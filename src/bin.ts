@@ -13,9 +13,10 @@ process.env["NODE_DISABLE_COLORS"] = "1";
 process.env["NO_COLOR"] = "1";
 
 const argv = process.argv.slice(2);
-// Must run before importing anything that reads runtime configuration.
+// Must run before importing anything that reads runtime configuration. A help
+// request is answered from the command table alone, so it configures nothing.
 const { applyCliBootstrap } = await import("@/cli/command-contract/bootstrap");
-applyCliBootstrap(argv);
+const bootstrap = applyCliBootstrap(argv);
 
 const { runCli } = await import("@/cli/commands/run");
-await runCli(argv);
+await runCli(argv, bootstrap);

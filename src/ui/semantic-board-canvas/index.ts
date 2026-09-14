@@ -42,4 +42,5 @@ export {
 	semanticBoardKeys,
 	semanticBoardListQuery,
 	semanticRenderQuery,
+	vaultCheckQuery,
 } from "@/ui/semantic-board-canvas/lib/queries";

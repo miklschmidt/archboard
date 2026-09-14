@@ -22,8 +22,8 @@ const output = {
 } as const;
 const checkContract = defineCommand({
 	path: ["check"],
+	shared: ["url"],
 	summary: "Check configuration and every board family in the vault",
-	usage: "check",
 	description:
 		"Reports invalid configuration, unreadable boards and removed vocabulary references. Exit 1 means the vault still has diagnostics; no board is changed.",
 	examples: ["archboard check"],
@@ -72,8 +72,8 @@ const checkContract = defineCommand({
 });
 const semanticConfigContract = defineCommand({
 	path: ["semantic", "config"],
+	shared: ["url"],
 	summary: "Discover the configured vocabulary or its editor schema",
-	usage: "semantic config [--schema]",
 	description:
 		"Prints the vault policy, source path and current diagnostics. --schema emits a JSON Schema generated from the canonical YAML validation schema, without requiring a running server.",
 	examples: [
@@ -86,6 +86,7 @@ const semanticConfigContract = defineCommand({
 			key: "schema",
 			spellings: ["--schema"],
 			value: "none",
+			excludesShared: ["url"],
 			description: "Print the generated editor JSON Schema",
 		},
 	],

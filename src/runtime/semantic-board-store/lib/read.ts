@@ -110,6 +110,10 @@ function interpretBoard(
 	} catch (error) {
 		return unreadable(location, `${location.file} is not JSON: ${errorMessage(error)}`);
 	}
+	const legacy = legacyGroupProblem(value);
+	if (legacy !== null) {
+		return unreadable(location, `${location.file}: ${legacy}`);
+	}
 	const parsed = parseSemanticBoard(value);
 	if (!parsed.ok) {
 		return unreadable(location, parsed.problem);
@@ -135,6 +139,89 @@ function interpretBoard(
 				: []),
 		],
 	};
+}
+
+/**
+ * The one-time conversion a document from before schema 2.2.0 needs, when it
+ * needs one.
+ *
+ * Nodes used to carry a free-text `group` label; they now carry `groups`, a
+ * list of ids the vault configuration defines. The store never rewrites a
+ * board it was not asked to write, and a label is not an id — "the write
+ * path" has to become some configured key somebody chose — so the file is
+ * refused with exactly what to do, rather than read with the membership
+ * silently dropped or a key invented for it.
+ * @param value The document as parsed from disk, before the contract sees it.
+ * @returns The conversion to make, or null when nothing in it is legacy.
+ */
+function legacyGroupProblem(value: unknown): string | null {
+	const labelled = legacyGroupedNodes(value);
+	if (labelled.length === 0) {
+		return null;
+	}
+	const listed = labelled.map(({ name, group }) => `${JSON.stringify(name)} (${group})`).join(", ");
+	return (
+		`this board is from before schema 2.2.0 and ${labelled.length} node(s) still carry the ` +
+		`retired singular "group" label: ${listed}. Convert it by hand once: define each group ` +
+		`under "groups" in .archboard/config.yaml with a stable id, replace every node's ` +
+		`"group": "<label>" with "groups": ["<id>"], and set "schemaVersion" to "2.2.0". ` +
+		"Nothing is rewritten for you, so no membership is lost and no id is invented."
+	);
+}
+
+/** One node still carrying the retired label, as far as the refusal needs to name it. */
+interface LegacyGroupedNode {
+	readonly name: string;
+	readonly group: string;
+}
+
+/**
+ * Every node of every variant that still carries a singular `group`.
+ * @param value The document as parsed from disk.
+ * @returns The nodes, with the label each carries.
+ */
+function legacyGroupedNodes(value: unknown): LegacyGroupedNode[] {
+	const variants = isRecord(value) ? value["variants"] : undefined;
+	if (!Array.isArray(variants)) {
+		return [];
+	}
+	return variants.flatMap(nodesOfVariant).flatMap((node) => {
+		const label = legacyLabel(node);
+		return label === null ? [] : [label];
+	});
+}
+
+/**
+ * The nodes one decoded variant holds, whatever shape it turned out to be.
+ * @param variant One entry of the document's variants.
+ * @returns Its nodes, or none when it holds nothing readable.
+ */
+function nodesOfVariant(variant: unknown): unknown[] {
+	const content = isRecord(variant) ? variant["content"] : undefined;
+	const nodes = isRecord(content) ? content["nodes"] : undefined;
+	return Array.isArray(nodes) ? nodes : [];
+}
+
+/**
+ * The retired label one decoded node carries, when it carries one.
+ * @param node One decoded node.
+ * @returns What to call the node and the label, or null when it has none.
+ */
+function legacyLabel(node: unknown): LegacyGroupedNode | null {
+	if (!isRecord(node) || typeof node["group"] !== "string") {
+		return null;
+	}
+	const name = typeof node["name"] === "string" ? node["name"] : "?";
+	return { name, group: node["group"] };
+}
+
+/**
+ * Whether a decoded JSON value is a plain object.
+ * @param value The value.
+ * @returns True for an object that is neither null nor an array.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**

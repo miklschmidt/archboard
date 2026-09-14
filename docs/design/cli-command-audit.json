@@ -3,12 +3,12 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 35,
-		"paths": 68
+		"subcommands": 36,
+		"paths": 69
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
-		"tailGlobals": ["--board", "--doing", "--expect-version"],
+		"tailGlobals": ["--url", "--board", "--doing", "--expect-version", "--as-session"],
 		"successExit": 0,
 		"genericExit": 1,
 		"usageExit": 2,
@@ -1541,10 +1541,38 @@
 			"classification": "board"
 		},
 		{
+			"path": "semantic inspect",
+			"introducedBy": "TASK-207",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-inspect.ts",
+			"stdout": "json object",
+			"result": "one group of one variant: members, internal edges, directed boundary edges, immediate neighbors",
+			"diagnostics": "summary and vocabulary warnings on stderr; usage/refusal on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards/board", "GET /api/vault/check"],
+			"semantics": "derived from the whole variant before any view narrows it, by the same pure inspection the browser runs; a configured empty group answers empty, an id neither configured nor used is refused",
+			"ordering": "read the board, resolve the variant, read the policy, inspect, then print",
+			"nextFields": ["group.configured", "members[].id", "boundaryEdges[].direction"],
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "UNKNOWN_GROUP",
+					"exit": 2
+				}
+			],
+			"classification": "board"
+		},
+		{
 			"path": "semantic render",
 			"introducedBy": "TASK-171",
 			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerOwner": "src/cli/commands/semantic.ts",
+			"handlerOwner": "src/cli/commands/semantic-render.ts",
 			"stdout": "file receipt",
 			"result": "the SVG that was written, with its size",
 			"diagnostics": "file receipt note on stderr",

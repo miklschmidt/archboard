@@ -178,10 +178,14 @@ Containment expresses membership independently of how nodes are drawn.
 _Avoid_: lane, frame, rectangle
 
 **Group**:
-What a node belongs to, as one optional short label: an effort, a team, a
-migration, a family of parts. It is independent of containment and of kind, is
-never inherited from a parent, and a node is in at most one.
-_Avoid_: tag, category, layer, swimlane, colour
+A concern a node belongs to, defined once in the vault configuration under a
+stable readable id with a display name: an effort, a team, a migration, a family
+of parts. A node's memberships are an explicit set of those ids; a node may be in
+several groups, inherits none from its parent, and a group is independent of
+containment and of kind. Renaming a group changes no board. Inspecting a group
+reads its members, the relationships between them, the relationships crossing its
+boundary and their direction, and the immediate neighbours those reach.
+_Avoid_: tag, category, layer, swimlane, colour, label
 
 **Visual policy**:
 The vault-wide interpretation of semantic vocabulary as appearance, shared by

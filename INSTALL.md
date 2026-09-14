@@ -155,10 +155,18 @@ nodeKinds:
 relationshipKinds:
   http: { name: HTTP, color: cyan, dash: solid, arrowhead: filled }
   event: { name: Event, color: amber, dash: dashed, arrowhead: open }
+groups:
+  fulfillment: { name: Fulfillment }
+  billing: { name: Billing }
 ```
 
 Every board must declare a `level`. Nodes and edges reference the configured
-kind keys. Icons use Remix Icon React export names, such as `RiServerLine`.
+kind keys. `groups` is optional and empty by default: each key is a stable id a
+node may list in its `groups` array, and the name is what readers see. A node may
+belong to several groups across different containers; nothing is inherited from a
+parent, and renaming a group changes no board. Inspect one group with
+`archboard semantic inspect <board> --group <id>` or from the group control in a
+pane's reading strip. Icons use Remix Icon React export names, such as `RiServerLine`.
 Browse the [Remix Icon catalog](https://remixicon.com/) visually, or search the
 [complete export-name list for the installed version](https://unpkg.com/@remixicon/react@4.9.0/index.d.ts)
 as plain text — agents can search its `declare const Ri...` entries directly.

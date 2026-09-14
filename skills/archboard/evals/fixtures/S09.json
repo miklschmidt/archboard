@@ -1,0 +1,61 @@
+{
+	"$comment": "S03 with the memberships recorded and an Overview view that keeps CLI but not the command inside it.",
+	"registerRepo": true,
+	"policy": {
+		"groups": {
+			"request-lifecycle": { "name": "Request lifecycle" },
+			"sansio-core": { "name": "Sans-IO core" }
+		}
+	},
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask application",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "The WSGI application object",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Dispatch",
+						"kind": "function",
+						"parent": "Flask app",
+						"groups": ["request-lifecycle", "sansio-core"],
+						"responsibility": "full_dispatch_request through finalize_request",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "CLI",
+						"kind": "module",
+						"responsibility": "The flask command group",
+						"binding": { "repo": "$FLASK", "path": "src/flask/cli.py" }
+					},
+					{
+						"name": "Run command",
+						"kind": "function",
+						"parent": "CLI",
+						"groups": ["request-lifecycle"],
+						"responsibility": "flask run: load the app and serve it",
+						"binding": { "repo": "$FLASK", "path": "src/flask/cli.py" }
+					}
+				],
+				"edges": [
+					{ "from": "Flask app", "to": "Dispatch", "kind": "call", "label": "dispatches" },
+					{ "from": "Run command", "to": "Flask app", "kind": "call", "label": "serves" },
+					{ "from": "Run command", "to": "Dispatch", "kind": "call", "label": "requests reach" }
+				],
+				"views": [
+					{
+						"name": "Overview",
+						"grammar": "architecture",
+						"scope": { "kind": "selection", "nodes": ["Flask app", "Dispatch", "CLI"] }
+					}
+				]
+			}
+		}
+	]
+}

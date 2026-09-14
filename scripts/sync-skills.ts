@@ -14,6 +14,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 
 const repoRoot = path.resolve(import.meta.dir, "..");
 const source = path.join(repoRoot, "skills");
@@ -56,6 +57,13 @@ for (const name of names) {
 	const from = path.join(source, name);
 	const to = path.join(agentSkills, name);
 
+	// The consumer skill ships generated schemas and a portable install manual
+	// beside its authored files. They are derived into the tracked source, for
+	// the checkout's own use, and into every copy, so the same relative links
+	// work everywhere the skill lands.
+	if (name === "archboard") {
+		prepareSkillArtifacts(from, { root: repoRoot });
+	}
 	fs.rmSync(to, { recursive: true, force: true });
 	fs.cpSync(from, to, { recursive: true });
 

@@ -1,0 +1,68 @@
+{
+	"$comment": "A board with a walkthrough whose third beat is about the part that is going away.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask application",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "The WSGI application object",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Jinja environment",
+						"kind": "module",
+						"responsibility": "The app's Jinja environment and render_template",
+						"binding": { "repo": "$FLASK", "path": "src/flask/templating.py" }
+					},
+					{
+						"name": "Template engine",
+						"kind": "external",
+						"responsibility": "Jinja2 compiles and renders templates"
+					}
+				],
+				"edges": [
+					{
+						"from": "Flask app",
+						"to": "Jinja environment",
+						"kind": "call",
+						"label": "render_template"
+					},
+					{
+						"from": "Jinja environment",
+						"to": "Template engine",
+						"kind": "dependency",
+						"label": "jinja2"
+					}
+				],
+				"walkthroughs": [
+					{
+						"name": "How a page is built",
+						"summary": "From a view's call to a rendered page",
+						"beats": [
+							{
+								"heading": "One request, one page",
+								"body": "A view function asks for a template and gets a string back. This walkthrough follows that call."
+							},
+							{
+								"heading": "The app asks Jinja",
+								"body": "render_template looks the template up in the app's Jinja environment, which is created lazily with the app's loader.",
+								"subjects": ["Flask app", "Jinja environment"]
+							},
+							{
+								"heading": "The engine renders",
+								"body": "The template engine compiles the template and renders it with the context the view supplied.",
+								"subjects": ["Template engine"]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

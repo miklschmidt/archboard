@@ -69,7 +69,7 @@ describe("containment and type have independent visual channels", () => {
 		const content = VariantContentSchema.parse({ nodes });
 		const plain = await renderArchitecture({ content, theme: "light", policy });
 		const groupedContent = structuredClone(content);
-		for (const node of groupedContent.nodes) node.group = "migration";
+		for (const node of groupedContent.nodes) node.groups = ["migration"];
 		const grouped = await renderArchitecture({
 			content: groupedContent,
 			theme: "light",

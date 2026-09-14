@@ -1,0 +1,74 @@
+{
+	"$comment": "Flask 2.1 contexts as pushed onto werkzeug LocalStacks, with one shared view over the whole board.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask contexts",
+			"input": {
+				"level": "module",
+				"variant": "Local stacks",
+				"summary": "Contexts pushed onto werkzeug LocalStacks, as Flask 2.1 did",
+				"nodes": [
+					{
+						"name": "App context",
+						"kind": "module",
+						"responsibility": "Binds current_app and g for one unit of work",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/ctx.py"
+						}
+					},
+					{
+						"name": "Request context",
+						"kind": "module",
+						"responsibility": "Binds request and session for one request",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/ctx.py"
+						}
+					},
+					{
+						"name": "App context stack",
+						"kind": "module",
+						"responsibility": "werkzeug LocalStack holding pushed app contexts"
+					},
+					{
+						"name": "Request context stack",
+						"kind": "module",
+						"responsibility": "werkzeug LocalStack holding pushed request contexts"
+					}
+				],
+				"edges": [
+					{
+						"from": "App context",
+						"to": "App context stack",
+						"kind": "data",
+						"label": "push / pop"
+					},
+					{
+						"from": "Request context",
+						"to": "Request context stack",
+						"kind": "data",
+						"label": "push / pop"
+					},
+					{
+						"from": "Request context",
+						"to": "App context",
+						"kind": "call",
+						"label": "pushes an app context when none is active"
+					}
+				],
+				"views": [
+					{
+						"name": "Contexts",
+						"grammar": "architecture",
+						"scope": {
+							"kind": "all"
+						}
+					}
+				]
+			}
+		}
+	]
+}

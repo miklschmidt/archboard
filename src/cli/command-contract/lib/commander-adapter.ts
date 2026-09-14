@@ -1,4 +1,4 @@
-import { Command, Option } from "commander";
+import type { Command, Option } from "commander";
 import { z } from "zod";
 import type {
 	AnyCommandContract,
@@ -6,34 +6,10 @@ import type {
 	TokenRecord,
 } from "@/cli/command-contract/contract";
 import { CliUsageError } from "@/cli/command-contract/contract";
+import { declareCommand } from "@/cli/command-contract/commander";
 
 /** The value shapes a parsed token may take, mirroring one TokenRecord entry. */
 const tokenValueSchema = z.union([z.string(), z.boolean(), z.array(z.string()), z.undefined()]);
-
-/**
- * Commander's collector for a repeatable option: appends rather than replaces.
- * @param value - The value this occurrence carried.
- * @param previous - The values collected so far.
- * @returns The values including this one.
- */
-function collect(value: string, previous: string[] = []): string[] {
-	return [...previous, value];
-}
-
-/**
- * Spells an option for Commander: every spelling, then the value placeholder
- * its arity calls for.
- * @param spellings - The option's spellings, long and short.
- * @param value - Whether the option takes a value, and whether it is optional.
- * @returns The flags string Commander parses.
- */
-function optionFlags(
-	spellings: readonly string[],
-	value: "none" | "required" | "optional",
-): string {
-	const suffix = value === "required" ? " <value>" : value === "optional" ? " [value]" : "";
-	return spellings.join(", ") + suffix;
-}
 
 /**
  * Rewrites Commander's unknown-option complaint in this CLI's words.
@@ -61,6 +37,33 @@ function missingValueRefusal(message: string): CliUsageError | undefined {
 }
 
 /**
+ * Rewrites Commander's missing-positional complaint in this CLI's words.
+ * @param message - Commander's message, without its "error:" prefix.
+ * @returns The refusal, or undefined when the message is about something else.
+ */
+function missingArgumentRefusal(message: string): CliUsageError | undefined {
+	const missing = message.match(/^missing required argument '([^']+)'/iu);
+	return missing ? new CliUsageError(`Missing required argument <${missing[1]}>`) : undefined;
+}
+
+/**
+ * Rewrites Commander's rejected-choice complaint in this CLI's words, naming
+ * the flag as the person spelled it and the values it accepts.
+ * @param message - Commander's message, without its "error:" prefix.
+ * @returns The refusal, or undefined when the message is about something else.
+ */
+function choiceRefusal(message: string): CliUsageError | undefined {
+	const rejected = message.match(
+		/^option '([^']+)' argument '([^']*)' is invalid\. Allowed choices are (.+)\.$/iu,
+	);
+	if (!rejected) {
+		return undefined;
+	}
+	const spelling = rejected[1]?.match(/--[a-z0-9-]+/iu)?.[0] ?? rejected[1];
+	return new CliUsageError(`${spelling} must be one of ${rejected[3]}; got "${rejected[2]}"`);
+}
+
+/**
  * Turns whatever Commander threw into a usage refusal this CLI would have
  * written itself, so its parser is never visible in the message.
  * @param error - The value Commander threw.
@@ -69,12 +72,22 @@ function missingValueRefusal(message: string): CliUsageError | undefined {
 function commanderUsageError(error: unknown): CliUsageError {
 	const raw = error instanceof Error ? error.message : String(error);
 	const message = raw.replace(/^error:\s*/iu, "");
-	return (
-		unknownFlagRefusal(message) ??
-		missingValueRefusal(message) ??
-		new CliUsageError(message[0]?.toUpperCase() + message.slice(1))
-	);
+	for (const rewrite of REWRITES) {
+		const refusal = rewrite(message);
+		if (refusal !== undefined) {
+			return refusal;
+		}
+	}
+	return new CliUsageError(message[0]?.toUpperCase() + message.slice(1));
 }
+
+/** Every Commander complaint this CLI rewrites, tried in order. */
+const REWRITES = [
+	unknownFlagRefusal,
+	missingValueRefusal,
+	missingArgumentRefusal,
+	choiceRefusal,
+] as const;
 
 /**
  * Hides single-dash tokens Commander would read as short options, so a value
@@ -127,7 +140,7 @@ function assertNoValueOnFlags(contract: AnyCommandContract, argv: readonly strin
 	if (argv.includes("--")) {
 		throw new CliUsageError("Unknown flag --");
 	}
-	const valueless = contract.parameters.flatMap((parameter) =>
+	const valueless = parsedParameters(contract).flatMap((parameter) =>
 		parameter.kind === "option" && parameter.value === "none" ? parameter.spellings : [],
 	);
 	for (const token of argv) {
@@ -139,50 +152,34 @@ function assertNoValueOnFlags(contract: AnyCommandContract, argv: readonly strin
 }
 
 /**
- * Builds the Commander command for one contract: its positionals in order and
- * one option per declared flag, with output and help suppressed so this CLI
- * owns every message.
+ * Refuses an option the contract says must be present and the person left
+ * out. Presence, not value: an option that is present without its value is
+ * refused by Commander as a missing argument, which is a different mistake.
  * @param contract - The command contract.
- * @returns The command and the options by parameter key.
+ * @param argv - The arguments after the command path.
+ * @throws {CliUsageError} Naming the first required option that is absent.
  */
-function buildCommanderCommand(contract: AnyCommandContract): {
-	command: Command;
-	options: Map<string, Option>;
-} {
-	const command = new Command();
-	command
-		.name(contract.path.join(" "))
-		.exitOverride()
-		.configureOutput({
-			/** Swallows Commander's stdout; this CLI writes every message itself. */
-			writeOut: () => {},
-			/** Swallows Commander's stderr; this CLI writes every message itself. */
-			writeErr: () => {},
-		})
-		.helpOption(false)
-		.addHelpCommand(false)
-		.allowExcessArguments(true);
-	if (contract.parameters.some((parameter) => parameter.route === "staged-tokens")) {
-		command.allowUnknownOption(true).passThroughOptions();
-	}
-
-	const options = new Map<string, Option>();
+function assertRequiredOptions(contract: AnyCommandContract, argv: readonly string[]): void {
 	for (const parameter of contract.parameters) {
-		if (parameter.kind === "positional") {
-			command.argument(parameter.repeatable ? `[${parameter.name}...]` : `[${parameter.name}]`);
-			continue;
+		if (
+			parameter.kind === "option" &&
+			parameter.required === true &&
+			parameter.route !== "staged" &&
+			!optionPresent(parameter, argv)
+		) {
+			throw new CliUsageError(`${parameter.spellings[0]} is required`);
 		}
-		const option = new Option(
-			optionFlags(parameter.spellings, parameter.value),
-			parameter.description,
-		);
-		if (parameter.occurrences === "append") {
-			option.argParser(collect);
-		}
-		command.addOption(option);
-		options.set(parameter.key, option);
 	}
-	return { command, options };
+}
+
+/**
+ * The parameters the ordinary parser reads: every declared one but the staged
+ * parameters, which their stage reads after the command's prerequisites.
+ * @param contract - The command contract.
+ * @returns The parameters, in declaration order.
+ */
+function parsedParameters(contract: AnyCommandContract): TokenParameter[] {
+	return contract.parameters.filter((parameter) => parameter.route !== "staged");
 }
 
 /**
@@ -244,9 +241,9 @@ export class CommanderArgvParser {
 	 */
 	async parse(contract: AnyCommandContract, argv: readonly string[]): Promise<TokenRecord> {
 		assertNoValueOnFlags(contract, argv);
-		const { command, options } = buildCommanderCommand(contract);
+		const { command, options } = declareCommand(contract, "parse");
 		const declared = new Set(
-			contract.parameters.flatMap((parameter) =>
+			parsedParameters(contract).flatMap((parameter) =>
 				parameter.kind === "option" ? parameter.spellings : [],
 			),
 		);
@@ -256,10 +253,11 @@ export class CommanderArgvParser {
 		} catch (error) {
 			throw commanderUsageError(error);
 		}
+		assertRequiredOptions(contract, argv);
 
 		const record: TokenRecord = {};
 		const args = [...command.args];
-		for (const parameter of contract.parameters) {
+		for (const parameter of parsedParameters(contract)) {
 			if (parameter.kind === "option") {
 				record[parameter.key] = optionValue(parameter, argv, command, options, restored);
 				continue;

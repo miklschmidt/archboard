@@ -8,6 +8,16 @@ type TokenRecord = Record<string, string | boolean | string[] | undefined>;
 
 type TokenParameter = OptionParameter | PositionalParameter;
 
+/**
+ * How a parameter reaches the handler. `value` is the ordinary parsed token;
+ * `stdin-or-file` and `pass-through` say what the value stands for; a
+ * `staged-tokens` collection is the raw tail a staged command validates only
+ * after its prerequisites, and a `staged` parameter is one the person may
+ * write inside that tail — declared here so help and introspection know it,
+ * parsed by the stage rather than by the ordinary parser.
+ */
+type ParameterRoute = "value" | "stdin-or-file" | "pass-through" | "staged-tokens" | "staged";
+
 interface OptionParameter {
 	kind: "option";
 	key: string;
@@ -15,7 +25,21 @@ interface OptionParameter {
 	value: "none" | "required" | "optional";
 	occurrences?: "last" | "append";
 	description: string;
-	route?: "value" | "stdin-or-file" | "pass-through" | "staged-tokens";
+	route?: ParameterRoute;
+	/** What the value stands for in help, without brackets; `value` when absent. */
+	placeholder?: string;
+	/** Whether the option must be present. Distinct from `value`, which says a present option needs a value. */
+	required?: boolean;
+	/** When the option is required, in words, for an option that is required only sometimes. */
+	requiredWhen?: string;
+	/** The only values the option accepts, when it accepts a closed set. */
+	choices?: readonly string[];
+	/** The value in effect when the option is absent, when there is one worth saying. */
+	default?: string;
+	/** Parsed but never advertised: a tail the command ignores and no person should write. */
+	hidden?: boolean;
+	/** Shared options that do not apply when this local option is present. */
+	excludesShared?: readonly SharedOptionKey[];
 }
 
 interface PositionalParameter {
@@ -24,8 +48,23 @@ interface PositionalParameter {
 	name: string;
 	repeatable?: boolean;
 	description: string;
-	route?: "value" | "stdin-or-file" | "pass-through" | "staged-tokens";
+	route?: ParameterRoute;
+	/** Whether the argument must be given. */
+	required?: boolean;
+	/** What the argument stands for in help, when `name` is not the whole story. */
+	placeholder?: string;
+	/** Parsed but never advertised: a tail the command ignores and no person should write. */
+	hidden?: boolean;
 }
+
+/**
+ * The options every command may share, and which one command actually reads.
+ *
+ * They are stripped by routing before a command's own parser sees them, so a
+ * command that does nothing with one would otherwise accept it in silence. A
+ * command lists the ones it reads; any other is refused as a usage error.
+ */
+type SharedOptionKey = "url" | "board" | "doing" | "expect-version" | "as-session";
 
 interface InputStage {
 	name: string;
@@ -132,10 +171,11 @@ interface CommandContext {
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	path: readonly [string, ...string[]];
 	summary: string;
-	usage: string;
 	description: string;
 	examples: readonly string[];
 	parameters: readonly TokenParameter[];
+	/** The shared options this command reads; every other one is refused. */
+	shared: readonly SharedOptionKey[];
 	input: CommandInput<Shape>;
 	result: z.ZodType<Result>;
 	output: OutputPolicy<z.output<z.ZodObject<Shape>>>;
@@ -186,6 +226,93 @@ function assertOptionSpellings(
 }
 
 /**
+ * Refuses option facts that contradict each other: a default or a choice list
+ * on an option that takes no value, a default outside its own choices, and a
+ * conditional requirement on an option that is always required.
+ * @param contract - The contract being defined.
+ * @param parameter - The option to check.
+ * @throws {Error} Naming the first contradiction.
+ */
+function assertOptionFacts(
+	contract: CommandContract<z.ZodRawShape, unknown>,
+	parameter: OptionParameter,
+): void {
+	const contradiction = optionContradiction(parameter);
+	if (contradiction !== null) {
+		throw new Error(
+			`${contract.path.join(" ")}: option ${parameter.spellings[0]} ${contradiction}`,
+		);
+	}
+}
+
+/**
+ * Refuses an option that excludes a shared option the command never declared.
+ * @param contract - The contract being defined.
+ * @param parameter - The local option with conditional exclusions.
+ */
+function assertExcludedShared(
+	contract: CommandContract<z.ZodRawShape, unknown>,
+	parameter: OptionParameter,
+): void {
+	for (const excluded of parameter.excludesShared ?? []) {
+		if (!contract.shared.includes(excluded)) {
+			throw new Error(
+				`${contract.path.join(" ")}: option ${parameter.spellings[0]} excludes undeclared shared option ${excluded}`,
+			);
+		}
+	}
+}
+
+/**
+ * The first way an option's facts contradict each other, in words.
+ * @param parameter - The option.
+ * @returns The contradiction, or null when the facts agree.
+ */
+function optionContradiction(parameter: OptionParameter): string | null {
+	const found = CONTRADICTIONS.find(([holds]) => holds(parameter));
+	return found === undefined ? null : found[1];
+}
+
+/**
+ * Whether an option that takes no value carries a default or choices anyway.
+ * @param parameter - The option.
+ * @returns True when it does.
+ */
+function valuelessButValued(parameter: OptionParameter): boolean {
+	return (
+		parameter.value === "none" &&
+		(parameter.default !== undefined || parameter.choices !== undefined)
+	);
+}
+
+/**
+ * Whether an option's default is not one of its own choices.
+ * @param parameter - The option.
+ * @returns True when it is not.
+ */
+function defaultOutsideChoices(parameter: OptionParameter): boolean {
+	return (
+		parameter.default !== undefined && parameter.choices?.includes(parameter.default) === false
+	);
+}
+
+/**
+ * Whether an option is declared both always required and required only sometimes.
+ * @param parameter - The option.
+ * @returns True when it is.
+ */
+function requiredBothWays(parameter: OptionParameter): boolean {
+	return parameter.required === true && parameter.requiredWhen !== undefined;
+}
+
+/** Each way an option's facts can contradict each other, and the words for it. */
+const CONTRADICTIONS: readonly (readonly [(parameter: OptionParameter) => boolean, string])[] = [
+	[valuelessButValued, "takes no value, so it can have no default or choices"],
+	[defaultOutsideChoices, "defaults to a value outside its choices"],
+	[requiredBothWays, "is always required, so it cannot also be required only sometimes"],
+];
+
+/**
  * Refuses parameters the ingress schema cannot receive, duplicate option
  * spellings, and a positional after a repeatable one, which could never be
  * given a value of its own.
@@ -197,18 +324,42 @@ function assertParameters(contract: CommandContract<z.ZodRawShape, unknown>): vo
 	const spellings = new Set<string>();
 	let sawRepeatablePositional = false;
 	for (const parameter of contract.parameters) {
-		if (!inputKeys.has(parameter.key)) {
+		// A staged parameter arrives inside the staged token collection, so it
+		// has no ingress key of its own: the collection's key receives it.
+		if (parameter.route !== "staged" && !inputKeys.has(parameter.key)) {
 			throw new Error(`${contract.path.join(" ")}: token ${parameter.key} has no Zod ingress key`);
 		}
 		if (parameter.kind === "option") {
 			assertOptionSpellings(contract, parameter, spellings);
+			assertOptionFacts(contract, parameter);
+			assertExcludedShared(contract, parameter);
 			continue;
 		}
-		if (sawRepeatablePositional) {
-			throw new Error(`${contract.path.join(" ")}: no positional may follow a repeatable one`);
+		if (parameter.route === "staged") {
+			continue;
 		}
-		sawRepeatablePositional = parameter.repeatable === true;
+		sawRepeatablePositional = positionalAfter(contract, parameter, sawRepeatablePositional);
 	}
+}
+
+/**
+ * Refuses a positional after a repeatable one, which could never be given a
+ * value of its own, and says whether this one is repeatable for the next.
+ * @param contract - The contract being defined.
+ * @param parameter - The positional.
+ * @param sawRepeatable - Whether a repeatable positional came before it.
+ * @returns Whether a repeatable positional has now been seen.
+ * @throws {Error} When a positional follows a repeatable one.
+ */
+function positionalAfter(
+	contract: CommandContract<z.ZodRawShape, unknown>,
+	parameter: PositionalParameter,
+	sawRepeatable: boolean,
+): boolean {
+	if (sawRepeatable) {
+		throw new Error(`${contract.path.join(" ")}: no positional may follow a repeatable one`);
+	}
+	return parameter.repeatable === true;
 }
 
 /**
@@ -292,6 +443,8 @@ export {
 	CliUsageError,
 	type TokenRecord,
 	type TokenParameter,
+	type ParameterRoute,
+	type SharedOptionKey,
 	type OptionParameter,
 	type PositionalParameter,
 	type InputStage,

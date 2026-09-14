@@ -144,4 +144,4 @@ function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): string 
 	}
 }
 
-export { isBlockId, type IdsInUse, mintId, fnv1a, derivedId };
+export { BLOCK_ID_RE, isBlockId, type IdsInUse, mintId, fnv1a, derivedId };

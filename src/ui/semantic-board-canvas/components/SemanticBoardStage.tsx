@@ -27,11 +27,12 @@ import type {
 	SemanticTheme,
 	SemanticWaiting,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import { SemanticDiagram } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
+import {
+	SemanticDiagram,
+	type SemanticDiagramProps,
+} from "@/ui/semantic-board-canvas/components/SemanticDiagram";
 import { SemanticNarrative } from "@/ui/semantic-board-canvas/components/SemanticNarrative";
-import { SemanticVariantBar } from "@/ui/semantic-board-canvas/components/SemanticVariantBar";
-import { SemanticViewBar } from "@/ui/semantic-board-canvas/components/SemanticViewBar";
-import { SemanticWalkthroughBar } from "@/ui/semantic-board-canvas/components/SemanticWalkthroughBar";
+import { SemanticReadingBar } from "@/ui/semantic-board-canvas/components/SemanticReadingBar";
 import { SemanticRefreshFailure } from "@/ui/semantic-board-canvas/components/SemanticRefreshFailure";
 import { SemanticTrail } from "@/ui/semantic-board-canvas/components/SemanticTrail";
 import {
@@ -43,6 +44,8 @@ import {
 	useDrillDown,
 	type DrillNavigation,
 } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
+import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
+import { useGroupInspection } from "@/ui/semantic-board-canvas/hooks/use-group-focus";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import {
 	useLevelReading,
@@ -54,6 +57,7 @@ import {
 	type WalkthroughReading,
 } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
+import type { GroupChoice, GroupFocus } from "@/ui/semantic-board-canvas/lib/groups";
 import { beatFocus, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
@@ -161,6 +165,31 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onCloseNarrative: () => void;
 	/** Leave the guided reading and choose a view of this level. */
 	readonly onChooseView: (view: string | null) => void;
+	/** Read an explanation, leaving any group inspection behind. */
+	readonly onChooseWalkthrough: (walkthrough: string | null) => void;
+	/** Every group the variant on screen uses. */
+	readonly groups: readonly GroupChoice[];
+	/** How the inspector names memberships and inspects one. */
+	readonly groupControls: GroupControls;
+	/** The group under inspection, read against the picture, or null. */
+	readonly groupFocus: GroupFocus | null;
+	/** Inspect a group, leaving any guided reading behind; null to stop. */
+	readonly onChooseGroup: (group: string | null) => void;
+}
+
+/**
+ * What to call one of this board's variants.
+ *
+ * The board's own family, which the pane already has in hand for the variant
+ * bar. A variant it does not know — one renamed out from under a reader, or one
+ * of another board after a drill-down — is named by its id, which is worse than
+ * a name and better than a blank.
+ * @param view What the stage is assembled from.
+ * @returns A function from a variant id to what it is called.
+ */
+function variantNamer(view: RenderView): (id: string) => string {
+	const offered = view.reading?.variants ?? [];
+	return (id) => offered.find((variant) => variant.id === id)?.name ?? id;
 }
 
 /**
@@ -211,130 +240,6 @@ function refreshDisclosure(view: RenderView): ReactNode {
 }
 
 /**
- * Offer the board's shared views at the level currently being read.
- * @param view What the stage is assembled from.
- * @param answer The render the server gave, or undefined before one has.
- * @returns The bar, or null when there is no choice to offer here.
- */
-function viewBar(view: RenderView, answer: SemanticRender | undefined): ReactNode {
-	const choose = view.level.onView;
-	if (answer === undefined || choose === undefined) {
-		return null;
-	}
-	return (
-		<SemanticViewBar views={answer.views} showing={answer.view} onChoose={view.onChooseView} />
-	);
-}
-
-/**
- * The bar that offers the board's other states.
- *
- * A board's variants are the board's, not a view's: the pane's own board again,
- * and absent while somebody is a level down, where the family belongs to a
- * different board and choosing from it would quietly change what the way back
- * leads to.
- * @param view What the stage is assembled from.
- * @returns The bar, or null when there is no choice to offer here.
- */
-function variantBar(view: RenderView): ReactNode {
-	const { reading } = view;
-	const choose = view.level.onVariant;
-	if (choose === undefined || reading === null) {
-		return null;
-	}
-	return (
-		<SemanticVariantBar
-			variants={reading.variants}
-			showing={reading.showing?.id ?? null}
-			onChoose={choose}
-		/>
-	);
-}
-
-/**
- * What to call one of this board's variants.
- *
- * The board's own family, which the pane already has in hand for the variant
- * bar. A variant it does not know — one renamed out from under a reader, or one
- * of another board after a drill-down — is named by its id, which is worse than
- * a name and better than a blank.
- * @param view What the stage is assembled from.
- * @returns A function from a variant id to what it is called.
- */
-function variantNamer(view: RenderView): (id: string) => string {
-	const offered = view.reading?.variants ?? [];
-	return (id) => offered.find((variant) => variant.id === id)?.name ?? id;
-}
-
-/**
- * The bar that offers this variant’s explanations of itself.
- *
- * One place decides whether a variant that explains itself nowhere is offered
- * anything, and this is it: the strip asks this, rather than the count, so that
- * there is one answer rather than two that can drift apart.
- * @param view What the stage is assembled from.
- * @returns The bar, or null when the variant states no walkthrough.
- */
-function walkthroughBar(view: RenderView): ReactNode {
-	const { narrative } = view;
-	if (narrative.offered.length === 0) {
-		return null;
-	}
-	return (
-		<SemanticWalkthroughBar
-			walkthroughs={narrative.offered}
-			open={narrative.open?.id ?? null}
-			onChoose={narrative.choose}
-		/>
-	);
-}
-
-/**
- * The hairline between two groups of the strip, when both are there.
- * @param between Whether there are two groups to separate.
- * @returns The rule, or null when there is nothing to divide.
- */
-function divider(between: boolean): ReactNode {
-	return between ? <span aria-hidden="true" className="bg-border mx-1 h-5 w-px" /> : null;
-}
-
-/**
- * The strip above the diagram: the states of this architecture, the ways this
- * variant can be read, and the explanations it gives of itself.
- *
- * One strip rather than two, because both are the same question — how is this
- * board being read — and a second rule across the pane for the second half of
- * it would be a line drawn where there is no difference. It is absent when the
- * board offers no alternate reading.
- *
- * The explanations are offered in every state, including while the server is
- * drawing. A beat may be told through a view, so moving to one asks for a
- * different picture; if the rail went away while that picture was being drawn,
- * the reader's place would go with it.
- * @param view What the stage is assembled from.
- * @returns The strip, or null when there is nothing to offer.
- */
-function readingBar(view: RenderView): ReactNode {
-	const views = viewBar(view, view.render.data);
-	const variants = variantBar(view);
-	const walkthroughs = walkthroughBar(view);
-	if (views === null && variants === null && walkthroughs === null) {
-		return null;
-	}
-	return (
-		<div
-			data-slot="semantic-reading-bar"
-			className="border-border bg-background flex shrink-0 items-center gap-1 border-b px-3 py-1.5"
-		>
-			{variants}
-			{divider(variants !== null && views !== null)}
-			{views}
-			{walkthroughs}
-		</div>
-	);
-}
-
-/**
  * The explanation being read, beside the picture.
  * @param view What the stage is assembled from.
  * @returns The rail, or null when nobody is reading one.
@@ -353,6 +258,19 @@ function narrativeRail(view: RenderView): ReactNode {
 			onClose={view.onCloseNarrative}
 		/>
 	);
+}
+
+/**
+ * What the picture is told about the group under inspection.
+ * @param focus The group under inspection, or null.
+ * @returns Which group it is and what to mark, or nothing for either.
+ */
+function groupMarks(
+	focus: GroupFocus | null,
+): Pick<SemanticDiagramProps, "groupId" | "groupMarks"> {
+	return focus === null
+		? { groupId: null, groupMarks: null }
+		: { groupId: focus.group, groupMarks: focus.emphasis };
 }
 
 /**
@@ -400,6 +318,8 @@ function stageBody(view: RenderView): JSX.Element {
 			onOpenDown={view.onOpenDown}
 			onOpenCode={view.onOpenCode}
 			focus={view.focus}
+			{...groupMarks(view.groupFocus)}
+			groupControls={view.groupControls}
 		/>
 	);
 }
@@ -428,7 +348,17 @@ function renderedView(view: RenderView): JSX.Element {
 			    with the picture would leave them stuck on a board they cannot
 			    leave. */}
 			<SemanticTrail trail={view.drill.trail} board={view.drill.board} onBack={view.onBack} />
-			{readingBar(view)}
+			<SemanticReadingBar
+				answer={view.render.data}
+				reading={view.reading}
+				onChooseView={view.level.onView === undefined ? undefined : view.onChooseView}
+				onChooseVariant={view.level.onVariant}
+				narrative={view.narrative}
+				onChooseWalkthrough={view.onChooseWalkthrough}
+				groups={view.groups}
+				groupFocus={view.groupFocus}
+				onChooseGroup={view.onChooseGroup}
+			/>
 			{/* Coherent and out of step: a picture cannot say that by itself, and
 			    drawn plainly it looks settled — which is the one impression it must
 			    not give. */}
@@ -526,6 +456,45 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		[choose, chooseView],
 	);
 
+	// Which group is under inspection is this pane's, kept on the board and the
+	// resolved variant it was chosen on: a walk into another board, or to another
+	// state of this one, drops it, while a change of view keeps it. Inspecting a
+	// group and following an explanation are two readings of one picture that
+	// each decide what is lit, so choosing one lets go of the other; picking a
+	// subject out is fine under either.
+	const source = useMemo(
+		() => ({ board: drill.board, variant: reading === null ? null : reading.variant, drawn }),
+		[drill.board, reading, drawn],
+	);
+	const inspecting = useGroupInspection(source);
+	const chooseGroup = inspecting.choose;
+	const onChooseGroup = useCallback(
+		(group: string | null): void => {
+			if (group !== null) {
+				choose(null);
+			}
+			chooseGroup(group);
+		},
+		[choose, chooseGroup],
+	);
+	const onChooseWalkthrough = useCallback(
+		(walkthrough: string | null): void => {
+			if (walkthrough !== null) {
+				chooseGroup(null);
+			}
+			choose(walkthrough);
+		},
+		[choose, chooseGroup],
+	);
+	const groupControls = useMemo(
+		() => ({
+			names: inspecting.names,
+			inspecting: inspecting.focus === null ? null : inspecting.focus.group,
+			onChoose: onChooseGroup,
+		}),
+		[inspecting.names, inspecting.focus, onChooseGroup],
+	);
+
 	// What was picked out is reported as what it is, not only as an id. The pane
 	// is the one place that knows: it has the board open and has just drawn the
 	// thing. A shell told only "sTn4eQ" would need a second read of the board to
@@ -593,6 +562,11 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		missing,
 		onCloseNarrative,
 		onChooseView,
+		onChooseWalkthrough,
+		groups: inspecting.choices,
+		groupControls,
+		groupFocus: inspecting.focus,
+		onChooseGroup,
 	});
 }
 

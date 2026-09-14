@@ -22,7 +22,7 @@ import {
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
-	GroupLabelSchema,
+	GroupIdSchema,
 	ResponsibilitySchema,
 	SemanticIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
@@ -65,8 +65,9 @@ const HandleSchema = z
 	.string()
 	.trim()
 	.min(1)
+	.regex(/\S/u, "must not be blank")
 	.max(MAX_HANDLE)
-	.refine((value) => !value.includes("\n"), "must be a single line");
+	.regex(/^[^\n]*$/u, "must be a single line");
 
 /**
  * A node as an agent states it. `id` names an existing node to replace; when
@@ -81,9 +82,10 @@ const SemanticNodeInputSchema = z
 		responsibility: ResponsibilitySchema.optional(),
 		description: DescriptionSchema.optional(),
 		parent: NodeReferenceSchema.optional(),
-		// A label, not a reference: a group is not a thing on the board that could
-		// be named or identified, which is exactly why it needs no registry.
-		group: GroupLabelSchema.optional(),
+		// Configured group ids, in any order and repeated if the agent repeats
+		// them: the write boundary spells the set canonically, and an empty list
+		// lands as no membership at all.
+		groups: z.array(GroupIdSchema).optional(),
 		binding: CodeBindingSchema.optional(),
 		// Stated in full or not at all. A shorter spelling — the target board's
 		// name on its own — would have to mean "whatever is current there", and

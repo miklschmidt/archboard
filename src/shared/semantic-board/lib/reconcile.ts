@@ -80,7 +80,7 @@ const MERGED = {
 		"responsibility",
 		"description",
 		"parent",
-		"group",
+		"groups",
 		"binding",
 		"drillDown",
 	],
@@ -384,6 +384,9 @@ function decideField<Entity extends { readonly id: string }>(
 	const mine = field9(merge.mine, field);
 	const base = field9(merge.base, field);
 	const theirs = field9(merge.theirs, field);
+	if (field === "groups") {
+		return decideMemberships(merge.id, { mine, base, theirs });
+	}
 	if (same(mine, theirs) || same(theirs, base)) {
 		// Either both sides agree, or only this proposal moved: nothing to settle.
 		return { value: mine, issues: [], inherited: [] };
@@ -408,6 +411,63 @@ function decideField<Entity extends { readonly id: string }>(
 		],
 		inherited: [],
 	};
+}
+
+/**
+ * The ids a groups field holds, read off whichever state holds it.
+ * @param value What is written there, if anything.
+ * @returns The ids, as a set.
+ */
+function membershipsOf(value: unknown): Set<string> {
+	return new Set(Array.isArray(value) ? value.filter((id) => typeof id === "string") : []);
+}
+
+/**
+ * Decide a node's groups one membership at a time.
+ *
+ * A node's groups are a set, and each membership in it is its own yes-or-no
+ * against the base. Deciding the whole field as one value would hold a
+ * disagreement whenever the two sides touched different groups — this proposal
+ * adding one, the predecessor removing another — which is two decisions that
+ * do not compete. Decided one at a time, each membership is inherited, kept or
+ * agreed exactly as a scalar field is, and there is nothing left to hold: a
+ * membership both sides changed from the base can only have been changed to
+ * the same answer, because a membership has only two.
+ * @param id The node's identity, for what was inherited.
+ * @param sides What the three states say about its groups.
+ * @param sides.mine The proposal's memberships.
+ * @param sides.base The memberships when the two agreed.
+ * @param sides.theirs The predecessor's memberships now.
+ * @returns The settled memberships, and whether any came from the predecessor.
+ */
+function decideMemberships(
+	id: string,
+	sides: { readonly mine: unknown; readonly base: unknown; readonly theirs: unknown },
+): { value: unknown; issues: ReconciliationIssue[]; inherited: string[] } {
+	const mine = membershipsOf(sides.mine);
+	const base = membershipsOf(sides.base);
+	const theirs = membershipsOf(sides.theirs);
+	const every = [...new Set([...mine, ...base, ...theirs])].toSorted();
+	const settled = every.filter((group) =>
+		settledMembership(mine.has(group), base.has(group), theirs.has(group)),
+	);
+	const inherited = settled.length !== mine.size || settled.some((group) => !mine.has(group));
+	const value = settled.length === 0 ? undefined : settled;
+	return { value, issues: [], inherited: inherited ? [id] : [] };
+}
+
+/**
+ * Whether one membership stands after the merge.
+ *
+ * Only the predecessor moved it: it follows. Otherwise this proposal's answer
+ * stands, which is also both sides' answer when they agree.
+ * @param here Whether this proposal has it.
+ * @param was Whether the base had it.
+ * @param there Whether the predecessor has it now.
+ * @returns True when the node is in the group afterwards.
+ */
+function settledMembership(here: boolean, was: boolean, there: boolean): boolean {
+	return there !== was && here === was ? there : here;
 }
 
 /**

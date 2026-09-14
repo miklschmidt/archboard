@@ -1,10 +1,11 @@
 ---
 id: TASK-210
 title: Distribute generated semantic and vault JSON Schemas with the skill
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@codex'
 created_date: '2026-09-13 23:14'
-updated_date: '2026-09-13 23:33'
+updated_date: '2026-09-14 02:55'
 labels: []
 dependencies:
   - TASK-207
@@ -31,24 +32,36 @@ Deliver generation and portable access for the skill overhaul without expanding 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The full semantic board document JSON Schema and actual vault configuration JSON Schema are reproducibly generated from their canonical Zod schemas, including the configured validator icon contract, with no handwritten duplicate schema definitions.
-- [ ] #2 Both schemas have stable, directly linkable locations accessible to an agent using the installed skill as well as the source checkout. Normal installation/distribution supplies current generated artifacts without requiring consumers to discover a generation command.
-- [ ] #3 Schema references identify their format/version and purpose, distinguish persisted semantic documents from CLI authoring inputs, and clearly identify runtime semantic validation that JSON Schema cannot express.
-- [ ] #4 Vault guidance points to the config schema and INSTALL.md as authoritative installation/setup documentation; document links remain usable after the skill is installed outside the source checkout.
-- [ ] #5 Runtime validation exercises representative valid and invalid inputs at the schema boundary, with no static file-content or policy tests. Generated artifacts are ignored, generation is documented, and relevant normal checks pass.
+- [x] #1 The full semantic board document JSON Schema and actual vault configuration JSON Schema are reproducibly generated from their canonical Zod schemas, including the configured validator icon contract, with no handwritten duplicate schema definitions.
+- [x] #2 Both schemas have stable, directly linkable locations accessible to an agent using the installed skill as well as the source checkout. Normal installation/distribution supplies current generated artifacts without requiring consumers to discover a generation command.
+- [x] #3 Schema references identify their format/version and purpose, distinguish persisted semantic documents from CLI authoring inputs, and clearly identify runtime semantic validation that JSON Schema cannot express.
+- [x] #4 Vault guidance points to the config schema and INSTALL.md as authoritative installation/setup documentation; document links remain usable after the skill is installed outside the source checkout.
+- [x] #5 Runtime validation exercises representative valid and invalid inputs at the schema boundary, with no static file-content or policy tests. Generated artifacts are ignored, generation is documented, and relevant normal checks pass.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Start gate: TASK-207 and TASK-208 must both be Done before implementation begins. TASK-210 may then run in parallel with TASK-209; TASK-211 waits for this distribution contract and the evaluation harness. Do not add a new CLI command or schema authoring API.
-
-1. Re-read the final SemanticBoardSchema exported by src/shared/semantic-board/index.ts, SemanticBoardConfigurationSchema exported by src/runtime/semantic-board-store/index.ts, semantic config --schema in src/cli/commands/vault.ts, and skill install/sync paths. Use the actual runtime configuration schema: it specializes createSemanticPolicySchema with an enum derived from installed RemixIcon exports; the looser transport policy schema is not the validator contract. Include TASK-207's final groups representation and current board schema version.
-2. Add one reproducible generator using the existing Zod z.toJSONSchema facility through public module entrypoints. Emit the complete persisted board-family and vault configuration schemas with explicit JSON Schema dialect, stable document identity and format/version/purpose metadata. Keep validation definitions in Zod; avoid handwritten schema copies, permissive conversion fallbacks or a second icon list. Identify refinements/integrity checks that cannot be expressed in JSON Schema and document them as runtime obligations.
-3. Reserve portable relative artifact paths within the skill package, proposed as references/generated/semantic-board.schema.json and references/generated/vault-config.schema.json. Generate them for source-checkout use and install/sync output through the same preparation function. Add focused ignore rules; track only generation code and authored metadata. Generation is deterministic and leaves no tracked output drift; imported generator modules must have no startup/file-write side effects.
-4. Wire preparation into the existing install-skill staging flow and scripts/sync-skills.ts, and the normal build/setup path used by a clean checkout, so normal distribution supplies current schemas without a consumer generation step. Reuse one artifact preparation owner behind a module interface; do not make scripts import private implementation or tests. Generate/validate staged assets before replacing a working install, and keep --print-source and help read-only. Do not introduce product CLI behavior beyond supplying installation artifacts.
-5. Provide a generated portable copy of canonical INSTALL.md alongside the schemas (proposed references/generated/INSTALL.md), preserving or resolving any relative links to the corresponding canonical material. Source and installed skill links use the same relative paths; the copy is derived, ignored and carries source revision information rather than becoming a second authored installation manual. Add concise schema guidance distinguishing persisted documents from semantic new/edit authoring payloads, explaining runtime reference/cycle checks, and pointing vault setup to INSTALL.md and the actual config schema.
-6. Verify generated schemas at runtime using representative valid and invalid board/config objects, including groups and real versus nonexistent RemixIcon names, defaults, strict unknown fields and nested variants/views/flows/walkthroughs. Validate the expressible boundary against canonical Zod behavior; explicitly retain existing runtime owners for non-expressible semantic integrity. Inspect existing validator dependencies before choosing a validator; if an additional maintained JSON Schema validator is needed, request the dependency rather than hand-writing one.
-7. Extend the existing install-target product owner in tests/system/cli/install-targets.test.ts with an outside-checkout installation that consumes the generated schemas to validate actual inputs. Exercise a clean install/update and a preparation failure preserving the previous usable install. Manually follow installed documentation/schema links from the isolated destination. Do not assert file prose, snapshots, schema text or repository policy; test delivered runtime contracts.
-8. Update minimal canonical skill links/setup guidance and document the developer generation command; leave the broad workflow rewrite to TASK-211. Coordinate output paths and package revision with TASK-209 so both comparison arms use the same supporting CLI/schema distribution. Run skill sync, focused runtime/install checks and bun run check; reassess whether any separate generation paths or copied schema metadata can be removed.
+1. Make generated JSON Schema preserve canonical Zod constraints wherever Zod has an exportable built-in, deriving semantic-id validation from the shared ids authority.
+2. Enumerate every remaining runtime-only/refinement obligation accurately for boards, configuration, and authoring payloads.
+3. Strengthen focused artifact validation, including timestamp format support, mismatch regressions, and installed artifact usability.
+4. Run only TASK-210 module/install tests and the relevant type/lint checks; do not run skill evals or the grader.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented as src/runtime/skill-distribution: generatedSchemas() renders four draft 2020-12 documents from the Zod authorities (persisted board in output mode; vault config, semantic new payload without the name positional, semantic edit payload in input mode), each stamped with $id, title, description and x-archboard {semanticBoardSchemaVersion, runtimeObligations}. prepareSkillArtifacts() writes them plus a revision-stamped copy of INSTALL.md (relative links rewritten to absolute checkout paths) into <skill>/references/generated/, which is gitignored. scripts/sync-skills.ts prepares before copying; bun run generate:skill-artifacts writes them on demand; install-skill prepares the staging copy before the rename swap, so a preparation failure leaves the previously installed skill in place (guaranteed by ordering in installSkillFiles, not induced at the process boundary by a test). skills/archboard/references/schemas.md (tracked) documents the files, the authoring-versus-persisted distinction and the runtime obligations; SKILL.md and the archboard-dev skill link to it. ajv@8 added as a devDependency for schema validation in tests. Owners: src/runtime/skill-distribution/tests/artifacts.test.ts (Zod/JSON Schema agreement on accepted and refused payloads, metadata, determinism, INSTALL link rewrite) and tests/system/cli/install-targets.test.ts (an install carries and validates the generated files). bun run check EXIT 0.
+
+Review fixes: generated schemas now retain block-id, nonblank/single-line text, unique-level, nonempty-kind-map and unique persisted-group constraints from their canonical Zod authorities. Runtime obligations now accurately allow inherited subject ids across variants and enumerate family ancestry, designation, reconciliation, per-variant reference and cross-field checks. Ajv tests register Zod's canonical date-time validator, cover valid cross-variant identity reuse and runtime-only cyclic ancestry, and keep schema semantics in the module owner while the install test owns compiled presence and link resolution. Generated INSTALL links use angle-bracket destinations for paths with spaces/parentheses and provenance labels a dirty source checkout. Focused artifact/install tests: 17 pass; targeted lint and diff checks pass. Full typecheck remains blocked by unrelated concurrent CLI/evaluation errors.
+
+Review integration gate: bun run check passed with generated-schema constraints, accurate runtime obligations, installed-manual link/provenance corrections and warning-free schema validators. Canonical skills were formatted and synchronized before the final gate.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Generated JSON Schemas for the persisted board, the vault configuration and the two authoring payloads, plus a portable INSTALL.md copy, are produced from the Zod authorities on every sync and install into the skill's references/generated/ directory, documented by references/schemas.md, with fast tests holding the schemas to what Zod accepts and refuses and a system owner checking an install carries them.
+
+Review repaired expressible schema constraints, inherited identity and runtime-obligation guidance, and installed-manual links and provenance; the full normal gate passed.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -14,6 +14,7 @@ import { Button } from "@/ui/components/button";
 import type { CodeBinding } from "@/shared/code-target";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 import { Badge } from "@/ui/components/badge";
+import { groupLabel, type GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 
 /** Inputs for a section heading. */
 interface SectionLabelProps {
@@ -188,19 +189,12 @@ interface TitleProps {
 	id: string;
 	/** The one line it is responsible for, when it has one. */
 	responsibility?: string | undefined;
-	/** What it belongs to, when the board says. */
-	group?: string | undefined;
 }
 
 /**
- * The title block: the name, the kind beside it, the id under it, what it
- * belongs to when it belongs to anything, and the one line it is responsible
- * for.
- *
- * The group is words here because the picture says it in colour, and a colour
- * is not a name: a reader who can see that two cards are the same family still
- * cannot tell what the family is called, and two families can land on one hue.
- * @param props The name, kind, id, group and responsibility.
+ * The title block: the name, the kind beside it, the id under it, and the one
+ * line it is responsible for.
+ * @param props The name, kind, id and responsibility.
  * @returns The title block.
  */
 function TitleBlock(props: TitleProps): JSX.Element {
@@ -217,11 +211,6 @@ function TitleBlock(props: TitleProps): JSX.Element {
 			<p className="text-technical text-muted-foreground truncate font-mono" title={props.id}>
 				{props.id}
 			</p>
-			{props.group !== undefined && (
-				<p className="text-body text-muted-foreground pt-1" data-slot="semantic-inspector-group">
-					Part of {props.group}
-				</p>
-			)}
 			{props.responsibility !== undefined && (
 				<p className="text-body pt-1">{props.responsibility}</p>
 			)}
@@ -267,4 +256,105 @@ function namesOf(nodes: readonly SemanticNode[]): string {
 	return nodes.map((node) => node.name).join(", ");
 }
 
-export { BindingBody, Described, OpenCode, Row, Section, SectionLabel, TitleBlock, namesOf };
+/** How the panel names groups, which one is under inspection, and how to inspect one. */
+interface GroupControls {
+	/** What the vault calls each group, by id. */
+	readonly names: GroupNames;
+	/** The group under inspection, or null for none. */
+	readonly inspecting: string | null;
+	/**
+	 * Inspect a group, when the pane around the panel can.
+	 * @param group The group's id, or null to stop.
+	 */
+	readonly onChoose?: ((group: string | null) => void) | undefined;
+}
+
+/** Inputs for one membership. */
+interface MembershipProps {
+	/** The group's id. */
+	group: string;
+	/** The controls the panel was given. */
+	controls: GroupControls;
+}
+
+/**
+ * One group the node belongs to, as the control that inspects it.
+ *
+ * Named by what the vault calls it and marked when the vault no longer does:
+ * a membership in a group nobody defines is the board saying something the
+ * configuration has stopped saying, and the reader is the one who repairs that.
+ * @param props The group and the controls.
+ * @returns The control.
+ */
+function Membership(props: MembershipProps): JSX.Element {
+	const { group, controls } = props;
+	const choose = useCallback((): void => {
+		controls.onChoose?.(controls.inspecting === group ? null : group);
+	}, [controls, group]);
+	const configured = Object.hasOwn(controls.names, group);
+	return (
+		<Button
+			type="button"
+			variant={controls.inspecting === group ? "secondary" : "outline"}
+			size="sm"
+			aria-pressed={controls.inspecting === group}
+			disabled={controls.onChoose === undefined}
+			data-slot="semantic-inspector-group"
+			data-group={group}
+			data-configured={configured}
+			title={
+				configured ? `Inspect ${groupLabel(group, controls.names)}` : `${group} is not configured`
+			}
+			onClick={choose}
+		>
+			{groupLabel(group, controls.names)}
+			{!configured && <span className="text-muted-foreground"> (not configured)</span>}
+		</Button>
+	);
+}
+
+/** Inputs for the memberships section. */
+interface MembershipsProps {
+	/** The groups the node belongs to, as the board spells them. */
+	groups: readonly string[] | undefined;
+	/** The controls the panel was given. */
+	controls: GroupControls;
+}
+
+/**
+ * What the node belongs to, each membership as a control that inspects it.
+ *
+ * Words and a control rather than a colour: the picture never colours a group,
+ * and a membership is something a reader acts on — inspecting the group is how
+ * they see the rest of it across whatever contains each part.
+ * @param props The memberships and the controls.
+ * @returns The section, or nothing for a node in no group.
+ */
+function Memberships(props: MembershipsProps): JSX.Element | null {
+	const groups = props.groups ?? [];
+	if (groups.length === 0) {
+		return null;
+	}
+	return (
+		<Section title="Belongs to">
+			<div className="flex flex-wrap gap-1.5" data-slot="semantic-inspector-groups">
+				{groups.map((group) => (
+					<Membership key={group} group={group} controls={props.controls} />
+				))}
+			</div>
+		</Section>
+	);
+}
+
+export {
+	BindingBody,
+	Described,
+	Memberships,
+	OpenCode,
+	Row,
+	Section,
+	SectionLabel,
+	TitleBlock,
+	namesOf,
+	type GroupControls,
+};

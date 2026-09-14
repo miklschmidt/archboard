@@ -1,0 +1,5 @@
+{
+	"$comment": "The default vocabulary only: no signal kind, no extension kind, no observability group. The author extends config.yaml before the board can say what it must.",
+	"registerRepo": true,
+	"steps": []
+}

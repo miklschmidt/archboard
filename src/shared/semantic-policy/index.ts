@@ -31,9 +31,10 @@ const VocabularyNameSchema = z
 	.trim()
 	.min(1)
 	.regex(/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/iu);
+const PolicyDisplayNameSchema = z.string().trim().min(1).regex(/\S/u, "Name cannot be blank");
 const NodePolicySchema = z
 	.object({
-		name: z.string().trim().min(1),
+		name: PolicyDisplayNameSchema,
 		icon: z
 			.string()
 			.regex(
@@ -45,12 +46,18 @@ const NodePolicySchema = z
 	.strict();
 const RelationshipPolicySchema = z
 	.object({
-		name: z.string().trim().min(1),
+		name: PolicyDisplayNameSchema,
 		color: PaletteColorSchema.optional(),
 		dash: z.enum(["solid", "dashed", "dotted"]),
 		arrowhead: z.enum(["filled", "open", "none"]),
 	})
 	.strict();
+/**
+ * One configured group a node may belong to. The record key is the stable id
+ * boards carry; the name is what a reader sees, and renaming it changes no
+ * board and no comparison.
+ */
+const GroupPolicySchema = z.object({ name: PolicyDisplayNameSchema }).strict();
 /**
  * Build the policy contract with the icon vocabulary available at this boundary.
  * @param icon Valid icon names; browser readers only need the transport spelling.
@@ -62,16 +69,18 @@ function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.s
 			levels: z
 				.array(VocabularyNameSchema)
 				.min(1)
-				.refine((values) => new Set(values).size === values.length, "Levels must be unique"),
+				.refine((values) => new Set(values).size === values.length, "Levels must be unique")
+				.meta({ uniqueItems: true }),
 			nodeKinds: z
 				.record(VocabularyNameSchema, NodePolicySchema.extend({ icon }))
-				.refine((values) => Object.keys(values).length > 0, "Define at least one node kind"),
+				.refine((values) => Object.keys(values).length > 0, "Define at least one node kind")
+				.meta({ minProperties: 1 }),
 			relationshipKinds: z
 				.record(VocabularyNameSchema, RelationshipPolicySchema)
-				.refine(
-					(values) => Object.keys(values).length > 0,
-					"Define at least one relationship kind",
-				),
+				.refine((values) => Object.keys(values).length > 0, "Define at least one relationship kind")
+				.meta({ minProperties: 1 }),
+			/** Groups nodes may belong to, by stable id. None by default. */
+			groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}),
 		})
 		.strict();
 }
@@ -107,6 +116,7 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 		render: { name: "Render", dash: "solid", arrowhead: "filled" },
 		other: { name: "Other", dash: "solid", arrowhead: "filled" },
 	},
+	groups: {},
 };
 const VaultDiagnosticSchema = z.object({
 	severity: z.enum(["warning", "error"]),
@@ -129,6 +139,7 @@ type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 export {
 	VocabularyNameSchema,
+	GroupPolicySchema,
 	createSemanticPolicySchema,
 	SEMANTIC_PALETTE,
 	PaletteColorSchema,

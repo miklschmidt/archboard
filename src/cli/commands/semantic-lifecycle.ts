@@ -40,8 +40,8 @@ const ResolveInputSchema = z.object({
 
 const semanticResolveContract = defineCommand({
 	path: ["semantic", "resolve"],
+	shared: ["url", "doing", "expect-version", "as-session"],
 	summary: "Settle what a proposal is holding",
-	usage: "semantic resolve <name> --expect-version <n> [--variant <v>] [--input <file.json>]",
 	description:
 		"Answers the disagreements one proposal is holding against the variant it came from. The " +
 		"answer is JSON with `choices`, each naming the disagreement by its `subject` and `field` " +
@@ -54,19 +54,27 @@ const semanticResolveContract = defineCommand({
 		'archboard semantic resolve pipeline --expect-version 7 --input answer.json --doing "settling the gateway name"',
 	],
 	parameters: [
-		{ kind: "positional", key: "name", name: "name", description: "The board's name" },
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
 		{
 			kind: "option",
 			key: "variant",
 			spellings: ["--variant"],
 			value: "required",
-			description: "Which proposal to settle; the current variant when absent",
+			placeholder: "variant",
+			description: "Which proposal to settle, by id or name; the current variant when absent",
 		},
 		{
 			kind: "option",
 			key: "input",
 			spellings: ["--input"],
 			value: "required",
+			placeholder: "file.json",
 			description: "A JSON file stating the answer; standard input when absent",
 		},
 	],
@@ -144,8 +152,8 @@ const AdoptInputSchema = z.object({
 
 const semanticAdoptContract = defineCommand({
 	path: ["semantic", "adopt"],
+	shared: ["url", "doing", "expect-version", "as-session"],
 	summary: "Make one variant the architecture that is implemented",
-	usage: "semantic adopt <name> --variant <v> [--reason <why>] --expect-version <n>",
 	description:
 		"Moves the current designation to a variant of this board. Nothing is renamed and nothing is " +
 		"reparented: the variant that was current becomes the architecture that was implemented until " +
@@ -157,19 +165,28 @@ const semanticAdoptContract = defineCommand({
 		'archboard semantic adopt pipeline --variant "Queued ingest" --reason "the queue paid for itself in a week" --expect-version 9 --doing "adopting the queued ingest"',
 	],
 	parameters: [
-		{ kind: "positional", key: "name", name: "name", description: "The board's name" },
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
 		{
 			kind: "option",
 			key: "variant",
 			spellings: ["--variant"],
 			value: "required",
-			description: "Which variant becomes the implemented architecture",
+			placeholder: "variant",
+			required: true,
+			description: "Which variant becomes the implemented architecture, by id or name",
 		},
 		{
 			kind: "option",
 			key: "reason",
 			spellings: ["--reason"],
 			value: "required",
+			placeholder: "why",
 			description: "Why the architecture changed, kept with the record of the move",
 		},
 	],

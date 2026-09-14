@@ -298,13 +298,15 @@ test("a variant that explains itself nowhere offers nothing at all", async () =>
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
-	// No rail, no empty rail, no control that would only ever be disabled — and
-	// no strip to put one in either. A variant that has nothing to offer takes
-	// up none of the pane saying so.
+	// No rail, no empty rail, and no walkthrough control that would only ever
+	// be disabled. The strip stays for the one control that has an empty state
+	// of its own to show: a variant with no group memberships says so there.
 	expect(offers()).toHaveLength(0);
 	expect(document.querySelector("[data-slot='semantic-walkthrough-bar']")).toBeNull();
 	expect(document.querySelector("[data-slot='semantic-narrative']")).toBeNull();
-	expect(document.querySelector("[data-slot='semantic-reading-bar']")).toBeNull();
+	expect(
+		document.querySelector<HTMLSelectElement>("[data-slot='semantic-group-choice']")?.disabled,
+	).toBe(true);
 });
 
 test("choosing an explanation shows its beats in the order they were written", async () => {

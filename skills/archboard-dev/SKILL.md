@@ -34,6 +34,81 @@ package `mcp-excalidraw-server` is releases behind the git tag; never install it
 the same canvas skill. Keep the `archboard` skill free of machine-specific
 paths; it runs outside this repo.
 
+The consumer skill also ships derived files under
+`skills/archboard/references/generated/` (ignored): JSON Schemas for the
+persisted board document, the vault configuration and the `semantic new` and
+`semantic edit` payloads, rendered from the Zod authorities with
+`z.toJSONSchema`, plus an installation-local copy of `INSTALL.md`. One owner,
+`src/runtime/skill-distribution`, writes them; the sync script, the installer's
+staging step and `bun run generate:skill-artifacts` all call it. Never hand-edit
+a generated file or add a second schema definition; change the Zod schema and
+regenerate. The generated INSTALL copy belongs to the machine-local install: it
+records when its source checkout has working-tree changes and its escaped
+absolute links depend on the active checkout that also supplies the CLI.
+
+## Maintaining the consumer skill
+
+`skills/archboard` is what an agent in another repository reads to use
+archboard; it is measured, not eyeballed, and it goes stale the moment the
+product moves. **Trigger:** any change to a CLI contract (a command, option,
+ordering, default, exit code or answer shape), a diagram grammar or renderer
+promise, semantic identity or comparison rules, vault vocabulary or grouping,
+schema generation or distribution, installation, or verification behaviour.
+When it fires, in the same change:
+
+1. Update the recipe, reference, example and schema link the change touches
+   (`skills/archboard/SKILL.md` and `references/`). A recipe that the CLI
+   would now refuse is a defect, not a token saving.
+2. Update the evaluation inputs under `skills/archboard/evals/`: the scenario
+   whose `expectedFeatures` or `outcomes` the change alters, its fixture, and
+   the row of `coverage.json` that maps the feature. A new user-facing feature
+   or a new branch of a closed enum needs a scenario, an expected use and an
+   evidence owner; mechanical validation and generated metadata get a runtime
+   owner (a fast test), never a forced authored decoration.
+3. `bun scripts/sync-skills.ts`, then `bun test src/runtime/skill-evaluation
+tests/system/cli/install-targets.test.ts` and `bun run check`.
+
+The success contract the skill is held to: the fewest total author tokens per
+successfully completed workflow, not the shortest document. The four common
+paths (architecture from code, sequence through the data-flow grammar, edit one
+batch, propose and compare) run on SKILL.md plus at most one targeted
+reference; source investigation, the required reads, the writes and the
+verification are necessary work, and help, listing, config and check calls the
+context already answers are not. The frontmatter description is the trigger;
+conditional material sits behind a pointer that says when to read it; every
+link, including the generated schemas and the INSTALL.md copy, works in the
+installed package. Every guardrail in
+`docs/design/skill-evals/preservation-assessment.md` keeps a home and an
+evidence owner.
+
+### Evaluating a change
+
+`skills/archboard/evals/README.md` is the manual; `bun run eval:skill` is
+the command; `rubric.md` is what the grader reads. The harness runs real
+Codex authors (gpt-5.6-luna, high reasoning) on pinned Flask checkouts, three
+repetitions per scenario per skill version in parallel with isolated state, an
+installed baseline (`docs/design/skill-evals/baseline/archboard`) against an
+installed candidate (the live `skills/archboard`), the same CLI, prompts,
+fixtures and pins for both; then ONE gpt-6-astra session at high reasoning
+grades every run of the batch itself, reusing what it read of Flask, blinded
+to the arm, with per-run feature verdicts, scores and evidence, and told in
+these words: "Do not use subagents. Inspect the source and grade every run
+yourself in this session." Reports separate discovery from operations from
+code investigation, author usage from grader usage, primary workflows from the
+broad case, and list every failure. A person starts every run; `bun run
+check` never does.
+
+Read the comparison honestly. A skill-only change is comparable when
+`pins.json` and the fixtures are untouched. A product change that makes an
+old recipe unexecutable is a changed contract: the baseline arm then fails
+early and cheaply, and that is not a token saving; say so in the report, repin
+both arms on the new CLI, and capture a new baseline before claiming an
+improvement. Semantic compliance needs every expected feature to pass (traffic,
+containment, configured kinds, TASK-207 grouping and the rest of the
+checklist); a missing or incorrect required feature fails the run whatever the
+picture looks like, and the report surfaces every waived feature. Percentage
+targets come from a measured baseline, never from a plan.
+
 ## Facts that will mislead you
 
 - **A pane key carries a variant; a board name never does.** `payments@<variant>`

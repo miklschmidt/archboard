@@ -1,8 +1,20 @@
 // One CLI invocation from argv to exit code: help and version, retired-command guidance,
 // global flag capture, dispatch, and an interruptible run of the selected contract.
+//
+// Help is answered first and from the command table alone. A help request is
+// resolved before any global flag is applied, any prerequisite checked, any
+// input read or any handler run, so `--help` anywhere in an invocation prints
+// help and exits 0 whatever else the invocation got wrong.
 import { CliUsageError } from "@/cli/command-contract/contract";
-import type { AnyCommandContract } from "@/cli/command-contract/contract";
+import type { AnyCommandContract, SharedOptionKey } from "@/cli/command-contract/contract";
+import type { CliBootstrap } from "@/cli/command-contract/bootstrap";
+import { isHelpInvocation } from "@/cli/command-contract/bootstrap";
 import { runCommand } from "@/cli/command-contract/runner";
+import {
+	inapplicableSharedOptions,
+	SHARED_OPTIONS,
+	SHARED_OPTION_KEYS,
+} from "@/cli/command-contract/shared-options";
 import {
 	setExpectedVersion,
 	setRequestedBoard,
@@ -11,13 +23,8 @@ import {
 } from "@/runtime/engine/canvas-client";
 import { packageVersion } from "@/runtime/engine/package-version";
 import { CLI_INTERRUPT_CLEANUP_MS } from "@/shared/timing/timing";
-import {
-	type CommandRoutes,
-	type RouteOwner,
-	commandSummary,
-	commandUsage,
-} from "@/cli/command-routing/lib/route";
-import { helpFor } from "@/cli/command-routing/lib/registry";
+import type { CommandRoutes, RouteOwner } from "@/cli/command-routing/lib/route";
+import { helpText, usageLine } from "@/cli/command-routing/lib/help";
 import { dispatchedCommand } from "@/cli/command-routing/lib/dispatch";
 import { exitCodeFor, reportFailure } from "@/cli/command-routing/lib/exit-codes";
 import {
@@ -26,60 +33,6 @@ import {
 	takeSessionFlag,
 	takeExpectVersionFlag,
 } from "@/cli/command-routing/lib/global-flags";
-
-/**
- * Prints the top-level help: every command's summary and the conventions shared by all.
- * @param routes - The command table.
- */
-function printHelp(routes: CommandRoutes): void {
-	const lines = [
-		`archboard ${packageVersion()} — Excalidraw architecture canvas for AI coding agents`,
-		"",
-		"Usage:",
-		"  archboard                  Show this help",
-		"  archboard <command> [...]  Drive the canvas from the command line",
-		"",
-		"  Inside the archboard checkout, `./bin/canvas <command>` runs the CLI from",
-		"  src/ with bun, from any cwd. There is no build step, and the package is",
-		"  private — there is nothing to install from npm.",
-		"",
-		"Commands:",
-		...Object.entries(routes).map(
-			([name, command]) => `  ${name.padEnd(14)} ${commandSummary(command)}`,
-		),
-		"",
-		"Conventions:",
-		"  Results are JSON on stdout — except `describe` (plain text), `browser selection --text`,",
-		"  and raw-content output when --out is omitted (`export` scene JSON,",
-		"  `browser capture --format svg`).",
-		"  Diagnostics go to stderr.",
-		"  Named-board reads, writes, Mermaid conversion, inspection, PNG/SVG rendering, and export",
-		"    use the persisted vault note through the server and need no browser connection.",
-		"  Only `browser ...` commands inspect or control a live pane. Real-browser checks verify",
-		"    browser behavior and Excalidraw fidelity; they are not board-work prerequisites.",
-		"  --board <key> is global and REQUIRED on every command that touches a board. There is no",
-		'    default: a browser pane is never an authority for "the board" (ADR 0020). A call',
-		"    without it is refused, and the refusal lists persisted boards.",
-		'  --doing "..." is global and REQUIRED on every command that CHANGES a board. One short line',
-		'    in the present tense — "adding the payment queue" — which goes up on the canvas as the',
-		"    write lands, so the person at the board can see what you are up to. A write without it is",
-		"    refused. It is never written to the note. A claim's --reason is the overall reason; this is the",
-		"    step, and neither stands in for the other.",
-		"  --expect-version <n> is global: the version of the board you were working from, from the",
-		"    fingerprint on your last write or from `board info`. The write is refused if the board has",
-		"    moved past it, naming both versions. You need it only where the canvas cannot know who you",
-		"    are — a CLI process with no claim. Under a claim it fills the version in for you.",
-		"  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,",
-		"               5 board write refused (held, claim revoked, version moved, or the",
-		"               note changed on disk).",
-		"               check: 0 means clean; 1 means vault warnings or errors remain.",
-		"  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).",
-		"  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.",
-		"",
-		"Run `archboard help <command>` for per-command usage.",
-	];
-	process.stdout.write(`${lines.join("\n")}\n`);
-}
 
 /**
  * Runs a command contract while forwarding SIGINT and SIGTERM as an abort, then re-raises
@@ -164,7 +117,7 @@ function reportUnknownCommand(name: string): void {
  * @param name - An argument.
  * @returns True for `--help` or `-h`.
  */
-function isHelpRequest(name: string): boolean {
+function isHelpFlag(name: string): boolean {
 	return name === "--help" || name === "-h";
 }
 
@@ -178,44 +131,114 @@ function isVersionRequest(name: string): boolean {
 }
 
 /**
- * Resolves help flags to the named command, ignoring its ordinary arguments.
- * @param routes - The command table.
- * @param args - The invocation, including the command name.
- * @returns The command help, or null for top-level help.
+ * The shared option spelling one token uses, if any.
+ * @param token - One invocation token.
+ * @returns Its shared spelling, or undefined.
  */
-function requestedHelp(routes: CommandRoutes, args: readonly string[]): string | null {
-	const topic = args.filter((token) => !isHelpRequest(token));
-	if (topic[0] === "help") {
-		topic.shift();
+function sharedSpelling(token: string): string | undefined {
+	for (const key of SHARED_OPTION_KEYS) {
+		const spelling = SHARED_OPTIONS[key].spellings[0];
+		if (token === spelling || token.startsWith(`${spelling}=`)) {
+			return spelling;
+		}
 	}
-	return args.some(isHelpRequest)
-		? (helpFor(routes, topic.slice(0, 2)) ?? helpFor(routes, topic.slice(0, 1)))
-		: helpFor(routes, topic);
+	return undefined;
 }
 
 /**
- * Handles the argv forms that print and exit before any command runs.
- * @param routes - The command table.
- * @param name - The first argument.
- * @param rest - The remaining arguments.
- * @returns True when help or the version was printed.
+ * Whether a separated shared-option value should be consumed beside its flag.
+ * @param token - The option token.
+ * @param spelling - Its canonical spelling.
+ * @param following - The following token, if any.
+ * @returns True when the following token is its value.
  */
-function printedInformation(routes: CommandRoutes, name: string, rest: readonly string[]): boolean {
-	const args = [name, ...rest];
-	if (name === "help" || args.some(isHelpRequest)) {
-		const help = requestedHelp(routes, args);
-		if (help) {
-			process.stdout.write(help);
-		} else {
-			printHelp(routes);
+function consumesSharedValue(
+	token: string,
+	spelling: string,
+	following: string | undefined,
+): boolean {
+	return token === spelling && following !== undefined && !isHelpFlag(following);
+}
+
+/**
+ * The invocation with help flags and shared options, including their values, removed.
+ * @param args - The invocation.
+ * @returns Only possible command and positional words.
+ */
+function helpWords(args: readonly string[]): string[] {
+	const words: string[] = [];
+	for (let index = 0; index < args.length; index += 1) {
+		const token = args[index]!;
+		if (isHelpFlag(token)) {
+			continue;
 		}
-		return true;
+		const spelling = sharedSpelling(token);
+		if (spelling !== undefined) {
+			if (consumesSharedValue(token, spelling, args[index + 1])) {
+				index += 1;
+			}
+			continue;
+		}
+		words.push(token);
 	}
-	if (isVersionRequest(name)) {
-		process.stdout.write(`${packageVersion()}\n`);
-		return true;
+	return words;
+}
+
+/**
+ * The deepest consecutive route named by the words.
+ * @param routes - The command table.
+ * @param words - Possible command words.
+ * @returns The registered path prefix.
+ */
+function topicPath(routes: CommandRoutes, words: readonly string[]): string[] {
+	const root = words[0];
+	if (root === undefined) {
+		return [];
 	}
-	return false;
+	const first = routes[root];
+	if (first === undefined) {
+		return [];
+	}
+	const topic = [root];
+	let route = first;
+	for (const word of words.slice(1)) {
+		const child = route.children?.[word];
+		if (child === undefined) {
+			break;
+		}
+		topic.push(word);
+		route = child;
+	}
+	return topic;
+}
+
+/**
+ * The command words a help request is about, with shared option values kept
+ * from masquerading as subcommands.
+ * @param routes - The command table.
+ * @param args - The invocation, including the command name.
+ * @returns The registered path to look up.
+ */
+function helpTopic(routes: CommandRoutes, args: readonly string[]): string[] {
+	const words = helpWords(args);
+	if (words[0] === "help") {
+		words.shift();
+	}
+	return topicPath(routes, words);
+}
+
+/**
+ * Prints the help an invocation asks for, when it asks for any.
+ * @param routes - The command table.
+ * @param argv - The arguments after the executable name.
+ * @returns True when help was printed.
+ */
+function printedHelp(routes: CommandRoutes, argv: readonly string[]): boolean {
+	if (!isHelpInvocation(argv)) {
+		return false;
+	}
+	process.stdout.write(helpText(routes, packageVersion(), helpTopic(routes, argv)));
+	return true;
 }
 
 /**
@@ -237,40 +260,179 @@ function refuseRetiredBoardForms(name: string, rest: readonly string[]): void {
 	}
 }
 
+/** The shared options one invocation stated, with their values. */
+interface StatedShared {
+	readonly url: string | null;
+	readonly board: string | null;
+	readonly doing: string | null;
+	readonly session: string | null;
+	readonly expectVersion: number | null;
+}
+
 /**
- * Runs one CLI invocation against the command table and sets the process exit code.
- * @param routes - The command table.
- * @param argv - The arguments after the executable name.
+ * Takes the shared options out of the arguments, without applying any of them.
+ * @param rest - The arguments after the command name; the flags are spliced out.
+ * @param bootstrap - What the bootstrap already took.
+ * @returns What was stated.
  */
-async function runCliWith(routes: CommandRoutes, argv: string[]): Promise<void> {
-	const [name, ...rest] = argv;
-	if (!name) {
-		printHelp(routes);
+function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
+	return {
+		url: bootstrap.url,
+		board: takeBoardFlag(rest),
+		doing: takeDoingFlag(rest),
+		session: takeSessionFlag(rest),
+		expectVersion: takeExpectVersionFlag(rest),
+	};
+}
+
+/**
+ * The shared options an invocation stated, by key.
+ * @param stated - What was stated.
+ * @returns The keys with a value.
+ */
+function statedKeys(stated: StatedShared): SharedOptionKey[] {
+	const keys: SharedOptionKey[] = [];
+	if (stated.url !== null) keys.push("url");
+	if (stated.board !== null) keys.push("board");
+	if (stated.doing !== null) keys.push("doing");
+	if (stated.expectVersion !== null) keys.push("expect-version");
+	if (stated.session !== null) keys.push("as-session");
+	return keys;
+}
+
+/**
+ * Refuses a shared option the selected command does not read. Accepting it
+ * would let a person believe it did something — a `--doing` on a read, an
+ * `--expect-version` on a command that checks no version.
+ * @param selected - The command that will run.
+ * @param stated - What the invocation stated.
+ * @param argv - The selected command's local arguments, for conditional exclusions.
+ * @throws {CliUsageError} Naming the refused options and the command.
+ */
+function assertSharedApplies(
+	selected: RouteOwner,
+	stated: StatedShared,
+	argv: readonly string[] = [],
+): void {
+	const excluded = new Set(
+		selected.contract.parameters.flatMap((parameter) => {
+			if (parameter.kind !== "option" || parameter.excludesShared === undefined) {
+				return [];
+			}
+			const present = argv.some((token) =>
+				parameter.spellings.some(
+					(spelling) => token === spelling || token.startsWith(`${spelling}=`),
+				),
+			);
+			return present ? parameter.excludesShared : [];
+		}),
+	);
+	const applicable = selected.contract.shared.filter((key) => !excluded.has(key));
+	const refused = inapplicableSharedOptions(applicable, statedKeys(stated));
+	if (refused.length === 0) {
 		return;
 	}
-	if (printedInformation(routes, name, rest)) {
-		return;
+	const path = selected.contract.path.join(" ");
+	const reads = selected.contract.shared.length === 0 ? "none of the shared options" : "";
+	throw new CliUsageError(
+		`${refused.join(", ")} does not apply to \`archboard ${path}\`${reads ? `, which reads ${reads}` : ""}. ` +
+			`Run \`archboard help ${path}\` to see the options it reads.`,
+	);
+}
+
+/**
+ * Resolves what runs. A namespace that refuses its bare form is still asked
+ * whether the shared options apply to it first, so a person who wrote one that
+ * does not is told about the flag rather than only about the missing subcommand.
+ * @param command - The top-level route.
+ * @param rest - The arguments after the command name, shared options removed.
+ * @param stated - What the invocation stated.
+ * @returns The dispatch.
+ */
+function dispatchedTo(
+	command: CommandRoutes[string],
+	rest: readonly string[],
+	stated: StatedShared,
+): ReturnType<typeof dispatchedCommand> {
+	try {
+		return dispatchedCommand(command, rest);
+	} catch (error) {
+		assertSharedApplies(command.owner, stated, rest);
+		throw error;
+	}
+}
+
+/**
+ * Makes what the invocation stated the fact every later request carries.
+ * @param stated - What the invocation stated.
+ */
+function applyShared(stated: StatedShared): void {
+	setRequestedBoard(stated.board);
+	setWriteDoing(stated.doing);
+	setWriteSession(stated.session);
+	setExpectedVersion(stated.expectVersion);
+}
+
+/**
+ * The route an invocation runs, once the forms that print and exit — help,
+ * the version, an unknown command — have been answered.
+ * @param routes - The command table.
+ * @param argv - The arguments after the executable name.
+ * @returns The route, or null when the invocation has already been answered.
+ */
+function commandToRun(
+	routes: CommandRoutes,
+	argv: readonly string[],
+): CommandRoutes[string] | null {
+	if (printedHelp(routes, argv)) {
+		return null;
+	}
+	const name = argv[0];
+	if (name === undefined) {
+		return null;
+	}
+	if (isVersionRequest(name)) {
+		process.stdout.write(`${packageVersion()}\n`);
+		return null;
 	}
 	const command = routes[name];
 	if (command === undefined) {
 		reportUnknownCommand(name);
 		process.exitCode = 2;
+		return null;
+	}
+	return command;
+}
+
+/**
+ * Runs one CLI invocation against the command table and sets the process exit code.
+ * @param routes - The command table.
+ * @param argv - The arguments after the executable name.
+ * @param bootstrap - What the bootstrap took before runtime configuration loaded.
+ */
+async function runCliWith(
+	routes: CommandRoutes,
+	argv: string[],
+	bootstrap: CliBootstrap = { url: null, help: false },
+): Promise<void> {
+	const command = commandToRun(routes, argv);
+	if (command === null) {
 		return;
 	}
+	const [name = "", ...rest] = argv;
 	let selected: RouteOwner = command.owner;
 	try {
 		refuseRetiredBoardForms(name, rest);
-		setRequestedBoard(takeBoardFlag(rest));
-		setWriteDoing(takeDoingFlag(rest));
-		setWriteSession(takeSessionFlag(rest));
-		setExpectedVersion(takeExpectVersionFlag(rest));
-		const dispatched = dispatchedCommand(command, rest);
+		const stated = takeShared(rest, bootstrap);
+		const dispatched = dispatchedTo(command, rest, stated);
 		selected = dispatched.selected;
+		assertSharedApplies(selected, stated, dispatched.argv);
+		applyShared(stated);
 		await runInterruptibleCommand(selected.contract, dispatched.argv);
 	} catch (error) {
-		reportFailure(error, commandUsage(command));
+		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);
 	}
 }
 
-export { runCliWith };
+export { runCliWith, type CliBootstrap };

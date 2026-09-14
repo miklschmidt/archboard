@@ -84,4 +84,52 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 	}
 }
 
-export { SELECTED_CLASS, SUBJECT_ATTRIBUTE, isSubject, markSubjects, subjectAt, subjectBox };
+/** The class the surface carries while one group is under inspection. */
+const GROUP_FOCUS_CLASS = "is-group-focus";
+
+/** The classes the embedded stylesheet reads a group inspection through. */
+const GROUP_CLASSES = {
+	members: "is-group-member",
+	boundary: "is-group-boundary",
+	context: "is-group-context",
+} as const;
+
+/** Which subjects a group inspection lights, keeps readable, or treats as context. */
+interface GroupMarks {
+	readonly members: ReadonlySet<string>;
+	readonly boundary: ReadonlySet<string>;
+	readonly context: ReadonlySet<string>;
+}
+
+/**
+ * Draw one group's inspection on the picture, or take it off.
+ *
+ * Its own classes rather than the attention ring, so a subject can be attended
+ * and a member at once and say both. The surface carries the class that lets
+ * everything else recede, so a picture with no group under inspection is drawn
+ * exactly as it was: the stylesheet's group rules all hang under it.
+ * @param surface The element the picture was put into.
+ * @param marks What to light, keep readable, and treat as context; null for none.
+ */
+function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
+	surface.classList.toggle(GROUP_FOCUS_CLASS, marks !== null);
+	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
+		const id = group.getAttribute(SUBJECT_ATTRIBUTE) ?? "";
+		for (const role of ["members", "boundary", "context"] as const) {
+			group.classList.toggle(GROUP_CLASSES[role], marks?.[role].has(id) ?? false);
+		}
+	}
+}
+
+export {
+	GROUP_CLASSES,
+	GROUP_FOCUS_CLASS,
+	SELECTED_CLASS,
+	SUBJECT_ATTRIBUTE,
+	isSubject,
+	markGroupFocus,
+	markSubjects,
+	subjectAt,
+	subjectBox,
+	type GroupMarks,
+};

@@ -9,12 +9,12 @@ export {
 	type CommandRoute,
 	type CommandRoutes,
 	type CliRegistryEntry,
-	commandSummary,
-	commandUsage,
 	contract,
 	child,
 } from "@/cli/command-routing/lib/route";
 
-export { cliSurfaceOf, registryOf, helpFor } from "@/cli/command-routing/lib/registry";
+export { cliSurfaceOf, registryOf } from "@/cli/command-routing/lib/registry";
 
-export { runCliWith } from "@/cli/command-routing/lib/session";
+export { commanderTree, helpText, usageLine } from "@/cli/command-routing/lib/help";
+
+export { runCliWith, type CliBootstrap } from "@/cli/command-routing/lib/session";

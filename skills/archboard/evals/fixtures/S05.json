@@ -1,0 +1,85 @@
+{
+	"$comment": "The request pipeline as parts and calls, with no flow, view or walkthrough yet.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask request pipeline",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{
+						"name": "WSGI server",
+						"kind": "external",
+						"responsibility": "Calls the application once per request"
+					},
+					{
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "The WSGI application object",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Flask.wsgi_app",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Pushes the request context and dispatches",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Request context",
+						"kind": "module",
+						"parent": "Flask app",
+						"responsibility": "Binds request and session for one request",
+						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
+					},
+					{
+						"name": "full_dispatch_request",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Preprocess, dispatch and finalize one request",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "View function",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "The matched endpoint's function"
+					},
+					{
+						"name": "make_response",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Turns a view's return value into a Response",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "process_response",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Runs after_request functions and saves the session",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					}
+				],
+				"edges": [
+					{
+						"from": "WSGI server",
+						"to": "Flask.wsgi_app",
+						"kind": "call",
+						"label": "environ, start_response"
+					},
+					{ "from": "Flask.wsgi_app", "to": "Request context", "kind": "call", "label": "push" },
+					{ "from": "Flask.wsgi_app", "to": "full_dispatch_request", "kind": "call" },
+					{
+						"from": "full_dispatch_request",
+						"to": "View function",
+						"kind": "call",
+						"label": "dispatch_request"
+					},
+					{ "from": "full_dispatch_request", "to": "make_response", "kind": "call" },
+					{ "from": "full_dispatch_request", "to": "process_response", "kind": "call" }
+				]
+			}
+		}
+	]
+}

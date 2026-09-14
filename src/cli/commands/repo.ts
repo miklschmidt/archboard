@@ -8,7 +8,6 @@ import {
 } from "@/runtime/engine/repo-registry";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 
-const usage = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
 const tail = z.array(z.string()).default([]);
 
 const RepoNamespaceInputSchema = z.object({ action: z.string().optional(), tail });
@@ -17,19 +16,26 @@ const RepoNamespaceResultSchema = z.never();
 type RepoNamespaceResult = z.infer<typeof RepoNamespaceResultSchema>;
 const repoContract = defineCommand({
 	path: ["repo"],
+	shared: [],
 	summary:
 		"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
-	usage,
 	description: "Routes repository registry subcommands.",
 	examples: ["archboard repo list"],
 	parameters: [
-		{ kind: "positional", key: "action", name: "subcommand", description: "Repository subcommand" },
+		{
+			kind: "positional",
+			key: "action",
+			name: "subcommand",
+			hidden: true,
+			description: "Repository subcommand",
+		},
 		{
 			kind: "positional",
 			key: "tail",
 			name: "arguments",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Subcommand arguments",
 		},
 	],
@@ -52,7 +58,7 @@ const repoContract = defineCommand({
 	 * @returns Never; the usage error is the whole behaviour.
 	 */
 	async handler() {
-		throw new CliUsageError(usage);
+		throw new CliUsageError("repo needs a subcommand: list, add, or forget");
 	},
 });
 
@@ -76,8 +82,8 @@ const RepoListResultSchema = z.union([RepoListJsonResultSchema, z.string()]);
 type RepoListResult = z.infer<typeof RepoListResultSchema>;
 const repoListContract = defineCommand({
 	path: ["repo", "list"],
+	shared: [],
 	summary: "List registered repository checkouts",
-	usage: "repo list [--text]",
 	description: "Reads the machine-local repository registry.",
 	examples: ["archboard repo list"],
 	parameters: [
@@ -94,6 +100,7 @@ const repoListContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],
@@ -165,18 +172,24 @@ const RepoAddResultSchema = z.object({
 type RepoAddResult = z.infer<typeof RepoAddResultSchema>;
 const repoAddContract = defineCommand({
 	path: ["repo", "add"],
+	shared: [],
 	summary: "Register a repository checkout",
-	usage: "repo add [dir]",
 	description: "Derives a checkout identity from git and records its local root.",
 	examples: ["archboard repo add ."],
 	parameters: [
-		{ kind: "positional", key: "dir", name: "dir", description: "Checkout directory" },
+		{
+			kind: "positional",
+			key: "dir",
+			name: "dir",
+			description: "Checkout directory; the working directory when absent",
+		},
 		{
 			kind: "positional",
 			key: "tail",
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],
@@ -246,18 +259,25 @@ const RepoForgetResultSchema = z.object({
 type RepoForgetResult = z.infer<typeof RepoForgetResultSchema>;
 const repoForgetContract = defineCommand({
 	path: ["repo", "forget"],
+	shared: [],
 	summary: "Forget a local repository checkout",
-	usage: "repo forget <identity>",
 	description: "Removes one identity from the machine-local registry.",
 	examples: ["archboard repo forget github.com/acme/payments"],
 	parameters: [
-		{ kind: "positional", key: "identity", name: "identity", description: "Repository identity" },
+		{
+			kind: "positional",
+			key: "identity",
+			name: "identity",
+			required: true,
+			description: "Repository identity, such as github.com/acme/payments",
+		},
 		{
 			kind: "positional",
 			key: "tail",
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],

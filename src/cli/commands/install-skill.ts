@@ -8,19 +8,23 @@ import {
 	type SkillDestination,
 	countFiles,
 	findSkillSource,
+	packageRoot,
 	resolveAgent,
 	resolveExplicitDir,
 	resolveInvocation,
 	resolveTarget,
 } from "@/cli/commands/lib/skill-destination";
 import { applyBlock, chooseDoc, writeSetup } from "@/cli/commands/lib/repo-setup-block";
+import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 
 const RETIRED_SKILL_NAMES = ["excalidraw-skill"];
+const INSTALL_TARGETS = ["agents", "claude"] as const;
+const INSTALL_AGENTS = ["codex", "claude-code"] as const;
 
 const InstallSkillInputSchema = z.object({
 	dir: z.string().optional(),
-	target: z.string().optional(),
-	agent: z.string().optional(),
+	target: z.enum(INSTALL_TARGETS).optional(),
+	agent: z.enum(INSTALL_AGENTS).optional(),
 	printSource: z.boolean().default(false),
 	repo: z.string().optional(),
 	vault: z.string().optional(),
@@ -33,7 +37,7 @@ type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
 
 /**
  * The request problems the input schema cannot express field by field: at most one destination
- * spelling, --doc and --no-doc exclusive, and only supported agent and target names.
+ * spelling and --doc and --no-doc being exclusive.
  * @param input - The parsed install input.
  * @returns One message per problem found, in check order.
  */
@@ -48,42 +52,7 @@ function installRequestIssues(input: InstallSkillInput): string[] {
 	if (input.noDoc && input.doc !== undefined) {
 		issues.push("Use either --doc <file> or --no-doc, not both");
 	}
-	const agent = agentIssue(input.agent);
-	if (agent !== undefined) {
-		issues.push(agent);
-	}
-	const target = targetIssue(input.target);
-	if (target !== undefined) {
-		issues.push(target);
-	}
 	return issues;
-}
-
-/**
- * The problem with an --agent spelling, if any: a name this installer does not know.
- * @param agent - The agent spelling, if given.
- * @returns The message, or undefined when the agent is absent or supported.
- */
-function agentIssue(agent: string | undefined): string | undefined {
-	if (agent !== undefined && !["codex", "claude-code"].includes(agent)) {
-		return `Unknown --agent ${agent}. Supported agents: codex, claude-code.`;
-	}
-	return undefined;
-}
-
-/**
- * The problem with a --target spelling, if any: the obsolete codex target or an unknown name.
- * @param target - The target spelling, if given.
- * @returns The message, or undefined when the target is absent or supported.
- */
-function targetIssue(target: string | undefined): string | undefined {
-	if (target === "codex") {
-		return "--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.";
-	}
-	if (target !== undefined && !["agents", "claude"].includes(target)) {
-		return `Unknown --target ${target}. Supported targets: claude. Omit --target for ~/.agents/skills, or use --dir <skills-root> for a custom location.`;
-	}
-	return undefined;
 }
 
 const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((input, context) => {
@@ -205,6 +174,10 @@ function removeRetiredInstalls(root: string, target: string, context: CommandCon
  * Copies the skill into the root by staging into a sibling temp dir and swapping it in.
  * Replace, never overlay: stale files from older skill versions (e.g. the pre-1.1
  * scripts/*.cjs helpers) must not survive an upgrade.
+ *
+ * The staged copy is prepared — its generated schemas and portable install
+ * manual written — before anything is swapped, so a preparation that fails
+ * leaves the previous install exactly as it was.
  * @param source - The bundled skill directory.
  * @param destination - The skills root and target directory.
  * @param context - The command context that receives the diagnostics.
@@ -220,6 +193,7 @@ function installSkillFiles(
 	const staging = fs.mkdtempSync(path.join(root, `.${SKILL_NAME}-staging-`));
 	try {
 		fs.cpSync(source, staging, { recursive: true });
+		prepareSkillArtifacts(staging, { root: packageRoot() });
 		if (lstat) {
 			fs.rmSync(target, { recursive: true, force: true });
 			context.diagnostic(`Replaced existing install at ${target}`);
@@ -290,13 +264,13 @@ async function executeInstallSkill(
 
 const installSkillContract = defineCommand({
 	path: ["install-skill"],
+	shared: [],
 	summary: "Install the bundled agent skill and write the setup into this repo",
-	usage: [
-		"install-skill [--agent codex|claude-code] [--target claude] [--dir <skills-root>]",
-		"              [--print-source]",
-		"              [--repo <dir>] [--vault <path>] [--doc <file>] [--no-doc] [--yes]",
-	].join("\n"),
-	description: "Installs the bundled skill locally and optionally records repo-specific setup.",
+	description:
+		"Copies the bundled skill into a skills root (~/.agents/skills by default), then writes the " +
+		"setup an agent cannot know — the vault path and how to invoke this binary — into the " +
+		"repository's CLAUDE.md or AGENTS.md between markers, replacing the block on a re-run. On a " +
+		"terminal the vault is offered and asked for; --yes takes the offer.",
 	examples: ["archboard install-skill --yes", "archboard install-skill --print-source"],
 	parameters: [
 		{
@@ -304,63 +278,77 @@ const installSkillContract = defineCommand({
 			key: "dir",
 			spellings: ["--dir"],
 			value: "required",
-			description: "Custom skills root",
+			placeholder: "skills-root",
+			description: "A custom skills root; one destination spelling at most",
 		},
 		{
 			kind: "option",
 			key: "target",
 			spellings: ["--target"],
 			value: "required",
-			description: "Legacy destination shortcut",
+			placeholder: "target",
+			choices: INSTALL_TARGETS,
+			default: "agents",
+			description:
+				"A destination shortcut: claude installs to ~/.claude/skills, agents to ~/.agents/skills",
 		},
 		{
 			kind: "option",
 			key: "agent",
 			spellings: ["--agent"],
 			value: "required",
-			description: "Skills-compatible agent",
+			placeholder: "agent",
+			choices: INSTALL_AGENTS,
+			description: "A skills.sh-compatible agent whose root to install into: codex or claude-code",
 		},
 		{
 			kind: "option",
 			key: "printSource",
 			spellings: ["--print-source"],
 			value: "none",
-			description: "Report the bundled source without installing",
+			description: "Report the bundled source without installing anything",
 		},
 		{
 			kind: "option",
 			key: "repo",
 			spellings: ["--repo"],
 			value: "required",
-			description: "Repository to configure",
+			placeholder: "dir",
+			description: "The repository whose agent instructions receive the setup block",
+			default: "the working directory",
 		},
 		{
 			kind: "option",
 			key: "vault",
 			spellings: ["--vault"],
 			value: "required",
-			description: "Vault path to record",
+			placeholder: "path",
+			description:
+				"The vault to record; <repo>/.archboard/vault or ARCHBOARD_VAULT is offered when absent",
 		},
 		{
 			kind: "option",
 			key: "doc",
 			spellings: ["--doc"],
 			value: "required",
-			description: "Agent document to update",
+			placeholder: "file",
+			description:
+				"The agent document to write the setup block into; an existing CLAUDE.md, then AGENTS.md, " +
+				"when absent",
 		},
 		{
 			kind: "option",
 			key: "noDoc",
 			spellings: ["--no-doc"],
 			value: "none",
-			description: "Do not write repository setup",
+			description: "Install the skill files and write no repository setup",
 		},
 		{
 			kind: "option",
 			key: "yes",
 			spellings: ["--yes"],
 			value: "none",
-			description: "Accept the suggested vault",
+			description: "Take the offered vault without asking",
 		},
 		{
 			kind: "positional",
@@ -368,6 +356,7 @@ const installSkillContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],

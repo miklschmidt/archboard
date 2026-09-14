@@ -57,7 +57,7 @@ import { CodeBindingSchema } from "@/shared/code-target/index";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
-	GroupLabelSchema,
+	GroupMembershipsSchema,
 	ResponsibilitySchema,
 	SemanticIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
@@ -108,15 +108,17 @@ type DrillDown = z.infer<typeof DrillDownSchema>;
  * `binding` is the one optional primary code location. A planned node has
  * none, and two nodes on the same board may name different repositories.
  *
- * `group` is what the node belongs to, and is deliberately none of the other
+ * `groups` is what the node belongs to, and is deliberately none of the other
  * three. Not `parent`: a module inside a service is contained by it, while a
  * group crosses containment — two modules in different services can be part of
- * the same effort. Not `kind`: what a thing IS and what it is PART OF are
- * different questions, and a picture that answered only the first cannot show
- * an architecture organised around anything else. And not presentation: what
- * how that membership is presented is resolved from the vault policy by the
- * renderer and stored nowhere (ADR 0023), so the board carries the grouping
- * and never its appearance.
+ * the same effort, and one module can be part of two. Not `kind`: what a thing
+ * IS and what it is PART OF are different questions, and a picture that
+ * answered only the first cannot show an architecture organised around
+ * anything else. And not presentation: a group's name and how membership is
+ * shown come from the vault policy and the viewer, and are stored nowhere on
+ * the board (ADR 0023), so the board carries the ids and never their
+ * appearance. Absent means the same as empty, and the document writes the
+ * shorter of the two.
  */
 const SemanticNodeSchema = z
 	.object({
@@ -126,7 +128,7 @@ const SemanticNodeSchema = z
 		responsibility: ResponsibilitySchema.optional(),
 		description: DescriptionSchema.optional(),
 		parent: SemanticIdSchema.optional(),
-		group: GroupLabelSchema.optional(),
+		groups: GroupMembershipsSchema.optional(),
 		binding: CodeBindingSchema.optional(),
 		drillDown: DrillDownSchema.optional(),
 	})

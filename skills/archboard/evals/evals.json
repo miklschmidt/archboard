@@ -1,55 +1,1037 @@
 {
 	"skill_name": "archboard",
-	"grading": "Human review of the agent's authoring choices and resulting board. Run against an isolated vault with a running server.",
+	"schemaVersion": 2,
+	"grading": "Deterministic runtime checks own metadata, coherence and fixture-specific outcomes. One blinded gpt-6-astra session at high reasoning grades every run of a comparison batch itself, against rubric.md, and returns a per-run feature checklist, scores and evidence. Author runs use gpt-5.6-luna at high reasoning, three repetitions per scenario per skill version, in parallel with isolated state. Run with `bun run eval:skill` as README.md describes; never as part of bun run check.",
+	"pins": "pins.json",
+	"coverage": "coverage.json",
+	"rubric": "rubric.md",
 	"evals": [
 		{
-			"id": 0,
-			"graded_by": "human",
-			"prompt": "Create a board named pipeline: GitHub holds source, GitHub Actions builds it, a registry stores container images, and a Kubernetes cluster runs them. Read it back and render it.",
-			"expected_output": "Creates the four architectural parts with appropriate kinds and relationships in one write, then reads and renders pipeline. Uses meaning and labels to describe the pipeline.",
-			"files": []
+			"id": "S00",
+			"name": "create the request pipeline from source",
+			"report": "primary",
+			"workflow": "architecture-create",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S00.json",
+			"sources": ["src/flask/app.py", "src/flask/ctx.py", "src/flask/wrappers.py"],
+			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout: the WSGI entry (Flask.wsgi_app in src/flask/app.py), the request context it pushes (src/flask/ctx.py), the dispatch path (full_dispatch_request -> preprocess_request -> dispatch_request -> the matched view), and the response path (make_response -> process_response -> finalize_request) back to the WSGI server. Give each part a configured kind and a one-line responsibility, bind each part to its source file, and put the app-internal parts inside a `Flask app` container. Read the board back and render it to pipeline.svg.",
+			"expectedFeatures": [
+				{
+					"feature": "board.create",
+					"requirement": "one board named exactly `Flask request pipeline` with level `service`"
+				},
+				{
+					"feature": "node.kind",
+					"requirement": "every node uses a configured kind; the WSGI server is `external`, dispatch steps are `function` or `module`"
+				},
+				{
+					"feature": "node.responsibility",
+					"requirement": "every node carries a one-line responsibility grounded in the source"
+				},
+				{
+					"feature": "containment.parent",
+					"requirement": "app-internal parts are inside a single `Flask app` container; the WSGI server is outside it"
+				},
+				{
+					"feature": "edge.actual-receiver",
+					"requirement": "calls land on the internal receivers (wsgi_app, context, dispatch, view), not on the container"
+				},
+				{
+					"feature": "binding.repo-path",
+					"requirement": "bound nodes use the registered repository identity and repo-relative src/flask paths"
+				},
+				{
+					"feature": "render.svg",
+					"requirement": "pipeline.svg is written from the saved board"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "board-level",
+					"board": "Flask request pipeline",
+					"level": "service"
+				},
+				{
+					"check": "nodes-named",
+					"board": "Flask request pipeline",
+					"names": ["Flask app"]
+				},
+				{
+					"check": "node-count-at-least",
+					"board": "Flask request pipeline",
+					"min": 6
+				},
+				{
+					"check": "container-has-children",
+					"board": "Flask request pipeline",
+					"container": "Flask app",
+					"min": 4
+				},
+				{
+					"check": "binding-count-at-least",
+					"board": "Flask request pipeline",
+					"min": 4,
+					"pathPrefix": "src/flask/"
+				},
+				{
+					"check": "no-edge-to-container-with-children",
+					"board": "Flask request pipeline"
+				},
+				{
+					"check": "render-ok",
+					"board": "Flask request pipeline"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		},
 		{
-			"id": 1,
-			"graded_by": "human",
-			"prompt": "Add a Redis cache between Auth Service and User DB on the existing auth board. Preserve the service's responsibility and code binding.",
-			"expected_output": "Reads auth, edits against that version with a doing description, and batches the cache, relationships and any removal of the original direct-query edge. Keeps existing IDs and fields on any restated subjects.",
-			"files": []
+			"id": "S01",
+			"name": "route the JSON helpers through the app provider",
+			"report": "primary",
+			"workflow": "edit",
+			"flask": "2.2.0",
+			"fixture": "fixtures/S01.json",
+			"sources": ["src/flask/json/provider.py", "src/flask/json/__init__.py", "src/flask/app.py"],
+			"prompt": "On the existing `Flask JSON` board, Flask 2.2.0 introduced `DefaultJSONProvider` (src/flask/json/provider.py): the app holds it as `app.json`, and `flask.json.dumps` delegates to `current_app.json.dumps`. Update the current variant to add the provider module with its responsibility, represent the app's ownership of the provider and the helpers' call to it, remove the old direct app -> helpers call, bind the provider to its file, and keep the `Flask app` node's existing responsibility, binding and identity.",
+			"expectedFeatures": [
+				{
+					"feature": "read.version",
+					"requirement": "the board is read first and the edit states the read version"
+				},
+				{
+					"feature": "edit.batch",
+					"requirement": "the provider, its two relationships and the removal land in one `semantic edit`"
+				},
+				{
+					"feature": "identity.continuation",
+					"requirement": "`Flask app` and `JSON helpers` keep their ids; the restated app keeps its responsibility and binding"
+				},
+				{
+					"feature": "edge.replacement-rule",
+					"requirement": "the direct app -> helpers edge is removed by id and two new edges are added without ids"
+				},
+				{
+					"feature": "binding.repo-path",
+					"requirement": "the provider is bound to src/flask/json/provider.py"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "node-id-retained",
+					"board": "Flask JSON",
+					"node": "Flask app"
+				},
+				{
+					"check": "node-id-retained",
+					"board": "Flask JSON",
+					"node": "JSON helpers"
+				},
+				{
+					"check": "node-field-retained",
+					"board": "Flask JSON",
+					"node": "Flask app",
+					"fields": ["responsibility", "binding"]
+				},
+				{
+					"check": "nodes-named",
+					"board": "Flask JSON",
+					"names": ["DefaultJSONProvider"]
+				},
+				{
+					"check": "edge-between",
+					"board": "Flask JSON",
+					"from": "Flask app",
+					"to": "DefaultJSONProvider"
+				},
+				{
+					"check": "edge-between",
+					"board": "Flask JSON",
+					"from": "JSON helpers",
+					"to": "DefaultJSONProvider"
+				},
+				{
+					"check": "no-edge-between",
+					"board": "Flask JSON",
+					"from": "Flask app",
+					"to": "JSON helpers"
+				},
+				{
+					"check": "node-binding",
+					"board": "Flask JSON",
+					"node": "DefaultJSONProvider",
+					"pathIncludes": "src/flask/json/provider.py"
+				},
+				{
+					"check": "version-advanced-by",
+					"board": "Flask JSON",
+					"max": 1
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		},
 		{
-			"id": 2,
-			"graded_by": "human",
-			"prompt": "Propose adding Orders Cache to the payments board. Orders should read it. Keep the current architecture and render the proposal.",
-			"expected_output": "Branches payments, targets that variant in the edit JSON, adds the cache and data edge, and renders that variant. Reuses existing subject IDs so the comparison identifies the additions.",
-			"files": []
+			"id": "S02",
+			"name": "propose the contextvars rewrite as a variant",
+			"report": "primary",
+			"workflow": "propose-compare",
+			"flask": "2.2.0",
+			"fixture": "fixtures/S02.json",
+			"sources": ["src/flask/ctx.py", "src/flask/globals.py"],
+			"prompt": "The `Flask contexts` board describes the 2.1 design where `App context` and `Request context` are pushed onto werkzeug `LocalStack`s. Flask 2.2.0 replaced the stacks with `contextvars` (`_cv_app`, `_cv_request` in src/flask/globals.py, used by src/flask/ctx.py). Propose that change as a new variant named `Context variables` derived from the current architecture: keep the two context nodes, replace the two stack nodes with one `Context variables` node bound to src/flask/globals.py, and rewire the contexts to it. Keep the current architecture unchanged and render both the current variant and the proposal through the board's `Contexts` view.",
+			"expectedFeatures": [
+				{
+					"feature": "variant.branch",
+					"requirement": "a draft named `Context variables` derived from the current variant"
+				},
+				{
+					"feature": "edit.variant-target",
+					"requirement": "the edit names the variant; the current variant is untouched"
+				},
+				{
+					"feature": "identity.replacement",
+					"requirement": "the stack nodes are removed and one new node is added without an id; the context nodes keep theirs"
+				},
+				{
+					"feature": "compare.same-view",
+					"requirement": "both states are rendered through the same board view"
+				},
+				{
+					"feature": "compare.reading",
+					"requirement": "the reported comparison names the two removed nodes, the added node and the rewired edges"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "variant-exists",
+					"board": "Flask contexts",
+					"variant": "Context variables",
+					"lifecycle": "draft"
+				},
+				{
+					"check": "current-untouched",
+					"board": "Flask contexts"
+				},
+				{
+					"check": "node-id-retained",
+					"board": "Flask contexts",
+					"node": "App context",
+					"variant": "Context variables"
+				},
+				{
+					"check": "node-id-retained",
+					"board": "Flask contexts",
+					"node": "Request context",
+					"variant": "Context variables"
+				},
+				{
+					"check": "nodes-absent",
+					"board": "Flask contexts",
+					"variant": "Context variables",
+					"names": ["App context stack", "Request context stack"]
+				},
+				{
+					"check": "nodes-named",
+					"board": "Flask contexts",
+					"variant": "Context variables",
+					"names": ["Context variables"]
+				},
+				{
+					"check": "comparison-standing",
+					"board": "Flask contexts",
+					"variant": "Context variables",
+					"removed": 2,
+					"addedAtLeast": 1
+				},
+				{
+					"check": "render-ok",
+					"board": "Flask contexts",
+					"variant": "Context variables",
+					"view": "Contexts"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		},
 		{
-			"id": 3,
-			"graded_by": "human",
-			"prompt": "On payments, Orders contains Validation and Shipping contains Dispatch. Validation and Dispatch both belong to Fulfillment. Bind Validation to src/orders/validation.ts in /home/me/src/payments-api.",
-			"expected_output": "Uses parent for the module-to-service containment and explicitly assigns Fulfillment to both modules with group. Registers the checkout and binds Validation using its repository identity and repo-relative path.",
-			"files": []
+			"id": "S03",
+			"name": "group modules across containers and bind one",
+			"report": "primary",
+			"workflow": "edit",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S03.json",
+			"sources": ["src/flask/app.py", "src/flask/cli.py", "src/flask/sansio/app.py"],
+			"prompt": "On the `Flask application` board, `Flask app` contains `Dispatch` and `CLI` contains `Run command`. Both `Dispatch` and `Run command` belong to the configured `request-lifecycle` group, and `Dispatch` also belongs to `sansio-core`. Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout after registering it as a repository. Nothing else changes.",
+			"expectedFeatures": [
+				{
+					"feature": "groups.multi-membership",
+					"requirement": "`Dispatch` lists both configured ids; `Run command` lists `request-lifecycle`"
+				},
+				{
+					"feature": "groups.no-inheritance",
+					"requirement": "the containers `Flask app` and `CLI` gain no membership"
+				},
+				{
+					"feature": "groups.configured-ids",
+					"requirement": "memberships use the configured ids, never display names or a singular group field"
+				},
+				{
+					"feature": "binding.repo-registration",
+					"requirement": "the checkout is registered with `repo add` and the binding uses its identity"
+				},
+				{
+					"feature": "edit.field-retention",
+					"requirement": "restated nodes keep parent, kind and responsibility"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "node-groups",
+					"board": "Flask application",
+					"node": "Dispatch",
+					"groups": ["request-lifecycle", "sansio-core"]
+				},
+				{
+					"check": "node-groups",
+					"board": "Flask application",
+					"node": "Run command",
+					"groups": ["request-lifecycle"]
+				},
+				{
+					"check": "node-groups",
+					"board": "Flask application",
+					"node": "Flask app",
+					"groups": []
+				},
+				{
+					"check": "node-groups",
+					"board": "Flask application",
+					"node": "CLI",
+					"groups": []
+				},
+				{
+					"check": "node-parent",
+					"board": "Flask application",
+					"node": "Dispatch",
+					"parent": "Flask app"
+				},
+				{
+					"check": "node-binding",
+					"board": "Flask application",
+					"node": "Dispatch",
+					"pathIncludes": "src/flask/app.py"
+				},
+				{
+					"check": "node-field-retained",
+					"board": "Flask application",
+					"node": "Dispatch",
+					"fields": ["responsibility", "parent"]
+				},
+				{
+					"check": "inspect-group",
+					"board": "Flask application",
+					"group": "request-lifecycle",
+					"membersInclude": ["Dispatch", "Run command"],
+					"membersExclude": ["Flask app", "CLI"]
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		},
 		{
-			"id": 4,
-			"graded_by": "human",
-			"prompt": "The payments board shows Orders as a service. Its modules are already on orders-internals. Link Orders to that board's current architecture, then propose linking to its Queued validation variant instead.",
-			"expected_output": "Reuses orders-internals as a separate detail board. Sets drillDown with board and variant kind current. Branches payments for the proposal and changes its link to variant kind named with name Queued validation, retaining the Orders node's ID and other fields.",
-			"files": []
+			"id": "S04",
+			"name": "link a node to a detail board, then propose a named target",
+			"report": "primary",
+			"workflow": "propose-compare",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S04.json",
+			"sources": ["src/flask/sansio/app.py", "src/flask/app.py"],
+			"prompt": "The `Flask application` board shows `Sansio core` as a module, and its internals are already on the `Flask sansio` board, which has a current variant and a draft named `Blueprint registration`. Link `Sansio core` to the `Flask sansio` board's current architecture. Then, as a proposal named `Follow the blueprint draft` on `Flask application`, change that link to open the `Blueprint registration` variant instead, keeping the `Sansio core` node's identity and other fields.",
+			"expectedFeatures": [
+				{
+					"feature": "drilldown.current",
+					"requirement": "the current variant's node links to `Flask sansio` with `{kind: current}`"
+				},
+				{
+					"feature": "drilldown.named",
+					"requirement": "the proposal's node links with `{kind: named, name: Blueprint registration}`"
+				},
+				{
+					"feature": "variant.branch",
+					"requirement": "the proposal is a draft derived from current"
+				},
+				{
+					"feature": "identity.continuation",
+					"requirement": "`Sansio core` keeps its id and fields in both variants"
+				},
+				{
+					"feature": "linked-boards",
+					"requirement": "no second detail board is created; the existing one is reused"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "node-drilldown",
+					"board": "Flask application",
+					"node": "Sansio core",
+					"target": "Flask sansio",
+					"variantKind": "current"
+				},
+				{
+					"check": "variant-exists",
+					"board": "Flask application",
+					"variant": "Follow the blueprint draft",
+					"lifecycle": "draft"
+				},
+				{
+					"check": "node-drilldown",
+					"board": "Flask application",
+					"variant": "Follow the blueprint draft",
+					"node": "Sansio core",
+					"target": "Flask sansio",
+					"variantKind": "named",
+					"variantName": "Blueprint registration"
+				},
+				{
+					"check": "node-id-retained",
+					"board": "Flask application",
+					"node": "Sansio core",
+					"variant": "Follow the blueprint draft"
+				},
+				{
+					"check": "board-count",
+					"expected": 2
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		},
 		{
-			"id": 5,
-			"graded_by": "human",
-			"prompt": "On payments, explain Gateway calling Orders, Orders persisting to Orders DB, then acknowledging Gateway. Show the ordered exchange and add a walkthrough beat explaining why persistence comes first.",
-			"expected_output": "Authors a flow with ordered participants and steps using sync and return message kinds, a data-flow view scoped to it, and a walkthrough beat referencing the relevant subjects and view. Uses a same-write handle if the beat references a new flow step.",
-			"files": []
+			"id": "S05",
+			"name": "explain dispatch as an ordered exchange with a walkthrough",
+			"report": "primary",
+			"workflow": "sequence-create",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S05.json",
+			"sources": ["src/flask/app.py", "src/flask/ctx.py"],
+			"prompt": "On the `Flask request pipeline` board, explain one request as an ordered exchange named `Handle a request`: the WSGI server calls `Flask.wsgi_app`, which pushes the `Request context`, calls `full_dispatch_request`, which runs `preprocess_request` on itself, dispatches to the `View function`, receives the view's return value, turns it into a response with `make_response`, runs `process_response`, and returns the response to the WSGI server. Use the message kinds the exchange actually has, add a board view named `Dispatch exchange` that shows that flow, and add a walkthrough beat explaining why the request context is pushed before dispatch, referencing the push step and the view.",
+			"expectedFeatures": [
+				{
+					"feature": "flow.participants-and-steps",
+					"requirement": "one flow with the named participants in column order and ordered steps"
+				},
+				{
+					"feature": "flow.message-kinds",
+					"requirement": "sync calls, at least one return, and a self message for preprocess_request"
+				},
+				{
+					"feature": "view.data-flow",
+					"requirement": "a board view `Dispatch exchange` with the data-flow grammar scoped to the flow"
+				},
+				{
+					"feature": "walkthrough.beat-subjects",
+					"requirement": "a beat whose subjects include the push step (by same-write handle or id) and the view node"
+				},
+				{
+					"feature": "authoring.handles",
+					"requirement": "a step created in the same write is referenced by `as`"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "flow-with-steps",
+					"board": "Flask request pipeline",
+					"flow": "Handle a request",
+					"minSteps": 6,
+					"kinds": ["sync", "return", "self"]
+				},
+				{
+					"check": "view-exists",
+					"board": "Flask request pipeline",
+					"view": "Dispatch exchange",
+					"grammar": "data-flow"
+				},
+				{
+					"check": "walkthrough-beat-references",
+					"board": "Flask request pipeline",
+					"minBeats": 1,
+					"subjectKinds": ["step", "node"]
+				},
+				{
+					"check": "render-ok",
+					"board": "Flask request pipeline",
+					"view": "Dispatch exchange"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		},
 		{
-			"id": 6,
-			"graded_by": "human",
-			"prompt": "Adopt the Read cache proposal on payments.",
-			"expected_output": "Reads the board and adopts the named proposal against the read version. Reports the resulting current architecture and preserves the previous current variant as historical.",
-			"files": []
+			"id": "S06",
+			"name": "adopt the settled proposal",
+			"report": "primary",
+			"workflow": "propose-compare",
+			"flask": "2.2.0",
+			"fixture": "fixtures/S06.json",
+			"sources": ["src/flask/ctx.py"],
+			"prompt": "The `Flask contexts` board has a draft named `Context variables`. Adopt it as the implemented architecture with the reason that Flask 2.2 shipped contextvars-backed contexts, and report which variant is current afterwards and what happened to the previous one.",
+			"expectedFeatures": [
+				{
+					"feature": "adopt.reason",
+					"requirement": "`semantic adopt` names the variant and a reason against the read version"
+				},
+				{
+					"feature": "lifecycle.transition",
+					"requirement": "the adopted variant is current and the previous current is historical; nothing is renamed"
+				},
+				{
+					"feature": "report.outcome",
+					"requirement": "the answer names the current and historical variants as the saved board says"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "current-variant",
+					"board": "Flask contexts",
+					"variant": "Context variables"
+				},
+				{
+					"check": "variant-exists",
+					"board": "Flask contexts",
+					"variant": "Local stacks",
+					"lifecycle": "historical"
+				},
+				{
+					"check": "adoptions-count",
+					"board": "Flask contexts",
+					"expected": 1,
+					"withReason": true
+				},
+				{
+					"check": "version-advanced-by",
+					"board": "Flask contexts",
+					"max": 1
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "doing-on-writes"]
+		},
+		{
+			"id": "S07",
+			"name": "a standalone startup sequence",
+			"report": "primary",
+			"workflow": "sequence-create",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S07.json",
+			"sources": ["src/flask/cli.py"],
+			"prompt": "Create a board named `Flask CLI startup` at the module level that explains, as one exchange named `flask run`, how the `flask run` command starts a server in Flask 3.0.0 (src/flask/cli.py): the `Shell` invokes `FlaskGroup`, which dispatches `run_command`; `run_command` asks `ScriptInfo` to load the app; `ScriptInfo` locates and imports it (a repeated attempt over the default candidate modules or names, at least two) and returns it to `run_command`; `run_command` calls werkzeug's `run_simple` (an external), and `run_simple` serves requests until interrupted. Include a note on the loading step about `FLASK_APP`. The board needs the participating parts as nodes; no other relationships are required.",
+			"expectedFeatures": [
+				{
+					"feature": "board.create",
+					"requirement": "a module-level board with the participating parts as nodes"
+				},
+				{
+					"feature": "flow.repeat",
+					"requirement": "the loading step carries `repeat` of at least 2"
+				},
+				{
+					"feature": "flow.note",
+					"requirement": "the loading step carries a note"
+				},
+				{
+					"feature": "flow.message-kinds",
+					"requirement": "sync, return and at least one self or async message where the source justifies it"
+				},
+				{
+					"feature": "node.kind-external",
+					"requirement": "`run_simple` is `external`"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "board-level",
+					"board": "Flask CLI startup",
+					"level": "module"
+				},
+				{
+					"check": "flow-with-steps",
+					"board": "Flask CLI startup",
+					"flow": "flask run",
+					"minSteps": 5,
+					"kinds": ["sync", "return"]
+				},
+				{
+					"check": "flow-step-repeat",
+					"board": "Flask CLI startup",
+					"flow": "flask run",
+					"minRepeat": 2,
+					"withNote": true
+				},
+				{
+					"check": "node-kind",
+					"board": "Flask CLI startup",
+					"node": "run_simple",
+					"kind": "external"
+				},
+				{
+					"check": "render-ok",
+					"board": "Flask CLI startup"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+		},
+		{
+			"id": "S08",
+			"name": "extend the vault vocabulary and recover from a refusal",
+			"report": "primary",
+			"workflow": "architecture-create",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S08.json",
+			"sources": ["src/flask/signals.py", "src/flask/app.py"],
+			"prompt": "This vault's configuration knows no `signal` relationship kind and no `extension` node kind. Add both to .archboard/config.yaml (signals drawn dashed with an open arrowhead, extensions with the RiPlugLine icon) and a group named `Observability` under the id `observability`, then create a `Flask signals` board at the service level with `Flask app` sending `request_started` and `request_finished` signals (src/flask/signals.py) to a `Metrics extension` node that belongs to the observability group. Run the checker and leave the vault clean.",
+			"expectedFeatures": [
+				{
+					"feature": "config.vocabulary",
+					"requirement": "config.yaml gains `signal` (dashed, open), `extension` (RiPlugLine) and the `observability` group with its display name"
+				},
+				{
+					"feature": "config.schema",
+					"requirement": "the edited configuration validates; icon is a real RemixIcon export"
+				},
+				{
+					"feature": "refusal.recovery",
+					"requirement": "a write refused for an unknown kind is repaired by configuring, not by changing the meaning"
+				},
+				{
+					"feature": "check.clean",
+					"requirement": "`archboard check` reports no diagnostics at the end"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "config-has",
+					"relationshipKinds": {
+						"signal": {
+							"dash": "dashed",
+							"arrowhead": "open"
+						}
+					},
+					"nodeKinds": {
+						"extension": {
+							"icon": "RiPlugLine"
+						}
+					},
+					"configuredGroups": {
+						"observability": {
+							"name": "Observability"
+						}
+					}
+				},
+				{
+					"check": "edge-between",
+					"board": "Flask signals",
+					"from": "Flask app",
+					"to": "Metrics extension",
+					"kind": "signal"
+				},
+				{
+					"check": "node-kind",
+					"board": "Flask signals",
+					"node": "Metrics extension",
+					"kind": "extension"
+				},
+				{
+					"check": "node-groups",
+					"board": "Flask signals",
+					"node": "Metrics extension",
+					"groups": ["observability"]
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "adopt-only-when-asked", "doing-on-writes"]
+		},
+		{
+			"id": "S09",
+			"name": "inspect a configured group across containers",
+			"report": "primary",
+			"workflow": "read",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S09.json",
+			"sources": ["src/flask/app.py", "src/flask/sansio/app.py"],
+			"prompt": "On the `Flask application` board, which parts belong to the `request-lifecycle` group, which relationships stay inside it, which cross its boundary and in which direction, and what are its immediate neighbours? Answer from the saved board using the CLI, and note any member that the `Overview` view does not draw. Change nothing.",
+			"expectedFeatures": [
+				{
+					"feature": "inspect.group",
+					"requirement": "`semantic inspect --group request-lifecycle` is used and its members, internal edges, boundary edges with direction and neighbours are reported"
+				},
+				{
+					"feature": "inspect.hidden-members",
+					"requirement": "the answer says the `Overview` view collapses `CLI`, so `Run command` is a member the view does not draw"
+				},
+				{
+					"feature": "read-only",
+					"requirement": "no write happens"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 0
+				},
+				{
+					"check": "inspect-group",
+					"board": "Flask application",
+					"group": "request-lifecycle",
+					"membersInclude": ["Dispatch", "Run command"],
+					"membersExclude": ["Flask app", "CLI"]
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			]
+		},
+		{
+			"id": "S10",
+			"name": "illustrate traffic on the hot path",
+			"report": "primary",
+			"workflow": "edit",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S10.json",
+			"sources": ["src/flask/app.py"],
+			"prompt": "On the `Flask request pipeline` board, illustrate flow on the hot path: the WSGI server -> `Flask.wsgi_app` call gets default traffic, `Flask.wsgi_app` -> `full_dispatch_request` gets faster and denser traffic (speed 80, volume 2), and the existing traffic on `make_response` -> `process_response` is turned off. Keep every relationship's identity and other fields. Say plainly that the animation illustrates flow and is not measured.",
+			"expectedFeatures": [
+				{
+					"feature": "traffic.default",
+					"requirement": "`traffic: {}` on the first edge"
+				},
+				{
+					"feature": "traffic.custom",
+					"requirement": "`traffic: {speed: 80, volume: 2}` on the second edge"
+				},
+				{
+					"feature": "traffic.off",
+					"requirement": "traffic omitted on the third edge"
+				},
+				{
+					"feature": "identity.continuation",
+					"requirement": "all three edges keep their ids and other fields (one changed property each)"
+				},
+				{
+					"feature": "traffic.illustrative",
+					"requirement": "the answer distinguishes illustration from telemetry"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "edge-traffic",
+					"board": "Flask request pipeline",
+					"from": "WSGI server",
+					"to": "Flask.wsgi_app",
+					"traffic": "default"
+				},
+				{
+					"check": "edge-traffic",
+					"board": "Flask request pipeline",
+					"from": "Flask.wsgi_app",
+					"to": "full_dispatch_request",
+					"traffic": {
+						"speed": 80,
+						"volume": 2
+					}
+				},
+				{
+					"check": "edge-traffic",
+					"board": "Flask request pipeline",
+					"from": "make_response",
+					"to": "process_response",
+					"traffic": "off"
+				},
+				{
+					"check": "edge-ids-retained",
+					"board": "Flask request pipeline"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+		},
+		{
+			"id": "S11",
+			"name": "settle a disagreement, partly, then finish",
+			"report": "primary",
+			"workflow": "propose-compare",
+			"flask": "2.2.0",
+			"fixture": "fixtures/S11.json",
+			"sources": ["src/flask/json/provider.py"],
+			"prompt": "The `Flask JSON` board's draft `Provider rewrite` is holding disagreements against the current variant: both renamed the `JSON helpers` node differently, both reworded the `Flask app` responsibility differently, and the draft removed a node the current variant changed. Settle the name by taking the current variant's answer, keep the draft's own responsibility wording, write a third answer for the removed node by restoring it under its original id with the current variant's description, and report what is still open after each step. Do not adopt.",
+			"expectedFeatures": [
+				{
+					"feature": "resolve.choices",
+					"requirement": "`semantic resolve` with `theirs` for the name and `mine` for the responsibility"
+				},
+				{
+					"feature": "resolve.partial",
+					"requirement": "the deleted-and-changed disagreement is left open by the first resolve and reported"
+				},
+				{
+					"feature": "resolve.third-answer",
+					"requirement": "the removed node is restored by an ordinary edit with its original id, which settles the deletion"
+				},
+				{
+					"feature": "lifecycle.no-adopt",
+					"requirement": "the draft remains a draft"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "reconciliation-settled",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite"
+				},
+				{
+					"check": "nodes-named",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"names": ["JSON helper functions", "Tagged JSON"]
+				},
+				{
+					"check": "nodes-absent",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"names": ["Provider-backed helpers"]
+				},
+				{
+					"check": "node-field-equals",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"node": "Flask app",
+					"field": "responsibility",
+					"expected": "Owns the JSON provider and the request lifecycle"
+				},
+				{
+					"check": "node-id-retained",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"node": "Tagged JSON"
+				},
+				{
+					"check": "variant-exists",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"lifecycle": "draft"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+		},
+		{
+			"id": "S12",
+			"name": "views that isolate, and a comparison that keeps a removal visible",
+			"report": "primary",
+			"workflow": "propose-compare",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S12.json",
+			"sources": ["src/flask/app.py", "src/flask/sessions.py"],
+			"prompt": "On the `Flask request pipeline` board, add two board views: `Session path`, an architecture view showing only `Request context`, `Session interface` and the single relationship between them, and `Dispatch only`, an architecture view of the `Flask app` container's dispatch parts (`full_dispatch_request`, `dispatch_request`, `View function`) with every relationship between them. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
+			"expectedFeatures": [
+				{
+					"feature": "view.edge-isolation",
+					"requirement": "`Session path` selects the relationship by id (or same-write handle) so only that one is shown"
+				},
+				{
+					"feature": "view.node-region",
+					"requirement": "`Dispatch only` selects nodes with no edges so every relationship among them is shown"
+				},
+				{
+					"feature": "view.board-owned",
+					"requirement": "views are added once and apply to both variants"
+				},
+				{
+					"feature": "compare.removal-visible",
+					"requirement": "the proposal's render through `Session path` still draws the removed node as removed"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "view-exists",
+					"board": "Flask request pipeline",
+					"view": "Session path",
+					"grammar": "architecture",
+					"edgesSelected": 1
+				},
+				{
+					"check": "view-exists",
+					"board": "Flask request pipeline",
+					"view": "Dispatch only",
+					"grammar": "architecture",
+					"edgesSelected": 0,
+					"nodesSelectedAtLeast": 3
+				},
+				{
+					"check": "variant-exists",
+					"board": "Flask request pipeline",
+					"variant": "No session interface",
+					"lifecycle": "draft"
+				},
+				{
+					"check": "nodes-absent",
+					"board": "Flask request pipeline",
+					"variant": "No session interface",
+					"names": ["Session interface"]
+				},
+				{
+					"check": "comparison-standing",
+					"board": "Flask request pipeline",
+					"variant": "No session interface",
+					"removed": 1
+				},
+				{
+					"check": "render-ok",
+					"board": "Flask request pipeline",
+					"variant": "No session interface",
+					"view": "Session path"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+		},
+		{
+			"id": "S13",
+			"name": "remove a part and repair the explanation",
+			"report": "primary",
+			"workflow": "edit",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S13.json",
+			"sources": ["src/flask/templating.py"],
+			"prompt": "On the `Flask application` board, the `Template engine` node has been folded into `Jinja environment`. Remove `Template engine` and its relationships, and repair the `How a page is built` walkthrough so the beat that referenced it now refers to `Jinja environment`, keeping every beat's identity and order and rewording only that beat's body.",
+			"expectedFeatures": [
+				{
+					"feature": "removal.collections",
+					"requirement": "`removeNodes` removes the node; its edges go with it"
+				},
+				{
+					"feature": "walkthrough.identity",
+					"requirement": "beat ids and order are retained; only the affected beat's body and subjects change"
+				},
+				{
+					"feature": "walkthrough.repair",
+					"requirement": "the repaired beat references `Jinja environment` rather than a dangling id"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "nodes-absent",
+					"board": "Flask application",
+					"names": ["Template engine"]
+				},
+				{
+					"check": "walkthrough-beats-retained",
+					"board": "Flask application",
+					"walkthrough": "How a page is built"
+				},
+				{
+					"check": "walkthrough-beat-references",
+					"board": "Flask application",
+					"walkthrough": "How a page is built",
+					"subjectNames": ["Jinja environment"]
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+		},
+		{
+			"id": "S14",
+			"name": "map Flask onto a system board",
+			"report": "broad",
+			"workflow": "architecture-create",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S14.json",
+			"sources": ["src/flask"],
+			"prompt": "Map the architecture of Flask 3.0.0 in this checkout onto a system-level board named `Flask`: the major parts (the sans-IO core, the WSGI application, contexts and globals, routing and blueprints, the CLI, sessions, templating, JSON, signals and testing), how they depend on or call each other, and what each is responsible for. Bind each part to its source. Keep it readable: fewer, truer parts over many.",
+			"expectedFeatures": [
+				{
+					"feature": "board.create",
+					"requirement": "a system-level board named `Flask`"
+				},
+				{
+					"feature": "node.kind",
+					"requirement": "configured kinds throughout; externals for werkzeug/jinja/click"
+				},
+				{
+					"feature": "binding.repo-path",
+					"requirement": "every internal part bound to src/flask paths"
+				},
+				{
+					"feature": "edge.actual-receiver",
+					"requirement": "relationships between the parts that actually depend on each other in the source"
+				},
+				{
+					"feature": "readability",
+					"requirement": "between eight and sixteen nodes; containment used only where the source has it"
+				}
+			],
+			"outcomes": [
+				{
+					"check": "board-level",
+					"board": "Flask",
+					"level": "system"
+				},
+				{
+					"check": "node-count-between",
+					"board": "Flask",
+					"min": 8,
+					"max": 20
+				},
+				{
+					"check": "binding-count-at-least",
+					"board": "Flask",
+					"min": 6,
+					"pathPrefix": "src/flask"
+				},
+				{
+					"check": "render-ok",
+					"board": "Flask"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
 		}
 	]
 }
