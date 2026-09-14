@@ -30,7 +30,7 @@
 				],
 				"edges": [
 					{ "from": "Flask app", "to": "JSON helpers", "kind": "call", "label": "jsonify" },
-					{ "from": "JSON helpers", "to": "Tagged JSON", "kind": "call", "label": "tag" }
+					{ "from": "Tagged JSON", "to": "JSON helpers", "kind": "call", "label": "dumps / loads" }
 				]
 			}
 		}

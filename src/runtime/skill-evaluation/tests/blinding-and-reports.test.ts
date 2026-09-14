@@ -75,6 +75,7 @@ const RUN: CompletedRun = {
 	durationMs: 1000,
 	finalMessage: "I read /run/home/.agents/skills/archboard/SKILL.md and wrote the board.",
 	usage: { input: 10, cached: 4, cacheWrite: null, output: 5, reasoning: null, total: 15 },
+	fileChanges: [],
 	commands: [
 		{
 			command: "cat /run/home/.agents/skills/archboard/SKILL.md",
@@ -84,6 +85,7 @@ const RUN: CompletedRun = {
 			class: "discovery",
 			rule: "reads the installed skill",
 			write: false,
+			exposure: null,
 		},
 	],
 	boards: new Map([["Flask", BOARD]]),
@@ -228,6 +230,8 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		durationMs: 10,
 		usage: { input: 100, cached: 50, cacheWrite: null, output: 20, reasoning: null, total: 120 },
 		commandCounts: { discovery: 2, operation: 3, "code-investigation": 1, setup: 0, ambiguous: 0 },
+		directWrites: 0,
+		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		verdict: {

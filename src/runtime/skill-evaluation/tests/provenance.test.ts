@@ -11,7 +11,7 @@ import {
 	resumeSelection,
 } from "@/runtime/skill-evaluation/index";
 
-const loaded = loadSuite(path.join(import.meta.dir, "../../../..", "skills/archboard/evals"));
+const loaded = loadSuite(path.join(import.meta.dir, "../../../..", "evals"));
 
 describe("comparison provenance", () => {
 	test("changed prompts, fixtures and pins cannot reuse an earlier comparison", () => {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // The on-demand skill evaluation. Not part of `bun run check`: every author
 // run and the grading session call a model, and a human decides when that
-// happens. See skills/archboard/evals/README.md.
+// happens. See evals/README.md.
 //
 //   bun run eval:skill run   [--arm baseline|candidate] [--scenario S01,S02] [--repetitions 3] [--concurrency 3] [--resume <batch-dir>]
 //   bun run eval:skill grade <batch-dir> [--chunk 6]
@@ -90,7 +90,7 @@ function cancellation(): AbortController {
  * The validated canonical evaluation inputs.
  * @returns The complete suite.
  */
-const loadedSuite = () => loadSuite(join(checkout, "skills", "archboard", "evals"));
+const loadedSuite = () => loadSuite(join(checkout, "evals"));
 /**
  * Prints one progress line to stderr.
  * @param line The line.

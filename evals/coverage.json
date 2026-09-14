@@ -257,14 +257,14 @@
 					"expectedUse": "a region view",
 					"scenarios": ["S12"],
 					"evidence": "harness-check",
-					"owner": "view-exists edgesSelected 0"
+					"owner": "view-exists edgesSelected 0 with three parts selected; grader view.node-region"
 				},
 				{
 					"path": "view.scope selection.edges (explicit edge isolation)",
 					"expectedUse": "one relationship isolated by id or handle",
 					"scenarios": ["S12"],
 					"evidence": "harness-check",
-					"owner": "view-exists edgesSelected 1"
+					"owner": "view-exists edgesSelected 1 with process_response selected and its save_session call hidden; grader view.edge-isolation"
 				},
 				{
 					"path": "view.scope selection.flows",
@@ -292,7 +292,7 @@
 					"expectedUse": "the removal stays visible through the view",
 					"scenarios": ["S12"],
 					"evidence": "harness-check",
-					"owner": "comparison-standing removed 1 + render-ok; src/shared/semantic-board/tests compare withRemoved"
+					"owner": "comparison-standing removedNodes 1 + render-ok; src/shared/semantic-board/tests compare withRemoved"
 				},
 				{
 					"path": "view empty on both sides without falling back to all",
@@ -581,7 +581,7 @@
 					"expectedUse": "read the refusal, configure, retry",
 					"scenarios": ["S08"],
 					"evidence": "author-run",
-					"owner": "grader refusal.recovery; src/runtime/semantic-board-store/tests policy (UNKNOWN_VOCABULARY)"
+					"owner": "grader config.before-board; the refusal itself: src/runtime/semantic-board-store/tests policy (unknown kind rejected)"
 				}
 			]
 		},
@@ -739,7 +739,7 @@
 					"expectedUse": "configure the vocabulary the request asked for rather than bend the board",
 					"scenarios": ["S08"],
 					"evidence": "author-run",
-					"owner": "grader refusal.recovery"
+					"owner": "grader config.before-board (configure first, or repair a refusal by configuring; never bend the meaning); the refusal itself: src/runtime/semantic-board-store/tests policy"
 				},
 				{
 					"path": "default versus explicit values; partial traffic overrides",

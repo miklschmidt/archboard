@@ -26,10 +26,23 @@ interface Usage {
 	readonly total: number;
 }
 
+/**
+ * One file the author changed through Codex's own editing tool rather than
+ * through a shell command. A `file_change` item is the only record of such a
+ * write: no command_execution carries it, so a harness that read only the
+ * commands would never see a board patched directly in the vault.
+ */
+interface FileChange {
+	readonly path: string;
+	/** What Codex says it did: add, update or delete. */
+	readonly kind: string;
+}
+
 /** Everything a run's event stream said that the reports read. */
 interface AuthorTrace {
 	readonly threadId: string | null;
 	readonly commands: readonly CommandRecord[];
+	readonly fileChanges: readonly FileChange[];
 	readonly messages: readonly string[];
 	readonly usage: Usage | null;
 	readonly failure: string | null;
@@ -39,12 +52,33 @@ interface AuthorTrace {
 
 type CommandClass = "discovery" | "operation" | "code-investigation" | "setup" | "ambiguous";
 
+/**
+ * Material an author must not read: the scenario definitions, fixtures, rubric
+ * and coverage it is being measured against; the harness's own source; and the
+ * private world of another run of the same batch.
+ */
+type ExposureKind = "evaluation-inputs" | "harness-source" | "other-run";
+
 /** A command with how the harness read it, and why. */
 interface ClassifiedCommand extends CommandRecord {
 	readonly class: CommandClass;
 	readonly rule: string;
 	/** True for an archboard write: semantic new, edit, branch, resolve or adopt. */
 	readonly write: boolean;
+	/** The evaluation material this command reached for, when it reached for any. */
+	readonly exposure: ExposureKind | null;
+}
+
+/** Where the evaluation material lives, so a command that touches it is seen. */
+interface ExposureRoots {
+	/** The canonical inputs: evals.json, the fixtures, the rubric, the coverage. */
+	readonly evaluationInputs: string;
+	/** The harness's source. */
+	readonly harnessSource: string;
+	/** The batch every run of this comparison lives under. */
+	readonly batchRoot: string;
+	/** This run's own directory, which it may of course read. */
+	readonly runRoot: string;
 }
 
 /** What the classifier knows about where the run happened. */
@@ -52,6 +86,8 @@ interface ClassificationContext {
 	readonly skillRoot: string;
 	readonly checkoutRoot: string;
 	readonly vault: string;
+	/** Absent only in tests of the classes alone; a run always knows its roots. */
+	readonly exposure?: ExposureRoots | undefined;
 }
 
 type Json = Record<string, unknown>;
@@ -134,10 +170,28 @@ function commandRecord(item: Json): CommandRecord {
 	};
 }
 
+/**
+ * The file changes of a completed file_change item.
+ * @param item The item.
+ * @returns One record per changed file.
+ */
+function fileChanges(item: Json): FileChange[] {
+	const changes = item["changes"];
+	if (!Array.isArray(changes)) return [];
+	return changes.flatMap((change: unknown) => {
+		if (!isJson(change)) return [];
+		const changed = stringField(change, "path");
+		return changed === null
+			? []
+			: [{ path: changed, kind: stringField(change, "kind") ?? "unknown" }];
+	});
+}
+
 /** A trace under construction. */
 interface TraceBuilder {
 	threadId: string | null;
 	commands: CommandRecord[];
+	fileChanges: FileChange[];
 	messages: string[];
 	usage: Usage | null;
 	failure: string | null;
@@ -164,6 +218,7 @@ function failureText(event: Json): string {
 function takeItem(trace: TraceBuilder, item: unknown): void {
 	if (!isJson(item)) return;
 	if (item["type"] === "command_execution") trace.commands.push(commandRecord(item));
+	if (item["type"] === "file_change") trace.fileChanges.push(...fileChanges(item));
 	const text = stringField(item, "text");
 	if (item["type"] === "agent_message" && text !== null) trace.messages.push(text);
 }
@@ -247,6 +302,7 @@ function parseTrace(text: string): AuthorTrace {
 	const trace: TraceBuilder = {
 		threadId: null,
 		commands: [],
+		fileChanges: [],
 		messages: [],
 		usage: null,
 		failure: null,
@@ -272,6 +328,11 @@ function unwrapped(command: string): string {
 
 const WRITE_RE = /\barchboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u;
 const HELP_RE = /\barchboard\b(?:\s+\S+)*\s+(?:help|--help|-h)\b|\barchboard\s+help\b/u;
+/** The harness's own source, by its module name. */
+const HARNESS_SOURCE_RE = /\bskill-evaluation\//u;
+/** The words that begin a read of evaluation inputs by their canonical names. */
+const EVALUATION_INPUT_RE =
+	/\bevals\/(?:evals\.json|pins\.json|coverage\.json|rubric\.md|README\.md|fixtures\/S\d{2}\.json)\b/u;
 const OPERATION_RE =
 	/\barchboard\s+(?:semantic|repo|check|claim|release|start|stop|status|install-skill|browser)\b/u;
 const INVESTIGATION_RE =
@@ -376,6 +437,74 @@ const RULES: readonly Rule[] = [
 ];
 
 /**
+ * The simple commands of a script: what runs between `;`, `&&`, `||`, `|` and
+ * newlines, each without the environment assignments in front of it.
+ * @param script The unwrapped script.
+ * @returns The simple commands, trimmed.
+ */
+function simpleCommands(script: string): string[] {
+	return script
+		.split(/\s*(?:&&|\|\||[;|\n])\s*/u)
+		.map((part) => part.replace(/^(?:\s*[A-Z_][A-Z0-9_]*=(?:'[^']*'|"[^"]*"|\S+)\s+)*/u, "").trim())
+		.filter((part) => part !== "");
+}
+
+/**
+ * Whether a script actually invokes an archboard write: a simple command that
+ * begins with `archboard semantic <write>` and is not asking for help. A
+ * `cat` of a recipe or an `rg` for the word "semantic edit" mentions a write
+ * and performs none, and `semantic edit --help` reads.
+ * @param script The unwrapped script.
+ * @returns True when it writes.
+ */
+function invokesWrite(script: string): boolean {
+	return simpleCommands(script).some(
+		(command) =>
+			/^archboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u.test(command) &&
+			!HELP_RE.test(command),
+	);
+}
+
+/**
+ * Whether a script reaches into a directory another run of the batch owns.
+ * @param script The unwrapped script.
+ * @param roots Where the batch and this run live.
+ * @returns True when it names a run directory that is not this run's.
+ */
+function reachesAnotherRun(script: string, roots: ExposureRoots): boolean {
+	const runs = `${roots.batchRoot}/runs/`;
+	let at = script.indexOf(runs);
+	while (at >= 0) {
+		if (!script.startsWith(roots.runRoot, at)) return true;
+		at = script.indexOf(runs, at + runs.length);
+	}
+	return false;
+}
+
+/**
+ * The evaluation material a script reaches for, if any: the canonical inputs
+ * by path or by their names, the harness's source, or another run's world.
+ * An archboard invocation itself is never exposure, whatever paths its
+ * environment carries.
+ * @param script The unwrapped script.
+ * @param context Where the run happened.
+ * @returns The kind of exposure, or null.
+ */
+function exposureOf(script: string, context: ClassificationContext): ExposureKind | null {
+	const roots = context.exposure;
+	if (roots === undefined) return null;
+	const reached: readonly [ExposureKind, boolean][] = [
+		[
+			"evaluation-inputs",
+			script.includes(roots.evaluationInputs) || EVALUATION_INPUT_RE.test(script),
+		],
+		["harness-source", script.includes(roots.harnessSource) || HARNESS_SOURCE_RE.test(script)],
+		["other-run", reachesAnotherRun(script, roots)],
+	];
+	return reached.find(([, found]) => found)?.[0] ?? null;
+}
+
+/**
  * Every command of a trace, classified with the rule that decided it.
  * @param commands The commands.
  * @param context Where the run happened.
@@ -392,9 +521,27 @@ function classifyCommands(
 			...record,
 			class: decided?.class ?? "ambiguous",
 			rule: decided?.rule ?? "no rule matched",
-			write: WRITE_RE.test(script),
+			write: WRITE_RE.test(script) && invokesWrite(script),
+			exposure: exposureOf(script, context),
 		};
 	});
+}
+
+/**
+ * How many commands reached for each kind of evaluation material.
+ * @param commands The classified commands.
+ * @returns Counts by kind, every kind present.
+ */
+function exposureCounts(commands: readonly ClassifiedCommand[]): Record<ExposureKind, number> {
+	const counts: Record<ExposureKind, number> = {
+		"evaluation-inputs": 0,
+		"harness-source": 0,
+		"other-run": 0,
+	};
+	for (const command of commands) {
+		if (command.exposure !== null) counts[command.exposure] += 1;
+	}
+	return counts;
 }
 
 /**
@@ -417,7 +564,9 @@ function classCounts(commands: readonly ClassifiedCommand[]): Record<CommandClas
 export {
 	classCounts,
 	classifyCommands,
+	exposureCounts,
 	parseTrace,
+	simpleCommands,
 	unwrapped,
 	usageFrom,
 	type AuthorTrace,
@@ -425,5 +574,8 @@ export {
 	type ClassifiedCommand,
 	type CommandClass,
 	type CommandRecord,
+	type ExposureKind,
+	type ExposureRoots,
+	type FileChange,
 	type Usage,
 };

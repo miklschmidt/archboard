@@ -103,7 +103,7 @@ explains the lanes and the browser prerequisites.
 
 ## 7. Evaluate the archboard skill (human-run, on demand)
 
-`skills/archboard/evals/` holds the canonical inputs of a model evaluation:
+`evals/` holds the canonical inputs of a model evaluation:
 real Codex authors on pinned Flask checkouts, one blinded grader, deterministic
 checks and a comparison report. It is never part of `bun run check`; every run
 calls a model, so a person starts it:
@@ -115,7 +115,7 @@ bun run eval:skill grade .skill-evals/<batch>
 bun run eval:skill report .skill-evals/<batch>
 ```
 
-[`skills/archboard/evals/README.md`](skills/archboard/evals/README.md) says
+[`evals/README.md`](evals/README.md) says
 what one run is, how the grader is blinded, and how a baseline is reproduced.
 The fast owners for the harness's deterministic parts live in
 `src/runtime/skill-evaluation/tests`.

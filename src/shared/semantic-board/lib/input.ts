@@ -72,6 +72,10 @@ const HandleSchema = z
 /**
  * A node as an agent states it. `id` names an existing node to replace; when
  * it is absent the node is matched by name, and minted when no name matches.
+ * The one id that may be stated without being on the variant is one the
+ * variant holds a `deleted-and-changed` disagreement about: stating it brings
+ * the node back under its original identity and settles that issue
+ * (TASK-213); the store decides which ids those are from the recorded standing.
  */
 const SemanticNodeInputSchema = z
 	.object({

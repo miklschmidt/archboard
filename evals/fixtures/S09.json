@@ -4,7 +4,7 @@
 	"policy": {
 		"groups": {
 			"request-lifecycle": { "name": "Request lifecycle" },
-			"sansio-core": { "name": "Sans-IO core" }
+			"wsgi-layer": { "name": "WSGI layer" }
 		}
 	},
 	"steps": [
@@ -24,7 +24,7 @@
 						"name": "Dispatch",
 						"kind": "function",
 						"parent": "Flask app",
-						"groups": ["request-lifecycle", "sansio-core"],
+						"groups": ["request-lifecycle", "wsgi-layer"],
 						"responsibility": "full_dispatch_request through finalize_request",
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
@@ -45,8 +45,12 @@
 				],
 				"edges": [
 					{ "from": "Flask app", "to": "Dispatch", "kind": "call", "label": "dispatches" },
-					{ "from": "Run command", "to": "Flask app", "kind": "call", "label": "serves" },
-					{ "from": "Run command", "to": "Dispatch", "kind": "call", "label": "requests reach" }
+					{
+						"from": "Run command",
+						"to": "Flask app",
+						"kind": "call",
+						"label": "loads the app and serves it with werkzeug run_simple"
+					}
 				],
 				"views": [
 					{

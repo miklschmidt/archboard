@@ -228,6 +228,8 @@ describe("what an install carries beyond the authored skill", () => {
 		const skill = join(custom, "archboard");
 		const generated = join(skill, "references", "generated");
 		expect(() => fixture.assertSkillBytes(skill), diagnostic).not.toThrow();
+		// The evaluation inputs are the repository's, never the installed skill's (TASK-212).
+		expect(existsSync(join(skill, "evals")), diagnostic).toBe(false);
 
 		// Module tests own schema semantics. This system boundary proves the files
 		// that actually landed outside the checkout are complete JSON Schemas a
