@@ -1,11 +1,11 @@
 ---
 id: TASK-214
 title: Improve skill success through evidence checks and bitmap grading
-status: Done
+status: In Progress
 assignee:
-  - '@claude'
+  - '@codex'
 created_date: '2026-09-14 22:44'
-updated_date: '2026-09-14 23:46'
+updated_date: '2026-09-15 01:08'
 labels: []
 dependencies:
   - TASK-212
@@ -50,7 +50,7 @@ Claude is implementing TASK-212 and TASK-213 concurrently. Build on their correc
 - [x] #8 Capture provenance identifies the saved board version/content, variant, view, scale and image dimensions. Capture uses canonical renderer output and fonts with stable presentation state, contains complete diagram bounds, and is not an author-supplied substitute or unrelated screenshot. Images and optional full-resolution detail tiles remain ignored derived run artifacts and are provided without revealing the evaluation arm.
 - [x] #9 The grader is supplied image-capable access to every required bitmap and explicitly visually inspects each. Verdicts identify inspected capture IDs and image-grounded observations about readability, clipping, overlap, endpoints and sequence legibility; SVG parsing, file existence, board JSON and claimed author inspection cannot substitute. Large diagrams retain native-resolution detail through appropriate image access or supplemental tiles.
 - [x] #10 Missing/failed capture, unreadable image or omitted visual inspection is an explicit incomplete/failed visual evaluation and cannot receive an unqualified successful visual verdict. Failed author runs retain available final/partial-state captures where possible and explain absent diagrams; no placeholder counts as a capture. Static captures do not claim to prove traffic animation.
-- [x] #11 The task records hypotheses separately from demonstrated improvement; corrected inputs and the same CLI are used for future human-run comparisons, with success and semantic/visual quality primary and token usage secondary. Focused model-free behavior/contract tests, skill synchronization and the normal check gate validate implementation without agent-run evals or grading.
+- [ ] #11 The task records hypotheses separately from demonstrated improvement; corrected inputs and the same CLI are used for future human-run comparisons, with success and semantic/visual quality primary and token usage secondary. Focused model-free behavior/contract tests, skill synchronization and the normal check gate validate implementation without agent-run evals or grading.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,16 +61,22 @@ Claude is implementing TASK-212 and TASK-213 concurrently. Build on their correc
 3. Grader contract: a required visual answer (inspectedCaptures, verdict, observations), a prompt and rubric that demand opening every capture image and forbid SVG or JSON reading as inspection; report columns for visual pass/fail/incomplete beside semantic compliance.
 4. Fast owners: captures.test.ts (receipt to record, grammar and view mismatch, tiles, visual standing), suite.test.ts (captures declared, sequence views, both comparison sides), blinding and grader contract tests; sync skills; bun run check without model runs.
 5. Record hypotheses apart from demonstrated improvement in docs/design/skill-evals/2026-09-15-evidence-and-bitmap-grading.md; extend coverage.json, evals/README.md, rubric.md, TESTING.md and the archboard-dev skill.
+
+Review implementation against TASK-214 and reconcile the branch with reviewed TASK-212/213 fixes. Fix confirmed raster ownership, capture-evidence and visual-verification findings; run model-free regressions, visual QA and the full normal check gate in an isolated checkout. Merge into feat/semantic-boards while preserving concurrent theme and pane work. No author evals or grader runs.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Validation: bun test src/runtime/skill-evaluation (80 pass incl. captures.test.ts, suite captures test, blinding captures test, strict visual verdict parsing), tests/system/cli/install-targets.test.ts (9 pass after bun scripts/sync-skills.ts), bun run lint clean, type-check clean, fmt:check clean, test:modules 3025 pass, test:repository 8 pass, test:system 159 pass with only the 4 pre-existing resource-cleanup failures. No model was run. Hypotheses are recorded apart from evidence in docs/design/skill-evals/2026-09-15-evidence-and-bitmap-grading.md; the preservation assessment gained six rows. Inherited snapshot code (sessionUsage, comparisonStanding) was split to pass the complexity ceiling. Input correction: S07 now asks for a Startup exchange view and checks it exists, so its sequence has a data-flow capture. evals.json schemaVersion is 3; the 2026-09-14 batch stays a frozen baseline and cannot be re-graded on the new inputs by design.
+
+Independent review fixed mechanism-specific relationship evidence, renderer-defect handling, inspected multi-repository bindings and the required view grammar check. Failed and cancelled author setups now persist blinded capture bundles with explicit unavailable reasons. Grading calls attach every required main image and native tile; harness-owned delivery receipts bind image bytes to the exact verdict. Per-capture observations and complete verified delivery are required before either visual pass or fail counts as assessed. Missing/stale evidence remains incomplete and visual failures prevent token-efficiency claims. Capture receipt validation now shares the CLI authority. Model-free suite check and independent scope/boundary reviews pass; no author evals or grader runs. Normal-gate criterion remains unchecked because the integration target contains concurrent styling failures outside this task: eight existing renderer module assertions and an OKLCH arrowhead-selector browser failure. Those files are owned by TASK-217 and preserved unchanged.
+
+Final review validation: 116 focused tests pass across skill evaluation, rasterizer, restoration and system rasterization. All 163 system tests and 8 repository-policy tests pass; the nine remaining browser owners pass after isolating the existing semantic-status-legibility failure. Full gate reached 3031 passing module tests plus the one subsequently corrected mock-receipt regression and eight unrelated renderer assertion failures. No eval authors or grader ran.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Skill guidance now leads with CLI-only persistence and evidence-driven refusal recovery, adds an evidence-before-a-write procedure (request-to-checks, source proof per relationship and step with siblings never a chain, deliberate boundary discovery, binding to the implementation owner), separates node-region inclusion from explicit-edge isolation and proposal-only from current-state edits, drops the unsupported repeat count, and describes visual verification as opening a picture of the intended view. The harness declares captures per scenario, takes every one through semantic rasterize at native scale with provenance and tiles after every run (partial state after a failed one), lists failed captures with the reason, stages them blinded for the grader, requires a visual verdict naming the captures opened, downgrades an uncorroborated pass to incomplete, and reports visual pass/fail/incomplete beside semantic compliance. Verified by model-free owners, skill sync and the normal gates; improvement remains a hypothesis until the next human-run batch.
+Reviewed evidence-first skill guidance, harness-owned native captures, verified image delivery and visual-aware comparisons. Fixed capture persistence and grading evidence gaps with model-free regressions; no measured success-rate improvement is claimed. Full normal-gate completion remains pending the concurrent theme work, while TASK-214 implementation and review are ready to merge.
 <!-- SECTION:FINAL_SUMMARY:END -->

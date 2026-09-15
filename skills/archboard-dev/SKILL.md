@@ -136,9 +136,12 @@ Two facts about the evidence that the first batch had to teach:
   records provenance (version, variant, view, size, SVG digest), cuts a large
   one into native-scale tiles, and lists a capture it could not take as
   failed with the reason; a declared view the author never made is a failed
-  capture, never a default picture. The grader is told to open every capture
-  as an image and to name the ones it opened; the report downgrades a visual
-  pass the harness cannot corroborate to incomplete. Rasterizing needs a
+  capture, never a default picture. The harness attaches every capture and
+  its required native-detail tiles to the grading call, records successful
+  delivery against the image and verdict hashes, and requires observations
+  for each capture. Missing images, incomplete tiles, stale evidence or
+  missing observations make visual evaluation incomplete and prevent token
+  efficiency claims. Rasterizing needs a
   Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one).
 
 - **Codex's `turn.completed` usage is the thread's cumulative total.** A

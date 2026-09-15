@@ -74,15 +74,17 @@ describe("what one capture record is", () => {
 
 	test("a default view in place of the declared one, or the wrong grammar, is a failed capture", () => {
 		const whole = captureFromReceipt(DECLARED, answered(receipt({ view: null })), import.meta.path);
-		expect(whole.ok).toBe(false);
-		expect(whole.detail).toContain("Dispatch exchange");
+		expect(whole).toMatchObject({ ok: false, tiles: [] });
+		expect(whole.file).toBeUndefined();
+		expect(whole.provenance).toBeUndefined();
 		const architecture = captureFromReceipt(
 			DECLARED,
 			answered(receipt({ view: { id: "w1", name: "Dispatch exchange", grammar: "architecture" } })),
 			import.meta.path,
 		);
-		expect(architecture.ok).toBe(false);
-		expect(architecture.detail).toContain("data-flow");
+		expect(architecture).toMatchObject({ ok: false, tiles: [] });
+		expect(architecture.file).toBeUndefined();
+		expect(architecture.provenance).toBeUndefined();
 	});
 
 	test("a refusal, a missing receipt, a scaled capture or an absent file is recorded as not taken", () => {
@@ -96,9 +98,9 @@ describe("what one capture record is", () => {
 			},
 			import.meta.path,
 		);
-		expect(refused.ok).toBe(false);
-		expect(refused.detail).toContain("exit 1");
-		expect(refused.detail).toContain("not on the board");
+		expect(refused).toMatchObject({ ok: false, tiles: [] });
+		expect(refused.file).toBeUndefined();
+		expect(refused.provenance).toBeUndefined();
 		expect(captureFromReceipt(DECLARED, answered({ nonsense: true }), import.meta.path).ok).toBe(
 			false,
 		);
@@ -106,8 +108,9 @@ describe("what one capture record is", () => {
 			false,
 		);
 		const gone = captureFromReceipt(DECLARED, answered(receipt()), "/nowhere/capture.png");
-		expect(gone.ok).toBe(false);
-		expect(gone.detail).toContain("no file");
+		expect(gone).toMatchObject({ ok: false, tiles: [] });
+		expect(gone.file).toBeUndefined();
+		expect(gone.provenance).toBeUndefined();
 	});
 
 	test("the manifest summary names what was declared, taken and not", () => {
@@ -167,9 +170,20 @@ describe("the visual verdict as it stands", () => {
 		const looked = {
 			inspectedCaptures: ["a", "b"],
 			verdict: "pass" as const,
-			observations: "legible",
+			observations: ["a", "b"].map((capture) => ({ capture, observation: "legible" })),
 		};
-		expect(visualStandingOf(taken, graded(looked))).toBe("pass");
+		expect(visualStandingOf(taken, graded(looked), ["a", "b"])).toBe("pass");
+		expect(visualStandingOf(taken, graded(looked))).toBe("incomplete");
+		expect(
+			visualStandingOf(
+				taken,
+				graded({ ...looked, observations: looked.observations.slice(0, 1) }),
+				["a", "b"],
+			),
+		).toBe("incomplete");
+		expect(visualStandingOf({ ...taken, captured: ["a"] }, graded(looked), ["a", "b"])).toBe(
+			"incomplete",
+		);
 		expect(visualStandingOf(taken, graded({ ...looked, inspectedCaptures: ["a"] }))).toBe(
 			"incomplete",
 		);
@@ -182,19 +196,25 @@ describe("the visual verdict as it stands", () => {
 		expect(visualStandingOf(null, graded(looked))).toBe("incomplete");
 	});
 
-	test("a fail the grader saw stands, an incomplete stays incomplete, and no visual answer is incomplete", () => {
+	test("pass and fail require complete delivery and observations; historical or partial evidence stays incomplete", () => {
+		const failed = {
+			inspectedCaptures: ["a", "b"],
+			verdict: "fail" as const,
+			observations: ["a", "b"].map((capture) => ({ capture, observation: "clipped" })),
+		};
+		expect(visualStandingOf(taken, graded(failed), ["a", "b"])).toBe("fail");
+		expect(visualStandingOf(taken, graded(failed))).toBe("incomplete");
 		expect(
-			visualStandingOf(
-				{ declared: ["a", "b"], captured: ["a"], failed: ["b"] },
-				graded({ inspectedCaptures: ["a"], verdict: "fail", observations: "clipped" }),
-			),
-		).toBe("fail");
-		expect(
-			visualStandingOf(
-				taken,
-				graded({ inspectedCaptures: ["a", "b"], verdict: "incomplete", observations: "unsure" }),
-			),
+			visualStandingOf({ declared: ["a", "b"], captured: ["a"], failed: ["b"] }, graded(failed), [
+				"a",
+			]),
 		).toBe("incomplete");
+		expect(
+			visualStandingOf(taken, graded({ ...failed, observations: "historical prose" }), ["a", "b"]),
+		).toBe("incomplete");
+		expect(visualStandingOf(taken, graded({ ...failed, verdict: "incomplete" }), ["a", "b"])).toBe(
+			"incomplete",
+		);
 		expect(visualStandingOf(taken, graded(undefined))).toBe("incomplete");
 		expect(visualStandingOf(taken, null)).toBeNull();
 	});

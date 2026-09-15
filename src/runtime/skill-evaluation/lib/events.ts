@@ -7,6 +7,8 @@
 // usage, and turn.failed or error. Only fields this harness reports are read;
 // everything else stays in the retained raw file.
 
+import path from "node:path";
+
 /** One shell command the author ran. */
 interface CommandRecord {
 	readonly command: string;
@@ -26,12 +28,7 @@ interface Usage {
 	readonly total: number;
 }
 
-/**
- * One file the author changed through Codex's own editing tool rather than
- * through a shell command. A `file_change` item is the only record of such a
- * write: no command_execution carries it, so a harness that read only the
- * commands would never see a board patched directly in the vault.
- */
+/** One file the author changed through Codex's editing tool rather than a command. */
 interface FileChange {
 	readonly path: string;
 	/** What Codex says it did: add, update or delete. */
@@ -321,7 +318,7 @@ function parseTrace(text: string): AuthorTrace {
  * @returns The inner script.
  */
 function unwrapped(command: string): string {
-	const match = /^(?:\/bin\/)?(?:ba|z)?sh\s+-l?c\s+(.*)$/su.exec(command.trim());
+	const match = /^(?:\S*\/)?(?:ba|z)?sh\s+-l?c\s+(.*)$/su.exec(command.trim());
 	const inner = match?.[1] ?? command;
 	return inner.replace(/^(['"])(.*)\1$/su, "$2").trim();
 }
@@ -437,10 +434,9 @@ const RULES: readonly Rule[] = [
 ];
 
 /**
- * The simple commands of a script: what runs between `;`, `&&`, `||`, `|` and
- * newlines, each without the environment assignments in front of it.
+ * Splits a script at shell operators and removes leading environment assignments.
  * @param script The unwrapped script.
- * @returns The simple commands, trimmed.
+ * @returns The trimmed simple commands.
  */
 function simpleCommands(script: string): string[] {
 	return script
@@ -450,12 +446,9 @@ function simpleCommands(script: string): string[] {
 }
 
 /**
- * Whether a script actually invokes an archboard write: a simple command that
- * begins with `archboard semantic <write>` and is not asking for help. A
- * `cat` of a recipe or an `rg` for the word "semantic edit" mentions a write
- * and performs none, and `semantic edit --help` reads.
+ * Whether a simple command invokes an archboard write without asking for help.
  * @param script The unwrapped script.
- * @returns True when it writes.
+ * @returns True for an invocation rather than a textual mention.
  */
 function invokesWrite(script: string): boolean {
 	return simpleCommands(script).some(
@@ -469,23 +462,46 @@ function invokesWrite(script: string): boolean {
  * Whether a script reaches into a directory another run of the batch owns.
  * @param script The unwrapped script.
  * @param roots Where the batch and this run live.
+ * @param cwd The author's working directory.
  * @returns True when it names a run directory that is not this run's.
  */
-function reachesAnotherRun(script: string, roots: ExposureRoots): boolean {
+function reachesAnotherRun(script: string, roots: ExposureRoots, cwd: string): boolean {
 	const runs = `${roots.batchRoot}/runs/`;
 	let at = script.indexOf(runs);
 	while (at >= 0) {
 		if (!script.startsWith(roots.runRoot, at)) return true;
 		at = script.indexOf(runs, at + runs.length);
 	}
-	return false;
+	return relativePathWords(script).some((word) => {
+		const reached = path.resolve(cwd, word);
+		return inside(runs, reached) && !inside(roots.runRoot, reached);
+	});
 }
 
 /**
- * The evaluation material a script reaches for, if any: the canonical inputs
- * by path or by their names, the harness's source, or another run's world.
- * An archboard invocation itself is never exposure, whatever paths its
- * environment carries.
+ * Finds shell words that explicitly spell a path relative to the author's cwd.
+ * @param script The unwrapped shell script.
+ * @returns Relative path words without shell quoting.
+ */
+function relativePathWords(script: string): string[] {
+	return [...script.matchAll(/'([^']*)'|"([^"$`]*)"|([^\s'"|;&<>]+)/gu)]
+		.map((match) => (match[1] ?? match[2] ?? match[3] ?? "").replaceAll("\\ ", " "))
+		.filter((word) => word.startsWith("../") || word.startsWith("./"));
+}
+
+/**
+ * Tests whether a resolved path is the directory or one of its descendants.
+ * @param directory The containing directory.
+ * @param target The resolved path to test.
+ * @returns True when target is inside directory.
+ */
+function inside(directory: string, target: string): boolean {
+	const relative = path.relative(directory, target);
+	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+/**
+ * Finds canonical inputs, harness source or another run named by a script.
  * @param script The unwrapped script.
  * @param context Where the run happened.
  * @returns The kind of exposure, or null.
@@ -499,7 +515,7 @@ function exposureOf(script: string, context: ClassificationContext): ExposureKin
 			script.includes(roots.evaluationInputs) || EVALUATION_INPUT_RE.test(script),
 		],
 		["harness-source", script.includes(roots.harnessSource) || HARNESS_SOURCE_RE.test(script)],
-		["other-run", reachesAnotherRun(script, roots)],
+		["other-run", reachesAnotherRun(script, roots, context.checkoutRoot)],
 	];
 	return reached.find(([, found]) => found)?.[0] ?? null;
 }

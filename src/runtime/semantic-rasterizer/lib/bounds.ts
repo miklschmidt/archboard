@@ -113,6 +113,9 @@ function regionRefusal(region: PageRegion): string | null {
  * @returns The refusal text, or null.
  */
 function sizeRefusal(size: BitmapSize): string | null {
+	if (!isPositiveSize(size.width) || !isPositiveSize(size.height)) {
+		return `The requested scale rounds the bitmap to ${size.width}×${size.height} pixels; increase the scale or draw a larger region.`;
+	}
 	const advice = "lower the scale or draw a narrower view.";
 	if (size.width > RASTER_MAX_SIDE_PX || size.height > RASTER_MAX_SIDE_PX) {
 		return `A ${size.width}×${size.height} bitmap exceeds the ${RASTER_MAX_SIDE_PX} px side a capture may have; ${advice}`;

@@ -14,7 +14,8 @@ description: >-
 An agent states what an architecture IS; archboard draws it. A **board** is one
 document in the vault holding a family of **variants** (the current architecture
 and proposals derived from it). There is no layout to author: every picture is
-rendered from meaning, so a wrong picture is fixed by fixing the meaning.
+rendered from meaning. Fix a semantic error in that meaning; when the saved
+meaning matches the source and the picture does not, report a renderer defect.
 
 Two diagram types, one board:
 
@@ -69,8 +70,8 @@ Use a **variant** for a proposed evolution of the same diagram, and a separate
   down before writing (below). When the picture is the deliverable, draw it
   and look at it: `semantic rasterize <board> --out <file.png>` and open the
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
-  viewer. Reading the SVG's text is not looking at a diagram. `archboard
-check` is for after a vocabulary edit or when an answer carries `warnings`.
+  viewer. Reading the SVG's text is not looking at a diagram. `archboard check`
+  is for after a vocabulary edit or when an answer carries `warnings`.
 - **Claims.** For work of several writes, `archboard claim --board <board>
 --reason "<campaign>"` first and `archboard release --board <board>` after. A
   person can take the claim back: your next write is then refused once, nothing
@@ -87,16 +88,19 @@ board needs all of it.
    correct answer must show: the board and the `version` you read; the target
    variant (a proposal names it in `variant`; a batch without `variant` edits
    the current architecture, so a proposal-only request lands nothing there);
-   the ids and fields that must survive; and for a view, the exact scope:
-   naming `edges` isolates those relationships and draws no other, while
-   naming `nodes` alone draws every relationship among them. After the write,
-   read the answer against that list.
+   the ids and fields that must survive; and for a view, its exact `grammar`
+   and `scope` selectors: naming `edges` isolates those relationships and
+   draws no other, while naming `nodes` alone draws every relationship among
+   them. After the write, read the answer against that list.
 2. **Prove each relationship and step from source.** For every `edge` and
-   every flow step keep a one-line record: caller → receiver, the kind, and
-   where in the source the call is made (file and function). The receiver is
-   the part whose body runs, inside its `parent`; a container is an endpoint
-   only when the source addresses the whole module. Direction follows the
-   call, not the data. Sibling calls are not a chain: when `dispatch()` calls
+   every flow step keep a one-line record: `from` → `to`, the semantic kind,
+   and the source file and function or symbol that prove the mechanism. For a
+   call, `from` is the caller whose body makes it and `to` is the receiver
+   whose body runs, inside its `parent`; a container is an endpoint only when
+   the source addresses the whole module. For a return or a non-call
+   relationship, state the directional claim in words and make the endpoints
+   follow it (for example, A returns to B, A reads from B, A publishes to B, or
+   A depends on B). Sibling calls are not a chain: when `dispatch()` calls
    `before()` and then `handle()`, the source shows two relationships from
    `dispatch`, and none from `before` to `handle`, whatever order they run in.
    For a sequence also check the order the source runs them in, which steps
@@ -112,9 +116,11 @@ board needs all of it.
    omission, one you chose to omit is scope.
 4. **Bind to the owner.** A `binding` names the file that implements the
    node's stated responsibility, not a file that imports, registers or calls
-   it. A part outside the checkout, or one whose implementation you did not
-   find, stays unbound. When a node's responsibility spans files, narrow the
-   responsibility or split the node rather than bind to the wrong one.
+   it. A planned part or an implementation unavailable for inspection stays
+   unbound. An implementation in another checkout may bind after you inspect
+   its owner and register that repository. When a node's responsibility spans
+   files, narrow the responsibility or split the node rather than bind to the
+   wrong one.
 
 ## Create an architecture diagram from code
 

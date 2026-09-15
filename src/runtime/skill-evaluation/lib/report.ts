@@ -13,6 +13,14 @@ import {
 	summedField,
 	type Maybe,
 } from "@/runtime/skill-evaluation/lib/report-numbers";
+import {
+	auditReasons,
+	contaminated,
+	contaminationLine,
+	unaudited,
+	unauditedLine,
+	wroteDirectly,
+} from "@/runtime/skill-evaluation/lib/report-audit";
 
 /** One run as the report reads it. */
 interface RunRecord {
@@ -26,7 +34,7 @@ interface RunRecord {
 	readonly durationMs: number;
 	readonly usage: Usage | null;
 	readonly commandCounts: Readonly<Record<CommandClass, number>>;
-	/** Board files the author patched outside the CLI; null when the run did not record file changes. */
+	/** Direct board-file writes outside the CLI; null when the run did not record them. */
 	readonly directWrites: number | null;
 	/** Commands that reached for evaluation material, by kind; null when the run did not record exposure. */
 	readonly exposure: Readonly<Record<ExposureKind, number>> | null;
@@ -61,7 +69,7 @@ interface ArmSummary {
 	readonly waived: number;
 	/** Runs whose author read evaluation material or another run's world. */
 	readonly contaminated: number;
-	/** Runs whose author patched a board file outside the CLI. */
+	/** Runs whose author wrote a board file outside the CLI. */
 	readonly directWrites: number;
 	/** Runs recorded before the harness kept file changes and exposure, which can say neither. */
 	readonly unaudited: number;
@@ -99,43 +107,15 @@ interface Report {
 	readonly workflows: readonly ComparisonRow[];
 	readonly broad: readonly ComparisonRow[];
 	readonly failures: readonly RunRecord[];
-	/** Runs that read evaluation material, reached another run, or patched the vault: kept apart from every comparison. */
+	/** Runs that read evaluation material, reached another run, or wrote directly to the vault: kept apart from every comparison. */
 	readonly contamination: readonly RunRecord[];
 	readonly graderUsage: Usage | null;
 	readonly authorUsage: { readonly baseline: Usage | null; readonly candidate: Usage | null };
 }
 
 /**
- * Whether a run's author reached for material it was being measured against.
- * @param run The run.
- * @returns True when any command did.
- */
-function contaminated(run: RunRecord): boolean {
-	return run.exposure !== null && Object.values(run.exposure).some((count) => count > 0);
-}
-
-/**
- * Whether a run's author changed a board file outside the CLI.
- * @param run The run.
- * @returns True when the trace holds such a change.
- */
-function wroteDirectly(run: RunRecord): boolean {
-	return run.directWrites !== null && run.directWrites > 0;
-}
-
-/**
- * Whether a run's audit could not be carried out: it was recorded before
- * the harness kept file changes and exposure.
- * @param run The run.
- * @returns True when the manifest lacks either.
- */
-function unaudited(run: RunRecord): boolean {
-	return run.directWrites === null || run.exposure === null;
-}
-
-/**
  * Whether a run counts as a success: it completed, every deterministic check
- * held, and the grader found every expected feature when it graded.
+ * held, and both semantic compliance and the visual evaluation passed.
  * @param run The run.
  * @returns True on success.
  */
@@ -145,7 +125,8 @@ function succeeded(run: RunRecord): boolean {
 		run.outcomesPassed &&
 		run.guardrailsPassed &&
 		run.verdict !== null &&
-		run.semanticallyCompliant === true
+		run.semanticallyCompliant === true &&
+		run.visual === "pass"
 	);
 }
 
@@ -267,13 +248,11 @@ function dropped(
  * @returns True on a regression.
  */
 function qualityRegressed(baseline: ArmSummary, candidate: ArmSummary): boolean | null {
-	if (
-		baseline.runs === 0 ||
-		baseline.runs !== candidate.runs ||
-		baseline.graded !== baseline.runs ||
-		candidate.graded !== candidate.runs
-	)
-		return null;
+	const assessed = [baseline, candidate].every(
+		(arm) =>
+			arm.runs > 0 && arm.graded === arm.runs && arm.visualPassed + arm.visualFailed === arm.runs,
+	);
+	if (!assessed || baseline.runs !== candidate.runs) return null;
 	const measures: ((summary: ArmSummary) => Maybe)[] = [
 		(s) => s.meanSemanticCorrectness,
 		(s) => s.meanArchitecturalTruth,
@@ -281,6 +260,7 @@ function qualityRegressed(baseline: ArmSummary, candidate: ArmSummary): boolean 
 	];
 	return (
 		candidate.succeeded < baseline.succeeded ||
+		candidate.visualFailed > baseline.visualFailed ||
 		measures.some((pick) => dropped(baseline, candidate, pick))
 	);
 }
@@ -306,6 +286,11 @@ function compare(
 		planned.filter((run) => run.arm === "candidate").length,
 	);
 	const complete = completePair(runs, planned);
+	const comparableAudit = runs.every(
+		(run) => !contaminated(run) && !wroteDirectly(run) && !unaudited(run),
+	);
+	const comparable = complete && comparableAudit;
+	const allSucceeded = [baseline, candidate].every((arm) => arm.succeeded === arm.runs);
 	return {
 		key,
 		baseline,
@@ -314,13 +299,10 @@ function compare(
 		// another run's answer, measures nothing about the skill; a change
 		// computed over it would be a change in what was read, not in the skill.
 		tokenChangePercent:
-			complete &&
-			baseline.succeeded === baseline.runs &&
-			candidate.succeeded === candidate.runs &&
-			runs.every((run) => run.usage !== null && !contaminated(run))
+			comparable && allSucceeded && runs.every((run) => run.usage !== null)
 				? percentChange(baseline.medianTotalTokens, candidate.medianTotalTokens)
 				: null,
-		qualityRegressed: complete ? qualityRegressed(baseline, candidate) : null,
+		qualityRegressed: comparable ? qualityRegressed(baseline, candidate) : null,
 	};
 }
 
@@ -486,6 +468,7 @@ function failureLine(run: RunRecord): string {
 		...(run.guardrailsPassed ? [] : ["guardrail violated"]),
 		...(run.verdict === null ? ["awaiting grading"] : []),
 		...(run.semanticallyCompliant === false ? ["semantic compliance failed"] : []),
+		...visualReasons(run),
 		...(run.waivedFeatures.length === 0 ? [] : [`waived: ${run.waivedFeatures.join(", ")}`]),
 		...auditReasons(run),
 	];
@@ -493,46 +476,12 @@ function failureLine(run: RunRecord): string {
 }
 
 /**
- * What a run's audit found: direct writes, evaluation material read, or that
- * the run predates the audit.
- * @param run The run.
- * @returns Zero or more reasons.
+ * Why a run's visual evaluation cannot qualify it as successful.
+ * @param run The record.
+ * @returns No reason for a pass, otherwise its visible status.
  */
-function auditReasons(run: RunRecord): string[] {
-	if (unaudited(run)) return ["recorded before file changes and exposure were kept"];
-	const exposure = Object.entries(run.exposure ?? {})
-		.filter(([, count]) => count > 0)
-		.map(([kind, count]) => `${kind} ×${count}`);
-	return [
-		...(wroteDirectly(run) ? [`patched ${run.directWrites} board files outside the CLI`] : []),
-		...(exposure.length === 0 ? [] : [`read evaluation material: ${exposure.join(", ")}`]),
-	];
-}
-
-/**
- * One line saying how many runs the audit could not reach, when any.
- * @param report The report.
- * @returns Zero or one markdown lines.
- */
-function unauditedLine(report: Report): string[] {
-	const count = [...report.scenarios, ...report.broad].reduce(
-		(sum, row) => sum + row.baseline.unaudited + row.candidate.unaudited,
-		0,
-	);
-	return count === 0
-		? []
-		: [
-				`- ${count} runs were recorded before file changes and exposure were kept; they cannot be audited for direct writes or evaluation-material reads`,
-			];
-}
-
-/**
- * One line about a contaminated run.
- * @param run The run.
- * @returns The markdown line.
- */
-function contaminationLine(run: RunRecord): string {
-	return `- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): ${auditReasons(run).join(", ")}`;
+function visualReasons(run: RunRecord): string[] {
+	return run.visual === "pass" ? [] : [`visual evaluation ${run.visual ?? "not graded"}`];
 }
 
 /**
@@ -544,7 +493,7 @@ function renderReportMarkdown(report: Report): string {
 	return [
 		"# Skill evaluation comparison",
 		"",
-		"Token medians are per run; cached input is a subset of input and is never added to it. Percentage changes require equally sized, fully successful graded arms with complete usage and no contaminated run; incomplete, failed or contaminated runs cannot establish an efficiency improvement. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author patched a board file outside the CLI. The visual column counts graded runs whose bitmap captures the grader opened and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation.",
+		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to succeed and complete usage. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation.",
 		"",
 		...tableLines("Per scenario (primary)", report.scenarios),
 		...tableLines("Per primary workflow", report.workflows),
