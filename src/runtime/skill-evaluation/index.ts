@@ -38,6 +38,8 @@ export {
 export {
 	classCounts,
 	classifyCommands,
+	guidanceFilesRead,
+	guidanceStanding,
 	parseTrace,
 	unwrapped,
 	usageFrom,
@@ -46,6 +48,7 @@ export {
 	type ClassifiedCommand,
 	type CommandClass,
 	type CommandRecord,
+	type GuidanceStanding,
 	type Usage,
 } from "@/runtime/skill-evaluation/lib/events";
 export {

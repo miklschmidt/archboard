@@ -77,8 +77,10 @@ tests/system/cli/install-targets.test.ts` and `bun run check`.
 The success contract the skill is held to: the fewest total author tokens per
 successfully completed workflow, not the shortest document. The four common
 paths (architecture from code, sequence through the data-flow grammar, edit one
-batch, propose and compare) run on SKILL.md plus at most one targeted
-reference; source investigation, the required reads, the writes and the
+batch, propose and compare) run on SKILL.md plus its own recipe under
+`references/` (`create-architecture`, `create-sequence`, `edit`,
+`propose-compare`), the one targeted reference a common path needs; the
+harness records per run whether the recipe the scenario names was read; source investigation, the required reads, the writes and the
 verification are necessary work, and help, listing, config and check calls the
 context already answers are not. The frontmatter description is the trigger;
 conditional material sits behind a pointer that says when to read it; every

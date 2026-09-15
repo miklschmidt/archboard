@@ -62,6 +62,10 @@ function installFailure(result: InstallSpawn): string {
 
 const trackedSkillFiles = [
 	"SKILL.md",
+	"references/create-architecture.md",
+	"references/create-sequence.md",
+	"references/edit.md",
+	"references/propose-compare.md",
 	"references/authoring.md",
 	"references/sequences-views-walkthroughs.md",
 	"references/variants.md",

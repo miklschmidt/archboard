@@ -26,8 +26,11 @@ import {
 	classCounts,
 	classifyCommands,
 	exposureCounts,
+	guidanceFilesRead,
+	guidanceStanding,
 	parseTrace,
 	type ClassifiedCommand,
+	type GuidanceStanding,
 } from "@/runtime/skill-evaluation/lib/events";
 import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 import {
@@ -297,6 +300,10 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 				runRoot: job.root,
 			},
 		});
+		const guidance = guidanceStanding(
+			job.scenario.guidance,
+			guidanceFilesRead(trace.commands, { skillRoot: install.skillRoot }),
+		);
 		const reading = await readAfter(world, job.scenario, snapshot);
 		writeBoards(reading.boards, world.paths.boards);
 		const completed = assemble(job, id, world, install, {
@@ -304,6 +311,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			argv,
 			trace,
 			commands,
+			guidance,
 			reading,
 			configBefore,
 			startedAt,
@@ -322,6 +330,7 @@ interface Gathered {
 	readonly argv: readonly string[];
 	readonly trace: ReturnType<typeof parseTrace>;
 	readonly commands: readonly ClassifiedCommand[];
+	readonly guidance: GuidanceStanding;
 	readonly reading: Reading;
 	readonly configBefore: string;
 	readonly startedAt: string;
@@ -343,7 +352,7 @@ function assemble(
 	install: InstallRecord,
 	gathered: Gathered,
 ): CompletedRun {
-	const { result, trace, commands, reading } = gathered;
+	const { result, trace, commands, guidance, reading } = gathered;
 	const outcomes = evaluateOutcomes(job.scenario.outcomes, reading);
 	const guardrails = evaluateGuardrails(job.scenario.guardrails, {
 		snapshot: reading.snapshot,
@@ -423,6 +432,7 @@ function assemble(
 		commandCounts: classCounts(commands),
 		directWrites,
 		exposure: exposureCounts(commands),
+		guidance,
 		captures: captureSummary(reading.captures),
 		outcomesPassed: outcomes.every((verdict) => verdict.passed),
 		guardrailsPassed: guardrails.every((verdict) => verdict.passed),

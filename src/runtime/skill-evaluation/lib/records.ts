@@ -69,6 +69,15 @@ const RunManifestSchema = z
 				"other-run": z.number(),
 			})
 			.optional(),
+		// Absent from manifests written before the guidance a scenario names was
+		// recorded (TASK-235); such a run cannot say what its author read.
+		guidance: z
+			.object({
+				expected: z.array(z.string()),
+				read: z.array(z.string()),
+				missing: z.array(z.string()),
+			})
+			.optional(),
 		// Absent from manifests written before captures were taken (TASK-214);
 		// such a run has no picture the grader could have looked at.
 		captures: z
@@ -154,6 +163,19 @@ function verdictFor(batchRoot: string, grader: GraderName | null, run: string): 
 }
 
 /**
+ * What a manifest recorded of the audit, each absent before its harness kept it.
+ * @param manifest The manifest.
+ * @returns The three audit fields, null where the manifest predates them.
+ */
+function auditOf(manifest: RunManifest): Pick<RunRecord, "directWrites" | "exposure" | "guidance"> {
+	return {
+		directWrites: manifest.directWrites ?? null,
+		exposure: manifest.exposure ?? null,
+		guidance: manifest.guidance ?? null,
+	};
+}
+
+/**
  * One run's record, one grader's verdict joined in.
  * @param batchRoot The batch.
  * @param loaded The suite, for the expected features.
@@ -180,8 +202,7 @@ function recordOf(
 		durationMs: manifest.author?.durationMs ?? 0,
 		usage: manifest.usage,
 		commandCounts: { "product-source": 0, ...manifest.commandCounts },
-		directWrites: manifest.directWrites ?? null,
-		exposure: manifest.exposure ?? null,
+		...auditOf(manifest),
 		...visualOf(batchRoot, grader, manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,
 		guardrailsPassed: manifest.guardrailsPassed,

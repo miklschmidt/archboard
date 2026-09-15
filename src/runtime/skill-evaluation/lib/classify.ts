@@ -341,10 +341,60 @@ function classCounts(commands: readonly ClassifiedCommand[]): Record<CommandClas
 	return counts;
 }
 
+/** Whether a run read the guidance its scenario names: the files, what it read, what it did not. */
+interface GuidanceStanding {
+	readonly expected: readonly string[];
+	readonly read: readonly string[];
+	readonly missing: readonly string[];
+}
+
+/**
+ * The files of the installed skill a trace names, relative to the skill root:
+ * a read by absolute path, or by the `skills/archboard/` tail an install keeps.
+ * @param commands The commands as recorded.
+ * @param context Where the run happened.
+ * @returns The relative paths, sorted, each once.
+ */
+function guidanceFilesRead(
+	commands: readonly CommandRecord[],
+	context: Pick<ClassificationContext, "skillRoot">,
+): string[] {
+	const roots = [...new Set([context.skillRoot, "skills/archboard"])].map((root) =>
+		root.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"),
+	);
+	const found = new Set<string>();
+	for (const record of commands) {
+		const script = unwrapped(record.command);
+		for (const root of roots) {
+			for (const match of script.matchAll(
+				new RegExp(`${root}/([A-Za-z0-9_./-]+\\.(?:md|json))`, "gu"),
+			))
+				found.add(path.posix.normalize(match[1] ?? ""));
+		}
+	}
+	return [...found].toSorted();
+}
+
+/**
+ * How a run stands against the guidance its scenario names.
+ * @param expected The files the scenario names, relative to the skill root.
+ * @param read The files the trace read.
+ * @returns The standing.
+ */
+function guidanceStanding(expected: readonly string[], read: readonly string[]): GuidanceStanding {
+	return {
+		expected: [...expected],
+		read: [...read],
+		missing: expected.filter((file) => !read.includes(file)),
+	};
+}
+
 export {
 	classCounts,
 	classifyCommands,
 	exposureCounts,
+	guidanceFilesRead,
+	guidanceStanding,
 	simpleCommands,
 	unwrapped,
 	type ClassificationContext,
@@ -352,4 +402,5 @@ export {
 	type CommandClass,
 	type ExposureKind,
 	type ExposureRoots,
+	type GuidanceStanding,
 };

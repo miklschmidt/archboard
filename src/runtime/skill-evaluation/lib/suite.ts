@@ -174,6 +174,8 @@ const ScenarioSchema = z
 		expectedFeatures: z.array(ExpectedFeatureSchema).min(1),
 		outcomes: z.array(OutcomeCheckSchema).min(1),
 		guardrails: z.array(z.enum(GUARDRAILS)),
+		/** Files of the skill, relative to its root, an author of this scenario is expected to read. */
+		guidance: z.array(z.string().min(1)),
 		captures: z.array(CaptureDeclarationSchema).min(1),
 	})
 	.strict();
@@ -409,12 +411,26 @@ function coverageProblems(loaded: LoadedSuite): string[] {
 }
 
 /**
+ * Scenarios naming guidance the canonical skill does not carry.
+ * @param loaded The loaded suite.
+ * @returns Problems, one line each.
+ */
+function guidanceProblems(loaded: LoadedSuite): string[] {
+	const skill = path.join(loaded.directory, "..", "skills", "archboard");
+	return loaded.suite.evals.flatMap((scenario) =>
+		scenario.guidance
+			.filter((file) => !fs.existsSync(path.join(skill, file)))
+			.map((file) => `${scenario.id}: guidance ${file} is not in the skill`),
+	);
+}
+
+/**
  * The problems a suite has beyond each file's own shape. Empty when whole.
  * @param loaded The loaded suite.
  * @returns Problems, each one line.
  */
 function suiteProblems(loaded: LoadedSuite): string[] {
-	return [...fixtureProblems(loaded), ...coverageProblems(loaded)];
+	return [...fixtureProblems(loaded), ...coverageProblems(loaded), ...guidanceProblems(loaded)];
 }
 
 /**

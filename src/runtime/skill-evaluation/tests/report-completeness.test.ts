@@ -42,6 +42,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		},
 		directWrites: 0,
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
+		guidance: null,
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		captures: null,
@@ -190,4 +191,26 @@ test("visual defects regress quality but keep the shared renderer's cost measure
 		expect(report.scenarios[0]?.candidate.succeeded).toBe(0);
 		expect(report.failures).toHaveLength(1);
 	}
+});
+
+test("a run that skipped the guidance its scenario names is counted and listed, and one that read it counts as read", () => {
+	const skipped = record({
+		run: "run-0000000001",
+		guidance: {
+			expected: ["references/edit.md"],
+			read: ["SKILL.md"],
+			missing: ["references/edit.md"],
+		},
+	});
+	const read = record({
+		run: "run-0000000002",
+		arm: "candidate",
+		guidance: { expected: ["references/edit.md"], read: ["references/edit.md"], missing: [] },
+	});
+	const report = buildReport([skipped, read], null);
+	expect(report.skippedGuidance.map((run) => run.run)).toEqual(["run-0000000001"]);
+	const row = report.scenarios[0];
+	expect([row?.baseline.guidanceRead, row?.baseline.guidanceRecorded]).toEqual([0, 1]);
+	expect([row?.candidate.guidanceRead, row?.candidate.guidanceRecorded]).toEqual([1, 1]);
+	expect(buildReport([record()], null).scenarios[0]?.baseline.guidanceRecorded).toBe(0);
 });

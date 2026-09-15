@@ -172,273 +172,24 @@ you used and which you judged not to apply.
 A row the source does not support stays out: an added relationship without a
 line of evidence is a wrong board, not a complete one.
 
-## Create an architecture diagram from code
+## Which recipe
 
-1. Read the source you will describe, do the four steps above and walk the
-   catalogue. Decide the
-   board's level from `config.yaml` (`system`: collaborating services;
-   `service`: the modules of one; `module`: the functions inside one) and its
-   subject: a short name such as `Flask request pipeline`, never a path. Two
-   rows need a read before the payload: the configured `groups`, so each
-   part lists the concerns it serves, and `archboard semantic`, so a part
-   whose internals already have a board links to it with `drillDown`.
-2. If parts will be bound to code, register the checkout once:
-   `archboard repo add /path/to/checkout` prints the repository identity
-   (`github.com/pallets/flask`); bindings use that identity and a repo-relative
-   path.
-3. State the architecture in one payload and create the board. The evidence
-   behind this one, from `src/flask/app.py` in Flask 3.0: `Flask.wsgi_app`
-   pushes a `RequestContext` (`ctx.py`) and calls `full_dispatch_request`;
-   `full_dispatch_request` calls `preprocess_request`, then
-   `dispatch_request`, then `finalize_request`, one after another from its own
-   body, so those three are siblings, not a chain. The WSGI server is the
-   inbound caller and lives outside the checkout, so it stays unbound.
+Every request is one of four workflows, and each has one recipe holding the
+payload shape, a worked example from Flask and the checks to read the answer
+against. Read the recipe before the first command of that workflow; it is the
+one reference a common path needs beyond this file.
 
-```bash
-archboard semantic new "Flask request pipeline" --doing "describing one request through Flask" <<'JSON'
-{
-  "level": "service",
-  "nodes": [
-    { "name": "WSGI server", "kind": "external", "responsibility": "Calls the application once per request" },
-    { "name": "Flask app", "kind": "app", "responsibility": "The WSGI application object",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/app.py" } },
-    { "name": "Flask.wsgi_app", "kind": "function", "parent": "Flask app",
-      "responsibility": "Pushes the request context and dispatches",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/app.py" } },
-    { "name": "Request context", "kind": "module", "parent": "Flask app",
-      "responsibility": "Binds request and session for one request",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/ctx.py" } },
-    { "name": "full_dispatch_request", "kind": "function", "parent": "Flask app",
-      "responsibility": "Preprocess, dispatch and finalize one request",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/app.py" } },
-    { "name": "preprocess_request", "kind": "function", "parent": "Flask app",
-      "responsibility": "Runs the before-request hooks",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/app.py" } },
-    { "name": "dispatch_request", "kind": "function", "parent": "Flask app",
-      "responsibility": "Calls the matched view function",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/app.py" } }
-  ],
-  "edges": [
-    { "from": "WSGI server", "to": "Flask.wsgi_app", "kind": "call", "label": "environ, start_response" },
-    { "from": "Flask.wsgi_app", "to": "Request context", "kind": "call", "label": "push" },
-    { "from": "Flask.wsgi_app", "to": "full_dispatch_request", "kind": "call" },
-    { "from": "full_dispatch_request", "to": "preprocess_request", "kind": "call" },
-    { "from": "full_dispatch_request", "to": "dispatch_request", "kind": "call" }
-  ]
-}
-JSON
-archboard semantic rasterize "Flask request pipeline" --out pipeline.png
-```
+| The request asks you to                                                          | Read                                                                           |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| describe code as parts and their wiring, at a level, on a new board              | [create an architecture diagram](references/create-architecture.md)            |
+| explain one request, job or startup as an ordered exchange                       | [create a sequence diagram](references/create-sequence.md)                     |
+| change, extend, correct or repair what an existing board says                    | [edit an existing board](references/edit.md)                                   |
+| propose a change as a variant, compare it, settle its disagreements, or adopt it | [propose and compare a change](references/propose-compare.md)                  |
+| answer a question from a saved board and change nothing                          | `semantic show` and `semantic inspect` in [authoring](references/authoring.md) |
 
-Each relationship lands on the part that actually receives the call, inside
-its `parent`; the renderer carries the line across the container boundary.
-A container is an endpoint only for a relationship to the whole module.
-`Request context` receives `push` here because it has no children; the
-moment you draw `push` and `pop` inside it, the call lands on `push`.
-
-4. Check the answer against your record: every part you meant is there with a
-   configured `kind`; every relationship's `from`, `to` and `kind` match the
-   line of evidence you kept for it, and no relationship exists that you have
-   no line for; bound parts name the identity from step 2 and the owning file.
-   Open the picture and read it as the audience will: the labels legible,
-   nothing cut off, each arrow ending on the part its evidence names. Your
-   answer names the catalogue rows the board uses and the ones you judged not
-   to apply.
-
-Read [authoring](references/authoring.md) for groups, drill-down links to
-detail boards, traffic, emphasis, descriptions, and what a refusal means.
-
-## Create a sequence diagram
-
-A sequence is a `flow` on the board that holds its participants; create the
-parts, the relationships the messages travel and the flow in the same write,
-add a `data-flow` view over it and, when the reader needs narration, a
-walkthrough. The flow is drawn only through that view; the board itself is the
-architecture picture, so every call the exchange makes is also an `edge`
-between its participants, with the same line of evidence, or a reader who
-opens the board sees cards with nothing joining them.
-
-1. Read the code path and record each message with its evidence: who calls
-   whom, from which function, in which order, and which messages come back.
-   List the participants in reading order and each message in sequence with
-   its kind: `sync` (a call, the default), `return`, `async` (fire and
-   forget), `self` (a participant's own step; exactly when `from` and `to` are
-   the same node). Use `repeat` for a count the source fixes (a retry limit,
-   a batch of a known size, a literal list of candidates tried in turn: two
-   default module names is `repeat: 2`); a loop whose length depends on data
-   is one step with a `note` that says so. Use `note` for a branch or a
-   caveat. Walk the catalogue for the rest: the parts outside the checkout
-   are `external`, the exchange's relationships carry `traffic` when it is
-   the runtime path, and an ordering the reader must understand gets a
-   walkthrough beat.
-2. Create a standalone sequence in one write. Against an existing board, use
-   the same payload with `semantic edit` and the version you read. The
-   evidence here, from `src/flask/cli.py` in Flask 3.0: `run_command` calls
-   `ScriptInfo.load_app`; when `FLASK_APP` names nothing, `load_app` loops
-   over the literal tuple `("wsgi.py", "app.py")`, a list the source fixes, so
-   that step is `repeat: 2`, and within each candidate `locate_app` tries the
-   attribute names, which the `note` says; `load_app` then returns the app to
-   `run_command`, which hands it to werkzeug's `run_simple`. Each of those
-   calls is an `edge` as well as a step.
-
-```bash
-archboard semantic new "Flask CLI startup" --doing "explaining how flask run starts the server" <<'JSON'
-{
-  "level": "module",
-  "nodes": [
-    { "name": "Shell", "kind": "external", "responsibility": "Invokes the flask command" },
-    { "name": "FlaskGroup", "kind": "module", "responsibility": "Dispatches the selected Flask command",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "run_command", "kind": "function", "responsibility": "Loads the app and starts the development server",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "ScriptInfo", "kind": "module", "responsibility": "Locates and imports the Flask application",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "run_simple", "kind": "external", "responsibility": "Serves requests until interrupted" }
-  ],
-  "edges": [
-    { "from": "Shell", "to": "FlaskGroup", "kind": "call", "label": "flask run" },
-    { "from": "FlaskGroup", "to": "run_command", "kind": "call", "label": "invoke" },
-    { "from": "run_command", "to": "ScriptInfo", "kind": "call", "label": "load_app" },
-    { "from": "run_command", "to": "run_simple", "kind": "call", "label": "serve", "emphasis": "hero" }
-  ],
-  "flows": [{
-    "name": "flask run",
-    "participants": ["Shell", "FlaskGroup", "run_command", "ScriptInfo", "run_simple"],
-    "steps": [
-      { "from": "Shell", "to": "FlaskGroup", "label": "flask run" },
-      { "from": "FlaskGroup", "to": "run_command", "label": "invoke" },
-      { "from": "run_command", "to": "ScriptInfo", "label": "load_app" },
-      { "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "repeat": 2, "note": "tries wsgi.py then app.py unless FLASK_APP names the app or factory; within each, locate_app tries the attribute names" },
-      { "from": "ScriptInfo", "to": "run_command", "label": "Flask app", "kind": "return" },
-      { "from": "run_command", "to": "run_simple", "label": "serve" }
-    ]
-  }],
-  "views": [{ "name": "Startup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["flask run"] } }]
-}
-JSON
-archboard semantic rasterize "Flask CLI startup" --view "Startup exchange" --out startup.png
-```
-
-3. Check the answer's flow against your record: participants in the order you
-   meant, steps in the order the source runs them, returns where the source
-   returns, kinds and notes as the code justifies. Open the picture through
-   the `data-flow` view you made, not the whole board: the columns in order,
-   every message readable and in sequence, returns and repeats
-   distinguishable, nothing cut off. Your answer names the catalogue rows the
-   board uses and the ones you judged not to apply.
-
-Read [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)
-for view scopes (isolating one relationship, a region, the whole board), beat
-subjects and identity, and single-participant flows.
-
-## Edit an existing board
-
-1. `archboard semantic show <board>` and note `version`, the target variant's
-   ids, and the fields of every subject you will restate. Write the checks:
-   which variant the change lands on, which ids must survive, which fields you
-   are keeping and which you are changing. Read the source for the region you
-   touch: when the board already contradicts it there (a call drawn from the
-   wrong part, a membership the code does not support), say so in your
-   answer, and change it only when the request covers it; a board you were
-   asked to extend is not yours to silently repair or silently repeat.
-2. Map the change onto what you read, subject by subject:
-   - **Continuing**: the same part, relationship, exchange or step evolves; keep
-     its `id` (a rename, a reworded responsibility, a new binding).
-   - **Replacement**: a different unit takes its place; remove the old id and
-     add the new subject without one. Similar names or paths do not make two
-     implementations one unit.
-   - **Untouched**: leave it out of the payload entirely.
-     For a relationship, changing two or more of `from`, `to`, `kind`, `label`,
-     `description`, `emphasis`, effective `traffic` makes it a replacement;
-     one change keeps the id.
-     Walk the catalogue for what you add: a new part brings its kind,
-     containment, binding and groups; a new runtime path brings its traffic;
-     a removed part takes its relationships and walkthrough references with
-     it.
-3. Write it as one batch, naming the `variant` when it is not the current one:
-
-```bash
-archboard semantic edit "Flask JSON" --expect-version 3 --doing "routing JSON through the provider" <<'JSON'
-{
-  "nodes": [{ "name": "DefaultJSONProvider", "kind": "module",
-    "responsibility": "dumps, loads and response for the app",
-    "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/json/provider.py" } }],
-  "edges": [
-    { "from": "Flask app", "to": "DefaultJSONProvider", "kind": "data", "label": "app.json" },
-    { "from": "JSON helpers", "to": "DefaultJSONProvider", "kind": "call", "label": "current_app.json.dumps" }
-  ],
-  "removeEdges": ["e7Kq2mP1"]
-}
-JSON
-```
-
-The evidence for the two relationships: `Flask.__init__` (`app.py`) assigns
-`self.json = self.json_provider_class(self)`, and `flask.json.dumps`
-(`json/__init__.py`) calls `current_app.json.dumps`. The provider binds to
-`provider.py`, where `DefaultJSONProvider` is implemented, not to the helpers
-that call it.
-
-4. Check the answer against your checks: the ids you meant to keep are
-   unchanged, removed subjects are gone, restated subjects still carry the
-   fields you kept, `version` moved by one, and nothing landed on a variant
-   you did not name. Draw and look when the picture matters. Your answer
-   names the catalogue rows the change uses and the ones you judged not to
-   apply.
-
-Read [authoring](references/authoring.md) for every removal list, bindings
-with revision evidence, groups, and how to repair a refused write.
-
-## Propose and compare a change
-
-1. `semantic show` the board; note `version` and the variant to derive from.
-   The checks: every edit names the proposal in `variant`, so the current
-   architecture is byte-for-byte what it was; the ids the proposal keeps; the
-   view both pictures will go through.
-2. Branch, then edit the proposal:
-
-```bash
-archboard semantic branch "Flask contexts" --as "Context variables" --summary "Replace the LocalStacks with contextvars" --expect-version 2 --doing "proposing contextvars"
-archboard semantic edit "Flask contexts" --expect-version 3 --doing "rewiring the contexts to contextvars" <<'JSON'
-{
-  "variant": "Context variables",
-  "nodes": [{ "name": "Context variables", "kind": "module", "responsibility": "_cv_app and _cv_request hold the active contexts",
-    "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/globals.py" } }],
-  "edges": [
-    { "from": "App context", "to": "Context variables", "kind": "data", "label": "set / reset" },
-    { "from": "Request context", "to": "Context variables", "kind": "data", "label": "set / reset" }
-  ],
-  "removeNodes": ["App context stack", "Request context stack"]
-}
-JSON
-archboard semantic rasterize "Flask contexts" --view Contexts --out current.png
-archboard semantic rasterize "Flask contexts" --view Contexts --variant "Context variables" --out proposal.png
-```
-
-The proposal carries every subject of its predecessor with the same ids, so
-the comparison is exact: kept ids read as continuing, new subjects as added,
-removed ids as removed. Views belong to the board, so both pictures go through
-the same view and a removed subject stays drawn as removed. The evidence for
-the rewiring is in `src/flask/ctx.py` of Flask 2.2: `AppContext.push` and
-`RequestContext.push` call `_cv_app.set` and `_cv_request.set` from
-`globals.py`, where the context variables are defined.
-
-3. Check the answer's comparison against your change map: the added, removed,
-   changed and unchanged subjects are the ones you intended, the current
-   variant is untouched, and a continuing exchange compares step by step.
-   Open both pictures: the removal is drawn as removed in the proposal's, and
-   the current one shows what it showed before. Report what changed in those
-   terms: the parts removed, the parts added, and for every relationship the
-   proposal keeps or adds, where it now lands (here, both contexts' `set /
-reset` relationships land on `Context variables`). A relationship whose
-   endpoint moved is the change the comparison exists to show, so name it.
-4. Only when asked, adopt with the version returned by the proposal edit:
-   `archboard semantic adopt "Flask contexts" --variant "Context variables" --reason "Flask 2.2 implements contexts with contextvars" --expect-version 4 --doing "adopting context variables"`.
-   The proposal becomes current, the previous current becomes historical, and
-   nothing is renamed.
-
-Read [variants](references/variants.md) for what the comparison counts, for a
-proposal that holds disagreements after its predecessor moved (`semantic
-resolve`), and for adoption rules.
+A request that combines them (extend the vocabulary, then create; link a
+detail board, then propose) reads each recipe it needs, in the order the
+request runs them.
 
 ## Keep it true
 
@@ -462,9 +213,13 @@ resolve`), and for adoption rules.
 
 ## When to read more
 
-| Read                                                                            | When                                                                                                           |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [authoring](references/authoring.md)                                            | groups and `semantic inspect`, bindings with branch/commit, drill-down, traffic, emphasis, removals, refusals  |
-| [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md) | view scopes and grammars, message kinds, repeat/note, walkthrough beats and their identity                     |
-| [variants](references/variants.md)                                              | what a comparison counts, edge identity, flow/step identity, reconciliation and `resolve`, adoption, claims    |
-| [schemas](references/schemas.md)                                                | the exact JSON Schemas of the payloads, the persisted document and `config.yaml`; vault setup and installation |
+| Read                                                                            | When                                                                                                             |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [create an architecture diagram](references/create-architecture.md)             | the recipe: level, registration, one payload with parts, containment, relationships and bindings, and its checks |
+| [create a sequence diagram](references/create-sequence.md)                      | the recipe: participants, message kinds, repeat and note, the data-flow view, and its checks                     |
+| [edit an existing board](references/edit.md)                                    | the recipe: continuing, replacement and untouched subjects, one batch at the read version, and its checks        |
+| [propose and compare a change](references/propose-compare.md)                   | the recipe: branch, variant-targeted edit, both pictures through one view, the comparison report, adoption       |
+| [authoring](references/authoring.md)                                            | groups and `semantic inspect`, bindings with branch/commit, drill-down, traffic, emphasis, removals, refusals    |
+| [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md) | view scopes and grammars, message kinds, repeat/note, walkthrough beats and their identity                       |
+| [variants](references/variants.md)                                              | what a comparison counts, edge identity, flow/step identity, reconciliation and `resolve`, adoption, claims      |
+| [schemas](references/schemas.md)                                                | the exact JSON Schemas of the payloads, the persisted document and `config.yaml`; vault setup and installation   |

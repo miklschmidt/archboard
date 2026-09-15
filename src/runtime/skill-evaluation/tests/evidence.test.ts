@@ -369,6 +369,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		},
 		directWrites: 0,
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
+		guidance: null,
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		captures: null,
