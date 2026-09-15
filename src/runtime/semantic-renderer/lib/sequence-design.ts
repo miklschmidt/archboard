@@ -10,13 +10,16 @@ import type { Weight } from "@/runtime/semantic-renderer/lib/svg/styles";
  * Bounds for the uniform participant-column width. The maximum prevents one
  * long name from widening every column; longer names use normal card text fitting.
  */
-const COLUMN_MIN_WIDTH = 168;
-const COLUMN_MAX_WIDTH = 288;
+const COLUMN_MIN_WIDTH = 112;
+const COLUMN_MAX_WIDTH = 192;
 
 /**
- * Space between participant columns, reserved for interaction labels.
+ * Space between participant columns: a visible seam and no more. A message's
+ * label sits above its arrow and spans the lifelines it joins, so the gap
+ * carries no words; ten participants at the old 78 ran a request across a
+ * page four times wider than it was tall.
  */
-const COLUMN_GAP = 78;
+const COLUMN_GAP = 16;
 
 /** The air between the bottom of a participant's card and the top of its lifeline. */
 const LIFELINE_GAP = 6;
