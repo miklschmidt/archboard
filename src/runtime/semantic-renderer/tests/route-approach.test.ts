@@ -16,6 +16,7 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
+import { roundBridges } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /**
  * How much straight line an endpoint must keep, which is `APPROACH_STRAIGHT` in
@@ -333,7 +334,15 @@ describe("a turn has room to round", () => {
 	test("beside a card it is the whole minimum, not a leftover", async () => {
 		// Endpoint turns reserve room for the arrowhead and a legible bend.
 		// Interior alignment jogs round within the engine's available corridor.
-		const routes = drawnRoutes(await renderArchitecture({ content: CROWDED, theme: "light" }));
+		const drawing = await renderArchitecture({ content: CROWDED, theme: "light" });
+		// A bridge can precede the first turn and has its own smaller radius.
+		// Remove only recognized circular hops when measuring the route corners.
+		const svg = drawing.svg.replace(/ d="([^"]+)"/gu, (attribute, path: string) => {
+			let corridor = path;
+			for (const bridge of roundBridges(path)) corridor = corridor.replaceAll(bridge.span, "");
+			return attribute.replace(path, corridor);
+		});
+		const routes = drawnRoutes({ ...drawing, svg });
 		const adjacent = [...routes.values()].flatMap((steps) => {
 			const first = steps.find((step) => step.kind === "C");
 			const last = steps.findLast((step) => step.kind === "C");

@@ -226,7 +226,103 @@ test("a flank label clears an unrelated corridor without bending away from its r
 			point.x === lanePoints[index]!.x && point.y !== lanePoints[index]!.y ? [point.x] : [],
 		);
 	expect(vertical.length).toBeGreaterThan(0);
-	expect(new Set(vertical).size, "one continuous flank through the label").toBe(1);
+	// ELK centers an inline dummy port at ceil(labelWidth) / 2, while its
+	// measured box uses labelWidth / 2. Allow only that half-pixel difference.
+	expect(
+		Math.max(...vertical) - Math.min(...vertical),
+		"one continuous flank through the label",
+	).toBeLessThanOrEqual(0.5);
 	for (const card of Object.values(drawing.atlas.nodes))
 		expect(routeCrosses(points, card)).toBe(false);
+});
+
+test("flank label allocation keeps an outer corridor clear of an adjacent card", async () => {
+	// Reduced from the literal-colors route: another labeled flank starts farther
+	// inside, and will move outward. Clearing it first must not push this route
+	// into the adjacent card and force a detour below that card.
+	const before = VariantContentSchema.parse({
+		nodes: [
+			["y8vuJJKu", "Region builder"],
+			["Y0smyqtZ", "Architecture layout"],
+			["L51bfquE", "Edge routing"],
+			["wLF1X11D", "Data-flow layout"],
+			["u1OXg3Yy", "Theme palette"],
+			["J7mPrUeP", "SVG painters"],
+			["eECDrhMc", "SVG document and atlas"],
+		].map(([id, name]) => ({ id, name, kind: "function" })),
+		edges: [
+			{ id: "v3e9dOLe", from: "y8vuJJKu", to: "Y0smyqtZ", kind: "data" },
+			{ id: "qJrkH2Qg", from: "Y0smyqtZ", to: "L51bfquE", kind: "call" },
+			{
+				id: "SIdU2g2Q",
+				from: "Y0smyqtZ",
+				to: "J7mPrUeP",
+				kind: "data",
+				label: "placed architecture",
+			},
+			{ id: "0s8raCUw", from: "L51bfquE", to: "J7mPrUeP", kind: "data" },
+			{ id: "eKqUHYSH", from: "wLF1X11D", to: "J7mPrUeP", kind: "data" },
+			{ id: "I1lGjMES", from: "u1OXg3Yy", to: "J7mPrUeP", kind: "data", label: "literal colors" },
+			{ id: "qDiEFiIT", from: "J7mPrUeP", to: "eECDrhMc", kind: "render" },
+		],
+	});
+	const content = VariantContentSchema.parse({
+		nodes: [before.nodes[1], before.nodes[3], before.nodes[4], before.nodes[5]],
+		edges: [before.edges[5], before.edges[2]],
+	});
+	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	const points = corridorPoints(drawing.svg).get("I1lGjMES")!;
+	const lanes = points
+		.slice(1)
+		.flatMap((point, index) =>
+			point.x === points[index]!.x && point.y !== points[index]!.y ? [point.x] : [],
+		);
+	expect(new Set(lanes).size, "one continuous lane alongside the adjacent card").toBe(1);
+	for (const card of Object.values(drawing.atlas.nodes))
+		expect(routeCrosses(routePoints(drawing.svg).get("I1lGjMES")!, card)).toBe(false);
+});
+
+test("a new west-to-north route and its label share the target attachment corridor", async () => {
+	const before = VariantContentSchema.parse({
+		nodes: [
+			["Y0smyqtZ", "Architecture layout"],
+			["L51bfquE", "Edge routing"],
+			["J3yMo4ag", "Measured text"],
+			["J7mPrUeP", "SVG painters"],
+		].map(([id, name]) => ({ id, name, kind: "function" })),
+		edges: [
+			{ id: "qJrkH2Qg", from: "Y0smyqtZ", to: "L51bfquE", kind: "call" },
+			{ id: "Wn0XA35I", from: "Y0smyqtZ", to: "J3yMo4ag", kind: "call" },
+			{ id: "neQc1gXi", from: "L51bfquE", to: "J3yMo4ag", kind: "call" },
+		],
+	});
+	const content = VariantContentSchema.parse({
+		nodes: [before.nodes[0], before.nodes[2], before.nodes[3], before.nodes[1]],
+		edges: [
+			{
+				id: "6zcjVgzh",
+				from: "Y0smyqtZ",
+				to: "J7mPrUeP",
+				kind: "data",
+				label: "complete placed drawing",
+			},
+			before.edges[0],
+			before.edges[1],
+			{ id: "0s8raCUw", from: "L51bfquE", to: "J7mPrUeP", kind: "data" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	const points = corridorPoints(drawing.svg).get("6zcjVgzh")!;
+	const source = drawing.atlas.nodes["Y0smyqtZ"]!,
+		target = drawing.atlas.nodes["J7mPrUeP"]!;
+	expect(points[0]!.x).toBe(source.x);
+	expect(points.at(-1)!.y).toBe(target.y);
+	const lanes = points
+		.slice(1)
+		.flatMap((point, index) =>
+			point.x === points[index]!.x && point.y !== points[index]!.y ? [point.x] : [],
+		);
+	expect(new Set(lanes).size, "one target-aligned corridor through the label").toBe(1);
+	for (const card of Object.values(drawing.atlas.nodes))
+		expect(routeCrosses(routePoints(drawing.svg).get("6zcjVgzh")!, card)).toBe(false);
 });
