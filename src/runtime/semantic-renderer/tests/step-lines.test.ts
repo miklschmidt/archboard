@@ -52,16 +52,11 @@ function drawnIds(svg: string, kind: "edge" | "step"): string[] {
 }
 
 describe("a flow drawn on its board", () => {
-	test("each message between two participants is a dashed, open-headed step line; a self step and a repeated pair draw nothing more", async () => {
+	test("each message between two participants is a dashed, open-headed step line; a return, a self step and a repeated pair draw nothing more", async () => {
 		const rendered = await renderArchitecture({ content: board(), theme: "light" });
-		expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2", "s3", "s5"]);
+		expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2", "s3"]);
 		expect(drawnIds(rendered.svg, "edge")).toEqual([]);
-		expect([...routeEnds(rendered.svg, "step").keys()].toSorted()).toEqual([
-			"s1",
-			"s2",
-			"s3",
-			"s5",
-		]);
+		expect([...routeEnds(rendered.svg, "step").keys()].toSorted()).toEqual(["s1", "s2", "s3"]);
 		const line = rendered.svg.match(
 			/<g data-semantic-kind="step" data-semantic-id="s1"[^>]*>/u,
 		)?.[0];
@@ -70,13 +65,13 @@ describe("a flow drawn on its board", () => {
 		expect(rendered.atlas.edges["s1"]).toBeDefined();
 	});
 
-	test("an authored relationship over the same pair in the same direction suppresses the step line", async () => {
+	test("a board with any authored relationship is drawn from its relationships alone", async () => {
 		const rendered = await renderArchitecture({
 			content: board([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
 			theme: "light",
 		});
 		expect(drawnIds(rendered.svg, "edge")).toEqual(["e1"]);
-		expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s3", "s5"]);
+		expect(drawnIds(rendered.svg, "step")).toEqual([]);
 	});
 
 	test("a standing keyed by the step's id lands on its line", async () => {

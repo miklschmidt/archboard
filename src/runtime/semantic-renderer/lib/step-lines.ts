@@ -18,8 +18,9 @@ interface StepLines {
 }
 
 /**
- * Whether a step can be a line of its own on this reading: two distinct
- * participants, both drawn here as cards. A step whose participant this
+ * Whether a step can be a line of its own on this reading: a message, not the
+ * answer travelling back, between two distinct participants both drawn here
+ * as cards. A step whose participant this
  * reading does not hold (a view without it, a proposal that removed it) has no
  * card to land on; a container receives nothing itself, since a message to a
  * part drawn with children belongs on the child whose body runs.
@@ -28,7 +29,7 @@ interface StepLines {
  * @returns True when the step may be drawn.
  */
 function drawable(step: FlowStep, content: VariantContent): boolean {
-	if (step.from === step.to) return false;
+	if (step.from === step.to || step.kind === "return") return false;
 	const ends = content.nodes.filter((node) => node.id === step.from || node.id === step.to);
 	if (ends.length !== 2) return false;
 	return !content.nodes.some((node) => node.parent === step.from || node.parent === step.to);
@@ -52,15 +53,19 @@ function lineOf(step: FlowStep): SemanticEdge {
 
 /**
  * The content with one derived line per flow message between two distinct
- * participants that no authored relationship already joins in that direction.
- * A second step over the same pair in the same direction rides the first; a
+ * participants, on a board that holds no relationships of its own. A second
+ * step over the same pair in the same direction rides the first; a return, a
  * self step, a step to a container and a step whose participant is not in
  * this reading draw nothing.
  * @param content The variant content.
  * @returns The drawable content and the derived ids.
  */
 function withStepLines(content: VariantContent): StepLines {
-	const joined = new Set(content.edges.map((edge) => `${edge.from}>${edge.to}`));
+	// A board that has relationships is drawn from them: a flow there restates
+	// the wiring as messages and answers, and drawing those again doubles every
+	// line. Only a board with no relationships at all reads its exchange this way.
+	if (content.edges.length > 0) return { content, derived: new Set() };
+	const joined = new Set<string>();
 	const lines: SemanticEdge[] = [];
 	for (const step of content.flows.flatMap((flow) => flow.steps)) {
 		const pair = `${step.from}>${step.to}`;
