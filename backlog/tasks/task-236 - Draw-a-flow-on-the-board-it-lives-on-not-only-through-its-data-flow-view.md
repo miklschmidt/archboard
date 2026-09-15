@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 19:18'
-updated_date: '2026-09-15 19:28'
+updated_date: '2026-09-15 21:17'
 labels:
   - renderer
 dependencies: []
@@ -41,6 +41,8 @@ A sequence board whose author wrote a flow and no edges renders, in the whole-bo
 
 <!-- SECTION:NOTES:BEGIN -->
 Rendered the S07 candidate rep 1 board from the 2026-09-15 batch through the library and rasterized it (scratch s07.png, 690x725): Shell -> FlaskGroup -> run_command -> ScriptInfo -> run_command -> run_simple drawn as dashed step lines with labels, the self step absent. Renderer 158 pass, server and canvas suites 536 pass, lint and type-check clean.
+
+Correction after dogfooding: the Semantic renderer board (proposal Readable layout, a nine-step flow with returns over an already wired board) rendered as a thicket because every step and return became a line beside the authored relationships. Step lines now apply only to a board with no relationships at all, and never to a return step. Verified by re-rendering that proposal with its predecessor.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
