@@ -82,9 +82,15 @@ function without(intervals: readonly Interval[], blocked: Interval): Interval[] 
  * @param piece A piece of this badge's own route.
  * @param label Its measured dimensions.
  * @param obstacles Boxes already enlarged by their required clearance.
+ * @param preferred Inherited position translated with its source card.
  * @returns Feasible boxes, scored without preferring either orientation.
  */
-function candidatesOf(piece: RoutePiece, label: Box, obstacles: readonly Box[]): Candidate[] {
+function candidatesOf(
+	piece: RoutePiece,
+	label: Box,
+	obstacles: readonly Box[],
+	preferred?: Box,
+): Candidate[] {
 	const axis = piece.axis;
 	if (axis === undefined) return [];
 	const { cross, length, breadth } = DIMENSIONS[axis];
@@ -99,7 +105,12 @@ function candidatesOf(piece: RoutePiece, label: Box, obstacles: readonly Box[]):
 		intervals = without(intervals, [box[axis] - label[length], box[axis] + box[length]]);
 	}
 	return intervals.map(([low, high]) => ({
-		box: { ...label, [axis]: (low + high) / 2, [cross]: across },
+		box: {
+			...label,
+			[axis]:
+				preferred === undefined ? (low + high) / 2 : Math.max(low, Math.min(high, preferred[axis])),
+			[cross]: across,
+		},
 		length: high - low + label[length],
 		index: piece.index,
 	}));
@@ -138,18 +149,73 @@ function nodeObstacles(drawing: ArchitectureDrawing): Box[] {
 }
 
 /**
- * Use the longest clear run, retaining the engine's box when none fits.
+ * Translate retained labels with the cards their relationships leave.
+ * @param drawing Current solved cards and relationships.
+ * @param predecessor Their preceding reading, when this is a comparison.
+ * @returns Preferred positions; collision checks still choose the final clear box.
+ */
+function inheritedLabels(
+	drawing: ArchitectureDrawing,
+	predecessor?: ArchitectureDrawing,
+): Map<string, Box> {
+	if (predecessor === undefined) return new Map();
+	const previous = new Map(
+		predecessor.edges
+			.filter((edge) => edge.label !== undefined)
+			.map((edge) => [edge.edge.id, edge]),
+	);
+	const previousNodes = new Map(
+		[...predecessor.cards, ...predecessor.containers].map((node) => [
+			node.measured.node.id,
+			node.box,
+		]),
+	);
+	const nodes = new Map(
+		[...drawing.cards, ...drawing.containers].map((node) => [node.measured.node.id, node.box]),
+	);
+	return new Map(
+		drawing.edges.flatMap(({ edge }) => {
+			const before = previous.get(edge.id),
+				source = nodes.get(edge.from),
+				oldSource = previousNodes.get(edge.from);
+			if (
+				before === undefined ||
+				before.edge.from !== edge.from ||
+				before.edge.to !== edge.to ||
+				source === undefined ||
+				oldSource === undefined
+			)
+				return [];
+			return [
+				[
+					edge.id,
+					{
+						...before.label!.box,
+						x: before.label!.box.x + source.x - oldSource.x,
+						y: before.label!.box.y + source.y - oldSource.y,
+					},
+				],
+			];
+		}),
+	);
+}
+
+/**
+ * Keep an inherited label near its source, otherwise use the longest clear run.
  *
  * Reserved engine boxes remain a fallback when no clear alternative fits.
  * @param drawing Solved cards and routes, with any reserved label boxes.
  * @param measured Measured labels, including those awaiting their first placement.
+ * @param predecessor Previous drawing whose label placement should stay recognizable.
  * @returns The one final drawing, with only eligible label boxes replaced.
  */
 function placeLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
+	predecessor?: ArchitectureDrawing,
 ): ArchitectureDrawing {
 	const pieces = piecesOf(drawing.edges);
+	const preferences = inheritedLabels(drawing, predecessor);
 	const labels = new Map(
 		drawing.edges.flatMap(({ edge, label }) =>
 			label === undefined ? [] : [[edge.id, label.box] as const],
@@ -164,21 +230,33 @@ function placeLabelsOnRuns(
 	)) {
 		const label = measured.get(edge.edge.id);
 		if (label === undefined) continue;
+		const preferred = preferences.get(edge.edge.id);
 		const otherLabels = [...labels]
 			.filter(([id]) => id !== edge.edge.id)
 			.map(([, box]) => inflate(box, labelAir));
 		const candidates = pieces
 			.filter((piece) => piece.edgeId === edge.edge.id)
 			.flatMap((piece) =>
-				candidatesOf(piece, { x: 0, y: 0, width: label.width, height: label.height }, [
-					...nodes,
-					...otherLabels,
-					...pieces.filter((other) => other !== piece).map(({ box }) => inflate(box, routeAir)),
-				]),
+				candidatesOf(
+					piece,
+					{ x: 0, y: 0, width: label.width, height: label.height },
+					[
+						...nodes,
+						...otherLabels,
+						...pieces.filter((other) => other !== piece).map(({ box }) => inflate(box, routeAir)),
+					],
+					preferred,
+				),
 			)
 			.filter(({ box }) => insidePage(box, drawing));
 		const chosen = candidates.toSorted(
-			(one, other) => other.length - one.length || one.index - other.index,
+			(one, other) =>
+				(preferred === undefined
+					? 0
+					: Math.hypot(one.box.x - preferred.x, one.box.y - preferred.y) -
+						Math.hypot(other.box.x - preferred.x, other.box.y - preferred.y)) ||
+				other.length - one.length ||
+				one.index - other.index,
 		)[0];
 		if (chosen !== undefined) labels.set(edge.edge.id, chosen.box);
 	}

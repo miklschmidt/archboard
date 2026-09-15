@@ -5,7 +5,12 @@
 // here along its real seams: this is the geometry of a drawn route, with no
 // opinion about which gaps the route travelled through.
 
-import { APPROACH_STRAIGHT, BEND_RADIUS_MAX } from "@/runtime/semantic-renderer/lib/design";
+import {
+	APPROACH_STRAIGHT,
+	BEND_RADIUS_MAX,
+	BRIDGE_RADIUS,
+	BRIDGE_CLEARANCE,
+} from "@/runtime/semantic-renderer/lib/design";
 import { coord, type Box, type Point } from "@/runtime/semantic-renderer/lib/geometry";
 
 /** One piece of a route. */
@@ -270,12 +275,14 @@ function endOf(segments: readonly Segment[], first: Point): Point {
  * @param reserved How much of the incoming and outgoing legs the route's ends need left straight.
  * @param reserved.entering How much of the incoming leg to leave alone.
  * @param reserved.leaving How much of the outgoing leg to leave alone.
+ * @param maximum The radius allowed by nearby perpendicular crossings.
  * @returns The segments to append.
  */
 function bendThrough(
 	corner: Corner,
 	start: Point,
 	reserved: { readonly entering: number; readonly leaving: number },
+	maximum: number,
 ): Segment[] {
 	const { previous, vertex, next } = corner;
 	const inLength = Math.hypot(vertex.x - previous.x, vertex.y - previous.y);
@@ -283,7 +290,7 @@ function bendThrough(
 	const radius = Math.max(
 		0,
 		Math.min(
-			BEND_RADIUS_MAX,
+			maximum,
 			Math.min(inLength, outLength) / 2,
 			inLength - reserved.entering,
 			outLength - reserved.leaving,
@@ -324,12 +331,50 @@ function closeOn(segments: Segment[], first: Point, last: Point | undefined): vo
 }
 
 /**
+ * Measure a point along one of an orthogonal corner's legs.
+ * @param vertex The corner being rounded.
+ * @param end The far end of this leg.
+ * @param point A crossing elsewhere on the route.
+ * @returns Distance from the corner, only when the crossing lies on this leg.
+ */
+function distanceOnLeg(vertex: Point, end: Point, point: Point): number | undefined {
+	const dx = end.x - vertex.x,
+		dy = end.y - vertex.y;
+	const px = point.x - vertex.x,
+		py = point.y - vertex.y;
+	if (px * dy - py * dx !== 0) return undefined;
+	const projection = px * dx + py * dy;
+	if (projection < 0 || projection > dx * dx + dy * dy) return undefined;
+	return Math.hypot(px, py);
+}
+
+/**
+ * Leave enough straight route beside a crossing for the existing bridge policy.
+ * @param corner The corner whose incoming and outgoing legs may cross other routes.
+ * @param crossings Proper perpendicular crossings on this route.
+ * @returns The usual radius, reduced only when a nearby crossing needs the space.
+ */
+function crossingRadius(corner: Corner, crossings: readonly Point[] | undefined): number {
+	let radius = BEND_RADIUS_MAX;
+	// Touching obstacle bounds count as occupied; retain numerical clearance too.
+	const clearance = BRIDGE_RADIUS + BRIDGE_CLEARANCE + EPSILON;
+	for (const point of crossings ?? []) {
+		for (const end of [corner.previous, corner.next]) {
+			const distance = distanceOnLeg(corner.vertex, end, point);
+			if (distance !== undefined) radius = Math.min(radius, distance - clearance);
+		}
+	}
+	return radius;
+}
+
+/**
  * The polyline as one continuous line: long runs stay dead straight and only
  * the turns curve.
  * @param points The waypoints.
+ * @param crossings Proper crossings whose bridge clearance must remain straight.
  * @returns The route.
  */
-function curveThrough(points: readonly Point[]): Curve {
+function curveThrough(points: readonly Point[], crossings?: readonly Point[]): Curve {
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
 	const last = points.length - 1;
@@ -340,10 +385,15 @@ function curveThrough(points: readonly Point[]): Curve {
 			// turn's outgoing leg arrives at its target. Both have to stay straight
 			// where they touch; every leg in between is the planner's business.
 			segments.push(
-				...bendThrough(corner, endOf(segments, first), {
-					entering: index === 1 ? APPROACH_STRAIGHT : 0,
-					leaving: index === last - 1 ? APPROACH_STRAIGHT : 0,
-				}),
+				...bendThrough(
+					corner,
+					endOf(segments, first),
+					{
+						entering: index === 1 ? APPROACH_STRAIGHT : 0,
+						leaving: index === last - 1 ? APPROACH_STRAIGHT : 0,
+					},
+					crossingRadius(corner, crossings),
+				),
 			);
 		}
 	}

@@ -13,7 +13,7 @@ const CROSSED = VariantContentSchema.parse({
 	),
 });
 
-test("a crossing beside a rounded turn bridges the other route when that side has room", async () => {
+test("a crossing beside a rounded turn bridges whichever route has room", async () => {
 	const [before, content] = cornerCrossing.map((value) => VariantContentSchema.parse(value));
 	const drawing = await renderArchitecture({
 		content: content!,
@@ -21,16 +21,18 @@ test("a crossing beside a rounded turn bridges the other route when that side ha
 		theme: "dark",
 	});
 	const lines = routes(drawing.svg);
-	const upper = lines.find((line) => line.id === "eKqUHYSH")!;
-	const lower = lines.find((line) => line.id === "I1lGjMES")!;
-	const cutouts = masks(drawing.svg).get(lower.mask ?? "") ?? [];
+	const pair = ["eKqUHYSH", "I1lGjMES"].map((id) => lines.find((line) => line.id === id)!);
+	const cutouts = masks(drawing.svg);
 	expect(
-		cutouts.some((cutout) => {
-			const span = cutout.path.replace(/^M/u, "L");
-			return (
-				roundBridges(` ${span}`).length === 1 && upper.paths.every((path) => path.includes(span))
-			);
-		}),
+		pair.some((lower, index) =>
+			(cutouts.get(lower.mask ?? "") ?? []).some((cutout) => {
+				const span = cutout.path.replace(/^M/u, "L");
+				return (
+					roundBridges(` ${span}`).length === 1 &&
+					pair[1 - index]!.paths.every((path) => path.includes(span))
+				);
+			}),
+		),
 	).toBe(true);
 });
 

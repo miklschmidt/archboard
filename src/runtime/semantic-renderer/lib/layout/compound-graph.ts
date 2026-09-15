@@ -53,22 +53,38 @@ type PortSides = readonly [
 ];
 
 /**
+ * Whether a leftward departure can descend onto the target's top face.
+ * @param edge New connection between existing cards.
+ * @param predecessor The geometry whose arrangement should remain recognizable.
+ * @returns Whether the target center lies to the left of the source's exit.
+ */
+function hasTopApproach(edge: SemanticEdge, predecessor: ArchitectureDrawing | undefined): boolean {
+	if (predecessor === undefined) return false;
+	const from = predecessor.cards.find((node) => node.measured.node.id === edge.from);
+	const to = predecessor.cards.find((node) => node.measured.node.id === edge.to);
+	return from !== undefined && to !== undefined && to.box.x + to.box.width / 2 < from.box.x;
+}
+
+/**
  * Adjacent forward steps are direct; skips and returns occupy opposite flanks.
  * @param edge The connection being read.
  * @param ranks The deterministic dependency ranks, with cycles broken in document order.
  * @param nested Whether the connection crosses a containment boundary.
+ * @param predecessor Existing geometry for choosing a shorter new skip attachment.
  * @returns The source and target attachment faces.
  */
 function sidesOf(
 	edge: SemanticEdge,
 	ranks: ReadonlyMap<string, number>,
 	nested: boolean,
+	predecessor?: ArchitectureDrawing,
 ): PortSides {
-	const distance = (ranks.get(edge.to) ?? 0) - (ranks.get(edge.from) ?? 0);
-	if (distance === 1 && !nested) {
-		return ["SOUTH", "NORTH"];
-	}
-	return distance > 0 ? ["WEST", "WEST"] : ["EAST", "EAST"];
+	// rankNodes assigns every node before edge attachment begins.
+	const distance = ranks.get(edge.to)! - ranks.get(edge.from)!;
+	if (distance <= 0) return ["EAST", "EAST"];
+	if (nested) return ["WEST", "WEST"];
+	if (distance === 1) return ["SOUTH", "NORTH"];
+	return ["WEST", hasTopApproach(edge, predecessor) ? "NORTH" : "WEST"];
 }
 
 /**
@@ -237,7 +253,7 @@ function edgeOf(
 	const nested =
 		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
 	const [fromSide, toSide] =
-		previousSides(edge, measured, predecessor) ?? sidesOf(edge, ranks, nested);
+		previousSides(edge, measured, predecessor) ?? sidesOf(edge, ranks, nested, predecessor);
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
 	attachPort(edge.from, portOf(fromPort, fromSide, ranks.get(edge.to) ?? 0), nodes);
