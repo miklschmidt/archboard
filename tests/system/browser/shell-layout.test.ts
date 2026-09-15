@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readThemeColors, themeColor } from "@/shared/theme/server";
 
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
@@ -154,8 +155,11 @@ test(
 			expect(Math.abs(snapshot.wordmarkSize.height - 13.209)).toBeLessThan(0.02);
 			expect(snapshot.unexpectedBrandIconCount).toBe(0);
 			expect(snapshot.headerHeight).toBeCloseTo(56, 0);
-			expect(snapshot.selection).toBe("#155eef");
-			expect(snapshot.status).toBe("#a3e635");
+			const colors = readThemeColors(
+				`:root { --primary: ${snapshot.selection}; --status: ${snapshot.status}; }`,
+			).light;
+			expect(colors["--primary"]).toBe(themeColor(snapshot.theme, "--primary"));
+			expect(colors["--status"]).toBe(themeColor(snapshot.theme, "--status"));
 			expect(snapshot.inkContrast).toBeGreaterThanOrEqual(4.5);
 			expect(snapshot.flatSurfaces).toBe(true);
 			expect(snapshot.shadowlessSurfaces).toBe(true);

@@ -413,7 +413,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			<div className="relative flex min-h-0 min-w-0 flex-1">
 				{/* The legend participates in layout so fitting measures only the
 				    unobscured viewport. Hiding it gives that width back to the canvas. */}
-				<SemanticLegend appearances={appearances} theme={drawing.theme} />
+				<SemanticLegend appearances={appearances} />
 				{/* The viewport is the tab stop, and it is a plain box on purpose: a
 				    pan-and-zoom diagram is a keyboard surface that no native element
 				    and no ARIA role describes, and every role that would satisfy the

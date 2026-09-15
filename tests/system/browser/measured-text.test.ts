@@ -14,6 +14,7 @@ import {
 } from "./support/agent-browser.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { assertThemeParity } from "./support/theme-parity.ts";
 
 // Text width is measured, not estimated — checked against the only ruler that
 // is not the one that did the measuring.
@@ -196,6 +197,7 @@ test("the server's text measurement is what a real browser draws", async () => {
 	// And Chrome really drew something: zero widths would agree with an engine
 	// that also returned zero.
 	expect(drawn.every((one) => one.width > 0)).toBeTrue();
+	await assertThemeParity(browser);
 
 	await canvas.assertRunning();
 }, 40_000);

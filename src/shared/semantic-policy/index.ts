@@ -1,31 +1,26 @@
 import { z } from "zod";
 
-/** Curated paired colors. Consumers name these; maintainers tune them here. */
-const SEMANTIC_PALETTE = {
-	red: { light: "#dc2626", dark: "#f87171" },
-	orange: { light: "#ea580c", dark: "#fb923c" },
-	amber: { light: "#b45309", dark: "#fbbf24" },
-	yellow: { light: "#a16207", dark: "#facc15" },
-	lime: { light: "#4d7c0f", dark: "#a3e635" },
-	green: { light: "#15803d", dark: "#4ade80" },
-	emerald: { light: "#047857", dark: "#34d399" },
-	teal: { light: "#0f766e", dark: "#2dd4bf" },
-	cyan: { light: "#0e7490", dark: "#22d3ee" },
-	sky: { light: "#0369a1", dark: "#38bdf8" },
-	blue: { light: "#2563eb", dark: "#60a5fa" },
-	indigo: { light: "#4f46e5", dark: "#818cf8" },
-	violet: { light: "#7c3aed", dark: "#a78bfa" },
-	purple: { light: "#9333ea", dark: "#c084fc" },
-	fuchsia: { light: "#c026d3", dark: "#e879f9" },
-	pink: { light: "#db2777", dark: "#f472b6" },
-	rose: { light: "#e11d48", dark: "#fb7185" },
-} as const;
-type PaletteColor = keyof typeof SEMANTIC_PALETTE;
-const PaletteColorSchema = z.enum(
-	Object.keys(SEMANTIC_PALETTE).filter((color): color is PaletteColor =>
-		Object.hasOwn(SEMANTIC_PALETTE, color),
-	),
-);
+/** Stable vocabulary names; their light and dark colors live in shared/theme/theme.css. */
+const PaletteColorSchema = z.enum([
+	"red",
+	"orange",
+	"amber",
+	"yellow",
+	"lime",
+	"green",
+	"emerald",
+	"teal",
+	"cyan",
+	"sky",
+	"blue",
+	"indigo",
+	"violet",
+	"purple",
+	"fuchsia",
+	"pink",
+	"rose",
+]);
+type PaletteColor = z.infer<typeof PaletteColorSchema>;
 const VocabularyNameSchema = z
 	.string()
 	.trim()
@@ -141,7 +136,6 @@ export {
 	VocabularyNameSchema,
 	GroupPolicySchema,
 	createSemanticPolicySchema,
-	SEMANTIC_PALETTE,
 	PaletteColorSchema,
 	type PaletteColor,
 	SemanticPolicySchema,
