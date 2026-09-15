@@ -1,11 +1,11 @@
 ---
 id: TASK-235.04
 title: Report where kept relationships land after a proposal
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 18:51'
-updated_date: '2026-09-15 18:52'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -23,7 +23,7 @@ S02 compare.reading failed in 1/3 baseline and 2/3 candidate runs: the answer na
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The propose-and-compare check step tells the author to report, for each kept or added relationship, where it now lands, alongside added and removed parts
+- [x] #1 The propose-and-compare check step tells the author to report, for each kept or added relationship, where it now lands, alongside added and removed parts
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -31,3 +31,15 @@ S02 compare.reading failed in 1/3 baseline and 2/3 candidate runs: the answer na
 <!-- SECTION:PLAN:BEGIN -->
 1. Extend propose step 3 to report where relationships land.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Propose step 3 (references/propose-compare.md) now asks for the removed parts, the added parts and where each kept or added relationship lands, with the Context variables example.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Report step names re-targeted relationships; verified by grep.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-235.10
 title: Repair the S12 fixture and teach reporting an inherited untruth
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 18:52'
-updated_date: '2026-09-15 18:53'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -23,6 +23,18 @@ The grader flags the S12 fixture in every run of both arms: the WSGI server call
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The S12 fixture routes the WSGI call through Flask.wsgi_app and the finalize path through finalize_request, and the S12 prompt and checks still hold
-- [ ] #2 The edit workflow says that an inherited inaccuracy in the region being changed is reported in the answer and changed only when the request covers it
+- [x] #1 The S12 fixture routes the WSGI call through Flask.wsgi_app and the finalize path through finalize_request, and the S12 prompt and checks still hold
+- [x] #2 The edit workflow says that an inherited inaccuracy in the region being changed is reported in the answer and changed only when the request covers it
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+S12 fixture: Flask.wsgi_app and finalize_request added, calls routed through them, prompt and checks unchanged, eval:skill check ok. references/edit.md step 1 says an inherited inaccuracy in the region touched is reported and changed only when the request covers it.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fixture says what the source says and the edit recipe tells authors to report inherited untruths; verified by eval:skill check and grep.
+<!-- SECTION:FINAL_SUMMARY:END -->
