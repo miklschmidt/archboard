@@ -41,7 +41,8 @@ function armLine(key: string, arm: Arm, s: ArmSummary): string {
 	const audit =
 		s.unaudited === s.runs && s.runs > 0 ? "unaudited" : `${s.contaminated}/${s.directWrites}`;
 	const visual = `${s.visualPassed}/${s.visualFailed}/${s.visualIncomplete}`;
-	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${visual} | ${audit} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${s.productSourceReads} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} | ${cell(s.meanBehaviouralCompleteness, 1)} | ${s.missedUnprompted} |`;
+	const guidance = s.guidanceRecorded === 0 ? "n/a" : `${s.guidanceRead}/${s.guidanceRecorded}`;
+	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${visual} | ${audit} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${s.productSourceReads} | ${guidance} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} | ${cell(s.meanBehaviouralCompleteness, 1)} | ${s.missedUnprompted} |`;
 }
 
 /**
@@ -51,7 +52,7 @@ function armLine(key: string, arm: Arm, s: ArmSummary): string {
  */
 function changeLine(row: ComparisonRow): string {
 	const tokens = row.tokenChangePercent === null ? "n/a" : `${row.tokenChangePercent.toFixed(1)}%`;
-	return `| ${row.key} | change | | | | | | | | | | ${tokens} | | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | | | |`;
+	return `| ${row.key} | change | | | | | | | | | | ${tokens} | | | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | | | |`;
 }
 
 /**
@@ -64,8 +65,8 @@ function tableLines(title: string, table: readonly ComparisonRow[]): string[] {
 	return [
 		`## ${title}`,
 		"",
-		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | visual pass/fail/incomplete | contaminated/direct | median total | median cached | median output | discovery | ops | investigation | product src | correctness | truth | readability | completeness | missed |",
-		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | visual pass/fail/incomplete | contaminated/direct | median total | median cached | median output | discovery | ops | investigation | product src | guidance | correctness | truth | readability | completeness | missed |",
+		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
 		...table.flatMap((row) => [
 			armLine(row.key, "baseline", row.baseline),
 			armLine(row.key, "candidate", row.candidate),
@@ -104,6 +105,15 @@ function failureLine(run: RunRecord): string {
 		...auditReasons(run),
 	];
 	return `- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): ${reasons.join(", ")}`;
+}
+
+/**
+ * One line about a run that did not read every guidance file its scenario names.
+ * @param run The run.
+ * @returns The markdown line.
+ */
+function guidanceLine(run: RunRecord): string {
+	return `- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): did not read ${(run.guidance?.missing ?? []).join(", ")}`;
 }
 
 /**
@@ -150,7 +160,7 @@ function renderReportMarkdown(report: Report): string {
 	return [
 		`# ${reportHeading(report.grader)}`,
 		"",
-		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to have done what was asked with its pictures inspected, and complete usage; a visual failure counts against its arm's quality but, since both arms share the renderer, does not withhold the cost comparison. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation. Completeness is the grader's 0-10 judgment of how far a board that wrote something uses the semantics the source justifies beyond what the request named, and missed counts the justified catalogue rows its authors left out, summed over the arm. Product src counts runs whose author read the archboard product's source past the installed skill, its generated schemas and --help; reading the skill is expected and reading Flask is investigation, but a read of the product is a question the skill or a CLI answer left open, listed by the grader under concerns as tooling:, and is neither contamination nor a failure.",
+		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to have done what was asked with its pictures inspected, and complete usage; a visual failure counts against its arm's quality but, since both arms share the renderer, does not withhold the cost comparison. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation. Completeness is the grader's 0-10 judgment of how far a board that wrote something uses the semantics the source justifies beyond what the request named, and missed counts the justified catalogue rows its authors left out, summed over the arm. Product src counts runs whose author read the archboard product's source past the installed skill, its generated schemas and --help; reading the skill is expected and reading Flask is investigation, but a read of the product is a question the skill or a CLI answer left open, listed by the grader under concerns as tooling:, and is neither contamination nor a failure. Guidance counts runs that read every skill file their scenario names over runs that recorded their reads; a run that skipped one is listed below, since a cost saving over a recipe nobody read measures the wrong thing.",
 		"",
 		...tableLines("Per scenario (primary)", report.scenarios),
 		...tableLines("Per primary workflow", report.workflows),
@@ -167,6 +177,12 @@ function renderReportMarkdown(report: Report): string {
 			? ["- none"]
 			: report.contamination.map(contaminationLine)),
 		...unauditedLine(report),
+		"",
+		"## Runs that skipped the guidance their scenario names",
+		"",
+		...(report.skippedGuidance.length === 0
+			? ["- none"]
+			: report.skippedGuidance.map(guidanceLine)),
 		"",
 		"## Runs that did not succeed",
 		"",

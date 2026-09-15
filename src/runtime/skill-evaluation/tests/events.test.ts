@@ -6,6 +6,8 @@ import { describe, expect, test } from "bun:test";
 import {
 	classCounts,
 	classifyCommands,
+	guidanceFilesRead,
+	guidanceStanding,
 	parseTrace,
 	unwrapped,
 	usageFrom,
@@ -187,5 +189,21 @@ describe("classifying what an author ran", () => {
 			setup: 1,
 			ambiguous: 2,
 		});
+	});
+});
+
+describe("what guidance an author read", () => {
+	test("names the skill files a trace read, by absolute root or by the install's tail, and what the scenario named that it did not", () => {
+		const records = [
+			"bash -lc 'sed -n 1,240p /run/home/.agents/skills/archboard/SKILL.md'",
+			"bash -lc 'cat /run/home/.agents/skills/archboard/references/edit.md'",
+			"bash -lc 'cat .agents/skills/archboard/references/../references/authoring.md'",
+			"bash -lc 'rg -n \"class Flask\" src/flask/app.py'",
+		].map((command) => ({ command, exitCode: 0, status: "completed" as const, output: "" }));
+		const read = guidanceFilesRead(records, { skillRoot: "/run/home/.agents/skills/archboard" });
+		expect(read).toEqual(["SKILL.md", "references/authoring.md", "references/edit.md"]);
+		const standing = guidanceStanding(["references/edit.md", "references/variants.md"], read);
+		expect(standing.missing).toEqual(["references/variants.md"]);
+		expect(guidanceStanding([], read).missing).toEqual([]);
 	});
 });
