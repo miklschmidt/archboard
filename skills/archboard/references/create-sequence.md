@@ -7,10 +7,13 @@ request or job": a `flow` over the parts it moves between, drawn through a
 A sequence is a `flow` on the board that holds its participants; create the
 parts, the relationships the messages travel and the flow in the same write,
 add a `data-flow` view over it and, when the reader needs narration, a
-walkthrough. The flow is drawn only through that view; the board itself is the
-architecture picture, so every call the exchange makes is also an `edge`
-between its participants, with the same line of evidence, or a reader who
-opens the board sees cards with nothing joining them.
+walkthrough. The board itself is the architecture picture: it draws each
+message of the flow as a dashed step line where no relationship joins those
+two parts, so an exchange is never a row of unjoined cards, but a step line is
+a reading, not a relationship. Every call the exchange makes is also an `edge`
+between its participants, with the same line of evidence, because the
+relationship is what carries the kind, the traffic and the emphasis, and what
+a comparison, a view and a group inspection read.
 
 1. Read the code path and record each message with its evidence: who calls
    whom, from which function, in which order, and which messages come back.

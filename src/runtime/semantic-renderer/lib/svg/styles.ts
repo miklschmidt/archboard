@@ -112,6 +112,7 @@ function strokeWidthOf(edge: SemanticEdge): number {
  * @param palette The theme's colours.
  * @param standing How it stands, when this is a proposal and it moved.
  * @param policy Current vault policy.
+ * @param appearance The line's appearance, when it is not the kind's (a flow step drawn on the board).
  * @returns The path's attributes.
  */
 function edgeAttributes(
@@ -119,9 +120,9 @@ function edgeAttributes(
 	palette: Palette,
 	standing?: SubjectStanding,
 	policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
+	appearance = relationshipAppearance(edge.kind, policy),
 ): Attributes {
 	const weight = weightOf(edge);
-	const appearance = relationshipAppearance(edge.kind, policy);
 	const ink = semanticInk(appearance.color, palette) ?? palette.edge;
 	return {
 		fill: "none",

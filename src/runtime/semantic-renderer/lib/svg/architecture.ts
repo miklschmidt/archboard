@@ -41,6 +41,37 @@ import {
 const EDGE_HALO_EXTRA = 5;
 
 /**
+ * How a flow step reads on the board: dashed with an open head, in the neutral
+ * ink, so it is never mistaken for an authored relationship of any kind.
+ */
+const STEP_APPEARANCE = {
+	name: "Step",
+	color: undefined,
+	dash: "dashed",
+	arrowhead: "open",
+} as const;
+
+/**
+ * The subject kind a drawn line is: a flow step drawn on the board, or a relationship.
+ * @param step Whether the line is a flow step.
+ * @returns The kind.
+ */
+function lineKind(step: boolean): "step" | "edge" {
+	return step ? "step" : "edge";
+}
+
+/**
+ * How a drawn line reads: a step in its own appearance, a relationship in its kind's.
+ * @param edge The line.
+ * @param policy Current vault policy.
+ * @param step Whether the line is a flow step.
+ * @returns The appearance.
+ */
+function lineAppearance(edge: DrawingEdge["edge"], policy: SemanticPolicy, step: boolean) {
+	return step ? STEP_APPEARANCE : relationshipAppearance(edge.kind, policy);
+}
+
+/**
  * A head uses the line's ink and SVG's proportional stroke-width units.
  * @param id Marker identity scoped to this edge.
  * @param head Configured arrowhead form.
@@ -84,6 +115,7 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
  * @param standing Its architectural change.
  * @param policy Current vault policy.
  * @param mask Optional narrow cutouts beneath higher connections.
+ * @param step Whether this line is a flow step drawn on the board, not an authored relationship.
  * @returns The connection group.
  */
 function paintEdgeLine(
@@ -92,13 +124,14 @@ function paintEdgeLine(
 	standing: SubjectStanding | undefined,
 	policy: SemanticPolicy,
 	mask: string | undefined,
+	step: boolean,
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
 	const width = strokeWidthOf(edge);
 	// One ink for the line, the head it ends in and the dots that ride it.
-	const appearance = relationshipAppearance(edge.kind, policy);
-	const attributes = edgeAttributes(edge, palette, standing, policy);
+	const appearance = lineAppearance(edge, policy, step);
+	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
 	const ink = String(attributes["stroke"]);
 	// Inline panes share the document ID namespace. Equal IDs must always
 	// define equal heads, even when the same subject has a different standing.
@@ -107,7 +140,7 @@ function paintEdgeLine(
 	return wrap(
 		"g",
 		{
-			...subjectGroup("edge", edge.id, standing),
+			...subjectGroup(lineKind(step), edge.id, standing),
 			mask: mask === undefined ? undefined : `url(#${mask})`,
 			"data-type-name": appearance.name,
 			"data-type-kind": edge.kind,
@@ -152,6 +185,7 @@ function paintEdgeLine(
  * @param palette The selected theme.
  * @param standing Its architectural change.
  * @param unsettled Whether this relationship needs reconciliation.
+ * @param step Whether this line is a flow step drawn on the board.
  * @returns The words group, or nothing for an unlabelled settled connection.
  */
 function paintEdgeWords(
@@ -159,6 +193,7 @@ function paintEdgeWords(
 	palette: Palette,
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
+	step: boolean,
 ): string {
 	const { label, edge } = routed;
 	const styles = stylesFor(palette);
@@ -184,7 +219,7 @@ function paintEdgeWords(
 				]);
 	return pill === "" && badge === ""
 		? ""
-		: wrap("g", subjectGroup("edge", edge.id, standing), lines([pill, badge]));
+		: wrap("g", subjectGroup(lineKind(step), edge.id, standing), lines([pill, badge]));
 }
 
 /** A painted drawing and the subject geometry a viewer interacts with. */
@@ -202,6 +237,7 @@ interface ArchitecturePainting {
  * @param standingOf How each subject changed against its predecessor.
  * @param unsettledOf Whether a subject needs reconciliation.
  * @param policy Current vault policy.
+ * @param derived Ids of the lines that are flow steps drawn on the board, not authored relationships.
  * @returns The document body, bounds and matching atlas.
  */
 function paintArchitecture(
@@ -210,6 +246,7 @@ function paintArchitecture(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
+	derived: ReadonlySet<string> = new Set(),
 ): ArchitecturePainting {
 	const { cards, containers } = drawing;
 	const { edges, bridges } = bridgeCrossings(drawing);
@@ -244,7 +281,14 @@ function paintArchitecture(
 			),
 		),
 		...edges.map((edge) =>
-			paintEdgeLine(edge, palette, standingOf(edge.edge.id), policy, masks.get(edge.edge.id)),
+			paintEdgeLine(
+				edge,
+				palette,
+				standingOf(edge.edge.id),
+				policy,
+				masks.get(edge.edge.id),
+				derived.has(edge.edge.id),
+			),
 		),
 		...cards.map((card) =>
 			paintMeasuredCard(
@@ -256,7 +300,13 @@ function paintArchitecture(
 			),
 		),
 		...edges.map((edge) =>
-			paintEdgeWords(edge, palette, standingOf(edge.edge.id), unsettledOf(edge.edge.id)),
+			paintEdgeWords(
+				edge,
+				palette,
+				standingOf(edge.edge.id),
+				unsettledOf(edge.edge.id),
+				derived.has(edge.edge.id),
+			),
 		),
 		...boxes.map((held) =>
 			paintMeasuredHeader(
