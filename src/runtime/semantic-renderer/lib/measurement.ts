@@ -111,6 +111,24 @@ function runsFor(
 }
 
 /**
+ * Wrap a sequence responsibility with the same measured line breaking as architecture cards.
+ * @param text The complete authored note.
+ * @param width The available text width.
+ * @param fontSize The sequence note size.
+ * @param lineHeight The room reserved for each line.
+ * @returns Measured lines relative to the top-left of the note block.
+ */
+function measureNoteLines(
+	text: string,
+	width: number,
+	fontSize: number,
+	lineHeight: number,
+): TextRun[] {
+	const style = { ...NOTE, fontSize, lineHeight };
+	return runsFor(prepare(text, style), style, width, 0, 0);
+}
+
+/**
  * Reserve all title and responsibility lines before a card gains neighbours.
  * @param node The semantic subject, including its complete authored words.
  * @param container Whether other subjects name this one as their parent.
@@ -180,4 +198,4 @@ function measureArchitecture(content: VariantContent): MeasuredArchitecture {
 	};
 }
 
-export { measureArchitecture };
+export { measureArchitecture, measureNoteLines };

@@ -35,7 +35,7 @@
 				},
 				{
 					"path": "node.name, node.kind, node.responsibility, node.description",
-					"expectedUse": "configured kind, one-line responsibility grounded in source, longer description where useful",
+					"expectedUse": "configured kind, clear short responsibility grounded in source and readable over two or three rendered lines when useful; optional explicit newlines; longer detail in description",
 					"scenarios": ["S00", "S01", "S14"],
 					"evidence": "author-run",
 					"owner": "grader feature node.kind, node.responsibility; harness node-kind"
@@ -728,11 +728,11 @@
 					"owner": "src/runtime/skill-distribution/tests/artifacts.test.ts; semantic-board input tests"
 				},
 				{
-					"path": "bounded single-line names/responsibilities/labels/handles; description limits",
+					"path": "bounded single-line names/labels/handles; bounded multiline responsibilities; description limits",
 					"expectedUse": "mechanical limits",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests primitives"
+					"owner": "src/shared/semantic-board/tests primitives; src/shared/semantic-board/tests/responsibility.test.ts"
 				},
 				{
 					"path": "ambiguous name references versus ids",

@@ -30,18 +30,14 @@ import type {
 	SemanticNode,
 } from "@/shared/semantic-board/index";
 import {
-	CARD_PADDING_X,
 	CONTAINER_BOTTOM_PAD,
 	CONTAINER_TOP_PAD,
 	DIAGRAM_MARGIN,
 	HEADER_GAP,
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
-	ICON_CHIP_GAP,
-	ICON_CHIP_SIZE,
 	ICON_MIN_CARD_WIDTH,
 	NEST_INSET,
-	NOTE_SIZE,
 	TITLE_SIZE,
 	TITLE_SIZE_MIN,
 	TITLE_SIZE_SMALL,
@@ -61,10 +57,12 @@ import {
 	SELF_MESSAGE_PITCH,
 } from "@/runtime/semantic-renderer/lib/sequence-design";
 import type { Box } from "@/runtime/semantic-renderer/lib/geometry";
-import { CARD_NOTE_FONT, CARD_TITLE_FONT } from "@/runtime/semantic-renderer/lib/fonts";
-import { fittedSize, measure } from "@/runtime/semantic-renderer/lib/text";
+import { CARD_TITLE_FONT } from "@/runtime/semantic-renderer/lib/fonts";
+import { fittedSize } from "@/runtime/semantic-renderer/lib/text";
 import {
 	cardHeight,
+	cardNotes,
+	cardContentWidth,
 	cardTextWidth,
 	type SequenceCard,
 } from "@/runtime/semantic-renderer/lib/layout/sequence-card";
@@ -195,25 +193,6 @@ function participantNode(id: string, byId: ReadonlyMap<string, SemanticNode>): S
 }
 
 /**
- * The width one participant's card asks for: chip, name, and responsibility.
- * @param node The participant.
- * @returns The width that would fit it without cutting anything.
- */
-function cardContentWidth(node: SemanticNode): number {
-	return (
-		CARD_PADDING_X * 2 +
-		ICON_CHIP_SIZE +
-		ICON_CHIP_GAP +
-		Math.max(
-			measure(node.name, CARD_TITLE_FONT, TITLE_SIZE),
-			node.responsibility === undefined
-				? 0
-				: measure(node.responsibility, CARD_NOTE_FONT, NOTE_SIZE),
-		)
-	);
-}
-
-/**
  * The one width every column of every flow is drawn at.
  *
  * One width rather than one per flow, because stacked flows share a page and
@@ -223,18 +202,32 @@ function cardContentWidth(node: SemanticNode): number {
  * the page.
  * @param flows The flows being drawn.
  * @param byId The variant's nodes.
- * @returns The column width, in whole units.
+ * @returns The shared width in whole units and complete measured note lines.
  */
-function columnWidthFor(
+function measureColumns(
 	flows: readonly SemanticFlow[],
 	byId: ReadonlyMap<string, SemanticNode>,
-): number {
+): { readonly width: number; readonly notes: ReadonlyMap<string, SequenceCard["notes"]> } {
 	const asked = flows.flatMap((flow) =>
 		flow.participants.map((participant) => cardContentWidth(participantNode(participant, byId))),
 	);
 	// A whole unit: adding measured widths leaves floating-point dust, and a card
 	// handed back exactly the width its name measured would round into cutting it.
-	return Math.min(COLUMN_MAX_WIDTH, Math.ceil(largest(asked, COLUMN_MIN_WIDTH)));
+	const preferred = Math.min(COLUMN_MAX_WIDTH, Math.ceil(largest(asked, COLUMN_MIN_WIDTH)));
+	// Whole-line kerning and unbroken identifiers can exceed the preferred wrap
+	// width. Widen every column together so complete notes still fit their cards.
+	const participants = new Set(flows.flatMap((flow) => flow.participants));
+	const notes = new Map(
+		[...participants].map((id) => [id, cardNotes(participantNode(id, byId), preferred)]),
+	);
+	const painted = [...notes.values()].flatMap((runs) => runs.map((run) => run.width));
+	return {
+		width: Math.max(
+			preferred,
+			Math.ceil(largest(painted, 0) + preferred - cardTextWidth(preferred)),
+		),
+		notes,
+	};
 }
 
 /**
@@ -375,13 +368,14 @@ function activationLookup(columns: readonly PlacedColumn[]): ActiveAt {
 /**
  * The card heading one column.
  *
- * Its name is fitted to the column exactly as a card's name is fitted to a card
- * in the architecture grammar, so a long participant name steps down in
- * half-points before it is cut, and is cut against the run the painter will use.
+ * A long participant name steps down in half-points before it is cut, and is
+ * cut against the run the painter will use. Responsibility lines are complete
+ * and already measured, including any widening needed to fit their ink.
  * @param node The participant.
  * @param centreX Where its column sits.
  * @param top The height every card in this flow's header row starts at.
  * @param width The shared column width.
+ * @param notes The participant's measured responsibility lines.
  * @returns The placed card.
  */
 function placeColumnCard(
@@ -389,11 +383,13 @@ function placeColumnCard(
 	centreX: number,
 	top: number,
 	width: number,
+	notes: SequenceCard["notes"],
 ): SequenceCard {
-	const box = { x: centreX - width / 2, y: top, width, height: cardHeight(node) };
+	const box = { x: centreX - width / 2, y: top, width, height: cardHeight(notes) };
 	return {
 		node,
 		box,
+		notes,
 		titleSize: fittedSize(
 			node.name,
 			CARD_TITLE_FONT,
@@ -455,7 +451,7 @@ function lowestDrawn(steps: readonly PlacedStep[], floor: number): number {
  * One flow, placed.
  * @param flow The flow.
  * @param byId The variant's nodes.
- * @param columnWidth The width every column is drawn at.
+ * @param measurement The shared column width and measured responsibility lines.
  * @param start Where this flow begins: the height of its frame, and its first turn of the drawing's clock.
  * @param start.top Where its frame begins.
  * @param start.turn Its first turn.
@@ -464,10 +460,11 @@ function lowestDrawn(steps: readonly PlacedStep[], floor: number): number {
 function layoutFlow(
 	flow: SemanticFlow,
 	byId: ReadonlyMap<string, SemanticNode>,
-	columnWidth: number,
+	measurement: ReturnType<typeof measureColumns>,
 	start: { readonly top: number; readonly turn: number },
 ): FlowLayout {
 	const top = start.top;
+	const columnWidth = measurement.width;
 	const nodes = flow.participants.map((participant) => participantNode(participant, byId));
 	const contentLeft = DIAGRAM_MARGIN + NEST_INSET;
 	const centres = nodes.map(
@@ -482,7 +479,22 @@ function layoutFlow(
 		height: flow.summary === undefined ? HEADER_HEIGHT : HEADER_HEIGHT_WITH_NOTE,
 	};
 	const cardsTop = header.y + header.height + HEADER_GAP;
-	const lifelineTop = cardsTop + largest(nodes.map(cardHeight), 0) + LIFELINE_GAP;
+	const cards = nodes.map((node, index) =>
+		placeColumnCard(
+			node,
+			centres[index] ?? 0,
+			cardsTop,
+			columnWidth,
+			measurement.notes.get(node.id) ?? [],
+		),
+	);
+	const lifelineTop =
+		cardsTop +
+		largest(
+			cards.map((card) => card.box.height),
+			0,
+		) +
+		LIFELINE_GAP;
 
 	const steps = placeSteps(
 		flow,
@@ -492,12 +504,12 @@ function layoutFlow(
 	);
 	const lifelineBottom = lowestDrawn(steps, lifelineTop + FIRST_MESSAGE_DROP) + FLOW_BOTTOM_PADDING;
 
-	const columns = nodes.map((node, index) => {
+	const columns = cards.map((card, index) => {
 		const centreX = centres[index] ?? 0;
 		return {
-			card: placeColumnCard(node, centreX, cardsTop, columnWidth),
+			card,
 			centreX,
-			activations: activationsFor(node.id, steps),
+			activations: activationsFor(card.node.id, steps),
 		};
 	});
 
@@ -528,7 +540,7 @@ function layoutDataFlow(
 	nodes: readonly SemanticNode[],
 ): DataFlowLayout {
 	const byId = new Map(nodes.map((node) => [node.id, node]));
-	const columnWidth = columnWidthFor(flows, byId);
+	const measurement = measureColumns(flows, byId);
 
 	const placed: FlowLayout[] = [];
 	let cursor = DIAGRAM_MARGIN;
@@ -536,7 +548,7 @@ function layoutDataFlow(
 	// flows on one page take their turns in the order they are stated.
 	let turn = 0;
 	for (const flow of flows) {
-		const laid = layoutFlow(flow, byId, columnWidth, { top: cursor, turn });
+		const laid = layoutFlow(flow, byId, measurement, { top: cursor, turn });
 		placed.push(laid);
 		cursor = laid.frame.y + laid.frame.height + FLOW_GAP;
 		turn = laid.steps.reduce((total, step) => total + step.slot.count, turn);
@@ -553,7 +565,7 @@ function layoutDataFlow(
 			) + DIAGRAM_MARGIN,
 		),
 		height: Math.ceil(cursor - FLOW_GAP + DIAGRAM_MARGIN),
-		columnWidth,
+		columnWidth: measurement.width,
 		flows: placed,
 		turns: turn,
 	};

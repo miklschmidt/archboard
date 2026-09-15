@@ -19,7 +19,7 @@ meaning matches the source and the picture does not, report a renderer defect.
 
 Two diagram types, one board:
 
-- **Architecture diagram**: nodes (with a configured `kind`, a one-line
+- **Architecture diagram**: nodes (with a configured `kind`, a clear short
   `responsibility`, optional `parent` containment, `groups`, a code `binding`),
   directed relationships (`edges`) between them, and board-owned `views` that
   read a region of it. Use it to answer "what are the parts and how are they
@@ -31,6 +31,11 @@ Two diagram types, one board:
 
 Use a **variant** for a proposed evolution of the same diagram, and a separate
 **linked board** for a different subject or level of detail.
+
+Write responsibilities as clear prose that usually reads over two or three
+card lines. Newlines are optional: the renderer wraps and shows the complete
+value, and rendered line count is not a validation limit. Put longer detail in
+`description`.
 
 ## Essentials
 

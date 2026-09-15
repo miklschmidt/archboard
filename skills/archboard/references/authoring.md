@@ -6,16 +6,16 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
 
 ## Nodes
 
-| Field            | Meaning                                                                                                                            |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `name`           | One line a reader sees; unique enough to name the node in later payloads.                                                          |
-| `kind`           | A key of `nodeKinds` in `config.yaml`. What the unit IS, whether it is drawn as a card or a container.                             |
-| `responsibility` | One line the source supports.                                                                                                      |
-| `description`    | Longer prose, shown on inspection.                                                                                                 |
-| `parent`         | The containing node, by name or id. At most one; containment is acyclic.                                                           |
-| `groups`         | The configured group ids the node belongs to. Omit for none.                                                                       |
-| `binding`        | Where the code is: `{ "repo", "path" }` plus optional `branch`, `commit`, `confirmedAt`.                                           |
-| `drillDown`      | The board one level down: `{ "board": "<name>", "variant": { "kind": "current" } }` or `{ "kind": "named", "name": "<variant>" }`. |
+| Field            | Meaning                                                                                                                                                              |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | One line a reader sees; unique enough to name the node in later payloads.                                                                                            |
+| `kind`           | A key of `nodeKinds` in `config.yaml`. What the unit IS, whether it is drawn as a card or a container.                                                               |
+| `responsibility` | Clear short prose the source supports, usually two or three rendered lines. Newlines are optional; the renderer wraps the complete value without a line-count limit. |
+| `description`    | Longer detail, shown on inspection.                                                                                                                                  |
+| `parent`         | The containing node, by name or id. At most one; containment is acyclic.                                                                                             |
+| `groups`         | The configured group ids the node belongs to. Omit for none.                                                                                                         |
+| `binding`        | Where the code is: `{ "repo", "path" }` plus optional `branch`, `commit`, `confirmedAt`.                                                                             |
+| `drillDown`      | The board one level down: `{ "board": "<name>", "variant": { "kind": "current" } }` or `{ "kind": "named", "name": "<variant>" }`.                                   |
 
 ### Containment and receivers
 
@@ -164,7 +164,7 @@ unresolved and why, rather than approximate it another way.
 | self step                            | `kind: "self"` exactly when `from` and `to` are the same node.                                                                                                                                                               |
 | empty selection or empty walkthrough | A selection view names nothing; a walkthrough has no beats.                                                                                                                                                                  |
 | invalid traffic or repeat            | `speed`/`volume` are positive finite; `repeat` is an integer of 2 or more.                                                                                                                                                   |
-| too long                             | Names, responsibilities, labels and handles are one line and bounded; descriptions are bounded.                                                                                                                              |
+| too long                             | Names, labels and handles are single-line and bounded; responsibilities are bounded prose and may contain line breaks; descriptions are bounded.                                                                             |
 | version moved (exit 5)               | Somebody wrote since you read; `semantic show` again and redo the change on what is there.                                                                                                                                   |
 | held or claim revoked (exit 5)       | Another writer holds the board, or a person released your claim; stop and say so.                                                                                                                                            |
 

@@ -14,7 +14,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S00.json",
 			"sources": ["src/flask/app.py", "src/flask/ctx.py", "src/flask/wrappers.py"],
-			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout. The WSGI server calls Flask.wsgi_app (src/flask/app.py), which pushes the request context (src/flask/ctx.py) and calls full_dispatch_request. full_dispatch_request itself calls preprocess_request, then dispatch_request (which calls the matched view function), then finalize_request; finalize_request calls make_response and then process_response, and the response returns to the WSGI server. Draw the calls as the source makes them: the caller of each function is the function whose body calls it, so preprocess_request does not call dispatch_request and make_response does not call process_response. Give each part a configured kind and a one-line responsibility, put the app-internal parts inside a `Flask app` container, and bind each Flask-internal part to its source file; the WSGI server and the matched view function are outside this checkout and stay unbound. Read the board back and render it to pipeline.svg.",
+			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout. The WSGI server calls Flask.wsgi_app (src/flask/app.py), which pushes the request context (src/flask/ctx.py) and calls full_dispatch_request. full_dispatch_request itself calls preprocess_request, then dispatch_request (which calls the matched view function), then finalize_request; finalize_request calls make_response and then process_response, and the response returns to the WSGI server. Draw the calls as the source makes them: the caller of each function is the function whose body calls it, so preprocess_request does not call dispatch_request and make_response does not call process_response. Give each part a configured kind and a clear short responsibility that reads naturally over two or three card lines when useful, put the app-internal parts inside a `Flask app` container, and bind each Flask-internal part to its source file; the WSGI server and the matched view function are outside this checkout and stay unbound. Read the board back and render it to pipeline.svg.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
@@ -26,7 +26,7 @@
 				},
 				{
 					"feature": "node.responsibility",
-					"requirement": "every node carries a one-line responsibility grounded in the source"
+					"requirement": "every node carries a clear short responsibility grounded in the source; responsibilities may wrap over two or three card lines without losing text"
 				},
 				{
 					"feature": "containment.parent",
@@ -113,7 +113,7 @@
 				},
 				{
 					"feature": "identity.continuation",
-					"requirement": "`Flask app` and `JSON helpers` keep their ids; the restated app keeps its responsibility and binding"
+					"requirement": "`Flask app` and `JSON helpers` keep their ids; the restated app keeps its multiline responsibility and binding"
 				},
 				{
 					"feature": "edge.replacement-rule",
