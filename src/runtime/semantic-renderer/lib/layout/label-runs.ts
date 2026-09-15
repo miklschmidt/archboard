@@ -7,7 +7,7 @@ import type {
 } from "@/runtime/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN } from "@/runtime/semantic-renderer/lib/design";
 import { inflate, type Box } from "@/runtime/semantic-renderer/lib/geometry";
-import { curveBounds } from "@/runtime/semantic-renderer/lib/layout/curves";
+import { curveBounds, pointAt } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
 
 /** A route piece and its conservative bounds, including rounded corners. */
@@ -23,6 +23,14 @@ interface Candidate {
 	readonly box: Box;
 	readonly length: number;
 	readonly index: number;
+	/** How far the badge sits from the nearer of its route's two ends. */
+	readonly reach: number;
+}
+
+/** A point on the page. */
+interface Point {
+	readonly x: number;
+	readonly y: number;
 }
 
 type Interval = readonly [number, number];
@@ -99,13 +107,15 @@ function without(intervals: readonly Interval[], blocked: Interval): Interval[] 
  * @param piece A piece of this badge's own route.
  * @param label Its measured dimensions.
  * @param obstacles Boxes already enlarged by their required clearance.
+ * @param ends Where the route leaves its source and reaches its target.
  * @param preferred Inherited position translated with its source card.
- * @returns Feasible boxes, scored without preferring either orientation.
+ * @returns Feasible boxes, each as near an end of the route as its interval allows.
  */
 function candidatesOf(
 	piece: RoutePiece,
 	label: Box,
 	obstacles: readonly Box[],
+	ends: readonly [Point, Point],
 	preferred?: Box,
 ): Candidate[] {
 	const axis = piece.axis;
@@ -125,16 +135,57 @@ function candidatesOf(
 			continue;
 		intervals = without(intervals, [box[axis] - label[length], box[axis] + box[length]]);
 	}
-	return intervals.map(([low, high]) => ({
-		box: {
-			...label,
-			[axis]:
-				preferred === undefined ? (low + high) / 2 : Math.max(low, Math.min(high, preferred[axis])),
-			[cross]: across,
-		},
-		length: high - low + label[length],
-		index: piece.index,
-	}));
+	return intervals.map(([low, high]) => {
+		// A badge belongs where a reader tracing the line from either card finds
+		// it soonest: as near the nearer end as its clear interval allows, or where
+		// the predecessor had it.
+		const nearest = nearestPlacement(low, high, label, axis, ends);
+		const along =
+			preferred === undefined ? nearest.along : Math.max(low, Math.min(high, preferred[axis]));
+		return {
+			box: { ...label, [axis]: along, [cross]: across },
+			length: high - low + label[length],
+			index: piece.index,
+			reach: reachOf({ ...label, [axis]: along, [cross]: across }, ends),
+		};
+	});
+}
+
+/**
+ * The distance from a badge's centre to the nearer end of its route.
+ * @param box The badge.
+ * @param ends The route's ends.
+ * @returns The smaller distance.
+ */
+function reachOf(box: Box, ends: readonly [Point, Point]): number {
+	const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	return Math.min(...ends.map((end) => Math.hypot(centre.x - end.x, centre.y - end.y)));
+}
+
+/**
+ * Where along a clear interval a badge sits nearest an end of its route.
+ * @param low The lowest leading coordinate the interval allows.
+ * @param high The highest.
+ * @param label The badge.
+ * @param axis The run's axis.
+ * @param ends The route's ends.
+ * @returns The leading coordinate to use.
+ */
+function nearestPlacement(
+	low: number,
+	high: number,
+	label: Box,
+	axis: "x" | "y",
+	ends: readonly [Point, Point],
+): { readonly along: number } {
+	const half = label[DIMENSIONS[axis].length] / 2;
+	// Each end pulls the badge as close as the interval allows; the closer pull wins.
+	const choices = ends.map((end) => Math.max(low, Math.min(high, end[axis] - half)));
+	const reaches = choices.map((along) =>
+		Math.min(...ends.map((end) => Math.abs(along + half - end[axis]))),
+	);
+	const best = reaches.indexOf(Math.min(...reaches));
+	return { along: choices[best] ?? (low + high) / 2 };
 }
 
 /**
@@ -252,6 +303,7 @@ function placeLabelsOnRuns(
 		const label = measured.get(edge.edge.id);
 		if (label === undefined) continue;
 		const preferred = preferences.get(edge.edge.id);
+		const ends: readonly [Point, Point] = [edge.curve.from, pointAt(edge.curve, 1)];
 		const otherLabels = [...labels]
 			.filter(([id]) => id !== edge.edge.id)
 			.map(([, box]) => inflate(box, labelAir));
@@ -266,6 +318,7 @@ function placeLabelsOnRuns(
 						...otherLabels,
 						...pieces.filter((other) => other !== piece).map(({ box }) => inflate(box, routeAir)),
 					],
+					ends,
 					preferred,
 				),
 			)
@@ -276,6 +329,9 @@ function placeLabelsOnRuns(
 					? 0
 					: Math.hypot(one.box.x - preferred.x, one.box.y - preferred.y) -
 						Math.hypot(other.box.x - preferred.x, other.box.y - preferred.y)) ||
+				// Nearest an end first: a reader traces a line from a card and should
+				// meet its words soon; the longest run only breaks the tie.
+				one.reach - other.reach ||
 				other.length - one.length ||
 				one.index - other.index,
 		)[0];
