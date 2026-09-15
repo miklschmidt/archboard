@@ -63,7 +63,7 @@ function nearestAnchor(
  * @param content Current architecture.
  * @param previous Stable subjects in the predecessor.
  * @param height Current card height, used only for a new terminal chain.
- * @param fallback Position relative to a newly placed neighbor when no stable anchor exists.
+ * @param fallback Position relative to a newly placed neighbor when interpolation is unavailable.
  * @returns A pseudo vertical position used by interactive layer assignment.
  */
 function newLayer(
@@ -71,7 +71,7 @@ function newLayer(
 	content: VariantContent,
 	previous: ReadonlyMap<string, DrawingNode>,
 	height: number,
-	fallback = 24,
+	fallback?: number,
 ): number {
 	const before = nearestAnchor(id, true, content, previous),
 		after = nearestAnchor(id, false, content, previous);
@@ -80,10 +80,11 @@ function newLayer(
 			(before.node.box.y * after.distance + after.node.box.y * before.distance) /
 			(before.distance + after.distance)
 		);
+	if (fallback !== undefined) return fallback;
 	if (before !== undefined)
 		return before.node.box.y + before.distance * (before.node.box.height + 80);
 	if (after !== undefined) return after.node.box.y - after.distance * (height + 80);
-	return fallback;
+	return 24;
 }
 
 /**
@@ -215,9 +216,14 @@ function connectedPositions(
 		const point = result.get(id)!;
 		for (const { node: other, offset } of newNeighbors(id, edges, fresh)) {
 			if (result.has(other.id)) continue;
+			const anchor = nearestAnchor(id, offset.y < 0, content, previous);
+			// Continue the neighbor's interpolated step so an independent terminal
+			// can share the stable sibling's layer instead of claiming another one.
+			const step =
+				anchor === undefined ? offset.y : (anchor.node.box.y - point.y) / anchor.distance;
 			result.set(other.id, {
 				x: point.x + offset.x,
-				y: newLayer(other.id, content, previous, other.height!, point.y + offset.y),
+				y: newLayer(other.id, content, previous, other.height!, point.y + step),
 			});
 			frontier.push(other.id);
 		}
@@ -296,6 +302,40 @@ function componentAttachments(
 }
 
 /**
+ * Keep label dummies from joining independent hinted layers before ELK assigns them.
+ * Overlapping cards already describe one layer; only gaps between those layers grow.
+ * @param children Measured sibling cards.
+ * @param positions Their global layer and lane hints.
+ * @param routes Current measured labels.
+ * @returns Hints with enough room between layers for a centered label.
+ */
+function spaceLayers(
+	children: readonly ElkNode[],
+	positions: ReadonlyMap<string, Point>,
+	routes: NodeHintRoutes,
+): Map<string, Point> {
+	const labelHeight = Math.max(
+		0,
+		...routes.current.flatMap((edge) => edge.labels?.map((label) => label.height!) ?? []),
+	);
+	if (labelHeight === 0) return new Map(positions);
+	const clearance = labelHeight + 2 * Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
+	const ordered = children.toSorted(
+		(one, other) => positions.get(one.id)!.y - positions.get(other.id)!.y,
+	);
+	const result = new Map<string, Point>();
+	let bottom = -Infinity,
+		shift = 0;
+	for (const node of ordered) {
+		const point = positions.get(node.id)!;
+		if (point.y >= bottom) shift += Math.max(0, clearance - (point.y - bottom));
+		result.set(node.id, { x: point.x, y: point.y + shift });
+		bottom = Math.max(bottom, point.y + node.height!);
+	}
+	return result;
+}
+
+/**
  * Reserve nearby lanes for new branches while keeping old sibling cards fixed.
  * @param children Measured subjects of one containment level.
  * @param content Current architecture.
@@ -345,7 +385,7 @@ function nodePositionHints(
 			occupied.push({ ...placed, width: node.width!, height: node.height! });
 		}
 	}
-	return result;
+	return spaceLayers(children, result, routes);
 }
 
 export { nodePositionHints, portHint };
