@@ -147,7 +147,7 @@ function answerWrite(
 		announce(result, envelope);
 		const current = readSemanticBoard(result.board.name);
 		res.json({
-			warnings: current.ok ? current.warnings : [],
+			warnings: [...result.warnings, ...(current.ok ? current.warnings : [])],
 			success: true,
 			board: result.board,
 			version: result.board.version,

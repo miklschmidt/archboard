@@ -225,17 +225,16 @@ test("a replacement gets a new identity and compares as removed plus added", asy
 	const proposal = variant();
 	const before = read().variants.find((one) => one.id === proposal.parent)!;
 	const edge = proposal.content.edges[0]!;
-	expect(
-		(
-			await edit({
-				variant: "Proposal",
-				removeEdges: [edge.id],
-				edges: [{ from: "Driver", to: "Compound", kind: "call", label: "measured graph" }],
-			})
-		).outcome,
-	).toBe("applied");
+	const written = await edit({
+		variant: "Proposal",
+		removeEdges: [edge.id],
+		edges: [{ from: "Driver", to: "Compound", kind: "call", label: "measured graph" }],
+	});
+	expect(written.outcome).toBe("applied");
 	const replacement = variant().content.edges[0]!;
 	expect(replacement.id).not.toBe(edge.id);
+	// Other ends: a different unit, so the write says nothing about it.
+	expect(written.outcome === "applied" ? written.warnings : null).toEqual([]);
 	const comparison = contract.compareVariants(before.content, variant().content);
 	expect(comparison.edges.get(edge.id)?.kind).toBe("removed");
 	expect(comparison.edges.get(replacement.id)?.kind).toBe("added");
@@ -252,4 +251,34 @@ test("a nested proposal compares to its direct parent, not the root", async () =
 		(await edit({ variant: "Next proposal", edges: [{ ...inherited, label: "measured graph" }] }))
 			.outcome,
 	).toBe("applied");
+});
+
+test("a relationship removed and stated again with one property changed lands with a warning; two changed properties is a replacement", async () => {
+	const edge = variant().content.edges[0]!;
+	const reAdded = await edit({
+		variant: "Proposal",
+		removeEdges: [edge.id],
+		edges: [{ from: "Driver", to: "Grid", kind: "call", label: "place grid", traffic: {} }],
+	});
+	expect(reAdded.outcome).toBe("applied");
+	const twin = variant().content.edges[0]!;
+	const warnings = reAdded.outcome === "applied" ? reAdded.warnings : [];
+	expect(warnings.map((warning) => [warning.code, warning.path])).toEqual([
+		["RELATIONSHIP_REPLACED", `edges.${twin.id}`],
+	]);
+	expect(warnings[0]?.message).toContain(edge.id);
+	const replaced = await edit({
+		variant: "Proposal",
+		removeEdges: [twin.id],
+		edges: [
+			{
+				from: "Driver",
+				to: "Grid",
+				kind: "call",
+				label: "rebuilt grid",
+				description: "now a different unit",
+			},
+		],
+	});
+	expect(replaced.outcome === "applied" ? replaced.warnings : null).toEqual([]);
 });
