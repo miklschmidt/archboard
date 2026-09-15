@@ -98,6 +98,8 @@ const OutcomeCheckSchema = z
 		from: z.string().optional(),
 		to: z.string().optional(),
 		kind: z.string().optional(),
+		/** edge-between: the ends match the named node or any node contained in it. */
+		includeContained: z.boolean().optional(),
 		lifecycle: z.enum(["current", "draft", "historical"]).optional(),
 		/** Subjects of every kind: nodes, relationships, flows and walkthroughs together. */
 		removed: z.number().optional(),

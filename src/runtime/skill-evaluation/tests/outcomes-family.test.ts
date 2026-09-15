@@ -12,6 +12,7 @@ import {
 	type OutcomeCheck,
 	type Reading,
 } from "@/runtime/skill-evaluation/index";
+import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
 import { AFTER, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
 
 describe("family checks", () => {
@@ -286,5 +287,96 @@ describe("guardrails", () => {
 			boards: new Map(),
 		});
 		expect(verdicts[0]?.passed).toBe(false);
+	});
+});
+
+describe("relationship identity", () => {
+	const NODES = [
+		{ id: "a", name: "A", kind: "module", responsibility: "a" },
+		{ id: "b", name: "B", kind: "module", responsibility: "b" },
+		{ id: "c", name: "C", kind: "module", responsibility: "c" },
+	];
+	const withEdges = (edges: readonly object[], version: number): SemanticBoard =>
+		SemanticBoardSchema.parse({
+			schemaVersion: "2.2.0",
+			kind: "semantic-board",
+			id: "bd",
+			name: "Flask",
+			level: "service",
+			version,
+			createdAt: "2026-09-14T00:00:00.000Z",
+			updatedAt: "2026-09-14T00:00:00.000Z",
+			views: [],
+			current: "v1",
+			variants: [
+				{ id: "v1", name: "Initial", lifecycle: "current", content: { nodes: NODES, edges } },
+			],
+		});
+	const before = withEdges(
+		[
+			{ id: "e1", from: "a", to: "b", kind: "call", label: "x", traffic: {} },
+			{ id: "e2", from: "a", to: "c", kind: "call", label: "y" },
+		],
+		1,
+	);
+	const judge = (after: SemanticBoard) =>
+		evaluateGuardrails(["ids-stable"], {
+			snapshot: new Map([["Flask", before]]),
+			boards: new Map([["Flask", after]]),
+			configBefore: "a",
+			configAfter: "a",
+			commands: [],
+			fileChanges: [],
+			vault: "/run/vault",
+		})[0];
+
+	test("a relationship removed and added again with one property changed breaks identity", () => {
+		const verdict = judge(
+			withEdges(
+				[
+					{
+						id: "e9",
+						from: "a",
+						to: "b",
+						kind: "call",
+						label: "x",
+						traffic: { speed: 80, volume: 2 },
+					},
+					{ id: "e2", from: "a", to: "c", kind: "call", label: "y" },
+				],
+				2,
+			),
+		);
+		expect(verdict?.passed).toBe(false);
+		expect(verdict?.detail).toContain("A -> B (call) was e1, re-added as e9");
+	});
+
+	test("a replacement that changes two properties, or a relationship left alone, keeps the guardrail", () => {
+		const replaced = judge(
+			withEdges(
+				[
+					{ id: "e8", from: "a", to: "b", kind: "call", label: "z", description: "now different" },
+					{ id: "e2", from: "a", to: "c", kind: "call", label: "y" },
+				],
+				2,
+			),
+		);
+		const kept = judge(
+			withEdges(
+				[
+					{
+						id: "e1",
+						from: "a",
+						to: "b",
+						kind: "call",
+						label: "x",
+						traffic: { speed: 80, volume: 2 },
+					},
+					{ id: "e2", from: "a", to: "c", kind: "call", label: "y" },
+				],
+				2,
+			),
+		);
+		expect([replaced?.passed, kept?.passed]).toEqual([true, true]);
 	});
 });

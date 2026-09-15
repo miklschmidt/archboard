@@ -155,3 +155,35 @@ describe("content checks", () => {
 		expect(verdicts[1]?.detail).toContain("Ghost");
 	});
 });
+
+describe("relationships into a container", () => {
+	test("edge-between matches a sender or receiver drawn inside the named part only when asked", () => {
+		expect(
+			passes([
+				{ check: "edge-between", board: "Flask", from: "CLI", to: "Flask app" },
+				{
+					check: "edge-between",
+					board: "Flask",
+					from: "CLI",
+					to: "Flask app",
+					includeContained: true,
+				},
+				{
+					check: "edge-between",
+					board: "Flask",
+					from: "CLI",
+					to: "Flask app",
+					kind: "data",
+					includeContained: true,
+				},
+				{
+					check: "edge-between",
+					board: "Flask",
+					from: "Provider",
+					to: "Flask app",
+					includeContained: true,
+				},
+			]),
+		).toEqual([false, true, false, false]);
+	});
+});
