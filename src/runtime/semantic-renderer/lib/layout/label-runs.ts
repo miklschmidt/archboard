@@ -44,6 +44,8 @@ type Interval = readonly [number, number];
  * reservation makes a layer of its own, moving every row and bending the route.
  */
 const ROUTE_SNAP = 0.5;
+/** The run kept clear at each end of a badge when the node spacing leaves no room at all. */
+const TIGHT_AIR = 8;
 
 const DIMENSIONS = {
 	x: { cross: "y", length: "width", breadth: "height" },
@@ -109,6 +111,7 @@ function without(intervals: readonly Interval[], blocked: Interval): Interval[] 
  * @param obstacles Boxes already enlarged by their required clearance.
  * @param ends Where the route leaves its source and reaches its target.
  * @param preferred Inherited position translated with its source card.
+ * @param air How much of the run stays clear at each end.
  * @returns Feasible boxes, each as near an end of the route as its interval allows.
  */
 function candidatesOf(
@@ -116,12 +119,12 @@ function candidatesOf(
 	label: Box,
 	obstacles: readonly Box[],
 	ends: readonly [Point, Point],
-	preferred?: Box,
+	preferred: Box | undefined,
+	air: number,
 ): Candidate[] {
 	const axis = piece.axis;
 	if (axis === undefined) return [];
 	const { cross, length, breadth } = DIMENSIONS[axis];
-	const air = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 	const start = piece.box[axis] + air;
 	const end = piece.box[axis] + piece.box[length] - label[length] - air;
 	if (end < start) return [];
@@ -296,7 +299,7 @@ function placeLabelsOnRuns(
 	const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 	const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
-	const nodes = nodeObstacles(drawing).map((box) => inflate(box, nodeAir));
+	const cards = nodeObstacles(drawing);
 	for (const edge of drawing.edges.toSorted((one, other) =>
 		one.edge.id < other.edge.id ? -1 : one.edge.id > other.edge.id ? 1 : 0,
 	)) {
@@ -307,22 +310,35 @@ function placeLabelsOnRuns(
 		const otherLabels = [...labels]
 			.filter(([id]) => id !== edge.edge.id)
 			.map(([, box]) => inflate(box, labelAir));
-		const candidates = pieces
-			.filter((piece) => piece.edgeId === edge.edge.id)
-			.flatMap((piece) =>
-				candidatesOf(
-					piece,
-					{ x: 0, y: 0, width: label.width, height: label.height },
-					[
-						...nodes,
-						...otherLabels,
-						...pieces.filter((other) => other !== piece).map(({ box }) => inflate(box, routeAir)),
-					],
-					ends,
-					preferred,
-				),
-			)
-			.filter(({ box }) => insidePage(box, drawing));
+		/**
+		 * The places this label can sit with a given clearance from cards and run ends.
+		 * @param air The clearance.
+		 * @returns The candidates.
+		 */
+		const candidatesWith = (air: number) =>
+			pieces
+				.filter((piece) => piece.edgeId === edge.edge.id)
+				.flatMap((piece) =>
+					candidatesOf(
+						piece,
+						{ x: 0, y: 0, width: label.width, height: label.height },
+						[
+							...cards.map((box) => inflate(box, air)),
+							...otherLabels,
+							...pieces.filter((other) => other !== piece).map(({ box }) => inflate(box, routeAir)),
+						],
+						ends,
+						preferred,
+						air,
+					),
+				)
+				.filter(({ box }) => insidePage(box, drawing));
+		// A run between two rows is short: with the node spacing clear at both
+		// ends it holds nothing, and a label the runs cannot hold is reserved with
+		// the engine, which gives it a layer of its own and makes the page taller
+		// by a row. A tighter second pass keeps the label on its own line first.
+		const roomy = candidatesWith(nodeAir);
+		const candidates = roomy.length > 0 ? roomy : candidatesWith(TIGHT_AIR);
 		const chosen = candidates.toSorted(
 			(one, other) =>
 				(preferred === undefined
