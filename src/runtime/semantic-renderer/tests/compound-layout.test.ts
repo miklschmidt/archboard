@@ -65,12 +65,18 @@ describe("compound architecture layout", () => {
 				[points?.[0], edge.from],
 				[points?.at(-1), edge.to],
 			] as const;
+			// A frame's own call to a part inside it leaves the title band, inside
+			// the frame; every other endpoint sits on its card's or frame's edge.
+			const holds = NESTED.nodes.some(
+				(node) => node.id === edge.to && ancestorsOf(node.id).includes(edge.from),
+			);
 			for (const [point, id] of endpoints) {
 				const box = drawing.atlas.nodes[id];
 				expect(point).toBeDefined();
 				expect(box).toBeDefined();
 				if (point === undefined || box === undefined) throw new Error(`Missing endpoint ${id}`);
-				expect(distanceToFrame(point, box)).toBeLessThan(0.02);
+				if (holds && id === edge.from) expect(point.y).toBeGreaterThan(box.y);
+				else expect(distanceToFrame(point, box)).toBeLessThan(0.02);
 				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.02);
 				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.02);
 				expect(point.y).toBeGreaterThanOrEqual(box.y - 0.02);
@@ -95,3 +101,18 @@ describe("compound architecture layout", () => {
 		expect(subsequent).toEqual(first);
 	});
 });
+
+/**
+ * Every frame a node sits inside, nearest first.
+ * @param id The node.
+ * @returns Its ancestors' ids.
+ */
+function ancestorsOf(id: string): string[] {
+	const found: string[] = [];
+	let at = NESTED.nodes.find((node) => node.id === id)?.parent;
+	while (at !== undefined) {
+		found.push(at);
+		at = NESTED.nodes.find((node) => node.id === at)?.parent;
+	}
+	return found;
+}
