@@ -3,8 +3,10 @@
 // `--output-schema` and written by `-o`, every image attached with `--image`
 // on every call, and the thread resumed with `codex exec resume`.
 
+import fs from "node:fs";
 import path from "node:path";
-import { parseTrace } from "@/runtime/skill-evaluation/lib/events";
+import { parseTrace, unwrapped, type AuthorTrace } from "@/runtime/skill-evaluation/lib/events";
+import type { ProcessResult } from "@/runtime/skill-evaluation/lib/process";
 import {
 	callSucceeded,
 	type GraderCall,
@@ -60,6 +62,70 @@ function codexGraderArgv(
 }
 
 /**
+ * Every path a script names, absolute or spelled relative to the workspace,
+ * resolved: what a sandbox that blocks writes but not reads lets a grader open.
+ * @param script The unwrapped command.
+ * @param workspace The workspace the paths are relative to.
+ * @returns The resolved paths.
+ */
+function namedPaths(script: string, workspace: string): string[] {
+	return [...script.matchAll(/'([^']*)'|"([^"$`]*)"|([^\s'"|;&<>]+)/gu)]
+		.map((match) => (match[1] ?? match[2] ?? match[3] ?? "").replaceAll("\\ ", " "))
+		.filter((word) => word.startsWith("/") || word.startsWith("../") || word.startsWith("./"))
+		.filter((word) => word !== "/dev/null")
+		.map((word) => path.resolve(workspace, word));
+}
+
+/**
+ * Whether a resolved path is the directory or one of its descendants.
+ * @param directory The containing directory.
+ * @param target The resolved path.
+ * @returns True when target is inside directory.
+ */
+function within(directory: string, target: string): boolean {
+	const relative = path.relative(directory, target);
+	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+/**
+ * Every path the grader reached outside its workspace: a command naming one,
+ * or a file change landing on one. The Codex sandbox blocks writes and not
+ * reads, so this is what blinds the grader rather than the prompt.
+ * @param workspace The workspace.
+ * @param trace The event stream.
+ * @returns The offending paths, each once.
+ */
+function outsideReaches(workspace: string, trace: AuthorTrace): string[] {
+	const root = path.resolve(workspace);
+	const named = trace.commands.flatMap((command) => namedPaths(unwrapped(command.command), root));
+	const changed = trace.fileChanges.map((change) => path.resolve(root, change.path));
+	return [...new Set([...named, ...changed].filter((target) => !within(root, target)))];
+}
+
+/**
+ * Why the call failed as a grading call: the process, the stream, a reach
+ * outside the workspace, or an answer never written.
+ * @param workspace The workspace.
+ * @param result The process outcome.
+ * @param trace The stream.
+ * @param verdictFile Where Codex was told to write the answer.
+ * @returns The failure, or null.
+ */
+function codexProtocolFailure(
+	workspace: string,
+	result: ProcessResult,
+	trace: AuthorTrace,
+	verdictFile: string,
+): string | null {
+	if (result.exitCode !== 0) return `codex exited ${result.exitCode ?? result.signalCode}`;
+	if (trace.failure !== null) return trace.failure;
+	const outside = outsideReaches(workspace, trace);
+	if (outside.length > 0) return `the grader reached outside the workspace: ${outside.join(", ")}`;
+	if (!fs.existsSync(verdictFile)) return "the grader wrote no structured answer";
+	return null;
+}
+
+/**
  * The Codex grader runner.
  * @param settings The pinned grader.
  * @param executable The Codex executable to run.
@@ -102,18 +168,27 @@ function codexGrader(settings: CodexGraderSettings, executable: string): GraderR
 				signal: request.signal,
 			});
 			const trace = parseTrace(result.stdout);
-			const delivered = callSucceeded(result, trace.failure) ? request.images : null;
+			const failure = codexProtocolFailure(request.workspace, result, trace, request.verdictFile);
+			// Codex wrote the answer itself; a call that reached outside the workspace
+			// leaves none behind to be filed.
+			if (failure !== null) fs.rmSync(request.verdictFile, { force: true });
 			return {
 				result,
 				events: result.stdout,
 				sessionId: trace.threadId,
 				usage: trace.usage,
 				raw: null,
-				failure: trace.failure,
-				delivered,
+				failure,
+				delivered: callSucceeded(result, failure) ? request.images : null,
 			};
 		},
 	};
 }
 
-export { codexGrader, codexGraderArgv, type CodexGraderSettings };
+export {
+	codexGrader,
+	codexGraderArgv,
+	codexProtocolFailure,
+	outsideReaches,
+	type CodexGraderSettings,
+};

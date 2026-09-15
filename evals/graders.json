@@ -10,7 +10,8 @@
 		"sessions": "one per grading session, resumed rather than recreated (codex exec resume <thread>)",
 		"subagents": "prohibited by prompt",
 		"images": "attached with --image on every call, including a resumed one",
-		"usageSemantics": "cumulative: turn.completed carries the thread's total_token_usage, so a call's own usage is the growth since the previous reading and a session costs its last reading, never the sum of its calls. cached_input_tokens is a subset of input_tokens; total = input + output. Verified without a model from the retained rollout of the 2026-09-14 batch (docs/design/skill-evals/2026-09-14-batch-corrections.md)."
+		"usageSemantics": "cumulative: turn.completed carries the thread's total_token_usage, so a call's own usage is the growth since the previous reading and a session costs its last reading, never the sum of its calls. cached_input_tokens is a subset of input_tokens; total = input + output. Verified without a model from the retained rollout of the 2026-09-14 batch (docs/design/skill-evals/2026-09-14-batch-corrections.md).",
+		"reads": "workspace only: a command naming a path outside graders/workspace, or a file change landing outside it, files the call as an error and discards its answer (the sandbox blocks writes, not reads)"
 	},
 	"claude": {
 		"executable": "claude",
