@@ -374,6 +374,8 @@ export {
 	FLOW_CYCLE_CAP_MS,
 	FLOW_PULSE_RAMP,
 	FLOW_STEP_TRAVEL_MS,
+	PICTURE_TRANSITION_MS,
+	PICTURE_TRANSITION_PHASES,
 } from "@/shared/timing/lib/diagram-motion";
 export {
 	ACTIVITY_LINGER_MS,
