@@ -1,7 +1,10 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
-import { themeColor } from "@/shared/theme/server";
-import { renderSemanticView, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
+import {
+	paletteFor,
+	renderSemanticView,
+	type RenderedDiagram,
+} from "@/runtime/semantic-renderer/index";
 import {
 	RASTER_MAX_SIDE_PX,
 	SemanticRasterError,
@@ -97,6 +100,15 @@ function processExists(pid: number): boolean {
 const rasterizers: SemanticRasterizer[] = [];
 
 /**
+ * A colour as the pixel counter keys it.
+ * @param hex A `#rrggbb` colour.
+ * @returns Its `r,g,b` key.
+ */
+function rgbOf(hex: string): string {
+	return [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(",");
+}
+
+/**
  * A rasterizer this file will stop, whatever a test did.
  * @returns The rasterizer.
  */
@@ -120,10 +132,9 @@ describe("what one capture is", () => {
 		// The theme's ground and cards are painted, so this is the picture
 		// and not a blank page of the right size.
 		const colors = pngRgbCounts(capture.png);
-		for (const token of ["--background", "--card"]) {
-			const hex = themeColor("light", token);
-			const rgb = [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(",");
-			expect(colors.get(rgb) ?? 0).toBeGreaterThan(1000);
+		const palette = paletteFor("light");
+		for (const color of [palette.background, palette.card]) {
+			expect(colors.get(rgbOf(color)) ?? 0).toBeGreaterThan(1000);
 		}
 		// Every one of the renderer's faces was declared and loaded before the shot.
 		expect(capture.fonts).toBeGreaterThan(0);
@@ -146,10 +157,10 @@ describe("what one capture is", () => {
 		expect(drawn.height).toBeGreaterThan(1080);
 		const capture = await owned().rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
-		// The last card sits near the bottom of the page, so the bottom rows are
-		// not blank ground: the capture reached the end of the diagram.
+		// Every card is painted in the card fill, so the capture holds all of
+		// them and not only the ones a display would have shown.
 		const colors = pngRgbCounts(capture.png);
-		expect(colors.get("255,255,255") ?? 0).toBeGreaterThan(24 * 500);
+		expect(colors.get(rgbOf(paletteFor("light").card)) ?? 0).toBeGreaterThan(24 * 500);
 	});
 
 	test("a sequence draws through the data-flow grammar with its animation paused", async () => {

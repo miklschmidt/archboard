@@ -27,6 +27,16 @@ interface Candidate {
 
 type Interval = readonly [number, number];
 
+/**
+ * How far a label may sit inside an obstacle's clearance before it counts as
+ * meeting it. The engine spaces rows so that a label centred on a route has
+ * exactly its clearance on each side, then snaps the route to a whole unit,
+ * which leaves the label up to half a unit off that centre. Refusing the run
+ * for that half unit would reserve the label with the engine instead, and a
+ * reservation makes a layer of its own, moving every row and bending the route.
+ */
+const ROUTE_SNAP = 0.5;
+
 const DIMENSIONS = {
 	x: { cross: "y", length: "width", breadth: "height" },
 	y: { cross: "x", length: "height", breadth: "width" },
@@ -62,6 +72,11 @@ function piecesOf(edges: readonly DrawingEdge[]): RoutePiece[] {
 
 /**
  * Remove the positions where a badge would enter an obstacle's clearance.
+ *
+ * A badge is seeded exactly the room it needs beside a corridor, so the last
+ * position the run allows and the first the corridor allows can be the same
+ * number computed two ways; a blocked span that overshoots the run's end by
+ * no more than the route snap still leaves that end position.
  * @param intervals Currently available positions for the badge's leading edge.
  * @param blocked The forbidden positions along the same axis.
  * @returns The remaining disjoint intervals, in coordinate order.
@@ -71,8 +86,10 @@ function without(intervals: readonly Interval[], blocked: Interval): Interval[] 
 	return intervals.flatMap(([start, end]): Interval[] => {
 		if (high <= start || low >= end) return [[start, end]];
 		return [
-			...(low >= start ? ([[start, Math.min(low, end)]] as const) : []),
-			...(high <= end ? ([[Math.max(high, start), end]] as const) : []),
+			...(low + ROUTE_SNAP >= start
+				? ([[start, Math.max(start, Math.min(low, end))]] as const)
+				: []),
+			...(high <= end + ROUTE_SNAP ? ([[Math.min(end, Math.max(high, start)), end]] as const) : []),
 		];
 	});
 }
@@ -101,7 +118,11 @@ function candidatesOf(
 	const across = piece.box[cross] - label[breadth] / 2;
 	let intervals: Interval[] = [[start, end]];
 	for (const box of obstacles) {
-		if (across + label[breadth] <= box[cross] || across >= box[cross] + box[breadth]) continue;
+		if (
+			across + label[breadth] <= box[cross] + ROUTE_SNAP ||
+			across + ROUTE_SNAP >= box[cross] + box[breadth]
+		)
+			continue;
 		intervals = without(intervals, [box[axis] - label[length], box[axis] + box[length]]);
 	}
 	return intervals.map(([low, high]) => ({

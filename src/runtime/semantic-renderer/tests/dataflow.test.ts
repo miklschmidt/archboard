@@ -66,7 +66,7 @@ const SAMPLE: VariantContent = variant({
 					id: "s9",
 					from: "io",
 					to: "vault",
-					label: "an unusually long label for a short hop between columns",
+					label: "an unusually long label for a short hop between two columns",
 					kind: "async",
 				},
 			],
