@@ -1,11 +1,11 @@
 ---
 id: TASK-235.01
 title: Stop requiring a traffic disclaimer in S10 and the skill
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 18:51'
-updated_date: '2026-09-15 18:52'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -24,9 +24,9 @@ S10 failed 6/6 in the 2026-09-15 batch on the single feature traffic.illustrativ
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 S10 in evals/evals.json declares no expected feature that asks the answer to distinguish illustration from telemetry
-- [ ] #2 Neither SKILL.md nor the authoring reference tells an author to say traffic is illustrative when reporting it; the rule that traffic is not a measurement stays
-- [ ] #3 bun run eval:skill check passes
+- [x] #1 S10 in evals/evals.json declares no expected feature that asks the answer to distinguish illustration from telemetry
+- [x] #2 Neither SKILL.md nor the authoring reference tells an author to say traffic is illustrative when reporting it; the rule that traffic is not a measurement stays
+- [x] #3 bun run eval:skill check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -34,3 +34,15 @@ S10 failed 6/6 in the 2026-09-15 batch on the single feature traffic.illustrativ
 <!-- SECTION:PLAN:BEGIN -->
 1. Remove traffic.illustrative from S10 in evals.json. 2. Drop the say-so lines in SKILL.md Keep it true and authoring.md Relationships. 3. Run eval:skill check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Removed traffic.illustrative from S10; rewrote the traffic bullets in SKILL.md Keep it true and authoring.md Relationships to say traffic is authored intent, not measurement, without asking for a caveat sentence. bun run eval:skill check: suite ok.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+S10 no longer expects a disclaimer and the skill no longer tells authors to write one; verified by grep over the skill and evals.json and by bun run eval:skill check.
+<!-- SECTION:FINAL_SUMMARY:END -->

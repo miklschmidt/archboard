@@ -1,11 +1,11 @@
 ---
 id: TASK-235.08
 title: Colour the default kinds and teach groups and drill-down as first-class rows
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 18:52'
-updated_date: '2026-09-15 18:53'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -25,8 +25,20 @@ Across the batch groups were missed in 16 runs per arm and drillDown in 18 (base
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 DEFAULT_SEMANTIC_POLICY gives each node kind and each non-neutral relationship kind a palette colour; external and other stay neutral so an outside part reads as outside
-- [ ] #2 Existing policy, store, renderer and evaluation tests pass with the coloured defaults
-- [ ] #3 The create and edit workflows tell the author to check config.yaml groups for the concerns the parts belong to and to list the vault boards for a drill-down target before writing, and the catalogue rows for groups and drillDown say so
-- [ ] #4 The skill says colour is a property of a kind in config.yaml, never of a board or a group
+- [x] #1 DEFAULT_SEMANTIC_POLICY gives each node kind and each non-neutral relationship kind a palette colour; external and other stay neutral so an outside part reads as outside
+- [x] #2 Existing policy, store, renderer and evaluation tests pass with the coloured defaults
+- [x] #3 The create and edit workflows tell the author to check config.yaml groups for the concerns the parts belong to and to list the vault boards for a drill-down target before writing, and the catalogue rows for groups and drillDown say so
+- [x] #4 The skill says colour is a property of a kind in config.yaml, never of a board or a group
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+DEFAULT_SEMANTIC_POLICY colours 13 node kinds and 6 relationship kinds; external, other, call and dependency stay neutral. bun test over semantic-policy, semantic-board-store, semantic-renderer, skill-evaluation and vault-diagnostics: 400 pass. create-architecture.md step 1 reads groups and lists boards before the payload; catalogue rows say so; authoring.md says colour is a kind property in config.yaml, never a board or group property. INSTALL.md notes the coloured defaults.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fresh vaults are no longer gray and the workflows walk authors to groups and drill-down; verified by the module tests and grep.
+<!-- SECTION:FINAL_SUMMARY:END -->

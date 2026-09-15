@@ -1,11 +1,11 @@
 ---
 id: TASK-235.06
 title: Catch a relationship removed and re-added under a new id
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 18:51'
-updated_date: '2026-09-15 18:53'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -24,7 +24,19 @@ Candidate S05 rep 3 sent removeEdges for all seven seeded edges and re-added equ
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ids-stable also fails when a relationship present before the run is gone by id and a relationship with the same endpoints and kind exists after under a new id with at most one other authored property changed
-- [ ] #2 A focused guardrail test covers the re-added edge, a genuine replacement (two or more properties changed) and an untouched edge
-- [ ] #3 SKILL.md says that changing a property of an existing relationship means restating it with its id, and that a restatement without the id is a new relationship
+- [x] #1 ids-stable also fails when a relationship present before the run is gone by id and a relationship with the same endpoints and kind exists after under a new id with at most one other authored property changed
+- [x] #2 A focused guardrail test covers the re-added edge, a genuine replacement (two or more properties changed) and an untouched edge
+- [x] #3 SKILL.md says that changing a property of an existing relationship means restating it with its id, and that a restatement without the id is a new relationship
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+ids-stable compares relationships by endpoint names and kind and flags a removed-and-re-added one with at most one other authored property changed (label, description, emphasis, effective traffic). Tests in outcomes-family.test.ts cover the re-added edge, a two-property replacement and an untouched edge. SKILL.md References and authoring.md Relationships say a relationship restated without its id is new. A CLI-time warning is TASK-235.07, not started.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The guardrail catches the S05 rep 3 identity break and the skill says how to change a relationship property; verified by the guardrail tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
