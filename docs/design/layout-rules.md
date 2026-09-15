@@ -284,3 +284,14 @@ predecessor turns it off, since its cards are pinned where the reader last
 saw them. The general crossing invariant in `tests/crossing-rounding.test.ts`
 exposed a bridge defect on the way: a route whose end carried floating noise
 (575.0000000000001 against 575) was never a straight run and never bridged.
+
+## 8. A trunk for hubs (2026-09-15, TASK-239, not landed)
+
+`mergeEdges` stays a no-op even with a hub's skips attached node to node,
+since the engine still gives each its own port. Giving every hub skip one
+shared south port instead shortens boards 1 and 2 (4.96 / 5.75 to
+4.61 / 5.14 Mpx, bends 7.5 / 8.0 to 5.9 / 6.4 per edge) but pushes board 3,
+the six-skip hub, to 7.27 Mpx with cells touched down to 17 percent: six
+routes through one port need the width back. A trunk would have to open into
+separate ports below the card, which is the engine's hyperedge routing and
+not exposed to a layered graph. Left open.
