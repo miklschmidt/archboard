@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-13 23:15'
-updated_date: '2026-09-15 12:17'
+updated_date: '2026-09-15 19:30'
 labels: []
 dependencies:
   - TASK-207
@@ -64,7 +64,7 @@ The maintained evaluation instructions must specify one gpt-6-astra session at h
 - [x] #1 SKILL.md explains what archboard is useful for, its actual architecture and sequence diagram types, when to use each, and a concise frontmatter description that triggers relevant board work.
 - [x] #2 Step-by-step workflows explicitly cover creating architecture and sequence diagrams, editing existing boards, and branching/comparing proposals. Primary paths require SKILL.md and at most one targeted reference for guidance, with discovery calls separated from necessary state reads, writes and verification.
 - [x] #3 Conditional references cover specialized authoring, linking/binding, views/walkthroughs, adoption, grammar and schema details; main-skill pointers say when to read them. Installation and vault guidance link authoritative repo documents and directly link the full generated semantic and config JSON Schemas. Links work in the installed package.
-- [ ] #4 All existing material dos/donts and the guardrails recorded in this task are preserved in the appropriate workflow/reference. A documented preservation assessment and behavioral eval evidence establish this without tests that match prose or headings.
+- [x] #4 All existing material dos/donts and the guardrails recorded in this task are preserved in the appropriate workflow/reference. A documented preservation assessment and behavioral eval evidence establish this without tests that match prose or headings.
 - [x] #5 Unnecessary help/list/config/check discovery is removed where existing context suffices, while required configuration knowledge, optimistic concurrency, identity, claims, batching and semantic/visual verification remain correct.
 - [ ] #6 Using TASK-209, baseline and candidate each receive three repetitions per scenario in parallel. Candidate primary workflows successfully complete without guardrail violations, show no material quality regression under the blinded Astra rubric, and reduce median total author tokens. Reports include scenario-level outcomes, failures, discovery/operational calls and separately reported broad exploration/setup costs; any percentage target is based on measured baseline.
 - [x] #7 The implementation remains limited to skill/reference/schema distribution and evaluation work. Concrete new CLI improvements are recorded as subtasks of TASK-208, not implemented here or duplicated from its existing scope.
@@ -114,6 +114,8 @@ Review: the preservation assessment and corrected workflow documentation are com
 Review integration gate: bun run check passed after correcting standalone sequence creation, source-grounded JSON-provider and Flask CLI recipes, adoption syntax, references and group Details guidance. Canonical skills are synchronized. AC 4 behavioral evidence and AC 6 measured comparison remain unchecked and reserved for a human; no author evaluation or grader was run.
 
 Batch 2026-09-15T03-21-37-188Z: all three candidate S07 runs drew ScriptInfo's two-candidate import loop as one self step with a note and no repeat, following the SKILL.md wording that a data-dependent loop is a note; the baseline skill, which says nothing about repeat, got it right once. SKILL.md now says a loop over a list the source fixes (two default module names) is a repeat of that count, in both the evidence step and the sequence procedure. Skills re-synced.
+
+AC 4: docs/design/skill-evals/preservation-assessment.md maps every guardrail to its home and evidence owner (updated for the TASK-235.09 recipe split); the 2026-09-15 batch shows zero guardrail violations and zero direct writes in either arm, and the harness guardrails plus scenario checks own the evidence. AC 6 waits for the human-run rerun of both arms on the TASK-235 inputs.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
