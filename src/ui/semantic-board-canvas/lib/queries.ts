@@ -97,6 +97,13 @@ function semanticBoardListQuery() {
  *
  * A network reconnect is the one exception: while the tab was offline a change
  * could have been announced to nobody, so the picture is read again then.
+ *
+ * While another picture of the same board is being drawn — another variant,
+ * or the same one through another view — the last picture stays as the
+ * placeholder, so the pane can carry it into the next rather than dropping to
+ * a skeleton between the two. Another board's picture is not kept: there is
+ * nothing of it to carry across, and a pane must not show one board under
+ * another's name for even a request's length.
  * @param request The board, the variant and the theme.
  * @returns The query options.
  */
@@ -109,6 +116,18 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
 		 * @returns The drawing, or the news that there is nothing to draw.
 		 */
 		queryFn: (context) => fetchSemanticRender(request, context.signal),
+		/**
+		 * The last picture of this board, while this one is on its way.
+		 *
+		 * Decided by the board the last query asked for, spelled exactly as this
+		 * one asks: a reply names the board canonically and an address does not,
+		 * and the two must not be compared.
+		 * @param previous What the last query held, if anything.
+		 * @param previousQuery The query that held it.
+		 * @returns That, when it was of this board.
+		 */
+		placeholderData: (previous, previousQuery) =>
+			previousQuery?.queryKey[2] === request.board ? previous : undefined,
 		staleTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: "always" as const,
