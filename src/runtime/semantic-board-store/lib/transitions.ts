@@ -34,6 +34,7 @@ import { restorableNodes, settleByRestoring } from "@/runtime/semantic-board-sto
 import { settleVariant } from "@/runtime/semantic-board-store/lib/settle";
 import { idsInUse, mintInto, openBatch } from "@/runtime/semantic-board-store/lib/batch";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
+import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 
 /**
  * The name a board's first variant carries when the caller names none.
@@ -57,6 +58,8 @@ type TransitionResult =
 			 * reading the whole board back and working it out.
 			 */
 			readonly descendants?: readonly DescendantOutcome[];
+			/** What the command did that the answer should say, though the write lands. */
+			readonly notices?: readonly WriteNotice[];
 	  }
 	| SemanticRefusal;
 
@@ -294,6 +297,7 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 					updatedAt: at,
 				},
 				descendants: carried.descendants,
+				notices: content.notices,
 			};
 		},
 	};

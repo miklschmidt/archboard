@@ -49,10 +49,20 @@ import {
 } from "@/runtime/semantic-board-store/lib/batch";
 import { editViews } from "@/runtime/semantic-board-store/lib/edit-views";
 import { editWalkthroughs } from "@/runtime/semantic-board-store/lib/edit-walkthroughs";
+import {
+	replacedRelationships,
+	type WriteNotice,
+} from "@/runtime/semantic-board-store/lib/replaced-relationships";
 
 /** A content value, or why the edit could not produce one. */
 type ContentEdit =
-	| { readonly ok: true; readonly content: VariantContent; readonly views: SemanticView[] }
+	| {
+			readonly ok: true;
+			readonly content: VariantContent;
+			readonly views: SemanticView[];
+			/** What the batch did that the answer should say, though the write lands. */
+			readonly notices: readonly WriteNotice[];
+	  }
 	| SemanticRefusal;
 
 /** What one batch takes off the board, resolved against the board as it stood. */
@@ -430,7 +440,16 @@ function editContent(
 		return nodes;
 	}
 	const edges = placeStatedEdges(kept.edges, nodes.nodes, edit.edges, batch);
-	return edges.ok ? withViews(before, board, edit, nodes.nodes, edges.edges, batch) : edges;
+	if (!edges.ok) {
+		return edges;
+	}
+	const placed = withViews(before, board, edit, nodes.nodes, edges.edges, batch);
+	return placed.ok
+		? {
+				...placed,
+				notices: replacedRelationships(before.edges, planned.removals.edges, edges.edges),
+			}
+		: placed;
 }
 
 /**
@@ -514,6 +533,7 @@ function withViews(
 	return {
 		ok: true,
 		views: rest.views,
+		notices: [],
 		content: {
 			nodes: [...nodes],
 			edges: [...edges],

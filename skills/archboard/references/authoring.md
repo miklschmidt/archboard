@@ -185,5 +185,9 @@ unresolved and why, rather than approximate it another way.
 | version moved (exit 5)               | Somebody wrote since you read; `semantic show` again and redo the change on what is there.                                                                                                                                   |
 | held or claim revoked (exit 5)       | Another writer holds the board, or a person released your claim; stop and say so.                                                                                                                                            |
 
-A `warnings` list on a successful answer means the board references vocabulary
-the configuration no longer defines; `archboard check` names each reference.
+A `warnings` list on a successful answer says what the write did that you
+should know: `UNKNOWN_VOCABULARY` means the board references vocabulary the
+configuration no longer defines (`archboard check` names each reference), and
+`RELATIONSHIP_REPLACED` means the batch removed a relationship and stated one
+with the same ends and kind and at most one other property changed, which is
+the same relationship under a new id; restate it with its `id` next time.

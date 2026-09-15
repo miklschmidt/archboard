@@ -50,6 +50,8 @@ import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
 import { edgeIdentityRefusal } from "@/runtime/semantic-board-store/lib/edge-identity";
+import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
+import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import { newVocabularyProblem } from "@/runtime/semantic-board-store/lib/vocabulary";
 
@@ -114,6 +116,12 @@ type SemanticWriteResult =
 			 * from one that landed and left proposals needing somebody.
 			 */
 			readonly descendants: readonly DescendantOutcome[];
+			/**
+			 * What the write did that the caller should say alongside the board it
+			 * read back: a relationship removed and stated again as a new one, for
+			 * instance. Empty for a write that did nothing worth a warning.
+			 */
+			readonly warnings: readonly VaultDiagnostic[];
 			/**
 			 * The identity this write held the board under.
 			 *
@@ -322,18 +330,33 @@ function missingVersionRefusal(
  * @param location Where the board lives.
  * @param board The board as it should now be.
  * @param previousVersion The version it was at before this write.
- * @param descendants What every draft under the change did about it.
+ * @param candidate What the command reported beside the board: every draft's answer and the notices the write answers with.
+ * @param candidate.descendants What every draft under the change did about it.
+ * @param candidate.notices What the command did that the answer should say.
  * @returns What the write did.
  */
 function persisted(
 	location: SemanticBoardLocation,
 	board: SemanticBoard,
 	previousVersion: number | null,
-	descendants: readonly DescendantOutcome[],
+	candidate: {
+		readonly descendants?: readonly DescendantOutcome[];
+		readonly notices?: readonly WriteNotice[];
+	},
 ): LeasedWriteResult {
+	const descendants = candidate.descendants ?? [];
+	const notices = candidate.notices ?? [];
 	fs.mkdirSync(path.dirname(location.file), { recursive: true });
 	writeFileAtomic(location.file, serializeBoard(board));
-	return { outcome: "applied", board, location, previousVersion, descendants };
+	const warnings = notices.map((notice) => ({
+		severity: "warning" as const,
+		code: notice.code,
+		file: location.file,
+		path: notice.path,
+		board: board.name,
+		message: notice.message,
+	}));
+	return { outcome: "applied", board, location, previousVersion, descendants, warnings };
 }
 
 /**
@@ -377,7 +400,7 @@ function applyUnderLease(
 	if (!("board" in checked)) {
 		return { ...checked, version: before.version };
 	}
-	return persisted(location, checked.board, before.version, candidate.descendants ?? []);
+	return persisted(location, checked.board, before.version, candidate);
 }
 
 /**
