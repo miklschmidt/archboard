@@ -62,6 +62,26 @@ interface ArchitectureDrawing {
 	readonly edges: readonly DrawingEdge[];
 }
 
+/** A raised arc where one route crosses others, on the route that carries it. */
+interface DrawingBridge {
+	readonly edgeId: string;
+	readonly under: readonly string[];
+	readonly curve: Curve;
+}
+
+/**
+ * The drawing as the painter draws it: the routes with their bridges spliced
+ * in, beside the un-bridged routes a successor seeds from. The layout owner
+ * returns both, so painter, atlas and interaction share one geometry and a
+ * predecessor never seeds a hump.
+ */
+interface PaintedDrawing extends ArchitectureDrawing {
+	readonly bridged: {
+		readonly edges: readonly DrawingEdge[];
+		readonly bridges: readonly DrawingBridge[];
+	};
+}
+
 export type {
 	TextRun,
 	MeasuredNode,
@@ -70,4 +90,6 @@ export type {
 	DrawingNode,
 	DrawingEdge,
 	ArchitectureDrawing,
+	DrawingBridge,
+	PaintedDrawing,
 };
