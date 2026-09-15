@@ -5,7 +5,7 @@
 //
 //   bun run eval:skill run   [--arm baseline|candidate] [--scenario S01,S02] [--repetitions 3] [--concurrency 3] [--resume <batch-dir>]
 //   bun run eval:skill grade <batch-dir> --grader codex|claude [--chunk 6] [--codex <exe>] [--claude <exe>]
-//   bun run eval:skill report <batch-dir>
+//   bun run eval:skill report <batch-dir>     (grade writes the report too; this re-reports without grading)
 //   bun run eval:skill check            (validates the canonical inputs only; no model)
 //   bun run eval:skill pin              (rewrites the version pins from the codex and claude on PATH; no model)
 
@@ -280,6 +280,10 @@ program
 		console.log(
 			`${options.grader} grading session ${graded.session.threadId ?? "(none)"}: ${graded.session.calls.length} calls; usage ${JSON.stringify(graded.usage)}`,
 		);
+		// The report costs no model call, so a graded batch is reported at once;
+		// `report` remains for reporting again without grading.
+		const written = writeReport(batchRoot, loaded);
+		console.log(`wrote ${written.markdown} and ${written.json}`);
 	});
 
 program
