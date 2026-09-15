@@ -82,9 +82,15 @@ high-degree node treatment (off), splines (unused).
 
 11. When any label is measured, `solveGraph` raises all three between-layer
     spacings to fit the **tallest label on the page**: one long label loosens
-    every layer.
-12. `TAIL_LAYER` and `inline` are dead settings: labels are stripped from every
-    edge ELK sees unless a retry reserved that label (`graphForLabels`).
+    every layer. Measured on 2026-09-15 (TASK-240): scoping that room to the
+    labels ELK itself places starves the run pass, every label then has to be
+    reserved one re-solve at a time, and the pages grow by a third to a
+    half (7.06 / 8.32 / 8.58 Mpx). The room is what gives the runs their
+    length; it stays, and it is per layer because the engine's spacing model
+    is.
+12. `TAIL_LAYER` and `inline` apply only to the labels a retry reserved
+    (`graphForLabels` strips the rest), which is how a reserved label lands
+    inline on its own edge rather than beside it; they are not dead.
 
 ### D. After ELK (`compound.ts`, `label-runs.ts`, `curves.ts`, `crossings.ts`)
 
