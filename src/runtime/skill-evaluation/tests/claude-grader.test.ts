@@ -80,7 +80,11 @@ test("the command line pins the model, effort, tools, empty setting sources, str
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-claude-argv-"));
 	try {
 		const schema = path.join(root, "schema.json");
-		fs.writeFileSync(schema, '{"type":"object"}\n');
+		// Claude's validator refuses the `$schema` draft key zod emits; it is dropped, nothing else.
+		fs.writeFileSync(
+			schema,
+			'{\n\t"$schema": "https://json-schema.org/draft/2020-12/schema",\n\t"type": "object"\n}\n',
+		);
 		const settings = loaded.graders.claude;
 		const first = claudeGraderArgv(
 			settings,

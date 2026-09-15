@@ -28,6 +28,17 @@ function flagValue(flag: string): string | null {
 	return index === -1 ? null : (argv[index + 1] ?? null);
 }
 
+if (mode === "refuse-schema") {
+	process.stderr.write("Error: --json-schema is not a valid JSON Schema\n");
+	process.exit(1);
+}
+if (JSON.parse(flagValue("--json-schema") ?? "{}")["$schema"] !== undefined) {
+	process.stderr.write(
+		"Error: --json-schema is not a valid JSON Schema: no schema with key or ref\n",
+	);
+	process.exit(1);
+}
+
 const sessionId = flagValue("--session-id") ?? flagValue("--resume") ?? "no-session";
 const prompt = argv.at(-1) ?? "";
 const images = [
