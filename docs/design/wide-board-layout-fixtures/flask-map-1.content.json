@@ -1,0 +1,371 @@
+{
+	"nodes": [
+		{
+			"id": "l6agbrUH",
+			"name": "Sans-IO core",
+			"kind": "module",
+			"responsibility": "Defines application setup independent of HTTP serving, including configuration, registries, hooks, and extension points.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/app.py"
+			}
+		},
+		{
+			"id": "5qnKoIYp",
+			"name": "WSGI application",
+			"kind": "app",
+			"responsibility": "Receives a WSGI environment, runs Flask's request lifecycle, produces the response, and tears contexts down.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/app.py"
+			}
+		},
+		{
+			"id": "ljm7t9IE",
+			"name": "Application contexts",
+			"kind": "module",
+			"responsibility": "Creates, pushes, matches, and tears down app and request context state around request execution.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/ctx.py"
+			}
+		},
+		{
+			"id": "0GAxZInK",
+			"name": "Context globals",
+			"kind": "module",
+			"responsibility": "Exposes current_app, request, session, and g through context-local variables and proxies.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/globals.py"
+			}
+		},
+		{
+			"id": "1EHE7RFb",
+			"name": "Routing",
+			"kind": "module",
+			"responsibility": "Stores URL rules and view mappings, binds them to request environments, and supplies route matches.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/app.py"
+			}
+		},
+		{
+			"id": "8scuYzyS",
+			"name": "Blueprints",
+			"kind": "module",
+			"responsibility": "Records routes and callbacks without an app, then replays them into an application during registration.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/blueprints.py"
+			}
+		},
+		{
+			"id": "fEIFWA4S",
+			"name": "CLI",
+			"kind": "module",
+			"responsibility": "Defines the flask command group, loads an application, and starts the development server and app commands.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/cli.py"
+			}
+		},
+		{
+			"id": "p3GxFF45",
+			"name": "Sessions",
+			"kind": "module",
+			"responsibility": "Provides session interfaces and the default signed-cookie session implementation for opening and saving session state.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sessions.py"
+			}
+		},
+		{
+			"id": "CFllWz1p",
+			"name": "Templating",
+			"kind": "module",
+			"responsibility": "Loads and renders templates, injects Flask context values, and emits template-rendering signals.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/templating.py"
+			}
+		},
+		{
+			"id": "D5LHTNOa",
+			"name": "JSON",
+			"kind": "module",
+			"responsibility": "Serializes and deserializes application data and builds application JSON responses through a provider.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/json/provider.py"
+			}
+		},
+		{
+			"id": "ZZOuVFH6",
+			"name": "Signals",
+			"kind": "module",
+			"responsibility": "Defines the event signals for request, app-context, and template lifecycle observers.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/signals.py"
+			}
+		},
+		{
+			"id": "6OjljH6z",
+			"name": "Testing",
+			"kind": "module",
+			"responsibility": "Builds Flask-aware test environments and clients, including preserved contexts and CLI runners.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/testing.py"
+			}
+		},
+		{
+			"id": "NCimGa0G",
+			"name": "Werkzeug",
+			"kind": "external",
+			"responsibility": "Provides the WSGI, request/response, routing, utility, serving, and testing primitives Flask builds on."
+		},
+		{
+			"id": "OjlS7Ytz",
+			"name": "Jinja",
+			"kind": "external",
+			"responsibility": "Provides the template environment, loaders, template selection, and rendering engine."
+		},
+		{
+			"id": "PT0kUBbi",
+			"name": "Click",
+			"kind": "external",
+			"responsibility": "Provides the command, option, group, context, and CLI runner primitives."
+		}
+	],
+	"edges": [
+		{
+			"id": "55mf9WGH",
+			"from": "5qnKoIYp",
+			"to": "l6agbrUH",
+			"kind": "dependency",
+			"label": "extends App",
+			"description": "Flask in app.py subclasses App from sansio.app.py.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "gxzqONNX",
+			"from": "5qnKoIYp",
+			"to": "ljm7t9IE",
+			"kind": "call",
+			"label": "push and pop request context",
+			"description": "wsgi_app creates request_context, calls ctx.push before dispatch, and ctx.pop in finally.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "F6gryjFj",
+			"from": "5qnKoIYp",
+			"to": "1EHE7RFb",
+			"kind": "call",
+			"label": "dispatch matched view",
+			"description": "dispatch_request reads request.url_rule and invokes the mapped view; create_url_adapter binds the URL map.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "tNZhS0KO",
+			"from": "5qnKoIYp",
+			"to": "p3GxFF45",
+			"kind": "call",
+			"label": "save session with response",
+			"description": "process_response calls session_interface.save_session for the request context session.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "jYS9Us80",
+			"from": "5qnKoIYp",
+			"to": "D5LHTNOa",
+			"kind": "call",
+			"label": "create JSON response",
+			"description": "make_response uses the app JSON provider for dict/list return values and JSON responses.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "QXIcYrJ9",
+			"from": "5qnKoIYp",
+			"to": "ZZOuVFH6",
+			"kind": "event",
+			"label": "request lifecycle events",
+			"description": "full_dispatch_request and finalize_request send request_started and request_finished; teardown sends request_tearing_down.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "pgt2ALOC",
+			"from": "l6agbrUH",
+			"to": "1EHE7RFb",
+			"kind": "call",
+			"label": "register URL rules",
+			"description": "App.add_url_rule constructs a Rule and adds it to self.url_map.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "M6EcjlNW",
+			"from": "l6agbrUH",
+			"to": "D5LHTNOa",
+			"kind": "call",
+			"label": "instantiate provider",
+			"description": "App.__init__ creates self.json from json_provider_class.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "al3xtXcT",
+			"from": "l6agbrUH",
+			"to": "CFllWz1p",
+			"kind": "call",
+			"label": "create global loader",
+			"description": "create_global_jinja_loader returns a DispatchingJinjaLoader for the app and its blueprints.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HRUkxspW",
+			"from": "8scuYzyS",
+			"to": "1EHE7RFb",
+			"kind": "call",
+			"label": "register deferred routes",
+			"description": "BlueprintSetupState.add_url_rule forwards a blueprint route to app.add_url_rule during Blueprint.register.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "3LYSMVgq",
+			"from": "1EHE7RFb",
+			"to": "NCimGa0G",
+			"kind": "call",
+			"label": "Map, Rule, and adapter",
+			"description": "Flask uses Werkzeug Map and Rule and calls bind_to_environ for request URL matching.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aCwcpFx7",
+			"from": "5qnKoIYp",
+			"to": "NCimGa0G",
+			"kind": "dependency",
+			"label": "WSGI request and response primitives",
+			"description": "The Flask app uses Werkzeug request/response wrappers, HTTP exceptions, headers, and WSGI response behavior.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "26DUE67y",
+			"from": "ljm7t9IE",
+			"to": "0GAxZInK",
+			"kind": "data",
+			"label": "bind context locals",
+			"description": "AppContext.push and RequestContext.push set the _cv_app and _cv_request context variables.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "o0T6KDZ7",
+			"from": "ljm7t9IE",
+			"to": "p3GxFF45",
+			"kind": "call",
+			"label": "open session",
+			"description": "RequestContext.push calls session_interface.open_session after binding the request context.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "mVlpt5hA",
+			"from": "ljm7t9IE",
+			"to": "ZZOuVFH6",
+			"kind": "event",
+			"label": "app-context events",
+			"description": "AppContext.push and AppContext.pop send appcontext_pushed and appcontext_popped.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "gyoQRwZa",
+			"from": "0GAxZInK",
+			"to": "NCimGa0G",
+			"kind": "dependency",
+			"label": "LocalProxy",
+			"description": "globals.py implements Flask proxies with werkzeug.local.LocalProxy.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "zzcFSrwa",
+			"from": "CFllWz1p",
+			"to": "0GAxZInK",
+			"kind": "data",
+			"label": "read current context values",
+			"description": "render_template resolves current_app and template context processors expose request, session, and g.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "UqZvc2N2",
+			"from": "CFllWz1p",
+			"to": "OjlS7Ytz",
+			"kind": "call",
+			"label": "select and render template",
+			"description": "render_template calls app.jinja_env.get_or_select_template and _render calls template.render.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "MajkIdve",
+			"from": "CFllWz1p",
+			"to": "ZZOuVFH6",
+			"kind": "event",
+			"label": "template events",
+			"description": "_render sends before_render_template before rendering and template_rendered afterward.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "wqoft1FX",
+			"from": "D5LHTNOa",
+			"to": "0GAxZInK",
+			"kind": "data",
+			"label": "resolve current app provider",
+			"description": "The public JSON helpers use current_app.json when an application context is active.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "PnHbVS8y",
+			"from": "fEIFWA4S",
+			"to": "PT0kUBbi",
+			"kind": "call",
+			"label": "commands and options",
+			"description": "FlaskGroup and AppGroup subclass click groups and define command and option callbacks.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "glQmGtpa",
+			"from": "fEIFWA4S",
+			"to": "NCimGa0G",
+			"kind": "call",
+			"label": "start development server",
+			"description": "run_command passes the loaded app to werkzeug.run_simple.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "D1bvnMid",
+			"from": "fEIFWA4S",
+			"to": "5qnKoIYp",
+			"kind": "data",
+			"label": "load Flask app",
+			"description": "ScriptInfo.load_app locates/imports the configured Flask application and returns it to run_command.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HYXrtXs7",
+			"from": "6OjljH6z",
+			"to": "5qnKoIYp",
+			"kind": "call",
+			"label": "invoke application",
+			"description": "FlaskClient.open builds a request and delegates to the underlying Werkzeug client for the application.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "KbEsKUAQ",
+			"from": "6OjljH6z",
+			"to": "NCimGa0G",
+			"kind": "call",
+			"label": "test client and environ",
+			"description": "Flask testing subclasses werkzeug.test.EnvironBuilder and Client.",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}
