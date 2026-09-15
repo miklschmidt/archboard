@@ -3,7 +3,11 @@
 TASK-211 rewrote `skills/archboard` around four common workflows. This table
 records where each material do/don't of the pre-overhaul skill (frozen under
 `baseline/archboard`) and each guardrail the task recorded now lives, and what
-evidence holds the candidate to it. Evidence owners are TASK-209 scenario
+evidence holds the candidate to it. Since TASK-235.09 the four recipes live
+under `references/`: "architecture recipe" is `create-architecture.md`,
+"sequence recipe" is `create-sequence.md`, "edit recipe" is `edit.md` and
+"propose recipe" is `propose-compare.md`; a row naming SKILL.md with a recipe
+step means that reference. Evidence owners are TASK-209 scenario
 checks (`evals/evals.json`), harness guardrails, the grader's
 per-feature verdicts, or an existing fast test.
 
