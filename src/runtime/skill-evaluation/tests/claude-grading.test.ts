@@ -62,6 +62,7 @@ function batch(mode = "grade", version = loaded.graders.claude.version) {
 			scenarios: ["S02"],
 			repetitions: 2,
 			codexExecutable: "codex",
+			pins: loaded.pins,
 		}),
 	);
 	RUNS.forEach((run, index) => {
