@@ -2,7 +2,7 @@
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
 import ELK from "elkjs/lib/elk-api.js";
 import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/lib/elk-api";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
 	PaintedDrawing,
@@ -98,13 +98,7 @@ async function solveGraph(graph: ElkNode, measured: MeasuredArchitecture): Promi
 		const height = Math.max(0, ...[...measured.labels.values()].map((label) => label.height));
 		const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 		const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
-		// The engine's post-compaction refuses a hierarchy ("invalid hitboxes for
-		// scanline constraint calculation"), so a board with a frame is laid out
-		// without it and a flat board is pulled together.
-		const hierarchical = (graph.children ?? []).some((node) => (node.children?.length ?? 0) > 0);
-		const options: LayoutOptions = hierarchical
-			? { ...COMPOUND_OPTIONS, "elk.layered.compaction.postCompaction.strategy": "NONE" }
-			: COMPOUND_OPTIONS;
+		const options: LayoutOptions = COMPOUND_OPTIONS;
 		return await owner.engine.layout(graph, {
 			layoutOptions:
 				height === 0
@@ -271,25 +265,91 @@ function drawingLabel(
 }
 
 /**
+ * Whether one node is inside another, at any depth.
+ * @param inner The part.
+ * @param outer The frame.
+ * @param content The content holding the parents.
+ * @returns True when outer is an ancestor of inner.
+ */
+function insideOf(inner: string, outer: string, content: VariantContent): boolean {
+	let at = content.nodes.find((node) => node.id === inner)?.parent;
+	while (at !== undefined) {
+		if (at === outer) return true;
+		at = content.nodes.find((node) => node.id === at)?.parent;
+	}
+	return false;
+}
+
+/**
+ * A relationship a frame makes to a part inside it leaves the frame's title
+ * band, not its outer top edge: the engine attaches it to the frame's top
+ * face, and read from there the line seems to arrive from outside the frame.
+ * The first run is vertical and inside the frame, so its start moves down to
+ * the bottom of the title.
+ * @param edge The relationship.
+ * @param points Its route as the engine solved it.
+ * @param content The content, for containment.
+ * @param nodes The placed cards and frames.
+ * @returns The route, its start moved when the frame is its source.
+ */
+function leaveFromTitle(
+	edge: SemanticEdge,
+	points: readonly Point[],
+	content: VariantContent,
+	nodes: readonly DrawingNode[],
+): Point[] {
+	const frame = holdingFrame(edge, content, nodes);
+	const [start, next] = points;
+	if (frame === undefined || start === undefined || next === undefined) return [...points];
+	const title = frame.box.y + frame.measured.headerHeight;
+	const downFromTop = [start.x === next.x, start.y <= title, next.y > title].every(Boolean);
+	return downFromTop ? [{ x: start.x, y: title }, ...points.slice(1)] : [...points];
+}
+
+/**
+ * The frame a relationship leaves for a part inside it, when that is what it is.
+ * @param edge The relationship.
+ * @param content The content, for containment.
+ * @param nodes The placed cards and frames.
+ * @returns The frame, or undefined for any other relationship.
+ */
+function holdingFrame(
+	edge: SemanticEdge,
+	content: VariantContent,
+	nodes: readonly DrawingNode[],
+): DrawingNode | undefined {
+	const frame = nodes.find((node) => node.measured.node.id === edge.from);
+	if (frame === undefined || frame.measured.headerHeight === 0) return undefined;
+	return insideOf(edge.to, edge.from, content) ? frame : undefined;
+}
+
+/**
  * Match final route and label geometry to every relationship in the view.
  * @param content The semantic connections in drawing order.
  * @param laidOut The engine's complete graph.
  * @param measured Text measurement for the optional label.
+ * @param nodes The placed cards and frames, for a frame's own departures.
  * @returns Every drawn edge; missing routes are errors, never silent omissions.
  */
 function drawingEdges(
 	content: VariantContent,
 	laidOut: ElkNode,
 	measured: MeasuredArchitecture,
+	nodes: readonly DrawingNode[],
 ): DrawingEdge[] {
 	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
 	const routes = new Map(
 		content.edges.map((edge) => [
 			edge.id,
-			simplify(
-				(laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? []).flatMap(
-					pointsOf,
+			leaveFromTitle(
+				edge,
+				simplify(
+					(laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? []).flatMap(
+						pointsOf,
+					),
 				),
+				content,
+				nodes,
 			),
 		]),
 	);
@@ -379,7 +439,7 @@ async function settleLabels(
 			height: extent.height,
 			cards: nodes.filter((node) => node.measured.headerHeight === 0),
 			containers: nodes.filter((node) => node.measured.headerHeight > 0),
-			edges: drawingEdges(content, laidOut, measured),
+			edges: drawingEdges(content, laidOut, measured, nodes),
 		},
 		measured.labels,
 		predecessor,

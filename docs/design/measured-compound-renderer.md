@@ -22,9 +22,11 @@ columns fit, which is what keeps a hub from fanning lanes down the margin
 ([layout-rules.md](layout-rules.md)). Under a predecessor the cards are
 pinned, so a new skip takes the flank there, or the target's top when the
 predecessor drawing shows the target left of the source. A connection between a frame and a part inside it is the frame's own:
-it leaves the frame's top face down into the part, or the part's bottom face
-down onto the frame's bottom, never the frame's outer flank (the 2026-09-15
-evaluation batch drew a frame's call into its child from the page margin). The compound layout owner gives ELK measured room between cards and route
+it leaves the bottom of the frame's title band down into the part, or the
+part's bottom face down onto the frame's bottom, never the frame's outer
+flank or its outer top edge (the 2026-09-15 evaluation batch drew a frame's
+call into its child from the page margin, and a line from the outer top edge
+reads as arriving from outside the frame). The compound layout owner gives ELK measured room between cards and route
 tracks, then places labels on clear horizontal or vertical runs. Labels do not
 start with a reserved vertical passage that forces extra bends.
 
