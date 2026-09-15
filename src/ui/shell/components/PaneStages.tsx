@@ -92,7 +92,7 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 			ref={attachStage}
 			data-slot="pane-stages"
 			data-presenting={presented ? "" : undefined}
-			className="bg-background flex min-h-0 min-w-0 flex-1 flex-col"
+			className="bg-sidebar flex min-h-0 min-w-0 flex-1 flex-col"
 		>
 			<PresentationChrome
 				presentation={presentation}

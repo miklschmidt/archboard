@@ -273,7 +273,7 @@ function Header(props: HeaderProps): JSX.Element {
 	const { actions } = props;
 	const summary = summarisePane(props.pane);
 	return (
-		<header className="border-border bg-background flex h-14 min-w-0 shrink-0 items-stretch overflow-hidden border-b">
+		<header className="border-border bg-sidebar flex h-14 min-w-0 shrink-0 items-stretch overflow-hidden border-b">
 			{/* The rule is this section's own right border, exactly as the navigator
 			    draws its rule, so the two lines meet on the same pixel. */}
 			<div className="border-border flex w-(--shell-navigator-width) shrink-0 items-center justify-center border-r">

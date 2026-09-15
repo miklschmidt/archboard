@@ -164,7 +164,7 @@ function SemanticReadingBar(props: SemanticReadingBarProps): JSX.Element | null 
 	return (
 		<div
 			data-slot="semantic-reading-bar"
-			className="border-border bg-background flex shrink-0 items-center gap-1 border-b px-3 py-1.5"
+			className="border-border bg-sidebar flex shrink-0 items-center gap-1 border-b px-3 py-1.5"
 		>
 			{variants}
 			{divider(variants !== null && views !== null)}
