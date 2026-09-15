@@ -8,6 +8,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { z } from "zod";
 import {
 	parseClaudeTrace,
 	redactedClaudeStream,
@@ -20,7 +21,7 @@ import {
 	type GraderRunner,
 } from "@/runtime/skill-evaluation/lib/grader-runner";
 import type { RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
-import { runProcess } from "@/runtime/skill-evaluation/lib/process";
+import { runProcess, type ProcessResult } from "@/runtime/skill-evaluation/lib/process";
 import type { Graders } from "@/runtime/skill-evaluation/lib/suite";
 
 type ClaudeGraderSettings = Graders["claude"];
@@ -28,6 +29,19 @@ type ClaudeGraderSettings = Graders["claude"];
 /** The one fixed system prompt; the rubric and the runs are in the shared user prompt. */
 const CLAUDE_GRADER_SYSTEM_PROMPT =
 	"You are the grader of an archboard skill evaluation. You run in a read-only workspace and may read only files inside it. Do not use subagents or delegate any part of the work. Answer only through the structured output tool; write nothing else.";
+
+/**
+ * The JSON Schema as Claude's validator accepts it: without the `$schema`
+ * draft declaration, which it does not know and refuses.
+ * @param schemaFile The schema file.
+ * @returns The schema text to pass.
+ */
+function claudeSchemaText(schemaFile: string): string {
+	const { $schema: _draft, ...schema } = z
+		.record(z.string(), z.unknown())
+		.parse(JSON.parse(fs.readFileSync(schemaFile, "utf8")));
+	return JSON.stringify(schema);
+}
 
 /** Environment the operator's login may depend on; forwarded when set, never invented. */
 const FORWARDED_ENVIRONMENT = ["CLAUDE_CONFIG_DIR", "ANTHROPIC_API_KEY"] as const;
@@ -66,7 +80,7 @@ function claudeGraderArgv(
 		"--system-prompt",
 		CLAUDE_GRADER_SYSTEM_PROMPT,
 		"--json-schema",
-		fs.readFileSync(call.schemaFile, "utf8").trim(),
+		claudeSchemaText(call.schemaFile),
 		resume ? "--resume" : "--session-id",
 		sessionId,
 		call.prompt,
@@ -149,12 +163,29 @@ function outsideReads(workspace: string, trace: ClaudeTrace): string[] {
 }
 
 /**
- * Why the call failed as a grading call, beyond what the process said.
+ * A non-zero exit, with the last thing Claude printed to stderr.
+ * @param result The process outcome.
+ * @returns The failure text.
+ */
+function exitFailure(result: ProcessResult): string {
+	const last = result.stderr.trim().split("\n").at(-1) ?? "";
+	return `claude exited ${result.exitCode ?? result.signalCode}; ${last}`;
+}
+
+/**
+ * Why the call failed as a grading call: the process, the stream, or what
+ * the stream lacks.
  * @param workspace The workspace.
+ * @param result The process outcome.
  * @param trace The stream.
  * @returns The failure, or null.
  */
-function protocolFailure(workspace: string, trace: ClaudeTrace): string | null {
+function protocolFailure(
+	workspace: string,
+	result: ProcessResult,
+	trace: ClaudeTrace,
+): string | null {
+	if (result.exitCode !== 0) return exitFailure(result);
 	if (trace.failure !== null) return trace.failure;
 	const outside = outsideReads(workspace, trace);
 	if (outside.length > 0) return `the grader read outside the workspace: ${outside.join(", ")}`;
@@ -199,7 +230,7 @@ function claudeGrader(settings: ClaudeGraderSettings, executable: string): Grade
 				signal: request.signal,
 			});
 			const trace = parseClaudeTrace(result.stdout, request.workspace);
-			const failure = protocolFailure(request.workspace, trace);
+			const failure = protocolFailure(request.workspace, result, trace);
 			fs.rmSync(request.verdictFile, { force: true });
 			if (failure === null && trace.structuredOutput !== null)
 				fs.writeFileSync(request.verdictFile, `${trace.structuredOutput}\n`);

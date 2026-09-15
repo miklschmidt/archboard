@@ -174,6 +174,7 @@ test("a capture whose tile the grader never opened has no receipt, so its visual
 test.each([
 	["outside-read", "read outside the workspace"],
 	["no-output", "no structured output"],
+	["refuse-schema", "claude exited 1; Error: --json-schema is not a valid JSON Schema"],
 ])("a call in mode %s is an error, not a verdict", async (mode, reason) => {
 	const { root, options } = batch(mode);
 	const graded = await gradeBatch(options);
