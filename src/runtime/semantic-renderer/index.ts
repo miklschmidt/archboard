@@ -33,7 +33,7 @@ import type {
 import { layoutCompound } from "@/runtime/semantic-renderer/lib/layout/compound";
 import type { ArchitectureDrawing } from "@/runtime/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
-import { paletteFor } from "@/runtime/semantic-renderer/lib/theme";
+import { paletteFor, type Palette } from "@/runtime/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/runtime/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/runtime/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/runtime/semantic-renderer/lib/svg/document";
@@ -314,4 +314,6 @@ export {
 	renderArchitecture,
 	renderDataFlow,
 	renderSemanticView,
+	paletteFor,
+	type Palette,
 };
