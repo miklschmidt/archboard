@@ -16,7 +16,10 @@ for the pinned upstream patch.
 Cards have measured dimensions; frames reserve their measured header and inset
 space for children. Each connection gets distinct ports. Consecutive forward
 connections use bottom/top ports, forward skips use the left, and returns use the
-right. The compound layout owner gives ELK measured room between cards and route
+right. A connection between a frame and a part inside it is the frame's own:
+it leaves the frame's top face down into the part, or the part's bottom face
+down onto the frame's bottom, never the frame's outer flank (the 2026-09-15
+evaluation batch drew a frame's call into its child from the page margin). The compound layout owner gives ELK measured room between cards and route
 tracks, then places labels on clear horizontal or vertical runs. Labels do not
 start with a reserved vertical passage that forces extra bends.
 
@@ -74,6 +77,11 @@ card at the far side of the drawing cannot push the whole addition outward.
 A branch leaves measured room for its horizontal badges beside inherited route
 corridors; the same free-space calculation handles cards and badge clearance.
 A new leaf without its own stable anchor follows its connected new neighbor.
+A flank skip reaches a west face along the target's own row; once every card
+is seeded, a skip whose approach would run through a card in that row (a new
+card placed beside its dependencies in the row of a removed one, in the
+2026-09-15 batch) is reseated as a plain descent from the source's bottom face
+to the target's top, which the engine routes between rows.
 ELK still owns collision-free spacing, routes, and any required label reservations.
 An unchanged layout reuses its predecessor geometry exactly.
 
