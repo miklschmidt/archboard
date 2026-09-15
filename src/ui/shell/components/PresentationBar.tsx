@@ -30,7 +30,7 @@ function PresentationBar(props: PresentationBarProps): JSX.Element {
 		<div
 			data-slot="presentation-bar"
 			data-presentation={paneId}
-			className="border-border bg-background flex h-9 shrink-0 items-center gap-3 border-b px-2"
+			className="border-border bg-sidebar flex h-9 shrink-0 items-center gap-3 border-b px-2"
 		>
 			<ExitControl actions={actions} />
 			<span className="text-muted-foreground text-body">

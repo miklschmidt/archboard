@@ -131,7 +131,7 @@ function PaneBar(props: PaneBarProps): JSX.Element {
 		[actions],
 	);
 	return (
-		<div className="border-border bg-background flex h-9 shrink-0 items-stretch border-b">
+		<div className="border-border bg-sidebar flex h-9 shrink-0 items-stretch border-b">
 			<ToggleGroup
 				value={value}
 				onValueChange={handleChange}

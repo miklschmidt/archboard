@@ -217,7 +217,7 @@ const HEADER_NAME_FONT: DiagramFont = { family: "sans", weight: 500 };
 /** What a band is responsible for. */
 const HEADER_NOTE_FONT: DiagramFont = { family: "sans", weight: 400 };
 /** What a connection carries: small, technical, and on a plate. */
-const PILL_FONT: DiagramFont = { family: "mono", weight: 500 };
+const PILL_FONT: DiagramFont = { family: "sans", weight: 500 };
 /** The two kind glyphs that are drawn as characters rather than as shapes. */
 const GLYPH_FONT: DiagramFont = { family: "mono", weight: 400 };
 
