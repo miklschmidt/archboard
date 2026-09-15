@@ -1,10 +1,11 @@
 ---
 id: TASK-231
 title: 'Route a forward skip to another column as a descent, not a west-flank corridor'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-15 13:10'
-updated_date: '2026-09-15 21:21'
+updated_date: '2026-09-15 21:27'
 labels:
   - renderer
 dependencies:
@@ -30,6 +31,12 @@ docs/design/wide-board-layout.md measures the three Flask module maps in docs/de
 - [ ] #4 The three fixtures are rasterized before and after (measure.ts with PICTURES=1) and inspected side by side: the change reads better to a person, not only in the numbers, and the after pictures are attached to the task
 - [ ] #5 Bends per edge (measure.ts) do not rise by more than 10% on any fixture; a route that gains corners to save a corridor is a snake, not an improvement
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. A forward skip (rank distance > 1, not nested, no inherited faces, no containment) gets no fixed port: its ELK edge runs node to node and the router chooses the faces (docs/design/layout-rules.md recommendation 1). 2. previousSides still inherits faces for a surviving skip, so proposals keep continuity; hasTopApproach and the flank reseating lose their first-render role. 3. Re-derive the flank tests that pinned west-face skips as reader invariants (no margin corridor, no route through a card, labels on their own route); measure.ts baseline on the three fixtures is the acceptance. 4. Rasterize before and after and read them side by side.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
