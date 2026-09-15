@@ -1,6 +1,7 @@
-// Images are supplied by the harness on every grading call, including a
-// resumed call. A receipt belongs to the exact filed verdict and image bytes;
-// the grader cannot create its own proof that pictures reached it.
+// Images reach the grader on every grading call, including a resumed call:
+// attached by the harness for Codex, opened from the workspace by Claude with
+// the stream showing which. A receipt belongs to the exact filed verdict and
+// image bytes; the grader cannot create its own proof that pictures reached it.
 
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -8,6 +9,8 @@ import path from "node:path";
 import { z } from "zod";
 import { readPngDimensions } from "@/runtime/semantic-rasterizer";
 import { CAPTURE_TILE_SIDE_PX, tileRegions } from "@/runtime/skill-evaluation/lib/captures";
+import { graderLayout } from "@/runtime/skill-evaluation/lib/grader-layout";
+import type { GraderName } from "@/runtime/skill-evaluation/lib/suite";
 
 const SizeSchema = z.object({ width: z.int().positive(), height: z.int().positive() });
 const TileSchema = SizeSchema.extend({ x: z.number(), y: z.number(), file: z.string() });
@@ -145,20 +148,22 @@ function fileImageReceipt(verdictFile: string, images: RunImages | null): void {
 }
 
 /**
- * Captures verifiably supplied with this verdict, still backed by the same bytes.
+ * Captures verifiably supplied with one grader's verdict, still backed by the same bytes.
  * @param batchRoot The batch.
+ * @param grader The grader.
  * @param run The anonymous run.
  * @returns The supplied labels; missing, historical, damaged or stale evidence proves nothing.
  */
-function suppliedCaptures(batchRoot: string, run: string): string[] {
-	const verdict = path.join(batchRoot, "grader", "verdicts", `${run}.json`);
+function suppliedCaptures(batchRoot: string, grader: GraderName, run: string): string[] {
+	const layout = graderLayout(batchRoot, grader);
+	const verdict = path.join(layout.verdicts, `${run}.json`);
 	try {
 		const receipt = ReceiptSchema.parse(
 			JSON.parse(fs.readFileSync(`${verdict}.images.json`, "utf8")),
 		);
 		if (receipt.run !== run || receipt.verdictSha256 !== digest(fs.readFileSync(verdict)))
 			return [];
-		const workspace = path.join(batchRoot, "grader", "workspace");
+		const workspace = layout.workspace;
 		if (
 			receipt.images.some(
 				(image) => digest(fs.readFileSync(path.join(workspace, image.file))) !== image.sha256,

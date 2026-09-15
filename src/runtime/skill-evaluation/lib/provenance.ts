@@ -21,11 +21,13 @@ type Provenance = z.infer<typeof ProvenanceSchema>;
 
 /**
  * Hash the complete scenario inputs, including fixture bodies and the rubric.
+ * The grader runners are left out: a grader is chosen when grading runs and
+ * recorded by its session, so changing one never makes a batch un-gradable.
  * @param loaded The canonical suite.
  * @returns The content identity.
  */
 function inputDigest(loaded: LoadedSuite): string {
-	const { directory: _directory, fixtures, ...inputs } = loaded;
+	const { directory: _directory, graders: _graders, fixtures, ...inputs } = loaded;
 	return createHash("sha256")
 		.update(JSON.stringify({ ...inputs, fixtures: [...fixtures] }))
 		.digest("hex");

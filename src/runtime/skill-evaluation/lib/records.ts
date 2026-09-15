@@ -1,6 +1,6 @@
 // From a batch directory to a comparison report: each run's manifest joined
-// with the verdict the grader filed for it, then the report built and written
-// beside the batch.
+// with the verdict each grader filed for it, one report per grader that
+// graded the batch, how the graders agree, all written beside the batch.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -13,16 +13,23 @@ import {
 } from "@/runtime/skill-evaluation/lib/grader";
 import { suppliedCaptures } from "@/runtime/skill-evaluation/lib/grading-images";
 import { visualStandingOf } from "@/runtime/skill-evaluation/lib/grader";
-import { filedVerdict, graderUsage } from "@/runtime/skill-evaluation/lib/grading-run";
+import { availableGraders } from "@/runtime/skill-evaluation/lib/grader-layout";
+import {
+	filedVerdict,
+	graderIdentity,
+	graderUsage,
+} from "@/runtime/skill-evaluation/lib/grading-run";
+import { agreementOf } from "@/runtime/skill-evaluation/lib/report-agreement";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import {
 	buildReport,
-	renderReportMarkdown,
-	type Report,
+	renderBatchReportMarkdown,
+	type BatchReport,
+	type GraderReport,
 	type RunRecord,
 	type PlannedRun,
 } from "@/runtime/skill-evaluation/lib/report";
-import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
+import type { GraderName, LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
 
 const UsageSchema = z.object({
 	input: z.number(),
@@ -119,31 +126,48 @@ function gradedOf(
  * What the record says of the pictures: the captures the manifest recorded,
  * and the visual verdict as it stands against them.
  * @param batchRoot The batch.
+ * @param grader The grader whose verdict this is, or null for an ungraded record.
  * @param manifest The manifest.
  * @param verdict The filed verdict, or null.
  * @returns The two fields.
  */
 function visualOf(
 	batchRoot: string,
+	grader: GraderName | null,
 	manifest: RunManifest,
 	verdict: RunVerdict | null,
 ): Pick<RunRecord, "captures" | "visual"> {
 	const captures = manifest.captures ?? null;
-	return {
-		captures,
-		visual: visualStandingOf(captures, verdict, suppliedCaptures(batchRoot, manifest.run)),
-	};
+	const supplied = grader === null ? [] : suppliedCaptures(batchRoot, grader, manifest.run);
+	return { captures, visual: visualStandingOf(captures, verdict, supplied) };
 }
 
 /**
- * One run's record, its verdict joined in.
+ * The verdict one grader filed for a run, when a grader is asked.
+ * @param batchRoot The batch.
+ * @param grader The grader, or null.
+ * @param run The anonymous id.
+ * @returns The verdict, or null.
+ */
+function verdictFor(batchRoot: string, grader: GraderName | null, run: string): RunVerdict | null {
+	return grader === null ? null : filedVerdict(batchRoot, grader, run);
+}
+
+/**
+ * One run's record, one grader's verdict joined in.
  * @param batchRoot The batch.
  * @param loaded The suite, for the expected features.
  * @param manifest The manifest.
+ * @param grader The grader, or null for a record with no verdict.
  * @returns The record.
  */
-function recordOf(batchRoot: string, loaded: LoadedSuite, manifest: RunManifest): RunRecord {
-	const verdict = filedVerdict(batchRoot, manifest.run);
+function recordOf(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifest: RunManifest,
+	grader: GraderName | null = null,
+): RunRecord {
+	const verdict = verdictFor(batchRoot, grader, manifest.run);
 	const graded = gradedOf(loaded, manifest.scenario, verdict);
 	return {
 		run: manifest.run,
@@ -158,7 +182,7 @@ function recordOf(batchRoot: string, loaded: LoadedSuite, manifest: RunManifest)
 		commandCounts: manifest.commandCounts,
 		directWrites: manifest.directWrites ?? null,
 		exposure: manifest.exposure ?? null,
-		...visualOf(batchRoot, manifest, verdict),
+		...visualOf(batchRoot, grader, manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,
 		guardrailsPassed: manifest.guardrailsPassed,
 		verdict,
@@ -190,6 +214,53 @@ function plannedRuns(batchRoot: string, loaded: LoadedSuite): PlannedRun[] {
 }
 
 /**
+ * One grader's report over the batch.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @param manifests Every run manifest.
+ * @param planned Every planned job.
+ * @param grader The grader, or null when nothing was graded yet.
+ * @returns The report with its records.
+ */
+function graderReport(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifests: readonly RunManifest[],
+	planned: readonly PlannedRun[],
+	grader: GraderName | null,
+): GraderReport {
+	const runs = manifests.map((manifest) => recordOf(batchRoot, loaded, manifest, grader));
+	const identity = grader === null ? null : graderIdentity(batchRoot, grader);
+	const usage = grader === null ? null : graderUsage(batchRoot, grader);
+	return { grader: identity, report: buildReport(runs, usage, planned, identity), runs };
+}
+
+/**
+ * Builds the whole batch report: one per grader that graded it, and their
+ * agreement when two did. A batch nobody graded yet reports once, ungraded.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @returns The batch report.
+ */
+function buildBatchReport(batchRoot: string, loaded: LoadedSuite): BatchReport {
+	const manifests = readManifests(batchRoot);
+	const planned = plannedRuns(batchRoot, loaded);
+	const names = availableGraders(batchRoot);
+	const graders = (names.length === 0 ? [null] : names).map((name) =>
+		graderReport(batchRoot, loaded, manifests, planned, name),
+	);
+	const [first, second] = graders;
+	const agreement =
+		first?.grader != null && second?.grader != null
+			? agreementOf(
+					{ grader: first.grader.name, runs: first.runs },
+					{ grader: second.grader.name, runs: second.runs },
+				)
+			: null;
+	return { graders, agreement };
+}
+
+/**
  * Builds and writes the comparison report for a batch.
  * @param batchRoot The batch.
  * @param loaded The suite.
@@ -198,15 +269,21 @@ function plannedRuns(batchRoot: string, loaded: LoadedSuite): PlannedRun[] {
 function writeReport(
 	batchRoot: string,
 	loaded: LoadedSuite,
-): { readonly report: Report; readonly markdown: string; readonly json: string } {
+): { readonly report: BatchReport; readonly markdown: string; readonly json: string } {
 	assertBatchInputs(batchRoot, loaded);
-	const records = readManifests(batchRoot).map((manifest) => recordOf(batchRoot, loaded, manifest));
-	const report = buildReport(records, graderUsage(batchRoot), plannedRuns(batchRoot, loaded));
+	const report = buildBatchReport(batchRoot, loaded);
 	const markdown = path.join(batchRoot, "report.md");
 	const json = path.join(batchRoot, "report.json");
-	fs.writeFileSync(markdown, renderReportMarkdown(report));
-	fs.writeFileSync(json, `${JSON.stringify({ report, runs: records }, null, "\t")}\n`);
+	fs.writeFileSync(markdown, renderBatchReportMarkdown(report));
+	fs.writeFileSync(json, `${JSON.stringify(report, null, "\t")}\n`);
 	return { report, markdown, json };
 }
 
-export { RunManifestSchema, readManifests, recordOf, writeReport, type RunManifest };
+export {
+	RunManifestSchema,
+	buildBatchReport,
+	readManifests,
+	recordOf,
+	writeReport,
+	type RunManifest,
+};
