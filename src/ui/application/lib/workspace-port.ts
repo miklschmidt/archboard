@@ -7,7 +7,7 @@
 
 import { unreachableBoardsNotice } from "@/ui/application/notices";
 import { PANE_IDS, paneListOf, type PaneList } from "@/ui/application/pane-list";
-import { recordFor } from "@/ui/application/pane-records";
+import { paneReady, recordFor } from "@/ui/application/pane-records";
 import type { LiveBinding } from "@/ui/application/lib/live-binding";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { PaneReadings } from "@/ui/application/hooks/use-pane-reading";
@@ -188,8 +188,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 * @returns True once the server knows this pane.
 		 */
 		ready: (paneId: string): boolean => {
-			const { clientId, connected, registered } = recordFor(panes.records, paneId).status;
-			return connected && registered && clientId !== "";
+			return paneReady(recordFor(panes.records, paneId).status);
 		},
 		/**
 		 * Point one pane at one board.
