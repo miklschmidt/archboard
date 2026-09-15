@@ -4,6 +4,7 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "tw-animate-css";
+@import "../../shared/theme/theme.css";
 
 /* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
    class names. Every class lives under `src/ui`, one level up from here. */
@@ -149,94 +150,11 @@
 	background-position: 4px 4px;
 }
 
-/* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
 :root {
-	/* One width for the navigator and the header section above it, so their
-	   right-hand rules align. Semantic names and several ancestry levels remain
-	   readable at the desktop shell size. */
+	/* Shared navigator/header width; shell geometry is independent of the palette. */
 	--shell-navigator-width: 320px;
-	--background: oklch(0.99 0.002 95);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: #155eef;
-	--primary-foreground: oklch(0.97 0.014 254.604);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.97 0 0);
-	/* Darker than the preset's 0.556: secondary text must clear 4.5:1 on the
-	   pale stone sidebar and inspector, not only on chalk white. */
-	--muted-foreground: oklch(0.5 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: #155eef;
-	--chart-1: oklch(0.897 0.196 126.665);
-	--chart-2: oklch(0.768 0.233 130.85);
-	--chart-3: oklch(0.648 0.2 131.684);
-	--chart-4: oklch(0.532 0.157 131.589);
-	--chart-5: oklch(0.453 0.124 130.933);
-	--status: #a3e635;
-	--status-foreground: #315314;
-	--status-subtle: #e7f9b7;
-	--warning: #d29a1e;
-	--warning-foreground: #6e4a00;
-	--warning-subtle: #fbf1d7;
 	/* Small corners: controls about 3px, dialogs about 4px. */
 	--radius: 0.3rem;
-	--sidebar: oklch(0.975 0.003 95);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: #155eef;
-	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-	--sidebar-accent: oklch(0.945 0.003 95);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: #155eef;
-}
-
-/* Dark: deep charcoal, black panels, bone-white text, the same two accents. */
-:root[data-theme="dark"] {
-	--background: oklch(0.2 0.004 264);
-	--foreground: oklch(0.965 0.004 95);
-	--card: oklch(0.165 0.004 264);
-	--card-foreground: oklch(0.965 0.004 95);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.965 0.004 95);
-	--primary: #155eef;
-	--primary-foreground: oklch(0.97 0.014 254.604);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: #155eef;
-	--chart-1: oklch(0.897 0.196 126.665);
-	--chart-2: oklch(0.768 0.233 130.85);
-	--chart-3: oklch(0.648 0.2 131.684);
-	--chart-4: oklch(0.532 0.157 131.589);
-	--chart-5: oklch(0.453 0.124 130.933);
-	--status: #a3e635;
-	--status-foreground: #d9ff84;
-	--status-subtle: #273716;
-	--warning: #d29a1e;
-	--warning-foreground: #f2c96b;
-	--warning-subtle: #3a2d10;
-	--sidebar: oklch(0.165 0.004 264);
-	--sidebar-foreground: oklch(0.965 0.004 95);
-	--sidebar-primary: #155eef;
-	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: #155eef;
 }
 
 @layer base {

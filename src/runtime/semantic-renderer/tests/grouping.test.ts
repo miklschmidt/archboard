@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
-import { SemanticPolicySchema, SEMANTIC_PALETTE } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { themeColor } from "@/shared/theme/server";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 
@@ -35,14 +36,31 @@ describe("containment and type have independent visual channels", () => {
 			const cluster = groupOf(expanded.svg, "region", "cluster")!.markup;
 			const plain = groupOf(expanded.svg, "region", "plain")!.markup;
 			const api = groupOf(expanded.svg, "node", "api")!.markup;
+			const cloud = groupOf(expanded.svg, "region", "cloud")!.markup;
+			// Nested surfaces must composite over their parents, not replace them
+			// with a color preblended against an opaque card background.
+			for (const [markup, color] of [
+				[cloud, "blue"],
+				[cluster, "green"],
+				[plain, "green"],
+				[api, "green"],
+			] as const) {
+				const body = markup.match(/<rect(?![^>]*class="ab-halo")[^>]*>/)![0];
+				expect(body).toContain(`fill="${themeColor(theme, `--semantic-${color}`)}"`);
+				expect(body).toContain('fill-opacity="0.07"');
+				expect(body).not.toMatch(/(?:^|\s)opacity=/);
+			}
+			expect(expanded.svg.indexOf(cloud)).toBeLessThan(expanded.svg.indexOf(cluster));
+			expect(expanded.svg.indexOf(cluster)).toBeLessThan(expanded.svg.indexOf(plain));
+			expect(expanded.svg.indexOf(plain)).toBeLessThan(expanded.svg.indexOf(api));
 			expect(cluster).toContain('data-body-color="green"');
 			expect(cluster).toContain('data-type-color="green"');
 			expect(plain).toContain('data-body-color="green"');
 			expect(plain).toContain('data-type-color="neutral"');
 			expect(api).toContain('data-body-color="green"');
 			expect(api).toContain('data-type-color="violet"');
-			expect(api).toContain(`stroke="${SEMANTIC_PALETTE.green[theme]}"`);
-			expect(api).toContain(`stroke="${SEMANTIC_PALETTE.violet[theme]}"`);
+			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-green")}"`);
+			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-violet")}"`);
 			const collapsed = await renderArchitecture({
 				content: VariantContentSchema.parse({ nodes: nodes.slice(0, 2) }),
 				theme,
@@ -101,7 +119,7 @@ describe("containment and type have independent visual channels", () => {
 		expect(api.match(/rx="6" fill="([^"]+)"/)?.[1]).toBe(
 			before.match(/rx="6" fill="([^"]+)"/)?.[1],
 		);
-		expect(api).toContain(`stroke="${SEMANTIC_PALETTE.violet.light}"`);
+		expect(api).toContain(`stroke="${themeColor("light", "--semantic-violet")}"`);
 		expect(api).toContain('class="ab-halo"');
 		expect(api).toContain('data-semantic-standing="changed"');
 	});
@@ -120,12 +138,12 @@ describe("containment and type have independent visual channels", () => {
 			policy,
 		});
 		const edge = groupOf(normal.svg, "edge", "e")!.markup;
-		expect(edge).toContain(`stroke="${SEMANTIC_PALETTE.rose.light}"`);
+		expect(edge).toContain(`stroke="${themeColor("light", "--semantic-rose")}"`);
 		expect(edge).toContain('stroke-dasharray="1.5 3.5"');
 		expect(edge).toContain('data-arrowhead="open"');
 		expect(hero.svg).not.toContain("<animateMotion");
 		expect(groupOf(hero.svg, "edge", "e")!.markup).toContain(
-			`stroke="${SEMANTIC_PALETTE.rose.light}"`,
+			`stroke="${themeColor("light", "--semantic-rose")}"`,
 		);
 	});
 });

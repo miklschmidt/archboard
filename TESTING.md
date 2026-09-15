@@ -128,3 +128,19 @@ rasterize`, so the machine that runs a batch needs a Chromium-family
 executable as well (see [INSTALL.md](INSTALL.md#rendering-to-a-bitmap)).
 The fast owners for the harness's deterministic parts live in
 `src/runtime/skill-evaluation/tests`.
+
+## Shared shell and SVG colors
+
+Edit `src/shared/theme/theme.css` for light/dark shadcn colors and the
+added/changed/removed comparison colors, plus the `--semantic-*` palette used by
+node types, groups and relationships. `--diagram-edge` controls neutral arrows independently
+of secondary text. All color definitions use OKLCH. `app.css` imports those tokens; the SVG
+renderer resolves the same declarations through Lightning CSS and embeds sRGB
+colors with their opacity. The shared file contains literal color custom
+properties in `:root` and `:root[data-theme="dark"]`; keep layout values in
+`app.css`. Unsupported cascade rules and unresolved colors are refused.
+
+`archboard semantic render --theme light|dark` still needs no browser or frontend
+build. Restart the canvas after editing the shared theme; rebuild the frontend
+when serving its production bundle. The existing measured-text browser owner
+also compares the built shell colors with standalone export colors in both themes.
