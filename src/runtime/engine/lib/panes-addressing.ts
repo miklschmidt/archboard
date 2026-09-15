@@ -59,8 +59,9 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 	const ordered = panesInOrder(registrations);
 	if (ordered.length === 0) {
 		throw new Error(
-			`No pane is open, so there is nowhere to put a board — "${spec}" names nothing. ` +
-				"Open the canvas in a browser first, then retry the browser command.",
+			"The canvas server has no connected panes. " +
+				"If the canvas is already open, wait for it to reconnect or reload the tab, then try again. " +
+				"Otherwise, open the canvas in a browser first.",
 		);
 	}
 	const wanted = spec.trim().toLowerCase();

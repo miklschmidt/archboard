@@ -4,7 +4,7 @@
 
 import { NOTICE_ACTIONS, failureNotice } from "@/ui/application/notices";
 import type { WorkspaceAddressing } from "@/ui/board-routing";
-import { recordFor } from "@/ui/application/pane-records";
+import { paneReady, recordFor } from "@/ui/application/pane-records";
 import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { Panes } from "@/ui/application/hooks/use-panes";
@@ -51,13 +51,28 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	 */
 	async function selectBoard(key: string, inPane?: string): Promise<void> {
 		const paneId = inPane ?? panes.active.status.paneId;
-		const { clientId, boardKey } = recordFor(panes.records, paneId).status;
+		const { status } = recordFor(panes.records, paneId);
+		const { clientId, boardKey } = status;
+		// A socket can be open before the server has accepted its pane. The
+		// picker must honor the same readiness boundary as URL restoration.
+		if (!paneReady(status)) {
+			deps.notices.raise({
+				...failureNotice(
+					"board-command",
+					"Show board",
+					"This pane is reconnecting. Try again once it is connected, or reload the canvas.",
+				),
+				actions: [{ kind: "select", id: NOTICE_ACTIONS.reloadFrontend, label: "Reload" }],
+			});
+			return;
+		}
 		// The command waits for the address bar's one slot, so what the person
 		// just asked for is the last thing the server is given.
 		const permission = await deps.addressing.claim({ kind: "board", paneId, from: boardKey });
 		try {
 			const opened = await show(key, clientId);
 			permission.move.done(opened.board);
+			deps.notices.dismiss("board-command");
 			// The listing says which pane holds what, and this just moved one.
 			deps.catalog.refresh();
 		} catch (error) {

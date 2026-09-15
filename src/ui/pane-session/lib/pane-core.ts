@@ -314,11 +314,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		}
 		const returning = openedBefore;
 		openedBefore = true;
-		status.connected = true;
+		status.connected = false;
 		// A new socket has not had a pane accepted on it yet, whatever the last
 		// one had: until the canvas answers a report there is no pane to address.
 		status.registered = false;
-		host.setConnected(true);
+		host.setConnected(false);
 		// The server retires a pane when its socket closes, so a reconnection
 		// re-announces this one even though nothing about it changed.
 		paneReports.forget();
