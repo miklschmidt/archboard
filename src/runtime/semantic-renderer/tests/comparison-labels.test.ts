@@ -3,7 +3,7 @@ import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
-test("a comparison keeps an inherited label on a horizontal run when a connection is added", async () => {
+test("a comparison keeps an inherited label on a straight run when a connection is added", async () => {
 	// Reduced from the Semantic renderer comparison: the added connection used
 	// to squeeze the inherited horizontal label onto a vertical staircase. Which
 	// row a label shares with another is the engine's once a fanning card's skips
@@ -58,15 +58,22 @@ test("a comparison keeps an inherited label on a horizontal run when a connectio
 		const labels = routeLabels(drawing.svg);
 		const label = labels.get("0s8raCUw")!,
 			points = routePoints(drawing.svg).get("0s8raCUw")!;
+		// On a straight run of its own route, whichever axis lies nearest an end
+		// of the route (TASK-232), never a staircase.
 		expect(
 			points.slice(1).some((end, index) => {
 				const start = points[index]!;
-				return (
+				const onHorizontal =
 					start.y === end.y &&
 					Math.abs(start.y - label.y - label.height / 2) < 0.01 &&
 					Math.min(start.x, end.x) <= label.x &&
-					Math.max(start.x, end.x) >= label.x + label.width
-				);
+					Math.max(start.x, end.x) >= label.x + label.width;
+				const onVertical =
+					start.x === end.x &&
+					Math.abs(start.x - label.x - label.width / 2) < 0.01 &&
+					Math.min(start.y, end.y) <= label.y &&
+					Math.max(start.y, end.y) >= label.y + label.height;
+				return onHorizontal || onVertical;
 			}),
 		).toBe(true);
 	}

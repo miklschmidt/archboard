@@ -41,16 +41,24 @@ test.each([false, true])(
 			expect(bends).toBe(id === "e0" ? 0 : 2);
 		}
 		expect(labels.size).toBe(content.edges.length);
+		// The badge sits on one straight run of its own route, 24 clear of that
+		// run's ends, on whichever axis lies nearest an end of the route
+		// (docs/design/layout-rules.md, TASK-232).
 		expect(
 			points.some((from, index) => {
 				const to = points[index + 1];
-				return (
-					to !== undefined &&
+				if (to === undefined) return false;
+				const onHorizontal =
 					from.y === to.y &&
 					Math.abs(from.y - horizontal.y - horizontal.height / 2) < 0.02 &&
 					Math.min(from.x, to.x) + 24 <= horizontal.x &&
-					Math.max(from.x, to.x) - 24 >= horizontal.x + horizontal.width
-				);
+					Math.max(from.x, to.x) - 24 >= horizontal.x + horizontal.width;
+				const onVertical =
+					from.x === to.x &&
+					Math.abs(from.x - horizontal.x - horizontal.width / 2) < 0.02 &&
+					Math.min(from.y, to.y) + 24 <= horizontal.y &&
+					Math.max(from.y, to.y) - 24 >= horizontal.y + horizontal.height;
+				return onHorizontal || onVertical;
 			}),
 		).toBe(true);
 		for (const id of ["e0"]) {
@@ -108,3 +116,27 @@ test.each([false, true])(
 		expect(await renderArchitecture({ content, theme: "light" })).toEqual(drawing);
 	},
 );
+
+test("a long relationship's label sits on the run nearest an endpoint that can hold it, not on the longest run", async () => {
+	// A skip over two stages: its route has a short departure beside the source,
+	// a long middle run and a short arrival. A reader tracing the line from
+	// either card should meet the words before the middle of the page.
+	const content = VariantContentSchema.parse({
+		nodes: ["a", "b", "c", "d"].map((id) => ({ id, name: id, kind: "module" })),
+		edges: [
+			{ id: "ab", from: "a", to: "b", kind: "call" },
+			{ id: "bc", from: "b", to: "c", kind: "call" },
+			{ id: "cd", from: "c", to: "d", kind: "call" },
+			{ id: "skip", from: "a", to: "d", kind: "data", label: "complete drawing" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	const label = routeLabels(drawing.svg).get("skip")!;
+	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
+	const route = routePoints(drawing.svg).get("skip")!;
+	const ends = [route[0]!, route.at(-1)!];
+	const reach = Math.min(...ends.map((end) => Math.hypot(centre.x - end.x, centre.y - end.y)));
+	const span = Math.hypot(ends[0]!.x - ends[1]!.x, ends[0]!.y - ends[1]!.y);
+	expect(reach, "the label is nearer an end than the middle of its route").toBeLessThan(span / 2);
+	expect(reach, "within a lane and a clearance of the nearer card").toBeLessThanOrEqual(150);
+});
