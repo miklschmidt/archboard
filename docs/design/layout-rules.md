@@ -335,3 +335,18 @@ target, east for a return); only the ports on the frames it crosses sit on a
 flank, since through a frame's top a route would cross the title band. Every
 frame now draws a rule under its title, and a relationship the frame itself
 makes to a part inside it hangs from that rule.
+
+## 12. A label the runs cannot hold costs a row (2026-09-16)
+
+The Semantic renderer board rendered tall and narrow after the flank rules
+went: six of its labels found no run and were reserved with the engine, and a
+reserved inline label is a layer of its own to the engine, so each cost a
+row. The run pass demanded the node spacing (24) clear at both ends of a run
+and around every card, which a direct descent between two rows can never
+give a 31-tall badge. A second, tighter pass (8 clear) now runs before a
+label is reserved; the proposal went from 819 by 1457 to 1231 by 1292 and
+fixture board 1 from 5.97 to 5.01 Mpx. What still reserves a label there is
+the engine spacing parallel departures 20 apart (`elk.spacing.edgeEdge`), so
+no badge fits beside its own run without crossing a sibling's; widening that
+spacing to 100 brought the board to 1457 tall but grew fixture board 3 by a
+fifth, so it stays.
