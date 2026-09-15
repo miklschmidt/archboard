@@ -8,7 +8,7 @@ import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 import type { RunVerdict, VisualStanding } from "@/runtime/skill-evaluation/lib/grader";
 import type { GraderIdentity } from "@/runtime/skill-evaluation/lib/grader-runner";
-import { agreementLines, type Agreement } from "@/runtime/skill-evaluation/lib/report-agreement";
+import type { Agreement } from "@/runtime/skill-evaluation/lib/report-agreement";
 import {
 	mean,
 	median,
@@ -16,11 +16,8 @@ import {
 	type Maybe,
 } from "@/runtime/skill-evaluation/lib/report-numbers";
 import {
-	auditReasons,
 	contaminated,
-	contaminationLine,
 	unaudited,
-	unauditedLine,
 	wroteDirectly,
 } from "@/runtime/skill-evaluation/lib/report-audit";
 
@@ -88,9 +85,19 @@ interface ArmSummary {
 	readonly medianDiscoveryCommands: Maybe;
 	readonly medianOperationCommands: Maybe;
 	readonly medianInvestigationCommands: Maybe;
+	/**
+	 * Runs whose author read the archboard product's source, past the installed
+	 * skill, the generated schemas and `--help`: each is a question the skill or
+	 * a CLI answer left open, not a fault of the run.
+	 */
+	readonly productSourceReads: number;
 	readonly meanSemanticCorrectness: Maybe;
 	readonly meanArchitecturalTruth: Maybe;
 	readonly meanReadability: Maybe;
+	/** Over graded runs that wrote a board and were judged for it; null when none was. */
+	readonly meanBehaviouralCompleteness: Maybe;
+	/** Catalogue rows the source justified that the authors left out, summed over the arm. */
+	readonly missedUnprompted: number;
 }
 
 /** One row of the comparison: a scenario or a workflow. */
@@ -137,13 +144,23 @@ interface BatchReport {
  * @returns True on success.
  */
 function succeeded(run: RunRecord): boolean {
+	return didWhatWasAsked(run) && run.visual === "pass";
+}
+
+/**
+ * Whether a run did what was asked, before its pictures are judged: it
+ * completed, every deterministic check held, and the grader found it
+ * semantically compliant.
+ * @param run The run.
+ * @returns True when only the visual verdict remains.
+ */
+function didWhatWasAsked(run: RunRecord): boolean {
 	return (
 		run.status === "completed" &&
 		run.outcomesPassed &&
 		run.guardrailsPassed &&
 		run.verdict !== null &&
-		run.semanticallyCompliant === true &&
-		run.visual === "pass"
+		run.semanticallyCompliant === true
 	);
 }
 
@@ -225,9 +242,19 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 		medianDiscoveryCommands: median(runs.map((run) => run.commandCounts.discovery)),
 		medianOperationCommands: median(runs.map((run) => run.commandCounts.operation)),
 		medianInvestigationCommands: median(runs.map((run) => run.commandCounts["code-investigation"])),
+		productSourceReads: runs.filter((run) => run.commandCounts["product-source"] > 0).length,
 		meanSemanticCorrectness: meanScore(runs, (verdict) => verdict.semanticCorrectness),
 		meanArchitecturalTruth: meanScore(runs, (verdict) => verdict.architecturalTruth),
 		meanReadability: meanScore(runs, (verdict) => verdict.readability),
+		meanBehaviouralCompleteness: mean(
+			runs.map((run) => run.verdict?.behaviouralCompleteness ?? null),
+		),
+		missedUnprompted: runs.reduce(
+			(count, run) =>
+				count +
+				(run.verdict?.unprompted ?? []).filter((entry) => entry.verdict === "missed").length,
+			0,
+		),
 	};
 }
 
@@ -259,6 +286,20 @@ function dropped(
 }
 
 /**
+ * Whether a run's cost can be compared: it did what was asked and the grader
+ * looked at every picture. A failed picture does not withhold the comparison,
+ * because the renderer that drew it is the same in both arms; what it drew
+ * counts against the arm as a visual failure and a quality regression, not as
+ * a run that did not happen. An unopened or untaken picture still withholds
+ * it, since the run's visual quality is then unknown.
+ * @param run The run.
+ * @returns True when its usage can enter an efficiency comparison.
+ */
+function measured(run: RunRecord): boolean {
+	return didWhatWasAsked(run) && (run.visual === "pass" || run.visual === "fail");
+}
+
+/**
  * Whether quality regressed from baseline to candidate on any measure.
  * @param baseline The baseline summary.
  * @param candidate The candidate summary.
@@ -274,6 +315,7 @@ function qualityRegressed(baseline: ArmSummary, candidate: ArmSummary): boolean 
 		(s) => s.meanSemanticCorrectness,
 		(s) => s.meanArchitecturalTruth,
 		(s) => s.meanReadability,
+		(s) => s.meanBehaviouralCompleteness,
 	];
 	return (
 		candidate.succeeded < baseline.succeeded ||
@@ -307,7 +349,7 @@ function compare(
 		(run) => !contaminated(run) && !wroteDirectly(run) && !unaudited(run),
 	);
 	const comparable = complete && comparableAudit;
-	const allSucceeded = [baseline, candidate].every((arm) => arm.succeeded === arm.runs);
+	const allMeasured = runs.every(measured);
 	return {
 		key,
 		baseline,
@@ -316,7 +358,7 @@ function compare(
 		// another run's answer, measures nothing about the skill; a change
 		// computed over it would be a change in what was read, not in the skill.
 		tokenChangePercent:
-			comparable && allSucceeded && runs.every((run) => run.usage !== null)
+			comparable && allMeasured && runs.every((run) => run.usage !== null)
 				? percentChange(baseline.medianTotalTokens, candidate.medianTotalTokens)
 				: null,
 		qualityRegressed: comparable ? qualityRegressed(baseline, candidate) : null,
@@ -409,180 +451,11 @@ function buildReport(
 	};
 }
 
-/**
- * A number for a table cell, or a dash for one the runs could not supply.
- * @param value The value.
- * @param digits Decimal places.
- * @returns The cell text.
- */
-function cell(value: Maybe, digits = 0): string {
-	return value === null ? "n/a" : value.toFixed(digits);
-}
-
-/**
- * One arm's table line.
- * @param key The row's key.
- * @param arm The arm.
- * @param s The summary.
- * @returns The markdown line.
- */
-function armLine(key: string, arm: Arm, s: ArmSummary): string {
-	const audit =
-		s.unaudited === s.runs && s.runs > 0 ? "unaudited" : `${s.contaminated}/${s.directWrites}`;
-	const visual = `${s.visualPassed}/${s.visualFailed}/${s.visualIncomplete}`;
-	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${visual} | ${audit} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} |`;
-}
-
-/**
- * The change line under a row's two arms.
- * @param row The row.
- * @returns The markdown line.
- */
-function changeLine(row: ComparisonRow): string {
-	const tokens = row.tokenChangePercent === null ? "n/a" : `${row.tokenChangePercent.toFixed(1)}%`;
-	return `| ${row.key} | change | | | | | | | | | | ${tokens} | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | |`;
-}
-
-/**
- * One markdown table over comparison rows.
- * @param title The table's heading.
- * @param table The rows.
- * @returns Markdown lines.
- */
-function tableLines(title: string, table: readonly ComparisonRow[]): string[] {
-	return [
-		`## ${title}`,
-		"",
-		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | visual pass/fail/incomplete | contaminated/direct | median total | median cached | median output | discovery | ops | investigation | correctness | truth | readability |",
-		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-		...table.flatMap((row) => [
-			armLine(row.key, "baseline", row.baseline),
-			armLine(row.key, "candidate", row.candidate),
-			changeLine(row),
-		]),
-		"",
-	];
-}
-
-/**
- * One usage line of the report.
- * @param label Whose usage.
- * @param usage The usage.
- * @returns The markdown line.
- */
-function usageLine(label: string, usage: Usage | null): string {
-	return usage === null
-		? `- ${label}: unavailable`
-		: `- ${label}: input ${usage.input} (of which cached ${usage.cached}), output ${usage.output}, total ${usage.total}`;
-}
-
-/**
- * One line about a run that did not succeed.
- * @param run The run.
- * @returns The markdown line.
- */
-function failureLine(run: RunRecord): string {
-	const reasons = [
-		run.status,
-		...(run.outcomesPassed ? [] : ["outcome checks failed"]),
-		...(run.guardrailsPassed ? [] : ["guardrail violated"]),
-		...(run.verdict === null ? ["awaiting grading"] : []),
-		...(run.semanticallyCompliant === false ? ["semantic compliance failed"] : []),
-		...visualReasons(run),
-		...(run.waivedFeatures.length === 0 ? [] : [`waived: ${run.waivedFeatures.join(", ")}`]),
-		...auditReasons(run),
-	];
-	return `- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): ${reasons.join(", ")}`;
-}
-
-/**
- * Why a run's visual evaluation cannot qualify it as successful.
- * @param run The record.
- * @returns No reason for a pass, otherwise its visible status.
- */
-function visualReasons(run: RunRecord): string[] {
-	return run.visual === "pass" ? [] : [`visual evaluation ${run.visual ?? "not graded"}`];
-}
-
-/**
- * The usage line's label for a grader, naming how its session was counted.
- * @param grader Who graded.
- * @returns The label.
- */
-function graderUsageLabel(grader: GraderIdentity | null): string {
-	const counted =
-		grader?.semantics === "per-call"
-			? "the sum of its calls"
-			: "the thread's last cumulative reading";
-	const who =
-		grader === null ? "" : ` ${grader.name}${grader.model === null ? "" : ` ${grader.model}`},`;
-	return `grader (one session, kept apart):${who} ${counted}`;
-}
-
-/**
- * The heading of one grader's report.
- * @param grader Who graded.
- * @returns The heading text.
- */
-function reportHeading(grader: GraderIdentity | null): string {
-	if (grader === null) return "Skill evaluation comparison (not graded)";
-	const model = grader.model === null ? "" : `, ${grader.model}`;
-	return `Skill evaluation comparison (grader: ${grader.name}${model})`;
-}
-
-/**
- * The report as markdown.
- * @param report The report.
- * @returns The document.
- */
-function renderReportMarkdown(report: Report): string {
-	return [
-		`# ${reportHeading(report.grader)}`,
-		"",
-		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to succeed and complete usage. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation.",
-		"",
-		...tableLines("Per scenario (primary)", report.scenarios),
-		...tableLines("Per primary workflow", report.workflows),
-		...tableLines("Broad mapping (reported separately)", report.broad),
-		"## Usage",
-		"",
-		usageLine("authors, baseline (sum)", report.authorUsage.baseline),
-		usageLine("authors, candidate (sum)", report.authorUsage.candidate),
-		usageLine(graderUsageLabel(report.grader), report.graderUsage),
-		"",
-		"## Contaminated runs (kept apart from every comparison)",
-		"",
-		...(report.contamination.length === 0
-			? ["- none"]
-			: report.contamination.map(contaminationLine)),
-		...unauditedLine(report),
-		"",
-		"## Runs that did not succeed",
-		"",
-		...(report.failures.length === 0 ? ["- none"] : report.failures.map(failureLine)),
-		"",
-	].join("\n");
-}
-
-/**
- * The whole batch as markdown: each grader's report, then how they agree.
- * @param batch The batch report.
- * @returns The document.
- */
-function renderBatchReportMarkdown(batch: BatchReport): string {
-	return [
-		...batch.graders.map((entry) => renderReportMarkdown(entry.report)),
-		...(batch.graders.length > 1 ? [agreementLines(batch.agreement).join("\n")] : []),
-	].join("\n");
-}
-
 export {
 	buildReport,
 	median,
 	mean,
 	percentChange,
-	renderBatchReportMarkdown,
-	renderReportMarkdown,
 	succeeded,
 	sumUsage,
 	summarize,

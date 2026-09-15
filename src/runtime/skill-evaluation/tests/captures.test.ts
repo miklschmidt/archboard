@@ -196,6 +196,32 @@ describe("the visual verdict as it stands", () => {
 		expect(visualStandingOf(null, graded(looked))).toBe("incomplete");
 	});
 
+	test("a grader that names the files it opened is read as naming their captures", () => {
+		const byFile = {
+			inspectedCaptures: [
+				"captures/capture-0-a.png",
+				"captures/capture-0-a-tile-0.png",
+				"runs/run-0123456789/captures/capture-1-b.png",
+			],
+			verdict: "pass" as const,
+			observations: [
+				{ capture: "captures/capture-0-a.png", observation: "legible" },
+				{ capture: "captures/capture-1-b.png", observation: "legible" },
+			],
+		};
+		expect(visualStandingOf(taken, graded(byFile), ["a", "b"])).toBe("pass");
+		expect(visualStandingOf(taken, graded({ ...byFile, verdict: "fail" }), ["a", "b"])).toBe(
+			"fail",
+		);
+		const unknown = { ...byFile, observations: [byFile.observations[0]!] };
+		expect(visualStandingOf(taken, graded(unknown), ["a", "b"])).toBe("incomplete");
+		const other = {
+			...byFile,
+			inspectedCaptures: ["captures/capture-0-a.png", "captures/capture-1-c.png"],
+		};
+		expect(visualStandingOf(taken, graded(other), ["a", "b"])).toBe("incomplete");
+	});
+
 	test("pass and fail require complete delivery and observations; historical or partial evidence stays incomplete", () => {
 		const failed = {
 			inspectedCaptures: ["a", "b"],

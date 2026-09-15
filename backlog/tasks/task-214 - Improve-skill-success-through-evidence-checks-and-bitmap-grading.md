@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-14 22:44'
-updated_date: '2026-09-15 01:08'
+updated_date: '2026-09-15 12:17'
 labels: []
 dependencies:
   - TASK-212
@@ -73,6 +73,8 @@ Validation: bun test src/runtime/skill-evaluation (80 pass incl. captures.test.t
 Independent review fixed mechanism-specific relationship evidence, renderer-defect handling, inspected multi-repository bindings and the required view grammar check. Failed and cancelled author setups now persist blinded capture bundles with explicit unavailable reasons. Grading calls attach every required main image and native tile; harness-owned delivery receipts bind image bytes to the exact verdict. Per-capture observations and complete verified delivery are required before either visual pass or fail counts as assessed. Missing/stale evidence remains incomplete and visual failures prevent token-efficiency claims. Capture receipt validation now shares the CLI authority. Model-free suite check and independent scope/boundary reviews pass; no author evals or grader runs. Normal-gate criterion remains unchecked because the integration target contains concurrent styling failures outside this task: eight existing renderer module assertions and an OKLCH arrowhead-selector browser failure. Those files are owned by TASK-217 and preserved unchanged.
 
 Final review validation: 116 focused tests pass across skill evaluation, rasterizer, restoration and system rasterization. All 163 system tests and 8 repository-policy tests pass; the nine remaining browser owners pass after isolating the existing semantic-status-legibility failure. Full gate reached 3031 passing module tests plus the one subsequently corrected mock-receipt regression and eight unrelated renderer assertion failures. No eval authors or grader ran.
+
+Batch .skill-evals/2026-09-15T03-21-37-188Z, read on 2026-09-15: 24 of its 47 listed failures were visual 'incomplete' only because the Claude grader named the files it opened (captures/capture-0-<label>.png) instead of the labels; grader.ts now reads a label back from such a file name (captureLabelOf, covered in tests/captures.test.ts). The efficiency gate in report.ts now needs every run measured (did what was asked, pictures inspected) rather than visually passed: a visual fail still fails the run and regresses quality, but no longer withholds the cost comparison, since both arms share the renderer; the batch failed every S02, S06 and S09 run in both arms on two renderer defects, filed as TASK-224 and TASK-225. Report regenerated with 'eval:skill report' under the batch's pinned inputs. S05's fixture and prompt now route make_response and process_response through finalize_request as Flask 3.0.0 does (the grader flagged the fixture); that changes the inputs digest, so the next batch is a new baseline.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

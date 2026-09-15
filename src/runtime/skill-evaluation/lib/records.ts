@@ -20,10 +20,10 @@ import {
 	graderUsage,
 } from "@/runtime/skill-evaluation/lib/grading-run";
 import { agreementOf } from "@/runtime/skill-evaluation/lib/report-agreement";
+import { renderBatchReportMarkdown } from "@/runtime/skill-evaluation/lib/report-markdown";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import {
 	buildReport,
-	renderBatchReportMarkdown,
 	type BatchReport,
 	type GraderReport,
 	type RunRecord,
@@ -179,7 +179,7 @@ function recordOf(
 		status: manifest.status,
 		durationMs: manifest.author?.durationMs ?? 0,
 		usage: manifest.usage,
-		commandCounts: manifest.commandCounts,
+		commandCounts: { "product-source": 0, ...manifest.commandCounts },
 		directWrites: manifest.directWrites ?? null,
 		exposure: manifest.exposure ?? null,
 		...visualOf(batchRoot, grader, manifest, verdict),

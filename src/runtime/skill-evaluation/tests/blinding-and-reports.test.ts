@@ -13,6 +13,7 @@ import {
 	buildReport,
 	bundleForGrader,
 	checklistGaps,
+	FiledVerdictSchema,
 	graderUsage,
 	graderPrompt,
 	median,
@@ -260,6 +261,10 @@ describe("the grader contract", () => {
 			semanticCorrectness: 8,
 			architecturalTruth: 7,
 			readability: 9,
+			unprompted: [
+				{ feature: "traffic", verdict: "missed", evidence: "boards/", reason: "hot path bare" },
+			],
+			behaviouralCompleteness: 6,
 			summary: "fine",
 			concerns: [],
 			visual: {
@@ -274,6 +279,24 @@ describe("the grader contract", () => {
 		// The grader must say what it saw: a verdict without a visual answer is no verdict.
 		const { visual: _visual, ...blind } = verdict;
 		expect(() => parseGraderOutput(JSON.stringify({ runs: [blind] }))).toThrow(/visual/u);
+		// And what the skill should have added unprompted: the rows and the score
+		// are required from the grader, a read-only run answering nothing and null.
+		const { unprompted: _rows, behaviouralCompleteness: _score, ...unjudged } = verdict;
+		expect(() => parseGraderOutput(JSON.stringify({ runs: [unjudged] }))).toThrow(/unprompted/u);
+		expect(
+			parseGraderOutput(
+				JSON.stringify({ runs: [{ ...verdict, unprompted: [], behaviouralCompleteness: null }] }),
+			).runs[0]?.behaviouralCompleteness,
+		).toBeNull();
+		expect(() =>
+			parseGraderOutput(
+				JSON.stringify({
+					runs: [{ ...verdict, unprompted: [{ ...verdict.unprompted?.[0], verdict: "pass" }] }],
+				}),
+			),
+		).toThrow();
+		// A verdict filed before the judgment existed still loads.
+		expect(FiledVerdictSchema.parse(unjudged).behaviouralCompleteness).toBeUndefined();
 		expect(() =>
 			parseGraderOutput(JSON.stringify({ runs: [{ ...verdict, semanticCorrectness: 11 }] })),
 		).toThrow();
@@ -310,7 +333,14 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		status: "completed",
 		durationMs: 10,
 		usage: { input: 100, cached: 50, cacheWrite: null, output: 20, reasoning: null, total: 120 },
-		commandCounts: { discovery: 2, operation: 3, "code-investigation": 1, setup: 0, ambiguous: 0 },
+		commandCounts: {
+			discovery: 2,
+			operation: 3,
+			"code-investigation": 1,
+			"product-source": 0,
+			setup: 0,
+			ambiguous: 0,
+		},
 		directWrites: 0,
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,

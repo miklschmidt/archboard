@@ -66,7 +66,13 @@ also supplies one image-grounded observation per capture. Reports verify the
 receipt against the saved bytes and fail closed for missing, failed, stale or
 unobserved captures and absent native detail tiles. Delivery is verifiable;
 the observations remain the grader’s judgment. Visual failures prevent
-success and efficiency claims; incomplete visuals leave quality unassessed.
+success and count as a quality regression; they do not withhold the cost
+comparison, because both arms draw with the same renderer (the 2026-09-15
+batch failed every S02, S06 and S09 run in both arms on two renderer defects
+the pre-authored fixtures exposed). Incomplete visuals leave quality and cost
+unassessed. A grader that names the files it opened rather than their labels
+is read as naming their captures; the same batch had 24 runs, 22 of them
+passed by the grader, counted incomplete for that reason alone.
 
 ## What is demonstrated (nothing yet)
 
