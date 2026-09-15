@@ -250,9 +250,10 @@ describe("renderDataFlow", () => {
 		const neighbour = rendered.atlas.nodes["io"]!;
 
 		// It leaves its own lifeline and comes back to it, so it starts inside its
-		// sender's column and reaches to the right of it.
+		// sender's column and reaches to the right of the lifeline; a column is
+		// wide enough that the loop need not leave it.
 		expect(loop.x).toBeGreaterThanOrEqual(sender.x);
-		expect(loop.x + loop.width).toBeGreaterThan(sender.x + sender.width);
+		expect(loop.x + loop.width).toBeGreaterThan(sender.x + sender.width / 2);
 
 		// And a label of ordinary length lands in the air between the two columns
 		// rather than over the next one. A label longer than that run rides over
