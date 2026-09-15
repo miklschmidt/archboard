@@ -1,22 +1,19 @@
 import { RiCloseLine, RiBookOpenLine } from "@remixicon/react";
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import { PaletteColorSchema, SEMANTIC_PALETTE } from "@/shared/semantic-policy/index";
-import { SEMANTIC_STANDING_PALETTE } from "@/shared/semantic-policy/standing";
+import { PaletteColorSchema } from "@/shared/semantic-policy/index";
+import { STANDING_COLORS } from "@/shared/theme/index";
 import { Button } from "@/ui/components/button";
-import type { SemanticTheme } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
 /**
  * A browser-only key to the channels in the current picture.
  * @param props The appearance facts and theme of the drawing.
  * @param props.appearances Facts emitted for its visible subjects.
- * @param props.theme The palette the picture uses.
  * @returns A spacious, hideable side legend that reserves its own canvas space.
  */
 function SemanticLegend(props: {
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
-	readonly theme: SemanticTheme;
 }): JSX.Element {
 	const [visible, setVisible] = useState(true);
 	const hide = useCallback(() => setVisible(false), []);
@@ -34,7 +31,7 @@ function SemanticLegend(props: {
 			</Button>
 		);
 	}
-	const standing = SEMANTIC_STANDING_PALETTE[props.theme];
+	const standing = STANDING_COLORS;
 	const entries = [...props.appearances.values()];
 	const kinds = uniqueTypes(entries.filter((item) => item.depiction !== ""));
 	const relationships = uniqueTypes(entries.filter((item) => item.depiction === ""));
@@ -62,7 +59,7 @@ function SemanticLegend(props: {
 						<ul className="space-y-2.5">
 							{kinds.map((item) => (
 								<li key={sampleKey(item)} className="text-body flex items-center gap-3">
-									<TypeSample appearance={item} theme={props.theme} />
+									<TypeSample appearance={item} />
 									{item.typeName}
 								</li>
 							))}
@@ -74,7 +71,7 @@ function SemanticLegend(props: {
 						<ul className="space-y-2.5">
 							{relationships.map((item) => (
 								<li key={sampleKey(item)} className="text-body flex items-center gap-3">
-									<RelationshipSample appearance={item} theme={props.theme} />
+									<RelationshipSample appearance={item} />
 									{item.typeName}
 								</li>
 							))}
@@ -121,12 +118,12 @@ function LegendSection(props: {
 /**
  * Resolve a curated color name, retaining a neutral fallback.
  * @param color The renderer's color name.
- * @param theme The picture's theme.
+ * @param fallback Token for an uncolored type or relationship.
  * @returns A CSS color.
  */
-function ink(color: string, theme: SemanticTheme): string {
+function ink(color: string, fallback = "--muted-foreground"): string {
 	const parsed = PaletteColorSchema.safeParse(color);
-	return parsed.success ? SEMANTIC_PALETTE[parsed.data][theme] : "var(--muted-foreground)";
+	return parsed.success ? `var(--semantic-${parsed.data})` : `var(${fallback})`;
 }
 
 /**
@@ -159,17 +156,13 @@ function sampleKey(item: AppliedAppearance): string {
  * Show the configured relationship color, dash and arrowhead.
  * @param props One applied relationship and the picture's theme.
  * @param props.appearance The line appearance.
- * @param props.theme The palette in force.
  * @returns The line sample.
  */
-function RelationshipSample(props: {
-	readonly appearance: AppliedAppearance;
-	readonly theme: SemanticTheme;
-}): JSX.Element {
+function RelationshipSample(props: { readonly appearance: AppliedAppearance }): JSX.Element {
 	const { appearance } = props;
 	const style = useMemo(
-		() => ({ color: ink(appearance.lineColor, props.theme) }),
-		[appearance.lineColor, props.theme],
+		() => ({ color: ink(appearance.lineColor, "--diagram-edge") }),
+		[appearance.lineColor],
 	);
 	const dash =
 		appearance.dash === "dotted" ? "1 4" : appearance.dash === "dashed" ? "6 4" : undefined;
@@ -234,21 +227,17 @@ function StandingSample(props: {
  * A sample of a type chip’s independently colored border and tint.
  * @param props The type color and theme.
  * @param props.appearance Applied type color and the renderer’s icon.
- * @param props.theme Drawing theme.
  * @returns The chip.
  */
-function TypeSample(props: {
-	readonly appearance: AppliedAppearance;
-	readonly theme: SemanticTheme;
-}): JSX.Element {
+function TypeSample(props: { readonly appearance: AppliedAppearance }): JSX.Element {
 	const { appearance } = props;
 	const markup = useMemo(() => ({ __html: appearance.iconSvg }), [appearance.iconSvg]);
 	const style = useMemo(
 		() => ({
-			borderColor: ink(appearance.typeColor, props.theme),
-			backgroundColor: `color-mix(in srgb, ${ink(appearance.typeColor, props.theme)} 12%, transparent)`,
+			borderColor: ink(appearance.typeColor),
+			backgroundColor: `color-mix(in srgb, ${ink(appearance.typeColor)} 12%, transparent)`,
 		}),
-		[appearance.typeColor, props.theme],
+		[appearance.typeColor],
 	);
 	return (
 		<span

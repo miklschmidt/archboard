@@ -1,32 +1,7 @@
-import { SEMANTIC_STANDING_PALETTE } from "@/shared/semantic-policy/standing";
+import { themeColor } from "@/shared/theme/server";
 import type { DiagramTheme } from "@/shared/semantic-board/index";
-// Every colour the renderer can paint, resolved to a literal.
-//
-// PR Lens's palette was GitHub's, and every hue in it said what a pull request
-// had done to a file. This one is built from Archboard's own operator shell
-// instead, so a rendered board sits beside the chrome around it rather than
-// looking like a screenshot from another product.
-//
-// The one place a hue still carries meaning is a proposal's standing against
-// the variant it came from, and those three are the last entries here. They are
-// deliberately the only saturated ink in the picture, they are never the whole
-// of what says a subject changed — `lib/svg/standing.ts` sets out the shape and
-// lightness channels that carry it without them — and they are picked dark
-// against the light grounds and bright against the dark ones, so that the page
-// ground is legible knocked out of any of the six.
-//
-// The values were converted from the shell's own tokens in
-// `src/ui/theme/app.css`: `--background`, `--card`, `--sidebar`, `--foreground`,
-// `--muted-foreground`, `--border` and `--primary`, in both themes. The shell's
-// two accents keep the jobs they have there — cobalt `#155eef` is selection,
-// acid lime is live status and so appears nowhere in a static picture. What is
-// left is a diagram drawn in ink and paper, which is what
-// `docs/design/operator-canvas-shell.md` asks for: flat, dense, one-pixel
-// rules, small radii, no gradient and no glow.
-//
-// Emphasis therefore has no colour of its own. A hero edge is drawn in ink at a
-// heavier weight and a muted one in the faintest grey the ground allows, which
-// is a hierarchy that survives both themes and does not compete with selection.
+
+// SVG roles resolve the same CSS tokens as the shell, with export-safe literals.
 
 /** One theme's resolved colours. */
 interface Palette {
@@ -98,71 +73,34 @@ interface Palette {
 }
 
 /**
- * Chalk white cards on pale stone bands on a warm paper ground, near-black ink,
- * cobalt selection.
- *
- * Three values, in that order, are what make the picture legible without a
- * single shadow: a card is the lightest thing on the page, the band it sits in
- * is a step down, and the page behind both is a step down again. PR Lens got
- * the same separation out of drop shadows and a dot grid, which the operator
- * shell does not use.
- */
-const LIGHT: Palette = {
-	ground: "light",
-	background: "#f6f5f2",
-	band: "#edece7",
-	bandBorder: "#dedcd5",
-	card: "#ffffff",
-	cardBorder: "#cdcbc5",
-	foreground: "#141414",
-	muted: "#5c5c59",
-	faint: "#83827e",
-	edge: "#7c7c78",
-	edgeMuted: "#b4b3ae",
-	chip: "#f0efeb",
-	glyph: "#5c5c59",
-	pill: "#ffffff",
-	pillBorder: "#d6d4ce",
-	pillText: "#43433f",
-	selection: SEMANTIC_STANDING_PALETTE.light.selected,
-	warning: "#6e4a00",
-	standingAdded: SEMANTIC_STANDING_PALETTE.light.added,
-	standingChanged: SEMANTIC_STANDING_PALETTE.light.changed,
-	standingRemoved: SEMANTIC_STANDING_PALETTE.light.removed,
-};
-
-/** Deep charcoal cards on black panels, bone-white ink, the same cobalt. */
-const DARK: Palette = {
-	ground: "dark",
-	background: "#141517",
-	band: "#0b0c0e",
-	bandBorder: "#2a2b2e",
-	card: "#232528",
-	cardBorder: "#3a3c40",
-	foreground: "#f2f1ee",
-	muted: "#a6a6a3",
-	faint: "#82827f",
-	edge: "#797a7d",
-	edgeMuted: "#44464a",
-	chip: "#2e3033",
-	glyph: "#a6a6a3",
-	pill: "#232528",
-	pillBorder: "#3a3c40",
-	pillText: "#bcbbb8",
-	selection: SEMANTIC_STANDING_PALETTE.dark.selected,
-	warning: "#d29a1e",
-	standingAdded: SEMANTIC_STANDING_PALETTE.dark.added,
-	standingChanged: SEMANTIC_STANDING_PALETTE.dark.changed,
-	standingRemoved: SEMANTIC_STANDING_PALETTE.dark.removed,
-};
-
-/**
- * The palette for a theme.
- * @param theme Which ground the picture is drawn on.
- * @returns Its colours.
+ * Map diagram roles onto the canonical shadcn theme, without a second palette.
+ * @param theme Which ground to draw on.
+ * @returns Literal sRGB colors, including transparency where the token has it.
  */
 function paletteFor(theme: DiagramTheme): Palette {
-	return theme === "dark" ? DARK : LIGHT;
+	return {
+		ground: theme,
+		background: themeColor(theme, "--background"),
+		band: themeColor(theme, "--sidebar"),
+		bandBorder: themeColor(theme, "--sidebar-border"),
+		card: themeColor(theme, "--card"),
+		cardBorder: themeColor(theme, "--border"),
+		foreground: themeColor(theme, "--card-foreground"),
+		muted: themeColor(theme, "--muted-foreground"),
+		faint: themeColor(theme, "--muted-foreground"),
+		edge: themeColor(theme, "--diagram-edge"),
+		edgeMuted: themeColor(theme, "--muted-foreground"),
+		chip: themeColor(theme, "--muted"),
+		glyph: themeColor(theme, "--muted-foreground"),
+		pill: themeColor(theme, "--popover"),
+		pillBorder: themeColor(theme, "--border"),
+		pillText: themeColor(theme, "--popover-foreground"),
+		selection: themeColor(theme, "--diagram-selection"),
+		warning: themeColor(theme, theme === "light" ? "--warning-foreground" : "--warning"),
+		standingAdded: themeColor(theme, "--standing-added"),
+		standingChanged: themeColor(theme, "--standing-changed"),
+		standingRemoved: themeColor(theme, "--standing-removed"),
+	};
 }
 
 export { type Palette, paletteFor };

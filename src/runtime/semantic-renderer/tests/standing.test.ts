@@ -282,11 +282,11 @@ describe("a stated standing on an architecture", () => {
 		const bare = strokesOf(plain);
 		const line = bare.at(-1)!;
 
-		// A swipe, first and widest, so it passes under both the line and the
-		// selection ring rather than through them.
+		// A swipe wider than the line, painted underneath it. The selection
+		// ring remains independent and may be wider than the swipe.
 		expect(marked.length).toBe(bare.length + 1);
 		expect(marked[0]!.at).toBeLessThan(marked[1]!.at);
-		expect(marked[0]!.width).toBeGreaterThan(Math.max(...bare.map((one) => one.width)));
+		expect(marked[0]!.width).toBeGreaterThan(line.width);
 
 		// And the line itself is untouched: its weight still says how much attention
 		// its author asked for, its dash still says what sort of relationship it is.
@@ -308,7 +308,7 @@ describe("a stated standing on an architecture", () => {
 		expect(drawnGroups.filter((group) => group.markup.includes("writes"))).toHaveLength(1);
 		for (const group of drawnGroups) {
 			expect(group.standing).toBe("removed");
-			expect(group.opacity).toBe(0.5);
+			expect(group.opacity).toBe(0.4);
 		}
 		const words = drawnGroups.find((group) => group.markup.includes("writes"))!;
 		const unmarked = subjectGroups((await drawn({ e4: "unchanged" })).svg).find(

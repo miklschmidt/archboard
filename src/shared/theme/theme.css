@@ -1,0 +1,133 @@
+/* Canonical shadcn theme colors, shared by the shell and standalone SVGs.
+   Keep theme colors as literal CSS colors; the export reader resolves them to sRGB. */
+/* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
+:root {
+	/* Named colors used by node types, groups and relationships. */
+	--semantic-red: oklch(63.7% 0.237 25.331);
+	--semantic-orange: oklch(70.5% 0.213 47.604);
+	--semantic-amber: oklch(76.9% 0.188 70.08);
+	--semantic-yellow: oklch(79.5% 0.184 86.047);
+	--semantic-lime: oklch(64.8% 0.2 131.684);
+	--semantic-green: oklch(62.7% 0.194 149.214);
+	--semantic-emerald: oklch(59.6% 0.145 163.225);
+	--semantic-teal: oklch(60% 0.118 184.704);
+	--semantic-cyan: oklch(60.9% 0.126 221.723);
+	--semantic-sky: oklch(68.5% 0.169 237.323);
+	--semantic-blue: oklch(62.3% 0.214 259.815);
+	--semantic-indigo: oklch(58.5% 0.233 277.117);
+	--semantic-violet: oklch(60.6% 0.25 292.717);
+	--semantic-purple: oklch(62.7% 0.265 303.9);
+	--semantic-fuchsia: oklch(66.7% 0.295 322.15);
+	--semantic-pink: oklch(65.6% 0.241 354.308);
+	--semantic-rose: oklch(58.6% 0.253 17.585);
+
+	--background: oklch(0.99 0.002 95);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.5367412 0.22860543 262.173533);
+	--primary-foreground: oklch(0.97 0.014 254.604);
+	--secondary: oklch(0.967 0.001 286.375);
+	--secondary-foreground: oklch(0.21 0.006 285.885);
+	--muted: oklch(0.97 0 0);
+	/* Darker than the preset's 0.556: secondary text must clear 4.5:1 on the
+	   pale stone sidebar and inspector, not only on chalk white. */
+	--muted-foreground: oklch(0.5 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.5367412 0.22860543 262.173533);
+	--chart-1: oklch(0.897 0.196 126.665);
+	--chart-2: oklch(0.768 0.233 130.85);
+	--chart-3: oklch(0.648 0.2 131.684);
+	--chart-4: oklch(0.532 0.157 131.589);
+	--chart-5: oklch(0.453 0.124 130.933);
+	--status: oklch(0.84931542 0.20733982 128.849744);
+	--status-foreground: oklch(0.40178217 0.09855448 133.653014);
+	--status-subtle: oklch(0.95294765 0.08717228 120.463839);
+	--standing-added: oklch(64.8% 0.2 131.684);
+	--standing-changed: oklch(76.9% 0.188 70.08);
+	--standing-removed: oklch(50.5% 0.213 27.518);
+	--diagram-selection: oklch(0.5367412 0.22860543 262.173533);
+	--diagram-edge: oklch(0.58506881 0.00599378 106.583359);
+	--warning: oklch(0.72131034 0.14180263 80.931184);
+	--warning-foreground: oklch(0.43816934 0.09171983 76.864627);
+	--warning-subtle: oklch(0.95920698 0.03574366 89.442142);
+	--sidebar: oklch(0.975 0.003 95);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.5367412 0.22860543 262.173533);
+	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+	--sidebar-accent: oklch(0.945 0.003 95);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.5367412 0.22860543 262.173533);
+}
+
+/* Dark: deep charcoal, black panels, bone-white text, the same two accents. */
+:root[data-theme="dark"] {
+	/* Named colors used by node types, groups and relationships. */
+	--semantic-red: oklch(0.71062735 0.16614792 22.216224);
+	--semantic-orange: oklch(0.7576398 0.15903746 55.934415);
+	--semantic-amber: oklch(0.83686057 0.16442159 84.428628);
+	--semantic-yellow: oklch(0.86055946 0.17311488 91.935651);
+	--semantic-lime: oklch(0.84931542 0.20733982 128.849744);
+	--semantic-green: oklch(0.80034877 0.18206039 151.711031);
+	--semantic-emerald: oklch(0.77294438 0.15349041 163.223075);
+	--semantic-teal: oklch(0.78451984 0.13252856 181.911977);
+	--semantic-cyan: oklch(0.79711582 0.13388753 211.530189);
+	--semantic-sky: oklch(0.75351288 0.13898886 232.66148);
+	--semantic-blue: oklch(0.71374005 0.14338051 254.624021);
+	--semantic-indigo: oklch(0.6801126 0.15830252 276.934902);
+	--semantic-violet: oklch(0.70896895 0.15916821 293.541199);
+	--semantic-purple: oklch(0.72168539 0.1766884 305.503759);
+	--semantic-fuchsia: oklch(0.74772013 0.20697173 322.160432);
+	--semantic-pink: oklch(0.72526641 0.17522733 349.760748);
+	--semantic-rose: oklch(0.71918609 0.16898359 13.427993);
+
+	--background: oklch(0.2 0.004 264);
+	--foreground: oklch(0.965 0.004 95);
+	--card: oklch(0.165 0.004 264);
+	--card-foreground: oklch(0.965 0.004 95);
+	--popover: oklch(0.205 0 0);
+	--popover-foreground: oklch(0.965 0.004 95);
+	--primary: oklch(0.5367412 0.22860543 262.173533);
+	--primary-foreground: oklch(0.97 0.014 254.604);
+	--secondary: oklch(0.274 0.006 286.033);
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: oklch(0.269 0 0);
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: oklch(0.269 0 0);
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(1 0 0 / 10%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: oklch(0.5367412 0.22860543 262.173533);
+	--chart-1: oklch(0.897 0.196 126.665);
+	--chart-2: oklch(0.768 0.233 130.85);
+	--chart-3: oklch(0.648 0.2 131.684);
+	--chart-4: oklch(0.532 0.157 131.589);
+	--chart-5: oklch(0.453 0.124 130.933);
+	--status: oklch(0.84931542 0.20733982 128.849744);
+	--status-foreground: oklch(0.94741891 0.15565109 123.504754);
+	--status-subtle: oklch(0.31354752 0.05775641 130.475651);
+	--standing-added: oklch(79.2% 0.209 151.711);
+	--standing-changed: oklch(82.8% 0.189 84.429);
+	--standing-removed: oklch(70.4% 0.191 22.216);
+	--diagram-selection: oklch(0.64396219 0.18987857 263.145359);
+	--diagram-edge: oklch(0.57961729 0.00470753 271.33291);
+	--warning: oklch(0.72131034 0.14180263 80.931184);
+	--warning-foreground: oklch(0.85278573 0.12194932 86.127776);
+	--warning-subtle: oklch(0.30488372 0.04761708 85.022106);
+	--sidebar: oklch(0.165 0.004 264);
+	--sidebar-foreground: oklch(0.965 0.004 95);
+	--sidebar-primary: oklch(0.5367412 0.22860543 262.173533);
+	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.5367412 0.22860543 262.173533);
+}

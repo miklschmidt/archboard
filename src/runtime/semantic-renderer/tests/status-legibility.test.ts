@@ -348,7 +348,7 @@ describe("a relationship is drawn in one ink from end to end", () => {
 		expect(band![1]).toBe(line(group).ink);
 		expect(Number(band![2])).toBeGreaterThan(2.2);
 		expect(Number(band![3])).toBeLessThan(1);
-		expect(band![4]).toBe("11 6");
+		expect(band![4]).toBe("7 3.5");
 	});
 
 	test("a relationship the proposal no longer has sends no dots", async () => {

@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { themeColor } from "@/shared/theme/server";
 import { renderSemanticView, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	RASTER_MAX_SIDE_PX,
@@ -116,11 +117,14 @@ describe("what one capture is", () => {
 		const capture = await rasterizer.rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
 		expect(capture).toMatchObject({ width: drawn.width, height: drawn.height });
-		// The light ground and the white cards are painted, so this is the picture
+		// The theme's ground and cards are painted, so this is the picture
 		// and not a blank page of the right size.
 		const colors = pngRgbCounts(capture.png);
-		expect(colors.get("246,245,242") ?? 0).toBeGreaterThan(1000);
-		expect(colors.get("255,255,255") ?? 0).toBeGreaterThan(1000);
+		for (const token of ["--background", "--card"]) {
+			const hex = themeColor("light", token);
+			const rgb = [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(",");
+			expect(colors.get(rgb) ?? 0).toBeGreaterThan(1000);
+		}
 		// Every one of the renderer's faces was declared and loaded before the shot.
 		expect(capture.fonts).toBeGreaterThan(0);
 		// The same document draws the same bytes: nothing about the capture reads a clock.
