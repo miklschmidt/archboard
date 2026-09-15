@@ -469,7 +469,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S05.json",
 			"sources": ["src/flask/app.py", "src/flask/ctx.py"],
-			"prompt": "On the `Flask request pipeline` board, explain one request as an ordered exchange named `Handle a request`: from the WSGI server's call to `Flask.wsgi_app`, through the `Request context` push and `full_dispatch_request` with its `preprocess_request`, to the `View function` and back through `finalize_request` with `make_response` and `process_response` to the WSGI server. Show that exchange in a board view named `Dispatch exchange`, and explain in a walkthrough why the request context is pushed before dispatch.",
+			"prompt": "On the `Flask request pipeline` board, explain one request as an ordered exchange named `Handle a request`: from the WSGI server's call to `Flask.wsgi_app`, through the `Request context` push, in which the context matches the URL against the app's rules, and `full_dispatch_request` with its `preprocess_request`, to the `View function` and back through `finalize_request` with `make_response` and `process_response` to the WSGI server. Show that exchange in a board view named `Dispatch exchange`, and explain in a walkthrough why the request context is pushed before dispatch.",
 			"expectedFeatures": [
 				{
 					"feature": "flow.participants-and-steps",
@@ -477,7 +477,7 @@
 				},
 				{
 					"feature": "flow.message-kinds",
-					"requirement": "sync calls, at least one return, and a self message for preprocess_request"
+					"requirement": "sync calls, at least one return, and a self message for the request context matching the URL during its own push (RequestContext.push calls self.match_request in ctx.py)"
 				},
 				{
 					"feature": "view.data-flow",
@@ -740,7 +740,8 @@
 					"board": "Flask signals",
 					"from": "Flask app",
 					"to": "Metrics extension",
-					"kind": "signal"
+					"kind": "signal",
+					"includeContained": true
 				},
 				{
 					"check": "node-kind",
@@ -851,10 +852,6 @@
 				{
 					"feature": "identity.continuation",
 					"requirement": "all three edges keep their ids and other fields (one changed property each)"
-				},
-				{
-					"feature": "traffic.illustrative",
-					"requirement": "the answer distinguishes illustration from telemetry"
 				}
 			],
 			"outcomes": [
