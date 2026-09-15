@@ -120,7 +120,7 @@ model, so a person starts it:
 bun run eval:skill check                  # validate the inputs, no model
 bun run eval:skill run                    # both arms, every scenario, pinned repetitions
 bun run eval:skill grade .skill-evals/<batch> --grader claude   # or --grader codex
-bun run eval:skill report .skill-evals/<batch>
+bun run eval:skill report .skill-evals/<batch>   # again, without grading; grade writes one too
 bun run eval:skill pin                    # rewrite the version pins from PATH, no model
 ```
 
