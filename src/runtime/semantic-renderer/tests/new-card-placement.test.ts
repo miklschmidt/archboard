@@ -151,3 +151,26 @@ test("removed return routes do not reserve room beside new branches", async () =
 		absent.atlas.nodes["new"]!.x - absent.atlas.nodes["n1"]!.x,
 	);
 });
+
+test("a new terminal shares its independent old sibling's layer after inserting their dependency", async () => {
+	const before = VariantContentSchema.parse({
+		nodes: ["n0", "n1"].map((id) => ({ id, name: id, kind: "module" })),
+		edges: [{ id: "old", from: "n0", to: "n1", kind: "call", label: "visible regions" }],
+	});
+	const content = VariantContentSchema.parse({
+		...before,
+		nodes: [
+			...before.nodes,
+			{ id: "new", name: "Card measurement", kind: "module" },
+			{ id: "leaf", name: "Pretext", kind: "module" },
+		],
+		edges: [
+			...before.edges,
+			{ id: "in", from: "n0", to: "new", kind: "call", label: "subjects to measure" },
+			{ id: "out", from: "new", to: "n1", kind: "call", label: "card and label sizes" },
+			{ id: "end", from: "new", to: "leaf", kind: "call", label: "prepare and wrap text" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	expect(drawing.atlas.nodes["leaf"]!.y).toBe(drawing.atlas.nodes["n1"]!.y);
+});
