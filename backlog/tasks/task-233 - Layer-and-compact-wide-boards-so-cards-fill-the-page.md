@@ -4,7 +4,7 @@ title: Layer and compact wide boards so cards fill the page
 status: To Do
 assignee: []
 created_date: '2026-09-15 13:10'
-updated_date: '2026-09-15 13:26'
+updated_date: '2026-09-15 18:52'
 labels:
   - renderer
 dependencies:
@@ -32,3 +32,13 @@ docs/design/wide-board-layout.md measures the three Flask module maps in docs/de
 - [ ] #4 Bends per edge (measure.ts) do not rise by more than 10% on any fixture; a route that gains corners to save a corridor is a snake, not an improvement
 - [ ] #5 On each of the three fixtures, with TASK-231 merged, measure.ts baseline reports at least 30% of 100 px cells touching a card and a page area at most 70% of the baseline recorded in the note (6.40, 6.15 and 7.52 Mpx)
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-09-15 18:52
+---
+The 2026-09-15 skill-eval batch (S14 candidate, 20 parts and 37-43 edges) scored readability 4/10 in both arms: the grader called the render a thicket of long routed lines, labels floating far from their edges and eight parallel lines fanning out of the WSGI application card. Captures under .skill-evals/2026-09-15T13-56-41-652Z/runs/candidate/S14/*/captures are a fourth fixture to measure against.
+---
+<!-- COMMENTS:END -->

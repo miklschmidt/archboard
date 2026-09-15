@@ -1,5 +1,5 @@
 {
-	"$comment": "The pipeline with the session interface reached from two places, as Flask 3.0.0 has it: the request context opens the session and process_response saves it. No views yet.",
+	"$comment": "The pipeline with the session interface reached from two places, as Flask 3.0.0 has it: the request context opens the session and process_response saves it. Calls land where the source makes them: the WSGI server calls wsgi_app, which pushes the context and calls full_dispatch_request; finalize_request calls process_response. No views yet.",
 	"registerRepo": true,
 	"steps": [
 		{
@@ -17,35 +17,70 @@
 						"name": "Flask app",
 						"kind": "app",
 						"responsibility": "The WSGI application object",
-						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/app.py"
+						}
+					},
+					{
+						"name": "Flask.wsgi_app",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Pushes the request context and dispatches",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/app.py"
+						}
 					},
 					{
 						"name": "Request context",
 						"kind": "module",
 						"parent": "Flask app",
 						"responsibility": "Binds request and session for one request and matches the URL",
-						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/ctx.py"
+						}
 					},
 					{
 						"name": "Session interface",
 						"kind": "module",
 						"parent": "Flask app",
 						"responsibility": "Opens and saves the signed cookie session",
-						"binding": { "repo": "$FLASK", "path": "src/flask/sessions.py" }
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/sessions.py"
+						}
 					},
 					{
 						"name": "full_dispatch_request",
 						"kind": "function",
 						"parent": "Flask app",
 						"responsibility": "Preprocess, dispatch and finalize one request",
-						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/app.py"
+						}
 					},
 					{
 						"name": "dispatch_request",
 						"kind": "function",
 						"parent": "Flask app",
 						"responsibility": "Calls the view function of the matched rule",
-						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/app.py"
+						}
+					},
+					{
+						"name": "finalize_request",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Makes the response and runs process_response",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/app.py"
+						}
 					},
 					{
 						"name": "View function",
@@ -58,15 +93,29 @@
 						"kind": "function",
 						"parent": "Flask app",
 						"responsibility": "Runs after_request functions and saves the session",
-						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/app.py"
+						}
 					}
 				],
 				"edges": [
 					{
 						"from": "WSGI server",
-						"to": "full_dispatch_request",
+						"to": "Flask.wsgi_app",
 						"kind": "call",
-						"label": "via wsgi_app"
+						"label": "environ, start_response"
+					},
+					{
+						"from": "Flask.wsgi_app",
+						"to": "Request context",
+						"kind": "call",
+						"label": "push"
+					},
+					{
+						"from": "Flask.wsgi_app",
+						"to": "full_dispatch_request",
+						"kind": "call"
 					},
 					{
 						"from": "Request context",
@@ -76,9 +125,13 @@
 					},
 					{
 						"from": "full_dispatch_request",
+						"to": "finalize_request",
+						"kind": "call"
+					},
+					{
+						"from": "finalize_request",
 						"to": "process_response",
-						"kind": "call",
-						"label": "via finalize_request"
+						"kind": "call"
 					},
 					{
 						"from": "process_response",
@@ -86,7 +139,11 @@
 						"kind": "call",
 						"label": "save_session"
 					},
-					{ "from": "full_dispatch_request", "to": "dispatch_request", "kind": "call" },
+					{
+						"from": "full_dispatch_request",
+						"to": "dispatch_request",
+						"kind": "call"
+					},
 					{
 						"from": "dispatch_request",
 						"to": "View function",
