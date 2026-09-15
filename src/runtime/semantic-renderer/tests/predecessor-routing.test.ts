@@ -326,3 +326,32 @@ test("a new west-to-north route and its label share the target attachment corrid
 	for (const card of Object.values(drawing.atlas.nodes))
 		expect(routeCrosses(routePoints(drawing.svg).get("6zcjVgzh")!, card)).toBe(false);
 });
+
+test("a surviving relationship keeps the face it left and reached in the predecessor, whichever the ranks would now choose", async () => {
+	// A return took the right flank in the predecessor. Adding a card that
+	// makes the same relationship a forward step by rank must not move its
+	// attachments: the faces are read back from the predecessor's route ends.
+	const before = VariantContentSchema.parse({
+		nodes: ["a", "b"].map((id) => ({ id, name: id, kind: "module" })),
+		edges: [
+			{ id: "ab", from: "a", to: "b", kind: "call" },
+			{ id: "ba", from: "b", to: "a", kind: "call", label: "result" },
+		],
+	});
+	const content = VariantContentSchema.parse({
+		nodes: [...before.nodes, { id: "c", name: "c", kind: "module" }],
+		edges: [...before.edges, { id: "bc", from: "b", to: "c", kind: "call" }],
+	});
+	const first = await renderArchitecture({ content: before, theme: "light" });
+	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	const wasFrom = routePoints(first.svg).get("ba")![0]!;
+	const nowFrom = routePoints(drawing.svg).get("ba")![0]!;
+	const b = { was: first.atlas.nodes["b"]!, now: drawing.atlas.nodes["b"]! };
+	const faceOf = (point: { x: number; y: number }, box: { x: number; width: number }) =>
+		Math.abs(point.x - box.x) < 1
+			? "west"
+			: Math.abs(point.x - box.x - box.width) < 1
+				? "east"
+				: "other";
+	expect(faceOf(nowFrom, b.now)).toBe(faceOf(wasFrom, b.was));
+});
