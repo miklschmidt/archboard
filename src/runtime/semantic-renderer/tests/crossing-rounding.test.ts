@@ -3,8 +3,8 @@ import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	bodyShift,
+	corridorPoints,
 	roundBridges,
-	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 test("a new top-entry route preserves room to bridge the crossing beside its first corner", async () => {
@@ -54,22 +54,34 @@ test("a new top-entry route preserves room to bridge the crossing beside its fir
 	});
 
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
-	const points = routePoints(drawing.svg);
-	const crossing = { x: points.get("6zcjVgzh")!.at(-1)!.x, y: points.get("SIdU2g2Q")![0]!.y };
+	// Which routes cross, and where, follows from the predecessor picture, and
+	// that picture is the engine's once a fanning card's skips are attached by
+	// the engine on a first render (docs/design/layout-rules.md). The reader's
+	// invariant is the bridge rule itself: every proper perpendicular crossing
+	// between two routes, a straight approach (12) away from both routes'
+	// ends, carries a bridge on one of them.
+	const crossings = perpendicularCrossings(corridorPoints(drawing.svg));
+	expect(crossings.length, "the reduction still crosses somewhere").toBeGreaterThan(0);
 	const shift = bodyShift(drawing.svg);
-	const marked = [
-		...drawing.svg.matchAll(
-			/<g data-semantic-kind="edge" data-semantic-id="(6zcjVgzh|SIdU2g2Q)"[^>]*>([\s\S]*?)<\/g>/gu,
-		),
-	].some((group) => {
-		const path = /<path[^>]*\sd="([^"]*)"[^>]*marker-end=/u.exec(group[2]!)?.[1];
-		return (
-			path !== undefined &&
-			roundBridges(path).some((bridge) => {
+	const bridges = new Map(
+		[
+			...drawing.svg.matchAll(
+				/<g data-semantic-kind="edge" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/gu,
+			),
+		]
+			.map((group) => {
+				const path = /<path[^>]*\sd="([^"]*)"[^>]*marker-end=/u.exec(group[2]!)?.[1];
+				return [group[1]!, path === undefined ? [] : roundBridges(path)] as const;
+			})
+			.filter(([, found]) => found.length > 0),
+	);
+	for (const crossing of crossings) {
+		const x = crossing.x - shift.x,
+			y = crossing.y - shift.y;
+		const bridged = crossing.routes.some((id) =>
+			(bridges.get(id) ?? []).some((bridge) => {
 				const first = bridge.points[0]!,
 					last = bridge.points.at(-1)!;
-				const x = crossing.x - shift.x,
-					y = crossing.y - shift.y;
 				return (
 					(first.y === last.y &&
 						Math.abs(first.y - y) < 0.01 &&
@@ -80,10 +92,80 @@ test("a new top-entry route preserves room to bridge the crossing beside its fir
 						y > Math.min(first.y, last.y) &&
 						y < Math.max(first.y, last.y))
 				);
-			})
+			}),
 		);
-	});
-	expect(marked, "the perpendicular crossing beside the new route's corner has a bridge").toBe(
-		true,
-	);
+		expect(
+			bridged,
+			`the crossing of ${crossing.routes.join(" and ")} at ${x},${y} has a bridge`,
+		).toBe(true);
+	}
 });
+
+/** A point where one route's straight run crosses another's at a right angle. */
+interface Crossing {
+	readonly x: number;
+	readonly y: number;
+	readonly routes: readonly [string, string];
+}
+
+/** One axis-aligned run of a route, and whether it is the route's first or last. */
+interface Run {
+	readonly id: string;
+	readonly start: { readonly x: number; readonly y: number };
+	readonly end: { readonly x: number; readonly y: number };
+	readonly first: boolean;
+	readonly last: boolean;
+}
+
+/**
+ * Whether a coordinate lies strictly inside a run, past the straight approach
+ * (12) at a route's own start or end, where the bridge rule leaves room for
+ * the departure and the arrowhead.
+ * @param run The run.
+ * @param along The coordinate along it.
+ * @param from The run's start coordinate.
+ * @param to The run's end coordinate.
+ * @returns True for a proper interior crossing.
+ */
+function inside(run: Run, along: number, from: number, to: number): boolean {
+	const startMargin = run.first ? 12 : 0.01;
+	const endMargin = run.last ? 12 : 0.01;
+	const [low, lowMargin, high, highMargin] =
+		from < to ? [from, startMargin, to, endMargin] : [to, endMargin, from, startMargin];
+	return along > low + lowMargin && along < high - highMargin;
+}
+
+/**
+ * Every proper perpendicular crossing between two routes' axis-aligned runs.
+ * @param routes Each route's bend points, by relationship id.
+ * @returns The crossings.
+ */
+function perpendicularCrossings(
+	routes: ReadonlyMap<string, readonly { x: number; y: number }[]>,
+): Crossing[] {
+	const runs: Run[] = [...routes].flatMap(([id, points]) =>
+		points.slice(1).flatMap((end, index) => {
+			const start = points[index]!;
+			return start.x === end.x || start.y === end.y
+				? [{ id, start, end, first: index === 0, last: index === points.length - 2 }]
+				: [];
+		}),
+	);
+	const found: Crossing[] = [];
+	for (const one of runs) {
+		for (const other of runs) {
+			if (one.id >= other.id) continue;
+			const horizontal = one.start.y === one.end.y ? one : other;
+			const vertical = one.start.y === one.end.y ? other : one;
+			if (horizontal.start.y !== horizontal.end.y || vertical.start.x !== vertical.end.x) continue;
+			const x = vertical.start.x,
+				y = horizontal.start.y;
+			if (
+				inside(horizontal, x, horizontal.start.x, horizontal.end.x) &&
+				inside(vertical, y, vertical.start.y, vertical.end.y)
+			)
+				found.push({ x, y, routes: [one.id, other.id] });
+		}
+	}
+	return found;
+}

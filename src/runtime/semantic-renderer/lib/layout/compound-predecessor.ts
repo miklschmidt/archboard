@@ -1,5 +1,4 @@
-// A predecessor contributes constraints to ELK, never a second layout pass
-// that moves individual cards after their routes have been solved.
+// A predecessor contributes constraints to ELK, never a second pass moving cards after routing.
 import type { ElkNode, ElkExtendedEdge, ElkLabel, LayoutOptions } from "elkjs/lib/elk-api";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
@@ -149,8 +148,8 @@ function reuseDrawing(
  */
 function seedLabels(graph: ElkNode, ports: ReadonlyMap<string, Point>): void {
 	for (const edge of graph.edges!) {
-		const from = ports.get(edge.sources[0]!)!,
-			to = ports.get(edge.targets[0]!)!;
+		const [from, to] = [ports.get(edge.sources[0]!), ports.get(edge.targets[0]!)];
+		if (from === undefined || to === undefined) continue; // engine-attached: no port to seed between
 		for (const label of edge.labels!) {
 			label.x = (from.x + to.x - label.width!) / 2;
 			label.y = (from.y + to.y - label.height!) / 2;
@@ -435,8 +434,8 @@ function seedRoute(
 	const before = priorRoutes.get(edge.id);
 	const current = content.edges.find((candidate) => candidate.id === edge.id);
 	if (current === undefined) return;
-	const from = ports.get(edge.sources[0]!)!,
-		to = ports.get(edge.targets[0])!;
+	const [from, to] = [ports.get(edge.sources[0]!), ports.get(edge.targets[0])];
+	if (from === undefined || to === undefined) return; // engine-attached
 	const side = portSides.get(edge.sources[0]!);
 	const priorPoints = inheritedRoute(before, current);
 	const horizontalSide = sharedHorizontalSide(side, portSides.get(edge.targets[0]));
