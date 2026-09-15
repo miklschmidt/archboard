@@ -1,0 +1,378 @@
+{
+	"nodes": [
+		{
+			"id": "B0LGvznT",
+			"name": "WSGI application",
+			"kind": "app",
+			"responsibility": "Central Flask application object that receives WSGI calls, manages request dispatch, responses, configuration and extensions.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/app.py"
+			}
+		},
+		{
+			"id": "zjBEbOT4",
+			"name": "Sans-IO core",
+			"kind": "module",
+			"responsibility": "Transport-independent application base that owns application registries, URL-map configuration and setup APIs.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/app.py"
+			}
+		},
+		{
+			"id": "A2uAxUJL",
+			"name": "Contexts",
+			"kind": "module",
+			"responsibility": "Creates, pushes and pops application and request contexts, opens sessions and matches each request URL.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/ctx.py"
+			}
+		},
+		{
+			"id": "TGUDuHiQ",
+			"name": "Globals",
+			"kind": "module",
+			"responsibility": "Defines context variables and the current_app, request, session and g proxy objects.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/globals.py"
+			}
+		},
+		{
+			"id": "QEjAG2SW",
+			"name": "Routing",
+			"kind": "module",
+			"responsibility": "Registers URL rules and view endpoints, builds URL adapters and provides route matching.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/app.py"
+			}
+		},
+		{
+			"id": "pxvjnOzy",
+			"name": "Blueprints",
+			"kind": "module",
+			"responsibility": "Defers application setup, then registers blueprint routes, callbacks, templates and CLI commands on an app.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/blueprints.py"
+			}
+		},
+		{
+			"id": "seE4N0tj",
+			"name": "CLI",
+			"kind": "module",
+			"responsibility": "Defines the flask command group, discovers applications, manages command app contexts and runs the development server.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/cli.py"
+			}
+		},
+		{
+			"id": "HA8LTJIU",
+			"name": "Sessions",
+			"kind": "module",
+			"responsibility": "Provides the default signed-cookie session interface that opens session data and saves it into response cookies.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sessions.py"
+			}
+		},
+		{
+			"id": "yw2FY7vL",
+			"name": "Templating",
+			"kind": "module",
+			"responsibility": "Integrates Flask application and blueprint loaders with Jinja and renders or streams templates with context.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/templating.py"
+			}
+		},
+		{
+			"id": "D9UvXFml",
+			"name": "JSON",
+			"kind": "module",
+			"responsibility": "Provides application-configurable JSON serialization, deserialization and JSON responses.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/json/provider.py"
+			}
+		},
+		{
+			"id": "IkVvpR65",
+			"name": "Signals",
+			"kind": "module",
+			"responsibility": "Publishes Flask lifecycle, request, application-context and template-rendering signals.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/signals.py"
+			}
+		},
+		{
+			"id": "GMdhye8q",
+			"name": "Testing",
+			"kind": "test",
+			"responsibility": "Supplies Flask-aware request clients, environment builders, context preservation and CLI test runners.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/testing.py"
+			}
+		},
+		{
+			"id": "zhTz5iOr",
+			"name": "Werkzeug",
+			"kind": "external",
+			"responsibility": "Provides WSGI wrappers, HTTP primitives, routing, serving and the underlying test client used by Flask."
+		},
+		{
+			"id": "EZKntgVv",
+			"name": "Jinja",
+			"kind": "external",
+			"responsibility": "Provides the template environment, loaders and template rendering engine integrated by Flask."
+		},
+		{
+			"id": "eo6vrH3Q",
+			"name": "Click",
+			"kind": "external",
+			"responsibility": "Provides command groups, options, invocation and the CLI testing runner used by Flask."
+		}
+	],
+	"edges": [
+		{
+			"id": "KOsivf3E",
+			"from": "B0LGvznT",
+			"to": "A2uAxUJL",
+			"kind": "call",
+			"label": "request_context / push / pop",
+			"emphasis": "hero"
+		},
+		{
+			"id": "9KK2gzVa",
+			"from": "B0LGvznT",
+			"to": "zjBEbOT4",
+			"kind": "dependency",
+			"label": "Flask extends App",
+			"emphasis": "normal"
+		},
+		{
+			"id": "bvRV9dMH",
+			"from": "B0LGvznT",
+			"to": "QEjAG2SW",
+			"kind": "data",
+			"label": "URL map and view registry",
+			"emphasis": "normal"
+		},
+		{
+			"id": "qC7KNcre",
+			"from": "B0LGvznT",
+			"to": "pxvjnOzy",
+			"kind": "call",
+			"label": "register_blueprint",
+			"emphasis": "normal"
+		},
+		{
+			"id": "i2e3X7TB",
+			"from": "B0LGvznT",
+			"to": "HA8LTJIU",
+			"kind": "call",
+			"label": "save_session",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Q71WF8k9",
+			"from": "B0LGvznT",
+			"to": "yw2FY7vL",
+			"kind": "call",
+			"label": "create Jinja environment",
+			"emphasis": "normal"
+		},
+		{
+			"id": "apwezuBL",
+			"from": "B0LGvznT",
+			"to": "D9UvXFml",
+			"kind": "call",
+			"label": "json.response for return values",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4RXFPQkJ",
+			"from": "B0LGvznT",
+			"to": "IkVvpR65",
+			"kind": "call",
+			"label": "request lifecycle signals",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4iuWtwtx",
+			"from": "B0LGvznT",
+			"to": "GMdhye8q",
+			"kind": "call",
+			"label": "test_client",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Tm6dBShU",
+			"from": "B0LGvznT",
+			"to": "zhTz5iOr",
+			"kind": "dependency",
+			"label": "WSGI and response primitives",
+			"emphasis": "normal"
+		},
+		{
+			"id": "TNwYaLtc",
+			"from": "A2uAxUJL",
+			"to": "TGUDuHiQ",
+			"kind": "data",
+			"label": "bind context variables",
+			"emphasis": "normal"
+		},
+		{
+			"id": "QKA5Qvb1",
+			"from": "A2uAxUJL",
+			"to": "HA8LTJIU",
+			"kind": "call",
+			"label": "open_session",
+			"emphasis": "normal"
+		},
+		{
+			"id": "jYSjP6od",
+			"from": "A2uAxUJL",
+			"to": "QEjAG2SW",
+			"kind": "call",
+			"label": "create adapter and match",
+			"emphasis": "normal"
+		},
+		{
+			"id": "JESK0MhM",
+			"from": "A2uAxUJL",
+			"to": "IkVvpR65",
+			"kind": "call",
+			"label": "context push / pop signals",
+			"emphasis": "normal"
+		},
+		{
+			"id": "lswAkeAH",
+			"from": "zjBEbOT4",
+			"to": "QEjAG2SW",
+			"kind": "data",
+			"label": "owns url_map and rules",
+			"emphasis": "normal"
+		},
+		{
+			"id": "BVtgG9sG",
+			"from": "zjBEbOT4",
+			"to": "D9UvXFml",
+			"kind": "call",
+			"label": "initialize json provider",
+			"emphasis": "normal"
+		},
+		{
+			"id": "IoPlGAX7",
+			"from": "zjBEbOT4",
+			"to": "EZKntgVv",
+			"kind": "dependency",
+			"label": "Jinja environment class",
+			"emphasis": "normal"
+		},
+		{
+			"id": "D1atjy0f",
+			"from": "QEjAG2SW",
+			"to": "zhTz5iOr",
+			"kind": "dependency",
+			"label": "Map, Rule and adapters",
+			"emphasis": "normal"
+		},
+		{
+			"id": "wIVu3eU2",
+			"from": "pxvjnOzy",
+			"to": "QEjAG2SW",
+			"kind": "call",
+			"label": "deferred add_url_rule",
+			"emphasis": "normal"
+		},
+		{
+			"id": "SSHZw9DM",
+			"from": "pxvjnOzy",
+			"to": "B0LGvznT",
+			"kind": "call",
+			"label": "register on app",
+			"emphasis": "normal"
+		},
+		{
+			"id": "xnFV9jMm",
+			"from": "pxvjnOzy",
+			"to": "seE4N0tj",
+			"kind": "data",
+			"label": "merge blueprint commands",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ewHGzrle",
+			"from": "seE4N0tj",
+			"to": "A2uAxUJL",
+			"kind": "call",
+			"label": "app_context for commands",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Cth4IAcc",
+			"from": "seE4N0tj",
+			"to": "zhTz5iOr",
+			"kind": "call",
+			"label": "run_simple",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5zl0DVVg",
+			"from": "seE4N0tj",
+			"to": "eo6vrH3Q",
+			"kind": "dependency",
+			"label": "command group and options",
+			"emphasis": "normal"
+		},
+		{
+			"id": "KWVSc3eQ",
+			"from": "yw2FY7vL",
+			"to": "EZKntgVv",
+			"kind": "call",
+			"label": "load and render templates",
+			"emphasis": "normal"
+		},
+		{
+			"id": "nCs59yfz",
+			"from": "yw2FY7vL",
+			"to": "TGUDuHiQ",
+			"kind": "dependency",
+			"label": "current_app and request proxies",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ogwbmLhV",
+			"from": "yw2FY7vL",
+			"to": "IkVvpR65",
+			"kind": "call",
+			"label": "template rendered signals",
+			"emphasis": "normal"
+		},
+		{
+			"id": "xOTECXbe",
+			"from": "GMdhye8q",
+			"to": "zhTz5iOr",
+			"kind": "dependency",
+			"label": "Client and EnvironBuilder",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ZV9c3WYs",
+			"from": "GMdhye8q",
+			"to": "eo6vrH3Q",
+			"kind": "dependency",
+			"label": "CliRunner",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}
