@@ -5,13 +5,12 @@ import {
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
-import type { ArchitectureDrawing, DrawingEdge } from "@/runtime/semantic-renderer/lib/drawing";
+import type { DrawingEdge, PaintedDrawing } from "@/runtime/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/runtime/semantic-renderer/lib/design";
 import { canvasFor, coord, inflate, union } from "@/runtime/semantic-renderer/lib/geometry";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/runtime/semantic-renderer/lib/atlas";
 import { curveBounds, labelAnchorOf } from "@/runtime/semantic-renderer/lib/layout/curves";
-import { bridgeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
 import { crossingMasks } from "@/runtime/semantic-renderer/lib/svg/crossings";
 import {
 	paintMeasuredCard,
@@ -241,7 +240,7 @@ interface ArchitecturePainting {
  * @returns The document body, bounds and matching atlas.
  */
 function paintArchitecture(
-	drawing: ArchitectureDrawing,
+	drawing: PaintedDrawing,
 	palette: Palette,
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
@@ -249,7 +248,7 @@ function paintArchitecture(
 	derived: ReadonlySet<string> = new Set(),
 ): ArchitecturePainting {
 	const { cards, containers } = drawing;
-	const { edges, bridges } = bridgeCrossings(drawing);
+	const { edges, bridges } = drawing.bridged;
 	const { definitions, masks } = crossingMasks(edges, bridges);
 	const appearances = nodeAppearances(
 		[...cards, ...containers].map(({ measured }) => measured.node),

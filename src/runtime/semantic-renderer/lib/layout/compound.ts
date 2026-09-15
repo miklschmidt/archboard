@@ -5,6 +5,7 @@ import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/li
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
+	PaintedDrawing,
 	DrawingEdge,
 	DrawingNode,
 	MeasuredArchitecture,
@@ -16,6 +17,7 @@ import {
 	seedPredecessor,
 } from "@/runtime/semantic-renderer/lib/layout/compound-predecessor";
 import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-runs";
+import { bridgeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
 import {
 	COMPOUND_OPTIONS,
@@ -318,13 +320,15 @@ async function layoutCompound(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	predecessor?: ArchitectureDrawing,
-): Promise<ArchitectureDrawing> {
-	if (predecessor !== undefined) {
-		measured = preserveSizes(measured, predecessor);
-		const reused = reuseDrawing(content, measured, predecessor);
-		if (reused !== undefined) return reused;
-	}
-	return settleLabels(content, measured, predecessor, new Set());
+): Promise<PaintedDrawing> {
+	if (predecessor !== undefined) measured = preserveSizes(measured, predecessor);
+	const reused =
+		predecessor === undefined ? undefined : reuseDrawing(content, measured, predecessor);
+	const drawing = reused ?? (await settleLabels(content, measured, predecessor, new Set()));
+	// Bridges are part of the geometry a reader sees, so they are settled here
+	// and not by a painter; the un-bridged routes stay beside them for a
+	// successor to seed from.
+	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 
 /**

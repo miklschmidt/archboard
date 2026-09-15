@@ -496,6 +496,8 @@ function previousSides(
 	 * @param node Its predecessor card or frame.
 	 * @returns The closest boundary face.
 	 */
+	// A port lies on a face, never a corner, so two faces tie only when the
+	// predecessor route ended off its card; the fixed order below decides then.
 	const face = (point: Point, node: typeof from): PortSides[number] => {
 		const distances: readonly (readonly [PortSides[number], number])[] = [
 			["WEST", Math.abs(point.x - node.box.x)],
