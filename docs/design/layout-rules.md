@@ -249,3 +249,16 @@ card fanning more than one skip down its flank. Three tests that pinned flank
 geometry were re-derived as the invariants they protected: the label on a
 straight run of its own route, a bounded bend count, and a bridge on every
 proper crossing.
+
+## 6. Labels nearest an endpoint (2026-09-15, TASK-232)
+
+Recommendation 5 landed: within each clear interval of a run the badge sits as
+near the nearer end of its route as the interval allows, and candidates sort
+by that reach before the run's length (an inherited position still comes
+first). Median label gap to the nearer endpoint went from 233/252/223 px to
+57/40/68 px and the maximum from 1345/1339/1413 to 191/178/243; no label on
+boards 1 and 2 is over 200 px away, two on board 3. The cost is on board 2,
+where reservations for badges beside their cards move the page from 6.15 to
+6.65 Mpx and bends per edge from 7.2 to 8.0 (12 percent over the baseline 7.1,
+above the 10 percent the task allowed); boards 1 and 3 are unchanged. The
+`TAIL_LAYER` and `inline` options are still dead and belong to TASK-240.
