@@ -101,8 +101,11 @@ function sidesOf(
 	// rankNodes assigns every node before edge attachment begins.
 	const distance = ordering.ranks.get(edge.to)! - ordering.ranks.get(edge.from)!;
 	if (distance <= 0) return ["EAST", "EAST"];
-	if (nested) return ["WEST", "WEST"];
-	return distance === 1 ? ["SOUTH", "NORTH"] : skipFaces(edge, ordering, predecessor);
+	if (distance === 1) return ["SOUTH", "NORTH"];
+	// A skip across a frame boundary descends like any forward step: the engine
+	// refuses a port-less edge across a hierarchy, and the flank it used to take
+	// was a lane down the frame's edge that looped a route round the frame.
+	return nested ? ["SOUTH", "NORTH"] : skipFaces(edge, ordering, predecessor);
 }
 
 /**
@@ -281,32 +284,48 @@ function ancestryOf(id: string, measured: MeasuredArchitecture): string[] {
  * Identify only the frames an edge must leave and enter, in traversal order.
  * @param edge The semantic relationship.
  * @param measured The existing inclusion tree.
- * @returns The intervening frame ids, without their shared ancestor.
+ * @returns The frames left, outermost last, and the frames entered, outermost first.
  */
-function boundariesOf(edge: SemanticEdge, measured: MeasuredArchitecture): string[] {
+function boundariesOf(
+	edge: SemanticEdge,
+	measured: MeasuredArchitecture,
+): { readonly leaving: string[]; readonly entering: string[] } {
 	const from = ancestryOf(edge.from, measured);
 	const to = ancestryOf(edge.to, measured);
 	const common = from.find((id) => to.includes(id));
 	const leaving = from.slice(1, common === undefined ? undefined : from.indexOf(common));
 	const entering = to.slice(1, common === undefined ? undefined : to.indexOf(common));
-	return [...leaving, ...entering.toReversed()];
+	return { leaving, entering: entering.toReversed() };
 }
 
 /**
- * One explicit boundary port is shared by the two adjacent edge sections.
+ * One explicit boundary port is shared by the two adjacent edge sections: on
+ * the face the route leaves its source by for every frame it leaves, and on
+ * the face it reaches its target by for every frame it enters.
  * @param edge The semantic relationship that owns the crossing.
- * @param boundaries Frames in traversal order.
+ * @param boundaries Frames left and entered, in traversal order.
+ * @param boundaries.leaving The frames the route leaves, innermost first.
+ * @param boundaries.entering The frames the route enters, outermost first.
  * @param nodes The engine hierarchy being constructed.
- * @param side The flank used by this relationship.
- * @returns Their port ids, in the same traversal order.
+ * @param sides The faces this relationship leaves and arrives by.
+ * @returns Their port ids, in traversal order.
  */
 function boundaryPorts(
 	edge: SemanticEdge,
-	boundaries: readonly string[],
+	boundaries: { readonly leaving: readonly string[]; readonly entering: readonly string[] },
 	nodes: ReadonlyMap<string, ElkNode>,
-	side: PortSides[number],
+	sides: PortSides,
 ): string[] {
-	return boundaries.map((id, index) => {
+	// A frame is left and entered by its side. Through its top a route would
+	// cross the title band, which is the frame's own and never a corridor, and
+	// the engine accepts a crossing on a flank whatever faces the ends use.
+	const entryFace = sides[1] === "NORTH" ? "WEST" : sides[1];
+	const exitFace = sides[0] === "SOUTH" ? "WEST" : sides[0];
+	const crossings = [
+		...boundaries.leaving.map((id) => ({ id, side: exitFace })),
+		...boundaries.entering.map((id) => ({ id, side: entryFace })),
+	];
+	return crossings.map(({ id, side }, index) => {
 		const port = portOf(`${edge.id}:boundary:${index}`, side, 0);
 		nodes.get(id)?.ports?.push(port);
 		return port.id;
@@ -355,7 +374,7 @@ function edgeOf(
 	attachPort(edge.to, portOf(toPort, toSide, ranks.get(edge.from) ?? 0), nodes);
 	const ports = [
 		fromPort,
-		...boundaryPorts(edge, boundariesOf(edge, measured), nodes, fromSide),
+		...boundaryPorts(edge, boundariesOf(edge, measured), nodes, [fromSide, toSide]),
 		toPort,
 	];
 	return ports.slice(1).map((target, index) => ({

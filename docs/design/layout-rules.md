@@ -323,3 +323,15 @@ sends a relationship across a frame boundary out the west flank was tried
 free as well; the engine refuses a port-less edge across a hierarchy (no
 route comes back), so that rule stands, and the four routes from inside a
 frame to an external card still bundle down the frame's west edge.
+
+## 11. The boundary flank rule is gone (2026-09-16)
+
+A relationship across a frame boundary took the west face at both ends, a
+rule that arrived with the skip routing and was never asked for; on the Agent
+workbench board it sent a route from a card above a frame down the frame's
+outside, round its bottom and back up into it. Such a relationship now takes
+the same faces as any forward step (south out of the source, north into the
+target, east for a return); only the ports on the frames it crosses sit on a
+flank, since through a frame's top a route would cross the title band. Every
+frame now draws a rule under its title, and a relationship the frame itself
+makes to a part inside it hangs from that rule.
