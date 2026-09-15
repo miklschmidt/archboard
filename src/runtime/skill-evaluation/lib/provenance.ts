@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { digestOf } from "@/runtime/skill-evaluation/lib/install";
-import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
+import { PinsSchema, type LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
 
 const ProvenanceSchema = z
 	.object({
@@ -68,18 +68,51 @@ function assertProvenance(previous: unknown, current: Provenance): void {
 }
 
 /**
+ * The pins as they bind a batch: without the grader block that older pins
+ * carried before graders.json, and without their prose. A grader is chosen
+ * when grading runs, and a comment binds nothing.
+ * @param pins The pins as recorded or as loaded.
+ * @returns The binding part.
+ */
+function bindingPins(pins: LoadedSuite["pins"]): unknown {
+	const { $comment: _comment, usageSemantics: _semantics, codex, ...rest } = pins;
+	const { grader: _grader, ...codexRest } = codex;
+	return { ...rest, codex: codexRest };
+}
+
+/**
+ * Whether a batch recorded under older pins is bound by the same inputs as
+ * the loaded ones: its own recorded pins reproduce its digest, and they
+ * differ from today's only in what no longer binds a batch.
+ * @param recorded The batch's recorded pins.
+ * @param digest The batch's recorded input digest.
+ * @param loaded The inputs requested now.
+ * @returns True when the inputs still match.
+ */
+function boundByOlderPins(recorded: unknown, digest: string, loaded: LoadedSuite): boolean {
+	const pins = PinsSchema.safeParse(recorded);
+	if (!pins.success) return false;
+	return (
+		inputDigest({ ...loaded, pins: pins.data }) === digest &&
+		JSON.stringify(bindingPins(pins.data)) === JSON.stringify(bindingPins(loaded.pins))
+	);
+}
+
+/**
  * Keep grading and report checklists bound to the inputs used by the authors.
  * @param batchRoot The saved comparison.
  * @param loaded The inputs requested for grading or reporting.
  */
 function assertBatchInputs(batchRoot: string, loaded: LoadedSuite): void {
 	const manifest = z
-		.object({ provenance: ProvenanceSchema })
+		.object({ provenance: ProvenanceSchema, pins: z.unknown().optional() })
 		.parse(JSON.parse(fs.readFileSync(path.join(batchRoot, "batch.json"), "utf8")));
-	if (manifest.provenance.inputs !== inputDigest(loaded))
-		throw new Error(
-			"The evaluation inputs differ from this batch. Restore its pinned inputs before grading or reporting.",
-		);
+	const digest = manifest.provenance.inputs;
+	if (digest === inputDigest(loaded)) return;
+	if (boundByOlderPins(manifest.pins, digest, loaded)) return;
+	throw new Error(
+		"The evaluation inputs differ from this batch. Restore its pinned inputs before grading or reporting.",
+	);
 }
 
 export { assertBatchInputs, assertProvenance, batchProvenance, inputDigest, type Provenance };

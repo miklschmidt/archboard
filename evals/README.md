@@ -160,8 +160,10 @@ identical prompts, fixtures, pins and settings. Changing any pin starts a new
 baseline; the harness refuses a Codex executable whose version differs from
 the pin. `graders.json` is deliberately outside that digest: a grader is
 chosen when grading runs, and changing its pins never makes a batch
-un-gradable (the batch graded on 2026-09-14 predates `graders.json` and its
-digest no longer matches; its written reports stand and are not re-run). The
+un-gradable. A batch recorded before `graders.json` existed carries a grader
+block inside its recorded pins; the input check recomputes its digest from
+those recorded pins and accepts it when they differ from today's only in that
+block and in prose, so such a batch can still be graded and reported. The
 batch also records content digests for its complete suite inputs,
 both skill packages and the implementation/dependency files, plus its Bun
 version. Resume refuses changed content or a different job selection before
