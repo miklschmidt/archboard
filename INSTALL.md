@@ -176,6 +176,9 @@ Use the React export name in `icon`, not the catalog's kebab-case name
 Colors reference the curated palette:
 red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo,
 violet, purple, fuchsia, pink and rose. Omit `color` for neutral type styling.
+The bundled defaults colour every node kind except `external` and `other`, and
+the `http`, `rpc`, `event`, `queue`, `data` and `render` relationship kinds, so a
+fresh vault is not gray; a consumer's own `config.yaml` replaces them.
 Relationship `dash` is solid, dashed or dotted; `arrowhead` is filled, open or none.
 
 Run `archboard semantic config` to discover the interpreted policy and
