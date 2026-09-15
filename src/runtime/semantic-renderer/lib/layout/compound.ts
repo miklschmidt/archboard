@@ -1,7 +1,7 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
 import ELK from "elkjs/lib/elk-api.js";
-import type { ElkExtendedEdge, ElkNode, ElkShape } from "elkjs/lib/elk-api";
+import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/lib/elk-api";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
@@ -96,12 +96,19 @@ async function solveGraph(graph: ElkNode, measured: MeasuredArchitecture): Promi
 		const height = Math.max(0, ...[...measured.labels.values()].map((label) => label.height));
 		const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 		const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
+		// The engine's post-compaction refuses a hierarchy ("invalid hitboxes for
+		// scanline constraint calculation"), so a board with a frame is laid out
+		// without it and a flat board is pulled together.
+		const hierarchical = (graph.children ?? []).some((node) => (node.children?.length ?? 0) > 0);
+		const options: LayoutOptions = hierarchical
+			? { ...COMPOUND_OPTIONS, "elk.layered.compaction.postCompaction.strategy": "NONE" }
+			: COMPOUND_OPTIONS;
 		return await owner.engine.layout(graph, {
 			layoutOptions:
 				height === 0
-					? COMPOUND_OPTIONS
+					? options
 					: {
-							...COMPOUND_OPTIONS,
+							...options,
 							"elk.layered.spacing.nodeNodeBetweenLayers": String(
 								Math.max(
 									Number(COMPOUND_OPTIONS["elk.layered.spacing.nodeNodeBetweenLayers"]),
