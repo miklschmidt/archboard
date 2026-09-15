@@ -308,3 +308,18 @@ frame's title band rather than the frame's outer top edge (Codex session), so
 it no longer reads as arriving from outside. A card whose label the engine
 had to reserve still drops a layer, since an inline reserved label is a
 layer of its own to the engine; that is the remaining oddity on a small fan.
+
+## 10. Brackets beside their own chain only (2026-09-16)
+
+On the Browser application board two skips from different cards to one card in
+another column each took the west flank as "the one bracket a non-hub card
+keeps", and their two flank lanes snaked down the middle of the frame. The
+bracket is now only the skip that runs beside its source's one chain to the
+same target (the reader's bracket); every other skip is the engine's on a
+first render. The fixtures measure 5.97 / 4.70 / 5.15 Mpx, corridor ink
+7 / 16 / 0 percent, bends 7.1 / 7.5 / 8.3 per edge: board 1 pays a third in
+page for losing its long bracket, board 3 loses its corridors. The rule that
+sends a relationship across a frame boundary out the west flank was tried
+free as well; the engine refuses a port-less edge across a hierarchy (no
+route comes back), so that rule stands, and the four routes from inside a
+frame to an external card still bundle down the frame's west edge.
