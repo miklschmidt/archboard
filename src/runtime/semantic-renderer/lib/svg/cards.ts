@@ -34,7 +34,6 @@ import {
 import { coord, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import { truncate, truncateTracked } from "@/runtime/semantic-renderer/lib/text";
 import {
-	CARD_NOTE_FONT,
 	CARD_TITLE_FONT,
 	HEADER_NAME_FONT,
 	HEADER_NOTE_FONT,
@@ -110,10 +109,10 @@ function paintCard(
 	appearance: NodeAppearance,
 ): string {
 	const styles = stylesFor(palette);
-	const { node, box, titleSize } = placed;
+	const { node, box, titleSize, notes } = placed;
 	const textX = box.x + CARD_PADDING_X + ICON_CHIP_SIZE + ICON_CHIP_GAP;
 	const room = cardTextWidth(box.width);
-	const hasNote = node.responsibility !== undefined;
+	const hasNote = notes.length > 0;
 
 	const title = textNode(
 		{
@@ -129,13 +128,19 @@ function paintCard(
 		truncate(node.name, CARD_TITLE_FONT, titleSize, room),
 	);
 
-	const note =
-		node.responsibility === undefined
-			? ""
-			: textNode(
-					{ x: coord(textX), y: coord(box.y + NOTE_BASELINE), ...styles.note },
-					truncate(node.responsibility, CARD_NOTE_FONT, NOTE_SIZE, room),
-				);
+	const note = lines(
+		notes.map((run) =>
+			textNode(
+				{
+					"xml:space": "preserve",
+					x: coord(textX),
+					y: coord(box.y + NOTE_BASELINE - NOTE_SIZE + run.y),
+					...styles.note,
+				},
+				run.text,
+			),
+		),
+	);
 
 	return wrap(
 		"g",

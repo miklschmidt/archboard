@@ -11,7 +11,7 @@
 					{
 						"name": "Flask app",
 						"kind": "app",
-						"responsibility": "Creates the app and dispatches requests",
+						"responsibility": "Acts as the WSGI application\nand dispatches requests",
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
 					{

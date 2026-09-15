@@ -149,8 +149,9 @@ traffic marks at their first frame and proves nothing about animation.
   actually does, at the level the request asked for, with fewer truer parts
   over many?
 - **readability**: is the captured diagram legible and organised, as you saw
-  it: sensible names, one-line responsibilities, no unexplained parts, views
-  that isolate what they claim to, nothing clipped or overlapping? Score it
+  it: sensible names, clear short responsibilities whose complete text is
+  legible, no unexplained parts, views that isolate what they claim to, nothing
+  clipped or overlapping? Score it
   from the attached captures you visually inspected; a run with no capture you
   could inspect scores
   what the saved names and views support and no more, and its summary says
