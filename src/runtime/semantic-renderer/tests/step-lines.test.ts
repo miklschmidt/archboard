@@ -90,3 +90,16 @@ describe("a flow drawn on its board", () => {
 		);
 	});
 });
+
+test("a step to a part drawn with children draws nothing: the container receives no line", async () => {
+	const content = VariantContentSchema.parse({
+		nodes: [
+			...NODES,
+			{ id: "inner", name: "load_app", kind: "function", parent: "info", responsibility: "Loads" },
+		],
+		edges: [],
+		flows: [FLOW],
+	});
+	const rendered = await renderArchitecture({ content, theme: "light" });
+	expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2"]);
+});
