@@ -19,7 +19,9 @@ A flow is an ordered exchange between nodes of one variant.
 
 - `repeat` (an integer of 2 or more) says one step happens exactly that many
   times in a run, and only when the source fixes the count: a retry limit
-  written as a number, a batch of a stated size. A loop over a list whose
+  written as a number, a batch of a stated size, a literal list of candidates
+  tried in turn (a loop over `("wsgi.py", "app.py")` is `repeat: 2`, and its
+  early exit on the first that loads is the `note`). A loop over a list whose
   length depends on data, or a retry until success, is one step with a `note`
   saying so; a count the source does not state is a count you invented.
 - `note` is a caveat on one step, shown beside it: a condition under which the
