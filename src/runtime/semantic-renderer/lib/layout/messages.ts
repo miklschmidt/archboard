@@ -115,19 +115,19 @@ function pillBox(placed: PlacedStep, ends: Ends): Box {
 }
 
 /**
- * A self-message's label: beside the loop, centred on its height.
+ * A self-message's label: above the loop's outgoing run, starting a little
+ * past the lifeline, the way a crossing message's label sits above its arrow.
  *
- * Beside rather than above, because a self-message's loop already occupies the
- * room above the row it turns back into, and because a reader scanning a column
- * for what it does to itself is scanning to the right of that column.
+ * Above rather than beside: columns are narrow and stand a seam apart, so a
+ * plate beside the loop would lie across the next participant's column.
  * @param placed The message.
  * @param activated Whether its column is busy at that height.
  * @returns The plate's box.
  */
 function selfPillBox(placed: PlacedStep, activated: boolean): Box {
 	return {
-		x: selfStart(placed, activated) + SELF_LOOP_REACH + SELF_LOOP_CORNER + SELF_LABEL_GAP,
-		y: placed.y + SELF_LOOP_EXTENT / 2 - PILL_HEIGHT / 2,
+		x: selfStart(placed, activated) + SELF_LABEL_GAP,
+		y: placed.y - MESSAGE_LABEL_GAP - PILL_HEIGHT,
 		width: pillWidth(placed.label),
 		height: PILL_HEIGHT,
 	};
