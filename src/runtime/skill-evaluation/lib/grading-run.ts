@@ -1,15 +1,17 @@
 // The grading session over one batch: a read-only workspace holding the
-// pinned Flask checkouts and every anonymous run bundle, one Codex thread
+// pinned Flask checkouts and every anonymous run bundle, one grader session
 // that grades the runs in chunks and is resumed rather than restarted, and
-// the verdicts and the session's own usage written beside the runs.
+// the verdicts and the session's own usage written beside the runs. Which
+// program grades is chosen here, by name, through the runner seam.
 
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { SKILL_EVAL_GRADER_TIMEOUT_MS } from "@/shared/timing/timing";
-import { parseTrace, type Usage } from "@/runtime/skill-evaluation/lib/events";
-import { codexVersion } from "@/runtime/skill-evaluation/lib/batch";
+import type { Usage } from "@/runtime/skill-evaluation/lib/events";
 import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
+import { claudeGrader } from "@/runtime/skill-evaluation/lib/claude-grader";
+import { codexGrader } from "@/runtime/skill-evaluation/lib/codex-grader";
 import {
 	FiledVerdictSchema,
 	GRADER_OUTPUT_JSON_SCHEMA,
@@ -18,23 +20,30 @@ import {
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
 import {
-	fillCodexHome,
-	graderConfigToml,
-	operatorAuthFile,
-} from "@/runtime/skill-evaluation/lib/isolation";
-import {
-	runProcess,
-	sequentially,
-	type ProcessResult,
-} from "@/runtime/skill-evaluation/lib/process";
+	graderLayout,
+	prepareGraderLayout,
+	type GraderLayout,
+} from "@/runtime/skill-evaluation/lib/grader-layout";
+import type {
+	GraderCallOutcome,
+	GraderIdentity,
+	GraderRunner,
+	UsageSemantics,
+} from "@/runtime/skill-evaluation/lib/grader-runner";
+import { callUsageFrom, sessionUsage } from "@/runtime/skill-evaluation/lib/grader-usage";
+import { sequentially, type ProcessResult } from "@/runtime/skill-evaluation/lib/process";
 import {
 	fileImageReceipt,
 	imagesForRun,
 	type RunImages,
 } from "@/runtime/skill-evaluation/lib/grading-images";
-import { sumUsage } from "@/runtime/skill-evaluation/lib/report";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
-import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
+import {
+	GRADER_NAMES,
+	type GraderName,
+	type LoadedSuite,
+} from "@/runtime/skill-evaluation/lib/suite";
+import { executableVersion } from "@/runtime/skill-evaluation/lib/version";
 
 /** What a grading pass is given. */
 interface GradingOptions {
@@ -45,7 +54,10 @@ interface GradingOptions {
 	readonly chunkSize: number;
 	readonly signal: AbortSignal;
 	readonly log: (line: string) => void;
-	readonly codexExecutable?: string | undefined;
+	/** Which grader runs, chosen now, not when the authors ran. */
+	readonly grader: GraderName;
+	/** The executable to run; must report the pinned version. */
+	readonly executable: string;
 }
 
 const UsageSchema = z.object({
@@ -64,58 +76,40 @@ const CallSchema = z.object({
 	eventsFile: z.string(),
 	exitCode: z.number().nullable(),
 	/**
-	 * What the call's turn.completed reported. In a resumed thread that is the
-	 * thread's cumulative usage so far, not this call's own (pins.json,
-	 * usageSemantics); `callUsage` is this call's share.
+	 * What the call reported, under the runner's semantics: a Codex resumed
+	 * thread reports its cumulative usage so far; a Claude call reports its own.
 	 */
 	usage: UsageSchema.nullable(),
-	/** This call's own usage: the difference from the previous reading of the same thread. Absent in sessions recorded before TASK-212. */
+	/** This call's own usage. Absent in sessions recorded before TASK-212. */
 	callUsage: UsageSchema.nullable().optional(),
+	/** The runner's raw usage record, kept beside the normalized one. Claude only. */
+	raw: z
+		.object({ usage: z.unknown(), modelUsage: z.unknown(), costUsd: z.number().nullable() })
+		.nullable()
+		.optional(),
 	graded: z.array(z.string()),
 	error: z.string().nullable(),
 });
 type GradingCall = z.infer<typeof CallSchema>;
-const SessionSchema = z.object({ threadId: z.string().nullable(), calls: z.array(CallSchema) });
+const SessionSchema = z.object({
+	/** The runner's session identity: a Codex thread id or a Claude session id. */
+	threadId: z.string().nullable(),
+	/** Absent in sessions recorded before there was a choice; those are Codex. */
+	runner: z.enum(GRADER_NAMES).optional(),
+	version: z.string().optional(),
+	settings: z.record(z.string(), z.unknown()).optional(),
+	calls: z.array(CallSchema),
+});
 type GradingSession = z.infer<typeof SessionSchema>;
 const BundleHeadSchema = z.object({ run: z.string(), revision: z.string() }).passthrough();
 /** A filed verdict, read leniently: one filed before captures existed carries no visual answer. */
 const RunVerdictSchema = FiledVerdictSchema;
-
-/** Where a grading pass keeps things. */
-interface GradingPaths {
-	readonly root: string;
-	readonly workspace: string;
-	readonly codexHome: string;
-	readonly verdicts: string;
-	readonly session: string;
-	readonly schema: string;
-}
 
 /** One bundled run, found under the batch. */
 interface BundledRun {
 	readonly id: string;
 	readonly directory: string;
 	readonly revision: string;
-}
-
-/**
- * The grading directory's layout, created if absent.
- * @param batchRoot The batch.
- * @returns The paths.
- */
-function gradingPaths(batchRoot: string): GradingPaths {
-	const root = path.join(batchRoot, "grader");
-	const paths: GradingPaths = {
-		root,
-		workspace: path.join(root, "workspace"),
-		codexHome: path.join(root, "codex-home"),
-		verdicts: path.join(root, "verdicts"),
-		session: path.join(root, "session.json"),
-		schema: path.join(root, "output-schema.json"),
-	};
-	for (const directory of [paths.workspace, paths.codexHome, paths.verdicts])
-		fs.mkdirSync(directory, { recursive: true });
-	return paths;
 }
 
 /**
@@ -193,96 +187,49 @@ function readSession(file: string): GradingSession {
 }
 
 /**
- * The Codex command line for one grading call: a new thread for the first,
- * the same thread resumed for the rest.
- * @param options The pass.
- * @param paths The grading paths.
- * @param threadId The session's thread, once it has one.
- * @param files The prompt to send and the verdict file to fill.
- * @param files.prompt The prompt file.
- * @param files.verdict The verdict file.
- * @param files.images Validated images attached to this call, including resumptions.
- * @returns The argv.
+ * The usage semantics a recorded session was written under.
+ * @param session The session.
+ * @returns Cumulative for Codex and for sessions recorded before the choice.
  */
-function graderArgv(
-	options: GradingOptions,
-	paths: GradingPaths,
-	threadId: string | null,
-	files: {
-		readonly prompt: string;
-		readonly verdict: string;
-		readonly images: readonly RunImages[];
-	},
-): string[] {
-	const grader = options.loaded.pins.codex.grader;
-	const prompt = fs.readFileSync(files.prompt, "utf8");
-	const shared = [
-		...files.images.flatMap((run) =>
-			run.images.flatMap((image) => ["--image", path.join(paths.workspace, image.file)]),
-		),
-		"--json",
-		"--skip-git-repo-check",
-		"-m",
-		grader.model,
-		"-c",
-		`model_reasoning_effort=${JSON.stringify(grader.reasoningEffort)}`,
-		"-c",
-		'approval_policy="never"',
-		"--output-schema",
-		paths.schema,
-		"-o",
-		files.verdict,
-	];
-	return threadId === null
-		? [
-				options.codexExecutable ?? options.loaded.pins.codex.executable,
-				"exec",
-				...shared,
-				"-C",
-				paths.workspace,
-				"-s",
-				grader.sandbox,
-				prompt,
-			]
-		: [
-				options.codexExecutable ?? options.loaded.pins.codex.executable,
-				"exec",
-				"resume",
-				threadId,
-				...shared,
-				prompt,
-			];
+function semanticsOf(session: GradingSession): UsageSemantics {
+	return session.runner === "claude" ? "per-call" : "cumulative";
+}
+
+/**
+ * The runner chosen by name.
+ * @param options The pass.
+ * @returns The runner.
+ */
+function runnerFor(options: GradingOptions): GraderRunner {
+	return options.grader === "claude"
+		? claudeGrader(options.loaded.graders.claude, options.executable)
+		: codexGrader(options.loaded.graders.codex, options.executable);
 }
 
 /**
  * Files each run's verdict from a call's structured answer.
- * @param paths The grading paths.
+ * @param layout The grading layout.
  * @param verdictFile The answer file.
  * @param asked The runs the call was asked to grade.
  * @param images Delivery evidence, only when the call completed successfully.
  * @returns What was filed, and what went wrong reading the answer.
  */
 function fileVerdicts(
-	paths: GradingPaths,
+	layout: GraderLayout,
 	verdictFile: string,
 	asked: readonly string[],
 	images: readonly RunImages[] | null,
 ): { readonly graded: string[]; readonly error: string | null } {
 	if (!fs.existsSync(verdictFile))
-		return { graded: [], error: "the grader wrote no final message" };
+		return { graded: [], error: "the grader returned no structured answer" };
 	try {
 		const output = parseGraderOutput(fs.readFileSync(verdictFile, "utf8"));
 		const graded = output.runs
 			.filter((verdict) => asked.includes(verdict.run))
 			.map((verdict) => {
-				fs.writeFileSync(
-					path.join(paths.verdicts, `${verdict.run}.json`),
-					`${JSON.stringify(verdict, null, "\t")}\n`,
-				);
-				fileImageReceipt(
-					path.join(paths.verdicts, `${verdict.run}.json`),
-					images?.find((run) => run.run === verdict.run) ?? null,
-				);
+				const file = path.join(layout.verdicts, `${verdict.run}.json`);
+				fs.writeFileSync(file, `${JSON.stringify(verdict, null, "\t")}\n`);
+				fileImageReceipt(file, images?.find((run) => run.run === verdict.run) ?? null);
 				return verdict.run;
 			});
 		const missing = asked.filter((id) => !graded.includes(id));
@@ -297,112 +244,93 @@ function fileVerdicts(
 }
 
 /**
- * Why a call went wrong, if it did: the filing error, the stream's failure,
+ * Why a call went wrong, if it did: the filing error, the runner's failure,
  * or a non-zero exit.
+ * @param name The runner, for the message.
  * @param filing What filing the verdicts said.
  * @param filing.error The filing error, if any.
- * @param failure What the event stream said.
+ * @param failure What the runner said.
  * @param result The process result.
  * @returns The error, or null.
  */
 function callError(
+	name: GraderName,
 	filing: { readonly error: string | null },
 	failure: string | null,
 	result: ProcessResult,
 ): string | null {
-	if (filing.error !== null) return filing.error;
 	if (failure !== null) return failure;
+	if (filing.error !== null) return filing.error;
 	return result.exitCode === 0
 		? null
-		: `codex exited ${result.exitCode ?? result.signalCode}; ${result.stderr.trim().split("\n").at(-1) ?? ""}`;
+		: `${name} exited ${result.exitCode ?? result.signalCode}; ${result.stderr.trim().split("\n").at(-1) ?? ""}`;
 }
 
 /**
  * Runs one grading call and files its verdicts.
  * @param options The pass.
- * @param paths The grading paths.
+ * @param runner The chosen runner.
+ * @param layout The grading layout.
  * @param session The session, updated in place.
  * @param runs The anonymous ids to grade.
  * @returns The call record.
  */
 async function gradeChunk(
 	options: GradingOptions,
-	paths: GradingPaths,
+	runner: GraderRunner,
+	layout: GraderLayout,
 	session: GradingSession,
 	runs: readonly string[],
 ): Promise<GradingCall> {
 	const index = session.calls.length + 1;
-	const images = runs.map((run) => imagesForRun(paths.workspace, run));
+	const images = runs.map((run) => imagesForRun(layout.workspace, run));
 	const files = {
-		images,
-		prompt: path.join(paths.root, `prompt-${index}.md`),
-		verdict: path.join(paths.root, `verdict-${index}.json`),
-		events: path.join(paths.root, `grader-${index}.jsonl`),
+		prompt: path.join(layout.root, `prompt-${index}.md`),
+		verdict: path.join(layout.root, `verdict-${index}.json`),
+		events: path.join(layout.root, `grader-${index}.jsonl`),
 	};
-	fs.writeFileSync(
-		files.prompt,
-		graderPrompt({
-			rubric: options.loaded.rubric,
-			layout: { flask: "flask", runs: "runs", verdictFile: path.basename(files.verdict) },
-			revisions: { ...options.loaded.pins.flask.revisions },
-			runs,
-			continuing: session.threadId !== null,
-			images,
-		}),
-	);
-	const result = await runProcess({
-		argv: graderArgv(options, paths, session.threadId, files),
-		cwd: paths.workspace,
-		env: {
-			PATH: process.env["PATH"] ?? "",
-			HOME: process.env["HOME"] ?? "",
-			CODEX_HOME: paths.codexHome,
-		},
+	const prompt = graderPrompt({
+		rubric: options.loaded.rubric,
+		layout: { flask: "flask", runs: "runs", verdictFile: path.basename(files.verdict) },
+		revisions: { ...options.loaded.pins.flask.revisions },
+		runs,
+		continuing: session.threadId !== null,
+		images,
+		delivery: runner.delivery,
+	});
+	fs.writeFileSync(files.prompt, prompt);
+	const outcome: GraderCallOutcome = await runner.call({
+		workspace: layout.workspace,
+		prompt,
+		schemaFile: layout.schema,
+		verdictFile: files.verdict,
+		images,
+		sessionId: session.threadId,
 		timeoutMs: SKILL_EVAL_GRADER_TIMEOUT_MS,
 		signal: options.signal,
 	});
-	fs.writeFileSync(files.events, result.stdout);
-	const trace = parseTrace(result.stdout);
-	session.threadId ??= trace.threadId;
-	const filing = fileVerdicts(
-		paths,
-		files.verdict,
-		runs,
-		deliveredImages(result, trace.failure, images),
-	);
+	fs.writeFileSync(files.events, outcome.events);
+	session.threadId ??= outcome.sessionId;
+	const filing = fileVerdicts(layout, files.verdict, runs, outcome.delivered);
 	const call: GradingCall = {
 		index,
 		runs: [...runs],
 		promptFile: files.prompt,
 		verdictFile: files.verdict,
 		eventsFile: files.events,
-		exitCode: result.exitCode,
-		usage: trace.usage,
-		callUsage: callUsageFrom(session.calls, trace.usage),
+		exitCode: outcome.result.exitCode,
+		usage: outcome.usage,
+		callUsage: callUsageFrom(session.calls, outcome.usage, runner.usageSemantics),
+		raw: outcome.raw,
 		graded: filing.graded,
-		error: callError(filing, trace.failure, result),
+		error: callError(runner.name, filing, outcome.failure, outcome.result),
 	};
 	session.calls.push(call);
-	fs.writeFileSync(paths.session, `${JSON.stringify(session, null, "\t")}\n`);
+	fs.writeFileSync(layout.session, `${JSON.stringify(session, null, "\t")}\n`);
 	options.log(
 		`call ${call.index}: graded ${call.graded.length}/${call.runs.length}${call.error === null ? "" : ` (${call.error})`}`,
 	);
 	return call;
-}
-
-/**
- * Image delivery only stands after a successful, uninterrupted call.
- * @param result The process outcome.
- * @param failure The protocol failure, if any.
- * @param images The supplied attachments.
- * @returns Delivery evidence or null when the call could not establish it.
- */
-function deliveredImages(
-	result: ProcessResult,
-	failure: string | null,
-	images: readonly RunImages[],
-): readonly RunImages[] | null {
-	return result.exitCode === 0 && !result.timedOut && failure === null ? images : null;
 }
 
 /**
@@ -418,8 +346,20 @@ function chunked(ids: readonly string[], size: number): string[][] {
 }
 
 /**
- * Grades every bundled run of a batch that has no verdict yet, in one
- * session, in chunks.
+ * Refuses an executable whose version is not the pinned one.
+ * @param runner The runner.
+ */
+async function assertPinnedVersion(runner: GraderRunner): Promise<void> {
+	const version = await executableVersion(runner.executable);
+	if (version !== runner.pinnedVersion)
+		throw new Error(
+			`Grading requires ${runner.name} ${runner.pinnedVersion}; the executable reports ${version}. Choose the pinned executable with --${runner.name}, or repin with \`bun run eval:skill pin\`.`,
+		);
+}
+
+/**
+ * Grades every bundled run of a batch that the chosen grader has no verdict
+ * for yet, in one session, in chunks.
  * @param options The pass.
  * @returns The session and the grader's total usage.
  */
@@ -427,153 +367,91 @@ async function gradeBatch(
 	options: GradingOptions,
 ): Promise<{ readonly session: GradingSession; readonly usage: Usage | null }> {
 	assertBatchInputs(options.batchRoot, options.loaded);
-	const version = await codexVersion(
-		options.codexExecutable ?? options.loaded.pins.codex.executable,
-	);
-	if (version !== options.loaded.pins.codex.version)
-		throw new Error(
-			`Grading requires Codex ${options.loaded.pins.codex.version}; the executable reports ${version}. Choose the pinned executable with --codex.`,
-		);
-	const paths = gradingPaths(options.batchRoot);
-	fs.writeFileSync(paths.schema, `${JSON.stringify(GRADER_OUTPUT_JSON_SCHEMA, null, "\t")}\n`);
-	fillCodexHome(
-		paths.codexHome,
-		operatorAuthFile(),
-		graderConfigToml(options.loaded.pins.codex.grader, paths.workspace),
-	);
+	const runner = runnerFor(options);
+	await assertPinnedVersion(runner);
+	const layout = prepareGraderLayout(options.batchRoot, options.grader);
+	fs.writeFileSync(layout.schema, `${JSON.stringify(GRADER_OUTPUT_JSON_SCHEMA, null, "\t")}\n`);
+	runner.prepare(layout.root, layout.workspace);
 	const runs = bundledRuns(options.batchRoot);
-	await stageFlask(options, [...new Set(runs.map((run) => run.revision))], paths.workspace);
-	for (const run of runs) stageRun(run, paths.workspace);
-	const session = readSession(paths.session);
+	await stageFlask(options, [...new Set(runs.map((run) => run.revision))], layout.workspace);
+	for (const run of runs) stageRun(run, layout.workspace);
+	const session = readSession(layout.session);
+	if (session.runner !== undefined && session.runner !== runner.name)
+		throw new Error(`${layout.session} belongs to the ${session.runner} grader`);
+	session.runner = runner.name;
+	session.version = runner.pinnedVersion;
+	session.settings = { ...runner.settings };
 	const pending = runs
 		.map((run) => run.id)
-		.filter((id) => !fs.existsSync(path.join(paths.verdicts, `${id}.json`)));
+		.filter((id) => !fs.existsSync(path.join(layout.verdicts, `${id}.json`)));
 	options.log(
-		`${runs.length} runs staged, ${pending.length} to grade, chunks of ${options.chunkSize}`,
+		`${runner.name}: ${runs.length} runs staged, ${pending.length} to grade, chunks of ${options.chunkSize}`,
 	);
 	await sequentially(chunked(pending, options.chunkSize), async (chunk) => {
-		if (!options.signal.aborted) await gradeChunk(options, paths, session, chunk);
+		if (!options.signal.aborted) await gradeChunk(options, runner, layout, session, chunk);
 	});
-	const usage = sessionUsage(session.calls);
-	fs.writeFileSync(path.join(paths.root, "usage.json"), `${JSON.stringify(usage, null, "\t")}\n`);
+	const usage = sessionUsage(session.calls, runner.usageSemantics);
+	fs.writeFileSync(path.join(layout.root, "usage.json"), `${JSON.stringify(usage, null, "\t")}\n`);
 	return { session, usage };
 }
 
 /**
- * The difference between two cumulative readings, field by field.
- * @param now The later reading.
- * @param before The earlier one.
- * @returns What happened in between.
- */
-function usageSince(now: Usage, before: Usage): Usage {
-	/**
-	 * One optional field's difference, unavailable when either side is.
-	 * @param pick The field.
-	 * @returns The difference or null.
-	 */
-	const optional = (pick: (usage: Usage) => number | null): number | null => {
-		const later = pick(now);
-		const earlier = pick(before);
-		return later === null || earlier === null ? null : later - earlier;
-	};
-	return {
-		input: now.input - before.input,
-		cached: now.cached - before.cached,
-		cacheWrite: optional((usage) => usage.cacheWrite),
-		output: now.output - before.output,
-		reasoning: optional((usage) => usage.reasoning),
-		total: now.total - before.total,
-	};
-}
-
-/**
- * The last cumulative reading a session's earlier calls gave.
- * @param calls The calls so far.
- * @returns The reading, or null when none gave one.
- */
-function lastReading(calls: readonly { readonly usage: Usage | null }[]): Usage | null {
-	return calls.map((call) => call.usage).findLast((usage) => usage !== null) ?? null;
-}
-
-/**
- * One call's own usage, read off the thread's cumulative counter.
- *
- * Codex's `turn.completed` usage is the thread's `total_token_usage`: a resumed
- * call reports everything the thread has cost so far, itself included. This
- * call's share is therefore the growth since the previous reading. A reading
- * smaller than the previous one is not a continuation — the thread was
- * started afresh — and then the reading is the call's own.
- * @param earlier The session's earlier calls.
- * @param reported What this call reported.
- * @returns This call's usage, or null when it reported none.
- */
-function callUsageFrom(
-	earlier: readonly { readonly usage: Usage | null }[],
-	reported: Usage | null,
-): Usage | null {
-	if (reported === null) return null;
-	const previous = lastReading(earlier);
-	return previous === null || reported.total < previous.total
-		? reported
-		: usageSince(reported, previous);
-}
-
-/**
- * What one grading session cost in total, under the same semantics: the last
- * reading of each run of cumulative readings, added up. One thread resumed
- * throughout is one reading, its last; summing the calls would count the
- * first call's tokens once per call.
- * @param calls The session's calls, in order.
- * @returns The session's usage, or null when no call reported any.
- */
-function sessionUsage(calls: readonly { readonly usage: Usage | null }[]): Usage | null {
-	const readings = calls.map((call) => call.usage).filter((usage) => usage !== null);
-	// A reading ends a run of cumulative readings when the next one is smaller.
-	const ends = readings.filter((reading, index) => {
-		const next = readings[index + 1];
-		return next === undefined || next.total < reading.total;
-	});
-	return ends.length === 0 ? null : sumUsage(ends);
-}
-
-/**
- * The verdict filed for one run, if any.
+ * The verdict one grader filed for one run, if any.
  * @param batchRoot The batch.
+ * @param grader The grader.
  * @param id The anonymous id.
  * @returns The verdict, or null.
  */
-function filedVerdict(batchRoot: string, id: string): RunVerdict | null {
-	const file = path.join(batchRoot, "grader", "verdicts", `${id}.json`);
+function filedVerdict(batchRoot: string, grader: GraderName, id: string): RunVerdict | null {
+	const file = path.join(graderLayout(batchRoot, grader).verdicts, `${id}.json`);
 	return fs.existsSync(file)
 		? RunVerdictSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")))
 		: null;
 }
 
 /**
- * The grader's usage as last written.
+ * The grader's usage as last written, under the semantics it recorded.
  * @param batchRoot The batch.
+ * @param grader The grader.
  * @returns The usage, or null.
  */
-function graderUsage(batchRoot: string): Usage | null {
-	const sessionFile = path.join(batchRoot, "grader", "session.json");
-	if (fs.existsSync(sessionFile)) {
-		const session = readSession(sessionFile);
-		return sessionUsage(session.calls);
+function graderUsage(batchRoot: string, grader: GraderName): Usage | null {
+	const layout = graderLayout(batchRoot, grader);
+	if (fs.existsSync(layout.session)) {
+		const session = readSession(layout.session);
+		return sessionUsage(session.calls, semanticsOf(session));
 	}
-	const file = path.join(batchRoot, "grader", "usage.json");
+	const file = path.join(layout.root, "usage.json");
 	return fs.existsSync(file)
 		? UsageSchema.nullable().parse(JSON.parse(fs.readFileSync(file, "utf8")))
 		: null;
 }
 
+/**
+ * Who graded, as the session recorded it.
+ * @param batchRoot The batch.
+ * @param grader The grader.
+ * @returns The identity, or null when the grader has no session here.
+ */
+function graderIdentity(batchRoot: string, grader: GraderName): GraderIdentity | null {
+	const layout = graderLayout(batchRoot, grader);
+	if (!fs.existsSync(layout.session)) return null;
+	const session = readSession(layout.session);
+	const model = session.settings?.["model"];
+	return {
+		name: grader,
+		semantics: semanticsOf(session),
+		model: typeof model === "string" ? model : null,
+	};
+}
+
 export {
 	bundledRuns,
-	callUsageFrom,
 	chunked,
 	filedVerdict,
 	gradeBatch,
-	graderArgv,
+	graderIdentity,
 	graderUsage,
-	sessionUsage,
+	type GraderIdentity,
 	type GradingOptions,
 };

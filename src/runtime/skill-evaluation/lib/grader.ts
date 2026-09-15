@@ -5,6 +5,7 @@
 // every run yourself in this session."
 
 import { z } from "zod";
+import type { ImageDelivery } from "@/runtime/skill-evaluation/lib/grader-runner";
 import type { RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 
@@ -126,7 +127,7 @@ function everyCaptureSeen(
 	return captures.declared.every((label) => observed.has(label));
 }
 
-/** The JSON Schema handed to `codex exec --output-schema`, rendered from the parsing authority. */
+/** The JSON Schema handed to `codex exec --output-schema` and `claude --json-schema`, rendered from the parsing authority. */
 const GRADER_OUTPUT_JSON_SCHEMA = z.toJSONSchema(GraderOutputSchema, {
 	io: "output",
 });
@@ -147,7 +148,17 @@ interface GraderBrief {
 	readonly continuing: boolean;
 	/** The harness-supplied attachments in their prompt order, repeated on every call. */
 	readonly images?: readonly RunImages[];
+	/** How the pictures reach the grader; only the one sentence about that differs between runners. */
+	readonly delivery?: ImageDelivery;
 }
+
+/** The one sentence that differs between runners: how the listed pictures reach the grader. */
+const DELIVERY_LINES: Readonly<Record<ImageDelivery, string>> = {
+	attached:
+		"The following images are attached directly to this prompt in the listed order. Inspect every attached main image and native-resolution tile visually; no image-tool call is needed to receive them.",
+	workspace:
+		"The following images are in the workspace at the listed paths, relative to the directory you run in. Open every listed main image and native-resolution tile with your file reading tool and look at it; the harness records which files you opened, and a capture you did not open in full is incomplete.",
+};
 
 /**
  * The prompt for one grading call. The first call carries the rubric and the
@@ -180,7 +191,7 @@ function graderPrompt(brief: GraderBrief): string {
 			];
 	return [
 		...opening,
-		"The following images are attached directly to this prompt in the listed order. Inspect every attached main image and native-resolution tile visually; no image-tool call is needed to receive them.",
+		DELIVERY_LINES[brief.delivery ?? "attached"],
 		...attachmentLines(brief.images ?? []),
 		`Grade these runs now: ${brief.runs.join(", ")}.`,
 		"For every run return one entry with: a verdict for EVERY expected feature (pass, missing, incorrect, or not-applicable), each with the evidence you read (file, board, node or edge id, render) and a one-line reason; integer scores 0-10 for semanticCorrectness, architecturalTruth and readability; a summary; and concerns.",

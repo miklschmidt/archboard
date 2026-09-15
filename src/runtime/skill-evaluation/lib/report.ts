@@ -7,6 +7,8 @@ import type { CommandClass, ExposureKind, Usage } from "@/runtime/skill-evaluati
 import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 import type { RunVerdict, VisualStanding } from "@/runtime/skill-evaluation/lib/grader";
+import type { GraderIdentity } from "@/runtime/skill-evaluation/lib/grader-runner";
+import { agreementLines, type Agreement } from "@/runtime/skill-evaluation/lib/report-agreement";
 import {
 	mean,
 	median,
@@ -110,7 +112,22 @@ interface Report {
 	/** Runs that read evaluation material, reached another run, or wrote directly to the vault: kept apart from every comparison. */
 	readonly contamination: readonly RunRecord[];
 	readonly graderUsage: Usage | null;
+	/** Who graded and how its usage is counted; null when nothing was graded. */
+	readonly grader: GraderIdentity | null;
 	readonly authorUsage: { readonly baseline: Usage | null; readonly candidate: Usage | null };
+}
+
+/** One grader's report over the batch, with the records it was built from. */
+interface GraderReport {
+	readonly grader: GraderIdentity | null;
+	readonly report: Report;
+	readonly runs: readonly RunRecord[];
+}
+
+/** The whole batch: one report per grader that graded it, and how they agree. */
+interface BatchReport {
+	readonly graders: readonly GraderReport[];
+	readonly agreement: Agreement | null;
 }
 
 /**
@@ -362,12 +379,14 @@ function rows(
  * @param runs Every run of the batch, both arms, failures included.
  * @param graderUsage What the grading session cost, kept apart from the authors.
  * @param planned The batch's expected jobs, defaulting to the supplied run identities.
+ * @param grader Who graded, when known.
  * @returns The report.
  */
 function buildReport(
 	runs: readonly RunRecord[],
 	graderUsage: Usage | null,
 	planned: readonly PlannedRun[] = runs,
+	grader: GraderIdentity | null = null,
 ): Report {
 	const primary = runs.filter((run) => run.report === "primary");
 	const expectedPrimary = planned.filter((run) => run.report === "primary");
@@ -382,6 +401,7 @@ function buildReport(
 		failures: runs.filter((run) => !succeeded(run)),
 		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
 		graderUsage,
+		grader,
 		authorUsage: {
 			baseline: sumUsage(runs.filter((run) => run.arm === "baseline").map((run) => run.usage)),
 			candidate: sumUsage(runs.filter((run) => run.arm === "candidate").map((run) => run.usage)),
@@ -485,13 +505,39 @@ function visualReasons(run: RunRecord): string[] {
 }
 
 /**
+ * The usage line's label for a grader, naming how its session was counted.
+ * @param grader Who graded.
+ * @returns The label.
+ */
+function graderUsageLabel(grader: GraderIdentity | null): string {
+	const counted =
+		grader?.semantics === "per-call"
+			? "the sum of its calls"
+			: "the thread's last cumulative reading";
+	const who =
+		grader === null ? "" : ` ${grader.name}${grader.model === null ? "" : ` ${grader.model}`},`;
+	return `grader (one session, kept apart):${who} ${counted}`;
+}
+
+/**
+ * The heading of one grader's report.
+ * @param grader Who graded.
+ * @returns The heading text.
+ */
+function reportHeading(grader: GraderIdentity | null): string {
+	if (grader === null) return "Skill evaluation comparison (not graded)";
+	const model = grader.model === null ? "" : `, ${grader.model}`;
+	return `Skill evaluation comparison (grader: ${grader.name}${model})`;
+}
+
+/**
  * The report as markdown.
  * @param report The report.
  * @returns The document.
  */
 function renderReportMarkdown(report: Report): string {
 	return [
-		"# Skill evaluation comparison",
+		`# ${reportHeading(report.grader)}`,
 		"",
 		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to succeed and complete usage. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation.",
 		"",
@@ -502,10 +548,7 @@ function renderReportMarkdown(report: Report): string {
 		"",
 		usageLine("authors, baseline (sum)", report.authorUsage.baseline),
 		usageLine("authors, candidate (sum)", report.authorUsage.candidate),
-		usageLine(
-			"grader (one session, kept apart): the thread's last cumulative reading",
-			report.graderUsage,
-		),
+		usageLine(graderUsageLabel(report.grader), report.graderUsage),
 		"",
 		"## Contaminated runs (kept apart from every comparison)",
 		"",
@@ -521,17 +564,32 @@ function renderReportMarkdown(report: Report): string {
 	].join("\n");
 }
 
+/**
+ * The whole batch as markdown: each grader's report, then how they agree.
+ * @param batch The batch report.
+ * @returns The document.
+ */
+function renderBatchReportMarkdown(batch: BatchReport): string {
+	return [
+		...batch.graders.map((entry) => renderReportMarkdown(entry.report)),
+		...(batch.graders.length > 1 ? [agreementLines(batch.agreement).join("\n")] : []),
+	].join("\n");
+}
+
 export {
 	buildReport,
 	median,
 	mean,
 	percentChange,
+	renderBatchReportMarkdown,
 	renderReportMarkdown,
 	succeeded,
 	sumUsage,
 	summarize,
 	type ArmSummary,
+	type BatchReport,
 	type ComparisonRow,
+	type GraderReport,
 	type Report,
 	type RunRecord,
 	type PlannedRun,

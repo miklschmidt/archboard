@@ -214,7 +214,6 @@ const PinsSchema = z
 				executable: z.string().min(1),
 				version: z.string().min(1),
 				author: ModelPinSchema,
-				grader: ModelPinSchema,
 			})
 			.passthrough(),
 		repetitions: z.int().min(1),
@@ -223,6 +222,36 @@ const PinsSchema = z
 	})
 	.passthrough();
 type Pins = z.infer<typeof PinsSchema>;
+
+/** The names a grader runner can have; `--grader` chooses one when grading runs. */
+const GRADER_NAMES = ["codex", "claude"] as const;
+type GraderName = (typeof GRADER_NAMES)[number];
+const CodexGraderSchema = z
+	.object({
+		executable: z.string().min(1),
+		version: z.string().min(1),
+		model: z.string().min(1),
+		reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]),
+		sandbox: z.literal("read-only"),
+		approvalPolicy: z.literal("never"),
+	})
+	.passthrough();
+const ClaudeGraderSchema = z
+	.object({
+		executable: z.string().min(1),
+		version: z.string().min(1),
+		model: z.string().min(1),
+		effort: z.enum(["low", "medium", "high", "xhigh", "max"]),
+		tools: z.array(z.string().min(1)).min(1),
+		settingSources: z.array(z.enum(["user", "project", "local"])),
+		strictMcpConfig: z.literal(true),
+	})
+	.passthrough();
+/** What each grader runner holds constant; outside the batch input digest by design. */
+const GradersSchema = z
+	.object({ codex: CodexGraderSchema, claude: ClaudeGraderSchema })
+	.passthrough();
+type Graders = z.infer<typeof GradersSchema>;
 
 /** A fixture input before its placeholders are resolved: the shapes are the CLI's own. */
 const CreateStepSchema = z
@@ -326,6 +355,8 @@ interface LoadedSuite {
 	readonly directory: string;
 	readonly suite: Suite;
 	readonly pins: Pins;
+	/** The grader runners; never part of a batch's identity. */
+	readonly graders: Graders;
 	readonly coverage: Coverage;
 	readonly rubric: string;
 	readonly fixtures: ReadonlyMap<string, Fixture>;
@@ -392,6 +423,7 @@ function suiteProblems(loaded: LoadedSuite): string[] {
 function loadSuite(directory: string): LoadedSuite {
 	const suite = readJson(path.join(directory, "evals.json"), SuiteSchema);
 	const pins = readJson(path.join(directory, suite.pins), PinsSchema);
+	const graders = readJson(path.join(directory, "graders.json"), GradersSchema);
 	const coverage = readJson(path.join(directory, suite.coverage), CoverageSchema);
 	const rubric = fs.readFileSync(path.join(directory, suite.rubric), "utf8");
 	const fixtures = new Map<string, Fixture>();
@@ -399,7 +431,7 @@ function loadSuite(directory: string): LoadedSuite {
 		const file = path.join(directory, scenario.fixture);
 		if (fs.existsSync(file)) fixtures.set(scenario.id, readJson(file, FixtureSchema));
 	}
-	const loaded: LoadedSuite = { directory, suite, pins, coverage, rubric, fixtures };
+	const loaded: LoadedSuite = { directory, suite, pins, graders, coverage, rubric, fixtures };
 	const problems = suiteProblems(loaded);
 	if (problems.length > 0)
 		throw new Error(`${directory} is not a whole suite:\n${problems.join("\n")}`);
@@ -419,6 +451,8 @@ export {
 	FixtureStepSchema,
 	OutcomeCheckSchema,
 	RawFixtureStepSchema,
+	GRADER_NAMES,
+	GradersSchema,
 	PinsSchema,
 	ScenarioSchema,
 	SuiteSchema,
@@ -427,6 +461,8 @@ export {
 	type Coverage,
 	type Fixture,
 	type FixtureStep,
+	type GraderName,
+	type Graders,
 	type LoadedSuite,
 	type OutcomeCheck,
 	type Pins,

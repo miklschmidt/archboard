@@ -1,6 +1,7 @@
 // The on-demand evaluation of the archboard skill: real Codex authors on real
-// Flask checkouts, one blinded grader, deterministic checks and a comparison
-// report. Never part of the fast gate; `bun run eval:skill` is the entry.
+// Flask checkouts, one blinded grader run by Codex or by Claude Code, chosen
+// when grading runs, deterministic checks and a comparison report. Never part
+// of the fast gate; `bun run eval:skill` is the entry.
 
 export { executeRun, statusOf, type RunJob } from "@/runtime/skill-evaluation/lib/author";
 export { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
@@ -65,9 +66,24 @@ export {
 	bundledRuns,
 	filedVerdict,
 	gradeBatch,
+	graderIdentity,
 	graderUsage,
 	type GradingOptions,
 } from "@/runtime/skill-evaluation/lib/grading-run";
+export type { GraderIdentity } from "@/runtime/skill-evaluation/lib/grader-runner";
+export { availableGraders, graderLayout } from "@/runtime/skill-evaluation/lib/grader-layout";
+export {
+	pinVersions,
+	type PinChange,
+	type PinTools,
+} from "@/runtime/skill-evaluation/lib/pin-versions";
+export { executableVersion } from "@/runtime/skill-evaluation/lib/version";
+export {
+	agreementLines,
+	agreementOf,
+	type Agreement,
+	type RunAgreement,
+} from "@/runtime/skill-evaluation/lib/report-agreement";
 export {
 	evaluateGuardrails,
 	type GuardrailContext,
@@ -94,6 +110,7 @@ export type {
 	RenderAttempt,
 } from "@/runtime/skill-evaluation/lib/reading";
 export {
+	buildBatchReport,
 	readManifests,
 	recordOf,
 	writeReport,
@@ -103,12 +120,15 @@ export {
 	buildReport,
 	median,
 	mean,
+	renderBatchReportMarkdown,
 	renderReportMarkdown,
 	succeeded,
 	sumUsage,
 	summarize,
 	type ArmSummary,
+	type BatchReport,
 	type ComparisonRow,
+	type GraderReport,
 	type Report,
 	type RunRecord,
 } from "@/runtime/skill-evaluation/lib/report";
@@ -126,6 +146,10 @@ export {
 export {
 	ARMS,
 	FLASK_REVISIONS,
+	GRADER_NAMES,
+	GradersSchema,
+	type GraderName,
+	type Graders,
 	GUARDRAILS,
 	WORKFLOWS,
 	CaptureDeclarationSchema,

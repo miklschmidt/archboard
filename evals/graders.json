@@ -1,0 +1,28 @@
+{
+	"$comment": "Everything one grader runner holds constant. A grader is chosen when grading runs, not when a batch's authors run, so nothing here is part of a batch's input digest; a grading session records the block it ran under. The version pins are exact and grading refuses a mismatch; `bun run eval:skill pin` rewrites them from the executables on PATH.",
+	"codex": {
+		"executable": "codex",
+		"version": "0.154.0",
+		"model": "gpt-6-astra",
+		"reasoningEffort": "high",
+		"sandbox": "read-only",
+		"approvalPolicy": "never",
+		"sessions": "one per grading session, resumed rather than recreated (codex exec resume <thread>)",
+		"subagents": "prohibited by prompt",
+		"images": "attached with --image on every call, including a resumed one",
+		"usageSemantics": "cumulative: turn.completed carries the thread's total_token_usage, so a call's own usage is the growth since the previous reading and a session costs its last reading, never the sum of its calls. cached_input_tokens is a subset of input_tokens; total = input + output. Verified without a model from the retained rollout of the 2026-09-14 batch (docs/design/skill-evals/2026-09-14-batch-corrections.md)."
+	},
+	"claude": {
+		"executable": "claude",
+		"version": "2.1.269",
+		"model": "claude-fable-5-1",
+		"effort": "high",
+		"tools": ["Read", "Grep", "Glob"],
+		"settingSources": [],
+		"strictMcpConfig": true,
+		"sessions": "one per grading session, started with --session-id and continued with --resume",
+		"subagents": "unreachable: the Agent tool is not in the tool list, and the prompt forbids delegation",
+		"images": "read by the grader from the staged workspace with its Read tool; the harness records which files the stream shows were opened",
+		"usageSemantics": "per call: the result line's usage is this call's own, so a session costs the sum of its calls. input_tokens is uncached input; cache_read_input_tokens and cache_creation_input_tokens are separate, so the normalized input is their sum and cached is cache reads. total_cost_usd and modelUsage are kept raw beside the normalized usage. Verified on claude 2.1.269 with a resumed probe session on 2026-09-15."
+	}
+}
