@@ -3,13 +3,19 @@
 
 export {
 	exposureCounts,
+	parseTrace,
+	type AuthorTrace,
 	type ExposureKind,
 	type ExposureRoots,
 	type FileChange,
 } from "@/runtime/skill-evaluation/lib/events";
 export { countDirectBoardWrites } from "@/runtime/skill-evaluation/lib/guardrails";
 export { callUsageFrom, sessionUsage } from "@/runtime/skill-evaluation/lib/grader-usage";
-export { codexGraderArgv } from "@/runtime/skill-evaluation/lib/codex-grader";
+export {
+	codexGraderArgv,
+	codexProtocolFailure,
+	outsideReaches,
+} from "@/runtime/skill-evaluation/lib/codex-grader";
 export {
 	CLAUDE_GRADER_SYSTEM_PROMPT,
 	claudeGraderArgv,

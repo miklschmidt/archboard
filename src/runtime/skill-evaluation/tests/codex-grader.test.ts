@@ -6,8 +6,12 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { codexProtocolFailure, outsideReaches } from "@/runtime/skill-evaluation/lib/codex-grader";
-import { parseTrace, type AuthorTrace } from "@/runtime/skill-evaluation/lib/events";
+import {
+	codexProtocolFailure,
+	outsideReaches,
+	parseTrace,
+	type AuthorTrace,
+} from "@/runtime/skill-evaluation/audit";
 
 const WORKSPACE = "/batch/graders/workspace";
 
