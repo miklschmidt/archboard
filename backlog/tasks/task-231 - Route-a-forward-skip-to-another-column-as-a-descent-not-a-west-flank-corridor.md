@@ -4,7 +4,7 @@ title: 'Route a forward skip to another column as a descent, not a west-flank co
 status: To Do
 assignee: []
 created_date: '2026-09-15 13:10'
-updated_date: '2026-09-15 13:23'
+updated_date: '2026-09-15 19:43'
 labels:
   - renderer
 dependencies:
@@ -32,3 +32,9 @@ docs/design/wide-board-layout.md measures the three Flask module maps in docs/de
 - [ ] #4 The three fixtures are rasterized before and after (measure.ts with PICTURES=1) and inspected side by side: the change reads better to a person, not only in the numbers, and the after pictures are attached to the task
 - [ ] #5 Bends per edge (measure.ts) do not rise by more than 10% on any fixture; a route that gains corners to save a corridor is a snake, not an improvement
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Attempted 2026-09-15 (Claude). Columns are not known before ELK places cards, so the rule was tried semantically in sidesOf: a skip brackets a chain when the single chain of forward steps leaving its source reaches its target. (1) Any chain: west exits stay at 5/3/6 per hub, corridor ink 22/20/14%, board 3 bends +23%: hubs reach everything downstream, so every hub skip counts as bracketing. (2) Single chain only: west exits 1 per board but that one long flank costs 6/9/10% corridor ink and board 3 grows to 8.99 Mpx. (3) Single chain over exactly one card: identical to the note's every-skip-descends numbers (west exits 0, corridor 0/2/1%, pages 4.93/6.22/7.63, bends 5.8/5.7/9.1), so no skip on these fixtures qualifies. Under (3) ten renderer tests fail: same-destination lane nesting (three), the flank-label and predecessor-routing owners (five), and two crossing-bridge owners, all of which pin flank routes for skips from a source with several successors, and boards 2 and 3 are 1% larger than baseline against AC 1. Not committed. Next step is a decision on which of those pinned behaviours to re-derive for descents (lane nesting and label corridors) and whether a 1% page growth is acceptable; TASK-232 and TASK-233 are measured with this in place and were not started.
+<!-- SECTION:NOTES:END -->
