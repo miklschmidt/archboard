@@ -170,9 +170,14 @@ test.each([false, true])(
 		act(() => {
 			fireEvent.click(choices()[1]!);
 		});
-		// The uncached picture is absent during the request; the camera must outlive it.
-		expect(document.querySelector("[data-slot='semantic-board-surface']")).toBeNull();
+		// The last picture stays up while the uncached one is on its way, so the
+		// pane can carry it into the next rather than dropping to a skeleton;
+		// the camera must outlive the request either way.
+		const stage = document.querySelector("[data-slot='semantic-board-stage']");
+		expect(stage?.getAttribute("data-variant")).toBe("current");
+		expect(document.querySelector("[data-slot='semantic-board-surface']")).not.toBeNull();
 		await settle();
+		expect(stage?.getAttribute("data-variant")).toBe(PROPOSED.name);
 		expect(renderCalls().at(-1)).toContain("variant=v2");
 		expect(cameraNow()).toEqual(before);
 		act(() => {

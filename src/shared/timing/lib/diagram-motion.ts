@@ -32,4 +32,58 @@ const FLOW_CYCLE_CAP_MS = 16_000;
  */
 const FLOW_PULSE_RAMP = 0.08;
 
-export { FLOW_CYCLE_CAP_MS, FLOW_PULSE_RAMP, FLOW_STEP_TRAVEL_MS };
+// ── One picture of a board turning into the next ─────────────────────────
+
+/**
+ * How long a pane takes to turn one picture of a board into the next one of
+ * the same board — another variant, or the same variant after an edit.
+ *
+ * Shared subjects glide from where they were to where they are; that is what
+ * lets a reader keep hold of which card became which. Pulls against attention
+ * two ways: shorter than about half a second and a move across a wide board
+ * reads as a jump with a smear on it; longer than about three quarters and the
+ * board feels like it is waiting for the animation rather than the reader.
+ * Everything below is a fraction of this one number, so the whole choreography
+ * shortens or lengthens together.
+ */
+const PICTURE_TRANSITION_MS = 640;
+
+/**
+ * When, as fractions of `PICTURE_TRANSITION_MS`, each part of the change
+ * happens. The order is the point: what is leaving goes first so that what is
+ * moving has room, what is moving settles before what is arriving appears, and
+ * the content of a card that changed swaps over while its frame is still in
+ * flight, so the swap reads as part of the move rather than as a second event.
+ */
+const PICTURE_TRANSITION_PHASES = Object.freeze({
+	/** Subjects only the old picture had are gone by here. */
+	exitEnd: 0.35,
+	/** Shared subjects begin to move here, and are in place by `moveEnd`. */
+	moveStart: 0.06,
+	moveEnd: 0.88,
+	/**
+	 * A changed card's old content and frame cross-fade into the new between
+	 * these two: one window for both, so that at every moment the two add up
+	 * to a whole card rather than dipping to a faint one halfway.
+	 */
+	fadeStart: 0.2,
+	fadeEnd: 0.68,
+	/**
+	 * Inside that window, a card's changed content swaps in two halves: what
+	 * leaves is gone by here, and what arrives begins here. One after the
+	 * other, so a title is never seen twice at once.
+	 */
+	swapAt: 0.44,
+	/** Subjects only the new picture has begin to appear here. */
+	enterStart: 0.54,
+	/** An arriving connection shows its arrowhead once this much of it is drawn. */
+	arrowheadAt: 0.9,
+});
+
+export {
+	FLOW_CYCLE_CAP_MS,
+	FLOW_PULSE_RAMP,
+	FLOW_STEP_TRAVEL_MS,
+	PICTURE_TRANSITION_MS,
+	PICTURE_TRANSITION_PHASES,
+};
