@@ -88,6 +88,51 @@ function sidesOf(
 }
 
 /**
+ * Whether one endpoint is a frame the other sits inside. Such a relationship
+ * starts or ends on the frame itself, so it is drawn from the frame's top face
+ * down into the part, or from the part down onto the frame's bottom face,
+ * never from the frame's outer flank as if it came from outside.
+ * @param edge The connection being read.
+ * @param measured The inclusion tree of this view.
+ * @returns Which end holds the other, or undefined for two separate parts.
+ */
+function containmentOf(
+	edge: SemanticEdge,
+	measured: MeasuredArchitecture,
+): "holds" | "held" | undefined {
+	if (edge.from === edge.to) return undefined;
+	if (ancestryOf(edge.to, measured).includes(edge.from)) return "holds";
+	if (ancestryOf(edge.from, measured).includes(edge.to)) return "held";
+	return undefined;
+}
+
+/**
+ * The attachment faces of one connection: inherited from the predecessor when
+ * the same relationship survives, by containment when one end holds the other,
+ * else by dependency rank.
+ * @param edge The connection being read.
+ * @param measured The inclusion tree of this view.
+ * @param ranks The deterministic dependency ranks.
+ * @param predecessor The preceding drawing of this view.
+ * @returns The source and target attachment faces.
+ */
+function facesOf(
+	edge: SemanticEdge,
+	measured: MeasuredArchitecture,
+	ranks: ReadonlyMap<string, number>,
+	predecessor: ArchitectureDrawing | undefined,
+): PortSides {
+	const inherited = previousSides(edge, measured, predecessor);
+	if (inherited !== undefined) return inherited;
+	const containment = containmentOf(edge, measured);
+	if (containment === "holds") return ["NORTH", "NORTH"];
+	if (containment === "held") return ["SOUTH", "SOUTH"];
+	const nested =
+		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
+	return sidesOf(edge, ranks, nested, predecessor);
+}
+
+/**
  * A distinct port for each end prevents unrelated relationships sharing a path.
  * @param id The internal endpoint id, derived from the semantic edge id.
  * @param side The face to use; ELK chooses the location on that face.
@@ -250,10 +295,7 @@ function edgeOf(
 	ranks: ReadonlyMap<string, number>,
 	predecessor: ArchitectureDrawing | undefined,
 ): ElkExtendedEdge[] {
-	const nested =
-		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
-	const [fromSide, toSide] =
-		previousSides(edge, measured, predecessor) ?? sidesOf(edge, ranks, nested, predecessor);
+	const [fromSide, toSide] = facesOf(edge, measured, ranks, predecessor);
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
 	attachPort(edge.from, portOf(fromPort, fromSide, ranks.get(edge.to) ?? 0), nodes);

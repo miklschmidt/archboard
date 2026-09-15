@@ -15,6 +15,11 @@ import {
 } from "@/runtime/semantic-renderer/lib/layout/compound-node-hints";
 import type { NodeHintRoutes } from "@/runtime/semantic-renderer/lib/layout/compound-label-space";
 import type { Point } from "@/runtime/semantic-renderer/lib/geometry";
+import {
+	emptySeeded,
+	reseatBlockedFlanks,
+	type Seeded,
+} from "@/runtime/semantic-renderer/lib/layout/compound-flanks";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
 
 /** Keep the prior layer/order while allowing the engine to make room. */
@@ -238,8 +243,7 @@ function inheritedPorts(
  * @param content Current architectural relationships.
  * @param previous Stable subjects in the predecessor.
  * @param crossesHierarchy Whether boundary routing needs a hierarchy-wide sweep.
- * @param ports Preliminary attachments collected by port id.
- * @param portSides Attachment faces collected by port id.
+ * @param seeded Where everything collected so far will be.
  * @param routes Current badge measurements and prior global corridors.
  */
 function seedNodes(
@@ -248,8 +252,7 @@ function seedNodes(
 	content: VariantContent,
 	previous: ReadonlyMap<string, DrawingNode>,
 	crossesHierarchy: boolean,
-	ports: Map<string, Point>,
-	portSides: Map<string, string>,
+	seeded: Seeded,
 	routes: NodeHintRoutes,
 ): void {
 	parent.layoutOptions = predecessorLayoutOptions(parent.layoutOptions, crossesHierarchy);
@@ -268,16 +271,19 @@ function seedNodes(
 		const attachments = inheritedPorts(node, point, previous.get(node.id), routes);
 		for (const port of node.ports!) {
 			const attachment = attachments.get(port.id)!;
-			ports.set(port.id, attachment);
-			portSides.set(port.id, port.layoutOptions!["elk.port.side"]!);
+			seeded.ports.set(port.id, attachment);
+			seeded.portSides.set(port.id, port.layoutOptions!["elk.port.side"]!);
+			seeded.owners.set(port.id, node.id);
 			port.x = attachment.x - point.x;
 			port.y = attachment.y - point.y;
 		}
+		seeded.boxes.set(node.id, { ...point, width: node.width!, height: node.height! });
+		seeded.nodes.set(node.id, { node, point });
 		node.x = point.x - origin.x;
 		node.y = point.y - origin.y;
 		node.layoutOptions = { ...node.layoutOptions, "elk.position": `(${node.x},${node.y})` };
 		if (node.children !== undefined)
-			seedNodes(node, point, content, previous, crossesHierarchy, ports, portSides, routes);
+			seedNodes(node, point, content, previous, crossesHierarchy, seeded, routes);
 	}
 }
 
@@ -564,8 +570,8 @@ function seedPredecessor(
 	const previous = new Map(
 		[...predecessor.cards, ...predecessor.containers].map((node) => [node.measured.node.id, node]),
 	);
-	const ports = new Map<string, Point>();
-	const portSides = new Map<string, string>();
+	const seeded: Seeded = emptySeeded();
+	const { ports, portSides } = seeded;
 	const parents = new Map(content.nodes.map((node) => [node.id, node.parent]));
 	const crossesHierarchy = content.edges.some(
 		(edge) => parents.get(edge.from) !== parents.get(edge.to),
@@ -575,10 +581,11 @@ function seedPredecessor(
 		const edge = represented.get(before.edge.id);
 		return edge?.from === before.edge.from && edge.to === before.edge.to;
 	});
-	seedNodes(graph, { x: 0, y: 0 }, content, previous, crossesHierarchy, ports, portSides, {
+	seedNodes(graph, { x: 0, y: 0 }, content, previous, crossesHierarchy, seeded, {
 		current: graph.edges!,
 		previous: retainedRoutes,
 	});
+	reseatBlockedFlanks(graph, seeded);
 	seedLabels(graph, ports);
 	// Allocate current labels and parallel lanes together; only cards retain placement.
 	const priorRoutes = new Map(predecessor.edges.map((edge) => [edge.edge.id, edge]));
