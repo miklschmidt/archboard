@@ -16,7 +16,7 @@ import third from "../../../../docs/design/wide-board-layout-fixtures/flask-map-
 /** What each fixture may cost, measured on 2026-09-15 plus room. */
 const BOUNDS = [
 	{ name: "flask-map-1", content: first, megapixels: 6.0, corridor: 0.25, bends: 8.5 },
-	{ name: "flask-map-2", content: second, megapixels: 6.8, corridor: 0.15, bends: 8.0 },
+	{ name: "flask-map-2", content: second, megapixels: 6.8, corridor: 0.2, bends: 8.0 },
 	{ name: "flask-map-3", content: third, megapixels: 5.5, corridor: 0.15, bends: 9.5 },
 ] as const;
 

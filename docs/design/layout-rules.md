@@ -295,3 +295,16 @@ the six-skip hub, to 7.27 Mpx with cells touched down to 17 percent: six
 routes through one port need the width back. A trunk would have to open into
 separate ports below the card, which is the engine's hyperedge routing and
 not exposed to a layered graph. Left open.
+
+## 9. Read on the dogfood boards (2026-09-16)
+
+Two corrections after reading the vault's own boards. Post-compaction `LEFT`
+staircased a plain fan (Command dispatch: five siblings each in its own row,
+the entry card at the right), so it is gone; network-simplex node placement
+took its place, which centres a card over the fan it feeds and keeps siblings
+on their layer line, at 4.56 / 4.70 / 5.27 Mpx on the fixtures. And a
+relationship a frame makes to a part inside it now leaves the bottom of the
+frame's title band rather than the frame's outer top edge (Codex session), so
+it no longer reads as arriving from outside. A card whose label the engine
+had to reserve still drops a layer, since an inline reserved label is a
+layer of its own to the engine; that is the remaining oddity on a small fan.

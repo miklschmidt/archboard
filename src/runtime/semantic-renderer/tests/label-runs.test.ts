@@ -30,16 +30,24 @@ test.each([false, true])(
 		const drawing = await renderArchitecture({ content, theme: "light" });
 		const labels = routeLabels(drawing.svg);
 		const routes = routePoints(drawing.svg);
-		const horizontal = labels.get("e2")!;
-		const points = routes.get("e2")!;
-		for (const [id, route] of routes) {
-			const axes = route.slice(1).flatMap((point, index) => {
-				const from = route[index]!;
-				return from.x === point.x ? ["vertical"] : from.y === point.y ? ["horizontal"] : [];
-			});
-			const bends = axes.filter((axis, index) => index > 0 && axis !== axes[index - 1]).length;
-			expect(bends).toBe(id === "e0" ? 0 : 2);
-		}
+		// The source sits over one of its three children, whichever the engine's
+		// placement centres it on: that route is straight and the other two bend
+		// twice. The straight one carries its label on a vertical run below.
+		const bendsOf = new Map(
+			[...routes].map(([id, route]) => {
+				const axes = route.slice(1).flatMap((point, index) => {
+					const from = route[index]!;
+					return from.x === point.x ? ["vertical"] : from.y === point.y ? ["horizontal"] : [];
+				});
+				return [id, axes.filter((axis, index) => index > 0 && axis !== axes[index - 1]).length];
+			}),
+		);
+		const straight = [...bendsOf].filter(([, bends]) => bends === 0).map(([id]) => id);
+		expect(straight).toHaveLength(1);
+		for (const [id, bends] of bendsOf) if (id !== straight[0]) expect(bends).toBe(2);
+		const bent = content.edges.map((edge) => edge.id).filter((id) => id !== straight[0]);
+		const horizontal = labels.get(bent[1]!)!;
+		const points = routes.get(bent[1]!)!;
 		expect(labels.size).toBe(content.edges.length);
 		// The badge sits on one straight run of its own route, 24 clear of that
 		// run's ends, on whichever axis lies nearest an end of the route
@@ -61,7 +69,7 @@ test.each([false, true])(
 				return onHorizontal || onVertical;
 			}),
 		).toBe(true);
-		for (const id of ["e0"]) {
+		for (const id of straight) {
 			const label = labels.get(id)!;
 			expect(
 				routes.get(id)!.some((from, index, route) => {
@@ -77,7 +85,7 @@ test.each([false, true])(
 			).toBe(true);
 		}
 		for (const [id, route] of routes) {
-			if (id !== "e2")
+			if (id !== bent[1])
 				expect(
 					routeCrosses(route, {
 						x: horizontal.x - 12,
@@ -92,7 +100,7 @@ test.each([false, true])(
 			.map(([, box]) => box);
 		for (const box of [
 			...cards,
-			...[...labels].filter(([id]) => id !== "e2").map(([, label]) => label),
+			...[...labels].filter(([id]) => id !== bent[1]).map(([, label]) => label),
 		]) {
 			const xGap = Math.max(
 				box.x - horizontal.x - horizontal.width,
