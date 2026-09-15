@@ -125,7 +125,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	const width = Math.min(340, Math.max(260, natural + left + padding));
 	const available = width - left - padding;
 	const titles = runsFor(title, TITLE, available, left, padding);
-	const noteTop = padding + titles.length * TITLE.lineHeight + 10;
+	const noteTop = padding + titles.length * TITLE.lineHeight + 2;
 	const notes = runsFor(note, NOTE, available, left, noteTop);
 	const runs = [...titles, ...notes];
 	const bottom =
