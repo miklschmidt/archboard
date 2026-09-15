@@ -28,6 +28,7 @@ import { pictureAppearances } from "@/ui/semantic-board-canvas/lib/appearance";
 import { SemanticInspector } from "@/ui/semantic-board-canvas/components/SemanticInspector";
 import { STAGE_CLASS } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import { usePictureTransition } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 import { PAN_STEP, cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
@@ -247,9 +248,12 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	const pressed = useRef<{ readonly subject: string | null } | null>(null);
 	const focus = props.focus ?? NO_FOCUS;
 
-	// The surface is remounted for each new picture, so this runs over the
-	// element the current markup is in and never over the one before it.
-	//
+	// The surface stays mounted across pictures and the picture inside it is
+	// written by the transition, which carries one picture of a board into the
+	// next. What comes back is the picture as it is now on the surface, new
+	// each time the markup was written, so the marks below run over the groups
+	// that are actually there.
+	const picture = usePictureTransition(surface, drawing, reducedMotion);
 	// Attention only. What the board says nobody has decided is drawn into the
 	// picture by the renderer, from the same reconciliation the sentences above
 	// it are written from, so it is legible on a pane with nothing selected and
@@ -257,18 +261,18 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// says both, which it could not while one map held one mark per subject.
 	const marked = useMemo(() => subjectMarks(selection, focus), [selection, focus]);
 	useEffect(() => {
-		if (surface !== null) {
-			markSubjects(surface, marked);
+		if (picture !== null) {
+			markSubjects(picture.root, marked);
 		}
-	}, [surface, marked]);
+	}, [picture, marked]);
 	// A group under inspection is its own set of marks, independent of
 	// attention: a member the person also picked out says both.
 	const { groupMarks } = props;
 	useEffect(() => {
-		if (surface !== null) {
-			markGroupFocus(surface, groupMarks);
+		if (picture !== null) {
+			markGroupFocus(picture.surface, groupMarks);
 		}
-	}, [surface, groupMarks]);
+	}, [picture, groupMarks]);
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -386,13 +390,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		}),
 		[drawing.width, drawing.height, view],
 	);
-	// The picture is a string of SVG from `/api/semantic-boards/render`, which is
-	// this repository's own renderer: script-free, self-contained, and built from
-	// the board's own content rather than from anything a person typed into the
-	// browser. It is inserted rather than shown through an <img> because the pane
-	// has to hit-test its groups and toggle the class the embedded stylesheet
-	// draws a selection with. Nothing else is ever put through this attribute.
-	const markup = useMemo(() => ({ __html: drawing.svg }), [drawing.svg]);
 	const appearances = useMemo(() => pictureAppearances(drawing.svg), [drawing.svg]);
 
 	return (
@@ -437,13 +434,13 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						panning ? "cursor-grabbing" : "cursor-grab"
 					}`}
 				>
+					{/* The picture inside is the transition's to write, never React's:
+					    see `usePictureTransition`. */}
 					<div
-						key={drawing.svg}
 						ref={setSurface}
 						data-slot="semantic-board-surface"
 						style={surfaceStyle}
 						className={surfaceClass(panning, reducedMotion)}
-						dangerouslySetInnerHTML={markup}
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
