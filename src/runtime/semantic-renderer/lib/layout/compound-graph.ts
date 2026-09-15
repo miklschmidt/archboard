@@ -10,6 +10,7 @@ import type {
 } from "@/runtime/semantic-renderer/lib/drawing";
 import type { Point } from "@/runtime/semantic-renderer/lib/geometry";
 import { pointAt } from "@/runtime/semantic-renderer/lib/layout/curves";
+import { flankSkips } from "@/runtime/semantic-renderer/lib/layout/brackets";
 import { rankNodes } from "@/runtime/semantic-renderer/lib/layout/rank";
 
 /** Room for a route alongside a card or inside its containing frame. */
@@ -79,91 +80,6 @@ function hasTopApproach(edge: SemanticEdge, predecessor: ArchitectureDrawing | u
 	const from = predecessor.cards.find((node) => node.measured.node.id === edge.from);
 	const to = predecessor.cards.find((node) => node.measured.node.id === edge.to);
 	return from !== undefined && to !== undefined && to.box.x + to.box.width / 2 < from.box.x;
-}
-
-/**
- * How many forward skips one card may bracket from its west flank. One skip
- * beside its own chain reads as a bracket; a fan of them from a hub is a set
- * of lanes down the margin, so the rest are the engine's to attach.
- */
-const FLANK_BUDGET = 1;
-/**
- * How many forward relationships a card may have and still bracket a skip:
- * a chain with one skip beside it reads as a bracket, a hub is a fan.
- */
-const HUB_DEGREE = 3;
-
-/** A forward skip, by id and the rank distance it spans. */
-interface Skip {
-	readonly id: string;
-	readonly distance: number;
-}
-
-/**
- * The rank distance a relationship spans, positive when forward.
- * @param edge The relationship.
- * @param ranks The dependency ranks.
- * @returns rank(to) minus rank(from).
- */
-function spanOf(edge: SemanticEdge, ranks: ReadonlyMap<string, number>): number {
-	return (ranks.get(edge.to) ?? 0) - (ranks.get(edge.from) ?? 0);
-}
-
-/**
- * How many forward relationships leave each card.
- * @param edges The relationships.
- * @param ranks The dependency ranks.
- * @returns Forward out-degree by source id.
- */
-function forwardDegrees(
-	edges: readonly SemanticEdge[],
-	ranks: ReadonlyMap<string, number>,
-): Map<string, number> {
-	const degrees = new Map<string, number>();
-	for (const edge of edges.filter((candidate) => spanOf(candidate, ranks) > 0))
-		degrees.set(edge.from, (degrees.get(edge.from) ?? 0) + 1);
-	return degrees;
-}
-
-/**
- * The forward skips of the cards that are not hubs, grouped by source.
- * @param edges The relationships.
- * @param ranks The dependency ranks.
- * @returns Each such source's skips.
- */
-function skipsBySource(
-	edges: readonly SemanticEdge[],
-	ranks: ReadonlyMap<string, number>,
-): Map<string, Skip[]> {
-	const degrees = forwardDegrees(edges, ranks);
-	const bySource = new Map<string, Skip[]>();
-	for (const edge of edges) {
-		const distance = spanOf(edge, ranks);
-		if (distance < 2 || (degrees.get(edge.from) ?? 0) >= HUB_DEGREE) continue;
-		bySource.set(edge.from, [...(bySource.get(edge.from) ?? []), { id: edge.id, distance }]);
-	}
-	return bySource;
-}
-
-/**
- * The forward skips drawn as west-flank brackets: per card that is not a hub,
- * the nearest by rank distance (then by id), up to the budget.
- * @param edges The relationships, in id order.
- * @param ranks The dependency ranks.
- * @returns The ids of the bracketing skips.
- */
-function flankSkips(
-	edges: readonly SemanticEdge[],
-	ranks: ReadonlyMap<string, number>,
-): Set<string> {
-	return new Set(
-		[...skipsBySource(edges, ranks).values()].flatMap((skips) =>
-			skips
-				.toSorted((one, other) => one.distance - other.distance || one.id.localeCompare(other.id))
-				.slice(0, FLANK_BUDGET)
-				.map((skip) => skip.id),
-		),
-	);
 }
 
 /**

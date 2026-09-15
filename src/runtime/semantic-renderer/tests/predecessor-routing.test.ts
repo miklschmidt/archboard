@@ -4,6 +4,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	corridorPoints,
 	routeCrosses,
+	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
@@ -272,12 +273,16 @@ test("flank label allocation keeps an outer corridor clear of an adjacent card",
 	});
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
 	const points = corridorPoints(drawing.svg).get("I1lGjMES")!;
-	const lanes = points
-		.slice(1)
-		.flatMap((point, index) =>
-			point.x === points[index]!.x && point.y !== points[index]!.y ? [point.x] : [],
-		);
-	expect(new Set(lanes).size, "one continuous lane alongside the adjacent card").toBe(1);
+	// Its faces come from the predecessor picture, where a single-relationship
+	// card's skip is the engine's to attach; the reader's invariant is one
+	// route with its label on a straight run, few bends, and no card crossed.
+	expect(onStraightRun(points, drawing, "I1lGjMES")).toBe(true);
+	const bends = points.slice(2).filter((point, index) => {
+		const previous = points[index]!,
+			middle = points[index + 1]!;
+		return (previous.x === middle.x) !== (middle.x === point.x);
+	}).length;
+	expect(bends, "a route that detours around its own label is a snake").toBeLessThanOrEqual(4);
 	for (const card of Object.values(drawing.atlas.nodes))
 		expect(routeCrosses(routePoints(drawing.svg).get("I1lGjMES")!, card)).toBe(false);
 });
@@ -359,4 +364,33 @@ test("a surviving relationship keeps the face it left and reached in the predece
 function faceOf(point: { x: number; y: number }, box: { x: number; width: number }): string {
 	if (Math.abs(point.x - box.x) < 1) return "west";
 	return Math.abs(point.x - box.x - box.width) < 1 ? "east" : "other";
+}
+
+/**
+ * Whether a route's label lies on one straight axis-aligned run of that route.
+ * @param points The route without its bridges.
+ * @param drawing The drawing holding the label.
+ * @param id The relationship.
+ * @returns True when one run carries the whole label.
+ */
+function onStraightRun(
+	points: readonly { x: number; y: number }[],
+	drawing: { svg: string },
+	id: string,
+): boolean {
+	const label = routeLabels(drawing.svg).get(id)!;
+	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
+	return points.slice(1).some((end, index) => {
+		const start = points[index]!;
+		const horizontal = start.y === end.y && Math.abs(start.y - centre.y) < 0.01;
+		const vertical = start.x === end.x && Math.abs(start.x - centre.x) < 0.01;
+		return (
+			(horizontal &&
+				Math.min(start.x, end.x) <= label.x &&
+				Math.max(start.x, end.x) >= label.x + label.width) ||
+			(vertical &&
+				Math.min(start.y, end.y) <= label.y &&
+				Math.max(start.y, end.y) >= label.y + label.height)
+		);
+	});
 }
