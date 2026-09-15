@@ -26,8 +26,8 @@ const SemanticIdSchema = z
 /** A name a person reads. One line, trimmed, never empty. */
 const DisplayNameSchema = SingleLineTextSchema.max(MAX_NAME);
 
-/** The one short line that says what a node is for. */
-const ResponsibilitySchema = SingleLineTextSchema.max(MAX_RESPONSIBILITY);
+/** A concise explanation of what a node is for; the renderer wraps its lines. */
+const ResponsibilitySchema = NonBlankTextSchema.max(MAX_RESPONSIBILITY);
 
 /**
  * The id of one configured group, as the vault configuration keys it.

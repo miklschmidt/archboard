@@ -51,7 +51,7 @@ const TEXT_LINE_HEIGHT = 1.35;
 const BASELINE_RATIO = 1.02;
 
 const CARD_RADIUS = 6;
-/** Fixed participant-card heights in the sequence grammar. */
+/** Minimum participant-card heights; each additional responsibility line adds its line height. */
 const CARD_HEIGHT = 46;
 const CARD_HEIGHT_WITH_NOTE = 58;
 const CARD_PADDING_X = 13;
@@ -77,7 +77,7 @@ const TITLE_SIZE_SMALL = 11.5;
 const TITLE_SIZE_MIN = 10.5;
 const TITLE_SIZE_STEP = 0.5;
 
-/** The responsibility line under a sequence participant's name. */
+/** Responsibility text under a sequence participant's name. */
 const NOTE_SIZE = 9.5;
 
 const PILL_HEIGHT = 15;
