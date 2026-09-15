@@ -183,6 +183,7 @@ describe("classifying what an author ran", () => {
 			discovery: 4,
 			operation: 2,
 			"code-investigation": 2,
+			"product-source": 0,
 			setup: 1,
 			ambiguous: 2,
 		});

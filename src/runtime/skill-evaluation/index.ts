@@ -50,6 +50,7 @@ export {
 } from "@/runtime/skill-evaluation/lib/events";
 export {
 	GRADER_OUTPUT_JSON_SCHEMA,
+	FiledVerdictSchema,
 	GraderOutputSchema,
 	NO_DELEGATION,
 	checklistGaps,
@@ -120,8 +121,6 @@ export {
 	buildReport,
 	median,
 	mean,
-	renderBatchReportMarkdown,
-	renderReportMarkdown,
 	succeeded,
 	sumUsage,
 	summarize,
@@ -177,3 +176,7 @@ export {
 	stepCommand,
 	type PlaceholderScope,
 } from "@/runtime/skill-evaluation/lib/vault";
+export {
+	renderBatchReportMarkdown,
+	renderReportMarkdown,
+} from "@/runtime/skill-evaluation/lib/report-markdown";

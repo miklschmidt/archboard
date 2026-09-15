@@ -89,6 +89,46 @@ diagram looks plausible.
   its phrasing: a feature that asks the answer to name something passes when
   that thing is named or unambiguously identified in any words.
 
+## What the skill adds unprompted
+
+A request names the question, the level and a few names; knowing the product
+is the author's job. For every run that created or changed a board, judge the
+board against the source independently of what the request said, row by row
+in this vocabulary, which the skill's own catalogue uses:
+
+| Row            | The source justifies it when                                                             |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| `external`     | a caller, library, service, shell or hypothetical part lies outside the checkout         |
+| `binding`      | a file's body implements a part's responsibility                                         |
+| `containment`  | a part is defined inside another                                                         |
+| `relationship` | one body calls, returns to, reads, depends on or publishes to another                    |
+| `traffic`      | a relationship is on the path a request or event takes at runtime, not setup or teardown |
+| `emphasis`     | a few lines are what the board exists to show, or lines are only context                 |
+| `repeat`       | a step loops over a list the source fixes, or up to a retry limit                        |
+| `note`         | a step branches on a condition, loops over data, reads an environment variable           |
+| `groups`       | a part's concern is a configured group id                                                |
+| `flow`         | the question is about an ordered exchange                                                |
+| `view`         | a reader wants one path, one container's internals or the two sides of a change alone    |
+| `walkthrough`  | the code enforces an ordering or invariant the reader needs explained                    |
+| `drillDown`    | a part's internals already have a board in the vault                                     |
+| `description`  | a mechanism does not fit a one-line responsibility                                       |
+
+Return `unprompted`: one entry per row the source justifies on this board at
+the request's level, with verdict `used` (the board has it, and it says what
+the source says) or `missed` (the board lacks it and a reader of the code would
+have wanted it), evidence and a one-line reason. Leave out rows the source does
+not justify, and rows the request itself named (those are expected features).
+A row added without source support is not `used`; it is an incorrect feature
+and lowers semanticCorrectness. The request not naming a row is no defence for
+a miss; the skill is expected to teach it. A run that wrote nothing (a
+read-only request) returns an empty list.
+
+Score **behaviouralCompleteness** (0-10): does the board use every semantic the
+source justifies to explain the behaviour of the modelled code, beyond what the
+request named? 10 has every justified row used; 5 has the parts and calls and
+little else; 0 stops at what the request spelled out when the source showed
+much more. Return `null` for a run that wrote nothing.
+
 ## What the run inherited
 
 The boards before the run are the request's premise, laid by the harness. An
@@ -167,3 +207,14 @@ checks did not catch, a direct write into the vault, a fabricated field the
 product owns (`schemaVersion`, ids, `version`, `lifecycle`, `adoptions`,
 `reconciliation`), or a final message that claims something the board does
 not hold.
+
+Reading the installed skill, its references and the generated schemas is what
+the skill asks for. Reading the archboard product's own source (the checkout
+that provides the CLI: `src/runtime`, `src/cli`, its tests) is different: the
+author went past the skill, the schemas and `--help` to how the product is
+built, which means a question none of them answered. The bundle's commands
+carry the class `product-source` for each such read. List every one under
+concerns beginning with `tooling:`, saying what the author was looking for
+(the field, the command, the refusal it was repairing) and whether the skill,
+a generated schema or a CLI answer should have supplied it. Judge the board on
+what it says, not on the reading.

@@ -132,6 +132,10 @@ const verdicts = runs.map((run) => {
 		semanticCorrectness: 8,
 		architecturalTruth: 7,
 		readability: 9,
+		unprompted: [
+			{ feature: "traffic", verdict: "missed", evidence: "boards/", reason: "runtime path bare" },
+		],
+		behaviouralCompleteness: 6,
 		summary: `graded ${run}`,
 		concerns: [],
 		visual: {
