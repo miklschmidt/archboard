@@ -32,7 +32,14 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		status: "completed",
 		durationMs: 10,
 		usage: { input: 100, cached: 20, cacheWrite: null, output: 10, reasoning: null, total: 110 },
-		commandCounts: { discovery: 1, operation: 2, "code-investigation": 1, setup: 0, ambiguous: 0 },
+		commandCounts: {
+			discovery: 1,
+			operation: 2,
+			"code-investigation": 1,
+			"product-source": 0,
+			setup: 0,
+			ambiguous: 0,
+		},
 		directWrites: 0,
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
@@ -124,10 +131,61 @@ test("unstarted planned scenarios stay visible without comparison conclusions", 
 	expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
 });
 
-test("visual defects prevent savings and regress quality; unavailable visuals remain unassessed", () => {
+test("what the skill added unprompted is scored, its misses counted, and a drop is a regression", () => {
+	const judged = (score: number | null, missed: number): RunVerdict => ({
+		...verdict,
+		behaviouralCompleteness: score,
+		unprompted: Array.from({ length: missed }, (_, index) => ({
+			feature: `row-${index}`,
+			verdict: "missed" as const,
+			evidence: "boards/",
+			reason: "left out",
+		})),
+	});
+	const unjudged = buildReport([record(), record({ arm: "candidate" })], null).scenarios[0];
+	expect(unjudged?.candidate.meanBehaviouralCompleteness).toBeNull();
+	expect(unjudged?.candidate.missedUnprompted).toBe(0);
+	expect(unjudged?.qualityRegressed).toBe(false);
+	const readOnly = buildReport(
+		[record({ verdict: judged(null, 0) }), record({ arm: "candidate", verdict: judged(null, 0) })],
+		null,
+	).scenarios[0];
+	expect(readOnly?.candidate.meanBehaviouralCompleteness).toBeNull();
+	expect(readOnly?.qualityRegressed).toBe(false);
+	const dropped = buildReport(
+		[record({ verdict: judged(8, 1) }), record({ arm: "candidate", verdict: judged(5, 3) })],
+		null,
+	).scenarios[0];
+	expect(dropped?.baseline.meanBehaviouralCompleteness).toBe(8);
+	expect(dropped?.candidate.meanBehaviouralCompleteness).toBe(5);
+	expect(dropped?.candidate.missedUnprompted).toBe(3);
+	expect(dropped?.qualityRegressed).toBe(true);
+});
+
+test("runs that read the product source are counted per arm without failing or contaminating them", () => {
+	const reader = record({
+		arm: "candidate",
+		commandCounts: {
+			discovery: 1,
+			operation: 2,
+			"code-investigation": 1,
+			"product-source": 3,
+			setup: 0,
+			ambiguous: 0,
+		},
+	});
+	const report = buildReport([record(), reader], null);
+	expect(report.scenarios[0]?.baseline.productSourceReads).toBe(0);
+	expect(report.scenarios[0]?.candidate.productSourceReads).toBe(1);
+	expect(report.scenarios[0]?.candidate.succeeded).toBe(1);
+	expect(report.scenarios[0]?.candidate.contaminated).toBe(0);
+	expect(report.scenarios[0]?.tokenChangePercent).toBe(0);
+});
+
+test("visual defects regress quality but keep the shared renderer's cost measured; unavailable visuals withhold both", () => {
 	for (const visual of ["fail", "incomplete", null] as const) {
 		const report = buildReport([record(), record({ arm: "candidate", visual })], null);
-		expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
+		expect(report.scenarios[0]?.tokenChangePercent).toBe(visual === "fail" ? 0 : null);
 		expect(report.scenarios[0]?.qualityRegressed).toBe(visual === "fail" ? true : null);
 		expect(report.scenarios[0]?.candidate.succeeded).toBe(0);
 		expect(report.failures).toHaveLength(1);

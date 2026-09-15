@@ -10,14 +10,14 @@ read (TASK-212). A fast test refuses an
 `evals/` directory inside `skills/archboard`, the frozen baseline or an
 install.
 
-| File               | Holds                                                                                                                                                     |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `evals.json`       | The scenarios: prompt, Flask revision, source paths, expected-feature checklist, deterministic outcome checks, guardrails, report group.                  |
-| `pins.json`        | What a comparison holds constant: Flask commits, the authors' Codex version, model and settings, repetitions, the frozen baseline's location.             |
-| `graders.json`     | What each grader runner holds constant: executable, exact version, model, effort, read posture, usage semantics. Not a batch input: chosen at grade time. |
-| `fixtures/S..json` | Each scenario's starting vault: a policy patch, whether the checkout is registered, and the boards laid through the CLI so every id is product-minted.    |
-| `coverage.json`    | The 14-part inventory: every schema path and behavioural branch, the scenarios that exercise it, the expected use, and who owns the evidence.             |
-| `rubric.md`        | What the blinded grader is told.                                                                                                                          |
+| File               | Holds                                                                                                                                                                                                                                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `evals.json`       | The scenarios: prompt, Flask revision, source paths, expected-feature checklist, deterministic outcome checks, guardrails, report group. A prompt says what a person would say (the question, the level, the names the checks anchor on, an explicit product request); the checklist names what the skill must add on its own. |
+| `pins.json`        | What a comparison holds constant: Flask commits, the authors' Codex version, model and settings, repetitions, the frozen baseline's location.                                                                                                                                                                                  |
+| `graders.json`     | What each grader runner holds constant: executable, exact version, model, effort, read posture, usage semantics. Not a batch input: chosen at grade time.                                                                                                                                                                      |
+| `fixtures/S..json` | Each scenario's starting vault: a policy patch, whether the checkout is registered, and the boards laid through the CLI so every id is product-minted.                                                                                                                                                                         |
+| `coverage.json`    | The 14-part inventory: every schema path and behavioural branch, the scenarios that exercise it, the expected use, and who owns the evidence.                                                                                                                                                                                  |
+| `rubric.md`        | What the blinded grader is told.                                                                                                                                                                                                                                                                                               |
 
 ## Commands
 
@@ -143,7 +143,10 @@ answer or one that violates the schema.
 each with per scenario, per primary workflow, and the broad mapping case on
 its own; successes, guardrail violations, outcome failures, semantic
 compliance failures and waived features; median tokens per run (cached input
-is a subset of input and is never added to it); mean grader scores; the
+is a subset of input and is never added to it); mean grader scores, among
+them behavioural completeness (how far a board uses the semantics the source
+justifies beyond what the request named, judged row by row in the rubric's
+catalogue vocabulary, with the missed rows counted per arm); the
 candidate's median-token change against the baseline; and every run that did
 not succeed. When two graders graded the batch, a final section puts their
 verdicts side by side for every run both graded, with the share of runs where

@@ -288,6 +288,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 		const commands = classifyCommands(trace.commands, {
 			skillRoot: install.skillRoot,
 			checkoutRoot: world.paths.flask,
+			archboardRoot: job.checkout,
 			vault: world.paths.vault,
 			exposure: {
 				evaluationInputs: path.join(job.checkout, "evals"),

@@ -31,6 +31,7 @@ const VAULT = `${RUN}/vault`;
 const CONTEXT = {
 	skillRoot: `${RUN}/home/.agents/skills/archboard`,
 	checkoutRoot: `${RUN}/flask`,
+	archboardRoot: "/checkout",
 	vault: VAULT,
 	exposure: {
 		evaluationInputs: "/checkout/evals",
@@ -221,6 +222,31 @@ describe("write attempts", () => {
 	});
 });
 
+describe("reading the product is its own class, apart from the skill, Flask and contamination", () => {
+	test("the skill is discovery, Flask is investigation, the archboard source is product-source", () => {
+		const skill = classified(
+			`bash -lc 'cat ${CONTEXT.skillRoot}/references/generated/semantic-edit-input.schema.json'`,
+		);
+		expect(skill.class).toBe("discovery");
+		expect(skill.exposure).toBeNull();
+		const flask = classified(`bash -lc 'rg -n load_app ${CONTEXT.checkoutRoot}/src/flask/cli.py'`);
+		expect(flask.class).toBe("code-investigation");
+		expect(flask.exposure).toBeNull();
+		const runtime = classified(
+			"bash -lc 'rg -n repeat /checkout/src/runtime/semantic-board-store/tests/flows-and-views.test.ts'",
+		);
+		expect(runtime.class).toBe("product-source");
+		expect(runtime.exposure).toBeNull();
+		const cli = classified("bash -lc 'sed -n 1,80p ../archboard/src/cli/semantic/edit.ts'");
+		expect(cli.class).toBe("product-source");
+		const harness = classified(
+			"bash -lc 'cat /checkout/src/runtime/skill-evaluation/lib/outcomes.ts'",
+		);
+		expect(harness.class).toBe("product-source");
+		expect(harness.exposure).toBe("harness-source");
+	});
+});
+
 describe("evaluation-material exposure", () => {
 	test("reads of the inputs, the harness and other runs are recorded by kind; the run's own world and the CLI are not", () => {
 		expect(classified("bash -lc 'cat /checkout/evals/fixtures/S11.json'").exposure).toBe(
@@ -333,7 +359,14 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		status: "completed",
 		durationMs: 10,
 		usage: reading(100, 10),
-		commandCounts: { discovery: 1, operation: 2, "code-investigation": 0, setup: 0, ambiguous: 0 },
+		commandCounts: {
+			discovery: 1,
+			operation: 2,
+			"code-investigation": 0,
+			"product-source": 0,
+			setup: 0,
+			ambiguous: 0,
+		},
 		directWrites: 0,
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
