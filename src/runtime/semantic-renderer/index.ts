@@ -33,6 +33,7 @@ import type {
 import { layoutCompound } from "@/runtime/semantic-renderer/lib/layout/compound";
 import type { ArchitectureDrawing } from "@/runtime/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
+import { withStepLines } from "@/runtime/semantic-renderer/lib/step-lines";
 import { paletteFor, type Palette } from "@/runtime/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/runtime/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/runtime/semantic-renderer/lib/svg/dataflow";
@@ -175,9 +176,10 @@ async function layoutPredecessors(
 	predecessors: readonly VariantContent[],
 	index = predecessors.length - 1,
 ): Promise<ArchitectureDrawing | undefined> {
-	const content = predecessors[index];
-	if (content === undefined || content.nodes.length === 0) return undefined;
+	const predecessor = predecessors[index];
+	if (predecessor === undefined || predecessor.nodes.length === 0) return undefined;
 	const before = await layoutPredecessors(predecessors, index - 1);
+	const { content } = withStepLines(predecessor);
 	return await layoutCompound(content, measureArchitecture(content), before);
 }
 
@@ -188,8 +190,8 @@ async function layoutPredecessors(
  * @throws {SemanticRenderError} When there is nothing to draw.
  */
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
-	const { content, theme } = request;
-	if (content.nodes.length === 0) {
+	const { theme } = request;
+	if (request.content.nodes.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
 			"this architecture has no nodes, so there is no diagram to draw",
@@ -197,6 +199,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 	}
 
 	const predecessor = await layoutPredecessors(request.predecessors ?? []);
+	const { content, derived } = withStepLines(request.content);
 	const measured = measureArchitecture(content);
 	const drawing = await layoutCompound(content, measured, predecessor);
 	const palette = paletteFor(theme);
@@ -206,13 +209,14 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		standingsFrom(request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
+		derived,
 	);
 
 	const svg = svgDocument({
 		width: painting.width,
 		height: painting.height,
 		palette,
-		title: titleFor(content),
+		title: titleFor(request.content),
 		description: descriptionFor(drawing.containers.map((held) => held.measured.node.name)),
 		fonts: request.fonts ?? "linked",
 		body: painting.body,
