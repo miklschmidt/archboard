@@ -89,8 +89,12 @@ function straightRuns(edges: readonly DrawingEdge[]): Run[] {
  * @returns Its axis, or undefined for a diagonal or point.
  */
 function straightAxis(from: Point, to: Point): Run["axis"] | undefined {
-	if (from.y === to.y && from.x !== to.x) return "x";
-	if (from.x === to.x && from.y !== to.y) return "y";
+	// Engine coordinates carry floating noise (575.0000000000001 against 575);
+	// a line that is straight to the eye is straight here.
+	const dx = Math.abs(to.x - from.x),
+		dy = Math.abs(to.y - from.y);
+	if (dy < EPSILON && dx >= EPSILON) return "x";
+	if (dx < EPSILON && dy >= EPSILON) return "y";
 	return undefined;
 }
 

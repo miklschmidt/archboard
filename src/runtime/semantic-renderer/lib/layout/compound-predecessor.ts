@@ -27,6 +27,7 @@ const PREDECESSOR_OPTIONS: LayoutOptions = {
 	"elk.layered.layering.strategy": "INTERACTIVE",
 	"elk.layered.crossingMinimization.strategy": "INTERACTIVE",
 	"elk.layered.nodePlacement.strategy": "INTERACTIVE",
+	"elk.layered.compaction.postCompaction.strategy": "NONE",
 	"elk.separateConnectedComponents": "false",
 };
 

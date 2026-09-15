@@ -30,6 +30,11 @@ const COMPOUND_OPTIONS: LayoutOptions = {
 	"elk.randomSeed": "1",
 	"elk.layered.cycleBreaking.strategy": "DEPTH_FIRST",
 	"elk.layered.layering.strategy": "LONGEST_PATH_SOURCE",
+	// Cards drift across the width the routes demand; a leftward compaction
+	// after placement pulls them back without touching the routes' bends
+	// (docs/design/layout-rules.md section 7). A predecessor turns it off, since
+	// its cards are pinned where the reader last saw them.
+	"elk.layered.compaction.postCompaction.strategy": "LEFT",
 	"elk.layered.mergeEdges": "false",
 	"elk.layered.mergeHierarchyEdges": "false",
 	"elk.spacing.nodeNode": "72",
