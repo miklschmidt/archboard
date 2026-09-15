@@ -68,6 +68,26 @@ describe("comparison provenance", () => {
 			expect(() => assertProvenance(provenance, batchProvenance(root, loaded))).not.toThrow();
 			expect(() => assertBatchInputs(root, loaded)).not.toThrow();
 			expect(() => assertBatchInputs(root, { ...loaded, rubric: "changed" })).toThrow();
+			// A batch recorded under older pins, with a grader block and other
+			// prose, is still bound by the same inputs: a grader is chosen at
+			// grade time. A changed author pin is not forgiven.
+			const older = {
+				...loaded.pins,
+				$comment: "older words",
+				usageSemantics: "older words",
+				codex: { ...loaded.pins.codex, grader: { model: "gpt-6-astra" } },
+			};
+			const olderBatch = {
+				...manifest,
+				pins: older,
+				provenance: { ...provenance, inputs: inputDigest({ ...loaded, pins: older }) },
+			};
+			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(olderBatch));
+			expect(() => assertBatchInputs(root, loaded)).not.toThrow();
+			expect(() =>
+				assertBatchInputs(root, { ...loaded, pins: { ...loaded.pins, repetitions: 9 } }),
+			).toThrow();
+			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(manifest));
 			for (const file of [
 				"src/input.txt",
 				"skills/archboard/input.txt",
