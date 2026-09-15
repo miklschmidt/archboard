@@ -90,12 +90,12 @@ type StandingOf = (id: string) => SubjectStanding | undefined;
 type SubjectKind = "node" | "edge" | "region" | "flow" | "step";
 
 /** How far in from a subject's corner its pin sits, and how big the pin is. */
-const PIN_INSET = 6;
-const PIN_RADIUS = 5.2;
+const PIN_INSET = 3;
+const PIN_RADIUS = 9.2;
 const PIN_STROKE = 1.7;
 
 /** What a ghosted subject's ink is worth. */
-const GHOST_OPACITY = 0.5;
+const GHOST_OPACITY = 0.4;
 
 /** How heavy a standing makes a subject's own outline. */
 const OUTLINE_WIDTH = 1.8;
@@ -108,7 +108,7 @@ const OUTLINE_WIDTH = 1.8;
  * becomes the loudest object on the page — which is wrong for all three
  * standings and badly wrong for a removal, whose whole job is to be quiet.
  */
-const SWIPE_EXTRA = 7;
+const SWIPE_EXTRA = 4;
 
 /**
  * The mark each standing wears, drawn in a ten-unit square about the origin.
@@ -128,7 +128,7 @@ const PIN_GLYPH: Readonly<Record<SubjectStanding, string>> = {
 /** The texture each standing puts on a subject's own outline. */
 const OUTLINE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
 	added: undefined,
-	removed: "2 3.4",
+	removed: "7 3.5",
 	changed: "7 3.5",
 	unchanged: undefined,
 };
@@ -142,8 +142,8 @@ const OUTLINE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
  */
 const SWIPE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
 	added: undefined,
-	removed: "3 5.5",
-	changed: "11 6",
+	removed: "7 3.5",
+	changed: "7 3.5",
 	unchanged: undefined,
 };
 
@@ -158,7 +158,7 @@ const SWIPE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
  */
 const SWIPE_OPACITY: Readonly<Record<SubjectStanding, number>> = {
 	added: 0.32,
-	removed: 0.6,
+	removed: 0.32,
 	changed: 0.32,
 	unchanged: 0,
 };
