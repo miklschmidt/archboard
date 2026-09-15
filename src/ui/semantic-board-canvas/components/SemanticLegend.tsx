@@ -39,7 +39,7 @@ function SemanticLegend(props: {
 		<aside
 			aria-label="Diagram legend"
 			data-slot="semantic-legend"
-			className="border-border bg-card flex min-h-0 w-[256px] shrink-0 flex-col border-r"
+			className="border-border bg-sidebar flex min-h-0 w-[256px] shrink-0 flex-col border-r"
 		>
 			<div className="flex shrink-0 items-center justify-between px-4 py-3">
 				<h2 className="text-control font-semibold">Legend</h2>
