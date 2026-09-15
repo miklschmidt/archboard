@@ -28,7 +28,7 @@ bun run eval:skill run --arm candidate --scenario S03,S09 --repetitions 1 --conc
 bun run eval:skill run --resume .skill-evals/<batch>   # finish a batch, keeping completed runs
 bun run eval:skill grade .skill-evals/<batch> --grader claude [--chunk 6] [--claude /path/to/claude]
 bun run eval:skill grade .skill-evals/<batch> --grader codex  [--chunk 6] [--codex /path/to/codex]
-bun run eval:skill report .skill-evals/<batch>
+bun run eval:skill report .skill-evals/<batch>   # again, without grading; grade writes one too
 bun run eval:skill pin                       # rewrite the version pins from PATH; no model
 ```
 
@@ -138,7 +138,7 @@ answer or one that violates the schema.
 
 ## Reports
 
-`report` joins each run's manifest with each grader's verdict and writes
+`grade` ends by writing the report, and `report` writes it again without grading. It joins each run's manifest with each grader's verdict and writes
 `report.md` and `report.json`: one section per grader that graded the batch,
 each with per scenario, per primary workflow, and the broad mapping case on
 its own; successes, guardrail violations, outcome failures, semantic
