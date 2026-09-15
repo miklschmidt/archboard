@@ -918,7 +918,7 @@
 				},
 				{
 					"feature": "resolve.third-answer",
-					"requirement": "the removed node is restored by an ordinary edit with its original id, which settles the deletion"
+					"requirement": "the removed node is restored by an ordinary edit with its original id and the current variant's description (Serializes tagged values in signed session cookies), which settles the deletion"
 				},
 				{
 					"feature": "lifecycle.no-adopt",
@@ -950,6 +950,14 @@
 					"node": "Flask app",
 					"field": "responsibility",
 					"expected": "Owns the JSON provider and the request lifecycle"
+				},
+				{
+					"check": "node-field-equals",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"node": "Tagged JSON",
+					"field": "description",
+					"expected": "Serializes tagged values in signed session cookies"
 				},
 				{
 					"check": "node-id-retained",

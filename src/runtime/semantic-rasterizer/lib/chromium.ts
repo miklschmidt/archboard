@@ -6,13 +6,18 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
 
+import {
+	createCodexProcessGroupOperations,
+	type CodexProcessGroupIdentity,
+} from "@/runtime/codex-process/process-group";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
+
 import { isJsonRecord } from "@/runtime/semantic-rasterizer/lib/devtools";
 
 /** The process a session leads. */
 type ChromiumProcess = Bun.Subprocess<"ignore", "pipe", "pipe">;
 
-/** How long each poll waits before looking again. */
-const POLL_MS = 25;
+const processGroups = createCodexProcessGroupOperations();
 
 /**
  * The first Chromium-family executable installed in a supported conventional
@@ -130,15 +135,6 @@ function spawnChromium(chromiumPath: string, tempRoot: string): ChromiumProcess 
 }
 
 /**
- * Wait a little.
- * @param ms How long.
- * @returns After the wait.
- */
-function pause(ms: number): Promise<void> {
-	return new Promise((resolveWait) => setTimeout(resolveWait, ms));
-}
-
-/**
  * Ask a question every few milliseconds until it has an answer or the
  * deadline passes.
  * @param probe The question; null means not yet.
@@ -161,7 +157,7 @@ function pollUntil<T>(
 				} else if (Date.now() > deadline) {
 					rejectPoll(new Error(failure));
 				} else {
-					setTimeout(() => void tick(), POLL_MS);
+					setTimeout(() => void tick(), PROCESS_GROUP_OBSERVATION_POLL_MS);
 				}
 			} catch (error) {
 				rejectPoll(error);
@@ -189,12 +185,20 @@ function devToolsPortIn(tempRoot: string): number | null {
  * DevTools socket URL.
  * @param port The DevTools port.
  * @param timeoutMs How long to wait.
+ * @param signal Cancels startup.
  * @returns The socket URL.
  */
-async function openPageTarget(port: number, timeoutMs: number): Promise<string> {
+async function openPageTarget(
+	port: number,
+	timeoutMs: number,
+	signal?: AbortSignal,
+): Promise<string> {
 	const target = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, {
 		method: "PUT",
-		signal: AbortSignal.timeout(timeoutMs),
+		signal:
+			signal === undefined
+				? AbortSignal.timeout(timeoutMs)
+				: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
 	});
 	const description: unknown = await target.json();
 	if (!isJsonRecord(description) || typeof description["webSocketDebuggerUrl"] !== "string") {
@@ -204,47 +208,51 @@ async function openPageTarget(port: number, timeoutMs: number): Promise<string> 
 }
 
 /**
- * Send one signal to a whole process group, ignoring a group already gone.
- * @param leader The group leader's pid.
- * @param signal Which signal.
- */
-function signalGroup(leader: number, signal: NodeJS.Signals): void {
-	try {
-		process.kill(-leader, signal);
-	} catch {
-		// An absent group is what the wait after it proves.
-	}
-}
-
-/**
- * Whether the process exits within a deadline.
- * @param child The process.
+ * Wait for the leader and every runnable helper to exit within a deadline.
+ * @param child The group leader.
+ * @param group The recorded process group identity.
  * @param timeoutMs How long to wait.
- * @returns Whether it exited.
+ * @returns Whether the whole group is gone.
  */
-function exitsWithin(child: ChromiumProcess, timeoutMs: number): Promise<boolean> {
-	return Promise.race([child.exited.then(() => true), pause(timeoutMs).then(() => false)]);
+async function groupExitsWithin(
+	child: ChromiumProcess,
+	group: CodexProcessGroupIdentity,
+	timeoutMs: number,
+): Promise<boolean> {
+	try {
+		await pollUntil(
+			() =>
+				Promise.resolve(
+					(child.exitCode !== null || child.signalCode !== null) &&
+						processGroups.inspect(group) === "quiescent"
+						? true
+						: null,
+				),
+			Date.now() + timeoutMs,
+			"Chromium's process group did not exit.",
+		);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
- * Ask the process group to stop, then make it, and say whether the leader
- * has really exited.
+ * Stop the whole process group and prove no runnable helper remains.
  * @param child The leader.
- * @param timeoutMs How long each of the two asks may take.
- * @returns Whether the leader exited.
+ * @param group The recorded process group identity.
+ * @param timeoutMs How long each signal may take.
+ * @returns Whether the group exited.
  */
-async function stopProcessGroup(child: ChromiumProcess, timeoutMs: number): Promise<boolean> {
-	if (child.exitCode === null) {
-		signalGroup(child.pid, "SIGTERM");
-		if (!(await exitsWithin(child, timeoutMs))) {
-			signalGroup(child.pid, "SIGKILL");
-			if (!(await exitsWithin(child, timeoutMs))) return false;
-		}
-	}
-	// Helpers the leader forked outlive a leader that was only asked; the group
-	// is what the session owns, so the group is what goes.
-	signalGroup(child.pid, "SIGKILL");
-	return true;
+async function stopProcessGroup(
+	child: ChromiumProcess,
+	group: CodexProcessGroupIdentity,
+	timeoutMs: number,
+): Promise<boolean> {
+	processGroups.signal(group, "SIGTERM");
+	if (await groupExitsWithin(child, group, timeoutMs)) return true;
+	processGroups.signal(group, "SIGKILL");
+	return groupExitsWithin(child, group, timeoutMs);
 }
 
 /**
@@ -265,6 +273,7 @@ function removeTempRoot(tempRoot: string, errors: string[]): boolean {
 }
 
 export {
+	processGroups,
 	devToolsPortIn,
 	discoveredChromiumPath,
 	openPageTarget,

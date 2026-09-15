@@ -44,33 +44,46 @@ class DevTools {
 	 * Open a DevTools connection to one target.
 	 * @param url The target's socket URL.
 	 * @param timeoutMs How long to wait for it to open.
+	 * @param signal Cancels startup.
 	 * @returns The connection.
 	 */
-	static async connect(url: string, timeoutMs: number): Promise<DevTools> {
+	static async connect(url: string, timeoutMs: number, signal?: AbortSignal): Promise<DevTools> {
+		signal?.throwIfAborted();
 		const socket = new WebSocket(url);
-		await new Promise<void>((resolveConnection, rejectConnection) => {
-			const timeout = setTimeout(
-				() => rejectConnection(new Error("Rasterizer DevTools socket did not open.")),
-				timeoutMs,
-			);
-			socket.addEventListener(
-				"open",
-				() => {
-					clearTimeout(timeout);
-					resolveConnection();
-				},
-				{ once: true },
-			);
-			socket.addEventListener(
-				"error",
-				() => {
-					clearTimeout(timeout);
-					rejectConnection(new Error("Rasterizer DevTools socket could not open."));
-				},
-				{ once: true },
-			);
-		});
-		return new DevTools(socket);
+		let timeout: Timer | undefined;
+		let cancel: (() => void) | undefined;
+		try {
+			await new Promise<void>((resolveConnection, rejectConnection) => {
+				/** Reject the opening connection on cancellation. */
+				cancel = () => {
+					rejectConnection(signal?.reason);
+				};
+				signal?.addEventListener("abort", cancel, { once: true });
+				timeout = setTimeout(
+					() => rejectConnection(new Error("Rasterizer DevTools socket did not open.")),
+					timeoutMs,
+				);
+				socket.addEventListener("open", () => resolveConnection(), { once: true });
+				socket.addEventListener(
+					"error",
+					() => rejectConnection(new Error("Rasterizer DevTools socket could not open.")),
+					{ once: true },
+				);
+				socket.addEventListener(
+					"close",
+					() => rejectConnection(new Error("Rasterizer DevTools socket closed before opening.")),
+					{ once: true },
+				);
+			});
+			signal?.throwIfAborted();
+			return new DevTools(socket);
+		} catch (error) {
+			socket.close();
+			throw error;
+		} finally {
+			clearTimeout(timeout);
+			if (cancel) signal?.removeEventListener("abort", cancel);
+		}
 	}
 
 	/**

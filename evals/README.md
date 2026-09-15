@@ -122,19 +122,34 @@ scenario inputs so earlier results cannot be assessed against a new checklist.
 ## What the grader sees, and what it must look at
 
 The grading workspace stages each run's `bundle.json`, `boards/`, `renders/`
-and `captures/`. The bundle's `captures` list carries, per declared capture,
-its label, board, variant, view and grammar, whether it was taken, why not
-when it was not, the file under `captures/`, its provenance and its tiles;
-the file paths are relative, so nothing about the arm survives. The grader
-is told to open every capture as an image (and the tiles where the whole
-image is too small to read), to record the labels it opened in
-`visual.inspectedCaptures`, and to answer `visual.verdict` and
-`visual.observations` beside the semantic checklist. The harness then
-downgrades a `pass` to `incomplete` for any run with a capture not taken or
-not opened, so a file that exists but was never looked at cannot pass, and
-the report counts visual pass, fail and incomplete apart from semantic
-compliance. A still capture pauses traffic animation at its first frame and
-proves nothing about motion.
+and `captures/`. The capture list names each required diagram and its saved
+board version, view, variant, dimensions, SVG digest and native detail tiles.
+All paths exposed to the grader are relative to its anonymous run.
+
+On every grading call, including a resumed call, the harness attaches each
+available capture and every required native-resolution tile directly with
+Codex 0.154.0's `--image` option. The prompt identifies the pictures in their
+attachment order. Missing files, invalid PNG headers, mismatched dimensions
+or missing native detail tiles leave that capture explicitly incomplete.
+Image decode or call failures cannot produce a successful delivery receipt.
+
+The grader must visually inspect the attached pictures, list their labels in
+`visual.inspectedCaptures`, and supply `visual.observations` as an array of
+`{capture, observation}` entries, one per capture. Only a successful grading
+call gets a harness-owned `<run>.json.images.json` receipt beside its verdict;
+it records the supplied image IDs, relative paths and SHA-256 digests and the
+exact verdict digest. Reports check those bytes again, so stale receipts and
+self-reported inspection alone cannot qualify a visual pass or assessed failure.
+Missing required evidence makes the effective evaluation incomplete while the
+raw grader verdict and its observations remain available. Historical runs
+without delivery receipts remain visually incomplete. Delivery is verified;
+the image-grounded observations remain the grader's judgment.
+
+Visual failure prevents an overall success and counts as a quality regression
+when it worsens relative to the baseline. Incomplete visual evidence leaves
+quality unassessed. Both prevent efficiency claims while retaining raw semantic
+scores and usage. A still capture pauses traffic at its first frame and proves
+nothing about motion.
 
 ## Evidence the harness keeps, and what it refuses to infer
 

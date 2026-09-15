@@ -12,7 +12,7 @@ implements: 0020
 > capture jobs, caller cancellation and a provable teardown, and replaces the
 > Excalidraw export step with a screenshot of the semantic renderer's own SVG
 > at a stated device scale. There is no page fixture, no Mermaid and no
-> server route: the CLI rasterizes what the canvas rendered.
+> rasterizer route: the CLI rasterizes what the canvas rendered.
 
 TASK-143.08.06.01 asks whether the pinned Excalidraw export and Mermaid
 conversion stack can render an Archboard board without an Archboard browser

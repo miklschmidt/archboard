@@ -5,6 +5,8 @@
 // every run yourself in this session."
 
 import { z } from "zod";
+import type { RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
+import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 
 const NO_DELEGATION =
 	"Do not use subagents. Inspect the source and grade every run yourself in this session.";
@@ -13,13 +15,16 @@ const FeatureVerdictSchema = z.enum(["pass", "missing", "incorrect", "not-applic
 /** What the grader says of the pictures: only after opening them, and only as far as it opened them. */
 const VisualStandingSchema = z.enum(["pass", "fail", "incomplete"]);
 type VisualStanding = z.infer<typeof VisualStandingSchema>;
+const ObservationsSchema = z.array(
+	z.object({ capture: z.string().min(1), observation: z.string().trim().min(1) }).strict(),
+);
 const VisualVerdictSchema = z
 	.object({
 		/** The labels of the captures the grader opened as images, tiles counted under their capture. */
 		inspectedCaptures: z.array(z.string()),
 		verdict: VisualStandingSchema,
 		/** What the grader saw: readability, clipping, overlap, endpoints, sequence legibility, per capture. */
-		observations: z.string().min(1),
+		observations: ObservationsSchema,
 	})
 	.strict();
 const VerdictFields = {
@@ -42,7 +47,12 @@ const VerdictFields = {
 const RunVerdictSchema = z.object({ ...VerdictFields, visual: VisualVerdictSchema }).strict();
 /** A filed verdict as the report reads it; one filed before captures existed has no visual answer. */
 const FiledVerdictSchema = z
-	.object({ ...VerdictFields, visual: VisualVerdictSchema.optional() })
+	.object({
+		...VerdictFields,
+		visual: VisualVerdictSchema.extend({
+			observations: z.union([ObservationsSchema, z.string().min(1)]),
+		}).optional(),
+	})
 	.strict();
 const GraderOutputSchema = z.object({ runs: z.array(RunVerdictSchema).min(1) }).strict();
 type RunVerdict = z.infer<typeof FiledVerdictSchema>;
@@ -53,44 +63,67 @@ type GraderOutput = z.infer<typeof GraderOutputSchema>;
  * captures is counted. The grader's word passes only for a run whose every
  * declared capture was taken and whose every taken capture the grader opened;
  * a failed or unopened capture makes the verdict incomplete, and a verdict
- * filed without any visual answer is incomplete too. A fail the grader saw
- * stands whatever else is missing.
+ * filed without any visual answer is incomplete too. The original verdict
+ * and observations remain available even when incomplete evidence prevents
+ * either a pass or a fail from becoming an assessed comparison.
  * @param captures What the run's manifest says was declared, taken and not; null when it recorded none.
  * @param verdict The filed verdict, or null when the run is not graded.
+ * @param supplied Labels backed by harness-owned image-delivery receipts.
  * @returns The standing, or null for an ungraded run.
  */
 function visualStandingOf(
-	captures: CapturesTaken | null,
+	captures: CaptureSummary | null,
 	verdict: RunVerdict | null,
+	supplied: readonly string[] = [],
 ): VisualStanding | null {
 	if (verdict === null) return null;
 	const visual = verdict.visual;
-	if (visual?.verdict === "fail") return "fail";
-	if (visual === undefined || !everyCaptureSeen(captures, visual.inspectedCaptures)) {
-		return "incomplete";
-	}
+	if (visual === undefined || !everyCaptureSeen(captures, visual, supplied)) return "incomplete";
 	return visual.verdict;
 }
 
-/** What a run's manifest says about its captures, as far as the standing needs. */
-interface CapturesTaken {
-	readonly declared: readonly string[];
-	readonly captured: readonly string[];
-	readonly failed: readonly string[];
+/**
+ * Captures both supplied by the harness and discussed by the grader.
+ * @param captures The manifest's capture requirements.
+ * @param visual The grader's answer.
+ * @param supplied Verified attachment labels.
+ * @returns The capture labels with both kinds of evidence.
+ */
+function observedCaptures(
+	captures: CaptureSummary | null,
+	visual: NonNullable<RunVerdict["visual"]>,
+	supplied: readonly string[],
+): Set<string> {
+	if (captures === null || !Array.isArray(visual.observations)) return new Set();
+	const seen = new Set(visual.inspectedCaptures);
+	const observed = new Set(visual.observations.map((entry) => entry.capture));
+	return new Set(
+		supplied.filter(
+			(label) =>
+				captures.declared.includes(label) &&
+				captures.captured.includes(label) &&
+				seen.has(label) &&
+				observed.has(label),
+		),
+	);
 }
 
 /**
- * Whether every declared capture was taken and every taken one was opened.
- * @param captures What was declared, taken and not; null when nothing was recorded.
- * @param inspected The labels the grader opened.
- * @returns Whether the pictures were all there and all seen.
+ * Whether every required capture was delivered and has an image-grounded answer.
+ * @param captures The harness's declared and captured labels.
+ * @param visual The grader's visual answer.
+ * @param supplied Labels backed by successful attachment delivery.
+ * @returns Whether all capture obligations have evidence.
  */
-function everyCaptureSeen(captures: CapturesTaken | null, inspected: readonly string[]): boolean {
-	if (captures === null || captures.captured.length === 0 || captures.failed.length > 0) {
+function everyCaptureSeen(
+	captures: CaptureSummary | null,
+	visual: NonNullable<RunVerdict["visual"]>,
+	supplied: readonly string[],
+): boolean {
+	if (captures === null || captures.declared.length === 0 || captures.failed.length > 0)
 		return false;
-	}
-	const opened = new Set(inspected);
-	return captures.captured.every((label) => opened.has(label));
+	const observed = observedCaptures(captures, visual, supplied);
+	return captures.declared.every((label) => observed.has(label));
 }
 
 /** The JSON Schema handed to `codex exec --output-schema`, rendered from the parsing authority. */
@@ -112,6 +145,8 @@ interface GraderBrief {
 	readonly runs: readonly string[];
 	/** Whether this call continues a session that already read the rubric and the sources. */
 	readonly continuing: boolean;
+	/** The harness-supplied attachments in their prompt order, repeated on every call. */
+	readonly images?: readonly RunImages[];
 }
 
 /**
@@ -136,7 +171,7 @@ function graderPrompt(brief: GraderBrief): string {
 					.join(", ")}.`,
 				`Each run is a directory under ${brief.layout.runs}/<run-id>/ holding bundle.json (the request, its source paths, the expected-feature checklist, the configured vault policy, group-inspection results, the boards before and after as the vault stores them, the harness's deterministic verdicts, the commands the author ran, and a \`captures\` list), the resulting board documents under boards/, rendered diagrams under renders/ as SVG, and under captures/ the PNG bitmaps the harness took of every final saved diagram the request asked for, at native scale, one per entry of \`captures\` with its label, board, variant, view, provenance (board version, variant, view, scale, dimensions, SVG digest) and, for a large diagram, native-scale tiles.`,
 				"Inspect the source the request names before judging a run's truth; reuse what you learned across runs of the same revision.",
-				"Open every capture image listed for a run with your image viewing tool and look at it; where a capture lists tiles and the whole image is too small to read, open the tiles too. A capture whose `ok` is false has no picture, and the entry says why; do not describe it. Reading the SVG text, the board JSON, the file's existence or the author's claim to have looked is not looking at a diagram.",
+				"Look at every harness-attached capture and native-resolution tile. Use the image viewing tool for further inspection if useful. A capture whose `ok` is false has no picture, and the entry says why; do not describe it. Reading the SVG text, the board JSON, the file's existence or the author's claim to have looked is not looking at a diagram.",
 				"",
 				"# Rubric",
 				"",
@@ -145,13 +180,36 @@ function graderPrompt(brief: GraderBrief): string {
 			];
 	return [
 		...opening,
+		"The following images are attached directly to this prompt in the listed order. Inspect every attached main image and native-resolution tile visually; no image-tool call is needed to receive them.",
+		...attachmentLines(brief.images ?? []),
 		`Grade these runs now: ${brief.runs.join(", ")}.`,
 		"For every run return one entry with: a verdict for EVERY expected feature (pass, missing, incorrect, or not-applicable), each with the evidence you read (file, board, node or edge id, render) and a one-line reason; integer scores 0-10 for semanticCorrectness, architecturalTruth and readability; a summary; and concerns.",
 		"An expected feature is required by the scenario. Mark it not-applicable only when the request itself made it impossible, and say why in the reason; a plausible diagram with a missing or incorrect feature does not pass that feature.",
 		"Judge persisted traffic from the saved board; a static render or capture cannot show motion, so never claim you observed animation.",
-		"For every run also return `visual`: `inspectedCaptures` (the labels of the captures you opened as images), a `verdict` of pass, fail or incomplete, and `observations` naming, per capture you opened, what you saw of readability, clipping at the page edge, overlapping cards or labels, whether each relationship's endpoints sit on the parts it names, and whether a sequence's columns and messages read in order. Pass only a run whose every listed capture you opened and found legible; a capture you did not open, or one the harness could not take, makes the verdict incomplete, and the harness downgrades a pass it cannot corroborate.",
+		"For every run also return `visual`: `inspectedCaptures` (the labels of the attached captures you visually inspected), a `verdict` of pass, fail or incomplete, and `observations` (an array of {capture, observation}, one entry per capture you inspected) naming what you saw of readability, clipping at the page edge, overlapping cards or labels, whether each relationship's endpoints sit on the parts it names, and whether a sequence's columns and messages read in order. Pass only a run whose every listed capture you visually inspected and found legible; a capture you did not inspect, or one the harness could not take or attach, makes the verdict incomplete, and the harness downgrades a pass lacking successful image delivery or a per-capture observation.",
 		`Write nothing but the structured answer; it is captured into ${brief.layout.verdictFile}.`,
 	].join("\n");
+}
+
+/**
+ * Identify each attached picture and each unavailable capture on every call.
+ * @param runs The attachment plans.
+ * @returns The ordered image legend and unavailable labels.
+ */
+function attachmentLines(runs: readonly RunImages[]): string[] {
+	const images = runs.flatMap((run) => run.images.map((image) => ({ run: run.run, ...image })));
+	return [
+		...images.map(
+			(image, index) =>
+				`Image ${index + 1}: ${image.run}, capture ${image.capture}, ${image.file} (${image.width}×${image.height}).`,
+		),
+		...runs.flatMap((run) =>
+			run.failures.map(
+				(failure) =>
+					`Unavailable: ${run.run}, capture ${failure.capture}: ${failure.detail}. Its visual evaluation is incomplete.`,
+			),
+		),
+	];
 }
 
 /**

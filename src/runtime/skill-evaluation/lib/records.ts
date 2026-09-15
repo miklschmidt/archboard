@@ -11,6 +11,7 @@ import {
 	semanticallyCompliant,
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
+import { suppliedCaptures } from "@/runtime/skill-evaluation/lib/grading-images";
 import { visualStandingOf } from "@/runtime/skill-evaluation/lib/grader";
 import { filedVerdict, graderUsage } from "@/runtime/skill-evaluation/lib/grading-run";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
@@ -117,16 +118,21 @@ function gradedOf(
 /**
  * What the record says of the pictures: the captures the manifest recorded,
  * and the visual verdict as it stands against them.
+ * @param batchRoot The batch.
  * @param manifest The manifest.
  * @param verdict The filed verdict, or null.
  * @returns The two fields.
  */
 function visualOf(
+	batchRoot: string,
 	manifest: RunManifest,
 	verdict: RunVerdict | null,
 ): Pick<RunRecord, "captures" | "visual"> {
 	const captures = manifest.captures ?? null;
-	return { captures, visual: visualStandingOf(captures, verdict) };
+	return {
+		captures,
+		visual: visualStandingOf(captures, verdict, suppliedCaptures(batchRoot, manifest.run)),
+	};
 }
 
 /**
@@ -152,7 +158,7 @@ function recordOf(batchRoot: string, loaded: LoadedSuite, manifest: RunManifest)
 		commandCounts: manifest.commandCounts,
 		directWrites: manifest.directWrites ?? null,
 		exposure: manifest.exposure ?? null,
-		...visualOf(manifest, verdict),
+		...visualOf(batchRoot, manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,
 		guardrailsPassed: manifest.guardrailsPassed,
 		verdict,
