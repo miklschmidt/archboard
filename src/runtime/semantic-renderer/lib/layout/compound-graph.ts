@@ -53,10 +53,22 @@ type PortSides = readonly [
 ];
 
 /**
- * Whether a leftward departure can descend onto the target's top face.
- * @param edge New connection between existing cards.
+ * Faces the engine chooses: a forward skip carries no reading convention the
+ * way a descent, a return or a containment call does, and a face fixed for it
+ * before layout is a guess about columns the engine has not made yet. Left
+ * free, the router picks the face that fits its own columns, which is what
+ * removes the margin corridors on wide boards (docs/design/layout-rules.md).
+ */
+const FREE = "FREE";
+type Faces = PortSides | typeof FREE;
+
+/**
+ * Whether a bracketing skip can descend onto the target's top face instead
+ * of its west flank: in the predecessor drawing the target sits left of the
+ * source, so the approach along the target's row would be a detour.
+ * @param edge The skip.
  * @param predecessor The geometry whose arrangement should remain recognizable.
- * @returns Whether the target center lies to the left of the source's exit.
+ * @returns True when the target centre lies left of the source's exit.
  */
 function hasTopApproach(edge: SemanticEdge, predecessor: ArchitectureDrawing | undefined): boolean {
 	if (predecessor === undefined) return false;
@@ -66,25 +78,137 @@ function hasTopApproach(edge: SemanticEdge, predecessor: ArchitectureDrawing | u
 }
 
 /**
- * Adjacent forward steps are direct; skips and returns occupy opposite flanks.
+ * How many forward skips one card may bracket from its west flank. One skip
+ * beside its own chain reads as a bracket; a fan of them from a hub is a set
+ * of lanes down the margin, so the rest are the engine's to attach.
+ */
+const FLANK_BUDGET = 1;
+/**
+ * How many forward relationships a card may have and still bracket a skip:
+ * a chain with one skip beside it reads as a bracket, a hub is a fan.
+ */
+const HUB_DEGREE = 3;
+
+/** A forward skip, by id and the rank distance it spans. */
+interface Skip {
+	readonly id: string;
+	readonly distance: number;
+}
+
+/**
+ * The rank distance a relationship spans, positive when forward.
+ * @param edge The relationship.
+ * @param ranks The dependency ranks.
+ * @returns rank(to) minus rank(from).
+ */
+function spanOf(edge: SemanticEdge, ranks: ReadonlyMap<string, number>): number {
+	return (ranks.get(edge.to) ?? 0) - (ranks.get(edge.from) ?? 0);
+}
+
+/**
+ * How many forward relationships leave each card.
+ * @param edges The relationships.
+ * @param ranks The dependency ranks.
+ * @returns Forward out-degree by source id.
+ */
+function forwardDegrees(
+	edges: readonly SemanticEdge[],
+	ranks: ReadonlyMap<string, number>,
+): Map<string, number> {
+	const degrees = new Map<string, number>();
+	for (const edge of edges.filter((candidate) => spanOf(candidate, ranks) > 0))
+		degrees.set(edge.from, (degrees.get(edge.from) ?? 0) + 1);
+	return degrees;
+}
+
+/**
+ * The forward skips of the cards that are not hubs, grouped by source.
+ * @param edges The relationships.
+ * @param ranks The dependency ranks.
+ * @returns Each such source's skips.
+ */
+function skipsBySource(
+	edges: readonly SemanticEdge[],
+	ranks: ReadonlyMap<string, number>,
+): Map<string, Skip[]> {
+	const degrees = forwardDegrees(edges, ranks);
+	const bySource = new Map<string, Skip[]>();
+	for (const edge of edges) {
+		const distance = spanOf(edge, ranks);
+		if (distance < 2 || (degrees.get(edge.from) ?? 0) >= HUB_DEGREE) continue;
+		bySource.set(edge.from, [...(bySource.get(edge.from) ?? []), { id: edge.id, distance }]);
+	}
+	return bySource;
+}
+
+/**
+ * The forward skips drawn as west-flank brackets: per card that is not a hub,
+ * the nearest by rank distance (then by id), up to the budget.
+ * @param edges The relationships, in id order.
+ * @param ranks The dependency ranks.
+ * @returns The ids of the bracketing skips.
+ */
+function flankSkips(
+	edges: readonly SemanticEdge[],
+	ranks: ReadonlyMap<string, number>,
+): Set<string> {
+	return new Set(
+		[...skipsBySource(edges, ranks).values()].flatMap((skips) =>
+			skips
+				.toSorted((one, other) => one.distance - other.distance || one.id.localeCompare(other.id))
+				.slice(0, FLANK_BUDGET)
+				.map((skip) => skip.id),
+		),
+	);
+}
+
+/**
+ * Adjacent forward steps are direct, returns take the right flank, one skip
+ * per card brackets its chain from the west flank, and every further skip is
+ * left to the engine.
  * @param edge The connection being read.
- * @param ranks The deterministic dependency ranks, with cycles broken in document order.
+ * @param ordering The deterministic dependency ranks, with cycles broken in document order, and the bracketing skips.
  * @param nested Whether the connection crosses a containment boundary.
- * @param predecessor Existing geometry for choosing a shorter new skip attachment.
- * @returns The source and target attachment faces.
+ * @param predecessor Existing geometry for choosing a shorter bracket attachment.
+ * @returns The source and target attachment faces, or FREE for the engine to choose.
  */
 function sidesOf(
 	edge: SemanticEdge,
-	ranks: ReadonlyMap<string, number>,
+	ordering: Ordering,
 	nested: boolean,
-	predecessor?: ArchitectureDrawing,
-): PortSides {
+	predecessor: ArchitectureDrawing | undefined,
+): Faces {
 	// rankNodes assigns every node before edge attachment begins.
-	const distance = ranks.get(edge.to)! - ranks.get(edge.from)!;
+	const distance = ordering.ranks.get(edge.to)! - ordering.ranks.get(edge.from)!;
 	if (distance <= 0) return ["EAST", "EAST"];
 	if (nested) return ["WEST", "WEST"];
-	if (distance === 1) return ["SOUTH", "NORTH"];
+	return distance === 1 ? ["SOUTH", "NORTH"] : skipFaces(edge, ordering, predecessor);
+}
+
+/**
+ * A forward skip's faces. A first render leaves a hub's skips to the engine,
+ * which places the cards around them. Under a predecessor the cards are
+ * pinned, and a free skip is routed as a staircase between them; there the
+ * flank, with its approach read from the predecessor drawing, is the shorter,
+ * straighter route.
+ * @param edge The skip.
+ * @param ordering The ranks and the bracketing skips.
+ * @param predecessor The preceding drawing, when there is one.
+ * @returns The faces, or FREE.
+ */
+function skipFaces(
+	edge: SemanticEdge,
+	ordering: Ordering,
+	predecessor: ArchitectureDrawing | undefined,
+): Faces {
+	if (!ordering.flank.has(edge.id) && predecessor === undefined) return FREE;
 	return ["WEST", hasTopApproach(edge, predecessor) ? "NORTH" : "WEST"];
+}
+
+/** The semantic ordering of one view: ranks, and which skips bracket from the flank. */
+interface Ordering {
+	readonly ranks: ReadonlyMap<string, number>;
+	readonly flank: ReadonlySet<string>;
 }
 
 /**
@@ -112,16 +236,16 @@ function containmentOf(
  * else by dependency rank.
  * @param edge The connection being read.
  * @param measured The inclusion tree of this view.
- * @param ranks The deterministic dependency ranks.
+ * @param ordering The deterministic dependency ranks and the bracketing skips.
  * @param predecessor The preceding drawing of this view.
- * @returns The source and target attachment faces.
+ * @returns The source and target attachment faces, or FREE for the engine to choose.
  */
 function facesOf(
 	edge: SemanticEdge,
 	measured: MeasuredArchitecture,
-	ranks: ReadonlyMap<string, number>,
+	ordering: Ordering,
 	predecessor: ArchitectureDrawing | undefined,
-): PortSides {
+): Faces {
 	const inherited = previousSides(edge, measured, predecessor);
 	if (inherited !== undefined) return inherited;
 	const containment = containmentOf(edge, measured);
@@ -129,7 +253,7 @@ function facesOf(
 	if (containment === "held") return ["SOUTH", "SOUTH"];
 	const nested =
 		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
-	return sidesOf(edge, ranks, nested, predecessor);
+	return sidesOf(edge, ordering, nested, predecessor);
 }
 
 /**
@@ -284,7 +408,7 @@ function attachPort(id: string, port: ElkPort, nodes: ReadonlyMap<string, ElkNod
  * @param edge The semantic relationship.
  * @param nodes The already constructed nodes, for endpoint ownership.
  * @param measured All text sizes.
- * @param ranks The semantic ordering that chooses faces.
+ * @param ordering The semantic ordering that chooses faces.
  * @param predecessor Prior endpoint faces for unchanged relationships.
  * @returns The contiguous engine sections, all owned by one semantic edge.
  */
@@ -292,10 +416,19 @@ function edgeOf(
 	edge: SemanticEdge,
 	nodes: ReadonlyMap<string, ElkNode>,
 	measured: MeasuredArchitecture,
-	ranks: ReadonlyMap<string, number>,
+	ordering: Ordering,
 	predecessor: ArchitectureDrawing | undefined,
 ): ElkExtendedEdge[] {
-	const [fromSide, toSide] = facesOf(edge, measured, ranks, predecessor);
+	const { ranks } = ordering;
+	const faces = facesOf(edge, measured, ordering, predecessor);
+	if (faces === FREE) {
+		// Node to node: the router chooses the faces, and a crossed frame is the
+		// engine's own hierarchy edge rather than a section per boundary.
+		return [
+			{ id: edge.id, sources: [edge.from], targets: [edge.to], labels: labelsOf(edge, measured) },
+		];
+	}
+	const [fromSide, toSide] = faces;
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
 	attachPort(edge.from, portOf(fromPort, fromSide, ranks.get(edge.to) ?? 0), nodes);
@@ -385,11 +518,12 @@ function compoundGraph(
 	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value)]));
 	const edges = content.edges.toSorted((one, other) => one.id.localeCompare(other.id));
 	const ranks = rankNodes(content.nodes, edges);
+	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks) };
 	return {
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },
 		children: containNodes(content.nodes, nodes),
-		edges: edges.flatMap((edge) => edgeOf(edge, nodes, measured, ranks, predecessor)),
+		edges: edges.flatMap((edge) => edgeOf(edge, nodes, measured, ordering, predecessor)),
 	};
 }
 

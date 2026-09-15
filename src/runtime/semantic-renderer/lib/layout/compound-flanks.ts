@@ -69,8 +69,9 @@ function acrossApproach(box: Box, to: Point, lane: number): boolean {
  * @returns True when a seeded card lies across the approach.
  */
 function westApproachBlocked(edge: ElkExtendedEdge, seeded: Seeded): boolean {
-	const from = seeded.ports.get(edge.sources[0]!)!,
-		to = seeded.ports.get(edge.targets[0]!)!;
+	const from = seeded.ports.get(edge.sources[0]!),
+		to = seeded.ports.get(edge.targets[0]!);
+	if (from === undefined || to === undefined) return false;
 	const lane = Math.min(from.x, to.x) - Number(COMPOUND_OPTIONS["elk.spacing.edgeNode"]);
 	return [...seeded.boxes.values()].some(
 		(box) => !reaches(box, from) && !reaches(box, to) && acrossApproach(box, to, lane),
