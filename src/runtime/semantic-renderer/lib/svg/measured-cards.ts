@@ -125,6 +125,16 @@ function paintMeasuredFrame(
 				...bodyAttributes(appearance, palette),
 				...standingOutline(standing, palette),
 			}),
+			// The rule under the title: what the frame itself relates to leaves from
+			// here, so such a line has a visible origin inside the frame.
+			tag("line", {
+				x1: coord(box.x),
+				y1: coord(box.y + measured.headerHeight),
+				x2: coord(box.x + box.width),
+				y2: coord(box.y + measured.headerHeight),
+				stroke: bodyAttributes(appearance, palette)["stroke"] ?? styles.band.stroke,
+				"stroke-width": 1,
+			}),
 			standingPin(box, standing, palette),
 		]),
 	);
