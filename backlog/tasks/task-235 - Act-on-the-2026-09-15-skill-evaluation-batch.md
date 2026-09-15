@@ -4,7 +4,7 @@ title: Act on the 2026-09-15 skill evaluation batch
 status: Done
 assignee: []
 created_date: '2026-09-15 18:50'
-updated_date: '2026-09-15 19:08'
+updated_date: '2026-09-15 19:09'
 labels: []
 dependencies: []
 references:
@@ -31,6 +31,8 @@ The batch .skill-evals/2026-09-15T13-56-41-652Z (baseline = frozen TASK-210 skil
 
 <!-- SECTION:NOTES:BEGIN -->
 TASK-235.07 (CLI warning on remove+re-add) stays To Do as a follow-up needing a product decision; every other subtask is Done. bun run check exit 0.
+
+Correction: bun run check stopped in the system lane on tests/system/process-contracts/codex-workbench-crash-replacement.test.ts (prior_group_census_at_spawn missing), a Codex process race unrelated to this work; it passes alone on the same tree. Module lane 3111 pass, system lane otherwise 162 pass, repository lane 8 pass; the browser lane was run explicitly afterwards.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
