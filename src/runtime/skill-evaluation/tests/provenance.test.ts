@@ -57,6 +57,7 @@ describe("comparison provenance", () => {
 				scenarios: ["S03"],
 				repetitions: 1,
 				codexExecutable: "/pinned/codex",
+				pins: loaded.pins,
 			};
 			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(manifest));
 			expect(resumeSelection(root)).toEqual({
@@ -87,6 +88,15 @@ describe("comparison provenance", () => {
 			expect(() =>
 				assertBatchInputs(root, { ...loaded, pins: { ...loaded.pins, repetitions: 9 } }),
 			).toThrow();
+			const otherAuthor = {
+				...loaded.pins,
+				codex: { ...loaded.pins.codex, author: { ...loaded.pins.codex.author, model: "other" } },
+			};
+			expect(() => assertBatchInputs(root, { ...loaded, pins: otherAuthor })).toThrow();
+			// A batch that recorded no pins cannot show what bound it.
+			const { pins: _pins, ...unpinned } = olderBatch;
+			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(unpinned));
+			expect(() => assertBatchInputs(root, loaded)).toThrow();
 			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(manifest));
 			for (const file of [
 				"src/input.txt",

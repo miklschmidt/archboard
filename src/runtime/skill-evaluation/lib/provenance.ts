@@ -89,12 +89,14 @@ function bindingPins(pins: LoadedSuite["pins"]): unknown {
  * @param loaded The inputs requested now.
  * @returns True when the inputs still match.
  */
-function boundByOlderPins(recorded: unknown, digest: string, loaded: LoadedSuite): boolean {
-	const pins = PinsSchema.safeParse(recorded);
-	if (!pins.success) return false;
+function boundByOlderPins(
+	recorded: LoadedSuite["pins"],
+	digest: string,
+	loaded: LoadedSuite,
+): boolean {
 	return (
-		inputDigest({ ...loaded, pins: pins.data }) === digest &&
-		JSON.stringify(bindingPins(pins.data)) === JSON.stringify(bindingPins(loaded.pins))
+		inputDigest({ ...loaded, pins: recorded }) === digest &&
+		JSON.stringify(bindingPins(recorded)) === JSON.stringify(bindingPins(loaded.pins))
 	);
 }
 
@@ -105,7 +107,7 @@ function boundByOlderPins(recorded: unknown, digest: string, loaded: LoadedSuite
  */
 function assertBatchInputs(batchRoot: string, loaded: LoadedSuite): void {
 	const manifest = z
-		.object({ provenance: ProvenanceSchema, pins: z.unknown().optional() })
+		.object({ provenance: ProvenanceSchema, pins: PinsSchema })
 		.parse(JSON.parse(fs.readFileSync(path.join(batchRoot, "batch.json"), "utf8")));
 	const digest = manifest.provenance.inputs;
 	if (digest === inputDigest(loaded)) return;
