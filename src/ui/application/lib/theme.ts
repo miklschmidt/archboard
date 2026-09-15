@@ -1,4 +1,4 @@
-// The one piece of browser storage the shell keeps: the theme a person chose.
+// Persist the theme a person chose in browser storage.
 
 import type { ThemeChoice } from "@/ui/shell";
 
