@@ -22,6 +22,15 @@ const RECORD_FIELDS = [
 /** The records by pane id. */
 type PaneRecords = Readonly<Record<string, PaneRecord>>;
 
+/**
+ * Whether this pane can be addressed by a browser command.
+ * @param status What the pane last reported.
+ * @returns True after its socket and registration are both accepted.
+ */
+function paneReady(status: PaneStatus): boolean {
+	return status.connected && status.registered && status.clientId !== "";
+}
+
 const IDLE_TAKE_BACK: TakeBackState = Object.freeze({ kind: "idle" });
 
 /**
@@ -141,6 +150,7 @@ export {
 	heldBoardKeys,
 	initialPaneRecord,
 	patchRecord,
+	paneReady,
 	recordFor,
 	releasedBoardKeys,
 	type PaneRecord,

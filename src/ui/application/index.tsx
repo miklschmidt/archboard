@@ -18,7 +18,7 @@ import {
 import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHost";
 import { paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
-import { createShellActions } from "@/ui/application/lib/shell-actions";
+import { createShellActions } from "@/ui/application/actions";
 import {
 	addressingOver,
 	announcingViews,
