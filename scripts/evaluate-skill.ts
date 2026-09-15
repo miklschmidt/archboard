@@ -4,22 +4,27 @@
 // happens. See evals/README.md.
 //
 //   bun run eval:skill run   [--arm baseline|candidate] [--scenario S01,S02] [--repetitions 3] [--concurrency 3] [--resume <batch-dir>]
-//   bun run eval:skill grade <batch-dir> [--chunk 6]
+//   bun run eval:skill grade <batch-dir> --grader codex|claude [--chunk 6] [--codex <exe>] [--claude <exe>]
 //   bun run eval:skill report <batch-dir>
 //   bun run eval:skill check            (validates the canonical inputs only; no model)
+//   bun run eval:skill pin              (rewrites the version pins from the codex and claude on PATH; no model)
 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command, InvalidArgumentError } from "commander";
 import {
 	ARMS,
+	GRADER_NAMES,
+	executableVersion,
 	gradeBatch,
 	loadSuite,
+	pinVersions,
 	resumeSelection,
 	runBatch,
 	writeReport,
 	type Arm,
 	type BatchOptions,
+	type GraderName,
 	type LoadedSuite,
 } from "@/runtime/skill-evaluation/index";
 
@@ -33,6 +38,43 @@ function chosenArm(text: string): Arm {
 	if (arm === undefined)
 		throw new InvalidArgumentError(`unknown arm "${text}"; use baseline or candidate`);
 	return arm;
+}
+
+/**
+ * One grader name as typed, refused when it is not one.
+ * @param text The text.
+ * @returns The grader.
+ */
+function chosenGrader(text: string): GraderName {
+	const name = GRADER_NAMES.find((candidate) => candidate === text);
+	if (name === undefined)
+		throw new InvalidArgumentError(`unknown grader "${text}"; use ${GRADER_NAMES.join(" or ")}`);
+	return name;
+}
+
+/**
+ * The executable to grade with: the one named for the chosen grader, else
+ * the grader's own name found on PATH.
+ * @param grader The grader.
+ * @param named The executables named on the command line.
+ * @returns The executable.
+ */
+function graderExecutable(grader: GraderName, named: GradeOptions): string {
+	const explicit = named[grader];
+	if (explicit !== undefined) return explicit;
+	const found = onPath(grader);
+	if (found === null)
+		throw new Error(`no ${grader} on PATH; name one with --${grader} <executable>`);
+	return found;
+}
+
+/**
+ * An executable found on PATH.
+ * @param name The executable name.
+ * @returns Its path, or null when absent.
+ */
+function onPath(name: string): string | null {
+	return Bun.which(name);
 }
 
 const checkout = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -110,7 +152,9 @@ interface RunOptions {
 
 interface GradeOptions {
 	readonly chunk?: number | undefined;
+	readonly grader: GraderName;
 	readonly codex?: string | undefined;
+	readonly claude?: string | undefined;
 }
 
 /**
@@ -206,27 +250,53 @@ program
 
 program
 	.command("grade")
-	.description("Grade every pending run in one shared session")
+	.description("Grade every run the chosen grader has not graded yet, in one shared session")
 	.argument("<batch-dir>", "batch directory")
+	.requiredOption(
+		"--grader <name>",
+		`which grader runs: ${GRADER_NAMES.join(" or ")}`,
+		chosenGrader,
+	)
 	.option("--chunk <count>", "runs per grading call", positiveInteger, 6)
-	.option("--codex <executable>", "Codex executable matching the pinned version")
+	.option("--codex <executable>", "Codex executable matching graders.json; default: codex on PATH")
+	.option(
+		"--claude <executable>",
+		"Claude executable matching graders.json; default: claude on PATH",
+	)
 	.action(async (batchDirectory: string, options: GradeOptions) => {
 		const loaded = loadedSuite();
 		const batchRoot = resolve(batchDirectory);
-		const saved = resumeSelection(batchRoot);
 		const graded = await gradeBatch({
 			batchRoot,
 			checkout,
 			cache: join(output, "cache", "flask.git"),
 			loaded,
 			chunkSize: options.chunk ?? 6,
-			codexExecutable: options.codex ?? saved.codexExecutable,
+			grader: options.grader,
+			executable: graderExecutable(options.grader, options),
 			signal: cancellation().signal,
 			log,
 		});
 		console.log(
-			`grading session ${graded.session.threadId ?? "(none)"}: ${graded.session.calls.length} calls; usage ${JSON.stringify(graded.usage)}`,
+			`${options.grader} grading session ${graded.session.threadId ?? "(none)"}: ${graded.session.calls.length} calls; usage ${JSON.stringify(graded.usage)}`,
 		);
+	});
+
+program
+	.command("pin")
+	.description("Rewrite the executable version pins from the codex and claude on PATH")
+	.action(async () => {
+		const changes = await pinVersions(join(checkout, "evals"), {
+			locate: onPath,
+			versionOf: executableVersion,
+		});
+		for (const change of changes) {
+			const outcome =
+				change.from === change.to
+					? `unchanged at ${change.to}`
+					: `${change.from} -> ${change.to}${change.startsNewBaseline ? " (starts a new baseline)" : ""}`;
+			console.log(`${change.file} ${change.key} (${change.executable}): ${outcome}`);
+		}
 	});
 
 program

@@ -4,8 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+	codexGraderArgv,
 	fileImageReceipt,
-	graderArgv,
 	imagesForRun,
 	suppliedCaptures,
 } from "@/runtime/skill-evaluation/audit";
@@ -60,39 +60,24 @@ function fixture(width = 1) {
 	return { root, workspace, directory, image, bundle, capture, verdict };
 }
 
-test("every initial and resumed grading argv attaches the full image and all native tiles", () => {
+test("every initial and resumed Codex grading argv attaches the full image and all native tiles", () => {
 	const f = fixture(1601);
 	const images = imagesForRun(f.workspace, run);
 	expect(images.suppliedCaptures).toEqual(["overview"]);
 	expect(images.images).toHaveLength(3);
-	const paths = {
-		root: path.join(f.root, "grader"),
-		workspace: f.workspace,
-		codexHome: path.join(f.root, "home"),
-		verdicts: path.dirname(f.verdict),
-		session: path.join(f.root, "session.json"),
-		schema: path.join(f.root, "schema.json"),
-	};
-	const prompt = path.join(f.root, "prompt.md");
-	fs.writeFileSync(prompt, "Grade the attached diagrams");
-	const options = {
-		batchRoot: f.root,
-		checkout: f.root,
-		cache: f.root,
-		loaded,
-		chunkSize: 1,
-		signal: new AbortController().signal,
-		log: () => {},
-	};
 	for (const thread of [null, "existing-thread"]) {
-		const argv = graderArgv(options, paths, thread, {
-			prompt,
-			verdict: f.verdict,
+		const argv = codexGraderArgv(loaded.graders.codex, "codex", {
+			workspace: f.workspace,
+			prompt: "Grade the attached diagrams",
+			schemaFile: path.join(f.root, "schema.json"),
+			verdictFile: f.verdict,
 			images: [images],
+			sessionId: thread,
 		});
 		const attached = argv.flatMap((arg, index) => (arg === "--image" ? [argv[index + 1]] : []));
 		expect(attached).toEqual(images.images.map((image) => path.join(f.workspace, image.file)));
 		expect(argv.includes("resume")).toBe(thread !== null);
+		expect(argv.at(-1)).toBe("Grade the attached diagrams");
 	}
 });
 
@@ -118,16 +103,16 @@ test("missing, unreadable, wrong-sized images and absent native tiles cannot qua
 test("delivery receipts belong to the successful call's exact images and verdict", () => {
 	const f = fixture();
 	const images = imagesForRun(f.workspace, run);
-	expect(suppliedCaptures(f.root, run)).toEqual([]);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
 	fileImageReceipt(f.verdict, images);
-	expect(suppliedCaptures(f.root, run)).toEqual(["overview"]);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual(["overview"]);
 	fs.appendFileSync(f.image, "changed");
-	expect(suppliedCaptures(f.root, run)).toEqual([]);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
 	fs.writeFileSync(f.image, png());
 	fs.appendFileSync(f.verdict, " ");
-	expect(suppliedCaptures(f.root, run)).toEqual([]);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
 	fileImageReceipt(f.verdict, images);
-	expect(suppliedCaptures(f.root, run)).toEqual(["overview"]);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual(["overview"]);
 	fileImageReceipt(f.verdict, null);
-	expect(suppliedCaptures(f.root, run)).toEqual([]);
+	expect(suppliedCaptures(f.root, "codex", run)).toEqual([]);
 });

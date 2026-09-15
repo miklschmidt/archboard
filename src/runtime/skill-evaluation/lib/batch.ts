@@ -7,17 +7,16 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { SKILL_EVAL_CLI_TIMEOUT_MS } from "@/shared/timing/timing";
 import { executeRun, type RunJob } from "@/runtime/skill-evaluation/lib/author";
 import { anonymousRunId, type Arm, type CompletedRun } from "@/runtime/skill-evaluation/lib/blind";
 import { ensureFlaskCache } from "@/runtime/skill-evaluation/lib/flask";
-import { runProcess } from "@/runtime/skill-evaluation/lib/process";
 import {
 	assertProvenance,
 	batchProvenance,
 	type Provenance,
 } from "@/runtime/skill-evaluation/lib/provenance";
 import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
+import { executableVersion } from "@/runtime/skill-evaluation/lib/version";
 
 /** What a batch is asked to do. */
 interface BatchOptions {
@@ -72,21 +71,6 @@ function resumeSelection(
 		repetitions: saved.repetitions,
 		codexExecutable: saved.codexExecutable,
 	};
-}
-
-/**
- * The installed Codex version, as it reports it.
- * @param executable The pinned executable.
- * @returns The version string, or the failure.
- */
-async function codexVersion(executable: string): Promise<string> {
-	const result = await runProcess({
-		argv: [executable, "--version"],
-		cwd: process.cwd(),
-		env: { PATH: process.env["PATH"] ?? "", HOME: process.env["HOME"] ?? "" },
-		timeoutMs: SKILL_EVAL_CLI_TIMEOUT_MS,
-	});
-	return /(\d+\.\d+\.\d+)/u.exec(result.stdout)?.[1] ?? `unknown (${result.stderr.trim()})`;
 }
 
 /**
@@ -311,7 +295,7 @@ async function runBatch(
 	validateBatchOptions(options);
 	const provenance = batchProvenance(options.checkout, loaded);
 	validateResume(options, provenance);
-	const version = await codexVersion(options.codexExecutable ?? loaded.pins.codex.executable);
+	const version = await executableVersion(options.codexExecutable ?? loaded.pins.codex.executable);
 	if (version !== loaded.pins.codex.version)
 		throw new Error(
 			`pins.json pins codex ${loaded.pins.codex.version}; the executable reports ${version}. Update the pin deliberately, and start a new baseline.`,
@@ -344,4 +328,4 @@ async function runBatch(
 	return { root, runs: runs.filter((run): run is CompletedRun => run !== null) };
 }
 
-export { codexVersion, planJobs, resumeSelection, runBatch, type BatchOptions };
+export { planJobs, resumeSelection, runBatch, type BatchOptions };

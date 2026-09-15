@@ -10,13 +10,14 @@ read (TASK-212). A fast test refuses an
 `evals/` directory inside `skills/archboard`, the frozen baseline or an
 install.
 
-| File               | Holds                                                                                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `evals.json`       | The scenarios: prompt, Flask revision, source paths, expected-feature checklist, deterministic outcome checks, guardrails, report group.               |
-| `pins.json`        | What a comparison holds constant: Flask commits, Codex version, author and grader models and settings, repetitions, the frozen baseline's location.    |
-| `fixtures/S..json` | Each scenario's starting vault: a policy patch, whether the checkout is registered, and the boards laid through the CLI so every id is product-minted. |
-| `coverage.json`    | The 14-part inventory: every schema path and behavioural branch, the scenarios that exercise it, the expected use, and who owns the evidence.          |
-| `rubric.md`        | What the blinded grader is told.                                                                                                                       |
+| File               | Holds                                                                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `evals.json`       | The scenarios: prompt, Flask revision, source paths, expected-feature checklist, deterministic outcome checks, guardrails, report group.                  |
+| `pins.json`        | What a comparison holds constant: Flask commits, the authors' Codex version, model and settings, repetitions, the frozen baseline's location.             |
+| `graders.json`     | What each grader runner holds constant: executable, exact version, model, effort, read posture, usage semantics. Not a batch input: chosen at grade time. |
+| `fixtures/S..json` | Each scenario's starting vault: a policy patch, whether the checkout is registered, and the boards laid through the CLI so every id is product-minted.    |
+| `coverage.json`    | The 14-part inventory: every schema path and behavioural branch, the scenarios that exercise it, the expected use, and who owns the evidence.             |
+| `rubric.md`        | What the blinded grader is told.                                                                                                                          |
 
 ## Commands
 
@@ -25,20 +26,34 @@ bun run eval:skill check                     # validate the inputs; no model
 bun run eval:skill run                       # both arms, every scenario, pinned repetitions
 bun run eval:skill run --arm candidate --scenario S03,S09 --repetitions 1 --concurrency 2
 bun run eval:skill run --resume .skill-evals/<batch>   # finish a batch, keeping completed runs
-bun run eval:skill grade .skill-evals/<batch> [--chunk 6]
+bun run eval:skill grade .skill-evals/<batch> --grader claude [--chunk 6] [--claude /path/to/claude]
+bun run eval:skill grade .skill-evals/<batch> --grader codex  [--chunk 6] [--codex /path/to/codex]
 bun run eval:skill report .skill-evals/<batch>
+bun run eval:skill pin                       # rewrite the version pins from PATH; no model
 ```
 
-Use a Codex executable matching `pins.json`. The repository's app-server
-dependency can be a different version, and `bun run` puts its executable first
-on `PATH`. In that case pass `--codex /absolute/path/to/codex` to `run`; `grade`
-and resumed runs reuse the recorded executable unless explicitly overridden.
-The harness checks its version before any model call.
+Use a Codex executable matching `pins.json` for the authors. The repository's
+app-server dependency can be a different version, and `bun run` puts its
+executable first on `PATH`. In that case pass `--codex /absolute/path/to/codex`
+to `run`; resumed runs reuse the recorded executable unless explicitly
+overridden. The harness checks its version before any model call.
+
+`grade` names its grader every time: `--grader codex` or `--grader claude`.
+The grader is not part of the batch: the same batch can be graded by both,
+each into its own directory, and `report` then carries both and how they
+agree. The executable is the grader's own name found on `PATH` unless
+`--codex` or `--claude` names one; it must report the exact version pinned in
+`graders.json`, and `bun run eval:skill pin` rewrites every version pin from
+the executables on `PATH`, saying which change starts a new baseline (only
+the authors' Codex version in `pins.json` does).
 
 Output lands under the ignored `.skill-evals/`: `cache/flask.git` (one bare
 clone), and one directory per batch holding `batch.json`, `blinding.json`
 (anonymous id to arm; never given to the grader), `runs/<arm>/<scenario>/<n>/`
-and `grader/`.
+and `graders/`: one shared staged `workspace/` and one directory per grader
+that has graded, `codex/` or `claude/`. A batch graded before there was a
+choice holds a single `grader/` directory instead, which reads as the Codex
+grader, untouched.
 
 ## What one author run is
 
@@ -89,23 +104,53 @@ shared between them but the read-only Flask cache.
 ## Grading
 
 `grade` stages a read-only workspace with the pinned Flask checkouts and every
-run's bundle, boards and renders under its anonymous id, then runs ONE Codex
-session with the grader model and effort from `pins.json`, in chunks of runs;
-the second chunk onwards resumes the same thread. The prompt carries the
-rubric and says, in these words: "Do not use subagents. Inspect the source and
-grade every run yourself in this session." The structured answer is enforced
-with `--output-schema`; per-run verdicts are filed under `grader/verdicts/`,
-and the session's own usage under `grader/usage.json`, apart from the authors'.
+run's bundle, boards, renders and captures under its anonymous id, then runs
+ONE session of the chosen grader with the model and effort from
+`graders.json`, in chunks of runs; the second chunk onwards resumes the same
+session. Both runners read the same user prompt: it carries the rubric and
+says, in these words: "Do not use subagents. Inspect the source and grade
+every run yourself in this session." Only the one sentence about how the
+pictures arrive differs. Per-run verdicts are filed under
+`graders/<name>/verdicts/`, the session under `graders/<name>/session.json`
+with the runner, its version and the settings it ran under, and the
+session's own usage under `graders/<name>/usage.json`, apart from the authors'.
+
+The Codex runner is `codex exec --json` in a read-only sandbox with the
+structured answer enforced by `--output-schema` and written by `-o`, every
+picture attached with `--image` on every call, and the thread resumed with
+`codex exec resume`. Its private `CODEX_HOME` under the grader directory
+carries the operator's `auth.json` and a harness-written `config.toml`.
+
+The Claude runner is `claude -p --output-format stream-json` with
+`--json-schema` enforcing the same answer, `--tools Read,Grep,Glob` and nothing
+else (no Bash, no subagents), `--setting-sources ""` and `--strict-mcp-config`
+so none of the operator's settings, hooks, plugins or MCP servers reach it,
+one short fixed system prompt recorded in the session, and the working
+directory set to the staged workspace so no CLAUDE.md or project memory is
+discovered. The session is started with `--session-id` and continued with
+`--resume`, which needs session persistence on. It runs under the operator's
+own Claude login (`PATH` and `HOME`; `CLAUDE_CONFIG_DIR` and
+`ANTHROPIC_API_KEY` forwarded when set), never a copied credential. Claude
+Code itself refuses a read outside the working directory, and the harness
+files any call whose stream shows a read or a refusal outside the workspace
+as an error rather than a verdict, as it does a call with no structured
+answer or one that violates the schema.
 
 ## Reports
 
-`report` joins each run's manifest with its verdict and writes `report.md` and
-`report.json`: per scenario, per primary workflow, and the broad mapping case
-on its own; successes, guardrail violations, outcome failures, semantic
+`report` joins each run's manifest with each grader's verdict and writes
+`report.md` and `report.json`: one section per grader that graded the batch,
+each with per scenario, per primary workflow, and the broad mapping case on
+its own; successes, guardrail violations, outcome failures, semantic
 compliance failures and waived features; median tokens per run (cached input
 is a subset of input and is never added to it); mean grader scores; the
 candidate's median-token change against the baseline; and every run that did
-not succeed. Percentage targets are set only after a baseline is measured.
+not succeed. When two graders graded the batch, a final section puts their
+verdicts side by side for every run both graded, with the share of runs where
+semantic pass/fail and visual standing agree and the mean absolute score
+difference per dimension. `report.json` is `{ graders: [{ grader, report,
+runs }], agreement }`. Percentage targets are set only after a baseline is
+measured.
 
 ## Reproducing a baseline
 
@@ -113,7 +158,11 @@ The baseline is `docs/design/skill-evals/baseline/archboard`, frozen before the
 TASK-211 rewrite, and it runs on the same CLI as the candidate. Both arms use
 identical prompts, fixtures, pins and settings. Changing any pin starts a new
 baseline; the harness refuses a Codex executable whose version differs from
-the pin. The batch also records content digests for its complete suite inputs,
+the pin. `graders.json` is deliberately outside that digest: a grader is
+chosen when grading runs, and changing its pins never makes a batch
+un-gradable (the batch graded on 2026-09-14 predates `graders.json` and its
+digest no longer matches; its written reports stand and are not re-run). The
+batch also records content digests for its complete suite inputs,
 both skill packages and the implementation/dependency files, plus its Bun
 version. Resume refuses changed content or a different job selection before
 touching saved results; concurrency may change. Grade and report refuse changed
@@ -126,20 +175,28 @@ and `captures/`. The capture list names each required diagram and its saved
 board version, view, variant, dimensions, SVG digest and native detail tiles.
 All paths exposed to the grader are relative to its anonymous run.
 
-On every grading call, including a resumed call, the harness attaches each
-available capture and every required native-resolution tile directly with
-Codex 0.154.0's `--image` option. The prompt identifies the pictures in their
-attachment order. Missing files, invalid PNG headers, mismatched dimensions
-or missing native detail tiles leave that capture explicitly incomplete.
-Image decode or call failures cannot produce a successful delivery receipt.
+On every grading call, including a resumed call, the prompt lists each
+available capture and every required native-resolution tile with its
+workspace-relative path. With the Codex runner the harness attaches them
+directly with Codex 0.154.0's `--image` option, in the listed order. With the
+Claude runner the grader opens them itself with its Read tool, and the
+retained stream shows every file it opened and whether it came back as an
+image; the retained stream replaces the image bytes with their size, since the
+pictures stay in the workspace. Missing files, invalid PNG headers, mismatched
+dimensions or missing native detail tiles leave that capture explicitly
+incomplete. Image decode or call failures cannot produce a successful delivery
+receipt.
 
-The grader must visually inspect the attached pictures, list their labels in
+The grader must visually inspect the pictures, list their labels in
 `visual.inspectedCaptures`, and supply `visual.observations` as an array of
 `{capture, observation}` entries, one per capture. Only a successful grading
 call gets a harness-owned `<run>.json.images.json` receipt beside its verdict;
 it records the supplied image IDs, relative paths and SHA-256 digests and the
-exact verdict digest. Reports check those bytes again, so stale receipts and
-self-reported inspection alone cannot qualify a visual pass or assessed failure.
+exact verdict digest. For the Codex runner "supplied" means attached; for the
+Claude runner it means the stream shows the main image and every tile of that
+capture were opened as images, and a capture with one tile unopened has no
+receipt. Reports check those bytes again, so stale receipts and self-reported
+inspection alone cannot qualify a visual pass or assessed failure.
 Missing required evidence makes the effective evaluation incomplete while the
 raw grader verdict and its observations remain available. Historical runs
 without delivery receipts remain visually incomplete. Delivery is verified;
@@ -178,14 +235,25 @@ feature verdicts still say what the board is.
 
 ## Usage semantics
 
-`turn.completed` carries the thread's `total_token_usage`. In a resumed thread
-that is cumulative: the second grading call reports the first call's tokens
-again, plus its own. So a call's own usage is the growth since the previous
-reading (`callUsage` in `grader/session.json`), and the session costs its last
-reading (`grader/usage.json`), never the sum of its calls. Verified without a
+Each runner counts its own way, and `graders.json` pins the rule per runner;
+the report's usage line names which applied.
+
+Codex: `turn.completed` carries the thread's `total_token_usage`. In a resumed
+thread that is cumulative: the second grading call reports the first call's
+tokens again, plus its own. So a call's own usage is the growth since the
+previous reading (`callUsage` in `session.json`), and the session costs its
+last reading (`usage.json`), never the sum of its calls. Verified without a
 model from the retained rollout of the 2026-09-14 batch, whose per-step
 `token_count` events show `total_token_usage` climbing through the resumed
-calls; `pins.json` pins the rule and the fast tests hold it.
+calls; the fast tests hold it.
+
+Claude: the `result` line's `usage` is this call's own, resumed or not, so the
+session costs the sum of its calls. Claude reports uncached input, cache reads
+and cache writes apart; the normalized reading takes input as their sum and
+cached as the cache reads, and the raw usage, `modelUsage` by model (a small
+side call by another model appears there) and `total_cost_usd` are kept
+beside it in `session.json`. Verified with a resumed probe session on claude
+2.1.269 on 2026-09-15; the fast tests hold it.
 
 ## Correcting a report
 

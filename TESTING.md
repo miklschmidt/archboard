@@ -110,15 +110,18 @@ explains the lanes and the browser prerequisites.
 ## 7. Evaluate the archboard skill (human-run, on demand)
 
 `evals/` holds the canonical inputs of a model evaluation:
-real Codex authors on pinned Flask checkouts, one blinded grader, deterministic
-checks and a comparison report. It is never part of `bun run check`; every run
-calls a model, so a person starts it:
+real Codex authors on pinned Flask checkouts, one blinded grader run by Codex
+or by Claude Code (chosen when grading runs; the same batch can be graded by
+both and the report says how they agree), deterministic checks and a
+comparison report. It is never part of `bun run check`; every run calls a
+model, so a person starts it:
 
 ```bash
 bun run eval:skill check                  # validate the inputs, no model
 bun run eval:skill run                    # both arms, every scenario, pinned repetitions
-bun run eval:skill grade .skill-evals/<batch>
+bun run eval:skill grade .skill-evals/<batch> --grader claude   # or --grader codex
 bun run eval:skill report .skill-evals/<batch>
+bun run eval:skill pin                    # rewrite the version pins from PATH, no model
 ```
 
 [`evals/README.md`](evals/README.md) says

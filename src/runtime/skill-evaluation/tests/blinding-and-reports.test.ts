@@ -369,7 +369,9 @@ describe("the comparison report", () => {
 				}),
 			);
 			fs.writeFileSync(path.join(grader, "usage.json"), JSON.stringify(usage(350, 30)));
-			expect(graderUsage(batch)).toEqual(usage(250, 20));
+			// A batch graded before there was a choice holds `grader/`: that is the Codex grader.
+			expect(graderUsage(batch, "codex")).toEqual(usage(250, 20));
+			expect(graderUsage(batch, "claude")).toBeNull();
 		} finally {
 			fs.rmSync(batch, { recursive: true, force: true });
 		}

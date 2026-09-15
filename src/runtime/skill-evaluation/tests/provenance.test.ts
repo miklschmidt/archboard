@@ -20,6 +20,16 @@ describe("comparison provenance", () => {
 		expect(inputDigest({ ...loaded, rubric: `${loaded.rubric}\nchanged` })).not.toBe(digest);
 		expect(inputDigest({ ...loaded, pins: { ...loaded.pins, repetitions: 9 } })).not.toBe(digest);
 		expect(inputDigest({ ...loaded, fixtures: new Map() })).not.toBe(digest);
+		// A grader is chosen when grading runs, so its pins never bind a batch.
+		expect(
+			inputDigest({
+				...loaded,
+				graders: {
+					...loaded.graders,
+					claude: { ...loaded.graders.claude, version: "0.0.0", model: "other" },
+				},
+			}),
+		).toBe(digest);
 		const changed = {
 			...loaded,
 			suite: {
