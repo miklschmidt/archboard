@@ -1,11 +1,11 @@
 ---
 id: TASK-215
 title: Restore headless native-scale bitmap export with semantic rasterize
-status: Done
+status: In Progress
 assignee:
-  - '@claude'
+  - '@codex'
 created_date: '2026-09-14 22:47'
-updated_date: '2026-09-14 23:46'
+updated_date: '2026-09-15 01:08'
 labels: []
 dependencies: []
 references:
@@ -38,7 +38,7 @@ The user requests archboard semantic rasterize: a headless 1:1 bitmap of the fin
 - [x] #4 The command does not mutate board content, versions, claims, panes, selected views or camera state. Its normal artifact receipt identifies file, dimensions, scale and resolved board/version/variant/view with source provenance.
 - [x] #5 Empty diagrams, invalid selectors, unavailable raster dependencies and images exceeding supported native bounds fail clearly rather than silently substituting a view, cropping, scaling down or leaving a successful-looking artifact. Renderer cancellation and cleanup preserve the old ownership guarantees without restoring obsolete Excalidraw machinery.
 - [x] #6 Focused model-free tests adapt useful main-branch coverage to prove actual PNG pixels, native dimensions, full bounds beyond a typical viewport, fonts, selectors, sequence/comparison output and no board/UI mutation, using the cheapest credible test owners.
-- [x] #7 CLI help, skill guidance and installation/runtime requirements document the restored command and scale semantics. Raster artifacts are ignored derived outputs. TASK-214 can use the shared rasterization capability; no duplicate evaluation-only renderer is introduced. Normal checks pass without running model evaluations or grading.
+- [ ] #7 CLI help, skill guidance and installation/runtime requirements document the restored command and scale semantics. Raster artifacts are ignored derived outputs. TASK-214 can use the shared rasterization capability; no duplicate evaluation-only renderer is introduced. Normal checks pass without running model evaluations or grading.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,6 +49,8 @@ The user requests archboard semantic rasterize: a headless 1:1 bitmap of the fin
 3. Timing: rename the unreferenced BOARD_RENDER_* constants to SEMANTIC_RASTER_*.
 4. Tests: module owner (pixels, native and scaled size, tall page, data-flow, region tile, refusals, fonts, ownership, cancellation) and a system owner driving the CLI against a real canvas (selectors, proposal, unchanged board file, refusals leave no file).
 5. Docs: INSTALL.md bitmap section, TESTING.md walkthrough, test-suite.md owners, server-rendering-boundary.md status note, .gitignore for generated PNGs; skill guidance lands with TASK-214.
+
+Review implementation against TASK-215 and reconcile the branch with reviewed TASK-212/213 fixes. Fix confirmed raster ownership, capture-evidence and visual-verification findings; run model-free regressions, visual QA and the full normal check gate in an isolated checkout. Merge into feat/semantic-boards while preserving concurrent theme and pane work. No author evals or grader runs.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -57,10 +59,14 @@ The user requests archboard semantic rasterize: a headless 1:1 bitmap of the fin
 Implemented on branch claude/task-214-215-rasterize: src/runtime/semantic-rasterizer (DevTools client, Chromium session owner, page readiness with SMIL paused at t=0 and every face loaded, PNG header check, bounds), src/cli/commands/semantic-rasterize.ts (--variant/--view/--theme/--scale/--region, binary receipt with diagram page, scale, variant, view and SVG digest; refusals RASTERIZER_UNAVAILABLE 4, RASTER_BOUNDS_EXCEEDED 2, RASTER_FAILED 1), audit entry, timing constants renamed to SEMANTIC_RASTER_*. Owners: src/runtime/semantic-rasterizer/tests/rasterizer.test.ts (11 cases, ~3 s) and tests/system/semantic-boards/rasterize.test.ts (3 cases). Docs: INSTALL.md Rendering to a bitmap, TESTING.md, docs/agents/test-suite.md, server-rendering-boundary.md status note, .gitignore. Measured: cold Chromium start plus three captures 525 ms; a 1199x712 board at scale 2 answers 2398x1424.
 
 Validation: bun test src/runtime/semantic-rasterizer (11 pass), bun test tests/system/semantic-boards/rasterize.test.ts (3 pass, incl. --region tile and out-of-page refusal), tests/system/cli/command-contract-artifacts.test.ts (3 pass), bun run lint clean, both tsconfigs type-check, fmt:check clean, test:modules 3025 pass, test:repository 8 pass; test:system 159 pass with the 4 pre-existing resource-cleanup failures only. AC evidence: 1 system test selectors and refusals; 2 module test native and x2 sizes; 3 four faces loaded before the shot, a document whose face cannot load is refused, data-flow SVG with <animate> captured; 4 board file bytes and mtime unchanged, receipt names file, size, scale, diagram, variant, view and svgSha256; 5 empty board exit 2, unknown view nonzero and no file, no Chromium named by RASTERIZER_UNAVAILABLE, bounds refused before any browser starts, queued cancellation and provable stop; 6 owners above; 7 INSTALL.md Rendering to a bitmap, TESTING.md, skill guidance, .gitignore, harness consumes the CLI.
+
+Independent review fixed cancellation during Chromium acquisition, socket cleanup on connection failure, whole-process-group shutdown proof using the existing identity-aware process owner, and retention of unclean startup/retirement receipts. Failed cleanup prevents PNG publication or reuse of a potentially leaking owner. TERM/KILL waits fit within the CLI shutdown allowance. Native bounds now reject dimensions rounding to zero pixels before launch. The CLI and evaluation harness use one authoritative raster receipt schema. Real architecture, sequence and comparison PNGs were visually inspected with complete labels, routes, embedded fonts and comparison marks. Focused native raster and cancellation regressions pass; no author evals or grader runs. The normal-gate part of AC7 remains unchecked because the integration target's concurrent committed styling causes eight existing renderer assertions and an OKLCH arrowhead-selector browser failure; preserved these TASK-217-owned files unchanged.
+
+Final review validation: 116 focused tests pass across skill evaluation, rasterizer, restoration and system rasterization. All 163 system tests and 8 repository-policy tests pass; the nine remaining browser owners pass after isolating the existing semantic-status-legibility failure. Full gate reached 3031 passing module tests plus the one subsequently corrected mock-receipt regression and eight unrelated renderer assertion failures. No eval authors or grader ran.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Restored headless native-scale bitmap export as archboard semantic rasterize: a new runtime module owns one lazy headless Chromium (private profile, own process group, serialised cancellable captures, provable teardown), loads the renderer's embedded-font SVG, pauses SMIL traffic at time zero, waits for every face, shoots the whole page at deviceScaleFactor=scale and refuses any bitmap that is not the size the diagram asks for. The command shares semantic render's selectors, adds --scale and --region, and answers a receipt with bitmap size, scale, the diagram page, variant, view and the SVG digest. Verified by the module owner (pixels, sizes, tall page, data-flow, tiles, refusals, fonts, ownership, cancellation), the system owner (real canvas, selectors, proposal, untouched board file, refusals leave no file) and the normal gates.
+Reviewed headless native-scale semantic rasterize and fixed startup cancellation, process ownership/cleanup, zero-pixel bounds, and shared receipt validation. Real PNG visual QA and focused model-free regressions pass. Full normal-gate completion awaits the concurrent theme work; raster implementation and review are ready to merge.
 <!-- SECTION:FINAL_SUMMARY:END -->

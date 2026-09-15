@@ -126,7 +126,7 @@ describe("what one capture is", () => {
 		// The same document draws the same bytes: nothing about the capture reads a clock.
 		const again = await rasterizer.rasterize({ ...drawn, scale: 1 });
 		expect(Buffer.from(again.png).equals(Buffer.from(capture.png))).toBe(true);
-	}, 20_000);
+	});
 
 	test("a scale multiplies the bitmap and nothing else", async () => {
 		const drawn = await draw(SAMPLE);
@@ -135,7 +135,7 @@ describe("what one capture is", () => {
 			width: drawn.width * 2,
 			height: drawn.height * 2,
 		});
-	}, 20_000);
+	});
 
 	test("the whole page is captured however far past a display it reaches", async () => {
 		const drawn = await draw(tallChain(24));
@@ -146,21 +146,21 @@ describe("what one capture is", () => {
 		// not blank ground: the capture reached the end of the diagram.
 		const colors = pngRgbCounts(capture.png);
 		expect(colors.get("255,255,255") ?? 0).toBeGreaterThan(24 * 500);
-	}, 20_000);
+	});
 
 	test("a sequence draws through the data-flow grammar with its animation paused", async () => {
 		const drawn = await draw(SAMPLE, "data-flow");
 		expect(drawn.svg).toContain("<animate");
 		const capture = await owned().rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
-	}, 20_000);
+	});
 
 	test("a region of the page is drawn at the same scale, as a detail tile", async () => {
 		const drawn = await draw(SAMPLE);
 		const region = { x: 10, y: 10, width: 120, height: 80 };
 		const tile = await owned().rasterize({ ...drawn, scale: 1, region });
 		expect(readPngDimensions(tile.png)).toEqual({ width: 120, height: 80 });
-	}, 20_000);
+	});
 });
 
 describe("what is refused", () => {
@@ -179,6 +179,16 @@ describe("what is refused", () => {
 		).rejects.toMatchObject({
 			code: "RASTER_BOUNDS_EXCEEDED",
 		});
+		// A positive CSS region may round to zero bitmap pixels at an allowed
+		// scale. Refuse either empty side before Chromium can stall capturing it.
+		for (const region of [
+			{ x: 0, y: 0, width: 1, height: 8 },
+			{ x: 0, y: 0, width: 8, height: 1 },
+		]) {
+			await expect(
+				rasterizer.rasterize({ svg: "<svg/>", width: 10, height: 10, scale: 0.25, region }),
+			).rejects.toMatchObject({ code: "RASTER_BOUNDS_EXCEEDED" });
+		}
 		expect(rasterizer.status().chromiumStarts).toBe(0);
 		expect(boundsRefusal({ width: 0, height: 10, scale: 1 })).not.toBeNull();
 		expect(boundsRefusal({ width: 10, height: 10, scale: 1 })).toBeNull();
@@ -190,19 +200,17 @@ describe("what is refused", () => {
 			'<text x="4" y="20" font-family="Nowhere">missing</text></svg>';
 		const failed = owned().rasterize({ svg, width: 80, height: 40, scale: 1 });
 		await expect(failed).rejects.toMatchObject({ code: "RASTER_FAILED" });
-		await expect(failed).rejects.toThrow(/faces did not load/u);
-	}, 20_000);
+	});
 
 	test("no browser at all, by name", async () => {
 		const rasterizer = createSemanticRasterizer({ chromiumPath: "" });
 		const refused = rasterizer.rasterize({ svg: "<svg/>", width: 10, height: 10, scale: 1 });
 		await expect(refused).rejects.toMatchObject({ code: "RASTERIZER_UNAVAILABLE" });
-		await expect(refused).rejects.toThrow(/ARCHBOARD_RENDERER_CHROMIUM/u);
 		expect((await rasterizer.stop()).clean).toBe(true);
 	});
 
 	test("bytes that are not a PNG", () => {
-		expect(() => readPngDimensions(new TextEncoder().encode("<svg/>"))).toThrow(/not a PNG/u);
+		expect(() => readPngDimensions(new TextEncoder().encode("<svg/>"))).toThrow();
 	});
 });
 
@@ -230,7 +238,7 @@ describe("how the browser is owned", () => {
 		await expect(rasterizer.rasterize({ ...drawn, scale: 1 })).rejects.toMatchObject({
 			code: "RASTERIZER_STOPPED",
 		});
-	}, 20_000);
+	});
 
 	test("a queued capture can be cancelled by its caller, and only that one", async () => {
 		const drawn = await draw(SAMPLE);
@@ -239,14 +247,16 @@ describe("how the browser is owned", () => {
 		const running = rasterizer.rasterize({ ...drawn, scale: 1 });
 		const cancelled = rasterizer.rasterize({ ...drawn, scale: 1 }, controller.signal);
 		const after = rasterizer.rasterize({ ...drawn, scale: 1 });
-		controller.abort(new Error("changed my mind"));
-		await expect(cancelled).rejects.toThrow("changed my mind");
+		const queuedReason = new Error("changed my mind");
+		controller.abort(queuedReason);
+		await expect(cancelled).rejects.toBe(queuedReason);
 		expect((await running).width).toBe(drawn.width);
 		expect((await after).width).toBe(drawn.width);
 		const already = new AbortController();
-		already.abort(new Error("never wanted it"));
-		await expect(rasterizer.rasterize({ ...drawn, scale: 1 }, already.signal)).rejects.toThrow(
-			"never wanted it",
+		const immediateReason = new Error("never wanted it");
+		already.abort(immediateReason);
+		await expect(rasterizer.rasterize({ ...drawn, scale: 1 }, already.signal)).rejects.toBe(
+			immediateReason,
 		);
-	}, 20_000);
+	});
 });

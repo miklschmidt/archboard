@@ -9,8 +9,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { z } from "zod";
 
+import type { PageRegion } from "@/runtime/semantic-rasterizer/index";
+import {
+	SemanticRasterReceiptSchema,
+	type SemanticRasterReceipt,
+} from "@/runtime/semantic-rasterizer/receipt";
 import {
 	archboard,
 	type CliAnswer,
@@ -26,58 +30,22 @@ import type { CaptureDeclaration } from "@/runtime/skill-evaluation/lib/suite";
  */
 const CAPTURE_TILE_SIDE_PX = 1600;
 
-/** What `semantic rasterize` answers, as far as a capture record keeps it. */
-const RasterReceiptSchema = z
-	.object({
-		board: z.string(),
-		version: z.int(),
-		variant: z.object({ id: z.string(), name: z.string(), lifecycle: z.string() }),
-		view: z
-			.object({ id: z.string(), name: z.string(), grammar: z.enum(["architecture", "data-flow"]) })
-			.nullable(),
-		theme: z.string(),
-		file: z.string(),
-		width: z.int(),
-		height: z.int(),
-		scale: z.number(),
-		diagram: z.object({ width: z.number(), height: z.number() }),
-		source: z
-			.object({ svgSha256: z.string(), facesLoaded: z.int(), motion: z.string() })
-			.passthrough(),
-	})
-	.passthrough();
-
-/** One rectangle of the diagram's page, in diagram pixels. */
-interface PageRegion {
-	readonly x: number;
-	readonly y: number;
-	readonly width: number;
-	readonly height: number;
-}
-
 /** One native-scale tile of a large capture. */
 interface CaptureTile extends PageRegion {
 	readonly file: string;
 }
 
 /** What a capture is of: the saved content, exactly, and how it was shot. */
-interface CaptureProvenance {
-	readonly version: number;
-	readonly variant: { readonly id: string; readonly name: string; readonly lifecycle: string };
-	readonly view: {
-		readonly id: string;
-		readonly name: string;
-		readonly grammar: "architecture" | "data-flow";
-	} | null;
-	readonly theme: string;
-	readonly scale: number;
-	readonly width: number;
-	readonly height: number;
-	readonly diagram: { readonly width: number; readonly height: number };
-	readonly svgSha256: string;
-	readonly facesLoaded: number;
-	readonly motion: string;
-}
+type CaptureProvenance = Readonly<
+	Pick<
+		SemanticRasterReceipt,
+		"version" | "variant" | "view" | "theme" | "scale" | "width" | "height" | "diagram"
+	> & {
+		readonly svgSha256: SemanticRasterReceipt["source"]["svgSha256"];
+		readonly facesLoaded: SemanticRasterReceipt["source"]["facesLoaded"];
+		readonly motion: SemanticRasterReceipt["source"]["motion"];
+	}
+>;
 
 /** One capture the harness attempted because the scenario declared it. */
 interface CaptureAttempt extends CaptureDeclaration {
@@ -114,15 +82,16 @@ function tileRegions(width: number, height: number, side: number): PageRegion[] 
 	return regions;
 }
 
-type RasterReceipt = z.infer<typeof RasterReceiptSchema>;
-
 /**
  * Why the view a receipt drew is not the view that was declared, or null.
  * @param declaration What was asked for.
  * @param receipt What the command answered.
  * @returns The refusal, or null.
  */
-function viewMismatch(declaration: CaptureDeclaration, receipt: RasterReceipt): string | null {
+function viewMismatch(
+	declaration: CaptureDeclaration,
+	receipt: SemanticRasterReceipt,
+): string | null {
 	if (declaration.view !== undefined && receipt.view === null) {
 		return `the receipt drew the whole variant, not the "${declaration.view}" view`;
 	}
@@ -146,14 +115,17 @@ function grammarMismatch(declared: string | undefined, drawn: string): string | 
  * @param receipt What the command answered.
  * @returns The refusal, or null.
  */
-function receiptMismatch(declaration: CaptureDeclaration, receipt: RasterReceipt): string | null {
+function receiptMismatch(
+	declaration: CaptureDeclaration,
+	receipt: SemanticRasterReceipt,
+): string | null {
 	const view = viewMismatch(declaration, receipt);
 	if (view !== null) return view;
 	return receipt.scale === 1 ? null : `the receipt states scale ${receipt.scale}, not native`;
 }
 
 /** A receipt read off a command answer, or the reason there is none. */
-type ReadReceipt = { receipt: RasterReceipt } | { failure: string };
+type ReadReceipt = { receipt: SemanticRasterReceipt } | { failure: string };
 
 /**
  * The receipt a successful command answer carries, or why it carries none.
@@ -165,7 +137,7 @@ function parsedReceipt(answer: CliAnswer): ReadReceipt {
 		const last = answer.stderr.trim().split("\n").at(-1) ?? "";
 		return { failure: `rasterize failed (exit ${answer.exitCode ?? "none"}): ${last}` };
 	}
-	const parsed = RasterReceiptSchema.safeParse(answer.json);
+	const parsed = SemanticRasterReceiptSchema.safeParse(answer.json);
 	return parsed.success ? { receipt: parsed.data } : { failure: "rasterize answered no receipt" };
 }
 

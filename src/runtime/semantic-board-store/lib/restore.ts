@@ -21,14 +21,27 @@ import { caughtUp, type Settlement } from "@/runtime/semantic-board-store/lib/se
  * Only a proposal that has been merged holds any. One waiting on an ancestor
  * has no disagreement of its own, so nothing on it is restorable, and a stated
  * id absent from it stays refused as it always was.
+ * @param board The family whose recorded predecessor establishes the subject's kind.
  * @param draft The proposal.
  * @returns The ids allowed back.
  */
-function restorableNodes(draft: SemanticVariant): Set<string> {
+function restorableNodes(board: SemanticBoard, draft: SemanticVariant): Set<string> {
 	const present = new Set(draft.content.nodes.map((node) => node.id));
+	const standing = draft.reconciliation;
+	if (standing === undefined) return new Set();
+	const parent = board.variants.find((variant) => variant.id === standing.against);
+	if (parent === undefined) return new Set();
+	const inBase = new Set(standing.base.nodes.map((node) => node.id));
+	const inParent = new Set(parent.content.nodes.map((node) => node.id));
 	return new Set(
-		(draft.reconciliation?.issues ?? [])
-			.filter((issue) => issue.kind === "deleted-and-changed" && !present.has(issue.subject))
+		standing.issues
+			.filter(
+				(issue) =>
+					issue.kind === "deleted-and-changed" &&
+					!present.has(issue.subject) &&
+					inBase.has(issue.subject) &&
+					inParent.has(issue.subject),
+			)
 			.map((issue) => issue.subject),
 	);
 }

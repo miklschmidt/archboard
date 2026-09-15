@@ -3,6 +3,7 @@
 // about it, nothing is adopted unasked, every write says what it is doing, and
 // a read-only task writes nothing.
 
+import path from "node:path";
 import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
 import {
 	simpleCommands,
@@ -113,8 +114,8 @@ const adoptOnlyWhenAsked: Guardrail = (context) => {
  */
 const doingOnWrites: Guardrail = (context) => {
 	const patched = context.fileChanges.filter((change) => isBoardFile(change.path, context.vault));
-	const direct = context.commands.filter(
-		(command) => command.class !== "operation" && mutatesBoardFile(command.command, context.vault),
+	const direct = context.commands.filter((command) =>
+		mutatesBoardFile(command.command, context.vault),
 	);
 	const undeclared = context.commands.filter(
 		(command) => command.write && !command.command.includes("--doing"),
@@ -130,6 +131,21 @@ const doingOnWrites: Guardrail = (context) => {
 };
 
 /**
+ * How many direct board-file writes the trace records, whether they came from
+ * Codex's editing tool or a shell command.
+ * @param context The evidence for one run.
+ * @returns The number of recorded direct writes.
+ */
+function countDirectBoardWrites(
+	context: Pick<GuardrailContext, "commands" | "fileChanges" | "vault">,
+): number {
+	return (
+		context.fileChanges.filter((change) => isBoardFile(change.path, context.vault)).length +
+		context.commands.filter((command) => mutatesBoardFile(command.command, context.vault)).length
+	);
+}
+
+/**
  * Whether a path is a board document of the vault. Configuration changes have
  * their own guardrail and are allowed in vocabulary scenarios.
  * @param file The path.
@@ -137,7 +153,13 @@ const doingOnWrites: Guardrail = (context) => {
  * @returns True for a `.semantic.json` under the vault.
  */
 function isBoardFile(file: string, vault: string): boolean {
-	return file.startsWith(vault) && file.endsWith(".semantic.json");
+	const relative = path.relative(vault, file);
+	return (
+		relative !== "" &&
+		!relative.startsWith("..") &&
+		!path.isAbsolute(relative) &&
+		file.endsWith(".semantic.json")
+	);
 }
 
 /**
@@ -249,4 +271,4 @@ function evaluateGuardrails(names: readonly string[], context: GuardrailContext)
 	});
 }
 
-export { evaluateGuardrails, type GuardrailContext };
+export { countDirectBoardWrites, evaluateGuardrails, type GuardrailContext };

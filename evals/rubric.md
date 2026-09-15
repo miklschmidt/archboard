@@ -63,8 +63,12 @@ diagram looks plausible.
   field. Inspection reports members, internal relationships, boundary
   relationships with direction, and immediate neighbours.
 - **Bindings**: `binding.repo` is the registered repository identity and
-  `binding.path` is repo-relative. Optional branch, commit and confirmedAt say
-  only what was actually confirmed.
+  `binding.path` is the repo-relative file that implements the node's stated
+  responsibility. An import, registration or invocation site is incorrect.
+  A planned part or an implementation unavailable for inspection stays
+  unbound; an inspected implementation in another registered repository may
+  bind there. Optional branch, commit and confirmedAt say only what was
+  actually confirmed.
 - **Drill-down**: `{kind: "current"}` follows the target board's designation;
   `{kind: "named", name}` opens that variant and never falls back to current.
 - **Flows**: participants in column order; steps in sequence; `sync`, `async`,
@@ -101,12 +105,15 @@ The bundle's `captures` list is what you can see: one PNG per diagram the
 request asked for (every board, view and variant it named, both sides of a
 comparison, the data-flow view of a sequence), taken by the harness from the
 final saved board at native scale, each with its provenance (board version,
-variant, view, dimensions, the digest of the SVG it was drawn from). Open
-every capture with your image viewing tool and look at it; a large capture
-also lists native-scale tiles under `tiles`, and where the whole image is too
-small to read a label, open the tiles. Reading the SVG text or the board
+variant, view, dimensions, the digest of the SVG it was drawn from). The
+harness attaches every available capture and all required native-scale
+tiles directly to each grading prompt, including resumed calls; the prompt
+names them in attachment order. Visually inspect every attached image and
+tile. An image viewing tool is available for further inspection if useful.
+Reading the SVG text or the board
 JSON, seeing that a file exists, or the author's claim to have looked is not
-looking at a diagram; only a picture you opened counts, and you say which in
+looking at a diagram; only a picture you visually inspected counts, and you
+say which in
 `visual.inspectedCaptures`.
 
 A capture whose `ok` is false has no picture, and its `detail` says why (a
@@ -116,16 +123,22 @@ for the sequence the request asked for: a capture of the wrong view is a
 missing capture. Older `renders/` SVGs are the deterministic checks' own
 evidence, not yours.
 
-What to look for, per capture, and to write in `visual.observations`:
+Write `visual.observations` as an array of `{capture, observation}` entries,
+one per capture inspected. For each, describe:
 names and labels readable at native scale; nothing cut off at the page edge;
 no cards, labels or lines drawn over one another; every relationship's
 endpoints on the parts it names, arrowheads where the meaning says; for a
 sequence, the participants in the stated order with every message readable
 in order, returns and repeats distinguishable. The visual verdict is `pass`
-only for a run whose every listed capture you opened and found legible;
+only for a run whose every listed capture and required tile you visually
+inspected and found legible;
 `fail` when you saw a defect; `incomplete` when a capture was not taken or
-you did not open one. The harness records which captures it took and
-downgrades a pass it cannot corroborate to incomplete. A still capture shows
+you did not inspect one or a required tile was unavailable. The harness
+records which images it supplied on a successful call, binds that
+receipt to the exact image and verdict bytes, and requires an observation for
+every capture. Without complete required evidence, either a claimed pass or
+fail is incomplete for comparison; the raw verdict remains available. A still
+capture shows
 traffic marks at their first frame and proves nothing about animation.
 
 ## Scores (0-10 each)
@@ -138,7 +151,8 @@ traffic marks at their first frame and proves nothing about animation.
 - **readability**: is the captured diagram legible and organised, as you saw
   it: sensible names, one-line responsibilities, no unexplained parts, views
   that isolate what they claim to, nothing clipped or overlapping? Score it
-  from the captures you opened; a run with no capture you could open scores
+  from the attached captures you visually inspected; a run with no capture you
+  could inspect scores
   what the saved names and views support and no more, and its summary says
   no picture was seen.
 

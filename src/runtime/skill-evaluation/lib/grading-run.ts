@@ -27,6 +27,11 @@ import {
 	sequentially,
 	type ProcessResult,
 } from "@/runtime/skill-evaluation/lib/process";
+import {
+	fileImageReceipt,
+	imagesForRun,
+	type RunImages,
+} from "@/runtime/skill-evaluation/lib/grading-images";
 import { sumUsage } from "@/runtime/skill-evaluation/lib/report";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
@@ -196,17 +201,25 @@ function readSession(file: string): GradingSession {
  * @param files The prompt to send and the verdict file to fill.
  * @param files.prompt The prompt file.
  * @param files.verdict The verdict file.
+ * @param files.images Validated images attached to this call, including resumptions.
  * @returns The argv.
  */
 function graderArgv(
 	options: GradingOptions,
 	paths: GradingPaths,
 	threadId: string | null,
-	files: { readonly prompt: string; readonly verdict: string },
+	files: {
+		readonly prompt: string;
+		readonly verdict: string;
+		readonly images: readonly RunImages[];
+	},
 ): string[] {
 	const grader = options.loaded.pins.codex.grader;
 	const prompt = fs.readFileSync(files.prompt, "utf8");
 	const shared = [
+		...files.images.flatMap((run) =>
+			run.images.flatMap((image) => ["--image", path.join(paths.workspace, image.file)]),
+		),
 		"--json",
 		"--skip-git-repo-check",
 		"-m",
@@ -246,12 +259,14 @@ function graderArgv(
  * @param paths The grading paths.
  * @param verdictFile The answer file.
  * @param asked The runs the call was asked to grade.
+ * @param images Delivery evidence, only when the call completed successfully.
  * @returns What was filed, and what went wrong reading the answer.
  */
 function fileVerdicts(
 	paths: GradingPaths,
 	verdictFile: string,
 	asked: readonly string[],
+	images: readonly RunImages[] | null,
 ): { readonly graded: string[]; readonly error: string | null } {
 	if (!fs.existsSync(verdictFile))
 		return { graded: [], error: "the grader wrote no final message" };
@@ -263,6 +278,10 @@ function fileVerdicts(
 				fs.writeFileSync(
 					path.join(paths.verdicts, `${verdict.run}.json`),
 					`${JSON.stringify(verdict, null, "\t")}\n`,
+				);
+				fileImageReceipt(
+					path.join(paths.verdicts, `${verdict.run}.json`),
+					images?.find((run) => run.run === verdict.run) ?? null,
 				);
 				return verdict.run;
 			});
@@ -313,7 +332,9 @@ async function gradeChunk(
 	runs: readonly string[],
 ): Promise<GradingCall> {
 	const index = session.calls.length + 1;
+	const images = runs.map((run) => imagesForRun(paths.workspace, run));
 	const files = {
+		images,
 		prompt: path.join(paths.root, `prompt-${index}.md`),
 		verdict: path.join(paths.root, `verdict-${index}.json`),
 		events: path.join(paths.root, `grader-${index}.jsonl`),
@@ -326,6 +347,7 @@ async function gradeChunk(
 			revisions: { ...options.loaded.pins.flask.revisions },
 			runs,
 			continuing: session.threadId !== null,
+			images,
 		}),
 	);
 	const result = await runProcess({
@@ -342,7 +364,12 @@ async function gradeChunk(
 	fs.writeFileSync(files.events, result.stdout);
 	const trace = parseTrace(result.stdout);
 	session.threadId ??= trace.threadId;
-	const filing = fileVerdicts(paths, files.verdict, runs);
+	const filing = fileVerdicts(
+		paths,
+		files.verdict,
+		runs,
+		deliveredImages(result, trace.failure, images),
+	);
 	const call: GradingCall = {
 		index,
 		runs: [...runs],
@@ -361,6 +388,21 @@ async function gradeChunk(
 		`call ${call.index}: graded ${call.graded.length}/${call.runs.length}${call.error === null ? "" : ` (${call.error})`}`,
 	);
 	return call;
+}
+
+/**
+ * Image delivery only stands after a successful, uninterrupted call.
+ * @param result The process outcome.
+ * @param failure The protocol failure, if any.
+ * @param images The supplied attachments.
+ * @returns Delivery evidence or null when the call could not establish it.
+ */
+function deliveredImages(
+	result: ProcessResult,
+	failure: string | null,
+	images: readonly RunImages[],
+): readonly RunImages[] | null {
+	return result.exitCode === 0 && !result.timedOut && failure === null ? images : null;
 }
 
 /**
@@ -485,25 +527,13 @@ function callUsageFrom(
  * @returns The session's usage, or null when no call reported any.
  */
 function sessionUsage(calls: readonly { readonly usage: Usage | null }[]): Usage | null {
-	const ends = threadEnds(calls.map((call) => call.usage).filter((usage) => usage !== null));
+	const readings = calls.map((call) => call.usage).filter((usage) => usage !== null);
+	// A reading ends a run of cumulative readings when the next one is smaller.
+	const ends = readings.filter((reading, index) => {
+		const next = readings[index + 1];
+		return next === undefined || next.total < reading.total;
+	});
 	return ends.length === 0 ? null : sumUsage(ends);
-}
-
-/**
- * The last reading of each thread in a run of cumulative readings: a reading
- * smaller than the one before it begins a new thread.
- * @param readings The readings, in order.
- * @returns One usage per thread, its last.
- */
-function threadEnds(readings: readonly Usage[]): Usage[] {
-	const ends: Usage[] = [];
-	let running: Usage | null = null;
-	for (const reading of readings) {
-		if (running !== null && reading.total < running.total) ends.push(running);
-		running = reading;
-	}
-	if (running !== null) ends.push(running);
-	return ends;
 }
 
 /**
@@ -525,6 +555,11 @@ function filedVerdict(batchRoot: string, id: string): RunVerdict | null {
  * @returns The usage, or null.
  */
 function graderUsage(batchRoot: string): Usage | null {
+	const sessionFile = path.join(batchRoot, "grader", "session.json");
+	if (fs.existsSync(sessionFile)) {
+		const session = readSession(sessionFile);
+		return sessionUsage(session.calls);
+	}
 	const file = path.join(batchRoot, "grader", "usage.json");
 	return fs.existsSync(file)
 		? UsageSchema.nullable().parse(JSON.parse(fs.readFileSync(file, "utf8")))
@@ -537,6 +572,7 @@ export {
 	chunked,
 	filedVerdict,
 	gradeBatch,
+	graderArgv,
 	graderUsage,
 	sessionUsage,
 	type GradingOptions,

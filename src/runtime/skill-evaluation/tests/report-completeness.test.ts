@@ -38,7 +38,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		captures: null,
-		visual: null,
+		visual: "pass",
 		verdict,
 		semanticallyCompliant: true,
 		waivedFeatures: [],
@@ -77,6 +77,22 @@ test("complete passing arms report measured token changes and assessed quality",
 	expect(report.scenarios[0]?.tokenChangePercent).toBe(0);
 });
 
+test("legacy unaudited and contaminated arms keep raw measurements but withhold comparisons", () => {
+	for (const candidate of [
+		record({ arm: "candidate", directWrites: null, exposure: null }),
+		record({
+			arm: "candidate",
+			exposure: { "evaluation-inputs": 1, "harness-source": 0, "other-run": 0 },
+		}),
+		record({ arm: "candidate", directWrites: 1 }),
+	]) {
+		const row = buildReport([record(), candidate], null).scenarios[0];
+		expect(row?.candidate.meanSemanticCorrectness).toBe(9);
+		expect(row?.tokenChangePercent).toBeNull();
+		expect(row?.qualityRegressed).toBeNull();
+	}
+});
+
 test("equally sized partial arms cannot replace the batch's planned repetitions", () => {
 	const runs = [record(), record({ arm: "candidate" })];
 	const planned = [...runs, record({ repetition: 2 }), record({ arm: "candidate", repetition: 2 })];
@@ -106,4 +122,14 @@ test("unstarted planned scenarios stay visible without comparison conclusions", 
 	expect(report.scenarios[0]?.baseline.runs).toBe(0);
 	expect(report.scenarios[0]?.qualityRegressed).toBeNull();
 	expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
+});
+
+test("visual defects prevent savings and regress quality; unavailable visuals remain unassessed", () => {
+	for (const visual of ["fail", "incomplete", null] as const) {
+		const report = buildReport([record(), record({ arm: "candidate", visual })], null);
+		expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
+		expect(report.scenarios[0]?.qualityRegressed).toBe(visual === "fail" ? true : null);
+		expect(report.scenarios[0]?.candidate.succeeded).toBe(0);
+		expect(report.failures).toHaveLength(1);
+	}
 });

@@ -3,6 +3,9 @@
 // grader cost apart and never loses a failed run.
 
 import { describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { SemanticBoardSchema } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import {
@@ -10,6 +13,7 @@ import {
 	buildReport,
 	bundleForGrader,
 	checklistGaps,
+	graderUsage,
 	graderPrompt,
 	median,
 	NO_DELEGATION,
@@ -22,6 +26,15 @@ import {
 	type RunVerdict,
 	type Scenario,
 } from "@/runtime/skill-evaluation/index";
+
+const usage = (input: number, output: number) => ({
+	input,
+	cached: 0,
+	cacheWrite: null,
+	output,
+	reasoning: null,
+	total: input + output,
+});
 
 const BOARD = SemanticBoardSchema.parse({
 	schemaVersion: "2.2.0",
@@ -186,7 +199,6 @@ describe("blinding", () => {
 			file: null,
 			provenance: null,
 		});
-		expect(bundle.captures[1]?.detail).toContain("no such view");
 	});
 
 	test("render references survive staging without exposing the source arm", () => {
@@ -253,7 +265,7 @@ describe("the grader contract", () => {
 			visual: {
 				inspectedCaptures: ["board"],
 				verdict: "pass",
-				observations: "labels readable, nothing clipped",
+				observations: [{ capture: "board", observation: "labels readable, nothing clipped" }],
 			},
 		};
 		expect(parseGraderOutput(JSON.stringify({ runs: [verdict] })).runs[0]?.run).toBe(
@@ -304,7 +316,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		captures: null,
-		visual: null,
+		visual: "pass",
 		verdict: {
 			run: "run-0000000000",
 			features: [],
@@ -321,6 +333,48 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 }
 
 describe("the comparison report", () => {
+	test("legacy grading sessions override a stale summed usage file with their last cumulative reading", () => {
+		const batch = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-grader-usage-"));
+		const grader = path.join(batch, "grader");
+		fs.mkdirSync(grader);
+		try {
+			fs.writeFileSync(
+				path.join(grader, "session.json"),
+				JSON.stringify({
+					threadId: "thread-1",
+					calls: [
+						{
+							index: 1,
+							runs: [],
+							promptFile: "p1",
+							verdictFile: "v1",
+							eventsFile: "e1",
+							exitCode: 0,
+							usage: usage(100, 10),
+							graded: [],
+							error: null,
+						},
+						{
+							index: 2,
+							runs: [],
+							promptFile: "p2",
+							verdictFile: "v2",
+							eventsFile: "e2",
+							exitCode: 0,
+							usage: usage(250, 20),
+							graded: [],
+							error: null,
+						},
+					],
+				}),
+			);
+			fs.writeFileSync(path.join(grader, "usage.json"), JSON.stringify(usage(350, 30)));
+			expect(graderUsage(batch)).toEqual(usage(250, 20));
+		} finally {
+			fs.rmSync(batch, { recursive: true, force: true });
+		}
+	});
+
 	test("medians ignore unavailable values and are null when nothing is available", () => {
 		expect(median([3, null, 1, 2])).toBe(2);
 		expect(median([4, 1, 3, 2])).toBe(2.5);

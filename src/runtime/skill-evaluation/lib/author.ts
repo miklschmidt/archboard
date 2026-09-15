@@ -30,7 +30,10 @@ import {
 	type ClassifiedCommand,
 } from "@/runtime/skill-evaluation/lib/events";
 import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
-import { evaluateGuardrails } from "@/runtime/skill-evaluation/lib/guardrails";
+import {
+	countDirectBoardWrites,
+	evaluateGuardrails,
+} from "@/runtime/skill-evaluation/lib/guardrails";
 import { installSkill, type InstallRecord } from "@/runtime/skill-evaluation/lib/install";
 import {
 	authorConfigToml,
@@ -254,7 +257,7 @@ async function readAfter(
  * @param name The file's name.
  * @param value What to write.
  */
-function writeJson(paths: RunPaths, name: string, value: unknown): void {
+function writeJson(paths: Pick<RunPaths, "root">, name: string, value: unknown): void {
 	fs.writeFileSync(path.join(paths.root, name), `${JSON.stringify(value, null, "\t")}\n`);
 }
 
@@ -350,9 +353,11 @@ function assemble(
 		fileChanges: trace.fileChanges,
 		vault: world.paths.vault,
 	});
-	const directWrites = trace.fileChanges.filter(
-		(change) => change.path.startsWith(world.paths.vault) && change.path.endsWith(".semantic.json"),
-	).length;
+	const directWrites = countDirectBoardWrites({
+		commands,
+		fileChanges: trace.fileChanges,
+		vault: world.paths.vault,
+	});
 	const finalMessage = fs.existsSync(world.paths.lastMessage)
 		? fs.readFileSync(world.paths.lastMessage, "utf8")
 		: (trace.messages.at(-1) ?? null);
@@ -430,21 +435,27 @@ function assemble(
  * A capture that cannot be taken is recorded as such, never invented.
  * @param job The job.
  * @param world The world, if it got that far.
- * @returns The attempts, or none when there was no world to ask.
+ * @returns Every declaration, including why an unavailable capture was not taken.
  */
 async function partialCaptures(job: RunJob, world: RunWorld | null): Promise<CaptureAttempt[]> {
-	if (world === null || job.signal.aborted) return [];
-	try {
-		return await captureDeclared(world.cli, job.scenario.captures, world.paths.captures);
-	} catch (error) {
-		const detail = error instanceof Error ? error.message : String(error);
-		return job.scenario.captures.map((declaration) => ({
+	return sequentially(job.scenario.captures, async (declaration) => {
+		let detail = "the run failed before its canvas was ready";
+		if (job.signal.aborted) detail = "the run was cancelled";
+		else if (world !== null) {
+			try {
+				const [capture] = await captureDeclared(world.cli, [declaration], world.paths.captures);
+				if (capture !== undefined) return capture;
+			} catch (error) {
+				detail = error instanceof Error ? error.message : String(error);
+			}
+		}
+		return {
 			...declaration,
 			ok: false,
 			detail: `not captured after the run failed: ${detail}`,
 			tiles: [],
-		}));
-	}
+		};
+	});
 }
 
 /**
@@ -471,7 +482,7 @@ async function failedRun(
 		path.join(job.root, "run.json"),
 		`${JSON.stringify({ run: id, arm: job.arm, scenario: job.scenario.id, workflow: job.scenario.workflow, report: job.scenario.report, repetition: job.repetition, status, error: message, startedAt, finishedAt: new Date().toISOString(), usage: null, commandCounts: classCounts([]), directWrites: 0, exposure: exposureCounts([]), captures: captureSummary(captures), outcomesPassed: false, guardrailsPassed: false }, null, "\t")}\n`,
 	);
-	return {
+	const run: CompletedRun = {
 		arm: job.arm,
 		scenario: job.scenario,
 		repetition: job.repetition,
@@ -492,6 +503,8 @@ async function failedRun(
 		guardrails: [],
 		privatePaths: world === null ? [job.root] : [world.paths.root, world.paths.home],
 	};
+	writeJson(job, "bundle.json", bundleForGrader(run, id));
+	return run;
 }
 
 export { authorArgv, executeRun, statusOf, type RunJob };

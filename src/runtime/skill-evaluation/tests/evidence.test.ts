@@ -9,14 +9,17 @@
 import { describe, expect, test } from "bun:test";
 import { SemanticBoardSchema } from "@/shared/semantic-board/index";
 import {
-	buildReport,
 	callUsageFrom,
+	countDirectBoardWrites,
+	exposureCounts,
+	sessionUsage,
+} from "@/runtime/skill-evaluation/audit";
+import {
+	buildReport,
 	classifyCommands,
 	evaluateGuardrails,
-	exposureCounts,
 	parseTrace,
 	renderReportMarkdown,
-	sessionUsage,
 	type ClassifiedCommand,
 	type RunRecord,
 	type Usage,
@@ -146,6 +149,10 @@ describe("file changes", () => {
 		expect(verdict.detail).toContain("1 board files patched directly");
 		// A file outside the vault is the author's business.
 		expect(writeGuardrail([], [trace.fileChanges[1]!]).passed).toBe(true);
+		expect(
+			writeGuardrail([], [{ path: `${VAULT}-backup/Flask JSON.semantic.json`, kind: "update" }])
+				.passed,
+		).toBe(true);
 	});
 });
 
@@ -185,6 +192,11 @@ describe("write attempts", () => {
 		).toBe(false);
 		expect(classified(doing).write).toBe(true);
 		expect(
+			classified(
+				"/home/msc/.nix-profile/bin/bash -lc 'archboard semantic edit \"Flask JSON\" --expect-version 3'",
+			).write,
+		).toBe(true);
+		expect(
 			classified("bash -lc 'ARCHBOARD_VAULT=/v archboard semantic branch \"Flask\" --as X'").write,
 		).toBe(true);
 		expect(
@@ -197,6 +209,15 @@ describe("write attempts", () => {
 		]);
 		expect(verdict.passed).toBe(true);
 		expect(verdict.detail).toContain("1 write attempts lacked --doing");
+	});
+
+	test("a CLI read does not hide a direct mutation later in the same shell script", () => {
+		const command = `bash -lc 'archboard semantic show "Flask JSON"; rm "${VAULT}/Flask JSON.semantic.json"'`;
+		expect(classified(command).class).toBe("operation");
+		expect(writeGuardrail([command]).passed).toBe(false);
+		expect(
+			countDirectBoardWrites({ commands: [classified(command)], fileChanges: [], vault: VAULT }),
+		).toBe(1);
 	});
 });
 
@@ -215,6 +236,10 @@ describe("evaluation-material exposure", () => {
 		expect(classified(`bash -lc 'ls ${BATCH}/runs/baseline/S11/2/vault'`).exposure).toBe(
 			"other-run",
 		);
+		expect(classified("bash -lc 'cat ../../2/vault/Flask\\ JSON.semantic.json'").exposure).toBe(
+			"other-run",
+		);
+		expect(classified("bash -lc 'cat ../vault/Flask\\ JSON.semantic.json'").exposure).toBeNull();
 		expect(classified(`bash -lc 'cat ${RUN}/vault/.archboard/config.yaml'`).exposure).toBeNull();
 		expect(
 			classified(`bash -lc 'ARCHBOARD_VAULT=${VAULT} archboard semantic show "Flask JSON"'`)
@@ -314,7 +339,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		captures: null,
-		visual: null,
+		visual: "pass",
 		verdict: {
 			run: "run-0000000000",
 			features: [],
@@ -357,7 +382,7 @@ describe("contamination in the report", () => {
 		expect(report.scenarios[0]!.baseline.unaudited).toBe(1);
 		expect(report.contamination.map((run) => run.run)).toEqual(["run-0000000003"]);
 		const markdown = renderReportMarkdown(report);
-		expect(markdown).toContain("patched 1 board files outside the CLI");
+		expect(markdown).toContain("wrote 1 board files outside the CLI");
 		expect(markdown).toContain("1 runs were recorded before file changes and exposure were kept");
 	});
 

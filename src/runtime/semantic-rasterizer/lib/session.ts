@@ -11,11 +11,14 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
+
 import { regionOf, type RasterBounds } from "@/runtime/semantic-rasterizer/lib/bounds";
 import {
 	devToolsPortIn,
 	openPageTarget,
 	pollUntil,
+	processGroups,
 	removeTempRoot,
 	spawnChromium,
 	stopProcessGroup,
@@ -61,6 +64,23 @@ interface SessionCleanup {
 	readonly errors: readonly string[];
 }
 
+/** A startup failure retains its teardown proof for the owner. */
+class SessionStartupError extends Error {
+	/**
+	 * Preserve both the original failure and the resource cleanup result.
+	 * @param message What failed.
+	 * @param cleanup The startup session's teardown proof.
+	 * @param cause The original startup failure.
+	 */
+	constructor(
+		message: string,
+		readonly cleanup: SessionCleanup,
+		cause: unknown,
+	) {
+		super(message, { cause });
+	}
+}
+
 /** How much of Chromium's own output a failure quotes. */
 const OUTPUT_TAIL_CHARACTERS = 4096;
 
@@ -86,6 +106,7 @@ function messageOf(error: unknown): string {
 class RasterSession {
 	#tempRoot: string | null = null;
 	#child: ChromiumProcess | null = null;
+	#group: CodexProcessGroupIdentity | null = null;
 	#devtools: DevTools | null = null;
 	#closePromise: Promise<SessionCleanup> | null = null;
 	#outputTail = "";
@@ -119,13 +140,15 @@ class RasterSession {
 	 * part way tears down whatever it acquired and says so when that was not
 	 * clean.
 	 * @param options What the owner settled on.
+	 * @param signal Cancels startup.
 	 * @returns The started session.
 	 */
-	static async acquire(options: SessionOptions): Promise<RasterSession> {
+	static async acquire(options: SessionOptions, signal?: AbortSignal): Promise<RasterSession> {
 		const session = new RasterSession(options);
 		try {
+			signal?.throwIfAborted();
 			session.spawn();
-			await session.connect();
+			await session.connect(signal);
 			return session;
 		} catch (error) {
 			throw await session.startupFailure(error);
@@ -182,6 +205,7 @@ class RasterSession {
 		this.#tempRoot = tempRoot;
 		const child = spawnChromium(this.options.chromiumPath, tempRoot);
 		this.#child = child;
+		this.#group = processGroups.capture(child.pid);
 		void this.drain(child.stderr);
 		void this.drain(child.stdout);
 	}
@@ -204,23 +228,39 @@ class RasterSession {
 		}
 	}
 
-	/** Find the DevTools endpoint, open a page target and enable what a capture needs. */
-	private async connect(): Promise<void> {
+	/**
+	 * Find the DevTools endpoint, open a page target and enable what a capture needs.
+	 * @param signal Cancels startup.
+	 */
+	private async connect(signal?: AbortSignal): Promise<void> {
 		const deadline = Date.now() + this.options.startupTimeoutMs;
 		const tempRoot = this.tempRootOrThrow();
 		const port = await pollUntil(
-			() => Promise.resolve(this.exitedEarly() ?? devToolsPortIn(tempRoot)),
+			() => {
+				signal?.throwIfAborted();
+				return Promise.resolve(this.exitedEarly() ?? devToolsPortIn(tempRoot));
+			},
 			deadline,
 			"Chromium did not open its DevTools port in time.",
 		);
 		if (typeof port !== "number") throw port;
-		const socketUrl = await openPageTarget(port, Math.max(1, deadline - Date.now()));
-		const devtools = await DevTools.connect(socketUrl, Math.max(1, deadline - Date.now()));
+		const socketUrl = await openPageTarget(port, Math.max(1, deadline - Date.now()), signal);
+		const devtools = await DevTools.connect(socketUrl, Math.max(1, deadline - Date.now()), signal);
 		this.#devtools = devtools;
-		const timeout = this.options.startupTimeoutMs;
-		await devtools.call("Page.enable", {}, timeout);
-		await devtools.call("Runtime.enable", {}, timeout);
-		await devtools.call("Log.enable", {}, timeout);
+		/** Close pending setup calls immediately when startup is cancelled. */
+		const cancel = (): void => {
+			devtools.close();
+		};
+		signal?.addEventListener("abort", cancel, { once: true });
+		try {
+			signal?.throwIfAborted();
+			await devtools.call("Page.enable", {}, Math.max(1, deadline - Date.now()));
+			await devtools.call("Runtime.enable", {}, Math.max(1, deadline - Date.now()));
+			await devtools.call("Log.enable", {}, Math.max(1, deadline - Date.now()));
+			signal?.throwIfAborted();
+		} finally {
+			signal?.removeEventListener("abort", cancel);
+		}
 	}
 
 	/**
@@ -230,9 +270,10 @@ class RasterSession {
 	 */
 	private exitedEarly(): Error | null {
 		const child = this.#child;
-		if (child?.exitCode === null) return null;
+		if (child === null) return new Error("Chromium was not started.");
+		if (child.exitCode === null && child.signalCode === null) return null;
 		return new Error(
-			`Chromium exited with code ${child?.exitCode ?? "unknown"} before it listened.`,
+			`Chromium exited with ${child.signalCode ?? child.exitCode} before it listened.`,
 		);
 	}
 
@@ -312,14 +353,15 @@ class RasterSession {
 	 * @param error What failed.
 	 * @returns The failure to throw.
 	 */
-	private async startupFailure(error: unknown): Promise<Error> {
+	private async startupFailure(error: unknown): Promise<SessionStartupError> {
 		const cleanup = await this.close();
 		const tail = this.#outputTail.trim();
-		return new Error(
+		return new SessionStartupError(
 			`The rasterizer's Chromium could not start: ${messageOf(error)}` +
 				(tail === "" ? "" : `\n${tail}`) +
 				(cleanup.clean ? "" : `\nIts cleanup also failed: ${cleanup.errors.join("; ")}`),
-			{ cause: error },
+			cleanup,
+			error,
 		);
 	}
 
@@ -334,8 +376,10 @@ class RasterSession {
 		if (devtools === null || child === null) {
 			throw new Error("The rasterizer is not ready.");
 		}
-		if (child.exitCode !== null) {
-			throw new Error(`The rasterizer's Chromium exited with code ${child.exitCode}.`);
+		if (child.exitCode !== null || child.signalCode !== null) {
+			throw new Error(
+				`The rasterizer's Chromium exited with ${child.signalCode ?? child.exitCode}.`,
+			);
 		}
 		return devtools;
 	}
@@ -358,9 +402,18 @@ class RasterSession {
 	private async stopChild(errors: string[]): Promise<boolean> {
 		const child = this.#child;
 		if (child === null) return true;
-		const gone = await stopProcessGroup(child, this.options.cleanupTimeoutMs);
-		if (!gone) errors.push(`Chromium ${child.pid} did not exit after SIGKILL`);
-		return gone;
+		try {
+			if (this.#group === null) {
+				child.kill("SIGKILL");
+				throw new Error("Chromium process group ownership could not be established.");
+			}
+			const gone = await stopProcessGroup(child, this.#group, this.options.cleanupTimeoutMs);
+			if (!gone) errors.push(`Chromium group ${child.pid} did not exit after SIGKILL`);
+			return gone;
+		} catch (error) {
+			errors.push(messageOf(error));
+			return false;
+		}
 	}
 
 	/**
@@ -383,7 +436,7 @@ class RasterSession {
 		this.#devtools?.close();
 		this.#devtools = null;
 		const processGone = await this.stopChild(errors);
-		const tempRootRemoved = this.removeTempRoot(errors);
+		const tempRootRemoved = processGone && this.removeTempRoot(errors);
 		// Every step that did not happen recorded why, so no errors is clean.
 		return { clean: errors.length === 0, pid: this.pid, processGone, tempRootRemoved, errors };
 	}
@@ -391,6 +444,7 @@ class RasterSession {
 
 export {
 	RasterSession,
+	SessionStartupError,
 	abortReason,
 	type Capture,
 	type CaptureJob,

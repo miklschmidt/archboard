@@ -3,7 +3,6 @@
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
 
 import {
-	compareVariants,
 	currentVariant,
 	findVariant,
 	resolveVariant,
@@ -15,6 +14,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import { fieldOf } from "@/runtime/skill-evaluation/lib/outcomes-board";
+import { comparisonStanding } from "@/runtime/skill-evaluation/lib/outcomes-comparison";
 import {
 	finding,
 	isFinding,
@@ -261,82 +261,6 @@ const currentUntouched: Check = (check, reading) =>
 		return finding(
 			same,
 			same ? "the current variant is unchanged" : "the current variant's content changed",
-		);
-	});
-
-/** How many subjects a comparison removed and added. */
-interface ChangeCounts {
-	readonly removed: number;
-	readonly added: number;
-}
-
-/**
- * Removed and added counts over one collection of changes.
- * @param changes The changes, by subject.
- * @returns The counts.
- */
-function countChanges(changes: ReadonlyMap<string, { readonly kind: string }>): ChangeCounts {
-	const kinds = [...changes.values()].map((change) => change.kind);
-	return {
-		removed: kinds.filter((kind) => kind === "removed").length,
-		added: kinds.filter((kind) => kind === "added").length,
-	};
-}
-
-/**
- * The comparison of a variant against its direct predecessor: over every kind
- * of subject together, and over the nodes alone. A scenario that replaces a
- * node also replaces the relationships that touched it, so "two nodes
- * removed" and "four subjects removed" describe the same proposal.
- * @param board The board.
- * @param variant The variant.
- * @returns The counts, or undefined without a predecessor.
- */
-function standingCounts(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-): { readonly all: ChangeCounts; readonly nodes: ChangeCounts } | undefined {
-	const parent = board.variants.find((candidate) => candidate.id === variant.parent);
-	if (parent === undefined) return undefined;
-	const comparison = compareVariants(parent.content, variant.content);
-	const nodes = countChanges(comparison.nodes);
-	const rest = [comparison.edges, comparison.flows, comparison.walkthroughs].map(countChanges);
-	return {
-		nodes,
-		all: {
-			removed: nodes.removed + rest.reduce((sum, counts) => sum + counts.removed, 0),
-			added: nodes.added + rest.reduce((sum, counts) => sum + counts.added, 0),
-		},
-	};
-}
-
-/**
- * Whether a proposal reads as the stated removals and additions against its
- * predecessor: `removed`/`addedAtLeast` count every kind of subject,
- * `removedNodes`/`addedNodesAtLeast` the nodes alone.
- * @param check The board, variant and counts.
- * @param reading The reading.
- * @returns The finding.
- */
-const comparisonStanding: Check = (check, reading) =>
-	onLocated(check, reading, (at) => {
-		const counts = standingCounts(at.board, at.variant);
-		if (counts === undefined)
-			return finding(false, `"${check.variant}" has no predecessor to compare against`);
-		const exact: [number | undefined, number][] = [
-			[check.removed, counts.all.removed],
-			[check.removedNodes, counts.nodes.removed],
-		];
-		const floors: [number | undefined, number][] = [
-			[check.addedAtLeast, counts.all.added],
-			[check.addedNodesAtLeast, counts.nodes.added],
-		];
-		const held =
-			exact.every(([want, have]) => want === undefined || have === want) &&
-			floors.every(([want, have]) => have >= (want ?? 0));
-		return finding(
-			held,
-			`${counts.nodes.removed} nodes removed, ${counts.nodes.added} added (${counts.all.removed} subjects removed, ${counts.all.added} added) against the predecessor`,
 		);
 	});
 

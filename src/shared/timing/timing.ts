@@ -199,11 +199,11 @@ const SEMANTIC_RASTER_JOB_TIMEOUT_MS = 10_000;
 const SEMANTIC_RASTER_STARTUP_TIMEOUT_MS = 10_000;
 
 /**
- * Shared deadline for renderer group termination, output-pipe settlement,
- * profile removal, and fixture-server closure. Cleanup proves the dedicated
- * process group absent before deleting its private profile.
+ * Bound for each renderer TERM/KILL phase. Two phases fit inside the CLI
+ * interrupt grace, leaving time to remove the private profile after the group
+ * is proved absent.
  */
-const SEMANTIC_RASTER_CLEANUP_MS = 5000;
+const SEMANTIC_RASTER_CLEANUP_MS = 1000;
 
 // ── When a board is considered still ──────────────────────────────────────
 

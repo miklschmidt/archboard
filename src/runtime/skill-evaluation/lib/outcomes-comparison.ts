@@ -20,22 +20,6 @@ import type { OutcomeCheck } from "@/runtime/skill-evaluation/lib/suite";
 
 type Check = (check: OutcomeCheck, reading: Reading) => Finding;
 
-/**
- * Runs a check that needs the board and variant it names.
- * @param check The check.
- * @param reading The reading.
- * @param judge What to conclude once located.
- * @returns The finding.
- */
-function onLocated(
-	check: OutcomeCheck,
-	reading: Reading,
-	judge: (at: { readonly board: SemanticBoard; readonly variant: SemanticVariant }) => Finding,
-): Finding {
-	const at = located(reading, check.board, check.variant);
-	return isFinding(at) ? at : judge(at);
-}
-
 /** How many subjects a comparison removed and added. */
 interface ChangeCounts {
 	readonly removed: number;
@@ -72,7 +56,13 @@ function standingCounts(
 	if (parent === undefined) return undefined;
 	const comparison = compareVariants(parent.content, variant.content);
 	const nodes = countChanges(comparison.nodes);
-	const rest = [comparison.edges, comparison.flows, comparison.walkthroughs].map(countChanges);
+	const rest = [
+		comparison.edges,
+		comparison.flows,
+		comparison.steps,
+		comparison.walkthroughs,
+		comparison.beats,
+	].map(countChanges);
 	return {
 		nodes,
 		all: {
@@ -90,17 +80,18 @@ function standingCounts(
  * @param reading The reading.
  * @returns The finding.
  */
-const comparisonStanding: Check = (check, reading) =>
-	onLocated(check, reading, (at) => {
-		const counts = standingCounts(at.board, at.variant);
-		if (counts === undefined)
-			return finding(false, `"${check.variant}" has no predecessor to compare against`);
-		return finding(
-			countsHold(counts.all, check.removed, check.addedAtLeast) &&
-				countsHold(counts.nodes, check.removedNodes, check.addedNodesAtLeast),
-			`${counts.nodes.removed} nodes removed, ${counts.nodes.added} added (${counts.all.removed} subjects removed, ${counts.all.added} added) against the predecessor`,
-		);
-	});
+const comparisonStanding: Check = (check, reading) => {
+	const at = located(reading, check.board, check.variant);
+	if (isFinding(at)) return at;
+	const counts = standingCounts(at.board, at.variant);
+	if (counts === undefined)
+		return finding(false, `"${check.variant}" has no predecessor to compare against`);
+	return finding(
+		countsHold(counts.all, check.removed, check.addedAtLeast) &&
+			countsHold(counts.nodes, check.removedNodes, check.addedNodesAtLeast),
+		`${counts.nodes.removed} nodes removed, ${counts.nodes.added} added (${counts.all.removed} subjects removed, ${counts.all.added} added) against the predecessor`,
+	);
+};
 
 /**
  * Whether counts match what a check states: the exact removals when it

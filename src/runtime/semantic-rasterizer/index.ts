@@ -29,6 +29,7 @@ import { discoveredChromiumPath } from "@/runtime/semantic-rasterizer/lib/chromi
 import { readPngDimensions, type PngDimensions } from "@/runtime/semantic-rasterizer/lib/png";
 import {
 	RasterSession,
+	SessionStartupError,
 	abortReason,
 	type Capture,
 	type CaptureJob,
@@ -177,6 +178,7 @@ type QueueState = "queued" | "active" | "settled";
 interface OwnerState {
 	accepting: boolean;
 	stopping: boolean;
+	shutdown: AbortController;
 	active: boolean;
 	queued: number;
 	chromiumStarts: number;
@@ -184,32 +186,52 @@ interface OwnerState {
 	acquisition: Promise<RasterSession> | null;
 	tail: Promise<void>;
 	stopPromise: Promise<SessionCleanup> | null;
+	cleanup: SessionCleanup;
+}
+
+/**
+ * Retain teardown proof and refuse new work if anything remains owned.
+ * @param state The rasterizer's state.
+ * @param cleanup The completed teardown.
+ */
+function rememberCleanup(state: OwnerState, cleanup: SessionCleanup): void {
+	state.cleanup = cleanup;
+	if (!cleanup.clean) state.accepting = false;
 }
 
 /**
  * Start the session, once, refusing when the rasterizer stopped meanwhile.
  * @param state The rasterizer's state.
  * @param options The session options.
+ * @param signal Cancels acquisition.
  * @returns The session.
  */
-async function startSession(state: OwnerState, options: SessionOptions): Promise<RasterSession> {
-	if (state.stopping) {
-		throw new SemanticRasterError("RASTERIZER_STOPPED", "The rasterizer stopped.");
-	}
+async function startSession(
+	state: OwnerState,
+	options: SessionOptions,
+	signal?: AbortSignal,
+): Promise<RasterSession> {
 	state.chromiumStarts += 1;
 	let acquired: RasterSession;
 	try {
-		acquired = await RasterSession.acquire(options);
+		acquired = await RasterSession.acquire(
+			options,
+			signal === undefined
+				? state.shutdown.signal
+				: AbortSignal.any([signal, state.shutdown.signal]),
+		);
 	} catch (error) {
+		if (error instanceof SessionStartupError) {
+			rememberCleanup(state, error.cleanup);
+		}
 		throw new SemanticRasterError(
 			"RASTERIZER_UNAVAILABLE",
 			error instanceof Error ? error.message : String(error),
 			error,
 		);
 	}
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the acquire above is awaited
 	if (state.stopping) {
-		await acquired.close();
+		rememberCleanup(state, await acquired.close());
 		throw new SemanticRasterError("RASTERIZER_STOPPED", "The rasterizer stopped during startup.");
 	}
 	state.session = acquired;
@@ -220,12 +242,17 @@ async function startSession(state: OwnerState, options: SessionOptions): Promise
  * The running session, started if this is the first capture.
  * @param state The rasterizer's state.
  * @param options The session options.
+ * @param signal Cancels acquisition.
  * @returns The session.
  */
-function acquire(state: OwnerState, options: SessionOptions): Promise<RasterSession> {
+function acquire(
+	state: OwnerState,
+	options: SessionOptions,
+	signal?: AbortSignal,
+): Promise<RasterSession> {
 	if (state.session) return Promise.resolve(state.session);
 	if (state.acquisition) return state.acquisition;
-	state.acquisition = startSession(state, options).finally(() => {
+	state.acquisition = startSession(state, options, signal).finally(() => {
 		state.acquisition = null;
 	});
 	return state.acquisition;
@@ -243,6 +270,7 @@ async function retireFailed(state: OwnerState, error: unknown): Promise<unknown>
 	if (failed === null) return error;
 	state.session = null;
 	const cleanup = await failed.close();
+	rememberCleanup(state, cleanup);
 	if (cleanup.clean) return error;
 	const message = error instanceof Error ? error.message : String(error);
 	return new SemanticRasterError(
@@ -268,7 +296,7 @@ async function runOnSession(
 ): Promise<Capture> {
 	let entered = false;
 	try {
-		const current = await acquire(state, options);
+		const current = await acquire(state, options, signal);
 		signal?.throwIfAborted();
 		entered = true;
 		return await abortable(current.capture(job, signal), signal);
@@ -363,12 +391,13 @@ function enqueue(
 async function stopOnce(state: OwnerState): Promise<SessionCleanup> {
 	state.accepting = false;
 	state.stopping = true;
+	state.shutdown.abort(new Error("The rasterizer stopped."));
 	const acquired = (await state.acquisition?.catch(() => null)) ?? null;
 	const current = state.session ?? acquired;
 	state.session = null;
 	const closing = current?.close();
 	await state.tail;
-	return (await closing) ?? NOTHING_TO_CLEAN;
+	return (await closing) ?? state.cleanup;
 }
 
 /**
@@ -381,6 +410,7 @@ function createSemanticRasterizer(options: SemanticRasterizerOptions = {}): Sema
 	const state: OwnerState = {
 		accepting: true,
 		stopping: false,
+		shutdown: new AbortController(),
 		active: false,
 		queued: 0,
 		chromiumStarts: 0,
@@ -388,6 +418,7 @@ function createSemanticRasterizer(options: SemanticRasterizerOptions = {}): Sema
 		acquisition: null,
 		tail: Promise.resolve(),
 		stopPromise: null,
+		cleanup: NOTHING_TO_CLEAN,
 	};
 	return {
 		/**

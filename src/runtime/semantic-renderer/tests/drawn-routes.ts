@@ -117,9 +117,10 @@ function routePoints(svg: string): Map<string, DrawnPoint[]> {
  * @returns The exact inserted spans and their control points.
  */
 function roundBridges(path: string) {
-	return [...path.matchAll(/ L[-\d.,]+ C[-\d., ]+(?: L[-\d.,]+)? C[-\d., ]+/gu)].flatMap(
+	// Look ahead so a preceding rounded corner cannot consume the bridge's first cubic.
+	return [...path.matchAll(/(?=( L[-\d.,]+ C[-\d., ]+(?: L[-\d.,]+)? C[-\d., ]+))/gu)].flatMap(
 		(match) => {
-			const span = match[0].trimEnd();
+			const span = match[1]!.trimEnd();
 			const points = pointsOf(span);
 			if (points.length !== 7 && points.length !== 8) return [];
 			const start = points[0]!;

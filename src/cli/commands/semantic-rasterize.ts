@@ -5,7 +5,7 @@
 
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { OfferedViewSchema, RenderedVariantSchema } from "@/shared/semantic-board/index";
+import { DiagramThemeSchema } from "@/shared/semantic-board/index";
 import { renderSemanticBoardOnCanvas } from "@/runtime/semantic-board-client/index";
 import {
 	RASTER_MAX_SCALE,
@@ -14,18 +14,22 @@ import {
 	createSemanticRasterizer,
 	type PageRegion,
 } from "@/runtime/semantic-rasterizer/index";
+import {
+	SemanticRasterReceiptSchema,
+	type SemanticRasterPageSize,
+} from "@/runtime/semantic-rasterizer/receipt";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
 import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
-const THEMES = ["light", "dark"] as const;
+const THEMES = DiagramThemeSchema.options;
 
 const RasterizeInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
 	view: SelectorSchema.optional(),
-	theme: z.enum(THEMES).default("light"),
+	theme: DiagramThemeSchema.default("light"),
 	scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
 	region: z
 		.string()
@@ -39,53 +43,6 @@ const RasterizeInputSchema = z.object({
 		})
 		.optional(),
 	out: z.string(),
-});
-
-/** The diagram's page, in the CSS pixels the renderer states. */
-type PageSize = z.infer<typeof PageSizeSchema>;
-const PageSizeSchema = z.object({ width: z.number(), height: z.number() });
-
-const RegionSchema = z.object({
-	x: z.int(),
-	y: z.int(),
-	width: z.int(),
-	height: z.int(),
-});
-
-const SemanticRasterizeResultSchema = z.object({
-	success: z.literal(true),
-	board: z.string(),
-	version: z.int(),
-	/** What was drawn, as the render answer names it: ids ask for it again, names are what a person types. */
-	variant: RenderedVariantSchema,
-	/** The view that was drawn, or null when the whole variant was. */
-	view: OfferedViewSchema.nullable(),
-	theme: z.enum(THEMES),
-	file: z.string(),
-	/** Bitmap pixels. */
-	width: z.int(),
-	height: z.int(),
-	/** Bitmap pixels per diagram pixel. */
-	scale: z.number(),
-	/** The diagram's own page, in the CSS pixels the renderer states; the bitmap is this times the scale. */
-	diagram: PageSizeSchema,
-	/** The rectangle of the page that was drawn, or null for the whole diagram. */
-	region: RegionSchema.nullable(),
-	/**
-	 * Where the picture came from: the renderer's document as it was drawn,
-	 * identified by content so a capture can be tied to exactly one saved
-	 * board state, and how it sat when the shot was taken.
-	 */
-	source: z.object({
-		renderer: z.literal("semantic-renderer"),
-		fonts: z.literal("embedded"),
-		/** SHA-256 of the SVG document that was rasterized. */
-		svgSha256: z.string(),
-		/** How many faces the document declared and had loaded before capture. */
-		facesLoaded: z.int(),
-		/** Traffic animation is SMIL; the capture pauses it at time zero, so marks sit at their first frame. */
-		motion: z.literal("paused-at-start"),
-	}),
 });
 
 const rasterizerUnavailableRefusal = {
@@ -116,7 +73,10 @@ const rasterFailedRefusal = {
  * @returns The region, or undefined for the whole page.
  * @throws {CliUsageError} When the region leaves the page.
  */
-function regionWithin(region: PageRegion | undefined, page: PageSize): PageRegion | undefined {
+function regionWithin(
+	region: PageRegion | undefined,
+	page: SemanticRasterPageSize,
+): PageRegion | undefined {
 	if (region === undefined) return undefined;
 	if (region.x + region.width > page.width || region.y + region.height > page.height) {
 		throw new CliUsageError(
@@ -203,7 +163,7 @@ const semanticRasterizeContract = defineCommand({
 		},
 	],
 	input: { ingress: RasterizeInputSchema },
-	result: SemanticRasterizeResultSchema,
+	result: SemanticRasterReceiptSchema,
 	output: {
 		cases: [
 			{
@@ -255,6 +215,7 @@ const semanticRasterizeContract = defineCommand({
 		}
 		const rasterizer = createSemanticRasterizer();
 		let capture;
+		let cleanup;
 		try {
 			capture = await rasterizer.rasterize(
 				{
@@ -267,10 +228,13 @@ const semanticRasterizeContract = defineCommand({
 				context.signal,
 			);
 		} finally {
-			const cleanup = await rasterizer.stop();
-			if (!cleanup.clean) {
-				context.diagnostic(`The rasterizer's cleanup was not clean: ${cleanup.errors.join("; ")}`);
-			}
+			cleanup = await rasterizer.stop();
+		}
+		if (!cleanup.clean) {
+			throw new SemanticRasterError(
+				"RASTER_FAILED",
+				`The rasterizer's cleanup was not clean: ${cleanup.errors.join("; ")}`,
+			);
 		}
 		const file = context.resolvePath(input.out);
 		return {

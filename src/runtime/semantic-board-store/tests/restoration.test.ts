@@ -374,3 +374,55 @@ test("a restoration that fails elsewhere in the batch writes nothing", async () 
 	expect(refused.outcome === "rejected" && refused.code).toBe("UNKNOWN_NODE");
 	expect(read()).toEqual(before);
 }, 30_000);
+
+test("deleted relationships and flows cannot authorize node identities", async () => {
+	const added = await edit({
+		edges: [{ from: ids.helpers, to: ids.app, kind: "call", label: "decode" }],
+		flows: [
+			{
+				name: "Decode request",
+				participants: [ids.app, ids.helpers],
+				steps: [{ from: ids.app, to: ids.helpers, label: "decode" }],
+			},
+		],
+	});
+	expect(added.outcome).toBe("applied");
+	const current = variant("Initial");
+	const edge = current.content.edges.find((one) => one.label === "decode")!;
+	const flow = current.content.flows.find((one) => one.name === "Decode request")!;
+	await write(
+		store.branchVariantTransition(
+			contract.BoardBranchInputSchema.parse({ from: "Initial", name: "Kind draft" }),
+		),
+	);
+	await edit({ variant: "Kind draft", removeEdges: [edge.id], removeFlows: [flow.id] });
+	await edit({
+		edges: [{ ...edge, label: "decode tagged values" }],
+		flows: [
+			{
+				...flow,
+				steps: [{ ...flow.steps[0], label: "decode tagged values" }],
+			},
+		],
+	});
+	const kindDraft = variant("Kind draft");
+	expect(kindDraft.reconciliation?.issues).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				subject: edge.id,
+				what: "relationship",
+				kind: "deleted-and-changed",
+			}),
+			expect.objectContaining({ subject: flow.id, what: "flow", kind: "deleted-and-changed" }),
+		]),
+	);
+	const before = read();
+	for (const id of [edge.id, flow.id]) {
+		const refused = await edit({
+			variant: "Kind draft",
+			nodes: [{ id, name: "Wrong kind", kind: "module" }],
+		});
+		expect(refused.outcome === "rejected" && refused.code, id).toBe("UNKNOWN_NODE");
+	}
+	expect(read()).toEqual(before);
+}, 30_000);

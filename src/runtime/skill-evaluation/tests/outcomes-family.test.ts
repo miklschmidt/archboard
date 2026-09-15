@@ -12,7 +12,7 @@ import {
 	type OutcomeCheck,
 	type Reading,
 } from "@/runtime/skill-evaluation/index";
-import { passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
+import { AFTER, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
 
 describe("family checks", () => {
 	test("versions, variants, comparison, reconciliation, adoption, flows, views and walkthroughs", () => {
@@ -35,7 +35,7 @@ describe("family checks", () => {
 					check: "comparison-standing",
 					board: "Flask",
 					variant: "No provider",
-					removed: 2,
+					removed: 3,
 					addedAtLeast: 0,
 				},
 				{ check: "reconciliation-settled", board: "Flask", variant: "No provider" },
@@ -87,12 +87,12 @@ describe("family checks", () => {
 	});
 
 	test("the comparison counts nodes on their own and every subject together", () => {
-		// The proposal removed one node, and the relationship that touched it went
-		// with it: one node removed, two subjects removed.
+		// The proposal removed one node, the relationship that touched it, and one
+		// walkthrough beat: one node removed, three subjects removed.
 		const verdicts = evaluateOutcomes(
 			[
 				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 0 },
-				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 2 },
+				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 3 },
 				{ check: "comparison-standing", board: "Flask", variant: "No provider", removedNodes: 1 },
 				{ check: "comparison-standing", board: "Flask", variant: "No provider", removedNodes: 2 },
 				{
@@ -106,6 +106,30 @@ describe("family checks", () => {
 			READING,
 		);
 		expect(verdicts.map((verdict) => verdict.passed)).toEqual([false, true, true, false, false]);
+	});
+
+	test("the comparison counts nested flow steps without treating them as nodes", () => {
+		const after = structuredClone(AFTER);
+		for (const variant of after.variants) {
+			if (variant.name !== "No provider") continue;
+			for (const flow of variant.content.flows) {
+				flow.steps = flow.steps.filter((step) => step.id !== "s3");
+			}
+		}
+		const reading: Reading = { ...READING, boards: new Map([["Flask", after]]) };
+		const verdicts = evaluateOutcomes(
+			[
+				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 4 },
+				{
+					check: "comparison-standing",
+					board: "Flask",
+					variant: "No provider",
+					removedNodes: 1,
+				},
+			],
+			reading,
+		);
+		expect(verdicts.map((verdict) => verdict.passed)).toEqual([true, true]);
 	});
 });
 

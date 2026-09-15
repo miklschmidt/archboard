@@ -1,6 +1,6 @@
 // What the audit of a run says in the report: whether its author read the
-// material it was measured against or reached another run, whether it patched
-// a board file outside the CLI, and whether the run was recorded before the
+// material it was measured against or reached another run, whether it wrote a
+// board file outside the CLI, and whether the run was recorded before the
 // harness kept either. Kept beside the comparison so the report can say it
 // without folding it into the board's correctness.
 
@@ -46,7 +46,7 @@ function auditReasons(run: RunRecord): string[] {
 		.filter(([, count]) => count > 0)
 		.map(([kind, count]) => `${kind} ×${count}`);
 	return [
-		...(wroteDirectly(run) ? [`patched ${run.directWrites} board files outside the CLI`] : []),
+		...(wroteDirectly(run) ? [`wrote ${run.directWrites} board files outside the CLI`] : []),
 		...(exposure.length === 0 ? [] : [`read evaluation material: ${exposure.join(", ")}`]),
 	];
 }

@@ -61,11 +61,11 @@ incoming and outgoing boundary relationships, and their immediate neighbours.
 
 ### Bindings
 
-Register the checkout once with `archboard repo add <dir>`; the answer's `repo`
-is the identity (`github.com/pallets/flask`) and every binding on every machine
-uses it with a repo-relative `path`. `branch`, `commit` and `confirmedAt`
-record what you actually confirmed; restating the node keeps them only if you
-restate them.
+Register each checkout whose implementation you bind with `archboard repo add
+<dir>`; the answer's `repo` is the identity (`github.com/pallets/flask`) and
+every binding on every machine uses it with a repo-relative `path`. `branch`,
+`commit` and `confirmedAt` record what you actually confirmed; restating the
+node keeps them only if you restate them.
 
 A binding names the implementation owner of the node's stated responsibility:
 the file whose body does what the responsibility says. It is not the file
@@ -73,11 +73,12 @@ that imports the unit, registers it (a blueprint registration, a plugin
 table, a CLI group), or calls it. `DefaultJSONProvider` binds to
 `src/flask/json/provider.py`, where its class is written, not to
 `src/flask/app.py`, which holds it as `app.json`, and not to `json/__init__.py`,
-whose helpers call it. A part outside the checkout (a WSGI server, werkzeug,
-a database), a planned part, or a part whose implementation you did not find
-stays unbound. When one node's responsibility is implemented across files,
-say less (narrow the responsibility to what one file owns) or say more (split
-the node) rather than bind to a file that does only part of it.
+whose helpers call it. A planned part or an implementation unavailable for
+inspection stays unbound. A part implemented in another checkout may bind
+after you inspect its owner and register that repository. When one node's
+responsibility is implemented across files, say less (narrow the responsibility
+to what one file owns) or say more (split the node) rather than bind to a file
+that does only part of it.
 
 ### Drill-down
 
@@ -102,12 +103,14 @@ render cannot show it moving: when you report it, say it illustrates.
 
 ### Evidence for a relationship
 
-Every relationship is a claim that one part's code reaches another's. Before
-it goes in a payload, hold one line for it: `from` → `to`, the `kind`, and the
-source location where the call, import, read or send happens (file and
-function). `from` is the part whose body makes the call and `to` is the part
-whose body runs; the direction of an answer travelling back is not a second
-relationship. The record decides three things a valid payload cannot:
+Every relationship is a directional claim that source must support. Before it
+goes in a payload, hold one line for it: `from` → `to`, the `kind`, the claim in
+words, and the source file and function or symbol where the mechanism appears.
+For a call, `from` is the caller whose body makes it and `to` is the receiver
+whose body runs. For another kind, make the endpoints follow the stated claim:
+A reads from B, publishes to B, or depends on B. A return travelling back is a
+flow step, not a second architecture relationship. The record decides three
+things a valid payload cannot:
 
 - **Siblings are not a chain.** When `full_dispatch_request` calls
   `preprocess_request` and then `dispatch_request`, the evidence is two lines

@@ -56,9 +56,17 @@ The hypothesis is that these raise semantic success (every expected feature
 passing under source-grounded grading) more than prose or token economy
 would, at a token cost the user accepts. The harness now takes a native-scale
 capture of every declared diagram in every run, both arms, every repetition,
-and the grader is held to opening each one; the hypothesis there is that a
+and every grading prompt, including resumptions, receives the main images
+and all native detail tiles as mandatory image attachments; the hypothesis there is that a
 grader that looked at the picture grades readability, clipping, overlap,
-endpoints and sequence legibility that a text reading cannot see.
+endpoints and sequence legibility that a text reading cannot see. The harness
+records image-delivery evidence only after a successful call, binding the
+supplied image IDs and SHA-256 digests to the exact filed verdict. The grader
+also supplies one image-grounded observation per capture. Reports verify the
+receipt against the saved bytes and fail closed for missing, failed, stale or
+unobserved captures and absent native detail tiles. Delivery is verifiable;
+the observations remain the grader’s judgment. Visual failures prevent
+success and efficiency claims; incomplete visuals leave quality unassessed.
 
 ## What is demonstrated (nothing yet)
 

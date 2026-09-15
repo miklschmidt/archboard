@@ -272,7 +272,7 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 			const { variant } = editable;
 			// A draft holding a disagreement about a node it removed may state that
 			// node's id again: the third answer the reconciliation contract promises.
-			const restorable = restorableNodes(variant);
+			const restorable = restorableNodes(before, variant);
 			const content = editContent(variant.content, input, before, restorable);
 			if (!content.ok) {
 				return content;
