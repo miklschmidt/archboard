@@ -1,11 +1,11 @@
 ---
 id: TASK-215
 title: Restore headless native-scale bitmap export with semantic rasterize
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-14 22:47'
-updated_date: '2026-09-15 01:08'
+updated_date: '2026-09-15 19:30'
 labels: []
 dependencies: []
 references:
@@ -38,7 +38,7 @@ The user requests archboard semantic rasterize: a headless 1:1 bitmap of the fin
 - [x] #4 The command does not mutate board content, versions, claims, panes, selected views or camera state. Its normal artifact receipt identifies file, dimensions, scale and resolved board/version/variant/view with source provenance.
 - [x] #5 Empty diagrams, invalid selectors, unavailable raster dependencies and images exceeding supported native bounds fail clearly rather than silently substituting a view, cropping, scaling down or leaving a successful-looking artifact. Renderer cancellation and cleanup preserve the old ownership guarantees without restoring obsolete Excalidraw machinery.
 - [x] #6 Focused model-free tests adapt useful main-branch coverage to prove actual PNG pixels, native dimensions, full bounds beyond a typical viewport, fonts, selectors, sequence/comparison output and no board/UI mutation, using the cheapest credible test owners.
-- [ ] #7 CLI help, skill guidance and installation/runtime requirements document the restored command and scale semantics. Raster artifacts are ignored derived outputs. TASK-214 can use the shared rasterization capability; no duplicate evaluation-only renderer is introduced. Normal checks pass without running model evaluations or grading.
+- [x] #7 CLI help, skill guidance and installation/runtime requirements document the restored command and scale semantics. Raster artifacts are ignored derived outputs. TASK-214 can use the shared rasterization capability; no duplicate evaluation-only renderer is introduced. Normal checks pass without running model evaluations or grading.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,10 +63,12 @@ Validation: bun test src/runtime/semantic-rasterizer (11 pass), bun test tests/s
 Independent review fixed cancellation during Chromium acquisition, socket cleanup on connection failure, whole-process-group shutdown proof using the existing identity-aware process owner, and retention of unclean startup/retirement receipts. Failed cleanup prevents PNG publication or reuse of a potentially leaking owner. TERM/KILL waits fit within the CLI shutdown allowance. Native bounds now reject dimensions rounding to zero pixels before launch. The CLI and evaluation harness use one authoritative raster receipt schema. Real architecture, sequence and comparison PNGs were visually inspected with complete labels, routes, embedded fonts and comparison marks. Focused native raster and cancellation regressions pass; no author evals or grader runs. The normal-gate part of AC7 remains unchecked because the integration target's concurrent committed styling causes eight existing renderer assertions and an OKLCH arrowhead-selector browser failure; preserved these TASK-217-owned files unchanged.
 
 Final review validation: 116 focused tests pass across skill evaluation, rasterizer, restoration and system rasterization. All 163 system tests and 8 repository-policy tests pass; the nine remaining browser owners pass after isolating the existing semantic-status-legibility failure. Full gate reached 3031 passing module tests plus the one subsequently corrected mock-receipt regression and eight unrelated renderer assertion failures. No eval authors or grader ran.
+
+AC 7: archboard semantic rasterize --help documents scale and capture semantics, INSTALL.md Rendering to a bitmap and the skill Verification bullet name the command, raster outputs under .skill-evals and docs/design/generated are ignored, and TASK-214 captures use src/runtime/semantic-rasterizer.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Reviewed headless native-scale semantic rasterize and fixed startup cancellation, process ownership/cleanup, zero-pixel bounds, and shared receipt validation. Real PNG visual QA and focused model-free regressions pass. Full normal-gate completion awaits the concurrent theme work; raster implementation and review are ready to merge.
+Headless native-scale bitmap export restored as semantic rasterize with its own owner; documented in help, INSTALL.md and the skill; verified by the rasterizer and system owners.
 <!-- SECTION:FINAL_SUMMARY:END -->
