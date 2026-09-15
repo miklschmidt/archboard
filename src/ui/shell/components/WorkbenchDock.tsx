@@ -5,7 +5,7 @@
 // saying so, so a person never loses the agent's narration.
 
 import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react";
-import { useCallback, useState, type JSX, type ReactNode } from "react";
+import { useCallback, type JSX, type ReactNode } from "react";
 
 import { Collapsible, CollapsibleContent } from "@/ui/components/collapsible";
 import { agentClaim } from "@/ui/shell/components/ClaimBanner";
@@ -13,6 +13,7 @@ import type { ShellPane, TakeBackState } from "@/ui/shell/types/contracts";
 import { IconButton } from "@/ui/shell/components/IconButton";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import { clockTime } from "@/ui/shell/lib/time";
+import { useWorkbenchDisclosure } from "@/ui/shell/hooks/use-workbench-disclosure";
 import type { DoingEntry } from "@/ui/types";
 
 /** Inputs for the dock. */
@@ -183,12 +184,12 @@ function DetachedBody(props: DetachedBodyProps): JSX.Element {
  */
 function WorkbenchDock(props: WorkbenchDockProps): JSX.Element {
 	const { pane, paneCount } = props;
-	const [open, setOpen] = useState(true);
-	const handleToggle = useCallback(() => setOpen((value) => !value), []);
+	const { open, changeOpen } = useWorkbenchDisclosure();
+	const handleToggle = useCallback(() => changeOpen(!open), [changeOpen, open]);
 	return (
 		<Collapsible
 			open={open}
-			onOpenChange={setOpen}
+			onOpenChange={changeOpen}
 			className="border-border bg-background shrink-0 border-t"
 		>
 			<div className="bg-sidebar flex h-10 items-center gap-3 pr-2 pl-4">
