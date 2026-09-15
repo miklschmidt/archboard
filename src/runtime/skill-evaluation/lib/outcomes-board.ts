@@ -138,13 +138,54 @@ const noEdgeToContainer: Check = (_check, content) => {
  * @returns The finding.
  */
 const edgeBetween: Check = (check, content) => {
-	const edges = edgesBetween(content, check.from ?? "", check.to ?? "");
+	const from = check.from ?? "";
+	const to = check.to ?? "";
+	const edges = check.includeContained
+		? edgesBetweenRegions(content, from, to)
+		: edgesBetween(content, from, to);
 	const matching = edges.filter((edge) => check.kind === undefined || edge.kind === check.kind);
+	const where = check.includeContained ? " (or a part inside either)" : "";
 	return finding(
 		matching.length > 0,
-		`${matching.length} ${check.kind ?? ""} relationships ${check.from} -> ${check.to}`,
+		`${matching.length} ${check.kind ?? ""} relationships ${from} -> ${to}${where}`,
 	);
 };
+
+/**
+ * A named node and every node contained in it, transitively, by id.
+ * @param content The content.
+ * @param name The node's name.
+ * @returns The ids, empty when the name is not on the variant.
+ */
+function region(content: VariantContent, name: string): Set<string> {
+	const root = nodeNamed(content, name);
+	const ids = new Set(root === undefined ? [] : [root.id]);
+	const pending = [...ids];
+	while (pending.length > 0) {
+		const parent = pending.pop();
+		const children = content.nodes.filter((node) => node.parent === parent && !ids.has(node.id));
+		for (const child of children) {
+			ids.add(child.id);
+			pending.push(child.id);
+		}
+	}
+	return ids;
+}
+
+/**
+ * The edges from a named node or anything inside it to another named node or
+ * anything inside it: what `edge-between` matches when the sender the source
+ * names is a method drawn inside the container the check names.
+ * @param content The content.
+ * @param from The source's name.
+ * @param to The target's name.
+ * @returns Every such edge.
+ */
+function edgesBetweenRegions(content: VariantContent, from: string, to: string) {
+	const sources = region(content, from);
+	const targets = region(content, to);
+	return content.edges.filter((edge) => sources.has(edge.from) && targets.has(edge.to));
+}
 
 /**
  * Whether no relationship exists between two named nodes.
