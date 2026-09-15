@@ -1,9 +1,10 @@
 ---
 id: TASK-235.11
 title: Make the S05 self message a step the source justifies
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-15 18:52'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -21,7 +22,19 @@ S05 flow.message-kinds failed 6/6: the checklist wants a self message for prepro
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 S05 expects a self message for the request context matching the URL during push, and no longer demands one for preprocess_request
-- [ ] #2 The S05 prompt states the fact the exchange includes without naming the mechanism, in line with TASK-229
-- [ ] #3 bun run eval:skill check passes
+- [x] #1 S05 expects a self message for the request context matching the URL during push, and no longer demands one for preprocess_request
+- [x] #2 The S05 prompt states the fact the exchange includes without naming the mechanism, in line with TASK-229
+- [x] #3 bun run eval:skill check passes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+S05 prompt states the push matches the URL; flow.message-kinds expects the self message there and no longer for preprocess_request; eval:skill check ok.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The self message S05 tests is one the source has; verified by eval:skill check.
+<!-- SECTION:FINAL_SUMMARY:END -->

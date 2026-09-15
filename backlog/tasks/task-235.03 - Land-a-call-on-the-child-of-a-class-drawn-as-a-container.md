@@ -1,11 +1,11 @@
 ---
 id: TASK-235.03
 title: Land a call on the child of a class drawn as a container
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-15 18:51'
-updated_date: '2026-09-15 18:52'
+updated_date: '2026-09-15 19:07'
 labels: []
 dependencies: []
 references:
@@ -23,8 +23,8 @@ Two of three candidate S00 runs landed the request_context call on the Request c
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The evidence step and the authoring reference say that a part drawn with children is a container and a call to it lands on the child whose body runs, with the RequestContext.push example
-- [ ] #2 The guidance says that giving an existing part children re-targets every relationship that landed on it
+- [x] #1 The evidence step and the authoring reference say that a part drawn with children is a container and a call to it lands on the child whose body runs, with the RequestContext.push example
+- [x] #2 The guidance says that giving an existing part children re-targets every relationship that landed on it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -32,3 +32,15 @@ Two of three candidate S00 runs landed the request_context call on the Request c
 <!-- SECTION:PLAN:BEGIN -->
 1. Extend the evidence step 2 container rule with the class-with-children case. 2. Same in authoring.md Containment and receivers.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+SKILL.md evidence step 2 and authoring.md Containment and receivers say a part drawn with children is a container whatever its kind, the call lands on the child whose body runs (RequestContext.push), and giving a part children moves its relationships to the child.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Container rule extended for a class drawn with children in both places; verified by grep.
+<!-- SECTION:FINAL_SUMMARY:END -->
