@@ -5,6 +5,7 @@ import {
 	bodyShift,
 	corridorPoints,
 	roundBridges,
+	routeLabels,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 test("a new top-entry route preserves room to bridge the crossing beside its first corner", async () => {
@@ -60,7 +61,10 @@ test("a new top-entry route preserves room to bridge the crossing beside its fir
 	// invariant is the bridge rule itself: every proper perpendicular crossing
 	// between two routes, a straight approach (12) away from both routes'
 	// ends, carries a bridge on one of them.
-	const crossings = perpendicularCrossings(corridorPoints(drawing.svg));
+	const corridors = corridorPoints(drawing.svg);
+	const crossings = perpendicularCrossings(corridors).filter((crossing) =>
+		bridgeHasRoom(crossing, corridors, drawing),
+	);
 	expect(crossings.length, "the reduction still crosses somewhere").toBeGreaterThan(0);
 	const shift = bodyShift(drawing.svg);
 	const bridges = new Map(
@@ -100,6 +104,57 @@ test("a new top-entry route preserves room to bridge the crossing beside its fir
 		).toBe(true);
 	}
 });
+
+/** The bridge's footprint: its radius (7) and clearance (3) each side of the crossing. */
+const FOOTPRINT = 10;
+
+/**
+ * Whether the bridge rule would bridge a crossing: nothing else within its
+ * footprint, since a bridge touching a card, a label or another route's ink is
+ * refused and the crossing left flat (lib/layout/crossings.ts).
+ * @param crossing The crossing.
+ * @param corridors Every route without its bridges.
+ * @param drawing The drawing, for its cards and labels.
+ * @returns True when a bridge has room.
+ */
+function bridgeHasRoom(
+	crossing: Crossing,
+	corridors: ReadonlyMap<string, readonly { x: number; y: number }[]>,
+	drawing: {
+		readonly svg: string;
+		readonly atlas: {
+			readonly nodes: Record<string, { x: number; y: number; width: number; height: number }>;
+		};
+	},
+): boolean {
+	const near = (box: { x: number; y: number; width: number; height: number }) =>
+		crossing.x > box.x - FOOTPRINT &&
+		crossing.x < box.x + box.width + FOOTPRINT &&
+		crossing.y > box.y - FOOTPRINT &&
+		crossing.y < box.y + box.height + FOOTPRINT;
+	if (Object.values(drawing.atlas.nodes).some(near)) return false;
+	if ([...routeLabels(drawing.svg).values()].some(near)) return false;
+	// A crossing on a rounded corner (radius up to 14) is on an arc, not a run.
+	const onCorner = crossing.routes.some((id) =>
+		(corridors.get(id) ?? [])
+			.slice(1, -1)
+			.some((corner) => Math.hypot(corner.x - crossing.x, corner.y - crossing.y) < 14 + FOOTPRINT),
+	);
+	if (onCorner) return false;
+	return ![...corridors].some(
+		([id, points]) =>
+			!crossing.routes.includes(id) &&
+			points.slice(1).some((end, index) => {
+				const start = points[index]!;
+				return near({
+					x: Math.min(start.x, end.x),
+					y: Math.min(start.y, end.y),
+					width: Math.abs(end.x - start.x),
+					height: Math.abs(end.y - start.y),
+				});
+			}),
+	);
+}
 
 /** A point where one route's straight run crosses another's at a right angle. */
 interface Crossing {

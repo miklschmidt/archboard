@@ -262,3 +262,19 @@ where reservations for badges beside their cards move the page from 6.15 to
 6.65 Mpx and bends per edge from 7.2 to 8.0 (12 percent over the baseline 7.1,
 above the 10 percent the task allowed); boards 1 and 3 are unchanged. The
 `TAIL_LAYER` and `inline` options are still dead and belong to TASK-240.
+
+## 7. Compaction (2026-09-15, TASK-233)
+
+Measured on the tree after sections 5 and 6, network-simplex layering alone
+grew every page (5.70 / 7.24 / 5.11 Mpx), network-simplex placement shrank
+boards 1 and 2 but grew board 3 by 6 percent with bends up 8 percent, and
+post-compaction `EDGE_LENGTH` moved cards off their layer lines (12 to 14
+rows). Post-compaction `LEFT` shrank every page (5.43 / 6.65 / 4.99 to
+4.96 / 5.75 / 4.45 Mpx, cells touched 21 / 20 / 25 to 25 / 23 / 28 percent)
+with bends per edge unchanged, so that is what landed. Two limits: the engine
+refuses to compact a hierarchy ("invalid hitboxes for scanline constraint
+calculation"), so a board with a frame is laid out without it; and a
+predecessor turns it off, since its cards are pinned where the reader last
+saw them. The general crossing invariant in `tests/crossing-rounding.test.ts`
+exposed a bridge defect on the way: a route whose end carried floating noise
+(575.0000000000001 against 575) was never a straight run and never bridged.
