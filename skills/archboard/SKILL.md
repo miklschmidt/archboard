@@ -77,6 +77,12 @@ value, and rendered line count is not a validation limit. Put longer detail in
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
   viewer. Reading the SVG's text is not looking at a diagram. `archboard check`
   is for after a vocabulary edit or when an answer carries `warnings`.
+- **Open questions.** A question about the product (a field, a selector, what
+  a refusal means, what a command accepts) is answered by the references
+  below, the generated JSON Schemas under `references/generated/`, and
+  `archboard <command> --help`. When none of them answers it, say so in your
+  final message, naming the question; that report is how the skill gets the
+  answer added.
 - **Claims.** For work of several writes, `archboard claim --board <board>
 --reason "<campaign>"` first and `archboard release --board <board>` after. A
   person can take the claim back: your next write is then refused once, nothing
@@ -111,7 +117,9 @@ board needs all of it.
    For a sequence also check the order the source runs them in, which steps
    return to their caller, which branch and under what condition (say it in a
    `note`), and whether a repeat count is in the source at all (a loop over a
-   list of unknown length is a `note`, not a `repeat`).
+   list the source fixes, such as two default module names, is a `repeat` of
+   that count; a loop over a list of unknown length is a `note`, not a
+   `repeat`).
 3. **Find the boundaries on purpose.** Before deciding the parts, look for
    what calls into this code (a server, a scheduler, a shell), the external
    libraries and services it depends on, the callbacks and plugins the
@@ -127,9 +135,40 @@ board needs all of it.
    files, narrow the responsibility or split the node rather than bind to the
    wrong one.
 
+## Everything the code shows
+
+A request names the question, the level and a few names. It does not list the
+semantics; knowing the product is your job, and a board that stops at the parts
+and calls the request happened to mention leaves out what the code showed you.
+Before every write that creates or extends a board, walk this catalogue against
+the source you read, in this vocabulary (the grader uses the same words); every
+row the source justifies goes in the payload, and your answer says which rows
+you used and which you judged not to apply.
+
+| Row            | When the source shows                                                                         | You author                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `external`     | a caller, library, service, shell or hypothetical part outside the checkout                   | a node of kind `external`, unbound                                                                     |
+| `binding`      | the file whose body implements a part's responsibility                                        | `binding: { repo, path }` to that file; nothing for a part you could not inspect                       |
+| `containment`  | a part defined inside another (a method of a class, a function of a module)                   | `parent`                                                                                               |
+| `relationship` | a call, return, read, dependency or publication one body makes to another                     | an `edge` of the configured kind, its `label` the message or mechanism                                 |
+| `traffic`      | the path a request or event takes at runtime, as against setup, registration or teardown      | `traffic` on those relationships (`{}`, or `speed`/`volume` to contrast a hotter path); none elsewhere |
+| `emphasis`     | the few lines the board exists to show, and lines that are only context                       | `emphasis: "hero"` on the few, `"muted"` on the context                                                |
+| `repeat`       | a loop over a list the source fixes, or a retry limit                                         | `repeat` with that count on the step                                                                   |
+| `note`         | a branch and its condition, a data-dependent loop, an environment variable, a caveat          | `note` on the step                                                                                     |
+| `groups`       | a part whose concern is a configured group id in `config.yaml`                                | `groups` on each member                                                                                |
+| `flow`         | an ordered exchange the question is about (handling a request, starting up, a lifecycle)      | a `flow` and a `data-flow` view over it                                                                |
+| `view`         | a subset a reader wants alone: one path, one container's internals, the two sides of a change | a board `view`                                                                                         |
+| `walkthrough`  | a why the code enforces (an ordering, an invariant, a context pushed before dispatch)         | a walkthrough beat whose subjects are the parts, relationships or steps it explains                    |
+| `drillDown`    | a part whose internals already have a board                                                   | `drillDown` to that board instead of its parts again                                                   |
+| `description`  | a mechanism a one-line responsibility cannot hold                                             | `description` on the node or relationship                                                              |
+
+A row the source does not support stays out: an added relationship without a
+line of evidence is a wrong board, not a complete one.
+
 ## Create an architecture diagram from code
 
-1. Read the source you will describe and do the four steps above. Decide the
+1. Read the source you will describe, do the four steps above and walk the
+   catalogue. Decide the
    board's level from `config.yaml` (`system`: collaborating services;
    `service`: the modules of one; `module`: the functions inside one) and its
    subject: a short name such as `Flask request pipeline`, never a path.
@@ -190,7 +229,9 @@ A container is an endpoint only for a relationship to the whole module.
    line of evidence you kept for it, and no relationship exists that you have
    no line for; bound parts name the identity from step 2 and the owning file.
    Open the picture and read it as the audience will: the labels legible,
-   nothing cut off, each arrow ending on the part its evidence names.
+   nothing cut off, each arrow ending on the part its evidence names. Your
+   answer names the catalogue rows the board uses and the ones you judged not
+   to apply.
 
 Read [authoring](references/authoring.md) for groups, drill-down links to
 detail boards, traffic, emphasis, descriptions, and what a refusal means.
@@ -206,9 +247,14 @@ reader needs narration, a walkthrough.
    List the participants in reading order and each message in sequence with
    its kind: `sync` (a call, the default), `return`, `async` (fire and
    forget), `self` (a participant's own step; exactly when `from` and `to` are
-   the same node). Use `repeat` only for a count the source fixes (a retry
-   limit, a batch of a known size); a loop whose length depends on data is one
-   step with a `note` that says so. Use `note` for a branch or a caveat.
+   the same node). Use `repeat` for a count the source fixes (a retry limit,
+   a batch of a known size, a literal list of candidates tried in turn: two
+   default module names is `repeat: 2`); a loop whose length depends on data
+   is one step with a `note` that says so. Use `note` for a branch or a
+   caveat. Walk the catalogue for the rest: the parts outside the checkout
+   are `external`, the exchange's relationships carry `traffic` when it is
+   the runtime path, and an ordering the reader must understand gets a
+   walkthrough beat.
 2. Create a standalone sequence in one write. Against an existing board, use
    the same payload with `semantic edit` and the version you read. The
    evidence here, from `src/flask/cli.py` in Flask 3.0: `run_command` calls
@@ -254,7 +300,8 @@ archboard semantic rasterize "Flask CLI startup" --view "Startup exchange" --out
    returns, kinds and notes as the code justifies. Open the picture through
    the `data-flow` view you made, not the whole board: the columns in order,
    every message readable and in sequence, returns and repeats
-   distinguishable, nothing cut off.
+   distinguishable, nothing cut off. Your answer names the catalogue rows the
+   board uses and the ones you judged not to apply.
 
 Read [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)
 for view scopes (isolating one relationship, a region, the whole board), beat
@@ -276,6 +323,10 @@ subjects and identity, and single-participant flows.
      For a relationship, changing two or more of `from`, `to`, `kind`, `label`,
      `description`, `emphasis`, effective `traffic` makes it a replacement;
      one change keeps the id.
+     Walk the catalogue for what you add: a new part brings its kind,
+     containment, binding and groups; a new runtime path brings its traffic;
+     a removed part takes its relationships and walkthrough references with
+     it.
 3. Write it as one batch, naming the `variant` when it is not the current one:
 
 ```bash
@@ -302,7 +353,9 @@ that call it.
 4. Check the answer against your checks: the ids you meant to keep are
    unchanged, removed subjects are gone, restated subjects still carry the
    fields you kept, `version` moved by one, and nothing landed on a variant
-   you did not name. Draw and look when the picture matters.
+   you did not name. Draw and look when the picture matters. Your answer
+   names the catalogue rows the change uses and the ones you judged not to
+   apply.
 
 Read [authoring](references/authoring.md) for every removal list, bindings
 with revision evidence, groups, and how to repair a refused write.

@@ -47,6 +47,13 @@
 						"responsibility": "The matched endpoint's function"
 					},
 					{
+						"name": "finalize_request",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Turns a view's return value into the response and post-processes it",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
 						"name": "make_response",
 						"kind": "function",
 						"parent": "Flask app",
@@ -76,8 +83,9 @@
 						"kind": "call",
 						"label": "dispatch_request"
 					},
-					{ "from": "full_dispatch_request", "to": "make_response", "kind": "call" },
-					{ "from": "full_dispatch_request", "to": "process_response", "kind": "call" }
+					{ "from": "full_dispatch_request", "to": "finalize_request", "kind": "call" },
+					{ "from": "finalize_request", "to": "make_response", "kind": "call" },
+					{ "from": "finalize_request", "to": "process_response", "kind": "call" }
 				]
 			}
 		}

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-13 23:15'
-updated_date: '2026-09-14 22:26'
+updated_date: '2026-09-15 12:17'
 labels: []
 dependencies:
   - TASK-207
@@ -112,6 +112,8 @@ Review follow-up repaired the consumer contract: the sequence workflow now creat
 Review: the preservation assessment and corrected workflow documentation are complete, but AC 4 also requires behavioral evaluation evidence. That evidence remains pending with AC 6 because author evaluations and grading are reserved for a human; neither was run during this review.
 
 Review integration gate: bun run check passed after correcting standalone sequence creation, source-grounded JSON-provider and Flask CLI recipes, adoption syntax, references and group Details guidance. Canonical skills are synchronized. AC 4 behavioral evidence and AC 6 measured comparison remain unchecked and reserved for a human; no author evaluation or grader was run.
+
+Batch 2026-09-15T03-21-37-188Z: all three candidate S07 runs drew ScriptInfo's two-candidate import loop as one self step with a note and no repeat, following the SKILL.md wording that a data-dependent loop is a note; the baseline skill, which says nothing about repeat, got it right once. SKILL.md now says a loop over a list the source fixes (two default module names) is a repeat of that count, in both the evidence step and the sequence procedure. Skills re-synced.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

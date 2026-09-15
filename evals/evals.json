@@ -14,7 +14,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S00.json",
 			"sources": ["src/flask/app.py", "src/flask/ctx.py", "src/flask/wrappers.py"],
-			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout. The WSGI server calls Flask.wsgi_app (src/flask/app.py), which pushes the request context (src/flask/ctx.py) and calls full_dispatch_request. full_dispatch_request itself calls preprocess_request, then dispatch_request (which calls the matched view function), then finalize_request; finalize_request calls make_response and then process_response, and the response returns to the WSGI server. Draw the calls as the source makes them: the caller of each function is the function whose body calls it, so preprocess_request does not call dispatch_request and make_response does not call process_response. Give each part a configured kind and a clear short responsibility that reads naturally over two or three card lines when useful, put the app-internal parts inside a `Flask app` container, and bind each Flask-internal part to its source file; the WSGI server and the matched view function are outside this checkout and stay unbound. Read the board back and render it to pipeline.svg.",
+			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout: from the WSGI server's call into `Flask app` (src/flask/app.py), through the request context (src/flask/ctx.py), full_dispatch_request and what it runs (preprocess_request, dispatch_request to the matched view function, finalize_request with make_response and process_response), to the response going back to the WSGI server. Read the board back and render it to pipeline.svg.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
@@ -101,7 +101,7 @@
 			"flask": "2.2.0",
 			"fixture": "fixtures/S01.json",
 			"sources": ["src/flask/json/provider.py", "src/flask/json/__init__.py", "src/flask/app.py"],
-			"prompt": "On the existing `Flask JSON` board, Flask 2.2.0 introduced `DefaultJSONProvider` (src/flask/json/provider.py): the app holds it as `app.json`, and `flask.json.dumps` delegates to `current_app.json.dumps`. Update the current variant to add the provider module with its responsibility, represent the app's ownership of the provider and the helpers' call to it, remove the old direct app -> helpers call, bind the provider to its file, and keep the `Flask app` node's existing responsibility, binding and identity.",
+			"prompt": "On the existing `Flask JSON` board, Flask 2.2.0 introduced `DefaultJSONProvider` (src/flask/json/provider.py): the app holds it as `app.json`, and `flask.json.dumps` delegates to `current_app.json.dumps`. Update the current architecture so the board shows the provider, the app's ownership of it and the helpers' use of it in place of the old direct app -> helpers call.",
 			"expectedFeatures": [
 				{
 					"feature": "read.version",
@@ -195,7 +195,7 @@
 			"flask": "2.2.0",
 			"fixture": "fixtures/S02.json",
 			"sources": ["src/flask/ctx.py", "src/flask/globals.py"],
-			"prompt": "The `Flask contexts` board describes the 2.1 design where `App context` and `Request context` are pushed onto werkzeug `LocalStack`s. Flask 2.2.0 replaced the stacks with `contextvars` (`_cv_app`, `_cv_request` in src/flask/globals.py, used by src/flask/ctx.py). Propose that change as a new variant named `Context variables` derived from the current architecture: keep the two context nodes, replace the two stack nodes with one `Context variables` node bound to src/flask/globals.py, and rewire the contexts to it. Keep the current architecture unchanged and render both the current variant and the proposal through the board's `Contexts` view.",
+			"prompt": "The `Flask contexts` board describes the 2.1 design where `App context` and `Request context` are pushed onto werkzeug `LocalStack`s. Flask 2.2.0 replaced the stacks with `contextvars` (`_cv_app`, `_cv_request` in src/flask/globals.py, used by src/flask/ctx.py). Propose that change as a variant named `Context variables`: the two stacks give way to one `Context variables` part that both contexts use. Render the current architecture and the proposal side by side through the board's `Contexts` view.",
 			"expectedFeatures": [
 				{
 					"feature": "variant.branch",
@@ -295,7 +295,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S03.json",
 			"sources": ["src/flask/app.py", "src/flask/cli.py", "src/flask/sansio/app.py"],
-			"prompt": "On the `Flask application` board, `Flask app` contains `Dispatch` and `CLI` contains `Run command`. Both `Dispatch` and `Run command` belong to the configured `request-lifecycle` group, and `Dispatch` also belongs to `wsgi-layer` (its functions live in the WSGI subclass in src/flask/app.py). Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout after registering it as a repository. Nothing else changes.",
+			"prompt": "On the `Flask application` board, `Flask app` contains `Dispatch` and `CLI` contains `Run command`. Both `Dispatch` and `Run command` belong to the configured `request-lifecycle` group, and `Dispatch` also belongs to `wsgi-layer` (its functions live in the WSGI subclass in src/flask/app.py). Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout. Nothing else changes.",
 			"expectedFeatures": [
 				{
 					"feature": "groups.multi-membership",
@@ -388,7 +388,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S04.json",
 			"sources": ["src/flask/sansio/app.py", "src/flask/app.py"],
-			"prompt": "The `Flask application` board shows `Sansio core` as a module, and its internals are already on the `Flask sansio` board, which has a current variant and a draft named `Blueprint registration`. Link `Sansio core` to the `Flask sansio` board's current architecture. Then, as a proposal named `Follow the blueprint draft` on `Flask application`, change that link to open the `Blueprint registration` variant instead, keeping the `Sansio core` node's identity and other fields.",
+			"prompt": "The `Flask application` board shows `Sansio core` as a module, and its internals are already on the `Flask sansio` board, which has a current variant and a draft named `Blueprint registration`. Link `Sansio core` to the `Flask sansio` board's current architecture. Then, as a proposal named `Follow the blueprint draft` on `Flask application`, change that link to open the `Blueprint registration` variant instead.",
 			"expectedFeatures": [
 				{
 					"feature": "drilldown.current",
@@ -469,7 +469,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S05.json",
 			"sources": ["src/flask/app.py", "src/flask/ctx.py"],
-			"prompt": "On the `Flask request pipeline` board, explain one request as an ordered exchange named `Handle a request`: the WSGI server calls `Flask.wsgi_app`, which pushes the `Request context`, calls `full_dispatch_request`, which runs `preprocess_request` on itself, dispatches to the `View function`, receives the view's return value, turns it into a response with `make_response`, runs `process_response`, and returns the response to the WSGI server. Use the message kinds the exchange actually has, add a board view named `Dispatch exchange` that shows that flow, and add a walkthrough beat explaining why the request context is pushed before dispatch, referencing the push step and the view.",
+			"prompt": "On the `Flask request pipeline` board, explain one request as an ordered exchange named `Handle a request`: from the WSGI server's call to `Flask.wsgi_app`, through the `Request context` push and `full_dispatch_request` with its `preprocess_request`, to the `View function` and back through `finalize_request` with `make_response` and `process_response` to the WSGI server. Show that exchange in a board view named `Dispatch exchange`, and explain in a walkthrough why the request context is pushed before dispatch.",
 			"expectedFeatures": [
 				{
 					"feature": "flow.participants-and-steps",
@@ -606,7 +606,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S07.json",
 			"sources": ["src/flask/cli.py"],
-			"prompt": "Create a board named `Flask CLI startup` at the module level that explains, as one exchange named `flask run`, how the `flask run` command starts a server in Flask 3.0.0 (src/flask/cli.py): the `Shell` invokes `FlaskGroup`, which dispatches `run_command`; `run_command` asks `ScriptInfo` to load the app; `ScriptInfo` locates and imports it (a repeated attempt over the default candidate modules or names, at least two) and returns it to `run_command`; `run_command` calls werkzeug's `run_simple` (an external), and `run_simple` serves requests until interrupted. Include a note on the loading step about `FLASK_APP`. Add a board view named `Startup exchange` that shows that exchange as a sequence. The board needs the participating parts as nodes; no other relationships are required.",
+			"prompt": "Create a board named `Flask CLI startup` at the module level that explains, as one exchange named `flask run`, how the `flask run` command starts a server in Flask 3.0.0 (src/flask/cli.py): from the `Shell` through `FlaskGroup`, `run_command` and `ScriptInfo` locating and importing the app, to werkzeug's `run_simple` serving requests. Show that exchange in a board view named `Startup exchange`.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
@@ -696,7 +696,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S08.json",
 			"sources": ["src/flask/signals.py", "src/flask/app.py"],
-			"prompt": "This vault's configuration knows no `signal` relationship kind and no `extension` node kind. Add both to .archboard/config.yaml (signals drawn dashed with an open arrowhead, extensions with the RiPlugLine icon) and a group named `Observability` under the id `observability`, then create a `Flask signals` board at the service level with `Flask app` (bound to src/flask/app.py, whose full_dispatch_request and finalize_request send the signals defined in src/flask/signals.py) sending `request_started` and `request_finished` signals to a `Metrics extension` node that belongs to the observability group; the extension is hypothetical and stays unbound. Run the checker and leave the vault clean.",
+			"prompt": "This vault's configuration knows no `signal` relationship kind and no `extension` node kind. Add both to .archboard/config.yaml (signals drawn dashed with an open arrowhead, extensions with the RiPlugLine icon) and a group named `Observability` under the id `observability`, then create a `Flask signals` board at the service level with `Flask app` (src/flask/app.py, whose full_dispatch_request and finalize_request send the signals defined in src/flask/signals.py) sending `request_started` and `request_finished` signals to a hypothetical `Metrics extension` that belongs to the observability group. Run the checker and leave the vault clean.",
 			"expectedFeatures": [
 				{
 					"feature": "config.vocabulary",
@@ -834,7 +834,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S10.json",
 			"sources": ["src/flask/app.py"],
-			"prompt": "On the `Flask request pipeline` board, illustrate flow on the hot path: the WSGI server -> `Flask.wsgi_app` call gets default traffic, `Flask.wsgi_app` -> `full_dispatch_request` gets faster and denser traffic (speed 80, volume 2), and the existing traffic on `finalize_request` -> `process_response` is turned off. Keep every relationship's identity and other fields. Say plainly that the animation illustrates flow and is not measured.",
+			"prompt": "On the `Flask request pipeline` board, illustrate flow on the hot path: the WSGI server -> `Flask.wsgi_app` call gets default traffic, `Flask.wsgi_app` -> `full_dispatch_request` gets faster and denser traffic (speed 80, volume 2), and the existing traffic on `finalize_request` -> `process_response` is turned off.",
 			"expectedFeatures": [
 				{
 					"feature": "traffic.default",
@@ -906,7 +906,7 @@
 			"flask": "2.2.0",
 			"fixture": "fixtures/S11.json",
 			"sources": ["src/flask/json/provider.py"],
-			"prompt": "The `Flask JSON` board's draft `Provider rewrite` is holding disagreements against the current variant: both renamed the `JSON helpers` node differently, both reworded the `Flask app` responsibility differently, and the draft removed a node the current variant changed. Settle the name by taking the current variant's answer, keep the draft's own responsibility wording, write a third answer for the removed node by restoring it under its original id with the current variant's description, and report what is still open after each step. Do not adopt.",
+			"prompt": "The `Flask JSON` board's draft `Provider rewrite` is holding disagreements against the current variant: both renamed the `JSON helpers` node differently, both reworded the `Flask app` responsibility differently, and the draft removed a node the current variant changed. Settle the name by taking the current variant's answer, keep the draft's own responsibility wording, write a third answer for the removed node by restoring it with the current variant's description, and report what is still open after each step. Do not adopt.",
 			"expectedFeatures": [
 				{
 					"feature": "resolve.choices",
@@ -996,7 +996,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S12.json",
 			"sources": ["src/flask/app.py", "src/flask/sessions.py"],
-			"prompt": "On the `Flask request pipeline` board, add two board views. `Session path` is an architecture view of how the session is opened: it shows `Request context`, `Session interface`, `process_response` and only the `open_session` relationship between the context and the interface; the `save_session` call from `process_response` must not be drawn, so select that one relationship (by id) rather than listing every relationship between those parts. `Dispatch only` is an architecture view of the `Flask app` container's dispatch parts (`full_dispatch_request`, `dispatch_request`, `View function`) with every relationship among them; select the parts and no relationships, so that whatever connects them is drawn. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
+			"prompt": "On the `Flask request pipeline` board, add two board views. `Session path` is an architecture view of how the session is opened: `Request context`, `Session interface` and `process_response`, showing only the `open_session` relationship between the context and the interface and not the `save_session` call from `process_response`. `Dispatch only` is an architecture view of the `Flask app` container's dispatch parts (`full_dispatch_request`, `dispatch_request`, `View function`) with whatever connects them. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
 			"expectedFeatures": [
 				{
 					"feature": "view.edge-isolation",
@@ -1091,7 +1091,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S13.json",
 			"sources": ["src/flask/templating.py"],
-			"prompt": "On the `Flask application` board, the `Template engine` node has been folded into `Jinja environment`. Remove `Template engine` and its relationships, and repair the `How a page is built` walkthrough so the beat that referenced it now refers to `Jinja environment`, keeping every beat's identity and order and rewording only that beat's body.",
+			"prompt": "On the `Flask application` board, the `Template engine` node has been folded into `Jinja environment`. Remove `Template engine` and its relationships, and repair the `How a page is built` walkthrough so the beat that referenced it now refers to `Jinja environment`.",
 			"expectedFeatures": [
 				{
 					"feature": "removal.collections",
@@ -1143,7 +1143,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S14.json",
 			"sources": ["src/flask"],
-			"prompt": "Map the architecture of Flask 3.0.0 in this checkout onto a system-level board named `Flask`: the major parts (the sans-IO core, the WSGI application, contexts and globals, routing and blueprints, the CLI, sessions, templating, JSON, signals and testing), the three libraries Flask is built on (werkzeug, jinja and click) as external parts, how the parts depend on or call each other, and what each is responsible for. Bind each Flask part to its source; the externals stay unbound. Keep it readable: between eight and twenty parts, fewer and truer over many.",
+			"prompt": "Map the architecture of Flask 3.0.0 in this checkout onto a system-level board named `Flask`: the major parts (the sans-IO core, the WSGI application, contexts and globals, routing and blueprints, the CLI, sessions, templating, JSON, signals and testing), what Flask is built on, how the parts depend on or call each other, and what each is responsible for. Keep it to between eight and twenty parts.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
