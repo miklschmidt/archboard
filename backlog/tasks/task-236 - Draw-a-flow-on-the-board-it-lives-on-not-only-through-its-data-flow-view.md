@@ -1,9 +1,11 @@
 ---
 id: TASK-236
 title: 'Draw a flow on the board it lives on, not only through its data-flow view'
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-09-15 19:18'
+updated_date: '2026-09-15 19:28'
 labels:
   - renderer
 dependencies: []
@@ -23,8 +25,26 @@ A sequence board whose author wrote a flow and no edges renders, in the whole-bo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The architecture reading of a variant draws each flow step between two distinct participants as a line when no authored relationship joins those nodes in that direction; a self step draws nothing
-- [ ] #2 A drawn step line is visibly distinct from an authored relationship and carries the step id, so selecting it selects the step and a comparison badges it as the step's standing
-- [ ] #3 An authored relationship between the same nodes in the same direction suppresses the step line, so a board with both does not draw two lines for one call
-- [ ] #4 Renderer tests cover a flow-only board, a board with both, and a self step; the S07 baseline captures rendered again show the exchange on the whole-board picture
+- [x] #1 The architecture reading of a variant draws each flow step between two distinct participants as a line when no authored relationship joins those nodes in that direction; a self step draws nothing
+- [x] #2 A drawn step line is visibly distinct from an authored relationship and carries the step id, so selecting it selects the step and a comparison badges it as the step's standing
+- [x] #3 An authored relationship between the same nodes in the same direction suppresses the step line, so a board with both does not draw two lines for one call
+- [x] #4 Renderer tests cover a flow-only board, a board with both, and a self step; the S07 baseline captures rendered again show the exchange on the whole-board picture
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. withStepLines derives one line per flow message between distinct participants not covered by an authored relationship. 2. renderArchitecture applies it to the content and its predecessors; paintArchitecture paints derived ids as step subjects, dashed and open-headed. 3. Tests in step-lines.test.ts; visual check on the S07 candidate board from the batch.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Rendered the S07 candidate rep 1 board from the 2026-09-15 batch through the library and rasterized it (scratch s07.png, 690x725): Shell -> FlaskGroup -> run_command -> ScriptInfo -> run_command -> run_simple drawn as dashed step lines with labels, the self step absent. Renderer 158 pass, server and canvas suites 536 pass, lint and type-check clean.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The architecture reading draws flow steps as distinct step lines where no relationship joins the parts; verified by step-lines.test.ts and a rasterized S07 board.
+<!-- SECTION:FINAL_SUMMARY:END -->
