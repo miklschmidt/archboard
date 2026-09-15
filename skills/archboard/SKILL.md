@@ -70,7 +70,10 @@ value, and rendered line count is not a validation limit. Put longer detail in
 - **References.** Inside a payload, name a node by its `name` or its `id`; a
   relationship or step, which has no name, by `id` or by a same-write handle
   `as`. New subjects leave `id` out. A restated subject replaces its previous
-  definition whole, so restate the fields you keep.
+  definition whole, so restate the fields you keep. A relationship restated
+  without its `id` is a new relationship, however familiar its endpoints: to
+  change one property of an existing relationship (its traffic, its label),
+  restate it with the `id` you read, and never remove it to add it again.
 - **Verification.** Read the write's answer back against the checks you wrote
   down before writing (below). When the picture is the deliverable, draw it
   and look at it: `semantic rasterize <board> --out <file.png>` and open the
@@ -108,7 +111,11 @@ board needs all of it.
    and the source file and function or symbol that prove the mechanism. For a
    call, `from` is the caller whose body makes it and `to` is the receiver
    whose body runs, inside its `parent`; a container is an endpoint only when
-   the source addresses the whole module. For a return or a non-call
+   the source addresses the whole module. A part you draw with children is a
+   container whatever its kind: once the request context holds `push` and
+   `pop`, the call `wsgi_app` makes lands on `push`, not on the container,
+   and giving an existing part children moves every relationship that landed
+   on it to the child whose body runs. For a return or a non-call
    relationship, state the directional claim in words and make the endpoints
    follow it (for example, A returns to B, A reads from B, A publishes to B, or
    A depends on B). Sibling calls are not a chain: when `dispatch()` calls
@@ -155,11 +162,11 @@ you used and which you judged not to apply.
 | `emphasis`     | the few lines the board exists to show, and lines that are only context                       | `emphasis: "hero"` on the few, `"muted"` on the context                                                |
 | `repeat`       | a loop over a list the source fixes, or a retry limit                                         | `repeat` with that count on the step                                                                   |
 | `note`         | a branch and its condition, a data-dependent loop, an environment variable, a caveat          | `note` on the step                                                                                     |
-| `groups`       | a part whose concern is a configured group id in `config.yaml`                                | `groups` on each member                                                                                |
+| `groups`       | a part whose concern is a configured group id in `config.yaml` (read them before every write) | `groups` on each member, explicit, across containers                                                   |
 | `flow`         | an ordered exchange the question is about (handling a request, starting up, a lifecycle)      | a `flow` and a `data-flow` view over it                                                                |
 | `view`         | a subset a reader wants alone: one path, one container's internals, the two sides of a change | a board `view`                                                                                         |
 | `walkthrough`  | a why the code enforces (an ordering, an invariant, a context pushed before dispatch)         | a walkthrough beat whose subjects are the parts, relationships or steps it explains                    |
-| `drillDown`    | a part whose internals already have a board                                                   | `drillDown` to that board instead of its parts again                                                   |
+| `drillDown`    | a part whose internals already have a board (`archboard semantic` lists them; check first)    | `drillDown` to that board instead of its parts again                                                   |
 | `description`  | a mechanism a one-line responsibility cannot hold                                             | `description` on the node or relationship                                                              |
 
 A row the source does not support stays out: an added relationship without a
@@ -171,7 +178,10 @@ line of evidence is a wrong board, not a complete one.
    catalogue. Decide the
    board's level from `config.yaml` (`system`: collaborating services;
    `service`: the modules of one; `module`: the functions inside one) and its
-   subject: a short name such as `Flask request pipeline`, never a path.
+   subject: a short name such as `Flask request pipeline`, never a path. Two
+   rows need a read before the payload: the configured `groups`, so each
+   part lists the concerns it serves, and `archboard semantic`, so a part
+   whose internals already have a board links to it with `drillDown`.
 2. If parts will be bound to code, register the checkout once:
    `archboard repo add /path/to/checkout` prints the repository identity
    (`github.com/pallets/flask`); bindings use that identity and a repo-relative
@@ -223,6 +233,8 @@ archboard semantic rasterize "Flask request pipeline" --out pipeline.png
 Each relationship lands on the part that actually receives the call, inside
 its `parent`; the renderer carries the line across the container boundary.
 A container is an endpoint only for a relationship to the whole module.
+`Request context` receives `push` here because it has no children; the
+moment you draw `push` and `pop` inside it, the call lands on `push`.
 
 4. Check the answer against your record: every part you meant is there with a
    configured `kind`; every relationship's `from`, `to` and `kind` match the
@@ -239,8 +251,12 @@ detail boards, traffic, emphasis, descriptions, and what a refusal means.
 ## Create a sequence diagram
 
 A sequence is a `flow` on the board that holds its participants; create the
-parts and flow in the same write, add a `data-flow` view over it and, when the
-reader needs narration, a walkthrough.
+parts, the relationships the messages travel and the flow in the same write,
+add a `data-flow` view over it and, when the reader needs narration, a
+walkthrough. The flow is drawn only through that view; the board itself is the
+architecture picture, so every call the exchange makes is also an `edge`
+between its participants, with the same line of evidence, or a reader who
+opens the board sees cards with nothing joining them.
 
 1. Read the code path and record each message with its evidence: who calls
    whom, from which function, in which order, and which messages come back.
@@ -258,10 +274,12 @@ reader needs narration, a walkthrough.
 2. Create a standalone sequence in one write. Against an existing board, use
    the same payload with `semantic edit` and the version you read. The
    evidence here, from `src/flask/cli.py` in Flask 3.0: `run_command` calls
-   `ScriptInfo.load_app`, which loops over the default import names and
-   attribute names until one imports (`FLASK_APP` names one directly), then
-   returns the app to `run_command`, which hands it to werkzeug's
-   `run_simple`.
+   `ScriptInfo.load_app`; when `FLASK_APP` names nothing, `load_app` loops
+   over the literal tuple `("wsgi.py", "app.py")`, a list the source fixes, so
+   that step is `repeat: 2`, and within each candidate `locate_app` tries the
+   attribute names, which the `note` says; `load_app` then returns the app to
+   `run_command`, which hands it to werkzeug's `run_simple`. Each of those
+   calls is an `edge` as well as a step.
 
 ```bash
 archboard semantic new "Flask CLI startup" --doing "explaining how flask run starts the server" <<'JSON'
@@ -277,6 +295,12 @@ archboard semantic new "Flask CLI startup" --doing "explaining how flask run sta
       "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
     { "name": "run_simple", "kind": "external", "responsibility": "Serves requests until interrupted" }
   ],
+  "edges": [
+    { "from": "Shell", "to": "FlaskGroup", "kind": "call", "label": "flask run" },
+    { "from": "FlaskGroup", "to": "run_command", "kind": "call", "label": "invoke" },
+    { "from": "run_command", "to": "ScriptInfo", "kind": "call", "label": "load_app" },
+    { "from": "run_command", "to": "run_simple", "kind": "call", "label": "serve", "emphasis": "hero" }
+  ],
   "flows": [{
     "name": "flask run",
     "participants": ["Shell", "FlaskGroup", "run_command", "ScriptInfo", "run_simple"],
@@ -284,7 +308,7 @@ archboard semantic new "Flask CLI startup" --doing "explaining how flask run sta
       { "from": "Shell", "to": "FlaskGroup", "label": "flask run" },
       { "from": "FlaskGroup", "to": "run_command", "label": "invoke" },
       { "from": "run_command", "to": "ScriptInfo", "label": "load_app" },
-      { "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "note": "loops over the default module and attribute names unless FLASK_APP names the app or factory" },
+      { "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "repeat": 2, "note": "tries wsgi.py then app.py unless FLASK_APP names the app or factory; within each, locate_app tries the attribute names" },
       { "from": "ScriptInfo", "to": "run_command", "label": "Flask app", "kind": "return" },
       { "from": "run_command", "to": "run_simple", "label": "serve" }
     ]
@@ -312,7 +336,11 @@ subjects and identity, and single-participant flows.
 1. `archboard semantic show <board>` and note `version`, the target variant's
    ids, and the fields of every subject you will restate. Write the checks:
    which variant the change lands on, which ids must survive, which fields you
-   are keeping and which you are changing.
+   are keeping and which you are changing. Read the source for the region you
+   touch: when the board already contradicts it there (a call drawn from the
+   wrong part, a membership the code does not support), say so in your
+   answer, and change it only when the request covers it; a board you were
+   asked to extend is not yours to silently repair or silently repeat.
 2. Map the change onto what you read, subject by subject:
    - **Continuing**: the same part, relationship, exchange or step evolves; keep
      its `id` (a rename, a reworded responsibility, a new binding).
@@ -399,7 +427,10 @@ the rewiring is in `src/flask/ctx.py` of Flask 2.2: `AppContext.push` and
    variant is untouched, and a continuing exchange compares step by step.
    Open both pictures: the removal is drawn as removed in the proposal's, and
    the current one shows what it showed before. Report what changed in those
-   terms.
+   terms: the parts removed, the parts added, and for every relationship the
+   proposal keeps or adds, where it now lands (here, both contexts' `set /
+reset` relationships land on `Context variables`). A relationship whose
+   endpoint moved is the change the comparison exists to show, so name it.
 4. Only when asked, adopt with the version returned by the proposal edit:
    `archboard semantic adopt "Flask contexts" --variant "Context variables" --reason "Flask 2.2 implements contexts with contextvars" --expect-version 4 --doing "adopting context variables"`.
    The proposal becomes current, the previous current becomes historical, and
@@ -421,9 +452,10 @@ resolve`), and for adoption rules.
   duplicating its parts.
 - Fewer, truer parts: every node has a responsibility the source supports, and
   a binding only to the file that implements it.
-- Traffic (`"traffic": {}`, or `speed`/`volume`) illustrates flow; say so when
-  you report it, and never present it as measured. A still picture shows the
-  marks at rest and proves nothing about motion.
+- Traffic (`"traffic": {}`, or `speed`/`volume`) is authored intent, never a
+  measurement: choose it from what the source says runs per request, not from
+  numbers you do not have. A still picture shows the marks at rest and proves
+  nothing about motion.
 - A refusal is repaired from its reason. Never edit the vault to get past one,
   never invent an id, and when the CLI cannot do what was asked, say what
   remains open rather than approximate it.

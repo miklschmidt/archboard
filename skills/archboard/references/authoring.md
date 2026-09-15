@@ -24,9 +24,13 @@ relationship lands on the part that receives it: `Browser client -> Viewer
 entry point -> Fetch semantic reads`, both internal parts parented to `Semantic
 viewer`, not `Browser client -> Semantic viewer -> Fetch`. The renderer carries a
 line across a container's boundary. A container is the endpoint only when the
-source addresses the whole module (a dependency in a higher-level view). Before
-presenting, trace each incoming call to its actual receiver; valid ids alone
-cannot tell you this.
+source addresses the whole module (a dependency in a higher-level view). Any
+part drawn with children is a container, whatever its `kind`: a class node
+that holds its methods receives nothing itself, and a call to it lands on the
+method whose body runs (`RequestContext.push`, not `Request context`). When
+you give an existing part children, move every relationship that landed on it
+to the child that receives it. Before presenting, trace each incoming call to
+its actual receiver; valid ids alone cannot tell you this.
 
 ### Groups
 
@@ -34,8 +38,16 @@ A group crosses containment: two modules in different services can be part of
 one effort, and one module of two. Membership is explicit on each member,
 never inherited by or from a container, and the ids come from `groups` in
 `config.yaml` (`{ "<id>": { "name": "<display name>" } }`). Renaming a group
-changes no board. Groups assign no color: a container gives its contents their
-body color, and each node's icon chip says its own kind.
+changes no board. Before every write that adds parts, read the configured
+groups and ask of each new part which of those concerns it serves; a
+configured group the source places a part in and the part does not list is a
+membership the board lacks. Groups assign no color: color is a property of a
+kind in `config.yaml` (`nodeKinds.<kind>.color`, `relationshipKinds.<kind>.color`
+from the curated palette), never of a board, a node or a group. A container
+with a colored kind tints its contents, and each node's icon chip says its
+own kind; a vault whose kinds carry no color draws every board neutral, which
+is a configuration question for the vault's owner, not a reason to touch
+`config.yaml` while authoring a board.
 
 ```json
 {
@@ -85,7 +97,10 @@ that does only part of it.
 Give a service's internals their own board and link the node to it. `current`
 follows the target board's designation; `named` opens that variant and never
 falls back to current when the name is gone. Reuse an existing detail board
-rather than creating a second one for the same subject.
+rather than creating a second one for the same subject: before a write that
+adds a part at the service or system level, `archboard semantic` lists the
+vault's boards, and a board whose subject is that part's internals is a
+`drillDown` on the part, not a reason to draw its internals again.
 
 ## Relationships
 
@@ -98,8 +113,10 @@ rather than creating a second one for the same subject.
 | `emphasis`    | `normal` (default), `hero` for the few central lines, `muted` for context. Line weight only.                                 |
 | `traffic`     | `{}` for moving dots at the defaults (speed 40, volume 0.5); `{ "speed", "volume" }` positive finite numbers; omit for none. |
 
-Traffic illustrates flow. It is authored intent, not measurement, and a static
-render cannot show it moving: when you report it, say it illustrates.
+Traffic is authored intent, not measurement: it belongs on the relationships
+the source shows a request or event travelling, and a static render cannot
+show it moving. Restate an existing relationship with its `id` to add or
+change its traffic; restated without the id it is a new relationship.
 
 ### Evidence for a relationship
 
