@@ -119,7 +119,11 @@ The Codex runner is `codex exec --json` in a read-only sandbox with the
 structured answer enforced by `--output-schema` and written by `-o`, every
 picture attached with `--image` on every call, and the thread resumed with
 `codex exec resume`. Its private `CODEX_HOME` under the grader directory
-carries the operator's `auth.json` and a harness-written `config.toml`.
+carries the operator's `auth.json` and a harness-written `config.toml`. The
+sandbox blocks writes and not reads, so the harness reads the stream: any
+call whose commands name a path outside the staged workspace, or whose file
+changes land outside it, is filed as an error rather than a verdict, and the
+answer Codex wrote is discarded; the same posture the Claude runner has.
 
 The Claude runner is `claude -p --output-format stream-json` with
 `--json-schema` enforcing the same answer, `--tools Read,Grep,Glob` and nothing
