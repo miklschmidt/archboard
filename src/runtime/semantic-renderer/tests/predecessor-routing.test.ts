@@ -347,11 +347,16 @@ test("a surviving relationship keeps the face it left and reached in the predece
 	const wasFrom = routePoints(first.svg).get("ba")![0]!;
 	const nowFrom = routePoints(drawing.svg).get("ba")![0]!;
 	const b = { was: first.atlas.nodes["b"]!, now: drawing.atlas.nodes["b"]! };
-	const faceOf = (point: { x: number; y: number }, box: { x: number; width: number }) =>
-		Math.abs(point.x - box.x) < 1
-			? "west"
-			: Math.abs(point.x - box.x - box.width) < 1
-				? "east"
-				: "other";
 	expect(faceOf(nowFrom, b.now)).toBe(faceOf(wasFrom, b.was));
 });
+
+/**
+ * Which horizontal face of a card a route point sits on.
+ * @param point The route's first point.
+ * @param box The card.
+ * @returns west, east or other.
+ */
+function faceOf(point: { x: number; y: number }, box: { x: number; width: number }): string {
+	if (Math.abs(point.x - box.x) < 1) return "west";
+	return Math.abs(point.x - box.x - box.width) < 1 ? "east" : "other";
+}
