@@ -218,3 +218,34 @@ cheap), containment faces, boundary sections, the label clearances, rounding
 and bridging, and the continuity contract for cards across variants. Those
 rules encode meaning or reading habits; the skip faces encode a guess about
 geometry.
+
+## 5. What was done (2026-09-15, TASK-231)
+
+Recommendation 1 landed with two refinements the measurements forced:
+
+- Only a hub's skips are the engine's. A card with fewer than three forward
+  relationships keeps one west-flank bracket for its nearest skip; a chain
+  with a skip beside it stays in one column, which the engine alone does not
+  keep (every placement option tried staggers the chain around the free
+  skip's dummy nodes).
+- Only on a first render. Under a predecessor the cards are pinned, and a
+  free skip is routed as a staircase between them (26 points for a route that
+  is a straight line on a first render), so a new skip in a proposal takes
+  the flank, or the target's top when the predecessor drawing shows the
+  target left of the source.
+
+Measured on the three fixtures against the baseline at the top of section 3:
+
+|                                             | Page (Mpx)         | West exits (max per card) | Corridor      | Bends per edge  |
+| ------------------------------------------- | ------------------ | ------------------------- | ------------- | --------------- |
+| Baseline                                    | 6.40 / 6.15 / 7.52 | 5 / 3 / 6                 | 23 / 27 / 23% | 7.4 / 7.1 / 8.6 |
+| Hub skips engine-attached on a first render | 5.43 / 6.15 / 4.99 | 1 / 1 / 1                 | 21 / 9 / 8%   | 7.5 / 7.2 / 8.5 |
+
+Board 1 keeps a long bracket from a non-hub card, which is most of its
+corridor ink; that is the case recommendation 3 (a geometry-informed first
+render) would settle. `tests/wide-boards.test.ts` holds the three fixtures to
+these numbers with a little room, alongside no route through a card and no
+card fanning more than one skip down its flank. Three tests that pinned flank
+geometry were re-derived as the invariants they protected: the label on a
+straight run of its own route, a bounded bend count, and a bridge on every
+proper crossing.
