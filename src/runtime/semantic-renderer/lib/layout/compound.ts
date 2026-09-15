@@ -186,12 +186,58 @@ function pointsOf(result: ElkExtendedEdge): Point[] {
 }
 
 /**
- * Join the engine's boundary sections into one semantic relationship.
- * @param result All consecutive sections of the relationship.
- * @returns One rounded path that retains the engine's full traversal.
+ * Intersect two perpendicular segments, excluding their endpoints.
+ * @param from The first segment's start.
+ * @param to The first segment's end.
+ * @param start The other segment's start.
+ * @param end The other segment's end.
+ * @returns Their proper crossing, when neither segment ends there.
  */
-function curveOf(result: readonly ElkExtendedEdge[]): DrawingEdge["curve"] {
-	return curveThrough(simplify(result.flatMap(pointsOf)));
+function perpendicularCrossing(
+	from: Point,
+	to: Point,
+	start: Point,
+	end: Point,
+): Point | undefined {
+	const dx = to.x - from.x,
+		dy = to.y - from.y;
+	const otherX = end.x - start.x,
+		otherY = end.y - start.y;
+	if (dx * otherX + dy * otherY !== 0) return undefined;
+	const determinant = dx * otherY - dy * otherX;
+	if (determinant === 0) return undefined;
+	const offsetX = start.x - from.x,
+		offsetY = start.y - from.y;
+	const along = (offsetX * otherY - offsetY * otherX) / determinant;
+	const across = (offsetX * dy - offsetY * dx) / determinant;
+	if (Math.min(along, 1 - along, across, 1 - across) <= 0) return undefined;
+	return { x: from.x + along * dx, y: from.y + along * dy };
+}
+
+/**
+ * Find proper perpendicular crossings before rounding consumes their straight legs.
+ * Shared endpoints, overlapping lines and this route's own corners are excluded.
+ * @param route One complete semantic route.
+ * @param others All complete routes in this drawing.
+ * @returns The crossings whose bridge space must survive corner rounding.
+ */
+function routeCrossings(route: readonly Point[], others: Iterable<readonly Point[]>): Point[] {
+	const crossings: Point[] = [];
+	for (const other of others) {
+		if (route === other) continue;
+		for (let index = 1; index < route.length; index += 1) {
+			for (let crossingIndex = 1; crossingIndex < other.length; crossingIndex += 1) {
+				const crossing = perpendicularCrossing(
+					route[index - 1]!,
+					route[index]!,
+					other[crossingIndex - 1]!,
+					other[crossingIndex]!,
+				);
+				if (crossing !== undefined) crossings.push(crossing);
+			}
+		}
+	}
+	return crossings;
 }
 
 /**
@@ -228,13 +274,23 @@ function drawingEdges(
 	measured: MeasuredArchitecture,
 ): DrawingEdge[] {
 	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
+	const routes = new Map(
+		content.edges.map((edge) => [
+			edge.id,
+			simplify(
+				(laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? []).flatMap(
+					pointsOf,
+				),
+			),
+		]),
+	);
 	return content.edges.map((edge) => {
 		const result = results.get(edge.id);
 		if (result === undefined) {
 			throw new Error(`Layout did not return relationship ${edge.id}`);
 		}
-		const parts = laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? [];
-		const curve = curveOf(parts);
+		const points = routes.get(edge.id)!;
+		const curve = curveThrough(points, routeCrossings(points, routes.values()));
 		return {
 			edge,
 			curve,
@@ -315,6 +371,7 @@ async function settleLabels(
 			edges: drawingEdges(content, laidOut, measured),
 		},
 		measured.labels,
+		predecessor,
 	);
 	const missing = drawing.edges.filter(
 		({ edge, label }) => measured.labels.has(edge.id) && label === undefined,

@@ -179,6 +179,59 @@ function predecessorLayoutOptions(
 }
 
 /**
+ * Preserve inherited attachment offsets when the face still has room for every port.
+ * @param node Current measured card and ordered ports.
+ * @param point Its seeded global position.
+ * @param before Its previous geometry, when retained.
+ * @param routes Retained routes identifying previous attachments.
+ * @returns Final attachment hints, with crowded faces using the current distribution.
+ */
+function inheritedPorts(
+	node: ElkNode,
+	point: Point,
+	before: DrawingNode | undefined,
+	routes: NodeHintRoutes,
+): Map<string, Point> {
+	const result = new Map(node.ports!.map((port) => [port.id, portHint(node, port, point)]));
+	if (before === undefined) return result;
+	for (const [side, axis, cross, far] of [
+		["NORTH", "x", "y", false],
+		["SOUTH", "x", "y", true],
+		["WEST", "y", "x", false],
+		["EAST", "y", "x", true],
+	] as const) {
+		const ports = node.ports!.filter((port) => port.layoutOptions!["elk.port.side"] === side);
+		const candidates = ports.map((port) => {
+			const route = routes.previous.find(
+				(edge) => port.id === edge.edge.id + ":from" || port.id === edge.edge.id + ":to",
+			);
+			if (route === undefined) return result.get(port.id)!;
+			const attachment = port.id.endsWith(":from")
+				? route.curve.from
+				: route.curve.segments.at(-1)!.to;
+			const face = before.box[cross] + (far ? before.box[cross === "x" ? "width" : "height"] : 0);
+			if (Math.abs(attachment[cross] - face) > 0.01) return result.get(port.id)!;
+			return { ...result.get(port.id)!, [axis]: point[axis] + attachment[axis] - before.box[axis] };
+		});
+		const ordered = candidates.toSorted((one, other) => one[axis] - other[axis]);
+		const gap = Number(COMPOUND_OPTIONS["elk.spacing.portPort"]);
+		if (
+			ordered.some(
+				(candidate, index) => index > 0 && candidate[axis] - ordered[index - 1]![axis] < gap,
+			)
+		)
+			continue;
+		for (const [index, port] of ports.entries()) {
+			const candidate = candidates[index]!;
+			if (candidate[axis] !== result.get(port.id)![axis])
+				node.layoutOptions = { ...node.layoutOptions, "elk.portConstraints": "FIXED_POS" };
+			result.set(port.id, candidate);
+		}
+	}
+	return result;
+}
+
+/**
  * Seed one containment level in its actual parent coordinate system.
  * @param parent The engine parent being visited.
  * @param origin Its global predecessor or suggested position.
@@ -212,8 +265,9 @@ function seedNodes(
 	const positions = nodePositionHints(children, content, previous, right, routes);
 	for (const node of children) {
 		const point = positions.get(node.id)!;
+		const attachments = inheritedPorts(node, point, previous.get(node.id), routes);
 		for (const port of node.ports!) {
-			const attachment = portHint(node, port, point);
+			const attachment = attachments.get(port.id)!;
 			ports.set(port.id, attachment);
 			portSides.set(port.id, port.layoutOptions!["elk.port.side"]!);
 			port.x = attachment.x - point.x;
@@ -384,6 +438,33 @@ function seedRoute(
 		seedHorizontalRoute(edge, current, horizontalSide, from, to, priorPoints, corridors);
 		return;
 	}
+	seedTopRoute(edge, from, to, side, portSides.get(edge.targets[0]), priorPoints);
+}
+
+/**
+ * Seed a left departure on its above-entry target corridor or inherited route.
+ * @param edge Current relationship.
+ * @param from Current source attachment.
+ * @param to Current target attachment.
+ * @param side Source face.
+ * @param targetSide Target face.
+ * @param priorPoints Matching predecessor route when available.
+ */
+function seedTopRoute(
+	edge: ElkExtendedEdge,
+	from: Point,
+	to: Point,
+	side: string | undefined,
+	targetSide: string | undefined,
+	priorPoints: readonly Point[] | undefined,
+): void {
+	// A west departure can turn directly onto a target above-entry corridor.
+	// Seed its label on that same corridor so ELK does not invent a middle lane.
+	if (side === "WEST" && targetSide === "NORTH") {
+		setRoute(edge, [from, { x: to.x, y: from.y }, to]);
+		for (const label of edge.labels!) label.x = to.x - label.width! / 2;
+		return;
+	}
 	if (priorPoints !== undefined) setRoute(edge, priorPoints);
 }
 
@@ -435,10 +516,21 @@ function clearFlankLabels(
 	edges: NonNullable<ElkNode["edges"]>,
 	portSides: ReadonlyMap<string, string>,
 ): void {
-	for (const edge of edges.filter(
+	const flanks = edges.filter(
 		(candidate) =>
 			candidate.labels!.length > 0 && candidate.sections?.[0]?.bendPoints?.length === 2,
-	)) {
+	);
+	// Move inner lanes before testing outer labels against them. A provisional
+	// inner lane can otherwise push an outer guide through an adjacent card,
+	// even though that inner lane is itself about to move clear.
+	/**
+	 * Order west flanks right-to-left and east flanks left-to-right.
+	 * @param edge A flank with an allocated corridor.
+	 * @returns Its inward-first horizontal sort coordinate.
+	 */
+	const inwardOrder = (edge: ElkExtendedEdge): number =>
+		edge.sections![0]!.bendPoints![0]!.x * (portSides.get(edge.sources[0]!) === "WEST" ? -1 : 1);
+	for (const edge of flanks.toSorted((one, other) => inwardOrder(one) - inwardOrder(other))) {
 		const side = sharedHorizontalSide(
 			portSides.get(edge.sources[0]!),
 			portSides.get(edge.targets[0]!),
