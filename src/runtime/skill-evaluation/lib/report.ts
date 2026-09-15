@@ -3,7 +3,12 @@
 // metric a run could not supply is reported as unavailable, and a run that
 // failed is a row, not a gap.
 
-import type { CommandClass, ExposureKind, Usage } from "@/runtime/skill-evaluation/lib/events";
+import type {
+	CommandClass,
+	ExposureKind,
+	GuidanceStanding,
+	Usage,
+} from "@/runtime/skill-evaluation/lib/events";
 import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 import type { RunVerdict, VisualStanding } from "@/runtime/skill-evaluation/lib/grader";
@@ -37,6 +42,8 @@ interface RunRecord {
 	readonly directWrites: number | null;
 	/** Commands that reached for evaluation material, by kind; null when the run did not record exposure. */
 	readonly exposure: Readonly<Record<ExposureKind, number>> | null;
+	/** The guidance the scenario names and what of it the author read; null when the run did not record it. */
+	readonly guidance: GuidanceStanding | null;
 	/** Which declared captures were taken and which were not; null when the run recorded none. */
 	readonly captures: CaptureSummary | null;
 	/**
@@ -97,6 +104,10 @@ interface ArmSummary {
 	/** Over graded runs that wrote a board and were judged for it; null when none was. */
 	readonly meanBehaviouralCompleteness: Maybe;
 	/** Catalogue rows the source justified that the authors left out, summed over the arm. */
+	/** Runs that recorded their guidance reads and read every file their scenario names. */
+	readonly guidanceRead: number;
+	/** Runs that recorded their guidance reads at all. */
+	readonly guidanceRecorded: number;
 	readonly missedUnprompted: number;
 }
 
@@ -118,6 +129,8 @@ interface Report {
 	readonly failures: readonly RunRecord[];
 	/** Runs that read evaluation material, reached another run, or wrote directly to the vault: kept apart from every comparison. */
 	readonly contamination: readonly RunRecord[];
+	/** Runs whose author did not read every guidance file the scenario names. */
+	readonly skippedGuidance: readonly RunRecord[];
 	readonly graderUsage: Usage | null;
 	/** Who graded and how its usage is counted; null when nothing was graded. */
 	readonly grader: GraderIdentity | null;
@@ -243,6 +256,8 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 		medianOperationCommands: median(runs.map((run) => run.commandCounts.operation)),
 		medianInvestigationCommands: median(runs.map((run) => run.commandCounts["code-investigation"])),
 		productSourceReads: runs.filter((run) => run.commandCounts["product-source"] > 0).length,
+		guidanceRead: runs.filter((run) => run.guidance?.missing.length === 0).length,
+		guidanceRecorded: runs.filter((run) => run.guidance !== null).length,
 		meanSemanticCorrectness: meanScore(runs, (verdict) => verdict.semanticCorrectness),
 		meanArchitecturalTruth: meanScore(runs, (verdict) => verdict.architecturalTruth),
 		meanReadability: meanScore(runs, (verdict) => verdict.readability),
@@ -442,6 +457,7 @@ function buildReport(
 		),
 		failures: runs.filter((run) => !succeeded(run)),
 		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
+		skippedGuidance: runs.filter((run) => (run.guidance?.missing.length ?? 0) > 0),
 		graderUsage,
 		grader,
 		authorUsage: {

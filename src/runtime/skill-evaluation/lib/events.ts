@@ -274,6 +274,8 @@ export {
 	classCounts,
 	classifyCommands,
 	exposureCounts,
+	guidanceFilesRead,
+	guidanceStanding,
 	simpleCommands,
 	unwrapped,
 	type ClassificationContext,
@@ -281,4 +283,5 @@ export {
 	type CommandClass,
 	type ExposureKind,
 	type ExposureRoots,
+	type GuidanceStanding,
 } from "@/runtime/skill-evaluation/lib/classify";
