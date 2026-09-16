@@ -1,9 +1,15 @@
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import {
+	across,
+	breadth,
+	faceOf,
+	readingOf,
+} from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routePoints, routeCrosses } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
-test("an added forward skip leaves the left side and enters the target top", async () => {
+test("an added forward skip leaves the flank beside its chain and enters the target from behind", async () => {
 	const pairs = [
 		["root", "source"],
 		["root", "other"],
@@ -24,13 +30,16 @@ test("an added forward skip leaves the left side and enters the target top", asy
 		],
 	});
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	const direction = readingOf(drawing);
 	const points = routePoints(drawing.svg).get("skip")!;
 	const source = drawing.atlas.nodes["source"]!;
 	const target = drawing.atlas.nodes["target"]!;
-	expect(points[0]!.x).toBe(source.x);
-	expect(points[1]!.x).toBeLessThan(source.x);
-	expect(points.at(-1)!.y).toBe(target.y);
-	expect(points.at(-1)!.x).toBeGreaterThan(target.x);
-	expect(points.at(-1)!.x).toBeLessThan(target.x + target.width);
+	expect(faceOf(points[0]!, source, direction)).toBe("beside");
+	expect(across(points[1]!, direction)).toBeLessThan(across(source, direction));
+	expect(faceOf(points.at(-1)!, target, direction)).toBe("behind");
+	expect(across(points.at(-1)!, direction)).toBeGreaterThan(across(target, direction));
+	expect(across(points.at(-1)!, direction)).toBeLessThan(
+		across(target, direction) + breadth(target, direction),
+	);
 	expect(routeCrosses(points, drawing.atlas.nodes["middle"]!)).toBe(false);
 });

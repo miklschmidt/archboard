@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { along, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
 	boxesOverlap,
 	routeCrosses,
@@ -48,8 +49,9 @@ test("an inserted stage preserves the existing order and routes around every car
 		theme: "light",
 	});
 	const { nodes } = drawing.atlas;
-	expect(nodes["driver"]!.y).toBeLessThan(nodes["layout"]!.y);
-	expect(nodes["layout"]!.y).toBeLessThan(nodes["paint"]!.y);
+	const direction = readingOf(drawing);
+	expect(along(nodes["driver"]!, direction)).toBeLessThan(along(nodes["layout"]!, direction));
+	expect(along(nodes["layout"]!, direction)).toBeLessThan(along(nodes["paint"]!, direction));
 	for (const [id, box] of Object.entries(nodes)) {
 		for (const [other, otherBox] of Object.entries(nodes)) {
 			if (id !== other) expect(boxesOverlap(box, otherBox)).toBe(false);

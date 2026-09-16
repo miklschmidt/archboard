@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { along, depth, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 test("new dependent cards use nearby free space and align their terminal connection", async () => {
@@ -68,9 +69,12 @@ test("a new terminal stays below its new dependency when only the dependency rea
 		],
 	});
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	const direction = readingOf(drawing);
 	const source = drawing.atlas.nodes["new"]!,
 		target = drawing.atlas.nodes["leaf"]!;
-	expect(target.y).toBeGreaterThan(source.y + source.height);
+	expect(along(target, direction)).toBeGreaterThan(
+		along(source, direction) + depth(source, direction),
+	);
 });
 
 test("new branches leave measured badge room beside an inherited return corridor", async () => {
@@ -172,5 +176,8 @@ test("a new terminal shares its independent old sibling's layer after inserting 
 		],
 	});
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
-	expect(drawing.atlas.nodes["leaf"]!.y).toBe(drawing.atlas.nodes["n1"]!.y);
+	const direction = readingOf(drawing);
+	expect(along(drawing.atlas.nodes["leaf"]!, direction)).toBe(
+		along(drawing.atlas.nodes["n1"]!, direction),
+	);
 });
