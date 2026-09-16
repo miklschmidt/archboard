@@ -33,7 +33,10 @@ import type {
 	VariantContent,
 } from "@/shared/semantic-board/index";
 import { layoutCompound } from "@/runtime/semantic-renderer/lib/layout/compound";
-import type { ArchitectureDrawing } from "@/runtime/semantic-renderer/lib/drawing";
+import type {
+	ArchitectureDrawing,
+	ReadingDirection,
+} from "@/runtime/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
 import { withStepLines } from "@/runtime/semantic-renderer/lib/step-lines";
 import { paletteFor, type Palette } from "@/runtime/semantic-renderer/lib/theme";
@@ -130,6 +133,12 @@ interface RenderedDiagram {
 	readonly height: number;
 	/** Where every subject the renderer drew ended up. */
 	readonly atlas: DiagramAtlas;
+	/**
+	 * Which way an architecture reads: down the page or left to right, the
+	 * renderer's choice on a first render and its predecessor's on a proposal
+	 * (ADR 0028). A sequence reads one way and says nothing.
+	 */
+	readonly readingDirection?: ReadingDirection | undefined;
 }
 
 /**
@@ -222,9 +231,16 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		description: descriptionFor(drawing.containers.map((held) => held.measured.node.name)),
 		fonts: request.fonts ?? "linked",
 		body: painting.body,
+		reading: drawing.direction,
 	});
 
-	return { svg, width: painting.width, height: painting.height, atlas: painting.atlas };
+	return {
+		svg,
+		width: painting.width,
+		height: painting.height,
+		atlas: painting.atlas,
+		readingDirection: drawing.direction,
+	};
 }
 
 /**
@@ -310,6 +326,7 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 }
 
 export {
+	type ReadingDirection,
 	type SubjectStanding,
 	type StatedStandings,
 	type DiagramRenderRequest,

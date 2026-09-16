@@ -6,6 +6,7 @@ import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api";
 import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
 import { portHint } from "@/runtime/semantic-renderer/lib/layout/compound-node-hints";
+import { SOLVING, type Face } from "@/runtime/semantic-renderer/lib/layout/reading";
 
 /** Everything the seeding pass learns about where cards and attachments will be. */
 interface Seeded {
@@ -85,7 +86,7 @@ function westApproachBlocked(edge: ElkExtendedEdge, seeded: Seeded): boolean {
  * @param side Its new face.
  * @param seeded Where everything will be.
  */
-function reseatPort(portId: string, side: "SOUTH" | "NORTH", seeded: Seeded): void {
+function reseatPort(portId: string, side: Face, seeded: Seeded): void {
 	const owner = seeded.nodes.get(seeded.owners.get(portId)!)!;
 	const port = owner.node.ports!.find((candidate) => candidate.id === portId)!;
 	const left = port.layoutOptions!["elk.port.side"];
@@ -111,13 +112,13 @@ function reseatPort(portId: string, side: "SOUTH" | "NORTH", seeded: Seeded): vo
 function reseatBlockedFlanks(graph: ElkNode, seeded: Seeded): void {
 	for (const edge of graph.edges!) {
 		if (
-			seeded.portSides.get(edge.sources[0]!) !== "WEST" ||
-			seeded.portSides.get(edge.targets[0]!) !== "WEST" ||
+			seeded.portSides.get(edge.sources[0]!) !== SOLVING.besideFlank ||
+			seeded.portSides.get(edge.targets[0]!) !== SOLVING.besideFlank ||
 			!westApproachBlocked(edge, seeded)
 		)
 			continue;
-		reseatPort(edge.sources[0]!, "SOUTH", seeded);
-		reseatPort(edge.targets[0]!, "NORTH", seeded);
+		reseatPort(edge.sources[0]!, SOLVING.forwardOut, seeded);
+		reseatPort(edge.targets[0]!, SOLVING.forwardIn, seeded);
 	}
 }
 

@@ -5,6 +5,7 @@
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { along, faceOf, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routeCrosses, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /**
@@ -71,6 +72,9 @@ test("relationships added to a new card do not run through the cards the proposa
 		}
 	}
 	// The two contexts still reach the new card, and the picture kept its rows.
-	expect(routes.get("e5")!.at(-1)!.y).toBeCloseTo(drawing.atlas.nodes["cv"]!.y, 1);
-	expect(drawing.atlas.nodes["reqctx"]!.y).toBeLessThan(drawing.atlas.nodes["appctx"]!.y);
+	const direction = readingOf(drawing);
+	expect(faceOf(routes.get("e5")!.at(-1)!, drawing.atlas.nodes["cv"]!, direction)).toBe("behind");
+	expect(along(drawing.atlas.nodes["reqctx"]!, direction)).toBeLessThan(
+		along(drawing.atlas.nodes["appctx"]!, direction),
+	);
 });

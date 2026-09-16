@@ -12,6 +12,15 @@ font, size, width, and baseline. A card grows to hold its text instead of shrink
 or truncating its title. See [the adapter contract](pretext-measurement-adapter.md)
 for the pinned upstream patch.
 
+`lib/layout/reading.ts` decides which way a page reads (ADR 0028). Every
+board is solved in one frame, the page reading down it; a board that reads
+left to right is the transposed problem solved in that frame and transposed
+back, so a face, a lane or a title band means one thing everywhere. A first
+render is settled both ways and the drawing that fits the reference pane
+better is kept, ties going down; a proposal keeps its predecessor's
+direction; the document carries `data-reading-direction`. The conventions
+below are stated in the solving frame.
+
 `lib/layout/compound-graph.ts` translates semantic containment to an ELK hierarchy.
 Cards have measured dimensions; frames reserve their measured header and inset
 space for children. Consecutive forward connections use bottom/top ports and

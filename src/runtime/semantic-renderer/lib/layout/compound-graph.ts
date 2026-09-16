@@ -8,10 +8,17 @@ import type {
 	MeasuredArchitecture,
 	MeasuredNode,
 } from "@/runtime/semantic-renderer/lib/drawing";
-import type { Point } from "@/runtime/semantic-renderer/lib/geometry";
 import { pointAt } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { flankSkips } from "@/runtime/semantic-renderer/lib/layout/brackets";
 import { rankNodes } from "@/runtime/semantic-renderer/lib/layout/rank";
+import {
+	SOLVING,
+	crossingFace,
+	headerInsets,
+	nearestFace,
+	type Face,
+	type HeaderSide,
+} from "@/runtime/semantic-renderer/lib/layout/reading";
 
 /** Room for a route alongside a card or inside its containing frame. */
 const FRAME_INSET = 48;
@@ -51,11 +58,8 @@ const COMPOUND_OPTIONS: LayoutOptions = {
 	"elk.layered.spacing.edgeEdgeBetweenLayers": "20",
 };
 
-/** The two attachment faces chosen before coordinates exist. */
-type PortSides = readonly [
-	"NORTH" | "SOUTH" | "WEST" | "EAST",
-	"NORTH" | "SOUTH" | "WEST" | "EAST",
-];
+/** The two attachment faces chosen before coordinates exist, in the solving frame. */
+type PortSides = readonly [Face, Face];
 
 /**
  * Faces the engine chooses: a forward skip carries no reading convention the
@@ -100,12 +104,12 @@ function sidesOf(
 ): Faces {
 	// rankNodes assigns every node before edge attachment begins.
 	const distance = ordering.ranks.get(edge.to)! - ordering.ranks.get(edge.from)!;
-	if (distance <= 0) return ["EAST", "EAST"];
-	if (distance === 1) return ["SOUTH", "NORTH"];
+	if (distance <= 0) return [SOLVING.returnFlank, SOLVING.returnFlank];
+	if (distance === 1) return [SOLVING.forwardOut, SOLVING.forwardIn];
 	// A skip across a frame boundary descends like any forward step: the engine
 	// refuses a port-less edge across a hierarchy, and the flank it used to take
 	// was a lane down the frame's edge that looped a route round the frame.
-	return nested ? ["SOUTH", "NORTH"] : skipFaces(edge, ordering, predecessor);
+	return nested ? [SOLVING.forwardOut, SOLVING.forwardIn] : skipFaces(edge, ordering, predecessor);
 }
 
 /**
@@ -125,7 +129,10 @@ function skipFaces(
 	predecessor: ArchitectureDrawing | undefined,
 ): Faces {
 	if (!ordering.flank.has(edge.id) && predecessor === undefined) return FREE;
-	return ["WEST", hasTopApproach(edge, predecessor) ? "NORTH" : "WEST"];
+	return [
+		SOLVING.besideFlank,
+		hasTopApproach(edge, predecessor) ? SOLVING.forwardIn : SOLVING.besideFlank,
+	];
 }
 
 /** The semantic ordering of one view: ranks, and which skips bracket from the flank. */
@@ -156,7 +163,10 @@ function containmentOf(
 /**
  * The attachment faces of one connection: inherited from the predecessor when
  * the same relationship survives, by containment when one end holds the other,
- * else by dependency rank.
+ * else by dependency rank. A frame's own relationship runs the way the page
+ * reads: from the frame's back edge into the part, or from the part's front
+ * onto the frame's front edge, never from a flank, which for a frame is a
+ * hierarchical port on a lateral face that the engine's node placer refuses.
  * @param edge The connection being read.
  * @param measured The inclusion tree of this view.
  * @param ordering The deterministic dependency ranks and the bracketing skips.
@@ -172,8 +182,8 @@ function facesOf(
 	const inherited = previousSides(edge, measured, predecessor);
 	if (inherited !== undefined) return inherited;
 	const containment = containmentOf(edge, measured);
-	if (containment === "holds") return ["NORTH", "NORTH"];
-	if (containment === "held") return ["SOUTH", "SOUTH"];
+	if (containment === "holds") return [SOLVING.forwardIn, SOLVING.forwardIn];
+	if (containment === "held") return [SOLVING.forwardOut, SOLVING.forwardOut];
 	const nested =
 		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
 	return sidesOf(edge, ordering, nested, predecessor);
@@ -186,24 +196,39 @@ function facesOf(
  * @param rank The dependency rank of the endpoint at the other end.
  * @returns The engine's endpoint.
  */
-function portOf(id: string, side: PortSides[number], rank: number): ElkPort {
+function portOf(id: string, side: Face, rank: number): ElkPort {
 	return {
 		id,
 		width: 0,
 		height: 0,
 		layoutOptions: {
 			"elk.port.side": side,
-			"elk.port.index": String(side === "EAST" ? -rank : rank),
+			// Returns nest on their flank: the farther back a return reaches, the
+			// farther out its lane.
+			"elk.port.index": String(side === SOLVING.returnFlank ? -rank : rank),
 		},
 	};
 }
 
 /**
+ * A frame's padding: its title band on the header side, and room for a route
+ * inside every other edge.
+ * @param headerHeight The measured title band.
+ * @param header Where the title band sits in the solving frame.
+ * @returns The engine's padding option.
+ */
+function framePadding(headerHeight: number, header: HeaderSide): string {
+	const { top, left } = headerInsets(header, headerHeight + HEADER_AIR, FRAME_INSET);
+	return `[top=${top},left=${left},bottom=${FRAME_INSET},right=${FRAME_INSET}]`;
+}
+
+/**
  * Convert measured dimensions to the graph's fixed card or expandable frame.
  * @param measured The complete text measurement.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns A node awaiting its children and ports.
  */
-function nodeOf(measured: MeasuredNode): ElkNode {
+function nodeOf(measured: MeasuredNode, header: HeaderSide): ElkNode {
 	const { node, width, height, headerHeight } = measured;
 	const result: ElkNode = {
 		id: node.id,
@@ -216,7 +241,7 @@ function nodeOf(measured: MeasuredNode): ElkNode {
 		result.children = [];
 		result.layoutOptions = {
 			...result.layoutOptions,
-			"elk.padding": `[top=${headerHeight + HEADER_AIR},left=${FRAME_INSET},bottom=${FRAME_INSET},right=${FRAME_INSET}]`,
+			"elk.padding": framePadding(headerHeight, header),
 			"elk.nodeSize.constraints": "MINIMUM_SIZE",
 			"elk.nodeSize.minimum": `(${width},${height})`,
 		};
@@ -308,6 +333,7 @@ function boundariesOf(
  * @param boundaries.entering The frames the route enters, outermost first.
  * @param nodes The engine hierarchy being constructed.
  * @param sides The faces this relationship leaves and arrives by.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns Their port ids, in traversal order.
  */
 function boundaryPorts(
@@ -315,12 +341,13 @@ function boundaryPorts(
 	boundaries: { readonly leaving: readonly string[]; readonly entering: readonly string[] },
 	nodes: ReadonlyMap<string, ElkNode>,
 	sides: PortSides,
+	header: HeaderSide,
 ): string[] {
-	// A frame is left and entered by its side. Through its top a route would
-	// cross the title band, which is the frame's own and never a corridor, and
-	// the engine accepts a crossing on a flank whatever faces the ends use.
-	const entryFace = sides[1] === "NORTH" ? "WEST" : sides[1];
-	const exitFace = sides[0] === "SOUTH" ? "WEST" : sides[0];
+	// A frame is left and entered by a side that is not its title band, which
+	// is the frame's own and never a corridor; the engine accepts a crossing on
+	// any face whatever faces the ends use.
+	const entryFace = crossingFace(sides[1], header);
+	const exitFace = crossingFace(sides[0], header);
 	const crossings = [
 		...boundaries.leaving.map((id) => ({ id, side: exitFace })),
 		...boundaries.entering.map((id) => ({ id, side: entryFace })),
@@ -349,6 +376,7 @@ function attachPort(id: string, port: ElkPort, nodes: ReadonlyMap<string, ElkNod
  * @param measured All text sizes.
  * @param ordering The semantic ordering that chooses faces.
  * @param predecessor Prior endpoint faces for unchanged relationships.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns The contiguous engine sections, all owned by one semantic edge.
  */
 function edgeOf(
@@ -357,6 +385,7 @@ function edgeOf(
 	measured: MeasuredArchitecture,
 	ordering: Ordering,
 	predecessor: ArchitectureDrawing | undefined,
+	header: HeaderSide,
 ): ElkExtendedEdge[] {
 	const { ranks } = ordering;
 	const faces = facesOf(edge, measured, ordering, predecessor);
@@ -374,7 +403,7 @@ function edgeOf(
 	attachPort(edge.to, portOf(toPort, toSide, ranks.get(edge.from) ?? 0), nodes);
 	const ports = [
 		fromPort,
-		...boundaryPorts(edge, boundariesOf(edge, measured), nodes, [fromSide, toSide]),
+		...boundaryPorts(edge, boundariesOf(edge, measured), nodes, [fromSide, toSide], header),
 		toPort,
 	];
 	return ports.slice(1).map((target, index) => ({
@@ -423,40 +452,25 @@ function previousSides(
 	const from = nodes.find((node) => sameParent(node, edge.from, measured)),
 		to = nodes.find((node) => sameParent(node, edge.to, measured));
 	if (from === undefined || to === undefined) return undefined;
-	const end = pointAt(before.curve, 1);
-	/**
-	 * Identify the face on which an already solved endpoint lies.
-	 * @param point Final endpoint coordinate.
-	 * @param node Its predecessor card or frame.
-	 * @returns The closest boundary face.
-	 */
-	// A port lies on a face, never a corner, so two faces tie only when the
-	// predecessor route ended off its card; the fixed order below decides then.
-	const face = (point: Point, node: typeof from): PortSides[number] => {
-		const distances: readonly (readonly [PortSides[number], number])[] = [
-			["WEST", Math.abs(point.x - node.box.x)],
-			["EAST", Math.abs(point.x - node.box.x - node.box.width)],
-			["NORTH", Math.abs(point.y - node.box.y)],
-			["SOUTH", Math.abs(point.y - node.box.y - node.box.height)],
-		];
-		return distances.toSorted((one, other) => one[1] - other[1])[0]![0];
-	};
-	return [face(before.curve.from, from), face(end, to)];
+	return [nearestFace(before.curve.from, from.box), nearestFace(pointAt(before.curve, 1), to.box)];
 }
 
 /**
- * The complete measured architecture in the engine's compound representation.
+ * The complete measured architecture in the engine's compound representation,
+ * in the solving frame.
  * @param content The view's semantic content.
- * @param measured Text lines and dimensions settled before layout.
- * @param predecessor The preceding complete drawing of this view.
+ * @param measured Text lines and dimensions settled before layout, in the solving frame.
+ * @param predecessor The preceding complete drawing of this view, in the solving frame.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns One graph for one layout run.
  */
 function compoundGraph(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	predecessor?: ArchitectureDrawing,
+	predecessor: ArchitectureDrawing | undefined,
+	header: HeaderSide,
 ): ElkNode {
-	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value)]));
+	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value, header)]));
 	const edges = content.edges.toSorted((one, other) => one.id.localeCompare(other.id));
 	const ranks = rankNodes(content.nodes, edges);
 	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks) };
@@ -464,7 +478,7 @@ function compoundGraph(
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },
 		children: containNodes(content.nodes, nodes),
-		edges: edges.flatMap((edge) => edgeOf(edge, nodes, measured, ordering, predecessor)),
+		edges: edges.flatMap((edge) => edgeOf(edge, nodes, measured, ordering, predecessor, header)),
 	};
 }
 

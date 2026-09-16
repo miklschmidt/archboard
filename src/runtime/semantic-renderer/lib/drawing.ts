@@ -53,8 +53,13 @@ interface DrawingEdge {
 	readonly label?: { readonly box: Box; readonly measured: MeasuredLabel };
 }
 
+/** The way a page reads: down it, or left to right across it (ADR 0028). */
+type ReadingDirection = "down" | "right";
+
 /** The single geometry result consumed by both SVG painting and the atlas. */
 interface ArchitectureDrawing {
+	/** Which way the page reads, chosen on a first render and kept by a successor. */
+	readonly direction: ReadingDirection;
 	readonly width: number;
 	readonly height: number;
 	readonly cards: readonly DrawingNode[];
@@ -83,6 +88,7 @@ interface PaintedDrawing extends ArchitectureDrawing {
 }
 
 export type {
+	ReadingDirection,
 	TextRun,
 	MeasuredNode,
 	MeasuredLabel,

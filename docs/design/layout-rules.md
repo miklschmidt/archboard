@@ -405,3 +405,81 @@ every fixture to its corridor share and bends with a little room, and every
 vault board to three bends per route; a board the vault gains needs a row.
 Nine of the fourteen are height-limited, which is what the reading-direction
 work of TASK-245.03 is for.
+
+## 14. A reading direction, chosen by fit (2026-09-16, TASK-245.03)
+
+The layout could only read down the page: `elk.direction` was `DOWN` in one
+line, and every face rule was a compass literal. ADR 0028 makes the reading
+direction the renderer's decision. It is implemented as one solving frame,
+the page reading down it, and a transposition: a board that reads left to
+right has its measured sizes transposed, is solved in that one frame, and
+has its drawing transposed back (`lib/layout/reading.ts`). The engine does
+the same when told to lay out downward, so the transposed solve is the
+layout it would have drawn told to lay out rightward, and every rule that
+knew about a row, a lane, a flank or a label's height keeps working, in the
+predecessor path included. The conventions are stated in reading terms
+(forward out, forward in, the return flank, the flank beside a chain, the
+frame's header side) and mapped to faces in that file; no compass literal is
+left in any other layout module.
+
+Two things had to be decided rather than rotated. A frame's title band stays
+at the top of the page, so in the transposed frame it sits on the frame's
+left and the frame's padding, the obstacle a label keeps off, the point a
+frame's own call leaves from and the face a boundary crossing may use all
+follow the header side. And a frame's own relationship (frame to part, part
+to frame) runs along the reading, from the frame's back edge or onto its
+front edge, never from a flank: a flank port on a frame is a hierarchical
+port on a lateral face, and the engine's node placer crashes on it
+(`nodeReps[other.id_0].tail` in the transposed solve of Codex session). The
+same limit is why a boundary crossing in the transposed frame takes the
+frame's foot rather than its left or right side.
+
+A first render is settled both ways and the drawing with the higher fit in
+the reference pane is kept, ties going down; a proposal keeps its
+predecessor's direction; the choice is on the document as
+`data-reading-direction` and on the rendered result as `readingDirection`.
+`tests/reading-direction.test.ts` owns the choice, the tie, the inheritance
+both ways and the determinism; a wide fan (one hub, sixteen dependents) is
+the board that reads right, and a frame with such a fan inside it proves the
+frame's own call comes in past the title band from the left edge.
+
+Measured on every fixture and vault board, first renders, both readings:
+
+| board               | down page, fit  | right page, fit | kept |
+| ------------------- | --------------- | --------------- | ---- |
+| flask-map-1         | 2312x1954, 0.46 | 7360x913, 0.17  | down |
+| flask-map-2         | 1815x2588, 0.35 | 8199x805, 0.16  | down |
+| flask-map-3         | 2566x1997, 0.45 | 8895x1041, 0.14 | down |
+| Agent workbench     | 1440x1536, 0.59 | 4225x680, 0.30  | down |
+| Archboard           | 1210x629, 1.00  | 1818x536, 0.70  | down |
+| Board persistence   | 1705x850, 0.75  | 3470x675, 0.37  | down |
+| Board viewer        | 1376x1443, 0.62 | 4778x603, 0.27  | down |
+| Browser application | 1632x1297, 0.69 | 4353x796, 0.29  | down |
+| Canvas server       | 1338x1265, 0.71 | 3262x716, 0.39  | down |
+| Codex session       | 1111x986, 0.91  | 3031x571, 0.42  | down |
+| Command dispatch    | 1441x685, 0.88  | 2025x562, 0.63  | down |
+| Command interface   | 683x1027, 0.88  | 3229x376, 0.39  | down |
+| Renderer layout     | 910x780, 1.00   | 2288x388, 0.56  | down |
+| Semantic renderer   | 997x1468, 0.61  | 4433x433, 0.29  | down |
+
+A plain rotation loses on every board, the chain-shaped ones most: a
+seven-rank pipeline read left to right is a ribbon four times the pane's
+width, because the gap between layers has to hold each label's width rather
+than its height and every reserved label adds a column of its own. The
+ribbons here are wider than the sandbox's 2026-09-16 numbers (Semantic
+renderer 3952 against 4433) because the sandbox rotated the faces but kept
+the between-layer room sized by label height. Sizing that room by the
+label's short side in both readings was measured too: it reproduces the
+sandbox's pages (Command interface 2889x276, Command dispatch 1615x562,
+Semantic renderer 3636x471, flask-map-1 4725x930) and a rightward reading
+still loses on every board, Command dispatch nearest at 0.79 against 0.88.
+It was reverted, since a badge on a track across the layers then has no
+room. So the direction machinery
+lands with every board still reading down, and the fit table of section 13
+is unchanged; what makes the chain boards read left to right is folding the
+ribbon, which TASK-245.06 measures. The reader invariants hold in both
+readings: `drawn-ink.ts` measures corridors and flank fans along the
+reading, and the tests that pinned rows or faces (the chain, the loose
+nodes, the inserted stage, the ghost rows, the new terminal's layer, the
+containment calls, the added skip, the nested lanes) now say ahead, behind,
+beside and along instead.
