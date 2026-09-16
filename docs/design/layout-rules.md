@@ -618,3 +618,38 @@ columns rather than a row. Semantic renderer, Board viewer and Codex session
 still read down unfolded, at 0.61, 0.62 and 0.91: no rightward or folded
 reading measured better without looping routes round the page. The lever
 left for them is the room between layers (TASK-239, TASK-242).
+
+## 18. The scorecard (2026-09-16)
+
+Sections 13 to 17 judged layouts by fit in the pane, and fit alone misleads:
+flask-map-2 fits the pane a little better with its skips on the flank while
+its page grows from 4.70 to 6.65 megapixels, most of it empty; a side-entry
+experiment spread Canvas server wider and emptier while cutting its crossings
+from 9 to 5. No single number decides whether a drawing is better.
+
+`src/runtime/semantic-renderer/tests/drawn-scorecard.ts` measures every
+drawing on twelve measures, each with the direction a reader wants it to
+move:
+
+| measure              | better | what it says                                           |
+| -------------------- | ------ | ------------------------------------------------------ |
+| fit                  | higher | scale the whole drawing shows at in the reference pane |
+| megapixels           | lower  | page area                                              |
+| card share           | higher | share of the page under cards; the rest is empty space |
+| route length         | lower  | total length of every route                            |
+| bends per route      | lower  | turns a reader follows along one route                 |
+| crossings            | lower  | right-angle crossings between two routes               |
+| lane ink             | lower  | share of route length in margin lanes beside no card   |
+| flank fan            | lower  | most routes leaving one card by its beside flank       |
+| side ends            | none   | share of route ends on a card's side face              |
+| horizontal labels    | none   | share of labels on a horizontal run of their route     |
+| routes through cards | lower  | invariant, must be zero                                |
+| labels off runs      | lower  | invariant, must be zero                                |
+
+`measure.ts` prints it for every fixture and vault board; `SAVE=run.json`
+keeps a run and `AGAINST=run.json` compares a later run measure by measure,
+naming each one that moved and whether it moved the way a reader wants. A
+layout change is reported that way, with the pictures, and every comparison
+from here on uses it. The label check now allows a unit of snapping: a
+Canvas server label reported off its line sat 0.88 units from it, which no
+reader can see.

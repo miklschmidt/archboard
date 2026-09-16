@@ -1,16 +1,21 @@
-// Measures every fixture and every vault board as a reader gets it: the fit in
-// the reference pane, the page, the rows and columns, the routes through
-// cards, the share of route ink in margin corridors, the bends per route and
-// the labels off their own route. The numbers in docs/design/layout-rules.md
-// come from here, and src/runtime/semantic-renderer/tests/wide-boards.test.ts
-// holds the same measurements through the same helpers.
+// Measures every fixture and every vault board on the scorecard a layout change
+// is judged by (src/runtime/semantic-renderer/tests/drawn-scorecard.ts): fit,
+// page area, how much of the page is card, route length, bends, crossings,
+// margin-lane ink, flank fan, side ends, horizontal labels and the two
+// invariants. No single measure decides a comparison; the numbers in
+// docs/design/layout-rules.md come from here.
 //
 // Run from the repository root:
 //   bun docs/design/wide-board-layout-fixtures/measure.ts [outdir]
-// ALL=1 measures every variant of every board rather than the current one;
-// PICTURES=1 writes a PNG of each drawing to outdir (default .skill-evals/repro).
-// To measure a layout experiment, copy src to a scratch directory, symlink
-// node_modules, mutate COMPOUND_OPTIONS there and run this script against it.
+//
+// SAVE=run.json      also write this run's scorecards
+// AGAINST=run.json   compare this run with a saved one, measure by measure
+// ALL=1              measure every variant of every board, not only the current one
+// PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
+// READINGS=1         also print page, fit and bends for every reading of a first render
+//
+// A layout experiment is compared by saving a run on the tree as it is, then
+// running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
 import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
@@ -20,18 +25,19 @@ import { settleIn } from "@/runtime/semantic-renderer/lib/layout/compound";
 import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
 import { withStepLines } from "@/runtime/semantic-renderer/lib/step-lines";
 import {
-	fitOf,
-	flankFanOf,
-	inkOf,
-	labelsOffRuns,
-	routesThroughCards,
-} from "@/runtime/semantic-renderer/tests/drawn-ink";
+	scorecardOf,
+	verdictOf,
+	type Measure,
+} from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
 const pictures = process.env["PICTURES"] === "1";
+const readings = process.env["READINGS"] === "1";
+const save = process.env["SAVE"];
+const against = process.env["AGAINST"];
 const rasterizer = pictures
 	? (await import("@/runtime/semantic-rasterizer/index")).createSemanticRasterizer({})
 	: null;
@@ -41,6 +47,13 @@ interface Item {
 	readonly name: string;
 	readonly variant: string;
 	readonly content: unknown;
+}
+
+/** One board's saved result. */
+interface Result {
+	readonly page: string;
+	readonly reads: string;
+	readonly measures: Measure[];
 }
 
 const items: Item[] = [];
@@ -71,63 +84,67 @@ for (const file of fs
 	}
 }
 
-console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
-console.log(
-	"board | variant | nodes | edges | reads | page WxH | fit | down: page, fit, bends | right | down folded | right folded | rows | cols | through cards | flank fan | corridor% | bends/route | labels off runs",
-);
-for (const item of items) {
-	const content = VariantContentSchema.parse(item.content);
-	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
-	const boxes = Object.values(drawn.atlas.nodes);
-	const direction = `${drawn.readingDirection ?? "-"}${drawn.svg.includes("data-reading-wrapped") ? " folded" : ""}`;
-	// Every reading of a first render, so the note can say what the others cost.
+/**
+ * A measure's value as the scorecard prints it.
+ * @param measure The measure.
+ * @returns The printed value.
+ */
+function shown(measure: Measure): string {
+	return measure.value.toFixed(measure.digits);
+}
+
+/**
+ * Page, fit and bends for every reading of a first render.
+ * @param content The board.
+ * @returns One printed cell per reading.
+ */
+async function everyReading(content: ReturnType<typeof VariantContentSchema.parse>) {
 	const stepped = withStepLines(content).content;
-	const readings = [
+	const all = [
 		{ direction: "down", wrapped: false },
 		{ direction: "right", wrapped: false },
 		{ direction: "down", wrapped: true },
 		{ direction: "right", wrapped: true },
 	] as const;
-	const each = await Promise.all(
-		readings.map(async (reading) => {
+	return Promise.all(
+		all.map(async (reading) => {
+			const name = `${reading.direction}${reading.wrapped ? " folded" : ""}`;
 			try {
 				const read = await settleIn(reading, stepped, measureArchitecture(stepped), undefined);
 				const bends =
 					read.edges.reduce(
-						(total, { curve }) => total + curve.segments.filter((s) => s.kind === "cubic").length,
+						(total, { curve }) =>
+							total + curve.segments.filter((segment) => segment.kind === "cubic").length,
 						0,
 					) / Math.max(1, read.edges.length);
-				return `${Math.round(read.width)}x${Math.round(read.height)}, ${fitIn(read).toFixed(2)}, ${bends.toFixed(1)}`;
+				return `${name} ${Math.round(read.width)}x${Math.round(read.height)} fit ${fitIn(read).toFixed(2)} bends ${bends.toFixed(1)}`;
 			} catch (error) {
-				return `throws ${String(error).slice(0, 40)}`;
+				return `${name} throws ${String(error).slice(0, 40)}`;
 			}
 		}),
 	);
-	const rows = new Set(boxes.map((box) => Math.round(box.y / 20))).size;
-	const cols = new Set(boxes.map((box) => Math.round(box.x / 20))).size;
-	const ink = inkOf(drawn);
-	console.log(
-		[
-			item.name,
-			item.variant,
-			content.nodes.length,
-			content.edges.length,
-			direction,
-			`${Math.round(drawn.width)}x${Math.round(drawn.height)}`,
-			fitOf(drawn).toFixed(2),
-			each[0],
-			each[1],
-			each[2],
-			each[3],
-			rows,
-			cols,
-			routesThroughCards(drawn, content).length,
-			flankFanOf(drawn, content),
-			(100 * ink.corridor).toFixed(0),
-			ink.bends.toFixed(1),
-			labelsOffRuns(drawn).length,
-		].join(" | "),
-	);
+}
+
+const saved: Record<string, Result> =
+	against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
+const results: Record<string, Result> = {};
+
+console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
+let header = false;
+for (const item of items) {
+	const content = VariantContentSchema.parse(item.content);
+	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
+	const key = `${item.name} ${item.variant}`;
+	const measures = scorecardOf(drawn, content);
+	const reads = `${drawn.readingDirection ?? "-"}${drawn.svg.includes("data-reading-wrapped") ? " folded" : ""}`;
+	const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
+	results[key] = { page, reads, measures };
+	if (!header) {
+		console.log(["board", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "));
+		header = true;
+	}
+	console.log([key, reads, page, ...measures.map(shown)].join(" | "));
+	if (readings) console.log(`  readings: ${(await everyReading(content)).join("; ")}`);
 	if (rasterizer !== null) {
 		const shot = await rasterizer.rasterize({
 			svg: drawn.svg,
@@ -136,8 +153,37 @@ for (const item of items) {
 			scale: 1,
 		});
 		fs.mkdirSync(out, { recursive: true });
-		const stem = `${item.name} ${item.variant}`.replace(/[^A-Za-z0-9]+/g, "-");
-		fs.writeFileSync(path.join(out, `${stem}.png`), shot.png);
+		fs.writeFileSync(path.join(out, `${key.replace(/[^A-Za-z0-9]+/g, "-")}.png`), shot.png);
 	}
 }
 await rasterizer?.stop();
+
+if (save !== undefined) fs.writeFileSync(save, JSON.stringify(results, null, "\t"));
+
+if (against !== undefined) {
+	console.log(`\ncompared with ${against}, measure by measure`);
+	for (const [key, result] of Object.entries(results)) {
+		const before = saved[key];
+		if (before === undefined) {
+			console.log(`${key}: not in the saved run`);
+			continue;
+		}
+		const moved: string[] = [];
+		const counts = { better: 0, worse: 0 };
+		result.measures.forEach((measure, index) => {
+			const previous = before.measures[index]!;
+			const verdict = verdictOf(previous, measure);
+			if (verdict === "same") return;
+			if (verdict === "better" || verdict === "worse") counts[verdict] += 1;
+			moved.push(`${measure.name} ${shown(previous)} -> ${shown(measure)} ${verdict}`);
+		});
+		const pageNote = before.page === result.page ? "" : ` page ${before.page} -> ${result.page};`;
+		const readNote =
+			before.reads === result.reads ? "" : ` reads ${before.reads} -> ${result.reads};`;
+		console.log(
+			moved.length === 0 && pageNote === "" && readNote === ""
+				? `${key}: unchanged`
+				: `${key}: ${counts.better} better, ${counts.worse} worse;${readNote}${pageNote} ${moved.join("; ")}`,
+		);
+	}
+}
