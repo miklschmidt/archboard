@@ -1,6 +1,6 @@
 // Installing the skill an author will read, and checking that it is really
 // there. The candidate is what `archboard install-skill` installs from this
-// checkout. The baseline is the frozen pre-overhaul package, put in place of
+// checkout. The baseline is the frozen package pins.json names, put in place of
 // the candidate after the same install so the repository block, the vault
 // and the skills root are exactly as the installer leaves them, and prepared
 // with the same generated files.
