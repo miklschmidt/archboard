@@ -60,6 +60,8 @@ type ReadingDirection = "down" | "right";
 interface ArchitectureDrawing {
 	/** Which way the page reads, chosen on a first render and kept by a successor. */
 	readonly direction: ReadingDirection;
+	/** Whether its layers fold toward the pane's shape, chosen and kept like the direction. */
+	readonly wrapped: boolean;
 	readonly width: number;
 	readonly height: number;
 	readonly cards: readonly DrawingNode[];

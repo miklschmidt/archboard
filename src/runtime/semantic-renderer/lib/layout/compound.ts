@@ -3,14 +3,12 @@
 import ELK from "elkjs/lib/elk-api.js";
 import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/lib/elk-api";
 import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
-import { fitIn } from "@/shared/shell-geometry/index";
 import type {
 	ArchitectureDrawing,
 	PaintedDrawing,
 	DrawingEdge,
 	DrawingNode,
 	MeasuredArchitecture,
-	ReadingDirection,
 } from "@/runtime/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
 import {
@@ -29,6 +27,11 @@ import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-
 import { bridgeCrossings, routeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { straightenJogs } from "@/runtime/semantic-renderer/lib/layout/jogs";
+import {
+	chooseReading,
+	foldAspect,
+	type Reading,
+} from "@/runtime/semantic-renderer/lib/layout/reading-choice";
 import {
 	settleWithAddedSkips,
 	type Problem,
@@ -351,14 +354,16 @@ function drawingEdges(
 /**
  * Settle a board read one way: solved in the one frame, turned back onto
  * the page.
- * @param direction The way the page reads.
+ * @param reading The way the page reads, and whether its layers fold.
+ * @param reading.direction Down the page, or left to right.
+ * @param reading.wrapped Whether the layers fold toward the pane's shape.
  * @param content The architecture meaning.
  * @param measured Its measured sizes, on the page.
  * @param predecessor The preceding drawing of this view, on the page.
  * @returns The settled drawing, on the page.
  */
 async function settleIn(
-	direction: ReadingDirection,
+	{ direction, wrapped }: Reading,
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
@@ -368,6 +373,7 @@ async function settleIn(
 		measured: measuredInFrame(direction, measured),
 		predecessor: predecessor === undefined ? undefined : drawingAcross(direction, predecessor),
 		direction,
+		wrapped,
 		header: headerSideOf(direction),
 	};
 	const drawing = await settleWithAddedSkips(
@@ -376,31 +382,6 @@ async function settleIn(
 		(each) => settleLabels(each, new Set()),
 	);
 	return drawingAcross(direction, drawing);
-}
-
-/**
- * The reading of a board: a proposal keeps its predecessor's direction, so a
- * comparison keeps the reader's bearings; a first render is settled both
- * ways and the one that fits the reader's pane better is kept, down the page
- * when they tie (ADR 0028).
- * @param content The architecture meaning.
- * @param measured Its measured sizes.
- * @param predecessor The preceding drawing of this view, when there is one.
- * @returns The settled drawing, with its direction on it.
- */
-async function readDrawing(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
-): Promise<ArchitectureDrawing> {
-	if (predecessor !== undefined) {
-		return settleIn(predecessor.direction, content, measured, predecessor);
-	}
-	const [down, right] = await Promise.all([
-		settleIn("down", content, measured, undefined),
-		settleIn("right", content, measured, undefined),
-	]);
-	return fitIn(right) > fitIn(down) ? right : down;
 }
 
 /**
@@ -418,7 +399,11 @@ async function layoutCompound(
 	if (predecessor !== undefined) measured = preserveSizes(measured, predecessor);
 	const reused =
 		predecessor === undefined ? undefined : reuseDrawing(content, measured, predecessor);
-	const drawing = reused ?? (await readDrawing(content, measured, predecessor));
+	const drawing =
+		reused ??
+		(await chooseReading(measured, predecessor, (reading) =>
+			settleIn(reading, content, measured, predecessor),
+		));
 	// Bridges are part of the geometry a reader sees, so they are settled here
 	// and not by a painter; the un-bridged routes stay beside them for a
 	// successor to seed from.
@@ -435,6 +420,14 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
 	const { content, measured, predecessor, header, added } = problem;
 	const graph = compoundGraph(content, measured, predecessor, header, added);
 	if (predecessor !== undefined) seedPredecessor(graph, content, predecessor);
+	if (problem.wrapped) {
+		// Fold the layers toward the pane's shape, like a long line of text.
+		graph.layoutOptions = {
+			...graph.layoutOptions,
+			"elk.layered.wrapping.strategy": "SINGLE_EDGE",
+			"elk.aspectRatio": String(foldAspect(problem.direction)),
+		};
+	}
 	for (const edge of graph.edges ?? []) {
 		if (!reserved.has(edge.id)) edge.labels = [];
 	}
@@ -466,6 +459,7 @@ async function attemptLabels(
 	const drawing = placeLabelsOnRuns(
 		{
 			direction: problem.direction,
+			wrapped: problem.wrapped,
 			width: extent.width,
 			height: extent.height,
 			cards: nodes.filter((node) => node.measured.headerHeight === 0),
