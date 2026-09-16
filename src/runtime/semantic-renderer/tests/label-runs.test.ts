@@ -7,6 +7,12 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/layout";
+
+/** The room a badge keeps from a card and from the ends of its run. */
+const AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
+/** The room a badge keeps from another badge. */
+const LABEL_AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 
 test.each([false, true])(
 	"badges use clear horizontal runs and retain vertical fallbacks (nested: %s)",
@@ -49,7 +55,7 @@ test.each([false, true])(
 		const horizontal = labels.get(bent[1]!)!;
 		const points = routes.get(bent[1]!)!;
 		expect(labels.size).toBe(content.edges.length);
-		// The badge sits on one straight run of its own route, 24 clear of that
+		// The badge sits on one straight run of its own route, the label air clear of that
 		// run's ends, on whichever axis lies nearest an end of the route
 		// (docs/design/layout-rules.md, TASK-232).
 		expect(
@@ -59,13 +65,13 @@ test.each([false, true])(
 				const onHorizontal =
 					from.y === to.y &&
 					Math.abs(from.y - horizontal.y - horizontal.height / 2) < 0.02 &&
-					Math.min(from.x, to.x) + 24 <= horizontal.x &&
-					Math.max(from.x, to.x) - 24 >= horizontal.x + horizontal.width;
+					Math.min(from.x, to.x) + AIR <= horizontal.x &&
+					Math.max(from.x, to.x) - AIR >= horizontal.x + horizontal.width;
 				const onVertical =
 					from.x === to.x &&
 					Math.abs(from.x - horizontal.x - horizontal.width / 2) < 0.02 &&
-					Math.min(from.y, to.y) + 24 <= horizontal.y &&
-					Math.max(from.y, to.y) - 24 >= horizontal.y + horizontal.height;
+					Math.min(from.y, to.y) + AIR <= horizontal.y &&
+					Math.max(from.y, to.y) - AIR >= horizontal.y + horizontal.height;
 				return onHorizontal || onVertical;
 			}),
 		).toBe(true);
@@ -98,9 +104,10 @@ test.each([false, true])(
 		const cards = Object.entries(drawing.atlas.nodes)
 			.filter(([id]) => id !== "outer")
 			.map(([, box]) => box);
-		for (const box of [
-			...cards,
-			...[...labels].filter(([id]) => id !== bent[1]).map(([, label]) => label),
+		const others = [...labels].filter(([id]) => id !== bent[1]).map(([, label]) => label);
+		for (const [box, air] of [
+			...cards.map((card) => [card, AIR] as const),
+			...others.map((label) => [label, LABEL_AIR] as const),
 		]) {
 			const xGap = Math.max(
 				box.x - horizontal.x - horizontal.width,
@@ -110,7 +117,7 @@ test.each([false, true])(
 				box.y - horizontal.y - horizontal.height,
 				horizontal.y - box.y - box.height,
 			);
-			expect(Math.max(xGap, yGap)).toBeGreaterThanOrEqual(24);
+			expect(Math.max(xGap, yGap)).toBeGreaterThanOrEqual(air);
 		}
 		if (nested) {
 			const frame = drawing.atlas.nodes["outer"]!;
