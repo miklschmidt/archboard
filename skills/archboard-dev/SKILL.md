@@ -183,7 +183,9 @@ Two facts about the evidence that the first batch had to teach:
 - The browser holds no board content. If you find yourself wanting to cache
   something the server knows, the answer is a query the pane re-reads on the
   board's own announcement, not a copy (ADR 0023).
-- **Text width is measured against the real font files, with no browser.**
-  `tests/system/browser/measured-text.test.ts` holds the engine to what Chrome
-  actually draws; the two agree to under one percent, and an estimate is out by
-  tens of them.
+- **Text width is measured by the canvas of whatever draws the picture**, with
+  the diagram fonts loaded: under Bun an `@napi-rs/canvas` canvas the renderer
+  host installs as `OffscreenCanvas`, in a browser its own. Never add a font
+  measurer; pictures may differ between browsers, because each matches what
+  that browser paints. `tests/system/browser/measured-text.test.ts` holds the
+  Bun canvas to what Chrome draws; the two agree to under one percent.

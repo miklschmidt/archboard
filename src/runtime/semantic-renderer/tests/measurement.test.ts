@@ -1,20 +1,16 @@
 import { expect, test } from "bun:test";
-import { resolve } from "node:path";
-import { measureLineIn } from "@/runtime/engine/measure-text";
+import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture, type TextRun } from "@/runtime/semantic-renderer/measurement";
 import { emptyContent, type VariantContent } from "@/shared/semantic-board/index";
 
-const FONT_DIR = resolve(import.meta.dir, "../../../ui/shell/assets/fonts");
-
+/**
+ * A run's width as the host canvas measures the whole line, in the face it is set in.
+ * @param run The run.
+ * @returns Its width.
+ */
 function exactWidth(run: TextRun): number {
-	const file =
-		run.font.family === "mono"
-			? "DMMono-Medium-v1.000.ttf"
-			: run.font.weight === 500
-				? "Onest-Medium-v1.000.ttf"
-				: "Onest-wght-v1.000.ttf";
-	return measureLineIn(run.text, run.fontSize, [[{ file: resolve(FONT_DIR, file), ranges: null }]])
-		.width;
+	const family = run.font.family === "mono" ? "Archboard Diagram Mono" : "Archboard Diagram Sans";
+	return diagramTextWidth(run.text, { family, weight: run.font.weight }, run.fontSize);
 }
 
 function letters(text: string): string {

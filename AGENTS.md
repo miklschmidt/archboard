@@ -67,9 +67,9 @@ with the reason). These are the rules that will not stop you:
   (one to eight characters); no second minting site. An id is what a proposal is
   compared by, so renaming one makes a change look like a deletion and an
   addition. Why: `docs/design/server-is-the-truth.md` §4.
-- **Text width is measured, not estimated** (`src/runtime/engine/measure-text.ts`),
-  and `tests/system/browser/measured-text.test.ts` holds the engine to what a
-  real browser draws.
+- **Text width is measured, not estimated**, by the canvas of the place that draws the
+  picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas` under Bun (TASK-247).
+  `tests/system/browser/measured-text.test.ts` holds the Bun canvas to what Chrome draws.
 - **Every duration lives in `src/shared/timing/timing.ts`** with what it pulls
   against written beside it.
 - **A node's code binding is part of its meaning**, not a presentation overlay:
