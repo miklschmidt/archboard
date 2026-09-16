@@ -19,6 +19,7 @@ import {
 import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-runs";
 import { bridgeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
+import { straightenJogs } from "@/runtime/semantic-renderer/lib/layout/jogs";
 import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
@@ -346,20 +347,23 @@ function drawingEdges(
 	nodes: readonly DrawingNode[],
 ): DrawingEdge[] {
 	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
-	const routes = new Map(
-		content.edges.map((edge) => [
-			edge.id,
-			leaveFromTitle(
-				edge,
-				simplify(
-					(laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? []).flatMap(
-						pointsOf,
+	const routes = straightenJogs(
+		new Map(
+			content.edges.map((edge) => [
+				edge.id,
+				leaveFromTitle(
+					edge,
+					simplify(
+						(laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? []).flatMap(
+							pointsOf,
+						),
 					),
+					content,
+					nodes,
 				),
-				content,
-				nodes,
-			),
-		]),
+			]),
+		),
+		nodes.map((node) => node.box),
 	);
 	return content.edges.map((edge) => {
 		const result = results.get(edge.id);
