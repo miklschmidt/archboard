@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-13 23:15'
-updated_date: '2026-09-15 19:30'
+updated_date: '2026-09-16 02:34'
 labels: []
 dependencies:
   - TASK-207
@@ -116,6 +116,8 @@ Review integration gate: bun run check passed after correcting standalone sequen
 Batch 2026-09-15T03-21-37-188Z: all three candidate S07 runs drew ScriptInfo's two-candidate import loop as one self step with a note and no repeat, following the SKILL.md wording that a data-dependent loop is a note; the baseline skill, which says nothing about repeat, got it right once. SKILL.md now says a loop over a list the source fixes (two default module names) is a repeat of that count, in both the evidence step and the sequence procedure. Skills re-synced.
 
 AC 4: docs/design/skill-evals/preservation-assessment.md maps every guardrail to its home and evidence owner (updated for the TASK-235.09 recipe split); the 2026-09-15 batch shows zero guardrail violations and zero direct writes in either arm, and the harness guardrails plus scenario checks own the evidence. AC 6 waits for the human-run rerun of both arms on the TASK-235 inputs.
+
+2026-09-16 batch (.skill-evals/2026-09-16T00-32-53-542Z, Claude grader): candidate 40/45 fully ok vs baseline 31/45, no guardrail violations, mean correctness 8.7 vs 8.2, truth 8.5 vs 8.1, readability level; median tokens rose 15% overall (S00 routing and S05 drove it; S04, S06, S07, S08, S13 fell). AC #6's quality half holds; its token half did not. The user promoted the candidate to the frozen baseline (TASK-243.01) and the follow-ups are under TASK-243.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
