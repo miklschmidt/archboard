@@ -128,3 +128,63 @@ describe("a proposal keeps its predecessor's reading", () => {
 		expect(proposal.readingDirection).toBe("right");
 	});
 });
+
+/**
+ * A pipeline of cards, long enough that a column of it is taller than the pane.
+ * @param length How many stages.
+ * @param framed Whether the stages sit inside one frame.
+ * @returns The board.
+ */
+function pipeline(length: number, framed = false): VariantContent {
+	const stages = Array.from({ length }, (_, index) => ({
+		id: `s${index}`,
+		name: `Pipeline stage ${index + 1}`,
+		kind: "module",
+		...(framed ? { parent: "app" } : {}),
+	}));
+	return VariantContentSchema.parse({
+		nodes: [...(framed ? [{ id: "app", name: "Application", kind: "service" }] : []), ...stages],
+		edges: stages.slice(1).map((stage, index) => ({
+			id: `e${index}`,
+			from: `s${index}`,
+			to: stage.id,
+			kind: "call",
+		})),
+	});
+}
+
+/**
+ * Whether the document says its layers fold.
+ * @param drawing The rendered board.
+ * @param drawing.svg Its document.
+ * @returns True when the reading folds.
+ */
+function folded(drawing: { readonly svg: string }): boolean {
+	return /<svg [^>]*data-reading-wrapped="true"/.test(drawing.svg);
+}
+
+describe("a long flat chain folds toward the pane's shape", () => {
+	test("when folding raises its fit, with no card crossed and every label on its run", async () => {
+		const content = pipeline(12);
+		const drawing = await renderArchitecture({ content, theme: "light" });
+		expect(folded(drawing)).toBe(true);
+		expect(fitIn(drawing)).toBe(1);
+		expect(routesThroughCards(drawing, content)).toEqual([]);
+		expect(labelsOffRuns(drawing)).toEqual([]);
+	});
+
+	test("never inside a frame, which the fold is kept away from", async () => {
+		const drawing = await renderArchitecture({ content: pipeline(12, true), theme: "light" });
+		expect(folded(drawing)).toBe(false);
+	});
+
+	test("and a proposal keeps the fold its predecessor had", async () => {
+		const before = pipeline(12);
+		const content = VariantContentSchema.parse({
+			nodes: [...before.nodes, { id: "side", name: "Side stage", kind: "module" }],
+			edges: [...before.edges, { id: "eside", from: "s3", to: "side", kind: "call" }],
+		});
+		const proposal = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+		expect(folded(proposal)).toBe(true);
+	});
+});

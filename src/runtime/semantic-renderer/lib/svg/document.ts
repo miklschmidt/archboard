@@ -167,6 +167,8 @@ interface DocumentInput {
 	readonly body: string;
 	/** Which way the page reads, when the grammar has a reading direction. */
 	readonly reading?: ReadingDirection | undefined;
+	/** Whether an architecture's layers fold toward the pane's shape. */
+	readonly wrapped?: boolean | undefined;
 }
 
 /**
@@ -175,13 +177,14 @@ interface DocumentInput {
  * @returns The whole document.
  */
 function svgDocument(input: DocumentInput): string {
-	const { width, height, palette, title, description, fonts, body, reading } = input;
+	const { width, height, palette, title, description, fonts, body, reading, wrapped } = input;
 	const defs = wrap("defs", {}, markers(palette));
 	return lines([
 		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${coord(width)} ${coord(height)}" ` +
 			`width="${coord(width)}" height="${coord(height)}" role="img" aria-label="${escapeXml(title)}" ` +
 			`font-family="${escapeXml(SANS_STACK)}"` +
 			(reading === undefined ? "" : ` data-reading-direction="${reading}"`) +
+			(wrapped === true ? ` data-reading-wrapped="true"` : "") +
 			">",
 		wrap("title", {}, escapeXml(title)),
 		description === undefined ? "" : wrap("desc", {}, escapeXml(description)),
