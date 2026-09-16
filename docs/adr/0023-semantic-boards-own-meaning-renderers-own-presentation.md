@@ -152,6 +152,14 @@ based on preserving human geometry no longer govern this design. Removing a draw
 engine does not require removing semantic identity or code bindings: those belong to
 the board and its nodes, independently of their graphical representation.
 
+[ADR 0028](0028-the-renderer-reads-a-board-in-a-direction-and-is-measured-by-fit.md)
+supersedes two paragraphs above: the architecture layout is ELK with reading
+conventions the renderer owns rather than PR Lens's grid, and a layout change is
+measured by fit in the reference pane together with reader invariants, which
+replaces the clauses that fitting one viewport is not a success criterion and
+that no density policy is wanted. It also records that the list of what agents
+may not author is exactly the list above.
+
 ## Delivery
 
 The later TASK-203 decisions refine consumer vocabulary and appearance in
@@ -160,6 +168,8 @@ The later TASK-203 decisions refine consumer vocabulary and appearance in
 [ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md).
 Their acceptance records product decisions; implementation of that work remains
 subject to completing the TASK-203 plan.
+The TASK-245 decisions on reading direction and the fit measure are in
+[ADR 0028](0028-the-renderer-reads-a-board-in-a-direction-and-is-measured-by-fit.md).
 
 The product decisions above were accepted through Q34 of the TASK-169 interview.
 The accepted implementation design is in

@@ -298,6 +298,27 @@ The cross-repository collection in which every board is persisted.
 _Avoid_: library (it means the stencil palette here), workspace, store,
 repository, folder
 
+### Reading
+
+**Reading direction**:
+The way a view's architecture reads across the page, down or left to right.
+The renderer derives it from the board's shape; a proposal keeps its
+predecessor's, and nobody authors it.
+_Avoid_: orientation, rotation, layout direction, landscape, portrait
+
+**Reference pane**:
+The board area of the desktop shell at its one supported size, with the
+navigator and the inspector open and the fit margin taken off every side. What
+a drawing is measured against.
+_Avoid_: viewport, screen, window, canvas size, page
+
+**Fit**:
+How large a drawing shows whole in the reference pane: the scale that fits it,
+capped at one. The measure of a layout change, read together with the reader
+invariants.
+_Avoid_: megapixels, page area, density, aspect ratio, zoom (that is the
+camera's)
+
 ### Working
 
 **Workhorse**:
