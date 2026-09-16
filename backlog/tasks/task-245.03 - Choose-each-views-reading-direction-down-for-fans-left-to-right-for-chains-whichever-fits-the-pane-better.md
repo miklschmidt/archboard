@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-16 02:36'
-updated_date: '2026-09-16 09:37'
+updated_date: '2026-09-16 09:44'
 labels: []
 dependencies:
   - TASK-245.02
@@ -55,6 +55,8 @@ elk.direction is DOWN in one line of compound-graph.ts and the face rules are co
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented as one solving frame plus transposition (lib/layout/reading.ts): a left-to-right board is its transposed measured sizes solved in the down frame and transposed back, which is what ELK's own RIGHT does internally, so the predecessor path stays direction-neutral. Conventions are SOLVING.forwardOut/forwardIn/returnFlank/besideFlank plus the frame's header side; no compass literal remains outside reading.ts. Two decisions were forced: a frame's title band stays at the page top, so in the transposed frame it is on the frame's left (padding, label obstacles, leaveFromTitle and boundary crossings follow it); and a frame's own relationship runs along the reading (forwardIn/forwardOut), because a flank port on a frame crashed the engine's node placer (nodeReps[other.id_0].tail on Codex session), which is also why boundary crossings under the transposed frame take the frame's foot. A first render settles both directions and keeps the higher fit, ties down; a proposal keeps its predecessor's direction; drawing.direction, RenderedDiagram.readingDirection and data-reading-direction record it. AC5 holds by construction: solveGraph sizes the gap between layers from the label dimension in the solving frame, which is the page width of a label under a rightward reading; a labelled 16-leaf fan reads right with every label on its own run. AC4 NOT met: measured on every fixture and vault board, a rightward reading loses fit on all fourteen (Semantic renderer 0.61 down vs 0.29 right, Command interface 0.88 vs 0.39, Board viewer 0.62 vs 0.27, Codex session 0.91 vs 0.42), so every board still reads down and no fit changed. Sizing between-layer room by the label's short side reproduced the sandbox's pages and still lost everywhere (Command dispatch nearest, 0.79 vs 0.88); reverted. The chain boards reading left to right depends on folding the ribbon (TASK-245.06), and the sandbox's wrapped numbers (Board viewer 0.53, Semantic renderer 0.60) suggest even that will not beat down on Board viewer, and wrapping throws on Codex session's frames. Recorded in layout-rules.md section 14. Tests re-derived through tests/drawn-reading.ts (along, across, faceOf ahead/behind/beside/return): architecture (loose nodes, chain), predecessor-layout, comparison-approach, new-card-placement, containment-calls (plus a left-to-right frame case), skipped-connections, route-nesting; drawn-ink measures corridor and flank fan along the reading. Validation: 185 renderer tests pass, 569 across renderer/UI/server modules, type-check, lint:policy on src, lint:baseline, fmt:check.
+
+bun run check passes on commit 0538225c with FORCE_COLOR unset (all lanes, browser included). With the job environment's FORCE_COLOR=3, tests/system/cli/resource-cleanup.test.ts fails four cases on ANSI escapes in error text; they pass with colour off and are unrelated.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
