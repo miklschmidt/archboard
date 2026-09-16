@@ -161,8 +161,10 @@ measured.
 
 ## Reproducing a baseline
 
-The baseline is `docs/design/skill-evals/baseline/archboard`, frozen before the
-TASK-211 rewrite, and it runs on the same CLI as the candidate. Both arms use
+The baseline is `docs/design/skill-evals/baseline/archboard`, a copy of
+`skills/archboard` frozen at the revision `pins.json` names (the last accepted
+skill; promoting a candidate replaces the copy and rewrites that pin), and it
+runs on the same CLI as the candidate. Both arms use
 identical prompts, fixtures, pins and settings. Changing any pin starts a new
 baseline; the harness refuses a Codex executable whose version differs from
 the pin. `graders.json` is deliberately outside that digest: a grader is

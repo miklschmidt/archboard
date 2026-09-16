@@ -42,8 +42,8 @@
 	"defaultConcurrency": 3,
 	"baselineSkill": {
 		"location": "docs/design/skill-evals/baseline/archboard",
-		"frozenAt": "TASK-210 completion, before the TASK-211 rewrite; frozen from skills/archboard at that revision",
-		"note": "The frozen copy already carries the TASK-207 groups contract, TASK-208 help contract and TASK-210 schema links, so both arms run on the same supporting CLI."
+		"frozenAt": "2026-09-16, commit ded9ac43, the TASK-211 candidate as measured by batch 2026-09-16T00-32-53-542Z and promoted under TASK-243.01; frozen from skills/archboard at that revision",
+		"note": "The frozen copy is the skill the 2026-09-16 batch measured, before the TASK-243 changes; the pre-overhaul package it replaced is in git history at commit 8ea1ee68. Both arms run on the same supporting CLI."
 	},
 	"usageSemantics": "cached_input_tokens is a subset of input_tokens (codex token_count); total = input + output. Never add cached to input. An author is one call, so its turn.completed usage is its own. Grader usage semantics are per runner in graders.json."
 }
