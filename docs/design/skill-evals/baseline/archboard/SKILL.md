@@ -1,199 +1,225 @@
 ---
 name: archboard
 description: >-
-  Author architecture boards, propose changes as variants, link system, service
-  and module detail, bind nodes to code, or render diagrams with the archboard CLI.
+  Diagram real code as archboard semantic boards with the archboard CLI: create
+  an architecture diagram (parts, containment, relationships) or a sequence
+  diagram (an ordered exchange) from source, edit an existing board, propose an
+  architectural change as a variant and compare it, bind parts to code, render
+  SVGs and PNGs. Use when asked to document, explain or change a system's
+  architecture, a request or data flow, or a board in the vault.
 ---
 
 # Archboard
 
-Write a board's architecture as JSON: its parts, relationships and explanations.
-Archboard renders it. Use `archboard help <command>` for command syntax; inside
-this checkout, use `./bin/canvas` in place of `archboard`.
+An agent states what an architecture IS; archboard draws it. A **board** is one
+document in the vault holding a family of **variants** (the current architecture
+and proposals derived from it). There is no layout to author: every picture is
+rendered from meaning. Fix a semantic error in that meaning; when the saved
+meaning matches the source and the picture does not, report a renderer defect.
 
-## Write a board
+Two diagram types, one board:
 
-Choose one diagram or architectural question and level of detail. Give the board
-a short semantic name describing its subject, such as `Payment processing`,
-`Board persistence` or `Renderer layout`. Board names are human navigation labels,
-not repository paths or directory hierarchies. Put code paths in node bindings.
-Every board requires a `level` chosen from the consumer's configured vocabulary.
-Discover the vault's configured levels, node kinds and relationship kinds before
-creating boards with `archboard semantic config`. Run `archboard check` before
-work and again after board edits;
-resolve its actionable diagnostics before presenting the result.
-The usual values are `system` (collaborating services), `service` (modules within
-one service), and `module` (functions within a module). The level belongs to the
-board, is shared by every variant, and appears beside its name in navigation.
-Use separate linked boards when exploring deeper.
+- **Architecture diagram**: nodes (with a configured `kind`, a clear short
+  `responsibility`, optional `parent` containment, `groups`, a code `binding`),
+  directed relationships (`edges`) between them, and board-owned `views` that
+  read a region of it. Use it to answer "what are the parts and how are they
+  wired".
+- **Sequence diagram**: a `flow` (participants in column order, ordered steps
+  with a message kind) drawn through a `data-flow` view. Use it to answer "what
+  happens, in what order, for one request or job". A flow lives on the same
+  board as the parts it moves between.
 
-The consumer owns the vocabulary and visual policy in
-`<vault>/.archboard/config.yaml`. Use configured values; do not invent one, omit
-required metadata, or change the vocabulary merely to make a write pass. Missing
-or invalid configuration activates bundled presentation defaults and warnings.
-Existing removed definitions remain readable; new unknown references are refused
-when the configuration is valid.
+Use a **variant** for a proposed evolution of the same diagram, and a separate
+**linked board** for a different subject or level of detail.
 
-```bash
-archboard semantic new payments --doing "describing payment processing" <<'JSON'
-{
-  "level": "system",
-  "nodes": [
-    { "name": "Gateway", "kind": "service", "responsibility": "Routes incoming requests" },
-    { "name": "Orders", "kind": "service", "responsibility": "Accepts and tracks orders", "groups": ["fulfillment"] },
-    { "name": "Orders DB", "kind": "datastore", "groups": ["fulfillment"] }
-  ],
-  "edges": [
-    { "from": "Gateway", "to": "Orders", "kind": "http", "label": "place order" },
-    { "from": "Orders", "to": "Orders DB", "kind": "data", "label": "persist order" }
-  ]
-}
-JSON
-archboard semantic show payments
-archboard semantic render payments --out payments.svg
-```
+Write responsibilities as clear prose that usually reads over two or three
+card lines. Newlines are optional: the renderer wraps and shows the complete
+value, and rendered line count is not a validation limit. Put longer detail in
+`description`.
 
-## Choose the meaning
+## Essentials
 
-- **Nodes:** give each part a `name`, `kind` and short `responsibility`. Use
-  `description` for detail. Choose `kind` from the vault's `nodeKinds`. A kind
-  identifies the architectural unit, independent of whether this view depicts it
-  as a card or a container.
-- **Containment:** `parent` names the containing node, such as a module's
-  service. Each node has at most one parent; containment is acyclic.
-- **Boundaries and entry points:** when a caller reaches an internal function,
-  route or component, connect to that subject inside its `parent`. The renderer
-  carries the edge across the boundary. Do not split one interaction into
-  caller → container and container → child: containment does not make the
-  container a caller. For example, model Browser client → Viewer entry point
-  → Fetch semantic reads, with both internal subjects parented to Semantic
-  viewer. Reuse an existing entry-point subject, or add the actual code-backed
-  responsibility; never invent a relay node just to steer a line. A container
-  endpoint is appropriate for a relationship to the whole module (such as a
-  dependency in a higher-level view). Before presenting, trace each incoming
-  call to its actual receiver and check that each container endpoint has that
-  whole-module meaning. This requires semantic judgment; valid containment
-  and endpoint IDs alone cannot verify it.
-- **Groups:** `groups` lists the configured group ids a node belongs to, such as
-  `["fulfillment", "billing"]`. Groups are defined under `groups` in the vault
-  configuration with a stable id and a display name; a node may belong to
-  several, across different containers, and children do not inherit membership.
-  Omit the field for no membership. Groups do not assign colors. Containers
-  establish the body color of their contents; each node's icon chip identifies
-  its own kind. Inspect one group with
-  `archboard semantic inspect <board> --group <id> [--variant <v>]`: it reports
-  members, internal relationships, boundary relationships with direction, and
-  immediate external neighbors over the whole variant.
-- **Code:** `binding: { "repo": "github.com/acme/payments", "path": "src/orders" }`
-  points to the code implementing that node. Register the checkout with
-  `archboard repo add /path/to/payments`; use its repository identity and a
-  repo-relative path in the binding.
-- **Edges:** name `from`, `to` and a `kind` from the vault's `relationshipKinds`.
-  Add a short `label`
-  for what crosses. Use `emphasis: "hero"` for the few relationships central
-  to the explanation; emphasis affects line weight only. Explicit `traffic: {}`
-  illustrates flow at 40 diagram units per second and 0.5 dots per second.
-  Optional `speed` and `volume` must be positive finite numbers. Omit `traffic`
-  to show no moving dots. These values illustrate flow, not measured telemetry.
-- **Flows:** name the exchange, list its `participants`, then ordered `steps`
-  with `from`, `to`, `label` and message `kind`: `sync`, `async`, `return`, `self`.
-- **Views:** the board owns one shared set of named readings. Give each a `name`,
-  a `grammar` (`architecture` or `data-flow`) and a `scope`. An architecture view
-  selects nodes or edges; a data-flow view selects a flow. Every variant uses
-  these same views. A comparison includes selected subjects removed from its
-  predecessor; a view is empty when neither state contains its selected subjects.
-- **Walkthroughs:** explain the board through ordered `beats`, each with a
-  `heading`, `body`, relevant `subjects` and optional `view`.
+- **The CLI is the only way a board changes.** Every board is a file the
+  server owns; you never read one to edit it and never write one. Its ids,
+  `version`, timestamps, `lifecycle`, `adoptions` and `reconciliation` are the
+  product's outcome of your writes, not fields you author or repair. When a
+  write is refused, repair the payload from what the refusal says; a second
+  attempt needs new evidence, not a retry. When no supported command can do
+  what was asked, leave the board valid as it is and report the requirement
+  you could not meet.
+- **Environment.** The repository's `AGENTS.md`/`CLAUDE.md` setup block names
+  `ARCHBOARD_VAULT` (and `EXPRESS_SERVER_URL` when the canvas is not on the
+  default port). Every `archboard` command reads them; the canvas starts itself
+  when nothing answers. Inside the archboard checkout, `./bin/canvas` stands in
+  for `archboard`.
+- **Vocabulary.** Read `$ARCHBOARD_VAULT/.archboard/config.yaml` once: it
+  defines the board `levels`, the `nodeKinds`, the `relationshipKinds` and the
+  `groups`. Use those keys; a new unknown key is refused. Extend the file only
+  when the request is about vocabulary ([schemas](references/schemas.md)
+  links its JSON Schema); then run `archboard check`.
+- **Reads.** `archboard semantic show <board>` prints the whole family: every
+  variant with its `lifecycle`, `parent`, `content` and the board `version`.
+  `archboard semantic` lists the boards.
+- **Writes.** `semantic new` needs `--doing "<present-tense line>"`. Every
+  later write (`edit`, `branch`, `resolve`, `adopt`) also needs
+  `--expect-version <n>` with the version you read; a moved board refuses the
+  write (exit 5) and you read again and redo the change on what is there now.
+  One requested change is one batch. The answer to a write is the saved family
+  with its new `version` and every minted id, so take ids and the version from
+  it rather than reading again.
+- **References.** Inside a payload, name a node by its `name` or its `id`; a
+  relationship or step, which has no name, by `id` or by a same-write handle
+  `as`. New subjects leave `id` out. A restated subject replaces its previous
+  definition whole, so restate the fields you keep. A relationship restated
+  without its `id` is a new relationship, however familiar its endpoints: to
+  change one property of an existing relationship (its traffic, its label),
+  restate it with the `id` you read, and never remove it to add it again.
+- **Verification.** Read the write's answer back against the checks you wrote
+  down before writing (below). When the picture is the deliverable, draw it
+  and look at it: `semantic rasterize <board> --out <file.png>` and open the
+  PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
+  viewer. Reading the SVG's text is not looking at a diagram. `archboard check`
+  is for after a vocabulary edit or when an answer carries `warnings`.
+- **Open questions.** A question about the product (a field, a selector, what
+  a refusal means, what a command accepts) is answered by the references
+  below, the generated JSON Schemas under `references/generated/`, and
+  `archboard <command> --help`. When none of them answers it, say so in your
+  final message, naming the question; that report is how the skill gets the
+  answer added.
+- **Claims.** For work of several writes, `archboard claim --board <board>
+--reason "<campaign>"` first and `archboard release --board <board>` after. A
+  person can take the claim back: your next write is then refused once, nothing
+  is rolled back, and you stop and say so.
 
-For JSON examples of containment, links, flows, views and walkthroughs, see
-[authoring examples](references/architecture-workflow.md). For the exact
-shapes, read [schemas and setup references](references/schemas.md): it links
-the generated JSON Schemas for the `semantic new` and `semantic edit` payloads,
-the persisted board document, and `.archboard/config.yaml`, and the portable
-copy of `INSTALL.md`; all of them ship with the installed skill.
+## Evidence before a write
 
-## Edit and propose
+Reading the right guidance and the right source is not enough: a relationship
+is a claim about code, and the failures that recur are claims nobody checked.
+Do this in proportion to the request. A rename needs one line of it; a new
+board needs all of it.
 
-Read with `semantic show <board>`. Make one requested change in one
-`semantic edit` batch, naming the target `variant` in its JSON. Omit it to edit
-current. Include `--expect-version` with the version you read and a short
-`--doing` description on each write.
+1. **Turn the request into checks.** Before the payload, write down what a
+   correct answer must show: the board and the `version` you read; the target
+   variant (a proposal names it in `variant`; a batch without `variant` edits
+   the current architecture, so a proposal-only request lands nothing there);
+   the ids and fields that must survive; and for a view, its exact `grammar`
+   and `scope` selectors: naming `edges` isolates those relationships and
+   draws no other, while naming `nodes` alone draws every relationship among
+   them. After the write, read the answer against that list.
+2. **Prove each relationship and step from source.** For every `edge` and
+   every flow step keep a one-line record: `from` → `to`, the semantic kind,
+   and the source file and function or symbol that prove the mechanism. For a
+   call, `from` is the caller whose body makes it and `to` is the receiver
+   whose body runs, inside its `parent`; a container is an endpoint only when
+   the source addresses the whole module. A part you draw with children is a
+   container whatever its kind: once the request context holds `push` and
+   `pop`, the call `wsgi_app` makes lands on `push`, not on the container,
+   and giving an existing part children moves every relationship that landed
+   on it to the child whose body runs. For a return or a non-call
+   relationship, state the directional claim in words and make the endpoints
+   follow it (for example, A returns to B, A reads from B, A publishes to B, or
+   A depends on B). Sibling calls are not a chain: when `dispatch()` calls
+   `before()` and then `handle()`, the source shows two relationships from
+   `dispatch`, and none from `before` to `handle`, whatever order they run in.
+   For a sequence also check the order the source runs them in, which steps
+   return to their caller, which branch and under what condition (say it in a
+   `note`), and whether a repeat count is in the source at all (a loop over a
+   list the source fixes, such as two default module names, is a `repeat` of
+   that count; a loop over a list of unknown length is a `note`, not a
+   `repeat`).
+3. **Find the boundaries on purpose.** Before deciding the parts, look for
+   what calls into this code (a server, a scheduler, a shell), the external
+   libraries and services it depends on, the callbacks and plugins the
+   application registers into it, and where it persists or publishes (a
+   store, a queue, a socket). Include the ones the board's question needs and
+   leave the rest out deliberately; a boundary you never looked for is an
+   omission, one you chose to omit is scope.
+4. **Bind to the owner.** A `binding` names the file that implements the
+   node's stated responsibility, not a file that imports, registers or calls
+   it. A planned part or an implementation unavailable for inspection stays
+   unbound. An implementation in another checkout may bind after you inspect
+   its owner and register that repository. When a node's responsibility spans
+   files, narrow the responsibility or split the node rather than bind to the
+   wrong one.
 
-Before editing, map the intended changes to the subjects you read:
+## Everything the code shows
 
-- **Continuation:** retain the ID when the same module, relationship, exchange or
-  action evolves. A renamed module or reordered call keeps its identity.
-- **Replacement:** remove the old subject and create its replacement without an
-  ID. Similar names, positions or source paths do not make two implementations
-  the same architectural unit. Keep bindings only when they implement that unit;
-  a planned replacement can have no binding yet.
-- **Untouched:** leave its definition alone. Rewording every responsibility makes
-  every card appear changed and hides the actual architectural delta.
+A request names the question, the level and a few names. It does not list the
+semantics; knowing the product is your job, and a board that stops at the parts
+and calls the request happened to mention leaves out what the code showed you.
+Before every write that creates or extends a board, walk this catalogue against
+the source you read, in this vocabulary (the grader uses the same words); every
+row the source justifies goes in the payload, and your answer says which rows
+you used and which you judged not to apply.
 
-For connections, count changed authored properties against the direct predecessor:
-`from`, `to`, `kind`, `label`, `description`, `emphasis` and `traffic`. Traffic
-counts once as a whole object, comparing effective values including defaults.
-The CLI enforces this
-after resolving node references and defaults, including changes spread across
-separate edits:
+| Row            | When the source shows                                                                         | You author                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `external`     | a caller, library, service, shell or hypothetical part outside the checkout                   | a node of kind `external`, unbound                                                                     |
+| `binding`      | the file whose body implements a part's responsibility                                        | `binding: { repo, path }` to that file; nothing for a part you could not inspect                       |
+| `containment`  | a part defined inside another (a method of a class, a function of a module)                   | `parent`                                                                                               |
+| `relationship` | a call, return, read, dependency or publication one body makes to another                     | an `edge` of the configured kind, its `label` the message or mechanism                                 |
+| `traffic`      | the path a request or event takes at runtime, as against setup, registration or teardown      | `traffic` on those relationships (`{}`, or `speed`/`volume` to contrast a hotter path); none elsewhere |
+| `emphasis`     | the few lines the board exists to show, and lines that are only context                       | `emphasis: "hero"` on the few, `"muted"` on the context                                                |
+| `repeat`       | a loop over a list the source fixes, or a retry limit                                         | `repeat` with that count on the step                                                                   |
+| `note`         | a branch and its condition, a data-dependent loop, an environment variable, a caveat          | `note` on the step                                                                                     |
+| `groups`       | a part whose concern is a configured group id in `config.yaml` (read them before every write) | `groups` on each member, explicit, across containers                                                   |
+| `flow`         | an ordered exchange the question is about (handling a request, starting up, a lifecycle)      | a `flow` and a `data-flow` view over it                                                                |
+| `view`         | a subset a reader wants alone: one path, one container's internals, the two sides of a change | a board `view`                                                                                         |
+| `walkthrough`  | a why the code enforces (an ordering, an invariant, a context pushed before dispatch)         | a walkthrough beat whose subjects are the parts, relationships or steps it explains                    |
+| `drillDown`    | a part whose internals already have a board (`archboard semantic` lists them; check first)    | `drillDown` to that board instead of its parts again                                                   |
+| `description`  | a mechanism a one-line responsibility cannot hold                                             | `description` on the node or relationship                                                              |
 
-- **One change:** the connection can retain its ID. A label clarification between
-  the same nodes, or the same labelled connection targeting a new node, can be a
-  continuation.
-- **Two or more changes:** treat it as a replacement. Put the old edge ID in
-  `removeEdges` and add the new edge without an ID in the same batch.
+A row the source does not support stays out: an added relationship without a
+line of evidence is a wrong board, not a complete one.
 
-For example, Render driver → Grid placement (“place grid”) becoming Render
-driver → Compound layout (“graph and measured sizes”) changes both destination
-and label: show one removed edge and one added edge. Compare endpoint IDs, not
-display names; renaming the same node does not count as changing the connection.
+## Which recipe
 
-For an evolving sequence, retain the flow ID for the same request or exchange.
-Match its steps by the action each represents, preserving IDs for continuing
-calls and returns even when their order or payload changes. Add genuinely new
-actions and remove obsolete ones. Recreating a flow or all its steps produces a
-wholesale deletion and addition, not a comparison of the exchange's evolution.
+Every request is one of four workflows, and each has one recipe holding the
+payload shape, a worked example from Flask and the checks to read the answer
+against. Read the recipe before the first command of that workflow; it is the
+one reference a common path needs beyond this file.
 
-References accept existing IDs or names. Each supplied subject replaces its
-previous definition, so retain its fields. Unmentioned subjects stay; use the
-matching `removeNodes`, `removeEdges`, `removeFlows`, `removeViews` or
-`removeWalkthroughs` list to delete them.
+| The request asks you to                                                          | Read                                                                           |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| describe code as parts and their wiring, at a level, on a new board              | [create an architecture diagram](references/create-architecture.md)            |
+| explain one request, job or startup as an ordered exchange                       | [create a sequence diagram](references/create-sequence.md)                     |
+| change, extend, correct or repair what an existing board says                    | [edit an existing board](references/edit.md)                                   |
+| propose a change as a variant, compare it, settle its disagreements, or adopt it | [propose and compare a change](references/propose-compare.md)                  |
+| answer a question from a saved board and change nothing                          | `semantic show` and `semantic inspect` in [authoring](references/authoring.md) |
 
-Variants describe the evolution of the same diagram. Branch from the state being
-discussed, then edit that successor; competing successors form branches in the
-board's tree. A view edit changes the board's shared reading, even when
-the batch targets a particular variant. Use linked boards for different subjects
-or questions, rather than variants with unrelated diagrams.
+A request that combines them (extend the vocabulary, then create; link a
+detail board, then propose) reads each recipe it needs, in the order the
+request runs them.
 
-For the example board at version 1:
+## Keep it true
 
-```bash
-archboard semantic branch payments --from current --as "Read cache" \
-  --expect-version 1 --doing "proposing an order cache"
-archboard semantic edit payments --expect-version 2 --doing "adding the read cache" <<'JSON'
-{
-  "variant": "Read cache",
-  "nodes": [{ "name": "Orders Cache", "kind": "cache" }],
-  "edges": [{ "from": "Orders", "to": "Orders Cache", "kind": "data", "label": "cache order reads" }]
-}
-JSON
-archboard semantic render payments --variant "Read cache" --out proposal.svg
-```
+- Author meaning. When the picture is wrong and the meaning is right, report the
+  renderer defect; the architecture stays as the code has it.
+- Every relationship and step has a line of source evidence; a picture that
+  needs a relationship the source does not have is a wrong picture.
+- Use the configured vocabulary and levels; extend `config.yaml` only when the
+  request is about vocabulary.
+- Reuse an existing detail board; link to it with `drillDown` instead of
+  duplicating its parts.
+- Fewer, truer parts: every node has a responsibility the source supports, and
+  a binding only to the file that implements it.
+- Traffic (`"traffic": {}`, or `speed`/`volume`) is authored intent, never a
+  measurement: choose it from what the source says runs per request, not from
+  numbers you do not have. A still picture shows the marks at rest and proves
+  nothing about motion.
+- A refusal is repaired from its reason. Never edit the vault to get past one,
+  never invent an id, and when the CLI cannot do what was asked, say what
+  remains open rather than approximate it.
 
-Before presenting a proposal, read the saved family and render the predecessor
-and proposal through the **same board view**. Verify both the IDs and the picture:
+## When to read more
 
-- Added, removed, changed and untouched subjects match your intended change map.
-- Selected deleted flows, calls and participants remain visibly marked as removed.
-  A subject absent from the picture is not evidence that its deletion is shown.
-- A continuing exchange has a meaningful step comparison. An entirely green
-  sequence or entirely changed cast needs an explanation grounded in the intended
-  change, not merely a successful render.
-
-Repair authoring errors before presenting. If the saved comparison is correct
-but the picture omits a change, report the renderer bug; keep the architecture
-truthful instead of adding fake subjects or changing IDs to force a visual result.
-
-Adopt when asked with `semantic adopt`: the proposal becomes current and the
-previous current variant becomes historical. For substantial work across
-multiple writes, `claim` the board first and `release` it when finished.
+| Read                                                                            | When                                                                                                             |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [create an architecture diagram](references/create-architecture.md)             | the recipe: level, registration, one payload with parts, containment, relationships and bindings, and its checks |
+| [create a sequence diagram](references/create-sequence.md)                      | the recipe: participants, message kinds, repeat and note, the data-flow view, and its checks                     |
+| [edit an existing board](references/edit.md)                                    | the recipe: continuing, replacement and untouched subjects, one batch at the read version, and its checks        |
+| [propose and compare a change](references/propose-compare.md)                   | the recipe: branch, variant-targeted edit, both pictures through one view, the comparison report, adoption       |
+| [authoring](references/authoring.md)                                            | groups and `semantic inspect`, bindings with branch/commit, drill-down, traffic, emphasis, removals, refusals    |
+| [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md) | view scopes and grammars, message kinds, repeat/note, walkthrough beats and their identity                       |
+| [variants](references/variants.md)                                              | what a comparison counts, edge identity, flow/step identity, reconciliation and `resolve`, adoption, claims      |
+| [schemas](references/schemas.md)                                                | the exact JSON Schemas of the payloads, the persisted document and `config.yaml`; vault setup and installation   |
