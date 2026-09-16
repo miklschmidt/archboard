@@ -1,37 +1,101 @@
-// Measures the three Flask module maps of docs/design/wide-board-layout.md under
-// layout experiments. Run from the repository root; the numbers in that note
-// come from here.
-// usage: bun docs/design/wide-board-layout-fixtures/measure.ts <baseline|layering|compaction|both> [outdir]
+// Measures every fixture and every vault board as a reader gets it: the fit in
+// the reference pane, the page, the rows and columns, the routes through
+// cards, the share of route ink in margin corridors, the bends per route and
+// the labels off their own route. The numbers in docs/design/layout-rules.md
+// come from here, and src/runtime/semantic-renderer/tests/wide-boards.test.ts
+// holds the same measurements through the same helpers.
+//
+// Run from the repository root:
+//   bun docs/design/wide-board-layout-fixtures/measure.ts [outdir]
+// ALL=1 measures every variant of every board rather than the current one;
+// PICTURES=1 writes a PNG of each drawing to outdir (default .skill-evals/repro).
+// To measure a layout experiment, copy src to a scratch directory, symlink
+// node_modules, mutate COMPOUND_OPTIONS there and run this script against it.
 import fs from "node:fs";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
+import path from "node:path";
+import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
+import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
-import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	fitOf,
+	flankFanOf,
+	inkOf,
+	labelsOffRuns,
+	routesThroughCards,
+} from "@/runtime/semantic-renderer/tests/drawn-ink";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
-const mode = process.argv[2] ?? "baseline";
-const out = process.argv[3] ?? ".skill-evals/repro";
-const options = COMPOUND_OPTIONS as Record<string, string>;
-if (mode === "layering") options["elk.layered.layering.strategy"] = "NETWORK_SIMPLEX";
-if (mode === "compaction") {
-	options["elk.layered.compaction.postCompaction.strategy"] = "EDGE_LENGTH";
-	options["elk.layered.nodePlacement.strategy"] = "NETWORK_SIMPLEX";
-}
-if (mode === "both") {
-	options["elk.layered.layering.strategy"] = "NETWORK_SIMPLEX";
-	options["elk.layered.compaction.postCompaction.strategy"] = "EDGE_LENGTH";
-	options["elk.layered.nodePlacement.strategy"] = "NETWORK_SIMPLEX";
-}
+const vault = ".archboard/vault";
+const out = process.argv[2] ?? ".skill-evals/repro";
+const every = process.env["ALL"] === "1";
 const pictures = process.env["PICTURES"] === "1";
 const rasterizer = pictures
 	? (await import("@/runtime/semantic-rasterizer/index")).createSemanticRasterizer({})
 	: null;
 
+/** One thing to measure: a board's variant, or a fixture. */
+interface Item {
+	readonly name: string;
+	readonly variant: string;
+	readonly content: unknown;
+}
+
+const items: Item[] = [];
 for (const rep of ["1", "2", "3"]) {
-	const content = VariantContentSchema.parse(
-		JSON.parse(fs.readFileSync(`${fixtures}/flask-map-${rep}.content.json`, "utf8")),
-	);
+	items.push({
+		name: `flask-map-${rep}`,
+		variant: "fixture",
+		content: JSON.parse(fs.readFileSync(`${fixtures}/flask-map-${rep}.content.json`, "utf8")),
+	});
+}
+for (const file of fs
+	.readdirSync(vault)
+	.filter((name) => name.endsWith(".semantic.json"))
+	.toSorted()) {
+	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
+	if (!parsed.ok) {
+		console.error(`unparsed ${file}: ${JSON.stringify(parsed).slice(0, 200)}`);
+		continue;
+	}
+	for (const variant of parsed.board.variants) {
+		const current = variant.id === parsed.board.current;
+		if (!current && !every) continue;
+		items.push({
+			name: parsed.board.name,
+			variant: `${current ? "*" : ""}${variant.name}`,
+			content: variant.content,
+		});
+	}
+}
+
+console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
+console.log(
+	"board | variant | nodes | edges | page WxH | fit | rows | cols | through cards | flank fan | corridor% | bends/route | labels off runs",
+);
+for (const item of items) {
+	const content = VariantContentSchema.parse(item.content);
 	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
+	const boxes = Object.values(drawn.atlas.nodes);
+	const rows = new Set(boxes.map((box) => Math.round(box.y / 20))).size;
+	const cols = new Set(boxes.map((box) => Math.round(box.x / 20))).size;
+	const ink = inkOf(drawn);
+	console.log(
+		[
+			item.name,
+			item.variant,
+			content.nodes.length,
+			content.edges.length,
+			`${Math.round(drawn.width)}x${Math.round(drawn.height)}`,
+			fitOf(drawn).toFixed(2),
+			rows,
+			cols,
+			routesThroughCards(drawn, content).length,
+			flankFanOf(drawn, content),
+			(100 * ink.corridor).toFixed(0),
+			ink.bends.toFixed(1),
+			labelsOffRuns(drawn).length,
+		].join(" | "),
+	);
 	if (rasterizer !== null) {
 		const shot = await rasterizer.rasterize({
 			svg: drawn.svg,
@@ -39,78 +103,9 @@ for (const rep of ["1", "2", "3"]) {
 			height: drawn.height,
 			scale: 1,
 		});
-		fs.writeFileSync(`${out}/flask-map-${rep}-${mode}.png`, shot.png);
+		fs.mkdirSync(out, { recursive: true });
+		const stem = `${item.name} ${item.variant}`.replace(/[^A-Za-z0-9]+/g, "-");
+		fs.writeFileSync(path.join(out, `${stem}.png`), shot.png);
 	}
-	const nodes = drawn.atlas.nodes;
-	const boxes = Object.values(nodes);
-	const cardArea = boxes.reduce((sum, box) => sum + box.width * box.height, 0);
-	const routes = routePoints(drawn.svg);
-	const labels = routeLabels(drawn.svg);
-	const westExits = new Map<string, number>();
-	let corridor = 0,
-		ink = 0,
-		west = 0,
-		bends = 0;
-	const distances: number[] = [];
-	for (const edge of content.edges) {
-		const route = routes.get(edge.id);
-		if (route === undefined) continue;
-		const from = nodes[edge.from]!,
-			to = nodes[edge.to]!;
-		if (Math.abs(route[0]!.x - from.x) < 1) {
-			west += 1;
-			westExits.set(edge.from, (westExits.get(edge.from) ?? 0) + 1);
-		}
-		for (let index = 1; index < route.length; index += 1) {
-			const a = route[index - 1]!,
-				b = route[index]!;
-			if (index > 1) {
-				const before = route[index - 2]!;
-				// A corner is where the run changes axis; crossing bridges are rounded
-				// hops and count too, since a reader follows every one of them.
-				if ((before.x === a.x) !== (a.x === b.x)) bends += 1;
-			}
-			const length = Math.hypot(b.x - a.x, b.y - a.y);
-			ink += length;
-			if (a.x === b.x && !boxes.some((box) => box.x <= a.x && a.x <= box.x + box.width))
-				corridor += length;
-		}
-		const label = labels.get(edge.id);
-		if (label === undefined) continue;
-		const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
-		const gap = (box: typeof to) =>
-			Math.hypot(
-				Math.max(box.x - centre.x, 0, centre.x - box.x - box.width),
-				Math.max(box.y - centre.y, 0, centre.y - box.y - box.height),
-			);
-		distances.push(Math.min(gap(from), gap(to)));
-	}
-	const cell = 100;
-	const columns = Math.ceil(drawn.width / cell),
-		rows = Math.ceil(drawn.height / cell);
-	let occupied = 0;
-	for (let row = 0; row < rows; row += 1)
-		for (let column = 0; column < columns; column += 1) {
-			const x = column * cell,
-				y = row * cell;
-			if (
-				boxes.some(
-					(box) =>
-						box.x < x + cell && box.x + box.width > x && box.y < y + cell && box.y + box.height > y,
-				)
-			)
-				occupied += 1;
-		}
-	const rowKeys = new Set(boxes.map((box) => Math.round(box.y / 20)));
-	const sorted = distances.toSorted((a, b) => a - b);
-	const hub = [...westExits.values()].toSorted((a, b) => b - a)[0] ?? 0;
-	console.log(
-		`${mode} rep${rep}: page ${drawn.width}x${drawn.height} (${(
-			(drawn.width * drawn.height) /
-			1e6
-		).toFixed(
-			2,
-		)}Mpx), rows ${rowKeys.size}, cards ${((100 * cardArea) / (drawn.width * drawn.height)).toFixed(1)}% of page, cells touched ${((100 * occupied) / (rows * columns)).toFixed(0)}%, west exits ${west}/${content.edges.length} (max per node ${hub}), corridor ink ${((100 * corridor) / ink).toFixed(0)}%, bends ${bends} (${(bends / content.edges.length).toFixed(1)} per edge), label gap median ${sorted[Math.floor(sorted.length / 2)]?.toFixed(0)}px max ${sorted.at(-1)?.toFixed(0)}px over200 ${sorted.filter((d) => d > 200).length}/${sorted.length}`,
-	);
 }
 await rasterizer?.stop();

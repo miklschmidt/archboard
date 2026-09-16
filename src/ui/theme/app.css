@@ -151,8 +151,8 @@
 }
 
 :root {
-	/* Shared navigator/header width; shell geometry is independent of the palette. */
-	--shell-navigator-width: 320px;
+	/* The navigator/header width, --shell-navigator-width, is set on the shell
+	   root from src/shared/shell-geometry: geometry is not the palette's. */
 	/* Small corners: controls about 3px, dialogs about 4px. */
 	--radius: 0.3rem;
 }
