@@ -30,6 +30,8 @@ interface Problem {
 	readonly measured: MeasuredArchitecture;
 	readonly predecessor: ArchitectureDrawing | undefined;
 	readonly direction: ReadingDirection;
+	/** Whether the layers fold toward the pane's shape. */
+	readonly wrapped: boolean;
 	readonly header: HeaderSide;
 	/**
 	 * How a proposal's added skips are attached: the first render of the same

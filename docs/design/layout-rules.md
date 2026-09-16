@@ -575,3 +575,46 @@ terminal sharing its sibling's layer, a flank connection keeping the chain
 in one column). It draws fewer bends and less ink on the two smaller vault
 proposals because it is free to re-lay them, which is what continuity exists
 to prevent. The seeding stays.
+
+## 17. A flat chain folds toward the pane (2026-09-16, TASK-245.06)
+
+A first render of a board with no frame is now also settled folded: the
+engine's layered wrapping cuts the layers into lines toward the reference
+pane's shape (`lib/layout/reading-choice.ts`), in each reading direction. A
+folded reading is a candidate only when the engine lays it out, its bends
+stay within the wide-board bound (three per route) and it carries at most one
+route across its folds; the kept drawing is the best fit, ties going to the
+earlier candidate (down, right, down folded, right folded). A proposal keeps
+its predecessor's fold. The document carries `data-reading-wrapped="true"`.
+
+Folded left to right loses on every board (Command interface 0.79, Semantic
+renderer 0.38 against 0.88 and 0.61 unfolded down). Folded down, a pipeline
+becomes columns of a newspaper. With the engine's `MULTI_EDGE` strategy, the
+one the analysis tried, Command interface folds to 1301x733 (0.98) and
+Semantic renderer to 1527x1199 (0.75), but the rasterised Semantic renderer
+carries four routes across the fold, each looping round the whole page, and
+reads worse than the column it replaces; hence the one-route rule, which
+keeps it unfolded. `MULTI_EDGE` also throws inside the engine on flask-map-2
+(`property.getDefault`, with its reserved labels as label nodes) where
+`SINGLE_EDGE` lays the same graph out; `tests/engine-wrapping.test.ts` holds
+that captured graph against the engine directly. `SINGLE_EDGE` is what
+landed:
+
+| board             | unfolded down  | folded down (single edge) | kept                   |
+| ----------------- | -------------- | ------------------------- | ---------------------- |
+| Command interface | 683x1027, 0.88 | 1012x805, 1.00            | folded, one fold route |
+| Semantic renderer | 997x1468, 0.61 | 997x1468, 0.61 (no cut)   | down                   |
+| every other board | unchanged      | unchanged or not better   | down                   |
+
+A narrower fold target than the pane's shape only loses (Command interface
+stops folding at an aspect of 1.2). The analysis saw wrapping throw on every
+framed board; this transposed solve does not reproduce that, and the engine
+cuts no framed vault board, so frames stay excluded as the task decided until
+one is measured folding well.
+
+So of the four chain-shaped boards TASK-245 named, one, Command interface,
+now fills the pane (0.88 to 1.00), as a folded pipeline read down in two
+columns rather than a row. Semantic renderer, Board viewer and Codex session
+still read down unfolded, at 0.61, 0.62 and 0.91: no rightward or folded
+reading measured better without looping routes round the page. The lever
+left for them is the room between layers (TASK-239, TASK-242).
