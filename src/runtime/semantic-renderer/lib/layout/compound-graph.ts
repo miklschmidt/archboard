@@ -72,36 +72,16 @@ const FREE = "FREE";
 type Faces = PortSides | typeof FREE;
 
 /**
- * Whether a bracketing skip can descend onto the target's top face instead
- * of its west flank: in the predecessor drawing the target sits left of the
- * source, so the approach along the target's row would be a detour.
- * @param edge The skip.
- * @param predecessor The geometry whose arrangement should remain recognizable.
- * @returns True when the target centre lies left of the source's exit.
- */
-function hasTopApproach(edge: SemanticEdge, predecessor: ArchitectureDrawing | undefined): boolean {
-	if (predecessor === undefined) return false;
-	const from = predecessor.cards.find((node) => node.measured.node.id === edge.from);
-	const to = predecessor.cards.find((node) => node.measured.node.id === edge.to);
-	return from !== undefined && to !== undefined && to.box.x + to.box.width / 2 < from.box.x;
-}
-
-/**
- * Adjacent forward steps are direct, returns take the right flank, one skip
- * per card brackets its chain from the west flank, and every further skip is
- * left to the engine.
+ * Adjacent forward steps are direct, returns take the return flank, a skip
+ * beside its source's one chain brackets that chain from the beside flank:
+ * those are reading conventions. Every other forward skip is the engine's
+ * (docs/design/layout-rules.md sections 10 and 15).
  * @param edge The connection being read.
- * @param ordering The deterministic dependency ranks, with cycles broken in document order, and the bracketing skips.
+ * @param ordering The deterministic dependency ranks, with cycles broken in document order, the brackets and the free solve.
  * @param nested Whether the connection crosses a containment boundary.
- * @param predecessor Existing geometry for choosing a shorter bracket attachment.
  * @returns The source and target attachment faces, or FREE for the engine to choose.
  */
-function sidesOf(
-	edge: SemanticEdge,
-	ordering: Ordering,
-	nested: boolean,
-	predecessor: ArchitectureDrawing | undefined,
-): Faces {
+function sidesOf(edge: SemanticEdge, ordering: Ordering, nested: boolean): Faces {
 	// rankNodes assigns every node before edge attachment begins.
 	const distance = ordering.ranks.get(edge.to)! - ordering.ranks.get(edge.from)!;
 	if (distance <= 0) return [SOLVING.returnFlank, SOLVING.returnFlank];
@@ -109,36 +89,50 @@ function sidesOf(
 	// A skip across a frame boundary descends like any forward step: the engine
 	// refuses a port-less edge across a hierarchy, and the flank it used to take
 	// was a lane down the frame's edge that looped a route round the frame.
-	return nested ? [SOLVING.forwardOut, SOLVING.forwardIn] : skipFaces(edge, ordering, predecessor);
+	return nested ? [SOLVING.forwardOut, SOLVING.forwardIn] : skipFaces(edge, ordering);
 }
 
 /**
- * A forward skip's faces. A first render leaves a hub's skips to the engine,
- * which places the cards around them. Under a predecessor the cards are
- * pinned, and a free skip is routed as a staircase between them; there the
- * flank, with its approach read from the predecessor drawing, is the shorter,
- * straighter route.
+ * A forward skip's faces. A first render gives a bracket the beside flank
+ * and leaves every other skip to the engine. A skip a proposal adds takes
+ * either the faces its route has in a first render of the same content, or
+ * no fixed face; the proposal is settled both ways and the cheaper drawing
+ * kept (`proposal-skips.ts`), never a guess from where the predecessor put a
+ * card. A surviving skip never reaches here: it keeps its drawn faces.
  * @param edge The skip.
- * @param ordering The ranks and the bracketing skips.
- * @param predecessor The preceding drawing, when there is one.
+ * @param ordering The brackets, and how a proposal's added skips are attached.
  * @returns The faces, or FREE.
  */
-function skipFaces(
-	edge: SemanticEdge,
-	ordering: Ordering,
-	predecessor: ArchitectureDrawing | undefined,
-): Faces {
-	if (!ordering.flank.has(edge.id) && predecessor === undefined) return FREE;
-	return [
-		SOLVING.besideFlank,
-		hasTopApproach(edge, predecessor) ? SOLVING.forwardIn : SOLVING.besideFlank,
-	];
+function skipFaces(edge: SemanticEdge, ordering: Ordering): Faces {
+	if (ordering.added === null) return FREE;
+	if (ordering.added !== undefined) return drawnSides(edge, ordering.added) ?? FREE;
+	return ordering.flank.has(edge.id) ? [SOLVING.besideFlank, SOLVING.besideFlank] : FREE;
 }
 
-/** The semantic ordering of one view: ranks, and which skips bracket from the flank. */
+/** The semantic ordering of one view: ranks, the brackets, and how a proposal's added skips are attached. */
 interface Ordering {
 	readonly ranks: ReadonlyMap<string, number>;
 	readonly flank: ReadonlySet<string>;
+	readonly added: ArchitectureDrawing | null | undefined;
+}
+
+/**
+ * Whether a relationship joins a frame to something outside it. The engine
+ * attaches such a relationship itself: a fixed port on a frame's face, when a
+ * proposal pins the cards, crashes the engine's layering
+ * (`nodeOrder[l][0].layer`, TASK-237), and node to node it is accepted.
+ * @param edge The connection being read.
+ * @param measured The inclusion tree of this view.
+ * @returns True when either end is a frame and neither holds the other.
+ */
+function framesOutside(edge: SemanticEdge, measured: MeasuredArchitecture): boolean {
+	const nested =
+		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
+	return (
+		!nested &&
+		containmentOf(edge, measured) === undefined &&
+		[edge.from, edge.to].some((id) => (measured.nodes.get(id)?.headerHeight ?? 0) > 0)
+	);
 }
 
 /**
@@ -161,6 +155,22 @@ function containmentOf(
 }
 
 /**
+ * The faces of a frame's own relationship, which run the way the page reads.
+ * @param edge The connection being read.
+ * @param measured The inclusion tree of this view.
+ * @returns The faces, or nothing when neither end holds the other.
+ */
+function containmentSides(
+	edge: SemanticEdge,
+	measured: MeasuredArchitecture,
+): PortSides | undefined {
+	const containment = containmentOf(edge, measured);
+	if (containment === "holds") return [SOLVING.forwardIn, SOLVING.forwardIn];
+	if (containment === "held") return [SOLVING.forwardOut, SOLVING.forwardOut];
+	return undefined;
+}
+
+/**
  * The attachment faces of one connection: inherited from the predecessor when
  * the same relationship survives, by containment when one end holds the other,
  * else by dependency rank. A frame's own relationship runs the way the page
@@ -179,14 +189,12 @@ function facesOf(
 	ordering: Ordering,
 	predecessor: ArchitectureDrawing | undefined,
 ): Faces {
-	const inherited = previousSides(edge, measured, predecessor);
+	if (framesOutside(edge, measured)) return FREE;
+	const inherited = previousSides(edge, measured, predecessor) ?? containmentSides(edge, measured);
 	if (inherited !== undefined) return inherited;
-	const containment = containmentOf(edge, measured);
-	if (containment === "holds") return [SOLVING.forwardIn, SOLVING.forwardIn];
-	if (containment === "held") return [SOLVING.forwardOut, SOLVING.forwardOut];
 	const nested =
 		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
-	return sidesOf(edge, ordering, nested, predecessor);
+	return sidesOf(edge, ordering, nested);
 }
 
 /**
@@ -456,12 +464,29 @@ function previousSides(
 }
 
 /**
+ * The faces a relationship's route has in a drawing: the face of each end's
+ * card nearest the route's first and last points.
+ * @param edge The relationship.
+ * @param drawing A drawing that routes it.
+ * @returns Its faces there, or nothing when the drawing does not route it.
+ */
+function drawnSides(edge: SemanticEdge, drawing: ArchitectureDrawing): PortSides | undefined {
+	const route = drawing.edges.find((candidate) => candidate.edge.id === edge.id);
+	const nodes = [...drawing.cards, ...drawing.containers];
+	const from = nodes.find((node) => node.measured.node.id === edge.from);
+	const to = nodes.find((node) => node.measured.node.id === edge.to);
+	if (route === undefined || from === undefined || to === undefined) return undefined;
+	return [nearestFace(route.curve.from, from.box), nearestFace(pointAt(route.curve, 1), to.box)];
+}
+
+/**
  * The complete measured architecture in the engine's compound representation,
  * in the solving frame.
  * @param content The view's semantic content.
  * @param measured Text lines and dimensions settled before layout, in the solving frame.
  * @param predecessor The preceding complete drawing of this view, in the solving frame.
  * @param header Where a frame's title band sits in the solving frame.
+ * @param added How a proposal attaches the skips it adds: a first render to read faces from, or null for none.
  * @returns One graph for one layout run.
  */
 function compoundGraph(
@@ -469,11 +494,12 @@ function compoundGraph(
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
 	header: HeaderSide,
+	added?: ArchitectureDrawing | null,
 ): ElkNode {
 	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value, header)]));
 	const edges = content.edges.toSorted((one, other) => one.id.localeCompare(other.id));
 	const ranks = rankNodes(content.nodes, edges);
-	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks) };
+	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks), added };
 	return {
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },

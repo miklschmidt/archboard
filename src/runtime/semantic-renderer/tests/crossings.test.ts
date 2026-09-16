@@ -14,12 +14,12 @@ const CROSSED = VariantContentSchema.parse({
 });
 
 test("a crossing beside a rounded turn bridges whichever route has room", async () => {
-	const [before, content] = cornerCrossing.map((value) => VariantContentSchema.parse(value));
-	const drawing = await renderArchitecture({
-		content: content!,
-		predecessors: [before!],
-		theme: "dark",
-	});
+	// The fixture's first variant, drawn on its own, crosses these two routes
+	// ten units from one route's turn. A first render is the stable way to reach
+	// that geometry: how a proposal attaches the relationships it adds is the
+	// layout's to change (docs/design/layout-rules.md section 15).
+	const [before] = cornerCrossing.map((value) => VariantContentSchema.parse(value));
+	const drawing = await renderArchitecture({ content: before!, theme: "dark" });
 	const lines = routes(drawing.svg);
 	const pair = ["eKqUHYSH", "I1lGjMES"].map((id) => lines.find((line) => line.id === id)!);
 	const cutouts = masks(drawing.svg);

@@ -24,13 +24,17 @@ below are stated in the solving frame.
 `lib/layout/compound-graph.ts` translates semantic containment to an ELK hierarchy.
 Cards have measured dimensions; frames reserve their measured header and inset
 space for children. Consecutive forward connections use bottom/top ports and
-returns use the right. A forward skip from a card with fewer than three forward
-relationships brackets its chain from the left (one per card); a skip from a
-hub gets no port on a first render and the engine attaches it where its own
-columns fit, which is what keeps a hub from fanning lanes down the margin
-([layout-rules.md](layout-rules.md)). Under a predecessor the cards are
-pinned, so a new skip takes the flank there, or the target's top when the
-predecessor drawing shows the target left of the source. A connection between a frame and a part inside it is the frame's own:
+returns use the right. A forward skip beside its source's one chain, from a
+card that is not a hub, brackets that chain from the left; every other skip
+gets no port and the engine attaches it where its own columns fit, which is
+what keeps a hub from fanning lanes down the margin
+([layout-rules.md](layout-rules.md)). A relationship between a frame and a
+card outside it gets no port either, since a fixed face on a frame crashes
+the engine once a proposal pins the cards. Under a predecessor a surviving
+relationship keeps the faces it was drawn with; a relationship the proposal
+adds is settled twice, with the faces a first render of the same content
+gives it and with no port, and the drawing with no route through a card and
+then fewer bends is kept (`lib/layout/proposal-skips.ts`). A connection between a frame and a part inside it is the frame's own:
 it leaves the rule drawn under the frame's title down into the part, or the
 part's bottom face down onto the frame's bottom, never the frame's outer
 flank or its outer top edge (the 2026-09-15 evaluation batch drew a frame's
@@ -97,11 +101,8 @@ card at the far side of the drawing cannot push the whole addition outward.
 A branch leaves measured room for its horizontal badges beside inherited route
 corridors; the same free-space calculation handles cards and badge clearance.
 A new leaf without its own stable anchor follows its connected new neighbor.
-A flank skip reaches a west face along the target's own row; once every card
-is seeded, a skip whose approach would run through a card in that row (a new
-card placed beside its dependencies in the row of a removed one, in the
-2026-09-15 batch) is reseated as a plain descent from the source's bottom face
-to the target's top, which the engine routes between rows.
+A relationship the proposal adds is not reseated after seeding: the choice
+between its two settled drawings is what keeps it out of the pinned cards.
 ELK still owns collision-free spacing, routes, and any required label reservations.
 An unchanged layout reuses its predecessor geometry exactly.
 
