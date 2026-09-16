@@ -71,9 +71,16 @@ moment you draw `push` and `pop` inside it, the call lands on `push`.
    line of evidence you kept for it, and no relationship exists that you have
    no line for; bound parts name the identity from step 2 and the owning file.
    Open the picture and read it as the audience will: the labels legible,
-   nothing cut off, each arrow ending on the part its evidence names. Your
-   answer names the catalogue rows the board uses and the ones you judged not
-   to apply.
+   nothing cut off, each arrow ending on the part its evidence names. A board
+   nobody can follow whole (a dozen or more parts, routes crossing the page)
+   gets a board `view` per reading a person will want (one container's
+   internals, one path, the parts one concern touches); a view is the answer to
+   a tangle, never a smaller or falser board. A request path the board carries
+   is a `flow` drawn through a `data-flow` view, not a row to declare
+   inapplicable. A picture the request names goes where it says; one you draw
+   to look at goes in a temporary directory, never into the checkout you are
+   describing. Your answer names the catalogue rows the board uses and the ones
+   you judged not to apply.
 
 Read [authoring](references/authoring.md) for groups, drill-down links to
 detail boards, traffic, emphasis, descriptions, and what a refusal means.

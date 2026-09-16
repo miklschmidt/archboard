@@ -114,9 +114,15 @@ vault's boards, and a board whose subject is that part's internals is a
 | `traffic`     | `{}` for moving dots at the defaults (speed 40, volume 0.5); `{ "speed", "volume" }` positive finite numbers; omit for none. |
 
 Traffic is authored intent, not measurement: it belongs on the relationships
-the source shows a request or event travelling, and a static render cannot
-show it moving. Restate an existing relationship with its `id` to add or
-change its traffic; restated without the id it is a new relationship.
+the source shows a request or event travelling forward on every pass, so a
+reader sees the hot path against everything else, and a static render cannot
+show it moving. Stamping it on every relationship says nothing. It never goes
+on teardown (a context pop, a cleanup hook), an error or exception path, a
+hook that runs only on a branch, startup, registration or a one-shot call;
+`speed`/`volume` above the defaults mark the hotter of two runtime paths,
+not a busier-looking picture. Restate an existing relationship with its `id`
+to add or change its traffic; restated without the id it is a new
+relationship.
 
 ### Evidence for a relationship
 
