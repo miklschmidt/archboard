@@ -227,6 +227,14 @@ function transitionPicture(
 		...pairing.shared.flatMap(({ before: old, after: next }) => carry(old, next) ?? []),
 		...pairing.added.map(arrive),
 	];
+	// The new picture is sized to its own page from the first frame, and an SVG
+	// clips what it draws to its box. Where the new page is smaller, the old
+	// geometry being carried or borrowed would be cut off at the start of the
+	// transition; it may draw past the page until the transition lands, when
+	// the untouched picture is staged again.
+	if (root instanceof SVGElement) {
+		root.style.overflow = "visible";
+	}
 	/**
 	 * Draw the moment this far through.
 	 * @param progress How far through, 0 to 1.

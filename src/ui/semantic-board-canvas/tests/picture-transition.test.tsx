@@ -106,10 +106,14 @@ function lineMarkup(line: Line): string {
 function picture(
 	cards: readonly Card[],
 	lines: readonly Line[],
-	identity: Partial<Pick<SemanticDrawing, "board" | "variant" | "view" | "theme">> = {},
+	identity: Partial<
+		Pick<SemanticDrawing, "board" | "variant" | "view" | "theme" | "width" | "height">
+	> = {},
 ): SemanticDrawing {
+	const width = identity.width ?? 600;
+	const height = identity.height ?? 400;
 	const svg =
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">` +
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">` +
 		lines.map(lineMarkup).join("") +
 		cards.map(cardMarkup).join("") +
 		`</svg>`;
@@ -124,8 +128,8 @@ function picture(
 		views: [],
 		changes: null,
 		waiting: null,
-		width: 600,
-		height: 400,
+		width,
+		height,
 		svg,
 		atlas: {
 			nodes: Object.fromEntries(cards.map((card) => [card.id, card.box])),
@@ -404,6 +408,25 @@ describe("leaving and arriving", () => {
 		expect(card.getAttribute("transform")).toMatch(/scale\(1\)/);
 		expect(Number(stroke.getAttribute("stroke-dashoffset"))).toBe(0);
 		expect(stroke.getAttribute("marker-end")).toBe("url(#head)");
+	});
+
+	test("a smaller next page does not cut off the last picture in flight, and lands sized to its own page", () => {
+		const surface = surfaceElement();
+		const before = picture([A, B], [AB]);
+		const after = picture([A], [], { width: 150, height: 90 });
+		surface.innerHTML = before.svg;
+		const transition = transitionPicture(surface, before, after);
+		const root = surface.querySelector<SVGSVGElement>("svg")!;
+		// Beta sits beyond the new page's width, and is still leaving.
+		expect(surface.querySelector(`g[data-semantic-id="n2"]`)).not.toBeNull();
+		expect(root.getAttribute("width")).toBe("150");
+		expect(root.style.overflow).toBe("visible");
+		transition.seek(0.5);
+		expect(root.style.overflow).toBe("visible");
+		transition.finish();
+		const landed = surface.querySelector<SVGSVGElement>("svg")!;
+		expect(landed.style.overflow).toBe("");
+		expect(landed.getAttribute("width")).toBe("150");
 	});
 
 	test("finishing leaves exactly the picture the server drew", () => {
