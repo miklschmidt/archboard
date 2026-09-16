@@ -134,6 +134,12 @@ export {
 } from "@/shared/semantic-board/lib/integrity";
 export { scopedContent, findView } from "@/shared/semantic-board/lib/scope";
 export {
+	drawingOf,
+	predecessorDrawingsOf,
+	type DrawnChanges,
+	type DrawnProposal,
+} from "@/shared/semantic-board/lib/drawing";
+export {
 	type ChangeKind,
 	type PlacedStep,
 	type PlacedBeat,
