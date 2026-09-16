@@ -444,7 +444,7 @@ async function attemptLabels(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
-	reserved: Set<string>,
+	reserved: ReadonlySet<string>,
 	stacked: number,
 ): Promise<LabelAttempt> {
 	const laidOut = await solveGraph(
@@ -506,7 +506,50 @@ function reserveMissing(attempt: LabelAttempt, reserved: Set<string>): void {
 }
 
 /**
+ * Settle the board to the end with one more badge of gap between its rows.
+ * @param content Current semantic subjects.
+ * @param measured Their fixed measured dimensions.
+ * @param predecessor The same inherited drawing for every attempt.
+ * @param reserved Labels reserved so far; this way keeps its own copy.
+ * @param current The attempt at the ordinary gap whose labels are missing.
+ * @returns The settled drawing, or nothing when the grown gap places no more labels.
+ */
+async function grownGap(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+	reserved: ReadonlySet<string>,
+	current: LabelAttempt,
+): Promise<ArchitectureDrawing | undefined> {
+	const taller = await stackedAttempt(current, 0, (depth) =>
+		attemptLabels(content, measured, predecessor, reserved, depth),
+	);
+	if (taller === undefined) return undefined;
+	return settleLabels(content, measured, predecessor, new Set(reserved), 1, taller);
+}
+
+/**
+ * The shorter page of two settled drawings, the certain one when they tie.
+ * @param grown The drawing settled with a grown gap, when there was one.
+ * @param kept The drawing settled by reservation alone.
+ * @returns Whichever is shorter.
+ */
+function shorterOf(
+	grown: ArchitectureDrawing | undefined,
+	kept: ArchitectureDrawing,
+): ArchitectureDrawing {
+	return grown !== undefined && grown.height < kept.height ? grown : kept;
+}
+
+/**
  * Add reservations monotonically until every measured label has a final box.
+ *
+ * A badge on a straight descent that found no room can be given one more
+ * badge of gap between every pair of rows instead of a reserved row of its
+ * own. Which is cheaper depends on what the rest of the board then needs
+ * (the 2026-09-16 "Agent workbench" board placed one more label in the grown
+ * gap and still reserved two, paying for both), so both ways are settled to
+ * the end and the shorter page is kept. The gap grows once at most.
  * @param content Current semantic subjects.
  * @param measured Their fixed measured dimensions.
  * @param predecessor The same inherited drawing for every attempt.
@@ -531,13 +574,11 @@ async function settleLabels(
 	const solve = (depth: number) => attemptLabels(content, measured, predecessor, reserved, depth);
 	const current = attempt ?? (await solve(stacked));
 	if (current.missing.length === 0) return current.drawing;
-	// Each round stacks one more badge or reserves every missing label; the
-	// measured label count bounds both.
-	const taller = await stackedAttempt(current, stacked, solve);
-	if (taller !== undefined)
-		return settleLabels(content, measured, predecessor, reserved, stacked + 1, taller);
+	const grown =
+		stacked === 0 ? await grownGap(content, measured, predecessor, reserved, current) : undefined;
 	reserveMissing(current, reserved);
-	return settleLabels(content, measured, predecessor, reserved, stacked);
+	const kept = await settleLabels(content, measured, predecessor, reserved, stacked);
+	return shorterOf(grown, kept);
 }
 
 export { layoutCompound };
