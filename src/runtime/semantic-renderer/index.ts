@@ -35,6 +35,7 @@ import type {
 import { layoutCompound } from "@/runtime/semantic-renderer/lib/layout/compound";
 import type {
 	ArchitectureDrawing,
+	PaintedDrawing,
 	ReadingDirection,
 } from "@/runtime/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
@@ -189,9 +190,46 @@ async function layoutPredecessors(
 ): Promise<ArchitectureDrawing | undefined> {
 	const predecessor = predecessors[index];
 	if (predecessor === undefined || predecessor.nodes.length === 0) return undefined;
-	const before = await layoutPredecessors(predecessors, index - 1);
-	const { content } = withStepLines(predecessor);
-	return await layoutCompound(content, measureArchitecture(content), before);
+	return layoutRemembered(predecessors.slice(0, index + 1));
+}
+
+/** How many laid-out lineages are remembered: a few boards' variants, both themes of each. */
+const REMEMBERED_LAYOUTS = 64;
+
+/** Layouts by the lineage they were laid out from, least recently used first. */
+const layouts = new Map<string, Promise<PaintedDrawing>>();
+
+/**
+ * The layout of the last content in a lineage, laid out once per distinct
+ * lineage. Layout depends on the content and its predecessors alone, never on
+ * the theme or the standing a picture is painted with, and the server draws
+ * the same lineage again for every proposal that descends from it, for the
+ * other theme and for another pane (docs/design/layout-rules.md section 22).
+ * The engine is deterministic, so a remembered layout is the layout.
+ * @param lineage The contents, oldest first, the last one to lay out.
+ * @returns Its layout.
+ */
+function layoutRemembered(lineage: readonly VariantContent[]): Promise<PaintedDrawing> {
+	const key = JSON.stringify(lineage);
+	const known = layouts.get(key);
+	if (known !== undefined) {
+		layouts.delete(key);
+		layouts.set(key, known);
+		return known;
+	}
+	const layout = (async () => {
+		const before = await layoutPredecessors(lineage, lineage.length - 2);
+		const { content } = withStepLines(lineage.at(-1)!);
+		return layoutCompound(content, measureArchitecture(content), before);
+	})();
+	layouts.set(key, layout);
+	// A failed layout is not remembered: the next request tries again.
+	layout.catch(() => layouts.delete(key));
+	for (const oldest of layouts.keys()) {
+		if (layouts.size <= REMEMBERED_LAYOUTS) break;
+		layouts.delete(oldest);
+	}
+	return layout;
 }
 
 /**
@@ -209,10 +247,8 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		);
 	}
 
-	const predecessor = await layoutPredecessors(request.predecessors ?? []);
-	const { content, derived } = withStepLines(request.content);
-	const measured = measureArchitecture(content);
-	const drawing = await layoutCompound(content, measured, predecessor);
+	const { derived } = withStepLines(request.content);
+	const drawing = await layoutRemembered([...(request.predecessors ?? []), request.content]);
 	const palette = paletteFor(theme);
 	const painting = paintArchitecture(
 		drawing,

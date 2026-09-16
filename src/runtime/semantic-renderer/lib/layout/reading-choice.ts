@@ -132,26 +132,39 @@ async function candidate(
  * @param measured The board's measured sizes.
  * @param predecessor The preceding drawing of this view, when there is one.
  * @param settle Settles the board in a reading.
+ * @param screen Solves the board once in a reading, labels unreserved, to bound what settling it can fit.
  * @returns The settled drawing, with its reading on it.
  */
 async function chooseReading(
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
 	settle: SettleReading,
+	screen?: SettleReading,
 ): Promise<ArchitectureDrawing> {
 	if (predecessor !== undefined) {
 		return settle({ direction: predecessor.direction, wrapped: predecessor.wrapped });
 	}
-	const drawings = await Promise.all(
-		candidatesOf(measured).map((reading) => candidate(reading, settle)),
-	);
-	let best: ArchitectureDrawing | undefined;
+	const [first, ...others] = candidatesOf(measured);
+	const [settled, ...screens] = await Promise.all([
+		settle(first!),
+		...others.map((reading) =>
+			screen === undefined ? undefined : screen(reading).catch(() => undefined),
+		),
+	]);
+	// A reading whose one plain solve already fits no better than the first
+	// reading settled cannot win: settling only adds rows for labels, so it
+	// fits no better than its plain solve (docs/design/layout-rules.md
+	// section 22).
+	const promising = others.filter((_, index) => {
+		const plain = screens[index];
+		return screen === undefined || (plain !== undefined && fitIn(plain) > fitIn(settled));
+	});
+	const drawings = await Promise.all(promising.map((reading) => candidate(reading, settle)));
+	let best = settled;
 	for (const drawing of drawings) {
-		if (drawing !== undefined && (best === undefined || fitIn(drawing) > fitIn(best)))
-			best = drawing;
+		if (drawing !== undefined && fitIn(drawing) > fitIn(best)) best = drawing;
 	}
-	// The first candidate is unfolded and never dropped, so there is always one.
-	return best!;
+	return best;
 }
 
 export { chooseReading, foldAspect, type Reading };

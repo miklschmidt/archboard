@@ -785,3 +785,66 @@ instead of a fit floor and a fan bound of one: a board may not be worse on
 more measures than it is better. The flank fan counts both flanks, since a
 rule can put skips on either. Mirroring a kept drawing so its cards sit on
 the left is a separate question and not done.
+
+## 22. Render time (2026-09-16, TASK-245.09)
+
+Sections 20 and 21 took a first render from about 100 ms to up to two
+seconds: one render asked the engine for 10 to 150 solves. Counted by purpose
+on four boards, most were label-release attempts made at the end of every
+branch of the settle, then reservation rounds, repeated for four readings and
+four flank rules. Nearly all the time is in the engine; building its graph
+and reading its answer back is under 3 percent.
+
+Kept, each leaving every drawing of every vault variant and fixture unchanged
+on the scorecard:
+
+- A settle asks the engine each distinct question once (`rememberSolves`).
+- Only the drawing a settle keeps is released, not every branch before the
+  shorter one is chosen.
+- The engine runs in a pool of workers sized from the host, one fewer than its
+  cores, started as solves find the running ones busy (`engine-pool.ts`).
+- The first reading is settled; each other is solved once and settled only
+  when that plain solve fits better than the first settled, since settling
+  only adds rows.
+- The other flank rules are settled for the down reading while the reading is
+  being chosen, and again only when another reading wins; the grown-gap branch
+  settles beside the reservation branch.
+- A layout is remembered by its content and predecessors
+  (`layoutRemembered`), so the other theme, another pane and every proposal
+  that re-lays out its predecessors reuse it: about 1 ms.
+
+Tried and dropped: screening readings and flank rules on one plain solve each
+(seven boards chose a worse drawing, one put a label off its run); growing
+the gap only on the first round (no gain); a linear release search (10 to 25
+percent faster, flask-map-1 worse on four measures); reserving every label on
+the second round (up to 5.8 seconds, worse drawings); Brandes-Koepf placement
+(faster, but four boards worse on more measures); lower crossing
+thoroughness and no greedy switch (little gain).
+
+`timing.ts` beside `measure.ts`, first render with the engine warmed on
+another board, then the median repeat:
+
+| board               | before | first render                                  | repeat |
+| ------------------- | ------ | --------------------------------------------- | ------ |
+| flask-map-1         | 1697   | 400 to 500 warm, 1400 to 1850 on cold workers | 7      |
+| flask-map-2         | 1832   | 780 to 900                                    | 2      |
+| flask-map-3         | 1083   | 630 to 740                                    | 2      |
+| Agent workbench     | 377    | 130                                           | 1      |
+| Archboard           | 47     | 15                                            | 0      |
+| Board persistence   | 671    | 120 to 280                                    | 1      |
+| Board viewer        | 373    | 100 to 130                                    | 1      |
+| Browser application | 172    | 115 to 140                                    | 1      |
+| Canvas server       | 729    | 330 to 375                                    | 1      |
+| Codex session       | 173    | 50 to 80                                      | 1      |
+| Command dispatch    | 123    | 50 to 210                                     | 0      |
+| Command interface   | 26     | 20 to 25                                      | 0      |
+| Renderer layout     | 53     | 15 to 30                                      | 0      |
+| Semantic renderer   | 898    | 160 to 190                                    | 1      |
+
+A worker started for a render compiles the engine as it goes: the same
+flask-map-1 render took 1552 ms on fresh workers and 400 ms on warm ones.
+Under 150 ms on a first render is met by nine of the fourteen; Canvas server,
+Semantic renderer, Board persistence and the three fixtures are not, and
+what remains is the number of solves a first render's candidates need, which
+only a change to what is chosen (fewer flank rules, lighter label settling,
+another placement) would cut further.

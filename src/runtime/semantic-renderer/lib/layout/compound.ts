@@ -1,6 +1,5 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
-import ELK from "elkjs/lib/elk-api.js";
 import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/lib/elk-api";
 import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
 import type {
@@ -25,6 +24,7 @@ import {
 } from "@/runtime/semantic-renderer/lib/layout/compound-predecessor";
 import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-runs";
 import {
+	rememberSolves,
 	settleLabels,
 	type LabelAttempt,
 } from "@/runtime/semantic-renderer/lib/layout/label-reservations";
@@ -50,69 +50,10 @@ import {
 	type FlankRule,
 } from "@/runtime/semantic-renderer/lib/layout/flank-rules";
 import { bestOf } from "@/runtime/semantic-renderer/lib/layout/scorecard";
+import { solveOnEngine } from "@/runtime/semantic-renderer/lib/layout/engine-pool";
 
 /**
- * Use the supported worker transport: Bun's main thread exposes `self`, which
- * the vendor's fake-worker detection otherwise mistakes for a worker scope.
- * @returns A private worker running the installed layout engine.
- */
-function layoutWorker(): Worker & Pick<Bun.Worker, "ref" | "unref"> {
-	// The repository also compiles DOM code, whose ambient Worker declaration
-	// hides Bun's ref/unref extensions. This server boundary always runs in Bun.
-	const worker = new Worker(import.meta.resolve("elkjs/lib/elk-worker.js"));
-	if (!hasProcessLifetime(worker)) {
-		worker.terminate();
-		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");
-	}
-	return worker;
-}
-
-/**
- * Narrow only Bun's process-lifetime additions to the standard worker API.
- * @param worker The worker created at this runtime boundary.
- * @returns Whether the worker provides the two native lifetime methods.
- */
-function hasProcessLifetime(worker: Worker): worker is Worker & Pick<Bun.Worker, "ref" | "unref"> {
-	return (
-		"ref" in worker &&
-		typeof worker.ref === "function" &&
-		"unref" in worker &&
-		typeof worker.unref === "function"
-	);
-}
-
-/** The worker itself serializes its layout messages in arrival order. */
-interface LayoutEngine {
-	readonly worker: ReturnType<typeof layoutWorker>;
-	readonly engine: InstanceType<typeof ELK>;
-	pending: number;
-}
-
-let layoutEngine: LayoutEngine | undefined;
-
-/**
- * Start the engine on its first actual drawing request.
- * @returns The one worker shared by concurrent renders.
- */
-function engineForDrawing(): LayoutEngine {
-	if (layoutEngine === undefined) {
-		const worker = layoutWorker();
-		/**
-		 * Supply the already owned worker to the vendor API.
-		 * @returns The native worker whose lifetime this module owns.
-		 */
-		const workerFactory = (): Worker => worker;
-		layoutEngine = {
-			worker,
-			engine: new ELK({ algorithms: ["layered"], workerFactory }),
-			pending: 0,
-		};
-	}
-	return layoutEngine;
-}
-
-/**
- * Keep the process alive only while a layout request still needs its worker.
+ * Solve a graph with room between rows for the labels on its runs.
  * @param graph The complete measured graph.
  * @param measured Label heights that leave room on ordinary route runs.
  * @param stacked How many badges beyond one a gap between rows must hold, stacked.
@@ -123,49 +64,39 @@ async function solveGraph(
 	measured: MeasuredArchitecture,
 	stacked = 0,
 ): Promise<ElkNode> {
-	const owner = engineForDrawing();
-	owner.pending += 1;
-	owner.worker.ref();
-	try {
-		const height = Math.max(0, ...[...measured.labels.values()].map((label) => label.height));
-		const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
-		const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
-		const options: LayoutOptions = COMPOUND_OPTIONS;
-		return await owner.engine.layout(graph, {
-			layoutOptions:
-				height === 0
-					? options
-					: {
-							...options,
-							"elk.layered.spacing.nodeNodeBetweenLayers": String(
-								Math.max(
-									Number(COMPOUND_OPTIONS["elk.layered.spacing.nodeNodeBetweenLayers"]),
-									// Badges stacked beside parallel runs in one gap each need
-									// their own height and air; only the gap between rows grows
-									// for them, never the room around every route track.
-									height + 2 * nodeAir + stacked * (height + labelAir),
-								),
-							),
-							"elk.layered.spacing.edgeNodeBetweenLayers": String(
-								Math.max(
-									Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeNodeBetweenLayers"]),
-									Math.ceil(height / 2 + nodeAir),
-								),
-							),
-							"elk.layered.spacing.edgeEdgeBetweenLayers": String(
-								Math.max(
-									Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeEdgeBetweenLayers"]),
-									height + labelAir,
-								),
-							),
-						},
-		});
-	} finally {
-		owner.pending -= 1;
-		if (owner.pending === 0) {
-			owner.worker.unref();
-		}
-	}
+	const height = Math.max(0, ...[...measured.labels.values()].map((label) => label.height));
+	const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
+	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
+	const options: LayoutOptions = COMPOUND_OPTIONS;
+	return solveOnEngine(
+		graph,
+		height === 0
+			? options
+			: {
+					...options,
+					"elk.layered.spacing.nodeNodeBetweenLayers": String(
+						Math.max(
+							Number(COMPOUND_OPTIONS["elk.layered.spacing.nodeNodeBetweenLayers"]),
+							// Badges stacked beside parallel runs in one gap each need
+							// their own height and air; only the gap between rows grows
+							// for them, never the room around every route track.
+							height + 2 * nodeAir + stacked * (height + labelAir),
+						),
+					),
+					"elk.layered.spacing.edgeNodeBetweenLayers": String(
+						Math.max(
+							Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeNodeBetweenLayers"]),
+							Math.ceil(height / 2 + nodeAir),
+						),
+					),
+					"elk.layered.spacing.edgeEdgeBetweenLayers": String(
+						Math.max(
+							Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeEdgeBetweenLayers"]),
+							height + labelAir,
+						),
+					),
+				},
+	);
 }
 
 /**
@@ -382,30 +313,88 @@ async function settleIn(
 }
 
 /**
- * On a first render, settle the chosen reading under every other flank rule
- * and keep the drawing the scorecard prefers (docs/design/layout-rules.md
- * section 21). The reading is chosen under the first rule, so each other
- * rule costs one settle, not one per reading. A folded reading keeps the
- * first rule: whether a fold reads well is judged when it is chosen.
- * @param chosen The first render in its chosen reading, under the first rule.
+ * A board settled read one way under every flank rule but the first.
+ * @param reading The way the page reads.
  * @param content The architecture meaning.
  * @param measured Its measured sizes, on the page.
- * @returns The kept drawing.
+ * @returns The drawings the engine did not refuse.
  */
-async function chooseFlanks(
-	chosen: ArchitectureDrawing,
+async function otherRules(
+	reading: Reading,
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-): Promise<ArchitectureDrawing> {
-	if (chosen.wrapped) return chosen;
-	const reading = { direction: chosen.direction, wrapped: false };
-	const others = await Promise.all(
+): Promise<ArchitectureDrawing[]> {
+	const drawings = await Promise.all(
 		FLANK_RULES.slice(1).map((rule) =>
 			// A rule the engine refuses is simply not a candidate.
 			settleUnder(reading, rule, content, measured, undefined).catch(() => undefined),
 		),
 	);
-	return bestOf([chosen, ...others.filter((drawing) => drawing !== undefined)]);
+	return drawings.filter((drawing) => drawing !== undefined);
+}
+
+/**
+ * A first render: its reading chosen under the first flank rule, then every
+ * other rule settled in that reading and the drawing the scorecard prefers
+ * kept (docs/design/layout-rules.md section 21). Nearly every board reads
+ * down the page, so the other rules are settled for that reading while the
+ * reading is still being chosen, and settled again only when another reading
+ * wins (section 22). A folded reading keeps the first rule: whether a fold
+ * reads well is judged when it is chosen.
+ * @param content The architecture meaning.
+ * @param measured Its measured sizes, on the page.
+ * @returns The kept drawing.
+ */
+async function firstRender(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+): Promise<ArchitectureDrawing> {
+	const down: Reading = { direction: "down", wrapped: false };
+	const ahead = otherRules(down, content, measured);
+	const chosen = await chooseReading(
+		measured,
+		undefined,
+		(reading) => settleIn(reading, content, measured, undefined),
+		async (reading) => {
+			const problem = problemOf(reading, FLANK_RULES[0]!, content, measured, undefined);
+			return drawingAcross(reading.direction, (await attemptLabels(problem, new Set(), 0)).drawing);
+		},
+	);
+	if (chosen.wrapped) return chosen;
+	const others =
+		chosen.direction === "down"
+			? await ahead
+			: await otherRules({ direction: chosen.direction, wrapped: false }, content, measured);
+	return bestOf([chosen, ...others]);
+}
+
+/**
+ * The board to lay out, in the solving frame.
+ * @param reading The way the page reads, and whether its layers fold.
+ * @param reading.direction Down the page, or left to right.
+ * @param reading.wrapped Whether the layers fold toward the pane's shape.
+ * @param flanks Which flank returns travel and how skips attach.
+ * @param content The architecture meaning.
+ * @param measured Its measured sizes, on the page.
+ * @param predecessor The preceding drawing of this view, on the page.
+ * @returns The problem.
+ */
+function problemOf(
+	{ direction, wrapped }: Reading,
+	flanks: FlankRule,
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+): Problem {
+	return {
+		content,
+		measured: measuredInFrame(direction, measured),
+		predecessor: predecessor === undefined ? undefined : drawingAcross(direction, predecessor),
+		direction,
+		wrapped,
+		header: headerSideOf(direction),
+		flanks,
+	};
 }
 
 /**
@@ -426,20 +415,15 @@ async function settleUnder(
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
 ): Promise<ArchitectureDrawing> {
-	const problem: Problem = {
-		content,
-		measured: measuredInFrame(direction, measured),
-		predecessor: predecessor === undefined ? undefined : drawingAcross(direction, predecessor),
-		direction,
-		wrapped,
-		header: headerSideOf(direction),
-		flanks,
-	};
+	const problem = problemOf({ direction, wrapped }, flanks, content, measured, predecessor);
 	const drawing = await settleWithAddedSkips(
 		problem,
 		async (first) => (await attemptLabels(first, new Set(), 0)).drawing,
 		(each) =>
-			settleLabels((reserved, stacked) => attemptLabels(each, reserved, stacked), new Set()),
+			settleLabels(
+				rememberSolves((reserved, stacked) => attemptLabels(each, reserved, stacked)),
+				new Set(),
+			),
 	);
 	return drawingAcross(direction, drawing);
 }
@@ -460,15 +444,15 @@ async function layoutCompound(
 	const reused =
 		predecessor === undefined ? undefined : reuseDrawing(content, measured, predecessor);
 	/**
-	 * Choose the reading, then on a first render the flank rule within it.
+	 * A first render chooses its reading and flank rule; a proposal keeps its predecessor's.
 	 * @returns The settled drawing.
 	 */
-	const read = async (): Promise<ArchitectureDrawing> => {
-		const chosen = await chooseReading(measured, predecessor, (reading) =>
-			settleIn(reading, content, measured, predecessor),
-		);
-		return predecessor === undefined ? chooseFlanks(chosen, content, measured) : chosen;
-	};
+	const read = async (): Promise<ArchitectureDrawing> =>
+		predecessor === undefined
+			? firstRender(content, measured)
+			: chooseReading(measured, predecessor, (reading) =>
+					settleIn(reading, content, measured, predecessor),
+				);
 	const drawing = reused ?? (await read());
 	// Bridges are part of the geometry a reader sees, so they are settled here
 	// and not by a painter; the un-bridged routes stay beside them for a
