@@ -16,6 +16,7 @@ import type {
 	MeasuredArchitecture,
 	ReadingDirection,
 } from "@/runtime/semantic-renderer/lib/drawing";
+import { routesThroughCards } from "@/runtime/semantic-renderer/lib/layout/scorecard";
 
 /** One way to draw a board: its direction, and whether its layers fold. */
 interface Reading {
@@ -118,9 +119,13 @@ async function candidate(
 	if (!reading.wrapped) return settle(reading);
 	try {
 		const drawing = await settle(reading);
+		// A fold that routes a line through a card is not a reading; elkjs threw
+		// on the one fold that did (Command dispatch read left to right), and an
+		// engine that does not throw must not make it a candidate.
 		const readable =
 			bendsPerRoute(drawing) <= FOLDED_BENDS &&
-			foldCrossings(drawing, reading.direction) <= FOLDED_THREADS;
+			foldCrossings(drawing, reading.direction) <= FOLDED_THREADS &&
+			routesThroughCards(drawing) === 0;
 		return readable ? drawing : undefined;
 	} catch {
 		return undefined;
