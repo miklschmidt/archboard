@@ -60,17 +60,23 @@ function reserveMissing(attempt: LabelAttempt, reserved: Set<string>): void {
 	}
 }
 
+/** An attempt that places every label, with the reservations and gap it was solved with. */
+interface Placed {
+	readonly attempt: LabelAttempt;
+	readonly reserved: ReadonlySet<string>;
+	readonly stacked: number;
+}
+
 /**
  * The shorter page of two settled drawings, the certain one when they tie.
  * @param grown The drawing settled with a grown gap, when there was one.
  * @param kept The drawing settled by reservation alone.
  * @returns Whichever is shorter.
  */
-function shorterOf(
-	grown: ArchitectureDrawing | undefined,
-	kept: ArchitectureDrawing,
-): ArchitectureDrawing {
-	return grown !== undefined && grown.height < kept.height ? grown : kept;
+function shorterOf(grown: Placed | undefined, kept: Placed): Placed {
+	return grown !== undefined && grown.attempt.drawing.height < kept.attempt.drawing.height
+		? grown
+		: kept;
 }
 
 /**
@@ -167,15 +173,14 @@ async function grownGap(
 	solve: Solve,
 	reserved: ReadonlySet<string>,
 	current: LabelAttempt,
-): Promise<ArchitectureDrawing | undefined> {
+): Promise<Placed | undefined> {
 	const taller = await stackedAttempt(current, 0, (depth) => solve(reserved, depth));
 	if (taller === undefined) return undefined;
-	return settleLabels(solve, new Set(reserved), 1, taller);
+	return placeEvery(solve, new Set(reserved), 1, taller);
 }
 
 /**
- * Add reservations until every measured label has a final box, then let go
- * of the ones the drawing does not use.
+ * Add reservations until every measured label has a box.
  *
  * A badge on a straight descent that found no room can be given one more
  * badge of gap between every pair of rows instead of a reserved row of its
@@ -187,20 +192,57 @@ async function grownGap(
  * @param reserved Labels already found to require dedicated engine space.
  * @param stacked How many badges beyond one the gaps between rows hold.
  * @param attempt The solve at that depth, when one is already in hand.
- * @returns One final drawing with every relationship and label present.
+ * @returns The attempt that places every label, with its reservations and gap.
  */
-async function settleLabels(
+async function placeEvery(
 	solve: Solve,
 	reserved: Set<string>,
 	stacked = 0,
 	attempt?: LabelAttempt,
-): Promise<ArchitectureDrawing> {
+): Promise<Placed> {
 	const current = attempt ?? (await solve(reserved, stacked));
-	if (current.missing.length === 0) return releaseUnused(solve, reserved, stacked, current);
-	const grown = stacked === 0 ? await grownGap(solve, reserved, current) : undefined;
+	if (current.missing.length === 0)
+		return { attempt: current, reserved: new Set(reserved), stacked };
+	// The two ways are independent, so they settle side by side; the grown gap
+	// keeps its own copy of the reservations made so far.
+	const growing = stacked === 0 ? grownGap(solve, new Set(reserved), current) : undefined;
 	reserveMissing(current, reserved);
-	const kept = await settleLabels(solve, reserved, stacked);
+	const [grown, kept] = await Promise.all([growing, placeEvery(solve, reserved, stacked)]);
 	return shorterOf(grown, kept);
 }
 
-export { settleLabels, type LabelAttempt };
+/**
+ * Add reservations until every measured label has a final box, then let go
+ * of the ones the kept drawing does not use. Only the kept drawing is
+ * released: releasing every branch before choosing between them was most of
+ * a render's solves (docs/design/layout-rules.md section 22).
+ * @param solve Solves with a set of reservations.
+ * @param reserved Labels already found to require dedicated engine space.
+ * @returns One final drawing with every relationship and label present.
+ */
+async function settleLabels(solve: Solve, reserved: Set<string>): Promise<ArchitectureDrawing> {
+	const placed = await placeEvery(solve, reserved);
+	return releaseUnused(solve, placed.reserved, placed.stacked, placed.attempt);
+}
+
+/**
+ * A solve that answers the same reservations and gap once. The engine is
+ * deterministic, and settling asks for the same solve again: the grown gap
+ * and the reservation rounds meet at one set of reservations from two sides,
+ * and a release lands on a set already solved.
+ * @param solve The solve.
+ * @returns The same solve, each distinct question asked of the engine once.
+ */
+function rememberSolves(solve: Solve): Solve {
+	const answers = new Map<string, Promise<LabelAttempt>>();
+	return (reserved, stacked) => {
+		const key = `${stacked}|${[...reserved].toSorted().join(",")}`;
+		const known = answers.get(key);
+		if (known !== undefined) return known;
+		const answer = solve(reserved, stacked);
+		answers.set(key, answer);
+		return answer;
+	};
+}
+
+export { rememberSolves, settleLabels, type LabelAttempt };
