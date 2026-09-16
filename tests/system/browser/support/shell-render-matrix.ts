@@ -48,6 +48,8 @@ type ShellMatrixCell = {
 	pageOverflow: boolean;
 	touchTargets: MatrixProbe["touchTargets"];
 	stateHash: string;
+	/** The shell's measured rectangles, so an owner can hold them to the shared shell geometry. */
+	geometry: MatrixProbe["geometry"];
 	geometryHash: string;
 	normalizedHash: string;
 	screenshot: string;
@@ -436,6 +438,7 @@ async function captureShellRenderMatrix(
 					pageOverflow: value.pageOverflow,
 					touchTargets: value.touchTargets,
 					stateHash,
+					geometry: value.geometry,
 					geometryHash,
 					normalizedHash,
 					screenshot,
