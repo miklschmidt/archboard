@@ -1,12 +1,15 @@
 # Consumer skill overhaul: preservation assessment
 
 TASK-211 rewrote `skills/archboard` around four common workflows. This table
-records where each material do/don't of the pre-overhaul skill (frozen under
-`baseline/archboard`) and each guardrail the task recorded now lives, and what
+records where each material do/don't of the pre-overhaul skill (the baseline
+of the 2026-09-15 and 2026-09-16 batches, in git history at commit 8ea1ee68
+under `baseline/archboard`; since TASK-243.01 that directory holds the
+accepted TASK-211 skill) and each guardrail the task recorded now lives, and what
 evidence holds the candidate to it. Since TASK-235.09 the four recipes live
 under `references/`: "architecture recipe" is `create-architecture.md`,
 "sequence recipe" is `create-sequence.md`, "edit recipe" is `edit.md` and
-"propose recipe" is `propose-compare.md`; a row naming SKILL.md with a recipe
+"propose recipe" is `propose-compare.md`, and since TASK-243.06 the read-only
+route has `read.md`; a row naming SKILL.md with a recipe
 step means that reference. Evidence owners are TASK-209 scenario
 checks (`evals/evals.json`), harness guardrails, the grader's
 per-feature verdicts, or an existing fast test.
@@ -22,7 +25,7 @@ per-feature verdicts, or an existing fast test.
 | Nodes: name, kind, responsibility, description; kind identifies the unit independent of card/container drawing                                                                                                                                              | authoring.md Nodes table                                                                              | S00 grader `node.kind`, `node.responsibility`; `node-kind`                                                            |
 | Containment: single parent, acyclic                                                                                                                                                                                                                         | authoring.md Nodes table, refusals                                                                    | `container-has-children`, `node-parent`; integrity tests                                                              |
 | Calls reach the actual internal receiver; containment is not a call; no relay nodes; container endpoint only for whole-module meaning                                                                                                                       | SKILL.md recipe step 3 note; authoring.md Containment and receivers                                   | `no-edge-to-container-with-children` (S00); grader `edge.actual-receiver`                                             |
-| Groups: configured ids, explicit multi-membership across containers, no inheritance, no colors; `semantic inspect` shape                                                                                                                                    | authoring.md Groups                                                                                   | S03/S09 `node-groups`, `inspect-group`; browser/unit owners for the viewer                                            |
+| Groups: configured ids, explicit multi-membership across containers, no inheritance, no colors; `semantic inspect` shape                                                                                                                                    | authoring.md Groups; read.md                                                                          | S03/S09 `node-groups`, `inspect-group`; browser/unit owners for the viewer                                            |
 | Bindings: register the checkout, identity plus repo-relative path                                                                                                                                                                                           | SKILL.md recipe step 2; authoring.md Bindings                                                         | `node-binding` (S01/S03); grader `binding.repo-registration`                                                          |
 | Edges: configured kind, short label, `hero` emphasis, traffic defaults/values/off, illustrative not measured                                                                                                                                                | authoring.md Relationships; SKILL.md Keep it true                                                     | S10 `edge-traffic` ×3, grader `traffic.illustrative`; `edge-ids-retained`                                             |
 | Flows: participants, ordered steps, kinds sync/async/return/self                                                                                                                                                                                            | SKILL.md sequence recipe; sequences reference                                                         | S05/S07 `flow-with-steps`, `flow-step-repeat`                                                                         |

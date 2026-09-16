@@ -20,14 +20,22 @@ a comparison, a view and a group inspection read.
    List the participants in reading order and each message in sequence with
    its kind: `sync` (a call, the default), `return`, `async` (fire and
    forget), `self` (a participant's own step; exactly when `from` and `to` are
-   the same node). Use `repeat` for a count the source fixes (a retry limit,
+   the same node). A call a participant makes on itself (`RequestContext.push`
+   calling `self.match_request`, a loader trying its own candidates) is one
+   `self` step on that participant: do not split a class the board draws as
+   one part into method participants so the call becomes a message between two
+   columns, since the exchange is between the parts the board has. Use `repeat` for a count the source fixes (a retry limit,
    a batch of a known size, a literal list of candidates tried in turn: two
    default module names is `repeat: 2`); a loop whose length depends on data
    is one step with a `note` that says so. Use `note` for a branch or a
    caveat. Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
-   are `external`, the exchange's relationships carry `traffic` when it is
-   the runtime path, and an ordering the reader must understand gets a
-   walkthrough beat.
+   are `external`; the relationships on the exchange's forward path carry
+   `traffic`, and its returns, teardown, error branches and one-shot startup
+   calls do not; and an ordering the reader must understand gets a
+   walkthrough beat. A beat explains a step by naming it: give that step an
+   `as` handle in the same write, put the handle in the beat's `subjects`
+   with the parts it joins, and set the beat's `view` to the data-flow view
+   so the reader looks at the exchange while reading it.
 2. Create a standalone sequence in one write. Against an existing board, use
    the same payload with `semantic edit` and the version you read. The
    evidence here, from `src/flask/cli.py` in Flask 3.0: `run_command` calls
@@ -65,12 +73,21 @@ archboard semantic new "Flask CLI startup" --doing "explaining how flask run sta
       { "from": "Shell", "to": "FlaskGroup", "label": "flask run" },
       { "from": "FlaskGroup", "to": "run_command", "label": "invoke" },
       { "from": "run_command", "to": "ScriptInfo", "label": "load_app" },
-      { "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "repeat": 2, "note": "tries wsgi.py then app.py unless FLASK_APP names the app or factory; within each, locate_app tries the attribute names" },
+      { "as": "load", "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "repeat": 2, "note": "tries wsgi.py then app.py unless FLASK_APP names the app or factory; within each, locate_app tries the attribute names" },
       { "from": "ScriptInfo", "to": "run_command", "label": "Flask app", "kind": "return" },
       { "from": "run_command", "to": "run_simple", "label": "serve" }
     ]
   }],
-  "views": [{ "name": "Startup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["flask run"] } }]
+  "views": [{ "name": "Startup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["flask run"] } }],
+  "walkthroughs": [{
+    "name": "Why the app is imported before serving",
+    "beats": [{
+      "heading": "Find the app once, then serve",
+      "body": "run_simple receives an app ScriptInfo has already imported: the search over wsgi.py and app.py happens once at startup, never per request, which is why an import error stops the command before any socket opens.",
+      "subjects": ["load", "ScriptInfo", "run_simple"],
+      "view": "Startup exchange"
+    }]
+  }]
 }
 JSON
 archboard semantic rasterize "Flask CLI startup" --view "Startup exchange" --out startup.png
@@ -78,10 +95,14 @@ archboard semantic rasterize "Flask CLI startup" --view "Startup exchange" --out
 
 3. Check the answer's flow against your record: participants in the order you
    meant, steps in the order the source runs them, returns where the source
-   returns, kinds and notes as the code justifies. Open the picture through
+   returns, kinds and notes as the code justifies; the saved beat's `subjects`
+   carry the step's minted id (a handle nobody referenced explains nothing).
+   Open the picture through
    the `data-flow` view you made, not the whole board: the columns in order,
    every message readable and in sequence, returns and repeats
-   distinguishable, nothing cut off. Your answer names the catalogue rows the
+   distinguishable, nothing cut off. A picture the request names goes where
+   it says; one you draw to look at goes in a temporary directory, never into
+   the checkout you are describing. Your answer names the catalogue rows the
    board uses and the ones you judged not to apply.
 
 Read [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)

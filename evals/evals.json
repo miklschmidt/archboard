@@ -823,7 +823,7 @@
 				"doing-on-writes",
 				"no-writes"
 			],
-			"guidance": ["references/authoring.md"],
+			"guidance": ["references/read.md"],
 			"captures": [
 				{
 					"label": "application",

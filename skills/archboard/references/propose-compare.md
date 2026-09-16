@@ -44,6 +44,10 @@ the rewiring is in `src/flask/ctx.py` of Flask 2.2: `AppContext.push` and
    proposal keeps or adds, where it now lands (here, both contexts' `set /
 reset` relationships land on `Context variables`). A relationship whose
    endpoint moved is the change the comparison exists to show, so name it.
+   When the proposal adds or changes a board view, read
+   [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)
+   for the two meanings of a selection scope before writing it; views belong
+   to the board and apply to both pictures.
 4. Only when asked, adopt with the version returned by the proposal edit:
    `archboard semantic adopt "Flask contexts" --variant "Context variables" --reason "Flask 2.2 implements contexts with contextvars" --expect-version 4 --doing "adopting context variables"`.
    The proposal becomes current, the previous current becomes historical, and
