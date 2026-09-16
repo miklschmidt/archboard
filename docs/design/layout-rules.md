@@ -350,3 +350,58 @@ the engine spacing parallel departures 20 apart (`elk.spacing.edgeEdge`), so
 no badge fits beside its own run without crossing a sibling's; widening that
 spacing to 100 brought the board to 1457 tall but grew fixture board 3 by a
 fifth, so it stays.
+
+## 13. Fit in the reference pane is the measure (2026-09-16, TASK-245.02)
+
+Page area was the layout suite's number, and area does not track what a
+reader gets: a 997 by 1468 column and a 3952 by 460 ribbon are the same
+area and fit the pane at 0.65 against 0.32. ADR 0028 makes fit the measure.
+Fit is the scale at which the whole drawing shows in the reference pane,
+capped at one: `min(pane.width / page.width, pane.height / page.height)`,
+the arithmetic the viewer's own fit uses. The reference pane is derived in
+`src/shared/shell-geometry/index.ts` from the desktop shell the product
+supports: 1920 by 1080, less the 320 navigator, the 56 header, the 36 pane
+bar and the 41 collapsed dock bar, less the 280 inspector drawn over the
+diagram's right edge, less the 24 fit margin on every side, which is 1272 by 899. (TASK-245 estimated 952 tall before the pane bar and the dock were
+counted.) The camera reads its margin and its fit arithmetic from that
+module, the shell root and the inspector take their widths from it, and the
+shell-layout browser owner holds the mounted shell's stage to it.
+
+`src/runtime/semantic-renderer/tests/drawn-ink.ts` is the one owner of the
+measurements, read by `tests/wide-boards.test.ts` and by `measure.ts`: fit,
+routes through a card (frames excluded, since a route inside a frame crosses
+it by design), the largest fan of skips down one card's flank, corridor ink,
+bends per route and labels off a straight run of their own route. Bends here
+are counted on the route without its bridges, as the suite always counted
+them; sections 3 to 10 counted them with `measure.ts`, bridge hops included,
+so those columns are not comparable with this one. The measure script now
+prints these for every fixture and every vault board (`ALL=1` for every
+variant, `PICTURES=1` for PNGs); its earlier layering and compaction modes
+are gone, their results being recorded in sections 3 and 7 and in
+[wide-board-layout.md](wide-board-layout.md).
+
+The baseline, first renders on the tree at this section's commit:
+
+| board               | page      |  fit | corridor | bends per route | labels off runs |
+| ------------------- | --------- | ---: | -------: | --------------: | --------------: |
+| flask-map-1         | 2312x1954 | 0.46 |       7% |             1.9 |               0 |
+| flask-map-2         | 1815x2588 | 0.35 |      16% |             2.3 |               0 |
+| flask-map-3         | 2566x1997 | 0.45 |       6% |             2.7 |               0 |
+| Agent workbench     | 1440x1536 | 0.59 |       0% |             1.6 |               0 |
+| Archboard           | 1210x629  | 1.00 |      10% |             1.3 |               0 |
+| Board persistence   | 1705x850  | 0.75 |       0% |             1.5 |               0 |
+| Board viewer        | 1376x1443 | 0.62 |       0% |             1.5 |               0 |
+| Browser application | 1632x1297 | 0.69 |       0% |             1.5 |               0 |
+| Canvas server       | 1338x1265 | 0.71 |      10% |             1.9 |               0 |
+| Codex session       | 1111x986  | 0.91 |       0% |             0.2 |               0 |
+| Command dispatch    | 1441x685  | 0.88 |       0% |             1.3 |               0 |
+| Command interface   | 683x1027  | 0.88 |       0% |             0.3 |               0 |
+| Renderer layout     | 910x780   | 1.00 |       0% |             0.8 |               0 |
+| Semantic renderer   | 997x1468  | 0.61 |      17% |             1.3 |               0 |
+
+No route runs through a card and no card fans more than one skip down its
+flank on any of them. The suite holds every fit to this table less 0.02,
+every fixture to its corridor share and bends with a little room, and every
+vault board to three bends per route; a board the vault gains needs a row.
+Nine of the fourteen are height-limited, which is what the reading-direction
+work of TASK-245.03 is for.
