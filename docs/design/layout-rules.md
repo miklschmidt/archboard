@@ -628,7 +628,7 @@ experiment spread Canvas server wider and emptier while cutting its crossings
 from 9 to 5. No single number decides whether a drawing is better.
 
 `src/runtime/semantic-renderer/tests/drawn-scorecard.ts` measures every
-drawing on twelve measures, each with the direction a reader wants it to
+drawing on ten measures, each with the direction a reader wants it to
 move:
 
 | measure              | better | what it says                                           |
@@ -641,8 +641,6 @@ move:
 | crossings            | lower  | right-angle crossings between two routes               |
 | lane ink             | lower  | share of route length in margin lanes beside no card   |
 | flank fan            | lower  | most routes leaving one card by its beside flank       |
-| side ends            | none   | share of route ends on a card's side face              |
-| horizontal labels    | none   | share of labels on a horizontal run of their route     |
 | routes through cards | lower  | invariant, must be zero                                |
 | labels off runs      | lower  | invariant, must be zero                                |
 
@@ -653,3 +651,36 @@ layout change is reported that way, with the pictures, and every comparison
 from here on uses it. The label check now allows a unit of snapping: a
 Canvas server label reported off its line sat 0.88 units from it, which no
 reader can see.
+
+Side ends and labels on horizontal runs were measured for a day and taken
+off the scorecard: they are ways a person corrects one layout so it reads
+better, not measures of how well a layout reads.
+
+## 19. Entering a card from the side (2026-09-16, rejected)
+
+Every route today leaves its source's bottom and enters its target's top:
+across the fourteen boards and fixtures, over 90 percent of route ends are on
+a top or bottom face, because the layered engine attaches a port-less link
+there when the page reads down and only takes a side face when one is fixed
+before the solve. Two experiments let a forward link whose source sits wholly
+beside its target enter the target's facing side, reading the positions off
+a first solve. Neither is on the branch.
+
+Solved again from scratch, the side choices moved the cards they were read
+from. Measured against today: Semantic renderer fit 0.61 to 0.67 but 1.46 to
+1.72 megapixels and crossings 8 to 4; Canvas server 1.69 to 2.34 megapixels,
+fit 0.71 to 0.54, route length +17 percent, crossings 9 to 5; Board viewer
+1.99 to 2.13 megapixels, bends per route 1.5 to 1.8. Page area grew on nine
+of fourteen boards and bends on nine; crossings fell on six and rose on three.
+
+Solved again with the first solve's cards pinned through the proposal seeding
+(one settle, then a second with that drawing as the predecessor), the routes
+had to snake round cards that no longer suited their ports, and it is worse
+on nearly every measure: routes through cards on nine boards (flask-map-3
+11, Board persistence 6), bends per route roughly doubled (Semantic renderer
+1.3 to 2.9, Board persistence 1.5 to 4.6), route length up on every board
+(Codex session 1162 to 7468), fit down on eleven (Board persistence 0.75 to
+0.50) and page area up on all fourteen (Board persistence 1.45 to 3.05
+megapixels). A side face chosen from where a first solve put the cards does
+not hold once the cards are placed for that face; placement and face have to
+be decided together, which the layered engine does not do on its own.

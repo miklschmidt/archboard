@@ -1,9 +1,10 @@
-// The scorecard a layout change is judged by: every measure a reader pays
-// for, read off the drawn page, so no single number decides whether a drawing
-// is better. Fit in the pane rewards a shape and ignores empty space; page
-// area rewards compactness and ignores the pane; route length, bends and
-// crossings say what a reader traces; lanes, side ports and horizontal label
-// runs say how the wiring sits. The invariants at the end must stay zero.
+// The scorecard a layout change is judged by: every measure of quality a
+// reader pays for, read off the drawn page, so no single number decides
+// whether a drawing is better. Fit in the pane rewards a shape and ignores
+// empty space; page area and card share reward compactness and ignore the
+// pane; route length, bends and crossings say what a reader traces; lane ink
+// and the flank fan say how much wiring runs down margins. The invariants at
+// the end must stay zero.
 //
 // Read by docs/design/wide-board-layout-fixtures/measure.ts, which prints it
 // for every board and compares two runs measure by measure.
@@ -17,15 +18,10 @@ import {
 	labelsOffRuns,
 	routesThroughCards,
 } from "@/runtime/semantic-renderer/tests/drawn-ink";
-import { faceOf, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
-import {
-	corridorPoints,
-	routeLabels,
-	type DrawnPoint,
-} from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /** Which way a measure should move for a reader to be better off. */
-type Better = "lower" | "higher" | "neither";
+type Better = "lower" | "higher";
 
 /** One measure of a drawing. */
 interface Measure {
@@ -38,13 +34,13 @@ interface Measure {
 	readonly meaning: string;
 }
 
-/** One drawn run between two points. */
+/** One drawn run between two points, with its relationship's id. */
 type Run = readonly [DrawnPoint, DrawnPoint, string];
 
 /**
  * Every straight run of every route, bridges removed.
  * @param drawing The rendered board.
- * @returns The runs, each with its relationship's id.
+ * @returns The runs.
  */
 function runsOf(drawing: RenderedDiagram): Run[] {
 	return [...corridorPoints(drawing.svg)].flatMap(([id, points]) =>
@@ -82,65 +78,6 @@ function crossingsOf(runs: readonly Run[]): number {
 }
 
 /**
- * How many route ends meet a card on a side face rather than on the face ahead
- * of or behind it in the reading.
- * @param drawing The rendered board.
- * @param content The board.
- * @returns Side ends, and all ends.
- */
-function sideEndsOf(
-	drawing: RenderedDiagram,
-	content: VariantContent,
-): { readonly side: number; readonly all: number } {
-	const direction = readingOf(drawing);
-	const routes = corridorPoints(drawing.svg);
-	let side = 0,
-		all = 0;
-	for (const edge of content.edges) {
-		const route = routes.get(edge.id);
-		const from = drawing.atlas.nodes[edge.from];
-		const to = drawing.atlas.nodes[edge.to];
-		if (route === undefined || from === undefined || to === undefined || edge.from === edge.to)
-			continue;
-		for (const [point, box] of [
-			[route[0]!, from],
-			[route.at(-1)!, to],
-		] as const) {
-			all += 1;
-			const face = faceOf(point, box, direction);
-			if (face === "beside" || face === "return") side += 1;
-		}
-	}
-	return { side, all };
-}
-
-/**
- * How many labels sit on a horizontal run of their own route.
- * @param drawing The rendered board.
- * @returns Those labels, and all labels.
- */
-function horizontalLabelsOf(drawing: RenderedDiagram): {
-	readonly horizontal: number;
-	readonly all: number;
-} {
-	const routes = corridorPoints(drawing.svg);
-	const labels = [...routeLabels(drawing.svg)];
-	const horizontal = labels.filter(([id, label]) => {
-		const centre = label.y + label.height / 2;
-		const route = routes.get(id) ?? [];
-		return route.some(
-			(point, index) =>
-				index > 0 &&
-				route[index - 1]!.y === point.y &&
-				Math.abs(point.y - centre) < 1 &&
-				Math.min(point.x, route[index - 1]!.x) <= label.x &&
-				Math.max(point.x, route[index - 1]!.x) >= label.x + label.width,
-		);
-	}).length;
-	return { horizontal, all: labels.length };
-}
-
-/**
  * Every measure of one drawing.
  * @param drawing The rendered board.
  * @param content The board.
@@ -157,8 +94,6 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 		0,
 	);
 	const ink = inkOf(drawing);
-	const ends = sideEndsOf(drawing, content);
-	const labels = horizontalLabelsOf(drawing);
 	return [
 		{
 			name: "fit",
@@ -211,20 +146,6 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 			meaning: "most routes leaving one card by its beside flank",
 		},
 		{
-			name: "side ends",
-			value: ends.all === 0 ? 0 : ends.side / ends.all,
-			digits: 2,
-			better: "neither",
-			meaning: "share of route ends on a card's side face",
-		},
-		{
-			name: "horizontal labels",
-			value: labels.all === 0 ? 0 : labels.horizontal / labels.all,
-			digits: 2,
-			better: "neither",
-			meaning: "share of labels on a horizontal run of their route",
-		},
-		{
 			name: "routes through cards",
 			value: routesThroughCards(drawing, content).length,
 			digits: 0,
@@ -245,13 +166,12 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
  * How one measure moved between two drawings of the same board.
  * @param before The measure in the first run.
  * @param after The same measure in the second run.
- * @returns "better", "worse", "same", or "more"/"fewer" for a measure with no preferred direction.
+ * @returns "better", "worse" or "same".
  */
 function verdictOf(before: Measure, after: Measure): string {
 	const scale = 10 ** before.digits;
 	const delta = Math.round(after.value * scale) - Math.round(before.value * scale);
 	if (delta === 0) return "same";
-	if (before.better === "neither") return delta > 0 ? "more" : "fewer";
 	return delta < 0 === (before.better === "lower") ? "better" : "worse";
 }
 
