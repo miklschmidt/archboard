@@ -55,5 +55,7 @@ that call it.
    names the catalogue rows the change uses and the ones you judged not to
    apply.
 
-Read [authoring](references/authoring.md) for every removal list, bindings
-with revision evidence, groups, and how to repair a refused write.
+Read [authoring](references/authoring.md) only when the change needs it: a
+removal beyond `removeEdges`, a binding with revision evidence, group
+membership, a drill-down link, or a refusal you must repair. A change of one
+property on subjects you read needs nothing beyond this recipe.
