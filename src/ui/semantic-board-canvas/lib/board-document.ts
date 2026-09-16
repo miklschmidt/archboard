@@ -193,7 +193,7 @@ function subjectOf(variant: SemanticVariant, id: string): Subject | undefined {
 // Two things make that the same answer as the server's rather than a second
 // opinion:
 //
-//   The baseline is the same. `src/server/canvas/lib/semantic-board-changes.ts`
+//   The baseline is the same. `src/shared/semantic-board/lib/drawing.ts`
 //   takes the predecessor to be `variant.parent` looked up in this board, and
 //   reports no changes at all exactly when there is no parent. That field is in
 //   the document, so this reads it rather than being told it.

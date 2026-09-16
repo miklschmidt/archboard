@@ -20,6 +20,7 @@ import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
 	VariantEditInputSchema,
+	drawingOf,
 } from "@/shared/semantic-board/index";
 import {
 	branchVariantTransition,
@@ -30,7 +31,6 @@ import {
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import { drawingOf } from "@/server/canvas/index";
 
 /** Where the statements live, relative to the checkout. */
 const STATED = "docs/design/semantic-pipeline";

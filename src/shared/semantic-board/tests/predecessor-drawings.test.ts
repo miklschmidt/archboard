@@ -4,7 +4,7 @@ import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	type SemanticBoard,
 } from "@/shared/semantic-board/index";
-import { drawingOf, predecessorDrawingsOf } from "@/server/canvas/index";
+import { drawingOf, predecessorDrawingsOf } from "@/shared/semantic-board/index";
 
 const PLATFORM = { id: "pl", name: "Platform", kind: "service" };
 const GATEWAY = { id: "gw", name: "Gateway", kind: "module", parent: "pl" };

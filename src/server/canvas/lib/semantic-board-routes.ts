@@ -18,7 +18,9 @@ import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@/shared/thrown-error/index";
 import {
+	drawingOf,
 	findView,
+	predecessorDrawingsOf,
 	resolveVariant,
 	type DiagramGrammar,
 	type OfferedView,
@@ -40,7 +42,6 @@ import {
 	type DiagramRenderRequest,
 } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
-import { drawingOf, predecessorDrawingsOf } from "@/server/canvas/lib/semantic-board-changes";
 import {
 	adoptRoute,
 	branchRoute,
