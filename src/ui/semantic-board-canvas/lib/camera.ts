@@ -6,17 +6,13 @@
 // and out of the component is what lets "a refetch did not move the camera" be
 // a fact about one function rather than a claim about a render.
 
+import { FIT_MARGIN, fitScale, type Size } from "@/shared/shell-geometry/index";
+
 /** Where the pane is looking: the diagram's origin, and how magnified it is. */
 interface Camera {
 	readonly x: number;
 	readonly y: number;
 	readonly scale: number;
-}
-
-/** A width and a height, in whichever units the caller is working in. */
-interface Size {
-	readonly width: number;
-	readonly height: number;
 }
 
 /**
@@ -54,9 +50,6 @@ const ZOOM_STEP = 1.1;
 
 /** How far one arrow key moves the diagram, in viewport pixels. */
 const PAN_STEP = 64;
-
-/** The breathing room a fit leaves around the diagram, in viewport pixels. */
-const FIT_MARGIN = 24;
 
 /**
  * How far in a fit to one region may go.
@@ -133,10 +126,9 @@ function fitRect(viewport: Size, rect: Rect, ceiling: number): Camera | null {
 	if (room.width <= 0 || room.height <= 0 || rect.width <= 0 || rect.height <= 0) {
 		return null;
 	}
-	const scale = Math.min(
-		ceiling,
-		clampScale(Math.min(room.width / rect.width, room.height / rect.height)),
-	);
+	// The same arithmetic the layout suite measures a drawing's fit with
+	// (`fitIn` beside `fitScale`), so a fit there is a fit here.
+	const scale = Math.min(ceiling, clampScale(fitScale(room, rect)));
 	return {
 		scale,
 		x: viewport.width / 2 - (rect.x + rect.width / 2) * scale,

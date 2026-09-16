@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { HEADER_HEIGHT, NAVIGATOR_WIDTH, STAGE } from "@/shared/shell-geometry/index";
 import { readThemeColors, themeColor } from "@/shared/theme/server";
 
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
@@ -143,6 +144,15 @@ test(
 			).toBe(true);
 			expect(cell.normalizedHash).toHaveLength(64);
 			expect(cell.screenshotSha256).toHaveLength(64);
+		}
+
+		// The reference pane a drawing's fit is measured against is derived from
+		// these widths and heights (ADR 0028); the mounted shell is what they are.
+		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
+			expect(cell.geometry["nav"]?.width, "navigator width").toBe(NAVIGATOR_WIDTH);
+			expect(cell.geometry["header"]?.height, "header height").toBe(HEADER_HEIGHT);
+			expect(cell.geometry["stages"]?.width, "stage width").toBe(STAGE.width);
+			expect(cell.geometry["stages"]?.height, "stage height").toBe(STAGE.height);
 		}
 
 		const themes = matrix.cells

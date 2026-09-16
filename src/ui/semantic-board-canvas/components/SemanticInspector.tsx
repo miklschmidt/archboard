@@ -14,7 +14,9 @@
 
 import { RiCloseLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, type JSX } from "react";
+import { useCallback, type CSSProperties, type JSX } from "react";
+
+import { INSPECTOR_WIDTH } from "@/shared/shell-geometry/index";
 
 import {
 	resolveVariant,
@@ -57,6 +59,9 @@ import {
 
 /** The close control: a 28px ghost icon button inside a 32px hit area. */
 const CLOSE_BUTTON_CLASS = "hit-area text-muted-foreground -mr-2";
+
+/** The panel's width is the shell's, so the reference pane is derived from it. */
+const INSPECTOR_STYLE: CSSProperties = { width: INSPECTOR_WIDTH };
 
 /** Inputs for the flow body. */
 interface FlowBodyProps {
@@ -466,7 +471,8 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 			// re-fits itself whenever its size changes — so picking a card out
 			// would move the whole diagram under the pointer that picked it. The
 			// cost is that it covers the right-hand edge, which panning answers.
-			className="border-border bg-card absolute inset-y-0 right-0 z-10 flex w-[280px] flex-col overflow-y-auto border-l"
+			className="border-border bg-card absolute inset-y-0 right-0 z-10 flex flex-col overflow-y-auto border-l"
+			style={INSPECTOR_STYLE}
 		>
 			{/* The panel says what it is by what is in it: the subject's name is the
 			    first thing in it, and a word saying "Inspect" above that name is a

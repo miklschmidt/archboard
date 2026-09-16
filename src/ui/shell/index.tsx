@@ -4,6 +4,7 @@
 
 import type { CSSProperties, JSX, ReactNode } from "react";
 
+import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
 import { SidebarProvider } from "@/ui/components/sidebar";
 import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
@@ -28,6 +29,12 @@ import { PaneStages } from "@/ui/shell/components/PaneStages";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
 
+/**
+ * The navigator's width is the shell's one fixed column, set here from the
+ * shared shell geometry so the reference pane a drawing is measured against
+ * is derived from the width the shell draws (ADR 0028).
+ */
+const SHELL_STYLE: CSSProperties = { "--shell-navigator-width": `${NAVIGATOR_WIDTH}px` };
 /** The navigator shares --shell-navigator-width with the header wordmark section, so the rule between them runs straight. */
 const SIDEBAR_STYLE: CSSProperties = { "--sidebar-width": "var(--shell-navigator-width)" };
 
@@ -67,7 +74,7 @@ function Shell(props: ShellProps): JSX.Element {
 	const { view, actions } = props;
 	const active = paneById(view, view.activePaneId);
 	return (
-		<div className="bg-background flex h-full min-w-0 flex-col">
+		<div className="bg-background flex h-full min-w-0 flex-col" style={SHELL_STYLE}>
 			<Header
 				current={view.current}
 				theme={view.theme}
