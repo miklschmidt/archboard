@@ -3,10 +3,11 @@ id: TASK-245.08
 title: >-
   Draw a first render under a few flank rules and keep the one the scorecard
   prefers
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-16 18:18'
-updated_date: '2026-09-16 18:35'
+updated_date: '2026-09-16 18:38'
 labels: []
 dependencies: []
 references:
