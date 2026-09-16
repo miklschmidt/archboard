@@ -539,3 +539,39 @@ measured recovers it on every board:
 So `brackets.ts` stays: a skip beside its source's one chain is a reading
 convention that earns its fit, like the step and the return. What is gone is
 every rule that guessed a face from the predecessor's geometry.
+
+## 16. ELK model order in place of the seeding (2026-09-16, TASK-245.05, rejected)
+
+The seeding that keeps a proposal's cards where its predecessor put them
+(`compound-predecessor.ts`, `compound-node-hints.ts`,
+`compound-label-space.ts`: interactive strategies, pinned positions, port
+offsets, seeded routes and lanes for new cards) was tried against ELK's own
+continuity mechanism. The spike ordered every level's children by the
+predecessor's placement (along the reading, then across it, new cards last
+by id) and the edges by the predecessor's order, set
+`considerModelOrder.strategy` to `NODES_AND_EDGES` with
+`crossingMinimization.forceNodeModelOrder`, and seeded nothing.
+
+Measured against the predecessor's own first render: card move is the mean
+distance a surviving card moved, ink the total route length, through the
+routes crossing a card.
+
+| proposal                          | seeding: fit, card move, bends, ink, through | model order: fit, card move, bends, ink, through |
+| --------------------------------- | -------------------------------------------- | ------------------------------------------------ |
+| Canvas server @ Readable layout   | 0.71, 0, 1.9, 11317, 0                       | 0.71, 0, 1.9, 11317, 0                           |
+| Renderer layout @ Readable layout | 1.00, 349, 1.6, 1712, 0                      | 1.00, 269, 0.8, 1391, 0                          |
+| Semantic renderer @ Readable      | 0.66, 59, 1.5, 7010, 0                       | 0.66, 239, 1.2, 6165, 0                          |
+| flask-map-1 + one skip            | 0.42, 141, 2.1, 31433, 0                     | 0.41, 584, 2.1, 37929, 1                         |
+| flask-map-2 + one skip            | 0.33, 88, 2.8, 35845, 0                      | 0.36, 397, 2.1, 38370, 1                         |
+| flask-map-3 + one skip            | 0.42, 66, 2.9, 42685, 2                      | 0.33, 615, 2.9, 52074, 0                         |
+
+Canvas server's proposal changes nothing the layout reads, so both reuse the
+predecessor's geometry without solving. Model order keeps the order of cards
+within a layer, not the layers or the lanes: on the fixture edits cards move
+four to nine times as far, a route runs through a card on two of them, and
+flask-map-3 loses 0.09 of fit. It fails four continuity tests (new dependent
+cards in nearby free space, badge room beside an inherited return, a new
+terminal sharing its sibling's layer, a flank connection keeping the chain
+in one column). It draws fewer bends and less ink on the two smaller vault
+proposals because it is free to re-lay them, which is what continuity exists
+to prevent. The seeding stays.
