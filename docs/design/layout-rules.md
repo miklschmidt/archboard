@@ -735,3 +735,53 @@ Release alone moved only Agent workbench, Canvas server and Semantic
 renderer; the clearance moved every board. The scorecard's route reader now
 drops the points a removed bridge leaves a fraction of a unit off its run,
 which a proposal test had been counting as turns.
+
+## 21. Flank rules, chosen by the scorecard (2026-09-16, TASK-245.08)
+
+Every flank rule measured this day drew some boards better and others worse:
+forward skips left to the engine (section 15), every skip on the left flank
+(before 1f370ce6), the mirror of that, and returns on the left with every skip
+the engine's. So a first render is now drawn under each and the scorecard
+keeps one; a proposal keeps its predecessor's rule, as it keeps its reading.
+`flank-rules.ts` names the four:
+
+| rule                | returns | forward skips over a rank                                   |
+| ------------------- | ------- | ----------------------------------------------------------- |
+| bracketed (default) | right   | a bracket beside a chain on the left, the rest the engine's |
+| flanked             | right   | every one on the left                                       |
+| mirrored            | left    | every one on the right; port order mirrored too             |
+| returns-left        | left    | every one the engine's                                      |
+
+The reading is chosen first under the default rule, then the other three are
+settled in that reading only, so a first render costs three more settles and
+not twelve (the measure run over every board went from about 2 to 10
+seconds; solving every reading under every rule took 22). A folded reading
+keeps the default rule.
+
+`scorecard.ts` keeps the drawing that is better than the most others on the
+measures of section 18, the default when they tie. Two things earned their
+place. Another rule is a candidate only with no more crossings and no more
+routes through cards than the default: freeing a skip over two steps made a
+page smaller on five measures while crossing the first step and doubling the
+bends. And a size (fit, page area, card share, route length, bends, lane ink)
+counts only when it differs by more than 2 percent, a count (crossings, flank
+fan) by any amount: a route two units shorter flipped a five-card board to
+the mirrored rule.
+
+Measured against the tree before, every variant of every vault board and the
+three fixtures; the rest keep the default rule and their drawing:
+
+| board                              | rule         | page before | after     | better                                                       | worse                                 |
+| ---------------------------------- | ------------ | ----------- | --------- | ------------------------------------------------------------ | ------------------------------------- |
+| flask-map-3                        | returns-left | 2566x1901   | 2229x1790 | fit, area, card share, length, bends, crossings              | nothing                               |
+| Agent workbench                    | flanked      | 1372x1390   | 1349x1202 | fit 0.65 to 0.75, area, card share, length, crossings        | bends 1.5 to 1.6, fan 0 to 1          |
+| Board persistence                  | mirrored     | 1705x802    | 1522x828  | fit 0.75 to 0.84, area, card share, length, crossings 9 to 7 | bends, lane ink 0 to 0.08, fan 0 to 3 |
+| Canvas server                      | flanked      | 1254x1169   | 1316x924  | fit 0.77 to 0.97, area, card share, length, lane ink         | bends 1.9 to 2.1, fan 1 to 2          |
+| Semantic renderer                  | flanked      | 819x1291    | 1062x987  | fit 0.70 to 0.91, area, length, bends, crossings 8 to 4      | lane ink 0.16 to 0.38, fan 1 to 2     |
+| Semantic renderer, Readable layout | flanked      | 1454x1083   | 1591x933  | area, card share, length                                     | fit 0.83 to 0.80, lane ink            |
+
+The wide-board suite holds each board to its recorded scorecard as a whole
+instead of a fit floor and a fan bound of one: a board may not be worse on
+more measures than it is better. The flank fan counts both flanks, since a
+rule can put skips on either. Mirroring a kept drawing so its cards sit on
+the left is a separate question and not done.

@@ -19,6 +19,7 @@ import {
 	SOLVING,
 	faceGeometry,
 	pointOnFace,
+	isNearFlank,
 	sharedFlank,
 	FACES,
 	type Flank,
@@ -304,7 +305,7 @@ function initialLaneX(
 	points: readonly Point[],
 	inherited: boolean,
 ): number {
-	const beside = side === SOLVING.besideFlank;
+	const beside = isNearFlank(side);
 	if (inherited)
 		return beside
 			? Math.min(...points.map((point) => point.x))
@@ -334,7 +335,7 @@ function clearParallelLane(
 		],
 	);
 	const distance = (width + parallel.width) / 2 + spacing;
-	return side === SOLVING.besideFlank
+	return isNearFlank(side)
 		? Math.min(x, parallel.x - distance)
 		: Math.max(x, parallel.x + distance);
 }
@@ -457,7 +458,7 @@ function seedTopRoute(
 	// A departure by the beside flank can turn directly onto the corridor that
 	// enters the target from behind. Seed its label on that same corridor so
 	// ELK does not invent a middle lane.
-	if (side === SOLVING.besideFlank && targetSide === SOLVING.forwardIn) {
+	if (isNearFlank(side) && targetSide === SOLVING.forwardIn) {
 		setRoute(edge, [from, { x: to.x, y: from.y }, to]);
 		for (const label of edge.labels!) label.x = to.x - label.width! / 2;
 		return;
@@ -499,7 +500,7 @@ function clearLabelX(
 		if (label.y! + label.height! < Math.min(from.y, to.y) || label.y! > Math.max(from.y, to.y))
 			continue;
 		if (Math.abs(x - from.x) < clearance)
-			x = side === SOLVING.besideFlank ? from.x - clearance : from.x + clearance;
+			x = isNearFlank(side) ? from.x - clearance : from.x + clearance;
 	}
 	return x;
 }
@@ -526,8 +527,7 @@ function clearFlankLabels(
 	 * @returns Its inward-first horizontal sort coordinate.
 	 */
 	const inwardOrder = (edge: ElkExtendedEdge): number =>
-		edge.sections![0]!.bendPoints![0]!.x *
-		(portSides.get(edge.sources[0]!) === SOLVING.besideFlank ? -1 : 1);
+		edge.sections![0]!.bendPoints![0]!.x * (isNearFlank(portSides.get(edge.sources[0]!)) ? -1 : 1);
 	for (const edge of flanks.toSorted((one, other) => inwardOrder(one) - inwardOrder(other))) {
 		const side = sharedFlank(portSides.get(edge.sources[0]!), portSides.get(edge.targets[0]!));
 		if (side === undefined) continue;
@@ -536,7 +536,7 @@ function clearFlankLabels(
 			.filter((other) => other !== edge)
 			.flatMap(verticalGuides)
 			.toSorted((one, other) =>
-				side === SOLVING.besideFlank ? other.from.x - one.from.x : one.from.x - other.from.x,
+				isNearFlank(side) ? other.from.x - one.from.x : one.from.x - other.from.x,
 			);
 		let x = section.bendPoints![0]!.x;
 		for (const label of edge.labels!) x = clearLabelX(x, side, label, corridors);

@@ -1,6 +1,8 @@
 // The layout's own rules that focused runtime checks hold without a whole
-// board: how label reservations settle, and the spacing a label keeps.
+// board: how label reservations settle, the spacing a label keeps, and which
+// of several drawings the scorecard keeps.
 export { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
+export { bestOf } from "@/runtime/semantic-renderer/lib/layout/scorecard";
 export {
 	settleLabels,
 	type LabelAttempt,

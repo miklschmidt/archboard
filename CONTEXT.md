@@ -314,10 +314,22 @@ _Avoid_: viewport, screen, window, canvas size, page
 
 **Fit**:
 How large a drawing shows whole in the reference pane: the scale that fits it,
-capped at one. The measure of a layout change, read together with the reader
-invariants.
-_Avoid_: megapixels, page area, density, aspect ratio, zoom (that is the
-camera's)
+capped at one. One measure on the scorecard, never the only one.
+_Avoid_: density, aspect ratio, zoom (that is the camera's)
+
+**Scorecard**:
+Every measure a reader pays for in one drawing: fit, page area, card share,
+route length, bends, crossings, margin lanes and the flank fan. One drawing is
+better than another when it is better on more of these than it is worse; no
+single measure decides.
+_Avoid_: score, cost, quality metric
+
+**Flank rule**:
+Which side of the page returns travel and how a skip over a rank attaches to
+its cards. The renderer draws a first render under each rule and keeps the one
+the scorecard prefers; a proposal keeps its predecessor's, and nobody authors
+it.
+_Avoid_: side convention, port rule, lane side
 
 ### Working
 
