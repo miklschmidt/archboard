@@ -58,7 +58,7 @@ import {
 } from "@/runtime/semantic-renderer/lib/sequence-design";
 import type { Box } from "@/runtime/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT } from "@/runtime/semantic-renderer/lib/fonts";
-import { fittedSize } from "@/runtime/semantic-renderer/lib/text";
+import { fittedSize, measure } from "@/runtime/semantic-renderer/lib/text";
 import {
 	cardHeight,
 	cardNotes,
@@ -200,6 +200,12 @@ function participantNode(id: string, byId: ReadonlyMap<string, SemanticNode>): S
  * column, because a column's width is also the step from one lifeline to the
  * next, and lifelines at uneven intervals make a sequence hard to follow down
  * the page.
+ *
+ * The cap keeps one long name from widening every column, and a name past it
+ * shrinks its title before anything else; but a name is the one text a card
+ * cannot wrap, so what still does not fit at the smallest title size widens
+ * every column together rather than being cut. A cut name is a participant
+ * nobody can name, whatever the rest of the picture shows.
  * @param flows The flows being drawn.
  * @param byId The variant's nodes.
  * @returns The shared width in whole units and complete measured note lines.
@@ -221,10 +227,15 @@ function measureColumns(
 		[...participants].map((id) => [id, cardNotes(participantNode(id, byId), preferred)]),
 	);
 	const painted = [...notes.values()].flatMap((runs) => runs.map((run) => run.width));
+	const names = [...participants].map((id) =>
+		measure(participantNode(id, byId).name, CARD_TITLE_FONT, TITLE_SIZE_MIN),
+	);
+	const insets = preferred - cardTextWidth(preferred);
 	return {
 		width: Math.max(
 			preferred,
-			Math.ceil(largest(painted, 0) + preferred - cardTextWidth(preferred)),
+			Math.ceil(largest(painted, 0) + insets),
+			Math.ceil(largest(names, 0) + insets),
 		),
 		notes,
 	};
