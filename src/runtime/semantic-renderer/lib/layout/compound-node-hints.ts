@@ -8,6 +8,12 @@ import type { VariantContent } from "@/shared/semantic-board/index";
 import type { DrawingNode } from "@/runtime/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
+import {
+	SOLVING,
+	asFace,
+	isFlank,
+	pointOnFace,
+} from "@/runtime/semantic-renderer/lib/layout/reading";
 
 /**
  * Compare stable identities without depending on the host locale.
@@ -95,21 +101,19 @@ function newLayer(
  * @returns An evenly distributed attachment; ELK still owns final port placement.
  */
 function portHint(node: ElkNode, port: ElkPort, origin: Point): Point {
-	const side = port.layoutOptions!["elk.port.side"];
+	const side = asFace(port.layoutOptions!["elk.port.side"]);
 	const ordered = node
 		.ports!.filter((candidate) => candidate.layoutOptions!["elk.port.side"] === side)
 		.toSorted((one, other) => {
 			const difference =
 				Number(one.layoutOptions!["elk.port.index"]) -
 				Number(other.layoutOptions!["elk.port.index"]);
-			return side === "SOUTH" || side === "WEST" ? -difference : difference;
+			// The engine orders a face's ports clockwise, so the two faces it
+			// walks backwards along are reversed here.
+			return side === SOLVING.forwardOut || side === SOLVING.besideFlank ? -difference : difference;
 		});
 	const fraction = (ordered.indexOf(port) + 1) / (ordered.length + 1);
-	const width = node.width!,
-		height = node.height!;
-	if (side === "WEST") return { x: origin.x, y: origin.y + height * fraction };
-	if (side === "EAST") return { x: origin.x + width, y: origin.y + height * fraction };
-	return { x: origin.x + width * fraction, y: origin.y + (side === "SOUTH" ? height : 0) };
+	return pointOnFace(side, { ...origin, width: node.width!, height: node.height! }, fraction);
 }
 
 /**
@@ -149,8 +153,8 @@ function attachmentOffset(
 	const from = source.ports!.find((port) => port.id === `${edge.id}:from`)!,
 		to = target.ports!.find((port) => port.id === `${edge.id}:to`)!;
 	if (
-		from.layoutOptions!["elk.port.side"] !== "SOUTH" ||
-		to.layoutOptions!["elk.port.side"] !== "NORTH"
+		from.layoutOptions!["elk.port.side"] !== SOLVING.forwardOut ||
+		to.layoutOptions!["elk.port.side"] !== SOLVING.forwardIn
 	)
 		return 0;
 	return portHint(source, from, { x: 0, y: 0 }).x - portHint(target, to, { x: 0, y: 0 }).x;
@@ -293,7 +297,7 @@ function componentAttachments(
 					{
 						point: portHint(node, port, point),
 						moving: component.has(node.id),
-						vertical: side === "NORTH" || side === "SOUTH",
+						vertical: !isFlank(side),
 					},
 				] as const;
 			});

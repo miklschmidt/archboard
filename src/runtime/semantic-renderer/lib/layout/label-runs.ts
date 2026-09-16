@@ -9,6 +9,7 @@ import { DIAGRAM_MARGIN } from "@/runtime/semantic-renderer/lib/design";
 import { inflate, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import { curveBounds, pointAt } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
+import { headerAxis, type HeaderSide } from "@/runtime/semantic-renderer/lib/layout/reading";
 
 /** A route piece and its conservative bounds, including rounded corners. */
 interface RoutePiece {
@@ -209,13 +210,15 @@ function insidePage(box: Box, drawing: ArchitectureDrawing): boolean {
 /**
  * Protect card bodies and frame ink while leaving each frame's interior usable.
  * @param drawing The engine's cards and measured container headings.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns Obstacles before the common label-to-node clearance is added.
  */
-function nodeObstacles(drawing: ArchitectureDrawing): Box[] {
+function nodeObstacles(drawing: ArchitectureDrawing, header: HeaderSide): Box[] {
+	const extent = headerAxis(header) === "y" ? "height" : "width";
 	return [
 		...drawing.cards.map(({ box }) => box),
 		...drawing.containers.flatMap(({ box, measured }) => [
-			{ ...box, height: measured.headerHeight },
+			{ ...box, [extent]: measured.headerHeight },
 			{ ...box, width: 0 },
 			{ ...box, x: box.x + box.width, width: 0 },
 			{ ...box, y: box.y + box.height, height: 0 },
@@ -282,12 +285,14 @@ function inheritedLabels(
  * @param drawing Solved cards and routes, with any reserved label boxes.
  * @param measured Measured labels, including those awaiting their first placement.
  * @param predecessor Previous drawing whose label placement should stay recognizable.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns The one final drawing, with only eligible label boxes replaced.
  */
 function placeLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
-	predecessor?: ArchitectureDrawing,
+	predecessor: ArchitectureDrawing | undefined,
+	header: HeaderSide,
 ): ArchitectureDrawing {
 	const pieces = piecesOf(drawing.edges);
 	const preferences = inheritedLabels(drawing, predecessor);
@@ -299,7 +304,7 @@ function placeLabelsOnRuns(
 	const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 	const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
-	const cards = nodeObstacles(drawing);
+	const cards = nodeObstacles(drawing, header);
 	for (const edge of drawing.edges.toSorted((one, other) =>
 		one.edge.id < other.edge.id ? -1 : one.edge.id > other.edge.id ? 1 : 0,
 	)) {

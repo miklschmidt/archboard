@@ -13,6 +13,7 @@ import {
 	registeredFaces,
 	spanFits,
 } from "@/runtime/semantic-renderer/tests/drawn-text";
+import { across, along, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -317,21 +318,22 @@ describe("renderArchitecture", () => {
 		expect(arrival!.y).toBeGreaterThanOrEqual(box.y - 2);
 	});
 
-	test("nodes belonging to nothing spread instead of stacking in one column", async () => {
+	test("nodes belonging to nothing spread across the reading instead of lining up along it", async () => {
 		const loose = ["Ingest", "Normaliser", "Scheduler", "Worker Pool", "Metrics", "Object Store"];
 		const rendered = await render(
 			architecture(loose.map((name, index) => ({ id: `n${index}`, name, kind: "service" }))),
 		);
+		const direction = readingOf(rendered);
 		const boxes = loose.map((_, index) => rendered.atlas.nodes[`n${index}`]!);
-		const columns = new Set(boxes.map((box) => box.x));
-
-		expect(columns.size).toBeGreaterThan(2);
-		expect(rendered.width).toBeGreaterThan(rendered.height);
+		const lanes = new Set(boxes.map((box) => across(box, direction)));
+		// Not ranked one after another as if they were a chain.
+		expect(lanes.size).toBeGreaterThan(2);
+		expect(new Set(boxes.map((box) => along(box, direction))).size).toBe(1);
 		// None of them belongs to a container, so none of them draws one.
 		expect(Object.keys(rendered.atlas.regions)).toHaveLength(0);
 	});
 
-	test("a chain of uncontained nodes still reads down the page", async () => {
+	test("a chain of uncontained nodes reads along the page in one lane", async () => {
 		const rendered = await render(
 			architecture(
 				[
@@ -345,10 +347,11 @@ describe("renderArchitecture", () => {
 				],
 			),
 		);
+		const direction = readingOf(rendered);
 		const boxes = ["a", "b", "c"].map((id) => rendered.atlas.nodes[id]!);
-		expect(new Set(boxes.map((box) => box.x)).size).toBe(1);
-		expect(boxes[0]!.y).toBeLessThan(boxes[1]!.y);
-		expect(boxes[1]!.y).toBeLessThan(boxes[2]!.y);
+		expect(new Set(boxes.map((box) => across(box, direction))).size).toBe(1);
+		expect(along(boxes[0]!, direction)).toBeLessThan(along(boxes[1]!, direction));
+		expect(along(boxes[1]!, direction)).toBeLessThan(along(boxes[2]!, direction));
 	});
 
 	test("a node with no container and no children is still drawn", async () => {

@@ -345,4 +345,59 @@ function crossingKey(a: Run, b: Run): string {
 		.join("/");
 }
 
-export { bridgeCrossings };
+/**
+ * Intersect two perpendicular segments, excluding their endpoints.
+ * @param from The first segment's start.
+ * @param to The first segment's end.
+ * @param start The other segment's start.
+ * @param end The other segment's end.
+ * @returns Their proper crossing, when neither segment ends there.
+ */
+function perpendicularCrossing(
+	from: Point,
+	to: Point,
+	start: Point,
+	end: Point,
+): Point | undefined {
+	const dx = to.x - from.x,
+		dy = to.y - from.y;
+	const otherX = end.x - start.x,
+		otherY = end.y - start.y;
+	if (dx * otherX + dy * otherY !== 0) return undefined;
+	const determinant = dx * otherY - dy * otherX;
+	if (determinant === 0) return undefined;
+	const offsetX = start.x - from.x,
+		offsetY = start.y - from.y;
+	const along = (offsetX * otherY - offsetY * otherX) / determinant;
+	const across = (offsetX * dy - offsetY * dx) / determinant;
+	if (Math.min(along, 1 - along, across, 1 - across) <= 0) return undefined;
+	return { x: from.x + along * dx, y: from.y + along * dy };
+}
+
+/**
+ * Find proper perpendicular crossings before rounding consumes their straight legs.
+ * Shared endpoints, overlapping lines and this route's own corners are excluded.
+ * @param route One complete semantic route.
+ * @param others All complete routes in this drawing.
+ * @returns The crossings whose bridge space must survive corner rounding.
+ */
+function routeCrossings(route: readonly Point[], others: Iterable<readonly Point[]>): Point[] {
+	const crossings: Point[] = [];
+	for (const other of others) {
+		if (route === other) continue;
+		for (let index = 1; index < route.length; index += 1) {
+			for (let crossingIndex = 1; crossingIndex < other.length; crossingIndex += 1) {
+				const crossing = perpendicularCrossing(
+					route[index - 1]!,
+					route[index]!,
+					other[crossingIndex - 1]!,
+					other[crossingIndex]!,
+				);
+				if (crossing !== undefined) crossings.push(crossing);
+			}
+		}
+	}
+	return crossings;
+}
+
+export { bridgeCrossings, routeCrossings };
