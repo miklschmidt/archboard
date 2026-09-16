@@ -143,10 +143,14 @@ function onStraightRun(
 	label: { x: number; y: number; width: number; height: number },
 ): boolean {
 	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
+	// The engine centres an inline label at a rounded width and snaps routes to
+	// whole units, so a label on its run can sit up to about a unit off it
+	// (0.88 on Canvas server): invisible, and not a label off its line.
+	const snap = 1;
 	return points.slice(1).some((end, index) => {
 		const start = points[index]!;
-		const horizontal = start.y === end.y && Math.abs(start.y - centre.y) < 0.01;
-		const vertical = start.x === end.x && Math.abs(start.x - centre.x) < 0.01;
+		const horizontal = start.y === end.y && Math.abs(start.y - centre.y) < snap;
+		const vertical = start.x === end.x && Math.abs(start.x - centre.x) < snap;
 		return (
 			(horizontal &&
 				Math.min(start.x, end.x) <= label.x &&
