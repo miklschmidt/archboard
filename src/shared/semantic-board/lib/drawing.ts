@@ -2,25 +2,26 @@
 //
 // Nothing on a board says a node is new. A proposal states its architecture and
 // what it changed is read against the variant it came from, every time, out of
-// the identities the two share (ADR 0023). That reading happens here, on the way
-// out, so no tombstone is ever written and a variant with no predecessor simply
-// carries nothing.
+// the identities the two share (ADR 0023). That reading happens on the way to a
+// picture, so no tombstone is ever written and a variant with no predecessor
+// simply carries nothing. It is shared because whatever draws — the server's
+// render route, the CLI, or a browser drawing from the board it has read
+// (TASK-247) — has to give the renderer the same content for the same variant.
 //
 // Restore the comparison before applying the shared view scope. A selected
 // subject can exist only in the predecessor; narrowing the proposal first
 // loses that selection and makes a whole removed flow disappear.
 
+import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/lib/aggregate";
 import {
 	compareVariants,
 	withRemoved,
-	scopedContent,
 	type ChangeKind,
-	type SemanticBoard,
-	type SemanticVariant,
 	type VariantComparison,
-	type VariantContent,
-	type ViewScope,
-} from "@/shared/semantic-board/index";
+} from "@/shared/semantic-board/lib/compare";
+import type { VariantContent } from "@/shared/semantic-board/lib/content";
+import { scopedContent } from "@/shared/semantic-board/lib/scope";
+import type { ViewScope } from "@/shared/semantic-board/lib/views";
 
 /** What the answer says about a proposal, or nothing for a variant with no predecessor. */
 interface DrawnChanges {

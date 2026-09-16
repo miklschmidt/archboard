@@ -6,7 +6,7 @@ import {
 	type SemanticBoard,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
-import { drawingOf } from "@/server/canvas/index";
+import { drawingOf } from "@/shared/semantic-board/index";
 
 const PLATFORM = { id: "pl", name: "Platform", kind: "service" };
 const GATEWAY = { id: "gw", name: "Gateway", kind: "module", parent: "pl" };

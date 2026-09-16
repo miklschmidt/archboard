@@ -7,12 +7,6 @@ export {
 } from "@/server/canvas/lib/application-lifetime";
 export { createCheckoutWorkOwner } from "@/server/canvas/lib/checkout-work";
 export type { CheckoutTask, CheckoutWorkOwner } from "@/server/canvas/lib/checkout-work";
-export {
-	drawingOf,
-	predecessorDrawingsOf,
-	predecessorOf,
-} from "@/server/canvas/lib/semantic-board-changes";
-export type { DrawnChanges, DrawnProposal } from "@/server/canvas/lib/semantic-board-changes";
 export { semanticBoardContext } from "@/server/canvas/lib/semantic-board-context";
 export type { BoardContext } from "@/server/canvas/lib/semantic-board-context";
 export { canonicalContextFromBrief } from "@/server/canvas/lib/codex-semantic-input";
