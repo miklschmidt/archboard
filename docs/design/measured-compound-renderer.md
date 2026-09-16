@@ -29,6 +29,10 @@ call into its child from the page margin, and a line from the outer top edge
 reads as arriving from outside the frame). The compound layout owner gives ELK measured room between cards and route
 tracks, then places labels on clear horizontal or vertical runs. Labels do not
 start with a reserved vertical passage that forces extra bends.
+A leg into a card that steps sideways by less than a badge, because the
+engine placed the lane and the port apart, has its port slid onto the lane when
+the face still holds it and no other run lies within a lane of the leg
+(`lib/layout/jogs.ts`).
 
 `lib/layout/compound.ts` runs that graph and exposes one `ArchitectureDrawing`.
 Missing cards, routes, or label geometry fail the render rather than silently
