@@ -48,7 +48,7 @@ const COMPOUND_OPTIONS: LayoutOptions = {
 	"elk.spacing.componentComponent": "96",
 	"elk.spacing.edgeNode": "24",
 	"elk.spacing.edgeEdge": "20",
-	"elk.spacing.labelNode": "24",
+	"elk.spacing.labelNode": "16",
 	"elk.spacing.labelLabel": "24",
 	"elk.spacing.edgeLabel": "12",
 	"elk.spacing.portPort": "24",

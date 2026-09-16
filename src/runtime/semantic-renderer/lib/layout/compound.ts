@@ -24,6 +24,10 @@ import {
 	seedPredecessor,
 } from "@/runtime/semantic-renderer/lib/layout/compound-predecessor";
 import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-runs";
+import {
+	settleLabels,
+	type LabelAttempt,
+} from "@/runtime/semantic-renderer/lib/layout/label-reservations";
 import { bridgeCrossings, routeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { straightenJogs } from "@/runtime/semantic-renderer/lib/layout/jogs";
@@ -379,7 +383,8 @@ async function settleIn(
 	const drawing = await settleWithAddedSkips(
 		problem,
 		async (first) => (await attemptLabels(first, new Set(), 0)).drawing,
-		(each) => settleLabels(each, new Set()),
+		(each) =>
+			settleLabels((reserved, stacked) => attemptLabels(each, reserved, stacked), new Set()),
 	);
 	return drawingAcross(direction, drawing);
 }
@@ -434,18 +439,22 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
 	return graph;
 }
 
-/** One solve with its labels placed, and the labels that found no run. */
-type LabelAttempt = {
-	drawing: ArchitectureDrawing;
-	missing: ArchitectureDrawing["edges"];
-};
+/**
+ * Whether a label was drawn somewhere other than the box the engine reserved.
+ * @param reserved The engine's box.
+ * @param drawn The box it was drawn in.
+ * @returns True when the two differ by more than rounding.
+ */
+function movedOff(reserved: Box, drawn: Box | undefined): boolean {
+	return drawn === undefined || Math.hypot(reserved.x - drawn.x, reserved.y - drawn.y) > 0.5;
+}
 
 /**
  * Solve once and place every label that has a clear run.
  * @param problem The board, in the solving frame.
  * @param reserved Labels given dedicated engine space.
  * @param stacked How many badges beyond one the gaps between rows hold.
- * @returns The drawing and the measured labels it left without a box.
+ * @returns The drawing, the measured labels it left without a box, and the reserved labels drawn elsewhere.
  */
 async function attemptLabels(
 	problem: Problem,
@@ -456,6 +465,7 @@ async function attemptLabels(
 	const laidOut = await solveGraph(graphForLabels(problem, reserved), measured, stacked);
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
+	const solved = drawingEdges(content, laidOut, measured, nodes, header);
 	const drawing = placeLabelsOnRuns(
 		{
 			direction: problem.direction,
@@ -464,7 +474,7 @@ async function attemptLabels(
 			height: extent.height,
 			cards: nodes.filter((node) => node.measured.headerHeight === 0),
 			containers: nodes.filter((node) => node.measured.headerHeight > 0),
-			edges: drawingEdges(content, laidOut, measured, nodes, header),
+			edges: solved,
 		},
 		measured.labels,
 		predecessor,
@@ -473,108 +483,10 @@ async function attemptLabels(
 	const missing = drawing.edges.filter(
 		({ edge, label }) => measured.labels.has(edge.id) && label === undefined,
 	);
-	return { drawing, missing };
-}
-
-/**
- * Grow the gaps between rows by one badge, and keep that only when the labels
- * on straight descents it was grown for gain from it.
- * @param attempt The attempt whose labels are missing.
- * @param stacked Its stack depth.
- * @param solve Solves at a stack depth.
- * @returns The taller attempt when it places more labels, else nothing.
- */
-async function stackedAttempt(
-	attempt: LabelAttempt,
-	stacked: number,
-	solve: (stacked: number) => Promise<LabelAttempt>,
-): Promise<LabelAttempt | undefined> {
-	// A badge on a straight descent between two rows found no room because its
-	// siblings' badges took it: one more badge of gap is far cheaper than the
-	// whole row that reserving the label with the engine costs.
-	if (!attempt.missing.some(({ curve }) => curve.segments.length === 1)) return undefined;
-	const taller = await solve(stacked + 1);
-	return taller.missing.length < attempt.missing.length ? taller : undefined;
-}
-
-/**
- * Reserve engine space for every label the attempt left without a box.
- * @param attempt The attempt whose labels are missing.
- * @param reserved Labels already reserved; a label reserved twice is a bug.
- */
-function reserveMissing(attempt: LabelAttempt, reserved: Set<string>): void {
-	for (const { edge } of attempt.missing) {
-		if (reserved.has(edge.id))
-			throw new Error(`Layout omitted the reserved label for relationship ${edge.id}`);
-		reserved.add(edge.id);
-	}
-}
-
-/**
- * Settle the board to the end with one more badge of gap between its rows.
- * @param problem The board, in the solving frame.
- * @param reserved Labels reserved so far; this way keeps its own copy.
- * @param current The attempt at the ordinary gap whose labels are missing.
- * @returns The settled drawing, or nothing when the grown gap places no more labels.
- */
-async function grownGap(
-	problem: Problem,
-	reserved: ReadonlySet<string>,
-	current: LabelAttempt,
-): Promise<ArchitectureDrawing | undefined> {
-	const taller = await stackedAttempt(current, 0, (depth) =>
-		attemptLabels(problem, reserved, depth),
+	const unused = solved.flatMap(({ edge, label }, index) =>
+		label !== undefined && movedOff(label.box, drawing.edges[index]?.label?.box) ? [edge.id] : [],
 	);
-	if (taller === undefined) return undefined;
-	return settleLabels(problem, new Set(reserved), 1, taller);
-}
-
-/**
- * The shorter page of two settled drawings, the certain one when they tie.
- * @param grown The drawing settled with a grown gap, when there was one.
- * @param kept The drawing settled by reservation alone.
- * @returns Whichever is shorter.
- */
-function shorterOf(
-	grown: ArchitectureDrawing | undefined,
-	kept: ArchitectureDrawing,
-): ArchitectureDrawing {
-	return grown !== undefined && grown.height < kept.height ? grown : kept;
-}
-
-/**
- * Add reservations monotonically until every measured label has a final box.
- *
- * A badge on a straight descent that found no room can be given one more
- * badge of gap between every pair of rows instead of a reserved row of its
- * own. Which is cheaper depends on what the rest of the board then needs
- * (the 2026-09-16 "Agent workbench" board placed one more label in the grown
- * gap and still reserved two, paying for both), so both ways are settled to
- * the end and the shorter page is kept. The gap grows once at most.
- * @param problem The board, in the solving frame.
- * @param reserved Labels already found to require dedicated engine space.
- * @param stacked How many badges beyond one the gaps between rows hold.
- * @param attempt The solve at that depth, when one is already in hand.
- * @returns One final drawing with every relationship and label present.
- */
-async function settleLabels(
-	problem: Problem,
-	reserved: Set<string>,
-	stacked = 0,
-	attempt?: LabelAttempt,
-): Promise<ArchitectureDrawing> {
-	/**
-	 * Solve with the reservations so far at a stack depth.
-	 * @param depth How many badges beyond one the gaps between rows hold.
-	 * @returns That solve with its labels placed.
-	 */
-	const solve = (depth: number) => attemptLabels(problem, reserved, depth);
-	const current = attempt ?? (await solve(stacked));
-	if (current.missing.length === 0) return current.drawing;
-	const grown = stacked === 0 ? await grownGap(problem, reserved, current) : undefined;
-	reserveMissing(current, reserved);
-	const kept = await settleLabels(problem, reserved, stacked);
-	return shorterOf(grown, kept);
+	return { drawing, missing, unused };
 }
 
 export { layoutCompound, settleIn };

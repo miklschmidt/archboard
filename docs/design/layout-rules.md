@@ -684,3 +684,54 @@ on nearly every measure: routes through cards on nine boards (flask-map-3
 megapixels). A side face chosen from where a first solve put the cards does
 not hold once the cards are placed for that face; placement and face have to
 be decided together, which the layered engine does not do on its own.
+
+## 20. Empty rows between cards (2026-09-16, TASK-245.07)
+
+A gap between two rows of cards was a label's height plus 24 above and 24
+below, 79 units for a one-line badge between 72-unit cards, and a label
+reserved with the engine added its own height and one more such gap, 110
+units (two cards with one forced reservation: gap 79 without, 189 with; the
+label's width does not enter it). Two changes take the empty room back.
+
+A reserved label was usually not drawn where it was reserved. The run pass
+places every label again after the solve and prefers the run nearest a route
+end, so on Canvas server `owns listener` and `runs backend` were reserved at
+y 231 and drawn at 120 and 148, and the band above HTTP application held
+nothing for about 150 units. Reservations only ever grew. Now, once every
+label has a box, the reservations whose labels sit elsewhere are released,
+all together and then one at a time, and a release is kept only when every
+label still has a box and the page is no taller, no larger in area, smaller
+in one of the two, and no more crossed. Each condition was earned: height
+alone let Command dispatch spread from 1441x685 to 1636x643; an equal page
+only rerouted flask-map-2 (route length, a crossing and lane ink worse); and
+a narrower page unnested two routes to one card so they crossed (the
+same-destination nesting test). `label-reservations.ts` owns it.
+
+The clearance a label keeps from a card and from the ends of its run is 16
+(`elk.spacing.labelNode`), so a gap between rows is a label plus 16 above and
+16 below: 63 for a one-line badge. Between badges it stays 24.
+
+Measured together against the tree before, every variant of every vault
+board and the three fixtures (scorecard, section 18):
+
+| board               | page before | after     | fit          | megapixels   | worse on                   |
+| ------------------- | ----------- | --------- | ------------ | ------------ | -------------------------- |
+| flask-map-1         | 2312x1954   | 2311x1804 | 0.46 to 0.50 | 4.52 to 4.17 | nothing                    |
+| flask-map-2         | 1815x2588   | 1815x2373 | 0.35 to 0.38 | 4.70 to 4.31 | nothing                    |
+| flask-map-3         | 2566x1997   | 2566x1901 | 0.45 to 0.47 | 5.12 to 4.88 | nothing                    |
+| Agent workbench     | 1440x1536   | 1372x1390 | 0.59 to 0.65 | 2.21 to 1.91 | nothing                    |
+| Archboard           | 1210x629    | 1210x581  | 1.00         | 0.76 to 0.70 | nothing                    |
+| Board persistence   | 1705x850    | 1705x802  | 0.75         | 1.45 to 1.37 | nothing                    |
+| Board viewer        | 1376x1443   | 1376x1315 | 0.62 to 0.68 | 1.99 to 1.81 | nothing                    |
+| Browser application | 1632x1297   | 1632x1185 | 0.69 to 0.76 | 2.12 to 1.93 | nothing                    |
+| Canvas server       | 1338x1265   | 1254x1169 | 0.71 to 0.77 | 1.69 to 1.47 | nothing                    |
+| Codex session       | 1111x986    | 1111x906  | 0.91 to 0.99 | 1.10 to 1.01 | nothing                    |
+| Command dispatch    | 1441x685    | 1441x637  | 0.88         | 0.99 to 0.92 | nothing                    |
+| Command interface   | 1012x805    | 1012x725  | 1.00         | 0.81 to 0.73 | nothing                    |
+| Renderer layout     | 910x780     | 910x716   | 1.00         | 0.71 to 0.65 | nothing                    |
+| Semantic renderer   | 997x1468    | 819x1291  | 0.61 to 0.70 | 1.46 to 1.06 | bends per route 1.3 to 1.6 |
+
+Release alone moved only Agent workbench, Canvas server and Semantic
+renderer; the clearance moved every board. The scorecard's route reader now
+drops the points a removed bridge leaves a fraction of a unit off its run,
+which a proposal test had been counting as turns.

@@ -174,7 +174,30 @@ function corridorPoints(svg: string): Map<string, DrawnPoint[]> {
 		for (const bridge of roundBridges(path)) corridor = corridor.replaceAll(bridge.span, "");
 		return attribute.replace(path, corridor);
 	});
-	return routePoints(corridors);
+	return new Map([...routePoints(corridors)].map(([id, points]) => [id, withoutSeams(points)]));
+}
+
+/**
+ * A route with the seams a removed bridge leaves taken out: points a fraction
+ * of a unit off the run they sit on, which are neither turns nor lengths a
+ * reader follows.
+ * @param points The route after its bridges were cut out.
+ * @returns The route with each such point dropped or put back on its run.
+ */
+function withoutSeams(points: readonly DrawnPoint[]): DrawnPoint[] {
+	const seam = 0.5;
+	const kept: DrawnPoint[] = [];
+	for (const point of points) {
+		const last = kept.at(-1);
+		if (last === undefined) {
+			kept.push(point);
+			continue;
+		}
+		const x = Math.abs(point.x - last.x) < seam ? last.x : point.x;
+		const y = Math.abs(point.y - last.y) < seam ? last.y : point.y;
+		if (x !== last.x || y !== last.y) kept.push({ ...point, x, y });
+	}
+	return kept;
 }
 
 /**
