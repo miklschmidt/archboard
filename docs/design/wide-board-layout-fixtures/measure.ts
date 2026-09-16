@@ -136,7 +136,7 @@ for (const item of items) {
 	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
 	const key = `${item.name} ${item.variant}`;
 	const measures = scorecardOf(drawn, content);
-	const reads = `${drawn.readingDirection ?? "-"}${drawn.svg.includes("data-reading-wrapped") ? " folded" : ""}`;
+	const reads = `${drawn.readingDirection ?? "-"}${drawn.svg.includes("data-reading-wrapped") ? " folded" : ""} ${/data-flank-rule="([^"]+)"/u.exec(drawn.svg)?.[1] ?? "-"}`;
 	const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
 	results[key] = { page, reads, measures };
 	if (!header) {

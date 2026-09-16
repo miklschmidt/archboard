@@ -137,6 +137,18 @@ function isFlank(face: string | undefined): face is Flank {
 }
 
 /**
+ * Whether a face is the flank at the lower coordinate across the reading:
+ * the left one when the page reads down. Where a lane beside it runs, and
+ * which way the engine walks its ports, follow from that alone, whichever
+ * flank rule put a route there.
+ * @param face A face.
+ * @returns True for the near flank.
+ */
+function isNearFlank(face: string | undefined): boolean {
+	return isFlank(face) && !FACE_GEOMETRY[face].far;
+}
+
+/**
  * The flank two attachments share, when both lie on the same one.
  * @param side The source's face.
  * @param targetSide The target's face.
@@ -420,6 +432,7 @@ export {
 	headerInsets,
 	headerSideOf,
 	isFlank,
+	isNearFlank,
 	measuredInFrame,
 	nearestFace,
 	opposite,

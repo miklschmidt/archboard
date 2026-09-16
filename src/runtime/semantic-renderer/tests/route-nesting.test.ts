@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { across, along, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
+import { across, along, breadth, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
 	corridorPoints,
 	routePoints,
@@ -15,6 +15,15 @@ import {
 	overlaps,
 	masking,
 } from "@/runtime/semantic-renderer/tests/drawn-labels";
+
+/**
+ * The flank rule a drawing was kept under.
+ * @param svg The rendered document.
+ * @returns The rule's name.
+ */
+function ruleOf(svg: string): string | undefined {
+	return /data-flank-rule="([^"]+)"/u.exec(svg)?.[1];
+}
 
 describe("same-destination routes", () => {
 	for (const shape of ["forward", "blocked left", "return", "with unrelated"] as const) {
@@ -64,9 +73,8 @@ describe("same-destination routes", () => {
 					},
 				],
 			});
-			const other = corridorPoints(
-				(await renderArchitecture({ content: base, theme: "light" })).svg,
-			).get("other");
+			const reference = await renderArchitecture({ content: base, theme: "light" });
+			const other = corridorPoints(reference.svg).get("other");
 			for (const edges of [base.edges, base.edges.toReversed()]) {
 				for (const theme of ["light", "dark"] as const) {
 					const content = { ...base, edges };
@@ -76,10 +84,14 @@ describe("same-destination routes", () => {
 					const far = paths.get("far")!;
 					const near = paths.get("near")!;
 					if (!paired) {
-						// The farther-reaching route takes the outer lane on its flank:
-						// the return flank for returns, the flank beside the chain for skips.
-						const outside = returning ? Math.max : Math.min;
-						const side = returning ? 1 : -1;
+						// The farther-reaching route takes the outer lane on the flank the
+						// pair runs down, whichever flank the drawing's rule gives them
+						// (docs/design/layout-rules.md section 21).
+						const target = drawn.atlas.nodes[returning ? "first" : "last"]!;
+						const centre = across(target, direction) + breadth(target, direction) / 2;
+						const lanes = near.map((p) => across(p, direction));
+						const side = Math.max(...lanes) > centre + breadth(target, direction) / 2 ? 1 : -1;
+						const outside = side > 0 ? Math.max : Math.min;
 						expect(
 							side *
 								(outside(...far.map((p) => across(p, direction))) -
@@ -120,7 +132,11 @@ describe("same-destination routes", () => {
 					expect(covering(drawn)).toEqual([]);
 					expect(overlaps(drawn, content, 11.9)).toEqual([]);
 					expect(masking(drawn)).toEqual([]);
-					if (unrelated) {
+					// Nesting the pair leaves an unrelated route where it was. The
+					// engine's placement depends on the order relationships are
+					// listed in, so a first render may keep a different flank rule
+					// for another order; under the same rule the route is the same.
+					if (unrelated && ruleOf(drawn.svg) === ruleOf(reference.svg)) {
 						expect(other).toBeDefined();
 						expect(corridorPoints(drawn.svg).get("other")).toEqual(other);
 					}

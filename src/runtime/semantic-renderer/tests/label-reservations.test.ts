@@ -45,7 +45,16 @@ function page(
 	height: number,
 	edges: readonly DrawingEdge[] = [],
 ): ArchitectureDrawing {
-	return { direction: "down", wrapped: false, width, height, cards: [], containers: [], edges };
+	return {
+		direction: "down",
+		wrapped: false,
+		flanks: "bracketed",
+		width,
+		height,
+		cards: [],
+		containers: [],
+		edges,
+	};
 }
 
 /**

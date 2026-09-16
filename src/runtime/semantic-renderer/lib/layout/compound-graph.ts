@@ -12,6 +12,11 @@ import { pointAt } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { flankSkips } from "@/runtime/semantic-renderer/lib/layout/brackets";
 import { rankNodes } from "@/runtime/semantic-renderer/lib/layout/rank";
 import {
+	besideFlankOf,
+	portIndex,
+	type FlankRule,
+} from "@/runtime/semantic-renderer/lib/layout/flank-rules";
+import {
 	SOLVING,
 	crossingFace,
 	headerInsets,
@@ -84,7 +89,7 @@ type Faces = PortSides | typeof FREE;
 function sidesOf(edge: SemanticEdge, ordering: Ordering, nested: boolean): Faces {
 	// rankNodes assigns every node before edge attachment begins.
 	const distance = ordering.ranks.get(edge.to)! - ordering.ranks.get(edge.from)!;
-	if (distance <= 0) return [SOLVING.returnFlank, SOLVING.returnFlank];
+	if (distance <= 0) return [ordering.rule.returnFlank, ordering.rule.returnFlank];
 	if (distance === 1) return [SOLVING.forwardOut, SOLVING.forwardIn];
 	// A skip across a frame boundary descends like any forward step: the engine
 	// refuses a port-less edge across a hierarchy, and the flank it used to take
@@ -106,13 +111,28 @@ function sidesOf(edge: SemanticEdge, ordering: Ordering, nested: boolean): Faces
 function skipFaces(edge: SemanticEdge, ordering: Ordering): Faces {
 	if (ordering.added === null) return FREE;
 	if (ordering.added !== undefined) return drawnSides(edge, ordering.added) ?? FREE;
-	return ordering.flank.has(edge.id) ? [SOLVING.besideFlank, SOLVING.besideFlank] : FREE;
+	return ruleFaces(edge, ordering);
 }
 
-/** The semantic ordering of one view: ranks, the brackets, and how a proposal's added skips are attached. */
+/**
+ * A first render's skip faces under its flank rule: the beside flank for
+ * every skip, for a bracket only, or for none.
+ * @param edge The skip.
+ * @param ordering The brackets and the flank rule.
+ * @returns The faces, or FREE.
+ */
+function ruleFaces(edge: SemanticEdge, ordering: Ordering): Faces {
+	const { skips } = ordering.rule;
+	const flanked = skips === "flanked" || (skips === "bracketed" && ordering.flank.has(edge.id));
+	const beside = besideFlankOf(ordering.rule);
+	return flanked ? [beside, beside] : FREE;
+}
+
+/** The semantic ordering of one view: ranks, the brackets, the flank rule, and how a proposal's added skips are attached. */
 interface Ordering {
 	readonly ranks: ReadonlyMap<string, number>;
 	readonly flank: ReadonlySet<string>;
+	readonly rule: FlankRule;
 	readonly added: ArchitectureDrawing | null | undefined;
 }
 
@@ -201,19 +221,17 @@ function facesOf(
  * A distinct port for each end prevents unrelated relationships sharing a path.
  * @param id The internal endpoint id, derived from the semantic edge id.
  * @param side The face to use; ELK chooses the location on that face.
- * @param rank The dependency rank of the endpoint at the other end.
+ * @param index Its place among the ports of its face (`portIndex`).
  * @returns The engine's endpoint.
  */
-function portOf(id: string, side: Face, rank: number): ElkPort {
+function portOf(id: string, side: Face, index: number): ElkPort {
 	return {
 		id,
 		width: 0,
 		height: 0,
 		layoutOptions: {
 			"elk.port.side": side,
-			// Returns nest on their flank: the farther back a return reaches, the
-			// farther out its lane.
-			"elk.port.index": String(side === SOLVING.returnFlank ? -rank : rank),
+			"elk.port.index": String(index),
 		},
 	};
 }
@@ -395,7 +413,7 @@ function edgeOf(
 	predecessor: ArchitectureDrawing | undefined,
 	header: HeaderSide,
 ): ElkExtendedEdge[] {
-	const { ranks } = ordering;
+	const { ranks, rule } = ordering;
 	const faces = facesOf(edge, measured, ordering, predecessor);
 	if (faces === FREE) {
 		// Node to node: the router chooses the faces, and a crossed frame is the
@@ -407,8 +425,10 @@ function edgeOf(
 	const [fromSide, toSide] = faces;
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
-	attachPort(edge.from, portOf(fromPort, fromSide, ranks.get(edge.to) ?? 0), nodes);
-	attachPort(edge.to, portOf(toPort, toSide, ranks.get(edge.from) ?? 0), nodes);
+	const fromIndex = portIndex(rule, fromSide, ranks.get(edge.to) ?? 0);
+	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0);
+	attachPort(edge.from, portOf(fromPort, fromSide, fromIndex), nodes);
+	attachPort(edge.to, portOf(toPort, toSide, toIndex), nodes);
 	const ports = [
 		fromPort,
 		...boundaryPorts(edge, boundariesOf(edge, measured), nodes, [fromSide, toSide], header),
@@ -486,6 +506,7 @@ function drawnSides(edge: SemanticEdge, drawing: ArchitectureDrawing): PortSides
  * @param measured Text lines and dimensions settled before layout, in the solving frame.
  * @param predecessor The preceding complete drawing of this view, in the solving frame.
  * @param header Where a frame's title band sits in the solving frame.
+ * @param rule Which flank returns travel and how skips attach.
  * @param added How a proposal attaches the skips it adds: a first render to read faces from, or null for none.
  * @returns One graph for one layout run.
  */
@@ -494,12 +515,13 @@ function compoundGraph(
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
 	header: HeaderSide,
+	rule: FlankRule,
 	added?: ArchitectureDrawing | null,
 ): ElkNode {
 	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value, header)]));
 	const edges = content.edges.toSorted((one, other) => one.id.localeCompare(other.id));
 	const ranks = rankNodes(content.nodes, edges);
-	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks), added };
+	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks), rule, added };
 	return {
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },

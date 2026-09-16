@@ -44,6 +44,12 @@ import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
+import {
+	FLANK_RULES,
+	flankRule,
+	type FlankRule,
+} from "@/runtime/semantic-renderer/lib/layout/flank-rules";
+import { bestOf } from "@/runtime/semantic-renderer/lib/layout/scorecard";
 
 /**
  * Use the supported worker transport: Bun's main thread exposes `self`, which
@@ -357,17 +363,65 @@ function drawingEdges(
 
 /**
  * Settle a board read one way: solved in the one frame, turned back onto
- * the page.
+ * the page, under its predecessor's flank rule or, on a first render, the
+ * first rule.
  * @param reading The way the page reads, and whether its layers fold.
- * @param reading.direction Down the page, or left to right.
- * @param reading.wrapped Whether the layers fold toward the pane's shape.
  * @param content The architecture meaning.
  * @param measured Its measured sizes, on the page.
  * @param predecessor The preceding drawing of this view, on the page.
  * @returns The settled drawing, on the page.
  */
 async function settleIn(
+	reading: Reading,
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+): Promise<ArchitectureDrawing> {
+	const rule = predecessor === undefined ? FLANK_RULES[0]! : flankRule(predecessor.flanks);
+	return settleUnder(reading, rule, content, measured, predecessor);
+}
+
+/**
+ * On a first render, settle the chosen reading under every other flank rule
+ * and keep the drawing the scorecard prefers (docs/design/layout-rules.md
+ * section 21). The reading is chosen under the first rule, so each other
+ * rule costs one settle, not one per reading. A folded reading keeps the
+ * first rule: whether a fold reads well is judged when it is chosen.
+ * @param chosen The first render in its chosen reading, under the first rule.
+ * @param content The architecture meaning.
+ * @param measured Its measured sizes, on the page.
+ * @returns The kept drawing.
+ */
+async function chooseFlanks(
+	chosen: ArchitectureDrawing,
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+): Promise<ArchitectureDrawing> {
+	if (chosen.wrapped) return chosen;
+	const reading = { direction: chosen.direction, wrapped: false };
+	const others = await Promise.all(
+		FLANK_RULES.slice(1).map((rule) =>
+			// A rule the engine refuses is simply not a candidate.
+			settleUnder(reading, rule, content, measured, undefined).catch(() => undefined),
+		),
+	);
+	return bestOf([chosen, ...others.filter((drawing) => drawing !== undefined)]);
+}
+
+/**
+ * Settle a board read one way under one flank rule.
+ * @param reading The way the page reads, and whether its layers fold.
+ * @param reading.direction Down the page, or left to right.
+ * @param reading.wrapped Whether the layers fold toward the pane's shape.
+ * @param flanks Which flank returns travel and how skips attach.
+ * @param content The architecture meaning.
+ * @param measured Its measured sizes, on the page.
+ * @param predecessor The preceding drawing of this view, on the page.
+ * @returns The settled drawing, on the page.
+ */
+async function settleUnder(
 	{ direction, wrapped }: Reading,
+	flanks: FlankRule,
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
@@ -379,6 +433,7 @@ async function settleIn(
 		direction,
 		wrapped,
 		header: headerSideOf(direction),
+		flanks,
 	};
 	const drawing = await settleWithAddedSkips(
 		problem,
@@ -404,11 +459,17 @@ async function layoutCompound(
 	if (predecessor !== undefined) measured = preserveSizes(measured, predecessor);
 	const reused =
 		predecessor === undefined ? undefined : reuseDrawing(content, measured, predecessor);
-	const drawing =
-		reused ??
-		(await chooseReading(measured, predecessor, (reading) =>
+	/**
+	 * Choose the reading, then on a first render the flank rule within it.
+	 * @returns The settled drawing.
+	 */
+	const read = async (): Promise<ArchitectureDrawing> => {
+		const chosen = await chooseReading(measured, predecessor, (reading) =>
 			settleIn(reading, content, measured, predecessor),
-		));
+		);
+		return predecessor === undefined ? chooseFlanks(chosen, content, measured) : chosen;
+	};
+	const drawing = reused ?? (await read());
 	// Bridges are part of the geometry a reader sees, so they are settled here
 	// and not by a painter; the un-bridged routes stay beside them for a
 	// successor to seed from.
@@ -423,7 +484,7 @@ async function layoutCompound(
  */
 function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNode {
 	const { content, measured, predecessor, header, added } = problem;
-	const graph = compoundGraph(content, measured, predecessor, header, added);
+	const graph = compoundGraph(content, measured, predecessor, header, problem.flanks, added);
 	if (predecessor !== undefined) seedPredecessor(graph, content, predecessor);
 	if (problem.wrapped) {
 		// Fold the layers toward the pane's shape, like a long line of text.
@@ -470,6 +531,7 @@ async function attemptLabels(
 		{
 			direction: problem.direction,
 			wrapped: problem.wrapped,
+			flanks: problem.flanks.name,
 			width: extent.width,
 			height: extent.height,
 			cards: nodes.filter((node) => node.measured.headerHeight === 0),

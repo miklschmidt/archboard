@@ -233,6 +233,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		body: painting.body,
 		reading: drawing.direction,
 		wrapped: drawing.wrapped,
+		flanks: drawing.flanks,
 	});
 
 	return {

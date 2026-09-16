@@ -56,12 +56,23 @@ interface DrawingEdge {
 /** The way a page reads: down it, or left to right across it (ADR 0028). */
 type ReadingDirection = "down" | "right";
 
+/**
+ * Which flank a return travels and how a forward skip attaches
+ * (docs/design/layout-rules.md section 21): returns on the right with a
+ * bracket on the left and every other skip the engine's; returns on the right
+ * with every skip on the left; the mirror of that; or returns on the left
+ * with every skip the engine's.
+ */
+type FlankRuleName = "bracketed" | "flanked" | "mirrored" | "returns-left";
+
 /** The single geometry result consumed by both SVG painting and the atlas. */
 interface ArchitectureDrawing {
 	/** Which way the page reads, chosen on a first render and kept by a successor. */
 	readonly direction: ReadingDirection;
 	/** Whether its layers fold toward the pane's shape, chosen and kept like the direction. */
 	readonly wrapped: boolean;
+	/** Its flank rule, chosen on a first render and kept like the direction. */
+	readonly flanks: FlankRuleName;
 	readonly width: number;
 	readonly height: number;
 	readonly cards: readonly DrawingNode[];
@@ -90,6 +101,7 @@ interface PaintedDrawing extends ArchitectureDrawing {
 }
 
 export type {
+	FlankRuleName,
 	ReadingDirection,
 	TextRun,
 	MeasuredNode,

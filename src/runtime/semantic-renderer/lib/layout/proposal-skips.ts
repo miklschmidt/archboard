@@ -16,9 +16,12 @@ import type {
 	MeasuredArchitecture,
 	ReadingDirection,
 } from "@/runtime/semantic-renderer/lib/drawing";
-import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
-import { segmentStart } from "@/runtime/semantic-renderer/lib/layout/curves";
+import type { FlankRule } from "@/runtime/semantic-renderer/lib/layout/flank-rules";
 import type { HeaderSide } from "@/runtime/semantic-renderer/lib/layout/reading";
+import {
+	bendsPerRoute,
+	routesThroughCards,
+} from "@/runtime/semantic-renderer/lib/layout/scorecard";
 
 /**
  * One board to lay out, in the solving frame: the content, its measured
@@ -33,6 +36,8 @@ interface Problem {
 	/** Whether the layers fold toward the pane's shape. */
 	readonly wrapped: boolean;
 	readonly header: HeaderSide;
+	/** Which flank returns travel and how skips attach. */
+	readonly flanks: FlankRule;
 	/**
 	 * How a proposal's added skips are attached: the first render of the same
 	 * content to read their faces from, or null for no fixed face. Absent on a
@@ -63,52 +68,6 @@ function addsRelationships(content: VariantContent, predecessor: ArchitectureDra
 }
 
 /**
- * Whether a straight piece of route runs through the inside of a box.
- * @param from Where the piece starts.
- * @param to Where it ends.
- * @param box The box.
- * @returns True when the piece enters the box's interior.
- */
-function through(from: Point, to: Point, box: Box): boolean {
-	return (
-		Math.min(from.x, to.x) < box.x + box.width - 0.5 &&
-		Math.max(from.x, to.x) > box.x + 0.5 &&
-		Math.min(from.y, to.y) < box.y + box.height - 0.5 &&
-		Math.max(from.y, to.y) > box.y + 0.5
-	);
-}
-
-/**
- * What a reader pays for a drawing: its routes through a card that is
- * neither of their ends, and its turns.
- * @param drawing The settled drawing.
- * @returns The two costs.
- */
-function costOf(drawing: ArchitectureDrawing): {
-	readonly through: number;
-	readonly bends: number;
-} {
-	let crossed = 0,
-		bends = 0;
-	for (const { edge, curve } of drawing.edges) {
-		curve.segments.forEach((segment, index) => {
-			if (segment.kind === "cubic") {
-				bends += 1;
-				return;
-			}
-			const from = segmentStart(curve, index);
-			crossed += drawing.cards.filter(
-				(card) =>
-					card.measured.node.id !== edge.from &&
-					card.measured.node.id !== edge.to &&
-					through(from, segment.to, card.box),
-			).length;
-		});
-	}
-	return { through: crossed, bends };
-}
-
-/**
  * The drawing a reader pays less for: no route through a card first, then
  * fewer turns, the first when they tie.
  * @param one A settled drawing.
@@ -116,9 +75,9 @@ function costOf(drawing: ArchitectureDrawing): {
  * @returns The cheaper one.
  */
 function cheaperOf(one: ArchitectureDrawing, other: ArchitectureDrawing): ArchitectureDrawing {
-	const [a, b] = [costOf(one), costOf(other)];
-	if (a.through !== b.through) return a.through < b.through ? one : other;
-	return b.bends < a.bends ? other : one;
+	const [a, b] = [routesThroughCards(one), routesThroughCards(other)];
+	if (a !== b) return a < b ? one : other;
+	return bendsPerRoute(other) < bendsPerRoute(one) ? other : one;
 }
 
 /**

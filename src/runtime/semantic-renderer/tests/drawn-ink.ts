@@ -71,11 +71,12 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
 }
 
 /**
- * How many routes leave each card by the flank beside it: the left face when
- * the page reads down, the top when it reads left to right.
+ * How many routes leave each card by each of its flanks: the left and right
+ * faces when the page reads down, the top and bottom when it reads left to
+ * right. A flank rule can put skips on either (layout-rules.md section 21).
  * @param drawing The rendered board.
  * @param content The board.
- * @returns The largest count over the cards: a fan of skips down one flank.
+ * @returns The largest count over the cards and flanks: a fan of routes down one flank.
  */
 function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
 	const direction = readingOf(drawing);
@@ -84,8 +85,10 @@ function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
 		const edge = content.edges.find((candidate) => candidate.id === id);
 		const from = edge === undefined ? undefined : drawing.atlas.nodes[edge.from];
 		if (edge === undefined || from === undefined) continue;
-		if (faceOf(points[0]!, from, direction) === "beside")
-			counts.set(edge.from, (counts.get(edge.from) ?? 0) + 1);
+		const face = faceOf(points[0]!, from, direction);
+		if (face !== "beside" && face !== "return") continue;
+		const key = `${edge.from}:${face}`;
+		counts.set(key, (counts.get(key) ?? 0) + 1);
 	}
 	return Math.max(0, ...counts.values());
 }

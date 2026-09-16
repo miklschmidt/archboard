@@ -12,6 +12,7 @@ import {
 	SOLVING,
 	asFace,
 	isFlank,
+	isNearFlank,
 	pointOnFace,
 } from "@/runtime/semantic-renderer/lib/layout/reading";
 
@@ -110,7 +111,7 @@ function portHint(node: ElkNode, port: ElkPort, origin: Point): Point {
 				Number(other.layoutOptions!["elk.port.index"]);
 			// The engine orders a face's ports clockwise, so the two faces it
 			// walks backwards along are reversed here.
-			return side === SOLVING.forwardOut || side === SOLVING.besideFlank ? -difference : difference;
+			return side === SOLVING.forwardOut || isNearFlank(side) ? -difference : difference;
 		});
 	const fraction = (ordered.indexOf(port) + 1) / (ordered.length + 1);
 	return pointOnFace(side, { ...origin, width: node.width!, height: node.height! }, fraction);
