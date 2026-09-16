@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
-import { measureLineIn } from "@/runtime/engine/measure-text";
+import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -19,12 +19,13 @@ import { assertThemeParity } from "./support/theme-parity.ts";
 // Text width is measured, not estimated — checked against the only ruler that
 // is not the one that did the measuring.
 //
-// The server decides how big every card is before any browser sees the picture,
-// reading the font files in the repository (src/runtime/engine/measure-text.ts).
-// Everything else that checks this measures with that same engine, so it proves
-// the renderer and the measurer agree and would go on agreeing if both were
-// wrong. This puts the strings in a real Chrome, in the faces the picture
-// registers, asks Chrome what they came out as, and holds the engine to it.
+// A picture drawn under Bun (the CLI, the rasterizer, the render route) is
+// measured by an @napi-rs/canvas canvas with the diagram's font files
+// registered, and then painted by a browser (TASK-247). Everything else that
+// checks this measures with that same canvas, so it proves the renderer and the
+// canvas agree and would go on agreeing if both were wrong. This puts the
+// strings in a real Chrome, in the faces the picture registers, asks Chrome
+// what they came out as, and holds the Bun canvas to it.
 //
 // The strings are chosen to punish an estimate rather than to look plausible:
 // AV, To and Wa kern tightly, ffi and fl are ligatures, and i against W is the
@@ -45,9 +46,6 @@ const WAIT = { timeoutMs: 8_000 } as const;
  * per-character estimate this invariant replaced was 40% wrong on "AuthService".
  */
 const TOLERANCE = 0.01;
-
-/** Where the faces the picture registers actually live. */
-const FONT_DIR = resolve(import.meta.dir, "../../../src/ui/shell/assets/fonts");
 
 /** The strings the two rulers are compared on. */
 const LINES = [
@@ -186,13 +184,9 @@ test("the server's text measurement is what a real browser draws", async () => {
 	// The engine, held to what Chrome did, within Chrome's own reporting step.
 	const disagreements = drawn
 		.map((one) => {
-			const file = join(FONT_DIR, faces[one.face]!.file);
-			const measured = measureLineIn(one.text, one.size, [[{ file, ranges: null }]]);
-			return { ...one, measured: measured.width, missing: measured.missing };
+			return { ...one, measured: diagramTextWidth(one.text, faces[one.face]!, one.size) };
 		})
-		.filter(
-			(one) => one.missing.length > 0 || Math.abs(one.measured - one.width) > one.width * TOLERANCE,
-		);
+		.filter((one) => Math.abs(one.measured - one.width) > one.width * TOLERANCE);
 	expect(disagreements).toEqual([]);
 	// And Chrome really drew something: zero widths would agree with an engine
 	// that also returned zero.

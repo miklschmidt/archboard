@@ -1,11 +1,11 @@
-// The layout's own rules that focused runtime checks hold without a whole
-// board: how label reservations settle, the spacing a label keeps, and which
-// of several drawings the scorecard keeps.
-export { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
-export { bestOf } from "@/runtime/semantic-renderer/lib/layout/scorecard";
+// The layout's own rules, for focused runtime checks. None of these draws or
+// measures, so none needs the Bun host.
 export {
+	COMPOUND_OPTIONS,
+	bestOf,
 	settleLabels,
+	type ArchitectureDrawing,
+	type DrawingEdge,
 	type LabelAttempt,
-} from "@/runtime/semantic-renderer/lib/layout/label-reservations";
-export type { ArchitectureDrawing, DrawingEdge } from "@/runtime/semantic-renderer/lib/drawing";
-export type { Point } from "@/runtime/semantic-renderer/lib/geometry";
+	type Point,
+} from "@/transformers/semantic-renderer/layout";

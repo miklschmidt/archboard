@@ -178,14 +178,14 @@ function corridorPoints(svg: string): Map<string, DrawnPoint[]> {
 }
 
 /**
- * A route with the seams a removed bridge leaves taken out: points a fraction
- * of a unit off the run they sit on, which are neither turns nor lengths a
+ * A route with the seams a removed bridge leaves taken out: points up to a
+ * unit off the run they sit on, which are neither turns nor lengths a
  * reader follows.
  * @param points The route after its bridges were cut out.
  * @returns The route with each such point dropped or put back on its run.
  */
 function withoutSeams(points: readonly DrawnPoint[]): DrawnPoint[] {
-	const seam = 0.5;
+	const seam = 1;
 	const kept: DrawnPoint[] = [];
 	for (const point of points) {
 		const last = kept.at(-1);

@@ -21,9 +21,9 @@ import path from "node:path";
 import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
 import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { settleIn } from "@/runtime/semantic-renderer/lib/layout/compound";
-import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
-import { withStepLines } from "@/runtime/semantic-renderer/lib/step-lines";
+import { settleIn } from "@/transformers/semantic-renderer/lib/layout/compound";
+import { measureArchitecture } from "@/transformers/semantic-renderer/lib/measurement";
+import { withStepLines } from "@/transformers/semantic-renderer/lib/step-lines";
 import {
 	scorecardOf,
 	verdictOf,
