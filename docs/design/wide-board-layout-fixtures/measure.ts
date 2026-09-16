@@ -1,7 +1,7 @@
 // Measures every fixture and every vault board on the scorecard a layout change
 // is judged by (src/runtime/semantic-renderer/tests/drawn-scorecard.ts): fit,
 // page area, how much of the page is card, route length, bends, crossings,
-// margin-lane ink, flank fan, side ends, horizontal labels and the two
+// margin-lane ink, flank fan and the two
 // invariants. No single measure decides a comparison; the numbers in
 // docs/design/layout-rules.md come from here.
 //
