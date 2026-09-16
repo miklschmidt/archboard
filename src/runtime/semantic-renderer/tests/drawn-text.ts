@@ -6,13 +6,9 @@
 // a family it does not register, or measures at one weight and draws at
 // another, fails here rather than in somebody's browser.
 
-import path from "node:path";
-import { measureLineIn } from "@/runtime/engine/measure-text";
+import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import type { DiagramBox } from "@/shared/semantic-board/index";
 import { bodyShift } from "@/runtime/semantic-renderer/tests/drawn-routes";
-
-/** Where the diagram faces live, from this file. */
-const FONT_DIR = path.join(import.meta.dir, "../../../ui/shell/assets/fonts");
 
 /** One `<text>` element, as it was written into the document. */
 interface DrawnText {
@@ -61,11 +57,11 @@ function attr(tag: string, name: string): string | undefined {
 }
 
 /**
- * Every face the document registers, by family and weight, resolved to the file
- * on disk it names. Only a linked document names files; an embedded one carries
- * the bytes, and nothing here needs to decode them.
+ * Every face the document registers, by family and weight. Only a linked
+ * document names files; an embedded one carries the bytes, and nothing here
+ * needs to decode them.
  * @param svg The document.
- * @returns Each `family|weight` key's font file path.
+ * @returns Each `family|weight` key's family name.
  */
 function registeredFaces(svg: string): Map<string, string> {
 	const faces = new Map<string, string>();
@@ -73,10 +69,10 @@ function registeredFaces(svg: string): Map<string, string> {
 		/@font-face\{font-family:"([^"]+)";font-style:normal;font-weight:(\d+);src:url\("([^"]*)"\)/g,
 	);
 	for (const [, family, weight, source] of rules) {
-		if (source === undefined || source.startsWith("data:")) {
+		if (family === undefined || source === undefined || source.startsWith("data:")) {
 			continue;
 		}
-		faces.set(`${family}|${weight}`, path.join(FONT_DIR, source.split("/").pop() ?? ""));
+		faces.set(`${family}|${weight}`, family);
 	}
 	return faces;
 }
@@ -194,14 +190,14 @@ function labelPlates(svg: string, kind: string = "edge"): Map<string, DiagramBox
  * @throws {Error} When the document draws in a face it never registered.
  */
 function drawnWidth(drawn: DrawnText, faces: ReadonlyMap<string, string>): number {
-	const file = faces.get(`${drawn.family}|${drawn.weight}`);
-	if (file === undefined) {
+	const family = faces.get(`${drawn.family}|${drawn.weight}`);
+	if (family === undefined) {
 		throw new Error(
 			`"${drawn.text}" is drawn in ${drawn.family} ${drawn.weight}, which the document does not register`,
 		);
 	}
-	const measured = measureLineIn(drawn.text, drawn.size, [[{ file, ranges: null }]]);
-	return measured.width + Array.from(drawn.text).length * drawn.tracking * drawn.size;
+	const measured = diagramTextWidth(drawn.text, { family, weight: drawn.weight }, drawn.size);
+	return measured + Array.from(drawn.text).length * drawn.tracking * drawn.size;
 }
 
 /**
@@ -233,7 +229,6 @@ function spanFits(span: { left: number; right: number }, box: DiagramBox): boole
 
 export {
 	type DrawnText,
-	FONT_DIR,
 	registeredFaces,
 	labelPlates,
 	drawnTexts,
