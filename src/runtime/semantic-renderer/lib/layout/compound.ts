@@ -30,6 +30,10 @@ import { bridgeCrossings, routeCrossings } from "@/runtime/semantic-renderer/lib
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { straightenJogs } from "@/runtime/semantic-renderer/lib/layout/jogs";
 import {
+	settleWithAddedSkips,
+	type Problem,
+} from "@/runtime/semantic-renderer/lib/layout/proposal-skips";
+import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
@@ -345,19 +349,6 @@ function drawingEdges(
 }
 
 /**
- * One board to lay out, in the solving frame: the content, its measured
- * sizes and its predecessor turned into that frame, and which way the page
- * reads, which says where a frame's title band sits.
- */
-interface Problem {
-	readonly content: VariantContent;
-	readonly measured: MeasuredArchitecture;
-	readonly predecessor: ArchitectureDrawing | undefined;
-	readonly direction: ReadingDirection;
-	readonly header: HeaderSide;
-}
-
-/**
  * Settle a board read one way: solved in the one frame, turned back onto
  * the page.
  * @param direction The way the page reads.
@@ -379,7 +370,12 @@ async function settleIn(
 		direction,
 		header: headerSideOf(direction),
 	};
-	return drawingAcross(direction, await settleLabels(problem, new Set()));
+	const drawing = await settleWithAddedSkips(
+		problem,
+		async (first) => (await attemptLabels(first, new Set(), 0)).drawing,
+		(each) => settleLabels(each, new Set()),
+	);
+	return drawingAcross(direction, drawing);
 }
 
 /**
@@ -436,8 +432,8 @@ async function layoutCompound(
  * @returns The next complete engine input.
  */
 function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNode {
-	const { content, measured, predecessor, header } = problem;
-	const graph = compoundGraph(content, measured, predecessor, header);
+	const { content, measured, predecessor, header, added } = problem;
+	const graph = compoundGraph(content, measured, predecessor, header, added);
 	if (predecessor !== undefined) seedPredecessor(graph, content, predecessor);
 	for (const edge of graph.edges ?? []) {
 		if (!reserved.has(edge.id)) edge.labels = [];

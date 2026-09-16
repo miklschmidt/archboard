@@ -14,11 +14,6 @@ import {
 } from "@/runtime/semantic-renderer/lib/layout/compound-node-hints";
 import type { NodeHintRoutes } from "@/runtime/semantic-renderer/lib/layout/compound-label-space";
 import type { Point } from "@/runtime/semantic-renderer/lib/geometry";
-import {
-	emptySeeded,
-	reseatBlockedFlanks,
-	type Seeded,
-} from "@/runtime/semantic-renderer/lib/layout/compound-flanks";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
 import {
 	SOLVING,
@@ -28,6 +23,12 @@ import {
 	FACES,
 	type Flank,
 } from "@/runtime/semantic-renderer/lib/layout/reading";
+
+/** Where the seeding pass put each attachment, and on which face, by port id. */
+interface Seeded {
+	readonly ports: Map<string, Point>;
+	readonly portSides: Map<string, string>;
+}
 
 /** Keep the prior layer/order while allowing the engine to make room. */
 const PREDECESSOR_OPTIONS: LayoutOptions = {
@@ -276,12 +277,9 @@ function seedNodes(
 			const attachment = attachments.get(port.id)!;
 			seeded.ports.set(port.id, attachment);
 			seeded.portSides.set(port.id, port.layoutOptions!["elk.port.side"]!);
-			seeded.owners.set(port.id, node.id);
 			port.x = attachment.x - point.x;
 			port.y = attachment.y - point.y;
 		}
-		seeded.boxes.set(node.id, { ...point, width: node.width!, height: node.height! });
-		seeded.nodes.set(node.id, { node, point });
 		node.x = point.x - origin.x;
 		node.y = point.y - origin.y;
 		node.layoutOptions = { ...node.layoutOptions, "elk.position": `(${node.x},${node.y})` };
@@ -561,7 +559,7 @@ function seedPredecessor(
 	const previous = new Map(
 		[...predecessor.cards, ...predecessor.containers].map((node) => [node.measured.node.id, node]),
 	);
-	const seeded: Seeded = emptySeeded();
+	const seeded: Seeded = { ports: new Map(), portSides: new Map() };
 	const { ports, portSides } = seeded;
 	const parents = new Map(content.nodes.map((node) => [node.id, node.parent]));
 	const crossesHierarchy = content.edges.some(
@@ -576,7 +574,6 @@ function seedPredecessor(
 		current: graph.edges!,
 		previous: retainedRoutes,
 	});
-	reseatBlockedFlanks(graph, seeded);
 	seedLabels(graph, ports);
 	// Allocate current labels and parallel lanes together; only cards retain placement.
 	const priorRoutes = new Map(predecessor.edges.map((edge) => [edge.edge.id, edge]));
