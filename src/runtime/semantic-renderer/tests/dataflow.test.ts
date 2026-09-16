@@ -445,4 +445,42 @@ describe("renderDataFlow", () => {
 		expect(dark.height).toBe(light.height);
 		expect(dark.atlas).toEqual(light.atlas);
 	});
+	test("a participant's name is drawn complete however long it is", () => {
+		// The column cap keeps one long name from widening every column, and a
+		// long name shrinks its title first; but a name is the one text a card
+		// cannot wrap, so past the smallest title size the columns widen rather
+		// than cut it. A cut name is a participant nobody can name.
+		const long = variant({
+			nodes: [
+				{ id: "srv", name: "WSGI server", kind: "external" },
+				{
+					id: "push",
+					name: "RequestContext.push",
+					kind: "function",
+					responsibility:
+						"Binds the request and the session for one request, then matches the URL against the app's rules",
+				},
+				{ id: "match", name: "RequestContext.match_request", kind: "function" },
+				{ id: "view", name: "View function", kind: "function" },
+			],
+			flows: [
+				{
+					id: "f",
+					name: "Handle a request",
+					participants: ["srv", "push", "match", "view"],
+					steps: [
+						{ id: "s1", from: "srv", to: "push", label: "push()", kind: "sync" },
+						{ id: "s2", from: "push", to: "match", label: "match_request()", kind: "sync" },
+						{ id: "s3", from: "match", to: "view", label: "view(**view_args)", kind: "sync" },
+					],
+				},
+			],
+		});
+		const drawn = drawnTexts(render(long).svg);
+		expect(drawn.map((text) => text.text)).toContain("RequestContext.match_request");
+		expect(drawn.some((text) => text.text.endsWith("…"))).toBe(false);
+		// The responsibility still wraps into lines under its card rather than
+		// widening the columns to hold it whole.
+		expect(drawn.filter((text) => text.subject.id === "push").length).toBeGreaterThan(2);
+	});
 });
