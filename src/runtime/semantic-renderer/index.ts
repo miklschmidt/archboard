@@ -8,9 +8,11 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 //
 // ADR 0023 draws the line this module sits on: an agent authors meaning, and
 // everything about the picture — where a box goes, what colour it is, which
-// face an arrow leaves by, whether a name will fit — is decided here, once, for
-// every board. There is no coordinate, no colour and no rank hint in the input,
-// and adding one would move that line.
+// face an arrow leaves by, which way the page reads, whether a name will fit —
+// is decided here, once, for every board. The input carries none of the four
+// things that ADR keeps out of an agent's hands (a coordinate, a font size, a
+// colour, a connector route), and the reading of the picture — its direction,
+// its ranks, its faces — is derived here from the board (ADR 0028).
 //
 // A proposal's standing against the variant it came from is on the same side of
 // that line. The caller states, per render, how each subject stands — derived

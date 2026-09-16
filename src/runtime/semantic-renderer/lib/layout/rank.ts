@@ -1,9 +1,11 @@
 // How far down the diagram each card sits, derived from the edge graph.
 //
 // Forked from PR Lens's `layout/rank.ts`. Two changes. There are no document
-// rank hints to apply as a floor: under ADR 0023 an agent authors meaning and
-// never a coordinate, and a rank hint is a coordinate in disguise. And the
-// cycle-breaking walk is written as recursion rather than as an explicit stack,
+// rank hints to apply as a floor: a board's ranks and its reading direction are
+// the renderer's to derive from its relationships (ADR 0028), and what an agent
+// may not author is ADR 0023's list (coordinates, font sizes, colours and
+// connector routes), no more and no less. And the cycle-breaking walk is
+// written as recursion rather than as an explicit stack,
 // because the stack version cannot be expressed inside this repository's
 // complexity limit and a board's containment depth is small.
 
