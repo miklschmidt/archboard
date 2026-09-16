@@ -73,19 +73,34 @@ for (const file of fs
 
 console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
 console.log(
-	"board | variant | nodes | edges | reads | page WxH | fit | down page, fit | right page, fit | rows | cols | through cards | flank fan | corridor% | bends/route | labels off runs",
+	"board | variant | nodes | edges | reads | page WxH | fit | down: page, fit, bends | right | down folded | right folded | rows | cols | through cards | flank fan | corridor% | bends/route | labels off runs",
 );
 for (const item of items) {
 	const content = VariantContentSchema.parse(item.content);
 	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
 	const boxes = Object.values(drawn.atlas.nodes);
-	const direction = drawn.readingDirection ?? "-";
-	// Both readings of a first render, so the note can say what the other one cost.
+	const direction = `${drawn.readingDirection ?? "-"}${drawn.svg.includes("data-reading-wrapped") ? " folded" : ""}`;
+	// Every reading of a first render, so the note can say what the others cost.
 	const stepped = withStepLines(content).content;
+	const readings = [
+		{ direction: "down", wrapped: false },
+		{ direction: "right", wrapped: false },
+		{ direction: "down", wrapped: true },
+		{ direction: "right", wrapped: true },
+	] as const;
 	const each = await Promise.all(
-		(["down", "right"] as const).map(async (way) => {
-			const read = await settleIn(way, stepped, measureArchitecture(stepped), undefined);
-			return `${Math.round(read.width)}x${Math.round(read.height)}, ${fitIn(read).toFixed(2)}`;
+		readings.map(async (reading) => {
+			try {
+				const read = await settleIn(reading, stepped, measureArchitecture(stepped), undefined);
+				const bends =
+					read.edges.reduce(
+						(total, { curve }) => total + curve.segments.filter((s) => s.kind === "cubic").length,
+						0,
+					) / Math.max(1, read.edges.length);
+				return `${Math.round(read.width)}x${Math.round(read.height)}, ${fitIn(read).toFixed(2)}, ${bends.toFixed(1)}`;
+			} catch (error) {
+				return `throws ${String(error).slice(0, 40)}`;
+			}
 		}),
 	);
 	const rows = new Set(boxes.map((box) => Math.round(box.y / 20))).size;
@@ -102,6 +117,8 @@ for (const item of items) {
 			fitOf(drawn).toFixed(2),
 			each[0],
 			each[1],
+			each[2],
+			each[3],
 			rows,
 			cols,
 			routesThroughCards(drawn, content).length,

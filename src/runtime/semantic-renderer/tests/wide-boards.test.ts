@@ -51,7 +51,7 @@ const VAULT_FITS: Readonly<Record<string, number>> = {
 	"Canvas server": 0.71,
 	"Codex session": 0.91,
 	"Command dispatch": 0.88,
-	"Command interface": 0.88,
+	"Command interface": 1.0,
 	"Renderer layout": 1.0,
 	"Semantic renderer": 0.61,
 };
