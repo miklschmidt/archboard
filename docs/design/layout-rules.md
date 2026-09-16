@@ -483,3 +483,59 @@ reading, and the tests that pinned rows or faces (the chain, the loose
 nodes, the inserted stage, the ghost rows, the new terminal's layer, the
 containment calls, the added skip, the nested lanes) now say ahead, behind,
 beside and along instead.
+
+## 15. Faces under a predecessor come from solves, not guesses (2026-09-16, TASK-245.04)
+
+What landed: under a predecessor, a relationship that survives keeps its
+drawn faces, and a relationship the proposal adds is no longer given a face
+from ranks or from where the predecessor put the cards. `hasTopApproach` and
+the flank reseating in `compound-flanks.ts` are deleted, with the file. The
+proposal is settled twice instead (`lib/layout/proposal-skips.ts`): once
+with the added skips on the faces a first render of the same content gives
+them, once with no fixed face, and the drawing with no route through a card,
+then the fewer bends over the whole drawing, is kept. That is one first
+render and one extra settle, only for a proposal that adds relationships.
+Neither reading alone holds: with the first render's faces the added skip in
+`skipped-connections` runs through a card the predecessor pinned in its way;
+with no face the added route in `predecessor-routing` snakes round a pinned
+card (six turns). The vault's three proposals (Canvas server, Renderer layout
+and Semantic renderer, each Readable layout) draw identically before and
+after. A one-skip edit of each fixture, first card to last:
+
+| proposal         | before page, bends | after page, bends |
+| ---------------- | ------------------ | ----------------- |
+| flask-map-1+skip | 2312x2164, 2.1     | 2312x2164, 2.1    |
+| flask-map-2+skip | 1876x2590, 2.3     | 1815x2753, 2.8    |
+| flask-map-3+skip | 2616x2106, 2.8     | 2616x2161, 2.9    |
+
+flask-map-3's edit draws two routes through cards both before and after;
+that is not this change and is left open.
+
+TASK-237 is fixed: a relationship between a frame and a card outside it gets
+no fixed face at all. With a proposal pinning the cards, a fixed face on a
+frame crashed the engine (`nodeOrder[l][0].layer`) whichever face it was,
+inherited or from ranks; node to node the engine accepts it. No vault board
+or fixture has such a relationship, so no measurement moved;
+`tests/frame-relationships.test.ts` holds both directions.
+
+What was measured and rejected: the bracket. Leaving every forward skip to
+the engine on a first render removes corridor ink (flask-map-2 16 to 2
+percent) and costs fit: flask-map-1 0.46 to 0.44, flask-map-2 0.35 to 0.31,
+flask-map-3 0.45 to 0.37, Board viewer 0.62 to 0.51. The chain beside a skip
+staggers around the skip's dummy nodes, as section 5 found. No engine option
+measured recovers it on every board:
+
+| free skips, and               | flask 1 | flask 2 | flask 3 | Board viewer | Board persistence | Semantic renderer |
+| ----------------------------- | ------: | ------: | ------: | -----------: | ----------------: | ----------------: |
+| network-simplex placement     |    0.44 |    0.31 |    0.37 |         0.51 |              0.75 |              0.61 |
+| Brandes-Köpf placement        |    0.48 |    0.33 |    0.44 |         0.47 |              0.67 |              0.72 |
+| Brandes-Köpf, balanced        |    0.42 |    0.32 |    0.40 |         0.44 |              0.74 |              0.69 |
+| linear-segments placement     |    0.35 |    0.30 |    0.42 |         0.47 |              0.75 |              0.49 |
+| network-simplex layering      |    0.41 |    0.29 |    0.32 |         0.53 |              0.75 |              0.72 |
+| straightness 10 on each step  |    0.36 |    0.32 |    0.35 |         0.52 |              0.75 |              0.69 |
+| faces fixed from a free solve |    0.46 |    0.39 |    0.43 |         0.46 |              0.62 |              0.55 |
+| **bracket kept (baseline)**   |    0.46 |    0.35 |    0.45 |         0.62 |              0.75 |              0.61 |
+
+So `brackets.ts` stays: a skip beside its source's one chain is a reading
+convention that earns its fit, like the step and the return. What is gone is
+every rule that guessed a face from the predecessor's geometry.

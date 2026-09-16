@@ -3,13 +3,14 @@ import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	across,
+	along,
 	breadth,
-	faceOf,
+	depth,
 	readingOf,
 } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routePoints, routeCrosses } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
-test("an added forward skip leaves the flank beside its chain and enters the target from behind", async () => {
+test("a skip a proposal adds beside its own chain is still drawn beside that chain", async () => {
 	const pairs = [
 		["root", "source"],
 		["root", "other"],
@@ -32,14 +33,26 @@ test("an added forward skip leaves the flank beside its chain and enters the tar
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
 	const direction = readingOf(drawing);
 	const points = routePoints(drawing.svg).get("skip")!;
-	const source = drawing.atlas.nodes["source"]!;
-	const target = drawing.atlas.nodes["target"]!;
-	expect(faceOf(points[0]!, source, direction)).toBe("beside");
-	expect(across(points[1]!, direction)).toBeLessThan(across(source, direction));
-	expect(faceOf(points.at(-1)!, target, direction)).toBe("behind");
-	expect(across(points.at(-1)!, direction)).toBeGreaterThan(across(target, direction));
-	expect(across(points.at(-1)!, direction)).toBeLessThan(
-		across(target, direction) + breadth(target, direction),
-	);
-	expect(routeCrosses(points, drawing.atlas.nodes["middle"]!)).toBe(false);
+	// The card it skips stays on one side of it: the skip runs beside that
+	// card rather than weaving through the chain, and it crosses no card.
+	const middle = drawing.atlas.nodes["middle"]!;
+	const top = along(middle, direction),
+		bottom = top + depth(middle, direction);
+	// The lanes the skip runs in while it is level with the card it skips.
+	const passing = points.slice(1).flatMap((end, index) => {
+		const start = points[index]!;
+		const alongReading = across(start, direction) === across(end, direction);
+		const low = Math.min(along(start, direction), along(end, direction));
+		const high = Math.max(along(start, direction), along(end, direction));
+		return alongReading && low < bottom && high > top ? [across(start, direction)] : [];
+	});
+	expect(passing.length, "the skip passes the card it skips").toBeGreaterThan(0);
+	const lane = across(middle, direction);
+	const beside = passing.every((at) => at <= lane);
+	const opposite = passing.every((at) => at >= lane + breadth(middle, direction));
+	expect(beside || opposite, "the skip keeps to one side of the card it skips").toBe(true);
+	for (const [id, card] of Object.entries(drawing.atlas.nodes)) {
+		if (id === "source" || id === "target") continue;
+		expect(routeCrosses(points, card), `the skip through ${id}`).toBe(false);
+	}
 });
