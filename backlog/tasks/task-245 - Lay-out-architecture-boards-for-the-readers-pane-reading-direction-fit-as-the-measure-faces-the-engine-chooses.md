@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 02:34'
-updated_date: '2026-09-16 02:39'
+updated_date: '2026-09-16 10:06'
 labels: []
 dependencies: []
 references:
@@ -52,3 +52,9 @@ Subtasks, in order: record the decision (ADR), make fit in the pane the measure,
 - [ ] #2 docs/design/layout-rules.md has a dated section recording what landed and what was measured and rejected, and an accepted ADR records the decisions
 - [ ] #3 bun run check passes with the bracket, top-approach and flank-reseating rules deleted rather than disabled
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Subtasks landed 2026-09-16 on branch task-245-layout. Fits (reference pane 1272x899, first renders) before -> after: Command interface 0.88 -> 1.00 (folded down into two columns); all other vault boards and fixtures unchanged (flask-map-1 0.46, flask-map-2 0.35, flask-map-3 0.45, Agent workbench 0.59, Archboard 1.00, Board persistence 0.75, Board viewer 0.62, Browser application 0.69, Canvas server 0.71, Codex session 0.91, Command dispatch 0.88, Renderer layout 1.00, Semantic renderer 0.61). AC1 partly met: no fit below baseline, but only Command interface changed shape, and none of the four chain boards reads left to right: every rightward reading, plain or folded, measured worse (layout-rules.md sections 14 and 17). AC2 met: ADR 0028 and layout-rules.md sections 13 to 17. AC3 partly met: hasTopApproach and the flank reseating are deleted, but brackets.ts stays because removing it lost fit on four boards with no engine option recovering it (section 15). Left open for a decision: whether chain boards should still read left to right at a fit cost, and the between-layer room (TASK-239, TASK-242) as the next lever for Semantic renderer and Board viewer.
+<!-- SECTION:NOTES:END -->
