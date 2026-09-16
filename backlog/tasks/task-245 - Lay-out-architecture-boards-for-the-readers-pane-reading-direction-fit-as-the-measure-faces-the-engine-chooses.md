@@ -3,10 +3,11 @@ id: TASK-245
 title: >-
   Lay out architecture boards for the reader's pane: reading direction, fit as
   the measure, faces the engine chooses
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 02:34'
+updated_date: '2026-09-16 02:39'
 labels: []
 dependencies: []
 references:
