@@ -14,8 +14,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
+import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { settleIn } from "@/runtime/semantic-renderer/lib/layout/compound";
+import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
+import { withStepLines } from "@/runtime/semantic-renderer/lib/step-lines";
 import {
 	fitOf,
 	flankFanOf,
@@ -70,12 +73,21 @@ for (const file of fs
 
 console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
 console.log(
-	"board | variant | nodes | edges | page WxH | fit | rows | cols | through cards | flank fan | corridor% | bends/route | labels off runs",
+	"board | variant | nodes | edges | reads | page WxH | fit | down page, fit | right page, fit | rows | cols | through cards | flank fan | corridor% | bends/route | labels off runs",
 );
 for (const item of items) {
 	const content = VariantContentSchema.parse(item.content);
 	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
 	const boxes = Object.values(drawn.atlas.nodes);
+	const direction = drawn.readingDirection ?? "-";
+	// Both readings of a first render, so the note can say what the other one cost.
+	const stepped = withStepLines(content).content;
+	const each = await Promise.all(
+		(["down", "right"] as const).map(async (way) => {
+			const read = await settleIn(way, stepped, measureArchitecture(stepped), undefined);
+			return `${Math.round(read.width)}x${Math.round(read.height)}, ${fitIn(read).toFixed(2)}`;
+		}),
+	);
 	const rows = new Set(boxes.map((box) => Math.round(box.y / 20))).size;
 	const cols = new Set(boxes.map((box) => Math.round(box.x / 20))).size;
 	const ink = inkOf(drawn);
@@ -85,8 +97,11 @@ for (const item of items) {
 			item.variant,
 			content.nodes.length,
 			content.edges.length,
+			direction,
 			`${Math.round(drawn.width)}x${Math.round(drawn.height)}`,
 			fitOf(drawn).toFixed(2),
+			each[0],
+			each[1],
 			rows,
 			cols,
 			routesThroughCards(drawn, content).length,

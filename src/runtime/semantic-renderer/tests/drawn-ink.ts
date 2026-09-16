@@ -11,6 +11,13 @@ import type { DiagramBox, VariantContent } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
+	across,
+	along,
+	breadth,
+	faceOf,
+	readingOf,
+} from "@/runtime/semantic-renderer/tests/drawn-reading";
+import {
 	corridorPoints,
 	routeCrosses,
 	routeLabels,
@@ -64,30 +71,34 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
 }
 
 /**
- * How many routes leave each card by its west face.
+ * How many routes leave each card by the flank beside it: the left face when
+ * the page reads down, the top when it reads left to right.
  * @param drawing The rendered board.
  * @param content The board.
  * @returns The largest count over the cards: a fan of skips down one flank.
  */
 function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
+	const direction = readingOf(drawing);
 	const counts = new Map<string, number>();
 	for (const [id, points] of corridorPoints(drawing.svg)) {
 		const edge = content.edges.find((candidate) => candidate.id === id);
 		const from = edge === undefined ? undefined : drawing.atlas.nodes[edge.from];
 		if (edge === undefined || from === undefined) continue;
-		if (Math.abs(points[0]!.x - from.x) < 1)
+		if (faceOf(points[0]!, from, direction) === "beside")
 			counts.set(edge.from, (counts.get(edge.from) ?? 0) + 1);
 	}
 	return Math.max(0, ...counts.values());
 }
 
 /**
- * The share of route ink in vertical runs beside no card, which is a lane
- * down a margin rather than a route between rows, and the bends per route.
+ * The share of route ink in runs along the reading beside no card, which is
+ * a lane down a margin rather than a route between rows, and the bends per
+ * route.
  * @param drawing The rendered board.
  * @returns Corridor ink over all ink, and bends per route.
  */
 function inkOf(drawing: RenderedDiagram): Ink {
+	const direction = readingOf(drawing);
 	const cards = Object.values(drawing.atlas.nodes);
 	let total = 0,
 		corridor = 0,
@@ -100,8 +111,17 @@ function inkOf(drawing: RenderedDiagram): Ink {
 				end = points[index]!;
 			const length = Math.abs(end.x - start.x) + Math.abs(end.y - start.y);
 			total += length;
-			const vertical = start.x === end.x && start.y !== end.y;
-			if (vertical && !cards.some((box) => box.x <= start.x && start.x <= box.x + box.width))
+			const lane = across(start, direction);
+			const alongReading =
+				lane === across(end, direction) && along(start, direction) !== along(end, direction);
+			if (
+				alongReading &&
+				!cards.some(
+					(box) =>
+						across(box, direction) <= lane &&
+						lane <= across(box, direction) + breadth(box, direction),
+				)
+			)
 				corridor += length;
 			if (index >= 2) {
 				const before = points[index - 2]!;

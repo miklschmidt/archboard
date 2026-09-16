@@ -3,6 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { across, along, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
 	corridorPoints,
 	routePoints,
@@ -70,14 +71,19 @@ describe("same-destination routes", () => {
 				for (const theme of ["light", "dark"] as const) {
 					const content = { ...base, edges };
 					const drawn = await renderArchitecture({ content, theme });
+					const direction = readingOf(drawn);
 					const paths = routePoints(drawn.svg);
 					const far = paths.get("far")!;
 					const near = paths.get("near")!;
 					if (!paired) {
+						// The farther-reaching route takes the outer lane on its flank:
+						// the return flank for returns, the flank beside the chain for skips.
 						const outside = returning ? Math.max : Math.min;
 						const side = returning ? 1 : -1;
 						expect(
-							side * (outside(...far.map((p) => p.x)) - outside(...near.map((p) => p.x))),
+							side *
+								(outside(...far.map((p) => across(p, direction))) -
+									outside(...near.map((p) => across(p, direction)))),
 						).toBeGreaterThan(0);
 					}
 					// A peer may move to either side under compound placement. The
@@ -92,7 +98,10 @@ describe("same-destination routes", () => {
 						expect(routeCrosses(far, inside)).toBe(false);
 						expect(routeCrosses(near, inside)).toBe(false);
 					}
-					expect((returning ? -1 : 1) * (far.at(-1)!.y - near.at(-1)!.y)).toBeGreaterThan(0);
+					// And arrives farther along the target's face, so the lanes never cross.
+					expect(
+						(returning ? -1 : 1) * (along(far.at(-1)!, direction) - along(near.at(-1)!, direction)),
+					).toBeGreaterThan(0);
 					expect(
 						far.some((point, index) => {
 							const next = far[index + 1];

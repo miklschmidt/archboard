@@ -3,21 +3,30 @@
 import ELK from "elkjs/lib/elk-api.js";
 import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/lib/elk-api";
 import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import { fitIn } from "@/shared/shell-geometry/index";
 import type {
 	ArchitectureDrawing,
 	PaintedDrawing,
 	DrawingEdge,
 	DrawingNode,
 	MeasuredArchitecture,
+	ReadingDirection,
 } from "@/runtime/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
+import {
+	drawingAcross,
+	headerAxis,
+	headerSideOf,
+	measuredInFrame,
+	type HeaderSide,
+} from "@/runtime/semantic-renderer/lib/layout/reading";
 import {
 	preserveSizes,
 	reuseDrawing,
 	seedPredecessor,
 } from "@/runtime/semantic-renderer/lib/layout/compound-predecessor";
 import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-runs";
-import { bridgeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
+import { bridgeCrossings, routeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
 import { straightenJogs } from "@/runtime/semantic-renderer/lib/layout/jogs";
 import {
@@ -198,61 +207,6 @@ function pointsOf(result: ElkExtendedEdge): Point[] {
 }
 
 /**
- * Intersect two perpendicular segments, excluding their endpoints.
- * @param from The first segment's start.
- * @param to The first segment's end.
- * @param start The other segment's start.
- * @param end The other segment's end.
- * @returns Their proper crossing, when neither segment ends there.
- */
-function perpendicularCrossing(
-	from: Point,
-	to: Point,
-	start: Point,
-	end: Point,
-): Point | undefined {
-	const dx = to.x - from.x,
-		dy = to.y - from.y;
-	const otherX = end.x - start.x,
-		otherY = end.y - start.y;
-	if (dx * otherX + dy * otherY !== 0) return undefined;
-	const determinant = dx * otherY - dy * otherX;
-	if (determinant === 0) return undefined;
-	const offsetX = start.x - from.x,
-		offsetY = start.y - from.y;
-	const along = (offsetX * otherY - offsetY * otherX) / determinant;
-	const across = (offsetX * dy - offsetY * dx) / determinant;
-	if (Math.min(along, 1 - along, across, 1 - across) <= 0) return undefined;
-	return { x: from.x + along * dx, y: from.y + along * dy };
-}
-
-/**
- * Find proper perpendicular crossings before rounding consumes their straight legs.
- * Shared endpoints, overlapping lines and this route's own corners are excluded.
- * @param route One complete semantic route.
- * @param others All complete routes in this drawing.
- * @returns The crossings whose bridge space must survive corner rounding.
- */
-function routeCrossings(route: readonly Point[], others: Iterable<readonly Point[]>): Point[] {
-	const crossings: Point[] = [];
-	for (const other of others) {
-		if (route === other) continue;
-		for (let index = 1; index < route.length; index += 1) {
-			for (let crossingIndex = 1; crossingIndex < other.length; crossingIndex += 1) {
-				const crossing = perpendicularCrossing(
-					route[index - 1]!,
-					route[index]!,
-					other[crossingIndex - 1]!,
-					other[crossingIndex]!,
-				);
-				if (crossing !== undefined) crossings.push(crossing);
-			}
-		}
-	}
-	return crossings;
-}
-
-/**
  * Read a reserved label box; other measured labels will use clear route runs.
  * @param result The laid-out relationship.
  * @param measured The measured words and dimensions.
@@ -291,14 +245,15 @@ function insideOf(inner: string, outer: string, content: VariantContent): boolea
 
 /**
  * A relationship a frame makes to a part inside it leaves the frame's title
- * band, not its outer top edge: the engine attaches it to the frame's top
+ * band, not its outer edge: the engine attaches it to the frame's header
  * face, and read from there the line seems to arrive from outside the frame.
- * The first run is vertical and inside the frame, so its start moves down to
- * the bottom of the title.
+ * The first run crosses the band and is inside the frame, so its start moves
+ * in to the bottom of the title.
  * @param edge The relationship.
  * @param points Its route as the engine solved it.
  * @param content The content, for containment.
  * @param nodes The placed cards and frames.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns The route, its start moved when the frame is its source.
  */
 function leaveFromTitle(
@@ -306,13 +261,18 @@ function leaveFromTitle(
 	points: readonly Point[],
 	content: VariantContent,
 	nodes: readonly DrawingNode[],
+	header: HeaderSide,
 ): Point[] {
 	const frame = holdingFrame(edge, content, nodes);
 	const [start, next] = points;
 	if (frame === undefined || start === undefined || next === undefined) return [...points];
-	const title = frame.box.y + frame.measured.headerHeight;
-	const downFromTop = [start.x === next.x, start.y <= title, next.y > title].every(Boolean);
-	return downFromTop ? [{ x: start.x, y: title }, ...points.slice(1)] : [...points];
+	const across = headerAxis(header);
+	const along = across === "y" ? "x" : "y";
+	const title = frame.box[across] + frame.measured.headerHeight;
+	const fromBand = [start[along] === next[along], start[across] <= title, next[across] > title];
+	return fromBand.every(Boolean)
+		? [{ ...start, [across]: title }, ...points.slice(1)]
+		: [...points];
 }
 
 /**
@@ -338,6 +298,7 @@ function holdingFrame(
  * @param laidOut The engine's complete graph.
  * @param measured Text measurement for the optional label.
  * @param nodes The placed cards and frames, for a frame's own departures.
+ * @param header Where a frame's title band sits in the solving frame.
  * @returns Every drawn edge; missing routes are errors, never silent omissions.
  */
 function drawingEdges(
@@ -345,6 +306,7 @@ function drawingEdges(
 	laidOut: ElkNode,
 	measured: MeasuredArchitecture,
 	nodes: readonly DrawingNode[],
+	header: HeaderSide,
 ): DrawingEdge[] {
 	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
 	const routes = straightenJogs(
@@ -360,6 +322,7 @@ function drawingEdges(
 					),
 					content,
 					nodes,
+					header,
 				),
 			]),
 		),
@@ -382,6 +345,69 @@ function drawingEdges(
 }
 
 /**
+ * One board to lay out, in the solving frame: the content, its measured
+ * sizes and its predecessor turned into that frame, and which way the page
+ * reads, which says where a frame's title band sits.
+ */
+interface Problem {
+	readonly content: VariantContent;
+	readonly measured: MeasuredArchitecture;
+	readonly predecessor: ArchitectureDrawing | undefined;
+	readonly direction: ReadingDirection;
+	readonly header: HeaderSide;
+}
+
+/**
+ * Settle a board read one way: solved in the one frame, turned back onto
+ * the page.
+ * @param direction The way the page reads.
+ * @param content The architecture meaning.
+ * @param measured Its measured sizes, on the page.
+ * @param predecessor The preceding drawing of this view, on the page.
+ * @returns The settled drawing, on the page.
+ */
+async function settleIn(
+	direction: ReadingDirection,
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+): Promise<ArchitectureDrawing> {
+	const problem: Problem = {
+		content,
+		measured: measuredInFrame(direction, measured),
+		predecessor: predecessor === undefined ? undefined : drawingAcross(direction, predecessor),
+		direction,
+		header: headerSideOf(direction),
+	};
+	return drawingAcross(direction, await settleLabels(problem, new Set()));
+}
+
+/**
+ * The reading of a board: a proposal keeps its predecessor's direction, so a
+ * comparison keeps the reader's bearings; a first render is settled both
+ * ways and the one that fits the reader's pane better is kept, down the page
+ * when they tie (ADR 0028).
+ * @param content The architecture meaning.
+ * @param measured Its measured sizes.
+ * @param predecessor The preceding drawing of this view, when there is one.
+ * @returns The settled drawing, with its direction on it.
+ */
+async function readDrawing(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+): Promise<ArchitectureDrawing> {
+	if (predecessor !== undefined) {
+		return settleIn(predecessor.direction, content, measured, predecessor);
+	}
+	const [down, right] = await Promise.all([
+		settleIn("down", content, measured, undefined),
+		settleIn("right", content, measured, undefined),
+	]);
+	return fitIn(right) > fitIn(down) ? right : down;
+}
+
+/**
  * Route with measured spacing, reserving only labels that need their own layer.
  * @param content The architecture meaning, including its containment links.
  * @param measured Fixed card and label dimensions and minimum frame dimensions.
@@ -396,7 +422,7 @@ async function layoutCompound(
 	if (predecessor !== undefined) measured = preserveSizes(measured, predecessor);
 	const reused =
 		predecessor === undefined ? undefined : reuseDrawing(content, measured, predecessor);
-	const drawing = reused ?? (await settleLabels(content, measured, predecessor, new Set()));
+	const drawing = reused ?? (await readDrawing(content, measured, predecessor));
 	// Bridges are part of the geometry a reader sees, so they are settled here
 	// and not by a painter; the un-bridged routes stay beside them for a
 	// successor to seed from.
@@ -405,19 +431,13 @@ async function layoutCompound(
 
 /**
  * Seed all measured relationships before omitting unneeded label reservations.
- * @param content Current semantic subjects.
- * @param measured Their measured dimensions.
- * @param predecessor The immediately preceding drawing.
+ * @param problem The board, in the solving frame.
  * @param reserved Relationships that could not fit a badge on an ordinary run.
  * @returns The next complete engine input.
  */
-function graphForLabels(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
-	reserved: ReadonlySet<string>,
-): ElkNode {
-	const graph = compoundGraph(content, measured, predecessor);
+function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNode {
+	const { content, measured, predecessor, header } = problem;
+	const graph = compoundGraph(content, measured, predecessor, header);
 	if (predecessor !== undefined) seedPredecessor(graph, content, predecessor);
 	for (const edge of graph.edges ?? []) {
 		if (!reserved.has(edge.id)) edge.labels = [];
@@ -433,37 +453,32 @@ type LabelAttempt = {
 
 /**
  * Solve once and place every label that has a clear run.
- * @param content Current semantic subjects.
- * @param measured Their fixed measured dimensions.
- * @param predecessor The same inherited drawing for every attempt.
+ * @param problem The board, in the solving frame.
  * @param reserved Labels given dedicated engine space.
  * @param stacked How many badges beyond one the gaps between rows hold.
  * @returns The drawing and the measured labels it left without a box.
  */
 async function attemptLabels(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
+	problem: Problem,
 	reserved: ReadonlySet<string>,
 	stacked: number,
 ): Promise<LabelAttempt> {
-	const laidOut = await solveGraph(
-		graphForLabels(content, measured, predecessor, reserved),
-		measured,
-		stacked,
-	);
+	const { content, measured, predecessor, header } = problem;
+	const laidOut = await solveGraph(graphForLabels(problem, reserved), measured, stacked);
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
 	const drawing = placeLabelsOnRuns(
 		{
+			direction: problem.direction,
 			width: extent.width,
 			height: extent.height,
 			cards: nodes.filter((node) => node.measured.headerHeight === 0),
 			containers: nodes.filter((node) => node.measured.headerHeight > 0),
-			edges: drawingEdges(content, laidOut, measured, nodes),
+			edges: drawingEdges(content, laidOut, measured, nodes, header),
 		},
 		measured.labels,
 		predecessor,
+		header,
 	);
 	const missing = drawing.edges.filter(
 		({ edge, label }) => measured.labels.has(edge.id) && label === undefined,
@@ -507,25 +522,21 @@ function reserveMissing(attempt: LabelAttempt, reserved: Set<string>): void {
 
 /**
  * Settle the board to the end with one more badge of gap between its rows.
- * @param content Current semantic subjects.
- * @param measured Their fixed measured dimensions.
- * @param predecessor The same inherited drawing for every attempt.
+ * @param problem The board, in the solving frame.
  * @param reserved Labels reserved so far; this way keeps its own copy.
  * @param current The attempt at the ordinary gap whose labels are missing.
  * @returns The settled drawing, or nothing when the grown gap places no more labels.
  */
 async function grownGap(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
+	problem: Problem,
 	reserved: ReadonlySet<string>,
 	current: LabelAttempt,
 ): Promise<ArchitectureDrawing | undefined> {
 	const taller = await stackedAttempt(current, 0, (depth) =>
-		attemptLabels(content, measured, predecessor, reserved, depth),
+		attemptLabels(problem, reserved, depth),
 	);
 	if (taller === undefined) return undefined;
-	return settleLabels(content, measured, predecessor, new Set(reserved), 1, taller);
+	return settleLabels(problem, new Set(reserved), 1, taller);
 }
 
 /**
@@ -550,18 +561,14 @@ function shorterOf(
  * (the 2026-09-16 "Agent workbench" board placed one more label in the grown
  * gap and still reserved two, paying for both), so both ways are settled to
  * the end and the shorter page is kept. The gap grows once at most.
- * @param content Current semantic subjects.
- * @param measured Their fixed measured dimensions.
- * @param predecessor The same inherited drawing for every attempt.
+ * @param problem The board, in the solving frame.
  * @param reserved Labels already found to require dedicated engine space.
  * @param stacked How many badges beyond one the gaps between rows hold.
  * @param attempt The solve at that depth, when one is already in hand.
  * @returns One final drawing with every relationship and label present.
  */
 async function settleLabels(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
+	problem: Problem,
 	reserved: Set<string>,
 	stacked = 0,
 	attempt?: LabelAttempt,
@@ -571,14 +578,13 @@ async function settleLabels(
 	 * @param depth How many badges beyond one the gaps between rows hold.
 	 * @returns That solve with its labels placed.
 	 */
-	const solve = (depth: number) => attemptLabels(content, measured, predecessor, reserved, depth);
+	const solve = (depth: number) => attemptLabels(problem, reserved, depth);
 	const current = attempt ?? (await solve(stacked));
 	if (current.missing.length === 0) return current.drawing;
-	const grown =
-		stacked === 0 ? await grownGap(content, measured, predecessor, reserved, current) : undefined;
+	const grown = stacked === 0 ? await grownGap(problem, reserved, current) : undefined;
 	reserveMissing(current, reserved);
-	const kept = await settleLabels(content, measured, predecessor, reserved, stacked);
+	const kept = await settleLabels(problem, reserved, stacked);
 	return shorterOf(grown, kept);
 }
 
-export { layoutCompound };
+export { layoutCompound, settleIn };

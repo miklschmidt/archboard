@@ -20,6 +20,14 @@ import {
 	type Seeded,
 } from "@/runtime/semantic-renderer/lib/layout/compound-flanks";
 import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/lib/layout/compound-graph";
+import {
+	SOLVING,
+	faceGeometry,
+	pointOnFace,
+	sharedFlank,
+	FACES,
+	type Flank,
+} from "@/runtime/semantic-renderer/lib/layout/reading";
 
 /** Keep the prior layer/order while allowing the engine to make room. */
 const PREDECESSOR_OPTIONS: LayoutOptions = {
@@ -198,12 +206,8 @@ function inheritedPorts(
 ): Map<string, Point> {
 	const result = new Map(node.ports!.map((port) => [port.id, portHint(node, port, point)]));
 	if (before === undefined) return result;
-	for (const [side, axis, cross, far] of [
-		["NORTH", "x", "y", false],
-		["SOUTH", "x", "y", true],
-		["WEST", "y", "x", false],
-		["EAST", "y", "x", true],
-	] as const) {
+	for (const side of FACES) {
+		const { along: axis, across: cross } = faceGeometry(side);
 		const ports = node.ports!.filter((port) => port.layoutOptions!["elk.port.side"] === side);
 		const candidates = ports.map((port) => {
 			const route = routes.previous.find(
@@ -213,7 +217,7 @@ function inheritedPorts(
 			const attachment = port.id.endsWith(":from")
 				? route.curve.from
 				: route.curve.segments.at(-1)!.to;
-			const face = before.box[cross] + (far ? before.box[cross === "x" ? "width" : "height"] : 0);
+			const face = pointOnFace(side, before.box, 0)[cross];
 			if (Math.abs(attachment[cross] - face) > 0.01) return result.get(port.id)!;
 			return { ...result.get(port.id)!, [axis]: point[axis] + attachment[axis] - before.box[axis] };
 		});
@@ -287,20 +291,6 @@ function seedNodes(
 }
 
 /**
- * Find the horizontal attachment face shared by two endpoints.
- * @param side Source attachment face.
- * @param targetSide Target attachment face.
- * @returns Their shared horizontal face, if they have one.
- */
-function sharedHorizontalSide(
-	side: string | undefined,
-	targetSide: string | undefined,
-): "WEST" | "EAST" | undefined {
-	if ((side === "WEST" || side === "EAST") && side === targetSide) return side;
-	return undefined;
-}
-
-/**
  * Keep an inherited lane or place a new lane outside both attachments.
  * @param side Shared endpoint face.
  * @param from Source attachment.
@@ -316,12 +306,13 @@ function initialLaneX(
 	points: readonly Point[],
 	inherited: boolean,
 ): number {
+	const beside = side === SOLVING.besideFlank;
 	if (inherited)
-		return side === "WEST"
+		return beside
 			? Math.min(...points.map((point) => point.x))
 			: Math.max(...points.map((point) => point.x));
 	const gap = Number(COMPOUND_OPTIONS["elk.spacing.edgeNode"]);
-	return side === "WEST" ? Math.min(from.x, to.x) - gap : Math.max(from.x, to.x) + gap;
+	return beside ? Math.min(from.x, to.x) - gap : Math.max(from.x, to.x) + gap;
 }
 
 /**
@@ -345,7 +336,9 @@ function clearParallelLane(
 		],
 	);
 	const distance = (width + parallel.width) / 2 + spacing;
-	return side === "WEST" ? Math.min(x, parallel.x - distance) : Math.max(x, parallel.x + distance);
+	return side === SOLVING.besideFlank
+		? Math.min(x, parallel.x - distance)
+		: Math.max(x, parallel.x + distance);
 }
 
 /**
@@ -392,7 +385,7 @@ function setRoute(edge: NonNullable<ElkNode["edges"]>[number], points: readonly 
 function seedHorizontalRoute(
 	edge: NonNullable<ElkNode["edges"]>[number],
 	current: VariantContent["edges"][number],
-	side: "WEST" | "EAST",
+	side: Flank,
 	from: Point,
 	to: Point,
 	priorPoints: readonly Point[] | undefined,
@@ -438,7 +431,7 @@ function seedRoute(
 	if (from === undefined || to === undefined) return; // engine-attached
 	const side = portSides.get(edge.sources[0]!);
 	const priorPoints = inheritedRoute(before, current);
-	const horizontalSide = sharedHorizontalSide(side, portSides.get(edge.targets[0]));
+	const horizontalSide = sharedFlank(side, portSides.get(edge.targets[0]));
 	if (horizontalSide !== undefined) {
 		seedHorizontalRoute(edge, current, horizontalSide, from, to, priorPoints, corridors);
 		return;
@@ -463,9 +456,10 @@ function seedTopRoute(
 	targetSide: string | undefined,
 	priorPoints: readonly Point[] | undefined,
 ): void {
-	// A west departure can turn directly onto a target above-entry corridor.
-	// Seed its label on that same corridor so ELK does not invent a middle lane.
-	if (side === "WEST" && targetSide === "NORTH") {
+	// A departure by the beside flank can turn directly onto the corridor that
+	// enters the target from behind. Seed its label on that same corridor so
+	// ELK does not invent a middle lane.
+	if (side === SOLVING.besideFlank && targetSide === SOLVING.forwardIn) {
 		setRoute(edge, [from, { x: to.x, y: from.y }, to]);
 		for (const label of edge.labels!) label.x = to.x - label.width! / 2;
 		return;
@@ -498,7 +492,7 @@ function verticalGuides(edge: ElkExtendedEdge): { from: Point; to: Point }[] {
  */
 function clearLabelX(
 	x: number,
-	side: "WEST" | "EAST",
+	side: Flank,
 	label: ElkLabel,
 	corridors: ReturnType<typeof verticalGuides>,
 ): number {
@@ -507,7 +501,7 @@ function clearLabelX(
 		if (label.y! + label.height! < Math.min(from.y, to.y) || label.y! > Math.max(from.y, to.y))
 			continue;
 		if (Math.abs(x - from.x) < clearance)
-			x = side === "WEST" ? from.x - clearance : from.x + clearance;
+			x = side === SOLVING.besideFlank ? from.x - clearance : from.x + clearance;
 	}
 	return x;
 }
@@ -529,24 +523,22 @@ function clearFlankLabels(
 	// inner lane can otherwise push an outer guide through an adjacent card,
 	// even though that inner lane is itself about to move clear.
 	/**
-	 * Order west flanks right-to-left and east flanks left-to-right.
+	 * Order the beside flank's lanes inward first, and the return flank's likewise.
 	 * @param edge A flank with an allocated corridor.
 	 * @returns Its inward-first horizontal sort coordinate.
 	 */
 	const inwardOrder = (edge: ElkExtendedEdge): number =>
-		edge.sections![0]!.bendPoints![0]!.x * (portSides.get(edge.sources[0]!) === "WEST" ? -1 : 1);
+		edge.sections![0]!.bendPoints![0]!.x *
+		(portSides.get(edge.sources[0]!) === SOLVING.besideFlank ? -1 : 1);
 	for (const edge of flanks.toSorted((one, other) => inwardOrder(one) - inwardOrder(other))) {
-		const side = sharedHorizontalSide(
-			portSides.get(edge.sources[0]!),
-			portSides.get(edge.targets[0]!),
-		);
+		const side = sharedFlank(portSides.get(edge.sources[0]!), portSides.get(edge.targets[0]!));
 		if (side === undefined) continue;
 		const section = edge.sections![0]!;
 		const corridors = edges
 			.filter((other) => other !== edge)
 			.flatMap(verticalGuides)
 			.toSorted((one, other) =>
-				side === "WEST" ? other.from.x - one.from.x : one.from.x - other.from.x,
+				side === SOLVING.besideFlank ? other.from.x - one.from.x : one.from.x - other.from.x,
 			);
 		let x = section.bendPoints![0]!.x;
 		for (const label of edge.labels!) x = clearLabelX(x, side, label, corridors);
