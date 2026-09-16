@@ -88,9 +88,14 @@ function engineForDrawing(): LayoutEngine {
  * Keep the process alive only while a layout request still needs its worker.
  * @param graph The complete measured graph.
  * @param measured Label heights that leave room on ordinary route runs.
+ * @param stacked How many badges beyond one a gap between rows must hold, stacked.
  * @returns Its solved geometry.
  */
-async function solveGraph(graph: ElkNode, measured: MeasuredArchitecture): Promise<ElkNode> {
+async function solveGraph(
+	graph: ElkNode,
+	measured: MeasuredArchitecture,
+	stacked = 0,
+): Promise<ElkNode> {
 	const owner = engineForDrawing();
 	owner.pending += 1;
 	owner.worker.ref();
@@ -108,7 +113,10 @@ async function solveGraph(graph: ElkNode, measured: MeasuredArchitecture): Promi
 							"elk.layered.spacing.nodeNodeBetweenLayers": String(
 								Math.max(
 									Number(COMPOUND_OPTIONS["elk.layered.spacing.nodeNodeBetweenLayers"]),
-									height + 2 * nodeAir,
+									// Badges stacked beside parallel runs in one gap each need
+									// their own height and air; only the gap between rows grows
+									// for them, never the room around every route track.
+									height + 2 * nodeAir + stacked * (height + labelAir),
 								),
 							),
 							"elk.layered.spacing.edgeNodeBetweenLayers": String(
@@ -413,23 +421,32 @@ function graphForLabels(
 	return graph;
 }
 
+/** One solve with its labels placed, and the labels that found no run. */
+type LabelAttempt = {
+	drawing: ArchitectureDrawing;
+	missing: ArchitectureDrawing["edges"];
+};
+
 /**
- * Add reservations monotonically until every measured label has a final box.
+ * Solve once and place every label that has a clear run.
  * @param content Current semantic subjects.
  * @param measured Their fixed measured dimensions.
  * @param predecessor The same inherited drawing for every attempt.
- * @param reserved Labels already found to require dedicated engine space.
- * @returns One final drawing with every relationship and label present.
+ * @param reserved Labels given dedicated engine space.
+ * @param stacked How many badges beyond one the gaps between rows hold.
+ * @returns The drawing and the measured labels it left without a box.
  */
-async function settleLabels(
+async function attemptLabels(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	predecessor: ArchitectureDrawing | undefined,
 	reserved: Set<string>,
-): Promise<ArchitectureDrawing> {
+	stacked: number,
+): Promise<LabelAttempt> {
 	const laidOut = await solveGraph(
 		graphForLabels(content, measured, predecessor, reserved),
 		measured,
+		stacked,
 	);
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
@@ -447,14 +464,76 @@ async function settleLabels(
 	const missing = drawing.edges.filter(
 		({ edge, label }) => measured.labels.has(edge.id) && label === undefined,
 	);
-	if (missing.length === 0) return drawing;
-	// Each retry adds a reservation; the measured label count bounds the work.
-	for (const { edge } of missing) {
+	return { drawing, missing };
+}
+
+/**
+ * Grow the gaps between rows by one badge, and keep that only when the labels
+ * on straight descents it was grown for gain from it.
+ * @param attempt The attempt whose labels are missing.
+ * @param stacked Its stack depth.
+ * @param solve Solves at a stack depth.
+ * @returns The taller attempt when it places more labels, else nothing.
+ */
+async function stackedAttempt(
+	attempt: LabelAttempt,
+	stacked: number,
+	solve: (stacked: number) => Promise<LabelAttempt>,
+): Promise<LabelAttempt | undefined> {
+	// A badge on a straight descent between two rows found no room because its
+	// siblings' badges took it: one more badge of gap is far cheaper than the
+	// whole row that reserving the label with the engine costs.
+	if (!attempt.missing.some(({ curve }) => curve.segments.length === 1)) return undefined;
+	const taller = await solve(stacked + 1);
+	return taller.missing.length < attempt.missing.length ? taller : undefined;
+}
+
+/**
+ * Reserve engine space for every label the attempt left without a box.
+ * @param attempt The attempt whose labels are missing.
+ * @param reserved Labels already reserved; a label reserved twice is a bug.
+ */
+function reserveMissing(attempt: LabelAttempt, reserved: Set<string>): void {
+	for (const { edge } of attempt.missing) {
 		if (reserved.has(edge.id))
 			throw new Error(`Layout omitted the reserved label for relationship ${edge.id}`);
 		reserved.add(edge.id);
 	}
-	return settleLabels(content, measured, predecessor, reserved);
+}
+
+/**
+ * Add reservations monotonically until every measured label has a final box.
+ * @param content Current semantic subjects.
+ * @param measured Their fixed measured dimensions.
+ * @param predecessor The same inherited drawing for every attempt.
+ * @param reserved Labels already found to require dedicated engine space.
+ * @param stacked How many badges beyond one the gaps between rows hold.
+ * @param attempt The solve at that depth, when one is already in hand.
+ * @returns One final drawing with every relationship and label present.
+ */
+async function settleLabels(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+	reserved: Set<string>,
+	stacked = 0,
+	attempt?: LabelAttempt,
+): Promise<ArchitectureDrawing> {
+	/**
+	 * Solve with the reservations so far at a stack depth.
+	 * @param depth How many badges beyond one the gaps between rows hold.
+	 * @returns That solve with its labels placed.
+	 */
+	const solve = (depth: number) => attemptLabels(content, measured, predecessor, reserved, depth);
+	const current = attempt ?? (await solve(stacked));
+	if (current.missing.length === 0) return current.drawing;
+	// Each round stacks one more badge or reserves every missing label; the
+	// measured label count bounds both.
+	const taller = await stackedAttempt(current, stacked, solve);
+	if (taller !== undefined)
+		return settleLabels(content, measured, predecessor, reserved, stacked + 1, taller);
+	reserveMissing(current, reserved);
+	return settleLabels(content, measured, predecessor, reserved, stacked);
 }
 
 export { layoutCompound };
