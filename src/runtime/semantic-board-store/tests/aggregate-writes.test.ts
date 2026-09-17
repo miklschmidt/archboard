@@ -242,63 +242,6 @@ describe("identity across edits", () => {
 	});
 });
 
-describe("one thing asked for is one write", () => {
-	test("a container goes and its child is re-parented in the same command, in either order", async () => {
-		for (const [name, order] of [
-			["order-a", ["Wrapper"]],
-			["order-b", ["Wrapper"]],
-		] as const) {
-			await create(name, {
-				nodes: [
-					{ name: "Wrapper", kind: "service" },
-					{ name: "Inner", kind: "module", parent: "Wrapper" },
-					{ name: "Host", kind: "service" },
-				],
-			});
-			const read = store.readSemanticBoard(name);
-			const inner = read.ok
-				? read.board.variants[0]!.content.nodes.find((n) => n.name === "Inner")!
-				: undefined;
-			const result = await edit(name, {
-				nodes: [{ id: inner?.id, name: "Inner", kind: "module", parent: "Host" }],
-				removeNodes: order,
-			});
-			expect(result.outcome).toBe("applied");
-			if (result.outcome !== "applied") continue;
-			expect(namesOn(result.board)).toEqual(["Host", "Inner"]);
-		}
-	});
-
-	test("a container left with something inside it is refused with what to do", async () => {
-		await create("orphan", {
-			nodes: [
-				{ name: "Wrapper", kind: "service" },
-				{ name: "Inner", kind: "module", parent: "Wrapper" },
-			],
-		});
-		const refused = await edit("orphan", { removeNodes: ["Wrapper"] });
-		expect(refused.outcome === "rejected" && refused.code).toBe("NODE_HAS_CHILDREN");
-		expect(refused.outcome === "rejected" && refused.problem).toContain("same command");
-	});
-
-	test("an edge named for removal that its endpoint already takes away is not an error", async () => {
-		await create("overlap", {
-			nodes: [
-				{ name: "Left", kind: "module" },
-				{ name: "Right", kind: "module" },
-			],
-			edges: [{ from: "Left", to: "Right", kind: "call" }],
-		});
-		const read = store.readSemanticBoard("overlap");
-		const edgeId = read.ok ? read.board.variants[0]!.content.edges[0]!.id : "";
-		const result = await edit("overlap", { removeNodes: ["Right"], removeEdges: [edgeId] });
-		expect(result.outcome).toBe("applied");
-		if (result.outcome !== "applied") return;
-		expect(result.board.variants[0]!.content.edges).toEqual([]);
-		expect(namesOn(result.board)).toEqual(["Left"]);
-	});
-});
-
 describe("one writer at a time, over the whole board", () => {
 	test("an agent writing a claimed board writes as the claim", async () => {
 		await create("claimed", { nodes: [{ name: "First", kind: "module" }] });

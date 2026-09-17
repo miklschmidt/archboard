@@ -74,6 +74,17 @@ function edit(input: unknown) {
 	});
 }
 
+/**
+ * What a write warned about, as code and path.
+ * @param result The write's answer.
+ * @returns The warnings, or null when the write did not land.
+ */
+function warningsOf(result: Awaited<ReturnType<typeof edit>>) {
+	return result.outcome === "applied"
+		? result.warnings.map((warning) => [warning.code, warning.path])
+		: null;
+}
+
 /** Derive a fresh successor. */
 function branch(from: string, name: string) {
 	return store.writeSemanticBoard({
@@ -281,4 +292,82 @@ test("a relationship removed and stated again with one property changed lands wi
 		],
 	});
 	expect(replaced.outcome === "applied" ? replaced.warnings : null).toEqual([]);
+});
+
+test("a restatement without its id warns when it lands and again when a later write removes the original", async () => {
+	const edge = variant().content.edges[0]!;
+	const restated = await edit({
+		variant: "Proposal",
+		edges: [{ from: "Driver", to: "Grid", kind: "call", label: "place grid", traffic: {} }],
+	});
+	const copy = variant().content.edges.find((one) => one.id !== edge.id)!;
+	expect(warningsOf(restated)).toEqual([["RELATIONSHIP_DUPLICATED", `edges.${copy.id}`]]);
+	const removed = await edit({ variant: "Proposal", removeEdges: [edge.id] });
+	expect(warningsOf(removed)).toEqual([["RELATIONSHIP_REPLACED", `edges.${copy.id}`]]);
+	expect(removed.outcome === "applied" ? removed.warnings[0]?.message : "").toContain(edge.id);
+});
+
+test("moving a relationship onto the part that replaces the one removed keeps its id, and changing anything else with it is a replacement", async () => {
+	const edge = variant().content.edges[0]!;
+	const moved = await edit({
+		variant: "Proposal",
+		removeNodes: ["Grid"],
+		nodes: [{ name: "Grid engine", kind: "module", as: "engine" }],
+		edges: [{ id: edge.id, from: "Driver", to: "engine", kind: "call", label: "place grid" }],
+	});
+	expect(moved.outcome).toBe("applied");
+	const kept = variant().content.edges[0]!;
+	expect(kept.id).toBe(edge.id);
+	expect(kept.to).toBe(variant().content.nodes.find((node) => node.name === "Grid engine")!.id);
+	expect(warningsOf(moved)).toEqual([]);
+
+	const file = store.locateSemanticBoard(board).file;
+	const bytes = readFileSync(file, "utf8");
+	const replaced = await edit({
+		variant: "Proposal",
+		removeNodes: ["Grid engine"],
+		nodes: [{ name: "Grid service", kind: "module", as: "service" }],
+		edges: [{ id: kept.id, from: "Driver", to: "service", kind: "call", label: "draw grid" }],
+	});
+	expect(replaced).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
+	// The refusal names the fields it changed, which is what says what to do next.
+	if (replaced.outcome === "rejected") expect(replaced.problem).toContain("to, label");
+	expect(readFileSync(file, "utf8")).toBe(bytes);
+});
+
+test("dropping the id while the part the relationship was on goes is answered as a replaced identity", async () => {
+	const edge = variant().content.edges[0]!;
+	const reDrawn = await edit({
+		variant: "Proposal",
+		removeNodes: ["Grid"],
+		nodes: [{ name: "Grid engine", kind: "module", as: "engine" }],
+		edges: [{ from: "Driver", to: "engine", kind: "call", label: "place grid" }],
+	});
+	expect(reDrawn.outcome).toBe("applied");
+	const minted = variant().content.edges[0]!;
+	expect(minted.id).not.toBe(edge.id);
+	expect(warningsOf(reDrawn)).toEqual([["RELATIONSHIP_REPLACED", `edges.${minted.id}`]]);
+	expect(reDrawn.outcome === "applied" ? reDrawn.warnings[0]?.message : "").toContain(edge.id);
+});
+
+test("a relationship drawn afresh to a different part, saying something else, is not a lost identity", async () => {
+	const written = await edit({
+		variant: "Proposal",
+		removeNodes: ["Grid"],
+		nodes: [{ name: "Grid engine", kind: "module", as: "engine" }],
+		edges: [{ from: "Driver", to: "engine", kind: "data", label: "measured sizes" }],
+	});
+	expect(written.outcome).toBe("applied");
+	expect(warningsOf(written)).toEqual([]);
+});
+
+test("two calls between the same parts carrying different messages are not a restatement", async () => {
+	const edge = variant().content.edges[0]!;
+	const second = await edit({
+		variant: "Proposal",
+		edges: [{ from: "Driver", to: "Grid", kind: "call", label: "measure grid" }],
+	});
+	expect(second.outcome === "applied" ? second.warnings : null).toEqual([]);
+	const removed = await edit({ variant: "Proposal", removeEdges: [edge.id] });
+	expect(removed.outcome === "applied" ? removed.warnings : null).toEqual([]);
 });
