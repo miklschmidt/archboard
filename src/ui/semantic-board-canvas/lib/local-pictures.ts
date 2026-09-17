@@ -44,6 +44,7 @@ import {
 	forgetStalePictures,
 	readCachedPicture,
 	writeCachedPicture,
+	type PictureStamp,
 	type PictureStorage,
 } from "@/ui/semantic-board-canvas/lib/picture-cache";
 import type { PictureSource } from "@/ui/semantic-board-canvas/lib/picture-source";
@@ -89,6 +90,7 @@ async function boardFor(client: QueryClient, board: string): Promise<SemanticBoa
  * @param setup The renderer, its build and the storage.
  * @param request What is asked for.
  * @param client The tab's cache.
+ * @param drawing The pictures being laid out now, by request and stamp.
  * @returns The drawing, or the news that there is nothing to draw.
  * @throws {SemanticBoardError} When the board has no such variant or view, or cannot be read.
  */
@@ -96,6 +98,7 @@ async function drawHere(
 	setup: LocalPictureSetup,
 	request: SemanticRenderRequest,
 	client: QueryClient,
+	drawing: Map<string, Promise<SemanticRenderReply>>,
 ): Promise<SemanticRender> {
 	const [board, vault] = await Promise.all([
 		boardFor(client, request.board),
@@ -106,13 +109,52 @@ async function drawHere(
 		fingerprint: vault.fingerprint,
 		renderer: setup.renderer,
 	};
-	let reply: SemanticRenderReply | undefined =
+	const kept =
 		setup.storage === undefined ? undefined : readCachedPicture(setup.storage, request, stamp);
-	if (reply === undefined) {
-		reply = await drawn(setup, board, request, vault.policy);
-		if (setup.storage !== undefined) writeCachedPicture(setup.storage, request, stamp, reply);
-	}
+	// The same picture asked for again while it is still being laid out — a
+	// pane reading its board again as the first read lands — waits for that
+	// drawing rather than laying the board out a second time.
+	const key = JSON.stringify([request.board, request.variant, request.view, request.theme, stamp]);
+	const reply =
+		kept ??
+		(await (drawing.get(key) ??
+			startDrawing(setup, { board, request, stamp, policy: vault.policy }, drawing, key)));
 	return wasDrawn(reply) ? { ...reply, kind: "drawn" } : { ...reply, kind: "empty" };
+}
+
+/**
+ * Lay a picture out once, keep it when it is done, and let anyone asking for
+ * the same picture meanwhile wait for it.
+ * @param setup The renderer and the storage.
+ * @param what The board, request, stamp and policy to draw with.
+ * @param what.board The board.
+ * @param what.request What is asked for.
+ * @param what.stamp What the picture is kept under.
+ * @param what.policy The vault policy.
+ * @param drawing The pictures being laid out now.
+ * @param key This picture's key among them.
+ * @returns The drawing in progress.
+ */
+function startDrawing(
+	setup: LocalPictureSetup,
+	what: {
+		board: SemanticBoard;
+		request: SemanticRenderRequest;
+		stamp: PictureStamp;
+		policy: SemanticPolicy;
+	},
+	drawing: Map<string, Promise<SemanticRenderReply>>,
+	key: string,
+): Promise<SemanticRenderReply> {
+	const pending = drawn(setup, what.board, what.request, what.policy).then((fresh) => {
+		if (setup.storage !== undefined) {
+			writeCachedPicture(setup.storage, what.request, what.stamp, fresh);
+		}
+		return fresh;
+	});
+	drawing.set(key, pending);
+	void pending.finally(() => drawing.delete(key)).catch(() => undefined);
+	return pending;
 }
 
 /**
@@ -238,6 +280,7 @@ async function drawAhead(client: QueryClient, board: string): Promise<void> {
  */
 function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	const warmed = new WeakSet<QueryClient>();
+	const drawing = new Map<string, Promise<SemanticRenderReply>>();
 	return {
 		/**
 		 * Draw a picture here; the first one also starts drawing changed boards ahead.
@@ -252,7 +295,7 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 					void drawAhead(client, board).catch(() => undefined);
 				});
 			}
-			return drawHere(setup, request, client);
+			return drawHere(setup, request, client, drawing);
 		},
 		/**
 		 * Forget kept pictures of boards that moved or went away.

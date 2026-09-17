@@ -48,28 +48,37 @@ function heldPool(ceiling: number) {
 	return { solve, workers };
 }
 
-test("a busy pool starts another worker up to its ceiling, and reuses one that has answered", async () => {
+test("a pool grows one worker at a time, past workers that have started, up to its ceiling", async () => {
 	const { solve, workers } = heldPool(2);
 	const first = solve({ id: "a" }, {});
 	const second = solve({ id: "b" }, {});
+	// The first worker has not answered, so it is still starting: the second
+	// solve waits behind it rather than compiling the engine again beside it.
+	expect(workers).toHaveLength(1);
+	workers[0]!.answer(0, { data: { id: "a!" } });
+	expect(await first).toEqual({ id: "a!" });
+
+	// It has started and is busy, so the next solve starts a second worker; the
+	// ceiling keeps the one after that waiting on the least busy.
 	const third = solve({ id: "c" }, {});
+	workers[1]!.answer(0, { data: { id: "c!" } });
+	expect(await third).toEqual({ id: "c!" });
+	const fourth = solve({ id: "d" }, {});
+	const fifth = solve({ id: "e" }, {});
 	expect(workers).toHaveLength(2);
-	expect(workers.map((worker) => worker.sent.length).toSorted((a, b) => a - b)).toEqual([1, 2]);
 
-	for (const worker of workers) {
-		for (const [index, message] of worker.sent.entries()) {
-			worker.answer(index, { data: { id: `${message.graph.id}!` } });
-		}
+	workers[0]!.answer(1, { data: { id: "b!" } });
+	for (const [index, message] of workers[1]!.sent.entries()) {
+		if (index > 0) workers[1]!.answer(index, { data: { id: `${message.graph.id}!` } });
 	}
-	expect(await Promise.all([first, second, third])).toEqual([
-		{ id: "a!" },
+	for (const [index, message] of workers[0]!.sent.entries()) {
+		if (index > 1) workers[0]!.answer(index, { data: { id: `${message.graph.id}!` } });
+	}
+	expect(await Promise.all([second, fourth, fifth])).toEqual([
 		{ id: "b!" },
-		{ id: "c!" },
+		{ id: "d!" },
+		{ id: "e!" },
 	]);
-
-	// Every worker has answered, so the next solve starts nothing new.
-	void solve({ id: "d" }, {});
-	expect(workers).toHaveLength(2);
 });
 
 test("an engine refusal rejects the solve with an error that keeps the engine's words", async () => {
