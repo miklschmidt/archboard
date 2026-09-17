@@ -28,8 +28,8 @@ import {
 import { PILL_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { covering, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
+import { pitchOf } from "@/transformers/semantic-renderer/lib/layout/step-rows";
 import {
-	pitchOf,
 	type ActiveAt,
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
@@ -200,12 +200,14 @@ function stepBox(placed: PlacedStep, activeAt: ActiveAt): Box {
 			: straightDrawn(placed, endsFor(placed, activeAt, direction));
 
 	const pitch = pitchOf(placed.step.kind);
-	return {
+	const row = {
 		x: drawn.x,
 		y: drawn.y + drawn.height / 2 - pitch / 2,
 		width: drawn.width,
 		height: pitch,
 	};
+	// A note is the message's own words too, and its row grew to hold it.
+	return placed.note === undefined ? row : covering(row, placed.note.box);
 }
 
 export { type Ends, type Travel, endsFor, labelBox, selfStart, stepBox, travelOf };

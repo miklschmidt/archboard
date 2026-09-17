@@ -23,12 +23,7 @@
 // language; here a flow is a single named box around the whole exchange, which
 // is what lets several flows stack down one page and still be told apart.
 
-import type {
-	FlowStep,
-	MessageKind,
-	SemanticFlow,
-	SemanticNode,
-} from "@/shared/semantic-board/index";
+import type { FlowStep, SemanticFlow, SemanticNode } from "@/shared/semantic-board/index";
 import {
 	CONTAINER_BOTTOM_PAD,
 	CONTAINER_TOP_PAD,
@@ -54,8 +49,15 @@ import {
 	LIFELINE_GAP,
 	MESSAGE_PITCH,
 	SELF_LOOP_EXTENT,
-	SELF_MESSAGE_PITCH,
+	STEP_NOTE_GAP,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
+import {
+	labelFor,
+	pitchOf,
+	placeNote,
+	type ColumnBounds,
+	type PlacedNote,
+} from "@/transformers/semantic-renderer/lib/layout/step-rows";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { fittedSize, measure } from "@/transformers/semantic-renderer/lib/text";
@@ -97,6 +99,8 @@ interface PlacedStep {
 	readonly fromX: number;
 	/** The lifeline it arrives at. */
 	readonly toX: number;
+	/** Its note, when the step carries one. */
+	readonly note?: PlacedNote | undefined;
 	/**
 	 * This message's turn on the drawing's shared clock: where its first dot
 	 * starts, and how many dots it sends.
@@ -239,25 +243,6 @@ function measureColumns(
 		),
 		notes,
 	};
-}
-
-/**
- * The label as drawn: a repeated step says so rather than being drawn twice.
- * @param step The message.
- * @returns Its label, with the repeat count folded in.
- */
-function labelFor(step: FlowStep): string {
-	return step.repeat === undefined ? step.label : `${step.label} ×${step.repeat}`;
-}
-
-/**
- * The vertical step from one message to the next. A self-message needs more,
- * because it drops below its own row before it comes back.
- * @param kind What the message does.
- * @returns The pitch of its row.
- */
-function pitchOf(kind: MessageKind): number {
-	return kind === "self" ? SELF_MESSAGE_PITCH : MESSAGE_PITCH;
 }
 
 /**
@@ -416,6 +401,7 @@ function placeColumnCard(
  * Every message of one flow, stacked down the page in the order it is stated.
  * @param flow The flow.
  * @param centreOf Where each participant's lifeline runs.
+ * @param bounds The flow's columns, which a note stays inside.
  * @param firstY The height the first message runs at.
  * @param firstTurn The turn of the drawing's clock this flow's first dot takes.
  * @returns The placed messages.
@@ -423,6 +409,7 @@ function placeColumnCard(
 function placeSteps(
 	flow: SemanticFlow,
 	centreOf: ReadonlyMap<string, number>,
+	bounds: ColumnBounds,
 	firstY: number,
 	firstTurn: number,
 ): PlacedStep[] {
@@ -431,16 +418,22 @@ function placeSteps(
 	let turn = firstTurn;
 	for (const step of flow.steps) {
 		const count = Math.min(step.repeat ?? 1, MAX_PULSES_PER_STEP);
+		const fromX = centreOf.get(step.from) ?? 0;
+		const toX = centreOf.get(step.to) ?? 0;
+		const note = placeNote(step, { fromX, toX, y }, bounds);
 		placed.push({
 			step,
 			label: labelFor(step),
 			y,
-			fromX: centreOf.get(step.from) ?? 0,
-			toX: centreOf.get(step.to) ?? 0,
+			fromX,
+			toX,
+			note,
 			slot: { start: turn, count },
 		});
 		turn += count;
-		y += pitchOf(step.kind);
+		// The row grows by the note it holds, so the next message's words sit
+		// where they would have without it, only lower.
+		y += pitchOf(step.kind) + (note === undefined ? 0 : note.box.height + STEP_NOTE_GAP);
 	}
 	return placed;
 }
@@ -453,7 +446,12 @@ function placeSteps(
  */
 function lowestDrawn(steps: readonly PlacedStep[], floor: number): number {
 	return largest(
-		steps.map((placed) => placed.y + (placed.step.kind === "self" ? SELF_LOOP_EXTENT : 0)),
+		steps.map((placed) =>
+			Math.max(
+				placed.y + (placed.step.kind === "self" ? SELF_LOOP_EXTENT : 0),
+				placed.note === undefined ? 0 : placed.note.box.y + placed.note.box.height,
+			),
+		),
 		floor,
 	);
 }
@@ -510,6 +508,7 @@ function layoutFlow(
 	const steps = placeSteps(
 		flow,
 		new Map(flow.participants.map((participant, index) => [participant, centres[index] ?? 0])),
+		{ left: contentLeft, right: contentLeft + contentWidth },
 		lifelineTop + FIRST_MESSAGE_DROP,
 		start.turn,
 	);
@@ -592,5 +591,4 @@ export {
 	activationLookup,
 	largest,
 	layoutDataFlow,
-	pitchOf,
 };

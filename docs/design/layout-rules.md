@@ -371,7 +371,9 @@ shell-layout browser owner holds the mounted shell's stage to it.
 measurements, read by `tests/wide-boards.test.ts` and by `measure.ts`: fit,
 routes through a card (frames excluded, since a route inside a frame crosses
 it by design), the largest fan of skips down one card's flank, corridor ink,
-bends per route and labels off a straight run of their own route. Bends here
+bends per route and labels off a straight run of their own route; how far a
+label sits from the line's nearer end and the corridors two routes share
+joined them in section 25. Bends here
 are counted on the route without its bridges, as the suite always counted
 them; sections 3 to 10 counted them with `measure.ts`, bridge hops included,
 so those columns are not comparable with this one. The measure script now
@@ -966,3 +968,147 @@ Measured and not kept:
 - Sharing one compiled engine across browser workers, WebAssembly SIMD and
   wasm-opt levels. None moved the time. The shared engine is kept for the
   compile work it saves.
+
+## 25. A label's reach and the corridors two routes share (2026-09-17, TASK-256.12)
+
+Every S14 run of the 2026-09-17T16-31-08 skill evaluation failed its visual
+check, readability 4 and 5 out of 10, on boards of 18 to 20 parts and 32 to 41
+relationships. The renderer's own measures could not see it: all six boards
+draw no route through a card, no label off a straight run of its own route,
+and 2.4 to 3.2 bends per route. What the grader reacted to had no measure at
+all, so this section is the measurement, and only then what can be held.
+
+Two measures joined `drawn-ink.ts`, which section 13 names as the one owner
+the suite and `measure.ts` both read:
+
+- **label reach**, the distance from a label to the nearer end of the line it
+  names, measured from the badge's centre — the point `label-runs.ts` itself
+  places by, so the renderer optimises the number the reader measures. Its
+  scale-free form is the **label strand**: that distance over the distance
+  between the two cards the line joins. Half is a label at the midpoint of a
+  straight route; near one is a label stranded off the stretch of page its two
+  cards occupy.
+- **shared corridor**, the longest stretch over which two routes are drawn side
+  by side, with the **corridor routes** a reader has to count across the widest
+  such bundle, and the **shared ink**, the share of all route length that has
+  another route beside it. Side by side is 24 units apart: the drawn
+  separations are 20 and 21 (`elk.spacing.edgeEdge` is 20 and snapping moves a
+  run a unit): of the 4,472 overlapping parallel pairs across every board
+  measured here, 217 sit 21 units apart or closer and only 33 between 22 and
+  30, the nearest of them at 26. A bundle counts
+  only over 400 units, which is longer than any two routes share on a board the
+  vault holds. Crossings and corridors are read off `corridorPoints`, so a
+  bridge cannot hide one route behind another.
+
+First renders on the tree at this section's commit, the new columns beside fit:
+
+| board               | page      |  fit | label reach | strand | shared corridor | corridor routes | shared ink |
+| ------------------- | --------- | ---: | ----------: | -----: | --------------: | --------------: | ---------: |
+| flask-map-1         | 2311x1804 | 0.50 |         601 |   0.51 |             225 |               1 |       0.02 |
+| flask-map-2         | 2916x1653 | 0.44 |        1181 |   0.52 |             829 |               3 |       0.09 |
+| flask-map-3         | 2230x1790 | 0.50 |         486 |   0.58 |             864 |               3 |       0.08 |
+| system-map          | 2859x2161 | 0.42 |        1519 |   0.94 |            1390 |               5 |       0.31 |
+| Agent workbench     | 1349x1202 | 0.75 |         128 |   0.50 |              99 |               1 |       0.06 |
+| Archboard           | 1210x581  | 1.00 |         114 |   0.50 |               0 |               1 |       0.00 |
+| Board persistence   | 1522x828  | 0.84 |         392 |   0.50 |             362 |               1 |       0.14 |
+| Board viewer        | 1376x1315 | 0.68 |         244 |   0.64 |               0 |               1 |       0.00 |
+| Browser application | 1633x1185 | 0.76 |         149 |   0.50 |               0 |               1 |       0.00 |
+| Canvas server       | 1317x924  | 0.97 |         319 |   0.54 |             382 |               1 |       0.18 |
+| Codex session       | 1111x906  | 0.99 |          93 |   0.50 |               0 |               0 |       0.00 |
+| Command dispatch    | 1441x637  | 0.88 |          78 |   0.21 |               0 |               1 |       0.00 |
+| Command interface   | 1012x725  | 1.00 |         194 |   0.50 |               0 |               1 |       0.00 |
+| Renderer layout     | 910x716   | 1.00 |         108 |   0.50 |               0 |               1 |       0.00 |
+| Semantic renderer   | 1062x987  | 0.91 |         306 |   0.61 |             239 |               1 |       0.11 |
+
+One route alone in a long run reads as one corridor route; two or more is a
+bundle. The eight columns of section 13 and the recorded scorecards are
+unchanged by this work: nothing in the layout moved, and `measure.ts` compares
+this tree with a run of it before the measures existed as unchanged on every
+fixture and every variant of every vault board.
+
+The six graded boards, each run's own board measured the same way (copy the
+run's `vault/Flask.semantic.json` content beside the fixtures and run
+`measure.ts`):
+
+| S14 run     | parts, relationships | page      |  fit | label reach | strand | shared corridor | corridor routes | shared ink |
+| ----------- | -------------------- | --------- | ---: | ----------: | -----: | --------------: | --------------: | ---------: |
+| baseline 1  | 20, 37               | 2648x3088 | 0.29 |        1368 |   0.65 |            1473 |               4 |       0.14 |
+| baseline 2  | 18, 32               | 2733x1855 | 0.47 |         596 |   0.50 |             680 |               2 |       0.13 |
+| baseline 3  | 18, 34               | 2773x2254 | 0.40 |         482 |   0.58 |            1071 |               2 |       0.14 |
+| candidate 1 | 19, 32               | 2976x3966 | 0.23 |         744 |   0.54 |            1975 |               4 |       0.14 |
+| candidate 2 | 20, 41               | 2738x3998 | 0.22 |         498 |   0.49 |            2253 |               5 |       0.28 |
+| candidate 3 | 19, 32               | 2859x2161 | 0.42 |        1519 |   0.94 |            1390 |               5 |       0.31 |
+
+Candidate 3 is now the `system-map` fixture, so the shape the grader failed is
+measured on every run from here on. It is held to what a reader needs and to
+nothing else: no route through a card, every label on a straight run of its own
+route and within reach of one of its cards, bends inside the vault's allowance.
+It has no recorded scorecard on purpose — the suite holds each board to its own
+recording, so recording this one would make today's failing drawing the
+standard and pass forever.
+
+`timing.ts` reads the fixture directory the same way, and the system map is now
+the second slowest first render on it, 288 ms against flask-map-2's 360 and
+every vault board's under 80 (section 24's table is otherwise unmoved).
+
+### What the numbers say, and what they do not justify
+
+The label and the corridor are one defect, not two. The worst label on the
+system map, `WSGI, HTTP, routing, and responses`, names a route between two
+cards 1,614 units apart that are all but vertically aligned; the route is 4,655
+units long, because it leaves the page's middle, runs to the right margin, down
+the whole page and back. Its badge sits 1,519 units from both of its cards, out
+on that lap, because the run beside its source is three parallel routes 21
+apart and a 31-tall badge with its 12 of clearance fits in none of it. The
+label goes wherever the corridor ends.
+
+What is held now: a label is never farther from the nearer of its two cards
+than those two cards are from each other (`LABEL_STRAND`). Thirteen of the
+fifteen boards keep every label inside 0.64, the widest is the system map's
+0.94, and nothing measures between. It is a bound a reader can state without
+knowing the board's size.
+
+What is not held, and why no figure was invented for it:
+
+- **An absolute bound on either measure is a size limit in disguise.** Every
+  board the vault holds keeps its label reach under 392 and shares no corridor
+  longer than 382; every graded board is above both (482 to 1,519, and 680 to
+  2,253). A threshold in the gap, say 400 and 400, separates the two
+  populations perfectly — and fails all three Flask fixtures as well, which are
+  15 parts and have drawn that way since section 13. The vault's boards are
+  small, not better drawn; holding a twenty-part board to a twelve-part board's
+  distances is a rule against large boards.
+- **The share of ink does not separate at all**: Canvas server, which reads
+  well, shares 0.18 of its ink, more than four of the six graded boards.
+- **The tight bounds the population does support are the ones the fixtures
+  fail**: a strand of 0.75 (13 of 15 boards are inside 0.64, the system map is
+  0.94), no two routes side by side over 400 (every vault board passes, the
+  system map shares 1,390), and no more than two routes in one corridor (every
+  vault board has one, the system map five). Each of those is a target with
+  evidence behind it, and each fails on a board that is on the branch today, so
+  none of them can be a gate until the routing changes.
+
+What would justify turning them on: the lap. A forward skip over many layers is
+routed in the outermost channel, so several of them nest around the page's
+margin, and they are what both measures see. That is the engine's long-edge
+placement, not a face this renderer chooses, and it is the same fan TASK-239
+(the departing trunk) and the unowned converging fan on a shared dependency
+are about. When a long skip no longer takes a lap, re-measure the system map;
+if it comes inside a strand of 0.75, two routes per corridor and 400 units of
+shared corridor, those become the thresholds and the fixture is held to them.
+
+### Measured and not kept
+
+`elk.spacing.edgeEdge` and `edgeEdgeBetweenLayers` from 20 to 36, so that
+parallel routes are drawn apart and a badge has room between them. On the
+fixtures it reads like a triumph — flask-map-2's label reach 1181 to 239, its
+shared corridor 829 to 0, flask-map-1's 225 to 0, Canvas server's 382 to 12 —
+and it is mostly the measure being fooled: 36 apart is beyond the 24 the
+corridor measure calls side by side, so a corridor of the same routes stops
+counting. The board that matters got worse: the system map's reading flips,
+its page goes 2859x2161 to 3625x1753, its fit 0.42 to 0.35, its label reach
+1519 to 2145 and its shared corridor 1390 to 2602. flask-map-2 loses fit 0.44
+to 0.35 and flask-map-1 0.50 to 0.46. Reverted. The lesson is about the
+measure as much as the spacing: `SIDE_BY_SIDE` has to be re-derived from the
+drawn separations whenever the engine's edge spacing changes, or a spacing
+bump silently empties the column.

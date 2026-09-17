@@ -36,6 +36,10 @@ import {
 	PILL_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
+	STEP_NOTE_PADDING_X,
+	STEP_NOTE_PADDING_Y,
+} from "@/transformers/semantic-renderer/lib/sequence-design";
+import {
 	STEP_WEIGHT,
 	MARKER_INSET,
 	SELF_LOOP_CORNER,
@@ -186,6 +190,41 @@ function paintLabel(
 }
 
 /**
+ * A step's note under its message: complete lines on a plate of the frame's
+ * ground, so a lifeline it crosses passes behind the words.
+ * @param placed The message.
+ * @param styles The painter's bundles.
+ * @returns The note, or nothing when the step has none.
+ */
+function paintNote(placed: PlacedStep, styles: SvgStyles): string {
+	const note = placed.note;
+	if (note === undefined) {
+		return "";
+	}
+	return lines([
+		tag("rect", {
+			x: coord(note.box.x),
+			y: coord(note.box.y),
+			width: coord(note.box.width),
+			height: coord(note.box.height),
+			rx: PILL_RADIUS,
+			fill: styles.band.fill,
+		}),
+		...note.lines.map((run) =>
+			textNode(
+				{
+					"xml:space": "preserve",
+					x: coord(note.box.x + STEP_NOTE_PADDING_X + run.x),
+					y: coord(note.box.y + STEP_NOTE_PADDING_Y + run.y),
+					...styles.note,
+				},
+				run.text,
+			),
+		),
+	]);
+}
+
+/**
  * The path a self-message takes: out to the right, down, and back.
  * @param placed The message.
  * @param activated Whether its column is busy at that height.
@@ -295,11 +334,13 @@ function paintStepWords(
 	unsettled: boolean,
 ): string {
 	const plate = labelBox(placed, activeAt);
+	const styles = stylesFor(palette);
 	return wrap(
 		"g",
 		subjectGroup("step", placed.step.id, standing),
 		lines([
-			paintLabel(placed.label, plate, stylesFor(palette), standingOutline(standing, palette)),
+			paintLabel(placed.label, plate, styles, standingOutline(standing, palette)),
+			paintNote(placed, styles),
 			// On the leading edge of the plate, clear of its words.
 			warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
 		]),

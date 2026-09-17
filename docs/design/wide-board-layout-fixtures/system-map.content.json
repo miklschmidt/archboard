@@ -1,0 +1,462 @@
+{
+	"nodes": [
+		{
+			"id": "OPvZVKTy",
+			"name": "Application code",
+			"kind": "external",
+			"responsibility": "Creates and configures a Flask application, then registers routes, blueprints, hooks, and extensions."
+		},
+		{
+			"id": "QNoyvZ4a",
+			"name": "WSGI server",
+			"kind": "external",
+			"responsibility": "Supplies the WSGI environment and start_response callback, then consumes the application response."
+		},
+		{
+			"id": "nCUNCIuN",
+			"name": "Flask WSGI application",
+			"kind": "app",
+			"responsibility": "Owns the concrete Flask application and drives WSGI request dispatch, response finalization, teardown, and middleware wrapping.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/app.py"
+			}
+		},
+		{
+			"id": "RypZSIKr",
+			"name": "Sans-IO core",
+			"kind": "module",
+			"responsibility": "Defines application configuration, registries, setup guards, URL-map ownership, and framework behavior independent of a network server.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/app.py"
+			}
+		},
+		{
+			"id": "HyQNhQwI",
+			"name": "Contexts",
+			"kind": "module",
+			"responsibility": "Creates, pushes, matches, tears down, and pops application and request state around each request or CLI operation.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/ctx.py"
+			}
+		},
+		{
+			"id": "TF7WIaPZ",
+			"name": "Context globals",
+			"kind": "module",
+			"responsibility": "Exposes current_app, request, session, g, and context proxies backed by Flask's context variables.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/globals.py"
+			}
+		},
+		{
+			"id": "tOd9Pz45",
+			"name": "Route registry",
+			"kind": "module",
+			"responsibility": "Provides route and hook decorators plus setup-time registration primitives used to populate application dispatch tables.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/scaffold.py"
+			}
+		},
+		{
+			"id": "eWN33bX3",
+			"name": "Blueprints",
+			"kind": "module",
+			"responsibility": "Collects deferred blueprint routes, callbacks, templates, static resources, and CLI commands, then merges them into an application.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sansio/blueprints.py"
+			}
+		},
+		{
+			"id": "ljeCxVUK",
+			"name": "Sessions",
+			"kind": "module",
+			"responsibility": "Loads and saves dictionary-like sessions through a pluggable interface; the default stores signed session data in cookies.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/sessions.py"
+			}
+		},
+		{
+			"id": "64nfCV8z",
+			"name": "Templating",
+			"kind": "module",
+			"responsibility": "Builds Flask's Jinja environment and loaders, renders templates, injects context, and emits render lifecycle signals.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/templating.py"
+			}
+		},
+		{
+			"id": "x7XepML0",
+			"name": "JSON",
+			"kind": "module",
+			"responsibility": "Provides configurable JSON dumps, loads, and response creation used by jsonify, request parsing, and automatic response conversion.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/json/provider.py"
+			}
+		},
+		{
+			"id": "wMIoiZNZ",
+			"name": "CLI",
+			"kind": "module",
+			"responsibility": "Loads applications and plugins, manages app-aware commands and contexts, and launches the development server and shell commands.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/cli.py"
+			}
+		},
+		{
+			"id": "pdJ1RKv6",
+			"name": "Signals",
+			"kind": "module",
+			"responsibility": "Defines Flask's request, application-context, template, exception, and flashing signal objects.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/signals.py"
+			}
+		},
+		{
+			"id": "NSzslakT",
+			"name": "Testing",
+			"kind": "module",
+			"responsibility": "Provides an app-aware test client, environment builder, session transactions, and Click-based CLI runner.",
+			"binding": {
+				"repo": "github.com/pallets/flask",
+				"path": "src/flask/testing.py"
+			}
+		},
+		{
+			"id": "RbPiC6Yg",
+			"name": "Werkzeug",
+			"kind": "external",
+			"responsibility": "Supplies Flask's WSGI wrappers, routing maps and adapters, HTTP exceptions, response objects, test client primitives, and development server."
+		},
+		{
+			"id": "Gn0G3E38",
+			"name": "Jinja",
+			"kind": "external",
+			"responsibility": "Provides the template environment, loaders, template compilation, and rendering engine used by Flask."
+		},
+		{
+			"id": "9geaVGlj",
+			"name": "Click",
+			"kind": "external",
+			"responsibility": "Provides command groups, options, invocation contexts, and CLI test-runner primitives used by Flask."
+		},
+		{
+			"id": "GxTdesEX",
+			"name": "itsdangerous",
+			"kind": "external",
+			"responsibility": "Signs and time-validates the serialized cookie payload used by Flask's default secure-cookie sessions."
+		},
+		{
+			"id": "YFiWXfQG",
+			"name": "Blinker",
+			"kind": "external",
+			"responsibility": "Provides the signal namespace and dispatch mechanism behind Flask's optional signal support."
+		}
+	],
+	"edges": [
+		{
+			"id": "LAdFXFsl",
+			"from": "OPvZVKTy",
+			"to": "nCUNCIuN",
+			"kind": "call",
+			"label": "constructs and configures Flask",
+			"description": "Application code imports Flask, constructs the application, and registers its routes and callbacks.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "7cwTcnIZ",
+			"from": "QNoyvZ4a",
+			"to": "nCUNCIuN",
+			"kind": "call",
+			"label": "WSGI environ/start_response",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "7o1s7aJt",
+			"from": "nCUNCIuN",
+			"to": "RypZSIKr",
+			"kind": "dependency",
+			"label": "Flask subclasses App",
+			"description": "flask.app.Flask extends flask.sansio.app.App and adds WSGI, request dispatch, sessions, and concrete I/O behavior.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "tV4WYtok",
+			"from": "nCUNCIuN",
+			"to": "HyQNhQwI",
+			"kind": "call",
+			"label": "creates, pushes, and pops request context",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "cHXvtiph",
+			"from": "HyQNhQwI",
+			"to": "TF7WIaPZ",
+			"kind": "data",
+			"label": "binds context variables",
+			"description": "AppContext and RequestContext set and reset the context variables consumed by LocalProxy globals.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "2dsimEej",
+			"from": "TF7WIaPZ",
+			"to": "HyQNhQwI",
+			"kind": "dependency",
+			"label": "proxies read active contexts",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5fXdwAtw",
+			"from": "HyQNhQwI",
+			"to": "ljeCxVUK",
+			"kind": "call",
+			"label": "open_session during context push",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "4LJRIwIj",
+			"from": "RypZSIKr",
+			"to": "tOd9Pz45",
+			"kind": "dependency",
+			"label": "inherits setup and route registration",
+			"emphasis": "normal"
+		},
+		{
+			"id": "P0fyJpWH",
+			"from": "RypZSIKr",
+			"to": "eWN33bX3",
+			"kind": "call",
+			"label": "register_blueprint",
+			"description": "App.register_blueprint delegates to Blueprint.register, which merges deferred routes and callbacks into the application.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "bibGMYwI",
+			"from": "eWN33bX3",
+			"to": "RypZSIKr",
+			"kind": "call",
+			"label": "merges routes and hooks into app",
+			"emphasis": "normal"
+		},
+		{
+			"id": "YYzmzRMC",
+			"from": "nCUNCIuN",
+			"to": "tOd9Pz45",
+			"kind": "data",
+			"label": "dispatches matched endpoint",
+			"description": "dispatch_request reads the matched rule and view function from the request and application registries before invoking the view.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "940d6hUj",
+			"from": "nCUNCIuN",
+			"to": "ljeCxVUK",
+			"kind": "call",
+			"label": "save_session during response processing",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "zJGQ7pYn",
+			"from": "nCUNCIuN",
+			"to": "64nfCV8z",
+			"kind": "call",
+			"label": "creates Jinja environment",
+			"emphasis": "normal"
+		},
+		{
+			"id": "dNDxw9Us",
+			"from": "64nfCV8z",
+			"to": "Gn0G3E38",
+			"kind": "call",
+			"label": "loads and renders template",
+			"emphasis": "normal"
+		},
+		{
+			"id": "6dwFkRTy",
+			"from": "64nfCV8z",
+			"to": "TF7WIaPZ",
+			"kind": "data",
+			"label": "reads current_app and request",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ncPW7wJB",
+			"from": "nCUNCIuN",
+			"to": "x7XepML0",
+			"kind": "call",
+			"label": "converts JSON return values",
+			"description": "Flask.make_response uses the application's JSON provider for dict and list return values.",
+			"emphasis": "normal"
+		},
+		{
+			"id": "DdubRXk6",
+			"from": "x7XepML0",
+			"to": "nCUNCIuN",
+			"kind": "call",
+			"label": "current_app.json response",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HBWSjWu5",
+			"from": "x7XepML0",
+			"to": "TF7WIaPZ",
+			"kind": "dependency",
+			"label": "resolves current_app",
+			"emphasis": "normal"
+		},
+		{
+			"id": "z372wSkF",
+			"from": "nCUNCIuN",
+			"to": "pdJ1RKv6",
+			"kind": "event",
+			"label": "request lifecycle signals",
+			"description": "full_dispatch_request, finalize_request, and teardown paths send request and application-context signals.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "6z0bwXJ4",
+			"from": "pdJ1RKv6",
+			"to": "YFiWXfQG",
+			"kind": "dependency",
+			"label": "Namespace.signal",
+			"emphasis": "normal"
+		},
+		{
+			"id": "jBfVOpz8",
+			"from": "ljeCxVUK",
+			"to": "GxTdesEX",
+			"kind": "call",
+			"label": "signs and loads session cookie",
+			"emphasis": "normal"
+		},
+		{
+			"id": "YtUz8Njz",
+			"from": "nCUNCIuN",
+			"to": "RbPiC6Yg",
+			"kind": "dependency",
+			"label": "WSGI, HTTP, routing, and responses",
+			"emphasis": "normal"
+		},
+		{
+			"id": "T0JQo56j",
+			"from": "RypZSIKr",
+			"to": "RbPiC6Yg",
+			"kind": "dependency",
+			"label": "Map, Rule, exceptions, and response base",
+			"emphasis": "normal"
+		},
+		{
+			"id": "nhcbEPvm",
+			"from": "wMIoiZNZ",
+			"to": "nCUNCIuN",
+			"kind": "call",
+			"label": "loads app and runs commands",
+			"emphasis": "normal"
+		},
+		{
+			"id": "n4fhnmWY",
+			"from": "wMIoiZNZ",
+			"to": "HyQNhQwI",
+			"kind": "call",
+			"label": "pushes app context for commands",
+			"emphasis": "normal"
+		},
+		{
+			"id": "wW7pK6yj",
+			"from": "wMIoiZNZ",
+			"to": "9geaVGlj",
+			"kind": "dependency",
+			"label": "commands and invocation contexts",
+			"emphasis": "normal"
+		},
+		{
+			"id": "hVfiw8nX",
+			"from": "wMIoiZNZ",
+			"to": "RbPiC6Yg",
+			"kind": "call",
+			"label": "run_simple development server",
+			"emphasis": "normal"
+		},
+		{
+			"id": "TWJP3giK",
+			"from": "nCUNCIuN",
+			"to": "NSzslakT",
+			"kind": "call",
+			"label": "creates test client and CLI runner",
+			"emphasis": "normal"
+		},
+		{
+			"id": "QB97rekx",
+			"from": "NSzslakT",
+			"to": "RbPiC6Yg",
+			"kind": "dependency",
+			"label": "test client and environment builder",
+			"emphasis": "normal"
+		},
+		{
+			"id": "QqsT5d6G",
+			"from": "NSzslakT",
+			"to": "9geaVGlj",
+			"kind": "dependency",
+			"label": "CliRunner",
+			"emphasis": "normal"
+		},
+		{
+			"id": "D5jwNYtB",
+			"from": "NSzslakT",
+			"to": "ljeCxVUK",
+			"kind": "call",
+			"label": "session_transaction",
+			"emphasis": "normal"
+		},
+		{
+			"id": "jo6gtZR3",
+			"from": "HyQNhQwI",
+			"to": "RbPiC6Yg",
+			"kind": "call",
+			"label": "MapAdapter.match during request context push",
+			"description": "RequestContext.match_request calls self.url_adapter.match(return_rule=True), where the adapter is Werkzeug's routing adapter.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

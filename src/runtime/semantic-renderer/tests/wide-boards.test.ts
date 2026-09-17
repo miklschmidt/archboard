@@ -4,9 +4,12 @@
 // 21): a board may give up fit for a smaller page, or a lane for fewer
 // crossings, so each is held to its recorded scorecard as a whole, and is
 // never worse on more measures than it is better. Beside that, what a reader
-// needs whatever way the page reads: no route through a card, every label on a
-// straight run of its own route, and bounded bends. A board the vault gains
-// needs a scorecard of its own.
+// needs whatever way the page reads and whatever the board's size: no route
+// through a card, every label on a straight run of its own route and within
+// reach of one of the two cards it joins, and bounded bends. Those are
+// thresholds, and the system map is held to them alone: a board that draws
+// badly must not be able to record its own drawing as the standard. A board
+// the vault gains needs a scorecard of its own.
 
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -16,9 +19,10 @@ import {
 	VariantContentSchema,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	inkOf,
+	labelReachOf,
 	labelsOffRuns,
 	routesThroughCards,
 } from "@/runtime/semantic-renderer/tests/drawn-ink";
@@ -26,6 +30,7 @@ import { scorecardOf, verdictOf } from "@/runtime/semantic-renderer/tests/drawn-
 import first from "../../../../docs/design/wide-board-layout-fixtures/flask-map-1.content.json";
 import second from "../../../../docs/design/wide-board-layout-fixtures/flask-map-2.content.json";
 import third from "../../../../docs/design/wide-board-layout-fixtures/flask-map-3.content.json";
+import systemMap from "../../../../docs/design/wide-board-layout-fixtures/system-map.content.json";
 
 /**
  * A recorded scorecard: fit, megapixels, card share, route length, bends per
@@ -37,8 +42,20 @@ type Recorded = readonly [number, number, number, number, number, number, number
 /** How far a size may move before it counts as better or worse. */
 const SIZE_TOLERANCE = 0.02;
 
-/** Bends per route a vault board may spend: the largest measured, with room. */
+/** Bends per route a board with no allowance of its own may spend: the largest measured, with room. */
 const VAULT_BENDS = 3.0;
+
+/**
+ * How far a label may sit from the nearer of the two cards its line joins, as
+ * a share of the way between them. A label at the midpoint of a straight route
+ * reaches half; one at the far card's own distance reaches all of it, which is
+ * words stranded off the stretch of page their two cards occupy, where a reader
+ * can only learn what they name by tracing the line. Thirteen of the fifteen
+ * boards measured for docs/design/layout-rules.md section 25 keep every label
+ * inside 0.64 and the widest is 0.94, so this bound is loose today; it is the
+ * one a reader can state without knowing how big the board is.
+ */
+const LABEL_STRAND = 1;
 
 /** The fixtures, their recorded scorecards, and the bends each may spend. */
 const FIXTURES = [
@@ -98,17 +115,34 @@ function vaultBoards(): { readonly name: string; readonly content: VariantConten
 }
 
 /**
- * What every drawing owes its reader, whichever way it reads, and that it is
- * no worse than its recorded scorecard on more measures than it is better.
+ * What every drawing owes its reader, whichever way it reads and whatever its
+ * size: nothing drawn over a card, every label on a straight run of its own
+ * route and within reach of one of its cards, and bends a reader can follow.
+ * These are thresholds, not recordings: a board meets them or it does not.
+ * @param drawing The rendered board.
+ * @param content The board.
+ * @param bends The bends per route it may spend.
+ */
+function expectLegible(drawing: RenderedDiagram, content: VariantContent, bends: number) {
+	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
+	expect(labelsOffRuns(drawing), "labels off a straight run of their own route").toEqual([]);
+	expect(inkOf(drawing).bends, "bends per route").toBeLessThanOrEqual(bends);
+	expect(
+		labelReachOf(drawing).strand,
+		"a label farther from its nearer card than its two cards are apart",
+	).toBeLessThanOrEqual(LABEL_STRAND);
+}
+
+/**
+ * What every drawing owes its reader, and that it is no worse than its
+ * recorded scorecard on more measures than it is better.
  * @param content The board.
  * @param recorded Its recorded scorecard.
  * @param bends The bends per route it may spend.
  */
 async function expectReadable(content: VariantContent, recorded: Recorded, bends: number) {
 	const drawing = await renderArchitecture({ content, theme: "light" });
-	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
-	expect(labelsOffRuns(drawing), "labels off a straight run of their own route").toEqual([]);
-	expect(inkOf(drawing).bends, "bends per route").toBeLessThanOrEqual(bends);
+	expectLegible(drawing, content, bends);
 	const measures = scorecardOf(drawing, content);
 	// A size counts only past two percent and a count by any amount, as the
 	// renderer itself compares drawings (docs/design/layout-rules.md section 21):
@@ -143,6 +177,19 @@ describe("a wide board reads as its cards and their wiring", () => {
 			);
 		});
 	}
+});
+
+describe("a system map at twenty parts is legible without a view", () => {
+	// Nineteen parts and thirty-two relationships, the shape of board an agent
+	// draws when asked to map a system whole (docs/design/layout-rules.md
+	// section 25). It is held to what a reader needs and never to a scorecard of
+	// its own: a recording of this drawing would pass forever, and this drawing
+	// is one a reader failed.
+	test("no route through a card, labels on their runs and within reach of a card, bounded bends", async () => {
+		const content = VariantContentSchema.parse(systemMap);
+		const drawing = await renderArchitecture({ content, theme: "light" });
+		expectLegible(drawing, content, VAULT_BENDS);
+	});
 });
 
 describe("every board in the vault reads no worse than it did", () => {

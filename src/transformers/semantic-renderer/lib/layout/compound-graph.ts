@@ -12,9 +12,12 @@ import { pointAt } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { flankSkips } from "@/transformers/semantic-renderer/lib/layout/brackets";
 import { rankNodes } from "@/transformers/semantic-renderer/lib/layout/rank";
 import {
+	ALONE,
 	besideFlankOf,
 	portIndex,
+	seatsOf,
 	type FlankRule,
+	type Seat,
 } from "@/transformers/semantic-renderer/lib/layout/flank-rules";
 import {
 	SOLVING,
@@ -134,6 +137,8 @@ interface Ordering {
 	readonly flank: ReadonlySet<string>;
 	readonly rule: FlankRule;
 	readonly added: ArchitectureDrawing | null | undefined;
+	/** Which of the relationships sharing a pair of endpoints each one is, so a pair does not cross. */
+	readonly seats: ReadonlyMap<string, Seat>;
 }
 
 /**
@@ -413,7 +418,7 @@ function edgeOf(
 	predecessor: ArchitectureDrawing | undefined,
 	header: HeaderSide,
 ): ElkExtendedEdge[] {
-	const { ranks, rule } = ordering;
+	const { ranks, rule, seats } = ordering;
 	const faces = facesOf(edge, measured, ordering, predecessor);
 	if (faces === FREE) {
 		// Node to node: the router chooses the faces, and a crossed frame is the
@@ -425,8 +430,9 @@ function edgeOf(
 	const [fromSide, toSide] = faces;
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
-	const fromIndex = portIndex(rule, fromSide, ranks.get(edge.to) ?? 0);
-	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0);
+	const seat = seats.get(edge.id) ?? ALONE;
+	const fromIndex = portIndex(rule, fromSide, ranks.get(edge.to) ?? 0, seat);
+	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0, seat);
 	attachPort(edge.from, portOf(fromPort, fromSide, fromIndex), nodes);
 	attachPort(edge.to, portOf(toPort, toSide, toIndex), nodes);
 	const ports = [
@@ -521,7 +527,13 @@ function compoundGraph(
 	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value, header)]));
 	const edges = content.edges.toSorted((one, other) => one.id.localeCompare(other.id));
 	const ranks = rankNodes(content.nodes, edges);
-	const ordering: Ordering = { ranks, flank: flankSkips(edges, ranks), rule, added };
+	const ordering: Ordering = {
+		ranks,
+		flank: flankSkips(edges, ranks),
+		rule,
+		added,
+		seats: seatsOf(edges),
+	};
 	return {
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },

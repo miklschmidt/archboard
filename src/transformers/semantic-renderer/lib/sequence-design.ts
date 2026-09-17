@@ -59,6 +59,21 @@ const MESSAGE_LABEL_GAP = 5;
 const SELF_LABEL_GAP = 8;
 
 /**
+ * A step's note: a caveat drawn under the message it qualifies, in the card
+ * note's face, on a plate of the frame's own ground so a lifeline it crosses
+ * passes behind the words without drawing a box around them. It wraps to the
+ * hop it annotates, never narrower than a readable measure and never wider
+ * than a comfortable line, and the message's row grows to hold it, so the next
+ * message never lands on it.
+ */
+const STEP_NOTE_GAP = 4;
+const STEP_NOTE_INSET = 8;
+const STEP_NOTE_PADDING_X = 4;
+const STEP_NOTE_PADDING_Y = 2;
+const STEP_NOTE_MIN_WIDTH = 180;
+const STEP_NOTE_MAX_WIDTH = 320;
+
+/**
  * Maximum animated dots per repeated step, keeping them countable and preventing
  * a high repetition count from delaying the rest of the sequence.
  */
@@ -91,4 +106,10 @@ export {
 	SELF_LOOP_EXTENT,
 	MESSAGE_LABEL_GAP,
 	SELF_LABEL_GAP,
+	STEP_NOTE_GAP,
+	STEP_NOTE_INSET,
+	STEP_NOTE_PADDING_X,
+	STEP_NOTE_PADDING_Y,
+	STEP_NOTE_MIN_WIDTH,
+	STEP_NOTE_MAX_WIDTH,
 };
