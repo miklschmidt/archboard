@@ -1,11 +1,11 @@
 // Every call the browser makes to the canvas server's semantic-board routes.
 //
-// Plain `fetch` on purpose: the browser never imports the renderer, the board
-// store or the vault (ADR 0023). Three reads are the whole of what a viewer is
-// allowed to know — which boards exist, what one variant of one of them looks
-// like, and what one board says — and every one of them is answered by the
-// server, which is where the fonts that measure the text live. There is no
-// fourth call, because the viewer never writes a board.
+// Plain `fetch` on purpose: the browser never imports the board store or the
+// vault (ADR 0023). The reads are the whole of what a viewer is allowed to
+// know — which boards exist, what one board says, the vault policy, and what
+// one variant looks like when the page draws no pictures of its own — and every
+// one of them is answered by the server. There is no write call, because the
+// viewer never writes a board.
 //
 // A refusal is carried as an error with the server's own code on it, so the
 // stage can say which of the several things went wrong rather than showing one

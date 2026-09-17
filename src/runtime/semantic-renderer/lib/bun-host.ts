@@ -14,6 +14,7 @@ import { GlobalFonts, createCanvas } from "@napi-rs/canvas";
 import { readThemeColors } from "@/shared/theme/server";
 import { FACES, installRendererHost } from "@/transformers/semantic-renderer/host";
 import { solveOnEngine } from "@/runtime/semantic-renderer/lib/engine-pool";
+import { iconPaths } from "@/runtime/semantic-renderer/lib/icon-paths";
 
 /** Where the diagram font files live in this checkout. */
 const FONT_DIR = fileURLToPath(new URL("../../../ui/shell/assets/fonts/", import.meta.url));
@@ -68,6 +69,7 @@ function installBunHost(): void {
 			readFileSync(new URL("../../../shared/theme/theme.css", import.meta.url), "utf8"),
 		),
 		fontBase64,
+		iconPaths,
 	});
 	installed = true;
 }
