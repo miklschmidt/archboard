@@ -19,7 +19,7 @@
 
 import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import { carryCard, growIn } from "@/ui/semantic-board-canvas/lib/picture-cards";
+import { carryCard, growIn, isLabel } from "@/ui/semantic-board-canvas/lib/picture-cards";
 import { carryLine, drawOn } from "@/ui/semantic-board-canvas/lib/picture-lines";
 import {
 	TRANSITION_ATTRIBUTE,
@@ -280,8 +280,17 @@ function alongside(first: Updater | null, second: Updater | null): Updater | nul
  * @returns The step.
  */
 function arrive(group: SubjectGroup): Updater {
-	return group.shape === "line" ? drawOn(group) : growIn(group);
+	if (group.shape === "line") {
+		return drawOn(group);
+	}
+	// A new connection's label waits for its line to reach it, rather than
+	// standing on its own over nothing while the line is still drawing on.
+	return isLabel(group.element) ? growIn(group, LABEL_ARRIVES, 1) : growIn(group);
 }
+
+/** Where a new connection's label begins to arrive: once its line is mostly drawn. */
+const LABEL_ARRIVES =
+	PICTURE_TRANSITION_PHASES.enterStart + (1 - PICTURE_TRANSITION_PHASES.enterStart) * 0.55;
 
 /** Nothing to draw: the finished picture is what is on the surface. */
 function nothingToSeek(): void {

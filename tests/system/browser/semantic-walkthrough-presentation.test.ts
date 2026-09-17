@@ -83,7 +83,11 @@ const opacityOfCard = (browser: AgentBrowserSession, words: string): Promise<num
 	browser.eval<number>(
 		`(() => { const card = [...document.querySelectorAll("[data-slot='semantic-board-surface'] [data-semantic-kind='node']")]` +
 			`.find((group) => group.textContent.includes(${JSON.stringify(words)}));` +
-			` return card ? Number(getComputedStyle(card).opacity) : -1; })()`,
+			` if (!card) return -1;` +
+			// What a reader sees: the card's own opacity, under any opacity filter over it.
+			` const look = getComputedStyle(card);` +
+			` const filtered = /opacity\\(([\\d.]+)\\)/.exec(look.filter);` +
+			` return Number(look.opacity) * (filtered ? Number(filtered[1]) : 1); })()`,
 	);
 
 test("a person presents a walkthrough step by step, and leaving gives the pane back", async () => {
