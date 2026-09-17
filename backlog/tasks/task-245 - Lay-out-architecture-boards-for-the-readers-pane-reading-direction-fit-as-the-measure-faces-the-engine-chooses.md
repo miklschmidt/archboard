@@ -3,11 +3,11 @@ id: TASK-245
 title: >-
   Lay out architecture boards for the reader's pane: reading direction, fit as
   the measure, faces the engine chooses
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-16 02:34'
-updated_date: '2026-09-16 10:06'
+updated_date: '2026-09-17 10:43'
 labels: []
 dependencies: []
 references:
@@ -48,13 +48,21 @@ Subtasks, in order: record the decision (ADR), make fit in the pane the measure,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every current vault board and the three wide-board fixtures fit the reference pane at a scale no lower than the 2026-09-16 baseline recorded in the fit subtask, and the chain-shaped boards (Semantic renderer, Command interface, Board viewer, Codex session) read left to right
-- [ ] #2 docs/design/layout-rules.md has a dated section recording what landed and what was measured and rejected, and an accepted ADR records the decisions
-- [ ] #3 bun run check passes with the bracket, top-approach and flank-reseating rules deleted rather than disabled
+- [x] #1 Every current vault board and the three wide-board fixtures fit the reference pane at a scale no lower than the 2026-09-16 baseline recorded in the fit subtask, and the chain-shaped boards (Semantic renderer, Command interface, Board viewer, Codex session) read left to right
+- [x] #2 docs/design/layout-rules.md has a dated section recording what landed and what was measured and rejected, and an accepted ADR records the decisions
+- [x] #3 bun run check passes with the bracket, top-approach and flank-reseating rules deleted rather than disabled
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Subtasks landed 2026-09-16 on branch task-245-layout. Fits (reference pane 1272x899, first renders) before -> after: Command interface 0.88 -> 1.00 (folded down into two columns); all other vault boards and fixtures unchanged (flask-map-1 0.46, flask-map-2 0.35, flask-map-3 0.45, Agent workbench 0.59, Archboard 1.00, Board persistence 0.75, Board viewer 0.62, Browser application 0.69, Canvas server 0.71, Codex session 0.91, Command dispatch 0.88, Renderer layout 1.00, Semantic renderer 0.61). AC1 partly met: no fit below baseline, but only Command interface changed shape, and none of the four chain boards reads left to right: every rightward reading, plain or folded, measured worse (layout-rules.md sections 14 and 17). AC2 met: ADR 0028 and layout-rules.md sections 13 to 17. AC3 partly met: hasTopApproach and the flank reseating are deleted, but brackets.ts stays because removing it lost fit on four boards with no engine option recovering it (section 15). Left open for a decision: whether chain boards should still read left to right at a fit cost, and the between-layer room (TASK-239, TASK-242) as the next lever for Semantic renderer and Board viewer.
+
+2026-09-17, closed at the user's decision with two criteria met as measured rather than as written. #1: no vault board or fixture fits below the 2026-09-16 baseline, and several rose since (flank rules, section 21: Semantic renderer 0.70 to 0.91, Canvas server 0.77 to 0.97, Board persistence 0.75 to 0.84, Agent workbench 0.65 to 0.75). The chain-shaped boards still read down: every left-to-right reading, plain or folded, fit worse (sections 14 and 17), and the direction machinery chooses by fit, so a chain would read left to right the day it fit better. #3: the top-approach and flank-reseating rules are deleted; brackets.ts stays because removing it lost fit on four boards with no engine option recovering it (section 15), and it is now the default of the four flank rules the scorecard chooses between. The between-layer room remains the next lever for Semantic renderer and Board viewer (TASK-239, TASK-242).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The renderer reads each view in a direction chosen by its fit in the reader's pane, and a flat chain folds toward the pane. Faces under a predecessor come from solves rather than guesses, unused label reservations are released, and a first render keeps the flank rule the scorecard prefers, all within the render-time budget. ADR 0028 records the decisions, and layout-rules.md sections 13 to 22 record what landed and what was measured and rejected. No board fits below the baseline. Two criteria landed as measured rather than as written: chain boards read down, because left to right fit worse on every one; and the bracket rule stays, because removing it cost fit. Verified by the wide-board scorecard suite, flank-rules.test.ts and the subtasks' owners.
+<!-- SECTION:FINAL_SUMMARY:END -->
