@@ -42,8 +42,8 @@
 	"defaultConcurrency": 3,
 	"baselineSkill": {
 		"location": "docs/design/skill-evals/baseline/archboard",
-		"frozenAt": "2026-09-16, commit ded9ac43, the TASK-211 candidate as measured by batch 2026-09-16T00-32-53-542Z and promoted under TASK-243.01; frozen from skills/archboard at that revision",
-		"note": "The frozen copy is the skill the 2026-09-16 batch measured, before the TASK-243 changes; the pre-overhaul package it replaced is in git history at commit 8ea1ee68. Both arms run on the same supporting CLI."
+		"frozenAt": "2026-09-16, commit ded9ac43 (the TASK-211 candidate promoted under TASK-243.01), then cleaned on 2026-09-17 under TASK-254: every worked example rewritten about archboard's own source, no other change",
+		"note": "Every batch before TASK-254 is void: both packages carried the answers to scenarios S00, S01, S02, S06 and S07 as worked examples. The cleaned baseline differs from the candidate only by the TASK-243 and TASK-253 guidance. Both arms run on the same supporting CLI."
 	},
 	"usageSemantics": "cached_input_tokens is a subset of input_tokens (codex token_count); total = input + output. Never add cached to input. An author is one call, so its turn.completed usage is its own. Grader usage semantics are per runner in graders.json."
 }

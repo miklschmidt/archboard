@@ -79,7 +79,9 @@ grader, untouched.
    command classification, and the blinded `bundle.json`.
 8. Every capture the scenario declares, taken by the harness through
    `archboard semantic rasterize` from the final saved board at native scale
-   into `captures/`: one PNG per declared board, view and variant, with its
+   into `captures/`: one PNG per declared board, view and variant (a
+   declaration with `"views": "every"` instead of a `view` becomes one PNG per
+   board view the author made, none when there are none), with its
    provenance (board version, variant, view, dimensions, the SVG digest), and
    for a bitmap wider or taller than 1600 px a grid of native-scale tiles
    drawn with `--region`. A capture the harness could not take (a view the
@@ -158,6 +160,22 @@ semantic pass/fail and visual standing agree and the mean absolute score
 difference per dimension. `report.json` is `{ graders: [{ grader, report,
 runs }], agreement }`. Percentage targets are set only after a baseline is
 measured.
+
+## The skill never carries an evaluation's answers
+
+Every worked example in the skill is about archboard's own source, never the
+evaluated codebase. Until 2026-09-17 each recipe's example was the answer to a
+scenario (the request pipeline, the JSON provider, the contexts proposal, the
+CLI startup exchange), and later rounds added rules shaped by single scenario
+failures, so every author of both arms read the checklist inside the package it
+was measured on. **Every batch run before that date is void**: its scores
+measure recall of those answers, and no comparison between them is evidence
+about the skill. `bun run eval:skill check` now refuses a candidate or frozen
+baseline package that names the evaluated framework, or any board, view,
+variant, group or quoted symbol a scenario or fixture grades on. When a batch
+analysis suggests a skill change, state the rule for any codebase and show it
+on archboard; a rule you can only state with a scenario's names is teaching
+that scenario.
 
 ## Reproducing a baseline
 

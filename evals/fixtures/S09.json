@@ -1,10 +1,11 @@
 {
-	"$comment": "S03 with the memberships recorded and an Overview view that keeps CLI but not the command inside it.",
+	"$comment": "S03 with the memberships recorded, the parts bound, and an Overview view that keeps the app and the CLI but draws neither the contexts module nor the function inside it.",
 	"registerRepo": true,
 	"policy": {
 		"groups": {
 			"request-lifecycle": { "name": "Request lifecycle" },
-			"wsgi-layer": { "name": "WSGI layer" }
+			"wsgi-layer": { "name": "WSGI layer" },
+			"cli-startup": { "name": "CLI startup" }
 		}
 	},
 	"steps": [
@@ -18,6 +19,14 @@
 						"name": "Flask app",
 						"kind": "app",
 						"responsibility": "The WSGI application object",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "WSGI entry",
+						"kind": "function",
+						"parent": "Flask app",
+						"groups": ["wsgi-layer"],
+						"responsibility": "Flask.wsgi_app: pushes the request context, then dispatches",
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
 					{
@@ -38,13 +47,40 @@
 						"name": "Run command",
 						"kind": "function",
 						"parent": "CLI",
-						"groups": ["request-lifecycle"],
-						"responsibility": "flask run: load the app and serve it",
+						"groups": ["cli-startup"],
+						"responsibility": "flask run: load the app and start the development server",
 						"binding": { "repo": "$FLASK", "path": "src/flask/cli.py" }
+					},
+					{
+						"name": "Contexts",
+						"kind": "module",
+						"responsibility": "The request and application contexts",
+						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
+					},
+					{
+						"name": "Request context push",
+						"kind": "function",
+						"parent": "Contexts",
+						"groups": ["request-lifecycle"],
+						"responsibility": "RequestContext.push: binds request and session for one request",
+						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
+					},
+					{
+						"name": "Session interface",
+						"kind": "module",
+						"responsibility": "Opens and saves the signed cookie session",
+						"binding": { "repo": "$FLASK", "path": "src/flask/sessions.py" }
 					}
 				],
 				"edges": [
-					{ "from": "Flask app", "to": "Dispatch", "kind": "call", "label": "dispatches" },
+					{ "from": "WSGI entry", "to": "Request context push", "kind": "call", "label": "push" },
+					{ "from": "WSGI entry", "to": "Dispatch", "kind": "call", "label": "dispatches" },
+					{
+						"from": "Request context push",
+						"to": "Session interface",
+						"kind": "call",
+						"label": "open_session"
+					},
 					{
 						"from": "Run command",
 						"to": "Flask app",
@@ -56,7 +92,10 @@
 					{
 						"name": "Overview",
 						"grammar": "architecture",
-						"scope": { "kind": "selection", "nodes": ["Flask app", "Dispatch", "CLI"] }
+						"scope": {
+							"kind": "selection",
+							"nodes": ["Flask app", "WSGI entry", "Dispatch", "CLI"]
+						}
 					}
 				]
 			}

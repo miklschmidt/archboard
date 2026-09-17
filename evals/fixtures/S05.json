@@ -29,7 +29,6 @@
 					{
 						"name": "Request context",
 						"kind": "module",
-						"parent": "Flask app",
 						"responsibility": "Binds request and session for one request",
 						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
 					},
@@ -41,10 +40,16 @@
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
 					{
-						"name": "View function",
+						"name": "dispatch_request",
 						"kind": "function",
 						"parent": "Flask app",
-						"responsibility": "The matched endpoint's function"
+						"responsibility": "Calls the view function of the matched rule",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "View function",
+						"kind": "function",
+						"responsibility": "The matched endpoint's function, in the application's own code"
 					},
 					{
 						"name": "finalize_request",
@@ -77,11 +82,12 @@
 					},
 					{ "from": "Flask.wsgi_app", "to": "Request context", "kind": "call", "label": "push" },
 					{ "from": "Flask.wsgi_app", "to": "full_dispatch_request", "kind": "call" },
+					{ "from": "full_dispatch_request", "to": "dispatch_request", "kind": "call" },
 					{
-						"from": "full_dispatch_request",
+						"from": "dispatch_request",
 						"to": "View function",
 						"kind": "call",
-						"label": "dispatch_request"
+						"label": "view_functions[endpoint]"
 					},
 					{ "from": "full_dispatch_request", "to": "finalize_request", "kind": "call" },
 					{ "from": "finalize_request", "to": "make_response", "kind": "call" },

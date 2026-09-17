@@ -612,7 +612,7 @@
 				},
 				{
 					"path": "node.groups explicit set memberships, overlapping across containers",
-					"expectedUse": "Dispatch in two groups, Run command in one, across two containers",
+					"expectedUse": "Dispatch in two groups, Request context push and Run command in one each, across three containers",
 					"scenarios": ["S03", "S09"],
 					"evidence": "harness-check",
 					"owner": "node-groups"
