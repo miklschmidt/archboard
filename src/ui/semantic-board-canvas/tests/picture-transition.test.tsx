@@ -311,7 +311,7 @@ describe("leaving and arriving", () => {
 		expect(surface.innerHTML).toBe(plain.innerHTML);
 	});
 
-	test("a new connection's label waits for its line to reach it", () => {
+	test("a new connection's label arrives late, with the other labels, once its line is in", () => {
 		const surface = surfaceElement();
 		const label: Card = {
 			id: "e1",
@@ -325,11 +325,15 @@ describe("leaving and arriving", () => {
 		const transition = transitionPicture(surface, before, after);
 		const groups = surface.querySelectorAll<SVGGElement>(`g[data-semantic-id="e1"]`);
 		const [line, pill] = [groups[0]!, groups[1]!];
-		const { enterStart } = PICTURE_TRANSITION_PHASES;
-		// The line is on its way; its label is not yet.
-		transition.seek(enterStart + (1 - enterStart) * 0.3);
+		const { enterStart, labelsStart } = PICTURE_TRANSITION_PHASES;
+		// The line is on its way; its label is not yet, and waits for the labels' window.
+		transition.seek((enterStart + labelsStart) / 2);
 		expect(Number(line.style.opacity)).toBeGreaterThan(0);
 		expect(Number(pill.style.opacity)).toBe(0);
+		transition.seek(labelsStart);
+		expect(Number(pill.style.opacity)).toBe(0);
+		transition.seek((labelsStart + 1) / 2);
+		expect(Number(pill.style.opacity)).toBeGreaterThan(0);
 		transition.seek(1);
 		expect(Number(pill.style.opacity)).toBe(1);
 	});
