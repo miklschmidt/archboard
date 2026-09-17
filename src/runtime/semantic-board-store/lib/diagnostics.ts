@@ -15,6 +15,10 @@ import {
 	type DrillDownTarget,
 	semanticDrillDownDiagnostics,
 } from "@/runtime/semantic-board-store/lib/drill-down";
+import {
+	createCheckoutLookup,
+	semanticBindingDiagnostics,
+} from "@/runtime/semantic-board-store/lib/bindings";
 
 /**
  * Check every board family and report traversal/read failures rather than hiding them.
@@ -22,7 +26,8 @@ import {
  * Boards are read first and linked afterwards: whether a drill-down opens a
  * board the vault holds, and at which level, is a fact about the vault rather
  * than about the board that states it (ADR 0029), so it can only be answered
- * once every board has been seen.
+ * once every board has been seen. A node's binding is checked in the same pass
+ * and for the same reason, against a filesystem the board does not own.
  * @param root The vault root.
  * @returns Current policy and all diagnostics.
  */
@@ -37,8 +42,11 @@ function checkSemanticVault(root = requireVaultRoot()): VaultCheck {
 	const targets = new Map<string, DrillDownTarget>();
 	for (const { board } of read)
 		targets.set(semanticBoardAddress(board.name).key, { name: board.name, level: board.level });
-	for (const { board, file } of read)
+	const checkoutOf = createCheckoutLookup();
+	for (const { board, file } of read) {
 		diagnostics.push(...semanticDrillDownDiagnostics(board, file, targets));
+		diagnostics.push(...semanticBindingDiagnostics(board, file, checkoutOf));
+	}
 	return {
 		policy: configured.configuration,
 		configurationValid: configured.ok,
