@@ -1,15 +1,18 @@
-// Reading a variant's own explanation of itself beside the picture of it.
+// Presenting a variant's own explanation of itself over the picture of it.
 //
-// The claim being checked is the one a leadership walkthrough lives or dies
-// by: the words are in the order somebody wrote them, one of them is the one
-// being read, and the diagram attends to whatever that one is about. Every
-// position on screen comes out of the atlas the server sent; nothing here
-// invents a coordinate, and a beat about something this reading does not draw
-// says so rather than pointing the camera at nothing.
+// The claim being checked is the one a walkthrough lives or dies by: the steps
+// are in the order somebody wrote them, one of them is the one on screen, the
+// reader moves between them on purpose, and the diagram attends to whatever
+// that one is about — gliding there, letting the rest recede, and giving the
+// reader back where they were when they leave. Every position on screen comes
+// out of the atlas the server sent; nothing here invents a coordinate, and a
+// step about something this reading does not draw says so rather than pointing
+// the camera at nothing.
 
 import { act, fireEvent } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
+import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
 import {
 	cameraNow,
 	chooseVariantInShell,
@@ -20,9 +23,10 @@ import {
 	server,
 	settle,
 	surface,
+	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 
-/** The view the variant offers, which one beat is told through. */
+/** The view the variant offers, which one step is told through. */
 const VIEW = { id: "vw1", name: "The writer alone", grammar: "architecture" } as const;
 
 /**
@@ -120,38 +124,42 @@ function offers(): HTMLElement[] {
 }
 
 /**
- * Every beat on screen, in the order the rail lists them.
- * @returns The beats.
- */
-function beats(): HTMLElement[] {
-	return [...document.querySelectorAll<HTMLElement>("[data-slot='semantic-beat']")];
-}
-
-/**
- * Which beat the rail says is being read.
- * @returns Its heading, or null when none is current.
+ * The heading of the step on screen.
+ * @returns It, or null while nothing is presented.
  */
 function current(): string | null {
-	const here = beats().find((beat) => beat.getAttribute("aria-current") === "step");
-	return here?.querySelector("[data-slot='semantic-beat-heading']")?.textContent ?? null;
+	return document.querySelector("[data-slot='semantic-presentation-heading']")?.textContent ?? null;
 }
 
 /**
- * Move to one beat by pressing its heading.
- * @param index Which beat.
+ * Press a key the way a person does, wherever focus happens to be.
+ * @param key The key.
  */
-function goTo(index: number): void {
-	const heading = beats()[index]?.querySelector<HTMLElement>("[data-slot='semantic-beat-heading']");
+function press(key: string): void {
 	act(() => {
-		fireEvent.click(heading!);
+		fireEvent.keyDown(document.body, { key });
 	});
 }
 
 /**
- * Open the first explanation the pane offers.
- * @returns Settles once the rail is on screen.
+ * Go to a step through its mark among the steps.
+ * @param index The step.
  */
-async function reading(): Promise<void> {
+function goTo(index: number): void {
+	act(() => {
+		fireEvent.click(
+			document.querySelector<HTMLElement>(
+				`[data-slot='semantic-presentation-dot'][data-step='${index}']`,
+			)!,
+		);
+	});
+}
+
+/**
+ * Present the first walkthrough the variant offers.
+ * @returns Settles once the presentation is up.
+ */
+async function presenting(): Promise<void> {
 	await settle();
 	act(() => {
 		fireEvent.click(offers()[0]!);
@@ -160,8 +168,8 @@ async function reading(): Promise<void> {
 }
 
 /**
- * Which subjects the picture is lighting up.
- * @returns Their semantic ids, in document order.
+ * The subjects the picture rings.
+ * @returns Their ids.
  */
 function marked(): string[] {
 	return [...surface().querySelectorAll("[data-semantic-id].is-selected")].map(
@@ -170,290 +178,211 @@ function marked(): string[] {
 }
 
 /**
- * Give each beat a place down the rail, since this DOM lays nothing out.
- * @param tops Where each beat's top is, measured from the rail's own top.
+ * The subjects the veil leaves standing.
+ * @returns Their ids, or none while nothing recedes.
  */
-function layOutBeats(tops: readonly number[]): void {
-	beats().forEach((beat, index) => {
-		/**
-		 * Where this beat sits.
-		 * @returns Its box, at the place the case asked for.
-		 */
-		function box(): DOMRect {
-			return new DOMRect(0, tops[index] ?? 0, 352, 120);
-		}
-		Object.defineProperty(beat, "getBoundingClientRect", { configurable: true, value: box });
-	});
-}
-
-/**
- * The behaviour of every scroll the rail has asked for.
- * @returns The rail, and what it recorded.
- */
-function watchingScrolls(): { rail: HTMLElement; behaviours: string[] } {
-	const rail = part("semantic-narrative-beats");
-	const behaviours: string[] = [];
-	/**
-	 * Record how the rail asked to be scrolled.
-	 * @param options What it asked for.
-	 */
-	function scrollTo(options: ScrollToOptions): void {
-		behaviours.push(options.behavior ?? "unsaid");
+function unveiled(): string[] {
+	if (!surface().classList.contains("is-group-focus")) {
+		return [];
 	}
-	Object.defineProperty(rail, "scrollTo", { configurable: true, value: scrollTo });
-	return { rail, behaviours };
+	return [...surface().querySelectorAll("[data-semantic-id].is-group-member")].map(
+		(group) => group.getAttribute("data-semantic-id") ?? "",
+	);
 }
 
-/** Where the camera sits when it is showing the whole 400×300 drawing. */
+// The harness measures every element at 800×600, the caption included, so the
+// caption keeps the most it may of the viewport clear: 40% of 600, which leaves
+// 800×360 to fit into, less the margin.
+
+/** The whole picture, fitted above the caption. */
+const WHOLE_ABOVE_CAPTION = { x: 192, y: 24, scale: 1.04 };
+
+/** `n1`, fitted above the caption: 80×40 at the origin, at half again its drawn size. */
+const N1_ABOVE_CAPTION = { x: 340, y: 150, scale: 1.5 };
+
+/** The whole picture, fitted to the whole viewport, as the reader had it before presenting. */
 const WHOLE_PICTURE = { x: 32, y: 24, scale: 1.84 };
 
-/** The rail, as the pane lays it out for the length of one case. */
-const railBox: { height: number } = { height: 600 };
-
 /**
- * Measure the rail at a height of its own, the way a pane of that height would.
- *
- * The workbench collapsing and a standing block appearing are both ordinary,
- * and each leaves the rail a different height; this is how a case says which
- * one it is about.
- * @param height How tall the scrollport is.
+ * Whether two cameras are the same, to within rounding.
+ * @param actual The camera on screen.
+ * @param expected The camera expected.
  */
-function railOfHeight(height: number): void {
-	railBox.height = height;
-	const rail = document.querySelector("[data-slot='semantic-narrative-beats']");
-	if (rail === null) {
-		return;
-	}
-	/**
-	 * How big the rail is.
-	 * @returns Its box, at the height this case asked for.
-	 */
-	function box(): DOMRect {
-		return new DOMRect(0, 0, 352, railBox.height);
-	}
-	Object.defineProperty(rail, "getBoundingClientRect", { configurable: true, value: box });
+function expectCamera(actual: typeof WHOLE_PICTURE, expected: typeof WHOLE_PICTURE): void {
+	expect(actual.x).toBeCloseTo(expected.x, 3);
+	expect(actual.y).toBeCloseTo(expected.y, 3);
+	expect(actual.scale).toBeCloseTo(expected.scale, 5);
 }
-
-/**
- * What the rail leaves blank under its last beat, in pixels.
- * @returns The tail.
- */
-function tail(): number {
-	return Number.parseFloat(part("semantic-narrative-beats").style.paddingBottom);
-}
-
-/** Every resize the rail is watching for, so a case can cause one. */
-const resizes: (() => void)[] = [];
-
-/** A `ResizeObserver` a case drives itself, since this DOM lays nothing out. */
-class WatchedResize implements ResizeObserver {
-	/**
-	 * Watch for a resize.
-	 * @param run What to do when one happens.
-	 */
-	constructor(run: ResizeObserverCallback) {
-		resizes.push((): void => run([], this));
-	}
-
-	/** Start watching. This DOM reports no size of its own; the case does. */
-	observe(): void {
-		// Nothing to do: a case causes the resize itself.
-	}
-
-	/** Stop watching one element. */
-	unobserve(): void {
-		// Nothing to release.
-	}
-
-	/** Stop watching. */
-	disconnect(): void {
-		// Nothing to release.
-	}
-}
-
-/**
- * Resize the rail to a new height, as collapsing the workbench does.
- * @param height How tall the scrollport becomes.
- */
-function resizeRailTo(height: number): void {
-	railOfHeight(height);
-	for (const run of resizes) {
-		run();
-	}
-}
-
-const realObserver = globalThis.ResizeObserver;
-
-beforeEach(() => {
-	resizes.length = 0;
-	railBox.height = 600;
-	globalThis.ResizeObserver = WatchedResize;
-});
-
-afterEach(() => {
-	globalThis.ResizeObserver = realObserver;
-});
 
 test("a variant that explains itself nowhere offers nothing at all", async () => {
 	server.documents["pipeline"] = boardOf({ nodes: CONTENT.nodes, edges: [] });
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
-	// No rail, no empty rail, and no walkthrough control that would only ever
-	// be disabled. The strip stays for the one control that has an empty state
-	// of its own to show: a variant with no group memberships says so there.
 	expect(offers()).toHaveLength(0);
 	expect(document.querySelector("[data-slot='semantic-walkthrough-bar']")).toBeNull();
-	expect(document.querySelector("[data-slot='semantic-narrative']")).toBeNull();
-	expect(
-		document.querySelector<HTMLSelectElement>("[data-slot='semantic-group-choice']")?.disabled,
-	).toBe(true);
+	expect(document.querySelector("[data-slot='semantic-presentation']")).toBeNull();
 });
 
-test("choosing an explanation shows its beats in the order they were written", async () => {
+test("choosing a walkthrough presents its first step, in the frame, with where it is in the walkthrough", async () => {
 	serving();
-	mountStage();
-	await reading();
-	expect(beats().map((beat) => beat.querySelector("h3")?.textContent)).toEqual([
-		"The shape of it",
-		"One writer",
-		"One edit, end to end",
-		"The lease",
-	]);
-	// The whole of what each beat says is beside the picture, not behind a
-	// disclosure: it is prose somebody reads.
-	expect(beats()[0]?.textContent).toContain("Two modules and one call.");
-	expect(part("semantic-narrative").textContent).toContain("Ten minutes on where the writes go.");
+	mountStage(null, { reducedMotion: true });
+	await presenting();
 	expect(current()).toBe("The shape of it");
+	expect(part("semantic-presentation").textContent).toContain("Two modules and one call.");
+	expect(part("semantic-presentation-count").textContent.replaceAll(/\s/g, "")).toBe("1/4");
+	const dots = [...document.querySelectorAll("[data-slot='semantic-presentation-dot']")];
+	expect(dots).toHaveLength(4);
+	expect(dots[0]?.getAttribute("aria-current")).toBe("step");
+	// The pane is the picture and its caption while it lasts: the sidebar steps aside.
+	expect(part("semantic-reading-area").hasAttribute("data-walkthrough")).toBe(true);
+	expect(part("semantic-board-stage").getAttribute("data-presentation-step")).toBe("0");
 });
 
-test("scrolling the words moves which beat is being read", async () => {
+test("steps change only when the reader asks: keys, the controls, or a step chosen", async () => {
 	serving();
-	mountStage();
-	await reading();
-	const { rail } = watchingScrolls();
-	// The rail is 600 tall here, so its reading line is 198 down. Two beats have
-	// passed it, and the later of the two is the one being read.
-	layOutBeats([-320, -80, 150, 400]);
-	act(() => {
-		fireEvent.scroll(rail);
-	});
-	expect(current()).toBe("One edit, end to end");
-});
-
-test("moving to a beat lights up what that beat is about", async () => {
-	serving();
-	mountStage();
-	await reading();
-	goTo(1);
+	mountStage(null, { reducedMotion: true });
+	await presenting();
+	press("ArrowRight");
 	await settle();
 	expect(current()).toBe("One writer");
-	expect(marked()).toEqual(["n1"]);
-	// And the camera goes to the box the atlas gave that subject, never to a
-	// coordinate the browser made up: n1 is 80×40 at the origin, so a fit that
-	// stops at half again its drawn size centres it here.
-	expect(cameraNow()).toEqual({ x: 340, y: 270, scale: 1.5 });
+	press(" ");
+	await settle();
+	expect(current()).toBe("One edit, end to end");
+	press("ArrowLeft");
+	await settle();
+	expect(current()).toBe("One writer");
+	press("End");
+	await settle();
+	expect(current()).toBe("The lease");
+	// The last step has nowhere further to go.
+	press("PageDown");
+	await settle();
+	expect(current()).toBe("The lease");
+	press("Home");
+	await settle();
+	expect(current()).toBe("The shape of it");
+	act(() => {
+		fireEvent.click(part("semantic-presentation-next"));
+	});
+	await settle();
+	expect(current()).toBe("One writer");
+	goTo(3);
+	await settle();
+	expect(current()).toBe("The lease");
+
+	// Scrolling is not a way to step: the wheel over the picture zooms it.
+	act(() => {
+		fireEvent.wheel(viewport(), { deltaY: 120 });
+		fireEvent.scroll(part("semantic-presentation"));
+	});
+	await settle();
+	expect(current()).toBe("The lease");
 });
 
-test("a beat about nothing in particular asks for the whole picture", async () => {
+test("a step lights what it is about, lets the rest recede, and brings it into view above the caption", async () => {
 	serving();
-	mountStage();
-	await reading();
+	mountStage(null, { reducedMotion: true });
+	await presenting();
 	goTo(1);
 	await settle();
-	expect(cameraNow().scale).toBe(1.5);
-	// An opening beat is about the architecture rather than a part of it, so
-	// coming back to it pulls out to all of it again — and stops singling
-	// anything out.
+	expect(marked()).toEqual(["n1"]);
+	expect(unveiled()).toEqual(["n1"]);
+	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+
+	// An opening step is about the architecture rather than a part of it, so it
+	// shows all of it and lets nothing recede.
 	goTo(0);
 	await settle();
-	expect(cameraNow()).toEqual(WHOLE_PICTURE);
+	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
 	expect(marked()).toEqual([]);
+	expect(unveiled()).toEqual([]);
 });
 
-test("a beat told through a view is read through that view", async () => {
+test("a step told through a view is read through that view", async () => {
 	serving();
-	mountStage();
-	await reading();
+	mountStage(null, { reducedMotion: true });
+	await presenting();
 	goTo(2);
 	await settle();
-	// The beat says which reading it is told through, so the pane asks the
-	// server for that picture. Nothing is written: this is a different request,
-	// not a different board.
 	expect(renderCalls().at(-1)).toContain(`view=${VIEW.id}`);
 	expect(renderCalls().filter((call) => call.includes("view=")).length).toBe(1);
 });
 
-test("a beat about something this reading does not draw says so", async () => {
-	serving();
-	mountStage();
-	await reading();
-	goTo(3);
-	await settle();
-	// `n2` is on the board and not in this picture. The reader is told, in the
-	// board's own words for it, rather than being left with a camera that moved
-	// nowhere for no stated reason.
-	expect(part("semantic-beat-missing").textContent).toBe("This reading does not draw Write Lease.");
-	expect(marked()).toEqual([]);
-	expect(cameraNow()).toEqual(WHOLE_PICTURE);
-});
-
-test("a reader who asked for reduced motion is not animated at", async () => {
+test("a step about something this reading does not draw says so", async () => {
 	serving();
 	mountStage(null, { reducedMotion: true });
-	await reading();
-	goTo(1);
-	await settle();
-	// The camera arrives at the beat's subject instead of easing into it.
-	expect(surface().className).not.toContain("transition-transform");
-	expect(cameraNow().scale).toBe(1.5);
-});
-
-test("a reader who did not ask for reduced motion gets the camera's ease", async () => {
-	serving();
-	mountStage();
-	await reading();
-	goTo(1);
-	await settle();
-	expect(surface().className).toContain("transition-transform");
-	expect(cameraNow().scale).toBe(1.5);
-});
-
-test("a jump to a beat arrives there rather than gliding through the ones between", async () => {
-	serving();
-	mountStage();
-	await reading();
-	const { behaviours } = watchingScrolls();
+	await presenting();
 	goTo(3);
 	await settle();
-	// A glide reports a scroll at every position it passes, and this rail reads
-	// the current beat out of those; jumping from the first beat to the fourth
-	// would make each beat between them current in turn, fly the camera through
-	// subjects nobody asked to see, and fetch the picture of any view they are
-	// told through. One gesture is one beat.
-	expect(behaviours).toEqual(["auto"]);
-	expect(current()).toBe("The lease");
+	expect(part("semantic-beat-missing").textContent).toBe("This reading does not draw Write Lease.");
+	expect(marked()).toEqual([]);
+	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
 });
 
-test("a beat a fraction below the reading line has still reached it", async () => {
+test("a reader who asked for reduced motion arrives at a step at once", async () => {
+	serving();
+	mountStage(null, { reducedMotion: true });
+	await presenting();
+	goTo(1);
+	await settle();
+	expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+});
+
+test("a reader who did not ask for reduced motion is glided to the step, and it lands where the fit says", async () => {
 	serving();
 	mountStage();
-	await reading();
-	const { rail } = watchingScrolls();
-	// Measured in a real browser: bringing a beat to the line left its top 0.27
-	// of a pixel short of it, and without a tolerance the rail put the reader
-	// back on the beat before the one they had just asked for.
-	layOutBeats([-320, -80, 198.3, 400]);
-	act(() => {
-		fireEvent.scroll(rail);
+	await presenting();
+	await new Promise((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 200));
+	await settle();
+	goTo(1);
+	await settle();
+	// Still on its way: the step has not finished arriving.
+	expect(surface().hasAttribute("data-camera-motion")).toBe(true);
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 200));
 	});
-	expect(current()).toBe("One edit, end to end");
+	await settle();
+	expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
 });
 
-test("the same explanation stays open when the reader moves to the proposal", async () => {
+test("Escape leaves, and gives the reader back the camera and the view they had", async () => {
+	serving();
+	const views: (string | null)[] = [];
+	/**
+	 * Keep the view the pane says it is reading.
+	 * @param reading What it is reading.
+	 * @param reading.view The view, or null for the whole variant.
+	 */
+	function reported(reading: { readonly view: string | null }): void {
+		views.push(reading.view);
+	}
+	mountStage(null, { reducedMotion: true, onReading: reported });
+	await settle();
+	expectCamera(cameraNow(), WHOLE_PICTURE);
+	await presenting();
+	goTo(2);
+	await settle();
+	expect(renderCalls().at(-1)).toContain(`view=${VIEW.id}`);
+
+	press("Escape");
+	await settle();
+	await settle();
+	expect(document.querySelector("[data-slot='semantic-presentation']")).toBeNull();
+	expect(part("semantic-board-stage").hasAttribute("data-presentation-step")).toBe(false);
+	// The step read the board through its view; the reader never chose one.
+	expect(views).toContain(VIEW.id);
+	expect(views.at(-1)).toBeNull();
+	expect(unveiled()).toEqual([]);
+	expectCamera(cameraNow(), WHOLE_PICTURE);
+});
+
+test("the same walkthrough stays presented when the reader moves to the proposal", async () => {
 	// A proposal inherits its predecessor's explanations with the rest of its
-	// content, ids and all. Somebody showing a board the architecture and then
-	// the change to it is reading one explanation of two states, so their place
+	// content, ids and all. Somebody presenting the architecture and then the
+	// change to it is presenting one explanation of two states, so their place
 	// in it survives the move.
 	const draft = {
 		id: "v2",
@@ -464,8 +393,8 @@ test("the same explanation stays open when the reader moves to the proposal", as
 	};
 	server.documents["pipeline"] = withVariants([CURRENT_VARIANT, draft]);
 	server.reply = { status: 200, body: { ...drawing(1), views: [VIEW] } };
-	mountStage(null, { live: true });
-	await reading();
+	mountStage(null, { live: true, reducedMotion: true });
+	await presenting();
 	goTo(1);
 	await settle();
 	expect(current()).toBe("One writer");
@@ -474,49 +403,6 @@ test("the same explanation stays open when the reader moves to the proposal", as
 	await settle();
 	expect(renderCalls().at(-1)).toContain("variant=v2");
 	expect(current()).toBe("One writer");
-});
-
-test("the last beat can reach the reading line whatever height the pane leaves", async () => {
-	serving();
-	mountStage();
-	await reading();
-	// Measured in a browser with the workbench collapsed: the rail was 812 tall
-	// with nothing to scroll, so the last beat sat at 322 against a line at 268
-	// and could never be read. The tail has to be measured from the scrollport,
-	// because a class that leaves enough room at one pane height leaves too
-	// little at another.
-	act(() => {
-		resizeRailTo(812);
-	});
-	expect(tail()).toBeGreaterThanOrEqual(812 - 812 * 0.33);
-	act(() => {
-		resizeRailTo(400);
-	});
-	expect(tail()).toBeGreaterThanOrEqual(400 - 400 * 0.33);
-	expect(tail()).toBeLessThan(812 - 812 * 0.33);
-});
-
-test("a resize that changes only the layout leaves the reader where they were", async () => {
-	serving();
-	mountStage();
-	await reading();
-	goTo(3);
-	await settle();
-	expect(current()).toBe("The lease");
-
-	// Collapsing the workbench makes the rail taller, the browser clamps the
-	// scroll, and the scroll it does on its own would otherwise be read as the
-	// reader moving: it is not. The beat they were on is the beat they are on.
-	const { behaviours, rail } = watchingScrolls();
-	layOutBeats([-320, -80, 150, 400]);
-	act(() => {
-		resizeRailTo(812);
-		fireEvent.scroll(rail);
-	});
-	await settle();
-	expect(current()).toBe("The lease");
-	// And they are put back to it rather than left wherever the clamp landed.
-	expect(behaviours).toEqual(["auto"]);
 });
 
 test("the subjects a disagreement is about are marked in the picture", async () => {
@@ -554,14 +440,11 @@ test("the subjects a disagreement is about are marked in the picture", async () 
 	);
 	// The viewer draws none of it. What the board has not decided is drawn into
 	// the picture by the renderer, from the same reconciliation these words come
-	// from, so the pane writes nothing onto the markup it was handed — a ring lit
-	// dashed by an inline style was a third ring on a page that already had two.
+	// from, so the pane writes nothing onto the markup it was handed.
 	const written = [...surface().querySelectorAll(".ab-halo")].map((halo) =>
 		halo.getAttribute("style"),
 	);
 	expect(written).toEqual([null, null]);
-	// And attention is independent of it: the ring the reader's own pick turns on
-	// is on, and the subject it is on is the one still being argued about.
 	expect([...(surface().querySelector("[data-semantic-id='n1']")?.classList ?? [])]).toContain(
 		"is-selected",
 	);
@@ -570,18 +453,16 @@ test("the subjects a disagreement is about are marked in the picture", async () 
 	);
 });
 
-test("picking a card out of the picture still inspects it while a rail is open", async () => {
+test("picking a card out of the picture still reports it while a walkthrough is presented", async () => {
 	serving();
-	const stage = mountStage(null, { live: true });
-	await reading();
+	const stage = mountStage(null, { live: true, reducedMotion: true });
+	await presenting();
 	act(() => {
 		fireEvent.click(surface().querySelector("#card")!);
 	});
 	await settle();
-	// Reading an explanation does not take the diagram away from the person: a
-	// pick still reports, still opens the panel, and still shows beside the beat
-	// that is being read.
+	// Presenting does not take the diagram away from the person: a pick still
+	// reports, and the step on screen stays the step on screen.
 	expect(stage.picks).toEqual(["n1"]);
-	expect(part("semantic-inspector").textContent).toContain("board-io");
 	expect(current()).toBe("The shape of it");
 });

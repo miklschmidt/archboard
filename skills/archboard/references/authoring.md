@@ -65,7 +65,7 @@ whole variant: a member a view hides is still a member. A configured group
 nobody has joined answers empty; an id that is neither configured nor on any
 node is refused.
 
-On the canvas, choose a group from the reading bar or from a selected node's
+On the canvas, choose a group from the sidebar's Board tab or from a selected node's
 membership. Its drawn members stand out across containers while boundary
 neighbours remain readable. Open **Details** for the complete report: every
 member including ones the current view hides, internal relationships, directed

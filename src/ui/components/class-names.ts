@@ -1,5 +1,5 @@
 // The one class-merge function the shared components use: the registry's own
-// `cn` engine, configured so the six Archboard type roles (app.css) merge as
+// `cn` engine, configured so the seven Archboard type roles (app.css) merge as
 // font sizes. Without this, `cn` reads `text-control` as a text colour and
 // drops it whenever a `text-<colour>` sits in the same class list, which is
 // how a button's `text-primary` silently threw away its size role. This is
@@ -13,7 +13,15 @@ import { createCn } from "cn/config";
  * `text-primary` as the colour utility, so a font-size role of that name would
  * be unreachable and would stop colour conflicts from merging.
  */
-const TYPE_ROLES = ["kicker", "technical", "body", "control", "title", "board"] as const;
+const TYPE_ROLES = [
+	"kicker",
+	"technical",
+	"body",
+	"control",
+	"title",
+	"board",
+	"presentation",
+] as const;
 
 const cn = createCn({
 	extend: {

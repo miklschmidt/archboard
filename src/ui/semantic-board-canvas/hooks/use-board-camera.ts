@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { useCameraGlide } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import {
 	IDENTITY_CAMERA,
 	ZOOM_STEP,
@@ -74,6 +75,63 @@ interface BoardCamera {
 	readonly followPicture: (shift: { readonly x: number; readonly y: number }) => void;
 	/** Whether the last move was one that must land at once, rather than be eased. */
 	readonly instant: boolean;
+	/**
+	 * Glide to a fit or to a camera along a path that pulls back to cross a long
+	 * distance, and land there. Nobody moved the camera, so a fit stays free to
+	 * happen unless the glide is giving a person back the camera they had.
+	 * @param to What to show, or the camera to return to.
+	 * @param duration How long, in milliseconds; zero lands at once.
+	 * @param handledAfter Whether the camera counts as the person's once it lands.
+	 * @returns False when the stage has not been laid out yet, and nothing moved.
+	 */
+	readonly glide: (to: FitTarget | Camera, duration: number, handledAfter?: boolean) => boolean;
+	/**
+	 * Keep the bottom of the viewport clear of what a fit shows, for something
+	 * laid over it there.
+	 * @param bottom How many pixels to keep clear; zero for none.
+	 */
+	readonly reserve: (bottom: number) => void;
+}
+
+/**
+ * The most of a viewport's height a reserve may keep clear: past this, what the
+ * reserve is for would be crowding out the picture it is laid over.
+ */
+const MOST_RESERVED = 0.4;
+
+/**
+ * The part of a viewport a fit may use, once the reserve at its bottom is kept clear.
+ * @param size The viewport's size, or null.
+ * @param bottom The reserve.
+ * @returns The usable size, or null before the viewport has one.
+ */
+function usable(size: Size | null, bottom: number): Size | null {
+	if (size === null || bottom <= 0) {
+		return size;
+	}
+	return { width: size.width, height: size.height - Math.min(bottom, size.height * MOST_RESERVED) };
+}
+
+/**
+ * Where a glide is going: a fit worked out for the room, or a camera as given.
+ * @param size The room, or null before there is one.
+ * @param to A fit, or a camera.
+ * @returns The camera to land at, or null when it cannot be worked out yet.
+ */
+function destinationIn(size: Size | null, to: FitTarget | Camera): Camera | null {
+	if (size === null) {
+		return null;
+	}
+	return "kind" in to ? cameraFor(size, to) : to;
+}
+
+/**
+ * The element a viewport's camera moves.
+ * @param viewport The viewport, or null.
+ * @returns The surface, or null when there is none.
+ */
+function surfaceIn(viewport: HTMLElement | null): HTMLElement | null {
+	return viewport?.querySelector<HTMLElement>("[data-slot='semantic-board-surface']") ?? null;
 }
 
 /**
@@ -118,7 +176,22 @@ function useBoardCamera(): BoardCamera {
 	const [camera, setCamera] = useState<Camera>(IDENTITY_CAMERA);
 	const [instant, setInstant] = useState(false);
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
-	const [room, setRoom] = useState<Size | null>(null);
+	const [measured, setRoom] = useState<Size | null>(null);
+	const [bottom, setBottom] = useState(0);
+	const room = useMemo(() => usable(measured, bottom), [measured, bottom]);
+	const flight = useCameraGlide();
+	// Where the camera is, for a glide to start from; read after commit.
+	const at = useRef<Camera>(camera);
+	useLayoutEffect(() => {
+		at.current = camera;
+	}, [camera]);
+	/** Stop a glide where it is drawn, so whatever moves next starts from what was seen. */
+	const settle = useCallback((): void => {
+		const stopped = flight.stop();
+		if (stopped !== null) {
+			setCamera(stopped);
+		}
+	}, [flight]);
 	// Whether the person has said where to look since the last fit. A ref rather
 	// than state: nothing is drawn from it, and it must be true for the very next
 	// gesture rather than for the next render.
@@ -148,41 +221,73 @@ function useBoardCamera(): BoardCamera {
 		return (): void => observer.disconnect();
 	}, [viewport]);
 
-	const panBy = useCallback((dx: number, dy: number): void => {
-		moved.current = true;
-		setInstant(false);
-		setCamera((current) => panCamera(current, dx, dy));
-	}, []);
+	const panBy = useCallback(
+		(dx: number, dy: number): void => {
+			settle();
+			moved.current = true;
+			setInstant(false);
+			setCamera((current) => panCamera(current, dx, dy));
+		},
+		[settle],
+	);
 
 	const zoomCentre = useCallback(
 		(direction: number): void => {
-			const size = sizeOf(viewport);
+			const size = usable(sizeOf(viewport), bottom);
 			if (size === null) {
 				return;
 			}
+			settle();
 			const factor = direction > 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
 			setInstant(false);
 			setCamera((current) => zoomCameraAbout(current, factor, size.width / 2, size.height / 2));
 		},
-		[viewport],
+		[viewport, bottom, settle],
 	);
 
 	const fit = useCallback(
 		(target: FitTarget, atOnce = false): boolean => {
-			const size = sizeOf(viewport);
+			const size = usable(sizeOf(viewport), bottom);
 			const fitted = size === null ? null : cameraFor(size, target);
 			if (fitted === null) {
 				return false;
 			}
+			flight.stop();
 			// A fit is the stage saying where to look, so it hands the camera back.
 			moved.current = false;
 			setInstant(atOnce);
 			setCamera(fitted);
 			return true;
 		},
-		[viewport],
+		[viewport, bottom, flight],
 	);
+
+	const glide = useCallback(
+		(to: FitTarget | Camera, duration: number, handledAfter = false): boolean => {
+			const size = usable(sizeOf(viewport), bottom);
+			const destination = destinationIn(size, to);
+			const surface = surfaceIn(viewport);
+			if (size === null || destination === null || surface === null) {
+				return false;
+			}
+			const from = flight.stop() ?? at.current;
+			moved.current = handledAfter;
+			setInstant(true);
+			flight.start(from, destination, {
+				duration,
+				viewport: size,
+				surface,
+				land: setCamera,
+			});
+			return true;
+		},
+		[viewport, bottom, flight],
+	);
+
+	const reserve = useCallback((pixels: number): void => {
+		setBottom(Math.max(0, Math.round(pixels)));
+	}, []);
 
 	// The wheel is listened for natively because a zoom has to stop the page
 	// from scrolling, and React's own wheel listener is passive.
@@ -200,6 +305,7 @@ function useBoardCamera(): BoardCamera {
 				return;
 			}
 			event.preventDefault();
+			settle();
 			const [x, y] = pointIn(element, event);
 			const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
@@ -208,7 +314,7 @@ function useBoardCamera(): BoardCamera {
 		}
 		element.addEventListener("wheel", onWheel, { passive: false });
 		return (): void => element.removeEventListener("wheel", onWheel);
-	}, [viewport]);
+	}, [viewport, settle]);
 
 	const handled = useCallback((): boolean => moved.current, []);
 	const followPicture = useCallback((shift: { readonly x: number; readonly y: number }): void => {
@@ -227,8 +333,10 @@ function useBoardCamera(): BoardCamera {
 			handled,
 			followPicture,
 			instant,
+			glide,
+			reserve,
 		}),
-		[camera, room, panBy, zoomCentre, fit, handled, followPicture, instant],
+		[camera, room, panBy, zoomCentre, fit, handled, followPicture, instant, glide, reserve],
 	);
 }
 

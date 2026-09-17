@@ -439,7 +439,8 @@ test("moving to another variant drops the group; changing the view keeps it", as
 	chooseVariantInShell(undefined);
 	await settled();
 	expect(chooser().value).toBe("");
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);
+	// The group is let go; what recedes now is whatever the step is not about.
+	expect(slot("semantic-board-stage")?.hasAttribute("data-group")).toBe(false);
 });
 
 test("inspecting a group leaves a walkthrough, and opening a walkthrough lets the group go", async () => {
@@ -472,17 +473,18 @@ test("inspecting a group leaves a walkthrough, and opening a walkthrough lets th
 		fireEvent.click(walkthrough());
 	});
 	await settled();
-	expect(slot("semantic-narrative")).not.toBeNull();
+	expect(slot("semantic-presentation")).not.toBeNull();
 
 	await choose("fulfillment");
-	expect(slot("semantic-narrative")).toBeNull();
+	expect(slot("semantic-presentation")).toBeNull();
 	expect(chooser().value).toBe("fulfillment");
 
 	await act(async () => {
 		fireEvent.click(walkthrough());
 	});
 	await settled();
-	expect(slot("semantic-narrative")).not.toBeNull();
+	expect(slot("semantic-presentation")).not.toBeNull();
 	expect(chooser().value).toBe("");
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);
+	// The group is let go; what recedes now is whatever the step is not about.
+	expect(slot("semantic-board-stage")?.hasAttribute("data-group")).toBe(false);
 });

@@ -43,12 +43,13 @@
 	--font-mono: "Archboard DM Mono", ui-monospace, monospace;
 	--font-heading: var(--font-sans);
 	--tracking-wordmark: -0.02027027027em;
-	/* Type roles (TASK-150.08). Chrome uses only these six sizes; a drawn board
-	   keeps its own. kicker: section labels. technical: identifiers, paths,
+	/* Type roles (TASK-150.08). Chrome uses only the first six sizes; a drawn
+	   board keeps its own. kicker: section labels. technical: identifiers, paths,
 	   versions, counts and times, always in the mono face. body: prose and row
 	   labels. control: buttons, tabs, fields. title: region and dialog titles.
 	   board: the board name in the header (named so it cannot collide with
-	   the text-primary colour utility). */
+	   the text-primary colour utility). presentation (TASK-250): a presented
+	   walkthrough's step heading, set in the picture's frame, not the chrome. */
 	--text-kicker: 10px;
 	--text-kicker--line-height: 12px;
 	--text-kicker--letter-spacing: 0.08em;
@@ -66,6 +67,12 @@
 	--text-board: 16px;
 	--text-board--line-height: 22px;
 	--text-board--font-weight: 600;
+	/* presentation: a presented walkthrough's step heading, the one piece of
+	   type that is part of the picture's frame rather than of the chrome. */
+	--text-presentation: 28px;
+	--text-presentation--line-height: 34px;
+	--text-presentation--letter-spacing: -0.01em;
+	--text-presentation--font-weight: 600;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -154,6 +161,18 @@
 	animation: slow-wait-reveal 240ms ease-out 450ms both;
 	@media (prefers-reduced-motion: reduce) {
 		animation-duration: 1ms;
+	}
+}
+
+/* While a walkthrough is presented, the veil over what a step is not about
+   cross-fades as the step changes. Not while a picture is moving in or across:
+   a flight writes opacity every frame, and an eased opacity would lag it. */
+[data-slot="semantic-board-surface"].is-presenting:not([data-picture-motion]) [data-semantic-id] {
+	transition: opacity var(--presentation-step-ms, 0ms) ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="semantic-board-surface"].is-presenting [data-semantic-id] {
+		transition: none;
 	}
 }
 
