@@ -5,6 +5,7 @@
 // held to from outside the module's private folders.
 
 export { usePictureTransition } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
+export { glidePath } from "@/ui/semantic-board-canvas/lib/camera-glide";
 export {
 	morphPath,
 	parsePath,

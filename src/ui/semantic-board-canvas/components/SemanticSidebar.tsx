@@ -9,7 +9,8 @@
 //
 // Its width is the shell's, so the pane a drawing's fit is measured against is
 // the pane a reader actually has. A pane presented fullscreen is the picture
-// alone, so the sidebar steps out of it for as long as the presentation lasts.
+// alone, so the sidebar steps out of it for as long as the presentation lasts;
+// so does a presented walkthrough, which is the picture and its caption.
 
 import {
 	RiCloseLine,
@@ -219,7 +220,7 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element {
 			data-slot="semantic-sidebar"
 			data-tab={sidebar.tab}
 			data-collapsed={sidebar.collapsed}
-			className="border-border bg-sidebar flex min-h-0 shrink-0 flex-col border-r in-data-presenting:hidden"
+			className="border-border bg-sidebar flex min-h-0 shrink-0 flex-col border-r in-data-presenting:hidden in-data-walkthrough:hidden"
 			style={sidebar.collapsed ? undefined : OPEN_STYLE}
 		>
 			{sidebar.collapsed ? (

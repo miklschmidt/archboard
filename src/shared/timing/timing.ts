@@ -379,6 +379,7 @@ export {
 	PICTURE_EXIT_MS,
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
+	PRESENTATION_STEP_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export {
 	ACTIVITY_LINGER_MS,

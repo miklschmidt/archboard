@@ -82,7 +82,7 @@ old inspector (`SIDEBAR_WIDTH`, 280 px), with two tabs:
 
 - **Board**: how the board on screen is read — its views, the walkthroughs it
   offers, group inspection, and, a level down, the states of that board — and
-  the legend for what is drawn. The pane's own board offers no choice of state:
+  the legend for what is drawn. Choosing a walkthrough presents it (see below). The pane's own board offers no choice of state:
   the navigator lists every state of every board, and one choice is made in one
   place. Views live here rather than in a switcher on the picture, because this
   is the one home for "how is this board being read" and a switcher over the
@@ -96,6 +96,13 @@ pick never changes the size of the pane or moves the picture. Collapsing it to
 its tab icons gives the width to the picture, which refits to it until the
 person has panned or zoomed. A pane presented fullscreen shows the picture
 without its sidebar. There is no strip above the picture.
+
+A presented walkthrough (TASK-250) is the picture and a caption laid over its
+bottom edge, with the sidebar stepped aside: the step's heading in the
+`presentation` type role, its words under it, where it is in the walkthrough, the
+steps, and previous and next. The camera keeps the step's subjects clear of the
+caption, glides between steps, and what a step is not about recedes. Escape
+leaves.
 
 ![The pane sidebar, board tab and selection tab](assets/semantic-pane-sidebar.png)
 

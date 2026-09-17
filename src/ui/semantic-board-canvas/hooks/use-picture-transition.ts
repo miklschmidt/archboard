@@ -61,6 +61,12 @@ interface PictureMotion {
 	readonly keepStill: (shift: Shift) => void;
 	/** Where the reader went from the last picture, when they went somewhere; null otherwise. */
 	readonly heading?: Departure | null | undefined;
+	/**
+	 * Whether a walkthrough is being presented. A step read through another view
+	 * of the same board is then carried into, not brought in afresh, and the
+	 * camera glides to the step instead of following the shared cards.
+	 */
+	readonly presenting?: boolean | undefined;
 }
 
 /**
@@ -88,10 +94,18 @@ function canAnimate(): boolean {
  * Whether the next picture is the last one carried on, rather than another.
  * @param last The picture on the surface.
  * @param next The picture that arrived.
- * @returns True when the two are pictures of one board read one way, and differ.
+ * @param presenting Whether a walkthrough is presented, which carries across views of one board.
+ * @returns True when the two are pictures of one board read one way, or of one
+ * board in one presentation, and differ.
  */
-function carriedOn(last: SemanticDrawing, next: SemanticDrawing): boolean {
-	return last.svg !== next.svg && continuousPictures(last, next);
+function carriedOn(last: SemanticDrawing, next: SemanticDrawing, presenting = false): boolean {
+	if (last.svg === next.svg) {
+		return false;
+	}
+	return (
+		continuousPictures(last, next) ||
+		(presenting && last.board === next.board && last.theme === next.theme)
+	);
 }
 
 /**
@@ -99,19 +113,19 @@ function carriedOn(last: SemanticDrawing, next: SemanticDrawing): boolean {
  * @param last What the surface was last given, if anything.
  * @param surface The surface the picture goes on.
  * @param drawing The picture.
- * @param reducedMotion Whether the person asked for no motion.
+ * @param motion Whether the person asked for no motion, and whether a walkthrough is presented.
  * @returns The last picture, or null when this one is simply shown.
  */
 function carriedFrom(
 	last: Shown | null,
 	surface: HTMLElement,
 	drawing: SemanticDrawing,
-	reducedMotion: boolean,
+	motion: Pick<PictureMotion, "reducedMotion" | "presenting">,
 ): SemanticDrawing | null {
-	if (last?.surface !== surface || reducedMotion || !canAnimate()) {
+	if (last?.surface !== surface || motion.reducedMotion || !canAnimate()) {
 		return null;
 	}
-	return carriedOn(last.drawing, drawing) ? last.drawing : null;
+	return carriedOn(last.drawing, drawing, motion.presenting === true) ? last.drawing : null;
 }
 
 /**
@@ -186,14 +200,16 @@ function land(flight: Flight | null): void {
  * @param last What the surface was showing, if anything.
  * @param surface The surface.
  * @param drawing The next picture.
+ * @param presenting Whether a walkthrough is presented, when the camera goes to the step instead.
  * @returns The shift, or nothing when the next picture is another board or reading.
  */
 function shiftFrom(
 	last: Shown | null,
 	surface: HTMLElement,
 	drawing: SemanticDrawing,
+	presenting: boolean,
 ): Shift | undefined {
-	return last?.surface === surface && carriedOn(last.drawing, drawing)
+	return !presenting && last?.surface === surface && carriedOn(last.drawing, drawing)
 		? sharedShift(last.drawing, drawing)
 		: undefined;
 }
@@ -248,8 +264,8 @@ function movedSince(seenAt: Point | null, surface: HTMLElement): Point {
  */
 function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
 	const { surface, last, drawing, reducedMotion, keepStill, heading, seenAt } = next;
-	const shift = shiftFrom(last, surface, drawing);
-	const from = carriedFrom(last, surface, drawing, reducedMotion);
+	const shift = shiftFrom(last, surface, drawing, next.presenting === true);
+	const from = carriedFrom(last, surface, drawing, next);
 	if (shift !== undefined) keepStill(shift);
 	if (from !== null) {
 		return fly(transitionPicture(surface, from, drawing, shift), PICTURE_TRANSITION_MS, onLanded);
@@ -291,6 +307,7 @@ function usePictureTransition(
 ): StagedPicture | null {
 	const { reducedMotion, keepStill } = motion;
 	const heading = motion.heading ?? null;
+	const presenting = motion.presenting === true;
 	const shown = useRef<Shown | null>(null);
 	const flight = useRef<Flight | null>(null);
 	const seen = useRef<Point | null>(null);
@@ -324,6 +341,7 @@ function usePictureTransition(
 			reducedMotion,
 			keepStill,
 			heading,
+			presenting,
 			seenAt: seen.current,
 		};
 		flight.current = showPicture(next, () => {
@@ -333,7 +351,7 @@ function usePictureTransition(
 		});
 		surface.toggleAttribute(MOTION_ATTRIBUTE, flight.current !== null);
 		publish(store.current, surface);
-	}, [surface, drawing, reducedMotion, keepStill, heading]);
+	}, [surface, drawing, reducedMotion, keepStill, heading, presenting]);
 	// Where the pane is after every commit, so the next picture knows where the
 	// last one was seen. After the picture is written, and read only when motion
 	// is allowed: nothing else needs it.

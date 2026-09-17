@@ -181,6 +181,21 @@ list, and a board's pictures are drawn again in the background when its
 change is announced. The render route remains for the CLI, rasterizing and
 anything else without a renderer of its own.
 
+## A walkthrough is presented, not scrolled (TASK-250, 2026-09-17)
+
+The walkthrough boundary above still holds: agents author the ordered steps,
+their subjects and their views, and the viewer owns every interaction with
+them. What changed is that interaction. Scrolling a column of text to move
+between steps put the step on screen at the mercy of where the text happened
+to sit, and the user wants a walkthrough to be something a voice agent can
+present. So the viewer presents it: the step's heading and words are set in
+the picture's frame, the reader steps explicitly (keys, controls, or choosing a
+step), the camera glides to the step while what it is not about recedes, and
+leaving returns the camera and view the reader had. The pane exposes which step
+is on screen and whether it has finished arriving, so something driving the
+presentation can wait for it. Nothing about a walkthrough is written by
+presenting it.
+
 ## Delivery
 
 The later TASK-203 decisions refine consumer vocabulary and appearance in

@@ -8,9 +8,9 @@
 // says out loud.
 //
 // Keeping it pure and out of the components is what lets "the camera went to
-// the beat's subjects" be a fact about one function, and what lets the rail and
-// the diagram agree about which subjects this view draws without either of them
-// asking the other.
+// the beat's subjects" be a fact about one function, and what lets the caption
+// and the diagram agree about which subjects this view draws without either of
+// them asking the other.
 
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
@@ -104,95 +104,6 @@ function beatFocus(beat: WalkthroughBeat | null, source: FocusSource | null): Be
 	return { drawn, undrawn, target, key: `${beat.id}:${targetKey(target)}` };
 }
 
-/** Where down the rail a beat becomes the one being read. */
-const READING_LINE = 0.33;
-
-/**
- * How far down a rail of this height the reading line is.
- * @param height How tall the scrollport is.
- * @returns The line, in the rail's own pixels.
- */
-function readingLineAt(height: number): number {
-	return height * READING_LINE;
-}
-
-/**
- * How much blank space a rail of this height needs after its last beat.
- *
- * Measured from the scrollport rather than set as a class, because a class is a
- * guess about one viewport and the pane has several: with the workbench
- * collapsed the rail was 812 tall with nothing to scroll, so the last beat sat
- * at 322 against a line at 268 and could never reach it — the explanation
- * simply ended before its final beat could be read. The tail a rail needs is
- * whatever puts its last beat at the line, and the last beat's top is at worst
- * the whole scrollport down, so a tail of everything below the line always
- * suffices and nothing shorter always does.
- * @param height How tall the scrollport is.
- * @returns The blank space to leave, in pixels.
- */
-function tailAfterLastBeat(height: number): number {
-	return Math.max(0, height - readingLineAt(height));
-}
-
-/**
- * How near the reading line counts as having reached it, in pixels.
- *
- * Measured in a browser: bringing a beat to the line landed its top 0.27 of a
- * pixel below the line, so the beat the reader had just asked for was not yet
- * the one being read and the rail put them back on the one before it. Sub-pixel
- * layout must not decide which beat somebody is on.
- */
-const REACHED_SLOP = 2;
-
-/**
- * Which beat the rail has brought to the reading line.
- *
- * The last one to have passed the line is the one being read: prose is read
- * downwards, so a beat whose heading is still below the line has not been
- * reached yet, and the beat above the line is the one whose words fill the
- * rail. Before anything has passed it — at the very top of a narrative — the
- * first beat is current, because somebody who has just opened an explanation is
- * at its beginning.
- * @param tops Where each beat sits, measured from the top of the rail.
- * @param line How far down the rail the reading line is.
- * @returns The index of the current beat.
- */
-function beatAtLine(tops: readonly number[], line: number): number {
-	let current = 0;
-	tops.forEach((top, index) => {
-		if (top <= line + REACHED_SLOP) {
-			current = index;
-		}
-	});
-	return current;
-}
-
-/** How each key that moves through a narrative moves through it. */
-const STEP_KEYS: Readonly<Record<string, number>> = {
-	ArrowDown: 1,
-	ArrowUp: -1,
-	PageDown: 1,
-	PageUp: -1,
-};
-
-/**
- * Which beat a key press moves to.
- * @param key The key that was pressed.
- * @param current Which beat is current now.
- * @param count How many beats the walkthrough has.
- * @returns The beat to move to, or null when the key was not one of these.
- */
-function beatForKey(key: string, current: number, count: number): number | null {
-	const step = STEP_KEYS[key];
-	if (step !== undefined) {
-		return Math.min(count - 1, Math.max(0, current + step));
-	}
-	if (key === "Home") {
-		return 0;
-	}
-	return key === "End" ? count - 1 : null;
-}
-
 /**
  * Which subjects the picture should mark as attended.
  *
@@ -213,16 +124,4 @@ function subjectMarks(selection: string | null, focus: BeatFocus): ReadonlySet<s
 	return attended;
 }
 
-export {
-	NO_FOCUS,
-	REACHED_SLOP,
-	READING_LINE,
-	beatAtLine,
-	beatFocus,
-	beatForKey,
-	readingLineAt,
-	subjectMarks,
-	tailAfterLastBeat,
-	type BeatFocus,
-	type FocusSource,
-};
+export { NO_FOCUS, beatFocus, subjectMarks, type BeatFocus, type FocusSource };
