@@ -55,19 +55,71 @@ function selectedOutcome(
 }
 
 /**
+ * How many problems one refusal spells out before it stops listing and starts
+ * counting. Enough that the same mistake repeated across a couple of entries is
+ * seen to be one mistake, short enough that a badly generated payload does not
+ * bury the first line of the answer.
+ */
+const LISTED_PROBLEMS = 4;
+
+/**
+ * Where one problem sat, in the spelling the rest of the product uses for a
+ * location inside a document: dotted segments, array positions included.
+ * @param path - The issue's path, as the schema recorded it.
+ * @returns The dotted location, empty when the problem is the whole value.
+ */
+function problemLocation(path: readonly PropertyKey[]): string {
+	return path.map((segment) => String(segment)).join(".");
+}
+
+/**
+ * One problem, said where it is.
+ *
+ * An author who is told only what is wrong has to guess which of the several
+ * places they wrote it is the one being refused, and the cheapest guess is to
+ * strip the offending spelling everywhere — including where it was legal. The
+ * location is the whole difference between one turn and several.
+ * @param issue - What the schema refused.
+ * @returns The problem with its location, or bare when it has none.
+ */
+function problemText(issue: z.ZodError["issues"][number]): string {
+	const location = problemLocation(issue.path);
+	return location === "" ? issue.message : `${location}: ${issue.message}`;
+}
+
+/**
+ * Everything a refused value got wrong, as one line.
+ *
+ * Every problem is separately locatable, so a key used in two places is named
+ * in both rather than reported once and hunted for. Past the few that are
+ * listed the rest are counted, which still tells the author the mistake is not
+ * confined to the place they can see.
+ * @param error - What the schema refused.
+ * @returns The line to refuse with.
+ */
+function refusalText(error: z.ZodError): string {
+	const listed = error.issues.slice(0, LISTED_PROBLEMS).map(problemText);
+	if (listed.length === 0) {
+		return "Invalid command input";
+	}
+	const rest = error.issues.length - listed.length;
+	return rest === 0 ? listed.join("; ") : `${listed.join("; ")}; and ${rest} more like it`;
+}
+
+/**
  * Validates a value against a schema, reporting a failure as a usage error so
- * the person sees the first problem rather than a stack trace.
+ * the person sees what is wrong and where rather than a stack trace.
  * @param schema - The schema to validate against.
  * @param value - The value to validate.
  * @returns The parsed value.
- * @throws {CliUsageError} With the first issue's message when validation fails.
+ * @throws {CliUsageError} Naming each problem and the path to it.
  */
 function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
 	const parsed = schema.safeParse(value);
 	if (parsed.success) {
 		return parsed.data;
 	}
-	throw new CliUsageError(parsed.error.issues[0]?.message ?? "Invalid command input");
+	throw new CliUsageError(refusalText(parsed.error));
 }
 
 /**

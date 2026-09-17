@@ -258,14 +258,24 @@ function draftLine(
 
 /**
  * One disagreement, in the words the reconciliation used.
+ *
+ * A removal against a change is settled by writing the subject again, out of
+ * values this line does not carry and must not be copied for: what it prints is
+ * cut to fit a terminal. So where the issue carries those values, the line says
+ * so and sends its reader to them rather than leaving them to be hunted down in
+ * the board and retyped (TASK-256.09).
  * @param issue What is standing.
  * @returns The line.
  */
 function issueLine(issue: ReconciliationReport["drafts"][number]["issues"][number]): string {
 	const field = issue.field === undefined ? "" : `.${issue.field}`;
+	const carried =
+		issue.changed === undefined
+			? ""
+			: " — the issue's `changed` carries each of those values, uncut";
 	return (
 		`${issue.what} ${issue.subject}${field}: this says ${valueText(issue.mine)}, the ` +
-		`variant it came from says ${valueText(issue.theirs)}`
+		`variant it came from says ${valueText(issue.theirs)}${carried}`
 	);
 }
 

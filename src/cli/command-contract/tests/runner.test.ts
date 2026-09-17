@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { z } from "zod";
-import { defineCommand } from "../contract.js";
+import { CliUsageError, defineCommand } from "../contract.js";
 import { runCommand } from "../runner.js";
 import {
 	cleanupCommandContractTest,
@@ -11,6 +11,102 @@ import {
 } from "./support.js";
 
 afterEach(cleanupCommandContractTest);
+
+/**
+ * A stated document shaped like the ones agents write: strict objects nested
+ * inside arrays, so a mistake has somewhere to sit that a bare key name cannot
+ * identify.
+ */
+const StatedStepSchema = z.object({ from: z.string(), to: z.string(), label: z.string() }).strict();
+const StatedFlowSchema = z.object({ name: z.string(), steps: z.array(StatedStepSchema) }).strict();
+const StatedDocumentSchema = z.object({ flows: z.array(StatedFlowSchema) }).strict();
+
+/**
+ * Runs a command whose handler validates a stated document mid-flight, the way
+ * every semantic write does.
+ * @param stated - The document to state.
+ * @returns What the run produced.
+ */
+async function statedRun(stated: unknown) {
+	return executePublic(
+		defineCommand({
+			...proofContract({ result: null }),
+			async handler(_input, context) {
+				return { result: context.parse(StatedDocumentSchema, stated) };
+			},
+		}),
+	);
+}
+
+/**
+ * What a refusal said, insisting it was a usage refusal first.
+ * @param error - What the run threw.
+ * @returns The refusal's message.
+ */
+function refusal(error: unknown): string {
+	expect(error).toBeInstanceOf(CliUsageError);
+	expect((error as CliUsageError).exitCode).toBe(2);
+	return (error as CliUsageError).message;
+}
+
+describe("command-contract input refusals", () => {
+	test("an unrecognized key and a wrong value are both refused where they sat", async () => {
+		const execution = await statedRun({
+			flows: [
+				{
+					name: "checkout",
+					steps: [
+						{ from: "a", to: "b", label: "ask", emphasis: "strong" },
+						{ from: "a", to: 7, label: "answer" },
+					],
+				},
+			],
+		});
+		const message = refusal(execution.error);
+		expect(message).toContain("flows.0.steps.0");
+		expect(message).toContain("emphasis");
+		expect(message).toContain("flows.0.steps.1.to");
+		expect(execution.stdout).toBe("");
+	});
+
+	test("the same unrecognized key in two places is refused in both, and nowhere else", async () => {
+		const step = { from: "a", to: "b", label: "step" };
+		const execution = await statedRun({
+			flows: [
+				{
+					name: "checkout",
+					steps: [{ ...step, emphasis: "strong" }, step, { ...step, emphasis: "strong" }],
+				},
+			],
+		});
+		const message = refusal(execution.error);
+		expect(message).toContain("flows.0.steps.0");
+		expect(message).toContain("flows.0.steps.2");
+		expect(message).not.toContain("flows.0.steps.1");
+	});
+
+	test("more offending places than one refusal lists are counted rather than dropped", async () => {
+		const steps = Array.from({ length: 10 }, (_unused, index) => ({
+			from: "a",
+			to: "b",
+			label: `step ${index}`,
+			emphasis: "strong",
+		}));
+		const execution = await statedRun({ flows: [{ name: "checkout", steps }] });
+		const message = refusal(execution.error);
+		const located = new Set(message.match(/steps\.\d+/gu) ?? []);
+		expect(located.size).toBeGreaterThan(0);
+		expect(located.size).toBeLessThan(steps.length);
+		expect(message).toContain(String(steps.length - located.size));
+	});
+
+	test("a problem with nowhere to sit is refused without an empty location", async () => {
+		const execution = await statedRun(["not a document"]);
+		const message = refusal(execution.error);
+		expect(message.startsWith(":")).toBe(false);
+		expect(message.trim()).not.toBe("");
+	});
+});
 
 describe("command-contract runner", () => {
 	test("the concrete Commander parser owns aliases and optional token arity", async () => {
