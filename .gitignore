@@ -64,6 +64,10 @@ skills/archboard/references/generated/
 # Agent worktrees, created per subagent run and removed after.
 .claude/worktrees/
 
+# Claude Code's per-person settings: the permission rules one operator
+# granted on one machine. The shared .claude/settings.json stays tracked.
+.claude/settings.local.json
+
 # TASK-150 local reference snapshot; never stage or import it.
 /legacy/
 
