@@ -150,3 +150,35 @@ test.each([false, true])(
 		expect(cameraNow()).toEqual(fitted);
 	},
 );
+
+test("moving to a proposal and back fits what the proposal changes in view", async () => {
+	serving([AS_IT_IS, PROPOSED]);
+	mountStage(null, { live: true, reducedMotion: true });
+	await settle();
+	const whole = cameraNow();
+	server.reply = {
+		status: 200,
+		body: {
+			...drawing(1),
+			variant: { id: PROPOSED.id, name: PROPOSED.name, lifecycle: PROPOSED.lifecycle },
+			changes: {
+				predecessor: { id: AS_IT_IS.id, name: AS_IT_IS.name, lifecycle: AS_IT_IS.lifecycle },
+				standing: { n1: "changed", e1: "unchanged" },
+			},
+		},
+	};
+	chooseVariantInShell(PROPOSED.id);
+	await settle();
+	// n1 is 80×40 at the origin: the camera goes to it, as close as a fit to one
+	// region may, rather than staying on the whole picture.
+	expect(cameraNow()).not.toEqual(whole);
+	expect(cameraNow()).toEqual({ x: 340, y: 270, scale: 1.5 });
+
+	// And back to the current state, the same changes are what the reader is shown.
+	act(() => {
+		fireEvent.keyDown(viewport(), { key: "0" });
+	});
+	chooseVariantInShell(undefined);
+	await settle();
+	expect(cameraNow()).toEqual({ x: 340, y: 270, scale: 1.5 });
+});
