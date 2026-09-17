@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:42'
-updated_date: '2026-09-17 01:39'
+updated_date: '2026-09-17 02:42'
 labels:
   - renderer
   - frontend
@@ -77,4 +77,12 @@ Reading: 'kept' is roughly app boot plus reads, with no layout. 'page' minus 'ke
 Not yet proven by a test: a kept picture of an older board version is not shown after a reload. The code reads the board document before choosing a kept picture.
 
 AC #6 left unchecked: background drawing of variants nobody is looking at is implemented (local-pictures.ts drawAhead) but no test proves it; the browser owner only proves the visible pane redraws.
+
+2026-09-17, three first-picture levers:
+- 6b27fd57: an engine starts at page start with a warm-up layout; the renderer is split into its own 119 kB chunk; the pool grows one worker at a time, only once running workers have answered (it had been starting 12-16 workers, each compiling the engine); a picture asked for again while it is being laid out waits for that layout.
+- d470b8ad: elk-rs 0.11.2 compiles the engine once in the page and shares it with every worker.
+First picture drawn in the page, ms (before the levers -> after): Archboard 495->333, Agent workbench 645->520, Semantic renderer 608->489, Canvas server 825->563. Reopen with a kept picture: 250-330 ms, which is app boot.
+Sharing the engine, and letting the pool grow freely once it was shared, changed nothing measurable: workers now start in milliseconds.
+CPU profile of the Canvas server first picture: renderer JavaScript on the main thread 145 ms; the shell's applyTheme forces a style recalculation of the 144 kB stylesheet at boot, 134 ms; the rest is waiting on reads and workers.
+Next levers, not started: move the renderer core itself into a worker (Pretext can measure with OffscreenCanvas and the worker's own fonts), which frees the main thread but does not cut total time; cut the solves label settling makes (layout-rules.md section 22); skip the forced reflow in applyTheme on the first application.
 <!-- SECTION:NOTES:END -->
