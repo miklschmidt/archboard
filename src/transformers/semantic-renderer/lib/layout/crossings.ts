@@ -377,6 +377,39 @@ function perpendicularCrossing(
 	return { x: from.x + along * dx, y: from.y + along * dy };
 }
 
+/** The extent of a route's points. */
+interface Extent {
+	readonly minX: number;
+	readonly maxX: number;
+	readonly minY: number;
+	readonly maxY: number;
+}
+
+const extents = new WeakMap<readonly Point[], Extent>();
+
+/**
+ * The extent of a route, worked out once per route.
+ * @param route The route's points.
+ * @returns Its extent.
+ */
+function extentOf(route: readonly Point[]): Extent {
+	const known = extents.get(route);
+	if (known !== undefined) return known;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
+	for (const point of route) {
+		minX = Math.min(minX, point.x);
+		maxX = Math.max(maxX, point.x);
+		minY = Math.min(minY, point.y);
+		maxY = Math.max(maxY, point.y);
+	}
+	const extent = { minX, maxX, minY, maxY };
+	extents.set(route, extent);
+	return extent;
+}
+
 /**
  * Find proper perpendicular crossings before rounding consumes their straight legs.
  * Shared endpoints, overlapping lines and this route's own corners are excluded.
@@ -387,20 +420,52 @@ function perpendicularCrossing(
 function routeCrossings(route: readonly Point[], others: Iterable<readonly Point[]>): Point[] {
 	const crossings: Point[] = [];
 	for (const other of others) {
-		if (route === other) continue;
-		for (let index = 1; index < route.length; index += 1) {
-			for (let crossingIndex = 1; crossingIndex < other.length; crossingIndex += 1) {
-				const crossing = perpendicularCrossing(
-					route[index - 1]!,
-					route[index]!,
-					other[crossingIndex - 1]!,
-					other[crossingIndex]!,
-				);
-				if (crossing !== undefined) crossings.push(crossing);
-			}
+		// A proper crossing lies strictly inside both routes, so routes whose
+		// extents do not even touch cannot cross.
+		if (route !== other && extentsTouch(extentOf(route), extentOf(other))) {
+			crossingsBetween(route, other, crossings);
 		}
 	}
 	return crossings;
+}
+
+/**
+ * Whether two extents touch or overlap.
+ * @param one One extent.
+ * @param other The other.
+ * @returns False only when they are apart on some axis.
+ */
+function extentsTouch(one: Extent, other: Extent): boolean {
+	return !(
+		one.maxX < other.minX ||
+		other.maxX < one.minX ||
+		one.maxY < other.minY ||
+		other.maxY < one.minY
+	);
+}
+
+/**
+ * Add every proper perpendicular crossing of one route by another.
+ * @param route The route.
+ * @param other The route crossing it.
+ * @param crossings Where the crossings are added, in segment order.
+ */
+function crossingsBetween(
+	route: readonly Point[],
+	other: readonly Point[],
+	crossings: Point[],
+): void {
+	for (let index = 1; index < route.length; index += 1) {
+		for (let crossingIndex = 1; crossingIndex < other.length; crossingIndex += 1) {
+			const crossing = perpendicularCrossing(
+				route[index - 1]!,
+				route[index]!,
+				other[crossingIndex - 1]!,
+				other[crossingIndex]!,
+			);
+			if (crossing !== undefined) crossings.push(crossing);
+		}
+	}
 }
 
 /**
