@@ -13,6 +13,27 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
+
+/**
+ * How wide the picture's viewport is.
+ * @param browser The page.
+ * @returns Its width in pixels.
+ */
+const viewportWidth = (browser: AgentBrowserSession): Promise<number> =>
+	browser.eval<number>(
+		`document.querySelector("[data-slot='semantic-board-viewport']")?.getBoundingClientRect().width ?? 0`,
+	);
+
+/**
+ * Where the camera has the picture.
+ * @param browser The page.
+ * @returns The surface's transform.
+ */
+const surfaceTransform = (browser: AgentBrowserSession): Promise<string> =>
+	browser.eval<string>(
+		`document.querySelector("[data-slot='semantic-board-surface']")?.style.transform ?? ""`,
+	);
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -207,6 +228,9 @@ test("a person reads containment, code and the level below it, and writes nothin
 	expect(await drawnInside(browser, ids["service"] ?? "", ids["system"] ?? "")).toBe(true);
 	expect(await drawnInside(browser, ids["module"] ?? "", ids["service"] ?? "")).toBe(true);
 
+	// The sidebar opens on the board, and a pick turns it to the selection.
+	expect(await sidebarTab(browser.eval.bind(browser))).toBe("board");
+
 	// Picking the module out reaches what its card deliberately does not carry.
 	await pick(browser, ids["module"] ?? "");
 	await pollUntil(
@@ -215,6 +239,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 		"the inspector to explain the picked node",
 		WAIT,
 	);
+	expect(await sidebarTab(browser.eval.bind(browser))).toBe("selection");
 	const inspected = await textOf(browser, INSPECTOR);
 	expect(inspected).toContain("The one place a note is read or written");
 	expect(inspected).toContain("archboard");
@@ -282,6 +307,37 @@ test("a person reads containment, code and the level below it, and writes nothin
 		() => browser.eval<string>("window.location.search"),
 		(search) => search === "?paneA=pipeline",
 		"the address to follow the reader back out",
+		WAIT,
+	);
+
+	// Collapsing the sidebar gives its width back to the picture, which refits
+	// to it while nobody has moved the camera; expanding it takes the width back.
+	await pollUntil(
+		() => pictureAtRest(browser.eval.bind(browser)),
+		(atRest) => atRest,
+		"the board the reader came back to to settle",
+		WAIT,
+	);
+	const open = await viewportWidth(browser);
+	const fittedOpen = await surfaceTransform(browser);
+	await press(browser, "[data-slot='semantic-sidebar-toggle']");
+	await pollUntil(
+		() => viewportWidth(browser),
+		(width) => width > open,
+		"the picture's viewport to widen once the sidebar collapses",
+		WAIT,
+	);
+	await pollUntil(
+		() => surfaceTransform(browser),
+		(transform) => transform !== fittedOpen,
+		"the picture to refit to the wider viewport",
+		WAIT,
+	);
+	await press(browser, "[data-slot='semantic-sidebar-toggle']");
+	await pollUntil(
+		() => surfaceTransform(browser),
+		(transform) => transform === fittedOpen,
+		"the picture to refit to the sidebar coming back",
 		WAIT,
 	);
 

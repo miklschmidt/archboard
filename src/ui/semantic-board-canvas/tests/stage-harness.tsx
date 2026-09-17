@@ -6,7 +6,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, afterEach, beforeAll } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
-import { createElement, useState, type JSX, type ReactNode } from "react";
+import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 
@@ -340,6 +340,44 @@ function paneReading(options: MountOptions): Record<string, unknown> {
 	return stated;
 }
 
+/**
+ * The shell's hold on a held pane's variant, which the navigator changes: a
+ * pane does not offer its own board's states, so a test changes them from here.
+ */
+const shellHold: { setVariant: ((variant: string | undefined) => void) | null } = {
+	setVariant: null,
+};
+
+/**
+ * Show another state of the held pane's board, as choosing it in the navigator does.
+ * @param variant The variant's id, or undefined for whichever is current.
+ */
+function chooseVariantInShell(variant: string | undefined): void {
+	const set = shellHold.setVariant;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(variant);
+	});
+}
+
+/**
+ * Open one tab of the pane's sidebar, as a person does.
+ * @param tab Which tab.
+ */
+function openSidebarTab(tab: "board" | "selection"): void {
+	const trigger = document.querySelector<HTMLElement>(
+		`[data-slot='semantic-sidebar-tab'][data-tab='${tab}']`,
+	);
+	if (trigger === null) {
+		throw new Error(`The sidebar has no ${tab} tab.`);
+	}
+	act(() => {
+		trigger.click();
+	});
+}
+
 /** Inputs for the harness's own holder of a pane's selection. */
 interface HeldProps extends MountOptions {
 	/** What is picked out when it mounts. */
@@ -361,6 +399,12 @@ function Held(props: HeldProps): JSX.Element {
 	const [picked, setPicked] = useState<string | null>(props.selection);
 	const [variant, setVariant] = useState<string | undefined>(props.variant);
 	const [view, setView] = useState<string | undefined>(props.view);
+	useEffect(() => {
+		shellHold.setVariant = setVariant;
+		return (): void => {
+			shellHold.setVariant = null;
+		};
+	}, []);
 	/**
 	 * Take the pane's pick and feed it back to the pane.
 	 * @param id The semantic id, or null.
@@ -538,7 +582,9 @@ export {
 	NOTHING_DRAWN,
 	NO_SUCH_BOARD,
 	UNREADABLE,
+	chooseVariantInShell,
 	mountStage,
+	openSidebarTab,
 	stageState,
 	part,
 	surface,

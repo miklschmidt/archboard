@@ -8,7 +8,13 @@ import { expect, test } from "bun:test";
 
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
-import { mountStage, server, settle } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import {
+	chooseVariantInShell,
+	mountStage,
+	openSidebarTab,
+	server,
+	settle,
+} from "@/ui/semantic-board-canvas/tests/stage-harness";
 
 /** The vault's groups: two configured, named for reading. */
 const GROUPS = { fulfillment: { name: "Fulfillment" }, billing: { name: "Billing" } };
@@ -323,7 +329,6 @@ test("a membership in the inspector is the same choice, and picking a subject ke
 		fireEvent.click(memberships[1]!);
 	});
 	await settled();
-	expect(chooser().value).toBe("fulfillment");
 	expect(
 		document
 			.querySelector("[data-slot='semantic-inspector-group'][data-group='fulfillment']")
@@ -332,6 +337,9 @@ test("a membership in the inspector is the same choice, and picking a subject ke
 	// The picked worker is both attended and a member: one does not hide the other.
 	expect(classesOf("w")).toContain("is-selected");
 	expect(classesOf("w")).toContain("is-group-member");
+	// And the board's own control says the same group.
+	openSidebarTab("board");
+	expect(chooser().value).toBe("fulfillment");
 });
 
 test("a variant with no memberships says so in the control's own place", async () => {
@@ -421,22 +429,14 @@ test("moving to another variant drops the group; changing the view keeps it", as
 			variant: { id: "v2", name: "proposed", lifecycle: "draft" },
 		},
 	};
-	await act(async () => {
-		fireEvent.click(
-			[...document.querySelectorAll<HTMLElement>("[data-slot='semantic-variant-choice']")].at(-1)!,
-		);
-	});
+	chooseVariantInShell("v2");
 	await settled();
 	expect(chooser().value).toBe("");
 	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);
 
 	// Returning is another navigation, not permission to restore the old choice.
 	server.reply = { status: 200, body: { ...picture(), views: [view] } };
-	await act(async () => {
-		fireEvent.click(
-			[...document.querySelectorAll<HTMLElement>("[data-slot=semantic-variant-choice]")][0]!,
-		);
-	});
+	chooseVariantInShell(undefined);
 	await settled();
 	expect(chooser().value).toBe("");
 	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);

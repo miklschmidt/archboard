@@ -138,7 +138,7 @@ function presentationSnapshot(browser: AgentBrowserSession): Promise<Presentatio
 		const controls = document.querySelector('${PRESENTATION_CONTROLS}');
 		const stop = [...(controls?.querySelectorAll('button') ?? [])].find(node => node.getAttribute('aria-label') === 'Stop voice');
 		const presented = [...document.querySelectorAll('${PANE_SECTIONS}')].find(node => !node.hidden);
-		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-view-bar"], [data-slot="semantic-variant-bar"]') ?? [])];
+		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-sidebar"], [data-slot="semantic-view-bar"], [data-slot="semantic-variant-bar"]') ?? [])];
 		return {
 			fullscreen: document.fullscreenElement === stage,
 			stateText: controls?.querySelector('output')?.textContent?.trim() ?? '',

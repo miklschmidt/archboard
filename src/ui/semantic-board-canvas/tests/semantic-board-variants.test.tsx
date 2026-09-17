@@ -1,10 +1,12 @@
 // Showing one board's other states: the drafts proposed against the current
 // architecture, and the states that used to be current.
 //
-// A proposal nobody can reach is a proposal nobody reviews. These check that a
-// board with a family of variants offers the family, that choosing one is
-// reading rather than editing — the pane asks the server for that variant and
-// writes nothing — and that a board with one state offers no choice at all.
+// A proposal nobody can reach is a proposal nobody reviews. The navigator offers
+// every state of every board, and a pane does not offer its own board's states a
+// second time (a board a level down is another matter, held by the levels
+// tests). These check what the pane still owns: the state it is told to show is
+// the one it asks the server for, and moving between states is reading rather
+// than editing, which leaves where the reader was looking alone.
 
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
@@ -13,6 +15,7 @@ import {
 	cameraNow,
 	drawing,
 	viewport,
+	chooseVariantInShell,
 	mountStage,
 	renderCalls,
 	server,
@@ -73,72 +76,14 @@ function serving(variants: readonly Record<string, unknown>[], shown = AS_IT_IS)
 	};
 }
 
-/**
- * Every variant button on screen, in order.
- * @returns The buttons.
- */
-function choices(): HTMLElement[] {
-	return [...document.querySelectorAll<HTMLElement>("[data-slot='semantic-variant-choice']")];
-}
-
-/** A pane whose choice nothing records, for cases that do not read it. */
-function ignoreChoice(): void {
-	// Which variant a pane shows is the shell's; these cases ask other questions.
-}
-
-test("a board with a proposal offers both states and says where each one stands", async () => {
-	serving([AS_IT_IS, PROPOSED]);
-	const picked: (string | null)[] = [];
-	/**
-	 * Record the state the pane reported.
-	 * @param variant The variant's id, or null.
-	 */
-	function record(variant: string | null): void {
-		picked.push(variant);
-	}
-	mountStage(null, { onVariantChange: record });
-	await settle();
-	// The name alone does not say whether a state is the architecture or a
-	// suggestion about it, so each button says both.
-	expect(choices().map((one) => one.textContent)).toEqual([
-		"as it iscurrent",
-		"Semantic boardsdraft",
-	]);
-	expect(choices()[0]?.getAttribute("aria-pressed")).toBe("true");
-
-	act(() => {
-		fireEvent.click(choices()[1]!);
-	});
-	// Reported upward, not decided here: two panes hold two answers, and the one
-	// a pane shows belongs in its board key.
-	expect(picked).toEqual(["v2"]);
-	// The current state is asked for as the absence of a variant, so a pane on it
-	// follows the designation rather than pinning itself to an id that stops
-	// being current the day somebody adopts the draft.
-	act(() => {
-		fireEvent.click(choices()[0]!);
-	});
-	expect(picked).toEqual(["v2", null]);
-});
-
 test("the variant the pane is told to show rides in the request", async () => {
 	serving([AS_IT_IS, PROPOSED], PROPOSED);
-	mountStage(null, { variant: "v2", onVariantChange: ignoreChoice });
+	mountStage(null, { variant: "v2" });
 	await settle();
 	expect(renderCalls().at(-1)).toContain("variant=v2");
-	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
-});
-
-test("a board with one state says which one it is without offering a choice", async () => {
-	serving([AS_IT_IS]);
-	mountStage(null, { onVariantChange: ignoreChoice });
-	await settle();
-	expect(choices()).toHaveLength(0);
-	// Still said, though: what else could be read and what is being read are two
-	// questions, and somebody who followed a link here has only asked the second.
-	const said = document.querySelector<HTMLElement>("[data-slot='semantic-variant-showing']");
-	expect(said?.textContent).toBe("as it iscurrent");
-	expect(said?.getAttribute("data-semantic-lifecycle")).toBe("current");
+	expect(
+		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-variant"),
+	).toBe(PROPOSED.name);
 });
 
 test.each([false, true])(
@@ -167,9 +112,7 @@ test.each([false, true])(
 				views: [view, other],
 			},
 		};
-		act(() => {
-			fireEvent.click(choices()[1]!);
-		});
+		chooseVariantInShell(PROPOSED.id);
 		// The last picture stays up while the uncached one is on its way, so the
 		// pane can carry it into the next rather than dropping to a skeleton;
 		// the camera must outlive the request either way.

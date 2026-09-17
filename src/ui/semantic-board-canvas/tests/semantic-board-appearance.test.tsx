@@ -5,6 +5,7 @@ import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import {
 	drawing,
 	mountStage,
+	openSidebarTab,
 	part,
 	server,
 	settle,
@@ -62,12 +63,14 @@ test("legend and inspection explain the picture and survive a policy-only restyl
 	mountStage("n1");
 	await settle();
 	await settle();
-	expect(part("semantic-legend").textContent).toContain("API");
+	// Something is selected, so the sidebar opens on it.
 	expect(part("semantic-inspector-appearance").textContent).toContain("green from Kubernetes");
 	expect(part("semantic-inspector-appearance").textContent).toContain("violet type chip");
+	openSidebarTab("board");
+	expect(part("semantic-legend").textContent).toContain("API");
 	act(() => {
 		fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
-		fireEvent.click(part("semantic-legend").querySelector("button")!);
+		fireEvent.click(part("semantic-sidebar-toggle"));
 	});
 	const camera = surface().style.transform;
 	expect(document.querySelector('[data-slot="semantic-legend"]')).toBeNull();
@@ -79,15 +82,14 @@ test("legend and inspection explain the picture and survive a policy-only restyl
 	expect(
 		surface().querySelector('[data-semantic-id="n1"]')?.classList.contains("is-selected"),
 	).toBe(true);
-	expect(part("semantic-inspector-appearance").textContent).toContain("blue from Kubernetes");
+	// The person collapsed the sidebar; a restyle does not open it again.
 	expect(document.querySelector('[data-slot="semantic-legend"]')).toBeNull();
-	const show = [...document.querySelectorAll("button")].find(
-		(button) => button.textContent === "Legend",
-	);
 	act(() => {
-		fireEvent.click(show!);
+		fireEvent.click(part("semantic-sidebar-toggle"));
 	});
 	expect(part("semantic-legend").textContent).toContain("Comparison and attention");
+	openSidebarTab("selection");
+	expect(part("semantic-inspector-appearance").textContent).toContain("blue from Kubernetes");
 });
 
 test("traffic changes are explained without animation numbers", async () => {

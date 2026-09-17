@@ -33,9 +33,10 @@ responsive layouts unless the user explicitly reverses this decision.
   introduce gradients, glow, or rounded dashboard cards.
 - Pair a neutral sans serif with monospaced secondary text for identifiers,
   paths, versions, and timing.
-- Use a compact board strip on the left, selection details on the right, and a
-  collapsible agent workbench below the canvas. Each region must earn the space
-  it takes.
+- Use a compact board strip on the left, one sidebar beside each pane's picture
+  for the board and the selection (see [The pane sidebar](#the-pane-sidebar)),
+  and a collapsible agent workbench below the canvas. Each region must earn the
+  space it takes.
 
 ## Product mapping
 
@@ -71,6 +72,36 @@ state:
   accessible board identity and state.
 - The drawing toolbar remains Excalidraw's responsibility. The mockup's tool
   rail communicates density and placement, not a second drawing toolset.
+
+## The pane sidebar
+
+Revised 2026-09-17 (TASK-249). The generated reference above places selection
+details in a column on the right of the canvas; that column is superseded. A
+semantic pane now has one sidebar on the left of its picture, the width of the
+old inspector (`SIDEBAR_WIDTH`, 280 px), with two tabs:
+
+- **Board**: how the board on screen is read — its views, the walkthroughs it
+  offers, group inspection, and, a level down, the states of that board — and
+  the legend for what is drawn. The pane's own board offers no choice of state:
+  the navigator lists every state of every board, and one choice is made in one
+  place. Views live here rather than in a switcher on the picture, because this
+  is the one home for "how is this board being read" and a switcher over the
+  picture would cover what it switches.
+- **Selection**: the inspector for whatever is picked out, with the control that
+  lets go of the selection in the tab row.
+
+Picking something out opens the selection tab; letting go gives back the tab
+that was open before. The sidebar keeps its width whichever tab is open, so a
+pick never changes the size of the pane or moves the picture. Collapsing it to
+its tab icons gives the width to the picture, which refits to it until the
+person has panned or zoomed. A pane presented fullscreen shows the picture
+without its sidebar. There is no strip above the picture.
+
+![The pane sidebar, board tab and selection tab](assets/semantic-pane-sidebar.png)
+
+The image is a rendered capture of the dogfood vault at 1920×1080, not a
+generated mockup: the board tab in the light theme on the left, the selection
+tab in the dark theme on the right.
 
 ## Typography and wordmark contract
 

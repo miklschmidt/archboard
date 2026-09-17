@@ -15,7 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { seedSemanticBoard } from "./support/semantic-page.ts";
 import { serverPath, type PanesBody } from "./support/navigator-support.ts";
-import { clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
+import { PANE_TABS, clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
 
 /**
  * The search parameters the address bar is showing.
@@ -169,7 +169,7 @@ test("an address naming a board that is not there says so and settles on what is
 	await canvas.assertRunning();
 }, 30_000);
 
-test("choosing a variant moves the pane it was chosen in, and only that one", async () => {
+test("choosing a variant in the navigator moves the pane it was chosen for, and only that one", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "variant-vault");
@@ -192,8 +192,9 @@ test("choosing a variant moves the pane it was chosen in, and only that one", as
 	expect(proposal).toBeDefined();
 
 	const browser = resources.use(await createAgentBrowser());
-	// Both panes on the same board, and the LEFT one active: focus follows the
-	// pointer, and the person is about to choose a variant in the right one.
+	// Both panes on the same board, and the LEFT one active: the person is about
+	// to move to the right one and choose a variant for it. A pane does not offer
+	// its own board's states; the navigator does, for the active pane.
 	await browser.run(["open", `${canvas.base}/?paneA=payments&paneB=payments&pane=A`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
@@ -202,20 +203,27 @@ test("choosing a variant moves the pane it was chosen in, and only that one", as
 		"both panes to settle on payments",
 	);
 
-	// The variant bar of the right-hand pane, pressed the way a person presses it.
-	const chosen = await browser.eval<boolean>(`(() => {
-		const stages = [...document.querySelectorAll('section[aria-label^="Pane "]')];
-		const right = stages.at(-1);
-		const choice = right?.querySelector(
-			"[data-slot='semantic-variant-choice'][data-semantic-variant='${proposal.id}']",
-		);
-		if (!choice) return false;
-		choice.click();
+	// The right-hand pane's tab, then the proposal's row, pressed the way a person presses them.
+	const focused = await browser.eval<boolean>(`(() => {
+		const tab = [...document.querySelectorAll(${JSON.stringify(PANE_TABS)})].at(-1);
+		if (!tab) return false;
+		tab.click();
 		return true;
 	})()`);
+	expect(focused).toBeTrue();
+	await pollUntil(
+		() => addressSearch(browser),
+		(search) => search.endsWith("pane=B"),
+		"the right-hand pane to become the active one",
+	);
+	const chosen = await pollUntil(
+		() => clickNavigatorRow(browser, `payments@${proposal.id}`),
+		(clicked) => clicked,
+		"the proposal's row in the navigator",
+	);
 	expect(chosen).toBeTrue();
 
-	// The pane they chose it in moved, and the one they were focused on did not.
+	// The pane they chose it for moved, and the other did not.
 	const after = await pollUntil(
 		panesOf(request),
 		(state) => state.panes.some((pane) => pane.board === `payments@${proposal.id}`),

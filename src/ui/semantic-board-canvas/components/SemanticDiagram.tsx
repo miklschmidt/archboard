@@ -7,7 +7,6 @@
 // (ADR 0023). What the server sends is a picture and an atlas, and everything
 // below is about putting the two together.
 
-import type { CodeBinding } from "@/shared/code-target";
 import {
 	useCallback,
 	useEffect,
@@ -24,9 +23,6 @@ import {
 } from "react";
 
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import { SemanticLegend } from "@/ui/semantic-board-canvas/components/SemanticLegend";
-import { pictureAppearances } from "@/ui/semantic-board-canvas/lib/appearance";
-import { SemanticInspector } from "@/ui/semantic-board-canvas/components/SemanticInspector";
 import {
 	STAGE_CLASS,
 	StageSpinner,
@@ -42,7 +38,6 @@ import {
 	stayPicture,
 	type Departure,
 } from "@/ui/semantic-board-canvas/lib/picture-departure";
-import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import {
 	markGroupFocus,
@@ -261,28 +256,12 @@ interface SemanticDiagramProps {
 	/** Whether the person asked for reduced motion; the shell owns the preference. */
 	reducedMotion: boolean;
 	/**
-	 * Open the code a node is bound to, when the shell around the pane can.
-	 *
-	 * The pane is a picture of an architecture and knows nothing about opening an
-	 * editor: whether that is possible at all is the shell's business, so the
-	 * control appears only when the shell says so, and nothing is drawn when it
-	 * does not.
-	 * @param binding Where the code is.
-	 */
-	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-	/**
 	 * What is on screen is the last picture that loaded, and a read since then
 	 * has failed. The diagram stays; the stage says so.
 	 */
 	stale?: boolean | undefined;
 	/** The disclosure above the diagram, when there is something to disclose. */
 	notice?: ReactNode;
-	/**
-	 * Follow the selected node's drill-down.
-	 * @param board The target board.
-	 * @param variant The variant to open, by id.
-	 */
-	onOpenDown: (board: string, variant: string) => void;
 	/**
 	 * What the beat the person is reading asks of the picture, when a
 	 * walkthrough is open beside it.
@@ -292,8 +271,6 @@ interface SemanticDiagramProps {
 	groupId: string | null;
 	/** What that inspection lights, keeps readable and treats as context, or null. */
 	groupMarks: GroupMarks | null;
-	/** How the inspector names memberships and inspects one. */
-	groupControls: GroupControls;
 	/**
 	 * The picture is on its way out: the reader went to another board, and
 	 * this one is kept only to be seen leaving while that one is drawn.
@@ -482,10 +459,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[onSelect, drawing.atlas],
 	);
 
-	const clearSelection = useCallback((): void => {
-		onSelect(null);
-	}, [onSelect]);
-
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {
 			if (moveCameraByKey(event.key, camera, content)) {
@@ -508,7 +481,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		}),
 		[drawing.width, drawing.height, view],
 	);
-	const appearances = useMemo(() => pictureAppearances(drawing.svg), [drawing.svg]);
 
 	return (
 		<section
@@ -522,13 +494,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		>
 			{props.notice}
 			<LeavingPart departure={departure} at="announcement" />
-			{/* The picture and, beside it, what the board says about whatever has
-			    been picked out of it. The panel is the selection's detail rather
-			    than a second pane: it opens with a pick and closes with one. */}
 			<div className="relative flex min-h-0 min-w-0 flex-1">
-				{/* The legend participates in layout so fitting measures only the
-				    unobscured viewport. Hiding it gives that width back to the canvas. */}
-				<SemanticLegend appearances={appearances} />
 				{/* The viewport is the tab stop, and it is a plain box on purpose: a
 				    pan-and-zoom diagram is a keyboard surface that no native element
 				    and no ARIA role describes, and every role that would satisfy the
@@ -564,18 +530,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
 				<LeavingPart departure={departure} at="spinner" />
-				{selection !== null && (
-					<SemanticInspector
-						board={drawing.board}
-						variant={drawing.variant.id}
-						selection={selection}
-						appearance={appearances.get(selection)}
-						onOpen={props.onOpenDown}
-						{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
-						groups={props.groupControls}
-						onClose={clearSelection}
-					/>
-				)}
 			</div>
 		</section>
 	);

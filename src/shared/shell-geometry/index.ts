@@ -25,8 +25,8 @@ const SHELL_VIEWPORT: Size = { width: 1920, height: 1080 };
 /** The navigator column, which the header's wordmark section shares. */
 const NAVIGATOR_WIDTH = 320;
 
-/** The inspector, drawn over the diagram's right-hand edge while open. */
-const INSPECTOR_WIDTH = 280;
+/** The sidebar beside a semantic diagram, holding the board's key and the selection. */
+const SIDEBAR_WIDTH = 280;
 
 /** The header row. */
 const HEADER_HEIGHT = 56;
@@ -47,11 +47,11 @@ const STAGE: Size = {
 };
 
 /**
- * The reference pane: the stage with the inspector open and the fit margin
+ * The reference pane: the stage with the sidebar open and the fit margin
  * taken off every side. What a drawing's fit is measured against.
  */
 const REFERENCE_PANE: Size = {
-	width: STAGE.width - INSPECTOR_WIDTH - 2 * FIT_MARGIN,
+	width: STAGE.width - SIDEBAR_WIDTH - 2 * FIT_MARGIN,
 	height: STAGE.height - 2 * FIT_MARGIN,
 };
 
@@ -80,9 +80,9 @@ export {
 	DOCK_BAR_HEIGHT,
 	FIT_MARGIN,
 	HEADER_HEIGHT,
-	INSPECTOR_WIDTH,
 	NAVIGATOR_WIDTH,
 	PANE_BAR_HEIGHT,
+	SIDEBAR_WIDTH,
 	REFERENCE_PANE,
 	SHELL_VIEWPORT,
 	STAGE,

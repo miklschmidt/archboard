@@ -11,7 +11,6 @@
 import type { JSX } from "react";
 
 import { SemanticDiagram } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
-import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { SemanticStageLoading } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import type { Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
@@ -26,18 +25,11 @@ interface WaitingView {
 	readonly camera: BoardCamera;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion?: boolean | undefined;
-	/** How the inspector names memberships; nothing on a leaving picture opens it. */
-	readonly groupControls: GroupControls;
 }
 
 /** A picture on its way out cannot be picked from. */
 function ignorePick(): void {
 	// Nothing on a leaving picture is somebody's to pick.
-}
-
-/** Nor opened from. */
-function ignoreOpen(): void {
-	// Nothing on a leaving picture opens anything.
 }
 
 /**
@@ -58,10 +50,8 @@ function waitingStage(view: WaitingView): JSX.Element {
 			selection={null}
 			onSelect={ignorePick}
 			reducedMotion={view.reducedMotion ?? false}
-			onOpenDown={ignoreOpen}
 			groupId={null}
 			groupMarks={null}
-			groupControls={view.groupControls}
 		/>
 	);
 }
