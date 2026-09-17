@@ -1,9 +1,11 @@
 // Measures every fixture and every vault board on the scorecard a layout change
 // is judged by (src/runtime/semantic-renderer/tests/drawn-scorecard.ts): fit,
 // page area, how much of the page is card, route length, bends, crossings,
-// margin-lane ink, flank fan and the two
+// margin-lane ink, flank fan, how far a label sits from the line it names, the
+// corridors two routes share and the two
 // invariants. No single measure decides a comparison; the numbers in
-// docs/design/layout-rules.md come from here.
+// docs/design/layout-rules.md come from here. A fixture is any
+// `*.content.json` beside this file.
 //
 // Run from the repository root:
 //   bun docs/design/wide-board-layout-fixtures/measure.ts [outdir]
@@ -57,11 +59,14 @@ interface Result {
 }
 
 const items: Item[] = [];
-for (const rep of ["1", "2", "3"]) {
+for (const file of fs
+	.readdirSync(fixtures)
+	.filter((name) => name.endsWith(".content.json"))
+	.toSorted()) {
 	items.push({
-		name: `flask-map-${rep}`,
+		name: file.replace(".content.json", ""),
 		variant: "fixture",
-		content: JSON.parse(fs.readFileSync(`${fixtures}/flask-map-${rep}.content.json`, "utf8")),
+		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
 	});
 }
 for (const file of fs
