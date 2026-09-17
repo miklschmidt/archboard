@@ -180,9 +180,11 @@ Two facts about the evidence that the first batch had to teach:
 - Test with two boards when checking pane switching, never two panes on one
   board: a switch reaches one pane's socket, and a regression looks like the
   other pane being replaced.
-- The browser holds no board content. If you find yourself wanting to cache
-  something the server knows, the answer is a query the pane re-reads on the
-  board's own announcement, not a copy (ADR 0023).
+- The browser holds board content only as a read-only cache: a query the pane
+  reads again on the board's own announcement, and pictures stamped with the
+  board version, policy fingerprint and renderer build that are checked before
+  they are shown. Never a copy the browser edits or answers from unchecked
+  (ADR 0023).
 - **Text width is measured by the canvas of whatever draws the picture**, with
   the diagram fonts loaded: under Bun an `@napi-rs/canvas` canvas the renderer
   host installs as `OffscreenCanvas`, in a browser its own. Never add a font

@@ -160,6 +160,27 @@ replaces the clauses that fitting one viewport is not a success criterion and
 that no density policy is wanted. It also records that the list of what agents
 may not author is exactly the list above.
 
+## Where a picture is drawn (TASK-247, 2026-09-17)
+
+The board file stays the one source of truth, and the browser stays a viewer
+that writes nothing. Drawing a picture in the browser does not change either.
+The user clarified on 2026-09-16 that a browser may hold a board's content as a
+read-only cache of what the server said. The server invalidates that cache by
+announcing the board's new version, as it already does for the pictures it
+serves. Nothing in the browser edits, merges or answers for that content, and
+no picture of it is shown without first being checked against the version the
+server reports.
+
+So the canvas draws its pictures in the page with the same renderer core the
+CLI and the render route run. Text is measured by the canvas of whatever
+draws, so a picture measured in one browser matches what that browser paints
+and may differ from another browser's. Pictures are kept in the browser's
+storage, stamped with the board version, the vault policy fingerprint and the
+renderer build. On page load, entries are checked against the server's board
+list, and a board's pictures are drawn again in the background when its
+change is announced. The render route remains for the CLI, rasterizing and
+anything else without a renderer of its own.
+
 ## Delivery
 
 The later TASK-203 decisions refine consumer vocabulary and appearance in
