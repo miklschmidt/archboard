@@ -35,6 +35,7 @@ function receipt(overrides: Record<string, unknown> = {}): Record<string, unknow
 		board: "Flask request pipeline",
 		version: 4,
 		variant: { id: "v1", name: "Current", lifecycle: "current" },
+		comparedWith: null,
 		view: { id: "w1", name: "Dispatch exchange", grammar: "data-flow" },
 		theme: "light",
 		file: "/run/captures/capture-0-exchange.png",

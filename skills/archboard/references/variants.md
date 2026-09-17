@@ -10,12 +10,9 @@ ordinary `semantic edit` batches that name it in `variant`. Competing proposals
 are two drafts off the same predecessor; a proposal on a proposal names its
 draft in `--from`.
 
-A batch that names no `variant` edits the current architecture. When the
-request is a proposal, every edit after the branch names the draft, and the
-check before you report is that the current variant's content is what it was
-when you read it; a change that was meant as a proposal and landed on the
-current architecture is not repaired by editing the file, but by reading the
-family again and moving the meaning with ordinary writes.
+A batch that names no `variant` edits the current architecture. A change meant
+as a proposal that landed there is not repaired by editing the file, but by
+reading the family again and moving the meaning with ordinary writes.
 
 ## What a comparison counts
 
@@ -54,17 +51,24 @@ A flow rewritten without ids compares as a deletion beside an addition.
 
 ## Comparing before you report
 
+**A variant with a predecessor is drawn as the comparison with it**, whatever
+you asked for: added, removed and changed subjects are marked, removed ones
+are still on the page, and the receipt names the other side under
+`comparedWith`. Only a variant that came from nothing draws plain. So parts
+added to a derived variant — a proposal, or a current variant that was adopted
+from something — arrive in the picture already marked as added, and a picture
+of one is read against its predecessor rather than as a board on its own.
+
 Read the saved family and draw predecessor and proposal through the same
 board view (`semantic rasterize <board> --view <view> --out current.png`,
 then the same with `--variant <draft>` to `proposal.png`), and open both.
 Check both the ids and the pictures: the added, removed, changed and
 untouched subjects match the change you meant; a removed flow, call or
 participant is drawn as removed in the proposal's picture (absence from the
-picture is not evidence of a shown deletion); the current picture shows what
-it showed before; a continuing exchange compares step by step, so an entirely
-new sequence needs an explanation grounded in the change. Repair authoring
-errors first. When the saved comparison is right and the picture omits a
-change, report the renderer defect and leave the meaning as it is.
+picture is not evidence of a shown deletion); a continuing exchange compares
+step by step, so an entirely new sequence needs an explanation grounded in the
+change. When the saved comparison is right and the picture omits a change,
+report the renderer defect and leave the meaning as it is.
 
 ## Disagreements
 
@@ -76,13 +80,20 @@ subject the other changed — a `changed` list of `{ field, before, after }`);
 a draft under an unsettled draft waits, and the family lands whole or not at
 all.
 
-| Kind                  | Meaning                                                                                 |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| `competing-field`     | Both changed one field of one subject.                                                  |
-| `competing-order`     | Both moved the same step or beat, to different positions.                               |
-| `deleted-and-changed` | One removed a subject the other changed.                                                |
-| `reference-lost`      | Merging the predecessor would leave this draft referring to something no longer there.  |
-| `left-empty`          | Both removed different parts of one flow or walkthrough; merged, it would hold nothing. |
+| Kind                  | Meaning                                                                                 | Answered by                                         |
+| --------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `competing-field`     | Both changed one field of one subject.                                                  | `mine` or `theirs`                                  |
+| `competing-order`     | Both moved the same step or beat, to different positions.                               | `mine`, or an edit telling the order you mean       |
+| `deleted-and-changed` | One removed a subject the other changed.                                                | `mine`, or stating the subject again under its id   |
+| `reference-lost`      | Merging the predecessor would leave this draft referring to something no longer there.  | `mine`, or an edit saying what it should say        |
+| `left-empty`          | Both removed different parts of one flow or walkthrough; merged, it would hold nothing. | `mine`, or an edit putting back what it should hold |
+
+`theirs` is a choice between two values, and only `competing-field` has two:
+asking for it on any other kind is refused, the whole call lands nothing, and
+the refusal names every choice in the batch rather than only the one it could
+not take — so read it as naming the payload, not the disagreements. Answer the
+competing fields as sides in one `resolve`, and settle the rest as ordinary
+edits. `mine` is always available, on every kind.
 
 Settle with `archboard semantic resolve <board> --variant <draft>
 --expect-version <n> --doing "..."` and a JSON of `choices`, each naming the
@@ -91,10 +102,9 @@ draft's answer, `theirs` takes the predecessor's. Answer part of it and the
 rest stays open, reported in the answer. A third answer is not a side: write it
 as an ordinary edit. For a `deleted-and-changed` node the draft removed, state
 the node again with its original `id` (the `subject` of the issue) and the
-fields you want; that one write restores the identity, settles that issue and
-leaves the others open, and the answer reports what is still open. Only an id
-an open disagreement names may come back this way; any other absent id is
-refused. Settling also catches the draft up with everything else the
+fields you want; that one write restores the identity and settles that issue.
+Only an id an open disagreement names may come back this way; any other absent
+id is refused. Settling also catches the draft up with everything else the
 predecessor decided.
 
 Every value in that third answer is read, never retyped: the issue's `changed`
@@ -117,11 +127,18 @@ draft holding a disagreement, or derived from one that is, is refused until it
 is settled. Adopt when asked, and report which variant is current and which
 became historical.
 
+A proposal nobody will carry out is shelved rather than left standing:
+`archboard semantic shelve <board> --variant <name> --reason "<why>"
+--expect-version <n> --doing "..."`. It keeps its name and everything it says,
+and a link naming it still opens it, but it stops following its predecessor —
+so it no longer collects disagreements somebody has to settle for a change
+nobody will make. Like history it takes no content edits and cannot be adopted;
+branch from it to propose it again. Shelve only when asked, or when a draft you
+were told to reconcile turns out to propose nothing.
+
 ## Claims
 
-`archboard claim --board <board> --reason "<campaign>" [--for 1h]` keeps the
-board between your writes (each write is still one `--doing` step); claim
-again to extend, `archboard release --board <board>` when done. Every pane
-showing the board says who holds it and why, and a person can take it back:
-your next write is refused once, nothing is rolled back, and you stop and say
-so.
+A claim keeps the board between your writes, and each write is still one
+`--doing` step. `--for 1h` says how long; claim again to extend. Every pane
+showing the board says who holds it and why, and offers the control that ends
+it.
