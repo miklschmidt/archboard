@@ -1,18 +1,18 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 13,
+	"version": 15,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-09-13T12:08:40.153Z",
+	"updatedAt": "2026-09-17T20:53:52.489Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
 			"name": "Render sequence",
 			"grammar": "data-flow",
-			"summary": "Follow a render request through the selected architecture state.",
+			"summary": "A render request through the layout, in order.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -32,9 +32,9 @@
 		},
 		{
 			"id": "JyXLZqHA",
-			"name": "Pretext sizing",
+			"name": "Sizing a card",
 			"grammar": "data-flow",
-			"summary": "Prepare text once, wrap at readable width, return measured card geometry. Server font host remains to be validated.",
+			"summary": "Where a card's size comes from: Pretext breaks the lines, the host's canvas measures them.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -48,7 +48,7 @@
 			"id": "wTcA4BmE",
 			"name": "Layout sequence",
 			"grammar": "data-flow",
-			"summary": "Responsibilities of the proposed single layout owner; engine selection is still open.",
+			"summary": "Inside the one owner of boxes, ports, routes and labels.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -323,60 +323,123 @@
 				"nodes": [
 					{
 						"id": "nmyK8UOO",
-						"name": "Render driver",
-						"kind": "function",
-						"responsibility": "Runs explicit geometry stages",
-						"description": "PROPOSED architecture orchestration: derive semantic graph, request measured card/text/label sizes, call one compound placement-and-routing owner, then paint its complete drawing. External renderer response stays SVG, dimensions and atlas. Parent proposal: Semantic renderer / Readable layout.",
+						"name": "View dispatcher",
+						"kind": "module",
+						"responsibility": "Measures, settles and paints one drawing, in that order",
+						"description": "The renderer's entry point, drawn here only as the caller of the layout. Follow it for the rest of the renderer.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
+							"path": "src/transformers/semantic-renderer/index.ts"
 						},
 						"drillDown": {
 							"board": "Semantic renderer",
 							"variant": {
-								"kind": "named",
-								"name": "Readable layout"
+								"kind": "current"
 							}
 						}
 					},
 					{
 						"id": "kHpIix5b",
-						"name": "Card measurement",
+						"name": "Measured text",
 						"kind": "function",
-						"responsibility": "Wraps text before placement",
-						"description": "PROPOSED replacement for fitting text into preselected card seats. Pretext is the preferred candidate for paragraph preparation and wrapping; use prepareWithSegments once per text/font/config, layoutWithLines for chosen content width and explicit line height. Our policy owns min/max width, padding, icon space, title/body styles and minimum height. Output exact lines with widths/baselines and outer card size, plus measured edge-label sizes. Long descriptions stay in inspector. Server Canvas/font host compatibility must be proved before adoption."
+						"responsibility": "Wraps every card, note and label and measures what the SVG will paint",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
+						}
 					},
 					{
 						"id": "BKjOFlgb",
 						"name": "Compound layout",
 						"kind": "function",
-						"responsibility": "Owns boxes, ports and routes",
-						"description": "PROPOSED replacement of grid placement plus separate indexed-corridor routing. Accept semantic parent/child graph, relationships and measured node/label dimensions. One established compound layout engine, still to be selected, solves local sibling placement and cross-container routes with real obstacle and whitespace constraints. Its adapter returns final node/container boxes, ports, paths and label boxes together. Steps in the sequence show responsibilities, not a promised engine algorithm or one-pass implementation."
+						"responsibility": "Settles cards, frames, ports, routes and labels as one drawing",
+						"description": "Nothing after it may repair a coordinate. A variant with a predecessor reuses that drawing instead of settling again, so a proposal and what it came from read the same way.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/compound.ts"
+						}
 					},
 					{
 						"id": "H0xU45vp",
-						"name": "SVG marks",
+						"name": "Architecture painter",
 						"kind": "function",
-						"responsibility": "Paints supplied lines and geometry",
-						"description": "PROPOSED painter takes a complete placed drawing, theme and standing. Paint exact wrapped lines at supplied baselines and use the supplied node/edge/label boxes. No second title fitting, ellipsis, route planning or label relocation in the architecture painter. Derive interaction atlas and document bounds from the same drawing. Data-flow rendering stays on its existing path.",
+						"responsibility": "Paints the settled drawing and decides no geometry of its own",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/svg/cards.ts"
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
 						}
 					},
 					{
 						"id": "RvOyWmEb",
 						"name": "Pretext",
-						"kind": "package",
-						"responsibility": "Prepares and wraps text",
-						"description": "Preferred candidate: @chenglou/pretext, https://github.com/chenglou/pretext. prepareWithSegments(text,font,options) measures and segments; layoutWithLines(prepared,maxWidth,lineHeight) returns lines, widths and height. Reuse prepared handles for width trials. Pretext does not choose card width, padding or lineHeight. Current upstream requires Canvas2D measurement and Intl.Segmenter; server support is not a proven drop-in. Verified upstream measurement.ts has no public injection API. Prefer preserving our existing font-file measurer behind a supported adapter; upstream change or an evaluated adaptation is needed. No package is installed by this proposal."
+						"kind": "external",
+						"responsibility": "Breaks a prepared string into lines at a given width"
 					},
 					{
 						"id": "dYxhsEhY",
-						"name": "Server font host",
+						"name": "Host canvas",
 						"kind": "external",
-						"responsibility": "Measurement integration to validate",
-						"description": "OPEN integration requirement, not implemented. Prefer a supported Pretext measurement adapter calling Archboard measureLineIn with the exact bundled fonts. Current upstream has no injection API: this needs upstream support or an explicitly evaluated maintained adaptation. Alternative: server Canvas2D with registered bundled fonts, validated against browser text. Bun currently provides neither OffscreenCanvas nor document. Avoid fake global canvas shims. Source pinned for this review: https://github.com/chenglou/pretext/blob/5ac3fd17ff8079274f45103bf09e294ac345c187/src/measurement.ts"
+						"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
+						"description": "An @napi-rs/canvas canvas installed as OffscreenCanvas under Bun, the tab's own canvas in a browser. Both the line breaking and the painted runs are measured through it, so a line and its words agree (TASK-247)."
+					},
+					{
+						"id": "ZRFUJrjD",
+						"name": "Compound graph",
+						"kind": "function",
+						"responsibility": "States containment and measured sizes as one graph, with the reading's order constraints",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/compound-graph.ts"
+						}
+					},
+					{
+						"id": "JwgvpLYJ",
+						"name": "Layout engine",
+						"kind": "external",
+						"responsibility": "Solves one compound graph into boxes and polylines",
+						"description": "@archboard/elk-rs, reached only through the host: a worker pool under Bun, Web Workers in a tab."
+					},
+					{
+						"id": "sJEdCSmX",
+						"name": "Reading choice",
+						"kind": "function",
+						"responsibility": "Chooses which way the page reads and whether it folds",
+						"description": "Derived from the board's own shape (ADR 0028); a proposal keeps its predecessor's and nobody authors it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/reading-choice.ts"
+						}
+					},
+					{
+						"id": "Jdtlq0lD",
+						"name": "Flank rules",
+						"kind": "function",
+						"responsibility": "Which side return travel uses and how a skip over a rank attaches",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/flank-rules.ts"
+						}
+					},
+					{
+						"id": "u1O704c8",
+						"name": "Scorecard",
+						"kind": "function",
+						"responsibility": "Keeps the better of two candidate drawings; no one measure decides",
+						"description": "Fit, page area, card share, route length, bends, crossings, margin lanes and the flank fan. One drawing wins when it is better on more of them than it is worse.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/scorecard.ts"
+						}
+					},
+					{
+						"id": "1hNZb5CR",
+						"name": "Label reservations",
+						"kind": "function",
+						"responsibility": "Settles every label onto a straight run of its own route",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/label-reservations.ts"
+						}
 					}
 				],
 				"edges": [
@@ -385,14 +448,18 @@
 						"from": "nmyK8UOO",
 						"to": "kHpIix5b",
 						"kind": "call",
-						"label": "measure graph subjects",
-						"emphasis": "normal"
+						"label": "measure every word",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "19pjtjrv",
 						"from": "kHpIix5b",
 						"to": "RvOyWmEb",
-						"kind": "dependency",
+						"kind": "call",
 						"label": "prepare and wrap",
 						"emphasis": "normal"
 					},
@@ -401,15 +468,7 @@
 						"from": "RvOyWmEb",
 						"to": "dYxhsEhY",
 						"kind": "dependency",
-						"label": "Canvas font metrics",
-						"emphasis": "normal"
-					},
-					{
-						"id": "my9Bj1QK",
-						"from": "nmyK8UOO",
-						"to": "H0xU45vp",
-						"kind": "render",
-						"label": "paint supplied drawing",
+						"label": "measures its segments there",
 						"emphasis": "normal"
 					},
 					{
@@ -417,14 +476,103 @@
 						"from": "nmyK8UOO",
 						"to": "BKjOFlgb",
 						"kind": "call",
-						"label": "graph and measured sizes",
+						"label": "content and measured sizes",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "TSsnxsV9",
+						"from": "kHpIix5b",
+						"to": "dYxhsEhY",
+						"kind": "call",
+						"label": "the width of a painted line",
 						"emphasis": "normal"
+					},
+					{
+						"id": "eNHrvq6Y",
+						"from": "BKjOFlgb",
+						"to": "sJEdCSmX",
+						"kind": "call",
+						"label": "which way this board reads",
+						"emphasis": "normal"
+					},
+					{
+						"id": "tY9P0yad",
+						"from": "BKjOFlgb",
+						"to": "Jdtlq0lD",
+						"kind": "call",
+						"label": "seats and the side returns travel",
+						"emphasis": "normal"
+					},
+					{
+						"id": "lbUaPzWc",
+						"from": "BKjOFlgb",
+						"to": "ZRFUJrjD",
+						"kind": "call",
+						"label": "state the graph for this reading",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "wCXK6KYw",
+						"from": "BKjOFlgb",
+						"to": "JwgvpLYJ",
+						"kind": "call",
+						"label": "solve, through the host",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "hJ4xGthq",
+						"from": "BKjOFlgb",
+						"to": "1hNZb5CR",
+						"kind": "call",
+						"label": "settle the labels on their runs",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kKBtoqI2",
+						"from": "BKjOFlgb",
+						"to": "u1O704c8",
+						"kind": "call",
+						"label": "keep the better first render",
+						"emphasis": "hero"
+					},
+					{
+						"id": "L8jPgkA5",
+						"from": "sJEdCSmX",
+						"to": "u1O704c8",
+						"kind": "call",
+						"label": "reject a reading that runs through a card",
+						"emphasis": "muted"
+					},
+					{
+						"id": "oYEzQ4k5",
+						"from": "nmyK8UOO",
+						"to": "H0xU45vp",
+						"kind": "render",
+						"label": "paint the settled drawing",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					}
 				],
 				"flows": [
 					{
 						"id": "EnnH7t3r",
-						"name": "Proposed: measure, solve, paint",
+						"name": "Measure, settle, paint",
+						"summary": "One architecture render, in the order the renderer runs it.",
 						"participants": [
 							"nmyK8UOO",
 							"kHpIix5b",
@@ -436,7 +584,7 @@
 								"id": "XFEvswz4",
 								"from": "nmyK8UOO",
 								"to": "nmyK8UOO",
-								"label": "Derive graph; retain IDs and parents",
+								"label": "Turn flow steps into lines, keeping every id and parent",
 								"kind": "self"
 							},
 							{
@@ -457,42 +605,43 @@
 								"id": "WGJHkAQl",
 								"from": "nmyK8UOO",
 								"to": "BKjOFlgb",
-								"label": "Graph + measured sizes + clearance",
+								"label": "Content and measured sizes",
 								"kind": "sync"
 							},
 							{
 								"id": "L9F90cm5",
 								"from": "BKjOFlgb",
 								"to": "nmyK8UOO",
-								"label": "Boxes, ports, paths and label boxes",
+								"label": "Boxes, ports, routes and label boxes",
 								"kind": "return"
 							},
 							{
 								"id": "WLZ1TpXI",
 								"from": "nmyK8UOO",
 								"to": "H0xU45vp",
-								"label": "Placed drawing + text runs + theme",
+								"label": "The settled drawing, its text runs and the theme",
 								"kind": "sync"
 							},
 							{
 								"id": "fGx4kjfR",
 								"from": "H0xU45vp",
 								"to": "H0xU45vp",
-								"label": "Paint supplied lines and geometry",
+								"label": "Paint the supplied lines and geometry",
 								"kind": "self"
 							},
 							{
 								"id": "UMqwdfOH",
 								"from": "H0xU45vp",
 								"to": "nmyK8UOO",
-								"label": "SVG + dimensions + matching atlas",
+								"label": "SVG marks and the matching atlas",
 								"kind": "return"
 							}
 						]
 					},
 					{
 						"id": "8bDSfxwQ",
-						"name": "Sizing a card with Pretext",
+						"name": "Sizing a card",
+						"summary": "Prepare the text once, wrap it at a readable width, hand back measured geometry.",
 						"participants": [
 							"nmyK8UOO",
 							"kHpIix5b",
@@ -511,7 +660,7 @@
 								"id": "LNqaqV2F",
 								"from": "kHpIix5b",
 								"to": "kHpIix5b",
-								"label": "Choose readable fonts and width bounds",
+								"label": "Fixed faces and readable width bounds",
 								"kind": "self"
 							},
 							{
@@ -525,21 +674,21 @@
 								"id": "PmcyOckC",
 								"from": "RvOyWmEb",
 								"to": "dYxhsEhY",
-								"label": "Measure segments (host integration needed)",
+								"label": "Measure the segments",
 								"kind": "sync"
 							},
 							{
 								"id": "BXG2HWcT",
 								"from": "dYxhsEhY",
 								"to": "RvOyWmEb",
-								"label": "Widths in the exact bundled font",
+								"label": "Widths in the face the SVG will paint",
 								"kind": "return"
 							},
 							{
 								"id": "4VDj3O5C",
 								"from": "RvOyWmEb",
 								"to": "kHpIix5b",
-								"label": "Reusable prepared text handle",
+								"label": "A reusable prepared handle",
 								"kind": "return"
 							},
 							{
@@ -567,14 +716,15 @@
 								"id": "k46CuhtA",
 								"from": "kHpIix5b",
 								"to": "nmyK8UOO",
-								"label": "Outer card size + exact text runs",
+								"label": "Outer card size and the exact text runs",
 								"kind": "return"
 							}
 						]
 					},
 					{
 						"id": "zSKT3nqZ",
-						"name": "Inside the compound layout owner",
+						"name": "Inside the layout owner",
+						"summary": "What one owner does between the measured sizes going in and the drawing coming out.",
 						"participants": [
 							"nmyK8UOO",
 							"BKjOFlgb"
@@ -584,49 +734,52 @@
 								"id": "1yozI9dG",
 								"from": "nmyK8UOO",
 								"to": "BKjOFlgb",
-								"label": "IDs, parents, edges and measured boxes",
+								"label": "Ids, parents, edges and measured boxes",
 								"kind": "sync"
 							},
 							{
 								"id": "xkkWK4nl",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Arrange connected siblings within parents",
-								"kind": "self"
+								"label": "Choose the reading and the flank rule",
+								"kind": "self",
+								"note": "a variant with a predecessor keeps its reading and reuses its drawing"
 							},
 							{
 								"id": "Jg0ZstWt",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Size containers around content and air",
+								"label": "State the graph and solve it on the engine",
 								"kind": "self"
 							},
 							{
 								"id": "wx3eSeIZ",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Solve cross-container ports and routes",
+								"label": "Settle every label onto a run of its own route",
 								"kind": "self"
 							},
 							{
 								"id": "v4G3l8cW",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Reserve label boxes and card clearance",
-								"kind": "self"
+								"label": "Score the candidates and keep the better",
+								"kind": "self",
+								"note": "one candidate per flank rule, each scored against the one before",
+								"repeat": 2
 							},
 							{
 								"id": "5rR69oPZ",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Iterate geometry inside this owner",
+								"label": "Bridge the crossings as settled geometry",
 								"kind": "self"
 							},
 							{
 								"id": "U515KUcY",
 								"from": "BKjOFlgb",
 								"to": "nmyK8UOO",
-								"label": "One drawing: boxes, text, paths, labels",
+								"label": "One drawing: boxes, text, routes, labels",
 								"kind": "return"
 							}
 						]
@@ -635,55 +788,55 @@
 				"walkthroughs": [
 					{
 						"id": "5fTFmh80",
-						"name": "What changes inside the boxes",
+						"name": "Why the drawing settles once",
 						"beats": [
 							{
 								"id": "4gGw0YbA",
-								"heading": "Compare the same render request",
-								"body": "Compare the same render request across variants. Card measurement replaces Card text; Compound layout replaces Grid placement and Route planning. Render driver and SVG marks retain their identities and change responsibilities. Added actions are green, obsolete fitting/routing calls remain marked as removed, and continuing layout/painting calls retain their identities. Text preparation now precedes geometry.",
+								"heading": "Words first, then space",
+								"body": "Nothing is placed before it is measured. The size a name needs is a fact the layout is handed, in the face the SVG will paint, so no later pass has to make room it did not reserve.",
 								"subjects": [
-									"kHpIix5b"
-								],
-								"view": "gKxiRSCO"
+									"kHpIix5b",
+									"RvOyWmEb",
+									"dYxhsEhY"
+								]
 							},
 							{
 								"id": "rNW1w4av",
-								"heading": "Pretext supplies line layout; we own card policy",
-								"body": "prepareWithSegments does reusable measurement. layoutWithLines computes wrapping for a chosen width and lineHeight. Archboard decides readable font styles, width bounds, padding and icon clearance. A changed width reuses preparation; changed text, fonts or configuration needs preparation again.",
+								"heading": "Pretext breaks lines; the renderer owns card policy",
+								"body": "Pretext is given a prepared string and a width and hands back lines. Padding, icon space, baselines and the bounds a card may take are the renderer's, not the library's.",
 								"subjects": [
-									"kHpIix5b",
-									"RvOyWmEb"
-								],
-								"view": "JyXLZqHA"
-							},
-							{
-								"id": "AOPSXwkc",
-								"heading": "Prove the server font host",
-								"body": "Pretext currently hard-codes Canvas2D and has no public measurement injection. Bun here has no OffscreenCanvas or document. Prefer a supported adapter to our existing bundled-font measurer; that needs upstream support or an evaluated adaptation. A native server Canvas is the alternative, subject to browser-metric checks. No fake browser global and no browser-owned canonical layout. Source: https://github.com/chenglou/pretext/blob/5ac3fd17ff8079274f45103bf09e294ac345c187/src/measurement.ts",
-								"subjects": [
-									"dYxhsEhY",
-									"RvOyWmEb"
-								],
-								"view": "JyXLZqHA"
+									"RvOyWmEb",
+									"kHpIix5b"
+								]
 							},
 							{
 								"id": "FWMgjXxD",
-								"heading": "Placement and routing become one contract",
-								"body": "The separate grid/corridor handoff disappears. The compound owner can iterate sibling positions, container bounds, ports, paths and label clearances internally, returning one final drawing. Its engine remains to be selected and benchmarked; these steps state required behavior rather than invented library calls.",
+								"heading": "One owner places and routes",
+								"body": "Cards, frames, ports, routes and labels settle together in one pass. Nothing after it may repair a coordinate, which is why there is no second geometry to keep in step.",
 								"subjects": [
-									"BKjOFlgb"
-								],
-								"view": "wTcA4BmE"
+									"BKjOFlgb",
+									"lbUaPzWc",
+									"wCXK6KYw",
+									"hJ4xGthq"
+								]
+							},
+							{
+								"id": "AOPSXwkc",
+								"heading": "The reading and the flank are derived, never authored",
+								"body": "Which way the page reads, whether it folds and which side return travel uses come from the board's own shape. A first render tries each and keeps what the scorecard prefers; a proposal keeps its predecessor's so the two read the same way.",
+								"subjects": [
+									"eNHrvq6Y",
+									"tY9P0yad",
+									"kKBtoqI2"
+								]
 							},
 							{
 								"id": "xfpajsvv",
-								"heading": "The painter stops making geometry decisions",
-								"body": "Paint supplied wrapped lines and final paths. Build atlas boxes from that same drawing. No new wrapping, truncation or label settlement occurs after layout. The server/browser response fields remain unchanged.",
+								"heading": "The painter decides no geometry",
+								"body": "By the time the painter runs, every box, port, route and label box is settled. It paints what it is given, so the picture a reader points at and the atlas the inspector reads are the same geometry.",
 								"subjects": [
-									"H0xU45vp",
-									"nmyK8UOO"
-								],
-								"view": "gKxiRSCO"
+									"H0xU45vp"
+								]
 							}
 						]
 					}

@@ -1,0 +1,558 @@
+{
+	"schemaVersion": "2.2.0",
+	"kind": "semantic-board",
+	"id": "IbGtfJE2",
+	"name": "Skill evaluation",
+	"level": "service",
+	"version": 4,
+	"createdAt": "2026-09-17T21:09:15.501Z",
+	"updatedAt": "2026-09-17T21:13:00.069Z",
+	"views": [
+		{
+			"id": "pth4q0ZY",
+			"name": "One author run",
+			"grammar": "architecture",
+			"summary": "What a single run stands up, and what it reads back afterwards.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"7A4Joh1m",
+					"w4qCQkDU",
+					"IsMHIzoa",
+					"8NS6WwkH",
+					"PEfE7dCL",
+					"IFhUy8C6",
+					"1snXnK3G",
+					"7LcGoxWH",
+					"xzOQOY33",
+					"RqoYaLTK"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "AAlYF4K5",
+			"name": "Grading",
+			"grammar": "architecture",
+			"summary": "Two graders on the same blinded bundle, and where they agree.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"PwYiE0Hr",
+					"gwU9cyGm",
+					"bgEcePXZ",
+					"1snXnK3G",
+					"9TIT63Qz",
+					"LcKROPw0"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "9mvpGVt6",
+			"name": "Initial",
+			"lifecycle": "current",
+			"content": {
+				"nodes": [
+					{
+						"id": "JaLEafPa",
+						"name": "Eval CLI",
+						"kind": "module",
+						"responsibility": "run, grade, report, check and pin, and the cancellation a person's interrupt becomes",
+						"description": "Never part of the gate: every author run and the grading session call a model, and a person decides when that happens.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "scripts/evaluate-skill.ts"
+						}
+					},
+					{
+						"id": "k8wziYS4",
+						"name": "Suite loader",
+						"kind": "module",
+						"responsibility": "Reads and validates every canonical input, and refuses a skill package that names what it is being graded on",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/suite.ts"
+						}
+					},
+					{
+						"id": "7A4Joh1m",
+						"name": "Batch orchestrator",
+						"kind": "module",
+						"responsibility": "Plans every arm, scenario and repetition, runs them in parallel, and can be resumed only on the same inputs",
+						"description": "It hashes the inputs, the harness and both skill packages into the batch, so a resume or a later grading pass cannot quietly change what was measured.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/batch.ts"
+						}
+					},
+					{
+						"id": "IsMHIzoa",
+						"name": "Run isolation",
+						"kind": "module",
+						"responsibility": "One run's private world: its own home, its own agent storage, its own CLI on the path",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/isolation.ts"
+						}
+					},
+					{
+						"id": "8NS6WwkH",
+						"name": "Pinned checkout",
+						"kind": "module",
+						"responsibility": "A detached, verified checkout of one pinned commit per run, from a bare cache",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/flask.ts"
+						}
+					},
+					{
+						"id": "PEfE7dCL",
+						"name": "Per-run canvas",
+						"kind": "module",
+						"responsibility": "Starts this checkout's server on a free port against the run's own vault, and owns its shutdown",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/canvas.ts"
+						}
+					},
+					{
+						"id": "IFhUy8C6",
+						"name": "Skill install",
+						"kind": "module",
+						"responsibility": "Installs the arm being measured: the live package, or the frozen baseline swapped in and re-derived",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/install.ts"
+						}
+					},
+					{
+						"id": "w4qCQkDU",
+						"name": "Author run",
+						"kind": "module",
+						"responsibility": "Brings the world up, runs one author turn, and reads everything back",
+						"description": "The author's stream is kept whole: its commands, its file changes, its usage and its failure are read from it afterwards, never reported by the author.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/author.ts"
+						}
+					},
+					{
+						"id": "7LcGoxWH",
+						"name": "Guardrails",
+						"kind": "function",
+						"responsibility": "The rules every run is held to, including whether a board file was written behind the CLI's back",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/guardrails.ts"
+						}
+					},
+					{
+						"id": "xzOQOY33",
+						"name": "Outcome checks",
+						"kind": "function",
+						"responsibility": "The verdicts that need no model: what the vault, the renders and the group reports actually say",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/outcomes.ts"
+						}
+					},
+					{
+						"id": "RqoYaLTK",
+						"name": "Captures",
+						"kind": "module",
+						"responsibility": "Takes the picture of every board, view and variant the scenario declared, and tiles an oversize one",
+						"description": "The harness takes the pictures; an author never supplies one. A declared view the author never made is a failed capture, never a default picture.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/captures.ts"
+						}
+					},
+					{
+						"id": "PwYiE0Hr",
+						"name": "Grading session",
+						"kind": "module",
+						"responsibility": "Stages a read-only workspace, chunks the ungraded runs, and drives one resumed grader session",
+						"description": "The runs reach the grader blinded: an anonymous id from the batch salt, private paths redacted, and no arm anywhere in the bundle.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/grading-run.ts"
+						}
+					},
+					{
+						"id": "gwU9cyGm",
+						"name": "Codex grader",
+						"kind": "module",
+						"responsibility": "One grader runner: a resumed thread, pictures attached, usage read as the thread's running total",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts"
+						}
+					},
+					{
+						"id": "bgEcePXZ",
+						"name": "Claude grader",
+						"kind": "module",
+						"responsibility": "The other grader runner: a resumed session, read-only tools, pictures opened from the workspace",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts"
+						}
+					},
+					{
+						"id": "LcKROPw0",
+						"name": "Report",
+						"kind": "module",
+						"responsibility": "Joins every run with each grader's verdict and says where the two graders agree",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/records.ts"
+						}
+					},
+					{
+						"id": "IOCRa8GO",
+						"name": "Evaluation inputs",
+						"kind": "config",
+						"responsibility": "The scenarios, fixtures, pins, coverage and rubric, kept outside every skill package on purpose",
+						"description": "An author reads whatever the installed skill carries. Authors that could read the scenario, the fixture and the rubric they were being measured against read them.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "evals"
+						}
+					},
+					{
+						"id": "fRFvnVRE",
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "The CLI under test, both as the author's tool and as the harness's own way of laying a fixture and reading a vault",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "EJ2b3Szn",
+						"name": "Canvas server",
+						"kind": "service",
+						"responsibility": "One per run, on its own port, against that run's vault",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/index.ts"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "1snXnK3G",
+						"name": "Codex CLI",
+						"kind": "external",
+						"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from"
+					},
+					{
+						"id": "9TIT63Qz",
+						"name": "Claude CLI",
+						"kind": "external",
+						"responsibility": "The other grader, run with read-only tools and none of the operator's settings"
+					},
+					{
+						"id": "JDTuIZQZ",
+						"name": "CLI driver",
+						"kind": "function",
+						"responsibility": "One call, one parsed answer: the seam every harness use of the CLI goes through",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/archboard.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "EZG5L7jf",
+						"from": "JaLEafPa",
+						"to": "k8wziYS4",
+						"kind": "call",
+						"label": "load and validate the inputs",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "ygYCKQLQ",
+						"from": "k8wziYS4",
+						"to": "IOCRa8GO",
+						"kind": "data",
+						"label": "scenarios, fixtures, pins, rubric",
+						"emphasis": "normal"
+					},
+					{
+						"id": "gkJMDrW9",
+						"from": "JaLEafPa",
+						"to": "7A4Joh1m",
+						"kind": "call",
+						"label": "run the selected arms",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "DJsFb8l6",
+						"from": "JaLEafPa",
+						"to": "PwYiE0Hr",
+						"kind": "call",
+						"label": "grade what has not been graded",
+						"emphasis": "hero"
+					},
+					{
+						"id": "hlCNYU50",
+						"from": "JaLEafPa",
+						"to": "LcKROPw0",
+						"kind": "call",
+						"label": "write the report",
+						"emphasis": "normal"
+					},
+					{
+						"id": "GYwjzXJJ",
+						"from": "7A4Joh1m",
+						"to": "w4qCQkDU",
+						"kind": "call",
+						"label": "one arm, one scenario, one repetition",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "r76TBNwY",
+						"from": "w4qCQkDU",
+						"to": "IsMHIzoa",
+						"kind": "call",
+						"label": "a private world for this run",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZexKQEJK",
+						"from": "w4qCQkDU",
+						"to": "8NS6WwkH",
+						"kind": "call",
+						"label": "the commit this scenario is about",
+						"emphasis": "normal"
+					},
+					{
+						"id": "i1FABJCb",
+						"from": "w4qCQkDU",
+						"to": "PEfE7dCL",
+						"kind": "call",
+						"label": "a canvas of its own",
+						"emphasis": "normal"
+					},
+					{
+						"id": "25DiejPQ",
+						"from": "w4qCQkDU",
+						"to": "IFhUy8C6",
+						"kind": "call",
+						"label": "install the arm being measured",
+						"emphasis": "hero"
+					},
+					{
+						"id": "9sL5gPEN",
+						"from": "w4qCQkDU",
+						"to": "1snXnK3G",
+						"kind": "call",
+						"label": "one author turn",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "VYAeNogH",
+						"from": "w4qCQkDU",
+						"to": "7LcGoxWH",
+						"kind": "call",
+						"label": "what the run was not allowed to do",
+						"emphasis": "normal"
+					},
+					{
+						"id": "cm1J9TGU",
+						"from": "w4qCQkDU",
+						"to": "xzOQOY33",
+						"kind": "call",
+						"label": "what the vault now says",
+						"emphasis": "normal"
+					},
+					{
+						"id": "b3s3lWZn",
+						"from": "w4qCQkDU",
+						"to": "RqoYaLTK",
+						"kind": "call",
+						"label": "photograph everything declared",
+						"emphasis": "hero"
+					},
+					{
+						"id": "uT0ylhOM",
+						"from": "PEfE7dCL",
+						"to": "EJ2b3Szn",
+						"kind": "call",
+						"label": "start it on a free port",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Kj1Dd9Y2",
+						"from": "PwYiE0Hr",
+						"to": "gwU9cyGm",
+						"kind": "call",
+						"label": "one chunk of blinded runs",
+						"emphasis": "normal"
+					},
+					{
+						"id": "GfcZMk6V",
+						"from": "PwYiE0Hr",
+						"to": "bgEcePXZ",
+						"kind": "call",
+						"label": "one chunk of blinded runs",
+						"emphasis": "normal"
+					},
+					{
+						"id": "xovfrY1j",
+						"from": "gwU9cyGm",
+						"to": "1snXnK3G",
+						"kind": "call",
+						"label": "resume the grading thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2X7jYiVB",
+						"from": "bgEcePXZ",
+						"to": "9TIT63Qz",
+						"kind": "call",
+						"label": "resume the grading session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "LzlhpsS7",
+						"from": "LcKROPw0",
+						"to": "PwYiE0Hr",
+						"kind": "data",
+						"label": "each grader's filed verdicts",
+						"emphasis": "normal"
+					},
+					{
+						"id": "oc71QCiH",
+						"from": "IFhUy8C6",
+						"to": "JDTuIZQZ",
+						"kind": "call",
+						"label": "install the arm",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EWbHFV2K",
+						"from": "xzOQOY33",
+						"to": "JDTuIZQZ",
+						"kind": "call",
+						"label": "read the vault back",
+						"emphasis": "normal"
+					},
+					{
+						"id": "5TtCOktb",
+						"from": "RqoYaLTK",
+						"to": "JDTuIZQZ",
+						"kind": "call",
+						"label": "rasterize each picture",
+						"emphasis": "normal"
+					},
+					{
+						"id": "eclUOkMc",
+						"from": "JDTuIZQZ",
+						"to": "fRFvnVRE",
+						"kind": "call",
+						"label": "one command, one answer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "7syMfPC4",
+						"name": "How a skill change is measured",
+						"beats": [
+							{
+								"id": "0gapAPJA",
+								"heading": "Two arms, everything else identical",
+								"body": "A batch runs the frozen baseline package and the live one against the same CLI, prompts, fixtures and pins, and hashes all of it into the batch. A resume on different inputs is refused rather than quietly comparing two different things.",
+								"subjects": [
+									"7A4Joh1m",
+									"IFhUy8C6"
+								]
+							},
+							{
+								"id": "0oIkDlI0",
+								"heading": "Each run in a world of its own",
+								"body": "A run gets its own home, its own agent storage, its own checkout at a pinned commit and its own canvas on a free port, so nothing an author does can reach another run or the operator's machine.",
+								"subjects": [
+									"IsMHIzoa",
+									"8NS6WwkH",
+									"PEfE7dCL"
+								]
+							},
+							{
+								"id": "rAuf3IXQ",
+								"heading": "The evidence is read from the stream, not reported",
+								"body": "What the author ran, what it changed and what it cost are read from its own transcript afterwards. A final board that is right proves nothing about how it got there: a board patched behind the CLI's back is a file change, and the guardrail sees it.",
+								"subjects": [
+									"w4qCQkDU",
+									"7LcGoxWH",
+									"xzOQOY33"
+								]
+							},
+							{
+								"id": "Rm1S3buq",
+								"heading": "The harness takes the pictures",
+								"body": "Every board, view and variant the scenario declared is photographed by the harness and attached to the grading call. An author never supplies a picture, and a declared view nobody made is a failed capture rather than a default one.",
+								"subjects": [
+									"RqoYaLTK",
+									"JDTuIZQZ"
+								]
+							},
+							{
+								"id": "wlpFYeya",
+								"heading": "The grader never learns the arm",
+								"body": "Runs reach a grader under anonymous ids with private paths redacted. Two graders read the same bundle, and the report says where they agree rather than picking one.",
+								"subjects": [
+									"PwYiE0Hr",
+									"gwU9cyGm",
+									"bgEcePXZ",
+									"LcKROPw0"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "9mvpGVt6"
+}

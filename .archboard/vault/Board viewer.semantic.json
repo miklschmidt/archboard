@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-13T12:08:40.369Z",
+	"updatedAt": "2026-09-17T21:04:05.584Z",
 	"views": [],
 	"variants": [
 		{
@@ -19,9 +19,8 @@
 					{
 						"id": "xJIh6Jdp",
 						"name": "Browser client",
-						"kind": "external",
-						"responsibility": "Hosts the read-only viewer",
-						"description": "The parent browser service mounts this module in each semantic pane.",
+						"kind": "service",
+						"responsibility": "Mounts one viewer in each pane",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/application/components/ApplicationPane.tsx"
@@ -151,6 +150,56 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
 						}
+					},
+					{
+						"id": "38hwLCO1",
+						"name": "Picture source",
+						"kind": "function",
+						"responsibility": "Which drawing this pane is entitled to show: the one it drew here, or the one the server sent",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-source.ts"
+						}
+					},
+					{
+						"id": "AaCxSfhT",
+						"name": "Picture cache",
+						"kind": "function",
+						"responsibility": "Holds a drawing only as a read-only cache, stamped with the version, policy and renderer build it was made for",
+						"description": "ADR 0023: the browser owns presentation and nothing else. A stamp that no longer matches is not shown.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/picture-cache.ts"
+						}
+					},
+					{
+						"id": "F90402mH",
+						"name": "Draw here",
+						"kind": "module",
+						"responsibility": "Draws the board in this tab, with the tab's own canvas and worker pool",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "3eeEnf3E",
+						"name": "Fit what changed",
+						"kind": "function",
+						"responsibility": "Brings what a write changed into view without taking the camera away from the reader",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/change-focus.ts"
+						}
 					}
 				],
 				"edges": [
@@ -248,6 +297,54 @@
 						"to": "tmwUm8BL",
 						"kind": "event",
 						"label": "invalidate matching queries",
+						"emphasis": "normal"
+					},
+					{
+						"id": "rlrH32yx",
+						"from": "ntOE7caV",
+						"to": "38hwLCO1",
+						"kind": "data",
+						"label": "the board a picture must match",
+						"emphasis": "normal"
+					},
+					{
+						"id": "R4zJCAXX",
+						"from": "38hwLCO1",
+						"to": "AaCxSfhT",
+						"kind": "call",
+						"label": "a drawing stamped for this version",
+						"emphasis": "normal"
+					},
+					{
+						"id": "9yW8SET1",
+						"from": "38hwLCO1",
+						"to": "F90402mH",
+						"kind": "call",
+						"label": "draw it here",
+						"emphasis": "hero"
+					},
+					{
+						"id": "QA6Vg8BG",
+						"from": "AaCxSfhT",
+						"to": "3KqRuOEN",
+						"kind": "data",
+						"label": "the picture to show",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Hk1A9VKy",
+						"from": "VC7yvPZB",
+						"to": "3eeEnf3E",
+						"kind": "event",
+						"label": "what this write changed",
+						"emphasis": "normal"
+					},
+					{
+						"id": "XssnNMPJ",
+						"from": "3eeEnf3E",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "fit the changed subjects",
 						"emphasis": "normal"
 					}
 				],

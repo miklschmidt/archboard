@@ -1,28 +1,31 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 7,
+	"version": 12,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-13T12:08:39.603Z",
+	"updatedAt": "2026-09-17T20:50:43.680Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
 			"name": "Architecture drawing",
 			"grammar": "architecture",
+			"summary": "One board becoming an SVG: measure, settle, paint, wrap.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"LgbAlvMN",
+					"0XCanbzp",
+					"yOV8Znnv",
 					"wpI1LbzG",
-					"y8vuJJKu",
+					"J3yMo4ag",
 					"Y0smyqtZ",
 					"L51bfquE",
-					"J3yMo4ag",
 					"u1OXg3Yy",
 					"J7mPrUeP",
+					"y8vuJJKu",
 					"eECDrhMc"
 				],
 				"edges": [],
@@ -33,15 +36,14 @@
 			"id": "srvJJgTA",
 			"name": "Data-flow drawing",
 			"grammar": "architecture",
+			"summary": "The sequence grammar: no layout engine, no predecessor.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
-					"LgbAlvMN",
 					"wpI1LbzG",
+					"CtoOMxca",
 					"wLF1X11D",
-					"J3yMo4ag",
 					"u1OXg3Yy",
-					"J7mPrUeP",
 					"eECDrhMc"
 				],
 				"edges": [],
@@ -50,25 +52,20 @@
 		},
 		{
 			"id": "ySOqVAJv",
-			"name": "Layout pipeline",
+			"name": "Host seam",
 			"grammar": "architecture",
-			"summary": "Follow layout responsibilities through the selected architecture state.",
+			"summary": "What a host supplies, and the two hosts that supply it.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
-					"y8vuJJKu",
-					"g4QgxvtX",
+					"4nyk76pY",
+					"0XCanbzp",
+					"wskEBeIy",
+					"J3yMo4ag",
 					"Y0smyqtZ",
-					"J7mPrUeP",
-					"eECDrhMc"
+					"u1OXg3Yy"
 				],
-				"edges": [
-					"BJAmGg5k",
-					"8c58qiNK",
-					"SIdU2g2Q",
-					"qDiEFiIT",
-					"6zcjVgzh"
-				],
+				"edges": [],
 				"flows": []
 			}
 		},
@@ -76,16 +73,15 @@
 			"id": "tXxlwAYP",
 			"name": "Renderer integration",
 			"grammar": "architecture",
-			"summary": "Stable caller and browser output around the changed internals.",
+			"summary": "The two callers around the core.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"LgbAlvMN",
+					"0XCanbzp",
+					"wskEBeIy",
+					"yOV8Znnv",
 					"wpI1LbzG",
-					"y8vuJJKu",
-					"g4QgxvtX",
-					"Y0smyqtZ",
-					"J7mPrUeP",
 					"eECDrhMc"
 				],
 				"edges": [],
@@ -96,13 +92,13 @@
 			"id": "OANefo74",
 			"name": "Render sequence",
 			"grammar": "data-flow",
-			"summary": "Calls and return values for the selected state; the linked Renderer layout board compares the current and proposed sequences.",
+			"summary": "The calls and returns of one architecture render.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
 				"edges": [],
 				"flows": [
-					"wSdmI5dP"
+					"ggtKmP5B"
 				]
 			}
 		}
@@ -118,9 +114,9 @@
 					{
 						"id": "LgbAlvMN",
 						"name": "Canvas server",
-						"kind": "external",
-						"responsibility": "Requests a selected board drawing",
-						"description": "Parent service context: semantic board routes supply resolved variant content, selected view, theme, and subject standing, then return the renderer's SVG and atlas to the browser.",
+						"kind": "service",
+						"responsibility": "Answers a render request with one board's drawing",
+						"description": "The read side of the semantic-board HTTP surface. It imports the Bun host's renderBoard; the CLI's render and rasterize commands reach the renderer only through this route.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-routes.ts"
@@ -136,99 +132,160 @@
 						"id": "wpI1LbzG",
 						"name": "View dispatcher",
 						"kind": "function",
-						"responsibility": "Selects architecture or data flow",
-						"description": "renderSemanticView is the public entry point. It examines the semantic view grammar and dispatches to architecture or data-flow rendering while preserving theme and per-subject standing.",
+						"responsibility": "Chooses the grammar, remembers one layout per lineage, and returns the document",
+						"description": "renderSemanticView picks architecture or data flow; renderArchitecture turns flow steps into lines, measures, lays out, paints and wraps. The layout memo holds 64 lineages so a proposal keeps its predecessor's drawing.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/index.ts"
+							"path": "src/transformers/semantic-renderer/index.ts"
 						}
 					},
 					{
 						"id": "y8vuJJKu",
-						"name": "Region builder",
+						"name": "Subject atlas",
 						"kind": "function",
-						"responsibility": "Builds visible containment regions",
-						"description": "regionsOf and containersIn derive drawable roots, nested containers, groups, and visible relationships from selected semantic content before spatial layout begins.",
+						"responsibility": "Records where every drawn node, relationship and region landed",
+						"description": "The geometry a reader's pointer is tested against, in viewBox units, so the picture and the inspector agree without a second measurement.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/regions.ts"
+							"path": "src/transformers/semantic-renderer/lib/atlas.ts"
 						}
 					},
 					{
 						"id": "Y0smyqtZ",
-						"name": "Architecture layout",
-						"kind": "function",
-						"responsibility": "Places cards and containers",
-						"description": "layoutArchitecture ranks and seats region nodes, measures card text and heights, allocates bands and corridors, places nested containers, and returns deterministic geometry for routing and painting.",
+						"name": "Compound layout",
+						"kind": "module",
+						"responsibility": "Settles cards, frames, ports, routes and labels in one pass",
+						"description": "Nothing after it may repair a coordinate. A first render tries each reading and flank rule and keeps the drawing the scorecard prefers; a proposal reuses its predecessor's.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
+							"path": "src/transformers/semantic-renderer/lib/layout/compound.ts"
+						},
+						"drillDown": {
+							"board": "Renderer layout",
+							"variant": {
+								"kind": "current"
+							}
 						}
 					},
 					{
 						"id": "L51bfquE",
-						"name": "Edge routing",
+						"name": "Edge geometry",
 						"kind": "function",
-						"responsibility": "Routes readable relationships",
-						"description": "The edge pipeline chooses ports and tracks, plans orthogonal routes, curves corners, reduces crossings and braids, relieves congestion, and places label pills clear of nodes and other marks.",
+						"responsibility": "Rounds a routed polyline into a curve and says where its label may sit",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/layout/edges.ts"
+							"path": "src/transformers/semantic-renderer/lib/layout/curves.ts"
 						}
 					},
 					{
 						"id": "wLF1X11D",
 						"name": "Data-flow layout",
 						"kind": "function",
-						"responsibility": "Places participants and messages",
-						"description": "layoutDataFlow converts an ordered semantic flow into participant columns, step positions, return and self-message geometry, and a clock suitable for animated exchange pulses.",
+						"responsibility": "Places participant columns, lifelines and stacked messages for one exchange",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/layout/dataflow.ts"
+							"path": "src/transformers/semantic-renderer/lib/layout/dataflow.ts"
 						}
 					},
 					{
 						"id": "J3yMo4ag",
 						"name": "Measured text",
 						"kind": "function",
-						"responsibility": "Fits labels to real font metrics",
-						"description": "Text helpers call the shared font measurement engine, apply tracking, truncate with measured ellipses, and choose fitted sizes so SVG text uses the same font geometry the layout reserved.",
+						"responsibility": "Measures every card, note and label with the diagram faces loaded",
+						"description": "Pretext prepares and wraps the runs; the width of each run comes from the host's canvas, never from an estimate (TASK-247).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/text.ts"
+							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
 						}
 					},
 					{
 						"id": "u1OXg3Yy",
 						"name": "Theme palette",
 						"kind": "function",
-						"responsibility": "Resolves every drawn color",
-						"description": "paletteFor maps the requested diagram theme to literal surface, ink, group, relationship, selection, and status colors consumed by both architecture and data-flow painters.",
+						"responsibility": "Resolves every drawn colour for the ground being drawn on",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/theme.ts"
+							"path": "src/transformers/semantic-renderer/lib/theme.ts"
 						}
 					},
 					{
 						"id": "J7mPrUeP",
-						"name": "SVG painters",
+						"name": "Architecture painter",
 						"kind": "function",
-						"responsibility": "Paints geometry and standing",
-						"description": "paintArchitecture and paintDataFlow turn placed nodes, containers, edges, steps, labels, groups, pulses, and current/proposed/changed standing into SVG marks with stable subject annotations.",
+						"responsibility": "Paints a settled drawing as SVG marks and standing",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
 						}
 					},
 					{
 						"id": "eECDrhMc",
-						"name": "SVG document and atlas",
+						"name": "SVG document",
 						"kind": "function",
-						"responsibility": "Frames SVG and hit geometry",
-						"description": "svgDocument supplies font faces, canvas bounds, styles, accessibility metadata, and animation policy; atlas helpers report the final subject boxes and route geometry used for browser selection and focus.",
+						"responsibility": "Wraps a painted body in one self-contained document with its faces",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/svg/document.ts"
+							"path": "src/transformers/semantic-renderer/lib/svg/document.ts"
+						}
+					},
+					{
+						"id": "wskEBeIy",
+						"name": "Browser application",
+						"kind": "service",
+						"responsibility": "Installs its own host in the tab and draws the same board there",
+						"description": "startBrowserRenderer fills the seam with a Web Worker layout pool, the tab's own canvas for measuring and linked faces; drawBoardHere then calls the same core the server calls (ADR 0023).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "0XCanbzp",
+						"name": "Bun host",
+						"kind": "module",
+						"responsibility": "Installs the Bun host before anything is drawn or measured",
+						"description": "installBunHost registers an @napi-rs/canvas canvas as OffscreenCanvas, loads the four diagram faces, and supplies the ELK worker pool, the theme colours read from theme.css, the font bytes and the icon paths.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/index.ts"
+						}
+					},
+					{
+						"id": "4nyk76pY",
+						"name": "Renderer host",
+						"kind": "function",
+						"responsibility": "The seam a host fills: the layout engine, theme colours, font bytes and icon paths",
+						"description": "Why the core lives under transformers: it reads no file, no clock and no random number. One host draws the same content to the same bytes; two browsers may measure a word differently because each paints it differently.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/host.ts"
+						}
+					},
+					{
+						"id": "yOV8Znnv",
+						"name": "Board answer",
+						"kind": "function",
+						"responsibility": "Resolves variant, view, scope and standing from one board before anything is drawn",
+						"description": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/board.ts"
+						}
+					},
+					{
+						"id": "CtoOMxca",
+						"name": "Sequence painter",
+						"kind": "function",
+						"responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts"
 						}
 					}
 				],
@@ -236,57 +293,21 @@
 					{
 						"id": "fl3z5Duy",
 						"from": "LgbAlvMN",
-						"to": "wpI1LbzG",
+						"to": "0XCanbzp",
 						"kind": "render",
 						"label": "render selected view",
-						"emphasis": "hero"
-					},
-					{
-						"id": "KtJOCzrZ",
-						"from": "wpI1LbzG",
-						"to": "y8vuJJKu",
-						"kind": "call",
-						"label": "derive architecture regions",
-						"emphasis": "normal"
-					},
-					{
-						"id": "v3e9dOLe",
-						"from": "y8vuJJKu",
-						"to": "Y0smyqtZ",
-						"kind": "data",
-						"label": "visible regions",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "qJrkH2Qg",
 						"from": "Y0smyqtZ",
 						"to": "L51bfquE",
 						"kind": "call",
-						"label": "route relationships",
-						"emphasis": "normal"
-					},
-					{
-						"id": "PjA6m5Ft",
-						"from": "wpI1LbzG",
-						"to": "wLF1X11D",
-						"kind": "call",
-						"label": "lay out exchange",
-						"emphasis": "normal"
-					},
-					{
-						"id": "Wn0XA35I",
-						"from": "Y0smyqtZ",
-						"to": "J3yMo4ag",
-						"kind": "call",
-						"label": "size cards",
-						"emphasis": "normal"
-					},
-					{
-						"id": "neQc1gXi",
-						"from": "L51bfquE",
-						"to": "J3yMo4ag",
-						"kind": "call",
-						"label": "fit labels",
+						"label": "round the routed polylines",
 						"emphasis": "normal"
 					},
 					{
@@ -302,7 +323,7 @@
 						"from": "Y0smyqtZ",
 						"to": "J7mPrUeP",
 						"kind": "data",
-						"label": "placed architecture",
+						"label": "the settled drawing",
 						"emphasis": "normal"
 					},
 					{
@@ -310,15 +331,7 @@
 						"from": "L51bfquE",
 						"to": "J7mPrUeP",
 						"kind": "data",
-						"label": "routed edges",
-						"emphasis": "normal"
-					},
-					{
-						"id": "eKqUHYSH",
-						"from": "wLF1X11D",
-						"to": "J7mPrUeP",
-						"kind": "data",
-						"label": "placed exchange",
+						"label": "curves and label anchors",
 						"emphasis": "normal"
 					},
 					{
@@ -326,7 +339,7 @@
 						"from": "u1OXg3Yy",
 						"to": "J7mPrUeP",
 						"kind": "data",
-						"label": "literal colors",
+						"label": "literal colours",
 						"emphasis": "normal"
 					},
 					{
@@ -334,19 +347,287 @@
 						"from": "J7mPrUeP",
 						"to": "eECDrhMc",
 						"kind": "render",
-						"label": "marks and hit boxes",
+						"label": "painted body and hit boxes",
 						"emphasis": "hero"
 					},
 					{
-						"id": "8EDKem8V",
-						"from": "eECDrhMc",
-						"to": "LgbAlvMN",
-						"kind": "data",
-						"label": "SVG and subject atlas",
+						"id": "4RbEQ6uO",
+						"from": "0XCanbzp",
+						"to": "yOV8Znnv",
+						"kind": "call",
+						"label": "renderBoard on the core",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "veScCirT",
+						"from": "0XCanbzp",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "installRendererHost",
+						"emphasis": "muted"
+					},
+					{
+						"id": "NFop37Ak",
+						"from": "wskEBeIy",
+						"to": "yOV8Znnv",
+						"kind": "call",
+						"label": "renderBoard, linked faces",
+						"emphasis": "normal"
+					},
+					{
+						"id": "aN2ABUiR",
+						"from": "wskEBeIy",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "installRendererHost",
+						"emphasis": "muted"
+					},
+					{
+						"id": "iyXO5GUb",
+						"from": "yOV8Znnv",
+						"to": "wpI1LbzG",
+						"kind": "call",
+						"label": "renderSemanticView",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "ezsxPVcK",
+						"from": "wpI1LbzG",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "measure every word",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "eJO5yog2",
+						"from": "wpI1LbzG",
+						"to": "Y0smyqtZ",
+						"kind": "call",
+						"label": "content and measured sizes",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "98et92HX",
+						"from": "wpI1LbzG",
+						"to": "J7mPrUeP",
+						"kind": "call",
+						"label": "paint the settled drawing",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "NSEpn12D",
+						"from": "wpI1LbzG",
+						"to": "CtoOMxca",
+						"kind": "call",
+						"label": "paint the exchange",
+						"emphasis": "normal"
+					},
+					{
+						"id": "rZknAbkb",
+						"from": "wpI1LbzG",
+						"to": "eECDrhMc",
+						"kind": "call",
+						"label": "wrap the painted body",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "F5mgUBCT",
+						"from": "Y0smyqtZ",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "solve on the layout engine",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4ZgfK8Ac",
+						"from": "J3yMo4ag",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "measure on the host canvas",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NIW5ioWQ",
+						"from": "u1OXg3Yy",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "theme colours",
+						"emphasis": "normal"
+					},
+					{
+						"id": "WMtzvSOO",
+						"from": "J7mPrUeP",
+						"to": "y8vuJJKu",
+						"kind": "call",
+						"label": "where every subject landed",
+						"emphasis": "normal"
+					},
+					{
+						"id": "IvQqev1K",
+						"from": "CtoOMxca",
+						"to": "wLF1X11D",
+						"kind": "call",
+						"label": "columns, lifelines and messages",
 						"emphasis": "normal"
 					}
 				],
-				"flows": [],
+				"flows": [
+					{
+						"id": "ggtKmP5B",
+						"name": "Render sequence",
+						"summary": "One architecture render, from the canvas server's route to the document it answers with.",
+						"participants": [
+							"LgbAlvMN",
+							"0XCanbzp",
+							"yOV8Znnv",
+							"wpI1LbzG",
+							"J3yMo4ag",
+							"Y0smyqtZ",
+							"J7mPrUeP",
+							"eECDrhMc"
+						],
+						"steps": [
+							{
+								"id": "1rKNzG1j",
+								"from": "LgbAlvMN",
+								"to": "0XCanbzp",
+								"label": "render this board, view and theme",
+								"kind": "sync"
+							},
+							{
+								"id": "PJduk2By",
+								"from": "0XCanbzp",
+								"to": "0XCanbzp",
+								"label": "install the canvas, the faces and the engine pool",
+								"kind": "self",
+								"note": "installBunHost is idempotent; later renders find the host already there"
+							},
+							{
+								"id": "llrceIKD",
+								"from": "0XCanbzp",
+								"to": "yOV8Znnv",
+								"label": "renderBoard on the core",
+								"kind": "sync"
+							},
+							{
+								"id": "UibFsWA6",
+								"from": "yOV8Znnv",
+								"to": "wpI1LbzG",
+								"label": "resolved content, grammar and standing",
+								"kind": "sync"
+							},
+							{
+								"id": "32Ao2Mfe",
+								"from": "wpI1LbzG",
+								"to": "J3yMo4ag",
+								"label": "measure every card, note and label",
+								"kind": "sync"
+							},
+							{
+								"id": "STISCFAG",
+								"from": "J3yMo4ag",
+								"to": "wpI1LbzG",
+								"label": "measured sizes and wrapped lines",
+								"kind": "return"
+							},
+							{
+								"id": "zrYLyVFk",
+								"from": "wpI1LbzG",
+								"to": "Y0smyqtZ",
+								"label": "content and measured sizes",
+								"kind": "sync"
+							},
+							{
+								"id": "WFtJLlx7",
+								"from": "Y0smyqtZ",
+								"to": "Y0smyqtZ",
+								"label": "settle each reading and flank rule, keep the best",
+								"kind": "self",
+								"note": "a variant with a predecessor reuses its drawing instead of settling again"
+							},
+							{
+								"id": "zJPQEVAa",
+								"from": "Y0smyqtZ",
+								"to": "wpI1LbzG",
+								"label": "cards, frames, ports, routes and labels",
+								"kind": "return"
+							},
+							{
+								"id": "1Yv9pTwY",
+								"from": "wpI1LbzG",
+								"to": "J7mPrUeP",
+								"label": "paint the settled drawing",
+								"kind": "sync"
+							},
+							{
+								"id": "Ix1Gsqd2",
+								"from": "J7mPrUeP",
+								"to": "wpI1LbzG",
+								"label": "marks and the subject atlas",
+								"kind": "return"
+							},
+							{
+								"id": "ppxdedYp",
+								"from": "wpI1LbzG",
+								"to": "eECDrhMc",
+								"label": "wrap the body with its faces",
+								"kind": "sync"
+							},
+							{
+								"id": "SrLHihKB",
+								"from": "eECDrhMc",
+								"to": "wpI1LbzG",
+								"label": "one self-contained document",
+								"kind": "return"
+							},
+							{
+								"id": "RqxmU0S4",
+								"from": "wpI1LbzG",
+								"to": "yOV8Znnv",
+								"label": "document, size and atlas",
+								"kind": "return"
+							},
+							{
+								"id": "gYWFY5g5",
+								"from": "yOV8Znnv",
+								"to": "0XCanbzp",
+								"label": "document, size and atlas",
+								"kind": "return"
+							},
+							{
+								"id": "AXncoKD3",
+								"from": "0XCanbzp",
+								"to": "LgbAlvMN",
+								"label": "document, size and atlas",
+								"kind": "return"
+							}
+						]
+					}
+				],
 				"walkthroughs": [
 					{
 						"id": "Gyc03kQp",
@@ -354,37 +635,37 @@
 						"beats": [
 							{
 								"id": "TxUv8QT5",
-								"heading": "The selected grammar chooses a pipeline",
-								"body": "The public dispatcher receives already-resolved semantic content and chooses architecture regions or an ordered data-flow exchange.",
+								"heading": "One core, two hosts",
+								"body": "The renderer body reads no file, no clock and no random number. The server installs a Bun host with an napi canvas and an ELK worker pool; the tab installs its own with Web Workers and its own canvas. Both then call the same board answer.",
 								"subjects": [
-									"LgbAlvMN",
-									"wpI1LbzG",
-									"y8vuJJKu",
-									"wLF1X11D"
+									"4nyk76pY",
+									"0XCanbzp",
+									"wskEBeIy",
+									"yOV8Znnv"
 								]
 							},
 							{
 								"id": "2XXwjrOX",
-								"heading": "Layout reserves measured space",
-								"body": "Architecture cards and routes or data-flow columns and messages are placed deterministically, using real font metrics for the text they must hold.",
+								"heading": "Words are measured before anything is placed",
+								"body": "Every card, note and label is measured with the diagram faces loaded before the layout runs, so the space a name needs is a fact the layout is given rather than one it guesses.",
 								"subjects": [
-									"Y0smyqtZ",
-									"L51bfquE",
-									"wLF1X11D",
-									"J3yMo4ag"
+									"ezsxPVcK",
+									"J3yMo4ag",
+									"eJO5yog2",
+									"Y0smyqtZ"
 								]
 							},
 							{
 								"id": "g5qAhKaY",
-								"heading": "Painting returns picture and interaction map",
-								"body": "The resolved palette and subject standing shape the SVG marks; document framing and atlas geometry let the browser display, select, and focus what the renderer actually drew.",
+								"heading": "Painting and inspection share one geometry",
+								"body": "The painter asks the atlas where each subject landed, so the picture a reader points at and the subject the inspector opens are the same geometry, never two measurements that can disagree.",
 								"subjects": [
-									"u1OXg3Yy",
+									"98et92HX",
 									"J7mPrUeP",
-									"eECDrhMc",
-									"LgbAlvMN"
-								],
-								"view": "hDJkR6K5"
+									"WMtzvSOO",
+									"y8vuJJKu",
+									"rZknAbkb"
+								]
 							}
 						]
 					}
@@ -401,9 +682,9 @@
 					{
 						"id": "LgbAlvMN",
 						"name": "Canvas server",
-						"kind": "external",
-						"responsibility": "Requests a selected board drawing",
-						"description": "Parent service context: semantic board routes supply resolved variant content, selected view, theme, and subject standing, then return the renderer's SVG and atlas to the browser.",
+						"kind": "service",
+						"responsibility": "Answers a render request with one board's drawing",
+						"description": "The read side of the semantic-board HTTP surface. It imports the Bun host's renderBoard; the CLI's render and rasterize commands reach the renderer only through this route.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-routes.ts"
@@ -420,39 +701,38 @@
 						"id": "wpI1LbzG",
 						"name": "View dispatcher",
 						"kind": "function",
-						"responsibility": "Own the render pipeline",
-						"description": "PROPOSED orchestration change behind the existing renderer entry point: resolve the selected grammar, derive its layout graph, measure cards, obtain one placed drawing, then paint it. The architecture pipeline changes; the ordered data-flow grammar keeps its existing behavior. Callers still supply semantic content, theme, fonts and standing and receive SVG, dimensions and a subject atlas.",
+						"responsibility": "Chooses the grammar, remembers one layout per lineage, and returns the document",
+						"description": "renderSemanticView picks architecture or data flow; renderArchitecture turns flow steps into lines, measures, lays out, paints and wraps. The layout memo holds 64 lineages so a proposal keeps its predecessor's drawing.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/index.ts"
+							"path": "src/transformers/semantic-renderer/index.ts"
 						}
 					},
 					{
 						"id": "y8vuJJKu",
-						"name": "Layout graph",
+						"name": "Subject atlas",
 						"kind": "function",
-						"responsibility": "Preserve semantic structure",
-						"description": "PROPOSED replacement of spatial regions with a geometry-free compound graph. Preserve subject IDs, actual parent/child containment, every selected relationship, group membership and emphasis. Groups remain semantic annotation rather than forcing columns. Supply connections across containment boundaries to the layout owner; neither global rows nor column assignments are produced here.",
+						"responsibility": "Records where every drawn node, relationship and region landed",
+						"description": "The geometry a reader's pointer is tested against, in viewBox units, so the picture and the inspector agree without a second measurement.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/regions.ts"
+							"path": "src/transformers/semantic-renderer/lib/atlas.ts"
 						}
 					},
 					{
 						"id": "Y0smyqtZ",
 						"name": "Compound layout",
-						"kind": "function",
-						"responsibility": "Place and route together",
-						"description": "PROPOSED one layout owner replaces global ranks, paired seats, indexed row bands and the separate corridor-routing pipeline. Input: semantic containment and connections plus measured card and edge-label dimensions. Output: a complete placed drawing: card boxes/text runs, container bounds, legal ports, orthogonal edge paths and label boxes. Arrange connected siblings locally and position enclosing groups with their cross-boundary connections in view. Containers enclose their actual children plus header and routing clearance. Route through geometric free space with short paths and few bends; protect cards, headers and labels from overlap. Canonical input ordering and stable-ID tie breaks make identical input deterministic. Local edits may legitimately rearrange nearby nodes; pixel-stable seating is not a requirement. Implementation should evaluate an established compound-graph layout engine before replacing these internals; library choice and performance remain unproven, not an added author control. The linked detail board contrasts Today with Proposed render and opens this responsibility in the Inside layout sequence.",
+						"kind": "module",
+						"responsibility": "Settles cards, frames, ports, routes and labels in one pass",
+						"description": "Nothing after it may repair a coordinate. A first render tries each reading and flank rule and keeps the drawing the scorecard prefers; a proposal reuses its predecessor's.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
+							"path": "src/transformers/semantic-renderer/lib/layout/compound.ts"
 						},
 						"drillDown": {
 							"board": "Renderer layout",
 							"variant": {
-								"kind": "named",
-								"name": "Readable layout"
+								"kind": "current"
 							}
 						}
 					},
@@ -460,90 +740,121 @@
 						"id": "wLF1X11D",
 						"name": "Data-flow layout",
 						"kind": "function",
-						"responsibility": "Places participants and messages",
-						"description": "layoutDataFlow converts an ordered semantic flow into participant columns, step positions, return and self-message geometry, and a clock suitable for animated exchange pulses.",
+						"responsibility": "Places participant columns, lifelines and stacked messages for one exchange",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/layout/dataflow.ts"
+							"path": "src/transformers/semantic-renderer/lib/layout/dataflow.ts"
 						}
 					},
 					{
 						"id": "J3yMo4ag",
 						"name": "Measured text",
 						"kind": "function",
-						"responsibility": "Fits labels to real font metrics",
-						"description": "Text helpers call the shared font measurement engine, apply tracking, truncate with measured ellipses, and choose fitted sizes so SVG text uses the same font geometry the layout reserved.",
+						"responsibility": "Measures every card, note and label with the diagram faces loaded",
+						"description": "Pretext prepares and wraps the runs; the width of each run comes from the host's canvas, never from an estimate (TASK-247).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/text.ts"
+							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
 						}
 					},
 					{
 						"id": "u1OXg3Yy",
 						"name": "Theme palette",
 						"kind": "function",
-						"responsibility": "Resolves every drawn color",
-						"description": "paletteFor maps the requested diagram theme to literal surface, ink, group, relationship, selection, and status colors consumed by both architecture and data-flow painters.",
+						"responsibility": "Resolves every drawn colour for the ground being drawn on",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/theme.ts"
+							"path": "src/transformers/semantic-renderer/lib/theme.ts"
 						}
 					},
 					{
 						"id": "J7mPrUeP",
-						"name": "SVG painters",
+						"name": "Architecture painter",
 						"kind": "function",
-						"responsibility": "Paint the placed drawing",
-						"description": "PROPOSED architecture painter consumes the complete drawing returned by Compound layout, including the exact measured wrapped text lines. It draws cards, containers, routes and semantic standing without placing nodes, shrinking titles, truncating responsibilities again, or finding new label positions. The data-flow painter remains unchanged. Existing node and edge identity annotations continue to drive inspection and focus. The linked Proposed render sequence shows the concrete drawing contract it consumes.",
+						"responsibility": "Paints a settled drawing as SVG marks and standing",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
-						},
-						"drillDown": {
-							"board": "Renderer layout",
-							"variant": {
-								"kind": "named",
-								"name": "Readable layout"
-							}
+							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
 						}
 					},
 					{
 						"id": "eECDrhMc",
-						"name": "SVG document and atlas",
+						"name": "SVG document",
 						"kind": "function",
-						"responsibility": "Share one geometry",
-						"description": "PROPOSED invariant made explicit at output: derive the SVG bounds and interaction atlas from the same final drawing, including wrapped card text, container frames and routed edges. Selection and walkthrough focus must match painted geometry. Keep the existing SVG, width, height and atlas response fields; the browser receives the improved geometry through its existing read path.",
+						"responsibility": "Wraps a painted body in one self-contained document with its faces",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-renderer/lib/svg/document.ts"
+							"path": "src/transformers/semantic-renderer/lib/svg/document.ts"
 						}
 					},
 					{
-						"id": "g4QgxvtX",
-						"name": "Card measurement",
+						"id": "wskEBeIy",
+						"name": "Browser application",
+						"kind": "service",
+						"responsibility": "Installs its own host in the tab and draws the same board there",
+						"description": "startBrowserRenderer fills the seam with a Web Worker layout pool, the tab's own canvas for measuring and linked faces; drawBoardHere then calls the same core the server calls (ADR 0023).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "0XCanbzp",
+						"name": "Bun host",
+						"kind": "module",
+						"responsibility": "Installs the Bun host before anything is drawn or measured",
+						"description": "installBunHost registers an @napi-rs/canvas canvas as OffscreenCanvas, loads the four diagram faces, and supplies the ELK worker pool, the theme colours read from theme.css, the font bytes and the icon paths.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/index.ts"
+						}
+					},
+					{
+						"id": "4nyk76pY",
+						"name": "Renderer host",
 						"kind": "function",
-						"responsibility": "Measure before placing",
-						"description": "PROPOSED: prepare and wrap card titles/responsibilities using Pretext as the preferred text-layout candidate, then add our padding, icons and readable width/line-height policy. Return card and label dimensions plus exact text runs before placement. prepareWithSegments caches preparation; layoutWithLines supplies wrapped lines at chosen width. Pretext currently needs Canvas2D font measurement; compatibility with our Bun server and exact bundled fonts must be proven. See the linked detail board Pretext sizing sequence. Source: https://github.com/chenglou/pretext",
-						"drillDown": {
-							"board": "Renderer layout",
-							"variant": {
-								"kind": "named",
-								"name": "Readable layout"
-							}
+						"responsibility": "The seam a host fills: the layout engine, theme colours, font bytes and icon paths",
+						"description": "Why the core lives under transformers: it reads no file, no clock and no random number. One host draws the same content to the same bytes; two browsers may measure a word differently because each paints it differently.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/host.ts"
 						}
 					},
 					{
-						"id": "QlYHEFsZ",
-						"name": "Pretext",
-						"kind": "package",
-						"responsibility": "Prepare text and return wrapped lines",
-						"description": "Preferred candidate @chenglou/pretext. Prepares measured text once, then lays out lines for a chosen width and lineHeight. Server Canvas/font-host support is a required compatibility check. See linked detail board for calls and ownership. https://github.com/chenglou/pretext",
-						"drillDown": {
-							"board": "Renderer layout",
-							"variant": {
-								"kind": "named",
-								"name": "Readable layout"
-							}
+						"id": "yOV8Znnv",
+						"name": "Board answer",
+						"kind": "function",
+						"responsibility": "Resolves variant, view, scope and standing from one board before anything is drawn",
+						"description": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/board.ts"
+						}
+					},
+					{
+						"id": "CtoOMxca",
+						"name": "Sequence painter",
+						"kind": "function",
+						"responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts"
+						}
+					},
+					{
+						"id": "1Ho9I0eE",
+						"name": "Edge geometry",
+						"kind": "function",
+						"responsibility": "Rounds a routed polyline into a curve and says where its label may sit",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/curves.ts"
 						}
 					}
 				],
@@ -551,34 +862,14 @@
 					{
 						"id": "fl3z5Duy",
 						"from": "LgbAlvMN",
-						"to": "wpI1LbzG",
+						"to": "0XCanbzp",
 						"kind": "render",
 						"label": "render selected view",
-						"emphasis": "hero"
-					},
-					{
-						"id": "KtJOCzrZ",
-						"from": "wpI1LbzG",
-						"to": "y8vuJJKu",
-						"kind": "call",
-						"label": "derive architecture regions",
-						"emphasis": "normal"
-					},
-					{
-						"id": "v3e9dOLe",
-						"from": "y8vuJJKu",
-						"to": "Y0smyqtZ",
-						"kind": "data",
-						"label": "compound graph",
-						"emphasis": "normal"
-					},
-					{
-						"id": "PjA6m5Ft",
-						"from": "wpI1LbzG",
-						"to": "wLF1X11D",
-						"kind": "call",
-						"label": "lay out exchange",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "WwNFCjLE",
@@ -589,19 +880,11 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "eKqUHYSH",
-						"from": "wLF1X11D",
-						"to": "J7mPrUeP",
-						"kind": "data",
-						"label": "placed exchange",
-						"emphasis": "normal"
-					},
-					{
 						"id": "I1lGjMES",
 						"from": "u1OXg3Yy",
 						"to": "J7mPrUeP",
 						"kind": "data",
-						"label": "literal colors",
+						"label": "literal colours",
 						"emphasis": "normal"
 					},
 					{
@@ -609,197 +892,312 @@
 						"from": "J7mPrUeP",
 						"to": "eECDrhMc",
 						"kind": "render",
-						"label": "marks and hit boxes",
+						"label": "painted body and hit boxes",
 						"emphasis": "hero"
 					},
 					{
-						"id": "8EDKem8V",
-						"from": "eECDrhMc",
-						"to": "LgbAlvMN",
-						"kind": "data",
-						"label": "SVG and subject atlas",
-						"emphasis": "normal"
-					},
-					{
-						"id": "BJAmGg5k",
-						"from": "y8vuJJKu",
-						"to": "g4QgxvtX",
-						"kind": "data",
-						"label": "subjects to measure",
-						"emphasis": "hero"
-					},
-					{
-						"id": "8c58qiNK",
-						"from": "g4QgxvtX",
-						"to": "Y0smyqtZ",
-						"kind": "data",
-						"label": "card and label sizes",
-						"emphasis": "hero"
-					},
-					{
-						"id": "LQhiBOCm",
-						"from": "g4QgxvtX",
-						"to": "QlYHEFsZ",
+						"id": "4RbEQ6uO",
+						"from": "0XCanbzp",
+						"to": "yOV8Znnv",
 						"kind": "call",
-						"label": "prepare and wrap text",
+						"label": "renderBoard on the core",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "veScCirT",
+						"from": "0XCanbzp",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "installRendererHost",
+						"emphasis": "muted"
+					},
+					{
+						"id": "NFop37Ak",
+						"from": "wskEBeIy",
+						"to": "yOV8Znnv",
+						"kind": "call",
+						"label": "renderBoard, linked faces",
 						"emphasis": "normal"
 					},
 					{
-						"id": "6zcjVgzh",
+						"id": "aN2ABUiR",
+						"from": "wskEBeIy",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "installRendererHost",
+						"emphasis": "muted"
+					},
+					{
+						"id": "iyXO5GUb",
+						"from": "yOV8Znnv",
+						"to": "wpI1LbzG",
+						"kind": "call",
+						"label": "renderSemanticView",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "ezsxPVcK",
+						"from": "wpI1LbzG",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "measure every word",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "eJO5yog2",
+						"from": "wpI1LbzG",
+						"to": "Y0smyqtZ",
+						"kind": "call",
+						"label": "content and measured sizes",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "98et92HX",
+						"from": "wpI1LbzG",
+						"to": "J7mPrUeP",
+						"kind": "call",
+						"label": "paint the settled drawing",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "NSEpn12D",
+						"from": "wpI1LbzG",
+						"to": "CtoOMxca",
+						"kind": "call",
+						"label": "paint the exchange",
+						"emphasis": "normal"
+					},
+					{
+						"id": "rZknAbkb",
+						"from": "wpI1LbzG",
+						"to": "eECDrhMc",
+						"kind": "call",
+						"label": "wrap the painted body",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "F5mgUBCT",
+						"from": "Y0smyqtZ",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "solve on the layout engine",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4ZgfK8Ac",
+						"from": "J3yMo4ag",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "measure on the host canvas",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NIW5ioWQ",
+						"from": "u1OXg3Yy",
+						"to": "4nyk76pY",
+						"kind": "call",
+						"label": "theme colours",
+						"emphasis": "normal"
+					},
+					{
+						"id": "WMtzvSOO",
+						"from": "J7mPrUeP",
+						"to": "y8vuJJKu",
+						"kind": "call",
+						"label": "where every subject landed",
+						"emphasis": "normal"
+					},
+					{
+						"id": "IvQqev1K",
+						"from": "CtoOMxca",
+						"to": "wLF1X11D",
+						"kind": "call",
+						"label": "columns, lifelines and messages",
+						"emphasis": "normal"
+					},
+					{
+						"id": "RoyAtsCH",
+						"from": "Y0smyqtZ",
+						"to": "1Ho9I0eE",
+						"kind": "call",
+						"label": "round the routed polylines",
+						"emphasis": "normal"
+					},
+					{
+						"id": "sx9dA1h1",
 						"from": "Y0smyqtZ",
 						"to": "J7mPrUeP",
 						"kind": "data",
-						"label": "complete placed drawing",
-						"emphasis": "hero"
+						"label": "the settled drawing",
+						"emphasis": "normal"
+					},
+					{
+						"id": "rSFC3xVY",
+						"from": "1Ho9I0eE",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "curves and label anchors",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [
 					{
-						"id": "wSdmI5dP",
-						"name": "Proposed render request",
+						"id": "ggtKmP5B",
+						"name": "Render sequence",
+						"summary": "One architecture render, from the canvas server's route to the document it answers with.",
 						"participants": [
 							"LgbAlvMN",
+							"0XCanbzp",
+							"yOV8Znnv",
 							"wpI1LbzG",
-							"g4QgxvtX",
+							"J3yMo4ag",
 							"Y0smyqtZ",
-							"J7mPrUeP"
+							"J7mPrUeP",
+							"eECDrhMc"
 						],
 						"steps": [
 							{
-								"id": "Cyb88oh1",
+								"id": "1rKNzG1j",
 								"from": "LgbAlvMN",
-								"to": "wpI1LbzG",
-								"label": "Selected content, theme and standing",
+								"to": "0XCanbzp",
+								"label": "render this board, view and theme",
 								"kind": "sync"
 							},
 							{
-								"id": "Dv6cKC6X",
-								"from": "wpI1LbzG",
-								"to": "wpI1LbzG",
-								"label": "Build graph with IDs and containment",
-								"kind": "self"
+								"id": "PJduk2By",
+								"from": "0XCanbzp",
+								"to": "0XCanbzp",
+								"label": "install the canvas, the faces and the engine pool",
+								"kind": "self",
+								"note": "installBunHost is idempotent; later renders find the host already there"
 							},
 							{
-								"id": "5Pk5gZcr",
-								"from": "wpI1LbzG",
-								"to": "g4QgxvtX",
-								"label": "Measure names, notes and edge labels",
+								"id": "llrceIKD",
+								"from": "0XCanbzp",
+								"to": "yOV8Znnv",
+								"label": "renderBoard on the core",
 								"kind": "sync"
 							},
 							{
-								"id": "Q6GFlTN3",
-								"from": "g4QgxvtX",
+								"id": "UibFsWA6",
+								"from": "yOV8Znnv",
 								"to": "wpI1LbzG",
-								"label": "Card sizes, wrapped lines, label sizes",
+								"label": "resolved content, grammar and standing",
+								"kind": "sync"
+							},
+							{
+								"id": "32Ao2Mfe",
+								"from": "wpI1LbzG",
+								"to": "J3yMo4ag",
+								"label": "measure every card, note and label",
+								"kind": "sync"
+							},
+							{
+								"id": "STISCFAG",
+								"from": "J3yMo4ag",
+								"to": "wpI1LbzG",
+								"label": "measured sizes and wrapped lines",
 								"kind": "return"
 							},
 							{
-								"id": "CjOwJ0uL",
+								"id": "zrYLyVFk",
 								"from": "wpI1LbzG",
 								"to": "Y0smyqtZ",
-								"label": "Graph + measured sizes + whitespace",
+								"label": "content and measured sizes",
 								"kind": "sync"
 							},
 							{
-								"id": "eJvZE7GH",
+								"id": "WFtJLlx7",
+								"from": "Y0smyqtZ",
+								"to": "Y0smyqtZ",
+								"label": "settle each reading and flank rule, keep the best",
+								"kind": "self",
+								"note": "a variant with a predecessor reuses its drawing instead of settling again"
+							},
+							{
+								"id": "zJPQEVAa",
 								"from": "Y0smyqtZ",
 								"to": "wpI1LbzG",
-								"label": "Final boxes, ports, routes and labels",
+								"label": "cards, frames, ports, routes and labels",
 								"kind": "return"
 							},
 							{
-								"id": "gFEXOCnC",
+								"id": "1Yv9pTwY",
 								"from": "wpI1LbzG",
 								"to": "J7mPrUeP",
-								"label": "Paint final drawing and text runs",
+								"label": "paint the settled drawing",
 								"kind": "sync"
 							},
 							{
-								"id": "NDSJ1uTT",
+								"id": "Ix1Gsqd2",
 								"from": "J7mPrUeP",
 								"to": "wpI1LbzG",
-								"label": "SVG marks + matching atlas geometry",
+								"label": "marks and the subject atlas",
 								"kind": "return"
 							},
 							{
-								"id": "hyljWKFd",
+								"id": "ppxdedYp",
 								"from": "wpI1LbzG",
+								"to": "eECDrhMc",
+								"label": "wrap the body with its faces",
+								"kind": "sync"
+							},
+							{
+								"id": "SrLHihKB",
+								"from": "eECDrhMc",
+								"to": "wpI1LbzG",
+								"label": "one self-contained document",
+								"kind": "return"
+							},
+							{
+								"id": "RqxmU0S4",
+								"from": "wpI1LbzG",
+								"to": "yOV8Znnv",
+								"label": "document, size and atlas",
+								"kind": "return"
+							},
+							{
+								"id": "gYWFY5g5",
+								"from": "yOV8Znnv",
+								"to": "0XCanbzp",
+								"label": "document, size and atlas",
+								"kind": "return"
+							},
+							{
+								"id": "AXncoKD3",
+								"from": "0XCanbzp",
 								"to": "LgbAlvMN",
-								"label": "SVG document, dimensions and atlas",
+								"label": "document, size and atlas",
 								"kind": "return"
 							}
 						]
 					}
 				],
-				"walkthroughs": [
-					{
-						"id": "JALUPXnI",
-						"name": "Why this layout model",
-						"summary": "Readable text, compact containment and one geometry owner. Proposed, not implemented.",
-						"beats": [
-							{
-								"id": "LIlwxaF3",
-								"heading": "Words set the card size",
-								"body": "Card measurement uses real font metrics and readable type. Names and responsibilities wrap inside measured boxes. This directly addresses the short cards with ellipses on the workbench board.",
-								"subjects": [
-									"g4QgxvtX"
-								],
-								"view": "ySOqVAJv"
-							},
-							{
-								"id": "dGQSHGjB",
-								"heading": "Connections shape the layout",
-								"body": "Compound layout sees both containment and cross-boundary edges. It keeps connected parts close and fits each container around its own children. It replaces the global row grid and forced half-width pairing.",
-								"subjects": [
-									"y8vuJJKu",
-									"Y0smyqtZ"
-								],
-								"view": "ySOqVAJv"
-							},
-							{
-								"id": "bWwDbOD7",
-								"heading": "One owner places and routes",
-								"body": "The same layout owner accounts for card sizes, ports, routing clearance and label boxes. It replaces the separate indexed-corridor router and returns a complete drawing, avoiding a second geometry model in the painter.",
-								"subjects": [
-									"Y0smyqtZ"
-								],
-								"view": "ySOqVAJv"
-							},
-							{
-								"id": "B7z1NujL",
-								"heading": "Paint and inspect the same geometry",
-								"body": "The painter draws the supplied wrapped text and paths; the atlas uses those same boxes and paths. Existing selection, code links and walkthrough focus continue to work.",
-								"subjects": [
-									"J7mPrUeP",
-									"eECDrhMc"
-								],
-								"view": "ySOqVAJv"
-							},
-							{
-								"id": "gj7gMeZf",
-								"heading": "Prove the result on the living vault",
-								"body": "Acceptance: the existing ten boards retain all selected subjects and links; the workbench responsibilities read without routine truncation; headers, cards and edge labels do not collide; long detours and empty container space visibly decrease. Compare at the same camera scale on the 1920×1080 shell. Identical input must produce identical geometry. Measure render latency before choosing an engine. This is a proposed architecture, displayed by the existing renderer.",
-								"subjects": [
-									"g4QgxvtX",
-									"Y0smyqtZ",
-									"eECDrhMc"
-								],
-								"view": "ySOqVAJv"
-							},
-							{
-								"id": "xCJHxziY",
-								"heading": "Follow the calls, then open the details",
-								"body": "Render sequence shows stage inputs and outputs. Open Card measurement or Compound layout and follow its linked detail board: compare Today with Proposed render, then inspect Pretext sizing and Inside layout. The library integration and compound engine choice remain proposals to validate.",
-								"subjects": [
-									"g4QgxvtX",
-									"Y0smyqtZ",
-									"J7mPrUeP"
-								],
-								"view": "OANefo74"
-							}
-						]
-					}
-				]
+				"walkthroughs": []
 			}
 		}
 	],

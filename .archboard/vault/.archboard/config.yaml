@@ -1,10 +1,12 @@
 # Vault-wide vocabulary and presentation. Commit alongside the boards.
+# There is a kind for every level: a node standing for what another board
+# describes carries that board's level as its kind (ADR 0029).
 {
   levels: [system, service, module],
   nodeKinds:
     {
+      system: { name: System, icon: RiApps2Line, color: sky },
       service: { name: Service, icon: RiServerLine, color: blue },
-      app: { name: Application, icon: RiWindowLine, color: sky },
       module: { name: Module, icon: RiBox3Line, color: violet },
       function: { name: Function, icon: RiCodeLine, color: cyan },
       route: { name: Route, icon: RiRouteLine, color: teal },

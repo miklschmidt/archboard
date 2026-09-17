@@ -1,13 +1,57 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 3,
+	"version": 4,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-09-13T12:08:39.933Z",
-	"views": [],
+	"updatedAt": "2026-09-17T21:01:46.040Z",
+	"views": [
+		{
+			"id": "Po1YmalJ",
+			"name": "One command's path",
+			"grammar": "architecture",
+			"summary": "From argv to the canvas and back.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"vAQwlVuz",
+					"iIVu1bGE",
+					"PQcK5dF2",
+					"E2MAq7W7",
+					"cWbvcIYa",
+					"OfRn3av3",
+					"MUs4pwRq"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "36hDtNB5",
+			"name": "What the CLI can be asked",
+			"grammar": "architecture",
+			"summary": "The command groups, and the one client they all speak through.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"E2MAq7W7",
+					"cWbvcIYa",
+					"eOsn0BO4",
+					"e8DKQF2E",
+					"69392DWF",
+					"yQCdykGt",
+					"qBnro8cs",
+					"vn4RDLH9",
+					"fOJvfmZv",
+					"OfRn3av3"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
 	"variants": [
 		{
 			"id": "BtJAsm3o",
@@ -17,22 +61,10 @@
 			"content": {
 				"nodes": [
 					{
-						"id": "g9qcekGB",
-						"name": "System overview",
-						"kind": "external",
-						"responsibility": "Back to applications",
-						"drillDown": {
-							"board": "Archboard",
-							"variant": {
-								"kind": "current"
-							}
-						}
-					},
-					{
 						"id": "vAQwlVuz",
 						"name": "Bootstrap",
 						"kind": "module",
-						"responsibility": "Sets configuration before imports",
+						"responsibility": "Takes the canvas address out of argv into the environment before any canvas-reading module loads",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-contract/bootstrap.ts"
@@ -42,7 +74,7 @@
 						"id": "iIVu1bGE",
 						"name": "Command catalogue",
 						"kind": "module",
-						"responsibility": "Declares available commands",
+						"responsibility": "The one table of commands: what exists, what it takes and who owns it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/run.ts"
@@ -52,7 +84,7 @@
 						"id": "PQcK5dF2",
 						"name": "Command routing",
 						"kind": "module",
-						"responsibility": "Selects and runs a command",
+						"responsibility": "Addresses one command, captures the global flags and bounds the run",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/index.ts"
@@ -66,19 +98,20 @@
 					},
 					{
 						"id": "E2MAq7W7",
-						"name": "Contract runner",
+						"name": "Contract execution",
 						"kind": "module",
-						"responsibility": "Validates input and output",
+						"responsibility": "Checks a command's prerequisites, runs its contract and presents the answer",
+						"description": "runner.ts is the seam callers import; the steps live here.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/cli/command-contract/runner.ts"
+							"path": "src/cli/command-contract/lib/execution.ts"
 						}
 					},
 					{
 						"id": "cWbvcIYa",
-						"name": "Semantic commands",
+						"name": "Semantic authoring",
 						"kind": "module",
-						"responsibility": "States board operations",
+						"responsibility": "new, edit, branch and show: the commands that state a board",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic.ts"
@@ -88,7 +121,7 @@
 						"id": "OfRn3av3",
 						"name": "Canvas client",
 						"kind": "module",
-						"responsibility": "Sends named board requests",
+						"responsibility": "The one way a command speaks to the canvas, and the refusals it reads back",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-client/index.ts"
@@ -98,7 +131,7 @@
 						"id": "fOJvfmZv",
 						"name": "Runtime control",
 						"kind": "module",
-						"responsibility": "Starts and stops the server",
+						"responsibility": "start and stop: the canvas as a detached child of this command",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/server.ts"
@@ -107,14 +140,91 @@
 					{
 						"id": "MUs4pwRq",
 						"name": "Canvas server",
-						"kind": "external",
-						"responsibility": "Owns reads and accepted writes",
+						"kind": "service",
+						"responsibility": "Owns every board and answers every command",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/index.ts"
 						},
 						"drillDown": {
 							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "eOsn0BO4",
+						"name": "Semantic lifecycle",
+						"kind": "module",
+						"responsibility": "resolve and adopt: settling a proposal and moving the current designation",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-lifecycle.ts"
+						}
+					},
+					{
+						"id": "e8DKQF2E",
+						"name": "Comparison",
+						"kind": "module",
+						"responsibility": "compare: what one variant changed about the one it came from",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-compare.ts"
+						}
+					},
+					{
+						"id": "69392DWF",
+						"name": "Rasterize",
+						"kind": "module",
+						"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
+						"description": "The sibling render command answers with the SVG the canvas drew; this one takes that SVG into a headless browser and photographs it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-rasterize.ts"
+						}
+					},
+					{
+						"id": "yQCdykGt",
+						"name": "Vault check",
+						"kind": "module",
+						"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/vault.ts"
+						}
+					},
+					{
+						"id": "qBnro8cs",
+						"name": "Claims",
+						"kind": "module",
+						"responsibility": "claim and release: holding a board for a stretch of agent work",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/claim.ts"
+						}
+					},
+					{
+						"id": "vn4RDLH9",
+						"name": "Panes",
+						"kind": "module",
+						"responsibility": "browser: the live session, its panes, and pointing one at a board",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/pane.ts"
+						}
+					},
+					{
+						"id": "I6RAbOlG",
+						"name": "Board rasterizer",
+						"kind": "module",
+						"responsibility": "One headless browser, one PNG at a time, refused rather than cropped",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer"
+						},
+						"drillDown": {
+							"board": "Board rasterizer",
 							"variant": {
 								"kind": "current"
 							}
@@ -127,7 +237,7 @@
 						"from": "vAQwlVuz",
 						"to": "iIVu1bGE",
 						"kind": "call",
-						"label": "load",
+						"label": "load the table",
 						"emphasis": "normal"
 					},
 					{
@@ -143,8 +253,12 @@
 						"from": "PQcK5dF2",
 						"to": "E2MAq7W7",
 						"kind": "call",
-						"label": "selected contract",
-						"emphasis": "normal"
+						"label": "the selected contract",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "kcqc65Ye",
@@ -152,7 +266,11 @@
 						"to": "cWbvcIYa",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "ytXRvhS3",
@@ -160,7 +278,11 @@
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "board operation",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "pB6BrbXY",
@@ -168,7 +290,11 @@
 						"to": "MUs4pwRq",
 						"kind": "http",
 						"label": "JSON",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "34TPgaMW",
@@ -177,6 +303,118 @@
 						"kind": "call",
 						"label": "lifecycle command",
 						"emphasis": "normal"
+					},
+					{
+						"id": "LvMXIuAw",
+						"from": "E2MAq7W7",
+						"to": "eOsn0BO4",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "BsJL3bGP",
+						"from": "E2MAq7W7",
+						"to": "e8DKQF2E",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "06f3KVxy",
+						"from": "E2MAq7W7",
+						"to": "69392DWF",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "0b4tib6n",
+						"from": "E2MAq7W7",
+						"to": "yQCdykGt",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "UD3ngpHC",
+						"from": "E2MAq7W7",
+						"to": "qBnro8cs",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yUWUF6TZ",
+						"from": "E2MAq7W7",
+						"to": "vn4RDLH9",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Ixm9Y4W9",
+						"from": "eOsn0BO4",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8bgnBTp4",
+						"from": "e8DKQF2E",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "I2CofSP0",
+						"from": "69392DWF",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "the drawn SVG",
+						"emphasis": "normal"
+					},
+					{
+						"id": "QmcmQeFK",
+						"from": "yQCdykGt",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "RoUCyRav",
+						"from": "qBnro8cs",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "b7q8WlCg",
+						"from": "vn4RDLH9",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "browser operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "uwbAloqv",
+						"from": "69392DWF",
+						"to": "I6RAbOlG",
+						"kind": "call",
+						"label": "photograph it headlessly",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Hb5DPGx6",
+						"from": "fOJvfmZv",
+						"to": "MUs4pwRq",
+						"kind": "call",
+						"label": "start and stop the child",
+						"emphasis": "muted"
 					}
 				],
 				"flows": [],
@@ -188,29 +426,39 @@
 							{
 								"id": "BT60n3Ki",
 								"heading": "One catalogue defines the surface",
-								"body": "The catalogue binds command contracts to routes. Bootstrap applies configuration before importing runtime consumers.",
+								"body": "Every command this CLI has is a row of one table, with the contract that says what it takes. Nothing is registered anywhere else, so help, routing and execution cannot disagree about what exists.",
 								"subjects": [
-									"vAQwlVuz",
-									"iIVu1bGE"
+									"iIVu1bGE",
+									"PQcK5dF2"
 								]
 							},
 							{
 								"id": "iVdPEdem",
-								"heading": "Contracts bound every invocation",
-								"body": "Routing selects the operation; the runner validates its inputs, prerequisites and result.",
+								"heading": "The contract bounds the invocation",
+								"body": "Input is validated against the contract before a handler runs, the prerequisites the command declares are checked, and the answer is presented one way for every command.",
 								"subjects": [
-									"PQcK5dF2",
-									"E2MAq7W7"
+									"E2MAq7W7",
+									"kcqc65Ye"
 								]
 							},
 							{
 								"id": "Mr26GVEr",
 								"heading": "Persistence stays in the server",
-								"body": "Semantic commands send explicit board operations over HTTP. Runtime-control commands manage the server process.",
+								"body": "No command writes a vault file. Every board operation is JSON over HTTP to the canvas, which owns the file, the lease and the version check.",
 								"subjects": [
-									"cWbvcIYa",
 									"OfRn3av3",
+									"pB6BrbXY",
 									"MUs4pwRq"
+								]
+							},
+							{
+								"id": "tHI5I16e",
+								"heading": "The one command that draws for itself",
+								"body": "Rasterizing asks the canvas for the SVG like every other command, then takes it into a headless browser of its own: the picture is photographed in this process, not on the server.",
+								"subjects": [
+									"69392DWF",
+									"uwbAloqv",
+									"I6RAbOlG"
 								]
 							}
 						]

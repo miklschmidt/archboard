@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 3,
+	"version": 4,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-09-13T12:08:40.259Z",
+	"updatedAt": "2026-09-17T21:03:08.047Z",
 	"views": [],
 	"variants": [
 		{
@@ -16,18 +16,6 @@
 			"summary": "Module level: how command-routing turns argv and a command table into one bounded invocation.",
 			"content": {
 				"nodes": [
-					{
-						"id": "VZjA1TbA",
-						"name": "CLI modules",
-						"kind": "external",
-						"responsibility": "Back to CLI internals",
-						"drillDown": {
-							"board": "Command interface",
-							"variant": {
-								"kind": "current"
-							}
-						}
-					},
 					{
 						"id": "qHOothyT",
 						"name": "runCliWith",
@@ -40,9 +28,9 @@
 					},
 					{
 						"id": "45uNvMac",
-						"name": "Help and registry",
+						"name": "Registry and surface",
 						"kind": "function",
-						"responsibility": "Projects the command table",
+						"responsibility": "What the table says exists, and the rule every command in it has to keep",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/registry.ts"
@@ -81,8 +69,8 @@
 					{
 						"id": "MmMnif7e",
 						"name": "runCommand",
-						"kind": "external",
-						"responsibility": "Executes the validated contract",
+						"kind": "module",
+						"responsibility": "The seam a bound command is run through, with its contract and the signal",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-contract/runner.ts"
@@ -96,6 +84,32 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/exit-codes.ts"
+						}
+					},
+					{
+						"id": "Swj3xzmd",
+						"name": "Command catalogue",
+						"kind": "service",
+						"responsibility": "The table of every command, and the caller that hands this module its argv",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/run.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ogSW3Rjt",
+						"name": "Help text",
+						"kind": "function",
+						"responsibility": "The help a reader sees, projected from the table rather than written beside it",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/help.ts"
 						}
 					}
 				],
@@ -146,6 +160,26 @@
 						"to": "bV1RPiKW",
 						"kind": "call",
 						"label": "on failure",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Xqy7fxY0",
+						"from": "Swj3xzmd",
+						"to": "qHOothyT",
+						"kind": "call",
+						"label": "argv",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "Fr1yww70",
+						"from": "45uNvMac",
+						"to": "ogSW3Rjt",
+						"kind": "data",
+						"label": "the commands to project",
 						"emphasis": "normal"
 					}
 				],

@@ -1,13 +1,51 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-13T12:08:40.587Z",
-	"views": [],
+	"updatedAt": "2026-09-17T21:08:05.036Z",
+	"views": [
+		{
+			"id": "PDi7k1Hs",
+			"name": "Reading a board",
+			"grammar": "architecture",
+			"summary": "What it takes to show one board in one pane.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"HggZR41l",
+					"c4LPnwh5",
+					"dtYjWvlf",
+					"hDWpDois",
+					"6uWT4mUj",
+					"xsn0RvSi",
+					"G4NHQC25"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "D87Mmg83",
+			"name": "Working with an agent",
+			"grammar": "architecture",
+			"summary": "The dock, the socket it rides, and the voice session beside it.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"0x47EMoO",
+					"0SRnYXnC",
+					"xsn0RvSi",
+					"G4NHQC25"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
 	"variants": [
 		{
 			"id": "IVTpHq7O",
@@ -17,27 +55,20 @@
 			"content": {
 				"nodes": [
 					{
-						"id": "mK7WVIy5",
-						"name": "Archboard system",
-						"kind": "external",
-						"responsibility": "Provides the complete product",
-						"description": "Context above this service: the canvas server, CLI, board files, browser, and Codex workbench together form Archboard.",
+						"id": "yAFyqal3",
+						"name": "Browser client",
+						"kind": "system",
+						"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing",
+						"description": "ADR 0023. Board content lives here only as a read-only cache of what the server said, read again when the server announces a new version. A person's one control over a board is taking back somebody else's claim.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx"
+						},
 						"drillDown": {
 							"board": "Archboard",
 							"variant": {
 								"kind": "current"
 							}
-						}
-					},
-					{
-						"id": "yAFyqal3",
-						"name": "Browser client",
-						"kind": "service",
-						"responsibility": "Presents boards without writing them",
-						"description": "The desktop-only read client. It owns presentation state and sends commands, while board meaning and drawing remain server-owned.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/application/index.tsx"
 						}
 					},
 					{
@@ -109,13 +140,12 @@
 					{
 						"id": "0x47EMoO",
 						"name": "Workbench client",
-						"kind": "module",
-						"responsibility": "Projects the bound agent session",
-						"description": "Renders the focused pane's Codex session from server snapshots and deltas and sends user actions through the pane transport.",
+						"kind": "service",
+						"responsibility": "The agent workbench in the dock: the thread link, the queue, the approvals, the timeline",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench"
+							"path": "src/ui/workbench/index.tsx"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -128,12 +158,17 @@
 						"id": "0SRnYXnC",
 						"name": "Voice session",
 						"kind": "module",
-						"responsibility": "Runs spoken presentation control",
-						"description": "Coordinates realtime voice, narration, approval speech, media level, and semantic context supplied by the active pane.",
+						"responsibility": "The live voice session this tab holds: availability, the peer connection, mute, recovery",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-session"
+							"path": "src/ui/voice-session/index.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
 						}
 					},
 					{
@@ -151,12 +186,11 @@
 					{
 						"id": "G4NHQC25",
 						"name": "Canvas server",
-						"kind": "external",
-						"responsibility": "Serves pictures and live session state",
-						"description": "Authoritative server peer reached through HTTP reads, pane WebSockets, workbench messages, and code-opening requests.",
+						"kind": "service",
+						"responsibility": "Owns every board and answers every read",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server.ts"
+							"path": "src/server/canvas/index.ts"
 						},
 						"drillDown": {
 							"board": "Canvas server",
@@ -164,23 +198,54 @@
 								"kind": "current"
 							}
 						}
+					},
+					{
+						"id": "c4LPnwh5",
+						"name": "Shell",
+						"kind": "ui",
+						"responsibility": "The desktop frame: header, navigator, the pane centre and the workbench dock",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/shell/index.tsx"
+						}
+					},
+					{
+						"id": "hDWpDois",
+						"name": "Browser renderer",
+						"kind": "module",
+						"responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/browser-renderer/index.ts"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "6uWT4mUj",
+						"name": "Server requests",
+						"kind": "module",
+						"responsibility": "The one way this tab speaks JSON to the canvas",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/server-requests/index.ts"
+						}
 					}
 				],
 				"edges": [
 					{
-						"id": "am5lUy4O",
-						"from": "mK7WVIy5",
-						"to": "yAFyqal3",
-						"kind": "dependency",
-						"label": "contains",
-						"emphasis": "normal"
-					},
-					{
 						"id": "4dl0EE8i",
 						"from": "HggZR41l",
-						"to": "dtYjWvlf",
+						"to": "c4LPnwh5",
 						"kind": "render",
-						"label": "mounts panes",
+						"label": "the desktop frame",
 						"emphasis": "normal"
 					},
 					{
@@ -202,18 +267,22 @@
 					{
 						"id": "4iVsoxG0",
 						"from": "zWQG6LJZ",
-						"to": "G4NHQC25",
-						"kind": "http",
-						"label": "fetch board list",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "fetch the board list",
 						"emphasis": "normal"
 					},
 					{
 						"id": "pqG9kqlF",
 						"from": "dtYjWvlf",
-						"to": "G4NHQC25",
-						"kind": "http",
-						"label": "fetch board and SVG",
-						"emphasis": "hero"
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "fetch the board",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "PuILGsjg",
@@ -250,10 +319,50 @@
 					{
 						"id": "ygbcyDVT",
 						"from": "4LDuKQvq",
-						"to": "G4NHQC25",
-						"kind": "http",
+						"to": "6uWT4mUj",
+						"kind": "call",
 						"label": "request activation",
 						"emphasis": "normal"
+					},
+					{
+						"id": "VbLQ6rfX",
+						"from": "c4LPnwh5",
+						"to": "dtYjWvlf",
+						"kind": "render",
+						"label": "one canvas per pane",
+						"emphasis": "hero"
+					},
+					{
+						"id": "G55H6teG",
+						"from": "dtYjWvlf",
+						"to": "hDWpDois",
+						"kind": "call",
+						"label": "draw this board here",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "WchncnH1",
+						"from": "c4LPnwh5",
+						"to": "0x47EMoO",
+						"kind": "render",
+						"label": "the dock",
+						"emphasis": "normal"
+					},
+					{
+						"id": "chjmKQLj",
+						"from": "6uWT4mUj",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "JSON",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					}
 				],
 				"flows": [],
