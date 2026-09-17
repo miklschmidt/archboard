@@ -1,11 +1,11 @@
 ---
 id: TASK-245.09
 title: Bring an architecture render back under 150 ms
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:30'
-updated_date: '2026-09-16 19:56'
+updated_date: '2026-09-17 09:57'
 labels:
   - renderer
   - performance
@@ -44,4 +44,12 @@ Rendering one variant went from about 100 ms to nearly a second on 2026-09-16 (w
 
 <!-- SECTION:NOTES:BEGIN -->
 Exact optimizations landed locally (scorecard unchanged on every vault variant and fixture): solves remembered per settle, release only on the kept branch, engine worker pool sized from host cores, bounded reading choice, flank rules settled ahead for the down reading, grown gap in parallel, layout remembered by lineage. Nine of fourteen boards under 150 ms first render; Canvas server ~340, Semantic renderer ~170, Board persistence ~120-280, fixtures 400-900 warm. Repeat renders ~1 ms. Remaining gap needs a choice with the user (fewer flank rules, lighter label settling, another placement). layout-rules.md section 22. bun run check passed.
+
+2026-09-17: closed at the user's call that the current situation is very good and acceptable. Since the notes above, pictures are drawn in the browser (TASK-247) and the Bun renderer gained a shared compiled engine, parallel reservation releases and elk-rs 0.11.3: Bun timing sum 2569 -> 907 ms, browser first picture ~396 ms mean, kept pictures shown at once, pictures byte-identical across every vault variant and fixture. Criterion 1 (every board under 150 ms) is not met for the largest boards and fixtures; the user accepted that.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rendering was cut substantially (per-settle memoisation, kept-branch releases, host-sized engine pools, shared compiled engine, parallel releases, elk-rs 0.11.3, browser drawing with kept pictures) with the scorecard unchanged; most boards render under 150 ms and the rest were accepted by the user as they are.
+<!-- SECTION:FINAL_SUMMARY:END -->
