@@ -116,11 +116,17 @@ async function releaseUnused(
 
 /**
  * The first release, in order, that still places every label on a page no taller.
+ *
+ * Every release is solved at once and the first that holds, in order, is kept,
+ * which is the release a one-at-a-time search would find. Most rounds find none
+ * and solve every release either way (measured 2026-09-17 across the vault and
+ * the wide-board fixtures), so solving them side by side costs a round nothing
+ * but its wait; a round that finds one pays for the solves after it, in parallel.
  * @param solve Solves with a set of reservations.
  * @param reserved The reservations held now.
  * @param stacked The stack depth.
  * @param settled The attempt with those reservations.
- * @param releases The releases to try, in order; tried one solve at a time, since the first that holds ends the search.
+ * @param releases The releases to try, in order.
  * @returns That release's attempt and remaining reservations, or nothing.
  */
 async function firstRelease(
@@ -130,13 +136,15 @@ async function firstRelease(
 	settled: LabelAttempt,
 	releases: readonly (readonly string[])[],
 ): Promise<{ attempt: LabelAttempt; kept: ReadonlySet<string> } | undefined> {
-	const [release, ...rest] = releases;
-	if (release === undefined) return undefined;
-	const kept = new Set([...reserved].filter((id) => !release.includes(id)));
-	const attempt = await solve(kept, stacked);
-	return attempt.missing.length === 0 && noLarger(attempt.drawing, settled.drawing)
-		? { attempt, kept }
-		: firstRelease(solve, reserved, stacked, settled, rest);
+	const tried = releases.map((release) => {
+		const kept = new Set([...reserved].filter((id) => !release.includes(id)));
+		return { kept, attempt: solve(kept, stacked) };
+	});
+	const answers = await Promise.all(tried.map(({ attempt }) => attempt));
+	const index = answers.findIndex(
+		(attempt) => attempt.missing.length === 0 && noLarger(attempt.drawing, settled.drawing),
+	);
+	return index === -1 ? undefined : { attempt: answers[index]!, kept: tried[index]!.kept };
 }
 
 /**
