@@ -1,13 +1,70 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-13T12:08:40.047Z",
-	"views": [],
+	"updatedAt": "2026-09-17T21:05:51.838Z",
+	"views": [
+		{
+			"id": "ASLOMTIS",
+			"name": "One command from a pane",
+			"grammar": "architecture",
+			"summary": "From the pane's lease to a turn running on the child.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"tzyaOHwF",
+					"u2LFaG7R",
+					"tlC2W839",
+					"2ffhMTdn",
+					"jylkTBp7",
+					"FxzIjbIO",
+					"giL6EI28"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "aeBxrmvQ",
+			"name": "The two threads",
+			"grammar": "architecture",
+			"summary": "The workhorse does the sustained work; the coordinator answers and routes.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"Fg9dkGj3",
+					"ZQxB1ZaK",
+					"tlC2W839",
+					"2ffhMTdn",
+					"jylkTBp7"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "kwp3Wsiz",
+			"name": "Owning the child",
+			"grammar": "architecture",
+			"summary": "What is durable about a generation, and what dies with it.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"skyIeErO",
+					"9diqPrFw",
+					"giL6EI28",
+					"Uz2qReYK",
+					"byMaoUe0"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
 	"variants": [
 		{
 			"id": "d74jhTtj",
@@ -17,87 +74,76 @@
 			"content": {
 				"nodes": [
 					{
-						"id": "LhKhARob",
-						"name": "Archboard system",
-						"kind": "external",
-						"responsibility": "Provides the complete product",
-						"description": "Context above this service: the workbench is one logical subsystem of the Archboard canvas server.",
+						"id": "7TAwfrZF",
+						"name": "Agent workbench",
+						"kind": "service",
+						"responsibility": "Everything archboard owns around one private Codex child, inside the canvas server",
+						"description": "Not a deployment of its own: this lives in the canvas server process. The Codex app-server is its child.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/codex-workbench-application.ts"
+						},
 						"drillDown": {
-							"board": "Archboard",
+							"board": "Canvas server",
 							"variant": {
 								"kind": "current"
 							}
 						}
 					},
 					{
-						"id": "7TAwfrZF",
-						"name": "Workbench subsystem",
-						"kind": "service",
-						"responsibility": "Owns one bound Codex workbench",
-						"description": "A logical subsystem inside the canvas server. It composes one private package-local Codex app-server session and publishes its state to browser panes.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/codex-workbench-application.ts"
-						}
-					},
-					{
 						"id": "skyIeErO",
-						"name": "Canvas composition",
+						"name": "Generation composition",
 						"kind": "module",
-						"responsibility": "Installs and replaces generations",
-						"description": "Builds the production workbench module inside the canvas server and owns startup, replacement, shutdown, and shared adapters.",
+						"responsibility": "Builds one generation's object graph, in the order its parts depend on each other",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/codex-workbench-owner.ts"
+							"path": "src/server/canvas/lib/codex-workbench-factories.ts"
 						}
 					},
 					{
 						"id": "u2LFaG7R",
 						"name": "Browser gateway",
 						"kind": "module",
-						"responsibility": "Publishes bounded browser state",
-						"description": "Leases browser connections, projects authoritative workbench state into bounded snapshots and deltas, and dispatches accepted browser commands.",
+						"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease at a time",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/codex-workbench"
+							"path": "src/server/codex-workbench/index.ts"
 						}
 					},
 					{
 						"id": "9diqPrFw",
 						"name": "Codex process",
 						"kind": "module",
-						"responsibility": "Owns child process and storage",
-						"description": "Prepares the isolated CODEX_HOME and SQLite paths, starts and stops the child process group, and reports lifecycle evidence.",
+						"responsibility": "Owns the child: proves the executable, prepares its private storage, spawns it and reaps its group",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-process"
+							"path": "src/runtime/codex-process/index.ts"
 						}
 					},
 					{
 						"id": "FxzIjbIO",
 						"name": "Codex transport",
 						"kind": "module",
-						"responsibility": "Carries correlated JSON-RPC",
-						"description": "Frames stdio requests, responses, notifications, and reverse requests with child-epoch correlation and bounded pending work.",
+						"responsibility": "One newline-framed JSON object at a time each way, correlated to its request",
+						"description": "The versioned wire contract it decodes against lives beside it in codex-protocol.",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-transport"
+							"path": "src/runtime/codex-transport/index.ts"
 						}
 					},
 					{
 						"id": "jylkTBp7",
 						"name": "Codex session",
 						"kind": "module",
-						"responsibility": "Exposes the reviewed RPC surface",
-						"description": "Initializes app-server, proves storage, gates account and thread operations, validates identities, and classifies mutation delivery outcomes.",
+						"responsibility": "One initialized session and the reviewed methods it will send",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-session"
+							"path": "src/runtime/codex-session/index.ts"
 						},
 						"drillDown": {
 							"board": "Codex session",
@@ -110,58 +156,56 @@
 						"id": "byMaoUe0",
 						"name": "Thread link",
 						"kind": "module",
-						"responsibility": "Binds one pane to one workhorse",
-						"description": "Discovers, creates, refreshes, and recovers the single workhorse thread linked to a semantic pane under current child ownership.",
+						"responsibility": "Which thread a pane is bound to: the candidates, the binding, and the refusal when two disagree",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-thread-link"
+							"path": "src/runtime/codex-thread-link/index.ts"
 						}
 					},
 					{
 						"id": "2ffhMTdn",
 						"name": "Workhorse queue",
 						"kind": "module",
-						"responsibility": "Orders pending user submissions",
-						"description": "Owns queued work, reorder and start behavior, and the authoritative queue projection for the bound workhorse.",
+						"responsibility": "The submissions waiting for one thread, and the one turn running",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-workhorse-queue"
+							"path": "src/runtime/codex-workhorse-queue/index.ts"
 						}
 					},
 					{
 						"id": "Fg9dkGj3",
-						"name": "Coordinator",
+						"name": "Voice coordinator",
 						"kind": "module",
-						"responsibility": "Runs voice coordination separately",
-						"description": "Owns the separate coordinator thread, its dynamic tools, callbacks, approvals, and semantic context without replacing the workhorse.",
+						"responsibility": "The separate fast thread voice attaches to, which routes sustained work to the workhorse",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-coordinator"
+							"path": "src/runtime/codex-coordinator/index.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
 						}
 					},
 					{
 						"id": "giL6EI28",
 						"name": "Codex app-server",
 						"kind": "external",
-						"responsibility": "Executes Codex protocol operations",
-						"description": "External child process launched as `codex app-server`; it communicates only through the owned stdio transport and private storage.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-process/process.ts"
-						}
+						"responsibility": "The Codex binary, run as one private child over stdio with its own storage",
+						"description": "Spawned as `app-server --stdio --strict-config`. Its threads are the workhorse and the coordinator; nothing here describes its internals."
 					},
 					{
 						"id": "tzyaOHwF",
 						"name": "Browser pane",
-						"kind": "external",
-						"responsibility": "Shows and controls the workbench",
-						"description": "The active semantic pane supplies one leased socket connection and consumes the projected session state.",
+						"kind": "service",
+						"responsibility": "The pane a person works in: it holds the lease, sends commands and draws the published state",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/pane-session/workbench-socket.ts"
+							"path": "src/ui/workbench/index.tsx"
 						},
 						"drillDown": {
 							"board": "Browser application",
@@ -169,32 +213,86 @@
 								"kind": "current"
 							}
 						}
+					},
+					{
+						"id": "Uz2qReYK",
+						"name": "Epoch ledger",
+						"kind": "module",
+						"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-epoch/index.ts"
+						}
+					},
+					{
+						"id": "tlC2W839",
+						"name": "Workhorse operations",
+						"kind": "module",
+						"responsibility": "The four things anything may ask of a workhorse: delegate, steer, inspect, manage its queue",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-operations/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ZQxB1ZaK",
+						"name": "Realtime voice",
+						"kind": "module",
+						"responsibility": "Starts the realtime leg on the coordinator's thread and carries its transcript back",
+						"description": "Archboard never speaks to a voice endpoint itself: the child brokers it, and the media travels browser to provider over the peer connection the tab made.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-realtime/index.ts"
+						}
+					},
+					{
+						"id": "QGVPyMwG",
+						"name": "Approvals",
+						"kind": "module",
+						"responsibility": "Every approval the child raises: staged, published once, answered exactly once, settled",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-approvals/index.ts"
+						}
+					},
+					{
+						"id": "DNQTPTxE",
+						"name": "Board tools",
+						"kind": "module",
+						"responsibility": "The archboard tools a thread may call: read a board, state a change, wait, answer an approval",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-dynamic-tools/index.ts"
+						}
 					}
 				],
 				"edges": [
-					{
-						"id": "4g4MoFAF",
-						"from": "LhKhARob",
-						"to": "7TAwfrZF",
-						"kind": "dependency",
-						"label": "contains",
-						"emphasis": "normal"
-					},
 					{
 						"id": "hwJPR59O",
 						"from": "skyIeErO",
 						"to": "9diqPrFw",
 						"kind": "call",
-						"label": "start generation",
-						"emphasis": "hero"
+						"label": "start a generation",
+						"emphasis": "normal"
 					},
 					{
 						"id": "9GaG5ItC",
 						"from": "9diqPrFw",
 						"to": "giL6EI28",
 						"kind": "call",
-						"label": "spawn child",
-						"emphasis": "hero"
+						"label": "spawn the child",
+						"emphasis": "normal"
 					},
 					{
 						"id": "FZnS78FX",
@@ -210,14 +308,18 @@
 						"to": "giL6EI28",
 						"kind": "rpc",
 						"label": "JSON-RPC over stdio",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "SRifquBt",
 						"from": "byMaoUe0",
 						"to": "jylkTBp7",
 						"kind": "call",
-						"label": "discover and bind thread",
+						"label": "discover and bind a thread",
 						"emphasis": "normal"
 					},
 					{
@@ -225,15 +327,19 @@
 						"from": "2ffhMTdn",
 						"to": "jylkTBp7",
 						"kind": "call",
-						"label": "queue and start turns",
-						"emphasis": "normal"
+						"label": "start the next turn",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "XAd3chIR",
 						"from": "Fg9dkGj3",
 						"to": "jylkTBp7",
 						"kind": "call",
-						"label": "run coordinator thread",
+						"label": "run the coordinator thread",
 						"emphasis": "normal"
 					},
 					{
@@ -241,16 +347,20 @@
 						"from": "u2LFaG7R",
 						"to": "byMaoUe0",
 						"kind": "call",
-						"label": "project binding",
+						"label": "which thread this pane has",
 						"emphasis": "normal"
 					},
 					{
 						"id": "Qh7VZ9MQ",
 						"from": "u2LFaG7R",
-						"to": "2ffhMTdn",
+						"to": "tlC2W839",
 						"kind": "call",
-						"label": "dispatch queue actions",
-						"emphasis": "normal"
+						"label": "the command this pane sent",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "Lo6Q7GDB",
@@ -258,6 +368,94 @@
 						"to": "u2LFaG7R",
 						"kind": "event",
 						"label": "lease, commands, snapshots",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "nw9nYSMn",
+						"from": "skyIeErO",
+						"to": "u2LFaG7R",
+						"kind": "call",
+						"label": "bind the gateway to this generation",
+						"emphasis": "muted"
+					},
+					{
+						"id": "2wlebJ2T",
+						"from": "u2LFaG7R",
+						"to": "tzyaOHwF",
+						"kind": "event",
+						"label": "one snapshot, then deltas",
+						"emphasis": "normal"
+					},
+					{
+						"id": "uK6QAuru",
+						"from": "tlC2W839",
+						"to": "2ffhMTdn",
+						"kind": "call",
+						"label": "one turn at a time",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "NeJ30W7X",
+						"from": "tlC2W839",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "the thread this operation is for",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2ed6AqSF",
+						"from": "tlC2W839",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "stage, commit or roll back",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mhknqBOz",
+						"from": "Fg9dkGj3",
+						"to": "tlC2W839",
+						"kind": "call",
+						"label": "delegate, steer, inspect, queue",
+						"emphasis": "hero"
+					},
+					{
+						"id": "TFjDY5zE",
+						"from": "ZQxB1ZaK",
+						"to": "jylkTBp7",
+						"kind": "call",
+						"label": "start the realtime leg",
+						"emphasis": "normal"
+					},
+					{
+						"id": "YOaSBuBr",
+						"from": "QGVPyMwG",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "an approval to answer",
+						"emphasis": "normal"
+					},
+					{
+						"id": "aoHKAkWD",
+						"from": "FxzIjbIO",
+						"to": "DNQTPTxE",
+						"kind": "event",
+						"label": "a tool call from a thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mxl6bmYW",
+						"from": "DNQTPTxE",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "the generation that may act",
 						"emphasis": "normal"
 					}
 				],
@@ -269,8 +467,8 @@
 						"beats": [
 							{
 								"id": "aDZPR2CP",
-								"heading": "Install a private generation",
-								"body": "Canvas composition prepares isolated storage and starts one external app-server child through the Codex process owner.",
+								"heading": "A private child, composed once",
+								"body": "The workbench verifies the executable, gives the child its own storage under the canvas's state directory, and builds one generation's parts in the order they depend on each other. Nothing here is shared with another client's Codex.",
 								"subjects": [
 									"skyIeErO",
 									"9diqPrFw",
@@ -279,24 +477,33 @@
 							},
 							{
 								"id": "GMR5L8XU",
-								"heading": "Establish the reviewed session",
-								"body": "Transport correlates stdio messages while Codex session initializes capabilities, proves storage, and opens account and thread gates.",
+								"heading": "Only reviewed methods reach the wire",
+								"body": "The session publishes the methods that have been reviewed against the pinned contract, and the transport carries one framed object at a time each way. A reply that does not decode is a refusal, not a guess.",
 								"subjects": [
-									"FxzIjbIO",
 									"jylkTBp7",
-									"giL6EI28"
+									"FZnS78FX",
+									"FxzIjbIO",
+									"3vlSu8a3"
 								]
 							},
 							{
 								"id": "Li1gMmz5",
-								"heading": "Bind work and publish it",
-								"body": "Thread link, queue, and coordinator own their distinct workflows; the browser gateway turns their state into bounded messages for the leased pane.",
+								"heading": "A pane holds the link, and the lease",
+								"body": "A pane's thread link names one workhorse. Work reaches it through the four operations, is serialized by its queue, and lands under an epoch transaction so a child that dies mid-flight leaves a stated outcome rather than a guess.",
 								"subjects": [
 									"byMaoUe0",
+									"tlC2W839",
 									"2ffhMTdn",
+									"Uz2qReYK"
+								]
+							},
+							{
+								"id": "LdbANjtD",
+								"heading": "Voice is a separate thread, not a second mouth",
+								"body": "The coordinator is its own thread with its own model and settings. It answers and does bounded work, and routes anything sustained to the workhorse through the same four operations a pane uses.",
+								"subjects": [
 									"Fg9dkGj3",
-									"u2LFaG7R",
-									"tzyaOHwF"
+									"ZQxB1ZaK"
 								]
 							}
 						]

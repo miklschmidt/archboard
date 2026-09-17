@@ -1,26 +1,28 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "6E6hL0Zk",
 	"name": "Canvas server",
 	"level": "service",
-	"version": 5,
+	"version": 7,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-13T12:08:40.692Z",
+	"updatedAt": "2026-09-17T20:59:56.659Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
-			"name": "Board request path",
+			"name": "One write lands",
 			"grammar": "architecture",
+			"summary": "What an agent's batch passes through before it is on disk and announced.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
+					"mTtiV3hX",
 					"2naazvac",
 					"K6P74fM7",
-					"Y70KOm9C",
+					"8B8O9ZiT",
 					"wYcdVszt",
-					"xP18j2Co",
-					"yiSc1qWU"
+					"yiSc1qWU",
+					"Eh7icS73"
 				],
 				"edges": [],
 				"flows": []
@@ -30,13 +32,34 @@
 			"id": "ZyxNXY6t",
 			"name": "Live canvas state",
 			"grammar": "architecture",
+			"summary": "What keeps a pane's reading current.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"yiSc1qWU",
 					"ZuLyutvj",
 					"9G6CmNgt",
-					"wYcdVszt"
+					"wYcdVszt",
+					"Eh7icS73"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "3rTjcIp7",
+			"name": "Board request path",
+			"grammar": "architecture",
+			"summary": "A read: the family, the picture, the code target.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"mTtiV3hX",
+					"Eh7icS73",
+					"Y70KOm9C",
+					"wYcdVszt",
+					"xP18j2Co",
+					"6a2R1ddu"
 				],
 				"edges": [],
 				"flows": []
@@ -52,28 +75,10 @@
 			"content": {
 				"nodes": [
 					{
-						"id": "ghOazHEA",
-						"name": "Archboard system",
-						"kind": "external",
-						"responsibility": "Provides CLI, canvas, and viewer",
-						"description": "Parent system context for this backend service; the system-level board owns the relationship among the CLI, this server, and the browser viewer.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src"
-						},
-						"drillDown": {
-							"board": "Archboard",
-							"variant": {
-								"kind": "current"
-							}
-						}
-					},
-					{
 						"id": "2naazvac",
 						"name": "HTTP application",
 						"kind": "module",
-						"responsibility": "Orders middleware and route mounts",
-						"description": "Builds the single Express application in execution order: mutation admission precedes body parsing, code-opening is preguarded, frontend assets are narrowly exposed, and route families mount before the final service/error routes.",
+						"responsibility": "Composes the middleware and mounts every route on the one application",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/application.ts"
@@ -83,8 +88,7 @@
 						"id": "J7yOKraz",
 						"name": "Application lifetime",
 						"kind": "module",
-						"responsibility": "Starts and drains server resources",
-						"description": "Owns startup and orderly shutdown across HTTP, WebSocket, Codex workbench, checkout work, pid state and process handlers. Accepted board writes commit before their response.",
+						"responsibility": "Boots and stops the canvas: the vault and loopback refusals, the pidfile, the ordered shutdown",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/canvas-startup.ts"
@@ -94,19 +98,17 @@
 						"id": "K6P74fM7",
 						"name": "Mutation admission",
 						"kind": "module",
-						"responsibility": "Tracks writes through shutdown",
-						"description": "Admits mutation requests, propagates disconnect cancellation to waitable work, counts work that outlives an HTTP response, and exposes quiesce/resume state to controlled shutdown.",
+						"responsibility": "One admitted change at a time, with a drain timeout, so a stop never loses an accepted write",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/lib/application-lifetime.ts"
+							"path": "src/server/canvas/lib/mutation-admission.ts"
 						}
 					},
 					{
 						"id": "Y70KOm9C",
-						"name": "Semantic board routes",
+						"name": "Board read routes",
 						"kind": "route",
-						"responsibility": "Serves board reads, writes, and SVG",
-						"description": "Validates HTTP inputs for create/edit/branch/settle/adopt operations, reads variants and views, renders diagrams on the server, and publishes accepted write outcomes to connected panes.",
+						"responsibility": "Answers every read of a board: the family, the catalogue, one drawn view",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-routes.ts"
@@ -116,8 +118,7 @@
 						"id": "wYcdVszt",
 						"name": "Semantic board store",
 						"kind": "module",
-						"responsibility": "Owns durable board aggregates",
-						"description": "The sole read/write boundary for .semantic.json documents. It resolves safe vault paths, validates every read, serializes writes under a board lease, checks expected versions, propagates edits, and commits once with fsync-backed atomic replacement.",
+						"responsibility": "The one place a board is read or written",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store"
@@ -133,8 +134,7 @@
 						"id": "xP18j2Co",
 						"name": "Semantic renderer",
 						"kind": "module",
-						"responsibility": "Turns board meaning into SVG",
-						"description": "Resolves architecture or data-flow view content, lays out nodes and exchanges, routes relationships, paints SVG with measured fonts and theme palettes, and returns a subject atlas for browser interaction.",
+						"responsibility": "Draws one variant, view and theme as a self-contained document",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer"
@@ -148,10 +148,9 @@
 					},
 					{
 						"id": "yiSc1qWU",
-						"name": "Pane routes and registry",
+						"name": "Pane registry",
 						"kind": "module",
-						"responsibility": "Owns live presentation state",
-						"description": "Tracks connected pane registrations, authoritative board assignments, layout acknowledgements, selection context, and targeted or broadcast WebSocket delivery without retaining board content in memory.",
+						"responsibility": "The sockets, what each pane is showing, and the news broadcast to every one of them",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/pane-registry.ts"
@@ -161,8 +160,7 @@
 						"id": "ZuLyutvj",
 						"name": "Disk change watcher",
 						"kind": "module",
-						"responsibility": "Refreshes externally changed boards",
-						"description": "Uses the board-lock sweep to compare inode, size and modification-time fingerprints for visible boards. Broadcasts board_note when a file changes; readers fetch fresh content through the store. It neither reads board content nor sends replacement scenes.",
+						"responsibility": "Notices a board changed on disk that this process did not write",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-disk-watch.ts"
@@ -172,8 +170,7 @@
 						"id": "6a2R1ddu",
 						"name": "Code opener",
 						"kind": "module",
-						"responsibility": "Resolves bindings into editors",
-						"description": "Accepts code-binding requests, guards browser-originated bodies and CSRF concerns, resolves registered repositories and safe paths, and launches the configured editor against a board node's persisted binding.",
+						"responsibility": "Resolves a node's binding against this machine and opens it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/code-opener"
@@ -182,12 +179,11 @@
 					{
 						"id": "9G6CmNgt",
 						"name": "Codex workbench",
-						"kind": "module",
-						"responsibility": "Coordinates bound agent sessions",
-						"description": "Composes the private Codex app-server session, browser gateway, coordinator, workhorse, approvals, timeline, and thread links used by the canvas while keeping their lifecycle under the server owner.",
+						"kind": "service",
+						"responsibility": "Owns the private Codex child and bridges it to the panes",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/lib/codex-workbench-compose.ts"
+							"path": "src/server/canvas/lib/canvas-codex-host.ts"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -195,24 +191,70 @@
 								"kind": "current"
 							}
 						}
+					},
+					{
+						"id": "mTtiV3hX",
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "Eh7icS73",
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8B8O9ZiT",
+						"name": "Board write routes",
+						"kind": "route",
+						"responsibility": "The one write boundary: every route that changes a board goes through here",
+						"description": "ADR 0023: the file is the board and nothing holds a copy of it. A write states the version it read, takes the board's lease, and is committed before it is answered.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-board-writes.ts"
+						}
+					},
+					{
+						"id": "Ck9cBsJC",
+						"name": "Claim routes",
+						"kind": "route",
+						"responsibility": "An agent's claim on a board, its release, and the person's override",
+						"description": "ADR 0016 and ADR 0022: one writer at a time, visible in every pane showing the board, and the one control a person has over it is taking it back.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-lock-routes.ts"
+						}
 					}
 				],
 				"edges": [
-					{
-						"id": "EJNFz91s",
-						"from": "ghOazHEA",
-						"to": "2naazvac",
-						"kind": "dependency",
-						"label": "runs backend",
-						"emphasis": "normal"
-					},
 					{
 						"id": "4TwcHVXq",
 						"from": "J7yOKraz",
 						"to": "2naazvac",
 						"kind": "dependency",
 						"label": "owns listener",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "W2BXIpq7",
@@ -220,15 +262,15 @@
 						"to": "K6P74fM7",
 						"kind": "dependency",
 						"label": "admits writes",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "C9PQBOwg",
 						"from": "2naazvac",
 						"to": "Y70KOm9C",
 						"kind": "dependency",
-						"label": "mounts routes",
-						"emphasis": "normal"
+						"label": "mounts the read routes",
+						"emphasis": "muted"
 					},
 					{
 						"id": "dHru8Ng6",
@@ -236,7 +278,7 @@
 						"to": "yiSc1qWU",
 						"kind": "dependency",
 						"label": "mounts panes",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "ibCZHaRq",
@@ -244,15 +286,15 @@
 						"to": "6a2R1ddu",
 						"kind": "dependency",
 						"label": "mounts opener",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "2SS8e4D0",
 						"from": "Y70KOm9C",
 						"to": "wYcdVszt",
 						"kind": "call",
-						"label": "read and commit",
-						"emphasis": "hero"
+						"label": "read the board family",
+						"emphasis": "normal"
 					},
 					{
 						"id": "4jlBP8Y2",
@@ -260,14 +302,6 @@
 						"to": "xP18j2Co",
 						"kind": "render",
 						"label": "render selected view",
-						"emphasis": "hero"
-					},
-					{
-						"id": "FzpRaj2R",
-						"from": "Y70KOm9C",
-						"to": "yiSc1qWU",
-						"kind": "event",
-						"label": "publish accepted write",
 						"emphasis": "normal"
 					},
 					{
@@ -308,6 +342,102 @@
 						"to": "9G6CmNgt",
 						"kind": "dependency",
 						"label": "start and stop",
+						"emphasis": "muted"
+					},
+					{
+						"id": "sn8CVTf4",
+						"from": "mTtiV3hX",
+						"to": "Y70KOm9C",
+						"kind": "http",
+						"label": "read a board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "BiJamQt9",
+						"from": "mTtiV3hX",
+						"to": "8B8O9ZiT",
+						"kind": "http",
+						"label": "one stated batch",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "jNIxQ6gv",
+						"from": "mTtiV3hX",
+						"to": "Ck9cBsJC",
+						"kind": "http",
+						"label": "claim and release",
+						"emphasis": "muted"
+					},
+					{
+						"id": "3verBPcG",
+						"from": "Eh7icS73",
+						"to": "Y70KOm9C",
+						"kind": "http",
+						"label": "a board and its picture",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VkGzebtq",
+						"from": "Eh7icS73",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "what this pane is reading",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VO9ngl7m",
+						"from": "yiSc1qWU",
+						"to": "Eh7icS73",
+						"kind": "event",
+						"label": "board and agent news",
+						"emphasis": "hero"
+					},
+					{
+						"id": "ppZ60bja",
+						"from": "2naazvac",
+						"to": "8B8O9ZiT",
+						"kind": "dependency",
+						"label": "mounts the write boundary",
+						"emphasis": "muted"
+					},
+					{
+						"id": "Ep4ins2T",
+						"from": "2naazvac",
+						"to": "Ck9cBsJC",
+						"kind": "dependency",
+						"label": "mounts the claim routes",
+						"emphasis": "muted"
+					},
+					{
+						"id": "iG4T44Pd",
+						"from": "8B8O9ZiT",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "one batch under the board's lease",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "9wogU6N3",
+						"from": "8B8O9ZiT",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "announce the accepted write",
+						"emphasis": "hero"
+					},
+					{
+						"id": "JnPKFYwB",
+						"from": "Ck9cBsJC",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "take, release or override the claim",
 						"emphasis": "normal"
 					}
 				],
@@ -319,35 +449,44 @@
 						"beats": [
 							{
 								"id": "V6wttd3K",
-								"heading": "Requests enter one ordered application",
-								"body": "The HTTP application establishes admission and parsing order before dispatching board, pane, code, or service routes.",
+								"heading": "One application, one admission",
+								"body": "Every request enters the same composed application, and a change to a board is admitted one at a time so a stop can drain what it has accepted rather than lose it.",
 								"subjects": [
 									"2naazvac",
 									"K6P74fM7"
-								],
-								"view": "FawxUEKE"
+								]
 							},
 							{
 								"id": "SCewKCv2",
-								"heading": "Meaning is read once and drawn server-side",
-								"body": "Semantic routes read the validated aggregate through the store and ask the renderer for the selected architecture or data-flow SVG.",
+								"heading": "Meaning is read once and drawn here",
+								"body": "A read answers with the board family or with a drawing made on the server. The browser is a viewer: it holds board content only as a read-only cache of what this said.",
 								"subjects": [
 									"Y70KOm9C",
 									"wYcdVszt",
 									"xP18j2Co"
-								],
-								"view": "FawxUEKE"
+								]
+							},
+							{
+								"id": "YWeWWUoZ",
+								"heading": "One write boundary, one lease",
+								"body": "Every change goes through one boundary: the writer states the version it read, the board's lease admits one writer at a time, and the file is committed before the write is answered.",
+								"subjects": [
+									"8B8O9ZiT",
+									"iG4T44Pd",
+									"wYcdVszt",
+									"Ck9cBsJC"
+								]
 							},
 							{
 								"id": "HRtMJ3Oc",
-								"heading": "The file remains truth while panes stay live",
-								"body": "Accepted writes and external disk changes become board-keyed WebSocket news; the registry retains presentation state only, while the Codex workbench coordinates the bound agent session.",
+								"heading": "The file stays the truth while panes stay live",
+								"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. Nothing about a board lives in a pane.",
 								"subjects": [
 									"ZuLyutvj",
 									"yiSc1qWU",
+									"VO9ngl7m",
 									"9G6CmNgt"
-								],
-								"view": "ZyxNXY6t"
+								]
 							}
 						]
 					}
@@ -362,28 +501,10 @@
 			"content": {
 				"nodes": [
 					{
-						"id": "ghOazHEA",
-						"name": "Archboard system",
-						"kind": "external",
-						"responsibility": "Provides CLI, canvas, and viewer",
-						"description": "Parent system context for this backend service; the system-level board owns the relationship among the CLI, this server, and the browser viewer.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src"
-						},
-						"drillDown": {
-							"board": "Archboard",
-							"variant": {
-								"kind": "current"
-							}
-						}
-					},
-					{
 						"id": "2naazvac",
 						"name": "HTTP application",
 						"kind": "module",
-						"responsibility": "Orders middleware and route mounts",
-						"description": "Builds the single Express application in execution order: mutation admission precedes body parsing, code-opening is preguarded, frontend assets are narrowly exposed, and route families mount before the final service/error routes.",
+						"responsibility": "Composes the middleware and mounts every route on the one application",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/application.ts"
@@ -393,8 +514,7 @@
 						"id": "J7yOKraz",
 						"name": "Application lifetime",
 						"kind": "module",
-						"responsibility": "Starts and drains server resources",
-						"description": "Owns startup and orderly shutdown across HTTP, WebSocket, Codex workbench, checkout work, pid state and process handlers. Accepted board writes commit before their response.",
+						"responsibility": "Boots and stops the canvas: the vault and loopback refusals, the pidfile, the ordered shutdown",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/canvas-startup.ts"
@@ -404,19 +524,17 @@
 						"id": "K6P74fM7",
 						"name": "Mutation admission",
 						"kind": "module",
-						"responsibility": "Tracks writes through shutdown",
-						"description": "Admits mutation requests, propagates disconnect cancellation to waitable work, counts work that outlives an HTTP response, and exposes quiesce/resume state to controlled shutdown.",
+						"responsibility": "One admitted change at a time, with a drain timeout, so a stop never loses an accepted write",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/lib/application-lifetime.ts"
+							"path": "src/server/canvas/lib/mutation-admission.ts"
 						}
 					},
 					{
 						"id": "Y70KOm9C",
-						"name": "Semantic board routes",
+						"name": "Board read routes",
 						"kind": "route",
-						"responsibility": "Serves board reads, writes, and SVG",
-						"description": "Validates HTTP inputs for create/edit/branch/settle/adopt operations, reads variants and views, renders diagrams on the server, and publishes accepted write outcomes to connected panes.",
+						"responsibility": "Answers every read of a board: the family, the catalogue, one drawn view",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-routes.ts"
@@ -426,8 +544,7 @@
 						"id": "wYcdVszt",
 						"name": "Semantic board store",
 						"kind": "module",
-						"responsibility": "Owns durable board aggregates",
-						"description": "The sole read/write boundary for .semantic.json documents. It resolves safe vault paths, validates every read, serializes writes under a board lease, checks expected versions, propagates edits, and commits once with fsync-backed atomic replacement.",
+						"responsibility": "The one place a board is read or written",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store"
@@ -443,8 +560,7 @@
 						"id": "xP18j2Co",
 						"name": "Semantic renderer",
 						"kind": "module",
-						"responsibility": "Turns board meaning into SVG",
-						"description": "PROPOSED internal layout replacement: measure readable cards, pass containment and connections into one compound layout owner, and paint its complete geometry. The semantic read/render interface still returns SVG and a matching interaction atlas; persistence and pane delivery remain as implemented. Open the named renderer proposal for the internal change and acceptance evidence.",
+						"responsibility": "Draws one variant, view and theme as a self-contained document",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer"
@@ -459,10 +575,9 @@
 					},
 					{
 						"id": "yiSc1qWU",
-						"name": "Pane routes and registry",
+						"name": "Pane registry",
 						"kind": "module",
-						"responsibility": "Owns live presentation state",
-						"description": "Tracks connected pane registrations, authoritative board assignments, layout acknowledgements, selection context, and targeted or broadcast WebSocket delivery without retaining board content in memory.",
+						"responsibility": "The sockets, what each pane is showing, and the news broadcast to every one of them",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/pane-registry.ts"
@@ -472,8 +587,7 @@
 						"id": "ZuLyutvj",
 						"name": "Disk change watcher",
 						"kind": "module",
-						"responsibility": "Refreshes externally changed boards",
-						"description": "Uses the board-lock sweep to compare inode, size and modification-time fingerprints for visible boards. Broadcasts board_note when a file changes; readers fetch fresh content through the store. It neither reads board content nor sends replacement scenes.",
+						"responsibility": "Notices a board changed on disk that this process did not write",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-disk-watch.ts"
@@ -483,8 +597,7 @@
 						"id": "6a2R1ddu",
 						"name": "Code opener",
 						"kind": "module",
-						"responsibility": "Resolves bindings into editors",
-						"description": "Accepts code-binding requests, guards browser-originated bodies and CSRF concerns, resolves registered repositories and safe paths, and launches the configured editor against a board node's persisted binding.",
+						"responsibility": "Resolves a node's binding against this machine and opens it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/code-opener"
@@ -493,12 +606,11 @@
 					{
 						"id": "9G6CmNgt",
 						"name": "Codex workbench",
-						"kind": "module",
-						"responsibility": "Coordinates bound agent sessions",
-						"description": "Composes the private Codex app-server session, browser gateway, coordinator, workhorse, approvals, timeline, and thread links used by the canvas while keeping their lifecycle under the server owner.",
+						"kind": "service",
+						"responsibility": "Owns the private Codex child and bridges it to the panes",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/lib/codex-workbench-compose.ts"
+							"path": "src/server/canvas/lib/canvas-codex-host.ts"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -506,24 +618,70 @@
 								"kind": "current"
 							}
 						}
+					},
+					{
+						"id": "mTtiV3hX",
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "Eh7icS73",
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8B8O9ZiT",
+						"name": "Board write routes",
+						"kind": "route",
+						"responsibility": "The one write boundary: every route that changes a board goes through here",
+						"description": "ADR 0023: the file is the board and nothing holds a copy of it. A write states the version it read, takes the board's lease, and is committed before it is answered.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-board-writes.ts"
+						}
+					},
+					{
+						"id": "Ck9cBsJC",
+						"name": "Claim routes",
+						"kind": "route",
+						"responsibility": "An agent's claim on a board, its release, and the person's override",
+						"description": "ADR 0016 and ADR 0022: one writer at a time, visible in every pane showing the board, and the one control a person has over it is taking it back.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-lock-routes.ts"
+						}
 					}
 				],
 				"edges": [
-					{
-						"id": "EJNFz91s",
-						"from": "ghOazHEA",
-						"to": "2naazvac",
-						"kind": "dependency",
-						"label": "runs backend",
-						"emphasis": "normal"
-					},
 					{
 						"id": "4TwcHVXq",
 						"from": "J7yOKraz",
 						"to": "2naazvac",
 						"kind": "dependency",
 						"label": "owns listener",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "W2BXIpq7",
@@ -531,15 +689,15 @@
 						"to": "K6P74fM7",
 						"kind": "dependency",
 						"label": "admits writes",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "C9PQBOwg",
 						"from": "2naazvac",
 						"to": "Y70KOm9C",
 						"kind": "dependency",
-						"label": "mounts routes",
-						"emphasis": "normal"
+						"label": "mounts the read routes",
+						"emphasis": "muted"
 					},
 					{
 						"id": "dHru8Ng6",
@@ -547,7 +705,7 @@
 						"to": "yiSc1qWU",
 						"kind": "dependency",
 						"label": "mounts panes",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "ibCZHaRq",
@@ -555,15 +713,15 @@
 						"to": "6a2R1ddu",
 						"kind": "dependency",
 						"label": "mounts opener",
-						"emphasis": "normal"
+						"emphasis": "muted"
 					},
 					{
 						"id": "2SS8e4D0",
 						"from": "Y70KOm9C",
 						"to": "wYcdVszt",
 						"kind": "call",
-						"label": "read and commit",
-						"emphasis": "hero"
+						"label": "read the board family",
+						"emphasis": "normal"
 					},
 					{
 						"id": "4jlBP8Y2",
@@ -571,14 +729,6 @@
 						"to": "xP18j2Co",
 						"kind": "render",
 						"label": "render selected view",
-						"emphasis": "hero"
-					},
-					{
-						"id": "FzpRaj2R",
-						"from": "Y70KOm9C",
-						"to": "yiSc1qWU",
-						"kind": "event",
-						"label": "publish accepted write",
 						"emphasis": "normal"
 					},
 					{
@@ -619,6 +769,102 @@
 						"to": "9G6CmNgt",
 						"kind": "dependency",
 						"label": "start and stop",
+						"emphasis": "muted"
+					},
+					{
+						"id": "sn8CVTf4",
+						"from": "mTtiV3hX",
+						"to": "Y70KOm9C",
+						"kind": "http",
+						"label": "read a board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "BiJamQt9",
+						"from": "mTtiV3hX",
+						"to": "8B8O9ZiT",
+						"kind": "http",
+						"label": "one stated batch",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "jNIxQ6gv",
+						"from": "mTtiV3hX",
+						"to": "Ck9cBsJC",
+						"kind": "http",
+						"label": "claim and release",
+						"emphasis": "muted"
+					},
+					{
+						"id": "3verBPcG",
+						"from": "Eh7icS73",
+						"to": "Y70KOm9C",
+						"kind": "http",
+						"label": "a board and its picture",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VkGzebtq",
+						"from": "Eh7icS73",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "what this pane is reading",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VO9ngl7m",
+						"from": "yiSc1qWU",
+						"to": "Eh7icS73",
+						"kind": "event",
+						"label": "board and agent news",
+						"emphasis": "hero"
+					},
+					{
+						"id": "ppZ60bja",
+						"from": "2naazvac",
+						"to": "8B8O9ZiT",
+						"kind": "dependency",
+						"label": "mounts the write boundary",
+						"emphasis": "muted"
+					},
+					{
+						"id": "Ep4ins2T",
+						"from": "2naazvac",
+						"to": "Ck9cBsJC",
+						"kind": "dependency",
+						"label": "mounts the claim routes",
+						"emphasis": "muted"
+					},
+					{
+						"id": "iG4T44Pd",
+						"from": "8B8O9ZiT",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "one batch under the board's lease",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "9wogU6N3",
+						"from": "8B8O9ZiT",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "announce the accepted write",
+						"emphasis": "hero"
+					},
+					{
+						"id": "JnPKFYwB",
+						"from": "Ck9cBsJC",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "take, release or override the claim",
 						"emphasis": "normal"
 					}
 				],
@@ -630,35 +876,44 @@
 						"beats": [
 							{
 								"id": "V6wttd3K",
-								"heading": "Requests enter one ordered application",
-								"body": "The HTTP application establishes admission and parsing order before dispatching board, pane, code, or service routes.",
+								"heading": "One application, one admission",
+								"body": "Every request enters the same composed application, and a change to a board is admitted one at a time so a stop can drain what it has accepted rather than lose it.",
 								"subjects": [
 									"2naazvac",
 									"K6P74fM7"
-								],
-								"view": "FawxUEKE"
+								]
 							},
 							{
 								"id": "SCewKCv2",
-								"heading": "Meaning is read once and drawn server-side",
-								"body": "Semantic routes read the validated aggregate through the store and ask the renderer for the selected architecture or data-flow SVG.",
+								"heading": "Meaning is read once and drawn here",
+								"body": "A read answers with the board family or with a drawing made on the server. The browser is a viewer: it holds board content only as a read-only cache of what this said.",
 								"subjects": [
 									"Y70KOm9C",
 									"wYcdVszt",
 									"xP18j2Co"
-								],
-								"view": "FawxUEKE"
+								]
+							},
+							{
+								"id": "YWeWWUoZ",
+								"heading": "One write boundary, one lease",
+								"body": "Every change goes through one boundary: the writer states the version it read, the board's lease admits one writer at a time, and the file is committed before the write is answered.",
+								"subjects": [
+									"8B8O9ZiT",
+									"iG4T44Pd",
+									"wYcdVszt",
+									"Ck9cBsJC"
+								]
 							},
 							{
 								"id": "HRtMJ3Oc",
-								"heading": "The file remains truth while panes stay live",
-								"body": "Accepted writes and external disk changes become board-keyed WebSocket news; the registry retains presentation state only, while the Codex workbench coordinates the bound agent session.",
+								"heading": "The file stays the truth while panes stay live",
+								"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. Nothing about a board lives in a pane.",
 								"subjects": [
 									"ZuLyutvj",
 									"yiSc1qWU",
+									"VO9ngl7m",
 									"9G6CmNgt"
-								],
-								"view": "ZyxNXY6t"
+								]
 							}
 						]
 					},

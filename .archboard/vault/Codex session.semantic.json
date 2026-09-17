@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 3,
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-09-13T12:08:39.825Z",
+	"updatedAt": "2026-09-17T21:04:35.020Z",
 	"views": [],
 	"variants": [
 		{
@@ -17,31 +17,20 @@
 			"content": {
 				"nodes": [
 					{
-						"id": "CeUbksta",
-						"name": "Workbench subsystem",
-						"kind": "external",
-						"responsibility": "Hosts the private Codex session",
-						"description": "The parent server subsystem supplies transport, identity authority, prepared storage, lifecycle callbacks, and checkout root.",
+						"id": "TdZj3lla",
+						"name": "Codex session",
+						"kind": "service",
+						"responsibility": "One initialized app-server session: the handshake, the reviewed methods, and what came back",
+						"description": "The module this board describes. It is created for one child generation by the workbench that owns the child; follow it for the rest of that subsystem.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/codex-workbench-application.ts"
+							"path": "src/runtime/codex-session/index.ts"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
 							"variant": {
 								"kind": "current"
 							}
-						}
-					},
-					{
-						"id": "TdZj3lla",
-						"name": "Codex session",
-						"kind": "module",
-						"responsibility": "Guards the reviewed RPC contract",
-						"description": "The typed boundary around one app-server child epoch, from initialization through account, thread, queue, realtime, and reverse-request operations.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-session/index.ts"
 						}
 					},
 					{
@@ -139,17 +128,35 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/session-failures.ts"
 						}
+					},
+					{
+						"id": "FPKa6YCR",
+						"name": "Workhorse start",
+						"kind": "module",
+						"responsibility": "The caller that opens a thread on this session under an epoch transaction",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-start/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ql0DevMk",
+						"name": "Codex transport",
+						"kind": "module",
+						"responsibility": "The wire under the session: one newline-framed JSON object at a time, each way",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-transport/index.ts"
+						}
 					}
 				],
 				"edges": [
-					{
-						"id": "wvKIZwSh",
-						"from": "CeUbksta",
-						"to": "TdZj3lla",
-						"kind": "call",
-						"label": "create for child epoch",
-						"emphasis": "normal"
-					},
 					{
 						"id": "qQrqNYdt",
 						"from": "TdZj3lla",
@@ -157,14 +164,6 @@
 						"kind": "call",
 						"label": "establish phase",
 						"emphasis": "hero"
-					},
-					{
-						"id": "3RLBrjAF",
-						"from": "tFTiAUKg",
-						"to": "Ly6hUU5o",
-						"kind": "call",
-						"label": "verify handshake paths",
-						"emphasis": "normal"
 					},
 					{
 						"id": "pDFicWqC",
@@ -220,6 +219,50 @@
 						"to": "X6j6fViI",
 						"kind": "dependency",
 						"label": "verify current epoch",
+						"emphasis": "normal"
+					},
+					{
+						"id": "7dDHchT9",
+						"from": "FPKa6YCR",
+						"to": "JBu1uGdl",
+						"kind": "call",
+						"label": "thread/start for a new workhorse",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "EAKN00R4",
+						"from": "X6j6fViI",
+						"to": "ql0DevMk",
+						"kind": "rpc",
+						"label": "one request frame",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "ombpFl2A",
+						"from": "ql0DevMk",
+						"to": "aRDbMlep",
+						"kind": "data",
+						"label": "one answered frame",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "blvoJ8p8",
+						"from": "ql0DevMk",
+						"to": "3FR6mev4",
+						"kind": "event",
+						"label": "a request the child made of us",
 						"emphasis": "normal"
 					}
 				],

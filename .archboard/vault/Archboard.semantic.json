@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 3,
+	"version": 4,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-13T12:08:39.721Z",
+	"updatedAt": "2026-09-17T21:09:58.769Z",
 	"views": [],
 	"variants": [
 		{
@@ -19,9 +19,9 @@
 					{
 						"id": "TBnOCNx2",
 						"name": "Agent CLI",
-						"kind": "app",
-						"responsibility": "Authors named boards",
-						"description": "A short-lived Bun process. Validated semantic commands reach the canvas over HTTP; it does not write vault files itself.",
+						"kind": "service",
+						"responsibility": "Authors named boards: one short-lived process per command, writing nothing itself",
+						"description": "Every stated change reaches the canvas over HTTP. The one command that draws for itself is rasterize, which takes the SVG the canvas made into a headless browser here.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/bin.ts"
@@ -37,8 +37,8 @@
 						"id": "cPOdAA3f",
 						"name": "Canvas server",
 						"kind": "service",
-						"responsibility": "Owns boards and serves views",
-						"description": "One Bun/Express process owns board persistence, rendering, HTTP and WebSocket delivery. Its embedded Codex workbench is explained separately on the workbench service board.",
+						"responsibility": "Owns every board, draws every view, and answers both applications",
+						"description": "One process. Board persistence, the renderer, the pane sockets and the agent workbench all live in it; the Codex app-server is its private child.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/index.ts"
@@ -53,12 +53,11 @@
 					{
 						"id": "6nZjwK9W",
 						"name": "Browser",
-						"kind": "app",
-						"responsibility": "Explores rendered architecture",
-						"description": "The desktop browser owns presentation: panes, camera, selection and walkthrough position. Board content is fetched from the server.",
+						"kind": "service",
+						"responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui"
+							"path": "src/ui/application/index.tsx"
 						},
 						"drillDown": {
 							"board": "Browser application",
@@ -71,40 +70,49 @@
 						"id": "8XKRkSHl",
 						"name": "Board vault",
 						"kind": "datastore",
-						"responsibility": "Stores semantic board families",
-						"description": "Permanent repo-local .archboard/vault. One .semantic.json per board holds current, draft and historical variants; accepted writes land atomically.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/index.ts"
-						}
+						"responsibility": "One document per board, holding every variant of it",
+						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023)."
 					},
 					{
 						"id": "xr1MHYE7",
 						"name": "Codex app-server",
 						"kind": "external",
-						"responsibility": "Runs linked agent threads",
-						"description": "A separate private child process owned by the canvas. The linked workhorse and voice coordinator are separate threads. Follow the link to the archboard integration, not Codex internals.",
+						"responsibility": "Runs the linked agent threads, as one private child of the canvas",
+						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the canvas server."
+					},
+					{
+						"id": "19855Ply",
+						"name": "Repository checkout",
+						"kind": "datastore",
+						"responsibility": "The source a node's binding resolves to on this machine",
+						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/codex-process/index.ts"
+							"path": "src/runtime/engine/repo-registry.ts"
+						}
+					},
+					{
+						"id": "PxnjFfV3",
+						"name": "Skill evaluation",
+						"kind": "service",
+						"responsibility": "Measures one version of the agent skill against another, on real authors and real checkouts",
+						"description": "Started by a person, never by the gate: every author run and the grading session call a model.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "scripts/evaluate-skill.ts"
 						},
 						"drillDown": {
-							"board": "Agent workbench",
+							"board": "Skill evaluation",
 							"variant": {
 								"kind": "current"
 							}
 						}
 					},
 					{
-						"id": "19855Ply",
-						"name": "Repository checkout",
-						"kind": "datastore",
-						"responsibility": "Supplies bound source files",
-						"description": "Code bindings use portable repository identities plus relative paths. A machine-local registry resolves them to this checkout.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/engine/repo-registry.ts"
-						}
+						"id": "t7W7wJHv",
+						"name": "Headless Chromium",
+						"kind": "external",
+						"responsibility": "Paints an SVG and answers with the bitmap, when a command asks for a picture"
 					}
 				],
 				"edges": [
@@ -114,7 +122,11 @@
 						"to": "cPOdAA3f",
 						"kind": "http",
 						"label": "semantic commands",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "iF6W48DS",
@@ -122,7 +134,11 @@
 						"to": "cPOdAA3f",
 						"kind": "http",
 						"label": "views and controls",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "mjjIPV4U",
@@ -130,15 +146,19 @@
 						"to": "8XKRkSHl",
 						"kind": "data",
 						"label": "read / commit",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "4p2LMrOt",
 						"from": "cPOdAA3f",
 						"to": "6nZjwK9W",
 						"kind": "event",
-						"label": "board and agent updates",
-						"emphasis": "normal"
+						"label": "board and agent news",
+						"emphasis": "hero"
 					},
 					{
 						"id": "2OeapIzk",
@@ -155,6 +175,30 @@
 						"kind": "data",
 						"label": "resolve code targets",
 						"emphasis": "normal"
+					},
+					{
+						"id": "chzSzpL4",
+						"from": "TBnOCNx2",
+						"to": "t7W7wJHv",
+						"kind": "call",
+						"label": "photograph a board",
+						"emphasis": "muted"
+					},
+					{
+						"id": "xKVVomRU",
+						"from": "PxnjFfV3",
+						"to": "TBnOCNx2",
+						"kind": "call",
+						"label": "the CLI under test",
+						"emphasis": "normal"
+					},
+					{
+						"id": "SoK3eMhj",
+						"from": "PxnjFfV3",
+						"to": "cPOdAA3f",
+						"kind": "call",
+						"label": "one per run, on its own port",
+						"emphasis": "muted"
 					}
 				],
 				"flows": [],
@@ -165,30 +209,41 @@
 						"beats": [
 							{
 								"id": "JnVoCQnm",
-								"heading": "One owner of board content",
-								"body": "Agents submit meaning through the CLI. The canvas checks writes and commits the whole board family before announcing it.",
+								"heading": "Agents author, people read",
+								"body": "An agent states meaning through the CLI. The canvas checks the write, takes the board's lease, commits the whole family to disk and only then answers. Nothing else writes a board.",
 								"subjects": [
 									"TBnOCNx2",
+									"9m47dJzG",
 									"cPOdAA3f",
 									"8XKRkSHl"
 								]
 							},
 							{
 								"id": "coggGU2D",
-								"heading": "People explore server-rendered views",
-								"body": "The browser requests a rendered view and owns the camera and selection. It re-reads after board announcements.",
+								"heading": "The browser is a viewer",
+								"body": "A pane holds board content only as a read-only cache of what the server said, and reads again when it is told a new version exists. What it owns is the camera, the view, the walkthrough position and what somebody picked out.",
 								"subjects": [
 									"6nZjwK9W",
-									"cPOdAA3f"
+									"iF6W48DS",
+									"4p2LMrOt"
 								]
 							},
 							{
 								"id": "FlAhpGUe",
-								"heading": "Agent execution has a separate lifetime",
-								"body": "The canvas owns a private Codex child. The integration handles thread links, context and approvals; code bindings resolve against registered checkouts.",
+								"heading": "Agent work has a lifetime of its own",
+								"body": "The canvas owns a private Codex child with its own storage and process group. A pane's thread link names one workhorse; the child's exit invalidates it rather than leaving it dangling.",
 								"subjects": [
 									"xr1MHYE7",
+									"2OeapIzk",
 									"19855Ply"
+								]
+							},
+							{
+								"id": "bnH63t0c",
+								"heading": "The skill is measured, not assumed",
+								"body": "The guidance an agent in another repository reads is held to real runs: two versions of the package, the same CLI and fixtures, real authors, and a blinded grading session. A person starts it; the gate never does.",
+								"subjects": [
+									"PxnjFfV3"
 								]
 							}
 						]

@@ -1,0 +1,426 @@
+{
+	"schemaVersion": "2.2.0",
+	"kind": "semantic-board",
+	"id": "SMjRfwN3",
+	"name": "Board rasterizer",
+	"level": "module",
+	"version": 1,
+	"createdAt": "2026-09-17T21:02:37.619Z",
+	"updatedAt": "2026-09-17T21:02:37.619Z",
+	"views": [
+		{
+			"id": "WXfBg0nd",
+			"name": "One rasterize",
+			"grammar": "data-flow",
+			"summary": "The calls and returns of one photograph.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [],
+				"edges": [],
+				"flows": [
+					"ZGaUX7x0"
+				]
+			}
+		},
+		{
+			"id": "prrDCZM6",
+			"name": "What is proved before shooting",
+			"grammar": "architecture",
+			"summary": "The two refusals: a size that may not be drawn, and a page that is not ready.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"KyQxypRC",
+					"7N0JLb2b",
+					"8c0zvhQW",
+					"FXGZhgKo",
+					"ctgF3OPk"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "YlFypVun",
+			"name": "Initial",
+			"lifecycle": "current",
+			"content": {
+				"nodes": [
+					{
+						"id": "jChkQdeE",
+						"name": "Rasterize command",
+						"kind": "service",
+						"responsibility": "Asks the canvas for the SVG, then photographs it here and writes the receipt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-rasterize.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "KyQxypRC",
+						"name": "Rasterizer",
+						"kind": "module",
+						"responsibility": "Admits one job at a time and acquires a browser only when there is work",
+						"description": "Nothing is started until a job arrives, and the session is stopped with the rasterizer, so no browser outlives the command that needed it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/index.ts"
+						}
+					},
+					{
+						"id": "7N0JLb2b",
+						"name": "Bounds and limits",
+						"kind": "function",
+						"responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/bounds.ts"
+						}
+					},
+					{
+						"id": "8c0zvhQW",
+						"name": "Raster session",
+						"kind": "function",
+						"responsibility": "One browser in its own process group and temp root, from spawn to cleanup",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/session.ts"
+						}
+					},
+					{
+						"id": "6uHnaygd",
+						"name": "Chromium process",
+						"kind": "function",
+						"responsibility": "Finds an executable, spawns it, reads its port, and reaps the whole group",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/chromium.ts"
+						}
+					},
+					{
+						"id": "AVCQVNqI",
+						"name": "DevTools connection",
+						"kind": "function",
+						"responsibility": "One socket to the page, its calls, and the complaints the page made",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/devtools.ts"
+						}
+					},
+					{
+						"id": "FXGZhgKo",
+						"name": "Page readiness",
+						"kind": "function",
+						"responsibility": "What the page must say before it is photographed, and what the answer must be",
+						"description": "The faces are loaded, the animation is paused at its first frame, and the SVG is the size the job asked for. A bitmap of the wrong size is refused, never cropped.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/page.ts"
+						}
+					},
+					{
+						"id": "ctgF3OPk",
+						"name": "PNG header",
+						"kind": "function",
+						"responsibility": "The two numbers from the IHDR of the answered image",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/png.ts"
+						}
+					},
+					{
+						"id": "EqEyDg2D",
+						"name": "Receipt",
+						"kind": "function",
+						"responsibility": "What was drawn, at what scale, and from which SVG",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/receipt.ts"
+						}
+					},
+					{
+						"id": "R9St060W",
+						"name": "Headless Chromium",
+						"kind": "external",
+						"responsibility": "The browser that paints the SVG and answers with the bitmap",
+						"description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group."
+					}
+				],
+				"edges": [
+					{
+						"id": "RPqD1PrA",
+						"from": "jChkQdeE",
+						"to": "KyQxypRC",
+						"kind": "call",
+						"label": "one SVG, a scale and a region",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "7gIxznvp",
+						"from": "KyQxypRC",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "refuse what is past the limits first",
+						"emphasis": "normal"
+					},
+					{
+						"id": "IiA7nIxT",
+						"from": "KyQxypRC",
+						"to": "8c0zvhQW",
+						"kind": "call",
+						"label": "capture, one job at a time",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "tJ3SgMcL",
+						"from": "8c0zvhQW",
+						"to": "6uHnaygd",
+						"kind": "call",
+						"label": "find, spawn and own the group",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "wI4kxS9L",
+						"from": "6uHnaygd",
+						"to": "R9St060W",
+						"kind": "call",
+						"label": "spawn in its own group and temp root",
+						"emphasis": "normal"
+					},
+					{
+						"id": "aYI0EhkT",
+						"from": "8c0zvhQW",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "one socket to the page",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "JgtXFRyO",
+						"from": "AVCQVNqI",
+						"to": "R9St060W",
+						"kind": "rpc",
+						"label": "CDP over a WebSocket",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "TBd33jdx",
+						"from": "8c0zvhQW",
+						"to": "FXGZhgKo",
+						"kind": "call",
+						"label": "prove the page before shooting",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "6dBMtPdX",
+						"from": "8c0zvhQW",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "the clip region",
+						"emphasis": "normal"
+					},
+					{
+						"id": "68lKuaPg",
+						"from": "FXGZhgKo",
+						"to": "ctgF3OPk",
+						"kind": "call",
+						"label": "the size of the answered bitmap",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2nhl0tv0",
+						"from": "jChkQdeE",
+						"to": "EqEyDg2D",
+						"kind": "data",
+						"label": "what the picture is of",
+						"emphasis": "muted"
+					}
+				],
+				"flows": [
+					{
+						"id": "ZGaUX7x0",
+						"name": "One rasterize",
+						"summary": "From a drawn SVG to a PNG of exactly the size that was asked for.",
+						"participants": [
+							"jChkQdeE",
+							"KyQxypRC",
+							"8c0zvhQW",
+							"R9St060W"
+						],
+						"steps": [
+							{
+								"id": "DfVy9P12",
+								"from": "jChkQdeE",
+								"to": "KyQxypRC",
+								"label": "This SVG, this scale, this region",
+								"kind": "sync"
+							},
+							{
+								"id": "38uP8Myk",
+								"from": "KyQxypRC",
+								"to": "KyQxypRC",
+								"label": "Refuse a size past the limits",
+								"kind": "self",
+								"note": "nothing is spawned for a job that cannot be answered"
+							},
+							{
+								"id": "nIMGMqnl",
+								"from": "KyQxypRC",
+								"to": "8c0zvhQW",
+								"label": "Capture it",
+								"kind": "sync"
+							},
+							{
+								"id": "Vh19z88j",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Spawn in a new process group and temp root",
+								"kind": "sync"
+							},
+							{
+								"id": "GN7NbENt",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Open the page at the file written beside it",
+								"kind": "sync"
+							},
+							{
+								"id": "Ijvy2tjF",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Ask what the page is ready with",
+								"kind": "sync"
+							},
+							{
+								"id": "VK16rtXy",
+								"from": "R9St060W",
+								"to": "8c0zvhQW",
+								"label": "Faces loaded, animation paused, SVG size",
+								"kind": "return"
+							},
+							{
+								"id": "0hiQvSA4",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Set the device scale and shoot the clip",
+								"kind": "sync"
+							},
+							{
+								"id": "4asCBipI",
+								"from": "R9St060W",
+								"to": "8c0zvhQW",
+								"label": "One PNG",
+								"kind": "return"
+							},
+							{
+								"id": "B9U0ZmCh",
+								"from": "8c0zvhQW",
+								"to": "8c0zvhQW",
+								"label": "Refuse a bitmap that is not the size asked for",
+								"kind": "self",
+								"note": "a wrong size is never cropped to fit"
+							},
+							{
+								"id": "3LHcRvKF",
+								"from": "8c0zvhQW",
+								"to": "KyQxypRC",
+								"label": "The bitmap and its size",
+								"kind": "return"
+							},
+							{
+								"id": "Q8fC0YBj",
+								"from": "KyQxypRC",
+								"to": "jChkQdeE",
+								"label": "The bitmap and its size",
+								"kind": "return"
+							},
+							{
+								"id": "5ICULe6f",
+								"from": "jChkQdeE",
+								"to": "KyQxypRC",
+								"label": "Stop",
+								"kind": "sync"
+							},
+							{
+								"id": "3kHGshbF",
+								"from": "KyQxypRC",
+								"to": "R9St060W",
+								"label": "Close the socket, reap the group, remove the temp root",
+								"kind": "async"
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "ZIq30sQv",
+						"name": "Why a picture is refused rather than approximated",
+						"beats": [
+							{
+								"id": "wwX4OD4Q",
+								"heading": "A browser only while there is work",
+								"body": "No Chromium is started until a job arrives, and it is stopped with the rasterizer. The process lives in its own group with its own temp root so the whole of it can be reaped, whatever it spawned.",
+								"subjects": [
+									"KyQxypRC",
+									"8c0zvhQW",
+									"6uHnaygd"
+								]
+							},
+							{
+								"id": "BnjBLsWM",
+								"heading": "The page says it is ready, in so many words",
+								"body": "Before anything is photographed the page is asked whether the diagram faces are loaded, the animation is paused at its first frame, and the SVG is the size the job named. A picture taken before that would differ run to run.",
+								"subjects": [
+									"FXGZhgKo"
+								]
+							},
+							{
+								"id": "cA04qJSt",
+								"heading": "The wrong size is a refusal, not a crop",
+								"body": "The answered bitmap is measured from its own header against the size the bounds asked for. Cropping or scaling it here would hand back a picture that quietly is not what was asked for.",
+								"subjects": [
+									"FXGZhgKo",
+									"ctgF3OPk",
+									"7N0JLb2b"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "YlFypVun"
+}

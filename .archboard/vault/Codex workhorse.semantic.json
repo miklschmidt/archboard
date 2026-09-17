@@ -1,0 +1,363 @@
+{
+	"schemaVersion": "2.2.0",
+	"kind": "semantic-board",
+	"id": "SJ2JMVyz",
+	"name": "Codex workhorse",
+	"level": "module",
+	"version": 1,
+	"createdAt": "2026-09-17T21:06:43.257Z",
+	"updatedAt": "2026-09-17T21:06:43.257Z",
+	"views": [
+		{
+			"id": "TX1Vzuu7",
+			"name": "One turn",
+			"grammar": "architecture",
+			"summary": "From an admitted command to a turn running on the child.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"tIEJl3KY",
+					"npbOHMgi",
+					"glxfDGYq",
+					"5SYKj5bN",
+					"4slFgCMu"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "9FAAfJfi",
+			"name": "Starting a workhorse",
+			"grammar": "architecture",
+			"summary": "What a thread is opened with, and what records that it was.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"fDdhxdXp",
+					"p05yEm5U",
+					"Fxm7RW2x",
+					"L4s2Ndtt",
+					"6T3oOpxS",
+					"4slFgCMu"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "y9kWSCEn",
+			"name": "Initial",
+			"lifecycle": "current",
+			"content": {
+				"nodes": [
+					{
+						"id": "tIEJl3KY",
+						"name": "Browser gateway",
+						"kind": "module",
+						"responsibility": "Where a pane's command arrives, already admitted and leased",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/codex-workbench/index.ts"
+						}
+					},
+					{
+						"id": "npbOHMgi",
+						"name": "Coordinator tools",
+						"kind": "module",
+						"responsibility": "The other caller: a voice tool call becomes the same operation a pane sends",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-tools/index.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "glxfDGYq",
+						"name": "Workhorse operations",
+						"kind": "module",
+						"responsibility": "The four things anything may ask of a workhorse: delegate, steer, inspect, manage its queue",
+						"description": "The one door in. Everything else about a workhorse is reached through these, so there is one place a command is admitted, settled and reported.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-operations/index.ts"
+						}
+					},
+					{
+						"id": "fDdhxdXp",
+						"name": "Workhorse start",
+						"kind": "module",
+						"responsibility": "Opens the one thread a pane's link will name, under a staged epoch operation",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-start/index.ts"
+						}
+					},
+					{
+						"id": "5SYKj5bN",
+						"name": "Workhorse queue",
+						"kind": "module",
+						"responsibility": "The submissions waiting for one thread, and the single turn running",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-queue/index.ts"
+						}
+					},
+					{
+						"id": "p05yEm5U",
+						"name": "Thread link",
+						"kind": "module",
+						"responsibility": "Which thread a pane is bound to, and the refusal when a second binding disagrees",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-link/index.ts"
+						}
+					},
+					{
+						"id": "Fxm7RW2x",
+						"name": "Thread tools",
+						"kind": "module",
+						"responsibility": "The tool manifest a workhorse thread is started with, pinned by its digest",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-tools/index.ts"
+						}
+					},
+					{
+						"id": "L4s2Ndtt",
+						"name": "Authored instructions",
+						"kind": "module",
+						"responsibility": "The developer instructions a thread starts with, and the digest that proves them unchanged",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-instructions/index.ts"
+						}
+					},
+					{
+						"id": "6T3oOpxS",
+						"name": "Epoch ledger",
+						"kind": "module",
+						"responsibility": "Which child generation owns which thread, on disk, with operations that commit, roll back or say the outcome is unknown",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-epoch/index.ts"
+						}
+					},
+					{
+						"id": "ZGoXFusm",
+						"name": "Board tools",
+						"kind": "module",
+						"responsibility": "The archboard tools a thread calls, including the ones that wait",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-dynamic-tools/index.ts"
+						}
+					},
+					{
+						"id": "abHx4peq",
+						"name": "Wait graph",
+						"kind": "module",
+						"responsibility": "The wait edges every waiting tool registers, so a wait cannot close a cycle",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-wait-graph/index.ts"
+						}
+					},
+					{
+						"id": "4slFgCMu",
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "The reviewed methods a turn is actually sent on",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex session",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "gPWhZQeZ",
+						"from": "tIEJl3KY",
+						"to": "glxfDGYq",
+						"kind": "call",
+						"label": "the command this pane sent",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "e1viO4QT",
+						"from": "npbOHMgi",
+						"to": "glxfDGYq",
+						"kind": "call",
+						"label": "delegate, steer, inspect, queue",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "l3RkMYAH",
+						"from": "glxfDGYq",
+						"to": "5SYKj5bN",
+						"kind": "call",
+						"label": "add the turn; one runs at a time",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "KGiq6epE",
+						"from": "glxfDGYq",
+						"to": "p05yEm5U",
+						"kind": "call",
+						"label": "which thread this is for",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yR5sjMnY",
+						"from": "glxfDGYq",
+						"to": "6T3oOpxS",
+						"kind": "call",
+						"label": "stage and settle the operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zgS5gisx",
+						"from": "5SYKj5bN",
+						"to": "4slFgCMu",
+						"kind": "call",
+						"label": "start the next submission",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "5B5ZeO2k",
+						"from": "fDdhxdXp",
+						"to": "p05yEm5U",
+						"kind": "call",
+						"label": "classify and bind the pane's thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "uiPv1wnk",
+						"from": "fDdhxdXp",
+						"to": "6T3oOpxS",
+						"kind": "call",
+						"label": "stage, commit or roll back the start",
+						"emphasis": "normal"
+					},
+					{
+						"id": "W87z7uEB",
+						"from": "fDdhxdXp",
+						"to": "4slFgCMu",
+						"kind": "call",
+						"label": "thread/start with the authored body",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zIWijDn9",
+						"from": "fDdhxdXp",
+						"to": "Fxm7RW2x",
+						"kind": "dependency",
+						"label": "the manifest, by digest",
+						"emphasis": "muted"
+					},
+					{
+						"id": "jAdLjEha",
+						"from": "fDdhxdXp",
+						"to": "L4s2Ndtt",
+						"kind": "dependency",
+						"label": "the instructions, by digest",
+						"emphasis": "muted"
+					},
+					{
+						"id": "CHkvrU1f",
+						"from": "ZGoXFusm",
+						"to": "abHx4peq",
+						"kind": "call",
+						"label": "register and release a wait edge",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Uflv9hM7",
+						"from": "ZGoXFusm",
+						"to": "6T3oOpxS",
+						"kind": "call",
+						"label": "the generation that may act",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "sdzhtbxw",
+						"name": "Why there is one door and one queue",
+						"beats": [
+							{
+								"id": "KVnICaNb",
+								"heading": "Two callers, one operation",
+								"body": "A pane's command and a voice tool call arrive from opposite directions and become the same four operations. Nothing reaches a workhorse another way, so admission, settlement and reporting have one place to live.",
+								"subjects": [
+									"tIEJl3KY",
+									"npbOHMgi",
+									"glxfDGYq"
+								]
+							},
+							{
+								"id": "ef76Ne2e",
+								"heading": "One turn at a time",
+								"body": "The queue holds the submissions for one thread and starts one. A thread running two turns would interleave their edits to the same repository, and neither would be reproducible.",
+								"subjects": [
+									"5SYKj5bN",
+									"4slFgCMu"
+								]
+							},
+							{
+								"id": "w44iEbUk",
+								"heading": "A start is a staged operation",
+								"body": "Opening a thread is staged in the epoch ledger before it is sent and committed after. A child that dies mid-flight leaves an operation whose outcome is stated as unknown rather than a binding nobody can account for.",
+								"subjects": [
+									"fDdhxdXp",
+									"6T3oOpxS",
+									"p05yEm5U"
+								]
+							},
+							{
+								"id": "AK907u1m",
+								"heading": "A wait cannot close a cycle",
+								"body": "Every waiting tool registers its edge, so a thread waiting on something that is waiting on it is refused instead of hanging until a timeout nobody set.",
+								"subjects": [
+									"ZGoXFusm",
+									"abHx4peq"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "y9kWSCEn"
+}
