@@ -1,11 +1,11 @@
 ---
 id: TASK-261
 title: Shelve a variant that has nothing left to propose
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 22:29'
-updated_date: '2026-09-17 23:03'
+updated_date: '2026-09-17 23:09'
 labels: []
 dependencies: []
 references:
@@ -99,3 +99,9 @@ Both keep their ids, names, and all content (14 nodes / 23 edges / 2 walkthrough
 Both named drill-downs still open: resolveDrillDown (the viewer's own resolver) answers ready with the shelved variant in each direction, and `semantic render --variant "Readable layout"` draws both against their current parent.
 ./bin/dogfood check reports 0 diagnostics.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A proposal nobody will carry out is shelved: it keeps its name and content, a link naming it still opens it, and it stops following its predecessor, so it no longer collects disagreements somebody must settle for a change nobody will make. Propagation already followed only drafts, so the skipping fell out for free and is proved rather than asserted. Content edits and adoption refuse as history does, pointing at branching from it, and shelving refuses the current variant, history, one already shelved, and a draft other drafts stand on, naming them. The two spent drafts in the vault are shelved with their reasons and both drill-downs still open. ADR 0030 records why this is not deletion. Verified in the wave gate, run lane by lane because the box is too short on memory for bun run check in one process: lint, fmt:check and type-check clean, the frontend build, 3272 module tests, 164 system tests, the repository lane, the full serial browser lane at exit 0, eval:skill check ok, and ./bin/dogfood check reporting no diagnostics.
+<!-- SECTION:FINAL_SUMMARY:END -->
