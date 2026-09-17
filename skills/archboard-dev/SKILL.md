@@ -103,7 +103,7 @@ feature verdicts, scores and evidence, and told in these words: "Do not use
 subagents. Inspect the source and grade every run yourself in this session."
 The grader is chosen when grading runs, never when the authors run:
 `--grader codex` (gpt-6-astra, high reasoning, read-only sandbox, pictures
-attached) or `--grader claude` (claude-fable-5-1, high effort, Read/Grep/Glob
+attached) or `--grader claude` (claude-opus-5, high effort, Read/Grep/Glob
 only, none of the operator's settings, pictures opened from the workspace and
 the stream showing which). Both read the same prompt; `evals/graders.json`
 pins each runner outside the batch digest, so one batch can be graded by both
