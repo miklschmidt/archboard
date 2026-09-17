@@ -10,30 +10,31 @@ only the draft, compare both through one view, adopt only when asked.
 2. Branch, then edit the proposal:
 
 ```bash
-archboard semantic branch "Flask contexts" --as "Context variables" --summary "Replace the LocalStacks with contextvars" --expect-version 2 --doing "proposing contextvars"
-archboard semantic edit "Flask contexts" --expect-version 3 --doing "rewiring the contexts to contextvars" <<'JSON'
+archboard semantic branch "Board lease" --as "Lease table" --summary "Hold leases in one table instead of one file per board" --expect-version 2 --doing "proposing a lease table"
+archboard semantic edit "Board lease" --expect-version 3 --doing "moving the lease records into a table" <<'JSON'
 {
-  "variant": "Context variables",
-  "nodes": [{ "name": "Context variables", "kind": "module", "responsibility": "_cv_app and _cv_request hold the active contexts",
-    "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/globals.py" } }],
+  "variant": "Lease table",
+  "nodes": [{ "name": "Lease table", "kind": "datastore", "responsibility": "One row per held board, written in a transaction" }],
   "edges": [
-    { "from": "App context", "to": "Context variables", "kind": "data", "label": "set / reset" },
-    { "from": "Request context", "to": "Context variables", "kind": "data", "label": "set / reset" }
+    { "from": "holdBoard", "to": "Lease table", "kind": "data", "label": "insert or take over" },
+    { "from": "releaseHold", "to": "Lease table", "kind": "data", "label": "delete" }
   ],
-  "removeNodes": ["App context stack", "Request context stack"]
+  "removeNodes": ["Lock files", "Lock watcher"]
 }
 JSON
-archboard semantic rasterize "Flask contexts" --view Contexts --out current.png
-archboard semantic rasterize "Flask contexts" --view Contexts --variant "Context variables" --out proposal.png
+archboard semantic rasterize "Board lease" --view Leases --out current.png
+archboard semantic rasterize "Board lease" --view Leases --variant "Lease table" --out proposal.png
 ```
 
 The proposal carries every subject of its predecessor with the same ids, so
 the comparison is exact: kept ids read as continuing, new subjects as added,
 removed ids as removed. Views belong to the board, so both pictures go through
-the same view and a removed subject stays drawn as removed. The evidence for
-the rewiring is in `src/flask/ctx.py` of Flask 2.2: `AppContext.push` and
-`RequestContext.push` call `_cv_app.set` and `_cv_request.set` from
-`globals.py`, where the context variables are defined.
+the same view and a removed subject stays drawn as removed. The current side
+comes from the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
+exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
+(`board-lock-state.ts`), and `watchBoardLocks` polls those files because a file
+cannot notify another canvas. The table is a proposal nobody has built, so it
+stays unbound.
 
 3. Check the answer's comparison against your change map: the added, removed,
    changed and unchanged subjects are the ones you intended, the current
@@ -41,11 +42,11 @@ the rewiring is in `src/flask/ctx.py` of Flask 2.2: `AppContext.push` and
    Open both pictures: the removal is drawn as removed in the proposal's, and
    the current one shows what it showed before. Report what changed in those
    terms: the parts removed, the parts added, and for every relationship the
-   proposal keeps or adds, where it now lands (here, both contexts' `set /
-reset` relationships land on `Context variables`). A relationship whose
+   proposal keeps or adds, where it now lands (here, the relationships from
+   `holdBoard` and `releaseHold` land on `Lease table`). A relationship whose
    endpoint moved is the change the comparison exists to show, so name it.
 4. Only when asked, adopt with the version returned by the proposal edit:
-   `archboard semantic adopt "Flask contexts" --variant "Context variables" --reason "Flask 2.2 implements contexts with contextvars" --expect-version 4 --doing "adopting context variables"`.
+   `archboard semantic adopt "Board lease" --variant "Lease table" --reason "Leases moved into a table the canvas can be notified from" --expect-version 4 --doing "adopting the lease table"`.
    The proposal becomes current, the previous current becomes historical, and
    nothing is renamed.
 

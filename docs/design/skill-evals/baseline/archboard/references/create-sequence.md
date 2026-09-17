@@ -18,11 +18,12 @@ a comparison, a view and a group inspection read.
 1. Read the code path and record each message with its evidence: who calls
    whom, from which function, in which order, and which messages come back.
    List the participants in reading order and each message in sequence with
-   its kind: `sync` (a call, the default), `return`, `async` (fire and
-   forget), `self` (a participant's own step; exactly when `from` and `to` are
+   its kind: `sync` (a call that waits, an awaited promise included; the
+   default), `return`, `async` (fire and forget: an emitted event, a message,
+   a promise nobody awaits), `self` (a participant's own step; exactly when `from` and `to` are
    the same node). Use `repeat` for a count the source fixes (a retry limit,
    a batch of a known size, a literal list of candidates tried in turn: two
-   default module names is `repeat: 2`); a loop whose length depends on data
+   candidate file names is `repeat: 2`); a loop whose length depends on data
    is one step with a `note` that says so. Use `note` for a branch or a
    caveat. Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
    are `external`, the exchange's relationships carry `traffic` when it is
@@ -30,50 +31,50 @@ a comparison, a view and a group inspection read.
    walkthrough beat.
 2. Create a standalone sequence in one write. Against an existing board, use
    the same payload with `semantic edit` and the version you read. The
-   evidence here, from `src/flask/cli.py` in Flask 3.0: `run_command` calls
-   `ScriptInfo.load_app`; when `FLASK_APP` names nothing, `load_app` loops
-   over the literal tuple `("wsgi.py", "app.py")`, a list the source fixes, so
-   that step is `repeat: 2`, and within each candidate `locate_app` tries the
-   attribute names, which the `note` says; `load_app` then returns the app to
-   `run_command`, which hands it to werkzeug's `run_simple`. Each of those
-   calls is an `edge` as well as a step.
+   evidence here, from archboard's own source: `executeInstallSkill`
+   (`src/cli/commands/install-skill.ts`) calls `writeSetup`
+   (`src/cli/commands/lib/repo-setup-block.ts`); to find the agent document,
+   `chooseDoc` loops over the literal list `["CLAUDE.md", "AGENTS.md"]`, a list
+   the source fixes, so that step is `repeat: 2`, and it keeps the first that
+   exists, which the `note` says; `writeSetup` then writes the block into that
+   document, asks `git check-ignore` whether the vault is ignored, and returns
+   the result to the command. Each call between two parts is an `edge` as well
+   as a step.
 
 ```bash
-archboard semantic new "Flask CLI startup" --doing "explaining how flask run starts the server" <<'JSON'
+archboard semantic new "Skill install" --doing "explaining how install-skill writes the repository setup" <<'JSON'
 {
   "level": "module",
   "nodes": [
-    { "name": "Shell", "kind": "external", "responsibility": "Invokes the flask command" },
-    { "name": "FlaskGroup", "kind": "module", "responsibility": "Dispatches the selected Flask command",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "run_command", "kind": "function", "responsibility": "Loads the app and starts the development server",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "ScriptInfo", "kind": "module", "responsibility": "Locates and imports the Flask application",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "run_simple", "kind": "external", "responsibility": "Serves requests until interrupted" }
+    { "name": "Person", "kind": "external", "responsibility": "Runs archboard install-skill in a repository" },
+    { "name": "install-skill command", "kind": "module", "responsibility": "Installs the skill files, then writes the setup",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts" } },
+    { "name": "Setup block", "kind": "module", "responsibility": "Writes the vault and CLI setup into the agent document",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts" } },
+    { "name": "git", "kind": "external", "responsibility": "Answers whether a path is ignored" }
   ],
   "edges": [
-    { "from": "Shell", "to": "FlaskGroup", "kind": "call", "label": "flask run" },
-    { "from": "FlaskGroup", "to": "run_command", "kind": "call", "label": "invoke" },
-    { "from": "run_command", "to": "ScriptInfo", "kind": "call", "label": "load_app" },
-    { "from": "run_command", "to": "run_simple", "kind": "call", "label": "serve", "emphasis": "hero" }
+    { "from": "Person", "to": "install-skill command", "kind": "call", "label": "install-skill" },
+    { "from": "install-skill command", "to": "Setup block", "kind": "call", "label": "writeSetup", "emphasis": "hero" },
+    { "from": "Setup block", "to": "git", "kind": "call", "label": "check-ignore" }
   ],
   "flows": [{
-    "name": "flask run",
-    "participants": ["Shell", "FlaskGroup", "run_command", "ScriptInfo", "run_simple"],
+    "name": "Repository setup",
+    "participants": ["Person", "install-skill command", "Setup block", "git"],
     "steps": [
-      { "from": "Shell", "to": "FlaskGroup", "label": "flask run" },
-      { "from": "FlaskGroup", "to": "run_command", "label": "invoke" },
-      { "from": "run_command", "to": "ScriptInfo", "label": "load_app" },
-      { "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "repeat": 2, "note": "tries wsgi.py then app.py unless FLASK_APP names the app or factory; within each, locate_app tries the attribute names" },
-      { "from": "ScriptInfo", "to": "run_command", "label": "Flask app", "kind": "return" },
-      { "from": "run_command", "to": "run_simple", "label": "serve" }
+      { "from": "Person", "to": "install-skill command", "label": "install-skill" },
+      { "from": "install-skill command", "to": "Setup block", "label": "writeSetup" },
+      { "from": "Setup block", "to": "Setup block", "label": "find the agent document", "kind": "self", "repeat": 2, "note": "tries CLAUDE.md then AGENTS.md and keeps the first that exists; when neither does, the skill target names the one to create" },
+      { "from": "Setup block", "to": "Setup block", "label": "write the setup block", "kind": "self" },
+      { "from": "Setup block", "to": "git", "label": "check-ignore the vault" },
+      { "from": "git", "to": "Setup block", "label": "ignored or not", "kind": "return" },
+      { "from": "Setup block", "to": "install-skill command", "label": "setup result", "kind": "return" }
     ]
   }],
-  "views": [{ "name": "Startup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["flask run"] } }]
+  "views": [{ "name": "Setup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["Repository setup"] } }]
 }
 JSON
-archboard semantic rasterize "Flask CLI startup" --view "Startup exchange" --out startup.png
+archboard semantic rasterize "Skill install" --view "Setup exchange" --out setup.png
 ```
 
 3. Check the answer's flow against your record: participants in the order you
