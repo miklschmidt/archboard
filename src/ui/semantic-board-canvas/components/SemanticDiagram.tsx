@@ -22,6 +22,7 @@ import {
 	type ReactNode,
 } from "react";
 
+import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	STAGE_CLASS,
@@ -281,6 +282,27 @@ interface SemanticDiagramProps {
 	 * arriving from it: the last picture goes that way as this one comes in.
 	 */
 	heading?: Departure | null | undefined;
+	/**
+	 * The step of a presented walkthrough on screen, or null while none is
+	 * presented. The pane says which step it is showing, lets what the step is
+	 * not about recede gradually, and carries a step read through another view
+	 * rather than bringing its picture in afresh.
+	 */
+	presenting?: number | null | undefined;
+}
+
+/**
+ * The surface's classes and the stage's marks while a walkthrough is presented.
+ * @param step The step on screen, or null or undefined while none is presented.
+ * @returns The class to add to the surface, and the attribute for the stage.
+ */
+function presentationMarks(step: number | null | undefined): {
+	readonly surface: string;
+	readonly stage: { readonly "data-presentation-step"?: number };
+} {
+	return step === null || step === undefined
+		? { surface: "", stage: {} }
+		: { surface: " is-presenting", stage: { "data-presentation-step": step } };
 }
 
 /**
@@ -345,6 +367,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		reducedMotion,
 		keepStill: camera.followPicture,
 		heading: props.heading,
+		presenting: presentationMarks(props.presenting).surface !== "",
 	});
 	// After the picture is staged, so a picture that just replaced a leaving one
 	// is never mistaken for it.
@@ -478,6 +501,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			width: drawing.width,
 			height: drawing.height,
 			transform: cameraTransform(view),
+			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
 		}),
 		[drawing.width, drawing.height, view],
 	);
@@ -490,6 +514,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			data-variant={drawing.variant.name}
 			data-version={drawing.version}
 			data-group={props.groupId}
+			{...presentationMarks(props.presenting).stage}
 			className={STAGE_CLASS}
 		>
 			{props.notice}
@@ -525,7 +550,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						ref={setSurface}
 						data-slot="semantic-board-surface"
 						style={surfaceStyle}
-						className={surfaceClass(panning, reducedMotion, camera.instant)}
+						className={`${surfaceClass(panning, reducedMotion, camera.instant)}${presentationMarks(props.presenting).surface}`}
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}

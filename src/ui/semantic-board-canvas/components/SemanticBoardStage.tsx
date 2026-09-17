@@ -27,11 +27,12 @@ import type {
 	SemanticTheme,
 	SemanticWaiting,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { SemanticDiagram } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
 import {
-	SemanticDiagram,
-	type SemanticDiagramProps,
-} from "@/ui/semantic-board-canvas/components/SemanticDiagram";
-import { SemanticNarrative } from "@/ui/semantic-board-canvas/components/SemanticNarrative";
+	ReadingArea,
+	pictureMarks,
+	presentationOver,
+} from "@/ui/semantic-board-canvas/components/SemanticStagePresentation";
 import { SemanticStageSidebar } from "@/ui/semantic-board-canvas/components/SemanticStageSidebar";
 import { SemanticRefreshFailure } from "@/ui/semantic-board-canvas/components/SemanticRefreshFailure";
 import { SemanticTrail } from "@/ui/semantic-board-canvas/components/SemanticTrail";
@@ -253,40 +254,6 @@ function refreshDisclosure(view: RenderView): ReactNode {
 }
 
 /**
- * The explanation being read, beside the picture.
- * @param view What the stage is assembled from.
- * @returns The rail, or null when nobody is reading one.
- */
-function narrativeRail(view: RenderView): ReactNode {
-	const { narrative } = view;
-	if (narrative.open === null) {
-		return null;
-	}
-	return (
-		<SemanticNarrative
-			walkthrough={narrative.open}
-			beatIndex={narrative.beatIndex}
-			missing={view.missing}
-			onBeat={narrative.goTo}
-			onClose={view.onCloseNarrative}
-		/>
-	);
-}
-
-/**
- * What the picture is told about the group under inspection.
- * @param focus The group under inspection, or null.
- * @returns Which group it is and what to mark, or nothing for either.
- */
-function groupMarks(
-	focus: GroupFocus | null,
-): Pick<SemanticDiagramProps, "groupId" | "groupMarks"> {
-	return focus === null
-		? { groupId: null, groupMarks: null }
-		: { groupId: focus.group, groupMarks: focus.emphasis };
-}
-
-/**
  * Whichever of the four states is true.
  * @param view The board, the query's answer, the selection and the retry.
  * @returns The picture, or the news that there is not one.
@@ -328,8 +295,9 @@ function stageBody(view: RenderView): JSX.Element {
 			stale={notice !== null}
 			notice={notice}
 			focus={view.focus}
-			{...groupMarks(view.groupFocus)}
+			{...pictureMarks(view)}
 			heading={view.heading}
+			presenting={view.narrative.open === null ? null : view.narrative.beatIndex}
 		/>
 	);
 }
@@ -366,13 +334,16 @@ function renderedView(view: RenderView): JSX.Element {
 				nameOf={view.narrative.nameOf}
 				variantNameOf={variantNamer(view)}
 			/>
-			{/* Read left to right: the board and whatever is selected on it, the
-			    explanation being followed, and the picture they are both about. */}
-			<div className="flex min-h-0 min-w-0 flex-1">
+			{/* Read left to right: the board and whatever is selected on it, then the
+			    picture — with a presented walkthrough's caption over it, while the
+			    sidebar steps aside. */}
+			<ReadingArea presenting={view.narrative.open !== null}>
 				<SemanticStageSidebar view={view} appearances={view.appearances} />
-				{narrativeRail(view)}
-				{stageBody(view)}
-			</div>
+				<div className="relative flex min-h-0 min-w-0 flex-1">
+					{stageBody(view)}
+					{presentationOver(view)}
+				</div>
+			</ReadingArea>
 		</>
 	);
 }
@@ -437,7 +408,10 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 
 	const drawn = drawingIn(render.data);
 	const focus = useMemo(() => beatFocus(narrative.beat, drawn), [narrative.beat, drawn]);
-	const camera = useAutoFit(drawn, focus);
+	const camera = useAutoFit(drawn, focus, {
+		presenting: narrative.open !== null,
+		reducedMotion: props.reducedMotion,
+	});
 	// A subject is named to a reader by its name. Which ones the picture could
 	// not find is settled against the atlas; what to call them is the board's.
 	const { choose, nameOf } = narrative;

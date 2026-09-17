@@ -119,6 +119,22 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
  */
 const PICTURE_EXIT_MS = 280;
 
+// ── A walkthrough, presented ──────────────────────────────────────────────
+
+/**
+ * How long the camera takes to glide from one step of a presented walkthrough
+ * to the next, and the veil over what the step is not about takes to follow it.
+ *
+ * A step is a new sentence in a talk, not a jump cut, so the camera travels far
+ * enough to be followed: it pulls back, crosses, and settles on the step. Pulls
+ * against the talk itself: a glide much past a second is dead air between two
+ * sentences, and one shorter than half a second reads as a cut with a blur. A
+ * step that also changes the view the board is read through moves with the
+ * picture instead, on `PICTURE_TRANSITION_MS`, so the cards and the camera
+ * arrive together.
+ */
+const PRESENTATION_STEP_MS = 900;
+
 export {
 	FLOW_CYCLE_CAP_MS,
 	FLOW_PULSE_RAMP,
@@ -128,4 +144,5 @@ export {
 	PICTURE_EXIT_MS,
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
+	PRESENTATION_STEP_MS,
 };
