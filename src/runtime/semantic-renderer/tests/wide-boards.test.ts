@@ -84,19 +84,31 @@ const FIXTURES = [
 	bends: number;
 }[];
 
-/** Each vault board's current variant, drawn first, as recorded. */
+/**
+ * Each vault board's current variant, drawn first, as recorded.
+ *
+ * Re-recorded on 2026-09-17 when TASK-257 rewrote the vault against the code
+ * as it now stands. Every board grew: the boards carry the subsystems built
+ * since September and the callers ADR 0029 asks for in place of the cards that
+ * only pointed at another board, so they are bigger pages at a smaller fit than
+ * the September recording, and these numbers are that drawing, not a target.
+ */
 const VAULT: Readonly<Record<string, Recorded>> = {
-	"Agent workbench": [0.75, 1.62, 0.13, 5260, 1.6, 3, 0, 1],
-	Archboard: [1, 0.7, 0.16, 3171, 1.3, 0, 0.1, 1],
-	"Board persistence": [0.84, 1.26, 0.15, 5914, 1.7, 7, 0.08, 3],
-	"Board viewer": [0.68, 1.81, 0.1, 5157, 1.5, 2, 0, 1],
-	"Browser application": [0.76, 1.94, 0.1, 5907, 1.5, 5, 0, 0],
-	"Canvas server": [0.97, 1.22, 0.17, 7793, 2.1, 9, 0.06, 2],
-	"Codex session": [0.99, 1.01, 0.17, 1002, 0.2, 0, 0, 0],
-	"Command dispatch": [0.88, 0.92, 0.16, 2738, 1.3, 0, 0, 0],
-	"Command interface": [1, 0.73, 0.23, 1696, 0.9, 0, 0.39, 0],
-	"Renderer layout": [1, 0.65, 0.17, 1295, 0.8, 0, 0, 0],
-	"Semantic renderer": [0.91, 1.05, 0.18, 5713, 1.1, 4, 0.38, 2],
+	"Agent workbench": [0.466, 4.981, 0.091, 16999, 1.8, 9, 0.089, 2],
+	Archboard: [0.709, 1.43, 0.163, 4553, 1.333, 0, 0.076, 1],
+	"Board persistence": [0.609, 1.634, 0.177, 6733, 1.333, 7, 0.052, 3],
+	"Board rasterizer": [0.697, 2.195, 0.134, 5258, 1.273, 1, 0.061, 1],
+	"Board viewer": [0.444, 3.075, 0.102, 10230, 1.111, 4, 0, 1],
+	"Browser application": [0.573, 2.584, 0.107, 9432, 1.571, 6, 0, 1],
+	"Canvas server": [0.518, 4.172, 0.098, 25511, 2, 26, 0.076, 1],
+	"Codex session": [0.604, 2.007, 0.104, 8321, 2.167, 5, 0.198, 1],
+	"Codex workhorse": [0.581, 1.748, 0.205, 8424, 1.231, 3, 0.204, 3],
+	"Command dispatch": [0.836, 1.272, 0.168, 2953, 1, 0, 0, 0],
+	"Command interface": [0.424, 5.079, 0.088, 18116, 1.81, 13, 0.042, 1],
+	"Renderer layout": [0.558, 1.764, 0.2, 6363, 1.231, 0, 0.061, 1],
+	"Semantic renderer": [0.549, 2.631, 0.166, 18527, 1.727, 15, 0.206, 1],
+	"Skill evaluation": [0.399, 3.848, 0.168, 13323, 1.25, 3, 0.03, 1],
+	"Voice coordinator": [0.491, 2.152, 0.184, 6376, 1.538, 2, 0.159, 1],
 };
 
 /** The vault's tracked boards, by name, as their current variant's content. */
