@@ -25,9 +25,10 @@ entry point -> Fetch semantic reads`, both internal parts parented to `Semantic
 viewer`, not `Browser client -> Semantic viewer -> Fetch`. The renderer carries a
 line across a container's boundary. A container is the endpoint only when the
 source addresses the whole module (a dependency in a higher-level view). Any
-part drawn with children is a container, whatever its `kind`: a class node
-that holds its methods receives nothing itself, and a call to it lands on the
-method whose body runs (`RequestContext.push`, not `Request context`). When
+part drawn with children is a container, whatever its `kind`: a module, class
+or component node that holds its functions, methods or child components
+receives nothing itself, and a call to it lands on the child whose body runs.
+When
 you give an existing part children, move every relationship that landed on it
 to the child that receives it. Before presenting, trace each incoming call to
 its actual receiver; valid ids alone cannot tell you this.
@@ -51,10 +52,10 @@ is a configuration question for the vault's owner, not a reason to touch
 
 ```json
 {
-	"name": "Dispatch",
+	"name": "Submit order",
 	"kind": "function",
-	"parent": "Flask app",
-	"groups": ["request-lifecycle", "sansio-core"]
+	"parent": "Checkout",
+	"groups": ["payments", "audit"]
 }
 ```
 
@@ -74,18 +75,17 @@ incoming and outgoing boundary relationships, and their immediate neighbours.
 ### Bindings
 
 Register each checkout whose implementation you bind with `archboard repo add
-<dir>`; the answer's `repo` is the identity (`github.com/pallets/flask`) and
+<dir>`; the answer's `repo` is the identity (such as `github.com/<owner>/<name>`) and
 every binding on every machine uses it with a repo-relative `path`. `branch`,
 `commit` and `confirmedAt` record what you actually confirmed; restating the
 node keeps them only if you restate them.
 
 A binding names the implementation owner of the node's stated responsibility:
 the file whose body does what the responsibility says. It is not the file
-that imports the unit, registers it (a blueprint registration, a plugin
-table, a CLI group), or calls it. `DefaultJSONProvider` binds to
-`src/flask/json/provider.py`, where its class is written, not to
-`src/flask/app.py`, which holds it as `app.json`, and not to `json/__init__.py`,
-whose helpers call it. A planned part or an implementation unavailable for
+that imports the unit, registers it (a command table, a plugin table, a route
+mount), or calls it. A command's handler binds to the file where the handler
+is written, not to the table that registers the command and not to the
+dispatcher that calls it. A planned part or an implementation unavailable for
 inspection stays unbound. A part implemented in another checkout may bind
 after you inspect its owner and register that repository. When one node's
 responsibility is implemented across files, say less (narrow the responsibility
@@ -125,18 +125,21 @@ goes in a payload, hold one line for it: `from` → `to`, the `kind`, the claim 
 words, and the source file and function or symbol where the mechanism appears.
 For a call, `from` is the caller whose body makes it and `to` is the receiver
 whose body runs. For another kind, make the endpoints follow the stated claim:
-A reads from B, publishes to B, or depends on B. A return travelling back is a
+A reads from B, renders B, emits an event B handles, publishes to B, or depends
+on B. A return travelling back is a
 flow step, not a second architecture relationship. The record decides three
 things a valid payload cannot:
 
-- **Siblings are not a chain.** When `full_dispatch_request` calls
-  `preprocess_request` and then `dispatch_request`, the evidence is two lines
-  from `full_dispatch_request`. Drawing `preprocess_request → dispatch_request`
-  because they run in that order states a call the source does not make.
+- **Siblings are not a chain.** When `apply()` calls `validate()` and then
+  `persist()`, the evidence is two lines from `apply`. Drawing
+  `validate → persist` because they run in that order states a call the source
+  does not make.
 - **The receiver is the part, not its container**, unless the source addresses
   the whole module. Containment says nothing about calls.
 - **The kind follows the mechanism.** A function call is a `call`; a value
-  read or handed over is `data`; an HTTP request is `http`; a dependency the
+  read or handed over is `data`; a component drawing another is `render`; an
+  emitted event or a subscription is `event`; a message put on a queue is
+  `queue`; an HTTP request is `http`; a dependency the
   source imports but never calls at this level is a `dependency`. Use the
   configured kind that names what the source does.
 
