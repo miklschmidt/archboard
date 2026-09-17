@@ -87,7 +87,11 @@ mount), or calls it. A command's handler binds to the file where the handler
 is written, not to the table that registers the command and not to the
 dispatcher that calls it. A planned part or an implementation unavailable for
 inspection stays unbound. A part implemented in another checkout may bind
-after you inspect its owner and register that repository. When one node's
+after you inspect its owner and register that repository. `archboard check`
+reports `BINDING_PATH_MISSING` for a node whose binding names a path the
+repository does not have, naming the node, the path, the repo and the
+checkout; a repository this machine has not registered draws no warning,
+because that is a local fact rather than a fault in the board. When one node's
 responsibility is implemented across files, say less (narrow the responsibility
 to what one file owns) or say more (split the node) rather than bind to a file
 that does only part of it.
@@ -130,6 +134,13 @@ relationship, no children, no part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (the
 vault holds no such board, so the link opens nothing) and
 `DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of the board it
 opens).
+
+Those three and `BINDING_PATH_MISSING` are checks on a variant's content, so
+they run only over the variants a write can still change. A frozen variant is
+left alone: no accepted write could clear a warning there, and a binding that
+named a file which existed then is a correct record, not drift.
+`UNKNOWN_VOCABULARY` is not one of them — its subject is the vault
+configuration, so defining the kind again clears it wherever it sits.
 
 ## Relationships
 

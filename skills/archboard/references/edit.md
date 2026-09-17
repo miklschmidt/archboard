@@ -18,16 +18,14 @@ onto its subjects, write one batch at the version you read, check the answer.
      add the new subject without one. Similar names or paths do not make two
      implementations one unit.
    - **Untouched**: leave it out of the payload entirely.
-     For a relationship, changing two or more of `from`, `to`, `kind`, `label`,
-     `description`, `emphasis`, effective `traffic` makes it a replacement;
-     one change keeps the id. So removing a part, adding what replaces it and
-     restating the relationships that landed on it with their ids and their
-     new endpoint is one write; re-adding those relationships without their
-     ids reads as a deletion and an addition.
-     Walk the catalogue for what you add: a new part brings its kind,
-     containment, binding and groups; a new runtime path brings its traffic;
-     a removed part takes its relationships and walkthrough references with
-     it.
+     Two or more of `from`, `to`, `kind`, `label`, `description`, `emphasis`,
+     effective `traffic` differing makes a relationship a replacement; one
+     keeps its id. The count is against the variant this one came from — a
+     current variant has one too — over every edit since, not what you just
+     read, so one you never touched may already be a difference from its
+     limit. Restate one whose endpoint moved with its id, in the same batch.
+     Walk the catalogue for what you add; a removed part takes its
+     relationships and walkthrough references with it.
 3. Write it as one batch, naming the `variant` when it is not the current one:
 
 ```bash

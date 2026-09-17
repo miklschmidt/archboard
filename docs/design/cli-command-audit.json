@@ -3,8 +3,8 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 38,
-		"paths": 71
+		"subcommands": 39,
+		"paths": 72
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -1486,6 +1486,50 @@
 			"semantics": "moves the current designation without renaming or reparenting; the former current becomes historical and stops being editable; a variant that is unsettled, derived from one that is, or already historical is refused",
 			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
 			"nextFields": ["board.current", "board.adoptions"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic shelve",
+			"introducedBy": "TASK-261",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-lifecycle.ts",
+			"stdout": "json object",
+			"result": "the board aggregate with the proposal let go",
+			"diagnostics": "which proposal the board has let go, at what version, and that branching from it is the way to propose it again",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/shelve"],
+			"semantics": "marks one proposal shelved under its own name, keeping its content and every drill-down that names it; the variant stops inheriting from its predecessor and any reconciliation standing it held is cleared; content edits and adoption are refused afterwards, pointing at branching from it; the current variant, a historical one, one already shelved, and one other drafts still stand on are refused",
+			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
+			"nextFields": ["board.shelvings", "board.variants[].lifecycle"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "server-state-write"],
 			"refusals": [
