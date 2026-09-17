@@ -311,6 +311,57 @@ describe("leaving and arriving", () => {
 		expect(surface.innerHTML).toBe(plain.innerHTML);
 	});
 
+	test("a new connection's label waits for its line to reach it", () => {
+		const surface = surfaceElement();
+		const label: Card = {
+			id: "e1",
+			label: true,
+			box: { x: 130, y: 30, width: 50, height: 20 },
+			title: "calls",
+		};
+		const before = picture([A, B], []);
+		const after = picture([A, B, label], [AB]);
+		surface.innerHTML = before.svg;
+		const transition = transitionPicture(surface, before, after);
+		const groups = surface.querySelectorAll<SVGGElement>(`g[data-semantic-id="e1"]`);
+		const [line, pill] = [groups[0]!, groups[1]!];
+		const { enterStart } = PICTURE_TRANSITION_PHASES;
+		// The line is on its way; its label is not yet.
+		transition.seek(enterStart + (1 - enterStart) * 0.3);
+		expect(Number(line.style.opacity)).toBeGreaterThan(0);
+		expect(Number(pill.style.opacity)).toBe(0);
+		transition.seek(1);
+		expect(Number(pill.style.opacity)).toBe(1);
+	});
+
+	test("a label whose words changed hands them over without an empty pill or two sets of words at once", () => {
+		const surface = surfaceElement();
+		const label: Card = {
+			id: "e1",
+			label: true,
+			box: { x: 130, y: 30, width: 50, height: 20 },
+			title: "calls",
+		};
+		const before = picture([A, B, label], [AB]);
+		const after = picture([A, B, { ...label, title: "queues" }], [AB]);
+		surface.innerHTML = before.svg;
+		const transition = transitionPicture(surface, before, after);
+		const outgoing = wrapper(surface, "outgoing");
+		const incoming = wrapper(surface, "incoming");
+		const { fadeStart, fadeEnd } = PICTURE_TRANSITION_PHASES;
+		for (let step = 0; step <= 200; step += 1) {
+			transition.seek(fadeStart + ((fadeEnd - fadeStart) * step) / 200);
+			const old = Number(outgoing.style.opacity);
+			const next = Number(incoming.style.opacity);
+			// Never empty, and never both plainly readable.
+			expect(old + next).toBeGreaterThan(0.25);
+			expect(Math.min(old, next)).toBeLessThan(0.2);
+		}
+		transition.seek(1);
+		expect(Number(incoming.style.opacity)).toBe(1);
+		expect(Number(outgoing.style.opacity)).toBe(0);
+	});
+
 	test("a card and a line a proposal removes fade to a ghost with the rest of their change, not at once", () => {
 		const surface = surfaceElement();
 		const before = picture([A, B], [AB]);

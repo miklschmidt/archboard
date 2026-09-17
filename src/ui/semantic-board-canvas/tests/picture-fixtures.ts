@@ -22,6 +22,8 @@ interface Card {
 	readonly pinned?: boolean;
 	/** Whether the card is drawn as a removed subject, its whole group a ghost. */
 	readonly ghost?: boolean;
+	/** Whether the card is the label drawn for a connection rather than a node. */
+	readonly label?: boolean;
 }
 
 /** One line to draw. */
@@ -43,7 +45,7 @@ function cardMarkup(card: Card): string {
 	const outline =
 		card.dashed === true ? ' stroke-dasharray="4 3" stroke="#f0b429"' : ' stroke="#555"';
 	return (
-		`<g data-semantic-kind="node" data-semantic-id="${card.id}"${card.ghost === true ? ' opacity="0.4"' : ""}>` +
+		`<g data-semantic-kind="${card.label === true ? "edge" : "node"}" data-semantic-id="${card.id}"${card.ghost === true ? ' opacity="0.4"' : ""}>` +
 		`<rect class="ab-halo" x="${x - 3}" y="${y - 3}" width="${width + 6}" height="${height + 6}" rx="9" fill="none"/>` +
 		`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6" fill="#222"${outline}/>` +
 		`<rect x="${x + 16}" y="${y + 16}" width="24" height="24" rx="5" fill="#888"/>` +

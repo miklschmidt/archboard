@@ -50,6 +50,9 @@ const ARRIVE_SCALE = 0.94;
  */
 const CONTENT_DROP = 10;
 
+/** How far either side of the swap a label's old and new words share, as a fraction of the transition. */
+const LABEL_OVERLAP = 0.12;
+
 /** One part of a card's frame, and how to draw it at wherever the card is. */
 type FramePart = (box: SemanticBox) => void;
 
@@ -323,6 +326,17 @@ interface Carried extends Wrappers {
 	readonly frames: readonly FramePart[];
 	readonly oldFrames: readonly FramePart[];
 	readonly clip: Element | null;
+	/** Whether the card is a connection's label, whose words cross-fade in place. */
+	readonly label: boolean;
+}
+
+/**
+ * Whether a group is the label drawn for a connection rather than a card.
+ * @param group The group.
+ * @returns True for a label.
+ */
+function isLabel(group: Element): boolean {
+	return group.getAttribute("data-semantic-kind") === "edge";
 }
 
 /**
@@ -350,6 +364,17 @@ function placeWrapped(wrappers: Wrapped, dx: number, dy: number, opacity: number
 function swapContent(carried: Carried, box: SemanticBox, progress: number): void {
 	const { from, to, incoming, outgoing } = carried;
 	const { fadeStart, swapAt, fadeEnd } = PICTURE_TRANSITION_PHASES;
+	if (carried.label) {
+		// A label is a few words in a pill, where two sets of words fully over
+		// each other read as a smudge and none at all reads as an empty pill: the
+		// old words hand over to the new ones where they stand, overlapping only
+		// while both are faint.
+		const gone = easeInOut(phase(progress, fadeStart, swapAt + LABEL_OVERLAP));
+		placeWrapped(outgoing, box.x - from.x, box.y - from.y, 1 - gone);
+		const here = easeInOut(phase(progress, swapAt - LABEL_OVERLAP, fadeEnd));
+		placeWrapped(incoming, box.x - to.x, box.y - to.y, here);
+		return;
+	}
 	const gone = easeInOut(phase(progress, fadeStart, swapAt));
 	placeWrapped(outgoing, box.x - from.x, box.y - from.y + CONTENT_DROP * gone, 1 - gone);
 	const here = easeInOut(phase(progress, swapAt, fadeEnd));
@@ -423,6 +448,7 @@ function carryCard(
 		frames: frameParts(next.frame, to),
 		oldFrames: frameParts(fading, from),
 		clip,
+		label: isLabel(after.element),
 	});
 }
 
@@ -451,4 +477,4 @@ function growIn(
 	};
 }
 
-export { carryCard, growIn };
+export { carryCard, growIn, isLabel };
