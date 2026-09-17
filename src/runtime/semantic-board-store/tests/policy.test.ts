@@ -127,6 +127,42 @@ test("a historical removed kind cannot authorize a newly authored reference in a
 	);
 });
 
+test("a removed definition is reported on frozen history too, because config.yaml can answer it", async () => {
+	// A vocabulary warning is not a content diagnostic: its subject is the vault
+	// configuration, and defining the value again is an accepted write that
+	// clears it. History is still drawn with that vocabulary, so a frozen
+	// variant referring to a definition nobody configures any more is a real gap
+	// the vault should keep saying out loud (TASK-259).
+	await create();
+	await store.writeSemanticBoard({
+		board: name,
+		writer,
+		expectedVersion: read().board.version,
+		transition: store.branchVariantTransition(
+			contract.BoardBranchInputSchema.parse({ name: "Worker instead", from: "current" }),
+		),
+	});
+	const node = read().board.variants[0]!.content.nodes[0]!;
+	expect(
+		(await edit({ variant: "Worker instead", nodes: [{ ...node, kind: "worker" }] })).outcome,
+	).toBe("applied");
+	const adopted = await store.writeSemanticBoard({
+		board: name,
+		writer,
+		expectedVersion: read().board.version,
+		transition: store.adoptVariantTransition(
+			contract.BoardAdoptInputSchema.parse({ variant: "Worker instead" }),
+		),
+	});
+	expect(adopted.outcome).toBe("applied");
+	const frozen = read().board.variants.find((variant) => variant.lifecycle === "historical");
+	expect(frozen?.content.nodes[0]?.kind).toBe("api");
+
+	save({ ...policy, nodeKinds: { worker: policy.nodeKinds["worker"]! } });
+	const warnings = read().warnings.filter((issue) => issue.code === "UNKNOWN_VOCABULARY");
+	expect(warnings.map((issue) => issue.variant)).toContain(frozen?.id);
+}, 30_000);
+
 test("missing, malformed, invalid-color and unknown-icon policies activate coherent defaults and recover", async () => {
 	const file = join(vault, ".archboard/config.yaml");
 	const healthy = store.readSemanticBoardConfiguration(vault);

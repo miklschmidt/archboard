@@ -19,10 +19,14 @@
 //     level as its kind.
 //
 // All three are warnings. The board still draws, and the repair is an ordinary
-// agent write (ADR 0026).
+// agent write (ADR 0026) — and every repair the three name rewrites the
+// variant's own nodes, which is why they are reported only over the variants
+// that still accept content edits (see `content-checks.ts`). On frozen history
+// the same warning would name a write the store refuses.
 
 import type { SemanticBoard, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import { contentCheckedVariants } from "@/runtime/semantic-board-store/lib/content-checks";
 import { semanticBoardAddress } from "@/runtime/semantic-board-store/lib/location";
 
 /** What the checker knows about one board it read, as another board's target. */
@@ -69,7 +73,8 @@ function participates(node: SemanticNode, content: VariantContent): boolean {
 }
 
 /**
- * Everything wrong with one board's links out of it.
+ * Everything wrong with one board's links out of it, over the variants
+ * somebody can still edit.
  * @param board The board as read.
  * @param file The file it was read from.
  * @param targets Every board the vault holds, by address key.
@@ -80,7 +85,7 @@ function semanticDrillDownDiagnostics(
 	file: string,
 	targets: ReadonlyMap<string, DrillDownTarget>,
 ): VaultDiagnostic[] {
-	return board.variants.flatMap((variant) =>
+	return contentCheckedVariants(board).flatMap((variant) =>
 		variant.content.nodes.flatMap((node) =>
 			node.drillDown === undefined
 				? []
