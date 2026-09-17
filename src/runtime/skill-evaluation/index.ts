@@ -6,6 +6,7 @@
 export { executeRun, statusOf, type RunJob } from "@/runtime/skill-evaluation/lib/author";
 export { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 export { startCanvas } from "@/runtime/skill-evaluation/lib/canvas";
+export { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 export {
 	ownProcess,
 	runProcess,
@@ -95,9 +96,17 @@ export {
 export {
 	authorConfigToml,
 	graderConfigToml,
+	prepareRunDirectory,
 	runEnvironment,
 	type RunPaths,
 } from "@/runtime/skill-evaluation/lib/isolation";
+export {
+	matchName,
+	namedSubject,
+	namesMatch,
+	plausibleSubjects,
+	type NameMatch,
+} from "@/runtime/skill-evaluation/lib/naming";
 export {
 	KNOWN_CHECKS,
 	evaluateOutcomes,
@@ -121,6 +130,11 @@ export {
 	type RunManifest,
 } from "@/runtime/skill-evaluation/lib/records";
 export {
+	RunManifestSchema,
+	writeRunManifest,
+	type RunManifestFields,
+} from "@/runtime/skill-evaluation/lib/run-manifest";
+export {
 	buildReport,
 	median,
 	mean,
@@ -139,6 +153,7 @@ export {
 	captureDeclared,
 	captureFromReceipt,
 	captureSummary,
+	expandCaptures,
 	tileRegions,
 	type CaptureAttempt,
 	type CaptureProvenance,
@@ -155,7 +170,11 @@ export {
 	GUARDRAILS,
 	WORKFLOWS,
 	CaptureDeclarationSchema,
+	CaptureRequestSchema,
+	EveryViewCaptureSchema,
 	type CaptureDeclaration,
+	type CaptureRequest,
+	type EveryViewCapture,
 	CoverageSchema,
 	FixtureSchema,
 	FixtureStepSchema,

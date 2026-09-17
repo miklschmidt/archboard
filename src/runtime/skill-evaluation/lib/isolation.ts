@@ -1,8 +1,17 @@
-// One run's private world: its own HOME, CODEX_HOME, vault, repository
-// registry, log files and an `archboard` on PATH that runs this checkout.
-// Nothing here is shared between runs, so parallel authors cannot see each
-// other, and nothing the operator has in their own ~/.codex — AGENTS.md,
-// skills, MCP servers, model choice — reaches an author.
+// One run's private world: its own HOME, vault, repository registry, CLI log
+// and an `archboard` on PATH that runs this checkout. Nothing here is shared
+// between runs, so parallel authors cannot see each other, and nothing the
+// operator has in their own ~/.codex — AGENTS.md, skills, MCP servers, model
+// choice — reaches an author.
+//
+// The world is a directory of its own under the run, and the harness's records
+// are not in it: the board snapshot the checks diff against, the author's
+// transcript, the verdicts, the bundle the grader reads and the private
+// CODEX_HOME with the operator's credentials all sit beside it, above the only
+// directory the author can write. Reads cannot be forbidden — a workspace-write
+// sandbox restricts writes, not reads — so what an author must not consult is
+// kept out of the world it works in, and a read that climbs out of it is
+// recorded as exposure (classify.ts).
 
 import fs from "node:fs";
 import path from "node:path";
@@ -10,6 +19,8 @@ import path from "node:path";
 /** Where everything of one run lives. */
 interface RunPaths {
 	readonly root: string;
+	/** The author's own world: the only directory it may write, holding nothing of the harness's. */
+	readonly world: string;
 	readonly home: string;
 	readonly codexHome: string;
 	readonly flask: string;
@@ -41,24 +52,30 @@ interface AuthorSettings {
 }
 
 /**
- * The layout of one run directory, created empty.
+ * The layout of one run directory, created empty: the author's world under
+ * `world/`, and the harness's own records beside it, where the author cannot
+ * write them and does not meet them.
  * @param root The run's directory.
  * @returns Every path the run uses.
  */
 function prepareRunDirectory(root: string): RunPaths {
+	const world = path.join(root, "world");
 	const paths: RunPaths = {
 		root,
-		home: path.join(root, "home"),
+		world,
+		home: path.join(world, "home"),
 		codexHome: path.join(root, "codex-home"),
-		flask: path.join(root, "flask"),
-		vault: path.join(root, "vault"),
-		bin: path.join(root, "bin"),
-		repos: path.join(root, "repos.json"),
-		xdgState: path.join(root, "state"),
-		xdgConfig: path.join(root, "config"),
-		temporary: path.join(root, "tmp"),
+		flask: path.join(world, "flask"),
+		vault: path.join(world, "vault"),
+		bin: path.join(world, "bin"),
+		repos: path.join(world, "repos.json"),
+		xdgState: path.join(world, "state"),
+		xdgConfig: path.join(world, "config"),
+		temporary: path.join(world, "tmp"),
 		canvasLog: path.join(root, "canvas.log"),
-		cliLog: path.join(root, "archboard.log"),
+		// The CLI refuses to start when the log path it is given cannot be
+		// written, so the author's own tool logs inside the author's world.
+		cliLog: path.join(world, "archboard.log"),
 		authorEvents: path.join(root, "author.jsonl"),
 		authorStdout: path.join(root, "author.stdout.txt"),
 		authorStderr: path.join(root, "author.stderr.txt"),
@@ -106,7 +123,8 @@ function writeCliWrapper(paths: RunPaths, checkout: string): void {
 /**
  * The config.toml an author's Codex reads: the pinned model and effort,
  * approvals off, a workspace-write sandbox that may reach the local canvas
- * and write inside the run, and the checkout trusted.
+ * and write inside the author's world — never the harness's records beside
+ * it — and the checkout trusted.
  * @param settings The pins.
  * @param paths The run.
  * @returns TOML text.
@@ -120,7 +138,7 @@ function authorConfigToml(settings: AuthorSettings, paths: RunPaths): string {
 		"",
 		"[sandbox_workspace_write]",
 		"network_access = true",
-		`writable_roots = [${JSON.stringify(paths.root)}]`,
+		`writable_roots = [${JSON.stringify(paths.world)}]`,
 		"",
 		`[projects.${JSON.stringify(paths.flask)}]`,
 		'trust_level = "trusted"',
