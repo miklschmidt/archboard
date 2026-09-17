@@ -273,6 +273,19 @@ async function adoptSemanticBoardOnCanvas(
 }
 
 /**
+ * Let one proposal go, under its name.
+ * @param board The board name.
+ * @param shelve Which variant, and why it was let go.
+ * @returns The board as it now stands.
+ */
+async function shelveSemanticBoardOnCanvas(
+	board: string,
+	shelve: Readonly<Record<string, unknown>>,
+): Promise<SemanticWriteAnswer> {
+	return postSemantic("/api/semantic-boards/shelve", { board, shelve });
+}
+
+/**
  * Derive a proposal from a variant this board already has.
  *
  * Nothing about what it proposes is said here. A branch carries its
@@ -297,6 +310,7 @@ export {
 	type ReconciliationReport,
 	type SemanticWriteAnswer,
 	adoptSemanticBoardOnCanvas,
+	shelveSemanticBoardOnCanvas,
 	resolveSemanticBoardOnCanvas,
 	listSemanticBoardsOnCanvas,
 	readSemanticBoardOnCanvas,

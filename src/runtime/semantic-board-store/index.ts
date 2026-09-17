@@ -41,6 +41,7 @@ export {
 	createBoardTransition,
 	editVariantTransition,
 	settleVariantTransition,
+	shelveVariantTransition,
 } from "@/runtime/semantic-board-store/lib/transitions";
 export {
 	type SemanticWriter,

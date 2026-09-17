@@ -21,7 +21,11 @@ import {
 	semanticNewContract,
 	semanticShowContract,
 } from "@/cli/commands/semantic";
-import { semanticAdoptContract, semanticResolveContract } from "@/cli/commands/semantic-lifecycle";
+import {
+	semanticAdoptContract,
+	semanticResolveContract,
+	semanticShelveContract,
+} from "@/cli/commands/semantic-lifecycle";
 import { semanticCompareContract } from "@/cli/commands/semantic-compare";
 import { semanticInspectContract } from "@/cli/commands/semantic-inspect";
 import { semanticRenderContract } from "@/cli/commands/semantic-render";
@@ -63,6 +67,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			branch: child(contract(semanticBranchContract, "src/cli/commands/semantic.ts")),
 			resolve: child(contract(semanticResolveContract, "src/cli/commands/semantic-lifecycle.ts")),
 			adopt: child(contract(semanticAdoptContract, "src/cli/commands/semantic-lifecycle.ts")),
+			shelve: child(contract(semanticShelveContract, "src/cli/commands/semantic-lifecycle.ts")),
 			show: child(contract(semanticShowContract, "src/cli/commands/semantic.ts")),
 			compare: child(contract(semanticCompareContract, "src/cli/commands/semantic-compare.ts")),
 			inspect: child(contract(semanticInspectContract, "src/cli/commands/semantic-inspect.ts")),

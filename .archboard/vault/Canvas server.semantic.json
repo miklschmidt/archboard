@@ -4,9 +4,9 @@
 	"id": "6E6hL0Zk",
 	"name": "Canvas server",
 	"level": "service",
-	"version": 7,
+	"version": 8,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-17T20:59:56.659Z",
+	"updatedAt": "2026-09-17T22:54:12.717Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -496,7 +496,7 @@
 		{
 			"id": "nkFJIEAH",
 			"name": "Readable layout",
-			"lifecycle": "draft",
+			"lifecycle": "shelved",
 			"parent": "GC6SAtGL",
 			"content": {
 				"nodes": [
@@ -936,5 +936,12 @@
 			}
 		}
 	],
-	"current": "GC6SAtGL"
+	"current": "GC6SAtGL",
+	"shelvings": [
+		{
+			"variant": "nkFJIEAH",
+			"at": "2026-09-17T22:54:12.717Z",
+			"reason": "it proposes nothing architectural: all 14 nodes and all 23 relationships are identical to the current variant, leaving one retargeted drill-down and one walkthrough beat"
+		}
+	]
 }

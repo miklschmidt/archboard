@@ -23,6 +23,27 @@ const SemanticIdSchema = z
 	.string()
 	.regex(BLOCK_ID_RE, "must be one to eight characters of the block-id alphabet");
 
+/**
+ * The same identity, as an agent states it in a payload.
+ *
+ * The shape is identical; only the refusal differs, and it differs because the
+ * two are read at different moments. A board being parsed holds ids the
+ * boundary minted, so a shape complaint there is about a damaged file. A stated
+ * id that is not this shape is nearly always a readable name invented for
+ * something new, and the store one layer down already answers that case well
+ * ("Leave the id out to add ... as a new one"). This says the same thing at the
+ * schema, so the answer does not depend on which layer refuses first, and names
+ * every subject that mints its own id rather than the two an author remembers.
+ */
+const StatedIdSchema = z
+	.string()
+	.regex(
+		BLOCK_ID_RE,
+		"must be an id the board already has: one to eight characters of the block-id alphabet. " +
+			"Every id is minted by the server, so a new node, relationship, step, flow, view or beat " +
+			'leaves "id" out',
+	);
+
 /** A name a person reads. One line, trimmed, never empty. */
 const DisplayNameSchema = SingleLineTextSchema.max(MAX_NAME);
 
@@ -97,6 +118,7 @@ const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION);
 
 export {
 	SemanticIdSchema,
+	StatedIdSchema,
 	DisplayNameSchema,
 	GroupIdSchema,
 	GroupMembershipsSchema,

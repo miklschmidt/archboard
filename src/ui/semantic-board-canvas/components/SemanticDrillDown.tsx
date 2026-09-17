@@ -31,6 +31,7 @@ const LIFECYCLE_WORDS: Readonly<Record<SemanticVariant["lifecycle"], string>> = 
 	current: "the current architecture",
 	draft: "a draft proposal",
 	historical: "a frozen historical state",
+	shelved: "a proposal that was let go",
 };
 
 /** Inputs for the section. */

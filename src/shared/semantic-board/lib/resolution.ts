@@ -69,9 +69,27 @@ const BoardAdoptInputSchema = z
 	.strict();
 type BoardAdoptInput = z.infer<typeof BoardAdoptInputSchema>;
 
+/**
+ * A shelving as it is asked for: which proposal, and why it was let go.
+ *
+ * The reason is required, unlike an adoption's. An adoption is legible without
+ * one — the board afterwards says which architecture is implemented — but a
+ * proposal that simply stops says nothing about whether it was tried, refused,
+ * overtaken or forgotten, and that is the whole of what shelving preserves.
+ */
+const BoardShelveInputSchema = z
+	.object({
+		variant: z.string().trim().min(1),
+		reason: z.string().trim().min(1).max(280),
+	})
+	.strict();
+type BoardShelveInput = z.infer<typeof BoardShelveInputSchema>;
+
 export {
 	BoardAdoptInputSchema,
 	type BoardAdoptInput,
+	BoardShelveInputSchema,
+	type BoardShelveInput,
 	ChoiceSchema,
 	type Choice,
 	ResolutionInputSchema,

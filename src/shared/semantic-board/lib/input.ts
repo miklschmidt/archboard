@@ -24,7 +24,7 @@ import {
 	DisplayNameSchema,
 	GroupIdSchema,
 	ResponsibilitySchema,
-	SemanticIdSchema,
+	StatedIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
 import { StepLabelSchema } from "@/shared/semantic-board/lib/views";
 import {
@@ -79,7 +79,7 @@ const HandleSchema = z
  */
 const SemanticNodeInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		as: HandleSchema.optional(),
 		name: DisplayNameSchema,
 		kind: NodeKindSchema,
@@ -102,7 +102,7 @@ type SemanticNodeInput = z.infer<typeof SemanticNodeInputSchema>;
 /** An edge as an agent states it, with its endpoints named or identified. */
 const SemanticEdgeInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		as: HandleSchema.optional(),
 		from: NodeReferenceSchema,
 		to: NodeReferenceSchema,
@@ -118,7 +118,7 @@ type SemanticEdgeInput = z.infer<typeof SemanticEdgeInputSchema>;
 /** One step of a flow as an agent states it, with its ends named or identified. */
 const FlowStepInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		as: HandleSchema.optional(),
 		from: NodeReferenceSchema,
 		to: NodeReferenceSchema,
@@ -133,7 +133,7 @@ type FlowStepInput = z.infer<typeof FlowStepInputSchema>;
 /** A flow as an agent states it: its columns and its steps, in order. */
 const SemanticFlowInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		as: HandleSchema.optional(),
 		name: DisplayNameSchema,
 		summary: DescriptionSchema.optional(),
@@ -172,7 +172,7 @@ type ViewScopeInput = z.infer<typeof ViewScopeInputSchema>;
  */
 const WalkthroughBeatInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		heading: DisplayNameSchema,
 		body: DescriptionSchema,
 		subjects: z.array(NodeReferenceSchema).default([]),
@@ -184,7 +184,7 @@ type WalkthroughBeatInput = z.infer<typeof WalkthroughBeatInputSchema>;
 /** A walkthrough as an agent states it: its name, and its beats in order. */
 const SemanticWalkthroughInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		name: DisplayNameSchema,
 		summary: DescriptionSchema.optional(),
 		beats: z.array(WalkthroughBeatInputSchema).default([]),
@@ -195,7 +195,7 @@ type SemanticWalkthroughInput = z.infer<typeof SemanticWalkthroughInputSchema>;
 /** A view as an agent states it. */
 const SemanticViewInputSchema = z
 	.object({
-		id: SemanticIdSchema.optional(),
+		id: StatedIdSchema.optional(),
 		name: DisplayNameSchema,
 		grammar: DiagramGrammarSchema,
 		summary: DescriptionSchema.optional(),

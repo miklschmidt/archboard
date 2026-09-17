@@ -3,7 +3,12 @@ import { StatusDot } from "@/ui/shell/components/StatusDot";
 import type { NavigatorEntry } from "@/ui/shell/lib/navigator-entries";
 import type { AgentActivityEntry } from "@/ui/types";
 
-const VARIANT_LABELS = { current: "Current", draft: "Draft", historical: "Historical" } as const;
+const VARIANT_LABELS = {
+	current: "Current",
+	draft: "Draft",
+	historical: "Historical",
+	shelved: "Shelved",
+} as const;
 
 /** Inputs for the small markers beside a name. */
 interface EntryMarkersProps {

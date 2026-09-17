@@ -123,7 +123,7 @@ function inspectedEdge(edge: SemanticEdge): z.infer<typeof InspectedEdgeSchema> 
  */
 function answered(
 	board: SemanticBoard,
-	variant: { id: string; name: string; lifecycle: "current" | "draft" | "historical" },
+	variant: { id: string; name: string; lifecycle: SemanticVariant["lifecycle"] },
 	inspection: GroupInspection,
 	policy: SemanticPolicy,
 	warnings: GroupInspectionResult["warnings"],
