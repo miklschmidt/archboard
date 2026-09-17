@@ -87,10 +87,16 @@ type SemanticPolicy = z.infer<typeof SemanticPolicySchema>;
  * gray (ADR 0025 makes containment colour mandatory once configured);
  * external and other stay neutral so a part outside the checkout reads as
  * outside, and call and dependency keep the neutral edge ink.
+ *
+ * There is a kind for every level, named after it, because a node standing for
+ * what another board describes carries that board's level as its kind
+ * (ADR 0029). Without `system` beside `service` and `module`, a board could
+ * not say that one of its parts is a whole system described elsewhere.
  */
 const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 	levels: ["system", "service", "module"],
 	nodeKinds: {
+		system: { name: "System", icon: "RiApps2Line", color: "sky" },
 		service: { name: "Service", icon: "RiServerLine", color: "blue" },
 		app: { name: "Application", icon: "RiWindowLine", color: "indigo" },
 		module: { name: "Module", icon: "RiBox3Line", color: "teal" },

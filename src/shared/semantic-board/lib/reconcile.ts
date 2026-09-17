@@ -38,19 +38,27 @@ import type {
 } from "@/shared/semantic-board/lib/content";
 import { incoherenceOf } from "@/shared/semantic-board/lib/reconcile-candidate";
 import {
+	ChangedFieldSchema,
 	ReconciliationIssueSchema,
 	ReconciliationKindSchema,
 	ToldStandingSchema,
 	VariantStandingSchema,
+	type ChangedField,
 	type ReconciliationIssue,
 	type ReconciliationKind,
 	type ToldStanding,
 	type VariantStanding,
 } from "@/shared/semantic-board/lib/reconcile-standing";
+import {
+	fieldOf,
+	removedHereIssues,
+	removedThereIssues,
+	same,
+	stated,
+} from "@/shared/semantic-board/lib/reconcile-removed";
 import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
 import type { SemanticWalkthrough } from "@/shared/semantic-board/lib/walkthrough";
 import { reconcileTold, type OrderedIssue } from "@/shared/semantic-board/lib/reconcile-told";
-import { sameSemanticValue } from "@/shared/semantic-board/lib/semantic-value";
 
 /** What became of a proposal when its predecessor moved. */
 interface Reconciliation {
@@ -96,28 +104,6 @@ const SUBJECT_WORDS = {
 	flow: "flow",
 	walkthrough: "walkthrough",
 } as const;
-
-/**
- * One side of a disagreement, in a shape a document can hold.
- *
- * An unwritten field is `undefined` in memory and simply absent once the board
- * is JSON on disk — so an issue about somebody clearing a description would come
- * back from a restart missing the very field it is about, and be refused by the
- * contract that describes it. Absence is therefore stated rather than implied.
- * @param value What that side says, or nothing when it says nothing.
- * @returns The value, or null for nothing written.
- */
-function stated(value: unknown): unknown {
-	return value === undefined ? null : value;
-}
-
-/**
- * Whether two values of one field say the same thing.
- * @param one A value.
- * @param other The other.
- * @returns True when nothing is between them.
- */
-const same = sameSemanticValue;
 
 /** One kind of subject, in all three states, by id. */
 interface Sides<Entity> {
@@ -189,48 +175,6 @@ function mergeByIdentity<Entity extends { readonly id: string }>(
 	return out;
 }
 
-/**
- * What to say about a subject this proposal removed and the predecessor then
- * changed. Nothing when the predecessor left it alone: following a removal of
- * something nobody touched is the ordinary case and needs no attention.
- * @param id The subject.
- * @param base It as it was when the two agreed.
- * @param theirs It as the predecessor has it now.
- * @param fields The fields that say what it is.
- * @param what The word for that kind of subject.
- * @returns The issue, or none.
- */
-function removedHereIssues<Entity extends object>(
-	id: string,
-	base: Entity,
-	theirs: Entity,
-	fields: readonly string[],
-	what: string,
-): ReconciliationIssue[] {
-	const moved = fields.filter((field) => !same(field9(theirs, field), field9(base, field)));
-	if (moved.length === 0 && !same(theirs, base)) {
-		// A flow whose steps the predecessor rewrote is a flow the predecessor
-		// worked on, however untouched its own name is — the same rule as the
-		// other direction, and for the same reason.
-		moved.push("what it holds");
-	}
-	if (moved.length === 0) {
-		return [];
-	}
-	return [
-		{
-			subject: id,
-			what,
-			kind: "deleted-and-changed",
-			mine: "removed it",
-			theirs: `changed ${moved.join(", ")}`,
-			repair:
-				`This proposal removed this ${what}, and the variant it came from changed it. Keep the ` +
-				"removal and say so, or take the change instead.",
-		},
-	];
-}
-
 /** One subject the predecessor holds, in all three states. */
 interface Arriving<Entity> {
 	readonly id: string;
@@ -298,41 +242,15 @@ function settleOne<Entity extends { readonly id: string }>(
 	}
 	// The predecessor removed it. Untouched here, it goes; changed here, the
 	// deletion and the change are two decisions and only a person settles them.
-	// "Changed" means the whole subject, contents and all: a flow whose steps
-	// this proposal rewrote is a flow this proposal worked on, however untouched
-	// its own name is, and dropping it whole would throw that work away in
-	// silence.
-	const changed = fields.filter((field) => !same(field9(mine, field), field9(base, field)));
-	if (changed.length === 0 && !same(mine, base)) {
-		changed.push("what it holds");
-	}
-	if (changed.length === 0) {
+	const held = removedThereIssues(id, base, mine, fields, what);
+	if (held.length === 0) {
 		// Safe to follow the predecessor — unless something here still refers to
 		// it, which is decided once the whole content is assembled.
 		out.dropped.push(mine);
 		return;
 	}
 	out.entities.push(mine);
-	out.issues.push({
-		subject: id,
-		what,
-		kind: "deleted-and-changed",
-		mine: `changed ${changed.join(", ")}`,
-		theirs: "removed it",
-		repair:
-			`The variant this proposal came from removed this ${what}, and this proposal changed it. ` +
-			"Keep the change and drop the removal, or remove it here too.",
-	});
-}
-
-/**
- * One field of one subject, read off whichever state holds it.
- * @param entity The subject in one state.
- * @param field The field's name.
- * @returns Its value, or undefined.
- */
-function field9(entity: object, field: string): unknown {
-	return Object.entries(entity).find(([name]) => name === field)?.[1];
+	out.issues.push(...held);
 }
 
 /** One subject's three states, and what is being merged. */
@@ -381,9 +299,9 @@ function decideField<Entity extends { readonly id: string }>(
 	field: string,
 	merge: FieldMerge<Entity> & { readonly base: Entity; readonly theirs: Entity },
 ): { value: unknown; issues: ReconciliationIssue[]; inherited: string[] } {
-	const mine = field9(merge.mine, field);
-	const base = field9(merge.base, field);
-	const theirs = field9(merge.theirs, field);
+	const mine = fieldOf(merge.mine, field);
+	const base = fieldOf(merge.base, field);
+	const theirs = fieldOf(merge.theirs, field);
 	if (field === "groups") {
 		return decideMemberships(merge.id, { mine, base, theirs });
 	}
@@ -532,11 +450,13 @@ function asIssues(issues: readonly OrderedIssue[]): ReconciliationIssue[] {
 		...(issue.field === undefined ? {} : { field: issue.field }),
 		mine: issue.mine,
 		theirs: issue.theirs,
+		...(issue.changed === undefined ? {} : { changed: [...issue.changed] }),
 		repair: issue.repair,
 	}));
 }
 
 export {
+	ChangedFieldSchema,
 	ReconciliationIssueSchema,
 	ReconciliationKindSchema,
 	VariantStandingSchema,
@@ -546,8 +466,9 @@ export {
 	MERGED,
 	SUBJECT_WORDS,
 	same,
-	field9 as fieldOf,
+	fieldOf,
 	reconcileVariant,
+	type ChangedField,
 	type Reconciliation,
 	type ReconciliationIssue,
 	type ReconciliationKind,

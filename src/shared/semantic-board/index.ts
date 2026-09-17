@@ -189,6 +189,7 @@ export {
 	type DiagramAtlas,
 	RenderedVariantSchema,
 	type RenderedVariant,
+	SubjectStandingSchema,
 	RenderIdentitySchema,
 	DrawnBoardSchema,
 	type DrawnBoard,
@@ -210,12 +211,14 @@ export {
 } from "@/shared/semantic-board/lib/resolution";
 export {
 	reconcileVariant,
+	ChangedFieldSchema,
 	ReconciliationIssueSchema,
 	ReconciliationKindSchema,
 	ToldStandingSchema,
 	VariantStandingSchema,
 	type ToldStanding,
 	type VariantStanding,
+	type ChangedField,
 	type Reconciliation,
 	type ReconciliationIssue,
 	type ReconciliationKind,

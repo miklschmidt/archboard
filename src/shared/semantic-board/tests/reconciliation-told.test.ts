@@ -267,6 +267,9 @@ describe("a removal this proposal made", () => {
 			what: "step",
 			mine: "removed it",
 		});
+		expect(about(settled.issues, "s2")[0]?.changed).toEqual([
+			{ field: "label", before: "answer", after: "answer at once" },
+		]);
 		expect(settled.content.flows[0]?.steps.map((step) => step.id)).toEqual(["s1"]);
 	});
 });

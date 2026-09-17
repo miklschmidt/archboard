@@ -22,6 +22,34 @@ const ReconciliationKindSchema = z.enum([
 type ReconciliationKind = z.infer<typeof ReconciliationKindSchema>;
 
 /**
+ * One field the side that changed a subject moved, and what it moved between.
+ *
+ * Carried because a disagreement between "removed it" and "changed it" is
+ * settled by a third answer — stating the subject again — and a third answer is
+ * written out of values, not out of field names. Naming `description` and
+ * leaving its value to be found in the board's JSON, a line below a
+ * near-identical `responsibility`, is how a restored node comes back with a
+ * sentence nobody wrote (TASK-256.09).
+ *
+ * `field`, `before` and `after` are the shape `semantic compare` already
+ * answers a moved field with, so "a field moved and here is what it moved
+ * between" reads the same way in both places. `before` is what the two sides
+ * agreed on when the proposal was branched; `after` is what the side that
+ * changed it says now — which side that is, is what `mine` and `theirs` say.
+ */
+const ChangedFieldSchema = z
+	.object({
+		/** The field's name. */
+		field: z.string().min(1),
+		/** What it said when the two sides last agreed; null for nothing written. */
+		before: z.unknown(),
+		/** What the side that changed it says now; null for nothing written. */
+		after: z.unknown(),
+	})
+	.strict();
+type ChangedField = z.infer<typeof ChangedFieldSchema>;
+
+/**
  * One thing a person has to decide before this proposal is coherent again.
  *
  * A schema rather than a bare type because an unsettled disagreement outlives
@@ -43,6 +71,12 @@ const ReconciliationIssueSchema = z
 		mine: z.unknown(),
 		/** What the variant it came from says now. */
 		theirs: z.unknown(),
+		/**
+		 * For a subject one side removed and the other changed: the fields that
+		 * side moved, with the values to settle it out of. Absent where neither
+		 * side is a change to particular fields.
+		 */
+		changed: z.array(ChangedFieldSchema).optional(),
 		/** What somebody has to do about it, in a sentence. */
 		repair: z.string().min(1),
 	})
@@ -123,11 +157,13 @@ const ToldStandingSchema = StandingShapeSchema.omit({ base: true }).refine(
 type ToldStanding = z.infer<typeof ToldStandingSchema>;
 
 export {
+	ChangedFieldSchema,
 	ReconciliationIssueSchema,
 	ReconciliationKindSchema,
 	StandingShapeSchema,
 	ToldStandingSchema,
 	VariantStandingSchema,
+	type ChangedField,
 	type ReconciliationIssue,
 	type ReconciliationKind,
 	type ToldStanding,
