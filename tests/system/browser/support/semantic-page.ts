@@ -103,11 +103,25 @@ function stageState(evaluate: <T>(expression: string) => Promise<T>): Promise<st
 	);
 }
 
+/**
+ * Whether the pane is drawn and its picture has landed: past the entrance or
+ * transition that brings a picture in, so what is on the surface is exactly
+ * what was drawn. Owners that read the picture's markup wait on this.
+ * @param evaluate How the owner evaluates an expression in the page.
+ * @returns True once the picture is at rest.
+ */
+function pictureAtRest(evaluate: <T>(expression: string) => Promise<T>): Promise<boolean> {
+	return evaluate<boolean>(
+		`document.querySelector('${SEMANTIC_STAGE}')?.getAttribute('data-state') === 'drawn' && document.querySelector('${SEMANTIC_SURFACE}:not([data-picture-motion]) svg') !== null`,
+	);
+}
+
 export {
 	A_SMALL_PIPELINE,
 	SEMANTIC_STAGE,
 	SEMANTIC_SURFACE,
 	addressShowing,
+	pictureAtRest,
 	seedSemanticBoard,
 	stageState,
 	type JsonRequester,

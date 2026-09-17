@@ -7,7 +7,7 @@
 // also why a fit is told the diagram's size rather than remembering it: the
 // camera knows where the person is looking and nothing about what they see.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
 	IDENTITY_CAMERA,
@@ -47,9 +47,11 @@ interface BoardCamera {
 	/**
 	 * Show the whole diagram, or one region of it, centred.
 	 * @param target What to show: the whole diagram, or a region of it.
+	 * @param instant Land at once rather than easing there: a fit the pane makes for a
+	 * picture it has only just put up, where an eased move would show the picture sliding into place.
 	 * @returns False when the stage has not been laid out yet, and nothing moved.
 	 */
-	readonly fit: (target: FitTarget) => boolean;
+	readonly fit: (target: FitTarget, instant?: boolean) => boolean;
 	/**
 	 * Whether the person has moved the camera themselves since the last fit.
 	 *
@@ -126,7 +128,8 @@ function useBoardCamera(): BoardCamera {
 	// nothing then would stay unfitted for as long as nobody touched it. So the
 	// size is watched rather than read once: the moment the stage has one, the
 	// caller's fit can happen.
-	useEffect(() => {
+	// Measured before paint, so a fit made for the first picture lands before it is seen.
+	useLayoutEffect(() => {
 		const element = viewport;
 		if (element === null) {
 			return undefined;
@@ -166,7 +169,7 @@ function useBoardCamera(): BoardCamera {
 	);
 
 	const fit = useCallback(
-		(target: FitTarget): boolean => {
+		(target: FitTarget, atOnce = false): boolean => {
 			const size = sizeOf(viewport);
 			const fitted = size === null ? null : cameraFor(size, target);
 			if (fitted === null) {
@@ -174,7 +177,7 @@ function useBoardCamera(): BoardCamera {
 			}
 			// A fit is the stage saying where to look, so it hands the camera back.
 			moved.current = false;
-			setInstant(false);
+			setInstant(atOnce);
 			setCamera(fitted);
 			return true;
 		},

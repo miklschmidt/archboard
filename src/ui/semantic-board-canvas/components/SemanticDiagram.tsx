@@ -11,6 +11,7 @@ import type { CodeBinding } from "@/shared/code-target";
 import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -26,10 +27,21 @@ import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-bo
 import { SemanticLegend } from "@/ui/semantic-board-canvas/components/SemanticLegend";
 import { pictureAppearances } from "@/ui/semantic-board-canvas/lib/appearance";
 import { SemanticInspector } from "@/ui/semantic-board-canvas/components/SemanticInspector";
-import { STAGE_CLASS } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
+import {
+	STAGE_CLASS,
+	StageSpinner,
+} from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
-import { usePictureTransition } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
+import {
+	usePictureTransition,
+	type StagedPicture,
+} from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 import { PAN_STEP, cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
+import {
+	leavePicture,
+	stayPicture,
+	type Departure,
+} from "@/ui/semantic-board-canvas/lib/picture-departure";
 import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import {
@@ -174,6 +186,65 @@ function surfaceClass(panning: boolean, reducedMotion: boolean, following = fals
 		: `${base} transition-transform duration-100 ease-out motion-reduce:transition-none`;
 }
 
+/**
+ * What the stage says about itself, for whoever reads it from outside: which
+ * board it is about, and whether it is showing that board or waiting for it.
+ * @param departure Where the reader went, when the picture is leaving.
+ * @param drawing The picture on the surface.
+ * @param stale Whether a read since the picture loaded has failed.
+ * @returns The section's attributes.
+ */
+function stageMarks(
+	departure: Departure | null,
+	drawing: SemanticDrawing,
+	stale: boolean,
+): { "aria-label": string; "aria-busy"?: true; "data-state": string } {
+	if (departure !== null) {
+		return {
+			"aria-label": `Semantic board ${departure.board}`,
+			"aria-busy": true,
+			"data-state": "loading",
+		};
+	}
+	return {
+		"aria-label": `Semantic board ${drawing.board}`,
+		"data-state": stale ? "stale" : "drawn",
+	};
+}
+
+/**
+ * Whether the picture is on its way out.
+ * @param departure Where the reader went, or null.
+ * @returns True while it leaves.
+ */
+function isLeaving(departure: Departure | null): boolean {
+	return departure !== null;
+}
+
+/**
+ * What a pane leaving its picture says aloud, and shows once the next is slow.
+ * @param props Where the reader went, or null while they stay.
+ * @param props.departure Where the reader went.
+ * @param props.at Which part: the announcement, or the spinner over the picture.
+ * @returns That part, or nothing while the pane stays.
+ */
+function LeavingPart(props: {
+	readonly departure: Departure | null;
+	readonly at: "announcement" | "spinner";
+}): JSX.Element | null {
+	const { departure, at } = props;
+	if (departure === null) {
+		return null;
+	}
+	return at === "announcement" ? (
+		<p aria-live="polite" className="sr-only">
+			Drawing {departure.board}…
+		</p>
+	) : (
+		<StageSpinner className="pointer-events-none absolute inset-0" />
+	);
+}
+
 /** Inputs for a drawn board. */
 interface SemanticDiagramProps {
 	/** The stage owns the camera across picture requests. */
@@ -223,6 +294,44 @@ interface SemanticDiagramProps {
 	groupMarks: GroupMarks | null;
 	/** How the inspector names memberships and inspects one. */
 	groupControls: GroupControls;
+	/**
+	 * The picture is on its way out: the reader went to another board, and
+	 * this one is kept only to be seen leaving while that one is drawn.
+	 */
+	departure?: Departure | null | undefined;
+	/**
+	 * Where the reader went from the picture before this one, while the pane is
+	 * arriving from it: the last picture goes that way as this one comes in.
+	 */
+	heading?: Departure | null | undefined;
+}
+
+/**
+ * Send the picture on its way out while the pane is leaving it, and bring it
+ * back when the reader returns to it before anything else arrived.
+ * @param picture The picture on the surface.
+ * @param leaving Where the reader went, or null while they stay.
+ * @param reducedMotion Whether the person asked for no motion.
+ * @returns Where the reader went, or null.
+ */
+function useLeaving(
+	picture: StagedPicture | null,
+	leaving: Departure | null | undefined,
+	reducedMotion: boolean,
+): Departure | null {
+	const departure = leaving ?? null;
+	useLayoutEffect(() => {
+		const root = picture?.root;
+		if (!(root instanceof SVGElement)) {
+			return;
+		}
+		if (departure === null) {
+			stayPicture(root);
+		} else {
+			leavePicture(root, departure, reducedMotion);
+		}
+	}, [picture, departure, reducedMotion]);
+	return departure;
 }
 
 /**
@@ -255,7 +364,14 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// next. What comes back is the picture as it is now on the surface, new
 	// each time the markup was written, so the marks below run over the groups
 	// that are actually there.
-	const picture = usePictureTransition(surface, drawing, reducedMotion, camera.followPicture);
+	const picture = usePictureTransition(surface, drawing, {
+		reducedMotion,
+		keepStill: camera.followPicture,
+		heading: props.heading,
+	});
+	// After the picture is staged, so a picture that just replaced a leaving one
+	// is never mistaken for it.
+	const departure = useLeaving(picture, props.departure, reducedMotion);
 	// Attention only. What the board says nobody has decided is drawn into the
 	// picture by the renderer, from the same reconciliation the sentences above
 	// it are written from, so it is legible on a pane with nothing selected and
@@ -396,9 +512,8 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 
 	return (
 		<section
-			aria-label={`Semantic board ${drawing.board}`}
+			{...stageMarks(departure, drawing, props.stale === true)}
 			data-slot="semantic-board-stage"
-			data-state={props.stale === true ? "stale" : "drawn"}
 			data-board={drawing.board}
 			data-variant={drawing.variant.name}
 			data-version={drawing.version}
@@ -406,6 +521,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			className={STAGE_CLASS}
 		>
 			{props.notice}
+			<LeavingPart departure={departure} at="announcement" />
 			{/* The picture and, beside it, what the board says about whatever has
 			    been picked out of it. The panel is the selection's detail rather
 			    than a second pane: it opens with a pick and closes with one. */}
@@ -425,6 +541,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				<div
 					ref={attachViewport}
 					data-slot="semantic-board-viewport"
+					inert={isLeaving(departure)}
 					tabIndex={0}
 					onKeyDown={onKeyDown}
 					onPointerDown={onPointerDown}
@@ -446,6 +563,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
+				<LeavingPart departure={departure} at="spinner" />
 				{selection !== null && (
 					<SemanticInspector
 						board={drawing.board}

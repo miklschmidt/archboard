@@ -8,186 +8,33 @@
 // mid-flight landing somewhere other than its own final state.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { act, cleanup, render } from "@testing-library/react";
-import { createElement, useState, type JSX } from "react";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import { PICTURE_TRANSITION_MS, PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
-import type { SemanticDrawing } from "@/ui/semantic-board-canvas";
+import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
 import {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
 	transitionPicture,
-	usePictureTransition,
 } from "@/ui/semantic-board-canvas/transitions";
+import {
+	A,
+	AB,
+	B,
+	bodyOf,
+	picture,
+	surfaceElement,
+	wrapper,
+	type Card,
+	type Line,
+} from "@/ui/semantic-board-canvas/tests/picture-fixtures";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
-	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 });
 
 afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
-
-afterEach(() => {
-	cleanup();
-});
-
-/** A box, as the atlas spells it. */
-interface Box {
-	readonly x: number;
-	readonly y: number;
-	readonly width: number;
-	readonly height: number;
-}
-
-/** One card to draw. */
-interface Card {
-	readonly id: string;
-	readonly box: Box;
-	readonly title: string;
-	readonly dashed?: boolean;
-	/** Whether a standing's pin sits astride the card's top-left corner. */
-	readonly pinned?: boolean;
-}
-
-/** One line to draw. */
-interface Line {
-	readonly id: string;
-	readonly d: string;
-	readonly masked?: boolean;
-}
-
-/**
- * A card as the renderer draws one: a halo, a body, a chip and two texts.
- * @param card The card.
- * @returns Its group.
- */
-function cardMarkup(card: Card): string {
-	const { x, y, width, height } = card.box;
-	const outline =
-		card.dashed === true ? ' stroke-dasharray="4 3" stroke="#f0b429"' : ' stroke="#555"';
-	return (
-		`<g data-semantic-kind="node" data-semantic-id="${card.id}">` +
-		`<rect class="ab-halo" x="${x - 3}" y="${y - 3}" width="${width + 6}" height="${height + 6}" rx="9" fill="none"/>` +
-		`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6" fill="#222"${outline}/>` +
-		`<rect x="${x + 16}" y="${y + 16}" width="24" height="24" rx="5" fill="#888"/>` +
-		`<text x="${x + 52}" y="${y + 30}" font-size="14">${card.title}</text>` +
-		(card.pinned === true
-			? `<g transform="translate(${x + 3},${y + 3})"><circle r="9.2" fill="#f0b429"/></g>`
-			: "") +
-		`</g>`
-	);
-}
-
-/**
- * A line as the renderer draws one: a halo path under the stroke.
- * @param line The line.
- * @returns Its group.
- */
-function lineMarkup(line: Line): string {
-	const mask = line.masked === true ? ' mask="url(#crossing-1)"' : "";
-	return (
-		`<g data-semantic-kind="edge" data-semantic-id="${line.id}"${mask}>` +
-		`<path class="ab-halo" d="${line.d}" fill="none"/>` +
-		`<path d="${line.d}" fill="none" stroke="#999" marker-end="url(#head)"/>` +
-		`</g>`
-	);
-}
-
-/**
- * One drawn picture of the board `pipeline`.
- * @param cards Its cards.
- * @param lines Its lines.
- * @param identity Which variant and view it is of, and on which ground.
- * @returns The drawing, as the render route answers it.
- */
-function picture(
-	cards: readonly Card[],
-	lines: readonly Line[],
-	identity: Partial<
-		Pick<SemanticDrawing, "board" | "variant" | "view" | "theme" | "width" | "height">
-	> = {},
-): SemanticDrawing {
-	const width = identity.width ?? 600;
-	const height = identity.height ?? 400;
-	const svg =
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">` +
-		lines.map(lineMarkup).join("") +
-		cards.map(cardMarkup).join("") +
-		`</svg>`;
-	return {
-		kind: "drawn",
-		success: true,
-		board: "pipeline",
-		version: 1,
-		variant: { id: "v1", name: "current", lifecycle: "current" },
-		theme: "dark",
-		view: null,
-		views: [],
-		changes: null,
-		waiting: null,
-		width,
-		height,
-		svg,
-		atlas: {
-			nodes: Object.fromEntries(cards.map((card) => [card.id, card.box])),
-			edges: Object.fromEntries(
-				lines.map((line) => [line.id, { x: 0, y: 0, width: 1, height: 1 }]),
-			),
-			regions: {},
-		},
-		...identity,
-	};
-}
-
-/**
- * A surface to draw on.
- * @returns The element, attached to the document.
- */
-function surfaceElement(): HTMLDivElement {
-	const surface = document.createElement("div");
-	document.body.append(surface);
-	return surface;
-}
-
-/**
- * The body rect of a card on the surface.
- * @param surface The surface.
- * @param id The card's id.
- * @returns Its box as drawn.
- */
-function bodyOf(surface: Element, id: string): Box {
-	const rect = surface.querySelectorAll(`g[data-semantic-id="${id}"] > rect`)[1];
-	if (rect === undefined) {
-		throw new Error(`no body for ${id}`);
-	}
-	return {
-		x: Number(rect.getAttribute("x")),
-		y: Number(rect.getAttribute("y")),
-		width: Number(rect.getAttribute("width")),
-		height: Number(rect.getAttribute("height")),
-	};
-}
-
-/**
- * One wrapper the transition added to the picture.
- * @param surface The surface.
- * @param role What the wrapper holds.
- * @returns The wrapper.
- */
-function wrapper(surface: Element, role: string): SVGGElement {
-	const found = surface.querySelector<SVGGElement>(`[${TRANSITION_ATTRIBUTE}="${role}"]`);
-	if (found === null) {
-		throw new Error(`no ${role} wrapper`);
-	}
-	return found;
-}
-
-const A: Card = { id: "n1", box: { x: 10, y: 10, width: 100, height: 60 }, title: "Alpha" };
-const B: Card = { id: "n2", box: { x: 200, y: 10, width: 100, height: 60 }, title: "Beta" };
-const AB: Line = { id: "e1", d: "M110,40 L200,40" };
 
 describe("carrying a card", () => {
 	test("a card that moved glides from its old box to its new one and keeps its content", () => {
@@ -479,119 +326,5 @@ describe("which pictures are continuous", () => {
 		const view = { id: "scope", name: "Scope", grammar: "architecture" as const };
 		expect(continuousPictures(base, picture([A], [], { view }))).toBe(false);
 		expect(continuousPictures(picture([A], [], { view }), picture([B], [], { view }))).toBe(true);
-	});
-});
-
-/** The frame clock, driven by hand. */
-const frames: { callbacks: FrameRequestCallback[]; now: number } = { callbacks: [], now: 0 };
-
-/**
- * A surface whose picture is the hook's to write.
- * @param props The picture and whether motion is reduced.
- * @param props.drawing The picture.
- * @param props.reducedMotion Whether motion is reduced.
- * @returns The surface.
- */
-function Surface(props: { drawing: SemanticDrawing; reducedMotion: boolean }): JSX.Element {
-	const [surface, setSurface] = useState<HTMLElement | null>(null);
-	usePictureTransition(surface, props.drawing, props.reducedMotion, keepStill);
-	return createElement("div", { ref: setSurface, "data-slot": "surface" });
-}
-
-/** Every shift the surface asked the camera to follow, in order. */
-const followed: { x: number; y: number }[] = [];
-
-/**
- * Record a shift the camera was asked to follow.
- * @param shift How far the shared cards moved.
- * @param shift.x Across.
- * @param shift.y Down.
- */
-function keepStill(shift: { x: number; y: number }): void {
-	followed.push(shift);
-}
-
-/**
- * Run the frames asked for so far, at a moment.
- * @param at The clock, in milliseconds.
- */
-function runFrames(at: number): void {
-	frames.now = at;
-	const due = frames.callbacks.splice(0);
-	act(() => {
-		for (const callback of due) {
-			callback(at);
-		}
-	});
-}
-
-describe("the surface across pictures", () => {
-	test("a picture arriving mid-flight lands the flight, then flies to its own final state", () => {
-		const realFrame = globalThis.requestAnimationFrame;
-		const realCancel = globalThis.cancelAnimationFrame;
-		const realNow = performance.now.bind(performance);
-		/**
-		 * Ask for a frame, to be run by hand.
-		 * @param callback What to run.
-		 * @returns The frame's number.
-		 */
-		function askForFrame(callback: FrameRequestCallback): number {
-			frames.callbacks.push(callback);
-			return frames.callbacks.length;
-		}
-		/** Drop every frame asked for. */
-		function dropFrames(): void {
-			frames.callbacks.length = 0;
-		}
-		/**
-		 * The clock, as the test set it.
-		 * @returns The moment, in milliseconds.
-		 */
-		function clock(): number {
-			return frames.now;
-		}
-		globalThis.requestAnimationFrame = askForFrame;
-		globalThis.cancelAnimationFrame = dropFrames;
-		performance.now = clock;
-		try {
-			const first = picture([A], []);
-			const second = picture([{ ...A, box: { x: 300, y: 10, width: 100, height: 60 } }], []);
-			const third = picture([{ ...A, box: { x: 300, y: 200, width: 100, height: 60 } }, B], []);
-			const { rerender, container } = render(
-				createElement(Surface, { drawing: first, reducedMotion: false }),
-			);
-			const surface = container.querySelector("[data-slot='surface']")!;
-			expect(bodyOf(surface, "n1")).toEqual(A.box);
-			frames.now = 1000;
-			followed.length = 0;
-			rerender(createElement(Surface, { drawing: second, reducedMotion: false }));
-			// The only shared card moved 290 across, so the camera follows it by as much.
-			expect(followed).toEqual([{ x: -290, y: 0 }]);
-			runFrames(1000 + PICTURE_TRANSITION_MS / 2);
-			expect(bodyOf(surface, "n1").x).toBeGreaterThan(A.box.x);
-			expect(bodyOf(surface, "n1").x).toBeLessThan(300);
-			// The same picture answered again is not another picture: the flight
-			// keeps flying rather than landing on itself, and nothing moves the camera.
-			const inFlight = bodyOf(surface, "n1").x;
-			rerender(createElement(Surface, { drawing: { ...second }, reducedMotion: false }));
-			expect(bodyOf(surface, "n1").x).toBe(inFlight);
-			expect(followed).toHaveLength(1);
-			// The third picture lands the second first: the surface is exactly the
-			// second picture, and the new flight starts from it.
-			rerender(createElement(Surface, { drawing: third, reducedMotion: false }));
-			expect(bodyOf(surface, "n1")).toEqual({ x: 300, y: 10, width: 100, height: 60 });
-			expect(surface.querySelector("g[data-semantic-id='n2']")).not.toBeNull();
-			runFrames(1000 + PICTURE_TRANSITION_MS / 2 + PICTURE_TRANSITION_MS + 1);
-			expect(bodyOf(surface, "n1")).toEqual({ x: 300, y: 200, width: 100, height: 60 });
-			expect(surface.querySelector(`[${TRANSITION_ATTRIBUTE}]`)).toBeNull();
-			// Reduced motion cuts: the next picture is simply there.
-			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));
-			expect(surface.querySelector(`[${TRANSITION_ATTRIBUTE}]`)).toBeNull();
-			expect(bodyOf(surface, "n1")).toEqual(A.box);
-		} finally {
-			globalThis.requestAnimationFrame = realFrame;
-			globalThis.cancelAnimationFrame = realCancel;
-			performance.now = realNow;
-		}
 	});
 });

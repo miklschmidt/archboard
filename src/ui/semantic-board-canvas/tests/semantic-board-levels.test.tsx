@@ -170,6 +170,30 @@ test("a board a level down offers its own views and its own states", async () =>
 	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
 });
 
+test("while the board below is drawn, the board above stays on the pane only to be seen leaving", async () => {
+	server.documents["pipeline"] = PIPELINE;
+	server.documents["engine"] = ENGINE;
+	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
+	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	await settle();
+
+	server.reply = "pending";
+	await act(async () => {
+		fireEvent.click(document.querySelector<HTMLElement>("[data-slot='semantic-drill-down-open']")!);
+	});
+	await settle();
+	const stage = document.querySelector("[data-slot='semantic-board-stage']");
+	// The pane is waiting on the board below, and says so, under that board's name.
+	expect(stage?.getAttribute("data-state")).toBe("loading");
+	expect(stage?.getAttribute("aria-busy")).toBe("true");
+	expect(stage?.getAttribute("aria-label")).toContain("engine");
+	// What it shows is the board above, which cannot be reached into.
+	const viewport = document.querySelector("[data-slot='semantic-board-viewport']");
+	expect(viewport?.querySelector("g[data-semantic-id='n1']")).not.toBeNull();
+	expect(viewport?.hasAttribute("inert")).toBe(true);
+	expect(document.querySelector("[data-slot='semantic-inspector']")).toBeNull();
+});
+
 test("choosing at the level below asks for that reading of the board below", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
