@@ -9,12 +9,16 @@ import {
 	type SemanticNode,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { namesMatch } from "@/runtime/skill-evaluation/lib/naming";
 import {
 	edgesBetween,
+	edgesPlausiblyBetween,
 	finding,
 	isFinding,
 	located,
+	nodeNameOf,
 	nodeNamed,
+	nodesPlausiblyNamed,
 	type Finding,
 	type Reading,
 } from "@/runtime/skill-evaluation/lib/reading";
@@ -49,13 +53,17 @@ const nodesNamed: Check = (check, content) => {
 };
 
 /**
- * Whether every named node is absent.
+ * Whether every named node is absent. Anything that could be the node answers
+ * for it, so a name two nodes could answer fails rather than passing because
+ * neither of them is definitely the one.
  * @param check Names that must be gone.
  * @param content The content.
  * @returns The finding.
  */
 const nodesAbsent: Check = (check, content) => {
-	const present = (check.names ?? []).filter((name) => nodeNamed(content, name) !== undefined);
+	const present = (check.names ?? []).flatMap((name) =>
+		nodesPlausiblyNamed(content, name).map((node) => node.name),
+	);
 	return finding(
 		present.length === 0,
 		present.length === 0 ? "every named node is absent" : `still present: ${present.join(", ")}`,
@@ -188,14 +196,22 @@ function edgesBetweenRegions(content: VariantContent, from: string, to: string) 
 }
 
 /**
- * Whether no relationship exists between two named nodes.
+ * Whether no relationship exists between two named nodes. Anything that could
+ * be either end answers for it, so a relationship the check would otherwise
+ * miss on a spelling fails it, and the finding says which ends it found.
  * @param check The ends.
  * @param content The content.
  * @returns The finding.
  */
 const noEdgeBetween: Check = (check, content) => {
-	const edges = edgesBetween(content, check.from ?? "", check.to ?? "");
-	return finding(edges.length === 0, `${edges.length} relationships ${check.from} -> ${check.to}`);
+	const edges = edgesPlausiblyBetween(content, check.from ?? "", check.to ?? "");
+	const found = edges.map(
+		(edge) => `${nodeNameOf(content, edge.from)} -> ${nodeNameOf(content, edge.to)}`,
+	);
+	return finding(
+		edges.length === 0,
+		`${edges.length} relationships ${check.from} -> ${check.to}${found.length === 0 ? "" : `: ${found.join(", ")}`}`,
+	);
 };
 
 /**
@@ -265,7 +281,7 @@ const nodeParent: Check = (check, content) =>
 	onNode(check, content, (node) => {
 		const parent = content.nodes.find((candidate) => candidate.id === node.parent);
 		return finding(
-			parent?.name === check.parent,
+			namesMatch(parent?.name, check.parent),
 			`"${check.node}" is inside ${parent?.name ?? "nothing"}`,
 		);
 	});
@@ -314,9 +330,13 @@ const nodeFieldEquals: Check = (check, content) =>
  * @returns True when board and selector match.
  */
 function drillDownMatches(link: DrillDown | undefined, check: OutcomeCheck): boolean {
-	if (link === undefined || link.board !== check.target || link.variant.kind !== check.variantKind)
+	if (
+		link === undefined ||
+		!namesMatch(link.board, check.target) ||
+		link.variant.kind !== check.variantKind
+	)
 		return false;
-	return link.variant.kind === "current" || link.variant.name === check.variantName;
+	return link.variant.kind === "current" || namesMatch(link.variant.name, check.variantName);
 }
 
 /**

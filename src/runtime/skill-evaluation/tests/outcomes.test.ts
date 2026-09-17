@@ -3,8 +3,9 @@
 // or stated, and a relationship landing on a container fails the receiver rule.
 
 import { describe, expect, test } from "bun:test";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 import { evaluateOutcomes, type Reading } from "@/runtime/skill-evaluation/index";
-import { passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
+import { AFTER, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
 
 describe("identity checks", () => {
 	test("a node restated under its id passes, a renamed identity fails, and kept fields pass while changed ones fail", () => {
@@ -153,6 +154,75 @@ describe("content checks", () => {
 		expect(verdicts.map((verdict) => verdict.passed)).toEqual([false, false]);
 		expect(verdicts[0]?.detail).toContain("Nope");
 		expect(verdicts[1]?.detail).toContain("Ghost");
+	});
+});
+
+/**
+ * The board with more nodes on its current variant, so two of them can answer
+ * to one name.
+ * @param board The board.
+ * @param names The names to add.
+ * @returns The board, its current variant that much larger.
+ */
+function alsoNamed(board: SemanticBoard, names: readonly string[]): SemanticBoard {
+	const [first, ...rest] = board.variants;
+	if (first === undefined) return board;
+	const added = names.map((name, index) => ({ id: `add${index}`, name, kind: "module" }));
+	const nodes = [...first.content.nodes, ...added];
+	return { ...board, variants: [{ ...first, content: { ...first.content, nodes } }, ...rest] };
+}
+
+describe("the name a check uses and the name the author wrote", () => {
+	test("a subject spelled differently answers the check, and the verdict says which name", () => {
+		const verdicts = evaluateOutcomes(
+			[
+				{ check: "nodes-named", board: "flask", names: ["Flask App"] },
+				{ check: "node-kind", board: "Flask", node: "provider", kind: "module" },
+				{ check: "node-parent", board: "Flask", node: "Dispatch", parent: "flask_app" },
+				{
+					check: "edge-between",
+					board: "Flask",
+					from: "flask-app",
+					to: "Provider",
+					kind: "call",
+				},
+			],
+			READING,
+		);
+		expect(verdicts.map((verdict) => verdict.passed)).toEqual([true, true, true, true]);
+		expect(verdicts[0]?.detail).toContain('"Flask App" matched "Flask app"');
+		expect(verdicts[1]?.detail).toContain('"provider" matched "Provider"');
+	});
+
+	test("a check requiring absence fails on anything that could answer, and names it", () => {
+		const verdicts = evaluateOutcomes(
+			[
+				{ check: "nodes-absent", board: "Flask", names: ["provider"] },
+				{ check: "no-edge-between", board: "Flask", from: "flask_app", to: "provider" },
+			],
+			READING,
+		);
+		expect(verdicts.map((verdict) => verdict.passed)).toEqual([false, false]);
+		expect(verdicts[0]?.detail).toContain("Provider");
+		expect(verdicts[1]?.detail).toContain("Flask app -> Provider");
+	});
+
+	test("a name two subjects answer to equally well finds neither, and hides neither", () => {
+		const confusable: Reading = {
+			...READING,
+			boards: new Map([
+				["Flask", alsoNamed(AFTER, ["Default JSON provider", "Cached JSON provider"])],
+			]),
+		};
+		const verdicts = evaluateOutcomes(
+			[
+				{ check: "nodes-named", board: "Flask", names: ["JSON provider"] },
+				{ check: "nodes-absent", board: "Flask", names: ["JSON provider"] },
+			],
+			confusable,
+		);
+		expect(verdicts.map((verdict) => verdict.passed)).toEqual([false, false]);
+		expect(verdicts[1]?.detail).toContain("Default JSON provider, Cached JSON provider");
 	});
 });
 

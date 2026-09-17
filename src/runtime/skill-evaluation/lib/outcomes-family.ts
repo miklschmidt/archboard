@@ -5,7 +5,6 @@
 import {
 	currentVariant,
 	findVariant,
-	resolveVariant,
 	type SemanticBoard,
 	type SemanticFlow,
 	type SemanticNode,
@@ -13,8 +12,23 @@ import {
 	type SemanticView,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import {
+	beatReferences,
+	beatsOf,
+	missingReferences,
+	referencesDetail,
+	singleBeatStanding,
+	walkthroughNamed,
+} from "@/runtime/skill-evaluation/lib/beats";
 import { fieldOf } from "@/runtime/skill-evaluation/lib/outcomes-board";
 import { comparisonStanding } from "@/runtime/skill-evaluation/lib/outcomes-comparison";
+import {
+	namedSubject,
+	namedValue,
+	namesMatch,
+	variantNamed,
+	viewNamed,
+} from "@/runtime/skill-evaluation/lib/naming";
 import {
 	finding,
 	isFinding,
@@ -56,7 +70,7 @@ function onBoard(
 	reading: Reading,
 	judge: (board: SemanticBoard) => Finding,
 ): Finding {
-	const board = reading.boards.get(check.board ?? "");
+	const board = namedValue(reading.boards, check.board);
 	return board === undefined
 		? finding(false, `board "${check.board}" is not in the vault`)
 		: judge(board);
@@ -69,8 +83,8 @@ function onBoard(
  * @returns The content, or undefined when the snapshot lacks it.
  */
 function snapshotContent(reading: Reading, check: OutcomeCheck): VariantContent | undefined {
-	const before = reading.snapshot.get(check.board ?? "");
-	return before === undefined ? undefined : resolveVariant(before, check.variant)?.content;
+	const before = namedValue(reading.snapshot, check.board);
+	return before === undefined ? undefined : variantNamed(before, check.variant)?.content;
 }
 
 /**
@@ -82,7 +96,7 @@ function snapshotContent(reading: Reading, check: OutcomeCheck): VariantContent 
  * @returns The id, or undefined when the snapshot never held the name.
  */
 function snapshotId(reading: Reading, check: OutcomeCheck): string | undefined {
-	const before = reading.snapshot.get(check.board ?? "");
+	const before = namedValue(reading.snapshot, check.board);
 	const contents = [
 		snapshotContent(reading, check),
 		...(before?.variants.map((variant) => variant.content) ?? []),
@@ -168,7 +182,7 @@ const edgeIdsRetained: Check = (check, reading) =>
  */
 const versionAdvancedBy: Check = (check, reading) =>
 	onBoard(check, reading, (board) => {
-		const moved = board.version - (reading.snapshot.get(check.board ?? "")?.version ?? 0);
+		const moved = board.version - (namedValue(reading.snapshot, check.board)?.version ?? 0);
 		const allowed = check.max ?? 0;
 		return finding(moved <= allowed, `version moved by ${moved} (allowed ≤ ${allowed})`);
 	});
@@ -211,7 +225,9 @@ function lifecycleMatches(variant: SemanticVariant, check: OutcomeCheck): boolea
  */
 const variantExists: Check = (check, reading) =>
 	onBoard(check, reading, (board) => {
-		const variant = findVariant(board, check.variant ?? "");
+		const variant =
+			findVariant(board, check.variant ?? "") ??
+			namedSubject(board.variants, (candidate) => candidate.name, check.variant);
 		return finding(
 			variant !== undefined && lifecycleMatches(variant, check),
 			`"${check.variant}" is ${variant?.lifecycle ?? "absent"}`,
@@ -225,7 +241,7 @@ const variantExists: Check = (check, reading) =>
  * @returns True when it is.
  */
 function isNamed(variant: SemanticVariant | undefined, asked: string | undefined): boolean {
-	return variant !== undefined && (variant.name === asked || variant.id === asked);
+	return variant !== undefined && (variant.id === asked || namesMatch(variant.name, asked));
 }
 
 /**
@@ -257,7 +273,7 @@ function currentJson(board: SemanticBoard | undefined): string {
  */
 const currentUntouched: Check = (check, reading) =>
 	onBoard(check, reading, (board) => {
-		const same = currentJson(board) === currentJson(reading.snapshot.get(check.board ?? ""));
+		const same = currentJson(board) === currentJson(namedValue(reading.snapshot, check.board));
 		return finding(
 			same,
 			same ? "the current variant is unchanged" : "the current variant's content changed",
@@ -306,7 +322,7 @@ function onFlow(
 	judge: (flow: SemanticFlow) => Finding,
 ): Finding {
 	return onLocated(check, reading, (at) => {
-		const flow = at.variant.content.flows.find((candidate) => candidate.name === check.flow);
+		const flow = namedSubject(at.variant.content.flows, (candidate) => candidate.name, check.flow);
 		return flow === undefined ? finding(false, `flow "${check.flow}" is missing`) : judge(flow);
 	});
 }
@@ -381,7 +397,7 @@ function viewMatches(view: SemanticView, check: OutcomeCheck): boolean {
  */
 const viewExists: Check = (check, reading) =>
 	onBoard(check, reading, (board) => {
-		const view = board.views.find((candidate) => candidate.name === check.view);
+		const view = viewNamed(board, check.view);
 		if (view === undefined) return finding(false, `view "${check.view}" is missing`);
 		const selection = selectionOf(view);
 		return finding(
@@ -391,77 +407,24 @@ const viewExists: Check = (check, reading) =>
 	});
 
 /**
- * The kind of every subject id on a variant.
- * @param content The content.
- * @returns Subject kind by id.
- */
-function subjectKinds(content: VariantContent): Map<string, string> {
-	const kinds = new Map<string, string>();
-	for (const node of content.nodes) kinds.set(node.id, "node");
-	for (const edge of content.edges) kinds.set(edge.id, "edge");
-	for (const flow of content.flows) {
-		kinds.set(flow.id, "flow");
-		for (const step of flow.steps) kinds.set(step.id, "step");
-	}
-	return kinds;
-}
-
-/** What the beats of a walkthrough refer to. */
-interface BeatReferences {
-	readonly beats: number;
-	readonly kinds: Set<string>;
-	readonly names: Set<string>;
-}
-
-/**
- * What the beats the check names refer to.
- * @param content The content.
- * @param walkthrough The walkthrough's name, or every walkthrough when absent.
- * @returns The references.
- */
-function beatReferences(content: VariantContent, walkthrough: string | undefined): BeatReferences {
-	const kinds = subjectKinds(content);
-	const beats = content.walkthroughs
-		.filter((candidate) => walkthrough === undefined || candidate.name === walkthrough)
-		.flatMap((candidate) => candidate.beats);
-	const subjects = beats.flatMap((beat) => beat.subjects);
-	return {
-		beats: beats.length,
-		kinds: new Set(subjects.map((id) => kinds.get(id) ?? "dangling")),
-		names: new Set(subjects.map((id) => content.nodes.find((node) => node.id === id)?.name ?? "")),
-	};
-}
-
-/**
- * The kinds and names a check wants referenced that the beats do not reference.
- * @param references What the beats reference.
- * @param check The check.
- * @returns The missing kinds and names.
- */
-function missingReferences(references: BeatReferences, check: OutcomeCheck): string[] {
-	return [
-		...(check.subjectKinds ?? []).filter((kind) => !references.kinds.has(kind)),
-		...(check.subjectNames ?? []).filter((name) => !references.names.has(name)),
-	];
-}
-
-/**
- * Whether some beat references subjects of every listed kind, and every listed name.
- * @param check The walkthrough, kinds and names.
+ * Whether the beats reference subjects of every listed kind and every listed
+ * name between them, and — when the check states what one beat must hold on
+ * its own — whether some single beat does.
+ * @param check The walkthrough, kinds, names and single-beat rule.
  * @param reading The reading.
  * @returns The finding.
  */
 const walkthroughBeatReferences: Check = (check, reading) =>
 	onLocated(check, reading, (at) => {
-		const references = beatReferences(at.variant.content, check.walkthrough);
+		const content = at.variant.content;
+		const beats = beatsOf(content, check.walkthrough);
+		const references = beatReferences(content, beats);
 		const missing = missingReferences(references, check);
-		const ok =
-			references.beats >= (check.minBeats ?? 1) &&
-			missing.length === 0 &&
-			!references.kinds.has("dangling");
+		const single = singleBeatStanding(content, beats, check.beatSubjectKinds);
+		const enough = references.beats >= (check.minBeats ?? 1) && !references.kinds.has("dangling");
 		return finding(
-			ok,
-			`${references.beats} beats referencing ${[...references.kinds].join(", ") || "nothing"}${missing.length === 0 ? "" : `; missing ${missing.join(", ")}`}`,
+			enough && missing.length === 0 && single.held,
+			referencesDetail(references, missing, single.detail),
 		);
 	});
 
@@ -473,12 +436,11 @@ const walkthroughBeatReferences: Check = (check, reading) =>
  */
 const walkthroughBeatsRetained: Check = (check, reading) =>
 	onLocated(check, reading, (at) => {
-		const was = snapshotContent(reading, check)?.walkthroughs.find(
-			(walkthrough) => walkthrough.name === check.walkthrough,
+		const was = walkthroughNamed(
+			snapshotContent(reading, check)?.walkthroughs ?? [],
+			check.walkthrough,
 		);
-		const now = at.variant.content.walkthroughs.find(
-			(walkthrough) => walkthrough.name === check.walkthrough,
-		);
+		const now = walkthroughNamed(at.variant.content.walkthroughs, check.walkthrough);
 		if (was === undefined || now === undefined)
 			return finding(false, `walkthrough "${check.walkthrough}" is missing before or after`);
 		const before = was.beats.map((beat) => beat.id).join(",");

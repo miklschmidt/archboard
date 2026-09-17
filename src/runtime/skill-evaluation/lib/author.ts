@@ -19,6 +19,7 @@ import {
 import { startCanvas, type OwnedCanvas } from "@/runtime/skill-evaluation/lib/canvas";
 import {
 	captureDeclared,
+	expandCaptures,
 	captureSummary,
 	type CaptureAttempt,
 } from "@/runtime/skill-evaluation/lib/captures";
@@ -58,6 +59,7 @@ import {
 	type ProcessResult,
 } from "@/runtime/skill-evaluation/lib/process";
 import type { Reading } from "@/runtime/skill-evaluation/lib/reading";
+import { writeRunManifest } from "@/runtime/skill-evaluation/lib/run-manifest";
 import type { Fixture, Pins, Scenario } from "@/runtime/skill-evaluation/lib/suite";
 import {
 	inspectGroup,
@@ -242,7 +244,11 @@ async function readAfter(
 	);
 	// Every diagram the scenario declared, as it was finally saved: the harness
 	// takes the picture, the author never supplies one.
-	const captures = await captureDeclared(world.cli, scenario.captures, world.paths.captures);
+	const captures = await captureDeclared(
+		world.cli,
+		expandCaptures(scenario.captures, boards),
+		world.paths.captures,
+	);
 	return {
 		boards,
 		snapshot,
@@ -296,13 +302,17 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			exposure: {
 				evaluationInputs: path.join(job.checkout, "evals"),
 				harnessSource: path.join(job.checkout, "src", "runtime", "skill-evaluation"),
+				// Both arms as the checkout holds them: the candidate the
+				// installer takes from, and the frozen baseline package.
+				skillPackages: [path.join(job.checkout, "skills", "archboard"), job.frozenSkill],
 				batchRoot: job.batchRoot,
-				runRoot: job.root,
+				world: world.paths.world,
 			},
 		});
 		const guidance = guidanceStanding(
 			job.scenario.guidance,
 			guidanceFilesRead(trace.commands, { skillRoot: install.skillRoot }),
+			(file) => fs.existsSync(path.join(install.skillRoot, file)),
 		);
 		const reading = await readAfter(world, job.scenario, snapshot);
 		writeBoards(reading.boards, world.paths.boards);
@@ -408,7 +418,7 @@ function assemble(
 	writeJson(world.paths, "commands.json", commands);
 	writeJson(world.paths, "file-changes.json", trace.fileChanges);
 	writeJson(world.paths, "bundle.json", bundleForGrader(run, id));
-	writeJson(world.paths, "run.json", {
+	writeRunManifest(world.paths.root, {
 		run: id,
 		arm: job.arm,
 		scenario: job.scenario.id,
@@ -449,7 +459,13 @@ function assemble(
  * @returns Every declaration, including why an unavailable capture was not taken.
  */
 async function partialCaptures(job: RunJob, world: RunWorld | null): Promise<CaptureAttempt[]> {
-	return sequentially(job.scenario.captures, async (declaration) => {
+	let boards: ReadonlyMap<string, SemanticBoard> = new Map();
+	if (world !== null && !job.signal.aborted) {
+		// An unreadable vault leaves every-view captures with no views to take;
+		// the named captures still record why they were not taken.
+		boards = await readVault(world.cli).catch(() => boards);
+	}
+	return sequentially(expandCaptures(job.scenario.captures, boards), async (declaration) => {
 		let detail = "the run failed before its canvas was ready";
 		if (job.signal.aborted) detail = "the run was cancelled";
 		else if (world !== null) {
@@ -488,11 +504,25 @@ async function failedRun(
 	const message = error instanceof Error ? error.message : String(error);
 	const status: RunStatus = job.signal.aborted ? "cancelled" : "failed";
 	const captures = await partialCaptures(job, world);
-	fs.mkdirSync(job.root, { recursive: true });
-	fs.writeFileSync(
-		path.join(job.root, "run.json"),
-		`${JSON.stringify({ run: id, arm: job.arm, scenario: job.scenario.id, workflow: job.scenario.workflow, report: job.scenario.report, repetition: job.repetition, status, error: message, startedAt, finishedAt: new Date().toISOString(), usage: null, commandCounts: classCounts([]), directWrites: 0, exposure: exposureCounts([]), captures: captureSummary(captures), outcomesPassed: false, guardrailsPassed: false }, null, "\t")}\n`,
-	);
+	writeRunManifest(job.root, {
+		run: id,
+		arm: job.arm,
+		scenario: job.scenario.id,
+		workflow: job.scenario.workflow,
+		report: job.scenario.report,
+		repetition: job.repetition,
+		status,
+		error: message,
+		startedAt,
+		finishedAt: new Date().toISOString(),
+		usage: null,
+		commandCounts: classCounts([]),
+		directWrites: 0,
+		exposure: exposureCounts([]),
+		captures: captureSummary(captures),
+		outcomesPassed: false,
+		guardrailsPassed: false,
+	});
 	const run: CompletedRun = {
 		arm: job.arm,
 		scenario: job.scenario,

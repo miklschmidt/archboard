@@ -13,7 +13,31 @@ import {
 	type Reading,
 } from "@/runtime/skill-evaluation/index";
 import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
-import { AFTER, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
+import { AFTER, BEFORE, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
+
+type Walkthroughs = SemanticBoard["variants"][number]["content"]["walkthroughs"];
+type Beats = Walkthroughs[number]["beats"];
+
+/**
+ * One beat about the named subjects.
+ * @param id The beat's id.
+ * @param subjects What it is about.
+ * @returns The beat.
+ */
+function beat(id: string, subjects: readonly string[]): Beats[number] {
+	return { id, heading: "A beat", body: "What it says.", subjects: [...subjects] };
+}
+
+/**
+ * The standard reading with the board explaining itself in the given walkthroughs.
+ * @param walkthroughs The walkthroughs, on every variant.
+ * @returns The reading.
+ */
+function explaining(walkthroughs: Walkthroughs): Reading {
+	const board = structuredClone(AFTER);
+	for (const variant of board.variants) variant.content.walkthroughs = walkthroughs;
+	return { ...READING, boards: new Map([["Flask", board]]) };
+}
 
 describe("family checks", () => {
 	test("versions, variants, comparison, reconciliation, adoption, flows, views and walkthroughs", () => {
@@ -85,6 +109,51 @@ describe("family checks", () => {
 			true,
 			true,
 		]);
+	});
+
+	test("a variant, flow, view or walkthrough answers to the name a person would call it", () => {
+		expect(
+			passes([
+				{ check: "variant-exists", board: "Flask", variant: "no_provider", lifecycle: "draft" },
+				{ check: "current-variant", board: "Flask", variant: "initial" },
+				{ check: "flow-with-steps", board: "Flask", flow: "handle", minSteps: 3 },
+				{ check: "view-exists", board: "Flask", view: "Session Path", grammar: "architecture" },
+				{
+					check: "walkthrough-beat-references",
+					board: "Flask",
+					walkthrough: "tour",
+					subjectKinds: ["node"],
+					subjectNames: ["dispatch"],
+				},
+				{ check: "walkthrough-beats-retained", board: "Flask", walkthrough: "TOUR" },
+				{ check: "view-exists", board: "Flask", view: "Session cache", grammar: "architecture" },
+			]),
+		).toEqual([true, true, true, true, true, true, false]);
+	});
+
+	test("an ordering is explained by one beat, never by two beats between them", () => {
+		const reading = (beats: Beats, name = "Tour"): Reading =>
+			explaining([{ id: "w1", name, beats }]);
+		const rule = {
+			check: "walkthrough-beat-references" as const,
+			board: "Flask",
+			beatSubjectKinds: { step: 2, node: 1 },
+		};
+		// s1 and s2 are steps of the flow, disp is the part they run on.
+		const split = [beat("b1", ["s1", "s2"]), beat("b2", ["disp"])];
+		const together = [beat("b1", ["s1", "s2", "disp"])];
+		expect(passes([rule], reading(split))).toEqual([false]);
+		expect(passes([rule], reading(together))).toEqual([true]);
+		// One side of the ordering only, and both sides with no part, each fail.
+		expect(passes([rule], reading([beat("b1", ["s1", "disp"])]))).toEqual([false]);
+		expect(passes([rule], reading([beat("b1", ["s1", "s2"])]))).toEqual([false]);
+		// A beat of another walkthrough cannot answer for the one the check names.
+		const both = explaining([
+			{ id: "w1", name: "Tour", beats: together },
+			{ id: "w2", name: "Elsewhere", beats: [beat("b9", ["disp"])] },
+		]);
+		expect(passes([{ ...rule, walkthrough: "Elsewhere" }], both)).toEqual([false]);
+		expect(passes([{ ...rule, walkthrough: "Tour" }], both)).toEqual([true]);
 	});
 
 	test("the comparison counts nodes on their own and every subject together", () => {
@@ -229,6 +298,26 @@ describe("guardrails", () => {
 		expect(verdicts[2]?.detail).toContain("Flask");
 		expect(verdicts[3]?.detail).toContain("1 write attempts lacked --doing");
 		expect(verdicts[4]?.detail).toContain("Flask");
+	});
+
+	test("identity compares a name exactly: a node respelled under a new id kept no name", () => {
+		// The outcome checks accept "dispatch" for "Dispatch"; identity must not,
+		// or a rename that minted an id would read as the same part all along.
+		const after = structuredClone(BEFORE);
+		for (const variant of after.variants) {
+			for (const node of variant.content.nodes) {
+				if (node.name !== "Dispatch") continue;
+				node.name = "dispatch";
+				node.id = "dsp2";
+			}
+		}
+		const verdict = evaluateGuardrails(["ids-stable"], {
+			...context,
+			snapshot: new Map([["Flask", BEFORE]]),
+			boards: new Map([["Flask", after]]),
+		})[0];
+		expect(verdict?.passed).toBe(true);
+		expect(verdict?.detail).not.toContain("Dispatch");
 	});
 
 	test("a direct touch of the vault fails the write guardrail, and a rewritten configuration fails its own", () => {

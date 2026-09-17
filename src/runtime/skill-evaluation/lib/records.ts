@@ -4,8 +4,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { z } from "zod";
 import { resumeSelection } from "@/runtime/skill-evaluation/lib/batch";
+import { RunManifestSchema, type RunManifest } from "@/runtime/skill-evaluation/lib/run-manifest";
 import {
 	checklistGaps,
 	semanticallyCompliant,
@@ -30,68 +30,6 @@ import {
 	type PlannedRun,
 } from "@/runtime/skill-evaluation/lib/report";
 import type { GraderName, LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
-
-const UsageSchema = z.object({
-	input: z.number(),
-	cached: z.number(),
-	cacheWrite: z.number().nullable(),
-	output: z.number(),
-	reasoning: z.number().nullable(),
-	total: z.number(),
-});
-
-/** A run manifest as run.json holds it, as far as the report reads it. */
-const RunManifestSchema = z
-	.object({
-		run: z.string(),
-		arm: z.enum(["baseline", "candidate"]),
-		scenario: z.string(),
-		workflow: z.string(),
-		report: z.enum(["primary", "broad"]),
-		repetition: z.number(),
-		status: z.enum(["completed", "failed", "timed-out", "cancelled"]),
-		author: z.object({ durationMs: z.number() }).passthrough().optional(),
-		usage: UsageSchema.nullable(),
-		commandCounts: z.object({
-			discovery: z.number(),
-			operation: z.number(),
-			"code-investigation": z.number(),
-			setup: z.number(),
-			ambiguous: z.number(),
-		}),
-		// Absent from manifests written before the evidence repair (TASK-212);
-		// such a run recorded neither, and the report says so rather than guessing.
-		directWrites: z.number().optional(),
-		exposure: z
-			.object({
-				"evaluation-inputs": z.number(),
-				"harness-source": z.number(),
-				"other-run": z.number(),
-			})
-			.optional(),
-		// Absent from manifests written before the guidance a scenario names was
-		// recorded (TASK-235); such a run cannot say what its author read.
-		guidance: z
-			.object({
-				expected: z.array(z.string()),
-				read: z.array(z.string()),
-				missing: z.array(z.string()),
-			})
-			.optional(),
-		// Absent from manifests written before captures were taken (TASK-214);
-		// such a run has no picture the grader could have looked at.
-		captures: z
-			.object({
-				declared: z.array(z.string()),
-				captured: z.array(z.string()),
-				failed: z.array(z.string()),
-			})
-			.optional(),
-		outcomesPassed: z.boolean(),
-		guardrailsPassed: z.boolean(),
-	})
-	.passthrough();
-type RunManifest = z.infer<typeof RunManifestSchema>;
 
 /**
  * Every run manifest under a batch.
@@ -201,7 +139,7 @@ function recordOf(
 		status: manifest.status,
 		durationMs: manifest.author?.durationMs ?? 0,
 		usage: manifest.usage,
-		commandCounts: { "product-source": 0, ...manifest.commandCounts },
+		commandCounts: manifest.commandCounts,
 		...auditOf(manifest),
 		...visualOf(batchRoot, grader, manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,

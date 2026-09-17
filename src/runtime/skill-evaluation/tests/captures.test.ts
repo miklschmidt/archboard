@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 import {
 	CAPTURE_TILE_SIDE_PX,
 	captureFromReceipt,
 	captureSummary,
+	expandCaptures,
 	tileRegions,
 	visualStandingOf,
 	type CaptureAttempt,
@@ -243,5 +245,70 @@ describe("the visual verdict as it stands", () => {
 		);
 		expect(visualStandingOf(taken, graded(undefined))).toBe("incomplete");
 		expect(visualStandingOf(taken, null)).toBeNull();
+	});
+});
+
+/** A saved board holding only the views a capture reads. */
+const boardWith = (views: SemanticBoard["views"]) => ({ views }) as unknown as SemanticBoard;
+
+describe("every view of a board", () => {
+	test("comes to one capture per view the author made, in its grammar, with a unique label that never reads as a tile", () => {
+		const boards = new Map([
+			[
+				"Flask",
+				boardWith([
+					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
+					{ id: "w2", name: "Request path!", grammar: "data-flow", scope: { kind: "all" } },
+					{ id: "w3", name: "Tile 3", grammar: "architecture", scope: { kind: "all" } },
+				]),
+			],
+		]);
+		const expanded = expandCaptures(
+			[
+				{ label: "flask", board: "Flask" },
+				{ label: "views", board: "Flask", views: "every" },
+			],
+			boards,
+		);
+		expect(expanded).toEqual([
+			{ label: "flask", board: "Flask" },
+			{
+				label: "views-request-path",
+				board: "Flask",
+				view: "Request path",
+				grammar: "architecture",
+			},
+			{
+				label: "views-request-path-2",
+				board: "Flask",
+				view: "Request path!",
+				grammar: "data-flow",
+			},
+			{ label: "views-tile-3-view", board: "Flask", view: "Tile 3", grammar: "architecture" },
+		]);
+	});
+
+	test("a named capture is taken of the board and view the author actually named", () => {
+		const boards = new Map([
+			[
+				"Flask JSON",
+				boardWith([
+					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
+				]),
+			],
+		]);
+		expect(
+			expandCaptures([{ label: "path", board: "flask_json", view: "request-path" }], boards),
+		).toEqual([{ label: "path", board: "Flask JSON", view: "Request path" }]);
+		expect(
+			expandCaptures([{ label: "path", board: "Flask JSON", view: "Session cache" }], boards),
+		).toEqual([{ label: "path", board: "Flask JSON", view: "Session cache" }]);
+	});
+
+	test("adds nothing for a board with no views or no board at all", () => {
+		const named = { label: "flask", board: "Flask" };
+		const requests = [named, { label: "views", board: "Flask", views: "every" as const }];
+		expect(expandCaptures(requests, new Map([["Flask", boardWith([])]]))).toEqual([named]);
+		expect(expandCaptures(requests, new Map())).toEqual([named]);
 	});
 });

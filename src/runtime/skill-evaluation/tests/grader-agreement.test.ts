@@ -40,7 +40,7 @@ function record(overrides: Partial<RunRecord> & { scores?: [number, number, numb
 			ambiguous: 0,
 		},
 		directWrites: 0,
-		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
+		exposure: { "evaluation-inputs": 0, "harness-source": 0, "skill-package": 0, "other-run": 0 },
 		guidance: null,
 		outcomesPassed: true,
 		guardrailsPassed: true,
