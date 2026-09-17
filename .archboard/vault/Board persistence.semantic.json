@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.1.0",
+	"schemaVersion": "2.2.0",
 	"kind": "semantic-board",
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 3,
+	"version": 4,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-13T12:08:40.478Z",
+	"updatedAt": "2026-09-17T21:03:45.817Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -54,9 +54,8 @@
 					{
 						"id": "4P7YZdnj",
 						"name": "Canvas server",
-						"kind": "external",
-						"responsibility": "Calls the board persistence boundary",
-						"description": "Parent service context: semantic routes and code-opening consume board reads and writes through the public store entrypoints.",
+						"kind": "service",
+						"responsibility": "The only caller: every read and every write of a board comes through it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas"
@@ -166,6 +165,37 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/atomic-write.ts"
 						}
+					},
+					{
+						"id": "IKUAjnNG",
+						"name": "Vault diagnostics",
+						"kind": "function",
+						"responsibility": "Everything wrong with the vault's boards, as warnings a repair can answer",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts"
+						}
+					},
+					{
+						"id": "wBw5FntC",
+						"name": "Drill-down checks",
+						"kind": "function",
+						"responsibility": "What a board can say about a link to another one, checked across the whole vault",
+						"description": "A link is the one thing on a board that names something outside it, so no single board can check it: a node with nothing but its link, a board the vault does not hold, and a kind that disagrees with the level it opens (ADR 0029).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/drill-down.ts"
+						}
+					},
+					{
+						"id": "CxaaWj4x",
+						"name": "Edge identity",
+						"kind": "function",
+						"responsibility": "When a restated relationship is the same one and when it is a replacement",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/edge-identity.ts"
+						}
 					}
 				],
 				"edges": [
@@ -264,6 +294,30 @@
 						"kind": "data",
 						"label": "commit serialized board",
 						"emphasis": "hero"
+					},
+					{
+						"id": "6HYXV63O",
+						"from": "4P7YZdnj",
+						"to": "IKUAjnNG",
+						"kind": "call",
+						"label": "check the vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DPHKb9jc",
+						"from": "IKUAjnNG",
+						"to": "wBw5FntC",
+						"kind": "call",
+						"label": "the links out of every board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "gkXKmHDc",
+						"from": "xoapCJNG",
+						"to": "CxaaWj4x",
+						"kind": "call",
+						"label": "same relationship, or a replacement",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
