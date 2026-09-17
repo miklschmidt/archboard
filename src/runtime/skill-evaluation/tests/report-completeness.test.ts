@@ -41,7 +41,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 			ambiguous: 0,
 		},
 		directWrites: 0,
-		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
+		exposure: { "evaluation-inputs": 0, "harness-source": 0, "skill-package": 0, "other-run": 0 },
 		guidance: null,
 		outcomesPassed: true,
 		guardrailsPassed: true,
@@ -90,7 +90,7 @@ test("legacy unaudited and contaminated arms keep raw measurements but withhold 
 		record({ arm: "candidate", directWrites: null, exposure: null }),
 		record({
 			arm: "candidate",
-			exposure: { "evaluation-inputs": 1, "harness-source": 0, "other-run": 0 },
+			exposure: { "evaluation-inputs": 1, "harness-source": 0, "skill-package": 0, "other-run": 0 },
 		}),
 		record({ arm: "candidate", directWrites: 1 }),
 	]) {

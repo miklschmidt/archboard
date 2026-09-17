@@ -12,6 +12,7 @@ import {
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 
 const FLASK_REVISIONS = ["2.1.3", "2.2.0", "3.0.0"] as const;
 const WORKFLOWS = [
@@ -70,6 +71,9 @@ const CHECK_KINDS = [
 	"walkthrough-beat-references",
 	"walkthrough-beats-retained",
 ] as const;
+
+/** What a walkthrough beat can point at; outcomes-family.ts reads the same list. */
+const SUBJECT_KINDS = ["node", "edge", "flow", "step"] as const;
 
 const ScenarioIdSchema = z.string().regex(/^S\d{2}$/u);
 const ExpectedFeatureSchema = z
@@ -136,6 +140,13 @@ const OutcomeCheckSchema = z
 		minBeats: z.number().optional(),
 		subjectKinds: Names.optional(),
 		subjectNames: Names.optional(),
+		/**
+		 * What ONE beat must refer to on its own, as a least count per subject
+		 * kind. An ordering is explained by a beat that names both of its sides
+		 * and the part they run on; the same subjects spread over several beats
+		 * explain each side separately and never say what ordered them.
+		 */
+		beatSubjectKinds: z.partialRecord(z.enum(SUBJECT_KINDS), z.int().min(1)).optional(),
 		relationshipKinds: PolicyRecord.optional(),
 		nodeKinds: PolicyRecord.optional(),
 		configuredGroups: PolicyRecord.optional(),
@@ -161,6 +172,27 @@ const CaptureDeclarationSchema = z
 	.strict();
 type CaptureDeclaration = z.infer<typeof CaptureDeclarationSchema>;
 
+/**
+ * Every board view the author made on one board, whose names nobody knows
+ * before the run: the harness takes one capture per view it finds, named
+ * from this label and the view, and a board with no views adds none. A view
+ * an author made to answer a tangle is part of what a reader gets, so the
+ * grader looks at it rather than only at the tangle.
+ */
+const EveryViewCaptureSchema = z
+	.object({
+		label: z.string().regex(/^[a-z0-9][a-z0-9-]*$/u),
+		board: z.string().min(1),
+		variant: z.string().min(1).optional(),
+		views: z.literal("every"),
+	})
+	.strict();
+type EveryViewCapture = z.infer<typeof EveryViewCaptureSchema>;
+
+/** What a scenario asks to see: one named picture, or every view of a board. */
+const CaptureRequestSchema = z.union([CaptureDeclarationSchema, EveryViewCaptureSchema]);
+type CaptureRequest = z.infer<typeof CaptureRequestSchema>;
+
 const ScenarioSchema = z
 	.object({
 		id: ScenarioIdSchema,
@@ -176,7 +208,13 @@ const ScenarioSchema = z
 		guardrails: z.array(z.enum(GUARDRAILS)),
 		/** Files of the skill, relative to its root, an author of this scenario is expected to read. */
 		guidance: z.array(z.string().min(1)),
-		captures: z.array(CaptureDeclarationSchema).min(1),
+		// Every-view captures can expand to nothing, so at least one capture
+		// names its picture and no run is left with nothing to look at.
+		captures: z
+			.array(CaptureRequestSchema)
+			.refine((captures) => captures.some((capture) => !("views" in capture)), {
+				message: "declare at least one capture that names its picture, besides every-view captures",
+			}),
 	})
 	.strict();
 type Scenario = z.infer<typeof ScenarioSchema>;
@@ -430,7 +468,20 @@ function guidanceProblems(loaded: LoadedSuite): string[] {
  * @returns Problems, each one line.
  */
 function suiteProblems(loaded: LoadedSuite): string[] {
-	return [...fixtureProblems(loaded), ...coverageProblems(loaded), ...guidanceProblems(loaded)];
+	const checkout = path.join(loaded.directory, "..");
+	return [
+		...fixtureProblems(loaded),
+		...coverageProblems(loaded),
+		...guidanceProblems(loaded),
+		...leakageProblems(
+			loaded.suite.evals,
+			loaded.fixtures.values(),
+			new Map([
+				["candidate", path.join(checkout, "skills", "archboard")],
+				["baseline", path.join(checkout, loaded.pins.baselineSkill.location)],
+			]),
+		),
+	];
 }
 
 /**
@@ -463,7 +514,11 @@ export {
 	GUARDRAILS,
 	WORKFLOWS,
 	CaptureDeclarationSchema,
+	CaptureRequestSchema,
+	EveryViewCaptureSchema,
 	type CaptureDeclaration,
+	type CaptureRequest,
+	type EveryViewCapture,
 	CoverageSchema,
 	FixtureSchema,
 	FixtureStepSchema,

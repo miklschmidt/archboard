@@ -16,10 +16,12 @@ type CommandClass =
 
 /**
  * Material an author must not read: the scenario definitions, fixtures, rubric
- * and coverage it is being measured against; the harness's own source; and the
- * private world of another run of the same batch.
+ * and coverage it is being measured against; the harness's own source; either
+ * arm's skill package as the checkout holds it; and the batch tree outside the
+ * run's own world — another run, the blinding table, the batch manifest, or
+ * the harness's records of this very run.
  */
-type ExposureKind = "evaluation-inputs" | "harness-source" | "other-run";
+type ExposureKind = "evaluation-inputs" | "harness-source" | "skill-package" | "other-run";
 
 /** A command with how the harness read it, and why. */
 interface ClassifiedCommand extends CommandRecord {
@@ -37,10 +39,20 @@ interface ExposureRoots {
 	readonly evaluationInputs: string;
 	/** The harness's source. */
 	readonly harnessSource: string;
+	/**
+	 * Both arms' skill packages as the checkout holds them. The skill an author
+	 * is given is installed in its own world; a package read here is the
+	 * material under comparison, read past the install.
+	 */
+	readonly skillPackages: readonly string[];
 	/** The batch every run of this comparison lives under. */
 	readonly batchRoot: string;
-	/** This run's own directory, which it may of course read. */
-	readonly runRoot: string;
+	/**
+	 * This run's own world, the only part of the batch tree it may read: its
+	 * Flask checkout, its vault, its home. The harness's records of the run sit
+	 * outside it, and reaching them is exposure like reaching another run's.
+	 */
+	readonly world: string;
 }
 
 /** What the classifier knows about where the run happened. */
@@ -160,6 +172,10 @@ function readsCheckout(script: string, context: ClassificationContext): boolean 
  * installed skill is matched first and is not this; a read that lands here
  * went past the skill, the generated schemas and `--help` to how the product
  * is built.
+ *
+ * The batch tree lives under the checkout, so a run reading its own vault,
+ * snapshot or Flask checkout names the checkout without reading a line of the
+ * product: a mention that continues into the batch root is not this.
  * @param script The command.
  * @param context Where the run happened.
  * @returns True when it does.
@@ -167,9 +183,25 @@ function readsCheckout(script: string, context: ClassificationContext): boolean 
 function readsProductSource(script: string, context: ClassificationContext): boolean {
 	return (
 		INVESTIGATION_RE.test(script) &&
-		((context.archboardRoot !== undefined && script.includes(context.archboardRoot)) ||
-			PRODUCT_SOURCE_RE.test(script))
+		(namesCheckoutOutsideBatch(script, context) || PRODUCT_SOURCE_RE.test(script))
 	);
+}
+
+/**
+ * Whether a script names the archboard checkout somewhere other than the batch
+ * tree the run itself lives in.
+ * @param script The command.
+ * @param context Where the run happened.
+ * @returns True when it names the checkout outside the batch.
+ */
+function namesCheckoutOutsideBatch(script: string, context: ClassificationContext): boolean {
+	const root = context.archboardRoot;
+	if (root === undefined) return false;
+	const batchRoot = context.exposure?.batchRoot;
+	for (let at = script.indexOf(root); at >= 0; at = script.indexOf(root, at + root.length)) {
+		if (batchRoot === undefined || !startsWithPath(script, at, batchRoot)) return true;
+	}
+	return false;
 }
 
 /**
@@ -222,23 +254,48 @@ function invokesWrite(script: string): boolean {
 }
 
 /**
- * Whether a script reaches into a directory another run of the batch owns.
+ * Whether a script reaches into the batch tree outside its own world: another
+ * run, the blinding table that names every run's arm, the batch manifest, or
+ * the harness's own records of this run.
  * @param script The unwrapped script.
- * @param roots Where the batch and this run live.
+ * @param roots Where the batch and this run's world live.
  * @param cwd The author's working directory.
- * @returns True when it names a run directory that is not this run's.
+ * @returns True when it names part of the batch that is not this run's world.
  */
-function reachesAnotherRun(script: string, roots: ExposureRoots, cwd: string): boolean {
-	const runs = `${roots.batchRoot}/runs/`;
-	let at = script.indexOf(runs);
-	while (at >= 0) {
-		if (!script.startsWith(roots.runRoot, at)) return true;
-		at = script.indexOf(runs, at + runs.length);
+function reachesBatchOutsideWorld(script: string, roots: ExposureRoots, cwd: string): boolean {
+	const batch = roots.batchRoot;
+	for (let at = script.indexOf(batch); at >= 0; at = script.indexOf(batch, at + batch.length)) {
+		if (!startsWithPath(script, at, roots.world)) return true;
 	}
 	return relativePathWords(script).some((word) => {
 		const reached = path.resolve(cwd, word);
-		return inside(runs, reached) && !inside(roots.runRoot, reached);
+		return inside(batch, reached) && !inside(roots.world, reached);
 	});
+}
+
+/**
+ * Whether a script names either arm's skill package in the checkout, rather
+ * than the one installed in the run's own world.
+ * @param script The unwrapped script.
+ * @param roots Where the packages live.
+ * @returns True when it names one.
+ */
+function reachesSkillPackage(script: string, roots: ExposureRoots): boolean {
+	return roots.skillPackages.some((packageRoot) => script.includes(packageRoot));
+}
+
+/**
+ * Whether the text at a position begins with a path, rather than with a longer
+ * name that merely starts the same way.
+ * @param text The script.
+ * @param at Where to look.
+ * @param root The path.
+ * @returns True when the path is what stands there.
+ */
+function startsWithPath(text: string, at: number, root: string): boolean {
+	if (!text.startsWith(root, at)) return false;
+	const next = text[at + root.length];
+	return next === undefined || next === "/" || !/[\w.-]/u.test(next);
 }
 
 /**
@@ -264,7 +321,8 @@ function inside(directory: string, target: string): boolean {
 }
 
 /**
- * Finds canonical inputs, harness source or another run named by a script.
+ * Finds canonical inputs, harness source, a skill package or the batch tree
+ * outside the run's world named by a script.
  * @param script The unwrapped script.
  * @param context Where the run happened.
  * @returns The kind of exposure, or null.
@@ -278,7 +336,8 @@ function exposureOf(script: string, context: ClassificationContext): ExposureKin
 			script.includes(roots.evaluationInputs) || EVALUATION_INPUT_RE.test(script),
 		],
 		["harness-source", script.includes(roots.harnessSource) || HARNESS_SOURCE_RE.test(script)],
-		["other-run", reachesAnotherRun(script, roots, context.checkoutRoot)],
+		["skill-package", reachesSkillPackage(script, roots)],
+		["other-run", reachesBatchOutsideWorld(script, roots, context.checkoutRoot)],
 	];
 	return reached.find(([, found]) => found)?.[0] ?? null;
 }
@@ -315,6 +374,7 @@ function exposureCounts(commands: readonly ClassifiedCommand[]): Record<Exposure
 	const counts: Record<ExposureKind, number> = {
 		"evaluation-inputs": 0,
 		"harness-source": 0,
+		"skill-package": 0,
 		"other-run": 0,
 	};
 	for (const command of commands) {
@@ -376,16 +436,25 @@ function guidanceFilesRead(
 }
 
 /**
- * How a run stands against the guidance its scenario names.
+ * How a run stands against the guidance its scenario names. A file the arm's
+ * installed skill does not ship is not expected of it: the frozen baseline
+ * can predate a recipe the candidate added, and a run cannot skip what it
+ * could not read.
  * @param expected The files the scenario names, relative to the skill root.
  * @param read The files the trace read.
+ * @param shipped Whether the installed skill holds a file, relative to its root.
  * @returns The standing.
  */
-function guidanceStanding(expected: readonly string[], read: readonly string[]): GuidanceStanding {
+function guidanceStanding(
+	expected: readonly string[],
+	read: readonly string[],
+	shipped: (file: string) => boolean,
+): GuidanceStanding {
+	const readable = expected.filter(shipped);
 	return {
-		expected: [...expected],
+		expected: readable,
 		read: [...read],
-		missing: expected.filter((file) => !read.includes(file)),
+		missing: readable.filter((file) => !read.includes(file)),
 	};
 }
 

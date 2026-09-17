@@ -3,6 +3,11 @@
 // configuration, the checker's report and the renders and inspections the
 // harness ran on the checks' behalf. Every verdict carries what was found.
 
+import {
+	namedSubject,
+	plausibleSubjects,
+	recordingMatches,
+} from "@/runtime/skill-evaluation/lib/naming";
 import { boardCheck } from "@/runtime/skill-evaluation/lib/outcomes-board";
 import { familyCheck } from "@/runtime/skill-evaluation/lib/outcomes-family";
 import {
@@ -92,19 +97,35 @@ function checkClean(_check: OutcomeCheck, reading: Reading): Finding {
 }
 
 /**
- * How an inspection's members compare with what the check wants.
+ * A plain name as its own subject, for looking one up among names.
+ * @param name The name.
+ * @returns The same name.
+ */
+function itself(name: string): string {
+	return name;
+}
+
+/**
+ * How an inspection's members compare with what the check wants. A wanted
+ * member is the one member that answers to its name; an unwanted one is
+ * anything that could, so a name two members could answer is wrongly included
+ * rather than quietly absent.
  * @param result The inspection.
  * @param check The check.
- * @returns Names wrongly missing and wrongly present.
+ * @returns Names wrongly missing and the members wrongly present.
  */
 function membershipGaps(
 	result: InspectedGroup,
 	check: OutcomeCheck,
 ): { readonly missing: string[]; readonly wrongly: string[] } {
-	const members = new Set(result.members.map((member) => member.name));
+	const members = result.members.map((member) => member.name);
 	return {
-		missing: (check.membersInclude ?? []).filter((name) => !members.has(name)),
-		wrongly: (check.membersExclude ?? []).filter((name) => members.has(name)),
+		missing: (check.membersInclude ?? []).filter(
+			(name) => namedSubject(members, itself, name) === undefined,
+		),
+		wrongly: (check.membersExclude ?? []).flatMap((name) =>
+			plausibleSubjects(members, itself, name),
+		),
 	};
 }
 
@@ -202,20 +223,25 @@ const VAULT_OWNERS: Partial<
 
 /**
  * Runs every check a scenario states and says what each found. A check no
- * owner claims fails loudly rather than passing by absence.
+ * owner claims fails loudly rather than passing by absence, and a check that
+ * accepted a subject under a differently spelled name says so.
  * @param checks The scenario's checks.
  * @param reading The reading.
  * @returns One verdict per check, in order.
  */
 function evaluateOutcomes(checks: readonly OutcomeCheck[], reading: Reading): CheckVerdict[] {
 	return checks.map((check) => {
-		const found =
-			VAULT_OWNERS[check.check]?.(check, reading) ??
-			boardCheck(check, reading) ??
-			familyCheck(check, reading);
+		const run = recordingMatches(
+			() =>
+				VAULT_OWNERS[check.check]?.(check, reading) ??
+				boardCheck(check, reading) ??
+				familyCheck(check, reading),
+		);
+		const found = run.value ?? finding(false, `no owner for check "${check.check}"`);
 		return {
 			check: check.check,
-			...(found ?? finding(false, `no owner for check "${check.check}"`)),
+			passed: found.passed,
+			detail: run.notes.length === 0 ? found.detail : `${found.detail}; ${run.notes.join(", ")}`,
 		};
 	});
 }

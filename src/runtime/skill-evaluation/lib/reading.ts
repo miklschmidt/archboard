@@ -5,7 +5,6 @@
 
 import {
 	currentVariant,
-	resolveVariant,
 	type SemanticBoard,
 	type SemanticEdge,
 	type SemanticNode,
@@ -14,6 +13,12 @@ import {
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy, VaultDiagnostic } from "@/shared/semantic-policy/index";
 import type { CaptureAttempt } from "@/runtime/skill-evaluation/lib/captures";
+import {
+	namedSubject,
+	namedValue,
+	plausibleSubjects,
+	variantNamed,
+} from "@/runtime/skill-evaluation/lib/naming";
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {
@@ -76,17 +81,38 @@ type Finding = Omit<CheckVerdict, "check">;
  * @returns The variant, or undefined when the board has no such variant.
  */
 function variantOf(board: SemanticBoard, asked?: string): SemanticVariant | undefined {
-	return asked === undefined ? currentVariant(board) : resolveVariant(board, asked);
+	return asked === undefined ? currentVariant(board) : variantNamed(board, asked);
 }
 
 /**
  * A node by the name a check uses, on one variant's content.
  * @param content The content.
  * @param name The node's name.
- * @returns The node, or undefined.
+ * @returns The node, or undefined when nothing, or more than one thing, answers to it.
  */
 function nodeNamed(content: VariantContent, name: string): SemanticNode | undefined {
-	return content.nodes.find((node) => node.name === name);
+	return namedSubject(content.nodes, (node) => node.name, name);
+}
+
+/**
+ * Every node that could be the one a name asks for: what a check requiring a
+ * node to be gone must find nothing of.
+ * @param content The content.
+ * @param name The node's name.
+ * @returns The nodes, in the content's order.
+ */
+function nodesPlausiblyNamed(content: VariantContent, name: string): SemanticNode[] {
+	return plausibleSubjects(content.nodes, (node) => node.name, name);
+}
+
+/**
+ * The name a node id carries on one variant.
+ * @param content The content.
+ * @param id The node's id.
+ * @returns The name, or the id when nothing carries it.
+ */
+function nodeNameOf(content: VariantContent, id: string): string {
+	return content.nodes.find((node) => node.id === id)?.name ?? id;
 }
 
 /**
@@ -101,6 +127,21 @@ function edgesBetween(content: VariantContent, from: string, to: string): Semant
 	const target = nodeNamed(content, to);
 	if (source === undefined || target === undefined) return [];
 	return content.edges.filter((edge) => edge.from === source.id && edge.to === target.id);
+}
+
+/**
+ * The edges between anything that could be the named source and anything that
+ * could be the named target: what a check requiring no relationship must find
+ * nothing of, so an ambiguous end fails it rather than passing by missing.
+ * @param content The content.
+ * @param from The source's name.
+ * @param to The target's name.
+ * @returns Every such edge.
+ */
+function edgesPlausiblyBetween(content: VariantContent, from: string, to: string): SemanticEdge[] {
+	const sources = new Set(nodesPlausiblyNamed(content, from).map((node) => node.id));
+	const targets = new Set(nodesPlausiblyNamed(content, to).map((node) => node.id));
+	return content.edges.filter((edge) => sources.has(edge.from) && targets.has(edge.to));
 }
 
 /**
@@ -125,7 +166,7 @@ function located(
 	board: string | undefined,
 	variant: string | undefined,
 ): { readonly board: SemanticBoard; readonly variant: SemanticVariant } | Finding {
-	const found = board === undefined ? undefined : reading.boards.get(board);
+	const found = namedValue(reading.boards, board);
 	if (found === undefined) return finding(false, `board "${board ?? "?"}" is not in the vault`);
 	const chosen = variantOf(found, variant);
 	if (chosen === undefined)
@@ -144,10 +185,13 @@ function isFinding(value: object): value is Finding {
 
 export {
 	edgesBetween,
+	edgesPlausiblyBetween,
 	finding,
 	isFinding,
 	located,
+	nodeNameOf,
 	nodeNamed,
+	nodesPlausiblyNamed,
 	variantOf,
 	type CheckVerdict,
 	type Finding,

@@ -192,6 +192,9 @@ describe("classifying what an author ran", () => {
 	});
 });
 
+/** A skill package that ships every file a scenario names. */
+const shipsAll = () => true;
+
 describe("what guidance an author read", () => {
 	test("names the skill files a trace read, by absolute root or by the install's tail, and what the scenario named that it did not", () => {
 		const records = [
@@ -202,8 +205,22 @@ describe("what guidance an author read", () => {
 		].map((command) => ({ command, exitCode: 0, status: "completed" as const, output: "" }));
 		const read = guidanceFilesRead(records, { skillRoot: "/run/home/.agents/skills/archboard" });
 		expect(read).toEqual(["SKILL.md", "references/authoring.md", "references/edit.md"]);
-		const standing = guidanceStanding(["references/edit.md", "references/variants.md"], read);
+		const standing = guidanceStanding(
+			["references/edit.md", "references/variants.md"],
+			read,
+			shipsAll,
+		);
 		expect(standing.missing).toEqual(["references/variants.md"]);
-		expect(guidanceStanding([], read).missing).toEqual([]);
+		expect(guidanceStanding([], read, shipsAll).missing).toEqual([]);
+	});
+
+	test("does not expect a file the arm's installed skill does not ship", () => {
+		const standing = guidanceStanding(
+			["references/read.md", "references/authoring.md"],
+			["SKILL.md"],
+			(file) => file !== "references/read.md",
+		);
+		expect(standing.expected).toEqual(["references/authoring.md"]);
+		expect(standing.missing).toEqual(["references/authoring.md"]);
 	});
 });

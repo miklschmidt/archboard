@@ -20,8 +20,10 @@ import {
 	type CliAnswer,
 	type CliContext,
 } from "@/runtime/skill-evaluation/lib/archboard";
+import { namedEntry, variantNamed, viewNamed } from "@/runtime/skill-evaluation/lib/naming";
 import { sequentially } from "@/runtime/skill-evaluation/lib/process";
-import type { CaptureDeclaration } from "@/runtime/skill-evaluation/lib/suite";
+import type { CaptureDeclaration, CaptureRequest } from "@/runtime/skill-evaluation/lib/suite";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 
 /**
  * The longest side a capture keeps whole before it is also cut into tiles.
@@ -244,6 +246,109 @@ async function tilesOf(
 }
 
 /**
+ * The label one view of an every-view capture is filed under: the request's
+ * label and the view's name, unique within the run, and never ending the way
+ * a tile file does, so the grader's file name reads back to it.
+ * @param label The request's label.
+ * @param view The view's name.
+ * @param taken The labels already used.
+ * @returns The label.
+ */
+function viewLabel(label: string, view: string, taken: ReadonlySet<string>): string {
+	const slug = view
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/gu, "-")
+		.replace(/^-+|-+$/gu, "");
+	let stem = slug === "" ? `${label}-view` : `${label}-${slug}`;
+	if (/-tile-\d+$/u.test(stem)) stem = `${stem}-view`;
+	let candidate = stem;
+	for (let index = 2; taken.has(candidate); index += 1) candidate = `${stem}-${index}`;
+	return candidate;
+}
+
+/**
+ * A named capture as the saved boards answer to it: the board, variant and
+ * view the author actually wrote, so a picture the scenario asked for is taken
+ * even when the author spelled its name differently. A name nothing answers to
+ * is left as written, and the rasterize command refuses it as before.
+ * @param request What the scenario asks to see.
+ * @param boards The boards as finally saved, by name.
+ * @returns The declaration the rasterize command is given.
+ */
+function resolvedCapture(
+	request: CaptureDeclaration,
+	boards: ReadonlyMap<string, SemanticBoard>,
+): CaptureDeclaration {
+	const entry = namedEntry(boards, request.board);
+	if (entry === undefined) return request;
+	const [name, board] = entry;
+	return { ...request, board: name, ...selectorsNamed(board, request) };
+}
+
+/**
+ * The variant and view of a named capture as the saved board answers to them,
+ * and as written when nothing on it does.
+ * @param board The board the capture is of.
+ * @param request What the scenario asks to see.
+ * @returns The selectors, each left out when the request names none.
+ */
+function selectorsNamed(
+	board: SemanticBoard,
+	request: CaptureDeclaration,
+): Pick<CaptureDeclaration, "variant" | "view"> {
+	return {
+		...asWritten("variant", request.variant, () => variantNamed(board, request.variant)?.name),
+		...asWritten("view", request.view, () => viewNamed(board, request.view)?.name),
+	};
+}
+
+/**
+ * One selector under its key: the name the board answers with, the name as
+ * written when nothing on it answers, and nothing at all when the request
+ * names no such selector.
+ * @param key The selector's key.
+ * @param asked The name the request used, if any.
+ * @param answer The name the board answers with, asked lazily.
+ * @returns The one-key record, or an empty one.
+ */
+function asWritten(
+	key: "variant" | "view",
+	asked: string | undefined,
+	answer: () => string | undefined,
+): Partial<Record<"variant" | "view", string>> {
+	return asked === undefined ? {} : { [key]: answer() ?? asked };
+}
+
+/**
+ * The pictures a scenario's requests come to once the saved boards are known:
+ * a named capture as declared, and an every-view capture as one capture per
+ * view on its board, in the board's order, drawing each in its own grammar.
+ * @param requests What the scenario asks to see.
+ * @param boards The boards as finally saved, by name.
+ * @returns The concrete declarations, in request order.
+ */
+function expandCaptures(
+	requests: readonly CaptureRequest[],
+	boards: ReadonlyMap<string, SemanticBoard>,
+): CaptureDeclaration[] {
+	const taken = new Set(requests.map((request) => request.label));
+	return requests.flatMap((request): CaptureDeclaration[] => {
+		if (!("views" in request)) return [resolvedCapture(request, boards)];
+		return (boards.get(request.board)?.views ?? []).map((view) => {
+			const label = viewLabel(request.label, view.name, taken);
+			taken.add(label);
+			return {
+				label,
+				board: request.board,
+				...(request.variant === undefined ? {} : { variant: request.variant }),
+				view: view.name,
+				grammar: view.grammar,
+			};
+		});
+	});
+}
+
+/**
  * Take every capture a scenario declares, in order, into one directory.
  * @param cli How to reach the CLI.
  * @param declarations What the scenario asks to see.
@@ -298,6 +403,7 @@ export {
 	CAPTURE_TILE_SIDE_PX,
 	captureDeclared,
 	captureFromReceipt,
+	expandCaptures,
 	captureSummary,
 	tileRegions,
 	type CaptureAttempt,

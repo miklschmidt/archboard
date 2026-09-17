@@ -25,19 +25,26 @@ import {
 	type Usage,
 } from "@/runtime/skill-evaluation/index";
 
-const BATCH = "/evals/.skill-evals/2026-09-14T13-50-10-617Z";
+const CHECKOUT = "/checkout";
+const BATCH = `${CHECKOUT}/.skill-evals/2026-09-14T13-50-10-617Z`;
 const RUN = `${BATCH}/runs/candidate/S11/3`;
-const VAULT = `${RUN}/vault`;
+/** The author's own world, the only part of the run it may read or write. */
+const WORLD = `${RUN}/world`;
+const VAULT = `${WORLD}/vault`;
 const CONTEXT = {
-	skillRoot: `${RUN}/home/.agents/skills/archboard`,
-	checkoutRoot: `${RUN}/flask`,
-	archboardRoot: "/checkout",
+	skillRoot: `${WORLD}/home/.agents/skills/archboard`,
+	checkoutRoot: `${WORLD}/flask`,
+	archboardRoot: CHECKOUT,
 	vault: VAULT,
 	exposure: {
-		evaluationInputs: "/checkout/evals",
-		harnessSource: "/checkout/src/runtime/skill-evaluation",
+		evaluationInputs: `${CHECKOUT}/evals`,
+		harnessSource: `${CHECKOUT}/src/runtime/skill-evaluation`,
+		skillPackages: [
+			`${CHECKOUT}/skills/archboard`,
+			`${CHECKOUT}/docs/design/skill-evals/baseline/archboard`,
+		],
 		batchRoot: BATCH,
-		runRoot: RUN,
+		world: WORLD,
 	},
 };
 
@@ -245,6 +252,26 @@ describe("reading the product is its own class, apart from the skill, Flask and 
 		expect(harness.class).toBe("product-source");
 		expect(harness.exposure).toBe("harness-source");
 	});
+
+	test("the batch lives under the checkout, and a run reading its own world or records has read no product source", () => {
+		for (const script of [
+			`cat ${VAULT}/Flask\\ JSON.semantic.json`,
+			`ls ${WORLD}`,
+			`rg -n load_app ${CONTEXT.checkoutRoot}/src/flask/cli.py`,
+			`cat ${RUN}/snapshot/Flask_JSON.json`,
+			`rg -n semantic ${RUN}/author.jsonl`,
+			`ls ${BATCH}/runs`,
+		]) {
+			expect(classified(`bash -lc '${script}'`).class, script).not.toBe("product-source");
+		}
+		// A read that leaves the batch tree for the checkout is still the product.
+		expect(classified(`bash -lc 'cat ${CHECKOUT}/src/cli/semantic/edit.ts'`).class).toBe(
+			"product-source",
+		);
+		expect(
+			classified(`bash -lc 'cat ${RUN}/snapshot/x.json ${CHECKOUT}/src/server.ts'`).class,
+		).toBe("product-source");
+	});
 });
 
 describe("evaluation-material exposure", () => {
@@ -259,14 +286,14 @@ describe("evaluation-material exposure", () => {
 			classified("bash -lc 'sed -n 1,40p /checkout/src/runtime/skill-evaluation/lib/vault.ts'")
 				.exposure,
 		).toBe("harness-source");
-		expect(classified(`bash -lc 'ls ${BATCH}/runs/baseline/S11/2/vault'`).exposure).toBe(
+		expect(classified(`bash -lc 'ls ${BATCH}/runs/baseline/S11/2/world/vault'`).exposure).toBe(
 			"other-run",
 		);
-		expect(classified("bash -lc 'cat ../../2/vault/Flask\\ JSON.semantic.json'").exposure).toBe(
-			"other-run",
-		);
+		expect(
+			classified("bash -lc 'cat ../../../2/world/vault/Flask\\ JSON.semantic.json'").exposure,
+		).toBe("other-run");
 		expect(classified("bash -lc 'cat ../vault/Flask\\ JSON.semantic.json'").exposure).toBeNull();
-		expect(classified(`bash -lc 'cat ${RUN}/vault/.archboard/config.yaml'`).exposure).toBeNull();
+		expect(classified(`bash -lc 'cat ${VAULT}/.archboard/config.yaml'`).exposure).toBeNull();
 		expect(
 			classified(`bash -lc 'ARCHBOARD_VAULT=${VAULT} archboard semantic show "Flask JSON"'`)
 				.exposure,
@@ -279,7 +306,39 @@ describe("evaluation-material exposure", () => {
 				classified(`bash -lc 'ls ${BATCH}/runs/baseline/S11/2'`),
 				classified("bash -lc 'ls'"),
 			]),
-		).toEqual({ "evaluation-inputs": 2, "harness-source": 0, "other-run": 1 });
+		).toEqual({
+			"evaluation-inputs": 2,
+			"harness-source": 0,
+			"skill-package": 0,
+			"other-run": 1,
+		});
+	});
+
+	test("the harness's records of this very run, the blinding table and the batch manifest are exposure", () => {
+		for (const script of [
+			`cat ${RUN}/author.jsonl`,
+			`rg -n semantic ${RUN}/author.jsonl`,
+			`cat ${RUN}/snapshot/Flask_JSON.json`,
+			`cat ${RUN}/bundle.json`,
+			`cat ${BATCH}/blinding.json`,
+			`cat ${BATCH}/batch.json`,
+			"cat ../../author.jsonl",
+			"ls ../../snapshot",
+		]) {
+			expect(classified(`bash -lc '${script}'`).exposure, script).toBe("other-run");
+		}
+	});
+
+	test("either arm's package in the checkout is exposure, the skill installed in the run's world is not", () => {
+		for (const script of [
+			`cat ${CHECKOUT}/skills/archboard/SKILL.md`,
+			`rg -n variant ${CHECKOUT}/docs/design/skill-evals/baseline/archboard/references/edit.md`,
+		]) {
+			expect(classified(`bash -lc '${script}'`).exposure, script).toBe("skill-package");
+		}
+		const installed = classified(`bash -lc 'cat ${CONTEXT.skillRoot}/SKILL.md'`);
+		expect(installed.exposure).toBeNull();
+		expect(installed.class).toBe("discovery");
 	});
 
 	test("a context without roots records no exposure, so the classes alone can be tested", () => {
@@ -368,7 +427,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 			ambiguous: 0,
 		},
 		directWrites: 0,
-		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
+		exposure: { "evaluation-inputs": 0, "harness-source": 0, "skill-package": 0, "other-run": 0 },
 		guidance: null,
 		outcomesPassed: true,
 		guardrailsPassed: true,
@@ -394,7 +453,7 @@ describe("contamination in the report", () => {
 		const exposed = record({
 			run: "run-0000000002",
 			arm: "candidate",
-			exposure: { "evaluation-inputs": 2, "harness-source": 0, "other-run": 0 },
+			exposure: { "evaluation-inputs": 2, "harness-source": 0, "skill-package": 0, "other-run": 0 },
 		});
 		const report = buildReport([record({}), exposed], null);
 		const row = report.scenarios[0]!;

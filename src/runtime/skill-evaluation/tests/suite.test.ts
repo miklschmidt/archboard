@@ -9,7 +9,15 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
-import { SemanticBoardSchema } from "@/shared/semantic-board/index";
+import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import {
+	adoptVariantTransition,
+	branchVariantTransition,
+	createBoardTransition,
+	editVariantTransition,
+	settleVariantTransition,
+	type SemanticTransition,
+} from "@/runtime/semantic-board-store/index";
 import {
 	FixtureStepSchema,
 	inspectionRequests,
@@ -18,6 +26,8 @@ import {
 	resolvePlaceholders,
 	stepCommand,
 	suiteProblems,
+	type FixtureStep,
+	type RawFixtureStep,
 } from "@/runtime/skill-evaluation/index";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -68,6 +78,47 @@ const BOARD = SemanticBoardSchema.parse({
 		},
 	],
 });
+
+/**
+ * The variant a step targets, for resolving its placeholders.
+ * @param step The step, before its placeholders resolve.
+ * @returns The variant selector, or undefined for the current one.
+ */
+function variantOf(step: RawFixtureStep): string | undefined {
+	if (step.op === "edit") {
+		const named = step.input["variant"];
+		return typeof named === "string" ? named : undefined;
+	}
+	return step.op === "resolve" ? step.variant : undefined;
+}
+
+/**
+ * The store transition one laid fixture step amounts to, exactly as the CLI
+ * command the harness sends would build it.
+ * @param step The resolved step.
+ * @returns The transition.
+ */
+function transitionOf(step: FixtureStep): SemanticTransition {
+	switch (step.op) {
+		case "new":
+			return createBoardTransition({ name: step.board, ...step.input });
+		case "edit":
+			return editVariantTransition(step.input);
+		case "branch":
+			return branchVariantTransition({
+				name: step.as,
+				from: step.from ?? "current",
+				...(step.summary === undefined ? {} : { summary: step.summary }),
+			});
+		case "resolve":
+			return settleVariantTransition({ variant: step.variant, ...step.input });
+		default:
+			return adoptVariantTransition({
+				variant: step.variant,
+				...(step.reason === undefined ? {} : { reason: step.reason }),
+			});
+	}
+}
 
 describe("the canonical suite", () => {
 	test("lives outside every skill package: neither the consumer skill, the frozen baseline nor a prepared copy carries it", () => {
@@ -138,16 +189,19 @@ describe("the canonical suite", () => {
 			// A capture names what the prompt asks for or what the fixture lays:
 			// never a picture nobody asked to see.
 			const known = `${scenario.prompt}\n${JSON.stringify(loaded.fixtures.get(scenario.id))}`;
+			const named = scenario.captures.flatMap((capture) => ("views" in capture ? [] : [capture]));
 			for (const capture of scenario.captures) {
-				for (const name of [capture.board, capture.view, capture.variant]) {
+				for (const name of [
+					capture.board,
+					"view" in capture ? capture.view : undefined,
+					capture.variant,
+				]) {
 					if (name !== undefined) expect(known, `${scenario.id} ${capture.label}`).toContain(name);
 				}
 			}
 			if (scenario.workflow === "sequence-create") {
 				expect(
-					scenario.captures.some(
-						(capture) => capture.grammar === "data-flow" && capture.view !== undefined,
-					),
+					named.some((capture) => capture.grammar === "data-flow" && capture.view !== undefined),
 					scenario.id,
 				).toBe(true);
 			}
@@ -155,10 +209,10 @@ describe("the canonical suite", () => {
 			// through the same view, so a removal stays visible.
 			for (const check of scenario.outcomes) {
 				if (check.check !== "render-ok" || check.variant === undefined) continue;
-				const proposal = scenario.captures.find(
+				const proposal = named.find(
 					(capture) => capture.variant === check.variant && capture.view === check.view,
 				);
-				const predecessor = scenario.captures.find(
+				const predecessor = named.find(
 					(capture) => capture.variant === undefined && capture.view === check.view,
 				);
 				expect(proposal, `${scenario.id} proposal capture`).toBeDefined();
@@ -197,6 +251,32 @@ describe("fixtures", () => {
 				expect(call.args.includes("--expect-version"), id).toBe(step.op !== "new");
 				expect(call.stdin === undefined, id).toBe(step.op === "branch" || step.op === "adopt");
 			}
+		}
+	});
+
+	test("every fixture lays: each step applies to the board the steps before it left", () => {
+		// eval:skill check validates shapes and never lays a fixture, so a parent,
+		// relationship end or view selection naming a node nothing created passes
+		// it and only fails hours into a batch. This lays each fixture through the
+		// store's own transitions, which is where a name becomes an id.
+		for (const [id, fixture] of loaded.fixtures) {
+			const vault = new Map<string, SemanticBoard>();
+			for (const [index, step] of fixture.steps.entries()) {
+				const before = vault.get(step.board) ?? null;
+				const resolved = FixtureStepSchema.parse(
+					resolvePlaceholders(step, {
+						repo: fixture.registerRepo ? "github.com/pallets/flask" : null,
+						board: before,
+						variant: variantOf(step),
+					}),
+				);
+				const applied = transitionOf(resolved).apply(before, "2026-09-17T00:00:00.000Z");
+				const where = `${id} step ${index} (${step.op} ${step.board})`;
+				expect(applied.ok ? null : applied.problem, where).toBeNull();
+				if (applied.ok) vault.set(step.board, applied.board);
+			}
+			// Every board a step named is in the vault the fixture leaves behind.
+			expect(vault.size, id).toBe(new Set(fixture.steps.map((step) => step.board)).size);
 		}
 	});
 
