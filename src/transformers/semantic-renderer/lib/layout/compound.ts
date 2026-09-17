@@ -260,17 +260,19 @@ function drawingEdges(
 	header: HeaderSide,
 ): DrawingEdge[] {
 	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
+	// The engine's parts of each relationship, grouped once in the engine's order.
+	const parts = new Map<string, ElkExtendedEdge[]>();
+	for (const part of laidOut.edges ?? []) {
+		const id = part.id.split(":")[0]!;
+		parts.set(id, [...(parts.get(id) ?? []), part]);
+	}
 	const routes = straightenJogs(
 		new Map(
 			content.edges.map((edge) => [
 				edge.id,
 				leaveFromTitle(
 					edge,
-					simplify(
-						(laidOut.edges?.filter((part) => part.id.split(":")[0] === edge.id) ?? []).flatMap(
-							pointsOf,
-						),
-					),
+					simplify((parts.get(edge.id) ?? []).flatMap(pointsOf)),
 					content,
 					nodes,
 					header,
