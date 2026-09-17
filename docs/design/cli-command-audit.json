@@ -3,8 +3,8 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 37,
-		"paths": 70
+		"subcommands": 38,
+		"paths": 71
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -1536,6 +1536,34 @@
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic compare",
+			"introducedBy": "TASK-256.07",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-compare.ts",
+			"stdout": "json object",
+			"result": "one variant against its direct predecessor: every part, relationship, sequence, step, walkthrough and beat either of them has, its standing, and the fields that moved",
+			"diagnostics": "counts and one line per relationship that moved on stderr; usage/refusal on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards/board"],
+			"semantics": "derived from the whole variant before any view narrows it, by the same pure comparison the canvas and the renderer overlay run; relationships and steps carry the endpoints they now have, named as well as identified, and a root architecture is refused",
+			"ordering": "read the board, resolve the variant, resolve its predecessor, compare, then print",
+			"nextFields": ["edges[].standing", "edges[].toName", "nodes[].fields[].field"],
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "NO_PREDECESSOR",
+					"exit": 2
 				}
 			],
 			"classification": "board"
