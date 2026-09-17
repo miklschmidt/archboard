@@ -21,7 +21,11 @@
 // one write (TASK-068), so removing a container and re-parenting what was
 // inside it is one command, in either order, and an edge that this command
 // removes twice — once by name and once by taking its endpoint away — is
-// removed once and is not a mistake. Removals resolve against the board as it
+// removed once and is not a mistake. A relationship the command restates is
+// not taken away by its endpoint going either: the move a proposal is made of
+// — the old parts out, the part that replaces them in, and the relationships
+// that landed on the old parts pointed at the new one — is one write, and the
+// relationship keeps the id it had. Removals resolve against the board as it
 // stood, additions apply on top, and the only thing that has to hold is what
 // is left at the end.
 
@@ -30,7 +34,6 @@ import {
 	type SemanticBoard,
 	type SemanticView,
 	type SemanticEdge,
-	type SemanticEdgeInput,
 	type SemanticNode,
 	type SemanticNodeInput,
 	type VariantContent,
@@ -53,6 +56,7 @@ import {
 	replacedRelationships,
 	type WriteNotice,
 } from "@/runtime/semantic-board-store/lib/replaced-relationships";
+import { placeStatedEdges } from "@/runtime/semantic-board-store/lib/stated-edges";
 
 /** A content value, or why the edit could not produce one. */
 type ContentEdit =
@@ -69,6 +73,8 @@ type ContentEdit =
 interface Removals {
 	readonly nodes: ReadonlySet<string>;
 	readonly edges: ReadonlySet<string>;
+	/** The ids the batch named in `removeEdges`, as against the ones it cascaded. */
+	readonly statedEdges: ReadonlySet<string>;
 }
 
 /**
@@ -77,6 +83,17 @@ interface Removals {
  * An edge that touches a node being removed goes with it — a relationship to
  * something that is no longer there is not a relationship — and naming that
  * edge explicitly as well is the same instruction twice, not an error.
+ *
+ * The cascade is what the batch did not ask for, so a relationship the same
+ * batch restates is not swept up by it: removing a part, adding the part that
+ * replaces it, and pointing the relationships that landed on the old part at
+ * the new one is one thing somebody asked for, and it is one write. The
+ * restatement still has to leave a relationship between parts that are there,
+ * which is judged where its endpoints are resolved. An id the batch names in
+ * `removeEdges` is a different matter: that is the batch itself saying the
+ * relationship goes, and restating it as well is two contradictory
+ * instructions rather than one, refused the way a stated node id the same
+ * command removes is.
  * @param before The content as it stands.
  * @param edit The batch as stated.
  * @param batch The batch, which has given out no handle yet: a removal names
@@ -96,19 +113,25 @@ function planRemovals(
 		}
 		nodes.add(found.node.id);
 	}
+	const restated = new Set(
+		edit.edges.flatMap((input) => (input.id === undefined ? [] : [input.id])),
+	);
 	const edges = new Set(
 		before.edges
 			.filter((edge) => nodes.has(edge.from) || nodes.has(edge.to))
+			.filter((edge) => !restated.has(edge.id))
 			.map((edge) => edge.id),
 	);
+	const statedEdges = new Set<string>();
 	for (const reference of edit.removeEdges) {
 		const edge = before.edges.find((candidate) => candidate.id === reference);
 		if (edge === undefined) {
 			return refuse("UNKNOWN_EDGE", `no edge with the id "${reference}" to remove`);
 		}
 		edges.add(edge.id);
+		statedEdges.add(edge.id);
 	}
-	return { ok: true, removals: { nodes, edges } };
+	return { ok: true, removals: { nodes, edges, statedEdges } };
 }
 
 /**
@@ -281,108 +304,6 @@ function resolveContainment(
 }
 
 /**
- * Build one stated edge against the nodes as they now stand.
- * @param edges The edges as they stand, for a stated id to name one of.
- * @param nodes The nodes the endpoints must name.
- * @param input The edge as the agent wrote it.
- * @param batch The batch; its ids and handles are extended.
- * @returns The edge, or the endpoint that named nothing.
- */
-function buildEdge(
-	edges: readonly SemanticEdge[],
-	nodes: readonly SemanticNode[],
-	input: SemanticEdgeInput,
-	batch: Batch,
-): { readonly ok: true; readonly edge: SemanticEdge } | SemanticRefusal {
-	const from = resolveNode(nodes, input.from, "connect from", batch);
-	if (!from.ok) {
-		return from;
-	}
-	const to = resolveNode(nodes, input.to, "connect to", batch);
-	if (!to.ok) {
-		return to;
-	}
-	const id = edgeId(edges, input, batch);
-	if (!id.ok) {
-		return id;
-	}
-	return {
-		ok: true,
-		edge: {
-			id: id.id,
-			from: from.node.id,
-			to: to.node.id,
-			...saidOfEdge(input),
-			emphasis: input.emphasis ?? "normal",
-		},
-	};
-}
-
-/**
- * The id a stated edge should carry: the one it names, which must already be a
- * relationship on this variant, or a fresh one.
- * @param edges The edges as they stand.
- * @param input The edge as the agent wrote it.
- * @param batch The batch; its ids and handles are extended.
- * @returns The id, or why the stated one names nothing.
- */
-function edgeId(edges: readonly SemanticEdge[], input: SemanticEdgeInput, batch: Batch): MintedId {
-	if (input.id === undefined) {
-		return held(batch, input.as, mintInto(batch));
-	}
-	return edges.some((edge) => edge.id === input.id)
-		? held(batch, input.as, input.id)
-		: refuse(
-				"UNKNOWN_EDGE",
-				`there is no relationship "${input.id}" on this variant to replace. Leave the id out to ` +
-					"add a new one, or state the id of the one you meant to change",
-			);
-}
-
-/**
- * What a stated edge says about itself, except for the input-only fields the
- * write boundary resolves or spends.
- * @param input The edge as the agent wrote it.
- * @returns Its authored fields, ready to persist.
- */
-function saidOfEdge(
-	input: SemanticEdgeInput,
-): Omit<SemanticEdgeInput, "id" | "as" | "from" | "to"> {
-	const said = { ...input };
-	Reflect.deleteProperty(said, "id");
-	Reflect.deleteProperty(said, "as");
-	Reflect.deleteProperty(said, "from");
-	Reflect.deleteProperty(said, "to");
-	return said;
-}
-
-/**
- * Apply every stated edge, resolving its endpoints against the nodes as they
- * now stand.
- * @param start The edges as they stand after removals.
- * @param nodes The nodes the endpoints must name.
- * @param stated The edges the agent wrote.
- * @param batch The batch; its ids and handles are extended.
- * @returns The edges, or the first endpoint that named nothing.
- */
-function placeStatedEdges(
-	start: readonly SemanticEdge[],
-	nodes: readonly SemanticNode[],
-	stated: readonly SemanticEdgeInput[],
-	batch: Batch,
-): { readonly ok: true; readonly edges: SemanticEdge[] } | SemanticRefusal {
-	let edges = [...start];
-	for (const input of stated) {
-		const built = buildEdge(edges, nodes, input, batch);
-		if (!built.ok) {
-			return built;
-		}
-		edges = place(edges, built.edge);
-	}
-	return { ok: true, edges };
-}
-
-/**
  * Whether the batch leaves anything inside a container it also took away.
  *
  * This is the check that used to happen at removal time, moved to the end.
@@ -439,7 +360,10 @@ function editContent(
 	if (!nodes.ok) {
 		return nodes;
 	}
-	const edges = placeStatedEdges(kept.edges, nodes.nodes, edit.edges, batch);
+	const edges = placeStatedEdges(kept.edges, nodes.nodes, edit.edges, batch, {
+		nodes: before.nodes.filter((node) => planned.removals.nodes.has(node.id)),
+		edges: planned.removals.statedEdges,
+	});
 	if (!edges.ok) {
 		return edges;
 	}

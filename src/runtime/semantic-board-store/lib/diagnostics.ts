@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { requireVaultRoot } from "@/runtime/engine/board";
 import { errorMessage } from "@/shared/thrown-error/index";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultCheck, VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import {
@@ -10,9 +11,18 @@ import {
 	SEMANTIC_BOARD_FILE_SUFFIX,
 } from "@/runtime/semantic-board-store/lib/location";
 import { readSemanticBoardAt } from "@/runtime/semantic-board-store/lib/read";
+import {
+	type DrillDownTarget,
+	semanticDrillDownDiagnostics,
+} from "@/runtime/semantic-board-store/lib/drill-down";
 
 /**
  * Check every board family and report traversal/read failures rather than hiding them.
+ *
+ * Boards are read first and linked afterwards: whether a drill-down opens a
+ * board the vault holds, and at which level, is a fact about the vault rather
+ * than about the board that states it (ADR 0029), so it can only be answered
+ * once every board has been seen.
  * @param root The vault root.
  * @returns Current policy and all diagnostics.
  */
@@ -20,35 +30,15 @@ function checkSemanticVault(root = requireVaultRoot()): VaultCheck {
 	const configured = readSemanticBoardConfiguration(root);
 	const diagnostics = [...configured.diagnostics];
 	const addresses = new Map<string, string>();
-	for (const file of boardFiles(root, diagnostics)) {
-		try {
-			const name = path
-				.relative(root, file)
-				.split(path.sep)
-				.join("/")
-				.slice(0, -SEMANTIC_BOARD_FILE_SUFFIX.length);
-			const location = { ...semanticBoardAddress(name), file };
-			recordAddress(location, addresses, diagnostics);
-			const read = readSemanticBoardAt(location, configured);
-			if (read.ok)
-				diagnostics.push(...read.warnings.filter((warning) => warning.code !== "INVALID_CONFIG"));
-			else
-				diagnostics.push({
-					severity: "error",
-					code: read.code,
-					file,
-					board: name,
-					message: read.problem,
-				});
-		} catch (error) {
-			diagnostics.push({
-				severity: "error",
-				code: "BOARD_UNREADABLE",
-				file,
-				message: errorMessage(error),
-			});
-		}
-	}
+	const read = boardFiles(root, diagnostics).flatMap((file) => {
+		const board = readBoardFile(file, root, configured, addresses, diagnostics);
+		return board === null ? [] : [{ board, file }];
+	});
+	const targets = new Map<string, DrillDownTarget>();
+	for (const { board } of read)
+		targets.set(semanticBoardAddress(board.name).key, { name: board.name, level: board.level });
+	for (const { board, file } of read)
+		diagnostics.push(...semanticDrillDownDiagnostics(board, file, targets));
 	return {
 		policy: configured.configuration,
 		configurationValid: configured.ok,
@@ -57,6 +47,54 @@ function checkSemanticVault(root = requireVaultRoot()): VaultCheck {
 		diagnostics,
 	};
 }
+/**
+ * Read one board file, recording whatever stopped it from being read.
+ * @param file The board file.
+ * @param root The vault root.
+ * @param configured Current interpreted vault configuration.
+ * @param addresses The first file seen at every identity.
+ * @param diagnostics Collected vault problems.
+ * @returns The board, or null when it could not be read.
+ */
+function readBoardFile(
+	file: string,
+	root: string,
+	configured: ReturnType<typeof readSemanticBoardConfiguration>,
+	addresses: Map<string, string>,
+	diagnostics: VaultDiagnostic[],
+): SemanticBoard | null {
+	try {
+		const name = path
+			.relative(root, file)
+			.split(path.sep)
+			.join("/")
+			.slice(0, -SEMANTIC_BOARD_FILE_SUFFIX.length);
+		const location = { ...semanticBoardAddress(name), file };
+		recordAddress(location, addresses, diagnostics);
+		const result = readSemanticBoardAt(location, configured);
+		if (!result.ok) {
+			diagnostics.push({
+				severity: "error",
+				code: result.code,
+				file,
+				board: name,
+				message: result.problem,
+			});
+			return null;
+		}
+		diagnostics.push(...result.warnings.filter((warning) => warning.code !== "INVALID_CONFIG"));
+		return result.board;
+	} catch (error) {
+		diagnostics.push({
+			severity: "error",
+			code: "BOARD_UNREADABLE",
+			file,
+			message: errorMessage(error),
+		});
+		return null;
+	}
+}
+
 /**
  * Enumerate authored board files without silently dropping invalid names or inaccessible folders.
  * @param directory The directory to inspect.
