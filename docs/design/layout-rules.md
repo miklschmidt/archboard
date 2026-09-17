@@ -950,8 +950,8 @@ fixture byte-identical:
 | Semantic renderer   | 111                | 65     | 41                        |
 | sum                 | 2569               | 1645   | 907                       |
 
-Twelve of the fourteen are now under 150 ms; flask-map-2 and, narrowly,
-nothing else of the vault is over 100.
+Thirteen of the fourteen are now under 150 ms, all but flask-map-2. Only the
+three wide-board fixtures take more than 100 ms; every vault board takes less.
 
 In the browser, over three runs across the eleven vault boards, the mean first
 picture fell from 440 to 396 ms and a reopen from 287 to 272 ms. A reopen is
