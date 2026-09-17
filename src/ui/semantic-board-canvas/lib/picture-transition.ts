@@ -25,6 +25,7 @@ import {
 	TRANSITION_ATTRIBUTE,
 	borrow,
 	easeInOut,
+	emphasised,
 	easeOut,
 	phase,
 	scaleAbout,
@@ -51,6 +52,42 @@ interface PictureTransition {
 
 /** How much a card leaving shrinks to. */
 const LEAVE_SCALE = 0.96;
+
+/** How far the page moved under the cards two pictures share, in picture units. */
+interface Shift {
+	readonly x: number;
+	readonly y: number;
+}
+
+const NO_SHIFT: Shift = { x: 0, y: 0 };
+
+/**
+ * How far the cards two pictures share moved, taken together: the old centre of
+ * the shared cards less their new centre.
+ *
+ * Another variant of a board is often laid out on a page of another size, with
+ * a lane or a card added along one edge, and every card that stayed the same
+ * then sits somewhere else on the page. A camera that stayed put would carry
+ * the whole board across the pane; a camera moved by this keeps what the two
+ * pictures share where the reader was looking at it, and only what changed
+ * moves.
+ * @param before The last picture.
+ * @param after The next.
+ * @returns The shift, or none when the pictures share no card.
+ */
+function sharedShift(before: SemanticDrawing, after: SemanticDrawing): Shift {
+	let x = 0;
+	let y = 0;
+	let shared = 0;
+	for (const [id, old] of Object.entries(before.atlas.nodes)) {
+		const next = after.atlas.nodes[id];
+		if (next === undefined) continue;
+		x += old.x + old.width / 2 - (next.x + next.width / 2);
+		y += old.y + old.height / 2 - (next.y + next.height / 2);
+		shared += 1;
+	}
+	return shared === 0 ? NO_SHIFT : { x: x / shared, y: y / shared };
+}
 
 /**
  * Which view a picture was read through, or null for the whole variant.
@@ -199,12 +236,14 @@ function nothingToSeek(): void {
  * @param surface The element the picture is in.
  * @param before The picture on the surface.
  * @param after The picture to arrive at.
+ * @param shift How far the camera moved to keep the shared cards still; the picture starts that far back and eases home.
  * @returns The transition, drawn at its start.
  */
 function transitionPicture(
 	surface: HTMLElement,
 	before: SemanticDrawing,
 	after: SemanticDrawing,
+	shift: Shift = NO_SHIFT,
 ): PictureTransition {
 	/** Land on the new picture exactly as the server drew it. */
 	function finish(): void {
@@ -244,6 +283,13 @@ function transitionPicture(
 		for (const step of steps) {
 			step(at);
 		}
+		if ((shift.x !== 0 || shift.y !== 0) && root instanceof SVGElement) {
+			// The camera already moved by the shift; the picture starts that far
+			// back and eases home with the cards, so the shared cards stay still.
+			const { moveStart, moveEnd } = PICTURE_TRANSITION_PHASES;
+			const left = 1 - emphasised(phase(at, moveStart, moveEnd));
+			root.style.transform = `translate(${-shift.x * left}px, ${-shift.y * left}px)`;
+		}
 	}
 	seek(0);
 	return { seek, finish };
@@ -252,7 +298,9 @@ function transitionPicture(
 export {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
+	sharedShift,
 	stagePicture,
 	transitionPicture,
 	type PictureTransition,
+	type Shift,
 };
