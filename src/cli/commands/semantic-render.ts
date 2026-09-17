@@ -7,7 +7,7 @@ import { OfferedViewSchema, RenderedVariantSchema } from "@/shared/semantic-boar
 import { renderSemanticBoardOnCanvas } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
-import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
+import { SelectorSchema, drawnAgainst } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
 const THEMES = ["light", "dark"] as const;
@@ -31,6 +31,17 @@ const SemanticRenderResultSchema = z.object({
 	 * what asks for exactly this picture again.
 	 */
 	variant: RenderedVariantSchema,
+	/**
+	 * The variant this picture is drawn against, or null when it came from
+	 * nothing and is therefore drawn plain.
+	 *
+	 * A variant with a predecessor is always drawn as the comparison with it —
+	 * added, removed and changed subjects marked, removed ones still on the page
+	 * — and that is the picture a reader gets. The receipt says so, because
+	 * nothing else does: the file is an SVG, and an author who asked for one
+	 * variant has no other way to learn that two are in the picture.
+	 */
+	comparedWith: RenderedVariantSchema.nullable(),
 	/** The view that was drawn, or null when the whole variant was. */
 	view: OfferedViewSchema.nullable(),
 	file: z.string(),
@@ -69,7 +80,8 @@ const semanticRenderContract = defineCommand({
 			spellings: ["--variant"],
 			value: "required",
 			placeholder: "variant",
-			description: "Which variant to draw, by id or name; the current one when absent",
+			description:
+				"Which variant to draw, by id or name; the current one when absent. A variant with a predecessor is drawn as the comparison with it, and the receipt names that predecessor",
 		},
 		{
 			kind: "option",
@@ -148,6 +160,7 @@ const semanticRenderContract = defineCommand({
 				board: drawn.board,
 				version: drawn.version,
 				variant: drawn.variant,
+				comparedWith: drawnAgainst(drawn),
 				view: drawn.view,
 				file,
 				width: drawn.width,

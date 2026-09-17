@@ -17,6 +17,7 @@ const CAPTURE_RECEIPT = {
 	success: true,
 	version: 3,
 	variant: { id: "v1", name: "Local stacks", lifecycle: "current" },
+	comparedWith: null,
 	view: { id: "w1", name: "Contexts", grammar: "architecture" },
 	theme: "light",
 	width: 1,

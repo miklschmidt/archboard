@@ -14,7 +14,26 @@ import {
 	type ReconciliationReport,
 	type SemanticWriteAnswer,
 } from "@/runtime/semantic-board-client/index";
-import { SemanticBoardSchema } from "@/shared/semantic-board/index";
+import {
+	SemanticBoardSchema,
+	type RenderedChanges,
+	type RenderedVariant,
+} from "@/shared/semantic-board/index";
+
+/**
+ * The variant a picture was drawn against, for the receipt that answers a draw.
+ *
+ * A variant with a predecessor is drawn as the comparison with it, and neither
+ * the SVG nor the PNG says so. Both drawing commands therefore carry the other
+ * side on their receipt, and they read it the same way here so the two answers
+ * cannot drift apart.
+ * @param drawn What the render answered.
+ * @param drawn.changes What it changed about the variant it came from, or null.
+ * @returns The predecessor, or null when this variant came from nothing.
+ */
+function drawnAgainst(drawn: { readonly changes: RenderedChanges | null }): RenderedVariant | null {
+	return drawn.changes === null ? null : drawn.changes.predecessor;
+}
 
 /**
  * The stated change, from a file when one was named and standard input
@@ -302,6 +321,7 @@ function valueText(value: unknown): string {
 
 export {
 	SemanticBoardReadSchema,
+	drawnAgainst,
 	SemanticBoardResultSchema,
 	describedWrite,
 	writeResult,
