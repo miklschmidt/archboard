@@ -119,7 +119,7 @@ async function candidate(
 	if (!reading.wrapped) return settle(reading);
 	try {
 		const drawing = await settle(reading);
-		// A fold that routes a line through a card is not a reading; elkjs threw
+		// A fold that routes a line through a card is not a reading; the engine threw
 		// on the one fold that did (Command dispatch read left to right), and an
 		// engine that does not throw must not make it a candidate.
 		const readable =
