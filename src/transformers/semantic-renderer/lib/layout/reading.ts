@@ -190,27 +190,53 @@ function asFace(value: string | undefined): Face {
 }
 
 /**
- * Where a frame boundary is crossed. The engine places a crossing only on a
- * flank of the solving frame, and never through the title band, whose face a
- * crossing would run across the title. With the title on top a crossing on
- * the frame's forward axis takes the beside flank, as it always has, so
- * routes through a frame bundle down one edge of it; with the title on the
- * left every crossing takes the other flank, the frame's foot on the page.
+ * The flank a crossing bundles down when it cannot take the face it travels:
+ * the one the title band is not on, which is the beside flank with the title
+ * on top and the frame's foot on the page with the title on the left. A
+ * crossing never runs across a title.
  */
-const CROSSING: Record<HeaderSide, Record<Face, Face>> = {
-	NORTH: { NORTH: "WEST", SOUTH: "WEST", WEST: "WEST", EAST: "EAST" },
-	WEST: { WEST: "EAST", NORTH: "EAST", SOUTH: "EAST", EAST: "EAST" },
-};
+const CLEAR_OF_BAND: Record<HeaderSide, Flank> = { NORTH: "WEST", WEST: "EAST" };
+
+/**
+ * The flank at the higher coordinate across the reading: the one the engine
+ * walks along that coordinate rather than back down it. Read from the one
+ * record of how a face lies on a box rather than written down twice.
+ * @returns The far flank.
+ */
+function farFlank(): Flank {
+	return isNearFlank("WEST") ? "EAST" : "WEST";
+}
 
 /**
  * The face a route crosses a frame boundary by, given the face it would
  * otherwise take.
+ *
+ * A crossing normally takes a flank, so routes through a frame bundle down one
+ * edge of it rather than cutting across its middle, and a route already
+ * travelling a flank keeps the one it is on.
+ *
+ * A route that must not be reordered against a sister crosses straight on by
+ * the face it travels instead. The engine will not be told where a crossing
+ * sits: it ignores the index a boundary port carries and seats the crossings
+ * of a face itself, in the order it walks the source's face — which is the
+ * reverse of the order a reader follows them in when they bundle down the
+ * flank `CLEAR_OF_BAND` names, so two relationships sharing both endpoints
+ * meet twice there and not at all going straight through (TASK-258).
+ *
+ * The title band is the frame's own and never a corridor, so a route whose
+ * face is the band bundles even when it must not be reordered — and then down
+ * the far flank, where the engine's seating agrees with the order a reader
+ * follows. That case is a route into a frame with its title on top; with the
+ * title on the left the two flanks are the same one and the choice does not
+ * arise.
  * @param face The face the route leaves or arrives by.
  * @param header Where the frame's title band sits.
+ * @param straight Whether the route carries on by the face it travels rather than bundling down a flank.
  * @returns The face of the frame the crossing takes.
  */
-function crossingFace(face: Face, header: HeaderSide): Face {
-	return CROSSING[header][face];
+function crossingFace(face: Face, header: HeaderSide, straight: boolean): Face {
+	if (face !== header && (straight || isFlank(face))) return face;
+	return straight ? farFlank() : CLEAR_OF_BAND[header];
 }
 
 /** How each face lies on a box: the axis along it, the one across it, and whether it is the far side. */
