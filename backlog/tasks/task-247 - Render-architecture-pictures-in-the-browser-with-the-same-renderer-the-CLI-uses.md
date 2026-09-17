@@ -3,11 +3,11 @@ id: TASK-247
 title: >-
   Render architecture pictures in the browser, with the same renderer the CLI
   uses
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:42'
-updated_date: '2026-09-17 04:25'
+updated_date: '2026-09-17 10:03'
 labels:
   - renderer
   - frontend
@@ -33,9 +33,9 @@ The canvas asks the server for every picture (/api/semantic-boards/render), and 
 - [x] #3 Worker pools size themselves from the host core count in both environments
 - [x] #4 Board content in the browser is a read-only cache invalidated by the server board announcements, and ADR 0023 records why that keeps one source of truth
 - [x] #5 The canvas first picture of a board is measured against the server-rendered baseline and recorded
-- [ ] #6 Background pre-rendering: when the server announces that a board changed, the browser renders its affected variants in the background rather than waiting for someone to navigate to them
+- [x] #6 Background pre-rendering: when the server announces that a board changed, the browser renders its affected variants in the background rather than waiting for someone to navigate to them
 - [x] #7 Rendered pictures are cached in localStorage, keyed so a changed board, variant, view, theme or renderer version misses the cache
-- [ ] #8 On page load the localStorage render cache is checked for invalidation against the server board versions before any cached picture is shown
+- [x] #8 On page load the localStorage render cache is checked for invalidation against the server board versions before any cached picture is shown
 - [x] #9 The custom font measurer and the Pretext patch are deleted; no code measures text outside a canvas
 <!-- AC:END -->
 
@@ -92,4 +92,12 @@ Next levers, not started: move the renderer core itself into a worker (Pretext c
 - Chromium, eleven vault boards over three runs: mean first picture 440 -> 396 ms, reopen 287 -> 272 ms.
 - Measured and dropped: renderer in a worker (no long tasks from drawing); free pool growth (no gain); WASM SIMD and wasm-opt levels in the fork (no gain).
 - Details in layout-rules.md section 24. Full gate green.
+
+2026-09-17: the last two criteria have owners in src/ui/semantic-board-canvas/tests/local-pictures.test.ts. #6: an announced change draws the current architecture first, then every other state, in every view and theme the page has been reading, one layout at a time, and opening a proposal afterwards needs no further layout. #8: a page loading against a moved or unlisted board forgets the kept picture when the boards are listed, and a kept picture of an older version is drawn again rather than shown even before the listing arrives. Mutation check: dropping the announcement listener, running the layouts at once, making forgetStalePictures a no-op, or skipping the version stamp each fails a test. bun run lint, type-check and fmt pass.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The canvas draws its own pictures in the page with elk-rs WASM and measures text with the canvas of the environment that draws. Both the browser and Bun share one renderer core. Pictures are kept in localStorage, stamped with the board version, policy fingerprint and renderer build; they are checked against the server's versions on page load and drawn again in the background when the server announces a change. The first picture is measured against the server baseline and recorded above. Verified by browser-drawn-pictures.test.ts (browser lane), measured-text.test.ts, and local-pictures.test.ts for drawing ahead and page-load invalidation, which was checked by mutation.
+<!-- SECTION:FINAL_SUMMARY:END -->
