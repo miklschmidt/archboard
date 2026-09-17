@@ -1,7 +1,9 @@
 {
 	// Canonical vault files use semantic-board-store's deterministic serializer.
 	// Reformatting outside that owner would bypass board versions and live updates.
-	"ignorePatterns": [".archboard/vault/**/*.semantic.json"],
+	// .claude/ is written by Claude Code in its own layout (settings it rewrites,
+	// derived skill links, session worktrees), not formatted to this repository's.
+	"ignorePatterns": [".archboard/vault/**/*.semantic.json", ".claude/**"],
 	"useTabs": true,
 	"printWidth": 100,
 	"quoteStyle": "double",
