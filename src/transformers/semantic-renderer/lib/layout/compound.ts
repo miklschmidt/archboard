@@ -1,6 +1,6 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
-import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "elkjs/lib/elk-api";
+import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "@archboard/elk-rs";
 import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
