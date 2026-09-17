@@ -31,8 +31,8 @@ describe("process observation", () => {
 			state: "live",
 			startTime: "linux:424242",
 		});
-		expect(parseLinuxProcessStat(83, linuxStat("T")).state).toBe("stopped");
-		expect(parseLinuxProcessStat(83, linuxStat("Z")).state).toBe("zombie");
+		expect(parseLinuxProcessStat(83, linuxStat("T"))?.state).toBe("stopped");
+		expect(parseLinuxProcessStat(83, linuxStat("Z"))?.state).toBe("zombie");
 	});
 
 	test("observes Linux kernel threads without making group zero an ownership target", () => {
@@ -43,6 +43,19 @@ describe("process observation", () => {
 			startTime: "linux:424242",
 		});
 		expect(() => listProcessGroupObservations(0)).toThrow("Invalid process group id 0.");
+	});
+
+	test("reads a process the kernel is releasing as one that has vanished", () => {
+		// A dead task release_task has already detached prints no parent and group
+		// and session -1, and its /proc entry is gone a moment later. A census that
+		// read one mid-release failed whole (TASK-252).
+		expect(parseLinuxProcessStat(83, linuxStat("X", "0", "-1"))).toBeUndefined();
+		expect(() => parseLinuxProcessStat(83, linuxStat("S", "0", "-1"))).toThrow(
+			"Incomplete process stat",
+		);
+		expect(() => parseLinuxProcessStat(83, linuxStat("Z", "0", "-1"))).toThrow(
+			"Incomplete process stat",
+		);
 	});
 
 	test("refuses malformed Linux process relationship identifiers", () => {
