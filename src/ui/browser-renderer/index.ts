@@ -16,7 +16,11 @@ import {
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 } from "@/transformers/semantic-renderer/board";
-import { installRendererHost, type ThemeColors } from "@/transformers/semantic-renderer/host";
+import {
+	installRendererHost,
+	type RendererHost,
+	type ThemeColors,
+} from "@/transformers/semantic-renderer/host";
 import { loadDiagramFaces } from "@/ui/browser-renderer/lib/diagram-faces";
 import { loadDiagramIcons, loadedIconPaths } from "@/ui/browser-renderer/lib/diagram-icons";
 import {
@@ -35,6 +39,17 @@ interface BrowserRendererSetup {
 
 let started: Promise<void> | undefined;
 
+/** Two boxes and an edge: the least a layout can be, to start an engine on. */
+const WARM_UP_GRAPH: Parameters<RendererHost["solve"]>[0] = {
+	id: "warm-up",
+	layoutOptions: { "elk.algorithm": "layered" },
+	children: [
+		{ id: "a", width: 10, height: 10 },
+		{ id: "b", width: 10, height: 10 },
+	],
+	edges: [{ id: "a-b", sources: ["a"], targets: ["b"] }],
+};
+
 /**
  * The embedded font bytes, which a page never has at hand synchronously and
  * never needs: a pane links its faces.
@@ -52,13 +67,18 @@ function noEmbeddedFaces(): never {
  */
 function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	if (started !== undefined) return;
+	const solve = createEnginePool(setup.startWorker, workerCeiling(navigator.hardwareConcurrency));
 	installRendererHost({
-		solve: createEnginePool(setup.startWorker, workerCeiling(navigator.hardwareConcurrency)),
+		solve,
 		themeColors: setup.themeColors,
 		fontBase64: noEmbeddedFaces,
 		iconPaths: loadedIconPaths,
 	});
 	started = loadDiagramFaces();
+	// Start one engine now, while the page boots and reads the board, rather
+	// than when the first picture needs it: a worker's first solve pays for
+	// fetching and compiling the engine, and a trivial graph pays it here.
+	void solve(WARM_UP_GRAPH, {}).catch(() => undefined);
 }
 
 /**
