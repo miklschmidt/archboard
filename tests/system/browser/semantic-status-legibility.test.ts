@@ -14,7 +14,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { pictureAtRest } from "./support/semantic-page.ts";
+import { openSidebarTab, pictureAtRest } from "./support/semantic-page.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -430,6 +430,8 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 
 	// The other grammar, told in the same language: the plate is over the dots.
+	// The views are on the board tab, which the pick moved away from.
+	expect(await openSidebarTab(browser.eval.bind(browser), "board")).toBe(true);
 	await browser.eval(
 		`[...document.querySelectorAll("[data-slot='semantic-view-choice']")]` +
 			`.find((button) => button.textContent.trim() === "In order").click()`,

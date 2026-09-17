@@ -1,12 +1,12 @@
-// The explanations this variant gives of itself, offered beside the board’s shared views.
+// The explanations this variant gives of itself, offered in the sidebar beside the board’s shared views.
 //
 // A walkthrough is a reading, like a view: choosing one opens a rail beside the
 // diagram and changes nothing else. No board is written, no version moves, and
 // the other pane showing this board is unaffected (ADR 0023).
 //
 // A variant that states no walkthrough is offered nothing — no rail, no empty
-// bar, no control that would only ever be disabled — and that is decided in one
-// place, by the strip that would hold this bar. Deciding it here as well would
+// list, no control that would only ever be disabled — and that is decided in one
+// place, by the sidebar panel that would hold this list. Deciding it here as well would
 // mean two answers to one question, and a viewer that grew an empty strip would
 // still pass whichever of them was left.
 //
@@ -63,6 +63,7 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
 			aria-pressed={open}
 			data-slot="semantic-walkthrough-choice"
 			data-semantic-walkthrough={walkthrough.id}
+			className="justify-start"
 			onClick={choose}
 		>
 			{walkthrough.name}
@@ -73,7 +74,7 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
 /**
  * The explanations this variant offers, and which one is being read.
  * @param props The walkthroughs, the open one, and what a choice does.
- * @returns The bar. The strip above the diagram decides whether there is one.
+ * @returns The list. The sidebar decides whether there is one.
  */
 function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element {
 	const { walkthroughs, open, onChoose } = props;
@@ -81,12 +82,8 @@ function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element
 		<fieldset
 			data-slot="semantic-walkthrough-bar"
 			aria-label="Explanations of this board"
-			className="ml-auto flex shrink-0 items-center gap-1 border-0 p-0"
+			className="flex flex-col items-stretch gap-0.5 border-0 p-0"
 		>
-			{/* Named for a screen reader by the fieldset's own label, and by nothing
-			    visible. The other bars beside it offer their choices without a word
-			    over them, and a label that only this one has reads as a heading for
-			    the whole strip rather than for the three buttons after it. */}
 			<legend className="sr-only">Explanations of this board</legend>
 			{walkthroughs.map((walkthrough) => (
 				<WalkthroughButton

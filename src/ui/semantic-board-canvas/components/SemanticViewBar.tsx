@@ -11,7 +11,7 @@
 // who picked one would be stuck inside it, and the board as a whole — the thing
 // every view is a reading of — would be the one thing they could not see.
 //
-// The bar is absent entirely when a board names no views. Offering
+// The list is absent entirely when a board names no views. Offering
 // a choice between the whole board and nothing else is furniture.
 //
 // A button says the view's name and nothing else. The grammar a view is drawn
@@ -76,6 +76,7 @@ function ViewButton(props: ViewButtonProps): JSX.Element {
 			aria-pressed={showing}
 			data-slot="semantic-view-choice"
 			data-semantic-view={view.id}
+			className="justify-start"
 			onClick={choose}
 		>
 			{view.name}
@@ -97,7 +98,7 @@ function SemanticViewBar(props: SemanticViewBarProps): JSX.Element | null {
 		<fieldset
 			data-slot="semantic-view-bar"
 			aria-label="Ways of reading this board"
-			className="flex shrink-0 items-center gap-1 border-0 p-0"
+			className="flex flex-col items-stretch gap-0.5 border-0 p-0"
 		>
 			<ViewButton view={WHOLE_VARIANT} showing={showing === null} onChoose={onChoose} />
 			{views.map((view) => (

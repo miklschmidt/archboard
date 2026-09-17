@@ -12,11 +12,8 @@
 // draw fewer subjects without the inspector losing the ability to explain the
 // ones it does draw.
 
-import { RiCloseLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, type CSSProperties, type JSX } from "react";
-
-import { INSPECTOR_WIDTH } from "@/shared/shell-geometry/index";
+import type { JSX } from "react";
 
 import {
 	resolveVariant,
@@ -24,7 +21,6 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { Button } from "@/ui/components/button";
 import { SemanticAppearance } from "@/ui/semantic-board-canvas/components/SemanticAppearance";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { SemanticDrillDown } from "@/ui/semantic-board-canvas/components/SemanticDrillDown";
@@ -56,12 +52,6 @@ import {
 	type StepSubject,
 	type Subject,
 } from "@/ui/semantic-board-canvas/lib/board-document";
-
-/** The close control: a 28px ghost icon button inside a 32px hit area. */
-const CLOSE_BUTTON_CLASS = "hit-area text-muted-foreground -mr-2";
-
-/** The panel's width is the shell's, so the reference pane is derived from it. */
-const INSPECTOR_STYLE: CSSProperties = { width: INSPECTOR_WIDTH };
 
 /** Inputs for the flow body. */
 interface FlowBodyProps {
@@ -439,14 +429,12 @@ interface SemanticInspectorProps {
 	onOpen: (board: string, variant: string) => void;
 	/** How to name and inspect the groups a node belongs to. */
 	groups: GroupControls;
-	/** Clear the selection, which closes the inspector. */
-	onClose: () => void;
 }
 
 /**
  * What the board says about whatever the person picked out.
- * @param props The board, the variant, the selection and the two actions.
- * @returns The inspector column.
+ * @param props The board, the variant, the selection and what can be opened from it.
+ * @returns The inspector, as the sidebar's selection panel.
  */
 function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	const document = useQuery(semanticBoardDocumentQuery(props.board));
@@ -456,38 +444,20 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
 	useSemanticBoardChanges(props.board);
-	const handleClose = useCallback((): void => props.onClose(), [props]);
 	const explained = explain(document, props.variant, props.selection);
 	const { subject } = explained;
 
 	return (
-		<aside
+		// A panel of the sidebar, which keeps one width whatever it shows, so
+		// picking a card out never changes the size of the pane and never moves
+		// the diagram under the pointer that picked it.
+		<section
 			aria-label="Semantic inspector"
 			data-slot="semantic-inspector"
 			data-subject={subject?.kind ?? "unknown"}
 			data-standing={explained.against?.standing}
-			// Over the diagram rather than beside it. A panel that took its width
-			// out of the viewport would change the size of the pane, and the pane
-			// re-fits itself whenever its size changes — so picking a card out
-			// would move the whole diagram under the pointer that picked it. The
-			// cost is that it covers the right-hand edge, which panning answers.
-			className="border-border bg-card absolute inset-y-0 right-0 z-10 flex flex-col overflow-y-auto border-l"
-			style={INSPECTOR_STYLE}
+			className="flex min-h-0 flex-1 flex-col overflow-y-auto"
 		>
-			{/* The panel says what it is by what is in it: the subject's name is the
-			    first thing in it, and a word saying "Inspect" above that name is a
-			    label on a label. The bar stays for the control it carries. */}
-			<div className="border-border flex h-10 shrink-0 items-center justify-end border-b px-4">
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className={CLOSE_BUTTON_CLASS}
-					aria-label="Close inspector"
-					onClick={handleClose}
-				>
-					<RiCloseLine />
-				</Button>
-			</div>
 			<InspectorBody
 				subject={subject}
 				against={explained.against}
@@ -502,7 +472,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				appearance={props.appearance}
 				standing={explained.against?.standing}
 			/>
-		</aside>
+		</section>
 	);
 }
 
