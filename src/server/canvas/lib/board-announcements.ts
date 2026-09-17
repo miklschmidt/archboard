@@ -1,9 +1,10 @@
 // What the canvas tells its panes about a board: who is writing it, and what
 // they said they were doing.
 //
-// Board content is not here and cannot be. A board is a file the server reads
-// and draws, and a pane holds no copy of it (ADR 0023), so the news is always
-// the same shape: this board moved, or this board changed hands.
+// Board content is not here and cannot be. A board is a file the server reads,
+// and a pane holds only a read-only cache of what it last read, which it reads
+// again when told (ADR 0023). So the news is always the same shape: this board
+// moved, or this board changed hands.
 
 import type { Response } from "express";
 import { boardLockState, onBoardLockChanged } from "@/runtime/engine/board-lock";

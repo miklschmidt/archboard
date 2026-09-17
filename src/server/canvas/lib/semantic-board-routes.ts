@@ -87,6 +87,8 @@ function listRoute(_req: Request, res: Response): void {
 					? {
 							name,
 							key,
+							// The browser checks its cached pictures against this on load.
+							version: read.board.version,
 							level: read.board.level,
 							variants: read.board.variants.map(({ id, name: variantName, lifecycle, parent }) => ({
 								id,
