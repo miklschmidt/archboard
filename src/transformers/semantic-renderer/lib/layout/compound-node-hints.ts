@@ -140,6 +140,28 @@ function neighborLane(
 }
 
 /**
+ * The two ends one relationship attaches its cards by.
+ *
+ * A relationship whose faces the router chooses carries no ports at all
+ * (`edgeOf` in compound-graph.ts returns before making any), which is what a
+ * skip a first render does not bracket looks like. There is then nothing for
+ * two new cards to line up on.
+ * @param edge Their semantic relationship.
+ * @param source The measured source node.
+ * @param target The measured target node.
+ * @returns Its two ports, or nothing when this relationship has none.
+ */
+function attachedPorts(
+	edge: VariantContent["edges"][number],
+	source: ElkNode,
+	target: ElkNode,
+): readonly [ElkPort, ElkPort] | undefined {
+	const from = source.ports?.find((port) => port.id === `${edge.id}:from`),
+		to = target.ports?.find((port) => port.id === `${edge.id}:to`);
+	return from === undefined || to === undefined ? undefined : [from, to];
+}
+
+/**
  * Align ordered attachments of two new vertically connected cards.
  * @param edge Their semantic relationship.
  * @param fresh Measured new siblings.
@@ -151,8 +173,9 @@ function attachmentOffset(
 ): number {
 	const source = fresh.get(edge.from)!,
 		target = fresh.get(edge.to)!;
-	const from = source.ports!.find((port) => port.id === `${edge.id}:from`)!,
-		to = target.ports!.find((port) => port.id === `${edge.id}:to`)!;
+	const ports = attachedPorts(edge, source, target);
+	if (ports === undefined) return 0;
+	const [from, to] = ports;
 	if (
 		from.layoutOptions!["elk.port.side"] !== SOLVING.forwardOut ||
 		to.layoutOptions!["elk.port.side"] !== SOLVING.forwardIn
