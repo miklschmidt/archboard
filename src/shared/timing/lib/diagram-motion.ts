@@ -78,6 +78,13 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	enterStart: 0.54,
 	/** An arriving connection shows its arrowhead once this much of it is drawn. */
 	arrowheadAt: 0.9,
+	/**
+	 * Every connection label only the new picture has arrives from here to the
+	 * end, all together. Timed by its own line, labels came in scattered batches
+	 * of every size and each one in a blink; together at the end they arrive as
+	 * the last layer of the picture, once the lines they name are in place.
+	 */
+	labelsStart: 0.66,
 });
 
 // ── A picture arriving with nothing to carry it from ──────────────────────
@@ -108,6 +115,13 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	linesStartBy: 0.62,
 	/** How long each line takes to draw on. */
 	lineSpan: 0.38,
+	/**
+	 * Every connection label only the new picture has arrives from here to the
+	 * end, all together. Timed by its own line, labels came in scattered batches
+	 * of every size and each one in a blink; together at the end they arrive as
+	 * the last layer of the picture, once the lines they name are in place.
+	 */
+	labelsStart: 0.66,
 });
 
 /**

@@ -5,8 +5,8 @@
 // picture is built up the way it is read instead. Frames first, fading in, so
 // the pane has its shape; then the cards, in a wave that runs down the board and
 // a little across it, each growing into place; then the lines between cards
-// that are already there, drawn from their start, with a line's label arriving
-// as its line reaches it. Everything is timed by where it is on the board, not
+// that are already there, drawn from their start; and last, every connection
+// label at once, as the final layer. Everything is timed by where it is on the board, not
 // by how many there are, so a board of four cards and a board of forty take the
 // same time to arrive and read as the same gesture.
 //
@@ -35,12 +35,6 @@ import {
  * turn is decided: the wave runs mostly downwards, and leans left to right.
  */
 const ACROSS_WEIGHT = 0.35;
-
-/** Where, in a line's own drawing, its label begins to arrive. */
-const LABEL_AT = 0.55;
-
-/** How much of the whole a label takes to arrive once its line reaches it. */
-const LABEL_SPAN = 0.22;
 
 /** A point on the board. */
 interface Point {
@@ -123,14 +117,11 @@ function isLineLabel(group: SubjectGroup): boolean {
 }
 
 /**
- * The steps that draw the lines on, in the wave, and where each begins.
+ * The steps that draw the lines on, in the wave.
  * @param lines The lines.
- * @returns The steps, and where each subject's line begins.
+ * @returns The steps.
  */
-function lineSteps(lines: readonly SubjectGroup[]): {
-	readonly steps: Updater[];
-	readonly starts: Map<string, number>;
-} {
+function lineSteps(lines: readonly SubjectGroup[]): Updater[] {
 	const { linesStart, linesStartBy, lineSpan } = PICTURE_ENTRY_PHASES;
 	const begins = spread(
 		lines.map((line) => {
@@ -140,41 +131,34 @@ function lineSteps(lines: readonly SubjectGroup[]): {
 		linesStart,
 		linesStartBy,
 	);
-	const starts = new Map<string, number>();
-	const steps = lines.map((line, index) => {
+	return lines.map((line, index) => {
 		const begin = begins[index] ?? linesStart;
-		starts.set(line.id, begin);
 		return drawOn(line, begin, Math.min(1, begin + lineSpan));
 	});
-	return { steps, starts };
 }
 
 /**
- * The steps that grow the cards in, in the wave; a connection's label waits
- * for its line.
- * @param cards The cards.
- * @param lineStarts Where each subject's line begins.
+ * The steps that grow the cards in, in the wave; connection labels come in
+ * together at the end, as the last layer of the picture.
+ * @param cards The cards, labels among them.
  * @returns The steps.
  */
-function cardSteps(
-	cards: readonly SubjectGroup[],
-	lineStarts: ReadonlyMap<string, number>,
-): Updater[] {
-	const { cardsStart, cardsStartBy, cardSpan, lineSpan } = PICTURE_ENTRY_PHASES;
+function cardSteps(cards: readonly SubjectGroup[]): Updater[] {
+	const { cardsStart, cardsStartBy, cardSpan, labelsStart } = PICTURE_ENTRY_PHASES;
+	const labels = cards.filter(isLineLabel);
+	const nodes = cards.filter((card) => !isLineLabel(card));
 	const begins = spread(
-		cards.map((card) => (card.box === null ? null : waveKey(middleOf(card.box)))),
+		nodes.map((card) => (card.box === null ? null : waveKey(middleOf(card.box)))),
 		cardsStart,
 		cardsStartBy,
 	);
-	return cards.map((card, index) => {
-		const line = isLineLabel(card) ? lineStarts.get(card.id) : undefined;
-		if (line !== undefined) {
-			const begin = Math.min(1, line + lineSpan * LABEL_AT);
-			return growIn(card, begin, Math.min(1, begin + LABEL_SPAN));
-		}
-		const begin = begins[index] ?? cardsStart;
-		return growIn(card, begin, Math.min(1, begin + cardSpan));
-	});
+	return [
+		...nodes.map((card, index) => {
+			const begin = begins[index] ?? cardsStart;
+			return growIn(card, begin, Math.min(1, begin + cardSpan));
+		}),
+		...labels.map((label) => growIn(label, labelsStart, 1)),
+	];
 }
 
 /**
@@ -219,15 +203,11 @@ function enterPicture(surface: HTMLElement, drawing: SemanticDrawing): PictureTr
 		return { seek: nothingToSeek, finish };
 	}
 	const groups = subjectGroups(root, drawing.atlas);
-	const lines = lineSteps(groups.filter((group) => group.shape === "line"));
 	const steps: Updater[] = [
 		...groundSteps(root),
 		...groups.filter(isRegion).map((group) => fadeFrame(group.element)),
-		...cardSteps(
-			groups.filter((group) => group.shape === "card" && !isRegion(group)),
-			lines.starts,
-		),
-		...lines.steps,
+		...cardSteps(groups.filter((group) => group.shape === "card" && !isRegion(group))),
+		...lineSteps(groups.filter((group) => group.shape === "line")),
 	];
 	/**
 	 * Draw the moment this far through.
