@@ -2,7 +2,7 @@
 // two relationships between the same pair of cards stay tellable apart.
 
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
+import { VariantContentSchema, type SemanticNode } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { across, along, breadth, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
@@ -17,6 +17,7 @@ import {
 	overlaps,
 	masking,
 } from "@/runtime/semantic-renderer/tests/drawn-labels";
+import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 
 /**
  * The flank rule a drawing was kept under.
@@ -156,6 +157,73 @@ describe("same-destination routes", () => {
 	}
 });
 
+/** Where the two ends of a parallel group sit relative to the frames on the board. */
+interface PairShape {
+	/** The subjects of the board, the frames among them holding the rest. */
+	readonly nodes: readonly SemanticNode[];
+	/** The subject every one of the group leaves. */
+	readonly from: string;
+	/** The subject every one of them reaches. */
+	readonly to: string;
+}
+
+/**
+ * A pair between two cards at one containment level and the same pair with a
+ * frame boundary in its way: one end inside a frame, the other end inside one,
+ * both inside their own, and one two frames deep. A boundary is crossed by a
+ * port on the frame whose index the engine ignores, seating the crossings
+ * itself, so a group that reads straight at one level can still meet at a
+ * boundary (TASK-258).
+ */
+const PAIR_SHAPES: Record<string, PairShape> = {
+	"at one level": {
+		nodes: [
+			{ id: "app", name: "Flask app", kind: "module" },
+			{ id: "metrics", name: "Metrics extension", kind: "module" },
+		],
+		from: "app",
+		to: "metrics",
+	},
+	"out of a frame": {
+		nodes: [
+			{ id: "app", name: "Flask app", kind: "module" },
+			{ id: "emit", name: "Emitting method", kind: "module", parent: "app" },
+			{ id: "metrics", name: "Metrics extension", kind: "module" },
+		],
+		from: "emit",
+		to: "metrics",
+	},
+	"into a frame": {
+		nodes: [
+			{ id: "source", name: "Flask app", kind: "module" },
+			{ id: "host", name: "Metrics host", kind: "module" },
+			{ id: "sink", name: "Metrics extension", kind: "module", parent: "host" },
+		],
+		from: "source",
+		to: "sink",
+	},
+	"between two frames": {
+		nodes: [
+			{ id: "aaa", name: "Flask app", kind: "module" },
+			{ id: "emit", name: "Emitting method", kind: "module", parent: "aaa" },
+			{ id: "zzz", name: "Metrics host", kind: "module" },
+			{ id: "sink", name: "Metrics extension", kind: "module", parent: "zzz" },
+		],
+		from: "emit",
+		to: "sink",
+	},
+	"out of two frames": {
+		nodes: [
+			{ id: "outer", name: "Flask app", kind: "module" },
+			{ id: "inner", name: "Blueprint", kind: "module", parent: "outer" },
+			{ id: "emit", name: "Emitting method", kind: "module", parent: "inner" },
+			{ id: "metrics", name: "Metrics extension", kind: "module" },
+		],
+		from: "emit",
+		to: "metrics",
+	},
+};
+
 describe("relationships between the same pair of cards", () => {
 	// Both ends of such a relationship are ranked by the card at the other end,
 	// so without a seat of its own each takes the same port index as its
@@ -163,60 +231,60 @@ describe("relationships between the same pair of cards", () => {
 	// (TASK-256.11). Crossed, a reader cannot tell which label belongs to which
 	// arrowhead.
 	const signals = ["request timing", "error counter", "queue depth"];
-	for (const count of [2, 3]) {
-		test(`${count} of them neither cross nor swap ends`, async () => {
-			const base = VariantContentSchema.parse({
-				nodes: [
-					{ id: "app", name: "Flask app", kind: "module" },
-					{ id: "metrics", name: "Metrics extension", kind: "module" },
-				],
-				edges: signals.slice(0, count).map((label, place) => ({
-					id: `signal${place + 1}`,
-					from: "app",
-					to: "metrics",
-					kind: "signal",
-					label,
-				})),
-			});
-			for (const edges of [base.edges, base.edges.toReversed()]) {
-				for (const theme of ["light", "dark"] as const) {
-					const content = { ...base, edges };
-					const drawn = await renderArchitecture({ content, theme });
-					const direction = readingOf(drawn);
-					// The corridors, not the ink: a bridge lifts the later route
-					// over the earlier one, so the ink of a crossing pair does not
-					// meet even though a reader still has two lines to follow.
-					const paths = corridorPoints(drawn.svg);
-					const routes = base.edges.map(({ id }) => paths.get(id)!);
-					for (const [index, route] of routes.entries()) {
-						expect(route, `${base.edges[index]!.id} is drawn`).toBeDefined();
-						for (const [other, against] of routes.entries()) {
-							if (other === index) continue;
-							expect(
-								crosses(route, against),
-								`${base.edges[index]!.id} crosses ${base.edges[other]!.id}`,
-							).toBe(false);
+	for (const [where, shape] of Object.entries(PAIR_SHAPES))
+		for (const count of [2, 3]) {
+			test(`${count} of them ${where} neither cross nor swap ends`, async () => {
+				const base = VariantContentSchema.parse({
+					nodes: shape.nodes,
+					edges: signals.slice(0, count).map((label, place) => ({
+						id: `signal${place + 1}`,
+						from: shape.from,
+						to: shape.to,
+						kind: "signal",
+						label,
+					})),
+				});
+				for (const edges of [base.edges, base.edges.toReversed()]) {
+					for (const theme of ["light", "dark"] as const) {
+						const content = { ...base, edges };
+						const drawn = await renderArchitecture({ content, theme });
+						const direction = readingOf(drawn);
+						// The corridors, not the ink: a bridge lifts the later route
+						// over the earlier one, so the ink of a crossing pair does not
+						// meet even though a reader still has two lines to follow.
+						const paths = corridorPoints(drawn.svg);
+						const routes = base.edges.map(({ id }) => paths.get(id)!);
+						for (const [index, route] of routes.entries()) {
+							expect(route, `${base.edges[index]!.id} is drawn`).toBeDefined();
+							for (const [other, against] of routes.entries()) {
+								if (other === index) continue;
+								expect(
+									crosses(route, against),
+									`${base.edges[index]!.id} crosses ${base.edges[other]!.id}`,
+								).toBe(false);
+							}
 						}
-					}
-					// And each leaves and arrives in the same place across the
-					// reading as its neighbours, so no two share an end either.
-					const departures = routes.map((route) => across(route[0]!, direction));
-					const arrivals = routes.map((route) => across(route.at(-1)!, direction));
-					for (const [index] of routes.entries()) {
-						for (const [other] of routes.entries()) {
-							if (other === index) continue;
-							expect(
-								Math.sign(departures[index]! - departures[other]!),
-								`${base.edges[index]!.id} against ${base.edges[other]!.id}`,
-							).toBe(Math.sign(arrivals[index]! - arrivals[other]!));
-							expect(departures[index]).not.toBe(departures[other]);
+						// And each leaves and arrives in the same place across the
+						// reading as its neighbours, so no two share an end either.
+						const departures = routes.map((route) => across(route[0]!, direction));
+						const arrivals = routes.map((route) => across(route.at(-1)!, direction));
+						for (const [index] of routes.entries()) {
+							for (const [other] of routes.entries()) {
+								if (other === index) continue;
+								expect(
+									Math.sign(departures[index]! - departures[other]!),
+									`${base.edges[index]!.id} against ${base.edges[other]!.id}`,
+								).toBe(Math.sign(arrivals[index]! - arrivals[other]!));
+								expect(departures[index]).not.toBe(departures[other]);
+							}
 						}
+						// Carrying on through a frame must not carry on through a card.
+						expect(routesThroughCards(drawn, content)).toEqual([]);
+						expect(detached(drawn)).toEqual([]);
+						expect(masking(drawn)).toEqual([]);
+						expect(overlaps(drawn, content, 11.9)).toEqual([]);
 					}
-					expect(detached(drawn)).toEqual([]);
-					expect(masking(drawn)).toEqual([]);
-					expect(overlaps(drawn, content, 11.9)).toEqual([]);
 				}
-			}
-		});
-	}
+			});
+		}
 });

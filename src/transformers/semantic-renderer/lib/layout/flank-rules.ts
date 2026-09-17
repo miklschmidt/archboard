@@ -97,6 +97,17 @@ interface Joined {
 const ALONE: Seat = { place: 0, shared: 1, room: 1 };
 
 /**
+ * Whether a relationship has a sister: another relationship between the same
+ * two subjects, which it must stay in one order with wherever the two are
+ * drawn alongside each other.
+ * @param seat The relationship's seat.
+ * @returns True when more than one relationship joins that pair of subjects.
+ */
+function hasSister(seat: Seat): boolean {
+	return seat.shared > 1;
+}
+
+/**
  * Seat every relationship among the ones sharing its endpoints. The order is
  * the order the relationships are given in, which the graph has already put in
  * the board's own id order, so what a board was authored in cannot reach here.
@@ -164,6 +175,7 @@ export {
 	FLANK_RULES,
 	besideFlankOf,
 	flankRule,
+	hasSister,
 	portIndex,
 	seatsOf,
 	type FlankRule,
