@@ -10,6 +10,13 @@ import {
 	type RenderedDiagram,
 	type SemanticViewRenderRequest,
 } from "@/transformers/semantic-renderer/index";
+import {
+	renderBoard as renderBoardIn,
+	type BoardRenderChoices,
+	type BoardRenderOutcome,
+} from "@/transformers/semantic-renderer/board";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { installBunHost } from "@/runtime/semantic-renderer/lib/bun-host";
 
 /**
@@ -40,6 +47,22 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 async function renderSemanticView(request: SemanticViewRenderRequest): Promise<RenderedDiagram> {
 	installBunHost();
 	return renderSemanticViewIn(request);
+}
+
+/**
+ * Answer a render of one board: the variant and view it names, drawn.
+ * @param board The board, as read.
+ * @param choices The variant, view, theme and faces asked for.
+ * @param policy The vault's presentation policy.
+ * @returns The answer, or which name the board does not have.
+ */
+async function renderBoard(
+	board: SemanticBoard,
+	choices: BoardRenderChoices,
+	policy: SemanticPolicy,
+): Promise<BoardRenderOutcome> {
+	installBunHost();
+	return renderBoardIn(board, choices, policy);
 }
 
 /**
@@ -76,4 +99,8 @@ export {
 	paletteFor,
 	type Palette,
 } from "@/transformers/semantic-renderer/index";
-export { diagramTextWidth, renderArchitecture, renderDataFlow, renderSemanticView };
+export type {
+	BoardRenderChoices,
+	BoardRenderOutcome,
+} from "@/transformers/semantic-renderer/board";
+export { diagramTextWidth, renderArchitecture, renderBoard, renderDataFlow, renderSemanticView };

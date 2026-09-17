@@ -20,10 +20,12 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 // never stored — and how added, removed and changed are then *drawn* is decided
 // here, in `lib/svg/standing.ts`, which sets out the whole vocabulary.
 //
-// Nothing here reads a clock, a random number or a mutable file. Font files are
-// read — to measure text, and to embed when a caller asks for a self-contained
-// document — and both are deterministic and cached, so the same content, theme
-// and font source produce the same bytes on any machine, in any order.
+// Nothing here reads a clock, a random number or a file. Text is measured by the
+// canvas of the host that draws, with the diagram faces loaded, and the host
+// supplies the layout engine, the theme colours and the font bytes a
+// self-contained document embeds (`lib/host.ts`). So one host draws the same
+// content, theme and font source to the same bytes in any order, and two
+// browsers may measure a word differently because each paints it differently.
 
 import type {
 	DiagramAtlas,
