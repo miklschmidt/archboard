@@ -116,12 +116,41 @@ function pictureAtRest(evaluate: <T>(expression: string) => Promise<T>): Promise
 	);
 }
 
+/**
+ * Which tab of the pane's sidebar is open, or null when it has none.
+ * @param evaluate How the owner evaluates an expression in the page.
+ * @returns `board`, `selection`, or null.
+ */
+function sidebarTab(evaluate: <T>(expression: string) => Promise<T>): Promise<string | null> {
+	return evaluate<string | null>(
+		`document.querySelector('[data-slot="semantic-sidebar"]')?.getAttribute('data-tab') ?? null`,
+	);
+}
+
+/**
+ * Open one tab of the pane's sidebar, as a person does.
+ * @param evaluate How the owner evaluates an expression in the page.
+ * @param tab Which tab.
+ * @returns Whether the tab was there to open.
+ */
+function openSidebarTab(
+	evaluate: <T>(expression: string) => Promise<T>,
+	tab: "board" | "selection",
+): Promise<boolean> {
+	return evaluate<boolean>(
+		`(() => { const trigger = document.querySelector('[data-slot="semantic-sidebar-tab"][data-tab="${tab}"]');` +
+			` if (!trigger) return false; trigger.click(); return true; })()`,
+	);
+}
+
 export {
 	A_SMALL_PIPELINE,
 	SEMANTIC_STAGE,
 	SEMANTIC_SURFACE,
 	addressShowing,
+	openSidebarTab,
 	pictureAtRest,
+	sidebarTab,
 	seedSemanticBoard,
 	stageState,
 	type JsonRequester,

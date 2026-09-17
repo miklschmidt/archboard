@@ -1,53 +1,26 @@
-import { RiCloseLine, RiBookOpenLine } from "@remixicon/react";
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useMemo, type JSX, type ReactNode } from "react";
 
 import { PaletteColorSchema } from "@/shared/semantic-policy/index";
 import { STANDING_COLORS } from "@/shared/theme/index";
-import { Button } from "@/ui/components/button";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
 /**
  * A browser-only key to the channels in the current picture.
  * @param props The appearance facts and theme of the drawing.
  * @param props.appearances Facts emitted for its visible subjects.
- * @returns A spacious, hideable side legend that reserves its own canvas space.
+ * @returns The key, as a part of the sidebar's board tab.
  */
 function SemanticLegend(props: {
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
 }): JSX.Element {
-	const [visible, setVisible] = useState(true);
-	const hide = useCallback(() => setVisible(false), []);
-	const show = useCallback(() => setVisible(true), []);
-	if (!visible) {
-		return (
-			<Button
-				variant="outline"
-				size="sm"
-				className="absolute bottom-4 left-4 z-10 rounded-sm"
-				onClick={show}
-			>
-				<RiBookOpenLine />
-				Legend
-			</Button>
-		);
-	}
 	const standing = STANDING_COLORS;
 	const entries = [...props.appearances.values()];
 	const kinds = uniqueTypes(entries.filter((item) => item.depiction !== ""));
 	const relationships = uniqueTypes(entries.filter((item) => item.depiction === ""));
 	return (
-		<aside
-			aria-label="Diagram legend"
-			data-slot="semantic-legend"
-			className="border-border bg-sidebar flex min-h-0 w-[256px] shrink-0 flex-col border-r"
-		>
-			<div className="flex shrink-0 items-center justify-between px-4 py-3">
-				<h2 className="text-control font-semibold">Legend</h2>
-				<Button variant="ghost" size="icon-sm" aria-label="Hide legend" onClick={hide}>
-					<RiCloseLine />
-				</Button>
-			</div>
-			<div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+		<section aria-label="Diagram legend" data-slot="semantic-legend" className="flex flex-col">
+			<h2 className="text-kicker text-muted-foreground px-4 pt-4 pb-1 uppercase">Legend</h2>
+			<div className="px-4 pb-4">
 				<LegendSection title="Containment">
 					<p className="text-muted-foreground text-body leading-relaxed">
 						Colored containers establish a body color for their contents. Cards inherit it; type
@@ -92,7 +65,7 @@ function SemanticLegend(props: {
 					</div>
 				</LegendSection>
 			</div>
-		</aside>
+		</section>
 	);
 }
 

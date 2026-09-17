@@ -12,6 +12,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 
 import {
 	cameraNow,
+	chooseVariantInShell,
 	drawing,
 	mountStage,
 	part,
@@ -469,13 +470,7 @@ test("the same explanation stays open when the reader moves to the proposal", as
 	await settle();
 	expect(current()).toBe("One writer");
 
-	act(() => {
-		fireEvent.click(
-			[...document.querySelectorAll<HTMLElement>("[data-slot='semantic-variant-choice']")].find(
-				(one) => one.getAttribute("data-semantic-variant") === "v2",
-			)!,
-		);
-	});
+	chooseVariantInShell("v2");
 	await settle();
 	expect(renderCalls().at(-1)).toContain("variant=v2");
 	expect(current()).toBe("One writer");

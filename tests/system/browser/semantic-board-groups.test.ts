@@ -15,7 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { SURFACE, WAIT, drawnId, pick, press, textOf } from "./support/drilling.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { pictureAtRest } from "./support/semantic-page.ts";
+import { openSidebarTab, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
 // Inspecting a group in a real browser: the half of the workflow only a
 // browser can answer. The keyboard reaches the control and the clear action,
@@ -24,7 +24,7 @@ import { pictureAtRest } from "./support/semantic-page.ts";
 // The semantics of who is a member are the pure inspection's, and are owned by
 // its own tests and the CLI owner.
 
-/** The group control in the reading strip. */
+/** The group control on the sidebar's board tab. */
 const CHOOSER = "[data-slot='semantic-group-choice']";
 
 /** The control that lets go of the group. */
@@ -185,6 +185,10 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 		),
 	).toBe(true);
 	expect(await opacityOf(browser, ids.worker)).toBe(1);
+
+	// The pick opened the selection; the group control is back on the board tab.
+	expect(await sidebarTab(browser.eval.bind(browser))).toBe("selection");
+	expect(await openSidebarTab(browser.eval.bind(browser), "board")).toBe(true);
 
 	// The clear action is a button the keyboard reaches, and it lets everything back.
 	await browser.eval(`document.querySelector("${CLEAR}").focus()`);

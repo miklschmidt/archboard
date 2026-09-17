@@ -75,7 +75,7 @@ function VariantButton(props: VariantButtonProps): JSX.Element {
 			data-slot="semantic-variant-choice"
 			data-semantic-variant={variant.id}
 			data-semantic-lifecycle={variant.lifecycle}
-			className="h-auto flex-col items-start gap-0 py-1"
+			className="h-auto flex-col items-start justify-start gap-0 py-1"
 			onClick={choose}
 		>
 			<span className="text-body">{variant.name}</span>
@@ -123,7 +123,7 @@ function SemanticVariantBar(props: SemanticVariantBarProps): JSX.Element | null 
 		<fieldset
 			data-slot="semantic-variant-bar"
 			aria-label="States of this architecture"
-			className="flex shrink-0 items-center gap-1 border-0 p-0"
+			className="flex flex-col items-stretch gap-0.5 border-0 p-0"
 		>
 			{variants.map((variant) => (
 				<VariantButton

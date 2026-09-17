@@ -2,7 +2,7 @@
 // inspection, and lets go of it.
 //
 // A group is chosen from a list rather than from a row of buttons because a
-// board can carry many and the strip has one line. The list holds every group
+// board can carry many. The list holds every group
 // the variant on screen uses — including an id the vault no longer defines,
 // which is exactly the one somebody needs to find — and a variant with no
 // memberships says so in the control's own place rather than by leaving a gap.
@@ -123,12 +123,12 @@ function SemanticGroupBar(props: SemanticGroupBarProps): JSX.Element {
 		<div
 			data-slot="semantic-group-bar"
 			data-group={focus === null ? undefined : focus.group}
-			className="relative flex shrink-0 items-center gap-1"
+			className="relative flex flex-col items-stretch gap-1"
 		>
 			<select
 				aria-label="Inspect a group"
 				data-slot="semantic-group-choice"
-				className="text-control border-border bg-background hover:bg-accent focus-visible:ring-ring h-7 rounded-sm border px-2 focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
+				className="text-control border-border bg-background hover:bg-accent focus-visible:ring-ring h-7 w-full rounded-sm border px-2 focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
 				value={focus === null ? NO_GROUP : focus.group}
 				disabled={offered.length === 0}
 				onChange={onChange}

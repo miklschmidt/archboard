@@ -32,7 +32,7 @@ import {
 	type SemanticDiagramProps,
 } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
 import { SemanticNarrative } from "@/ui/semantic-board-canvas/components/SemanticNarrative";
-import { SemanticReadingBar } from "@/ui/semantic-board-canvas/components/SemanticReadingBar";
+import { SemanticStageSidebar } from "@/ui/semantic-board-canvas/components/SemanticStageSidebar";
 import { SemanticRefreshFailure } from "@/ui/semantic-board-canvas/components/SemanticRefreshFailure";
 import { SemanticTrail } from "@/ui/semantic-board-canvas/components/SemanticTrail";
 import {
@@ -48,6 +48,9 @@ import type { GroupControls } from "@/ui/semantic-board-canvas/components/Semant
 import { useDeparture, type Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { useGroupInspection } from "@/ui/semantic-board-canvas/hooks/use-group-focus";
+import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
+import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
+import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import {
 	useLevelReading,
@@ -181,6 +184,10 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly groupFocus: GroupFocus | null;
 	/** Inspect a group, leaving any guided reading behind; null to stop. */
 	readonly onChooseGroup: (group: string | null) => void;
+	/** The sidebar's tab and collapse state. */
+	readonly sidebar: Sidebar;
+	/** What the picture on screen draws each kind with, for the key and the inspector. */
+	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
 }
 
 /**
@@ -320,11 +327,8 @@ function stageBody(view: RenderView): JSX.Element {
 			reducedMotion={view.reducedMotion ?? false}
 			stale={notice !== null}
 			notice={notice}
-			onOpenDown={view.onOpenDown}
-			onOpenCode={view.onOpenCode}
 			focus={view.focus}
 			{...groupMarks(view.groupFocus)}
-			groupControls={view.groupControls}
 			heading={view.heading}
 		/>
 	);
@@ -354,17 +358,6 @@ function renderedView(view: RenderView): JSX.Element {
 			    with the picture would leave them stuck on a board they cannot
 			    leave. */}
 			<SemanticTrail trail={view.drill.trail} board={view.drill.board} onBack={view.onBack} />
-			<SemanticReadingBar
-				answer={view.render.data}
-				reading={view.reading}
-				onChooseView={view.level.onView === undefined ? undefined : view.onChooseView}
-				onChooseVariant={view.level.onVariant}
-				narrative={view.narrative}
-				onChooseWalkthrough={view.onChooseWalkthrough}
-				groups={view.groups}
-				groupFocus={view.groupFocus}
-				onChooseGroup={view.onChooseGroup}
-			/>
 			{/* Coherent and out of step: a picture cannot say that by itself, and
 			    drawn plainly it looks settled — which is the one impression it must
 			    not give. */}
@@ -373,11 +366,10 @@ function renderedView(view: RenderView): JSX.Element {
 				nameOf={view.narrative.nameOf}
 				variantNameOf={variantNamer(view)}
 			/>
-			{/* The explanation is read beside the picture, in reading order: the
-			    words on the left, what they are about on the right, and — when
-			    somebody picks a card out of it — what the board says about that
-			    card on the far right. */}
+			{/* Read left to right: the board and whatever is selected on it, the
+			    explanation being followed, and the picture they are both about. */}
 			<div className="flex min-h-0 min-w-0 flex-1">
+				<SemanticStageSidebar view={view} appearances={view.appearances} />
 				{narrativeRail(view)}
 				{stageBody(view)}
 			</div>
@@ -544,6 +536,8 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
+	const sidebar = useSidebar(props.selection);
+	const appearances = useStageAppearances(drawn, departure.leaving);
 	const { leave } = departure;
 	const picked = props.selection;
 	const onOpenDown = useCallback(
@@ -570,6 +564,8 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		onOpenDown,
 		onBack,
 		leaving: departure.leaving,
+		sidebar,
+		appearances,
 		heading: departure.heading,
 		narrative,
 		level,
