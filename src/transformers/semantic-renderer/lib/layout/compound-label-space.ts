@@ -1,5 +1,5 @@
 // New branches leave measured badge room alongside retained route corridors.
-import type { ElkExtendedEdge } from "elkjs/lib/elk-api";
+import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { BEND_RADIUS_MAX } from "@/transformers/semantic-renderer/lib/design";

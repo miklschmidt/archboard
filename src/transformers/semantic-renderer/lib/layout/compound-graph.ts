@@ -1,6 +1,6 @@
 // Semantic containment and measured text become one compound graph. ELK owns
 // the coordinates; these constraints express only the diagram's reading order.
-import type { ElkExtendedEdge, ElkLabel, ElkNode, ElkPort, LayoutOptions } from "elkjs/lib/elk-api";
+import type { ElkExtendedEdge, ElkLabel, ElkNode, ElkPort, LayoutOptions } from "@archboard/elk-rs";
 import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,

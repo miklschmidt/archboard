@@ -8,8 +8,8 @@
 // which worker answers a solve never changes the drawing.
 
 import { availableParallelism } from "node:os";
-import ELK from "elkjs/lib/elk-api.js";
-import type { ElkNode, LayoutOptions } from "elkjs/lib/elk-api";
+import ELK from "@archboard/elk-rs/js/elk-api.js";
+import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 
 /**
  * The most workers that may solve at once: every core the host offers but
@@ -28,7 +28,7 @@ const WORKERS = Math.max(1, availableParallelism() - 1);
 function layoutWorker(): Worker & Pick<Bun.Worker, "ref" | "unref"> {
 	// The repository also compiles DOM code, whose ambient Worker declaration
 	// hides Bun's ref/unref extensions. This server boundary always runs in Bun.
-	const worker = new Worker(import.meta.resolve("elkjs/lib/elk-worker.js"));
+	const worker = new Worker(import.meta.resolve("@archboard/elk-rs/js/elk-worker.js"));
 	if (!hasProcessLifetime(worker)) {
 		worker.terminate();
 		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");

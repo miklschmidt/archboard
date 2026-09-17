@@ -17,7 +17,7 @@
 // browser paints, and one backed by @napi-rs/canvas under Bun. The host makes
 // sure that canvas exists and has the diagram faces loaded before measuring.
 
-import type { ElkNode, LayoutOptions } from "elkjs/lib/elk-api";
+import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import type { DiagramTheme } from "@/shared/semantic-board/index";
 
 /** Every theme colour by theme and custom property name. */

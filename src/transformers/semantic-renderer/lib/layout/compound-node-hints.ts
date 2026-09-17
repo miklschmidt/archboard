@@ -3,7 +3,7 @@ import {
 	type HintAttachment,
 	type NodeHintRoutes,
 } from "@/transformers/semantic-renderer/lib/layout/compound-label-space";
-import type { ElkNode, ElkPort } from "elkjs/lib/elk-api";
+import type { ElkNode, ElkPort } from "@archboard/elk-rs";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";

@@ -56,6 +56,7 @@
 		"eval:skill": "bun scripts/evaluate-skill.ts"
 	},
 	"dependencies": {
+		"@archboard/elk-rs": "0.11.1",
 		"@assistant-ui/react": "0.15.17",
 		"@assistant-ui/react-markdown": "0.14.14",
 		"@base-ui/react": "1.7.0",
@@ -71,7 +72,6 @@
 		"commander": "15.0.0",
 		"cors": "2.8.6",
 		"dotenv": "17.4.2",
-		"elkjs": "0.12.0",
 		"express": "5.2.1",
 		"lightningcss": "1.33.0",
 		"react": "19.2.8",
@@ -118,7 +118,6 @@
 	},
 	"packageManager": "bun@1.4.0",
 	"patchedDependencies": {
-		"@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
-		"elkjs@0.12.0": "patches/elkjs@0.12.0.patch"
+		"@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch"
 	}
 }

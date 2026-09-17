@@ -1,5 +1,5 @@
 // A predecessor contributes constraints to ELK, never a second pass moving cards after routing.
-import type { ElkNode, ElkExtendedEdge, ElkLabel, LayoutOptions } from "elkjs/lib/elk-api";
+import type { ElkNode, ElkExtendedEdge, ElkLabel, LayoutOptions } from "@archboard/elk-rs";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,

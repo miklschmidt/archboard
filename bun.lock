@@ -5,6 +5,7 @@
     "": {
       "name": "archboard",
       "dependencies": {
+        "@archboard/elk-rs": "0.11.1",
         "@assistant-ui/react": "0.15.17",
         "@assistant-ui/react-markdown": "0.14.14",
         "@base-ui/react": "1.7.0",
@@ -20,7 +21,6 @@
         "commander": "15.0.0",
         "cors": "2.8.6",
         "dotenv": "17.4.2",
-        "elkjs": "0.12.0",
         "express": "5.2.1",
         "lightningcss": "1.33.0",
         "react": "19.2.8",
@@ -65,10 +65,23 @@
     },
   },
   "patchedDependencies": {
-    "elkjs@0.12.0": "patches/elkjs@0.12.0.patch",
     "@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
   },
   "packages": {
+    "@archboard/elk-rs": ["@archboard/elk-rs@0.11.1", "", { "optionalDependencies": { "@archboard/elk-rs-darwin-arm64": "0.11.1", "@archboard/elk-rs-darwin-x64": "0.11.1", "@archboard/elk-rs-linux-arm64-gnu": "0.11.1", "@archboard/elk-rs-linux-x64-gnu": "0.11.1", "@archboard/elk-rs-linux-x64-musl": "0.11.1", "@archboard/elk-rs-win32-x64-msvc": "0.11.1" } }, "sha512-AkRBxLtJPSRRj7I2EZZ2/sRxjrtxXzw3GooubJVEssOVWFgnpSEtL2MJVu2/Wwf2fYHMKfZKs3Bacavr5+/AYQ=="],
+
+    "@archboard/elk-rs-darwin-arm64": ["@archboard/elk-rs-darwin-arm64@0.11.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-R6Onof8M0iX0l6wA7EgvdB/7ppgCmy47ZyUPkaZ4ci14dIaMAob4TwKufceINrk5knuc34PoHvEDC7vY1gLH0w=="],
+
+    "@archboard/elk-rs-darwin-x64": ["@archboard/elk-rs-darwin-x64@0.11.1", "", { "os": "darwin", "cpu": "x64" }, "sha512-aG4OXhnwCRnznsv1lv9Dz/MWg/YWTjdthiOKcvjtueYkHW9Rg8NM/jGOmwacYxLkaTxRbYv7ANdzELSGxixm0A=="],
+
+    "@archboard/elk-rs-linux-arm64-gnu": ["@archboard/elk-rs-linux-arm64-gnu@0.11.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-gnQoNlk9Zc0R4qaYLXh0fVmdy1LTzhqqPLu0PZTSguP6V7/tCPrQv95FcsiU5mv8h7J34LGC+MjTELSS6YtiUA=="],
+
+    "@archboard/elk-rs-linux-x64-gnu": ["@archboard/elk-rs-linux-x64-gnu@0.11.1", "", { "os": "linux", "cpu": "x64" }, "sha512-y11qxk/WEtvy+xKia0q705LQUvUK27ldZALzEtK4MRh/R1+4v3eVNfY0y/ceS6N9b3q3KujeqPIFTkJnB4f7NQ=="],
+
+    "@archboard/elk-rs-linux-x64-musl": ["@archboard/elk-rs-linux-x64-musl@0.11.1", "", { "os": "linux", "cpu": "x64" }, "sha512-sBAfz8fQw5+VmrMHYy0+qWwVRAoE3WUJPiKkA6L85fvXffi5OoqNt1cejgYB5zvUHp/DH8HhdzDzkAGarZpSrA=="],
+
+    "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.1", "", { "os": "win32", "cpu": "x64" }, "sha512-iqjY/wnqar6QSr8IM0QGQG3zx5waeTtTYyOzY9AZXccMqfBrsQPsOfZSE7JCupEumTHGjeudYZiTgPYab52QNQ=="],
+
     "@assistant-ui/core": ["@assistant-ui/core@0.3.16", "", { "dependencies": { "assistant-stream": "^0.3.40", "nanoid": "^6.0.1" }, "peerDependencies": { "@assistant-ui/store": "^0.3.0", "@assistant-ui/tap": "^0.9.0", "@types/react": "*", "assistant-cloud": "^0.1.42", "react": "^18 || ^19", "zustand": "^5.0.11" }, "optionalPeers": ["@types/react", "assistant-cloud", "react", "zustand"] }, "sha512-fZ9ud+z7hEjegu6NrHyMEcQKCdij2KRcqpLsyOYzHE9LhnBv59Q29jU287EkD0NZE0SG4YTo5/klzz7C/lKA+Q=="],
 
     "@assistant-ui/react": ["@assistant-ui/react@0.15.17", "", { "dependencies": { "@assistant-ui/core": "^0.3.16", "@assistant-ui/store": "^0.3.11", "@assistant-ui/tap": "^0.9.15", "assistant-cloud": "^0.1.42", "assistant-stream": "^0.3.40", "radix-ui": "^1.6.7", "react-textarea-autosize": "^8.5.9", "safe-content-frame": "^0.0.28", "zod": "^4.4.3", "zustand": "^5.0.15" }, "peerDependencies": { "@types/react": "*", "@types/react-dom": "*", "react": "^18 || ^19", "react-dom": "^18 || ^19" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-lCjukORuR2olq+XZYj8fF1MCYttqk90299CUrvruoKDr0cAPQzyIAxpTwOkJDhte4U+GyDHaov/KNb7NQe1EJg=="],
@@ -866,8 +879,6 @@
     "ee-first": ["ee-first@1.1.1", "", {}, "sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.416", "", {}, "sha512-K6bvB2BjnNrugtIih6ewlbBI9DXa976jIdiIlRLHhBoEI9a4JaQjjHyF+A1IQI543aQYR4LnmOrT/K5fZj0aPA=="],
-
-    "elkjs": ["elkjs@0.12.0", "", {}, "sha512-YZcKynxVxYoKIOEpywEPwCFdg+BTbxQRNf3pbwdDCvc8O3kQD8bmIwSxKU1eOTVc4Xo+VG9Te+575mlfvOrhEQ=="],
 
     "emoji-regex": ["emoji-regex@10.6.0", "", {}, "sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A=="],
 

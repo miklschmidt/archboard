@@ -848,3 +848,49 @@ Semantic renderer, Board persistence and the three fixtures are not, and
 what remains is the number of solves a first render's candidates need, which
 only a change to what is chosen (fewer flank rules, lighter label settling,
 another placement) would cut further.
+
+## 23. The engine is elk-rs (2026-09-17, TASK-247)
+
+The layout engine is now `@archboard/elk-rs` 0.11.1, the Rust port of ELK
+from archboard's fork of openedges/elk-rs, as a native addon in Bun workers
+and as WASM in browser workers. Before the switch, every solve archboard's
+renderer tests send was captured and run through both engines. Wherever
+elk-rs differed from the patched elkjs, the fork was fixed, each fix with a
+parity test against stored elkjs output:
+
+- a deadlock in interactive external port positioning
+- a compound port correction Java does not have
+- the prior bend points the elkjs patch carried
+- 32-bit float arithmetic where elkjs computes in doubles
+
+All 72 captured solves now match, and every scorecard in `wide-boards.test.ts`
+holds. Multi-edge wrapping still fails inside the engine on the folded
+fixture, as it did in elkjs, so section 17's single-edge choice stands.
+
+`timing.ts`, first render with the engine warmed on another board, three runs:
+
+| board               | elkjs, section 22 | elk-rs       | repeat |
+| ------------------- | ----------------- | ------------ | ------ |
+| flask-map-1         | 400 to 500        | 300 to 325   | 2      |
+| flask-map-2         | 780 to 900        | 1140 to 1190 | 2      |
+| flask-map-3         | 630 to 740        | 345 to 365   | 1      |
+| Agent workbench     | 130               | 85 to 130    | 1      |
+| Archboard           | 15                | 17 to 20     | 1      |
+| Board persistence   | 120 to 280        | 95 to 115    | 1      |
+| Board viewer        | 100 to 130        | 70 to 80     | 1      |
+| Browser application | 115 to 140        | 65 to 70     | 1      |
+| Canvas server       | 330 to 375        | 215 to 220   | 1      |
+| Codex session       | 50 to 80          | 50 to 60     | 0      |
+| Command dispatch    | 50 to 210         | 50 to 65     | 0      |
+| Command interface   | 20 to 25          | 22 to 25     | 0      |
+| Renderer layout     | 15 to 30          | 18 to 20     | 0      |
+| Semantic renderer   | 160 to 190        | 110 to 115   | 1      |
+
+The section 22 numbers predate measuring text with the drawing canvas
+(TASK-247), which changes widths and so the candidates a board settles through.
+flask-map-2 is the one board slower than there, and the engine is not why. On
+this branch it makes 126 solves on either engine. elk-rs spends 2073 ms solving
+and draws in 1174 ms; the patched elkjs spends 7781 ms solving and draws in
+3303 ms. What grew is how many solves label settling needs with the new widths,
+so that is where to look next. Ten of the fourteen are under 150 ms. The four
+that are not are the three fixtures and Canvas server.

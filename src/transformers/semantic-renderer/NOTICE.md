@@ -19,7 +19,8 @@ What was changed, and what that change is:
 **Adapted to Archboard's contract — these are permanent.**
 
 - **Architecture layout uses ELK.** The former fixed seats, indexed corridors,
-  braid guards and late label settlement were removed. `elkjs` lays out the
+  braid guards and late label settlement were removed. ELK, through its Rust
+  port `@archboard/elk-rs` (native under Bun, WASM in a browser), lays out the
   semantic containment graph using measured cards and labels. Its final boxes,
   ports and routes feed the SVG painter and interaction atlas together.
 - **Architecture text wraps with Pretext.** Pretext measures through the canvas of
