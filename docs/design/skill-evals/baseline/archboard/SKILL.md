@@ -109,29 +109,33 @@ board needs all of it.
 2. **Prove each relationship and step from source.** For every `edge` and
    every flow step keep a one-line record: `from` → `to`, the semantic kind,
    and the source file and function or symbol that prove the mechanism. For a
-   call, `from` is the caller whose body makes it and `to` is the receiver
-   whose body runs, inside its `parent`; a container is an endpoint only when
+   call (a function or method call, a hook, a component rendering another),
+   `from` is the part whose body makes it and `to` is the part whose body runs,
+   inside its `parent`; a container is an endpoint only when
    the source addresses the whole module. A part you draw with children is a
-   container whatever its kind: once the request context holds `push` and
-   `pop`, the call `wsgi_app` makes lands on `push`, not on the container,
+   container whatever its kind: once a module, class or component is drawn
+   holding its functions, methods or child components, a call into it lands on
+   the child whose body runs, not on the container,
    and giving an existing part children moves every relationship that landed
    on it to the child whose body runs. For a return or a non-call
    relationship, state the directional claim in words and make the endpoints
-   follow it (for example, A returns to B, A reads from B, A publishes to B, or
-   A depends on B). Sibling calls are not a chain: when `dispatch()` calls
-   `before()` and then `handle()`, the source shows two relationships from
-   `dispatch`, and none from `before` to `handle`, whatever order they run in.
+   follow it (for example, A returns to B, A reads from B, A emits an event B
+   handles, A resolves a promise B awaits, A passes B a callback or props, or
+   A depends on B). Sibling calls are not a chain: when `apply()` calls
+   `validate()` and then `persist()`, the source shows two relationships from
+   `apply`, and none from `validate` to `persist`, whatever order they run in.
    For a sequence also check the order the source runs them in, which steps
    return to their caller, which branch and under what condition (say it in a
-   `note`), and whether a repeat count is in the source at all (a loop over a
-   list the source fixes, such as two default module names, is a `repeat` of
+   `note`), and whether a repeat count is in the source at all (a loop, `map`
+   or retry over a list the source fixes, such as two candidate file names, is a `repeat` of
    that count; a loop over a list of unknown length is a `note`, not a
    `repeat`).
 3. **Find the boundaries on purpose.** Before deciding the parts, look for
-   what calls into this code (a server, a scheduler, a shell), the external
-   libraries and services it depends on, the callbacks and plugins the
-   application registers into it, and where it persists or publishes (a
-   store, a queue, a socket). Include the ones the board's question needs and
+   what calls into this code (a server, a scheduler, a shell, a user event in
+   a browser, a message consumer), the external libraries and services it
+   depends on, the callbacks, hooks, handlers and plugins the application
+   registers into it, and where it persists or publishes (a store, a queue, a
+   socket, an event bus, a stream). Include the ones the board's question needs and
    leave the rest out deliberately; a boundary you never looked for is an
    omission, one you chose to omit is scope.
 4. **Bind to the owner.** A `binding` names the file that implements the
@@ -152,22 +156,22 @@ the source you read, in this vocabulary (the grader uses the same words); every
 row the source justifies goes in the payload, and your answer says which rows
 you used and which you judged not to apply.
 
-| Row            | When the source shows                                                                         | You author                                                                                             |
-| -------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `external`     | a caller, library, service, shell or hypothetical part outside the checkout                   | a node of kind `external`, unbound                                                                     |
-| `binding`      | the file whose body implements a part's responsibility                                        | `binding: { repo, path }` to that file; nothing for a part you could not inspect                       |
-| `containment`  | a part defined inside another (a method of a class, a function of a module)                   | `parent`                                                                                               |
-| `relationship` | a call, return, read, dependency or publication one body makes to another                     | an `edge` of the configured kind, its `label` the message or mechanism                                 |
-| `traffic`      | the path a request or event takes at runtime, as against setup, registration or teardown      | `traffic` on those relationships (`{}`, or `speed`/`volume` to contrast a hotter path); none elsewhere |
-| `emphasis`     | the few lines the board exists to show, and lines that are only context                       | `emphasis: "hero"` on the few, `"muted"` on the context                                                |
-| `repeat`       | a loop over a list the source fixes, or a retry limit                                         | `repeat` with that count on the step                                                                   |
-| `note`         | a branch and its condition, a data-dependent loop, an environment variable, a caveat          | `note` on the step                                                                                     |
-| `groups`       | a part whose concern is a configured group id in `config.yaml` (read them before every write) | `groups` on each member, explicit, across containers                                                   |
-| `flow`         | an ordered exchange the question is about (handling a request, starting up, a lifecycle)      | a `flow` and a `data-flow` view over it                                                                |
-| `view`         | a subset a reader wants alone: one path, one container's internals, the two sides of a change | a board `view`                                                                                         |
-| `walkthrough`  | a why the code enforces (an ordering, an invariant, a context pushed before dispatch)         | a walkthrough beat whose subjects are the parts, relationships or steps it explains                    |
-| `drillDown`    | a part whose internals already have a board (`archboard semantic` lists them; check first)    | `drillDown` to that board instead of its parts again                                                   |
-| `description`  | a mechanism a one-line responsibility cannot hold                                             | `description` on the node or relationship                                                              |
+| Row            | When the source shows                                                                                                        | You author                                                                                             |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `external`     | a caller, library, service, shell or hypothetical part outside the checkout                                                  | a node of kind `external`, unbound                                                                     |
+| `binding`      | the file whose body implements a part's responsibility                                                                       | `binding: { repo, path }` to that file; nothing for a part you could not inspect                       |
+| `containment`  | a part defined inside another (a function of a module, a method of a class, a child component, a closure inside its factory) | `parent`                                                                                               |
+| `relationship` | a call, render, read, event, message, dependency or publication one body makes to another                                    | an `edge` of the configured kind, its `label` the message or mechanism                                 |
+| `traffic`      | the path a request or event takes at runtime, as against setup, registration or teardown                                     | `traffic` on those relationships (`{}`, or `speed`/`volume` to contrast a hotter path); none elsewhere |
+| `emphasis`     | the few lines the board exists to show, and lines that are only context                                                      | `emphasis: "hero"` on the few, `"muted"` on the context                                                |
+| `repeat`       | a loop over a list the source fixes, or a retry limit                                                                        | `repeat` with that count on the step                                                                   |
+| `note`         | a branch and its condition, a data-dependent loop, an environment variable, a caveat                                         | `note` on the step                                                                                     |
+| `groups`       | a part whose concern is a configured group id in `config.yaml` (read them before every write)                                | `groups` on each member, explicit, across containers                                                   |
+| `flow`         | an ordered exchange the question is about (handling a request, a user interaction, a pipeline run, starting up, a lifecycle) | a `flow` and a `data-flow` view over it                                                                |
+| `view`         | a subset a reader wants alone: one path, one container's internals, the two sides of a change                                | a board `view`                                                                                         |
+| `walkthrough`  | a why the code enforces (an ordering, an invariant, a lock held around a write)                                              | a walkthrough beat whose subjects are the parts, relationships or steps it explains                    |
+| `drillDown`    | a part whose internals already have a board (`archboard semantic` lists them; check first)                                   | `drillDown` to that board instead of its parts again                                                   |
+| `description`  | a mechanism a one-line responsibility cannot hold                                                                            | `description` on the node or relationship                                                              |
 
 A row the source does not support stays out: an added relationship without a
 line of evidence is a wrong board, not a complete one.
@@ -175,7 +179,7 @@ line of evidence is a wrong board, not a complete one.
 ## Which recipe
 
 Every request is one of four workflows, and each has one recipe holding the
-payload shape, a worked example from Flask and the checks to read the answer
+payload shape, a worked example from archboard's own source and the checks to read the answer
 against. Read the recipe before the first command of that workflow; it is the
 one reference a common path needs beyond this file.
 

@@ -28,25 +28,27 @@ onto its subjects, write one batch at the version you read, check the answer.
 3. Write it as one batch, naming the `variant` when it is not the current one:
 
 ```bash
-archboard semantic edit "Flask JSON" --expect-version 3 --doing "routing JSON through the provider" <<'JSON'
+archboard semantic edit "Board store" --expect-version 3 --doing "routing write warnings through their own module" <<'JSON'
 {
-  "nodes": [{ "name": "DefaultJSONProvider", "kind": "module",
-    "responsibility": "dumps, loads and response for the app",
-    "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/json/provider.py" } }],
+  "nodes": [{ "name": "Replaced relationships", "kind": "module",
+    "responsibility": "Names every relationship a batch stated again under a new id",
+    "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts" } }],
   "edges": [
-    { "from": "Flask app", "to": "DefaultJSONProvider", "kind": "data", "label": "app.json" },
-    { "from": "JSON helpers", "to": "DefaultJSONProvider", "kind": "call", "label": "current_app.json.dumps" }
+    { "from": "Edit content", "to": "Replaced relationships", "kind": "call", "label": "replacedRelationships" },
+    { "from": "applyUnderLease", "to": "persisted", "kind": "call", "label": "notices as warnings" }
   ],
   "removeEdges": ["e7Kq2mP1"]
 }
 JSON
 ```
 
-The evidence for the two relationships: `Flask.__init__` (`app.py`) assigns
-`self.json = self.json_provider_class(self)`, and `flask.json.dumps`
-(`json/__init__.py`) calls `current_app.json.dumps`. The provider binds to
-`provider.py`, where `DefaultJSONProvider` is implemented, not to the helpers
-that call it.
+The evidence for the two relationships: `editContent` (`edit-content.ts`)
+returns the notices `replacedRelationships` computes, and `applyUnderLease`
+(`write.ts`) hands the transition's notices to `persisted`, which turns them
+into warnings; the removed `e7Kq2mP1` had drawn `persisted` reading them from
+`Edit content` directly. The new module binds to `replaced-relationships.ts`,
+where `replacedRelationships` is implemented, not to `edit-content.ts`, which
+calls it.
 
 4. Check the answer against your checks: the ids you meant to keep are
    unchanged, removed subjects are gone, restated subjects still carry the
