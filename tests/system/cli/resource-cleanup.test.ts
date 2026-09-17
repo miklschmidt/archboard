@@ -12,6 +12,18 @@ import {
 } from "./support/package-cli.ts";
 import { createRepositoryFixture } from "./support/repository-fixture.ts";
 
+/**
+ * An error's message as a reader sees it, without the colour a terminal adds.
+ *
+ * A shell that forces colour (`FORCE_COLOR`) colours both the matcher's own
+ * failure messages and a child's stderr, and what is under test is the words.
+ * @param error The error.
+ * @returns Its message, with ANSI escapes taken out.
+ */
+function plain(error: unknown): string {
+	return Bun.stripANSI((error as Error).message);
+}
+
 describe("CLI resource cleanup", () => {
 	test("awaits an in-flight shipped-bin child before owned listeners and roots disappear", async () => {
 		let releaseHealth!: () => void;
@@ -60,7 +72,7 @@ describe("CLI resource cleanup", () => {
 
 		expect(intended).toBeInstanceOf(Error);
 		const intendedError = intended as Error;
-		expect(intendedError.message).toBe(
+		expect(plain(intendedError)).toBe(
 			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "observed in flight"\n',
 		);
 		expect(runPromise).toBeDefined();
@@ -131,14 +143,10 @@ describe("CLI resource cleanup", () => {
 		expect(repositoryRoot).toBe(repositoryFixture.root);
 		expect(installError).toBeInstanceOf(Error);
 		expect(repositoryError).toBeInstanceOf(Error);
-		expect((installError as Error).message).toContain(
-			'Expected: "intended install assertion failure"',
-		);
-		expect((installError as Error).message).toContain('Received: "install fixture acquired"');
-		expect((repositoryError as Error).message).toContain(
-			'Expected: "intended repository assertion failure"',
-		);
-		expect((repositoryError as Error).message).toContain('Received: "repository fixture acquired"');
+		expect(plain(installError)).toContain('Expected: "intended install assertion failure"');
+		expect(plain(installError)).toContain('Received: "install fixture acquired"');
+		expect(plain(repositoryError)).toContain('Expected: "intended repository assertion failure"');
+		expect(plain(repositoryError)).toContain('Received: "repository fixture acquired"');
 		expect(existsSync(installRoot)).toBeFalse();
 		expect(existsSync(repositoryRoot)).toBeFalse();
 	});
@@ -172,7 +180,7 @@ describe("CLI resource cleanup", () => {
 		expect(root).toBe(retainedFixture.root);
 		expect(missingServer).toBe(join(root, "missing-server.ts"));
 		expect(startupError).toBeInstanceOf(Error);
-		const startupMessage = (startupError as Error).message;
+		const startupMessage = plain(startupError);
 		expect(startupMessage).toContain("died (exit 1).");
 		expect(startupMessage).toContain(`error: Module not found "${missingServer}"`);
 		expect(existsSync(root)).toBeFalse();
@@ -213,7 +221,7 @@ describe("CLI resource cleanup", () => {
 		}
 		expect(intended).toBeInstanceOf(Error);
 		const intendedError = intended as Error;
-		expect(intendedError.message).toBe(
+		expect(plain(intendedError)).toBe(
 			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "running canvas"\n',
 		);
 		expect(verifiedRunning).toBeTrue();
