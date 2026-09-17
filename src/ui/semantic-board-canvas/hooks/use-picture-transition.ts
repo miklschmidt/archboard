@@ -19,9 +19,11 @@ import { PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	continuousPictures,
+	sharedShift,
 	stagePicture,
 	transitionPicture,
 	type PictureTransition,
+	type Shift,
 } from "@/ui/semantic-board-canvas/lib/picture-transition";
 
 /** The picture on the surface, as something to mark up. */
@@ -131,6 +133,57 @@ function land(flight: Flight | null): void {
 }
 
 /**
+ * How far the cards the last picture and the next share moved, when the next is
+ * the same board carried on, with or without motion.
+ * @param last What the surface was showing, if anything.
+ * @param surface The surface.
+ * @param drawing The next picture.
+ * @returns The shift, or nothing when the next picture is another board or reading.
+ */
+function shiftFrom(
+	last: Shown | null,
+	surface: HTMLElement,
+	drawing: SemanticDrawing,
+): Shift | undefined {
+	return last?.surface === surface && carriedOn(last.drawing, drawing)
+		? sharedShift(last.drawing, drawing)
+		: undefined;
+}
+
+/**
+ * Put the next picture on the surface: cut to it, or carry the last one into
+ * it. Either way, a picture of the same board tells the camera how far the
+ * shared cards moved before anything is painted.
+ * @param next What to show and how.
+ * @param next.surface The surface.
+ * @param next.last What the surface was showing, if anything.
+ * @param next.drawing The picture.
+ * @param next.reducedMotion Whether the person asked for no motion.
+ * @param next.keepStill Told how far the shared cards moved.
+ * @param onLanded What to do once a flight has landed.
+ * @returns The flight, or null for a cut.
+ */
+function showPicture(
+	next: {
+		surface: HTMLElement;
+		last: Shown | null;
+		drawing: SemanticDrawing;
+		reducedMotion: boolean;
+		keepStill: (shift: Shift) => void;
+	},
+	onLanded: () => void,
+): Flight | null {
+	const { surface, last, drawing, reducedMotion, keepStill } = next;
+	const shift = shiftFrom(last, surface, drawing);
+	const from = carriedFrom(last, surface, drawing, reducedMotion);
+	const flight =
+		from === null ? null : fly(transitionPicture(surface, from, drawing, shift), onLanded);
+	if (from === null) stagePicture(surface, drawing.svg);
+	if (shift !== undefined) keepStill(shift);
+	return flight;
+}
+
+/**
  * Tell the store what the surface now holds.
  * @param store The store.
  * @param surface The surface.
@@ -149,6 +202,9 @@ function publish(store: PictureStore, surface: HTMLElement | null): void {
  * @param surface The element the picture goes in, or null before it exists.
  * @param drawing The picture to show.
  * @param reducedMotion Whether the person asked for no motion; then every picture is a cut.
+ * @param keepStill Told, before the next picture of the same board is first
+ * painted, how far the cards the two share moved on the page, so the camera can
+ * move with them and keep them where the reader was looking.
  * @returns The picture as it is now on the surface, a new value each time the
  * markup was written, for whatever marks that markup up to run again over it.
  */
@@ -156,6 +212,7 @@ function usePictureTransition(
 	surface: HTMLElement | null,
 	drawing: SemanticDrawing,
 	reducedMotion: boolean,
+	keepStill: (shift: Shift) => void,
 ): StagedPicture | null {
 	const shown = useRef<Shown | null>(null);
 	const flight = useRef<Flight | null>(null);
@@ -171,26 +228,23 @@ function usePictureTransition(
 	);
 	useLayoutEffect(() => {
 		const last = shown.current;
-		if (surface === null || (last?.surface === surface && last.drawing === drawing)) {
+		// The same picture again, as another answer: a picture read twice while
+		// it is on its way arrives twice. Nothing on the surface changes, so a
+		// flight carrying it keeps flying rather than being landed by itself.
+		if (surface === null || (last?.surface === surface && last.drawing.svg === drawing.svg)) {
+			if (surface !== null) shown.current = { surface, drawing };
 			return;
 		}
 		// A picture arriving mid-flight lands the flight first, so the surface
 		// is showing exactly the picture the new transition is told it is.
 		land(flight.current);
-		flight.current = null;
 		shown.current = { surface, drawing };
-		const from = carriedFrom(last, surface, drawing, reducedMotion);
-		if (from === null) {
-			stagePicture(surface, drawing.svg);
-			publish(store.current, surface);
-			return;
-		}
-		flight.current = fly(transitionPicture(surface, from, drawing), () => {
+		flight.current = showPicture({ surface, last, drawing, reducedMotion, keepStill }, () => {
 			flight.current = null;
 			publish(store.current, surface);
 		});
 		publish(store.current, surface);
-	}, [surface, drawing, reducedMotion]);
+	}, [surface, drawing, reducedMotion, keepStill]);
 	// Leaving the surface stops asking for frames; what it showed does not matter any more.
 	useLayoutEffect(
 		() => (): void => {
