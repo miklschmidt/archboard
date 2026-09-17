@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:42'
-updated_date: '2026-09-17 00:04'
+updated_date: '2026-09-17 01:39'
 labels:
   - renderer
   - frontend
@@ -28,15 +28,15 @@ The canvas asks the server for every picture (/api/semantic-boards/render), and 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An architecture picture is laid out with text widths from the canvas of the environment that draws it: the browser own canvas in the canvas, an @napi-rs/canvas OffscreenCanvas under Bun, with the diagram fonts loaded in both
-- [ ] #2 The renderer core has one implementation used by both; the browser and Bun differ only in transport, text canvas and worker mechanism
-- [ ] #3 Worker pools size themselves from the host core count in both environments
-- [ ] #4 Board content in the browser is a read-only cache invalidated by the server board announcements, and ADR 0023 records why that keeps one source of truth
-- [ ] #5 The canvas first picture of a board is measured against the server-rendered baseline and recorded
+- [x] #1 An architecture picture is laid out with text widths from the canvas of the environment that draws it: the browser own canvas in the canvas, an @napi-rs/canvas OffscreenCanvas under Bun, with the diagram fonts loaded in both
+- [x] #2 The renderer core has one implementation used by both; the browser and Bun differ only in transport, text canvas and worker mechanism
+- [x] #3 Worker pools size themselves from the host core count in both environments
+- [x] #4 Board content in the browser is a read-only cache invalidated by the server board announcements, and ADR 0023 records why that keeps one source of truth
+- [x] #5 The canvas first picture of a board is measured against the server-rendered baseline and recorded
 - [ ] #6 Background pre-rendering: when the server announces that a board changed, the browser renders its affected variants in the background rather than waiting for someone to navigate to them
-- [ ] #7 Rendered pictures are cached in localStorage, keyed so a changed board, variant, view, theme or renderer version misses the cache
+- [x] #7 Rendered pictures are cached in localStorage, keyed so a changed board, variant, view, theme or renderer version misses the cache
 - [ ] #8 On page load the localStorage render cache is checked for invalidation against the server board versions before any cached picture is shown
-- [ ] #9 The custom font measurer and the Pretext patch are deleted; no code measures text outside a canvas
+- [x] #9 The custom font measurer and the Pretext patch are deleted; no code measures text outside a canvas
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -58,4 +58,23 @@ User asked on 2026-09-16 to include background pre-rendering: render diagrams in
 Decision by the user on 2026-09-17: text is measured by the canvas of the environment that renders, never by a custom font measurer. In the browser, Pretext uses the browser's own canvas after the diagram fonts are loaded, so a picture measured in Safari, Firefox or Chrome matches what that browser paints, and pictures may differ between browsers by design. Under Bun (CLI, rasterizer, server route), Pretext uses an OffscreenCanvas backed by @napi-rs/canvas with the same four font files registered under the same family names. The custom measurer (font-file, font-layout, measure-text) is deleted, and the Pretext patch with it. Spike 2026-09-17: @napi-rs/canvas registers all four faces under Bun, measures 20,000 strings in 180 ms.
 
 2026-09-17: steps 1 and 2 committed on local branch task-247-browser-render (1beab551 renderer core behind a host in src/transformers/semantic-renderer, text measured through OffscreenCanvas with @napi-rs/canvas under Bun, custom measurer and Pretext patch deleted; ed2a20d8 drawingOf/predecessorDrawingsOf in src/shared/semantic-board). Full gate green. @archboard/elk-rs 0.11.0 is published; on it archboard fails 7 renderer tests (4 engine infinite loops, bendpoint and port divergences from the patched elkjs, errors rejected as plain objects, no types in exports). Fixtures captured in ~/Projects/elk-rs-smoke/archboard-fixtures; fixes are going into the fork with tests, then 0.11.1. The swap itself is parked on local branch task-245-elk-rs.
+
+2026-09-17: rebased onto feat/semantic-boards; the user merges locally, nothing is pushed. Commits: d3fec6bb (elk-rs 0.11.1 replaces patched elkjs, every scorecard holds, layout-rules.md section 23), 5be8c81f (the canvas draws in the page; pictures kept in localStorage stamped with board version, policy fingerprint and renderer build; drawn again in the background on announcements; icons served by name from /assets/diagram-icons instead of bundling ~3,200; theme colours through a Vite module running the same lightningcss reader). Full gate green, with the new browser owner browser-drawn-pictures.test.ts: no render-route request, engine worker started, icons fetched, kept picture shown on reopen without a worker, board edit drawn again in the page.
+
+First picture, measured 2026-09-17 against an isolated canvas on a copy of the dogfood vault. Headless Chromium, fresh browser context per board, ms from navigation start to the pane's drawn state. 'server' is the render route's first answer for the board, which does the layout on the server. 'page' is a first open with nothing kept. 'kept' is reopening in the same context.
+Agent workbench server 131, page 645, kept 316
+Archboard 21 / 495 / 332
+Board persistence 98 / 571 / 247
+Board viewer 71 / 566 / 312
+Browser application 68 / 534 / 243
+Canvas server 224 / 825 / 315
+Codex session 68 / 568 / 301
+Command dispatch 65 / 528 / 290
+Command interface 29 / 481 / 289
+Renderer layout 46 / 517 / 305
+Semantic renderer 115 / 608 / 244
+Reading: 'kept' is roughly app boot plus reads, with no layout. 'page' minus 'kept' is layout in the page: about 160 ms on the smallest board, which is worker start and WASM compile, and 330 to 510 ms on the larger ones, about twice native layout on the server. So a first view is slower than asking the server was (boot plus server time). A reopened or pre-drawn picture is faster. Open levers: start and warm the worker pool at page start, compile the WASM module once and share it across workers, code-split the renderer out of the main bundle.
+Not yet proven by a test: a kept picture of an older board version is not shown after a reload. The code reads the board document before choosing a kept picture.
+
+AC #6 left unchecked: background drawing of variants nobody is looking at is implemented (local-pictures.ts drawAhead) but no test proves it; the browser owner only proves the visible pane redraws.
 <!-- SECTION:NOTES:END -->
