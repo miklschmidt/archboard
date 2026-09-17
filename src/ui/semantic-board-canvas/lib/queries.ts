@@ -9,10 +9,10 @@ import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 import {
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
-	fetchSemanticRender,
 	fetchVaultCheck,
 	type SemanticRenderRequest,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { pictureSource } from "@/ui/semantic-board-canvas/lib/picture-source";
 
 /** The one root every semantic resource hangs under, so a sweep can find it. */
 const SEMANTIC_KEY = "semantic-board";
@@ -73,23 +73,29 @@ function semanticBoardListQuery() {
 	return queryOptions({
 		queryKey: semanticBoardKeys.boards,
 		/**
-		 * Read the vault's semantic boards.
+		 * Read the vault's semantic boards, and tell the picture source which
+		 * versions they are at, so it can forget pictures of older ones.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The listing.
 		 */
-		queryFn: (context) => fetchSemanticBoards(context.signal),
+		queryFn: async (context) => {
+			const boards = await fetchSemanticBoards(context.signal);
+			pictureSource().listed?.(boards);
+			return boards;
+		},
 		refetchOnWindowFocus: true,
 	});
 }
 
 /**
- * One variant of one board, drawn by the server.
+ * One variant of one board, drawn in this page, or by the server when the page
+ * runs no renderer (`picture-source.ts`).
  *
  * This picture is derived from a versioned board, so the thing that makes it
  * out of date is a version we have been told about — never the passage of
  * time. A board that has not changed renders to the same bytes an hour later,
- * and re-asking for it would cost the server a full layout and text
- * measurement for a picture identical to the one already on screen. So there
+ * and drawing it again would cost a full layout and text measurement for a
+ * picture identical to the one already on screen. So there
  * is deliberately no timer here: the cached drawing stays fresh until the
  * board announces a new version over the pane socket, which is what
  * `useSemanticBoardChanges` listens for. That is also why there is no duration
@@ -111,11 +117,11 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
 	return queryOptions({
 		queryKey: semanticBoardKeys.render(request),
 		/**
-		 * Ask the server to draw it.
-		 * @param context The query context, carrying this read's cancellation.
+		 * Draw it, in this page or by the server, whichever the page chose.
+		 * @param context The query context, carrying the cache and this read's cancellation.
 		 * @returns The drawing, or the news that there is nothing to draw.
 		 */
-		queryFn: (context) => fetchSemanticRender(request, context.signal),
+		queryFn: (context) => pictureSource().draw(request, context.client, context.signal),
 		/**
 		 * The last picture of this board, while this one is on its way.
 		 *

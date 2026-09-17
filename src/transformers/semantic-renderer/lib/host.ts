@@ -1,8 +1,8 @@
 // What the renderer asks of the place it runs in.
 //
 // The renderer is the same code under Bun (the CLI, the rasterizer, the
-// canvas server's render route) and in a browser tab (TASK-247). Three things
-// differ between those places, and only three, so they arrive as a host
+// canvas server's render route) and in a browser tab (TASK-247). Four things
+// differ between those places, and only four, so they arrive as a host
 // installed once before the first picture:
 //
 //   the layout engine: a pool of workers, Bun Workers on the server and Web
@@ -11,6 +11,9 @@
 //     from disk and a browser build reads at build time
 //   the diagram fonts as base64, for a document that embeds its faces, which
 //     only a host with the files at hand can give
+//   the Remix Icon path data a policy's node kinds name: the whole set under
+//     Bun, and in a browser only the icons it fetched, so a page does not
+//     carry three thousand icons to draw a dozen
 //
 // Text is measured by the host's canvas, through the global `OffscreenCanvas`
 // Pretext itself uses: the browser's own, which measures exactly what that
@@ -40,6 +43,12 @@ interface RendererHost {
 	 * @returns Its bytes, base64 encoded.
 	 */
 	readonly fontBase64: (file: string) => string;
+	/**
+	 * One Remix Icon's path data, by export name.
+	 * @param name The icon's export name, e.g. `RiServerLine`.
+	 * @returns Its paths, or nothing when the host has no such icon.
+	 */
+	readonly iconPaths: (name: string) => readonly string[] | undefined;
 }
 
 let installed: RendererHost | undefined;
