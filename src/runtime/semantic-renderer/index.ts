@@ -103,4 +103,9 @@ export type {
 	BoardRenderChoices,
 	BoardRenderOutcome,
 } from "@/transformers/semantic-renderer/board";
+// The icon path data a browser host fetches by name, and every name there is.
+export {
+	iconNames as diagramIconNames,
+	iconPaths as diagramIconPaths,
+} from "@/runtime/semantic-renderer/lib/icon-paths";
 export { diagramTextWidth, renderArchitecture, renderBoard, renderDataFlow, renderSemanticView };

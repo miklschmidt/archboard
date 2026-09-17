@@ -18,6 +18,7 @@ import {
 } from "@/transformers/semantic-renderer/board";
 import { installRendererHost, type ThemeColors } from "@/transformers/semantic-renderer/host";
 import { loadDiagramFaces } from "@/ui/browser-renderer/lib/diagram-faces";
+import { loadDiagramIcons, loadedIconPaths } from "@/ui/browser-renderer/lib/diagram-icons";
 import {
 	createEnginePool,
 	workerCeiling,
@@ -55,6 +56,7 @@ function startBrowserRenderer(setup: BrowserRendererSetup): void {
 		solve: createEnginePool(setup.startWorker, workerCeiling(navigator.hardwareConcurrency)),
 		themeColors: setup.themeColors,
 		fontBase64: noEmbeddedFaces,
+		iconPaths: loadedIconPaths,
 	});
 	started = loadDiagramFaces();
 }
@@ -75,7 +77,7 @@ async function drawBoardHere(
 	if (started === undefined) {
 		throw new Error("startBrowserRenderer was not called before drawing a board.");
 	}
-	await started;
+	await Promise.all([started, loadDiagramIcons(policy)]);
 	return renderBoard(board, { ...choices, fonts: "linked" }, policy);
 }
 

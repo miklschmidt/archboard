@@ -1,6 +1,6 @@
 // One picture of a board turning into the next, on the pane's surface.
 //
-// The server draws each picture whole and the browser holds no board content
+// The renderer draws each picture whole and the pane edits no board content
 // (ADR 0023), so a transition is not a matter of moving the pane's own boxes
 // about: there are none. What the pane has is the last picture, the next one
 // and the atlas of each, and the transition is a choreography over the next

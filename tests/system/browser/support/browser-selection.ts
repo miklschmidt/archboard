@@ -11,6 +11,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/semantic-drill-address.test.ts",
 	"tests/system/browser/semantic-claim.test.ts",
 	"tests/system/browser/measured-text.test.ts",
+	"tests/system/browser/browser-drawn-pictures.test.ts",
 	"tests/system/browser/opener-settings.test.ts",
 	"tests/system/browser/codex-text-workbench.test.ts",
 	"tests/system/browser/codex-live-voice.test.ts",

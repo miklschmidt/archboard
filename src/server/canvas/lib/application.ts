@@ -8,6 +8,7 @@ import {
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 } from "@/server/code-opener";
+import { diagramIconPaths } from "@/runtime/semantic-renderer/index";
 import { app } from "@/server/canvas/lib/canvas-app";
 import { checkoutWork } from "@/server/canvas/lib/canvas-owners";
 import { startServer } from "@/server/canvas/lib/canvas-startup";
@@ -61,6 +62,20 @@ app.use(
 		maxAge: "1y",
 	}),
 );
+
+// The icons a picture drawn in the browser names, one at a time (TASK-247). A
+// policy may name any of the icon set's three thousand, so the page asks for
+// the few it draws rather than carrying them all.
+app.get("/assets/diagram-icons/:name", (req, res) => {
+	const name = /^(Ri[A-Za-z0-9]+(?:Line|Fill))\.json$/u.exec(req.params.name)?.[1];
+	const paths = name === undefined ? undefined : diagramIconPaths(name);
+	if (paths === undefined) {
+		res.status(404).json({ success: false, error: `No icon called "${req.params.name}"` });
+		return;
+	}
+	// Revalidated, not kept: the paths change when the icon package does.
+	res.set("Cache-Control", "no-cache").json({ paths });
+});
 
 app.use(
 	createCodeOpenerRouter({
