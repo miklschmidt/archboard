@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	reconcileVariant,
 	VariantContentSchema,
+	VariantStandingSchema,
 	type ReconciliationIssue,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
@@ -128,8 +129,63 @@ describe("a real disagreement", () => {
 			kind: "deleted-and-changed",
 			theirs: "removed it",
 		});
+		// The other direction of the same disagreement, and the same rule: the
+		// fields it says changed come with what they were changed to, so the side
+		// that has to be written out again is read rather than retyped.
+		expect(about(settled.issues, "n2")[0]?.changed).toEqual([
+			{ field: "responsibility", before: null, after: "Holds every board" },
+		]);
 		// Still there, so what is left is a picture somebody can read.
 		expect(settled.content.nodes.map((node) => node.id)).toEqual(["n1", "n2"]);
+	});
+
+	test("the removed side's issue says what the predecessor changed the field to", () => {
+		// Settling this is writing the node again with that value, so an issue
+		// that named `description` and stopped would have the sentence copied out
+		// of the board by hand — one line below a near-identical responsibility,
+		// which is how a restored node comes back saying something nobody wrote
+		// (TASK-256.09).
+		const lease = {
+			id: "n3",
+			name: "Lease",
+			kind: "module",
+			responsibility: "Keeps one writer at a time on a board",
+			description: "Keeps one writer at a time",
+		};
+		const reworded = "Keeps one writer at a time, and says who and since when";
+		const base = content({ nodes: [API, lease], edges: [] });
+		const settled = reconcileVariant({
+			base,
+			mine: content({ nodes: [API], edges: [] }),
+			theirs: content({ nodes: [API, { ...lease, description: reworded }], edges: [] }),
+		});
+		expect(about(settled.issues, "n3")[0]?.changed).toEqual([
+			{ field: "description", before: lease.description, after: reworded },
+		]);
+		// And it is something a board may hold: a standing is written on the
+		// variant and read back after a restart, so a value the contract refused
+		// would make the board unreadable rather than the disagreement unsettled.
+		const written = VariantStandingSchema.safeParse({
+			against: "v1",
+			atVersion: 2,
+			base: JSON.parse(JSON.stringify(base)),
+			issues: JSON.parse(JSON.stringify(settled.issues)),
+		});
+		expect(written.success, JSON.stringify(written.error?.issues ?? [])).toBe(true);
+	});
+
+	test("it carries the whole value, whatever a terminal line has room for", () => {
+		// The printed disagreement line cuts a long value to fit; the issue is
+		// where the whole of it lives, so a settled value is carried across
+		// rather than retyped from what was printed.
+		const long = `${"Keeps one writer at a time on a board, ".repeat(3)}and says since when`;
+		const lease = { id: "n3", name: "Lease", kind: "module", description: "short" };
+		const settled = reconcileVariant({
+			base: content({ nodes: [API, lease], edges: [] }),
+			mine: content({ nodes: [API], edges: [] }),
+			theirs: content({ nodes: [API, { ...lease, description: long }], edges: [] }),
+		});
+		expect(about(settled.issues, "n3")[0]?.changed?.[0]?.after).toBe(long);
 	});
 
 	test("only the fields in dispute are held; the rest of the subject still merges", () => {

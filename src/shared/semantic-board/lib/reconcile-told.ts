@@ -20,6 +20,7 @@
 // the end by somebody else's reordering.
 
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
+import type { ChangedField } from "@/shared/semantic-board/lib/reconcile-standing";
 import type { FlowStep, SemanticFlow } from "@/shared/semantic-board/lib/views";
 import type { SemanticWalkthrough, WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 
@@ -31,6 +32,8 @@ interface OrderedIssue {
 	readonly field?: string;
 	readonly mine: unknown;
 	readonly theirs: unknown;
+	/** For a removal against a change: what the changing side changed, and to what. */
+	readonly changed?: readonly ChangedField[];
 	readonly repair: string;
 }
 
@@ -208,8 +211,8 @@ function removedHere<Entry extends object>(
 	fields: readonly string[],
 	what: string,
 ): OrderedIssue[] {
-	const moved = fields.filter((field) => !same(valueOf(now, field), valueOf(was, field)));
-	if (moved.length === 0) {
+	const changed = changedFields(was, now, fields);
+	if (changed.length === 0) {
 		return [];
 	}
 	return [
@@ -218,10 +221,12 @@ function removedHere<Entry extends object>(
 			what,
 			kind: "deleted-and-changed",
 			mine: "removed it",
-			theirs: `changed ${moved.join(", ")}`,
+			theirs: `changed ${changed.map((field) => field.field).join(", ")}`,
+			changed,
 			repair:
 				`This proposal removed this ${what}, and the variant it came from changed it. Keep the ` +
-				"removal and say so, or take the change instead.",
+				`removal and say so, or take the change by stating the ${what} again under this id, ` +
+				"with the values this disagreement carries for each field it changed.",
 		},
 	];
 }
@@ -270,7 +275,7 @@ function removedUnderMe<Entry extends { readonly id: string }>(
 	fields: readonly string[],
 	what: string,
 ): { entries: Entry[]; issues: OrderedIssue[] } {
-	const changed = fields.filter((field) => !same(valueOf(mine, field), valueOf(base, field)));
+	const changed = changedFields(base, mine, fields);
 	if (changed.length === 0) {
 		return { entries: [], issues: [] };
 	}
@@ -281,8 +286,9 @@ function removedUnderMe<Entry extends { readonly id: string }>(
 				subject: mine.id,
 				what,
 				kind: "deleted-and-changed",
-				mine: `changed ${changed.join(", ")}`,
+				mine: `changed ${changed.map((field) => field.field).join(", ")}`,
 				theirs: "removed it",
+				changed,
 				repair:
 					`The variant this proposal came from removed this ${what}, and this proposal changed ` +
 					"it. Keep the change and drop the removal, or remove it here too.",
@@ -299,6 +305,29 @@ function removedUnderMe<Entry extends { readonly id: string }>(
  */
 function valueOf(entry: object, field: string): unknown {
 	return Object.entries(entry).find(([name]) => name === field)?.[1];
+}
+
+/**
+ * The fields one side moved, with the values to settle them out of: a removal
+ * against a change is settled by stating the entry again, and that is written
+ * out of values rather than field names (TASK-256.09).
+ * @param was The entry as the two sides had it when they last agreed.
+ * @param now The entry as the side that changed it has it.
+ * @param fields The fields that say what it is.
+ * @returns One entry per field that moved.
+ */
+function changedFields<Entry extends object>(
+	was: Entry,
+	now: Entry,
+	fields: readonly string[],
+): ChangedField[] {
+	return fields
+		.filter((field) => !same(valueOf(now, field), valueOf(was, field)))
+		.map((field) => ({
+			field,
+			before: stated(valueOf(was, field)),
+			after: stated(valueOf(now, field)),
+		}));
 }
 
 /**
