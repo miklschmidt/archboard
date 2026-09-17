@@ -9,6 +9,7 @@ import { z } from "zod";
 import {
 	BoardCreateInputSchema,
 	ResolutionInputSchema,
+	VariantLifecycleSchema,
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -104,7 +105,7 @@ const OutcomeCheckSchema = z
 		kind: z.string().optional(),
 		/** edge-between: the ends match the named node or any node contained in it. */
 		includeContained: z.boolean().optional(),
-		lifecycle: z.enum(["current", "draft", "historical"]).optional(),
+		lifecycle: VariantLifecycleSchema.optional(),
 		/** Subjects of every kind: nodes, relationships, flows and walkthroughs together. */
 		removed: z.number().optional(),
 		addedAtLeast: z.number().optional(),

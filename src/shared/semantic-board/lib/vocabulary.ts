@@ -55,10 +55,12 @@ type MessageKind = z.infer<typeof MessageKindSchema>;
 
 /**
  * Where a variant stands. `current` is the architecture that is implemented,
- * `draft` a proposal, `historical` an architecture that was once current.
- * The designation moves; the variant's name never does (ADR 0023).
+ * `draft` a proposal, `historical` an architecture that was once current,
+ * `shelved` a proposal nobody intends to carry out, kept under its name so the
+ * thinking and every link into it survive. The designation moves; the variant's
+ * name never does (ADR 0023, ADR 0030).
  */
-const VariantLifecycleSchema = z.enum(["current", "draft", "historical"]);
+const VariantLifecycleSchema = z.enum(["current", "draft", "historical", "shelved"]);
 type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 
 export {

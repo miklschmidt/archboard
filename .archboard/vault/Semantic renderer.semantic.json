@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 12,
+	"version": 13,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-17T20:50:43.680Z",
+	"updatedAt": "2026-09-17T22:54:18.253Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -675,7 +675,7 @@
 		{
 			"id": "IV2KX3GX",
 			"name": "Readable layout",
-			"lifecycle": "draft",
+			"lifecycle": "shelved",
 			"parent": "1gSwIfid",
 			"content": {
 				"nodes": [
@@ -1201,5 +1201,12 @@
 			}
 		}
 	],
-	"current": "1gSwIfid"
+	"current": "1gSwIfid",
+	"shelvings": [
+		{
+			"variant": "IV2KX3GX",
+			"at": "2026-09-17T22:54:18.253Z",
+			"reason": "it has converged on its parent: the only difference left is a reminted node id, which compares as a deletion beside an addition rather than as a proposal"
+		}
+	]
 }

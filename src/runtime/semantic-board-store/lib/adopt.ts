@@ -10,6 +10,7 @@
 
 import type { Adoption, SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
 import { unsettledAncestor } from "@/runtime/semantic-board-store/lib/propagate";
+import { BRANCH_INSTEAD } from "@/runtime/semantic-board-store/lib/shelve";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 
 /** A board with the designation moved, or why it cannot move. */
@@ -69,6 +70,14 @@ function adoptable(board: SemanticBoard, adopting: SemanticVariant): SemanticRef
 			`"${adopting.name}" is an architecture that was implemented and has since been superseded. ` +
 				"What was true then does not change, and making it current again would rewrite that " +
 				"record rather than add to it. Branch a proposal from it and adopt that.",
+		);
+	}
+	if (adopting.lifecycle === "shelved") {
+		return refuse(
+			"VARIANT_SHELVED",
+			`"${adopting.name}" is a proposal this board has let go, and the record says when and ` +
+				"why. Adopting it would make the implemented architecture a proposal nobody was " +
+				`carrying out. ${BRANCH_INSTEAD}`,
 		);
 	}
 	if (adopting.reconciliation !== undefined) {

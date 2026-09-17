@@ -1,17 +1,24 @@
-// The two commands that move a board's lifecycle on: settling what a proposal
-// is holding, and making one the architecture that is implemented.
+// The three commands that move a board's lifecycle on: settling what a proposal
+// is holding, making one the architecture that is implemented, and letting one
+// go that nobody intends to carry out.
 //
 // Separate from the commands that change what a board says because they are
 // about something else: not what the architecture is, but which answer to a
-// disagreement stands, and which state is the one in use. Both go through the
-// same write boundary as everything else — same lease, same expected version,
-// one atomic write, one version advance (ADR 0016, ADR 0023).
+// disagreement stands, which state is the one in use, and which proposals are
+// still live. All three go through the same write boundary as everything else —
+// same lease, same expected version, one atomic write, one version advance
+// (ADR 0016, ADR 0023, ADR 0030).
 
 import { z } from "zod";
-import { BoardAdoptInputSchema, ResolutionInputSchema } from "@/shared/semantic-board/index";
+import {
+	BoardAdoptInputSchema,
+	BoardShelveInputSchema,
+	ResolutionInputSchema,
+} from "@/shared/semantic-board/index";
 import {
 	adoptSemanticBoardOnCanvas,
 	resolveSemanticBoardOnCanvas,
+	shelveSemanticBoardOnCanvas,
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import {
@@ -252,4 +259,116 @@ const semanticAdoptContract = defineCommand({
 	},
 });
 
-export { semanticAdoptContract, semanticResolveContract };
+const ShelveInputSchema = z.object({
+	name: z.string(),
+	variant: SelectorSchema,
+	reason: SelectorSchema,
+});
+
+const semanticShelveContract = defineCommand({
+	path: ["semantic", "shelve"],
+	shared: ["url", "doing", "expect-version", "as-session"],
+	summary: "Let go of a proposal nobody intends to carry out",
+	description:
+		"Marks one proposal on this board as shelved: kept under its name, with everything it says " +
+		"and every link that names it still opening it, but no longer a proposal anybody is going to " +
+		"carry out. Nothing is renamed, deleted or reparented. A shelved variant stops following the " +
+		"variant it came from, so edits above it no longer raise disagreements somebody has to " +
+		"settle, and anything it was holding is let go with it. It cannot be edited or adopted " +
+		"afterwards; branch from it to propose the same thing again. The current variant, a " +
+		"historical one, one already shelved, and one that other proposals are still standing on are " +
+		"all refused.",
+	examples: [
+		'archboard semantic shelve pipeline --variant "Readable layout" --reason "the parent adopted the same layout" --expect-version 7 --doing "letting the readable-layout proposal go"',
+	],
+	parameters: [
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
+		{
+			kind: "option",
+			key: "variant",
+			spellings: ["--variant"],
+			value: "required",
+			placeholder: "variant",
+			required: true,
+			description: "Which proposal to let go, by id or name",
+		},
+		{
+			kind: "option",
+			key: "reason",
+			spellings: ["--reason"],
+			value: "required",
+			placeholder: "why",
+			required: true,
+			description: "Why the proposal was let go, kept with the record of the decision",
+		},
+	],
+	input: { ingress: ShelveInputSchema },
+	result: SemanticBoardResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				description: "The board as it now stands",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		/**
+		 * One answer: the board.
+		 * @returns The output case's id.
+		 */
+		select: () => "json",
+	},
+	prerequisites: ["server", "doing"],
+	effects: ["local-read", "server-state-write"],
+	refusals: [
+		serverRefusal,
+		doingRefusal,
+		expectVersionRefusal,
+		boardHeldRefusal,
+		boardVersionRefusal,
+		claimRevokedRefusal,
+	],
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/semantic-boards/shelve",
+			cardinality: "one",
+			description: "Let the proposal go",
+		},
+	],
+	/**
+	 * Let the proposal go.
+	 * @param input What the command was given.
+	 * @param context The command context.
+	 * @returns The board as it now stands.
+	 */
+	async handler(input, context) {
+		await context.require("server", "semantic shelve");
+		editedVersion(input.name);
+		const shelving = context.parse(BoardShelveInputSchema, {
+			variant: input.variant,
+			reason: input.reason,
+		});
+		const written = await shelveSemanticBoardOnCanvas(input.name, shelving);
+		const board = written.board;
+		const shelved = board.shelvings?.at(-1);
+		const name = board.variants.find((one) => one.id === shelved?.variant)?.name ?? input.variant;
+		return {
+			result: writeResult(written),
+			diagnostics: [
+				`"${name}" is shelved on "${board.name}", as of version ${board.version}. It keeps its ` +
+					"name and everything it says; branch from it to propose it again.",
+			],
+		};
+	},
+});
+
+export { semanticAdoptContract, semanticResolveContract, semanticShelveContract };

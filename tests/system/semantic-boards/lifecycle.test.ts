@@ -449,4 +449,50 @@ describe("settling a proposal and adopting an architecture", () => {
 		expect(typeof announced?.["heldAs"]).toBe("string");
 		socket.close();
 	}, 60_000);
+
+	test("a spent proposal is let go through the command line", () => {
+		const [board, proposal] = ["shelving", "Readable layout"];
+		cli(
+			["semantic", "new", board, "--doing", "starting a board to shelve from"],
+			JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
+		);
+		const start = JSON.parse(cli(["semantic", "show", board]).stdout).board;
+		cli([
+			"semantic",
+			"branch",
+			board,
+			"--from",
+			start.variants[0].name,
+			"--as",
+			proposal,
+			"--expect-version",
+			String(start.version),
+			"--doing",
+			"proposing a layout",
+		]);
+		const held = JSON.parse(cli(["semantic", "show", board]).stdout).board;
+		const was = held.variants.find((one: { name: string }) => one.name === proposal);
+		expect(was.lifecycle, "the proposal this case shelves was not branched").toBe("draft");
+		const letGo = cli([
+			"semantic",
+			"shelve",
+			board,
+			"--variant",
+			proposal,
+			"--reason",
+			"the parent already says this",
+			"--expect-version",
+			String(held.version),
+			"--doing",
+			"letting the layout proposal go",
+		]);
+		expect(letGo.status, letGo.stderr).toBe(0);
+		const after = JSON.parse(cli(["semantic", "show", board]).stdout).board;
+		const shelved = after.variants.find((one: { name: string }) => one.name === proposal);
+		// Kept as it was left, and the board says what it let go, and why.
+		expect(shelved).toEqual({ ...was, lifecycle: "shelved" });
+		expect(after.shelvings).toEqual([
+			{ variant: was.id, at: expect.any(String), reason: "the parent already says this" },
+		]);
+	}, 60_000);
 });

@@ -16,6 +16,7 @@ import {
 	FIRST_BOARD_VERSION,
 	type BoardAdoptInput,
 	type BoardCreateInput,
+	type BoardShelveInput,
 	nextVersion,
 	type ResolutionInput,
 	type SemanticBoard,
@@ -30,6 +31,7 @@ import {
 	type DescendantOutcome,
 } from "@/runtime/semantic-board-store/lib/propagate";
 import { adoptVariant } from "@/runtime/semantic-board-store/lib/adopt";
+import { BRANCH_INSTEAD, shelveVariant } from "@/runtime/semantic-board-store/lib/shelve";
 import { restorableNodes, settleByRestoring } from "@/runtime/semantic-board-store/lib/restore";
 import { settleVariant } from "@/runtime/semantic-board-store/lib/settle";
 import { idsInUse, mintInto, openBatch } from "@/runtime/semantic-board-store/lib/batch";
@@ -375,6 +377,38 @@ function adoptVariantTransition(input: BoardAdoptInput): SemanticTransition {
 }
 
 /**
+ * Let one proposal go, under its name.
+ * @param input Which variant, and why it was let go.
+ * @returns The transition.
+ */
+function shelveVariantTransition(input: BoardShelveInput): SemanticTransition {
+	return {
+		summary: "shelve a proposal",
+		changesExistingBoard: true,
+		/**
+		 * Build the board with the proposal let go.
+		 * @param before The board as it stands.
+		 * @param at The timestamp the write is being made at.
+		 * @returns The board afterwards, or why it cannot be let go.
+		 */
+		apply: (before, at) => {
+			if (before === null) {
+				return refuse("BOARD_MISSING", "there is no such board in the vault");
+			}
+			const shelving = resolveVariant(before, input.variant);
+			if (shelving === undefined) {
+				return refuse("UNKNOWN_VARIANT", `this board has no variant called "${input.variant}"`);
+			}
+			const shelved = shelveVariant(before, shelving, at, input.reason);
+			if (!shelved.ok) {
+				return shelved;
+			}
+			return { ok: true, board: { ...shelved.board, updatedAt: at } };
+		},
+	};
+}
+
+/**
  * What a fresh proposal is waiting on, when what it came from is unsettled.
  * @param parent The variant it was derived from.
  * @param before The board as it stands.
@@ -415,6 +449,7 @@ export {
 	type SemanticTransition,
 	createBoardTransition,
 	editVariantTransition,
+	shelveVariantTransition,
 };
 
 /**
@@ -438,7 +473,12 @@ function editsContent(input: VariantEditInput): boolean {
 
 /**
  * The variant an edit names, when it exists and may be edited: a state that
- * was implemented and superseded is a record, and records are not edited.
+ * was implemented and superseded is a record, and records are not edited, and
+ * a proposal that has been let go is an argument that is over.
+ *
+ * Both refusals are narrow on purpose — they fire only when a batch changes
+ * content. Views and level belong to the board rather than to any one variant,
+ * so a command that only changes those is not editing a frozen state at all.
  * @param board The board as it stands.
  * @param wanted The variant's id or name.
  * @param changesContent Whether variant content is being edited.
@@ -459,6 +499,13 @@ function editableVariant(
 			`"${variant.name}" is an architecture that was implemented and has since been ` +
 				"superseded. What was true then does not change: branch a proposal from it if you " +
 				"want to say something different.",
+		);
+	}
+	if (variant.lifecycle === "shelved" && changesContent) {
+		return refuse(
+			"VARIANT_SHELVED",
+			`"${variant.name}" is a proposal this board has let go, and it is kept as it was left. ` +
+				`Editing it would put words into an argument that is over. ${BRANCH_INSTEAD}`,
 		);
 	}
 	return { ok: true, variant };
