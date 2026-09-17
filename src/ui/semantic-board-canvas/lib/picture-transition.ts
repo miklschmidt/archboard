@@ -37,7 +37,7 @@ import {
 	subjectGroups,
 	type SubjectGroup,
 } from "@/ui/semantic-board-canvas/lib/picture-pairing";
-import { SUBJECT_ATTRIBUTE } from "@/ui/semantic-board-canvas/lib/subjects";
+import { SUBJECT_ATTRIBUTE, keepingMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** A transition in progress: where it is, and how it ends. */
 interface PictureTransition {
@@ -214,11 +214,64 @@ function carry(before: SubjectGroup, after: SubjectGroup): Updater | null {
 		return swapInPlace(before, after);
 	}
 	if (after.shape === "line") {
-		return carryLine(before, after);
+		return alongside(carryLine(before, after), easeGroundOpacity(before.element, after.element));
 	}
 	return before.box === null || after.box === null
 		? swapInPlace(before, after)
-		: carryCard(before, before.box, after, after.box);
+		: alongside(
+				carryCard(before, before.box, after, after.box),
+				easeGroundOpacity(before.element, after.element),
+			);
+}
+
+/**
+ * How visible a group is drawn, whatever the viewer does to it: the renderer's
+ * own `opacity`, which a removed subject's whole group is drawn at.
+ * @param group The group.
+ * @returns Its opacity, 1 when it states none.
+ */
+function drawnOpacity(group: Element): number {
+	const stated = Number.parseFloat(group.getAttribute("opacity") ?? "1");
+	return Number.isFinite(stated) ? stated : 1;
+}
+
+/**
+ * Ease a subject's whole-group opacity from how the last picture drew it to how
+ * the next one does, in the window its colours cross-fade in: a subject a
+ * proposal removes fades to a ghost with the rest of its change, rather than
+ * dropping to one at once while its colours are still on their way.
+ * @param before The group in the last picture.
+ * @param after The group in the next.
+ * @returns The step, or null when the two are drawn equally visible.
+ */
+function easeGroundOpacity(before: Element, after: SVGGElement): Updater | null {
+	const from = drawnOpacity(before);
+	const to = drawnOpacity(after);
+	if (from === to) {
+		return null;
+	}
+	const { fadeStart, fadeEnd } = PICTURE_TRANSITION_PHASES;
+	return (progress: number): void => {
+		after.style.opacity = String(
+			from + (to - from) * easeInOut(phase(progress, fadeStart, fadeEnd)),
+		);
+	};
+}
+
+/**
+ * Two steps run as one.
+ * @param first A step, or null.
+ * @param second Another, or null.
+ * @returns The two together, or whichever there is, or null for neither.
+ */
+function alongside(first: Updater | null, second: Updater | null): Updater | null {
+	if (first === null || second === null) {
+		return first ?? second;
+	}
+	return (progress: number): void => {
+		first(progress);
+		second(progress);
+	};
 }
 
 /**
@@ -254,14 +307,18 @@ function transitionPicture(
 	after: SemanticDrawing,
 	shift: Shift = NO_SHIFT,
 ): PictureTransition {
-	/** Land on the new picture exactly as the server drew it. */
+	/** Land on the new picture exactly as the server drew it, keeping the viewer's marks on it. */
 	function finish(): void {
-		stagePicture(surface, after.svg);
+		keepingMarks(surface, () => {
+			stagePicture(surface, after.svg);
+		});
 	}
 	const holder = surface.ownerDocument.createElement("div");
 	holder.innerHTML = before.svg;
 	const oldRoot = holder.querySelector("svg");
-	stagePicture(surface, after.svg);
+	// The marks the last picture carried go up with the next one, so a change of
+	// them — a presented step moving on — eases from what was seen.
+	finish();
 	const root = surface.querySelector("svg");
 	if (oldRoot === null || root === null || before.svg === after.svg) {
 		return { seek: nothingToSeek, finish };

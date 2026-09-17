@@ -20,6 +20,8 @@ interface Card {
 	readonly dashed?: boolean;
 	/** Whether a standing's pin sits astride the card's top-left corner. */
 	readonly pinned?: boolean;
+	/** Whether the card is drawn as a removed subject, its whole group a ghost. */
+	readonly ghost?: boolean;
 }
 
 /** One line to draw. */
@@ -27,6 +29,8 @@ interface Line {
 	readonly id: string;
 	readonly d: string;
 	readonly masked?: boolean;
+	/** Whether the line is drawn as a removed subject, its whole group a ghost. */
+	readonly ghost?: boolean;
 }
 
 /**
@@ -39,7 +43,7 @@ function cardMarkup(card: Card): string {
 	const outline =
 		card.dashed === true ? ' stroke-dasharray="4 3" stroke="#f0b429"' : ' stroke="#555"';
 	return (
-		`<g data-semantic-kind="node" data-semantic-id="${card.id}">` +
+		`<g data-semantic-kind="node" data-semantic-id="${card.id}"${card.ghost === true ? ' opacity="0.4"' : ""}>` +
 		`<rect class="ab-halo" x="${x - 3}" y="${y - 3}" width="${width + 6}" height="${height + 6}" rx="9" fill="none"/>` +
 		`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6" fill="#222"${outline}/>` +
 		`<rect x="${x + 16}" y="${y + 16}" width="24" height="24" rx="5" fill="#888"/>` +
@@ -59,7 +63,7 @@ function cardMarkup(card: Card): string {
 function lineMarkup(line: Line): string {
 	const mask = line.masked === true ? ' mask="url(#crossing-1)"' : "";
 	return (
-		`<g data-semantic-kind="edge" data-semantic-id="${line.id}"${mask}>` +
+		`<g data-semantic-kind="edge" data-semantic-id="${line.id}"${mask}${line.ghost === true ? ' opacity="0.4"' : ""}>` +
 		`<path class="ab-halo" d="${line.d}" fill="none"/>` +
 		`<path d="${line.d}" fill="none" stroke="#999" marker-end="url(#head)"/>` +
 		`</g>`

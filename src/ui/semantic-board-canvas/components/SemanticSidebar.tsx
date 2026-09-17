@@ -48,7 +48,10 @@ function SidebarPanel(props: {
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<TabsContent value={props.tab} className="flex min-h-0 flex-col overflow-y-auto">
+		<TabsContent
+			value={props.tab}
+			className="flex min-h-0 flex-col overflow-x-hidden overflow-y-auto"
+		>
 			{props.children}
 		</TabsContent>
 	);

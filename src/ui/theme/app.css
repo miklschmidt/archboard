@@ -164,11 +164,24 @@
 	}
 }
 
-/* While a walkthrough is presented, the veil over what a step is not about
-   cross-fades as the step changes. Not while a picture is moving in or across:
-   a flight writes opacity every frame, and an eased opacity would lag it. */
-[data-slot="semantic-board-surface"].is-presenting:not([data-picture-motion]) [data-semantic-id] {
-	transition: opacity var(--presentation-step-ms, 0ms) ease-in-out;
+/* While a walkthrough is presented, what a step is not about recedes under a
+   veil that cross-fades as the step changes. The veil is a filter rather than
+   the opacity group inspection uses: a step read through another view carries
+   the picture across while the camera glides, and that flight writes each
+   subject's opacity every frame. A filter multiplies with it, so a card only the
+   new view draws arrives veiled rather than lit and then dimmed. */
+[data-slot="semantic-board-surface"].is-presenting [data-semantic-id] {
+	transition: filter var(--presentation-step-ms, 0ms) ease-in-out;
+}
+[data-slot="semantic-board-surface"].is-presenting.is-group-focus [data-semantic-id] {
+	opacity: 1;
+	filter: opacity(0.28);
+}
+[data-slot="semantic-board-surface"].is-presenting.is-group-focus .is-group-member,
+[data-slot="semantic-board-surface"].is-presenting.is-group-focus
+	.is-group-member
+	[data-semantic-id] {
+	filter: none;
 }
 @media (prefers-reduced-motion: reduce) {
 	[data-slot="semantic-board-surface"].is-presenting [data-semantic-id] {

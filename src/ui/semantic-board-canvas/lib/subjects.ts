@@ -121,12 +121,57 @@ function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
 	}
 }
 
+/** Every class the viewer puts on a subject's group; none of them is the renderer's. */
+const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, ...Object.values(GROUP_CLASSES)];
+
+/**
+ * The viewer's marks on a surface, by subject.
+ * @param surface The surface.
+ * @returns Each marked subject's marks.
+ */
+function marksOn(surface: Element): Map<string, string[]> {
+	const marked = new Map<string, string[]>();
+	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
+		const marks = VIEWER_MARKS.filter((mark) => group.classList.contains(mark));
+		const id = group.getAttribute(SUBJECT_ATTRIBUTE);
+		if (id !== null && marks.length > 0) {
+			marked.set(id, marks);
+		}
+	}
+	return marked;
+}
+
+/**
+ * Put a picture back on a surface without it ever being seen unmarked.
+ *
+ * The marks the viewer draws — attention, a group, a presented step's veil —
+ * are put on the markup after it is staged, and a flight that lands stages the
+ * picture again from its string. Between the two a frame could be painted with
+ * none of them, and whatever they light or veil would be seen to switch off and
+ * fade back. So the marks the surface carries now are copied onto the fresh
+ * markup, subject by subject, as it goes up; the marks' own effects bring them
+ * up to date afterwards as they always do.
+ * @param surface The surface.
+ * @param stage Put the picture up.
+ */
+function keepingMarks(surface: Element, stage: () => void): void {
+	const marked = marksOn(surface);
+	stage();
+	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
+		const marks = marked.get(group.getAttribute(SUBJECT_ATTRIBUTE) ?? "");
+		if (marks !== undefined) {
+			group.classList.add(...marks);
+		}
+	}
+}
+
 export {
 	GROUP_CLASSES,
 	GROUP_FOCUS_CLASS,
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
 	isSubject,
+	keepingMarks,
 	markGroupFocus,
 	markSubjects,
 	subjectAt,
