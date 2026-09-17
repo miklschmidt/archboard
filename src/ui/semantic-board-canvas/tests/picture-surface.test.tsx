@@ -45,8 +45,46 @@ afterEach(() => {
 	cleanup();
 });
 
+/**
+ * The label drawn for a connection, as a pill.
+ * @param id The connection.
+ * @param y How far down the pill sits.
+ * @returns The pill, as a card.
+ */
+function pill(id: string, y: number): Card {
+	return { id, label: true, box: { x: 130, y, width: 50, height: 20 }, title: id };
+}
+
 describe("a picture with nothing to carry it from", () => {
 	const LOW: Card = { id: "n3", box: { x: 10, y: 300, width: 100, height: 60 }, title: "Gamma" };
+
+	test("every connection label arrives together at the end, whenever its own line was drawn", () => {
+		const surface = surfaceElement();
+		// One line near the top, drawn early in the wave; one near the bottom, drawn late.
+		const early = { id: "e1", d: "M110,40 L200,40" };
+		const late = { id: "e2", d: "M110,330 L200,330" };
+		const drawn = picture([A, B, LOW, pill("e1", 30), pill("e2", 320)], [early, late]);
+		const entrance = enterPicture(surface, drawn);
+		/**
+		 * How visible a connection's label is.
+		 * @param id The connection.
+		 * @returns Its opacity.
+		 */
+		const labelOf = (id: string): number =>
+			Number(
+				surface.querySelectorAll<SVGGElement>(`g[data-semantic-id="${id}"]`)[1]!.style.opacity,
+			);
+		const { labelsStart } = PICTURE_ENTRY_PHASES;
+		entrance.seek(labelsStart);
+		expect(labelOf("e1")).toBe(0);
+		expect(labelOf("e2")).toBe(0);
+		entrance.seek((labelsStart + 1) / 2);
+		expect(labelOf("e1")).toBeGreaterThan(0);
+		expect(labelOf("e1")).toBe(labelOf("e2"));
+		entrance.seek(1);
+		expect(labelOf("e1")).toBe(1);
+		expect(labelOf("e2")).toBe(1);
+	});
 
 	test("cards arrive down the board, lines draw on after the cards, and it lands untouched", () => {
 		const surface = surfaceElement();
