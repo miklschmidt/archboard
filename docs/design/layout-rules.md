@@ -1112,3 +1112,84 @@ to 0.35 and flask-map-1 0.50 to 0.46. Reverted. The lesson is about the
 measure as much as the spacing: `SIDE_BY_SIDE` has to be re-derived from the
 drawn separations whenever the engine's edge spacing changes, or a spacing
 bump silently empties the column.
+
+## 26. A pair crossing a frame boundary (2026-09-17, TASK-258)
+
+TASK-256.11 seated relationships that share both endpoints apart, so a pair
+between two cards at one level draws straight. A pair whose ends sit at
+different containment levels still met twice, and the lever it reached for —
+the index on the frame's boundary port — does nothing. Measured here, on the
+pair from the S08 evaluation with its emitting method inside a `Flask app`
+frame:
+
+- **The engine ignores `elk.port.index` on a boundary port.** The seat, the
+  seat negated, and ten times the seat all draw the same picture as index 0,
+  byte for byte. So does reversing the order the boundary ports are pushed
+  onto the frame. Only the port's **face** is the renderer's.
+- **The crossings of one face are seated in the order the engine walks the
+  source's face.** With the pair leaving a card's south face, whose ports the
+  engine walks from the far end, the route departing at the larger coordinate
+  across the reading turns first and takes the nearest lane. That is the
+  reverse of the order the pair must turn in, so down the flank a crossing has
+  taken since section 11 — the beside flank, with a title on top — the two
+  horizontal runs are always in the wrong order and always meet.
+- **Seating the ends the other way only mirrors the drawing.** The lane order
+  follows the end seating, so both seatings draw the same two crossings with
+  the labels swapped. Page, route length and bends are identical.
+- **A port-less edge across a hierarchy is still refused** (section 10): the
+  engine answers `UnsupportedConfigurationException: no entry found for key`,
+  so leaving the crossing to the router is not available.
+
+What landed: a relationship that shares both endpoints with another crosses a
+frame **by the face it is already travelling**, instead of turning to bundle
+down a flank of the frame and turning back. A route out of a frame then
+descends straight through the frame's foot and the pair cannot meet. Where
+the face it travels is the frame's title band — a route _into_ a frame with
+the title on top — it bundles as before, but down the **far** flank rather
+than the near one, that being the flank whose seating agrees with the order a
+reader follows. With the title on the left the two are the same flank and the
+choice does not arise. Both halves are measured clear.
+
+The rule is asked only of a relationship with a sister, so `seat.shared` is 1
+everywhere else and every other crossing takes the flank it always has. Twice
+over: with that flag false, `crossingFace` is the exact lookup table it
+replaces over all eight header-and-face combinations; and no fixture, vault
+board, variant or view holds two relationships sharing a pair of endpoints, so
+the flag is never true. All four fixtures and every variant of all fifteen
+vault boards measure unchanged, measure by measure, against a run of the tree
+before the change.
+
+The pair, a triple, both edge orders, both themes, five shapes, under each of
+the four flank rules and each reading. Fit is not the column here: every one of
+these shapes fits the reference pane whole, before and after, so fit is 1.00
+throughout and the page is what moves.
+
+| shape              | page before | page after | crossings before | after |
+| ------------------ | ----------- | ---------- | ---------------: | ----: |
+| at one level       | 308x310     | 308x310    |                0 |     0 |
+| out of a frame     | 601x572     | 404x443    |                1 |     0 |
+| into a frame       | 621x573     | 601x572    |                1 |     0 |
+| between two frames | 448x889     | 649x760    |                1 |     0 |
+| out of two frames  | 745x889     | 500x587    |                1 |     0 |
+
+One of the five buys the crossing with page: between two frames the drawing
+goes 201 wider and 129 shorter, a quarter more area, because the pair enters
+the target's frame down its far flank instead of cutting the near one. That is
+the trade the rule makes, and only a board with a pair ever makes it.
+
+### Measured and not kept
+
+**Every crossing by the face it travels, not only a pair's.** The same rule
+asked of every relationship is a wash at best and a loss where it matters:
+Codex session's fit 0.60 to 0.66 and Browser application's 0.57 to 0.63 and
+its crossings 6 to 4, against **Agent workbench's fit 0.47 to 0.40**, its
+shared corridor 374 to 1367 and its label reach 234 to 517, and Board viewer's
+label strand 0.85 to 1.14, past the 1.0 the suite holds. The bundle down a
+frame's edge earns its keep on a board with several crossings; it only fails
+a pair.
+
+**A pair into a frame crossing by the frame's top.** It draws the best
+picture of all — two straight descents, 404x498 against 601x572 — and runs
+both routes through the frame's own title: with a title of any length the
+lines cross the words, and every one crosses the rule under them. Section 11
+decided a crossing never runs across a title, and this does not change that.

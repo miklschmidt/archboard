@@ -14,6 +14,7 @@ import { rankNodes } from "@/transformers/semantic-renderer/lib/layout/rank";
 import {
 	ALONE,
 	besideFlankOf,
+	hasSister,
 	portIndex,
 	seatsOf,
 	type FlankRule,
@@ -336,16 +337,21 @@ function ancestryOf(id: string, measured: MeasuredArchitecture): string[] {
 		: [id, ...ancestryOf(parent, measured)];
 }
 
+/** The frames one route passes out of and into, in the order it meets them. */
+interface Boundaries {
+	/** The frames the route leaves, innermost first. */
+	readonly leaving: readonly string[];
+	/** The frames the route enters, outermost first. */
+	readonly entering: readonly string[];
+}
+
 /**
  * Identify only the frames an edge must leave and enter, in traversal order.
  * @param edge The semantic relationship.
  * @param measured The existing inclusion tree.
  * @returns The frames left, outermost last, and the frames entered, outermost first.
  */
-function boundariesOf(
-	edge: SemanticEdge,
-	measured: MeasuredArchitecture,
-): { readonly leaving: string[]; readonly entering: string[] } {
+function boundariesOf(edge: SemanticEdge, measured: MeasuredArchitecture): Boundaries {
 	const from = ancestryOf(edge.from, measured);
 	const to = ancestryOf(edge.to, measured);
 	const common = from.find((id) => to.includes(id));
@@ -354,38 +360,62 @@ function boundariesOf(
 	return { leaving, entering: entering.toReversed() };
 }
 
+/** One frame a route crosses, and the face of that frame it crosses by. */
+interface Crossing {
+	/** The frame being crossed. */
+	readonly frame: string;
+	/** The face of it the crossing sits on. */
+	readonly side: Face;
+}
+
 /**
- * One explicit boundary port is shared by the two adjacent edge sections: on
- * the face the route leaves its source by for every frame it leaves, and on
- * the face it reaches its target by for every frame it enters.
- * @param edge The semantic relationship that owns the crossing.
+ * The frames a route crosses and the face it crosses each by, in traversal
+ * order: the face the route leaves its source by for every frame it leaves,
+ * and the face it reaches its target by for every frame it enters.
+ *
+ * A relationship with a sister crosses straight on rather than bundling down
+ * the frame's flank, since the engine seats the crossings of a flank in an
+ * order a reader cannot follow (`crossingFace`). The engine accepts a
+ * crossing on any face whatever faces the ends use.
  * @param boundaries Frames left and entered, in traversal order.
- * @param boundaries.leaving The frames the route leaves, innermost first.
- * @param boundaries.entering The frames the route enters, outermost first.
- * @param nodes The engine hierarchy being constructed.
  * @param sides The faces this relationship leaves and arrives by.
  * @param header Where a frame's title band sits in the solving frame.
+ * @param seat Which of the relationships sharing this pair of endpoints it is.
+ * @returns The crossings, in the order the route makes them.
+ */
+function crossingsOf(
+	boundaries: Boundaries,
+	sides: PortSides,
+	header: HeaderSide,
+	seat: Seat,
+): Crossing[] {
+	const straight = hasSister(seat);
+	const exitFace = crossingFace(sides[0], header, straight);
+	const entryFace = crossingFace(sides[1], header, straight);
+	return [
+		...boundaries.leaving.map((frame) => ({ frame, side: exitFace })),
+		...boundaries.entering.map((frame) => ({ frame, side: entryFace })),
+	];
+}
+
+/**
+ * One explicit boundary port is shared by the two adjacent edge sections.
+ * Only its face is the renderer's: the engine ignores the index a boundary
+ * port carries, and seats the crossings of one face itself, in the order it
+ * walks the source's face (measured on 2026-09-17, TASK-258).
+ * @param edge The semantic relationship that owns the crossing.
+ * @param crossings The frames it crosses and the face of each, in traversal order.
+ * @param nodes The engine hierarchy being constructed.
  * @returns Their port ids, in traversal order.
  */
 function boundaryPorts(
 	edge: SemanticEdge,
-	boundaries: { readonly leaving: readonly string[]; readonly entering: readonly string[] },
+	crossings: readonly Crossing[],
 	nodes: ReadonlyMap<string, ElkNode>,
-	sides: PortSides,
-	header: HeaderSide,
 ): string[] {
-	// A frame is left and entered by a side that is not its title band, which
-	// is the frame's own and never a corridor; the engine accepts a crossing on
-	// any face whatever faces the ends use.
-	const entryFace = crossingFace(sides[1], header);
-	const exitFace = crossingFace(sides[0], header);
-	const crossings = [
-		...boundaries.leaving.map((id) => ({ id, side: exitFace })),
-		...boundaries.entering.map((id) => ({ id, side: entryFace })),
-	];
-	return crossings.map(({ id, side }, index) => {
+	return crossings.map(({ frame, side }, index) => {
 		const port = portOf(`${edge.id}:boundary:${index}`, side, 0);
-		nodes.get(id)?.ports?.push(port);
+		nodes.get(frame)?.ports?.push(port);
 		return port.id;
 	});
 }
@@ -431,15 +461,12 @@ function edgeOf(
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
 	const seat = seats.get(edge.id) ?? ALONE;
+	const crossings = crossingsOf(boundariesOf(edge, measured), [fromSide, toSide], header, seat);
 	const fromIndex = portIndex(rule, fromSide, ranks.get(edge.to) ?? 0, seat);
 	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0, seat);
 	attachPort(edge.from, portOf(fromPort, fromSide, fromIndex), nodes);
 	attachPort(edge.to, portOf(toPort, toSide, toIndex), nodes);
-	const ports = [
-		fromPort,
-		...boundaryPorts(edge, boundariesOf(edge, measured), nodes, [fromSide, toSide], header),
-		toPort,
-	];
+	const ports = [fromPort, ...boundaryPorts(edge, crossings, nodes), toPort];
 	return ports.slice(1).map((target, index) => ({
 		id: index === 0 ? edge.id : `${edge.id}:${index}`,
 		sources: [ports[index]!],
