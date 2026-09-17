@@ -45,6 +45,57 @@ async function create(input: Record<string, unknown>): Promise<void> {
 }
 
 /**
+ * Derive a proposal from a variant.
+ * @param on The board.
+ * @param from The variant to derive from.
+ * @param name What to call the proposal.
+ * @returns What the write did.
+ */
+async function branch(on: string, from: string, name: string) {
+	return store.writeSemanticBoard({
+		board: on,
+		writer,
+		expectedVersion: read(on).version,
+		transition: store.branchVariantTransition(
+			contract.BoardBranchInputSchema.parse({ from, name }),
+		),
+	});
+}
+
+/**
+ * Restate one node on one variant.
+ * @param on The board.
+ * @param variant The variant to edit.
+ * @param node The node as it should now stand.
+ * @returns What the write did.
+ */
+async function restate(on: string, variant: string, node: Record<string, unknown>) {
+	return store.writeSemanticBoard({
+		board: on,
+		writer,
+		expectedVersion: read(on).version,
+		transition: store.editVariantTransition(
+			contract.VariantEditInputSchema.parse({ variant, nodes: [node] }),
+		),
+	});
+}
+
+/**
+ * Designate a variant as the architecture that exists.
+ * @param on The board.
+ * @param variant The variant to adopt.
+ * @returns What the write did.
+ */
+async function adopt(on: string, variant: string) {
+	return store.writeSemanticBoard({
+		board: on,
+		writer,
+		expectedVersion: read(on).version,
+		transition: store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant })),
+	});
+}
+
+/**
  * The checker's drill-down findings about one board.
  * @param board The board's name.
  * @returns Its `DRILL_DOWN_*` diagnostics.
@@ -186,6 +237,86 @@ test("a link to a board the vault does not hold is reported once, and its level 
 		"DRILL_DOWN_UNKNOWN_BOARD",
 	]);
 });
+
+test("what a link said while it was the architecture is not reported once it is history", async () => {
+	await create({
+		name: "frozen-service",
+		level: "service",
+		nodes: [{ name: "Store", kind: "module" }],
+	});
+	const opens = { board: "frozen-service", variant: { kind: "current" } };
+	await create({
+		name: "frozen-system",
+		level: "system",
+		nodes: [
+			{ name: "Caller", kind: "app" },
+			{ name: "Checkout", kind: "external", drillDown: opens },
+		],
+		edges: [{ from: "Caller", to: "Checkout", kind: "http" }],
+	});
+	// While that state is the one somebody can repair, it is reported.
+	expect(linkFindings("frozen-system").map((issue) => issue.code)).toEqual([
+		"DRILL_DOWN_LEVEL_MISMATCH",
+	]);
+
+	const baseline = read("frozen-system").variants[0]!.name;
+	expect((await branch("frozen-system", baseline, "Ours after all")).outcome).toBe("applied");
+	expect(
+		(
+			await restate("frozen-system", "Ours after all", {
+				name: "Checkout",
+				kind: "service",
+				drillDown: opens,
+			})
+		).outcome,
+	).toBe("applied");
+	expect((await adopt("frozen-system", "Ours after all")).outcome).toBe("applied");
+
+	const was = read("frozen-system").variants.find((variant) => variant.name === baseline);
+	expect(was?.lifecycle).toBe("historical");
+	// The content that fails the check is still on the board, unchanged: what
+	// was true then does not change, and no accepted write could repair it.
+	expect(was?.content.nodes.find((node) => node.name === "Checkout")?.kind).toBe("external");
+	expect(linkFindings("frozen-system")).toEqual([]);
+}, 30_000);
+
+test("a link a proposal introduces is reported, because a proposal can still be repaired", async () => {
+	await create({
+		name: "proposed-service",
+		level: "service",
+		nodes: [{ name: "Store", kind: "module" }],
+	});
+	const opens = { board: "proposed-service", variant: { kind: "current" } };
+	await create({
+		name: "proposed-system",
+		level: "system",
+		nodes: [
+			{ name: "Caller", kind: "app" },
+			{ name: "Checkout", kind: "service", drillDown: opens },
+		],
+		edges: [{ from: "Caller", to: "Checkout", kind: "http" }],
+	});
+	expect(linkFindings("proposed-system")).toEqual([]);
+
+	const baseline = read("proposed-system").variants[0]!.name;
+	expect((await branch("proposed-system", baseline, "Buy it instead")).outcome).toBe("applied");
+	expect(
+		(
+			await restate("proposed-system", "Buy it instead", {
+				name: "Checkout",
+				kind: "external",
+				drillDown: opens,
+			})
+		).outcome,
+	).toBe("applied");
+
+	const findings = linkFindings("proposed-system");
+	expect(findings.map((issue) => issue.code)).toEqual(["DRILL_DOWN_LEVEL_MISMATCH"]);
+	const proposal = read("proposed-system").variants.find(
+		(variant) => variant.name === "Buy it instead",
+	);
+	expect(findings[0]?.variant).toBe(proposal?.id);
+}, 30_000);
 
 /**
  * One board as it stands on disk.
