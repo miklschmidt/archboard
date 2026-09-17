@@ -320,7 +320,12 @@ function useBoardCamera(): BoardCamera {
 	const followPicture = useCallback((shift: { readonly x: number; readonly y: number }): void => {
 		if (shift.x === 0 && shift.y === 0) return;
 		setInstant(true);
-		setCamera((current) => panCamera(current, shift.x * current.scale, shift.y * current.scale));
+		// Known at once, not only after the commit: a glide asked for in the same
+		// commit starts from where the camera follows to, not from where it was.
+		const current = at.current;
+		const followed = panCamera(current, shift.x * current.scale, shift.y * current.scale);
+		at.current = followed;
+		setCamera(followed);
 	}, []);
 	return useMemo(
 		() => ({
