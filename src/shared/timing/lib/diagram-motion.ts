@@ -80,10 +80,52 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	arrowheadAt: 0.9,
 });
 
+// ── A picture arriving with nothing to carry it from ──────────────────────
+
+/**
+ * How long a pane takes to bring in a picture it has nothing to carry from:
+ * the first picture of a page, another board, another view of this one.
+ *
+ * The picture is built up the way it is read: frames, then cards in reading
+ * order, then the lines between cards already there, so the eye lands on the
+ * structure before the detail. Pulls against the wait itself: somebody who asked
+ * for a board wants to read it, so the whole entrance is barely longer than a
+ * transition, and a card is readable well before the last line is drawn.
+ */
+const PICTURE_ENTRY_MS = 760;
+
+/** When, as fractions of `PICTURE_ENTRY_MS`, each part of a picture arrives. */
+const PICTURE_ENTRY_PHASES = Object.freeze({
+	/** Frames fade in over the first part. */
+	framesEnd: 0.35,
+	/** The first card in reading order begins here, and the last begins by `cardsStartBy`. */
+	cardsStart: 0.04,
+	cardsStartBy: 0.4,
+	/** How long each card takes to arrive. */
+	cardSpan: 0.42,
+	/** The first line begins drawing here, and the last by `linesStartBy`. */
+	linesStart: 0.34,
+	linesStartBy: 0.62,
+	/** How long each line takes to draw on. */
+	lineSpan: 0.38,
+});
+
+/**
+ * How long the picture a pane is leaving takes to go, when it goes to another
+ * board or view rather than turning into the next picture.
+ *
+ * Short on purpose: it is only there so the old picture is not snatched away,
+ * and it runs underneath the next picture's entrance.
+ */
+const PICTURE_EXIT_MS = 280;
+
 export {
 	FLOW_CYCLE_CAP_MS,
 	FLOW_PULSE_RAMP,
 	FLOW_STEP_TRAVEL_MS,
+	PICTURE_ENTRY_MS,
+	PICTURE_ENTRY_PHASES,
+	PICTURE_EXIT_MS,
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
 };

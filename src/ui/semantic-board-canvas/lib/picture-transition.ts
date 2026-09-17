@@ -110,9 +110,18 @@ function viewOf(drawing: SemanticDrawing): string | null {
  * @returns True when the subjects of one are the subjects of the other.
  */
 function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): boolean {
-	return (
-		before.board === after.board && viewOf(before) === viewOf(after) && before.theme === after.theme
-	);
+	return sameReading(before, after) && before.theme === after.theme;
+}
+
+/**
+ * Whether two pictures are of the same board read the same way, whatever
+ * ground they are drawn on.
+ * @param before One picture.
+ * @param after The other.
+ * @returns True for the same board through the same view.
+ */
+function sameReading(before: SemanticDrawing, after: SemanticDrawing): boolean {
+	return before.board === after.board && viewOf(before) === viewOf(after);
 }
 
 /**
@@ -298,6 +307,7 @@ function transitionPicture(
 export {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
+	sameReading,
 	sharedShift,
 	stagePicture,
 	transitionPicture,

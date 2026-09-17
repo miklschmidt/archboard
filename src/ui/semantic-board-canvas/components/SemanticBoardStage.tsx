@@ -37,14 +37,16 @@ import { SemanticRefreshFailure } from "@/ui/semantic-board-canvas/components/Se
 import { SemanticTrail } from "@/ui/semantic-board-canvas/components/SemanticTrail";
 import {
 	SemanticStageEmpty,
-	SemanticStageLoading,
 	SemanticStageProblem,
 } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
+import { waitingStage } from "@/ui/semantic-board-canvas/components/SemanticStageWaiting";
 import {
 	useDrillDown,
 	type DrillNavigation,
 } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
+import { useDeparture, type Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
+import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { useGroupInspection } from "@/ui/semantic-board-canvas/hooks/use-group-focus";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import {
@@ -151,6 +153,10 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onOpenDown: (board: string, variant: string) => void;
 	/** Go back a level, clearing the selection made on the level below. */
 	readonly onBack: () => void;
+	/** The last board's picture, on its way out while this one is drawn; null otherwise. */
+	readonly leaving: Leaving | null;
+	/** Where the reader went from the last board, until this board's picture is up; null otherwise. */
+	readonly heading: Departure | null;
 	/** What this variant explains about itself, and what is being read. */
 	readonly narrative: WalkthroughReading;
 	/** How the board on screen is being read, at whatever level it is. */
@@ -280,14 +286,13 @@ function groupMarks(
  */
 function stageBody(view: RenderView): JSX.Element {
 	const { render } = view;
-	const board = view.drill.board;
 	// Nothing has ever arrived: this is the only case where a failure takes the
 	// whole pane, because there is nothing behind it to keep showing.
 	if (render.data === undefined) {
 		return render.error === null ? (
-			<SemanticStageLoading board={board} />
+			waitingStage(view)
 		) : (
-			<SemanticStageProblem board={board} error={render.error} />
+			<SemanticStageProblem board={view.drill.board} error={render.error} />
 		);
 	}
 	// The disclosure is decided before the two shapes divide, because an empty
@@ -320,6 +325,7 @@ function stageBody(view: RenderView): JSX.Element {
 			focus={view.focus}
 			{...groupMarks(view.groupFocus)}
 			groupControls={view.groupControls}
+			heading={view.heading}
 		/>
 	);
 }
@@ -534,17 +540,25 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	}, [refetch]);
 	// A selection names a subject of the board it was made on, so moving between
 	// levels clears it rather than carrying an id to a board that never had it.
+	//
+	// Which way the reader went is said first, so the picture being left knows
+	// how to leave: into the card that was picked, or back out.
+	const departure = useDeparture(drawn, drill.board, render);
+	const { leave } = departure;
+	const picked = props.selection;
 	const onOpenDown = useCallback(
 		(target: string, asked: string): void => {
+			leave("into", picked);
 			onSelect(null);
 			drill.open(target, asked);
 		},
-		[drill, onSelect],
+		[drill, leave, onSelect, picked],
 	);
 	const onBack = useCallback((): void => {
+		leave("out");
 		onSelect(null);
 		drill.back();
-	}, [drill, onSelect]);
+	}, [drill, leave, onSelect]);
 
 	return renderedView({
 		...props,
@@ -555,6 +569,8 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		onPick,
 		onOpenDown,
 		onBack,
+		leaving: departure.leaving,
+		heading: departure.heading,
 		narrative,
 		level,
 		reading,

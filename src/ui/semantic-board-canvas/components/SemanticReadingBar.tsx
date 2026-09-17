@@ -5,8 +5,10 @@
 // One strip rather than several, because every part of it is the same question
 // — how is this board being read — and a second rule across the pane for a
 // second half of it would be a line drawn where there is no difference. Each
-// part decides for itself whether it has anything to offer, and the strip is
-// absent only when none of them does.
+// part decides for itself whether it has anything to offer. The strip itself is
+// always there at the one height, even while nothing in it has arrived: a strip
+// that came and went with the answers would move the picture under it up and
+// back down while the next board is being drawn.
 
 import type { JSX, ReactNode } from "react";
 
@@ -150,21 +152,20 @@ function divider(between: boolean): ReactNode {
  * different picture; if the rail went away while that picture was being drawn,
  * the reader's place would go with it.
  * @param props What the strip is assembled from.
- * @returns The strip, or null when there is nothing to offer.
+ * @returns The strip, empty while nothing in it has arrived.
  */
-function SemanticReadingBar(props: SemanticReadingBarProps): JSX.Element | null {
+function SemanticReadingBar(props: SemanticReadingBarProps): JSX.Element {
 	const views = viewBar(props);
 	const variants = variantBar(props);
 	const readings = [variants, views, walkthroughBar(props)];
 	const groups = groupBar(props);
 	const offered = [...readings, groups].filter((part) => part !== null);
-	if (offered.length === 0) {
-		return null;
-	}
+	// The height of a row holding the two-line state buttons, so a row holding
+	// less is as tall as one holding them.
 	return (
 		<div
 			data-slot="semantic-reading-bar"
-			className="border-border bg-sidebar flex shrink-0 items-center gap-1 border-b px-3 py-1.5"
+			className="border-border bg-sidebar flex min-h-[49px] shrink-0 items-center gap-1 border-b px-3 py-1.5"
 		>
 			{variants}
 			{divider(variants !== null && views !== null)}

@@ -15,10 +15,13 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
-import { PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
+import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { ghostPicture, type Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
+import { enterPicture } from "@/ui/semantic-board-canvas/lib/picture-entrance";
 import {
 	continuousPictures,
+	sameReading,
 	sharedShift,
 	stagePicture,
 	transitionPicture,
@@ -45,6 +48,27 @@ interface Shown {
 	readonly surface: HTMLElement;
 	readonly drawing: SemanticDrawing;
 }
+
+/** How pictures move on the surface, and what the camera is told as they do. */
+interface PictureMotion {
+	/** Whether the person asked for no motion; then every picture is a cut. */
+	readonly reducedMotion: boolean;
+	/**
+	 * Told, before the next picture of the same board is first painted, how far
+	 * the cards the two share moved on the page, so the camera can move with
+	 * them and keep them where the reader was looking.
+	 */
+	readonly keepStill: (shift: Shift) => void;
+	/** Where the reader went from the last picture, when they went somewhere; null otherwise. */
+	readonly heading?: Departure | null | undefined;
+}
+
+/**
+ * What the surface carries while a picture is still moving into place, and
+ * loses once it has landed: the picture at rest is the one a reader reads, and
+ * the one anything outside that wants to look at what was drawn should wait for.
+ */
+const MOTION_ATTRIBUTE = "data-picture-motion";
 
 /** What has been written to the surface, for React to read back. */
 interface PictureStore {
@@ -91,12 +115,36 @@ function carriedFrom(
 }
 
 /**
+ * Whether the next picture comes in part by part: one with nothing on this
+ * surface to be carried from — the first, or another board or view. A picture
+ * of the same board read the same way is carried instead, and one that only
+ * changed theme is cut to, since the same board simply took other colours.
+ * @param last What the surface was last given, if anything.
+ * @param surface The surface the picture goes on.
+ * @param drawing The picture.
+ * @param reducedMotion Whether the person asked for no motion.
+ * @returns True for an entrance.
+ */
+function entersAfresh(
+	last: Shown | null,
+	surface: HTMLElement,
+	drawing: SemanticDrawing,
+	reducedMotion: boolean,
+): boolean {
+	if (reducedMotion || !canAnimate()) {
+		return false;
+	}
+	return last?.surface !== surface || !sameReading(last.drawing, drawing);
+}
+
+/**
  * Drive a transition from now to its end, one frame at a time.
  * @param transition The transition.
+ * @param duration How long it takes.
  * @param onLanded What to do once it has finished.
  * @returns The flight, with the way to stop it.
  */
-function fly(transition: PictureTransition, onLanded: () => void): Flight {
+function fly(transition: PictureTransition, duration: number, onLanded: () => void): Flight {
 	const started = performance.now();
 	let frame = 0;
 	/**
@@ -104,7 +152,7 @@ function fly(transition: PictureTransition, onLanded: () => void): Flight {
 	 * @param now The frame's time.
 	 */
 	function tick(now: number): void {
-		const progress = (now - started) / PICTURE_TRANSITION_MS;
+		const progress = (now - started) / duration;
 		if (progress < 1) {
 			transition.seek(progress);
 			frame = requestAnimationFrame(tick);
@@ -150,37 +198,68 @@ function shiftFrom(
 		: undefined;
 }
 
+/** What the next picture is, where it goes, and how it may move. */
+interface NextPicture extends PictureMotion {
+	readonly heading: Departure | null;
+	readonly surface: HTMLElement;
+	readonly last: Shown | null;
+	readonly drawing: SemanticDrawing;
+	/** Where the surface's pane was on screen when the last picture was last seen. */
+	readonly seenAt: Point | null;
+}
+
+/** A point on screen, in pixels. */
+interface Point {
+	readonly x: number;
+	readonly y: number;
+}
+
 /**
- * Put the next picture on the surface: cut to it, or carry the last one into
- * it. Either way, a picture of the same board tells the camera how far the
- * shared cards moved before anything is painted.
- * @param next What to show and how.
- * @param next.surface The surface.
- * @param next.last What the surface was showing, if anything.
- * @param next.drawing The picture.
- * @param next.reducedMotion Whether the person asked for no motion.
- * @param next.keepStill Told how far the shared cards moved.
+ * Where the pane a surface is in sits on screen.
+ * @param surface The surface.
+ * @returns Its pane's top left corner, or null when it is in none.
+ */
+function paneAt(surface: HTMLElement | null): Point | null {
+	const box = surface?.parentElement?.getBoundingClientRect();
+	return box === undefined ? null : { x: box.left, y: box.top };
+}
+
+/**
+ * How far a pane has moved since it was seen.
+ * @param seenAt Where it was.
+ * @param surface Its surface, where it is now.
+ * @returns The distance, nothing when either is unknown.
+ */
+function movedSince(seenAt: Point | null, surface: HTMLElement): Point {
+	const now = paneAt(surface);
+	return seenAt === null || now === null
+		? { x: 0, y: 0 }
+		: { x: seenAt.x - now.x, y: seenAt.y - now.y };
+}
+
+/**
+ * Put the next picture on the surface: cut to it, carry the last one into it,
+ * or bring it in part by part when there is nothing to carry it from. Either
+ * way, a picture of the same board tells the camera how far the shared cards
+ * moved before anything is painted.
+ * @param next What to show, where, and how it may move.
  * @param onLanded What to do once a flight has landed.
  * @returns The flight, or null for a cut.
  */
-function showPicture(
-	next: {
-		surface: HTMLElement;
-		last: Shown | null;
-		drawing: SemanticDrawing;
-		reducedMotion: boolean;
-		keepStill: (shift: Shift) => void;
-	},
-	onLanded: () => void,
-): Flight | null {
-	const { surface, last, drawing, reducedMotion, keepStill } = next;
+function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
+	const { surface, last, drawing, reducedMotion, keepStill, heading, seenAt } = next;
 	const shift = shiftFrom(last, surface, drawing);
 	const from = carriedFrom(last, surface, drawing, reducedMotion);
-	const flight =
-		from === null ? null : fly(transitionPicture(surface, from, drawing, shift), onLanded);
-	if (from === null) stagePicture(surface, drawing.svg);
 	if (shift !== undefined) keepStill(shift);
-	return flight;
+	if (from !== null) {
+		return fly(transitionPicture(surface, from, drawing, shift), PICTURE_TRANSITION_MS, onLanded);
+	}
+	if (entersAfresh(last, surface, drawing, reducedMotion)) {
+		if (last?.surface === surface) ghostPicture(surface, heading, movedSince(seenAt, surface));
+		return fly(enterPicture(surface, drawing), PICTURE_ENTRY_MS, onLanded);
+	}
+	stagePicture(surface, drawing.svg);
+	return null;
 }
 
 /**
@@ -201,21 +280,20 @@ function publish(store: PictureStore, surface: HTMLElement | null): void {
  * the two are pictures of one board read the same way.
  * @param surface The element the picture goes in, or null before it exists.
  * @param drawing The picture to show.
- * @param reducedMotion Whether the person asked for no motion; then every picture is a cut.
- * @param keepStill Told, before the next picture of the same board is first
- * painted, how far the cards the two share moved on the page, so the camera can
- * move with them and keep them where the reader was looking.
+ * @param motion How pictures move, and what the camera is told as they do.
  * @returns The picture as it is now on the surface, a new value each time the
  * markup was written, for whatever marks that markup up to run again over it.
  */
 function usePictureTransition(
 	surface: HTMLElement | null,
 	drawing: SemanticDrawing,
-	reducedMotion: boolean,
-	keepStill: (shift: Shift) => void,
+	motion: PictureMotion,
 ): StagedPicture | null {
+	const { reducedMotion, keepStill } = motion;
+	const heading = motion.heading ?? null;
 	const shown = useRef<Shown | null>(null);
 	const flight = useRef<Flight | null>(null);
+	const seen = useRef<Point | null>(null);
 	const store = useRef<PictureStore>({ picture: null, listeners: new Set() });
 	const picture = useSyncExternalStore(
 		(listener) => {
@@ -239,12 +317,29 @@ function usePictureTransition(
 		// is showing exactly the picture the new transition is told it is.
 		land(flight.current);
 		shown.current = { surface, drawing };
-		flight.current = showPicture({ surface, last, drawing, reducedMotion, keepStill }, () => {
+		const next = {
+			surface,
+			last,
+			drawing,
+			reducedMotion,
+			keepStill,
+			heading,
+			seenAt: seen.current,
+		};
+		flight.current = showPicture(next, () => {
 			flight.current = null;
+			surface.toggleAttribute(MOTION_ATTRIBUTE, false);
 			publish(store.current, surface);
 		});
+		surface.toggleAttribute(MOTION_ATTRIBUTE, flight.current !== null);
 		publish(store.current, surface);
-	}, [surface, drawing, reducedMotion, keepStill]);
+	}, [surface, drawing, reducedMotion, keepStill, heading]);
+	// Where the pane is after every commit, so the next picture knows where the
+	// last one was seen. After the picture is written, and read only when motion
+	// is allowed: nothing else needs it.
+	useLayoutEffect(() => {
+		seen.current = reducedMotion ? null : paneAt(surface);
+	});
 	// Leaving the surface stops asking for frames; what it showed does not matter any more.
 	useLayoutEffect(
 		() => (): void => {
@@ -256,4 +351,4 @@ function usePictureTransition(
 	return picture;
 }
 
-export { usePictureTransition, type StagedPicture };
+export { usePictureTransition, type PictureMotion, type StagedPicture };

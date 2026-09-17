@@ -14,7 +14,7 @@
 // taken back and fitted to the beat — and then it is theirs again: panning
 // inside one beat sticks, and only moving to another beat takes it back.
 
-import { useEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 
 import {
 	useBoardCamera,
@@ -52,12 +52,16 @@ function useAutoFit(drawing: SemanticDrawing | null, focus: BeatFocus): BoardCam
 					}),
 		[drawing, focus.target, camera.room],
 	);
-	const subject =
-		drawing === null ? null : JSON.stringify([drawing.board, drawing.view?.id, focus.key]);
+	const picture = drawing === null ? null : JSON.stringify([drawing.board, drawing.view?.id]);
+	const subject = picture === null ? null : JSON.stringify([picture, focus.key]);
 	const fittedSubject = useRef<string | null>(null);
+	const fittedPicture = useRef<string | null>(null);
 	const fittedRoom = useRef<string | null>(null);
 	const room = roomKey(camera.room);
-	useEffect(() => {
+	// Before paint: a picture that has just gone up is shown fitted from its
+	// first frame, at once, rather than sliding into place. A new beat of the
+	// same picture glides, because the reader is following it.
+	useLayoutEffect(() => {
 		// Loading removes the viewport temporarily, not the reader’s camera.
 		if (target === null) {
 			return;
@@ -67,11 +71,12 @@ function useAutoFit(drawing: SemanticDrawing | null, focus: BeatFocus): BoardCam
 			fittedRoom.current = room;
 			return;
 		}
-		if (camera.fit(target)) {
+		if (camera.fit(target, fittedPicture.current !== picture)) {
 			fittedSubject.current = subject;
+			fittedPicture.current = picture;
 			fittedRoom.current = room;
 		}
-	}, [camera, target, subject, room]);
+	}, [camera, target, subject, picture, room]);
 	return camera;
 }
 

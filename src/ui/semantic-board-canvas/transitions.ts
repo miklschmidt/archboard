@@ -11,6 +11,7 @@ export {
 	pathLength,
 	serialise,
 } from "@/ui/semantic-board-canvas/lib/path-morph";
+export { enterPicture } from "@/ui/semantic-board-canvas/lib/picture-entrance";
 export {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,

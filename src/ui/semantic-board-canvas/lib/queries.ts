@@ -107,7 +107,7 @@ function semanticBoardListQuery() {
  * While another picture of the same board is being drawn — another variant,
  * or the same one through another view — the last picture stays as the
  * placeholder, so the pane can carry it into the next rather than dropping to
- * a skeleton between the two. Another board's picture is not kept: there is
+ * a skeleton between the two. Another board's picture is not kept here: there is
  * nothing of it to carry across, and a pane must not show one board under
  * another's name for even a request's length.
  * @param request The board, the variant and the theme.

@@ -429,13 +429,18 @@ function carryCard(
 /**
  * Let a card only the new picture has arrive: it grows into place and fades in.
  * @param group The card's group.
+ * @param start Where in the whole its arrival begins; by default where a transition's arrivals do.
+ * @param end Where it is in place.
  * @returns The step.
  */
-function growIn(group: SubjectGroup): Updater {
-	const { enterStart } = PICTURE_TRANSITION_PHASES;
+function growIn(
+	group: SubjectGroup,
+	start: number = PICTURE_TRANSITION_PHASES.enterStart,
+	end = 1,
+): Updater {
 	const box = group.box;
 	return (progress: number): void => {
-		const here = phase(progress, enterStart, 1);
+		const here = phase(progress, start, end);
 		setOpacity(group.element, easeOut(here));
 		if (box !== null) {
 			group.element.setAttribute(

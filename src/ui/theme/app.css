@@ -139,6 +139,24 @@
 	}
 }
 
+/* Something that only belongs on screen once a wait has gone on for a while:
+   a picture drawn in a few hundred milliseconds arrives before it is seen, so
+   a quick draw never flashes a placeholder in front of the picture. */
+@keyframes slow-wait-reveal {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@utility slow-wait-reveal {
+	animation: slow-wait-reveal 240ms ease-out 450ms both;
+	@media (prefers-reduced-motion: reduce) {
+		animation-duration: 1ms;
+	}
+}
+
 /* The faint 8px dot grid an empty preview shows instead of a sentence. */
 @utility dot-grid {
 	background-image: radial-gradient(

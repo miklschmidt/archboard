@@ -13,8 +13,9 @@ import {
 	registerCanvasBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { SURFACE, WAIT, drawnId, pick, press, stageState, textOf } from "./support/drilling.ts";
+import { SURFACE, WAIT, drawnId, pick, press, textOf } from "./support/drilling.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { pictureAtRest } from "./support/semantic-page.ts";
 
 // Inspecting a group in a real browser: the half of the workflow only a
 // browser can answer. The keyboard reaches the control and the clear action,
@@ -101,9 +102,11 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${canvas.base}/?paneA=orders`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	// At rest: an arriving picture fades its cards in, and what is under test is
+	// which of them the inspection lets recede.
 	await pollUntil(
-		() => stageState(browser),
-		(state) => state === "drawn",
+		() => pictureAtRest(browser.eval.bind(browser)),
+		(atRest) => atRest,
 		"the semantic board to be drawn in its pane",
 		WAIT,
 	);

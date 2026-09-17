@@ -14,28 +14,16 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { pictureAtRest } from "./support/semantic-page.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
-
-/** The stage one semantic pane draws into. */
-const STAGE = "[data-slot='semantic-board-stage']";
 
 /** The element the camera moves. */
 const SURFACE = "[data-slot='semantic-board-surface']";
 
 /** The panel beside the diagram. */
 const INSPECTOR = "[data-slot='semantic-inspector']";
-
-/**
- * Which of the pane's states is on screen.
- * @param browser The page.
- * @returns The `data-state`, or null before the pane is there.
- */
-const stageState = (browser: AgentBrowserSession): Promise<string | null> =>
-	browser.eval<string | null>(
-		`document.querySelector("${STAGE}")?.getAttribute("data-state") ?? null`,
-	);
 
 /**
  * What the browser actually paints one relationship with: the ink of the line,
@@ -363,9 +351,11 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${canvas.base}/?paneA=legible@Proposed`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	// At rest: an arriving picture draws its lines on and gives them their
+	// arrowheads last, and what is under test is the picture a reader reads.
 	await pollUntil(
-		() => stageState(browser),
-		(state) => state === "drawn",
+		() => pictureAtRest(browser.eval.bind(browser)),
+		(atRest) => atRest,
 		"the proposal to be drawn in its pane",
 		WAIT,
 	);
