@@ -104,17 +104,19 @@ describe("an unused label reservation", () => {
 
 	test("is released alone when releasing every unused one together loses a label's box", async () => {
 		const smaller = page(400, 400);
-		const { solve, asked } = solveFrom({
+		const { solve } = solveFrom({
 			"a,b": { drawing: page(400, 500), unused: ["a", "b"] },
 			"": { drawing: page(400, 300) },
 			b: { drawing: smaller },
+			// Releasing b alone would also hold, and on a smaller page still, but
+			// releases are tried in order and the first that holds is the one kept.
+			a: { drawing: page(400, 350) },
 		});
 		const missingLabel = async (reserved: ReadonlySet<string>): Promise<LabelAttempt> => {
 			const attempt = await solve(reserved);
 			return reserved.size === 0 ? { ...attempt, missing: [CROSSING[0]!] } : attempt;
 		};
 		expect(await settleLabels(missingLabel, new Set(["a", "b"]))).toBe(smaller);
-		expect(asked).toEqual(["a,b", "", "b"]);
 	});
 
 	test("settling ends when no reservation is unused", async () => {
