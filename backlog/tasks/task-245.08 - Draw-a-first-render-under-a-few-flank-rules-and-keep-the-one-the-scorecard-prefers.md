@@ -3,11 +3,11 @@ id: TASK-245.08
 title: >-
   Draw a first render under a few flank rules and keep the one the scorecard
   prefers
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-16 18:18'
-updated_date: '2026-09-16 18:38'
+updated_date: '2026-09-17 10:41'
 labels: []
 dependencies: []
 references:
@@ -26,10 +26,10 @@ Every flank rule measured on 2026-09-16 wins on some boards and loses on others:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A first render settles each candidate flank rule and keeps the drawing that is better on more scorecard measures than each other candidate, with a documented tie-break
-- [ ] #2 A proposal keeps its predecessor rule, like its reading direction, so a comparison does not jump between rules
-- [ ] #3 The kept drawing never has a route through a card or a label off its run
-- [ ] #4 docs/design/layout-rules.md records the candidates, the choice rule and the per-board result
+- [x] #1 A first render settles each candidate flank rule and keeps the drawing that is better on more scorecard measures than each other candidate, with a documented tie-break
+- [x] #2 A proposal keeps its predecessor rule, like its reading direction, so a comparison does not jump between rules
+- [x] #3 The kept drawing never has a route through a card or a label off its run
+- [x] #4 docs/design/layout-rules.md records the candidates, the choice rule and the per-board result
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,3 +41,15 @@ Every flank rule measured on 2026-09-16 wins on some boards and loses on others:
 4. A drawing-level scorecard in the renderer (fit, page area, card share, route length, bends, crossings, lane ink, flank fan; routes through cards as a veto) picks among the rules within each reading: the drawing better on more measures than each other, then most pairwise wins, then the earlier rule.
 5. Measure every variant against the tree before; record section 21 in layout-rules.md; owner tests for the choice and for inheritance.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-17: implemented in 8d205e1c and carried through TASK-245.09 (three extra settles in the chosen reading) and TASK-247 (src/transformers/semantic-renderer/lib/layout/flank-rules.ts). Verified today: src/runtime/semantic-renderer/tests/flank-rules.test.ts passes (the scorecard's choice, its tie-break, the crossing and route-through-card vetoes, and a proposal keeping its predecessor's rule); wide-boards.test.ts holds each board to its recorded scorecard; the per-board result is layout-rules.md section 21. Mirroring a kept drawing is a separate decision, not done.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A first render is drawn under four flank rules (bracketed, flanked, mirrored, returns-left) in its chosen reading. The scorecard keeps the drawing better than the most others, with the default winning ties; a size counts only past 2 percent, and a rule that adds crossings or routes through cards is refused. A proposal keeps its predecessor's rule. The candidates, the choice rule and the per-board results are in layout-rules.md section 21. Verified by flank-rules.test.ts and wide-boards.test.ts.
+<!-- SECTION:FINAL_SUMMARY:END -->
