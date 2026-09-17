@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:42'
-updated_date: '2026-09-16 23:38'
+updated_date: '2026-09-17 00:04'
 labels:
   - renderer
   - frontend
@@ -56,4 +56,6 @@ The canvas asks the server for every picture (/api/semantic-boards/render), and 
 User asked on 2026-09-16 to include background pre-rendering: render diagrams in the background when they change, cache them in localStorage, and check that cache for invalidation on page load.
 
 Decision by the user on 2026-09-17: text is measured by the canvas of the environment that renders, never by a custom font measurer. In the browser, Pretext uses the browser's own canvas after the diagram fonts are loaded, so a picture measured in Safari, Firefox or Chrome matches what that browser paints, and pictures may differ between browsers by design. Under Bun (CLI, rasterizer, server route), Pretext uses an OffscreenCanvas backed by @napi-rs/canvas with the same four font files registered under the same family names. The custom measurer (font-file, font-layout, measure-text) is deleted, and the Pretext patch with it. Spike 2026-09-17: @napi-rs/canvas registers all four faces under Bun, measures 20,000 strings in 180 ms.
+
+2026-09-17: steps 1 and 2 committed on local branch task-247-browser-render (1beab551 renderer core behind a host in src/transformers/semantic-renderer, text measured through OffscreenCanvas with @napi-rs/canvas under Bun, custom measurer and Pretext patch deleted; ed2a20d8 drawingOf/predecessorDrawingsOf in src/shared/semantic-board). Full gate green. @archboard/elk-rs 0.11.0 is published; on it archboard fails 7 renderer tests (4 engine infinite loops, bendpoint and port divergences from the patched elkjs, errors rejected as plain objects, no types in exports). Fixtures captured in ~/Projects/elk-rs-smoke/archboard-fixtures; fixes are going into the fork with tests, then 0.11.1. The swap itself is parked on local branch task-245-elk-rs.
 <!-- SECTION:NOTES:END -->

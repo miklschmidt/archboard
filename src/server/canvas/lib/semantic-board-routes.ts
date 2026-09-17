@@ -10,37 +10,22 @@
 // writes the aggregate atomically. One owner, one set of guarantees, a
 // different file.
 //
-// Rendering happens here rather than in the browser because the renderer
-// measures text out of real font files, which a browser tab cannot do. The
-// pane receives an SVG and an atlas and owns the camera and the selection.
+// The render route draws under the Bun host, for anything that has no renderer
+// of its own. What it answers is assembled by `renderBoard` in the renderer
+// core, the same function a browser drawing from the board it read runs
+// (TASK-247), so the two cannot answer the same request differently.
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@/shared/thrown-error/index";
-import {
-	drawingOf,
-	findView,
-	predecessorDrawingsOf,
-	resolveVariant,
-	type DiagramGrammar,
-	type OfferedView,
-	type SemanticBoard,
-	type SemanticVariant,
-	type ToldStanding,
-	type SemanticView,
-	type ViewScope,
-} from "@/shared/semantic-board/index";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 import {
 	listSemanticBoards,
 	checkSemanticVault,
 	readSemanticBoard,
 	readSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/index";
-import {
-	renderSemanticView,
-	SemanticRenderError,
-	type DiagramRenderRequest,
-} from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
 import {
 	adoptRoute,
@@ -161,17 +146,6 @@ function renderRoute(req: Request, res: Response): void {
 	});
 }
 
-/**
- * The variant a render request named: the one it asked for, or the board's
- * current designation when it asked for none.
- * @param board The board.
- * @param wanted What the request named, straight off the query string.
- * @returns The variant, or undefined when nothing answers to that name.
- */
-function askedVariant(board: SemanticBoard, wanted: unknown): SemanticVariant | undefined {
-	return resolveVariant(board, typeof wanted === "string" ? wanted : undefined);
-}
-
 /** What a render request selects, once every stated selector has been read. */
 interface RenderChoices {
 	readonly theme: "light" | "dark";
@@ -284,20 +258,16 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
 	if (board === null) {
 		return;
 	}
-	const variant = askedVariant(board, stated.how.variant);
-	if (variant === undefined) {
-		refuseUnknownVariant(res, stated.how.variant);
+	const outcome = await renderBoard(
+		board,
+		stated.how,
+		readSemanticBoardConfiguration().configuration,
+	);
+	if (!outcome.ok) {
+		res.status(404).json({ success: false, code: outcome.code, error: outcome.error });
 		return;
 	}
-	const view = askedView(stated.how.view, res, board);
-	if (view === null) {
-		return;
-	}
-	await answerDrawn(res, board, variant, {
-		theme: stated.how.theme,
-		fonts: stated.how.fonts,
-		...(view === undefined ? {} : { view }),
-	});
+	res.json(outcome.reply);
 }
 
 /**
@@ -317,164 +287,6 @@ function readableBoard(res: Response, asked: string): SemanticBoard | null {
 		error: read.problem,
 	});
 	return null;
-}
-
-/**
- * Answer a request that named a variant this board has not got.
- * @param res The response.
- * @param wanted What the request named, straight off the query string.
- */
-function refuseUnknownVariant(res: Response, wanted: unknown): void {
-	res.status(404).json({
-		success: false,
-		code: "UNKNOWN_VARIANT",
-		error: `this board has no variant called "${typeof wanted === "string" ? wanted : ""}"`,
-	});
-}
-
-/**
- * The view a render request named, or nothing when it named none.
- * @param asked The view the request stated, or nothing when it stated none.
- * @param res Its response.
- * @param board The board whose shared views may be drawn.
- * @returns The view, undefined for the whole variant, or null once refused.
- */
-function askedView(
-	asked: string | undefined,
-	res: Response,
-	board: SemanticBoard,
-): SemanticView | undefined | null {
-	if (asked === undefined) {
-		return undefined;
-	}
-	const view = findView(board, asked);
-	if (view !== undefined) {
-		return view;
-	}
-	res.status(404).json({
-		success: false,
-		code: "UNKNOWN_VIEW",
-		error: `board "${board.name}" has no view called "${asked}"`,
-	});
-	return null;
-}
-
-/**
- * A view as a reader needs to know it: enough to ask for it again.
- * @param view The view.
- * @returns What the answer carries about it.
- */
-function offered(view: SemanticView): OfferedView {
-	return { id: view.id, name: view.name, grammar: view.grammar };
-}
-
-/**
- * Draw one variant, or say that there is nothing on it yet.
- *
- * An empty board is not an error: it is a board somebody has just made and has
- * not filled in. The viewer shows that as its own state, so it is answered as a
- * success that carries no picture rather than as a failure.
- * @param res The response.
- * @param board The board.
- * @param variant The variant to draw.
- * @param how What to draw and how.
- * @param how.theme Which colour scheme to draw for.
- * @param how.fonts Where the drawn faces come from.
- * @param how.view The view to draw, or nothing for the whole variant.
- */
-async function answerDrawn(
-	res: Response,
-	board: SemanticBoard,
-	variant: SemanticVariant,
-	how: {
-		theme: "light" | "dark";
-		fonts: "linked" | "embedded";
-		view?: SemanticView;
-	},
-): Promise<void> {
-	const reading = readingOf(how.view);
-	// What a change took away is half of what a reader came to see, and it lives
-	// only in the predecessor, so the picture — never the board — puts it back.
-	// A named view that selects everything is the whole variant under another
-	// name, and says so about removals too: the two readings differ in what they
-	// are called, not in what they show.
-	const proposal = drawingOf(board, variant, reading.scope);
-	// The same reconciliation the sentences below the picture are written from.
-	// A subject nobody has decided yet is drawn with a warning on it, so a reader
-	// who is looking at the picture rather than reading the panel still knows
-	// which part of it not to trust yet.
-	const waiting = toldStanding(variant);
-	const identity = {
-		success: true,
-		board: board.name,
-		version: board.version,
-		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
-		theme: how.theme,
-		view: how.view === undefined ? null : offered(how.view),
-		views: board.views.map(offered),
-		// Derived here, on the way out, against this variant's actual predecessor.
-		// A variant with none carries null, which is not the same as carrying an
-		// empty set of changes: one has nothing to have changed, the other changed
-		// nothing.
-		changes: proposal.changes,
-		// Coherent, and out of date with the variant it came from: the viewer says
-		// so rather than showing a picture that looks settled.
-		waiting,
-	};
-	try {
-		const picture = await renderSemanticView({
-			policy: readSemanticBoardConfiguration().configuration,
-			content: proposal.content,
-			grammar: reading.grammar,
-			theme: how.theme,
-			fonts: how.fonts,
-			...predecessorsFor(board, variant, reading),
-			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
-			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
-		});
-		res.json({
-			...identity,
-			// The picture is drawn from the proposal's content with what the change
-			// took away put back, and the renderer is told how each subject stands
-			// so a restored one reads as absent rather than as part of the proposal.
-			...picture,
-		});
-	} catch (error) {
-		if (error instanceof SemanticRenderError) {
-			res.json({ ...identity, empty: error.code });
-			return;
-		}
-		throw error;
-	}
-}
-
-/**
- * Same-view history for architecture placement, omitted when the renderer will
- * draw a sequence and has no use for architecture coordinates.
- * @param board The board holding the variant family.
- * @param variant The variant being drawn.
- * @param reading The requested grammar and shared scope.
- * @param reading.scope The selection applied to every ancestor.
- * @param reading.grammar The grammar deciding whether lineage is relevant.
- * @returns The architecture lineage field, or no field for data flow.
- */
-function predecessorsFor(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-	reading: { scope: ViewScope; grammar: DiagramGrammar },
-): Pick<DiagramRenderRequest, "predecessors"> {
-	return reading.grammar === "architecture"
-		? { predecessors: predecessorDrawingsOf(board, variant, reading.scope) }
-		: {};
-}
-
-/**
- * The shared selection and grammar used to read either side of a change.
- * @param view The named view, or nothing for the whole architecture.
- * @returns What the renderer is asked to explain.
- */
-function readingOf(view: SemanticView | undefined): { scope: ViewScope; grammar: DiagramGrammar } {
-	return view ?? { scope: { kind: "all" }, grammar: "architecture" };
 }
 
 /**
@@ -500,25 +312,6 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.post("/api/semantic-boards/branch", asyncEndpoint(branchRoute));
 	app.post("/api/semantic-boards/resolve", asyncEndpoint(resolveRoute));
 	app.post("/api/semantic-boards/adopt", asyncEndpoint(adoptRoute));
-}
-
-/**
- * What a variant is waiting on, as a reader is told it.
- *
- * Everything the standing says except the state it was measured from. That base
- * is a whole second copy of the architecture, kept so a later merge has
- * something to compare against; a reader draws two sentences from this and
- * would be sent the board twice for them.
- * @param variant The variant being drawn.
- * @returns What it is waiting on, or null when it is waiting on nothing.
- */
-function toldStanding(variant: SemanticVariant): ToldStanding | null {
-	const standing = variant.reconciliation;
-	if (standing === undefined) {
-		return null;
-	}
-	const { base: _measuredFrom, ...told } = standing;
-	return told;
 }
 
 export { mountSemanticBoardRoutes };
