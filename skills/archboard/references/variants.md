@@ -71,8 +71,10 @@ change, report the renderer defect and leave the meaning as it is.
 When the predecessor moves after a draft was branched, the write reaches the
 draft too. Where both changed the same thing, the draft holds a disagreement in
 its `reconciliation` (`issues`, each with a `subject`, a `kind`, an optional
-`field`, `mine`, `theirs` and a `repair` line); a draft under an unsettled draft
-waits, and the family lands whole or not at all.
+`field`, `mine`, `theirs`, a `repair` line, and — where one side removed a
+subject the other changed — a `changed` list of `{ field, before, after }`);
+a draft under an unsettled draft waits, and the family lands whole or not at
+all.
 
 | Kind                  | Meaning                                                                                 |
 | --------------------- | --------------------------------------------------------------------------------------- |
@@ -94,6 +96,15 @@ leaves the others open, and the answer reports what is still open. Only an id
 an open disagreement names may come back this way; any other absent id is
 refused. Settling also catches the draft up with everything else the
 predecessor decided.
+
+Every value in that third answer is read, never retyped: the issue's `changed`
+carries each field the other side moved with the value it moved to, and
+`archboard semantic show <board>` carries the rest of the node as the
+predecessor has it. Carry each one across character for character. A field
+composed from memory, or blended with the neighbouring `responsibility`, is a
+sentence nobody wrote, and reporting it as the current description is a false
+report. The disagreement lines printed under a write are an index into those
+values and not the values themselves: a long one is cut to fit the line.
 
 ## Adoption
 

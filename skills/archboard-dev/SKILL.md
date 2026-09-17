@@ -89,6 +89,47 @@ installed package. Every guardrail in
 `docs/design/skill-evals/preservation-assessment.md` keeps a home and an
 evidence owner.
 
+### Portable rules, grounded examples
+
+The consumer skill is read by agents working in codebases archboard has never
+seen, in any language, so it speaks in two registers and keeps them apart:
+
+- **Portable rules.** Everything shared (`SKILL.md`, the catalogue, reference
+  prose, refusal tables, the check steps of a recipe) uses computer-science
+  vocabulary, and draws it from every paradigm a reader might be working in, so
+  a rule reads as true for an object-oriented service, a functional pipeline
+  and a UI component tree alike:
+  - structure: module, function, class and method, component, closure, package
+  - flow of control: caller and callee, handler, hook, callback, composition,
+    recursion, entry point
+  - data and effects: props and state, value passed or returned, side effect,
+    config file, cache
+  - asynchrony: event and subscription, promise and await, stream, message,
+    queue, retry limit, cleanup
+
+  A rule illustrated in one paradigm's terms (a class and its methods) names
+  another paradigm's equivalent beside it (a module and its functions, a
+  component and its children).
+
+- **Grounded examples.** Each recipe carries one worked example about
+  archboard's own source: the payload and the evidence paragraph beside it.
+  Archboard's names (a lease, a board store, a vault, a semantic write) stay
+  inside that example; a rule that needs them points at the example ("the
+  self step above") instead of repeating them.
+
+Before adding a sentence to shared guidance, read it as an agent in an
+unfamiliar codebase would. When it only holds with archboard's names, it is
+example material and goes in a recipe's worked example. When it only holds
+for one evaluation scenario, it is a fix for that scenario and stays out of
+the skill. A batch analysis names failing runs; the skill change is the
+portable pattern behind several of them, stated in portable terms and shown in
+an archboard example.
+
+The evaluated codebase appears nowhere in either package: `bun run eval:skill
+check` refuses its names and every board, view, variant, group and quoted
+symbol a scenario grades, and every batch before 2026-09-17 is void because
+the recipes were that codebase's answers (`evals/README.md`).
+
 ### Evaluating a change
 
 `evals/README.md` is the manual; `bun run eval:skill` is the command;
