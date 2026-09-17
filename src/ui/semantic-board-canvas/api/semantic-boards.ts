@@ -55,6 +55,8 @@ type SemanticOfferedView = OfferedView;
 const BoardEntrySchema = z.object({
 	name: z.string(),
 	key: z.string(),
+	/** The board's version, absent for a board that could not be read. */
+	version: z.int().optional(),
 	level: SemanticBoardLevelSchema.optional(),
 	variants: z.array(RenderedVariantSchema.extend({ parentId: z.string().nullable() })),
 	error: z.string().optional(),

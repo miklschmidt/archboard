@@ -46,8 +46,8 @@ import { announceDoing, refuseUndescribedWrite } from "@/server/canvas/lib/board
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for
  * a new picture, and put the change on the feed a thread's context reads. The
- * board is the news; what changed is not, because the pane holds no copy of the
- * content to patch.
+ * board is the news; what changed is not, because the pane patches nothing: it
+ * reads the board again (ADR 0023).
  * @param result What the write did.
  * @param envelope What the write stated about itself.
  */
