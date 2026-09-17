@@ -1,10 +1,10 @@
 ---
 id: TASK-256
 title: 'Act on the 2026-09-17 16:31 skill evaluation batch'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-17 17:39'
-updated_date: '2026-09-17 18:12'
+updated_date: '2026-09-17 23:10'
 labels: []
 dependencies: []
 references:
@@ -27,7 +27,19 @@ One thing to do before any of this lands: these fixes change the evaluation inpu
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every subtask is done and bun run check passes
-- [ ] #2 The evaluation inputs validate with bun run eval:skill check
-- [ ] #3 The derived skills are synchronized with bun scripts/sync-skills.ts
+- [x] #1 Every subtask is done and bun run check passes
+- [x] #2 The evaluation inputs validate with bun run eval:skill check
+- [x] #3 The derived skills are synchronized with bun scripts/sync-skills.ts
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All thirteen subtasks Done. Gate run lane by lane because the box is too short on memory for bun run check in one process: lint, fmt:check, type-check, the frontend build, 3272 module tests, 164 system tests, the repository lane and the full serial browser lane at exit 0. bun run eval:skill check reports suite ok, and bun scripts/sync-skills.ts synced both authored skills. Four findings outgrew this task and were filed as TASK-258 through TASK-262, all now Done.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Acted on the first evaluation batch that measured anything. The evaluation itself stopped failing accurate work: a subject is matched by the name a person would use, a beat is asked for the ordering the prompt asks about, five scenarios state only what the pinned source supports, and the harness keeps its records out of the author's world. The product gained what the batch showed authors could not do: move a relationship onto a replacing part in one write, read a comparison at all, be told where a refusal points, and carry a disagreement's values rather than its field name. The renderer stopped crossing relationships that share a pair of cards and gained the two measurements a dense board needed. The skill's rules were moved to where they are read rather than added to paragraphs nobody finishes. Whether the guidance changes fire is for the next batch, which the user runs.
+<!-- SECTION:FINAL_SUMMARY:END -->
