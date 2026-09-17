@@ -37,6 +37,20 @@ interface Point {
 type Interval = readonly [number, number];
 
 /**
+ * What a badge on one route piece must keep clear of, already grown by its
+ * clearance: groups applied in order, one of which is every route piece, with
+ * the piece the badge sits on skipped. Built once per placement and shared by
+ * every piece, rather than copied and grown again for each.
+ */
+interface Obstacles {
+	readonly groups: readonly (readonly Box[])[];
+	/** The route pieces, grown by the route clearance, in piece order. */
+	readonly pieces: readonly Box[];
+	/** The index, among them, of the piece the badge sits on. */
+	readonly ownPiece: number;
+}
+
+/**
  * How far a label may sit inside an obstacle's clearance before it counts as
  * meeting it. The engine spaces rows so that a label centred on a route has
  * exactly its clearance on each side, then snaps the route to a whole unit,
@@ -92,8 +106,10 @@ function piecesOf(edges: readonly DrawingEdge[]): RoutePiece[] {
  * @param blocked The forbidden positions along the same axis.
  * @returns The remaining disjoint intervals, in coordinate order.
  */
-function without(intervals: readonly Interval[], blocked: Interval): Interval[] {
+function without(intervals: readonly Interval[], blocked: Interval): readonly Interval[] {
 	const [low, high] = blocked;
+	// Most obstacles miss every interval; those leave the intervals as they are.
+	if (intervals.every(([start, end]) => high <= start || low >= end)) return intervals;
 	return intervals.flatMap(([start, end]): Interval[] => {
 		if (high <= start || low >= end) return [[start, end]];
 		return [
@@ -106,10 +122,57 @@ function without(intervals: readonly Interval[], blocked: Interval): Interval[] 
 }
 
 /**
+ * What is left of a run once every obstacle beside it has taken its span.
+ * @param run The badge's leading-edge positions the run allows.
+ * @param obstacles The obstacles, in the order they are applied.
+ * @param label The badge.
+ * @param axis The run's axis.
+ * @param across Where the badge's leading edge sits across the run.
+ * @returns The clear intervals, in coordinate order.
+ */
+function clearIntervals(
+	run: readonly Interval[],
+	obstacles: Obstacles,
+	label: Box,
+	axis: "x" | "y",
+	across: number,
+): readonly Interval[] {
+	const { length } = DIMENSIONS[axis];
+	let intervals = run;
+	for (const group of obstacles.groups) {
+		for (let index = 0; index < group.length; index += 1) {
+			const box = group[index]!;
+			const own = group === obstacles.pieces && index === obstacles.ownPiece;
+			if (!own && levelWith(box, label, axis, across)) {
+				intervals = without(intervals, [box[axis] - label[length], box[axis] + box[length]]);
+			}
+		}
+	}
+	return intervals;
+}
+
+/**
+ * Whether an obstacle is level with a badge's line, so that it takes a span of
+ * the run; one entirely beside the line takes nothing.
+ * @param box The obstacle.
+ * @param label The badge.
+ * @param axis The run's axis.
+ * @param across Where the badge's leading edge sits across the run.
+ * @returns True when it overlaps the badge across the run.
+ */
+function levelWith(box: Box, label: Box, axis: "x" | "y", across: number): boolean {
+	const { cross, breadth } = DIMENSIONS[axis];
+	return (
+		across + label[breadth] > box[cross] + ROUTE_SNAP &&
+		across + ROUTE_SNAP < box[cross] + box[breadth]
+	);
+}
+
+/**
  * Find the centers of clear spans on one horizontal or vertical straight run.
  * @param piece A piece of this badge's own route.
  * @param label Its measured dimensions.
- * @param obstacles Boxes already enlarged by their required clearance.
+ * @param obstacles Boxes already enlarged by their required clearance, in the order they are applied.
  * @param ends Where the route leaves its source and reaches its target.
  * @param preferred Inherited position translated with its source card.
  * @param air How much of the run stays clear at each end.
@@ -118,7 +181,7 @@ function without(intervals: readonly Interval[], blocked: Interval): Interval[] 
 function candidatesOf(
 	piece: RoutePiece,
 	label: Box,
-	obstacles: readonly Box[],
+	obstacles: Obstacles,
 	ends: readonly [Point, Point],
 	preferred: Box | undefined,
 	air: number,
@@ -130,15 +193,7 @@ function candidatesOf(
 	const end = piece.box[axis] + piece.box[length] - label[length] - air;
 	if (end < start) return [];
 	const across = piece.box[cross] - label[breadth] / 2;
-	let intervals: Interval[] = [[start, end]];
-	for (const box of obstacles) {
-		if (
-			across + label[breadth] <= box[cross] + ROUTE_SNAP ||
-			across + ROUTE_SNAP >= box[cross] + box[breadth]
-		)
-			continue;
-		intervals = without(intervals, [box[axis] - label[length], box[axis] + box[length]]);
-	}
+	const intervals = clearIntervals([[start, end]], obstacles, label, axis, across);
 	return intervals.map(([low, high]) => {
 		// A badge belongs where a reader tracing the line from either card finds
 		// it soonest: as near the nearer end as its clear interval allows, or where
@@ -305,6 +360,24 @@ function placeLabelsOnRuns(
 	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 	const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
 	const cards = nodeObstacles(drawing, header);
+	// Grown once: the cards at each clearance asked for, every route piece, and
+	// each label as it is placed, kept in the order the labels map holds them.
+	const grownCards = new Map<number, Box[]>();
+	/**
+	 * The cards grown by a clearance, grown once for each clearance asked for.
+	 * @param air The clearance.
+	 * @returns The grown cards.
+	 */
+	const cardsAt = (air: number): Box[] => {
+		let grown = grownCards.get(air);
+		if (grown === undefined) {
+			grown = cards.map((box) => inflate(box, air));
+			grownCards.set(air, grown);
+		}
+		return grown;
+	};
+	const grownPieces = pieces.map(({ box }) => inflate(box, routeAir));
+	const grownLabels = new Map([...labels].map(([id, box]) => [id, inflate(box, labelAir)]));
 	for (const edge of drawing.edges.toSorted((one, other) =>
 		one.edge.id < other.edge.id ? -1 : one.edge.id > other.edge.id ? 1 : 0,
 	)) {
@@ -312,32 +385,30 @@ function placeLabelsOnRuns(
 		if (label === undefined) continue;
 		const preferred = preferences.get(edge.edge.id);
 		const ends: readonly [Point, Point] = [edge.curve.from, pointAt(edge.curve, 1)];
-		const otherLabels = [...labels]
+		const otherLabels = [...grownLabels]
 			.filter(([id]) => id !== edge.edge.id)
-			.map(([, box]) => inflate(box, labelAir));
+			.map(([, box]) => box);
+		const size = { x: 0, y: 0, width: label.width, height: label.height };
 		/**
 		 * The places this label can sit with a given clearance from cards and run ends.
 		 * @param air The clearance.
 		 * @returns The candidates.
 		 */
-		const candidatesWith = (air: number) =>
-			pieces
-				.filter((piece) => piece.edgeId === edge.edge.id)
-				.flatMap((piece) =>
-					candidatesOf(
-						piece,
-						{ x: 0, y: 0, width: label.width, height: label.height },
-						[
-							...cards.map((box) => inflate(box, air)),
-							...otherLabels,
-							...pieces.filter((other) => other !== piece).map(({ box }) => inflate(box, routeAir)),
-						],
-						ends,
-						preferred,
-						air,
-					),
-				)
-				.filter(({ box }) => insidePage(box, drawing));
+		const candidatesWith = (air: number) => {
+			const found: Candidate[] = [];
+			for (const [index, piece] of pieces.entries()) {
+				if (piece.edgeId !== edge.edge.id) continue;
+				const obstacles = {
+					groups: [cardsAt(air), otherLabels, grownPieces],
+					pieces: grownPieces,
+					ownPiece: index,
+				};
+				for (const candidate of candidatesOf(piece, size, obstacles, ends, preferred, air)) {
+					if (insidePage(candidate.box, drawing)) found.push(candidate);
+				}
+			}
+			return found;
+		};
 		// A run between two rows is short: with the node spacing clear at both
 		// ends it holds nothing, and a label the runs cannot hold is reserved with
 		// the engine, which gives it a layer of its own and makes the page taller
@@ -356,7 +427,10 @@ function placeLabelsOnRuns(
 				other.length - one.length ||
 				one.index - other.index,
 		)[0];
-		if (chosen !== undefined) labels.set(edge.edge.id, chosen.box);
+		if (chosen !== undefined) {
+			labels.set(edge.edge.id, chosen.box);
+			grownLabels.set(edge.edge.id, inflate(chosen.box, labelAir));
+		}
 	}
 	return {
 		...drawing,
