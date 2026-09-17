@@ -60,6 +60,18 @@ interface BoardCamera {
 	 * @returns True once a pan or a zoom has happened.
 	 */
 	readonly handled: () => boolean;
+	/**
+	 * Move with the picture: when the next picture of a board places the cards
+	 * the last one shared elsewhere on its page, the camera moves by as much,
+	 * at once, so those cards stay where the reader was looking. Nobody moved
+	 * the camera, so this hands nothing back and leaves a fit free to happen.
+	 * @param shift How far the shared cards moved, in picture units.
+	 * @param shift.x Across.
+	 * @param shift.y Down.
+	 */
+	readonly followPicture: (shift: { readonly x: number; readonly y: number }) => void;
+	/** Whether the last move was one that must land at once, rather than be eased. */
+	readonly instant: boolean;
 }
 
 /**
@@ -102,6 +114,7 @@ function pointIn(element: HTMLElement, event: WheelEvent): readonly [number, num
  */
 function useBoardCamera(): BoardCamera {
 	const [camera, setCamera] = useState<Camera>(IDENTITY_CAMERA);
+	const [instant, setInstant] = useState(false);
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
 	const [room, setRoom] = useState<Size | null>(null);
 	// Whether the person has said where to look since the last fit. A ref rather
@@ -134,6 +147,7 @@ function useBoardCamera(): BoardCamera {
 
 	const panBy = useCallback((dx: number, dy: number): void => {
 		moved.current = true;
+		setInstant(false);
 		setCamera((current) => panCamera(current, dx, dy));
 	}, []);
 
@@ -145,6 +159,7 @@ function useBoardCamera(): BoardCamera {
 			}
 			const factor = direction > 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
+			setInstant(false);
 			setCamera((current) => zoomCameraAbout(current, factor, size.width / 2, size.height / 2));
 		},
 		[viewport],
@@ -159,6 +174,7 @@ function useBoardCamera(): BoardCamera {
 			}
 			// A fit is the stage saying where to look, so it hands the camera back.
 			moved.current = false;
+			setInstant(false);
 			setCamera(fitted);
 			return true;
 		},
@@ -184,6 +200,7 @@ function useBoardCamera(): BoardCamera {
 			const [x, y] = pointIn(element, event);
 			const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
+			setInstant(false);
 			setCamera((current) => zoomCameraAbout(current, factor, x, y));
 		}
 		element.addEventListener("wheel", onWheel, { passive: false });
@@ -191,9 +208,24 @@ function useBoardCamera(): BoardCamera {
 	}, [viewport]);
 
 	const handled = useCallback((): boolean => moved.current, []);
+	const followPicture = useCallback((shift: { readonly x: number; readonly y: number }): void => {
+		if (shift.x === 0 && shift.y === 0) return;
+		setInstant(true);
+		setCamera((current) => panCamera(current, shift.x * current.scale, shift.y * current.scale));
+	}, []);
 	return useMemo(
-		() => ({ camera, room, attachViewport: setViewport, panBy, zoomCentre, fit, handled }),
-		[camera, room, panBy, zoomCentre, fit, handled],
+		() => ({
+			camera,
+			room,
+			attachViewport: setViewport,
+			panBy,
+			zoomCentre,
+			fit,
+			handled,
+			followPicture,
+			instant,
+		}),
+		[camera, room, panBy, zoomCentre, fit, handled, followPicture, instant],
 	);
 }
 

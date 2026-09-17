@@ -429,6 +429,28 @@ describe("leaving and arriving", () => {
 		expect(landed.getAttribute("width")).toBe("150");
 	});
 
+	test("a picture carried with a shift starts that far back, eases home with the cards, and lands untouched", () => {
+		const surface = surfaceElement();
+		const before = picture([A, B], [AB]);
+		const after = picture([A, B], [], { width: 800 });
+		surface.innerHTML = before.svg;
+		const transition = transitionPicture(surface, before, after, { x: 40, y: -12 });
+		const root = surface.querySelector<SVGSVGElement>("svg")!;
+		/**
+		 * How far the picture is translated, as numbers.
+		 * @returns The translation.
+		 */
+		const offset = (): number[] =>
+			[...root.style.transform.matchAll(/(-?[\d.]+)px/g)].map((match) => Number(match[1]));
+		expect(offset()).toEqual([-40, 12]);
+		transition.seek(0.5);
+		expect(Math.abs(offset()[0]!)).toBeLessThan(40);
+		transition.seek(1);
+		expect(offset().map(Math.abs)).toEqual([0, 0]);
+		transition.finish();
+		expect(surface.querySelector<SVGSVGElement>("svg")!.style.transform).toBe("");
+	});
+
 	test("finishing leaves exactly the picture the server drew", () => {
 		const surface = surfaceElement();
 		const before = picture([A, B], [AB]);
@@ -472,8 +494,21 @@ const frames: { callbacks: FrameRequestCallback[]; now: number } = { callbacks: 
  */
 function Surface(props: { drawing: SemanticDrawing; reducedMotion: boolean }): JSX.Element {
 	const [surface, setSurface] = useState<HTMLElement | null>(null);
-	usePictureTransition(surface, props.drawing, props.reducedMotion);
+	usePictureTransition(surface, props.drawing, props.reducedMotion, keepStill);
 	return createElement("div", { ref: setSurface, "data-slot": "surface" });
+}
+
+/** Every shift the surface asked the camera to follow, in order. */
+const followed: { x: number; y: number }[] = [];
+
+/**
+ * Record a shift the camera was asked to follow.
+ * @param shift How far the shared cards moved.
+ * @param shift.x Across.
+ * @param shift.y Down.
+ */
+function keepStill(shift: { x: number; y: number }): void {
+	followed.push(shift);
 }
 
 /**
@@ -528,10 +563,19 @@ describe("the surface across pictures", () => {
 			const surface = container.querySelector("[data-slot='surface']")!;
 			expect(bodyOf(surface, "n1")).toEqual(A.box);
 			frames.now = 1000;
+			followed.length = 0;
 			rerender(createElement(Surface, { drawing: second, reducedMotion: false }));
+			// The only shared card moved 290 across, so the camera follows it by as much.
+			expect(followed).toEqual([{ x: -290, y: 0 }]);
 			runFrames(1000 + PICTURE_TRANSITION_MS / 2);
 			expect(bodyOf(surface, "n1").x).toBeGreaterThan(A.box.x);
 			expect(bodyOf(surface, "n1").x).toBeLessThan(300);
+			// The same picture answered again is not another picture: the flight
+			// keeps flying rather than landing on itself, and nothing moves the camera.
+			const inFlight = bodyOf(surface, "n1").x;
+			rerender(createElement(Surface, { drawing: { ...second }, reducedMotion: false }));
+			expect(bodyOf(surface, "n1").x).toBe(inFlight);
+			expect(followed).toHaveLength(1);
 			// The third picture lands the second first: the surface is exactly the
 			// second picture, and the new flight starts from it.
 			rerender(createElement(Surface, { drawing: third, reducedMotion: false }));

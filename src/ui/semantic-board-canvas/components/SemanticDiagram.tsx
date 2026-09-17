@@ -160,14 +160,16 @@ function moveCameraByKey(key: string, camera: BoardCamera, content: Size): boole
 
 /**
  * The surface's classes: a transition for a keyed move or a fit, and none
- * while a drag is in progress, since a pan is meant to track the pointer.
+ * while a drag is in progress, since a pan is meant to track the pointer, nor
+ * for a move that follows the picture, which must land in the frame the picture does.
  * @param panning Whether a drag is in progress.
  * @param reducedMotion Whether the person asked for reduced motion.
+ * @param following Whether the camera last moved to follow the picture.
  * @returns The class list.
  */
-function surfaceClass(panning: boolean, reducedMotion: boolean): string {
+function surfaceClass(panning: boolean, reducedMotion: boolean, following = false): string {
 	const base = "absolute top-0 left-0 origin-top-left select-none";
-	return panning || reducedMotion
+	return panning || reducedMotion || following
 		? base
 		: `${base} transition-transform duration-100 ease-out motion-reduce:transition-none`;
 }
@@ -253,7 +255,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// next. What comes back is the picture as it is now on the surface, new
 	// each time the markup was written, so the marks below run over the groups
 	// that are actually there.
-	const picture = usePictureTransition(surface, drawing, reducedMotion);
+	const picture = usePictureTransition(surface, drawing, reducedMotion, camera.followPicture);
 	// Attention only. What the board says nobody has decided is drawn into the
 	// picture by the renderer, from the same reconciliation the sentences above
 	// it are written from, so it is legible on a pane with nothing selected and
@@ -440,7 +442,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						ref={setSurface}
 						data-slot="semantic-board-surface"
 						style={surfaceStyle}
-						className={surfaceClass(panning, reducedMotion)}
+						className={surfaceClass(panning, reducedMotion, camera.instant)}
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
