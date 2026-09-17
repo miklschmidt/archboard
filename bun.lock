@@ -5,7 +5,7 @@
     "": {
       "name": "archboard",
       "dependencies": {
-        "@archboard/elk-rs": "0.11.2",
+        "@archboard/elk-rs": "0.11.3",
         "@assistant-ui/react": "0.15.17",
         "@assistant-ui/react-markdown": "0.14.14",
         "@base-ui/react": "1.7.0",
@@ -68,19 +68,19 @@
     "@radix-ui/react-select@2.3.7": "patches/@radix-ui%2Freact-select@2.3.7.patch",
   },
   "packages": {
-    "@archboard/elk-rs": ["@archboard/elk-rs@0.11.2", "", { "optionalDependencies": { "@archboard/elk-rs-darwin-arm64": "0.11.2", "@archboard/elk-rs-darwin-x64": "0.11.2", "@archboard/elk-rs-linux-arm64-gnu": "0.11.2", "@archboard/elk-rs-linux-x64-gnu": "0.11.2", "@archboard/elk-rs-linux-x64-musl": "0.11.2", "@archboard/elk-rs-win32-x64-msvc": "0.11.2" } }, "sha512-Zq7rd9X00xVoF/EQBRPX2cq3uFmdkMW/V2cL1r4BKiBwZi+lLXV7B+zw0b2wJmLYetZDMiwA0IY5r/zwfwuMTw=="],
+    "@archboard/elk-rs": ["@archboard/elk-rs@0.11.3", "", { "optionalDependencies": { "@archboard/elk-rs-darwin-arm64": "0.11.3", "@archboard/elk-rs-darwin-x64": "0.11.3", "@archboard/elk-rs-linux-arm64-gnu": "0.11.3", "@archboard/elk-rs-linux-x64-gnu": "0.11.3", "@archboard/elk-rs-linux-x64-musl": "0.11.3", "@archboard/elk-rs-win32-x64-msvc": "0.11.3" } }, "sha512-XHLs7ryOb0qnVqSQdb0ktpPa8PXCx3ert0m1wldCie+XjMwWegTNVSbuaHCoPa16czNTXqZnqVQbMjGgtB6NtA=="],
 
-    "@archboard/elk-rs-darwin-arm64": ["@archboard/elk-rs-darwin-arm64@0.11.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-JEfuUhQ/MGZbctLahy7FcwLJw9Zd9EuSQ37LMhtycs47aBQobXm/292xX73ectJNWNZwxUzlEZmCIiIQlveErw=="],
+    "@archboard/elk-rs-darwin-arm64": ["@archboard/elk-rs-darwin-arm64@0.11.3", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bTGbGvJiP6W0Mh/eiVgpWJd6ai57BM7hMyPitzr/MFVigq+Aq9U0jH5Q7LtZz1w2dlNlWakaHGPIIY59JSs/mA=="],
 
-    "@archboard/elk-rs-darwin-x64": ["@archboard/elk-rs-darwin-x64@0.11.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-0dbG8q5UHGgBcNPzWUy7c9zC0p3LNyM0hlL2dSLYM8CoDEmtn6Itmd/w1uGj2L7caITq24bB7pt/Ck9vxXxz1Q=="],
+    "@archboard/elk-rs-darwin-x64": ["@archboard/elk-rs-darwin-x64@0.11.3", "", { "os": "darwin", "cpu": "x64" }, "sha512-bryBE5917AGwOYbCQTp3lJDN+0OPlBpdjCV00UMS2k7l2hZ1TpoYBjHgNH2Gc/9SOdcyj0q8aPC3vH4dtdCEgA=="],
 
-    "@archboard/elk-rs-linux-arm64-gnu": ["@archboard/elk-rs-linux-arm64-gnu@0.11.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-wflx04NsCeElyakj0N1NJ9qTeN9eMGCeHAzHwbGoqWhc2mZjo84+nVfeyzsc3YTQiI3GQ5Qpx420OUk3HHl3ow=="],
+    "@archboard/elk-rs-linux-arm64-gnu": ["@archboard/elk-rs-linux-arm64-gnu@0.11.3", "", { "os": "linux", "cpu": "arm64" }, "sha512-8/+Dp55jlUIEPZ7/90vhIOb8rtugcBEMQrTovtsbTj1w/JzXmPRbwFlmzeO8kqcE/05NCE2YBZp4SzxbrlCnBA=="],
 
-    "@archboard/elk-rs-linux-x64-gnu": ["@archboard/elk-rs-linux-x64-gnu@0.11.2", "", { "os": "linux", "cpu": "x64" }, "sha512-zSqqhobp1IbWVfPxqXERjT+t9UchPGnvgGiM7I10SI2trf4mdiiY6EGRVLupYTVn5Yg8Ge+g3TRTzcjBj6NutA=="],
+    "@archboard/elk-rs-linux-x64-gnu": ["@archboard/elk-rs-linux-x64-gnu@0.11.3", "", { "os": "linux", "cpu": "x64" }, "sha512-qKi/ficv4PJNW+uYD2OM8LtNkkJOP6jKRj1VFILpBWbD7FoVA7CUjMvgRpnlalaXQsS8QxSFVUa9p+RWffgRmg=="],
 
-    "@archboard/elk-rs-linux-x64-musl": ["@archboard/elk-rs-linux-x64-musl@0.11.2", "", { "os": "linux", "cpu": "x64" }, "sha512-9gfDhKqKqF/ZYpKb8WXjKBCJ5OfhuB6sKNcEQZd8wf7e4YGZb0pHZ7SqYTpA1ttuikH0wrupEEmtkpmcMG/LHQ=="],
+    "@archboard/elk-rs-linux-x64-musl": ["@archboard/elk-rs-linux-x64-musl@0.11.3", "", { "os": "linux", "cpu": "x64" }, "sha512-wD0aSayLK9IxmERuM57N2Lo8hlvC8WjslJ2xpm4TK0ObzdrZiPHAB3AYWCEXlx15E9sRfUDcuQ/Ok5oJ83OPQw=="],
 
-    "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.2", "", { "os": "win32", "cpu": "x64" }, "sha512-/qUQRZCUgQ0I1zn1jrh/uSSyeJ9ngpPN77mE2ml+fcieEQT+dOtf2k33KTmG5JeUdYRPJRVnv2q9rzIuIzheBQ=="],
+    "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.3", "", { "os": "win32", "cpu": "x64" }, "sha512-0gur0QMU4kIXeE2dPK4ZG095KOUhxuNGzJdGpHkJRb91NGbFAOtEoIgK/Gv5ihjbQVuD5dormpq5y5fkwGLa3w=="],
 
     "@assistant-ui/core": ["@assistant-ui/core@0.3.16", "", { "dependencies": { "assistant-stream": "^0.3.40", "nanoid": "^6.0.1" }, "peerDependencies": { "@assistant-ui/store": "^0.3.0", "@assistant-ui/tap": "^0.9.0", "@types/react": "*", "assistant-cloud": "^0.1.42", "react": "^18 || ^19", "zustand": "^5.0.11" }, "optionalPeers": ["@types/react", "assistant-cloud", "react", "zustand"] }, "sha512-fZ9ud+z7hEjegu6NrHyMEcQKCdij2KRcqpLsyOYzHE9LhnBv59Q29jU287EkD0NZE0SG4YTo5/klzz7C/lKA+Q=="],
 
