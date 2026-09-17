@@ -25,6 +25,7 @@ import {
 	BoardAdoptInputSchema,
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
+	BoardShelveInputSchema,
 	ResolutionInputSchema,
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
@@ -35,6 +36,7 @@ import {
 	createBoardTransition,
 	editVariantTransition,
 	settleVariantTransition,
+	shelveVariantTransition,
 	writeSemanticBoard,
 	type SemanticWriteResult,
 } from "@/runtime/semantic-board-store/index";
@@ -383,6 +385,30 @@ async function adoptRoute(
 	await answerFrom(res, stated, adoptVariantTransition(adopting), signal);
 }
 
+/**
+ * Let one proposal go, under its name.
+ * @param req The request.
+ * @param res Its response.
+ * @param _next The next handler, which a write never calls.
+ * @param signal Cancels waiting for the board's lease when the caller goes.
+ */
+async function shelveRoute(
+	req: Request,
+	res: Response,
+	_next: NextFunction,
+	signal: AbortSignal,
+): Promise<void> {
+	const stated = await statedWrite(req, res, "shelve");
+	if (stated === null) {
+		return;
+	}
+	const shelving = asCommand(BoardShelveInputSchema, stated.body, res);
+	if (shelving === null) {
+		return;
+	}
+	await answerFrom(res, stated, shelveVariantTransition(shelving), signal);
+}
+
 /** Everything a write to an existing board states before it is a command. */
 interface StatedWrite {
 	readonly envelope: z.infer<typeof WriteEnvelopeSchema>;
@@ -403,7 +429,7 @@ interface StatedWrite {
 async function statedWrite(
 	req: Request,
 	res: Response,
-	field: "resolve" | "adopt",
+	field: "resolve" | "adopt" | "shelve",
 ): Promise<StatedWrite | null> {
 	const envelope = statedEnvelope(req, res);
 	if (envelope === null) {
@@ -465,4 +491,4 @@ function writerOf(envelope: z.infer<typeof WriteEnvelopeSchema>): {
 	};
 }
 
-export { adoptRoute, branchRoute, createRoute, editRoute, resolveRoute };
+export { adoptRoute, branchRoute, createRoute, editRoute, resolveRoute, shelveRoute };

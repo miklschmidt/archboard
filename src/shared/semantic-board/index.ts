@@ -110,7 +110,9 @@ export {
 export { sameSemanticValue } from "@/shared/semantic-board/lib/semantic-value";
 export {
 	AdoptionSchema,
+	ShelvingSchema,
 	type Adoption,
+	type Shelving,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	FIRST_BOARD_VERSION,
 	SemanticVariantSchema,
@@ -189,6 +191,7 @@ export {
 	type DiagramAtlas,
 	RenderedVariantSchema,
 	type RenderedVariant,
+	type RenderedChanges,
 	SubjectStandingSchema,
 	RenderIdentitySchema,
 	DrawnBoardSchema,
@@ -202,6 +205,8 @@ export {
 export {
 	BoardAdoptInputSchema,
 	type BoardAdoptInput,
+	BoardShelveInputSchema,
+	type BoardShelveInput,
 	ChoiceSchema,
 	type Choice,
 	ResolutionInputSchema,

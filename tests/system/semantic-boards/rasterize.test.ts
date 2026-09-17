@@ -110,6 +110,8 @@ describe("semantic rasterize", () => {
 				success: true,
 				board: "transfers",
 				version: 1,
+				// A root variant came from nothing, so the picture is of it alone.
+				comparedWith: null,
 				view: null,
 				theme: "light",
 				file: out,
@@ -125,7 +127,11 @@ describe("semantic rasterize", () => {
 			// The same picture `semantic render` draws.
 			const svgOut = path.join(vault, "transfers.svg");
 			const rendered = JSON.parse(cli(["semantic", "render", "transfers", "--out", svgOut]).stdout);
-			expect(rendered).toMatchObject({ width: receipt.width, height: receipt.height });
+			expect(rendered).toMatchObject({
+				width: receipt.width,
+				height: receipt.height,
+				comparedWith: null,
+			});
 			expect(boardFile()).toEqual(before);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
@@ -200,6 +206,21 @@ describe("semantic rasterize", () => {
 			expect(compared.status, compared.stderr).toBe(0);
 			const comparedReceipt = JSON.parse(compared.stdout);
 			expect(comparedReceipt.variant).toMatchObject({ name: "No auditor", lifecycle: "draft" });
+			// The picture of a variant with a predecessor is the comparison with it,
+			// and the receipt names the other side neither file can say on its own.
+			// Both drawing commands answer the same thing about the same picture.
+			expect(comparedReceipt.comparedWith).toEqual(receipt.variant);
+			const drawnSvg = cli([
+				"semantic",
+				"render",
+				"transfers",
+				"--variant",
+				"No auditor",
+				"--out",
+				path.join(vault, "proposal.svg"),
+			]);
+			expect(drawnSvg.status, drawnSvg.stderr).toBe(0);
+			expect(JSON.parse(drawnSvg.stdout).comparedWith).toEqual(comparedReceipt.comparedWith);
 			expect(comparedReceipt.version).toBe(3);
 			expect(pngSize(proposal)).toEqual({
 				width: comparedReceipt.width,

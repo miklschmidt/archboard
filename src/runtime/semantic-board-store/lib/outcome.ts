@@ -63,7 +63,14 @@ type SemanticRefusalCode =
 	| "ALREADY_CURRENT"
 	| "VARIANT_UNSETTLED"
 	| "VARIANT_BLOCKED"
-	| "VARIANT_HISTORICAL";
+	| "VARIANT_HISTORICAL"
+	// Letting a proposal go.
+	/** The variant is the implemented architecture, not a proposal about it. */
+	| "VARIANT_CURRENT"
+	/** The variant is a proposal nobody intends to carry out. */
+	| "VARIANT_SHELVED"
+	/** Drafts are still standing on the variant, and would be stranded. */
+	| "VARIANT_HAS_DRAFTS";
 
 /** A transition either produced a whole new board, or refused. */
 interface SemanticRefusal {

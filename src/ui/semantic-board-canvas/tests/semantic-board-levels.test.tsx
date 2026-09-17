@@ -81,40 +81,41 @@ const PIPELINE = boardOf(
 	[{ ...PIPELINE_VIEW, scope: { kind: "all" } }],
 );
 
-/** The board below: two states, two ways of reading it. */
-const ENGINE = boardOf(
-	"engine",
-	[
-		{
-			id: "e1",
-			name: "as built",
-			lifecycle: "draft",
-			content: {
-				nodes: [
-					{ id: "m1", name: "atomic-write", kind: "module" },
-					{ id: "m2", name: "fsync", kind: "module" },
-				],
-				edges: [],
-				flows: [
-					{
-						id: "f1",
-						name: "One write",
-						participants: ["m1", "m2"],
-						steps: [{ id: "s1", from: "m1", to: "m2", label: "flushes", kind: "sync" }],
-					},
-				],
+/** The proposal the link above names. */
+const AS_BUILT = {
+	id: "e1",
+	name: "as built",
+	lifecycle: "draft",
+	content: {
+		nodes: [
+			{ id: "m1", name: "atomic-write", kind: "module" },
+			{ id: "m2", name: "fsync", kind: "module" },
+		],
+		edges: [],
+		flows: [
+			{
+				id: "f1",
+				name: "One write",
+				participants: ["m1", "m2"],
+				steps: [{ id: "s1", from: "m1", to: "m2", label: "flushes", kind: "sync" }],
 			},
-		},
-		{
-			id: "e2",
-			name: "shipped",
-			lifecycle: "current",
-			content: { nodes: [{ id: "m1", name: "atomic-write", kind: "module" }], edges: [] },
-		},
-	],
-	"e2",
-	ENGINE_VIEWS.map((view) => ({ ...view, scope: { kind: "all" } })),
-);
+		],
+	},
+};
+
+/** The state the board below says is implemented. */
+const SHIPPED = {
+	id: "e2",
+	name: "shipped",
+	lifecycle: "current",
+	content: { nodes: [{ id: "m1", name: "atomic-write", kind: "module" }], edges: [] },
+};
+
+/** The views the board below offers, scoped as its document states them. */
+const ENGINE_SCOPES = ENGINE_VIEWS.map((view) => ({ ...view, scope: { kind: "all" } }));
+
+/** The board below: two states, two ways of reading it. */
+const ENGINE = boardOf("engine", [AS_BUILT, SHIPPED], "e2", ENGINE_SCOPES);
 
 /**
  * Every button of one bar, in order.
@@ -358,4 +359,32 @@ test("choosing the current state at a level, then a view, stays on the current s
 	expect(asked).toContain("board=engine");
 	expect(asked).not.toContain("variant=");
 	expect(buttons("semantic-variant-choice")[1]?.getAttribute("aria-pressed")).toBe("true");
+});
+
+test("a link into a proposal that was let go says so before it opens, and after", async () => {
+	// Shelving keeps the variant under its name precisely so a link like this one
+	// goes on opening it (ADR 0030); what a reader must not be left guessing is
+	// that what they followed is a proposal nobody is carrying out.
+	server.documents["pipeline"] = PIPELINE;
+	server.documents["engine"] = boardOf(
+		"engine",
+		[{ ...AS_BUILT, lifecycle: "shelved" }, SHIPPED],
+		"e2",
+		ENGINE_SCOPES,
+	);
+	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
+	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	await settle();
+
+	// Disclosed before it is followed, beside the name the link asked for.
+	const open = document.querySelector<HTMLElement>("[data-slot='semantic-drill-down-open']");
+	expect(open?.getAttribute("data-variant-lifecycle")).toBe("shelved");
+
+	await openDown();
+	// And on screen once it is open, where draft and current already say where
+	// they stand.
+	expect(buttons("semantic-variant-choice").map((one) => one.textContent)).toEqual([
+		"as builtshelved",
+		"shippedcurrent",
+	]);
 });

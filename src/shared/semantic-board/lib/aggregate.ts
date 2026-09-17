@@ -132,6 +132,32 @@ const AdoptionSchema = z
 type Adoption = z.infer<typeof AdoptionSchema>;
 
 /**
+ * One time a proposal was let go.
+ *
+ * The variant stays exactly where it is, under its name, with its content and
+ * with every drill-down that names it still resolving (ADR 0030). What is
+ * written down is the part the variant itself cannot say: that nobody intends
+ * to carry it out any more, when that was decided, and why. Without the reason
+ * a reader two years later finds a proposal that stops mid-argument and no
+ * account of how the argument ended.
+ *
+ * By identity, for the reason an adoption is: a name labels a state and this is
+ * a record of states. Append-only in practice, because nothing un-decides a
+ * decision that was made.
+ */
+const ShelvingSchema = z
+	.object({
+		/** The variant that was let go. */
+		variant: SemanticIdSchema,
+		/** When it happened. */
+		at: TimestampSchema,
+		/** Why the proposal was let go. */
+		reason: DescriptionSchema,
+	})
+	.strict();
+type Shelving = z.infer<typeof ShelvingSchema>;
+
+/**
  * A whole board as it sits on disk.
  *
  * The shape alone does not make a document coherent — an edge can name a node
@@ -159,6 +185,12 @@ const SemanticBoardSchema = z
 		 * inventing a decision nobody made.
 		 */
 		adoptions: z.array(AdoptionSchema).optional(),
+		/**
+		 * Every proposal this board has let go, oldest first. Absent on a board
+		 * that has let none go, for the reason `adoptions` is absent until the
+		 * designation first moves: an empty record of decisions is not a decision.
+		 */
+		shelvings: z.array(ShelvingSchema).optional(),
 	})
 	.strict();
 type SemanticBoard = z.infer<typeof SemanticBoardSchema>;
@@ -243,7 +275,9 @@ function resolveVariant(board: SemanticBoard, asked?: string): SemanticVariant |
 
 export {
 	AdoptionSchema,
+	ShelvingSchema,
 	type Adoption,
+	type Shelving,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SUPPORTED_SCHEMA_MAJOR,
 	FIRST_BOARD_VERSION,

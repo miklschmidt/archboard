@@ -240,7 +240,8 @@ sideways from a card.
 _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:
-One named state in a board's evolution. Each successor has one predecessor and
+One named state in a board's evolution, standing in exactly one lifecycle:
+current, draft, historical or shelved. Each successor has one predecessor and
 shows changes relative to it through the board's shared views; a predecessor may
 have several competing successors.
 _Avoid_: version (that is which edit the board's note is),
@@ -259,12 +260,23 @@ _Avoid_: promotion (the legacy element-to-node operation), rename, merge
 **Historical variant**:
 A formerly current architectural state retained under its name after a successor
 is adopted. It is frozen against ordinary edits so it preserves what existed.
-_Avoid_: abandoned proposal, snapshot
+_Avoid_: abandoned proposal, snapshot, shelved variant (that was never current)
+
+**Shelved variant**:
+A proposal nobody intends to carry out, retained under its name with everything
+it says. Shelving records when it was let go and why. A shelved variant stops
+following the variant it came from, so edits above it raise nothing to settle,
+and it is refused for content edits and for adoption the way history is —
+propose it again by branching from it. Every drill-down naming it still opens it.
+_Avoid_: abandoned, archived, deleted, closed, rejected, superseded (that is a
+historical variant), withdrawn (that is a rolled-back optimistic edit)
 
 **Reconciliation**:
 Bringing a draft variant up to date with its predecessor while retaining its own
 proposed changes. Nonconflicting changes carry through automatically; conflicting
-edits or broken references require resolution. Adopted states do not inherit automatically.
+edits or broken references require resolution. Only a draft inherits: adopted,
+historical and shelved states do not, and shelving clears any standing the
+proposal was holding rather than asking somebody to settle it first.
 _Avoid_: comparison, adoption
 
 **Walkthrough**:
