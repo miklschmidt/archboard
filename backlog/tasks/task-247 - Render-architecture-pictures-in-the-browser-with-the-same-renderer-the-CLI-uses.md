@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:42'
-updated_date: '2026-09-17 02:42'
+updated_date: '2026-09-17 04:25'
 labels:
   - renderer
   - frontend
@@ -85,4 +85,11 @@ First picture drawn in the page, ms (before the levers -> after): Archboard 495-
 Sharing the engine, and letting the pool grow freely once it was shared, changed nothing measurable: workers now start in milliseconds.
 CPU profile of the Canvas server first picture: renderer JavaScript on the main thread 145 ms; the shell's applyTheme forces a style recalculation of the 144 kB stylesheet at boot, 134 ms; the rest is waiting on reads and workers.
 Next levers, not started: move the renderer core itself into a worker (Pretext can measure with OffscreenCanvas and the worker's own fonts), which frees the main thread but does not cut total time; cut the solves label settling makes (layout-rules.md section 22); skip the forced reflow in applyTheme on the first application.
+
+2026-09-17, all first-picture levers measured:
+- Kept: engine start at page load and renderer split (6b27fd57); shared compiled engine (d470b8ad); first theme without a forced style flush (c947119b); faster label placement, pictures byte-identical (156dac4d); elk-rs 0.11.3 without native thread contention (f35f8d74); reservation releases solved side by side, pictures byte-identical (3ce680a1).
+- Bun timing.ts first renders summed over fourteen boards: 2569 -> 907 ms (flask-map-2 1125 -> 376, Canvas server 218 -> 77).
+- Chromium, eleven vault boards over three runs: mean first picture 440 -> 396 ms, reopen 287 -> 272 ms.
+- Measured and dropped: renderer in a worker (no long tasks from drawing); free pool growth (no gain); WASM SIMD and wasm-opt levels in the fork (no gain).
+- Details in layout-rules.md section 24. Full gate green.
 <!-- SECTION:NOTES:END -->

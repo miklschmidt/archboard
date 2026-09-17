@@ -894,3 +894,75 @@ and draws in 1174 ms; the patched elkjs spends 7781 ms solving and draws in
 3303 ms. What grew is how many solves label settling needs with the new widths,
 so that is where to look next. Ten of the fourteen are under 150 ms. The four
 that are not are the three fixtures and Canvas server.
+
+## 24. Where a first render's time goes (2026-09-17, TASK-247)
+
+Timing each attempt directly showed where flask-map-2's first render spends
+its time. Graph building takes 11 ms, placing labels on runs about 195 ms, and
+waiting on the engine 2.0 s, summed over 126 overlapping solves. A CPU profile
+put placement at 861 ms, but it samples badly across worker threads and the
+direct timing is the one to trust. A render under Bun is therefore bound by
+the engine.
+
+Its solves also barely overlapped, for a reason inside the engine. One solve
+of flask-map-2's largest graph took 13 ms alone, 17 ms each with four at
+once, and 31 ms each with eight, on 24 cores. elk-rs 0.11.3 removed the
+shared state the solves contended on:
+
+- a lock around every option lookup
+- a lock around property defaults
+- glibc malloc, replaced by mimalloc
+- shared reference counts
+
+It is now 9.4 ms alone and 10.0 ms with eight at once. A browser gives each
+worker its own WebAssembly instance and never had this contention.
+
+Kept, each leaving every picture of every vault variant and wide-board
+fixture byte-identical:
+
+- Label placement grows cards, labels and route pieces once per placement
+  rather than once per run, and skips obstacles that miss every interval.
+  Relationship parts are grouped once. Routes whose extents do not touch skip
+  the crossing search. Placement fell from about 195 to 110 ms per
+  flask-map-2 render.
+- A round of reservation releases solves all its candidates at once and keeps
+  the first that holds, in order. Most rounds hold none, so the round solved
+  every candidate anyway. On 0.11.2 this was slower (2516 to 3081 ms summed),
+  because the solves contended. On 0.11.3 it is the largest gain.
+
+`timing.ts` first renders under Bun, averaged over three runs, ms:
+
+| board               | 0.11.2, section 23 | 0.11.3 | 0.11.3, parallel releases |
+| ------------------- | ------------------ | ------ | ------------------------- |
+| flask-map-1         | 290                | 199    | 121                       |
+| flask-map-2         | 1125               | 779    | 376                       |
+| flask-map-3         | 344                | 226    | 101                       |
+| Agent workbench     | 81                 | 47     | 30                        |
+| Archboard           | 16                 | 7      | 7                         |
+| Board persistence   | 97                 | 46     | 33                        |
+| Board viewer        | 73                 | 39     | 32                        |
+| Browser application | 70                 | 38     | 24                        |
+| Canvas server       | 218                | 125    | 77                        |
+| Codex session       | 47                 | 25     | 16                        |
+| Command dispatch    | 55                 | 29     | 28                        |
+| Command interface   | 24                 | 12     | 12                        |
+| Renderer layout     | 19                 | 8      | 8                         |
+| Semantic renderer   | 111                | 65     | 41                        |
+| sum                 | 2569               | 1645   | 907                       |
+
+Twelve of the fourteen are now under 150 ms; flask-map-2 and, narrowly,
+nothing else of the vault is over 100.
+
+In the browser, over three runs across the eleven vault boards, the mean first
+picture fell from 440 to 396 ms and a reopen from 287 to 272 ms. A reopen is
+app boot, and a first picture adds about 30 ms of icon fetches and the layout.
+
+Measured and not kept:
+
+- Moving the renderer into a worker. Across 22 page loads no task over 50 ms
+  came from drawing, so there was no responsiveness to gain.
+- Letting the browser pool grow freely instead of one worker at a time: 396 to
+  415 ms, no gain.
+- Sharing one compiled engine across browser workers, WebAssembly SIMD and
+  wasm-opt levels. None moved the time. The shared engine is kept for the
+  compile work it saves.
