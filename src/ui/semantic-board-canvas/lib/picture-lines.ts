@@ -302,13 +302,18 @@ function drawStroke(stroke: Stroke, arrived: number): void {
 /**
  * Let a line only the new picture has arrive by being drawn on.
  * @param group The line's group.
+ * @param start Where in the whole it begins drawing; by default where a transition's arrivals do.
+ * @param end Where it is drawn.
  * @returns The step.
  */
-function drawOn(group: SubjectGroup): Updater {
-	const { enterStart } = PICTURE_TRANSITION_PHASES;
+function drawOn(
+	group: SubjectGroup,
+	start: number = PICTURE_TRANSITION_PHASES.enterStart,
+	end = 1,
+): Updater {
 	const strokes = drawnPaths(group.element).flatMap((path) => prepareStroke(path) ?? []);
 	return (progress: number): void => {
-		const arrived = phase(progress, enterStart, 1);
+		const arrived = phase(progress, start, end);
 		setOpacity(group.element, easeOut(phase(arrived, 0, ARRIVE_FADE_SHARE)));
 		for (const stroke of strokes) {
 			drawStroke(stroke, arrived);

@@ -5,9 +5,9 @@
 // board is there and empty, and the board could not be drawn. A person acting
 // on the wrong one of those wastes their afternoon.
 
+import { RiLoader4Line } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
-import { Skeleton } from "@/ui/components/skeleton";
 import type { SemanticOfferedView } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { SemanticBoardError } from "@/ui/semantic-board-canvas/api/semantic-boards";
 
@@ -21,13 +21,32 @@ interface SemanticStateProps {
 }
 
 /**
- * What the pane shows while the server is drawing.
+ * A spinner in the middle of a pane waiting on its picture. It fades in only
+ * once a draw has taken a while: most pictures arrive first, and a spinner
+ * flashed in front of them would be the only thing on screen that jumps.
+ * @param props Where it goes.
+ * @param props.className Classes for its placement.
+ * @returns The spinner.
+ */
+function StageSpinner(props: { readonly className?: string }): JSX.Element {
+	return (
+		<div
+			aria-hidden="true"
+			data-slot="semantic-board-spinner"
+			className={`slow-wait-reveal flex items-center justify-center ${props.className ?? ""}`}
+		>
+			<RiLoader4Line className="text-muted-foreground size-6 animate-spin [animation-duration:0.8s]" />
+		</div>
+	);
+}
+
+/**
+ * What the pane shows while the picture is being drawn.
  *
- * The shape of a diagram rather than a spinner, following the navigator's
- * register: a band of regions with cards on them, so the pane already has the
- * weight and rhythm of what is about to arrive.
+ * Nothing but a spinner in the middle, and only once the draw has taken a
+ * while; the pane says nothing about the shape of a board it has not seen.
  * @param props The board being drawn.
- * @returns The skeleton.
+ * @returns The waiting pane.
  */
 function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 	return (
@@ -41,21 +60,7 @@ function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 			<p aria-live="polite" className="sr-only">
 				Drawing {props.board}…
 			</p>
-			<div className="flex flex-col gap-6 p-8">
-				{[0, 1].map((band) => (
-					<div key={band} className="flex flex-col gap-2">
-						<Skeleton className="h-3 w-32 rounded-[2px] motion-reduce:animate-none" />
-						<div className="flex gap-3">
-							{[0, 1, 2].map((card) => (
-								<Skeleton
-									key={card}
-									className="h-20 w-48 rounded-[2px] motion-reduce:animate-none"
-								/>
-							))}
-						</div>
-					</div>
-				))}
-			</div>
+			<StageSpinner className="flex-1" />
 		</section>
 	);
 }
@@ -165,6 +170,7 @@ export {
 	SemanticStageEmpty,
 	SemanticStageLoading,
 	SemanticStageProblem,
+	StageSpinner,
 	failureWords,
 	type SemanticEmptyProps,
 	type SemanticStageProblemProps,
