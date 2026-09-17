@@ -22,6 +22,7 @@ import {
 	type ThemeColors,
 } from "@/transformers/semantic-renderer/host";
 import { loadDiagramFaces } from "@/ui/browser-renderer/lib/diagram-faces";
+import { compileEngine, workerOnSharedEngine } from "@/ui/browser-renderer/lib/shared-engine";
 import { loadDiagramIcons, loadedIconPaths } from "@/ui/browser-renderer/lib/diagram-icons";
 import {
 	createEnginePool,
@@ -33,8 +34,10 @@ import {
 interface BrowserRendererSetup {
 	/** The theme colours, as the build read them. */
 	readonly themeColors: ThemeColors;
-	/** Starts one layout engine worker. */
+	/** Starts one bare layout engine worker. */
 	readonly startWorker: () => EngineWorker;
+	/** Where the page serves the engine binary, compiled once and shared by every worker. */
+	readonly engineBinaryUrl: string;
 }
 
 let started: Promise<void> | undefined;
@@ -67,7 +70,11 @@ function noEmbeddedFaces(): never {
  */
 function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	if (started !== undefined) return;
-	const solve = createEnginePool(setup.startWorker, workerCeiling(navigator.hardwareConcurrency));
+	const engine = compileEngine(setup.engineBinaryUrl);
+	const solve = createEnginePool(
+		() => workerOnSharedEngine(setup.startWorker, engine),
+		workerCeiling(navigator.hardwareConcurrency),
+	);
 	installRendererHost({
 		solve,
 		themeColors: setup.themeColors,

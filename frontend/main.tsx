@@ -3,6 +3,7 @@
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import engineBinaryUrl from "@archboard/elk-rs/wasm-url";
 import { rendererBuild, themeColors } from "virtual:archboard-renderer";
 
 import { Application } from "@/ui/application";
@@ -36,6 +37,8 @@ function pictureStorage(): Storage | undefined {
 const renderer = import("@/ui/browser-renderer").then((module) => {
 	module.startBrowserRenderer({
 		themeColors,
+		// The engine binary, compiled once in the page and shared by every worker.
+		engineBinaryUrl,
 		startWorker: () =>
 			new Worker(new URL("@archboard/elk-rs/worker.browser", import.meta.url), {
 				type: "module",
