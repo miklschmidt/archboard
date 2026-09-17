@@ -310,6 +310,54 @@ describe("leaving and arriving", () => {
 		plain.innerHTML = after.svg;
 		expect(surface.innerHTML).toBe(plain.innerHTML);
 	});
+
+	test("a card and a line a proposal removes fade to a ghost with the rest of their change, not at once", () => {
+		const surface = surfaceElement();
+		const before = picture([A, B], [AB]);
+		const after = picture([{ ...A, ghost: true }, B], [{ ...AB, ghost: true }]);
+		surface.innerHTML = before.svg;
+		const transition = transitionPicture(surface, before, after);
+		const card = surface.querySelector<SVGGElement>(`g[data-semantic-id="n1"]`)!;
+		const line = surface.querySelector<SVGGElement>(`g[data-semantic-id="e1"]`)!;
+		// Drawn as the last picture drew them to begin with.
+		expect(Number(card.style.opacity)).toBe(1);
+		expect(Number(line.style.opacity)).toBe(1);
+		const { fadeStart, fadeEnd } = PICTURE_TRANSITION_PHASES;
+		transition.seek((fadeStart + fadeEnd) / 2);
+		expect(Number(card.style.opacity)).toBeLessThan(1);
+		expect(Number(card.style.opacity)).toBeGreaterThan(0.4);
+		expect(Number(line.style.opacity)).toBeLessThan(1);
+		transition.seek(1);
+		expect(Number(card.style.opacity)).toBeCloseTo(0.4, 6);
+		transition.finish();
+		expect(surface.querySelector(`g[data-semantic-id="n1"]`)?.getAttribute("opacity")).toBe("0.4");
+	});
+
+	test("the viewer's marks go up with the next picture and survive its landing", () => {
+		const surface = surfaceElement();
+		const before = picture([A, B], [AB]);
+		const after = picture([{ ...A, box: { x: 300, y: 10, width: 100, height: 60 } }, B], [AB]);
+		surface.innerHTML = before.svg;
+		surface
+			.querySelector(`g[data-semantic-id="n1"]`)
+			?.classList.add("is-selected", "is-group-member");
+		/**
+		 * The viewer's marks on one subject's group.
+		 * @param id The subject.
+		 * @returns Its classes.
+		 */
+		const marksOn = (id: string): string[] => [
+			...(surface.querySelector(`g[data-semantic-id="${id}"]`)?.classList ?? []),
+		];
+		const transition = transitionPicture(surface, before, after);
+		// A picture seen for a frame without them would show what they light or
+		// veil switch off and fade back in.
+		expect(marksOn("n1")).toEqual(["is-selected", "is-group-member"]);
+		transition.seek(0.5);
+		transition.finish();
+		expect(marksOn("n1")).toEqual(["is-selected", "is-group-member"]);
+		expect(marksOn("n2")).toEqual([]);
+	});
 });
 
 describe("which pictures are continuous", () => {
