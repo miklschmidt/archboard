@@ -181,3 +181,34 @@ test("a new terminal shares its independent old sibling's layer after inserting 
 		along(drawing.atlas.nodes["n1"]!, direction),
 	);
 });
+
+test("new cards joined by a relationship the router routes freely still draw", async () => {
+	// A skip a first render does not bracket carries no ports at all: the engine
+	// picks its faces. Two new cards on such a relationship have no ordered
+	// attachment to line up on, and the placement hints must say so rather than
+	// read a port that was never made.
+	const before = VariantContentSchema.parse({
+		nodes: [
+			{ id: "driver", name: "Driver", kind: "module" },
+			{ id: "painter", name: "Painter", kind: "module" },
+		],
+		edges: [{ id: "paint", from: "driver", to: "painter", kind: "call" }],
+	});
+	const content = VariantContentSchema.parse({
+		nodes: [
+			...before.nodes,
+			{ id: "layout", name: "Layout", kind: "module" },
+			{ id: "reading", name: "Reading", kind: "module" },
+			{ id: "score", name: "Score", kind: "module" },
+		],
+		edges: [
+			...before.edges,
+			{ id: "settle", from: "driver", to: "layout", kind: "call" },
+			{ id: "choose", from: "layout", to: "reading", kind: "call" },
+			{ id: "skip", from: "layout", to: "score", kind: "call" },
+			{ id: "reject", from: "reading", to: "score", kind: "call" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	for (const node of content.nodes) expect(drawing.atlas.nodes[node.id]).toBeDefined();
+});
