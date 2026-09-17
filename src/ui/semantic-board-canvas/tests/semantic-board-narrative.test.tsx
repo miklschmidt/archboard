@@ -309,6 +309,26 @@ test("a step told through a view is read through that view", async () => {
 	expect(renderCalls().filter((call) => call.includes("view=")).length).toBe(1);
 });
 
+test("a step told through a view keeps the last step's framing until that view's picture is up", async () => {
+	serving();
+	mountStage(null, { reducedMotion: true });
+	await presenting();
+	goTo(1);
+	await settle();
+	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	expect(unveiled()).toEqual(["n1"]);
+
+	// The view's picture is still being drawn. Worked out against the picture on
+	// screen, the step would send the camera and the veil somewhere now and
+	// somewhere else once its own picture came: it waits, and moves once.
+	server.reply = "pending";
+	goTo(2);
+	await settle();
+	expect(renderCalls().at(-1)).toContain(`view=${VIEW.id}`);
+	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	expect(unveiled()).toEqual(["n1"]);
+});
+
 test("a step about something this reading does not draw says so", async () => {
 	serving();
 	mountStage(null, { reducedMotion: true });

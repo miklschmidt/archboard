@@ -49,6 +49,7 @@ import type { GroupControls } from "@/ui/semantic-board-canvas/components/Semant
 import { useDeparture, type Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { useGroupInspection } from "@/ui/semantic-board-canvas/hooks/use-group-focus";
+import { useSettledFocus } from "@/ui/semantic-board-canvas/hooks/use-settled-focus";
 import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
@@ -64,7 +65,7 @@ import {
 } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupChoice, GroupFocus } from "@/ui/semantic-board-canvas/lib/groups";
-import { beatFocus, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
+import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
 /** Inputs for a semantic pane. */
@@ -407,7 +408,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	useSemanticBoardChanges(drill.board);
 
 	const drawn = drawingIn(render.data);
-	const focus = useMemo(() => beatFocus(narrative.beat, drawn), [narrative.beat, drawn]);
+	const focus = useSettledFocus(narrative.beat, drawn, viewToRead(narrative.beat, level.view));
 	const camera = useAutoFit(drawn, focus, {
 		presenting: narrative.open !== null,
 		reducedMotion: props.reducedMotion,

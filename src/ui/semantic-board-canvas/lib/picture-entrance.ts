@@ -24,6 +24,7 @@ import {
 	type Updater,
 } from "@/ui/semantic-board-canvas/lib/picture-motion";
 import { subjectGroups, type SubjectGroup } from "@/ui/semantic-board-canvas/lib/picture-pairing";
+import { keepingMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 import {
 	stagePicture,
 	type PictureTransition,
@@ -206,9 +207,11 @@ function nothingToSeek(): void {
  * @returns The entrance, drawn at its start.
  */
 function enterPicture(surface: HTMLElement, drawing: SemanticDrawing): PictureTransition {
-	/** Land on the picture exactly as the server drew it. */
+	/** Land on the picture exactly as the server drew it, keeping the viewer's marks on it. */
 	function finish(): void {
-		stagePicture(surface, drawing.svg);
+		keepingMarks(surface, () => {
+			stagePicture(surface, drawing.svg);
+		});
 	}
 	stagePicture(surface, drawing.svg);
 	const root = surface.querySelector("svg");

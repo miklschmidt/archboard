@@ -9,7 +9,6 @@
 
 import {
 	useCallback,
-	useEffect,
 	useLayoutEffect,
 	useMemo,
 	useRef,
@@ -378,7 +377,10 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// no walkthrough open — and a subject that is both attended and unsettled
 	// says both, which it could not while one map held one mark per subject.
 	const marked = useMemo(() => subjectMarks(selection, focus), [selection, focus]);
-	useEffect(() => {
+	// Before paint, both: a picture put up fresh — a flight landing, most of all —
+	// must never be seen for a frame without its marks, or what they light and
+	// veil is seen to switch off and fade back in.
+	useLayoutEffect(() => {
 		if (picture !== null) {
 			markSubjects(picture.root, marked);
 		}
@@ -386,7 +388,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// A group under inspection is its own set of marks, independent of
 	// attention: a member the person also picked out says both.
 	const { groupMarks } = props;
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (picture !== null) {
 			markGroupFocus(picture.surface, groupMarks);
 		}

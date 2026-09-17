@@ -8,8 +8,11 @@
 // slow draw leaves an empty pane rather than a board nobody is reading any more.
 //
 // When the next picture arrives while the last is still on its way out, what
-// is left of the last is copied into a ghost that finishes fading on top of the
-// same spot, under the arriving picture, so nothing is ever snatched away. The
+// is left of the last is copied into a ghost that finishes fading on the same
+// spot, over the arriving picture, so nothing is ever snatched away. It is laid
+// over rather than under, and without the page ground it was drawn on: under,
+// the arriving picture's own ground fading in would cover it inside that
+// page's rectangle and cut it off there, a hard edge through a fade. The
 // ghost is outside the camera's control: the camera has already been refitted
 // for the picture arriving, and the ghost stays exactly where the reader last
 // saw it.
@@ -186,6 +189,10 @@ function ghostOf(
 	// Where the pane was when the reader last saw it: whatever is around the
 	// picture may have changed size for the board arriving, and moved it.
 	ghost.style.translate = `${moved.x}px ${moved.y}px`;
+	// The page ground is the arriving picture's to draw; the ghost is only what was on it.
+	for (const ground of copy.querySelectorAll(":scope > rect")) {
+		ground.remove();
+	}
 	return { ghost, copy };
 }
 
@@ -252,7 +259,7 @@ function onwards(
 
 /**
  * Leave a copy of what the surface shows now to finish leaving where it is,
- * under the picture about to be put there.
+ * over the picture about to be put there.
  *
  * Only a picture still visible gets one: a picture that finished leaving is
  * already gone. A picture the reader left before it had begun to go — the
@@ -270,7 +277,7 @@ function ghostPicture(surface: HTMLElement, heading: Departure | null, moved: Of
 	const { look } = visible;
 	const to = onwards(visible.root, look, heading);
 	made.copy.style.transformOrigin = to.origin;
-	surface.before(made.ghost);
+	surface.after(made.ghost);
 	const fade = made.copy.animate(
 		[
 			{ opacity: look.opacity, transform: look.transform },
