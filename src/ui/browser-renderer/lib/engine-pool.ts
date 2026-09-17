@@ -4,9 +4,10 @@
 // A render settles several candidate drawings, and a worker answers its
 // messages in order, so one worker would queue every candidate behind every
 // other. The pool starts a worker only when a solve finds every running one
-// busy, up to one fewer than the cores the browser reports, so a small board
-// starts one and a wide one spreads its candidates out. The engine is
-// deterministic: which worker answers a solve never changes the drawing.
+// busy and none of them still starting, up to one fewer than the cores the
+// browser reports, so a small board starts one and a wide one spreads its
+// candidates out without compiling the engine a dozen times at once. The engine
+// is deterministic: which worker answers a solve never changes the drawing.
 //
 // The workers speak the elkjs worker protocol, which the engine's own worker
 // entry answers: `{ id, cmd: "layout", graph, layoutOptions }` in, and
@@ -45,6 +46,8 @@ function isAnswer(event: Event): event is MessageEvent<EngineAnswer> {
 /** One worker, and the solves it has been sent and not yet answered. */
 interface PooledEngine {
 	readonly worker: EngineWorker;
+	/** Whether it has answered anything yet, which is when its engine is compiled. */
+	answered: boolean;
 	readonly waiting: Map<
 		number,
 		{ resolve: (graph: SolveGraph) => void; reject: (error: Error) => void }
@@ -86,13 +89,18 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 * @returns The pooled worker.
 	 */
 	function start(): PooledEngine {
-		const engine: PooledEngine = { worker: startWorker(), waiting: new Map() };
+		const engine: PooledEngine = {
+			worker: startWorker(),
+			answered: false,
+			waiting: new Map(),
+		};
 		engine.worker.addEventListener("message", (event) => {
 			if (!isAnswer(event)) return;
 			const answer = event.data;
 			const pending = engine.waiting.get(answer.id);
 			if (pending === undefined) return;
 			engine.waiting.delete(answer.id);
+			engine.answered = true;
 			if (answer.error !== undefined) pending.reject(engineError(answer.error));
 			else if (answer.data === undefined)
 				pending.reject(engineError("The layout engine answered with nothing."));
@@ -109,13 +117,16 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	}
 
 	/**
-	 * The idle worker, a new one while the ceiling allows, or the least busy.
+	 * The idle worker, a new one while the ceiling allows and none is still
+	 * starting, or the least busy.
 	 * @returns The worker to send a solve to.
 	 */
 	function engineForSolve(): PooledEngine {
 		const idle = engines.find((engine) => engine.waiting.size === 0);
 		if (idle !== undefined) return idle;
-		if (engines.length < ceiling) return start();
+		// One worker starting at a time: a worker that has not answered is still
+		// compiling the engine, and starting another beside it only compiles it again.
+		if (engines.length < ceiling && engines.every((engine) => engine.answered)) return start();
 		return engines.toSorted((one, other) => one.waiting.size - other.waiting.size)[0]!;
 	}
 

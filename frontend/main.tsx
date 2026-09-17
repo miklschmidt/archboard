@@ -7,7 +7,6 @@ import { rendererBuild, themeColors } from "virtual:archboard-renderer";
 
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
-import { drawBoardHere, startBrowserRenderer } from "@/ui/browser-renderer";
 import { createLocalPictureSource, takePicturesFrom } from "@/ui/semantic-board-canvas";
 
 // The Excalidraw library site returns to the tab that opened it by name.
@@ -31,15 +30,22 @@ function pictureStorage(): Storage | undefined {
 }
 
 // Pictures are drawn here, with this browser's canvas and a pool of engine
-// workers, from the boards this tab reads (TASK-247).
-startBrowserRenderer({
-	themeColors,
-	startWorker: () =>
-		new Worker(new URL("@archboard/elk-rs/worker.browser", import.meta.url), { type: "module" }),
+// workers, from the boards this tab reads (TASK-247). The renderer is its own
+// chunk, fetched and started while the application boots, so the shell and a
+// kept picture never wait for it.
+const renderer = import("@/ui/browser-renderer").then((module) => {
+	module.startBrowserRenderer({
+		themeColors,
+		startWorker: () =>
+			new Worker(new URL("@archboard/elk-rs/worker.browser", import.meta.url), {
+				type: "module",
+			}),
+	});
+	return module;
 });
 takePicturesFrom(
 	createLocalPictureSource({
-		draw: drawBoardHere,
+		draw: async (board, choices, policy) => (await renderer).drawBoardHere(board, choices, policy),
 		renderer: rendererBuild,
 		storage: pictureStorage(),
 	}),

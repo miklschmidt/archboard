@@ -37,6 +37,16 @@ const fetched = (browser: AgentBrowserSession): Promise<string[]> =>
 	browser.eval<string[]>(`performance.getEntriesByType("resource").map((entry) => entry.name)`);
 
 /**
+ * Every picture this browser keeps, as stored.
+ * @param browser The page.
+ * @returns The stored entries, by key.
+ */
+const keptPictures = (browser: AgentBrowserSession): Promise<Record<string, string>> =>
+	browser.eval<Record<string, string>>(
+		`Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith("archboard.picture:")).map((key) => [key, localStorage.getItem(key)]))`,
+	);
+
+/**
  * Wait for the pane to have drawn.
  * @param browser The page.
  * @param what What is being waited for.
@@ -83,13 +93,16 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 		),
 	).toBeGreaterThan(0);
 
-	// Opened again: the kept picture is shown, and nothing is laid out for it.
+	// Opened again: the kept picture is shown, and nothing is laid out for it. A
+	// picture laid out again is kept again, with a later time on it, so the kept
+	// entries are exactly as they were.
+	const keptBefore = await keptPictures(browser);
 	await browser.run(["open", addressShowing(canvas.base, "pipeline")]);
 	await drawn(browser, "the kept picture to be shown after the page is opened again");
 	expect(await browser.eval<string>(`document.querySelector("${SURFACE}").textContent`)).toContain(
 		"Ingest",
 	);
-	expect((await fetched(browser)).some((url) => url.includes("worker.browser"))).toBeFalse();
+	expect(await keptPictures(browser)).toEqual(keptBefore);
 
 	// The board changes: the pane is told, and the new version is drawn here.
 	const wrote = await request<{ version: number }>("/api/semantic-boards/edit?expectVersion=1", {
@@ -104,9 +117,17 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 		"the board's new version to be drawn in the page",
 		WAIT,
 	);
-	const after = await fetched(browser);
-	expect(after.some((url) => url.includes("/api/semantic-boards/render"))).toBeFalse();
-	expect(after.some((url) => url.includes("worker.browser"))).toBeTrue();
+	expect(
+		(await fetched(browser)).some((url) => url.includes("/api/semantic-boards/render")),
+	).toBeFalse();
+	// Laid out here and kept again, as a picture of the new version.
+	const keptAfter = await pollUntil(
+		() => keptPictures(browser),
+		(kept) => Object.values(kept).some((entry) => entry.includes('"version":2')),
+		"the new version's picture to be kept",
+		WAIT,
+	);
+	expect(keptAfter).not.toEqual(keptBefore);
 
 	await canvas.assertRunning();
 }, 40_000);
