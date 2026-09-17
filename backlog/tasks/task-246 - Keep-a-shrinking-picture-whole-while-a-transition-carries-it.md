@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 19:30'
-updated_date: '2026-09-16 19:30'
+updated_date: '2026-09-17 07:30'
 labels:
   - frontend
   - bug
@@ -37,3 +37,9 @@ Between two pictures of one board, a transition stages the target SVG on the sur
 3. Own it in picture-transition.test.tsx: a smaller target keeps both pictures unclipped in flight and lands exactly as drawn.
 4. Look at the transition in the running canvas; record it only if awkward movement remains.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-17: the user reported the board still moves when switching Semantic renderer between Current architecture and Readable layout. Recorded headless over CDP. Two causes. (1) Readable layout's page is 1600x1125 against 1062x987, with a lane added on the left, so every shared card sits about 140 px right and 60 px down on the new page, and the camera stayed pinned to the page corner. (2) A second answer with the identical SVG arrived about 30 ms into the transition and landed it after one frame, so the move read as a jump. Fixed in 3a commit on task-247-browser-render: the camera follows the shared cards' mean centre shift before first paint (no CSS easing), the new picture starts that far back and eases home with the card motion, and the same SVG arriving again no longer lands a flight. Tests: picture-transition.test.tsx (shift start/ease/landing, camera told the shift, same picture mid-flight keeps flying). Recordings: ~/.claude/jobs/3103d28b/tmp/motion/before.mp4 and after.mp4.
+<!-- SECTION:NOTES:END -->
