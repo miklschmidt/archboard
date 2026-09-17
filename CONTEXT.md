@@ -105,8 +105,23 @@ _Avoid_: palette, theme, board content
 
 **Kind**:
 The consumer-defined node type: what sort of architectural unit a node stands
-for, such as an API, Kubernetes cluster, queue or external system.
+for, such as an API, Kubernetes cluster, queue or third-party library. The
+vocabulary offers one kind per level, so a node standing for another board can
+carry that board's level as its kind (ADR 0029).
 _Avoid_: category, role, class, drawing shape
+
+**External**:
+The kind for code this codebase does not own: a library, a framework, a
+runtime, a shell, a hosted service, a caller outside the checkout. Never a part
+of this codebase that a reader reaches through another board.
+_Avoid_: third-party kind for our own parts, link node, outside board
+
+**Standing-for node**:
+A node whose subject is what another board describes, carrying that board's
+level as its kind and the drill-down that opens it. It is a real participant on
+its own board first; a node added only to carry a link is a button, and a
+diagram has no buttons (ADR 0029).
+_Avoid_: link node, button, stub, proxy node
 
 **Relationship kind**:
 The consumer-defined type of architectural relationship represented by an edge.
@@ -211,14 +226,17 @@ _Avoid_: coordinates, theme, layout settings
 The required abstraction classification of a board, chosen from the vocabulary
 defined by the vault's consumer — commonly system, service, module. A
 system board shows interactions between services; a service board shows interactions
-between its modules, with navigation connecting these separate boards. A
-node carries one only to say it differs from its board; a node that says
-nothing is at its board's level.
+between its modules, with navigation connecting these separate boards. A node
+is at its board's level unless it says otherwise, and the only nodes that say
+otherwise are the ones standing for another board, which say it by carrying
+that board's level as their kind.
 _Avoid_: layer, depth, zoom, tier, granularity
 
 **Drill-down**:
 Moving from a node on one board to an explicitly linked board and variant
-describing that node's internals.
+describing that node's internals. It is an affordance on a part the board draws
+for its own sake: upward from the container the board describes, downward or
+sideways from a card.
 _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:

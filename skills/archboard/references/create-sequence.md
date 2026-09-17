@@ -17,86 +17,98 @@ a comparison, a view and a group inspection read.
 
 1. Read the code path and record each message with its evidence: who calls
    whom, from which function, in which order, and which messages come back.
-   List the participants in reading order and each message in sequence with
-   its kind: `sync` (a call, the default), `return`, `async` (fire and
-   forget), `self` (a participant's own step; exactly when `from` and `to` are
-   the same node). A call a participant makes on itself (`RequestContext.push`
-   calling `self.match_request`, a loader trying its own candidates) is one
-   `self` step on that participant: do not split a class the board draws as
-   one part into method participants so the call becomes a message between two
-   columns, since the exchange is between the parts the board has. Use `repeat` for a count the source fixes (a retry limit,
-   a batch of a known size, a literal list of candidates tried in turn: two
-   default module names is `repeat: 2`); a loop whose length depends on data
-   is one step with a `note` that says so. Use `note` for a branch or a
-   caveat. Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
+   List the participants in reading order: the exchange is between the parts
+   the board has, so a part drawn whole stays one column whatever functions,
+   methods or hooks run inside it, and a call it makes on itself (a recursive
+   function, a component updating its own state, a loader trying its own
+   candidates) is one `self` step. A function, method or component the request
+   names, or one the board already draws, is a participant, and a call to it
+   is a message to that column even when it lives inside its caller.
+   Then list each message in sequence with its kind: `sync` (a call that
+   waits, an awaited promise included; the default), `return`, `async` (fire
+   and forget: an emitted event, a message, a promise nobody awaits), `self`
+   (exactly when `from` and `to` are the same node). A step that runs more
+   than once carries `repeat` when the source fixes the count (a retry limit,
+   a batch of a known size, a literal list of candidates tried in turn), on a
+   `self` step as readily as on a call to another column: the example below
+   tries two candidate documents in one `self` step with `repeat: 2`. A loop
+   whose length depends on data is one step with a `note` that says so; use
+   `note` for a branch or a caveat too.
+   Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
    are `external`; the relationships on the exchange's forward path carry
-   `traffic`, and its returns, teardown, error branches and one-shot startup
-   calls do not; and an ordering the reader must understand gets a
-   walkthrough beat. A beat explains a step by naming it: give that step an
-   `as` handle in the same write, put the handle in the beat's `subjects`
-   with the parts it joins, and set the beat's `view` to the data-flow view
-   so the reader looks at the exchange while reading it.
+   `traffic` (a call a normal pass always makes stays on that path even when
+   an error could skip it), and its returns, teardown, error branches and
+   one-shot startup calls do not; and an ordering the reader must understand
+   gets a walkthrough beat. A beat explains a step by naming it: give that
+   step an `as` handle in the same write and put the handle in the beat's
+   `subjects`. An ordering has two sides, so a beat about why one thing
+   happens before another names both: the earlier step by its handle, and
+   what relies on it having happened (a later step, or the part that acts on
+   its result), with the parts they run on. Set the beat's `view` to the
+   data-flow view so the reader looks at the exchange while reading it.
 2. Create a standalone sequence in one write. Against an existing board, use
    the same payload with `semantic edit` and the version you read. The
-   evidence here, from `src/flask/cli.py` in Flask 3.0: `run_command` calls
-   `ScriptInfo.load_app`; when `FLASK_APP` names nothing, `load_app` loops
-   over the literal tuple `("wsgi.py", "app.py")`, a list the source fixes, so
-   that step is `repeat: 2`, and within each candidate `locate_app` tries the
-   attribute names, which the `note` says; `load_app` then returns the app to
-   `run_command`, which hands it to werkzeug's `run_simple`. Each of those
-   calls is an `edge` as well as a step.
+   evidence here, from archboard's own source: `executeInstallSkill`
+   (`src/cli/commands/install-skill.ts`) calls `writeSetup`
+   (`src/cli/commands/lib/repo-setup-block.ts`); to find the agent document,
+   `chooseDoc` loops over the literal list `["CLAUDE.md", "AGENTS.md"]`, a list
+   the source fixes, so that step is `repeat: 2`, and it keeps the first that
+   exists, which the `note` says; `writeSetup` then writes the block into that
+   document, asks `git check-ignore` whether the vault is ignored, and returns
+   the result to the command. Each call between two parts is an `edge` as well
+   as a step.
 
 ```bash
-archboard semantic new "Flask CLI startup" --doing "explaining how flask run starts the server" <<'JSON'
+archboard semantic new "Skill install" --doing "explaining how install-skill writes the repository setup" <<'JSON'
 {
   "level": "module",
   "nodes": [
-    { "name": "Shell", "kind": "external", "responsibility": "Invokes the flask command" },
-    { "name": "FlaskGroup", "kind": "module", "responsibility": "Dispatches the selected Flask command",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "run_command", "kind": "function", "responsibility": "Loads the app and starts the development server",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "ScriptInfo", "kind": "module", "responsibility": "Locates and imports the Flask application",
-      "binding": { "repo": "github.com/pallets/flask", "path": "src/flask/cli.py" } },
-    { "name": "run_simple", "kind": "external", "responsibility": "Serves requests until interrupted" }
+    { "name": "Person", "kind": "external", "responsibility": "Runs archboard install-skill in a repository" },
+    { "name": "install-skill command", "kind": "module", "responsibility": "Installs the skill files, then writes the setup",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts" } },
+    { "name": "Setup block", "kind": "module", "responsibility": "Writes the vault and CLI setup into the agent document",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts" } },
+    { "name": "git", "kind": "external", "responsibility": "Answers whether a path is ignored" }
   ],
   "edges": [
-    { "from": "Shell", "to": "FlaskGroup", "kind": "call", "label": "flask run" },
-    { "from": "FlaskGroup", "to": "run_command", "kind": "call", "label": "invoke" },
-    { "from": "run_command", "to": "ScriptInfo", "kind": "call", "label": "load_app" },
-    { "from": "run_command", "to": "run_simple", "kind": "call", "label": "serve", "emphasis": "hero" }
+    { "from": "Person", "to": "install-skill command", "kind": "call", "label": "install-skill" },
+    { "from": "install-skill command", "to": "Setup block", "kind": "call", "label": "writeSetup", "emphasis": "hero" },
+    { "from": "Setup block", "to": "git", "kind": "call", "label": "check-ignore" }
   ],
   "flows": [{
-    "name": "flask run",
-    "participants": ["Shell", "FlaskGroup", "run_command", "ScriptInfo", "run_simple"],
+    "name": "Repository setup",
+    "participants": ["Person", "install-skill command", "Setup block", "git"],
     "steps": [
-      { "from": "Shell", "to": "FlaskGroup", "label": "flask run" },
-      { "from": "FlaskGroup", "to": "run_command", "label": "invoke" },
-      { "from": "run_command", "to": "ScriptInfo", "label": "load_app" },
-      { "as": "load", "from": "ScriptInfo", "to": "ScriptInfo", "label": "import the first candidate that loads", "kind": "self", "repeat": 2, "note": "tries wsgi.py then app.py unless FLASK_APP names the app or factory; within each, locate_app tries the attribute names" },
-      { "from": "ScriptInfo", "to": "run_command", "label": "Flask app", "kind": "return" },
-      { "from": "run_command", "to": "run_simple", "label": "serve" }
+      { "from": "Person", "to": "install-skill command", "label": "install-skill" },
+      { "from": "install-skill command", "to": "Setup block", "label": "writeSetup" },
+      { "as": "find", "from": "Setup block", "to": "Setup block", "label": "find the agent document", "kind": "self", "repeat": 2, "note": "tries CLAUDE.md then AGENTS.md and keeps the first that exists; when neither does, the skill target names the one to create" },
+      { "as": "write", "from": "Setup block", "to": "Setup block", "label": "write the setup block", "kind": "self" },
+      { "from": "Setup block", "to": "git", "label": "check-ignore the vault" },
+      { "from": "git", "to": "Setup block", "label": "ignored or not", "kind": "return" },
+      { "from": "Setup block", "to": "install-skill command", "label": "setup result", "kind": "return" }
     ]
   }],
-  "views": [{ "name": "Startup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["flask run"] } }],
+  "views": [{ "name": "Setup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["Repository setup"] } }],
   "walkthroughs": [{
-    "name": "Why the app is imported before serving",
+    "name": "Why the document is found before the block is written",
     "beats": [{
-      "heading": "Find the app once, then serve",
-      "body": "run_simple receives an app ScriptInfo has already imported: the search over wsgi.py and app.py happens once at startup, never per request, which is why an import error stops the command before any socket opens.",
-      "subjects": ["load", "ScriptInfo", "run_simple"],
-      "view": "Startup exchange"
+      "heading": "One agent document, never two",
+      "body": "The block is written into whichever of CLAUDE.md and AGENTS.md already exists, so the search has to finish first: writing before it would create the second document the search exists to avoid.",
+      "subjects": ["find", "write", "Setup block"],
+      "view": "Setup exchange"
     }]
   }]
 }
 JSON
-archboard semantic rasterize "Flask CLI startup" --view "Startup exchange" --out startup.png
+archboard semantic rasterize "Skill install" --view "Setup exchange" --out setup.png
 ```
 
 3. Check the answer's flow against your record: participants in the order you
    meant, steps in the order the source runs them, returns where the source
    returns, kinds and notes as the code justifies; the saved beat's `subjects`
-   carry the step's minted id (a handle nobody referenced explains nothing).
+   carry the step's minted id (a handle nobody referenced explains nothing)
+   and what relies on that step (`write` above), not only the part the step
+   runs on.
    Open the picture through
    the `data-flow` view you made, not the whole board: the columns in order,
    every message readable and in sequence, returns and repeats
