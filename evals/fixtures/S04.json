@@ -73,11 +73,17 @@
 						"name": "register_blueprint",
 						"kind": "function",
 						"parent": "App",
-						"responsibility": "Runs the blueprint's deferred functions against the app"
+						"responsibility": "Hands the app to the blueprint so its deferred functions run against it",
+						"binding": { "repo": "$FLASK", "path": "src/flask/sansio/app.py" }
 					}
 				],
 				"edges": [
-					{ "from": "Blueprint", "to": "register_blueprint", "kind": "call", "label": "register" }
+					{
+						"from": "register_blueprint",
+						"to": "Blueprint",
+						"kind": "call",
+						"label": "register(self, options)"
+					}
 				]
 			}
 		}

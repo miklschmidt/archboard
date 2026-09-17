@@ -1,10 +1,11 @@
 {
-	"$comment": "Two containers with one module each, and two configured groups nobody belongs to yet. The checkout is deliberately not registered.",
+	"$comment": "Three containers with functions inside them and one module beside them, and three configured groups nobody belongs to yet. The checkout is deliberately not registered.",
 	"registerRepo": false,
 	"policy": {
 		"groups": {
 			"request-lifecycle": { "name": "Request lifecycle" },
-			"wsgi-layer": { "name": "WSGI layer" }
+			"wsgi-layer": { "name": "WSGI layer" },
+			"cli-startup": { "name": "CLI startup" }
 		}
 	},
 	"steps": [
@@ -16,6 +17,12 @@
 				"nodes": [
 					{ "name": "Flask app", "kind": "app", "responsibility": "The WSGI application object" },
 					{
+						"name": "WSGI entry",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Flask.wsgi_app: pushes the request context, then dispatches"
+					},
+					{
 						"name": "Dispatch",
 						"kind": "function",
 						"parent": "Flask app",
@@ -26,11 +33,34 @@
 						"name": "Run command",
 						"kind": "function",
 						"parent": "CLI",
-						"responsibility": "flask run: load the app and serve it"
+						"responsibility": "flask run: load the app and start the development server"
+					},
+					{
+						"name": "Contexts",
+						"kind": "module",
+						"responsibility": "The request and application contexts in src/flask/ctx.py"
+					},
+					{
+						"name": "Request context push",
+						"kind": "function",
+						"parent": "Contexts",
+						"responsibility": "RequestContext.push: binds request and session for one request"
+					},
+					{
+						"name": "Session interface",
+						"kind": "module",
+						"responsibility": "Opens and saves the signed cookie session"
 					}
 				],
 				"edges": [
-					{ "from": "Flask app", "to": "Dispatch", "kind": "call", "label": "dispatches" },
+					{ "from": "WSGI entry", "to": "Request context push", "kind": "call", "label": "push" },
+					{ "from": "WSGI entry", "to": "Dispatch", "kind": "call", "label": "dispatches" },
+					{
+						"from": "Request context push",
+						"to": "Session interface",
+						"kind": "call",
+						"label": "open_session"
+					},
 					{
 						"from": "Run command",
 						"to": "Flask app",

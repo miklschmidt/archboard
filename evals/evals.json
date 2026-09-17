@@ -297,16 +297,21 @@
 			"workflow": "edit",
 			"flask": "3.0.0",
 			"fixture": "fixtures/S03.json",
-			"sources": ["src/flask/app.py", "src/flask/cli.py", "src/flask/sansio/app.py"],
-			"prompt": "On the `Flask application` board, `Flask app` contains `Dispatch` and `CLI` contains `Run command`. Both `Dispatch` and `Run command` belong to the configured `request-lifecycle` group, and `Dispatch` also belongs to `wsgi-layer` (its functions live in the WSGI subclass in src/flask/app.py). Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout. Nothing else changes.",
+			"sources": [
+				"src/flask/app.py",
+				"src/flask/cli.py",
+				"src/flask/ctx.py",
+				"src/flask/sessions.py"
+			],
+			"prompt": "On the `Flask application` board, `Flask app` contains `WSGI entry` and `Dispatch`, `CLI` contains `Run command`, and `Contexts` contains `Request context push`. `Dispatch` and `Request context push` both belong to the configured `request-lifecycle` group; `Dispatch` also belongs to `wsgi-layer` (its functions live in the WSGI subclass in src/flask/app.py), and `Run command` belongs to `cli-startup`, because `flask run` starts the development server rather than handling a request. Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout. Nothing else changes.",
 			"expectedFeatures": [
 				{
 					"feature": "groups.multi-membership",
-					"requirement": "`Dispatch` lists both configured ids; `Run command` lists `request-lifecycle`"
+					"requirement": "`Dispatch` lists both configured ids; `Request context push` lists `request-lifecycle` and `Run command` lists `cli-startup`"
 				},
 				{
 					"feature": "groups.no-inheritance",
-					"requirement": "the containers `Flask app` and `CLI` gain no membership"
+					"requirement": "the containers `Flask app`, `CLI` and `Contexts` gain no membership"
 				},
 				{
 					"feature": "groups.configured-ids",
@@ -331,8 +336,14 @@
 				{
 					"check": "node-groups",
 					"board": "Flask application",
-					"node": "Run command",
+					"node": "Request context push",
 					"groups": ["request-lifecycle"]
+				},
+				{
+					"check": "node-groups",
+					"board": "Flask application",
+					"node": "Run command",
+					"groups": ["cli-startup"]
 				},
 				{
 					"check": "node-groups",
@@ -344,6 +355,12 @@
 					"check": "node-groups",
 					"board": "Flask application",
 					"node": "CLI",
+					"groups": []
+				},
+				{
+					"check": "node-groups",
+					"board": "Flask application",
+					"node": "Contexts",
 					"groups": []
 				},
 				{
@@ -368,8 +385,8 @@
 					"check": "inspect-group",
 					"board": "Flask application",
 					"group": "request-lifecycle",
-					"membersInclude": ["Dispatch", "Run command"],
-					"membersExclude": ["Flask app", "CLI"]
+					"membersInclude": ["Dispatch", "Request context push"],
+					"membersExclude": ["Flask app", "CLI", "Run command"]
 				},
 				{
 					"check": "check-clean"
@@ -490,7 +507,7 @@
 				},
 				{
 					"feature": "walkthrough.beat-subjects",
-					"requirement": "a beat whose subjects include the push step (by same-write handle or id) and the view node"
+					"requirement": "one beat that explains the ordering by itself: its subjects include the push step (by same-write handle or id), a step on the dispatch side the push enables, and the part they run on"
 				},
 				{
 					"feature": "authoring.handles",
@@ -515,7 +532,7 @@
 					"check": "walkthrough-beat-references",
 					"board": "Flask request pipeline",
 					"minBeats": 1,
-					"subjectKinds": ["step", "node"]
+					"beatSubjectKinds": { "step": 2, "node": 1 }
 				},
 				{
 					"check": "render-ok",
@@ -783,7 +800,12 @@
 			"workflow": "read",
 			"flask": "3.0.0",
 			"fixture": "fixtures/S09.json",
-			"sources": ["src/flask/app.py", "src/flask/sansio/app.py"],
+			"sources": [
+				"src/flask/app.py",
+				"src/flask/cli.py",
+				"src/flask/ctx.py",
+				"src/flask/sessions.py"
+			],
 			"prompt": "On the `Flask application` board, which parts belong to the `request-lifecycle` group, which relationships stay inside it, which cross its boundary and in which direction, and what are its immediate neighbours? Answer from the saved board using the CLI, and note any member that the `Overview` view does not draw. Change nothing.",
 			"expectedFeatures": [
 				{
@@ -792,7 +814,7 @@
 				},
 				{
 					"feature": "inspect.hidden-members",
-					"requirement": "the answer names `Run command` as a member the `Overview` view does not draw (the view selects its container `CLI` and not the command inside it); how that is phrased is free"
+					"requirement": "the answer names `Request context push` as a member the `Overview` view does not draw (the view selects neither the `Contexts` module nor the function inside it); how that is phrased is free"
 				},
 				{
 					"feature": "read-only",
@@ -809,8 +831,8 @@
 					"check": "inspect-group",
 					"board": "Flask application",
 					"group": "request-lifecycle",
-					"membersInclude": ["Dispatch", "Run command"],
-					"membersExclude": ["Flask app", "CLI"]
+					"membersInclude": ["Dispatch", "Request context push"],
+					"membersExclude": ["Flask app", "CLI", "Run command"]
 				},
 				{
 					"check": "check-clean"
@@ -1005,7 +1027,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S12.json",
 			"sources": ["src/flask/app.py", "src/flask/sessions.py"],
-			"prompt": "On the `Flask request pipeline` board, add two board views. `Session path` is an architecture view of how the session is opened: `Request context`, `Session interface` and `process_response`, showing only the `open_session` relationship between the context and the interface and not the `save_session` call from `process_response`. `Dispatch only` is an architecture view of the `Flask app` container's dispatch parts (`full_dispatch_request`, `dispatch_request`, `View function`) with whatever connects them. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
+			"prompt": "On the `Flask request pipeline` board, add two board views. `Session path` is an architecture view of how the session is opened: `Request context`, `Session interface` and `process_response`, showing only the `open_session` relationship between the context and the interface and not the `save_session` call from `process_response`. `Dispatch only` is an architecture view of how a request reaches the view: `full_dispatch_request`, `dispatch_request` and the `View function` they call, with whatever connects them. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
 			"expectedFeatures": [
 				{
 					"feature": "view.edge-isolation",
@@ -1209,6 +1231,11 @@
 				{
 					"label": "flask",
 					"board": "Flask"
+				},
+				{
+					"label": "flask-view",
+					"board": "Flask",
+					"views": "every"
 				}
 			]
 		}

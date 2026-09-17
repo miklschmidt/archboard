@@ -35,7 +35,6 @@
 					{
 						"name": "Request context",
 						"kind": "module",
-						"parent": "Flask app",
 						"responsibility": "Binds request and session for one request and matches the URL",
 						"binding": {
 							"repo": "$FLASK",
@@ -45,7 +44,6 @@
 					{
 						"name": "Session interface",
 						"kind": "module",
-						"parent": "Flask app",
 						"responsibility": "Opens and saves the signed cookie session",
 						"binding": {
 							"repo": "$FLASK",
@@ -85,8 +83,7 @@
 					{
 						"name": "View function",
 						"kind": "function",
-						"parent": "Flask app",
-						"responsibility": "The matched endpoint's function"
+						"responsibility": "The matched endpoint's function, in the application's own code"
 					},
 					{
 						"name": "process_response",
