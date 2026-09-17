@@ -37,13 +37,21 @@ function initialTheme(): ThemeChoice {
  */
 function applyTheme(theme: ThemeChoice): void {
 	const root = document.documentElement;
-	// One frame without transitions: the palette swaps whole, never cross-fades.
-	root.dataset["themeSwitching"] = "";
-	root.dataset["theme"] = theme;
-	void root.offsetWidth;
-	window.requestAnimationFrame(() => {
-		delete root.dataset["themeSwitching"];
-	});
+	const previous = root.dataset["theme"];
+	if (previous === undefined) {
+		// The first theme of the page: nothing has been drawn in another palette,
+		// so there is no cross-fade to prevent, and forcing a style flush here
+		// would only recalculate the whole stylesheet once more before first paint.
+		root.dataset["theme"] = theme;
+	} else if (previous !== theme) {
+		// One frame without transitions: the palette swaps whole, never cross-fades.
+		root.dataset["themeSwitching"] = "";
+		root.dataset["theme"] = theme;
+		void root.offsetWidth;
+		window.requestAnimationFrame(() => {
+			delete root.dataset["themeSwitching"];
+		});
+	}
 	try {
 		window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 	} catch {
