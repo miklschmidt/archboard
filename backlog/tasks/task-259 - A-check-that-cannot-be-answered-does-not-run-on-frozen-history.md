@@ -1,11 +1,11 @@
 ---
 id: TASK-259
 title: A check that cannot be answered does not run on frozen history
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 22:29'
-updated_date: '2026-09-17 22:51'
+updated_date: '2026-09-17 23:09'
 labels: []
 dependencies: []
 references:
@@ -59,3 +59,9 @@ Follow-up while implementing TASK-260: acceptsContentEdits is spelled as an allo
 
 Not done here, and outside this worker's files: skills/archboard/references/authoring.md documents DRILL_DOWN_LEVEL_MISMATCH and UNKNOWN_VOCABULARY for authors and says nothing about the frozen-history exemption or TASK-260's BINDING_PATH_MISSING. skills/** belongs to another worker.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A diagnostic about a variant's content now runs only over the variants a write can still change, spelled as an allowlist of current and draft rather than as "not historical" — which proved its worth within the hour, when a fourth lifecycle landed in a parallel task and fell outside it for free. UNKNOWN_VOCABULARY deliberately keeps running everywhere: its subject is the vault configuration, not the board, and defining the kind again clears it on frozen history exactly as on a current variant. Verified in the wave gate, run lane by lane because the box is too short on memory for bun run check in one process: lint, fmt:check and type-check clean, the frontend build, 3272 module tests, 164 system tests, the repository lane, the full serial browser lane at exit 0, eval:skill check ok, and ./bin/dogfood check reporting no diagnostics.
+<!-- SECTION:FINAL_SUMMARY:END -->

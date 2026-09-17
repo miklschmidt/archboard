@@ -1,11 +1,11 @@
 ---
 id: TASK-262
 title: Answer the four questions the skill left an author holding
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 22:30'
-updated_date: '2026-09-17 22:58'
+updated_date: '2026-09-17 23:09'
 labels: []
 dependencies: []
 references:
@@ -180,3 +180,9 @@ scenarios, 15 fixtures, 14 coverage parts.
 byte-identical create and edit input schemas, so the stated-id change moved the
 refusal wording and not the contract.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Each of the four is answered where an author meets it. Two were the product's: a rasterize or render receipt now names the variant the picture is drawn against, and a readable id for a new view, flow or beat is refused with what the store would have said instead of an alphabet rule. Two were wording, where the product was already right: which side a disagreement can be answered with, and that edge identity counts against the predecessor rather than against what you read. Both recipes shrank to pay for it. Verified in the wave gate, run lane by lane because the box is too short on memory for bun run check in one process: lint, fmt:check and type-check clean, the frontend build, 3272 module tests, 164 system tests, the repository lane, the full serial browser lane at exit 0, eval:skill check ok, and ./bin/dogfood check reporting no diagnostics.
+<!-- SECTION:FINAL_SUMMARY:END -->

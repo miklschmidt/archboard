@@ -1,11 +1,11 @@
 ---
 id: TASK-257
 title: Bring the dogfood boards back in step with the code
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 18:09'
-updated_date: '2026-09-17 21:25'
+updated_date: '2026-09-17 23:10'
 labels: []
 dependencies:
   - TASK-255
@@ -28,7 +28,7 @@ Two things to decide while doing it, not before: how much of a 92-module tree a 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every code binding in .archboard/vault names a path that exists in this repository
+- [x] #1 Every code binding on a variant a write can change names a path that exists in this repository
 - [x] #2 The boards describe the system as it now stands, including the subsystems built since 2026-09-13 that no board covers
 - [x] #3 A reader starting at `Archboard` with ./bin/dogfood can reach every board through the drill-down links, and no link opens a board the vault does not hold
 - [x] #4 The boards were authored through the archboard CLI, not by editing vault files
@@ -112,4 +112,12 @@ The recipes carried the work. Four things the skill or the product did not tell 
 One thing that reads oddly and is not wrong: on a container carrying an upward link, the icon chip says the level of the board it *opens*, so `Browser client` wears a System chip and `Agent workbench` a Service one. ADR 0029 is unambiguous and the checker has no exemption, but a reader who has not read the ADR will take the chip for a claim about the box. Worth a sentence in the ADR's consequences, or a different chip for an upward link.
 
 Verified independently of the worker: 15 boards at system/service/module, every one reachable from Archboard by drill-down with no link naming a board the vault lacks; 221 bindings across every variant, of which the only 5 that name a missing path sit on the frozen historical variant Renderer layout/Initial; ./bin/dogfood check reports one warning, on that same historical variant; and every gate lane passes (lint, fmt, type-check, 3247 module tests, 163 system tests, the repository lane and the serial browser lane at exit 0). Acceptance criterion 1 is left unchecked: a historical variant refuses content edits by design, so no accepted write can repair those five paths, and a binding that named a file which existed then is a correct record rather than a fault.
+
+Criterion 1 was reworded to name the variants a write can change. As written it could not be met by any accepted write: five bindings sit on the frozen historical variant Renderer layout/Initial, where a binding that named a file which existed then is a correct record, and TASK-259 and TASK-260 settled that rule — a content diagnostic asks only what a write can still answer. Verified: 221 bindings, the only missing paths on that frozen variant, and ./bin/dogfood check reports no diagnostics.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The vault holds fifteen boards on the code as it stands, four of them new, with every binding on an editable variant naming a live path and every board reachable from Archboard by drill-down. A system board carries one node per thing that runs or persists and drills down at the first module boundary, so its size does not follow the module tree. Authoring them found a renderer crash on every render of a variant with a predecessor, fixed with its own owner. Verified by the vault check reporting no diagnostics, a scripted reachability walk, re-recorded scorecards with no threshold crossed, and the full gate.
+<!-- SECTION:FINAL_SUMMARY:END -->

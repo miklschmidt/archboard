@@ -1,11 +1,11 @@
 ---
 id: TASK-260
 title: Report a code binding whose path has left the repository
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 22:29'
-updated_date: '2026-09-17 22:50'
+updated_date: '2026-09-17 23:09'
 labels: []
 dependencies:
   - TASK-259
@@ -53,3 +53,9 @@ Validation. New owner src/runtime/semantic-board-store/tests/bindings.test.ts br
 
 Against the tracked vault: ./bin/dogfood check exits 0 with no diagnostics (after ./bin/dogfood stop && start, since check answers from the server's source). Proof the check is running rather than silently skipping: checkSemanticVault over a scratch copy of the same vault with Renderer layout/Initial thawed to draft reports exactly the five known BINDING_PATH_MISSING nodes (plus the drill-down mismatch); over the tracked vault it reports none. 221 bindings, one repository, five missing paths, all on that frozen variant.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+BINDING_PATH_MISSING reports a node whose code binding names a path the repository no longer holds, naming the node, path, repo and checkout. It is silent for a repository this machine has not registered, which would otherwise fire on every bound node of a fresh clone, and for frozen history, where the path named a file that existed then. Proved non-vacuous by thawing the frozen variant in a scratch copy: the five known missing bindings appear, and none against the tracked vault. Verified in the wave gate, run lane by lane because the box is too short on memory for bun run check in one process: lint, fmt:check and type-check clean, the frontend build, 3272 module tests, 164 system tests, the repository lane, the full serial browser lane at exit 0, eval:skill check ok, and ./bin/dogfood check reporting no diagnostics.
+<!-- SECTION:FINAL_SUMMARY:END -->

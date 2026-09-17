@@ -1,11 +1,11 @@
 ---
 id: TASK-255
 title: A linking node carries the level of the board it opens
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 17:38'
-updated_date: '2026-09-17 19:45'
+updated_date: '2026-09-17 23:10'
 labels: []
 dependencies: []
 references:
@@ -31,7 +31,7 @@ What an implementer will find: `system` is not in the default vocabulary at all 
 - [x] #2 A decision record states what `external` means, that a node standing for what another board describes carries that board's level as its kind, that a drill-down is an affordance on a real participant and never a node added to carry a link, that an upward link belongs on a container and a downward or sideways link on a card, and how all of that relates to the `level` field ADR 0013 governs
 - [x] #3 CONTEXT.md and the archboard skill say the same in the words an author needs when choosing a kind
 - [x] #4 The vault checker reports a node that exists only to carry its `drillDown`, a `drillDown` naming a board the vault does not hold, and a kind that disagrees with the level of the board it opens
-- [ ] #5 The tracked .archboard/vault carries the decision: no card exists only to link, upward links sit on containers, and `external` is left only where the part is outside this codebase
+- [x] #5 The tracked .archboard/vault carries the decision: no card exists only to link, upward links sit on containers, and `external` is left only where the part is outside this codebase
 - [x] #6 bun run check passes and the derived skills are synchronized
 <!-- AC:END -->
 
@@ -70,4 +70,12 @@ What the vault will need (TASK-257 owns it; nothing under .archboard/vault was t
 Verification: bun test src/runtime/semantic-board-store/tests --isolate --max-concurrency=1 (139 pass, 0 fail, the 6 new drill-down owners included); bun test src/runtime/skill-distribution/tests (8 pass); bunx tsc --noEmit clean; oxlint policy and baseline configs clean over the changed directories; oxfmt --check clean; bun run eval:skill check ok (15 scenarios, 15 fixtures, 14 coverage parts). AC 5 is left unchecked: it is the vault rewrite TASK-257 owns and depends on this task. AC 6 is left unchecked: bun run check and bun scripts/sync-skills.ts run centrally for this wave.
 
 Gate run lane by lane (lint, fmt, type-check, frontend build, module, system, repository and serial browser lanes) all clean, and bun scripts/sync-skills.ts synced both authored skills. Acceptance criterion 5 is left for TASK-257, which rewrites the vault; the checker reports 26 DRILL_DOWN_LEVEL_MISMATCH and 2 DRILL_DOWN_ONLY_NODE against the tracked vault today.
+
+Verified on the rebuilt vault: 49 drill-down nodes across every variant a write can change, none of kind external, none existing only to carry its link, and ./bin/dogfood check reports no diagnostics. TASK-257 authored the boards and TASK-259 settled that a content diagnostic does not run on frozen history, which is why the one remaining mismatch on Renderer layout/Initial is no longer reported.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+External now means third-party code this codebase does not own, and a node standing for what another board describes carries that board's level as its kind, with a kind for every level in the default vocabulary. A drill-down is an affordance on a part that is really there: the vault's link-only cards were replaced by the callers that are really there or moved onto the containers they describe, and the checker reports a node that exists only to link, a link naming a board the vault does not hold, and a kind that disagrees with the level it opens. Recorded in ADR 0029, CONTEXT.md and the skill. Verified by the vault check reporting no diagnostics and the full gate.
+<!-- SECTION:FINAL_SUMMARY:END -->
