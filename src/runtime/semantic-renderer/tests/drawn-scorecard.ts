@@ -3,8 +3,10 @@
 // whether a drawing is better. Fit in the pane rewards a shape and ignores
 // empty space; page area and card share reward compactness and ignore the
 // pane; route length, bends and crossings say what a reader traces; lane ink
-// and the flank fan say how much wiring runs down margins. The invariants at
-// the end must stay zero.
+// and the flank fan say how much wiring runs down margins; label reach says
+// how far a reader goes along a line before meeting its words, and the shared
+// corridor how long two routes run side by side. The invariants at the end
+// must stay zero.
 //
 // Read by docs/design/wide-board-layout-fixtures/measure.ts, which prints it
 // for every board and compares two runs measure by measure.
@@ -15,10 +17,13 @@ import {
 	fitOf,
 	flankFanOf,
 	inkOf,
+	labelReachOf,
 	labelsOffRuns,
 	routesThroughCards,
+	runsOf,
+	sharedCorridorOf,
+	type Run,
 } from "@/runtime/semantic-renderer/tests/drawn-ink";
-import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /** Which way a measure should move for a reader to be better off. */
 type Better = "lower" | "higher";
@@ -32,20 +37,6 @@ interface Measure {
 	readonly better: Better;
 	/** What it means, in a reader's words. */
 	readonly meaning: string;
-}
-
-/** One drawn run between two points, with its relationship's id. */
-type Run = readonly [DrawnPoint, DrawnPoint, string];
-
-/**
- * Every straight run of every route, bridges removed.
- * @param drawing The rendered board.
- * @returns The runs.
- */
-function runsOf(drawing: RenderedDiagram): Run[] {
-	return [...corridorPoints(drawing.svg)].flatMap(([id, points]) =>
-		points.slice(1).map((end, index): Run => [points[index]!, end, id]),
-	);
 }
 
 /**
@@ -94,6 +85,8 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 		0,
 	);
 	const ink = inkOf(drawing);
+	const corridor = sharedCorridorOf(drawing);
+	const reach = labelReachOf(drawing);
 	return [
 		{
 			name: "fit",
@@ -144,6 +137,41 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 			digits: 0,
 			better: "lower",
 			meaning: "most routes leaving one card by its beside flank",
+		},
+		{
+			name: "label reach",
+			value: reach.farthest,
+			digits: 0,
+			better: "lower",
+			meaning: "farthest a label sits from the nearer end of the line it names",
+		},
+		{
+			name: "label strand",
+			value: reach.strand,
+			digits: 2,
+			better: "lower",
+			meaning: "farthest a label sits from its nearer card, as a share of the way between the two",
+		},
+		{
+			name: "shared corridor",
+			value: corridor.longest,
+			digits: 0,
+			better: "lower",
+			meaning: "longest stretch two routes run side by side",
+		},
+		{
+			name: "corridor routes",
+			value: corridor.widest,
+			digits: 0,
+			better: "lower",
+			meaning: "most routes a reader counts across one corridor",
+		},
+		{
+			name: "shared ink",
+			value: corridor.share,
+			digits: 2,
+			better: "lower",
+			meaning: "share of route length drawn beside another route",
 		},
 		{
 			name: "routes through cards",

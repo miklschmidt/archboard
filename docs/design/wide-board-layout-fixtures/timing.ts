@@ -18,10 +18,13 @@ const vault = ".archboard/vault";
 const runs = Number(process.argv[2] ?? 5);
 
 const items: { name: string; content: unknown }[] = [];
-for (const rep of ["1", "2", "3"]) {
+for (const file of fs
+	.readdirSync(fixtures)
+	.filter((name) => name.endsWith(".content.json"))
+	.toSorted()) {
 	items.push({
-		name: `flask-map-${rep}`,
-		content: JSON.parse(fs.readFileSync(`${fixtures}/flask-map-${rep}.content.json`, "utf8")),
+		name: file.replace(".content.json", ""),
+		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
 	});
 }
 for (const file of fs

@@ -153,6 +153,21 @@ function isNearFlank(face: string | undefined): boolean {
 }
 
 /**
+ * Whether the engine walks a face against the axis along it. It orders a
+ * card's ports clockwise from the corner the page starts at, so an index
+ * counts up along the face a step arrives by and the far flank, and back down
+ * the face a step leaves by and the near one. Two ports on faces that are
+ * walked in opposite senses are in the same order to the engine and the
+ * reverse order to a reader, which is why a relationship's two ends are
+ * seated mirrored (`flank-rules.ts`).
+ * @param face A face.
+ * @returns True when a higher index sits earlier along the face.
+ */
+function walksBackward(face: string | undefined): boolean {
+	return face === SOLVING.forwardOut || isNearFlank(face);
+}
+
+/**
  * The flank two attachments share, when both lie on the same one.
  * @param side The source's face.
  * @param targetSide The target's face.
@@ -445,4 +460,5 @@ export {
 	sharedFlank,
 	transposeBox,
 	transposePoint,
+	walksBackward,
 };

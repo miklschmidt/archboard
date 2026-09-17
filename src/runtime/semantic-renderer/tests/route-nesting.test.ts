@@ -1,4 +1,5 @@
-// Shared-destination routes coordinate their lane and arrival-port order.
+// Shared-destination routes coordinate their lane and arrival-port order, and
+// two relationships between the same pair of cards stay tellable apart.
 
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
@@ -8,6 +9,7 @@ import {
 	corridorPoints,
 	routePoints,
 	routeCrosses,
+	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
 	detached,
@@ -23,6 +25,27 @@ import {
  */
 function ruleOf(svg: string): string | undefined {
 	return /data-flank-rule="([^"]+)"/u.exec(svg)?.[1];
+}
+
+/**
+ * Whether one drawn route crosses another.
+ * @param one The route.
+ * @param other The route it must stay clear of.
+ * @returns True when any segment of one reaches into the other.
+ */
+function crosses(one: readonly DrawnPoint[], other: readonly DrawnPoint[]): boolean {
+	return one.some((point, index) => {
+		const next = one[index + 1];
+		return (
+			next !== undefined &&
+			routeCrosses(other, {
+				x: Math.min(point.x, next.x),
+				y: Math.min(point.y, next.y),
+				width: Math.abs(next.x - point.x),
+				height: Math.abs(next.y - point.y),
+			})
+		);
+	});
 }
 
 describe("same-destination routes", () => {
@@ -114,20 +137,7 @@ describe("same-destination routes", () => {
 					expect(
 						(returning ? -1 : 1) * (along(far.at(-1)!, direction) - along(near.at(-1)!, direction)),
 					).toBeGreaterThan(0);
-					expect(
-						far.some((point, index) => {
-							const next = far[index + 1];
-							return (
-								next !== undefined &&
-								routeCrosses(near, {
-									x: Math.min(point.x, next.x),
-									y: Math.min(point.y, next.y),
-									width: Math.abs(next.x - point.x),
-									height: Math.abs(next.y - point.y),
-								})
-							);
-						}),
-					).toBe(false);
+					expect(crosses(far, near)).toBe(false);
 					expect(detached(drawn)).toEqual([]);
 					expect(covering(drawn)).toEqual([]);
 					expect(overlaps(drawn, content, 11.9)).toEqual([]);
@@ -140,6 +150,71 @@ describe("same-destination routes", () => {
 						expect(other).toBeDefined();
 						expect(corridorPoints(drawn.svg).get("other")).toEqual(other);
 					}
+				}
+			}
+		});
+	}
+});
+
+describe("relationships between the same pair of cards", () => {
+	// Both ends of such a relationship are ranked by the card at the other end,
+	// so without a seat of its own each takes the same port index as its
+	// neighbour and the engine's opposite walks of the two faces invert them
+	// (TASK-256.11). Crossed, a reader cannot tell which label belongs to which
+	// arrowhead.
+	const signals = ["request timing", "error counter", "queue depth"];
+	for (const count of [2, 3]) {
+		test(`${count} of them neither cross nor swap ends`, async () => {
+			const base = VariantContentSchema.parse({
+				nodes: [
+					{ id: "app", name: "Flask app", kind: "module" },
+					{ id: "metrics", name: "Metrics extension", kind: "module" },
+				],
+				edges: signals.slice(0, count).map((label, place) => ({
+					id: `signal${place + 1}`,
+					from: "app",
+					to: "metrics",
+					kind: "signal",
+					label,
+				})),
+			});
+			for (const edges of [base.edges, base.edges.toReversed()]) {
+				for (const theme of ["light", "dark"] as const) {
+					const content = { ...base, edges };
+					const drawn = await renderArchitecture({ content, theme });
+					const direction = readingOf(drawn);
+					// The corridors, not the ink: a bridge lifts the later route
+					// over the earlier one, so the ink of a crossing pair does not
+					// meet even though a reader still has two lines to follow.
+					const paths = corridorPoints(drawn.svg);
+					const routes = base.edges.map(({ id }) => paths.get(id)!);
+					for (const [index, route] of routes.entries()) {
+						expect(route, `${base.edges[index]!.id} is drawn`).toBeDefined();
+						for (const [other, against] of routes.entries()) {
+							if (other === index) continue;
+							expect(
+								crosses(route, against),
+								`${base.edges[index]!.id} crosses ${base.edges[other]!.id}`,
+							).toBe(false);
+						}
+					}
+					// And each leaves and arrives in the same place across the
+					// reading as its neighbours, so no two share an end either.
+					const departures = routes.map((route) => across(route[0]!, direction));
+					const arrivals = routes.map((route) => across(route.at(-1)!, direction));
+					for (const [index] of routes.entries()) {
+						for (const [other] of routes.entries()) {
+							if (other === index) continue;
+							expect(
+								Math.sign(departures[index]! - departures[other]!),
+								`${base.edges[index]!.id} against ${base.edges[other]!.id}`,
+							).toBe(Math.sign(arrivals[index]! - arrivals[other]!));
+							expect(departures[index]).not.toBe(departures[other]);
+						}
+					}
+					expect(detached(drawn)).toEqual([]);
+					expect(masking(drawn)).toEqual([]);
+					expect(overlaps(drawn, content, 11.9)).toEqual([]);
 				}
 			}
 		});
