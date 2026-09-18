@@ -125,6 +125,48 @@ function describeJson(value: unknown): string {
  */
 const SelectorSchema = z.string().trim().min(1);
 
+/**
+ * The stated change with the variant the command line named.
+ *
+ * Which variant a write lands on is one fact with two places to say it: the
+ * `--variant` flag every variant command takes, and the stated change's own
+ * `variant`. The flag wins — it is the part somebody typed, and refusing the
+ * pair would turn a redundancy into a wasted call — but it does not win
+ * quietly: when the two name different variants the write says which one it
+ * took and which it passed over, on standard error with every other warning,
+ * leaving the machine-readable answer on stdout the board and nothing else.
+ *
+ * The comparison is of what was typed, not of what it resolves to: a flag
+ * naming a variant by id and a stated change naming the same variant by name
+ * are two spellings this cannot tell apart, and saying so costs a line rather
+ * than a write.
+ * @param stated The stated change, as it arrived.
+ * @param asked The variant the command line named, if any.
+ * @returns The change to parse, and what is worth saying about it.
+ */
+function targetedVariant(
+	stated: object,
+	asked: string | undefined,
+): { stated: Record<string, unknown>; diagnostics: string[] } {
+	const change: Record<string, unknown> = { ...stated };
+	if (asked === undefined) {
+		return { stated: change, diagnostics: [] };
+	}
+	const inChange = change["variant"];
+	const agrees = typeof inChange === "string" && inChange.trim() === asked.trim();
+	return {
+		stated: { ...change, variant: asked },
+		diagnostics:
+			inChange === undefined || agrees
+				? []
+				: [
+						`Warning: --variant "${asked}" and the stated change's \`variant\` ` +
+							`${typeof inChange === "string" ? `"${inChange}"` : describeJson(inChange)} name two ` +
+							`different variants. The command line wins, so this lands on "${asked}".`,
+					],
+	};
+}
+
 const expectVersionRefusal = {
 	code: "EXPECT_VERSION_REQUIRED",
 	exit: 2,
@@ -332,6 +374,7 @@ export {
 	failStated,
 	describeJson,
 	SelectorSchema,
+	targetedVariant,
 	expectVersionRefusal,
 	editedVersion,
 };

@@ -39,7 +39,7 @@ import {
 	named,
 	SelectorSchema,
 	statedJson,
-	describeJson,
+	targetedVariant,
 } from "@/cli/commands/lib/semantic-input";
 import {
 	boardHeldRefusal,
@@ -153,36 +153,6 @@ const EditInputSchema = z.object({
 	input: z.string().optional(),
 });
 
-/**
- * The stated batch with the variant the command line named.
- *
- * Which variant a change lands on is one fact, and there are two places to say
- * it: the flag every other variant command takes, and the batch's own
- * `variant`. Saying it in one is how it is normally said; saying it in both is
- * only safe while they agree, and two variants named in one call is a change
- * that would land somewhere its author did not mean. So a disagreement is
- * refused naming both, rather than one of them quietly winning.
- * @param stated The batch, as it arrived.
- * @param asked The variant the command line named, if any.
- * @returns The batch to parse.
- * @throws {CliUsageError} When the batch names a different variant.
- */
-function editedVariant(stated: object, asked: string | undefined): Record<string, unknown> {
-	const batch: Record<string, unknown> = { ...stated };
-	if (asked === undefined) {
-		return batch;
-	}
-	const inBatch = batch["variant"];
-	if (inBatch !== undefined && !(typeof inBatch === "string" && inBatch.trim() === asked.trim())) {
-		throw new CliUsageError(
-			`This edit names two variants: --variant says "${asked}" and the stated change's ` +
-				`\`variant\` says ${typeof inBatch === "string" ? `"${inBatch}"` : describeJson(inBatch)}. ` +
-				"Say which variant it lands on once, in either place. Nothing was written.",
-		);
-	}
-	return { ...stated, variant: asked };
-}
-
 const semanticEditContract = defineCommand({
 	path: ["semantic", "edit"],
 	shared: ["url", "doing", "expect-version", "as-session"],
@@ -194,7 +164,8 @@ const semanticEditContract = defineCommand({
 		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
 		"variant; views are shared by the whole board. --variant says which variant the change lands " +
 		"on, by id or name, and the current one takes it when absent; the batch's own `variant` says " +
-		"the same thing, and naming two different ones is refused. --expect-version is required: state the " +
+		"the same thing, and where the two differ the command line wins and the write says so. " +
+		"--expect-version is required: state the " +
 		"version the board reported when you read it, and the write is refused if somebody has changed " +
 		"it since. A view's scope reads exactly as it is written: name relationships and the view shows " +
 		"those and no others, so one connection can be isolated; name none and it shows every " +
@@ -283,11 +254,12 @@ const semanticEditContract = defineCommand({
 		if (typeof stated !== "object" || stated === null || Array.isArray(stated)) {
 			failStated(stated);
 		}
-		const edit = context.parse(VariantEditInputSchema, editedVariant(stated, input.variant));
+		const targeted = targetedVariant(stated, input.variant);
+		const edit = context.parse(VariantEditInputSchema, targeted.stated);
 		const written = await editSemanticBoardOnCanvas(input.name, edit);
 		return {
 			result: writeResult(written),
-			diagnostics: describedWrite(written),
+			diagnostics: [...targeted.diagnostics, ...describedWrite(written)],
 		};
 	},
 });
