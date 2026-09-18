@@ -49,6 +49,32 @@ const CATALOGUE_ROWS = [
 ] as const;
 type CatalogueRow = (typeof CATALOGUE_ROWS)[number];
 
+/** Where a batch keeps the candidate skill it ran, relative to the batch root. */
+const BATCH_SKILL_DIRECTORY = "skill";
+
+/**
+ * Keeps a copy of the candidate skill in the batch, once, so the batch can be
+ * graded against the skill it ran whatever the checkout holds by then: the
+ * grader reads it and its findings are resolved against it. The derived
+ * `references/generated/` is left out; it is regenerated from the product's
+ * source, not written as the skill's teaching, and no citation names it. A
+ * resumed batch keeps its first copy, which its provenance already binds.
+ * @param skillRoot The candidate skill in the checkout.
+ * @param batchRoot The batch.
+ */
+function keepBatchSkill(skillRoot: string, batchRoot: string): void {
+	const target = path.join(batchRoot, BATCH_SKILL_DIRECTORY);
+	if (fs.existsSync(target)) return;
+	const generated = path.join(skillRoot, "references", "generated");
+	/**
+	 * Whether a path is copied: all but the derived generated files.
+	 * @param source The path.
+	 * @returns True to copy it.
+	 */
+	const authored = (source: string): boolean => source !== generated;
+	fs.cpSync(skillRoot, target, { recursive: true, dereference: true, filter: authored });
+}
+
 /** Where the skill states its catalogue; the rows above are that table's. */
 const CATALOGUE_PASSAGE = "SKILL.md#everything-the-code-shows";
 
@@ -60,6 +86,7 @@ const CATALOGUE_PASSAGE = "SKILL.md#everything-the-code-shows";
  */
 const RUBRIC_SECTIONS = {
 	features: "Per-feature verdicts",
+	findings: "Findings",
 	correctUse: "What correct use means",
 	unprompted: "What the skill adds unprompted",
 	inherited: "What the run inherited",
@@ -219,6 +246,8 @@ function rubricSectionProblems(label: string, rubric: string): string[] {
 }
 
 export {
+	BATCH_SKILL_DIRECTORY,
+	keepBatchSkill,
 	CATALOGUE_PASSAGE,
 	RUBRIC_SECTIONS,
 	rubricSectionProblems,

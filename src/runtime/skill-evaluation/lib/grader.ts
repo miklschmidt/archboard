@@ -38,39 +38,45 @@ const VisualVerdictSchema = z
 		observations: ObservationsSchema,
 	})
 	.strict();
+const UnpromptedEntryFields = {
+	verdict: z.enum(["used", "missed"]),
+	evidence: z.string().min(1),
+	reason: z.string().min(1),
+};
 /**
  * One row of the skill's catalogue the grader judged for what the run added.
  * The row is one of the closed set, so a missed row is counted once under one
  * name and two arms' missed counts are the same quantity.
  */
 const UnpromptedSchema = z.array(
-	z
-		.object({
-			feature: z.enum(CATALOGUE_ROWS),
-			verdict: z.enum(["used", "missed"]),
-			evidence: z.string().min(1),
-			reason: z.string().min(1),
-		})
-		.strict(),
+	z.object({ feature: z.enum(CATALOGUE_ROWS), ...UnpromptedEntryFields }).strict(),
+);
+/**
+ * A judged row as filed. A verdict filed before the set was closed may name a
+ * row of its grader's own invention; it still loads, and the report counts
+ * only the rows of the closed set.
+ */
+const FiledUnpromptedSchema = z.array(
+	z.object({ feature: z.string().min(1), ...UnpromptedEntryFields }).strict(),
 );
 /**
  * What the grader must add beyond the checklist: the catalogue rows it judged
  * and the completeness score, null exactly when the rubric's unprompted walk
  * had no subject. Kept rather than removed (TASK-268): they measure what the
- * request did not name, which a checklist cannot, and they now grade against
- * the skill's own catalogue — the closed row set above, which `eval:skill
- * check` holds equal to both the skill's catalogue table and the rubric's.
+ * request did not name, which a checklist cannot. They answer in the skill's
+ * own catalogue: `eval:skill check` holds the closed row set above equal to
+ * the row keys of both the skill's catalogue table and the rubric's, and the
+ * rubric says the skill's row conditions govern wherever its restatement
+ * differs.
  */
 const UnpromptedFields = {
 	unprompted: UnpromptedSchema,
 	behaviouralCompleteness: z.int().min(0).max(10).nullable(),
 };
 /**
- * Which authority a finding answers to. `conformance`: the run departed from
- * what the skill teaches. `truth`: the run did what the skill teaches and the
- * board still says something the source contradicts. `skill`: the scenario
- * expects something no passage of the skill supports, which is a finding
- * about the skill (or the scenario), never a failed run.
+ * Which authority a finding answers to, as the rubric's "Findings" section
+ * defines them: a departure from the skill, a board the source contradicts,
+ * or an expectation the skill never taught, which fails no run.
  */
 const FINDING_AXES = ["conformance", "truth", "skill"] as const;
 type FindingAxis = (typeof FINDING_AXES)[number];
@@ -83,18 +89,20 @@ type FindingAxis = (typeof FINDING_AXES)[number];
 function byAxis<T>(pick: (axis: FindingAxis) => T): Readonly<Record<FindingAxis, T>> {
 	return { conformance: pick("conformance"), truth: pick("truth"), skill: pick("skill") };
 }
+/** Text that is not only whitespace, as a pattern the grader's schema carries too. */
+const SOME_TEXT = /\S/u;
 /** What a verdict other than a pass must state: what the run did, what the skill told it, and the gap. */
 const FindingSchema = z
 	.object({
 		axis: z.enum(FINDING_AXES),
 		/** What the run did, as the board or the commands show it. */
-		did: z.string().trim().min(1),
+		did: z.string().regex(SOME_TEXT),
 		/** What the skill told it to do, quoted from the passage. */
-		taught: z.string().trim().min(1),
+		taught: z.string().regex(SOME_TEXT),
 		/** Where: a `<file>#<heading-anchor>` citation into the staged skill. */
 		passage: z.string().regex(CITATION_PATTERN),
 		/** The gap between the two, or for a truth finding what the source says instead. */
-		gap: z.string().trim().min(1),
+		gap: z.string().regex(SOME_TEXT),
 	})
 	.strict();
 const FeatureFields = {
@@ -156,7 +164,7 @@ const FiledVerdictSchema = z
 	.object({
 		...VerdictFields,
 		features: z.array(FiledFeatureSchema),
-		unprompted: UnpromptedSchema.optional(),
+		unprompted: FiledUnpromptedSchema.optional(),
 		behaviouralCompleteness: UnpromptedFields.behaviouralCompleteness.optional(),
 		visual: VisualVerdictSchema.extend({
 			observations: z.union([ObservationsSchema, z.string().min(1)]),
@@ -295,14 +303,13 @@ const DELIVERY_LINES: Readonly<Record<ImageDelivery, string>> = {
 
 /**
  * How to fill the answer, by field. Each line names the rubric section that
- * governs a field instead of restating it, and adds only what the rubric
- * does not hold: what the field is and the axis a finding answers to.
+ * governs a field instead of restating it; the rubric is the one statement of
+ * every judgement, the finding axes included.
  */
 const ANSWER_LINES: readonly string[] = [
 	"Return one entry per run in the shape the output schema fixes. Judge each field by the rubric section named for it, not from a summary of it:",
-	`- \`features\`: one verdict for every expected feature, judged by "${RUBRIC_SECTIONS.features}" and "${RUBRIC_SECTIONS.correctUse}". A \`pass\` carries \`finding\` null. Every other verdict carries a \`finding\`: \`did\` (what the run did), \`taught\` (what the skill told it to do, quoted), \`passage\` (where, as a citation into the staged skill) and \`gap\` (the difference between the two).`,
-	"- A finding's `axis` says which authority it answers to, and the three are never the same kind of failure. `conformance`: the run departed from what the cited passage teaches. `truth`: the run did what the skill teaches and the board still says something the source contradicts; judge it against the source, and let `gap` say what the source does instead. `skill`: the feature expects something the passages it cites, and the rest of the skill, do not teach; that is a finding about the skill or the scenario, not a failure of the run, and `taught` says what the skill says instead or that it says nothing.",
-	`- \`unprompted\` and \`behaviouralCompleteness\`: by "${RUBRIC_SECTIONS.unprompted}" and "${RUBRIC_SECTIONS.inherited}". Each entry's \`feature\` is one row key of that catalogue, exactly as written there.`,
+	`- \`features\`: one verdict for every expected feature, by "${RUBRIC_SECTIONS.features}" and "${RUBRIC_SECTIONS.correctUse}"; each verdict's \`finding\`, its fields and its \`axis\`, by "${RUBRIC_SECTIONS.findings}".`,
+	`- \`unprompted\` and \`behaviouralCompleteness\`: by "${RUBRIC_SECTIONS.unprompted}" and "${RUBRIC_SECTIONS.inherited}"; each entry's \`feature\` is one row key of that catalogue, exactly as written there.`,
 	`- \`visual\`: by "${RUBRIC_SECTIONS.visual}". The harness downgrades a pass lacking successful image delivery or a per-capture observation.`,
 	`- \`semanticCorrectness\`, \`architecturalTruth\` and \`readability\`: by "${RUBRIC_SECTIONS.scores}"; \`summary\` in a few sentences; \`concerns\` by "${RUBRIC_SECTIONS.concerns}".`,
 ];
@@ -438,7 +445,10 @@ function findingsByAxis(
 ): Readonly<Record<FindingAxis, string[]>> {
 	const declared = new Set(expected.map((entry) => entry.feature));
 	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry]));
-	const found = [...answered.values()].filter((entry) => declared.has(entry.feature));
+	// A waiver is surfaced as a waiver, whatever axis its finding names.
+	const found = [...answered.values()].filter(
+		(entry) => declared.has(entry.feature) && entry.verdict !== "not-applicable",
+	);
 	return byAxis((axis) =>
 		found.filter((entry) => entry.finding?.axis === axis).map((entry) => entry.feature),
 	);

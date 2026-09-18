@@ -11,11 +11,15 @@ import {
 	type RunManifest,
 } from "@/runtime/skill-evaluation/lib/run-manifest";
 import {
+	byAxis,
 	checklistGaps,
 	checklistStanding,
+	findingsByAxis,
 	semanticallyCompliant,
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
+import { BATCH_SKILL_DIRECTORY, citationProblem } from "@/runtime/skill-evaluation/lib/citations";
+import type { Arm } from "@/runtime/skill-evaluation/lib/blind";
 import { suppliedCaptures } from "@/runtime/skill-evaluation/lib/grading-images";
 import { visualStandingOf } from "@/runtime/skill-evaluation/lib/grader";
 import { availableGraders } from "@/runtime/skill-evaluation/lib/grader-layout";
@@ -107,6 +111,54 @@ function verdictFor(batchRoot: string, grader: GraderName | null, run: string): 
 }
 
 /**
+ * The skill a run's arm was given: the baseline's frozen package, or the
+ * candidate as the batch kept it (the checkout's, for a batch that kept none).
+ * @param batchRoot The batch.
+ * @param loaded The suite, for the checkout and the baseline's location.
+ * @param arm The arm.
+ * @returns The skill's root directory.
+ */
+function armSkill(batchRoot: string, loaded: LoadedSuite, arm: Arm): string {
+	const checkout = path.join(loaded.directory, "..");
+	if (arm === "baseline") return path.join(checkout, loaded.pins.baselineSkill.location);
+	const kept = path.join(batchRoot, BATCH_SKILL_DIRECTORY);
+	return fs.existsSync(kept) ? kept : path.join(checkout, "skills", "archboard");
+}
+
+/**
+ * The verdict's findings by axis, and which conformance findings cite a
+ * passage the run's own skill never carried.
+ * @param batchRoot The batch.
+ * @param loaded The suite.
+ * @param manifest The run.
+ * @param verdict The filed verdict, or null.
+ * @returns The two fields; empty for an ungraded run.
+ */
+function findingsOf(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifest: RunManifest,
+	verdict: RunVerdict | null,
+): Pick<RunRecord, "findings" | "conformanceUnseen"> {
+	if (verdict === null) return { findings: byAxis(() => []), conformanceUnseen: [] };
+	const expected =
+		loaded.suite.evals.find((candidate) => candidate.id === manifest.scenario)?.expectedFeatures ??
+		[];
+	const findings = findingsByAxis(expected, verdict);
+	const skill = armSkill(batchRoot, loaded, manifest.arm);
+	const passages = new Map(
+		verdict.features.map((entry) => [entry.feature, entry.finding?.passage ?? null]),
+	);
+	return {
+		findings,
+		conformanceUnseen: findings.conformance.filter((feature) => {
+			const passage = passages.get(feature) ?? null;
+			return passage !== null && citationProblem(skill, passage) !== null;
+		}),
+	};
+}
+
+/**
  * What a manifest recorded of the audit, each absent before its harness kept it.
  * @param manifest The manifest.
  * @returns The three audit fields, null where the manifest predates them.
@@ -152,6 +204,7 @@ function recordOf(
 		guardrailsPassed: manifest.guardrailsPassed,
 		verdict,
 		...graded,
+		...findingsOf(batchRoot, loaded, manifest, verdict),
 	};
 }
 

@@ -350,6 +350,8 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		semanticallyCompliant: true,
 		waivedFeatures: [],
 		checklist: { standing: "answered", unmentioned: [], invented: [] },
+		findings: { conformance: [], truth: [], skill: [] },
+		conformanceUnseen: [],
 		...overrides,
 	};
 }

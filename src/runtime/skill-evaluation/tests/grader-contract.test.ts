@@ -125,6 +125,8 @@ function graded(
 		semanticallyCompliant: semanticallyCompliant(EXPECTED, verdict),
 		waivedFeatures: [],
 		checklist: { standing: "answered", unmentioned: [], invented: [] },
+		findings: findingsByAxis(EXPECTED, verdict),
+		conformanceUnseen: [],
 	};
 }
 
@@ -218,7 +220,47 @@ test("the report counts findings by axis, lists findings about the skill apart, 
 	expect(row?.candidate.semanticFailures).toBe(1);
 	expect(report.skillFindings.map((run) => run.run)).toEqual(["run-00000000c1"]);
 	expect(report.failures.map((run) => run.run)).toEqual(["run-00000000b1", "run-00000000c2"]);
+	// Whether the skill teaches render.svg is one fact about S00; the grader said both.
+	expect(report.skillDisagreements).toEqual([
+		{
+			scenario: "S00",
+			feature: "render.svg",
+			untaught: ["run-00000000c1"],
+			otherwise: ["run-00000000b1", "run-00000000c2"],
+		},
+	]);
 	expect(() => renderReportMarkdown(report)).not.toThrow();
+});
+
+test("a waiver is not a finding, and a departure from a passage the run's own skill lacked is counted apart", () => {
+	const waived = graded("run-00000000b1", "baseline", [
+		{ ...BARE, feature: "board.create", verdict: "missing", finding: finding("conformance") },
+		{ ...BARE, feature: "render.svg", verdict: "not-applicable", finding: finding("conformance") },
+	]);
+	expect(waived.findings.conformance).toEqual(["board.create"]);
+	const unseen = { ...waived, conformanceUnseen: ["board.create"] };
+	const row = buildReport([unseen], null).scenarios[0];
+	expect(row?.baseline.findings.conformance).toBe(0);
+	expect(row?.baseline.conformanceUnseen).toBe(1);
+});
+
+test("a verdict filed before the catalogue was closed still loads, and only the closed rows count as missed", () => {
+	const verdict = FiledVerdictSchema.parse({
+		...filed([{ ...BARE, feature: "board.create", verdict: "pass" }]),
+		unprompted: [
+			{ feature: "traffic", verdict: "missed", evidence: "e", reason: "r" },
+			{ feature: "node description", verdict: "missed", evidence: "e", reason: "r" },
+		],
+	});
+	const record = { ...graded("run-00000000c1", "candidate", []), verdict };
+	expect(buildReport([record], null).scenarios[0]?.candidate.missedUnprompted).toBe(1);
+});
+
+test("a finding's text is more than whitespace, as the schema the grader decodes against says", () => {
+	const feature = { ...BARE, feature: "board.create", verdict: "missing" };
+	expect(() =>
+		parseGraderOutput(answer([{ ...feature, finding: { ...finding("truth"), did: "  " } }])),
+	).toThrow();
 });
 
 test("every concern reaches the report, grouped by the prefix that says what it is about", () => {
