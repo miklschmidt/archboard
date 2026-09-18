@@ -749,7 +749,7 @@
 				},
 				{
 					"feature": "flow.message-kinds",
-					"requirement": "sync, return and a `self` step on ScriptInfo for its search over the candidate files, separate from the prepare_import and locate_app calls it makes per candidate, whichever columns those take; no `async` step, since nothing in cli.py is sent without being waited for",
+					"requirement": "sync and return, with the search over the candidate files drawn in either truthful shape: a `self` step on ScriptInfo carrying the repeat, or the per-candidate calls to prepare_import and locate_app carrying the repeat with a note; a `self` step is not required",
 					"skill": [
 						"SKILL.md#the-runbook",
 						"references/create-sequence.md#create-a-sequence-diagram",
@@ -781,7 +781,7 @@
 					"board": "Flask CLI startup",
 					"flow": "flask run",
 					"minSteps": 5,
-					"kinds": ["sync", "return", "self"]
+					"kinds": ["sync", "return"]
 				},
 				{
 					"check": "flow-step-repeat",

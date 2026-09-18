@@ -29,10 +29,7 @@ a comparison, a view and a group inspection read.
    chosen rather than read off the board: keep a candidate inside the part
    whose body runs it and the work that part does through it is one step with
    that part at both ends; give it a column and the same call is an ordinary
-   message between columns. Either way, the work the caller does to decide
-   what to call next (trying candidates in turn, stopping at the first that
-   answers) is its own step with the caller at both ends, separate from the
-   calls it makes per candidate. Both shapes carry the `repeat` the source fixes —
+   message between columns. Both shapes carry the `repeat` the source fixes —
    the example below tries two candidate documents in one `self` step because
    `chooseDoc` runs inside `Setup block` — and the choice settles which kinds
    the exchange can contain, so make it before listing the messages, apply it
