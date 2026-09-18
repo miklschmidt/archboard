@@ -1,7 +1,7 @@
 // What a grader filed beyond its verdicts, gathered for the report a person
 // reads: the concerns it raised, grouped by what they are about, and the
-// features it called untaught by the skill on some runs of a scenario and
-// held against the run on others, and the findings it put on the skill while
+// features counted as untaught by the skill on some runs of a scenario and
+// counted against the run on others, and the findings it put on the skill while
 // naming a passage the feature cites.
 
 import type { Arm } from "@/runtime/skill-evaluation/lib/blind";
