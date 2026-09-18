@@ -3,11 +3,11 @@ id: TASK-268
 title: >-
   The rubric judges a run by what the skill teaches, and says what it departed
   from
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:41'
+updated_date: '2026-09-18 13:48'
 labels: []
 dependencies: []
 references:
@@ -35,27 +35,27 @@ The decision taken with the user is NOT to make the rubric purely skill-derived.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every expected feature carries the skill passage it derives from, and a scenario whose feature names no skill passage is refused by eval:skill check rather than graded
-- [ ] #2 A verdict that is not a pass states what the run did, what the skill told it to do with the passage quoted or located, and the gap between them
-- [ ] #3 A conformance finding and a truth finding are distinguishable in the report: a board that followed the skill and still says something the source contradicts reads as a truth finding, never as skill non-compliance
-- [ ] #4 An expectation that no skill passage supports is reported as a finding about the skill, not as a failed run
-- [ ] #5 unprompted and behaviouralCompleteness either grade against the skill catalogue they are meant to reflect, or are removed; whichever is chosen, the reason is recorded
+- [x] #1 Every expected feature carries the skill passage it derives from, and a scenario whose feature names no skill passage is refused by eval:skill check rather than graded
+- [x] #2 A verdict that is not a pass states what the run did, what the skill told it to do with the passage quoted or located, and the gap between them
+- [x] #3 A conformance finding and a truth finding are distinguishable in the report: a board that followed the skill and still says something the source contradicts reads as a truth finding, never as skill non-compliance
+- [x] #4 An expectation that no skill passage supports is reported as a finding about the skill, not as a failed run
+- [x] #5 unprompted and behaviouralCompleteness either grade against the skill catalogue they are meant to reflect, or are removed; whichever is chosen, the reason is recorded
 - [ ] #6 Re-grading a saved batch under the new rubric explains at least one previously unexplained failure in terms of a named skill passage
-- [ ] #7 unprompted[].feature is a closed set of the catalogue row keys and anything else is refused, so a report can sum missed rows into a comparable number
+- [x] #7 unprompted[].feature is a closed set of the catalogue row keys and anything else is refused, so a report can sum missed rows into a comparable number
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. New module src/runtime/skill-evaluation/lib/skill.ts: the skill as the harness cites it. A citation is `<file>#<anchor>` relative to skills/archboard (SKILL.md#everything-the-code-shows, references/authoring.md#groups); resolution reads the file's markdown headings and slugs them, so a citation survives line edits and breaks loudly when a heading is renamed. Also holds CATALOGUE_ROWS: the closed set of the 14 catalogue row keys with the skill passage each derives from (all from SKILL.md#everything-the-code-shows, some elaborated in references). No dependency on suite.ts or grader.ts, so both can import it without a cycle.
-2. suite.ts: ExpectedFeatureSchema gains a required `skill` citation (AC#1). suiteProblems gains skillPassageProblems: a citation whose file or anchor the skill does not hold is a problem, so `eval:skill check` refuses the scenario rather than grading it. Also rubricCatalogueProblems: parse the row keys out of rubric.md's catalogue table and refuse a rubric whose rows differ from CATALOGUE_ROWS — the same drift, caught at check time (read-only on rubric.md; no edit).
-3. evals/evals.json: annotate all 68 expected features across S00-S14 with the passage each derives from. Any expectation with no honest passage is reported rather than invented (AC#4's source of truth).
-4. grader.ts, the contract: each feature verdict gains a required `finding`, null for a pass and otherwise {axis, did, taught, passage, gap} (AC#2). axis is conformance | truth | skill (AC#3, AC#4). unprompted[].feature becomes z.enum(CATALOGUE_ROWS) so anything outside the 14 rows is refused (AC#5, AC#7). semanticallyCompliant ignores a feature whose finding axis is `skill`: an expectation the skill does not support is a finding about the skill, not a failed run (AC#4).
-5. grader.ts, the prompt: delete every sentence that paraphrases the rubric (the unprompted gloss at :250 that TASK-271 has already contradicted, the not-applicable gloss, the traffic gloss, the visual gloss) and point at the rubric's own headings instead. The prompt keeps only harness facts and field semantics. grader.ts:45's doc comment loses the stale gloss too.
-6. grading-run.ts: stage the canonical skill into the shared grader workspace as skill/, so the grader can read the passage a feature cites — the mechanical root of this task is that it never sees the skill. One skill for both arms, not each run's own: the instrument has to be identical across arms or the comparison measures two different rulers, and a per-run skill copy would also let a grader cluster runs by passage text and guess the arm. Refuse grading when skills/archboard's digest differs from the batch's recorded provenance.candidate, so conformance is never judged against a skill no run used.
-7. report.ts / report-markdown.ts: count findings by axis per arm, distinguish a conformance failure from a truth failure in the runs-that-did-not-succeed lines (AC#3), and add a section listing findings about the skill (AC#4).
-8. Focused tests only, by explicit file path: citation resolution and its refusals, the closed catalogue set, semanticallyCompliant's skill-axis exemption, the per-axis arithmetic in summarize, and that a saved verdict carrying a departure re-renders. No prose or prompt-wording assertions.
-9. AC#6's measured half needs a grading pass, which is the user's to run: state it as pending rather than claim it.
+1. lib/citations.ts: a citation is <file>#<heading-anchor> into the skill, resolved against its real headings; the closed set of 14 catalogue rows; the rubric sections the grader prompt points at; the batch's kept copy of the candidate skill.
+2. suite.ts: every expected feature must carry a skill citation. eval:skill check refuses a citation that does not resolve or that points into references/generated/, a skill or rubric catalogue whose row keys differ from the closed set, and a rubric missing a section the prompt points at.
+3. evals/evals.json: all 68 features carry citations. Request-derived features cite SKILL.md#evidence-before-a-write, rule 4.
+4. grader.ts: a verdict that is not a pass carries a finding {axis conformance|truth|skill, did, taught, passage, gap}, as two alternative schema shapes. unprompted[].feature is the closed enum. semanticallyCompliant excuses a skill-axis finding. The prompt points at rubric sections and restates none of them.
+5. rubric.md: a Findings section defining the axes and fields, stating that the cited passage governs a conformance verdict, and that skill is never used for what the request states. The external and flow rows follow the skill's, the skill's row conditions govern where the two tables differ, and one image-delivery rule covers both runners.
+6. batch.ts/install.ts/grading-run.ts: each batch keeps a copy of the candidate skill immediately after its provenance digest, records the copy's digest, installs every candidate run from that copy, checks the copy on resume, and stages it for the grader once for both arms.
+7. records.ts/report*.ts: findings are counted by axis. Conformance on passages the run's own skill never carried is counted apart (unseen), and so are citations the candidate does not hold (uncited). The report lists findings about the skill, grader disagreements across runs of a scenario, and grouped concerns.
+8. SKILL.md: one catalogue row, flow, aligned with the Which recipe table.
+9. Focused tests own each rule; AC#6's measured half is left to the user's next batch.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -184,4 +184,46 @@ ROUND 3, commit bbe73e72.
 VERIFIED: tsc exit 0; lint exit 0 under both configs; oxfmt --check clean on evals, skills and the module; eval:skill check ok; all 26 skill-evaluation test files and tests/system/cli/install-targets.test.ts pass, run one at a time.
 
 FOR THE USER: the M2 laundering route is narrowed, not mechanically closed. semanticallyCompliant still excuses any feature the grader files on the skill axis. Only the rubric's Findings sentence (skill is never for what the request states) stands in the way, and every such excuse is listed in the report with its passage, along with any split across runs of a scenario. Closing it mechanically means marking request-derived features in evals.json and refusing the skill excuse on them. That is the user's call.
+
+ROUND 4, commit dc51b72b (the reviewer's optional notes, taken before the batch). A resumed batch now checks its kept candidate against the recorded candidateSkillDigest before any job runs, refuses a copy edited since, and keeps the saved digest rather than re-recording it (batch.ts's keptCandidate). The skill's catalogue flow row and the rubric's flow row now say at the row that a board asked to describe how something travels through the parts is parts, containment and calls (Which recipe), and owes no flow merely because it runs in order; this is portable and synced. install.test.ts also asserts that a file the checkout still holds but the kept copy lacks is absent after install.
+
+FINAL VERIFICATION: tsc exit 0; lint exit 0 under both configs; oxfmt --check clean on evals, skills and src/runtime/skill-evaluation; eval:skill check ok; all 26 skill-evaluation test files and tests/system/cli/install-targets.test.ts pass, run one at a time. The coordinator's full gate ran green on the tree at round 3.
+
+AC EVIDENCE.
+#1 suite.ts requires ExpectedFeatureSchema.skill. citations.test.ts: a feature with no citation fails the scenario schema, a feature citing a missing heading is a suiteProblem, and eval:skill check passes on the real suite with all 68 features cited.
+#2 The finding shape is enforced by the output schema's two shapes. grader-contract.test.ts: missing without a finding is refused, pass with a finding is refused, a non-citation passage is refused, and whitespace-only text is refused.
+#3 grader-contract.test.ts: the report counts conformance and truth apart per arm, and a failed run's line names each axis. rubric.md's Findings section says a board that followed the skill and is still wrong is truth, never conformance.
+#4 grader-contract.test.ts: a skill-axis finding leaves the run compliant, and the run is listed under findings about the skill, not under failures.
+#5 Kept, graded against the skill's catalogue. The closed row set is held equal to both catalogues' keys by eval:skill check (citations.test.ts). rubric.md says the skill's row conditions govern where the tables differ. The reason is in grader.ts's UnpromptedFields doc comment and in these notes.
+#7 grader-contract.test.ts: every catalogue key is accepted, an invented label is refused by the output schema, and the report counts only closed-set rows as missed.
+#6 NOT CHECKED. It needs a grading pass, which is the user's to run, and every saved batch, the 2026-09-18 one included, is locked out of grading and reporting by its input digest now that rubric.md and evals.json have changed. What is verified structurally: a verdict carries a located departure, old verdicts still load, and the report places each finding on its axis. The measured half is pending the user's next batch.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The grader was never given the skill, so a rubric sentence that had drifted from it was graded as the author's failure, and nothing said which passage a run departed from. Now the grader reads the skill, every expectation names the passage it comes from, and a verdict short of a pass says which authority it answers to.
+
+What changed:
+- Every expected feature in evals/evals.json cites the skill passages it comes from as <file>#<heading-anchor>. eval:skill check refuses a feature with no citation, a citation that does not resolve or points into generated files, a catalogue whose row keys differ between the skill, the rubric and the grader's closed set, and a rubric missing a section the prompt points at.
+- Each batch keeps a copy of the candidate skill immediately after its provenance digest and records the copy's digest. Every candidate run installs from that copy, a resume checks it, and grading stages it once for both arms. A comparison needs one measure, and a copy per run would let a grader tell the arms apart.
+- A verdict that is not a pass carries a finding: what the run did, what the skill taught and where, the gap, and an axis.
+  - conformance: the run departed from the skill.
+  - truth: the run followed the skill and the source still contradicts the board. It is judged against the source, which a skill-derived rubric cannot do.
+  - skill: the scenario expects something the skill never teaches. That is a finding about the skill and fails no run.
+- The report counts the axes apart per arm. It counts separately a departure from a passage the run's own skill never carried (the baseline is judged against the candidate's text) and a citation the grader invented. It lists findings about the skill, features the grader judged both ways across runs of one scenario, and every grader concern grouped as fixture:, tooling: and the rest.
+- unprompted and behaviouralCompleteness are kept. unprompted[].feature is one of the 14 catalogue rows, and the rubric says the skill's row conditions govern.
+- rubric.md gains a Findings section, which the prompt points at instead of paraphrasing the rubric.
+  - The external and flow rows follow the skill's.
+  - One image-delivery rule covers both grader runners.
+  - The report legends follow TASK-271's walk scope.
+- In SKILL.md, the one catalogue row flow now agrees with the Which recipe table.
+
+Verified with tsc, lint, oxfmt, eval:skill check, and all 26 skill-evaluation test files plus the install-targets system test, run one at a time. The coordinator's full gate was green at round 3. AC#1-5 and 7 are checked with the test evidence in the notes.
+
+AC#6 is pending the user's next batch. It needs a grading pass, and every saved batch, the 2026-09-18 one included, is locked out of grading and reporting by its input digest.
+
+For the user: the route by which a grader could excuse a real failure as 'the skill never taught it' is narrowed, not closed. semanticallyCompliant still honours any finding filed on the skill axis. Only the rubric's Findings sentence stands in the way: skill is never for what the request states, which is conformance to SKILL.md#evidence-before-a-write. Every such excuse is listed in the report with its passage, and so is any split across runs of a scenario. Closing it mechanically means marking the request-derived features in evals.json and refusing the skill excuse on them. That is your call.
+
+Also for the user: Codex is untested with the finding union in the output schema, and its version pin is stale.
+<!-- SECTION:FINAL_SUMMARY:END -->
