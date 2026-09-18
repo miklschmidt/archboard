@@ -1,11 +1,11 @@
 ---
 id: TASK-267
 title: S07 expects a self message only one participant granularity can justify
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:42'
-updated_date: '2026-09-18 13:31'
+updated_date: '2026-09-18 13:34'
 labels: []
 dependencies: []
 references:
@@ -34,10 +34,10 @@ The recipe sentence that sends readers to the losing shape is deliberate, not a 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 It is settled and written down whether a self message is truthful for the flask run startup exchange, and the reason is recorded against the source
-- [ ] #2 S07 expects of the author only what the source decides, not what a participant-granularity choice decides: either the scenario names the granularity it grades, or flow.message-kinds stops requiring a self or async message it cannot guarantee exists
-- [ ] #3 The scenario feature and the flow-with-steps outcome check agree about whether a self or async step is required
-- [ ] #4 references/create-sequence.md tells an author how to choose participant granularity for a subject like this one, without losing what TASK-253.02 and TASK-256.06 each bought
+- [x] #1 It is settled and written down whether a self message is truthful for the flask run startup exchange, and the reason is recorded against the source
+- [x] #2 S07 expects of the author only what the source decides, not what a participant-granularity choice decides: either the scenario names the granularity it grades, or flow.message-kinds stops requiring a self or async message it cannot guarantee exists
+- [x] #3 The scenario feature and the flow-with-steps outcome check agree about whether a self or async step is required
+- [x] #4 references/create-sequence.md tells an author how to choose participant granularity for a subject like this one, without losing what TASK-253.02 and TASK-256.06 each bought
 - [ ] #5 A later batch shows S07 runs passing or failing flow.message-kinds for a reason in the board, not for the granularity the author happened to pick
 <!-- AC:END -->
 
@@ -45,10 +45,10 @@ The recipe sentence that sends readers to the losing shape is deliberate, not a 
 
 <!-- SECTION:PLAN:BEGIN -->
 1. Read pinned Flask 3.0.0 cli.py (735a4701) and settle whether a self step is truthful for the flask run startup exchange; record the reason against source lines.
-2. Rewrite S07 flow.message-kinds so it names the self step the source decides instead of 'self or async where the source justifies it'; cite the passages that teach it (SKILL.md runbook step 9, create-sequence.md step 1/3, sequences-views-walkthroughs.md Flows).
-3. Make S07's flow-with-steps outcome check require the same kinds as the feature.
-4. Check SKILL.md and create-sequence.md as they stand for criterion 4; close any remaining gap minimally in create-sequence.md only.
-5. Verify with bun run eval:skill check; commit S07 + create-sequence.md; record notes. Criterion 5 stays pending the user's next batch.
+2. Per the user's decisions after review: narrow SKILL.md runbook step 9 to genuine self-calls, portable and grounded only by link in the recipe's example, keeping the generic repeat rule (on a self step or a call to another column alike); remove the deciding-work sentence and the 'loader trying its own candidates' example from create-sequence.md.
+3. S07: flow.message-kinds grades kinds only (sync and return; self or async only where truthful, neither required); flow.repeat owns repeat placement and accepts either shape; flow-with-steps stays [sync, return] so harness and grader agree; board.create cites evidence rule 4 (TASK-268).
+4. Confirm criterion 4 against create-sequence.md step 1 and SKILL.md step 7 with no added text.
+5. Verify with bun run eval:skill check and sync-skills; commit; criterion 5 pending the user's next batch.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -105,4 +105,30 @@ flow.message-kinds reduced to kinds only: 'sync and return, with self or async o
 Verified: bun run eval:skill check -> suite ok: 15 scenarios, 15 fixtures, 14 coverage parts; bun scripts/sync-skills.ts synced both skills.
 
 Routed from TASK-268 (separate commit, since round 2 was already committed and amending was avoided): S07 board.create now also cites SKILL.md#evidence-before-a-write, rule 4 'Turn the request into checks', which is where the exact board name and module level from the request become the author's obligation. Kept create-sequence.md (participants are nodes of the board, created in one write) and create-architecture.md (a board of parts at a level), both of which teach part of the expectation. Read rubric.md as it now stands: its reworded external row (a library outside the codebase, drawn external and unbound) agrees with S07 node.kind-external for werkzeug's run_simple; nothing in S07 needed changing for the new Findings section. eval:skill check: suite ok: 15 scenarios, 15 fixtures, 14 coverage parts.
+
+Round 4 (commit 538dbc37): flow.repeat's one-call clause loosened from 'a note naming the calls that repeat' to 'with a note describing the search over the candidates'. The skill never asks a note to name functions, and run-d9445fe601's honest note ('the source tries the two literal candidates wsgi.py then app.py and stops at the first application') describes the search without naming prepare_import or locate_app. eval:skill check: suite ok: 15 scenarios, 15 fixtures, 14 coverage parts.
+
+OPEN QUESTION for its own task (no change here): what repeat MEANS. The skill's worked example gives its find self step repeat: 2 for chooseDoc's inner two-file loop, although chooseDoc is called once; that is the same loop-count-on-one-step device S07 now accepts, and it predates TASK-256.06. The skill therefore uses repeat both as 'the call was made N times' and as 'the work inside it looped N times'. sequences-views-walkthroughs.md#flows says 'one step happens exactly that many times in a run', which reads as the first. Settling one meaning (or a loop notation) would change the example, step 9, the Flows reference and possibly S07's flow.repeat.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+S07 now grades only what Flask 3.0.0's cli.py decides, and the skill's runbook step 9 teaches only genuine self-calls.
+
+AC1: a self step is a NOTATION CHOICE for flask run, not something cli.py forces. load_app's fallback (cli.py:311-317, reached by plain 'flask run' since FlaskGroup has no create_app (:1051) and no --app leaves app_import_path None (:394-400)) is a loop header over exactly two calls, prepare_import and locate_app, plus 'if app: break'. A sequence diagram draws that as a loop fragment, which archboard lacks, so 'a self search step carrying repeat 2' and 'repeat on the per-candidate call with a note' are equally truthful. Contrast the recipe example's chooseDoc (src/cli/commands/lib/repo-setup-block.ts:77, called at :237), a real self-invocation.
+
+Why the rework: the first pass made S07 require a self step, citing TASK-263's step 9 ('the work a part does to decide what to do next is its own step'). That rule had been written from S07's one passing run, so grading S07 against it was circular, a rule shaped by one scenario's success, which breaks the standing rule that skill guidance is never shaped by an eval. The user decided: (1) narrow step 9 to real self-calls, portable and grounded in archboard's own example, keeping the generic repeat rule; (2) S07 accepts either honest shape and the harness does not require self.
+
+Changes: SKILL.md step 9 narrowed (TASK-263's deciding-work framing removed): a call a participant makes on itself (a recursive function, a method calling another of its own, a component updating its own state, a handler re-entering itself; linked to the recipe example) is one step at both ends, and a count the source fixes is the repeating step's repeat, on a self step or a call to another column alike. create-sequence.md: its self-call examples drop 'a loader trying its own candidates' for 'a method calling another of its own'; no other text added. S07: flow.message-kinds is kinds only (sync and return; self or async only where truthful, neither required); flow.repeat owns placement and accepts a self search step or a per-candidate call with a note describing the search; flow-with-steps stays [sync, return], agreeing with the grader (AC3); board.create also cites SKILL.md#evidence-before-a-write (routed from TASK-268). No 'no async' clause: threaded=with_threads (cli.py:930, default True :854) gives async request dispatch evidence.
+
+AC4 met without added text: create-sequence.md step 1 (participants a subset of the board's nodes; keep a candidate inside its part or give it a column; both shapes carry the repeat) with SKILL.md step 7 teaches the choice while keeping TASK-253.02 and TASK-256.06.
+
+Verified: bun run eval:skill check -> suite ok: 15 scenarios, 15 fixtures, 14 coverage parts (includes the skill-text leakage guard and citation validation); bun scripts/sync-skills.ts synced both skills. Three review rounds.
+
+AC5 NOT checked, pending the user's next evaluation batch. What counts: (a) whether S07 runs following the guidance draw a truthful shape of the candidate search (either shape, repeat of at least 2 on the step that repeats, early exit in a note); (b) whether any run whose flow is truthful is still failed on flow.message-kinds, flow.repeat or flow-with-steps. A run failed only for choosing the per-candidate-call shape over a self step would show the expectation is still wrong.
+
+Open question recorded in notes for its own task: the meaning of repeat (call made N times vs work inside it looped N times), which the skill's own example uses both ways.
+
+Commits: 89e53ab7, 9654eb96, f438fbc4, c9fdb8c3, 538dbc37 (plus backlog notes).
+<!-- SECTION:FINAL_SUMMARY:END -->
