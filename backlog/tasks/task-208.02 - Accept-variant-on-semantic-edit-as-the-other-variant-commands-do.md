@@ -1,11 +1,11 @@
 ---
 id: TASK-208.02
 title: Accept --variant on semantic edit as the other variant commands do
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-16 02:26'
-updated_date: '2026-09-18 11:46'
+updated_date: '2026-09-18 11:53'
 labels: []
 dependencies: []
 parent_task_id: TASK-208
@@ -20,9 +20,9 @@ In the 2026-09-16 skill evaluation batch five to six author runs per arm first r
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard semantic edit <board> --variant <name>` targets that variant, and a payload naming a different variant is overridden by the flag with a warning naming both, never refused
-- [ ] #2 The generated help lists the option and the skill edit recipe shows it
-- [ ] #3 The flag-wins rule reads the same across the variant commands: `semantic resolve` already overrides a payload variant, and says so the same way
+- [x] #1 `archboard semantic edit <board> --variant <name>` targets that variant, and a payload naming a different variant is overridden by the flag with a warning naming both, never refused
+- [x] #2 The generated help lists the option and the skill edit recipe shows it
+- [x] #3 The flag-wins rule reads the same across the variant commands: `semantic resolve` already overrides a payload variant, and says so the same way
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,4 +78,24 @@ Left to the coordinator as instructed: propose-compare.md (finding 7) and `bun s
 Verified: bun test src/cli/commands/tests/targeted-variant.test.ts (6 pass); tests/system/semantic-boards/variant-targeting.test.ts + lifecycle.test.ts + workflow.test.ts (27 pass); src/cli/command-routing/tests/help.test.ts + src/cli/command-contract/tests + src/cli/commands/tests (60 pass); tests/system/cli/command-contract-artifacts.test.ts (3 pass); tsc clean for every file I touched (remaining errors are another worker's renderer test); oxlint and oxfmt clean.
 
 Commits: 6194678a (code and tests), bac0a3b8 (edit.md).
+
+Round 3: review clean. Two cosmetic nits taken — the unit owner's header no longer miscounts the branches it covers, and the warning ends "this write names \"X\"" rather than "this lands on \"X\"", which read as a contradiction beside the server's "no variant called X" on the next line and is true in both branches. Re-verified after the change: the unit owner (6 pass), the canvas suite (4 pass), both lint lanes and oxfmt clean on the two files.
+
+Raised and deferred: the reviewer would rather `targetedVariant` were not re-exported from semantic.ts — the rule is shared equally by `semantic edit` and `semantic resolve`, so naming either as its owner is arbitrary, and semantic.ts is at 524 of its 600-line cap, so a later split would move the test's import for no behavioural reason. It proposes promoting lib/semantic-input.ts to its own module-root entrypoint (src/cli/commands/semantic-input.ts), which docs/agents/boundaries.md blesses. Judged defensible as it stands (the re-export is documented and the precedent is install-skill.ts:411-413, not comparisonAnswer, which is implemented in the file that exports it) and deferred to the user rather than widening this task.
+
+Commit: 22d3523d.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+`archboard semantic edit <board> --variant <id|name>` now targets a variant the way inspect, render, rasterize, adopt and resolve already do, so a variant edit no longer costs a refused call first.
+
+Where the flag and the stated change's own `variant` are not written the same, the flag wins and the write says so: one warning line naming both, emitted at the point of detection through `context.diagnostic`, so it survives a write the server refuses — which is exactly the run a mistyped flag produces. It never refuses, and stdout stays the board alone. The line says what happened ("--variant \"X\" overrides the stated change's \`variant\` \"Y\"; this write names \"X\"") rather than claiming the two are different variants, because resolving an id against a name would need the board read this change exists to spare, outside the lease.
+
+One helper, `targetedVariant`, carries the rule, so `semantic edit` and `semantic resolve` — which already let the flag win, silently — explain it once and the same way. The generated help lists the option from the contract; the skill's edit recipe and variants page state the rule; the @-address refusal names --variant as a place the variant can be said.
+
+Verified: src/cli/commands/tests/targeted-variant.test.ts covers every branch of the rule as a pure function (6 pass) and fails if a regression warns on every --variant; tests/system/semantic-boards/variant-targeting.test.ts drives a real canvas (4 pass) for the flag targeting a proposal, the override landing on the flag's variant with the payload's untouched and exit 0, a mistyped flag warning before its refusal with the version unmoved, and resolve behaving identically; lifecycle.test.ts and workflow.test.ts still pass (27 across the three); the generic help owner and the contract-artifact owner pass (60 and 3); `archboard semantic edit --help` lists --variant; tsc, oxlint and oxfmt clean on every file touched. Independently reviewed over three rounds, the last clean against the running CLI.
+
+Deferred to the user: promoting lib/semantic-input.ts to its own module-root entrypoint so `targetedVariant` need not be re-exported from semantic.ts.
+<!-- SECTION:FINAL_SUMMARY:END -->
