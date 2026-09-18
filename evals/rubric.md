@@ -112,28 +112,30 @@ silently repeat. What the run added is:
   it gave a new value in a field the run authored — a relationship restated to
   carry traffic, a node restated with a membership or a binding, a beat
   restated to name a different part. A subject restated with every field
-  unchanged adds nothing, and neither does a removal: what the product changes
-  as its consequence (ids, `version`, timestamps, the relationships and
-  walkthrough references a removed part takes with it) is not authored by the
-  run. A subject the run never wrote adds nothing.
+  unchanged adds nothing, and neither does anything the product writes as the
+  consequence of a command: the fields it owns (listed under Concerns),
+  timestamps, the relationships and walkthrough references a removed part
+  takes with it, and the subjects a branch carries into a new draft, which keep
+  their ids. None of that is authored by the run. A subject the run never wrote
+  adds nothing.
 
 Every row is in the walk, each asked of what the run added and decided by its
 own condition. On a board the run changed, `flow`, `view` and `walkthrough` ask
 whether what the run added is an exchange, a subset or a why the request's
 question is about; a flow is owed only when the request asks for the exchange
-itself (SKILL.md's recipe choice), not because what was added runs in some
+itself (SKILL.md's Which recipe table), not because what was added runs in some
 order. A flow, view or walkthrough the run added is walked like any other
 subject, its steps for `repeat` and `note`.
 
-A row the request's own words rule out is not a miss: the skill tells the
-author to change an existing board only where the request covers it, so a
-request that says nothing else changes fences every row it did not name off
-the subjects it did. A row the source justifies only on inherited subjects is
-the fixture's omission: leave it out of `unprompted` and list it under concerns
-as `fixture:`, the way an inherited inaccuracy is listed below. A run that
-added nothing has no subject: a read-only request, an adoption, a write that
-only removed. Its `unprompted` list is empty and its behaviouralCompleteness is
-`null`; that is the rule, not a missing result.
+A row the request's own words rule out is not a miss: a request that says
+nothing else changes fences every row it did not name off the subjects it did,
+and the skill's nearest rule agrees, changing an existing board only where the
+request covers it. A fenced row, like a row the source justifies only on
+inherited subjects, is the fixture's omission: leave it out of `unprompted` and
+list it under concerns as `fixture:`, the way an inherited inaccuracy is listed
+below. A run that added nothing has no subject: a read-only request, an
+adoption, a write that only removed. Its `unprompted` list is empty and its
+behaviouralCompleteness is `null`; that is the rule, not a missing result.
 
 | Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
