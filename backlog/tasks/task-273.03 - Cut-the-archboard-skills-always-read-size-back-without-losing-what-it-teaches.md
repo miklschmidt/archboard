@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 18:03'
+updated_date: '2026-09-18 18:04'
 labels: []
 dependencies: []
 parent_task_id: TASK-273
@@ -21,9 +21,9 @@ Between the frozen baseline and the candidate, skills/archboard/SKILL.md grew fr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 SKILL.md is materially smaller than 32.4 KB; the target and the measured result are recorded in the task
-- [ ] #2 Every rule SKILL.md taught before is still taught, in SKILL.md or in the recipe of the workflow that needs it; a reviewer diff-checks this rule by rule
-- [ ] #3 Every skill citation (<file>#<heading>) in evals/evals.json and rubric.md still resolves, updated where a heading moved
+- [x] #1 SKILL.md is materially smaller than 32.4 KB; the target and the measured result are recorded in the task
+- [x] #2 Every rule SKILL.md taught before is still taught, in SKILL.md or in the recipe of the workflow that needs it; a reviewer diff-checks this rule by rule
+- [x] #3 Every skill citation (<file>#<heading>) in evals/evals.json and rubric.md still resolves, updated where a heading moved
 - [ ] #4 Derived skill copies are resynced and bun run check passes
 <!-- AC:END -->
 
@@ -72,4 +72,6 @@ Lever 3 (38c3733e), moved to the recipe of the workflow that needs it:
 Gate: fmt:check, test:modules (3334 pass), test:system (168 pass), test:repository (8 pass) green. lint and type-check fail only in the other workers' in-flight src/runtime/skill-evaluation files (reaudit.ts, reaudit.test.ts, run-manifest.test.ts), none touched here. Derived copies resynced (bun scripts/sync-skills.ts; diff -r clean).
 
 Review round 1 (commit below): create-sequence.md now says a note stating the count does not replace the repeat (the step carries the repeat, a note beside it if needed); Keep it true regains 'use the configured vocabulary and levels; extend config.yaml only when the request is about vocabulary' (links Vocabulary essential, which also states it); evidence rule 3 regains 'a call into it lands on the child whose body runs, not on the container' and '(a branch or a loop of unknown length in a note, a count the source fixes in repeat)'; evidence rule 4 regains 'so a proposal-only request lands nothing there' and links propose-compare.md as well as edit.md; runbook 3 links the drillDown row; Lands-on column says 'a relationship (edge)'. evals.json and rubric.md untouched. Size now 21,873 bytes (~5.5k tokens), still under the 22 KB target. eval:skill check ok; fmt:check, test:modules (3334), test:repository (8) pass; derived copies resynced.
+
+Independent review, two rounds: round 1 found a moved 'fixed count' clause readable as the opposite rule, two cited passages gone stale (keep-it-true for S08 config.before-board; evidence rule 3 for S07 flow.note), two lost clauses and nits; all fixed in 0a70b4df without touching evals.json or rubric.md (keeps the 14:01 batch re-reportable). Round 2 clean. Final SKILL.md 21,873 bytes (from 32,419; baseline 18,654). AC#4 held for the final full gate.
 <!-- SECTION:NOTES:END -->
