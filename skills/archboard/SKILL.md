@@ -40,65 +40,61 @@ value, and rendered line count is not a validation limit. Put longer detail in
 ## The runbook
 
 One ordered walk from an empty request to a board somebody can read, for
-either diagram type. Every step names where its own detail lives, so the walk
-is what reaches the rest of this file. Take the whole walk for a new board; an
-edit, a proposal or a question is the same walk with its own recipe at step 1
-and the steps that recipe names.
+either diagram type. Each step is one move, and links the detail it needs
+where that detail lives, so the walk is what reaches the rest of this file and
+its references. Take the whole walk for a new board; an edit, a proposal or a
+question is the same walk with its own recipe at step 1 and the steps that
+recipe names.
 
 1. **Pick the workflow and read its one recipe** before the first command of
    it ([which recipe](#which-recipe)).
-2. **Put the vocabulary and the vault in hand**: read
-   `$ARCHBOARD_VAULT/.archboard/config.yaml` for the levels, kinds,
-   relationship kinds and groups you may use, run `archboard semantic` for a
-   board an existing part should `drillDown` to instead of being drawn again,
-   and `archboard claim` the board when the work runs to several writes.
-3. **Gather the source context**: read the code the request names and follow
-   it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists,
-   until what you have read covers the question the board answers.
-4. **Decide the parts**: the board's level and its subject, which parts hold
-   which as children, which belong to another codebase, and the one file whose
-   body implements each stated responsibility as its `binding`
+2. **Claim a board that already exists** when the work runs to several writes
+   ([Claims](#essentials)); a board this walk creates is claimed once the
+   first write has made it.
+3. **Read the configured vocabulary and the boards the vault already holds**
+   ([Vocabulary](#essentials), [Reads](#essentials)).
+4. **Gather the source context**: read the code the request names and follow
+   it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
+5. **Decide the parts**: the level, the subject, which parts hold which as
+   children, which belong to another codebase, and each one's `binding`
    ([evidence rule 2](#evidence-before-a-write)).
-5. **Map the relationships**: one line of evidence per `edge` — `from` → `to`,
-   the semantic kind, and the file and symbol that prove the mechanism
+6. **Map the relationships**, one line of evidence per `edge`
    ([evidence rule 3](#evidence-before-a-write)).
-6. **Read the source again for what a flow needs** before you write one: a
+7. **For a sequence, order the exchange**: the participants in column order,
+   and every message between them in the order the source runs them, returns
+   included ([create a sequence diagram](references/create-sequence.md)).
+8. **Read the source again for what a flow shows only on a second pass**: a
    count the source fixes (a literal list of candidates tried in turn, a retry
-   limit, a batch of known size) is that step's `repeat`, and a call a
-   participant makes on itself (a loader trying its own candidates, a
-   recursion, a server looping to serve) is a `self` step — a `note` that
-   states in prose what the source counts is a `repeat` left out.
-7. **Walk the catalogue** row by row against the source you read
-   ([everything the code shows](#everything-the-code-shows)), so every row the
-   source justifies is in the payload and you can name the rows you judged not
-   to apply.
-8. **Model the subject a second way** — cut at another level, another set of
-   participants, a container drawn whole instead of opened, one flow where you
-   had two — and keep the shape whose advantage over the other you can state
-   in one line.
-9. **Turn the request into checks** and write them down before the payload
-   ([evidence rule 4](#evidence-before-a-write)).
-10. **Write it as one payload** with the recipe's command, because one thing
-    somebody asked for is one write.
-11. **Read the answer against those checks**, taking the minted ids and the new
-    `version` from it rather than reading the board again.
-12. **Look at the picture** the reader gets, by opening the PNG that
-    `semantic rasterize <board> --out <file.png>` draws, with `--view <name>`
-    when a view is the reading.
-13. **Run `archboard semantic compare <board> --variant <name>`** when the
-    write was a proposal, and `archboard check` after a vocabulary edit or an
-    answer that carried `warnings`.
-14. **Repeat steps 4 to 13** for each further write the board still needs — the
-    flow over parts already drawn, the views a board nobody can follow whole
-    wants, the walkthrough, the correction the picture showed you — one
-    requested change per write.
-15. **Read your own board back with `archboard semantic show` and simplify it**:
-    spend a write removing every part, relationship, step and view the board's
-    question does not need and merging what the source does not distinguish,
-    then look at the picture again.
-16. **Release the claim and report**: `archboard release --board <board>`, the
-    catalogue rows you used and the ones you judged not to apply, the shape you
-    kept at step 8 and why, and any question this skill left open.
+   limit, a batch of known size) is that step's `repeat` rather than a `note`
+   stating the count in prose, and a call a participant makes on itself is one
+   step whose `from` and `to` are both that participant
+   ([sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)).
+9. **Walk the catalogue** row by row against the source you read
+   ([everything the code shows](#everything-the-code-shows)).
+10. **Model the subject a second way** — cut at another level, another set of
+    participants, a container drawn whole instead of opened, one flow where
+    you had two — and keep the shape whose advantage over the other you can
+    state in one line.
+11. **Turn the request into checks** and write them down before the payload
+    ([evidence rule 4](#evidence-before-a-write)).
+12. **Write one payload** carrying the parts, the relationships, the flow, the
+    views each reading wants — a `data-flow` view over a flow — and the
+    walkthrough an ordering needs ([Writes](#essentials)).
+13. **Read the answer against those checks and look at the picture it draws**
+    ([Verification](#essentials)).
+14. **Compare a proposal against the variant it came from**
+    ([variants](references/variants.md)).
+15. **Run `archboard check`** after a vocabulary edit or an answer that
+    carried `warnings` ([Vocabulary](#essentials)).
+16. **Repeat steps 4 to 15** for each further write the board still needs — a
+    flow over parts already drawn, a drill-down to a board you found, the
+    correction the picture showed you — one requested change per write.
+17. **Read your own board back** with `archboard semantic show`, and spend one
+    more write removing what it shows that the board's question does not need
+    ([authoring](references/authoring.md) for the removal keys).
+18. **Release the claim and report**: the line you kept at step 10, the
+    catalogue rows you judged not to apply, and any question this skill left
+    open ([Claims](#essentials), [Open questions](#essentials)).
 
 ## Essentials
 
@@ -155,9 +151,12 @@ and the steps that recipe names.
   final message, naming the question; that report is how the skill gets the
   answer added.
 - **Claims.** For work of several writes, `archboard claim --board <board>
---reason "<campaign>"` first and `archboard release --board <board>` after. A
-  person can take the claim back: your next write is then refused once, nothing
-  is rolled back, and you stop and say so.
+--reason "<campaign>"` first and `archboard release --board <board>` after; the
+  reason is what the pane shows the person whose board you took, and a claim
+  without one is refused. A claim is on a board the vault already holds, so a
+  board you are creating is claimed after the write that makes it. A person can
+  take the claim back: your next write is then refused once, nothing is rolled
+  back, and you stop and say so.
 
 ## Evidence before a write
 
@@ -207,8 +206,10 @@ board needs all of it.
    `repeat`).
 4. **Turn the request into checks.** Before the payload, write down what a
    correct answer must show: the board and the `version` you read; the target
-   variant (a proposal names it in `variant`; a batch without `variant` edits
-   the current architecture, so a proposal-only request lands nothing there);
+   variant (`semantic edit --variant <id|name>` lands the change on a proposal,
+   and a payload `variant` says the same thing — where the two differ the
+   command line wins and the answer says so; a write naming neither edits the
+   current architecture, so a proposal-only request lands nothing there);
    the ids and fields that must survive; and for a view, its exact `grammar`
    and `scope` selectors: naming `edges` isolates those relationships and
    draws no other, while naming `nodes` alone draws every relationship among
