@@ -71,6 +71,24 @@ describe("a relationship landing on a part with children", () => {
 		).toHaveLength(1);
 	});
 
+	test("a new part reusing a renamed part's old name is a new part", () => {
+		// The store matches a name against the parts as they are named now, so
+		// the old name names nothing and it mints a new part, leaving the
+		// renamed one where it was.
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers, dumps] } },
+				edit({
+					nodes: [
+						{ id: "$node(dumps)", name: "dumps_json", kind: "function", parent: "JSON helpers" },
+					],
+				}),
+				edit({ nodes: [{ name: "dumps", kind: "function" }] }),
+				edit({ edges: [call] }),
+			]),
+		).toHaveLength(1);
+	});
+
 	test("is refused for every configured kind but a dependency, which addresses the whole module", () => {
 		for (const kind of Object.keys(DEFAULT_SEMANTIC_POLICY.relationshipKinds)) {
 			const found = problems([

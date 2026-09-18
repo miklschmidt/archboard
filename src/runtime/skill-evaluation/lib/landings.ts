@@ -1,8 +1,6 @@
-// A fixture teaches an author the shapes it uses. The inherited fixtures drew
-// relationships onto containers, which is the shape the rubric marks a run down
-// for, and four S00 runs and the S14 runs failed `edge.actual-receiver` over
-// exactly it (TASK-264). A paid batch is the expensive way to find that, so
-// this refuses it at `eval:skill check` instead.
+// A fixture teaches an author the shapes it uses, and the inherited ones drew
+// relationships onto containers: four S00 runs and the S14 runs failed
+// `edge.actual-receiver` over it (TASK-264). This refuses it at `eval:skill check`.
 
 import { FIRST_VARIANT_NAME } from "@/runtime/semantic-board-store/index";
 import type {
@@ -69,8 +67,13 @@ interface Landing {
  * fixture writes rather than the ids the product would mint.
  */
 interface VariantState {
-	/** The key each name a node has gone by folds onto: the one it was created under. */
+	/**
+	 * The key each name a node has gone by folds onto: the name it was created
+	 * under, unless that name was taken by a newer part.
+	 */
 	readonly keys: Map<string, string>;
+	/** The name each part goes by now, by its key. */
+	readonly names: Map<string, string>;
 	/** The children a part has, by its key. */
 	readonly children: Map<string, Set<string>>;
 	/** Every receiving relationship written so far. */
@@ -93,6 +96,14 @@ interface Statement {
 	/** Carried down from the variant a draft follows rather than stated to it. */
 	readonly carried: boolean;
 }
+
+/**
+ * The name a part goes by now on a variant, for a line somebody reads.
+ * @param state The variant.
+ * @param key The part's key.
+ * @returns The name.
+ */
+const nameOf = (state: VariantState, key: string): string => state.names.get(key) ?? key;
 
 /**
  * Whether a value is an object with fields, as fixture JSON holds one.
@@ -152,14 +163,50 @@ function fold(
 	node: Record<string, unknown>,
 ): string | undefined {
 	const name = referenced(node[NODE.name]);
-	const stated = referenced(node[NODE.id]) ?? name;
-	if (stated === undefined) return undefined;
-	const key = keyOf(state, handles, stated);
-	state.keys.set(key, key);
-	if (name !== undefined) state.keys.set(name, key);
+	const key = identify(state, handles, referenced(node[NODE.id]), name);
+	if (key === undefined) return undefined;
+	if (name !== undefined) {
+		state.keys.set(name, key);
+		state.names.set(key, name);
+	}
 	const handle = referenced(node[NODE.as]);
 	if (handle !== undefined) handles.set(handle, key);
 	return key;
+}
+
+/**
+ * Which part a stated node is. One stated by id is the part the id names. One
+ * stated by name alone is the part going by that name now, as the store matches
+ * it; a name a renamed part used to go by names no part, so the store mints a
+ * new one, and so does this.
+ * @param state The variant so far.
+ * @param handles The handles this step gives.
+ * @param id What the node names as its id, if anything.
+ * @param name Its name, if it has one.
+ * @returns The key, or undefined when the node names nothing.
+ */
+function identify(
+	state: VariantState,
+	handles: Map<string, string>,
+	id: string | undefined,
+	name: string | undefined,
+): string | undefined {
+	if (id !== undefined) return keyOf(state, handles, id);
+	if (name === undefined) return undefined;
+	const known = keyOf(state, handles, name);
+	return (state.names.get(known) ?? name) === name ? known : fresh(state, name);
+}
+
+/**
+ * A key no part of the variant holds yet, for a new part reusing an old name.
+ * @param state The variant so far.
+ * @param name The name.
+ * @returns The key.
+ */
+function fresh(state: VariantState, name: string): string {
+	let count = 1;
+	while (state.names.has(`${name}#${count}`)) count += 1;
+	return `${name}#${count}`;
 }
 
 /**
@@ -334,6 +381,7 @@ function apply(state: VariantState, statement: Statement): void {
 function derived(source: VariantState, parent: string): VariantState {
 	return {
 		keys: new Map(source.keys),
+		names: new Map(source.names),
 		children: new Map([...source.children].map(([key, kids]) => [key, new Set(kids)])),
 		landings: [...source.landings],
 		removed: new Set(),
@@ -370,14 +418,21 @@ function followers(family: Family, name: string): VariantState[] {
  * One step applied to the family it writes. An edit reaches the variant it
  * names and is carried down every draft that follows it.
  *
- * The store merges a carried edit field by field against what each draft last
- * agreed with, and settles disagreements when a resolution chooses a side.
- * This does not track either, so it errs in one direction only: toward
- * refusing. A carried statement may add to a draft but never takes away — a
+ * This is a model of the store over the names a fixture writes, not the store.
+ * It models: a part's identity across renames, and a name a new part takes
+ * over; containment, with parents placed after every stated node is known;
+ * handles within a step; removals a variant states itself; branching, adoption,
+ * and carrying an edit into the drafts that follow the variant it changed.
+ *
+ * It does not model the store's field-by-field merge of a carried edit or which
+ * side a resolution chooses, and it is built to err toward refusing where it
+ * cannot tell: a carried statement may add to a draft but never takes away — a
  * carried node never loses a parent and a carried removal removes nothing —
  * and a resolution takes everything the predecessor has. A spurious refusal is
  * visible and safe; a missed landing is the silent failure this guard exists
- * to prevent.
+ * to prevent. Anything else the store decides that this does not reproduce can
+ * still hide a landing; laying the fixture through the store itself is what
+ * would close that for good.
  * @param families Every board so far, by name.
  * @param step The step.
  */
@@ -387,6 +442,7 @@ function applyStep(families: Map<string, Family>, step: RawFixtureStep): void {
 		const current = referenced(step.input[CREATE.variant]) ?? FIRST_VARIANT_NAME;
 		const initial: VariantState = {
 			keys: new Map(),
+			names: new Map(),
 			children: new Map(),
 			landings: [],
 			removed: new Set(),
@@ -460,7 +516,11 @@ function resolve(family: Family, step: Extract<RawFixtureStep, { op: "resolve" }
  * @param source The variant it comes from.
  */
 function absorb(state: VariantState, source: VariantState): void {
-	for (const [name, key] of source.keys) if (!state.keys.has(name)) state.keys.set(name, key);
+	for (const [map, from] of [
+		[state.keys, source.keys],
+		[state.names, source.names],
+	] as const)
+		for (const [key, value] of from) if (!map.has(key)) map.set(key, value);
 	for (const [parent, kids] of source.children)
 		for (const kid of kids) addChild(state, parent, kid);
 	state.landings.push(...source.landings);
@@ -490,12 +550,13 @@ function landed(where: string, family: Family, reported: Set<string>): string[] 
 	return [...family.variants].flatMap(([variant, state]) =>
 		state.landings.flatMap((landing) => {
 			const children = state.children.get(landing.to);
-			const relationship = `${landing.from} -> ${landing.to}`;
-			if (children === undefined || children.size === 0 || reported.has(relationship)) return [];
-			reported.add(relationship);
-			const named = [...children].toSorted().join(", ");
+			const seen = `${landing.from}\u0000${landing.to}`;
+			if (children === undefined || children.size === 0 || reported.has(seen)) return [];
+			reported.add(seen);
+			const [from, to] = [nameOf(state, landing.from), nameOf(state, landing.to)];
+			const kids = [...children].map((kid) => nameOf(state, kid)).toSorted();
 			return [
-				`${where}@${variant}: ${relationship} lands on ${landing.to}, which ${named} names as its parent`,
+				`${where}@${variant}: ${from} -> ${to} lands on ${to}, which ${kids.join(", ")} names as its parent`,
 			];
 		}),
 	);
