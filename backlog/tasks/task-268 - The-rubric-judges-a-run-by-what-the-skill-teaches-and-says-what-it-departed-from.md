@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:30'
+updated_date: '2026-09-18 13:41'
 labels: []
 dependencies: []
 references:
@@ -171,4 +171,17 @@ OPTIONAL items taken: finding text uses a \\S pattern that the schema carries to
 NOT TAKEN: checking finding.passage for existence at filing time. The report already resolves passages, against the run's own arm, which is where the answer is used.
 
 VERIFIED: tsc exit 0; lint (policy on lib + index, baseline on tests) exit 0; oxfmt --check clean on evals and the module; eval:skill check ok; all 25 skill-evaluation test files pass when run one at a time. Full gate not run. AC#6's measured half remains pending the user's next batch.
+
+ROUND 3, commit bbe73e72.
+
+1. One candidate per batch. runBatch now checks the codex version first, then digests the skill (batchProvenance) and keeps its copy immediately after, with nothing between them. batch.json records candidateSkillDigest, the digest of the kept copy. Every candidate run now installs that kept copy the same way the baseline installs its frozen package: install-skill lays out the environment, then the arm's package replaces what it installed and the generated files are regenerated (install.ts's swapInPackage, formerly swapInFrozen, and RunJob.candidateSkill). So both arms take one path, and an edit to skills/ mid-batch reaches no author and no grader. Grading refuses a kept copy whose digest differs from the recorded one. Owned by tests/install.test.ts, which runs install-skill for real (no model, offline, ~0.3 s) with a kept copy that differs from the checkout and checks that what got installed is the kept copy. The wiring from runBatch to the job is not tested, because runBatch needs a real codex.
+2. Images. rubric.md's 'What you can and cannot see' now covers both delivery modes: attached to the prompt, or in the workspace to open. It drops 'an image viewing tool is available'. The Scores section says 'listed' captures instead of 'attached'. Each runner's delivery line in grader.ts says which mode applies.
+3. flow. SKILL.md's catalogue flow row now says a flow is owed when the request asks for the exchange itself, on a new board or an existing one, and not merely because what a board draws runs in some order. That is one row, portable, and synced with bun scripts/sync-skills.ts. The formatter re-padded the table's columns, which is whitespace only. The rubric's flow row follows the skill's row, and the changed-board fence is reduced to view and walkthrough, with flow decided by its own row on any board.
+4, 5. records.ts resolves a finding's passage against the kept candidate first. A passage the candidate does not hold is the grader's error: it is counted as uncited and under no axis. A conformance passage the candidate holds but the run's own skill lacks is counted as unseen. The report column is now conf./unseen/truth/skill/uncited. The new test in run-manifest.test.ts goes through recordOf for both arms, using the real frozen baseline (which has no references/read.md) and the real candidate.
+6. A disagreement now needs a run whose finding for that feature is conformance or truth; a pass on another run is no disagreement.
+7. eval:skill check refuses a citation into references/generated/.
+
+VERIFIED: tsc exit 0; lint exit 0 under both configs; oxfmt --check clean on evals, skills and the module; eval:skill check ok; all 26 skill-evaluation test files and tests/system/cli/install-targets.test.ts pass, run one at a time.
+
+FOR THE USER: the M2 laundering route is narrowed, not mechanically closed. semanticallyCompliant still excuses any feature the grader files on the skill axis. Only the rubric's Findings sentence (skill is never for what the request states) stands in the way, and every such excuse is listed in the report with its passage, along with any split across runs of a scenario. Closing it mechanically means marking request-derived features in evals.json and refusing the skill excuse on them. That is the user's call.
 <!-- SECTION:NOTES:END -->
