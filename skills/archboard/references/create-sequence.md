@@ -106,8 +106,10 @@ archboard semantic rasterize "Skill install" --view "Setup exchange" --out setup
 3. Check the answer's flow against your record: participants in the order you
    meant, steps in the order the source runs them, returns where the source
    returns, kinds and notes as the code justifies, a `repeat` on every step
-   whose count the source fixes and a `self` kind on every call a participant
-   makes on itself; the saved beat's `subjects`
+   whose count the source fixes, and a step whose `from` and `to` are both the
+   same participant wherever the source has one calling itself (the saved kind
+   is `self` because the ends are equal, so the step has to be there at all);
+   the saved beat's `subjects`
    carry the step's minted id (a handle nobody referenced explains nothing)
    and what relies on that step (`write` above), not only the part the step
    runs on.
