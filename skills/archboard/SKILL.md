@@ -49,12 +49,9 @@ recipe names.
 1. **Pick the workflow and read its one recipe** before the first command of
    it ([which recipe](#which-recipe)).
 2. **Claim a board that already exists** when the work runs to several writes
-   ([Claims](#essentials)); a board this walk creates is claimed at step 13
-   instead.
-3. **Read the configured vocabulary and the boards the vault already holds**,
-   so a part whose internals already have a board links to it with `drillDown`
-   instead of being drawn again ([Vocabulary](#essentials),
-   [Reads](#essentials)).
+   ([Claims](#essentials)).
+3. **Read the configured vocabulary and the boards the vault already holds**
+   ([Vocabulary](#essentials), [Reads](#essentials), the `drillDown` row).
 4. **Gather the source context**: read the code the request names and follow
    it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
 5. **Decide the parts**: the level, the subject, which parts hold which as
@@ -90,8 +87,8 @@ recipe names.
     ([evidence rule 4](#evidence-before-a-write)).
 13. **Write one payload** carrying the parts, the relationships, the flow, the
     views each reading wants — a `data-flow` view over a flow — and the
-    walkthrough an ordering needs, then claim the board it just made when more
-    writes are coming ([Writes](#essentials), [Claims](#essentials)).
+    walkthrough an ordering needs, then claim the new board when more writes are
+    coming ([Writes](#essentials), [Claims](#essentials)).
 14. **Read the answer against those checks and look at the picture it draws**
     ([Verification](#essentials)).
 15. **Compare a proposal against the variant it came from**
@@ -115,7 +112,8 @@ recipe names.
   server owns; you never read one to edit it and never write one. Its ids,
   `version`, timestamps, `lifecycle`, `adoptions` and `reconciliation` are the
   product's outcome of your writes, not fields you author or repair. When a
-  write is refused, repair the payload from what the refusal says; a second
+  write is refused, repair the payload from what the refusal says, never by
+  editing the vault or inventing an id; a second
   attempt needs new evidence, not a retry. When no supported command can do
   what was asked, leave the board valid as it is and report the requirement
   you could not meet.
@@ -157,8 +155,7 @@ recipe names.
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
-  temporary directory, never into the checkout you are describing. `archboard
-check` is for after a vocabulary edit or when an answer carries `warnings`.
+  temporary directory, never into the checkout you are describing.
 - **Open questions.** A question about the product (a field, a selector, what
   a refusal means, what a command accepts) is answered by the references
   below, the generated JSON Schemas under `references/generated/`, and
@@ -202,13 +199,11 @@ board needs all of it.
    and the source file and function or symbol that prove the mechanism. For a
    call (a function or method call, a hook, a component rendering another),
    `from` is the part whose body makes it and `to` is the part whose body runs,
-   inside its `parent`; a container is an endpoint only when
-   the source addresses the whole module. A part you draw with children is a
-   container whatever its kind: once a module, class or component is drawn
-   holding its functions, methods or child components, a call into it lands on
-   the child whose body runs, not on the container,
-   and giving an existing part children moves every relationship that landed
-   on it to the child whose body runs. That is where a relationship lands, not
+   inside its `parent`. A part drawn with children (a module, class or
+   component holding its functions, methods or child components) is a
+   container whatever its kind, and is an endpoint only when the source
+   addresses the whole module; giving an existing part children moves every
+   relationship that landed on it to the child whose body runs. That is where a relationship lands, not
    who takes part in an exchange; a flow's columns are chosen at step 7. For a
    return or a non-call
    relationship, state the directional claim in words and make the endpoints
@@ -271,8 +266,8 @@ What the source shows for each row, and what you author for it:
   when it names one. Never for a part of this codebase a reader reaches through
   another board.
 - `binding`. _Shows:_ the file whose body implements a part's responsibility.
-  _Author:_ `binding: { repo, path }` to that file; nothing for a part you could
-  not inspect.
+  _Author:_ `binding: { repo, path }` to that file
+  ([evidence rule 2](#evidence-before-a-write)).
 - `containment`. _Shows:_ a part defined inside another (a function of a module,
   a method of a class, a child component, a closure inside its factory).
   _Author:_ `parent`.
@@ -285,6 +280,9 @@ What the source shows for each row, and what you author for it:
   could skip but a normal pass always makes (the handler every request reaches)
   included; never on teardown or cleanup, an error or exception path, an
   optional hook most passes skip, startup, registration or a one-shot call.
+  Traffic is authored intent chosen from what the source runs per request,
+  never a measurement; a still picture shows the marks at rest and proves
+  nothing about motion.
 - `emphasis`. _Shows:_ a spine: the path or backbone the board's question is
   about, and the lines that are only context. _Author:_ `emphasis: "hero"` on
   the spine — a third of the relationships, never past half — and `"muted"` on
@@ -299,10 +297,9 @@ What the source shows for each row, and what you author for it:
   member, explicit, across containers.
 - `flow`. _Shows:_ a request that asks for the exchange itself — what happens,
   in what order, for one request, job, interaction or startup — on a new board
-  or an existing one. A board asked to describe how something travels through
-  the parts is parts, containment and the calls between them
-  ([which recipe](#which-recipe)), and owes no flow merely because what it draws
-  runs in order. _Author:_ a `flow` and a `data-flow` view over it.
+  or an existing one; a board owes no flow merely because what it draws runs in
+  order ([which recipe](#which-recipe)). _Author:_ a `flow` and a `data-flow`
+  view over it.
 - `view`. _Shows:_ a subset a reader wants alone: one path, one container's
   internals, the two sides of a change. _Author:_ a board `view`.
 - `walkthrough`. _Shows:_ a why the code enforces (an ordering, an invariant, a
@@ -311,20 +308,18 @@ What the source shows for each row, and what you author for it:
 - `drillDown`. _Shows:_ a part whose internals already have a board
   (`archboard semantic` lists them; check first). _Author:_ `drillDown` on that
   part instead of drawing its parts again, its `kind` the level of the board it
-  opens (`system`, `service`, `module`); never a node added only to carry the
-  link.
+  opens (`system`, `service`, `module`) ([keep it true](#keep-it-true)).
 - `description`. _Shows:_ a mechanism a one-line responsibility cannot hold.
   _Author:_ `description` on the node or relationship.
 
 A row the source does not support stays out: an added relationship without a
 line of evidence is a wrong board, not a complete one.
 
-The rows land on different subjects. `note` and `repeat` are fields of a flow
-step; `emphasis` and `traffic` are fields of a relationship; `from`, `to`,
-`kind` and `label` are on both and mean the same thing. A step
-takes nothing else, so `emphasis` or `traffic` on one is refused by key name
-over the step it sits on (`→ at flows[0].steps[0]`): move it onto the
-relationship between the same parts rather than dropping it from the payload.
+`from`, `to`, `kind` and `label` mean the same on a step and a relationship,
+and a step takes nothing else but `note` and `repeat`: `emphasis` or `traffic`
+on one is refused by key name over the step it sits on
+(`→ at flows[0].steps[0]`), so move it onto the relationship between the same
+parts rather than dropping it from the payload.
 
 ## Which recipe
 
@@ -357,25 +352,10 @@ propose) reads each recipe it needs, in the order the request runs them.
 
 ## Keep it true
 
-- Author meaning. When the picture is wrong and the meaning is right, report the
-  renderer defect; the architecture stays as the code has it.
-- Every relationship and step has a line of source evidence; a picture that
-  needs a relationship the source does not have is a wrong picture.
-- Use the configured vocabulary and levels; extend `config.yaml` only when the
-  request is about vocabulary.
-- Reuse an existing detail board; link to it with `drillDown` instead of
-  duplicating its parts. The linking node is a part the board draws anyway, and
-  it carries the linked board's level as its kind; a node whose only reason to
-  exist is the link is a button, and a diagram has no buttons.
-- Fewer, truer parts: every node has a responsibility the source supports, and
-  a binding only to the file that implements it.
-- Traffic (`"traffic": {}`, or `speed`/`volume`) is authored intent, never a
-  measurement: choose it from what the source says runs per request, not from
-  numbers you do not have. A still picture shows the marks at rest and proves
-  nothing about motion.
-- A refusal is repaired from its reason. Never edit the vault to get past one,
-  never invent an id, and when the CLI cannot do what was asked, say what
-  remains open rather than approximate it.
+- Reuse an existing detail board: link it with `drillDown` on a part the board
+  draws anyway, never duplicating its parts. A node whose only reason to exist
+  is the link is a button, and a diagram has no buttons.
+- Fewer, truer parts: every node has a responsibility the source supports.
 
 ## When to read more
 
