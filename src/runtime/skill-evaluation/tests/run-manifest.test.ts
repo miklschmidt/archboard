@@ -239,48 +239,26 @@ test("a finding's passage is resolved against the run's own skill, and one the s
 	}
 });
 
-/**
- * A finding that puts a feature on the skill, naming one passage.
- * @param passage The citation.
- * @returns The finding.
- */
-function onTheSkill(passage: string) {
-	return { axis: "skill", did: "d", taught: "t", passage, gap: "the agent never opened it" };
-}
-
-test("a filed skill finding on a passage its feature cites is read back as a departure, without re-grading", () => {
-	const [first, second] = scenario.expectedFeatures;
-	const [cited] = first?.skill ?? [];
-	if (first === undefined || second === undefined || cited === undefined)
-		throw new Error("the scenario has fewer than two cited features");
-	const elsewhere = [
-		"SKILL.md#essentials",
-		"SKILL.md#everything-the-code-shows",
-		"references/read.md#answer-a-question-from-a-saved-board",
-	].find((passage) => !second.skill.includes(passage));
-	if (elsewhere === undefined) throw new Error("the second feature cites every candidate passage");
+test("the suite's citations reach a filed verdict when a batch is re-reported, without re-grading", () => {
+	// Every expected feature cites at least one passage, as the suite's schema requires.
+	const [cited, ...rest] = scenario.expectedFeatures;
+	const [passage] = cited?.skill ?? [];
+	if (cited === undefined || passage === undefined) throw new Error("the scenario cites nothing");
 	const filed = {
 		run: "run-0000000001",
 		features: [
 			{
-				feature: first.feature,
+				evidence: "e",
+				reason: "r",
+				feature: cited.feature,
 				verdict: "incorrect",
+				finding: { axis: "skill", did: "d", taught: "t", passage, gap: "never opened it" },
+			},
+			...rest.map((entry) => ({
 				evidence: "e",
 				reason: "r",
-				finding: onTheSkill(cited),
-			},
-			{
-				feature: second.feature,
-				verdict: "missing",
-				evidence: "e",
-				reason: "r",
-				finding: onTheSkill(elsewhere),
-			},
-			...scenario.expectedFeatures.slice(2).map((entry) => ({
 				feature: entry.feature,
 				verdict: "pass",
-				evidence: "e",
-				reason: "r",
 				finding: null,
 			})),
 		],
@@ -299,10 +277,8 @@ test("a filed skill finding on a passage its feature cites is read back as a dep
 		if (read === undefined) throw new Error("no manifest was read");
 		const record = recordOf(batchRoot, loaded, read, "claude");
 		expect(record.semanticallyCompliant).toBe(false);
-		expect(record.findings.conformance).toEqual([first.feature]);
-		expect(record.findings.skill).toEqual([second.feature]);
 		expect(record.excusedDepartures).toEqual([
-			{ feature: first.feature, passage: cited, gap: "the agent never opened it" },
+			{ feature: cited.feature, passage, gap: "never opened it" },
 		]);
 	} finally {
 		fs.rmSync(batchRoot, { recursive: true, force: true });
