@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:51'
-updated_date: '2026-09-18 12:12'
+updated_date: '2026-09-18 13:22'
 labels: []
 dependencies: []
 references:
@@ -135,6 +135,12 @@ TASK-268 exists to stop this class of drift between the skill and the rubric. ev
 Re-verified: oxfmt --check clean; bun scripts/sync-skills.ts synced both skills; bun test tests/system/cli/install-targets.test.ts 9 pass.
 
 Correction to the note above: one word was eaten by shell substitution. The sentence should read "its node-kind check demands kind extension, the kind the same request has the author configure".
+
+Revision recorded 2026-09-18, after this task closed. Runbook step 9 is being narrowed under TASK-267, at the user's decision.
+
+Step 9's "the work a part does to decide what to do next ... is its own step with that part at both ends, separate from the calls it then makes per candidate" was written from what the one S07 run that passed both checks did, relayed by the coordinator from TASK-263's round-3 review. TASK-267's review then showed two things. First, the self step it prescribes is a notation choice, not a fact of the source: in Flask's load_app the loop body is exactly the two calls, so the loop is a loop header a sequence diagram would draw as a fragment, and archboard has no fragment - both "search as a self step" and "repeat on the per-candidate calls with a note" are honest approximations, and a run drawing the second was graded truthful. Second, it was circular: S07 was being made to grade against a rule derived from S07's own winning run. That is the provenance the user's standing rule forbids - skill rules must never be shaped by a single scenario, and a scenario's success counts as much as its failure.
+
+So step 9 is narrowed to what the skill's own worked example grounds: a call a participant genuinely makes on itself (like chooseDoc) is one step with that participant at both ends. The generic, pre-existing parts stay - a count the source fixes is the repeating step's repeat, and a note stating it in prose leaves the repeat out. This task's AC#3 (a step directs the author to look for fixed-count repetition and participant self-calls before writing a flow) remains met by the narrowed step. The evidence in this task's notes that step 9 would move S07 should be read with this revision in mind.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
