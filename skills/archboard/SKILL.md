@@ -70,14 +70,15 @@ recipe names.
    exchange can hold ([create a sequence diagram](references/create-sequence.md)).
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
-9. **Read the source again for what a flow shows only on a second pass**: the
-   work a part does to decide what to do next — choosing among candidates,
-   searching, selecting a branch — is its own step with that part at both ends,
-   separate from the calls it then makes per candidate, and it carries as its
-   `repeat` the count the source fixes (a literal list of candidates, a retry
-   limit, a batch of known size), which a `note` stating that count in prose
-   leaves out ([sequences, views and
-   walkthroughs](references/sequences-views-walkthroughs.md)).
+9. **Read the source again for what a flow shows only on a second pass**: a
+   call a participant makes on itself — a function or method invoking another
+   of its own, as `Setup block` reaches its own `chooseDoc` in the [sequence
+   recipe's example](references/create-sequence.md) — is one step with that
+   participant at both ends, and a count the source fixes (a literal list of
+   candidates tried in turn, a retry limit, a batch of known size) is the
+   repeating step's `repeat`, on a `self` step or a call to another column
+   alike, which a `note` stating the count in prose leaves out ([sequences,
+   views and walkthroughs](references/sequences-views-walkthroughs.md)).
 10. **Walk the catalogue** row by row against the source you read
     ([everything the code shows](#everything-the-code-shows)).
 11. **Model the subject a second way** — cut at another level, another set of
