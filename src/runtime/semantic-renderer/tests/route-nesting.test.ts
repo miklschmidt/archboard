@@ -21,7 +21,11 @@ import {
 	overlaps,
 	masking,
 } from "@/runtime/semantic-renderer/tests/drawn-labels";
-import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
+import {
+	CORNER,
+	overdrawnRun,
+	routesThroughCards,
+} from "@/runtime/semantic-renderer/tests/drawn-ink";
 
 /**
  * The flank rule a drawing was kept under.
@@ -304,6 +308,16 @@ describe("relationships between the same pair of cards", () => {
 								expect(departures[index]).not.toBe(departures[other]);
 							}
 						}
+						// Two relationships a reader must tell apart are never drawn as
+						// one line for longer than the corner where they part. Sharing a
+						// corridor a reader can count across is a picture; sharing the
+						// ink is not one (TASK-265).
+						expect(
+							overdrawnRun(
+								drawn,
+								group.map(({ id }) => id),
+							),
+						).toBeLessThanOrEqual(CORNER);
 						// Carrying on through a frame must not carry on through a card.
 						expect(routesThroughCards(drawn, content)).toEqual([]);
 						expect(detached(drawn)).toEqual([]);
