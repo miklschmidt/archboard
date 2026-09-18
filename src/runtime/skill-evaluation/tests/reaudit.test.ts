@@ -54,10 +54,11 @@ const ROOTS: ExposureRoots = {
 /**
  * One command's exposure, against a batch holding only the present paths.
  * @param script The inner script.
+ * @param output What the command printed.
  * @returns Its exposure.
  */
-function exposureOf(script: string): string | null | undefined {
-	return classifyCommands([{ command: script, exitCode: 2, status: "failed", output: "" }], {
+function exposureOf(script: string, output = ""): string | null | undefined {
+	return classifyCommands([{ command: script, exitCode: 2, status: "failed", output }], {
 		skillRoot: `${WORLD}/home/.agents/skills/archboard`,
 		checkoutRoot: `${WORLD}/flask`,
 		archboardRoot: "/checkout",
@@ -66,12 +67,29 @@ function exposureOf(script: string): string | null | undefined {
 	})[0]?.exposure;
 }
 
-test("a literal batch path that exists nowhere read nothing; one that exists, a pattern, or the batch root is exposure", () => {
+/**
+ * What a command prints when the path it names does not exist.
+ * @param named The path as the command spelled it.
+ * @returns The output.
+ */
+function missing(named: string): string {
+	return `sed: can't read ${named}: No such file or directory\n`;
+}
+
+test("a plain batch path that does not exist, and that the command reports missing, read nothing", () => {
 	// Codex's skill-root alias expanded one level short of the run's world.
+	const misread = alias(BATCH);
+	expect(exposureOf(`bash -lc "sed -n '1,240p' ${misread}"`, missing(misread))).toBeNull();
 	expect(
-		exposureOf(`bash -lc "sed -n '1,240p' ${BATCH}/world/home/.agents/skills/archboard/SKILL.md"`),
-	).toBeNull();
-	expect(exposureOf("bash -lc 'cat ../../../9/world/vault/x.json'")).toBeNull();
+		exposureOf(`bash -lc "sed -n 1p ${misread} && cat ${BATCH}/blinding.json"`, missing(misread)),
+	).toBe("other-run");
+	const relative = "../../../9/world/vault/x.json";
+	expect(exposureOf(`bash -lc 'cat ${relative}'`, missing(relative))).toBeNull();
+	// The path is gone now, but the command's output shows it was read then.
+	expect(exposureOf(`bash -lc 'cat ${misread}'`, "---\nname: archboard\n")).toBe("other-run");
+});
+
+test("a path that exists, a pattern, the batch root, a quoted or joined word, or an escape from the world is exposure", () => {
 	for (const script of [
 		`ls ${BATCH}/runs/baseline/S11/2/world/vault`,
 		`cat "${BATCH}/blinding.json"`,
@@ -79,18 +97,34 @@ test("a literal batch path that exists nowhere read nothing; one that exists, a 
 		`ls ${BATCH}/`,
 		`cat ${BATCH}/runs/*/S11/*/world/vault/x.json`,
 		`cat ${BATCH}/runs/$ARM/S11/2/author.jsonl`,
+		`cat ${BATCH}/runs/base"line"/S11/2/run.json`,
+		`cat ${BATCH}/runs/base''line/S11/2/run.json`,
+		`cat '${BATCH}/runs/base'line/S11/2/run.json`,
+		`cat "${BATCH}/runs/base"*/S11/2/run.json`,
+		`cat ${WORLD}/../author.jsonl`,
+		`cat ..'/../'author.jsonl`,
 	])
-		expect(exposureOf(`bash -lc '${script}'`), script).toBe("other-run");
+		expect(exposureOf(`bash -lc '${script}'`, missing(`${BATCH}/runs/base`)), script).toBe(
+			"other-run",
+		);
+	// A variable assembled from a prefix that does not exist reads what it expands to.
+	expect(exposureOf(`bash -lc 'X=${BATCH}/runs/base; cat \${X}line/S11/2/run.json'`, "{}")).toBe(
+		"other-run",
+	);
+	expect(exposureOf(`bash -lc 'cat ${WORLD}/vault/"Flask JSON.semantic.json"'`)).toBeNull();
 });
 
 /**
  * A batch whose one run recorded an other-run read at run time and stored the
  * command that earned it, as a batch that sat at `recordedRoot` when it ran.
- * @param command What the author ran, given where the batch sat.
+ * @param command What the author ran and what it printed, given where the batch sat.
  * @param recordedRoot Where the batch sat when the run happened, or undefined for where it sits now.
  * @returns The batch root as it sits now.
  */
-function batchWithStoredCommand(command: (root: string) => string, recordedRoot?: string): string {
+function batchWithStoredCommand(
+	command: (root: string) => readonly [string, string],
+	recordedRoot?: string,
+): string {
 	const batchRoot = fs.mkdtempSync(path.join(os.tmpdir(), "reaudit-"));
 	const then = recordedRoot ?? batchRoot;
 	const place = path.join("runs", "baseline", scenario.id, "1");
@@ -122,29 +156,46 @@ function batchWithStoredCommand(command: (root: string) => string, recordedRoot?
 	fs.writeFileSync(path.join(batchRoot, "blinding.json"), "{}");
 	fs.writeFileSync(
 		path.join(batchRoot, place, "commands.json"),
-		JSON.stringify([{ command: command(then), exitCode: 2, status: "failed", output: "" }]),
+		JSON.stringify([
+			{ command: command(then)[0], exitCode: 2, status: "failed", output: command(then)[1] },
+		]),
 	);
 	return batchRoot;
 }
 
-test("the report re-reads a run's stored commands, so a path that exists nowhere sets no saved run aside", () => {
+/**
+ * The mis-expanded skill alias.
+ * @param root Where the batch sat.
+ * @returns The path.
+ */
+function alias(root: string): string {
+	return `${root}/world/home/.agents/skills/archboard/SKILL.md`;
+}
+
+test("the report re-reads a run's stored commands, so a read the command shows found nothing sets no saved run aside", () => {
 	for (const [label, command, recordedRoot, contaminated] of [
 		[
 			"a mis-expanded skill alias",
 			(root: string) =>
-				`bash -lc "sed -n '1,240p' ${root}/world/home/.agents/skills/archboard/SKILL.md"`,
+				[`bash -lc "sed -n '1,240p' ${alias(root)}"`, missing(alias(root))] as const,
 			undefined,
 			false,
 		],
 		[
+			"a path gone since the run, whose output shows it was read",
+			(root: string) => [`bash -lc 'cat ${alias(root)}'`, "---\nname: archboard\n"] as const,
+			undefined,
+			true,
+		],
+		[
 			"the blinding table",
-			(root: string) => `bash -lc 'cat ${root}/blinding.json'`,
+			(root: string) => [`bash -lc 'cat ${root}/blinding.json'`, "{}"] as const,
 			undefined,
 			true,
 		],
 		[
 			"the blinding table of a batch moved since it ran",
-			(root: string) => `bash -lc 'cat ${root}/blinding.json'`,
+			(root: string) => [`bash -lc 'cat ${root}/blinding.json'`, "{}"] as const,
 			"/elsewhere/.skill-evals/moved",
 			true,
 		],
@@ -163,7 +214,10 @@ test("the report re-reads a run's stored commands, so a path that exists nowhere
 });
 
 test("a run recorded before exposure was kept stays unaudited, whatever commands it stored", () => {
-	const batchRoot = batchWithStoredCommand((root) => `bash -lc 'cat ${root}/blinding.json'`);
+	const batchRoot = batchWithStoredCommand((root) => [
+		`bash -lc 'cat ${root}/blinding.json'`,
+		"{}",
+	]);
 	try {
 		const directory = path.join(batchRoot, "runs", "baseline", scenario.id, "1");
 		const { exposure: _exposure, ...older } = JSON.parse(
@@ -175,5 +229,23 @@ test("a run recorded before exposure was kept stays unaudited, whatever commands
 		expect(recordOf(batchRoot, loaded, read).exposure).toBeNull();
 	} finally {
 		fs.rmSync(batchRoot, { recursive: true, force: true });
+	}
+});
+
+test("a run whose stored commands cannot be read keeps the count it recorded, and the report goes on", () => {
+	for (const stored of ["{ not json", JSON.stringify([{ command: 7 }])]) {
+		const batchRoot = batchWithStoredCommand((root) => [
+			`bash -lc 'cat ${root}/blinding.json'`,
+			"{}",
+		]);
+		try {
+			const directory = path.join(batchRoot, "runs", "baseline", scenario.id, "1");
+			fs.writeFileSync(path.join(directory, "commands.json"), stored);
+			const [read] = readManifests(batchRoot);
+			if (read === undefined) throw new Error("no manifest was read");
+			expect(recordOf(batchRoot, loaded, read).exposure?.["other-run"], stored).toBe(1);
+		} finally {
+			fs.rmSync(batchRoot, { recursive: true, force: true });
+		}
 	}
 });
