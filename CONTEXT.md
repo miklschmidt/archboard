@@ -248,13 +248,18 @@ _Avoid_: version (that is which edit the board's note is),
 revision, branch, mode, state
 
 **Current**:
-The designation of the variant that describes the architecture that exists.
-Moving this designation preserves the names and identities of both states.
+The designation of the variant that describes the architecture that exists. A
+board has at most one. A board for something nobody has built yet has none: every
+variant on it is a proposal, and that absence is how the board says nothing it
+describes exists. Moving this designation preserves the names and identities of
+both states.
 _Avoid_: latest, default proposal
 
 **Adoption**:
-Explicitly designating a variant as the implemented architecture, retaining the
-formerly current state as named history and recording when the designation changed.
+Explicitly designating a variant as the implemented architecture and recording when
+the designation changed. A formerly current state is retained as named history; on a
+board that had no current variant, adoption is the moment its architecture starts
+existing, and nothing becomes history.
 _Avoid_: promotion (the legacy element-to-node operation), rename, merge
 
 **Historical variant**:
