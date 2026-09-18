@@ -1,6 +1,7 @@
 // The one grading session: what it is told, what it must return, and how its
-// answer is read. The grader sees anonymous runs, the pinned Flask sources and
-// the rubric, and returns one structured verdict per run. It is told, in these
+// answer is read. The grader sees anonymous runs, the pinned Flask sources,
+// the skill under evaluation and the rubric, and returns one structured
+// verdict per run. It is told, in these
 // words, not to delegate: "Do not use subagents. Inspect the source and grade
 // every run yourself in this session."
 
@@ -8,6 +9,12 @@ import { z } from "zod";
 import type { ImageDelivery } from "@/runtime/skill-evaluation/lib/grader-runner";
 import type { RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
+import {
+	CATALOGUE_PASSAGE,
+	CATALOGUE_ROWS,
+	CITATION_PATTERN,
+	RUBRIC_SECTIONS,
+} from "@/runtime/skill-evaluation/lib/citations";
 
 /** Whether a grader answered the scenario it was given, or a checklist of its own. */
 type ChecklistStanding = "answered" | "off-checklist";
@@ -31,32 +38,100 @@ const VisualVerdictSchema = z
 		observations: ObservationsSchema,
 	})
 	.strict();
-/** A catalogue row the source justified on the board, whether the request named it or not. */
+/**
+ * One row of the skill's catalogue the grader judged for what the run added.
+ * The row is one of the closed set, so a missed row is counted once under one
+ * name and two arms' missed counts are the same quantity.
+ */
 const UnpromptedSchema = z.array(
 	z
 		.object({
-			feature: z.string().min(1),
+			feature: z.enum(CATALOGUE_ROWS),
 			verdict: z.enum(["used", "missed"]),
 			evidence: z.string().min(1),
 			reason: z.string().min(1),
 		})
 		.strict(),
 );
-/** What the grader must add beyond the checklist: the rows it judged and the completeness score, null for a run that wrote nothing. */
+/**
+ * What the grader must add beyond the checklist: the catalogue rows it judged
+ * and the completeness score, null exactly when the rubric's unprompted walk
+ * had no subject. Kept rather than removed (TASK-268): they measure what the
+ * request did not name, which a checklist cannot, and they now grade against
+ * the skill's own catalogue — the closed row set above, which `eval:skill
+ * check` holds equal to both the skill's catalogue table and the rubric's.
+ */
 const UnpromptedFields = {
 	unprompted: UnpromptedSchema,
 	behaviouralCompleteness: z.int().min(0).max(10).nullable(),
 };
+/**
+ * Which authority a finding answers to. `conformance`: the run departed from
+ * what the skill teaches. `truth`: the run did what the skill teaches and the
+ * board still says something the source contradicts. `skill`: the scenario
+ * expects something no passage of the skill supports, which is a finding
+ * about the skill (or the scenario), never a failed run.
+ */
+const FINDING_AXES = ["conformance", "truth", "skill"] as const;
+type FindingAxis = (typeof FINDING_AXES)[number];
+
+/**
+ * One value per finding axis.
+ * @param pick The value for an axis.
+ * @returns The values, by axis.
+ */
+function byAxis<T>(pick: (axis: FindingAxis) => T): Readonly<Record<FindingAxis, T>> {
+	return { conformance: pick("conformance"), truth: pick("truth"), skill: pick("skill") };
+}
+/** What a verdict other than a pass must state: what the run did, what the skill told it, and the gap. */
+const FindingSchema = z
+	.object({
+		axis: z.enum(FINDING_AXES),
+		/** What the run did, as the board or the commands show it. */
+		did: z.string().trim().min(1),
+		/** What the skill told it to do, quoted from the passage. */
+		taught: z.string().trim().min(1),
+		/** Where: a `<file>#<heading-anchor>` citation into the staged skill. */
+		passage: z.string().regex(CITATION_PATTERN),
+		/** The gap between the two, or for a truth finding what the source says instead. */
+		gap: z.string().trim().min(1),
+	})
+	.strict();
+const FeatureFields = {
+	feature: z.string().min(1),
+	evidence: z.string().min(1),
+	reason: z.string().min(1),
+};
+/**
+ * A feature verdict as the grader must answer it: a pass states no finding,
+ * and every other verdict states one. Two shapes rather than one refined
+ * shape, so the JSON Schema the grader decodes against carries the rule and a
+ * paid call cannot return an answer the harness would then refuse.
+ */
+const AnsweredFeatureSchema = z.union([
+	z
+		.object({
+			...FeatureFields,
+			verdict: FeatureVerdictSchema.extract(["pass"]),
+			finding: z.null(),
+		})
+		.strict(),
+	z
+		.object({
+			...FeatureFields,
+			verdict: FeatureVerdictSchema.exclude(["pass"]),
+			finding: FindingSchema,
+		})
+		.strict(),
+]);
+/** A feature verdict as filed; one filed before findings existed has none. */
+const FiledFeatureSchema = z.object({
+	...FeatureFields,
+	verdict: FeatureVerdictSchema,
+	finding: FindingSchema.nullable().optional(),
+});
 const VerdictFields = {
 	run: z.string().regex(/^run-[0-9a-f]{10}$/u),
-	features: z.array(
-		z.object({
-			feature: z.string().min(1),
-			verdict: FeatureVerdictSchema,
-			evidence: z.string().min(1),
-			reason: z.string().min(1),
-		}),
-	),
 	semanticCorrectness: z.int().min(0).max(10),
 	architecturalTruth: z.int().min(0).max(10),
 	readability: z.int().min(0).max(10),
@@ -65,7 +140,12 @@ const VerdictFields = {
 };
 /** What the grader must answer per run: the semantic checklist and, separately, what it saw. */
 const RunVerdictSchema = z
-	.object({ ...VerdictFields, ...UnpromptedFields, visual: VisualVerdictSchema })
+	.object({
+		...VerdictFields,
+		features: z.array(AnsweredFeatureSchema),
+		...UnpromptedFields,
+		visual: VisualVerdictSchema,
+	})
 	.strict();
 /**
  * A filed verdict as the report reads it; one filed before captures existed
@@ -75,6 +155,7 @@ const RunVerdictSchema = z
 const FiledVerdictSchema = z
 	.object({
 		...VerdictFields,
+		features: z.array(FiledFeatureSchema),
 		unprompted: UnpromptedSchema.optional(),
 		behaviouralCompleteness: UnpromptedFields.behaviouralCompleteness.optional(),
 		visual: VisualVerdictSchema.extend({
@@ -189,6 +270,8 @@ interface GraderBrief {
 	readonly layout: {
 		readonly flask: string;
 		readonly runs: string;
+		/** The skill under evaluation, staged once for every run. */
+		readonly skill: string;
 		readonly verdictFile: string;
 	};
 	readonly revisions: Readonly<Record<string, string>>;
@@ -211,6 +294,20 @@ const DELIVERY_LINES: Readonly<Record<ImageDelivery, string>> = {
 };
 
 /**
+ * How to fill the answer, by field. Each line names the rubric section that
+ * governs a field instead of restating it, and adds only what the rubric
+ * does not hold: what the field is and the axis a finding answers to.
+ */
+const ANSWER_LINES: readonly string[] = [
+	"Return one entry per run in the shape the output schema fixes. Judge each field by the rubric section named for it, not from a summary of it:",
+	`- \`features\`: one verdict for every expected feature, judged by "${RUBRIC_SECTIONS.features}" and "${RUBRIC_SECTIONS.correctUse}". A \`pass\` carries \`finding\` null. Every other verdict carries a \`finding\`: \`did\` (what the run did), \`taught\` (what the skill told it to do, quoted), \`passage\` (where, as a citation into the staged skill) and \`gap\` (the difference between the two).`,
+	"- A finding's `axis` says which authority it answers to, and the three are never the same kind of failure. `conformance`: the run departed from what the cited passage teaches. `truth`: the run did what the skill teaches and the board still says something the source contradicts; judge it against the source, and let `gap` say what the source does instead. `skill`: the feature expects something the passages it cites, and the rest of the skill, do not teach; that is a finding about the skill or the scenario, not a failure of the run, and `taught` says what the skill says instead or that it says nothing.",
+	`- \`unprompted\` and \`behaviouralCompleteness\`: by "${RUBRIC_SECTIONS.unprompted}" and "${RUBRIC_SECTIONS.inherited}". Each entry's \`feature\` is one row key of that catalogue, exactly as written there.`,
+	`- \`visual\`: by "${RUBRIC_SECTIONS.visual}". The harness downgrades a pass lacking successful image delivery or a per-capture observation.`,
+	`- \`semanticCorrectness\`, \`architecturalTruth\` and \`readability\`: by "${RUBRIC_SECTIONS.scores}"; \`summary\` in a few sentences; \`concerns\` by "${RUBRIC_SECTIONS.concerns}".`,
+];
+
+/**
  * The prompt for one grading call. The first call carries the rubric and the
  * layout; a continuation names only the next runs, since the session keeps
  * what it read.
@@ -230,9 +327,8 @@ function graderPrompt(brief: GraderBrief): string {
 				)
 					.map(([version, commit]) => `${version} = ${commit}`)
 					.join(", ")}.`,
-				`Each run is a directory under ${brief.layout.runs}/<run-id>/ holding bundle.json (the request, its source paths, the expected-feature checklist, the configured vault policy, group-inspection results, the boards before and after as the vault stores them, the harness's deterministic verdicts, the commands the author ran, and a \`captures\` list), the resulting board documents under boards/, rendered diagrams under renders/ as SVG, and under captures/ the PNG bitmaps the harness took of every final saved diagram the request asked for, at native scale, one per entry of \`captures\` with its label, board, variant, view, provenance (board version, variant, view, scale, dimensions, SVG digest) and, for a large diagram, native-scale tiles.`,
-				"Inspect the source the request names before judging a run's truth; reuse what you learned across runs of the same revision.",
-				"Look at every harness-attached capture and native-resolution tile. Use the image viewing tool for further inspection if useful. A capture whose `ok` is false has no picture, and the entry says why; do not describe it. Reading the SVG text, the board JSON, the file's existence or the author's claim to have looked is not looking at a diagram.",
+				`Each run is a directory under ${brief.layout.runs}/<run-id>/ holding bundle.json (the request, its source paths, the expected-feature checklist with the skill passages each feature derives from, the configured vault policy, group-inspection results, the boards before and after as the vault stores them, the harness's deterministic verdicts, the commands the author ran, and a \`captures\` list), the resulting board documents under boards/, rendered diagrams under renders/ as SVG, and under captures/ the PNG bitmaps the harness took of every final saved diagram the request asked for, at native scale, one per entry of \`captures\` with its label, board, variant, view, provenance (board version, variant, view, scale, dimensions, SVG digest) and, for a large diagram, native-scale tiles.`,
+				`The skill under evaluation, read-only, under ${brief.layout.skill}/: SKILL.md and references/. A citation such as \`${CATALOGUE_PASSAGE}\` names a file there and one of its headings; each expected feature's \`skill\` list cites the passages it derives from, and the catalogue the \`unprompted\` rows come from is \`${CATALOGUE_PASSAGE}\`. Read a cited passage before judging a feature against it.`,
 				"",
 				"# Rubric",
 				"",
@@ -244,11 +340,7 @@ function graderPrompt(brief: GraderBrief): string {
 		DELIVERY_LINES[brief.delivery ?? "attached"],
 		...attachmentLines(brief.images ?? []),
 		`Grade these runs now: ${brief.runs.join(", ")}.`,
-		"For every run return one entry with: a verdict for EVERY expected feature (pass, missing, incorrect, or not-applicable), each with the evidence you read (file, board, node or edge id, render) and a one-line reason; integer scores 0-10 for semanticCorrectness, architecturalTruth and readability; a summary; and concerns.",
-		"An expected feature is required by the scenario. Mark it not-applicable only when the request itself made it impossible, and say why in the reason; a plausible diagram with a missing or incorrect feature does not pass that feature.",
-		"Judge persisted traffic from the saved board; a static render or capture cannot show motion, so never claim you observed animation.",
-		"For every run also return `unprompted`: one entry per catalogue row the source justifies on the board whether or not the request named it (rows the request named are expected features and are left out), each {feature, verdict used|missed, evidence, reason} in the rubric's vocabulary, and `behaviouralCompleteness`, an integer 0-10 for how completely the board uses the semantics the source justifies beyond what the request named; a run that wrote nothing returns an empty list and null.",
-		"For every run also return `visual`: `inspectedCaptures` (the labels of the attached captures you visually inspected), a `verdict` of pass, fail or incomplete, and `observations` (an array of {capture, observation}, one entry per capture you inspected) naming what you saw of readability, clipping at the page edge, overlapping cards or labels, whether each relationship's endpoints sit on the parts it names, and whether a sequence's columns and messages read in order. Pass only a run whose every listed capture you visually inspected and found legible; a capture you did not inspect, or one the harness could not take or attach, makes the verdict incomplete, and the harness downgrades a pass lacking successful image delivery or a per-capture observation.",
+		...ANSWER_LINES,
 		`Write nothing but the structured answer; it is captured into ${brief.layout.verdictFile}.`,
 	].join("\n");
 }
@@ -333,21 +425,47 @@ function checklistStanding(
 }
 
 /**
- * Whether a run passed semantic compliance: every expected feature passed.
+ * The findings a verdict states about a scenario's features, by the authority
+ * each answers to. A feature the grader answered twice counts once, by its
+ * last answer, as compliance reads it.
  * @param expected The scenario's checklist.
  * @param verdict The grader's answer.
- * @returns True only when nothing is missing, incorrect, waived or unmentioned.
+ * @returns The features carrying a finding on each axis.
+ */
+function findingsByAxis(
+	expected: readonly { readonly feature: string }[],
+	verdict: RunVerdict,
+): Readonly<Record<FindingAxis, string[]>> {
+	const declared = new Set(expected.map((entry) => entry.feature));
+	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry]));
+	const found = [...answered.values()].filter((entry) => declared.has(entry.feature));
+	return byAxis((axis) =>
+		found.filter((entry) => entry.finding?.axis === axis).map((entry) => entry.feature),
+	);
+}
+
+/**
+ * Whether a run passed semantic compliance: every expected feature passed, or
+ * failed only on the skill's account. A feature the skill never teaches is a
+ * finding about the skill, so the run that did what the skill taught is not
+ * failed for it; it is reported apart instead.
+ * @param expected The scenario's checklist.
+ * @param verdict The grader's answer.
+ * @returns True only when nothing is missing, incorrect, waived or unmentioned on the run's own account.
  */
 function semanticallyCompliant(
 	expected: readonly { readonly feature: string }[],
 	verdict: RunVerdict,
 ): boolean {
 	const gaps = checklistGaps(expected, verdict);
+	const onTheSkill = new Set(findingsByAxis(expected, verdict).skill);
 	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry.verdict]));
 	return (
 		gaps.waived.length === 0 &&
 		gaps.unmentioned.length === 0 &&
-		expected.every((entry) => answered.get(entry.feature) === "pass")
+		expected.every(
+			(entry) => answered.get(entry.feature) === "pass" || onTheSkill.has(entry.feature),
+		)
 	);
 }
 
@@ -357,12 +475,16 @@ export {
 	GraderOutputSchema,
 	NO_DELEGATION,
 	checklistGaps,
+	byAxis,
 	checklistStanding,
+	FINDING_AXES,
+	findingsByAxis,
 	graderPrompt,
 	parseGraderOutput,
 	semanticallyCompliant,
 	visualStandingOf,
 	type ChecklistStanding,
+	type FindingAxis,
 	type GraderBrief,
 	type GraderOutput,
 	type RunVerdict,

@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import {
 	availableGraders,
+	batchProvenance,
 	filedVerdict,
 	gradeBatch,
 	graderLayout,
@@ -21,6 +22,8 @@ import { suppliedCaptures } from "@/runtime/skill-evaluation/audit";
 
 const checkout = path.resolve(import.meta.dir, "../../../..");
 const loaded = loadSuite(path.join(checkout, "evals"));
+/** The skill a batch must have run for grading to stage it; a batch under another is refused. */
+const candidate = batchProvenance(checkout, loaded).candidate;
 const roots: string[] = [];
 afterEach(() => {
 	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
@@ -42,9 +45,10 @@ const RUNS = ["run-0000000001", "run-0000000002"] as const;
  * A batch with two bundled runs, one with a tiled capture, and a fake claude.
  * @param mode What the fake does wrong, if anything.
  * @param version What the fake says its version is.
+ * @param skill The skill digest the batch recorded as its candidate.
  * @returns The batch root and the grading options.
  */
-function batch(mode = "grade", version = loaded.graders.claude.version) {
+function batch(mode = "grade", version = loaded.graders.claude.version, skill = candidate) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-claude-grading-"));
 	roots.push(root);
 	fs.writeFileSync(
@@ -55,7 +59,7 @@ function batch(mode = "grade", version = loaded.graders.claude.version) {
 				inputs: inputDigest(loaded),
 				implementation: "i",
 				baseline: "b",
-				candidate: "c",
+				candidate: skill,
 				bun: Bun.version,
 			},
 			arms: ["candidate"],
@@ -156,6 +160,10 @@ test("a Claude pass files every verdict with read receipts, resumes one session,
 	expect(graderUsage(root, "claude")).toEqual(graded.usage);
 	expect(availableGraders(root)).toEqual(["claude"]);
 	expect(graderLayout(root, "claude").legacy).toBe(false);
+	// The grader can read what a feature cites: the skill the batch ran is staged beside the runs.
+	expect(
+		fs.existsSync(path.join(graderLayout(root, "claude").workspace, "skill", "SKILL.md")),
+	).toBe(true);
 	const events = fs.readFileSync(graded.session.calls[0]?.eventsFile ?? "", "utf8");
 	expect(events).toContain("base64 characters omitted");
 	// A second pass has nothing left to grade and starts no call.
@@ -189,6 +197,13 @@ test("an executable that is not the pinned version is refused before any call", 
 	const { options, log } = batch("grade", "0.0.1");
 	await expect(gradeBatch(options)).rejects.toThrow(/requires claude .*reports 0\.0\.1/u);
 	expect(fs.readFileSync(log, "utf8").trim().split("\n")).toHaveLength(1);
+});
+
+test("a batch that ran another skill is refused before any call, since conformance would be judged against a skill no run used", async () => {
+	const { options, log } = batch("grade", loaded.graders.claude.version, "another-skill");
+	await expect(gradeBatch(options)).rejects.toThrow();
+	const calls = fs.existsSync(log) ? fs.readFileSync(log, "utf8").trim().split("\n") : [];
+	expect(calls.filter((line) => !line.includes("--version"))).toEqual([]);
 });
 
 test("a batch graded before there was a choice keeps its single grader directory as Codex", () => {

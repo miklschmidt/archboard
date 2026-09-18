@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+	CATALOGUE_ROWS,
 	buildReport,
 	sumUsage,
 	type AxisChange,
@@ -182,7 +183,7 @@ test("what the skill added unprompted is scored, its misses counted, and a drop 
 		...verdict,
 		behaviouralCompleteness: score,
 		unprompted: Array.from({ length: missed }, (_, index) => ({
-			feature: `row-${index}`,
+			feature: CATALOGUE_ROWS[index % CATALOGUE_ROWS.length] ?? "traffic",
 			verdict: "missed" as const,
 			evidence: "boards/",
 			reason: "left out",

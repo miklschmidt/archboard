@@ -127,7 +127,13 @@ const verdicts = runs.map((run) => {
 	return {
 		run,
 		features: [
-			{ feature: "board.create", verdict: "pass", evidence: "boards/", reason: "present" },
+			{
+				feature: "board.create",
+				verdict: "pass",
+				evidence: "boards/",
+				reason: "present",
+				finding: null,
+			},
 		],
 		semanticCorrectness: 8,
 		architecturalTruth: 7,
