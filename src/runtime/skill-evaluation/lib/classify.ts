@@ -5,6 +5,7 @@
 
 import path from "node:path";
 import type { CommandRecord } from "@/runtime/skill-evaluation/lib/events";
+import { reachesBatchOutsideWorld } from "@/runtime/skill-evaluation/lib/other-run";
 
 type CommandClass =
 	| "discovery"
@@ -261,141 +262,6 @@ function invokesWrite(script: string): boolean {
 }
 
 /**
- * Whether a script reaches into the batch tree outside its own world: another
- * run, the blinding table that names every run's arm, the batch manifest, or
- * the harness's own records of this run. Every path a shell word names there
- * counts, unless the command itself shows it read nothing: the word is a plain
- * literal, with no quote, escape or expansion that could make the shell pass
- * something else, the path does not exist, and the command's output says so.
- * A script that assigns or expands a variable, or substitutes a command, can
- * build a path no word spells, so none of its paths is exempt. Existence alone
- * is not enough: the disk is read when the report is, and a file deleted since
- * the run was there when the author read it. A relative word is resolved from
- * the last absolute `cd` before it, or from the author's working directory.
- * @param script The unwrapped script.
- * @param output What the command printed.
- * @param roots Where the batch and this run's world live.
- * @param cwd The author's working directory.
- * @returns True when it names part of the batch that is not this run's world.
- */
-function reachesBatchOutsideWorld(
-	script: string,
-	output: string,
-	roots: ExposureRoots,
-	cwd: string,
-): boolean {
-	const words = shellWords(script);
-	const exemptable = !/[$`]/u.test(script) && !words.some((word) => ASSIGNMENT_RE.test(word.value));
-	let directory = cwd;
-	return words.some((word, index) => {
-		const reached = batchPathsIn(word.value, roots.batchRoot).some((named) => {
-			const target = path.resolve(directory, named);
-			if (!inside(roots.batchRoot, target) || inside(roots.world, target)) return false;
-			return !(exemptable && readNothing(word, target, named, { roots, output }));
-		});
-		if (words[index - 1]?.value === "cd" && path.isAbsolute(word.value)) directory = word.value;
-		return reached;
-	});
-}
-
-/** A shell word that assigns a variable. */
-const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/u;
-
-/**
- * Whether naming a path read nothing: its word is plain, the path does not
- * exist, and the command's output reports it missing.
- * @param word The shell word.
- * @param target The path it resolves to.
- * @param named The path as the word spells it.
- * @param seen What the check reads.
- * @param seen.roots Where to ask whether the path exists.
- * @param seen.output What the command printed.
- * @returns True when the command shows it read nothing.
- */
-function readNothing(
-	word: ShellWord,
-	target: string,
-	named: string,
-	seen: { readonly roots: ExposureRoots; readonly output: string },
-): boolean {
-	return word.plain && !seen.roots.exists(target) && reportedMissing(seen.output, named);
-}
-
-/**
- * The paths a shell word names that could lie in the batch: from each place
- * the batch root appears in it, and the whole word when it is relative.
- * @param value The word as the shell passes it.
- * @param batchRoot The batch.
- * @returns The paths, as spelled.
- */
-function batchPathsIn(value: string, batchRoot: string): string[] {
-	const found: string[] = [];
-	for (let at = value.indexOf(batchRoot); at >= 0; at = value.indexOf(batchRoot, at + 1))
-		found.push(value.slice(at));
-	if (value.startsWith("./") || value.startsWith("../")) found.push(value);
-	return found;
-}
-
-/**
- * Whether a command's output says a path it named does not exist, as sed, cat,
- * ls, head and rg put it.
- * @param output What the command printed.
- * @param named The path as the command spelled it.
- * @returns True when the output reports it missing.
- */
-function reportedMissing(output: string, named: string): boolean {
-	return [`${named}: No such file or directory`, `${named}': No such file or directory`].some(
-		(line) => output.includes(line),
-	);
-}
-
-/** Characters the shell expands: a word holding one names whatever it matches. */
-const EXPANSION_RE = /[*?[\]{}$`~]/u;
-
-/** One shell word: what the shell passes, and whether it is spelled exactly so. */
-interface ShellWord {
-	readonly value: string;
-	/** True when the word has no quote, escape or expansion character: what is written is what is passed. */
-	readonly plain: boolean;
-}
-
-/** One shell word as written: quoted runs, escapes and plain characters, up to unquoted space or an operator. */
-const SHELL_WORD_RE = /(?:'[^']*'?|"(?:\\.|[^"\\])*"?|\\.?|[^\s|;&<>()'"\\])+/gsu;
-/** One quoted run or escape inside a word, to be replaced by what it passes. */
-const QUOTING_RE = /'([^']*)'?|"((?:\\.|[^"\\])*)"?|\\(.?)/gsu;
-
-/**
- * Splits a script into shell words, joining quoted and unquoted parts of one
- * word as the shell does: `base"line"` and `..'/'..` are single words.
- * @param script The unwrapped script.
- * @returns The words in order.
- */
-function shellWords(script: string): ShellWord[] {
-	return [...script.matchAll(SHELL_WORD_RE)].map(([raw]) => ({
-		value: raw.replaceAll(QUOTING_RE, unquoted),
-		plain: !/['"\\]/u.test(raw) && !EXPANSION_RE.test(raw),
-	}));
-}
-
-/**
- * What one quoted run or escape passes. Inside double quotes a backslash
- * escapes only a dollar, a backtick, a double quote, a backslash or a newline.
- * @param _match The whole quoted run.
- * @param single The inside of single quotes.
- * @param double The inside of double quotes.
- * @param escaped The escaped character.
- * @returns The text the shell passes.
- */
-function unquoted(
-	_match: string,
-	single: string | undefined,
-	double: string | undefined,
-	escaped: string | undefined,
-): string {
-	return single ?? double?.replaceAll(/\\([$`"\\\n])/gu, "$1") ?? escaped ?? "";
-}
-
-/**
  * Whether a script names either arm's skill package in the checkout, rather
  * than the one installed in the run's own world.
  * @param script The unwrapped script.
@@ -418,17 +284,6 @@ function startsWithPath(text: string, at: number, root: string): boolean {
 	if (!text.startsWith(root, at)) return false;
 	const next = text[at + root.length];
 	return next === undefined || next === "/" || !/[\w.-]/u.test(next);
-}
-
-/**
- * Tests whether a resolved path is the directory or one of its descendants.
- * @param directory The containing directory.
- * @param target The resolved path to test.
- * @returns True when target is inside directory.
- */
-function inside(directory: string, target: string): boolean {
-	const relative = path.relative(directory, target);
-	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
 /**
