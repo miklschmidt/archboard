@@ -35,6 +35,7 @@ import {
 	failStated,
 	SelectorSchema,
 	SemanticBoardResultSchema,
+	targetedVariant,
 	writeResult,
 	statedJson,
 } from "@/cli/commands/lib/semantic-input";
@@ -56,7 +57,10 @@ const semanticResolveContract = defineCommand({
 		"what it says, `theirs` takes the value from the variant it came from. Answering part of it " +
 		"is normal; the rest stays open and says so. A third answer is not a side — write it as an " +
 		"ordinary edit. Settling also catches the proposal up with everything its predecessor decided " +
-		"while it was unsettled, and lets the drafts under it move again, all in the same write.",
+		"while it was unsettled, and lets the drafts under it move again, all in the same write. " +
+		"--variant says which proposal is being settled, by id or name, and the current variant takes " +
+		"it when absent; the answer's own `variant` says the same thing, and where the two differ the " +
+		"command line wins and the write says so.",
 	examples: [
 		'archboard semantic resolve pipeline --expect-version 7 --input answer.json --doing "settling the gateway name"',
 	],
@@ -139,14 +143,12 @@ const semanticResolveContract = defineCommand({
 		if (typeof stated !== "object" || stated === null || Array.isArray(stated)) {
 			failStated(stated);
 		}
-		const resolution = context.parse(ResolutionInputSchema, {
-			...stated,
-			...(input.variant === undefined ? {} : { variant: input.variant }),
-		});
+		const targeted = targetedVariant(stated, input.variant);
+		const resolution = context.parse(ResolutionInputSchema, targeted.stated);
 		const written = await resolveSemanticBoardOnCanvas(input.name, resolution);
 		return {
 			result: writeResult(written),
-			diagnostics: describedWrite(written),
+			diagnostics: [...targeted.diagnostics, ...describedWrite(written)],
 		};
 	},
 });
