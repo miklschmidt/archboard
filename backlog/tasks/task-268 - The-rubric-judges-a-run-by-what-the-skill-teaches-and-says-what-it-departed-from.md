@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:11'
+updated_date: '2026-09-18 13:30'
 labels: []
 dependencies: []
 references:
@@ -155,4 +155,20 @@ LEFT OPEN, for the reviewer.
 1. The three axis definitions are in the prompt (ANSWER_LINES), as the contract of the new field, because rubric.md was read-only to this task throughout. It would be drift-free to give the rubric a section defining the axes and the finding fields and have the prompt point at it; that is a rubric edit and needs its owner's go-ahead.
 2. A skill finding is the grader's judgement that no passage supports a feature; the static check only guarantees that every citation resolves, not that it supports. The citations were chosen by reading SKILL.md and the references against each requirement; the ones I would look at first are S14 readability (the 8-20 node bound is the scenario's, KT only supports fewer truer parts), S08 config.before-board (WR's combined-workflow sentence), and S07 flow.message-kinds (TASK-267's dispute).
 3. Verified in-session: bun x tsc clean; lint (policy config on lib, baseline config on tests) clean on this module; eval:skill check ok; focused tests pass: grader-contract, citations, blinding-and-reports, report-completeness, report-change, claude-grader, claude-grading, grader-agreement, suite. The full gate was not run, per instructions.
+
+ROUND 2, commit 0bb3804a, answering the review.
+
+CORRECTIONS TO THE ROUND-1 NOTES. (1) 'unprompted now grades against the skill's own catalogue' overstated it: round 1 shared only the row KEYS. Round 2 closes the conditions too — rubric.md now says the skill's row conditions govern the unprompted walk wherever its table differs, and the external row follows SKILL.md's. (2) 'Verdicts filed in the old shape still load' was false for real verdicts: 25 of the 2026-09-18 batch's 90 failed on invented unprompted labels. The filed schema now takes any label and the report counts only closed-set rows; all 90 of that batch's filed verdicts now parse (checked by reading its graders/claude/verdict-*.json, nothing under runs/). The batch is still locked out of grading and reporting by its input digest.
+
+M1: rubric.md gains '## Findings' (axes, fields, the skill-axis exemption, and that for conformance the cited passage beats the rubric's summary); :32 names the exemption; RUBRIC_SECTIONS gains it, so check refuses a rubric without it; ANSWER_LINES now only points at it.
+M2: chose ONE RUBRIC SENTENCE over a fourth `request` axis. The skill itself has the author meet the request through rule 4 of Evidence before a write (turn the request into checks), so a request-derived shortfall IS a departure from a passage, and a request axis would sort the same failure under a second name with the same effect on compliance. The Findings section says `skill` is never for what the request states, and a not-applicable carries the axis it would have been judged on and is reported as a waiver whatever that axis. Rule 4 is now cited on S00 board.create, S00 render.svg, S14 board.create, S14 readability, S02 variant.branch and S05 view.data-flow. S07 board.create needs the same citation and was NOT touched (TASK-267's scenario) — routed to the coordinator.
+M3: the external row now reads as SKILL.md's (a part nobody has built yet, drawn unbound with the kind the request names; never a part reached through another board); 'hypothetical' is gone. Sweep finding B2 left alone for TASK-270.
+S1: records.ts resolves each conformance finding's passage against the run's OWN arm's skill (the frozen baseline package, or the batch's kept candidate); a departure from text the run never carried is counted in its own column (conf./unseen/truth/skill) and named separately in a failed run's line, and the legend says conformance is judged against the candidate for both arms.
+S2: the report lists every scenario feature the grader called untaught on some runs and judged otherwise on others (report-findings.ts).
+S4: S08 config.before-board also cites SKILL.md#everything-the-code-shows and #keep-it-true.
+O1: instead of excluding generated/ from the digest and recording a commit, the batch now keeps a COPY of the candidate skill (skill/ at the batch root, authored files only, written once when the batch starts) and grading stages that copy. Nothing is compared against the checkout at grading time, so regenerating artifacts can no longer refuse a legitimate batch, and the only refusal left is for a batch that kept no copy — which cannot be recovered from a digest either way. Stronger than a recorded commit, which a dirty tree defeats.
+OPTIONAL items taken: finding text uses a \\S pattern that the schema carries too; findings exclude waivers, and the report's per-run findings are computed with the scenario's checklist (duplicates and invented names no longer counted).
+NOT TAKEN: checking finding.passage for existence at filing time. The report already resolves passages, against the run's own arm, which is where the answer is used.
+
+VERIFIED: tsc exit 0; lint (policy on lib + index, baseline on tests) exit 0; oxfmt --check clean on evals and the module; eval:skill check ok; all 25 skill-evaluation test files pass when run one at a time. Full gate not run. AC#6's measured half remains pending the user's next batch.
 <!-- SECTION:NOTES:END -->
