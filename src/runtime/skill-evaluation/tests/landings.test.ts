@@ -118,6 +118,50 @@ describe("variants", () => {
 		).toHaveLength(1);
 	});
 
+	test("a carried restatement does not take a draft's own parent away", () => {
+		// The store keeps a field only the draft changed; a restatement from
+		// above without a parent leaves the draft's child where the draft put it.
+		const f = { name: "f", kind: "function" };
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers, f] } },
+				{ op: "branch", board: BOARD, as: "Draft" },
+				edit({ variant: "Draft", nodes: [{ ...f, parent: "JSON helpers" }] }),
+				edit({ nodes: [{ ...f, responsibility: "Formats" }], edges: [call] }),
+			]),
+		).toHaveLength(1);
+	});
+
+	test("a carried removal does not take away a part the draft changed itself", () => {
+		// The store keeps a part the draft changed even when its predecessor
+		// removed it, so the child is still under the target on the draft.
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers, dumps] } },
+				{ op: "branch", board: BOARD, as: "Draft" },
+				edit({ variant: "Draft", nodes: [{ ...dumps, responsibility: "Serializes" }] }),
+				edit({ removeNodes: ["dumps"] }),
+				edit({ edges: [call] }),
+			]),
+		).toHaveLength(1);
+	});
+
+	test("a resolution may restore what the draft removed, so it is assumed to", () => {
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers, dumps] } },
+				{ op: "branch", board: BOARD, as: "Draft" },
+				edit({ variant: "Draft", removeNodes: ["dumps"], edges: [call] }),
+				{
+					op: "resolve",
+					board: BOARD,
+					variant: "Draft",
+					input: { choices: [{ subject: "$node(dumps)", side: "theirs" }] },
+				},
+			]),
+		).toHaveLength(1);
+	});
+
 	test("sibling drafts do not combine: one's relationship and the other's child land nowhere", () => {
 		expect(
 			problems([
