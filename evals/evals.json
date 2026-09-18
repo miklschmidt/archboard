@@ -735,7 +735,7 @@
 				},
 				{
 					"feature": "flow.repeat",
-					"requirement": "the loading step, whichever step draws the search over the candidate files, carries `repeat` of at least 2: a `self` step on ScriptInfo, or a per-candidate call (one call carrying it with a note naming the calls that repeat is enough)",
+					"requirement": "the loading step, whichever step draws the search over the candidate files, carries `repeat` of at least 2: a `self` step on ScriptInfo, or a per-candidate call (one call carrying it, with a note describing the search over the candidates, is enough)",
 					"skill": [
 						"SKILL.md#the-runbook",
 						"SKILL.md#evidence-before-a-write",
