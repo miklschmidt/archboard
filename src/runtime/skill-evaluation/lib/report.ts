@@ -32,6 +32,17 @@ import {
 	wroteDirectly,
 } from "@/runtime/skill-evaluation/lib/report-audit";
 import { changeOf, type QualityChange } from "@/runtime/skill-evaluation/lib/report-change";
+import { CATALOGUE_ROWS } from "@/runtime/skill-evaluation/lib/citations";
+import {
+	concernsOf,
+	skillDisagreementsOf,
+	type ConcernKind,
+	type RaisedConcern,
+	type SkillDisagreement,
+} from "@/runtime/skill-evaluation/lib/report-findings";
+
+/** The closed catalogue, as a set to count missed rows against. */
+const CATALOGUE_KEYS: ReadonlySet<string> = new Set(CATALOGUE_ROWS);
 
 /** One run as the report reads it. */
 interface RunRecord {
@@ -71,6 +82,19 @@ interface RunRecord {
 	readonly waivedFeatures: readonly string[];
 	/** What the grader's answer did with the scenario's checklist; null when the run is not graded. */
 	readonly checklist: ChecklistAnswer | null;
+	/**
+	 * The expected features graded missing or incorrect, by the authority each
+	 * finding answers to (the rubric's "Findings"); a waiver is counted as a
+	 * waiver, and a verdict filed before findings existed counts under none.
+	 */
+	readonly findings: Readonly<Record<FindingAxis, readonly string[]>>;
+	/**
+	 * Of the conformance findings, the features whose cited passage the run's
+	 * own skill never carried: the baseline arm is graded against the
+	 * candidate's text, and a departure from words it was never shown is not
+	 * the same quantity as one from words it had.
+	 */
+	readonly conformanceUnseen: readonly string[];
 }
 
 /** How far a grader's answer kept to the scenario's checklist. */
@@ -81,22 +105,6 @@ interface ChecklistAnswer {
 	readonly unmentioned: readonly string[];
 	/** Names the grader answered that the scenario's checklist does not hold. */
 	readonly invented: readonly string[];
-}
-
-/**
- * What a grader's concern is about, by the prefix the rubric's "Concerns"
- * and "What the run inherited" give it: the fixture the harness laid, a
- * question the skill or a CLI answer left open, or anything else.
- */
-type ConcernKind = "fixture" | "tooling" | "other";
-
-/** One concern a grader raised, with the run it was raised on. */
-interface RaisedConcern {
-	readonly run: string;
-	readonly arm: Arm;
-	readonly scenario: string;
-	readonly repetition: number;
-	readonly text: string;
 }
 
 /** One job expected in the saved batch, before a run has produced a manifest. */
@@ -149,16 +157,21 @@ interface ArmSummary {
 	readonly guidanceRead: number;
 	/** Runs that recorded their guidance reads at all. */
 	readonly guidanceRecorded: number;
-	/** Catalogue rows the source justified that the authors left out, summed over the arm. */
+	/**
+	 * Catalogue rows the source justified that the authors left out, summed
+	 * over the arm; a row outside the closed set, which a verdict filed before
+	 * the set was closed may name, is not counted.
+	 */
 	readonly missedUnprompted: number;
 	/**
-	 * Feature findings summed over the arm, by the authority each answers to.
-	 * A conformance finding is a departure from the skill, a truth finding a
-	 * board that did what the skill teaches and still contradicts the source,
-	 * and a skill finding an expectation the skill never taught — the last
-	 * fails no run. A non-pass filed before findings existed counts under none.
+	 * Feature findings summed over the arm, by the authority each answers to:
+	 * a departure from the skill, a board the source contradicts, and an
+	 * expectation the skill never taught, which fails no run. Conformance
+	 * counts only departures from a passage the run's own skill carried.
 	 */
 	readonly findings: Readonly<Record<FindingAxis, number>>;
+	/** Conformance findings on a passage the run's own skill never carried, summed over the arm. */
+	readonly conformanceUnseen: number;
 }
 
 /** One row of the comparison: a scenario or a workflow. */
@@ -187,6 +200,13 @@ interface Report {
 	readonly skippedGuidance: readonly RunRecord[];
 	/** Runs the grader found an expectation the skill never taught in: findings about the skill, not failures. */
 	readonly skillFindings: readonly RunRecord[];
+	/**
+	 * Features the grader filed as untaught by the skill on some runs of a
+	 * scenario and judged otherwise on others. Whether the skill teaches an
+	 * expectation is a fact about the scenario, so a split is the grader
+	 * disagreeing with itself, and the place a real failure could be excused.
+	 */
+	readonly skillDisagreements: readonly SkillDisagreement[];
 	/** Every concern the grader raised, by what it is about, so none is left only in the verdict files. */
 	readonly concerns: Readonly<Record<ConcernKind, readonly RaisedConcern[]>>;
 	readonly graderUsage: Usage | null;
@@ -246,51 +266,6 @@ function didWhatWasAsked(run: RunRecord): boolean {
  */
 function answeredOffChecklist(run: RunRecord): boolean {
 	return run.checklist?.standing === "off-checklist";
-}
-
-/**
- * The expected features a run's verdict carries a finding for, by axis.
- * @param run The run.
- * @returns The features on each axis; none for an ungraded run.
- */
-function findingsOf(run: RunRecord): Readonly<Record<FindingAxis, string[]>> {
-	const features = run.verdict?.features ?? [];
-	return byAxis((axis) =>
-		features.filter((entry) => entry.finding?.axis === axis).map((entry) => entry.feature),
-	);
-}
-
-/**
- * What a concern is about, by its prefix.
- * @param text The concern.
- * @returns Its kind.
- */
-function concernKind(text: string): ConcernKind {
-	const head = text.trimStart();
-	if (head.startsWith("fixture:")) return "fixture";
-	return head.startsWith("tooling:") ? "tooling" : "other";
-}
-
-/**
- * Every concern the graded runs carry, grouped by kind, in run order.
- * @param runs The runs.
- * @returns The concerns by kind.
- */
-function concernsOf(runs: readonly RunRecord[]): Readonly<Record<ConcernKind, RaisedConcern[]>> {
-	const raised = runs.flatMap((run) =>
-		(run.verdict?.concerns ?? []).map((text) => ({
-			run: run.run,
-			arm: run.arm,
-			scenario: run.scenario,
-			repetition: run.repetition,
-			text,
-		})),
-	);
-	return {
-		fixture: raised.filter((entry) => concernKind(entry.text) === "fixture"),
-		tooling: raised.filter((entry) => concernKind(entry.text) === "tooling"),
-		other: raised.filter((entry) => concernKind(entry.text) === "other"),
-	};
 }
 
 /**
@@ -384,12 +359,22 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 		missedUnprompted: runs.reduce(
 			(count, run) =>
 				count +
-				(run.verdict?.unprompted ?? []).filter((entry) => entry.verdict === "missed").length,
+				(run.verdict?.unprompted ?? []).filter(
+					(entry) => entry.verdict === "missed" && CATALOGUE_KEYS.has(entry.feature),
+				).length,
 			0,
 		),
 		findings: byAxis((axis) =>
-			runs.reduce((count, run) => count + findingsOf(run)[axis].length, 0),
+			runs.reduce(
+				(count, run) =>
+					count +
+					run.findings[axis].filter(
+						(feature) => axis !== "conformance" || !run.conformanceUnseen.includes(feature),
+					).length,
+				0,
+			),
 		),
+		conformanceUnseen: runs.reduce((count, run) => count + run.conformanceUnseen.length, 0),
 	};
 }
 
@@ -542,7 +527,8 @@ function buildReport(
 		ungradable: runs.filter(answeredOffChecklist),
 		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
 		skippedGuidance: runs.filter((run) => (run.guidance?.missing.length ?? 0) > 0),
-		skillFindings: runs.filter((run) => findingsOf(run).skill.length > 0),
+		skillFindings: runs.filter((run) => run.findings.skill.length > 0),
+		skillDisagreements: skillDisagreementsOf(runs),
 		concerns: concernsOf(runs),
 		graderUsage,
 		grader,
@@ -556,7 +542,6 @@ function buildReport(
 export {
 	answeredOffChecklist,
 	buildReport,
-	findingsOf,
 	median,
 	mean,
 	percentChange,
@@ -570,6 +555,7 @@ export {
 	type ConcernKind,
 	type GraderReport,
 	type RaisedConcern,
+	type SkillDisagreement,
 	type Report,
 	type RunRecord,
 	type PlannedRun,

@@ -13,6 +13,7 @@ import {
 	catalogueProblems,
 	catalogueRowsOf,
 	citationProblem,
+	keepBatchSkill,
 	loadSuite,
 	rubricSectionProblems,
 	ScenarioSchema,
@@ -124,4 +125,24 @@ describe("the suite", () => {
 		const drifted = { ...loaded, rubric: loaded.rubric.replace("| `emphasis`", "| `hero`") };
 		expect(suiteProblems(drifted).length).toBeGreaterThan(0);
 	});
+});
+
+test("a batch keeps the skill it ran once, without the derived generated files", () => {
+	const skill = skillWith("# Edit an existing board\n");
+	const batch = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-kept-skill-"));
+	try {
+		fs.mkdirSync(path.join(skill, "references", "generated"));
+		fs.writeFileSync(path.join(skill, "references", "generated", "schema.json"), "{}");
+		keepBatchSkill(skill, batch);
+		const kept = path.join(batch, "skill");
+		expect(citationProblem(kept, "references/edit.md#edit-an-existing-board")).toBeNull();
+		expect(fs.existsSync(path.join(kept, "references", "generated"))).toBe(false);
+		// A resumed batch keeps its first copy, whatever the checkout holds by then.
+		fs.writeFileSync(path.join(skill, "references", "edit.md"), "# Renamed\n");
+		keepBatchSkill(skill, batch);
+		expect(citationProblem(kept, "references/edit.md#edit-an-existing-board")).toBeNull();
+	} finally {
+		fs.rmSync(skill, { recursive: true, force: true });
+		fs.rmSync(batch, { recursive: true, force: true });
+	}
 });

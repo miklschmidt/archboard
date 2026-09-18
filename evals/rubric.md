@@ -30,7 +30,43 @@ Cite evidence for each verdict: a source file and symbol, a board and node or
 edge id, a render file, or a command. A verdict without evidence is not a verdict.
 
 Missing or incorrect declared features fail semantic compliance even when the
-diagram looks plausible.
+diagram looks plausible, except a feature whose finding is on the `skill` axis
+(below), which is a finding about the skill and fails no run.
+
+## Findings
+
+Every verdict short of a `pass` carries a `finding`; a `pass` carries none
+(`null`). A finding states what the run did (`did`), what the skill told it to
+do, quoted (`taught`), where the skill says it (`passage`: a citation such as
+`SKILL.md#essentials`, a file of the skill staged beside the runs and one of its
+headings), and the difference between the two (`gap`). Its `axis` says which
+authority the verdict answers to, and the three are never the same kind of
+failure:
+
+- `conformance`: the run departed from what the skill teaches. Judge it against
+  the passage the feature cites, and quote it. Where that passage and this
+  rubric's summary of the same rule disagree, the passage governs: the rubric
+  restates the skill and is not a second source of it. What the request itself
+  states — a board's exact name and level, a file to write, a count or a band
+  the request sets — the skill has the author meet by turning the request into
+  checks (`SKILL.md#evidence-before-a-write`), so falling short of it is a
+  conformance finding citing that passage.
+- `truth`: the run did what the skill teaches and the board still says
+  something the source contradicts. Judge it against the source, not the
+  skill, and let `gap` say what the source does instead. A board that followed
+  the skill and is still wrong is a truth finding, never a departure from the
+  skill.
+- `skill`: the feature expects something that neither the passages it cites
+  nor anything else in the skill teaches. That is a finding about the skill or
+  the scenario, not a failure of the run, and it does not count against
+  semantic compliance; `taught` says what the skill says instead, or that it
+  says nothing. It is never for what the request states (that is conformance,
+  above), and never for a rule the skill states in a passage the feature did not
+  cite: cite that passage and judge conformance.
+
+A `not-applicable` verdict carries the axis the feature would have been judged
+on, cites its passage, and says in `gap` how the request made the feature
+impossible; it is reported as a waiver whatever its axis.
 
 ## What correct use means
 
@@ -99,8 +135,10 @@ diagram looks plausible.
 
 A request names the question, the level and a few names; knowing the product
 is the author's job. Judge what the run added against the source independently
-of what the request said, row by row in the vocabulary of the table below,
-which the skill's own catalogue uses.
+of what the request said, row by row in the vocabulary of the table below.
+The rows and their conditions are the skill's own catalogue
+(`SKILL.md#everything-the-code-shows`); the table restates them, and wherever
+the two differ the skill's row governs.
 
 What the run added is the walk's subject, scoped as the skill scopes the
 author's own walk: walk the catalogue for what you add (references/edit.md),
@@ -139,7 +177,7 @@ behaviouralCompleteness is `null`; that is the rule, not a missing result.
 
 | Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `external`     | a caller, library, service, shell or hypothetical part lies outside the checkout                                                                                                                                                                                                                                                                                                         |
+| `external`     | a caller, library, framework, runtime, shell or hosted service lies outside what this codebase owns (drawn `external`, unbound), or a part nobody has built yet, drawn unbound the same way and taking the configured kind the request names for it when it names one; never a part of this codebase a reader reaches through another board                                              |
 | `binding`      | a file's body implements a part's responsibility                                                                                                                                                                                                                                                                                                                                         |
 | `containment`  | a part is defined inside another                                                                                                                                                                                                                                                                                                                                                         |
 | `relationship` | one body calls, renders, reads from, emits an event or message to, depends on or publishes to another; a return travelling back is a flow step, not a second relationship                                                                                                                                                                                                                |

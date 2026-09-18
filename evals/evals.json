@@ -20,6 +20,7 @@
 					"feature": "board.create",
 					"requirement": "one board named exactly `Flask request pipeline` with level `service`",
 					"skill": [
+						"SKILL.md#evidence-before-a-write",
 						"references/create-architecture.md#create-an-architecture-diagram-from-code",
 						"SKILL.md#essentials"
 					]
@@ -62,7 +63,7 @@
 				{
 					"feature": "render.svg",
 					"requirement": "pipeline.svg is written from the saved board",
-					"skill": ["SKILL.md#essentials"]
+					"skill": ["SKILL.md#evidence-before-a-write", "SKILL.md#essentials"]
 				}
 			],
 			"outcomes": [
@@ -232,6 +233,7 @@
 					"feature": "variant.branch",
 					"requirement": "a draft named `Context variables` derived from the current variant",
 					"skill": [
+						"SKILL.md#evidence-before-a-write",
 						"references/propose-compare.md#propose-and-compare-a-change",
 						"references/variants.md#branching"
 					]
@@ -576,6 +578,7 @@
 					"feature": "view.data-flow",
 					"requirement": "a board view `Dispatch exchange` with the data-flow grammar scoped to the flow",
 					"skill": [
+						"SKILL.md#evidence-before-a-write",
 						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/sequences-views-walkthroughs.md#views"
 					]
@@ -849,7 +852,12 @@
 				{
 					"feature": "config.before-board",
 					"requirement": "the board says what the request means in the new vocabulary: either the configuration is extended before the write that needs it, or a write refused for the unknown kind is repaired by configuring; a run that bends the meaning to the old vocabulary (a `call` instead of a `signal`, a `module` instead of an `extension`) fails this feature",
-					"skill": ["SKILL.md#essentials", "SKILL.md#which-recipe"]
+					"skill": [
+						"SKILL.md#essentials",
+						"SKILL.md#which-recipe",
+						"SKILL.md#everything-the-code-shows",
+						"SKILL.md#keep-it-true"
+					]
 				},
 				{
 					"feature": "check.clean",
@@ -1334,7 +1342,10 @@
 				{
 					"feature": "board.create",
 					"requirement": "a system-level board named `Flask`",
-					"skill": ["references/create-architecture.md#create-an-architecture-diagram-from-code"]
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/create-architecture.md#create-an-architecture-diagram-from-code"
+					]
 				},
 				{
 					"feature": "node.kind",
@@ -1361,7 +1372,11 @@
 				{
 					"feature": "readability",
 					"requirement": "between eight and twenty nodes, externals included; containment used only where the source has it",
-					"skill": ["SKILL.md#keep-it-true", "SKILL.md#everything-the-code-shows"]
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"SKILL.md#keep-it-true",
+						"SKILL.md#everything-the-code-shows"
+					]
 				}
 			],
 			"outcomes": [

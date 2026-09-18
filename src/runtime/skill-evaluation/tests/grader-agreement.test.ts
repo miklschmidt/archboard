@@ -58,6 +58,8 @@ function record(overrides: Partial<RunRecord> & { scores?: [number, number, numb
 		semanticallyCompliant: true,
 		waivedFeatures: [],
 		checklist: { standing: "answered", unmentioned: [], invented: [] },
+		findings: { conformance: [], truth: [], skill: [] },
+		conformanceUnseen: [],
 		...rest,
 	};
 }

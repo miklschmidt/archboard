@@ -15,6 +15,7 @@ import {
 	batchProvenance,
 	type Provenance,
 } from "@/runtime/skill-evaluation/lib/provenance";
+import { keepBatchSkill } from "@/runtime/skill-evaluation/lib/citations";
 import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
 import { executableVersion } from "@/runtime/skill-evaluation/lib/version";
 
@@ -313,6 +314,7 @@ async function runBatch(
 	);
 	const jobs = planJobs(options, root);
 	writeBatchFiles(root, options, { salt, version, jobs }, provenance);
+	keepBatchSkill(path.join(options.checkout, "skills", "archboard"), root);
 	const facts = {
 		salt,
 		cache,

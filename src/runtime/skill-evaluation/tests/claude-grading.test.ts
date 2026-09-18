@@ -9,12 +9,12 @@ import os from "node:os";
 import path from "node:path";
 import {
 	availableGraders,
-	batchProvenance,
 	filedVerdict,
 	gradeBatch,
 	graderLayout,
 	graderUsage,
 	inputDigest,
+	keepBatchSkill,
 	loadSuite,
 	type GradingOptions,
 } from "@/runtime/skill-evaluation/index";
@@ -22,8 +22,6 @@ import { suppliedCaptures } from "@/runtime/skill-evaluation/audit";
 
 const checkout = path.resolve(import.meta.dir, "../../../..");
 const loaded = loadSuite(path.join(checkout, "evals"));
-/** The skill a batch must have run for grading to stage it; a batch under another is refused. */
-const candidate = batchProvenance(checkout, loaded).candidate;
 const roots: string[] = [];
 afterEach(() => {
 	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
@@ -45,10 +43,10 @@ const RUNS = ["run-0000000001", "run-0000000002"] as const;
  * A batch with two bundled runs, one with a tiled capture, and a fake claude.
  * @param mode What the fake does wrong, if anything.
  * @param version What the fake says its version is.
- * @param skill The skill digest the batch recorded as its candidate.
+ * @param kept Whether the batch kept a copy of the skill it ran.
  * @returns The batch root and the grading options.
  */
-function batch(mode = "grade", version = loaded.graders.claude.version, skill = candidate) {
+function batch(mode = "grade", version = loaded.graders.claude.version, kept = true) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-claude-grading-"));
 	roots.push(root);
 	fs.writeFileSync(
@@ -59,7 +57,7 @@ function batch(mode = "grade", version = loaded.graders.claude.version, skill = 
 				inputs: inputDigest(loaded),
 				implementation: "i",
 				baseline: "b",
-				candidate: skill,
+				candidate: "c",
 				bun: Bun.version,
 			},
 			arms: ["candidate"],
@@ -69,6 +67,7 @@ function batch(mode = "grade", version = loaded.graders.claude.version, skill = 
 			pins: loaded.pins,
 		}),
 	);
+	if (kept) keepBatchSkill(path.join(checkout, "skills", "archboard"), root);
 	RUNS.forEach((run, index) => {
 		const directory = path.join(root, "runs", "candidate", "S02", String(index + 1));
 		fs.mkdirSync(path.join(directory, "captures"), { recursive: true });
@@ -199,8 +198,8 @@ test("an executable that is not the pinned version is refused before any call", 
 	expect(fs.readFileSync(log, "utf8").trim().split("\n")).toHaveLength(1);
 });
 
-test("a batch that ran another skill is refused before any call, since conformance would be judged against a skill no run used", async () => {
-	const { options, log } = batch("grade", loaded.graders.claude.version, "another-skill");
+test("a batch that kept no copy of its skill is refused before any call, since its conformance could not be judged", async () => {
+	const { options, log } = batch("grade", loaded.graders.claude.version, false);
 	await expect(gradeBatch(options)).rejects.toThrow();
 	const calls = fs.existsSync(log) ? fs.readFileSync(log, "utf8").trim().split("\n") : [];
 	expect(calls.filter((line) => !line.includes("--version"))).toEqual([]);

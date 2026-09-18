@@ -38,7 +38,7 @@ import {
 	imagesForRun,
 	type RunImages,
 } from "@/runtime/skill-evaluation/lib/grading-images";
-import { digestOf } from "@/runtime/skill-evaluation/lib/install";
+import { BATCH_SKILL_DIRECTORY } from "@/runtime/skill-evaluation/lib/citations";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import {
 	GRADER_NAMES,
@@ -156,29 +156,27 @@ const SKILL_DIRECTORY = "skill";
  * the passage an expected feature cites and judge conformance against the
  * skill rather than against the rubric's summary of it.
  *
- * It is the canonical skill, once, for every run of both arms, and never a
- * run's own copy. A comparison needs one instrument: judging each arm against
- * its own skill measures two things with two rulers. And a per-run copy would
- * let a grader sort runs by the text beside them, which is the unblinding
- * blind.ts keeps a printed SKILL.md out of the bundle to prevent. It must be
- * the skill the batch ran: one edited since would be judged against by no run
- * that used it, so a changed skill is refused.
+ * It is the candidate skill as the batch kept it when it ran, once, for every
+ * run of both arms, and never a run's own copy. A comparison needs one
+ * instrument: judging each arm against its own skill measures two things with
+ * two rulers. And a per-run copy would let a grader sort runs by the text
+ * beside them, which is the unblinding blind.ts keeps a printed SKILL.md out
+ * of the bundle to prevent. The cost falls on the baseline arm, which may be
+ * found to depart from a passage it never carried; the report counts those
+ * findings apart. A batch that kept no copy predates this and is refused: its
+ * skill can no longer be known.
  * @param options The pass.
  * @param workspace The workspace.
  */
 function stageSkill(options: GradingOptions, workspace: string): void {
-	const skill = path.join(options.checkout, "skills", "archboard");
-	const recorded = z
-		.object({ provenance: z.object({ candidate: z.string() }) })
-		.parse(JSON.parse(fs.readFileSync(path.join(options.batchRoot, "batch.json"), "utf8")))
-		.provenance.candidate;
-	if (digestOf(skill) !== recorded)
+	const kept = path.join(options.batchRoot, BATCH_SKILL_DIRECTORY);
+	if (!fs.existsSync(path.join(kept, "SKILL.md")))
 		throw new Error(
-			"skills/archboard differs from the skill this batch ran. A grader judges conformance against it, so restore the batch's skill before grading.",
+			`${kept} is missing: this batch kept no copy of the skill it ran, so conformance cannot be judged against it. Grade a batch started since the copy was kept.`,
 		);
 	const target = path.join(workspace, SKILL_DIRECTORY);
 	fs.rmSync(target, { recursive: true, force: true });
-	fs.cpSync(skill, target, { recursive: true, dereference: true });
+	fs.cpSync(kept, target, { recursive: true, dereference: true });
 }
 
 /**
