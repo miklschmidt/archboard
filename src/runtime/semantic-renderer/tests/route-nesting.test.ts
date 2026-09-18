@@ -2,7 +2,11 @@
 // two relationships between the same pair of cards stay tellable apart.
 
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema, type SemanticNode } from "@/shared/semantic-board/index";
+import {
+	VariantContentSchema,
+	type SemanticEdge,
+	type SemanticNode,
+} from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { across, along, breadth, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
@@ -165,6 +169,8 @@ interface PairShape {
 	readonly from: string;
 	/** The subject every one of them reaches. */
 	readonly to: string;
+	/** Relationships the board carries besides the group, in the board's own order. */
+	readonly besides?: readonly SemanticEdge[];
 }
 
 /**
@@ -222,6 +228,25 @@ const PAIR_SHAPES: Record<string, PairShape> = {
 		from: "emit",
 		to: "metrics",
 	},
+	// A frame the group leaves that another route also crosses. The other route
+	// bundles down a flank of the frame, and a frame carrying boundary ports
+	// both on a flank and on a face the reading runs along is one the engine
+	// refuses outright, so the group bundles there too (TASK-265).
+	"out of a frame another route crosses": {
+		nodes: [
+			{ id: "server", name: "WSGI server", kind: "external" },
+			{ id: "app", name: "Flask app", kind: "module" },
+			{ id: "emit", name: "Emitting method", kind: "module", parent: "app" },
+			{ id: "dispatch", name: "Dispatching method", kind: "module", parent: "app" },
+			{ id: "metrics", name: "Metrics extension", kind: "module" },
+		],
+		from: "emit",
+		to: "metrics",
+		besides: [
+			{ id: "serve", from: "server", to: "emit", kind: "call", emphasis: "normal" },
+			{ id: "inside", from: "emit", to: "dispatch", kind: "call", emphasis: "normal" },
+		],
+	},
 };
 
 describe("relationships between the same pair of cards", () => {
@@ -234,15 +259,16 @@ describe("relationships between the same pair of cards", () => {
 	for (const [where, shape] of Object.entries(PAIR_SHAPES))
 		for (const count of [2, 3]) {
 			test(`${count} of them ${where} neither cross nor swap ends`, async () => {
+				const group = signals.slice(0, count).map((label, place) => ({
+					id: `signal${place + 1}`,
+					from: shape.from,
+					to: shape.to,
+					kind: "signal",
+					label,
+				}));
 				const base = VariantContentSchema.parse({
 					nodes: shape.nodes,
-					edges: signals.slice(0, count).map((label, place) => ({
-						id: `signal${place + 1}`,
-						from: shape.from,
-						to: shape.to,
-						kind: "signal",
-						label,
-					})),
+					edges: [...group, ...(shape.besides ?? [])],
 				});
 				for (const edges of [base.edges, base.edges.toReversed()]) {
 					for (const theme of ["light", "dark"] as const) {
@@ -253,14 +279,14 @@ describe("relationships between the same pair of cards", () => {
 						// over the earlier one, so the ink of a crossing pair does not
 						// meet even though a reader still has two lines to follow.
 						const paths = corridorPoints(drawn.svg);
-						const routes = base.edges.map(({ id }) => paths.get(id)!);
+						const routes = group.map(({ id }) => paths.get(id)!);
 						for (const [index, route] of routes.entries()) {
-							expect(route, `${base.edges[index]!.id} is drawn`).toBeDefined();
+							expect(route, `${group[index]!.id} is drawn`).toBeDefined();
 							for (const [other, against] of routes.entries()) {
 								if (other === index) continue;
 								expect(
 									crosses(route, against),
-									`${base.edges[index]!.id} crosses ${base.edges[other]!.id}`,
+									`${group[index]!.id} crosses ${group[other]!.id}`,
 								).toBe(false);
 							}
 						}
@@ -273,7 +299,7 @@ describe("relationships between the same pair of cards", () => {
 								if (other === index) continue;
 								expect(
 									Math.sign(departures[index]! - departures[other]!),
-									`${base.edges[index]!.id} against ${base.edges[other]!.id}`,
+									`${group[index]!.id} against ${group[other]!.id}`,
 								).toBe(Math.sign(arrivals[index]! - arrivals[other]!));
 								expect(departures[index]).not.toBe(departures[other]);
 							}

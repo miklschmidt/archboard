@@ -14,15 +14,22 @@ import { rankNodes } from "@/transformers/semantic-renderer/lib/layout/rank";
 import {
 	ALONE,
 	besideFlankOf,
-	hasSister,
 	portIndex,
 	seatsOf,
 	type FlankRule,
 	type Seat,
 } from "@/transformers/semantic-renderer/lib/layout/flank-rules";
 import {
+	ancestryOf,
+	boundariesOf,
+	crossingPortId,
+	crossingsOf,
+	crowdedFrames,
+	type Crossing,
+	type PortSides,
+} from "@/transformers/semantic-renderer/lib/layout/frame-crossings";
+import {
 	SOLVING,
-	crossingFace,
 	headerInsets,
 	nearestFace,
 	type Face,
@@ -66,9 +73,6 @@ const COMPOUND_OPTIONS: LayoutOptions = {
 	"elk.layered.spacing.edgeNodeBetweenLayers": "20",
 	"elk.layered.spacing.edgeEdgeBetweenLayers": "20",
 };
-
-/** The two attachment faces chosen before coordinates exist, in the solving frame. */
-type PortSides = readonly [Face, Face];
 
 /**
  * Faces the engine chooses: a forward skip carries no reading convention the
@@ -325,98 +329,29 @@ function labelsOf(edge: SemanticEdge, measured: MeasuredArchitecture): ElkLabel[
 }
 
 /**
- * Read the inclusion path from a subject to the root of this view.
- * @param id The subject being connected.
- * @param measured The semantic subjects present in this view.
- * @returns The subject followed by its ancestors, nearest first.
- */
-function ancestryOf(id: string, measured: MeasuredArchitecture): string[] {
-	const parent = measured.nodes.get(id)?.node.parent;
-	return parent === undefined || !measured.nodes.has(parent)
-		? [id]
-		: [id, ...ancestryOf(parent, measured)];
-}
-
-/** The frames one route passes out of and into, in the order it meets them. */
-interface Boundaries {
-	/** The frames the route leaves, innermost first. */
-	readonly leaving: readonly string[];
-	/** The frames the route enters, outermost first. */
-	readonly entering: readonly string[];
-}
-
-/**
- * Identify only the frames an edge must leave and enter, in traversal order.
- * @param edge The semantic relationship.
- * @param measured The existing inclusion tree.
- * @returns The frames left, outermost last, and the frames entered, outermost first.
- */
-function boundariesOf(edge: SemanticEdge, measured: MeasuredArchitecture): Boundaries {
-	const from = ancestryOf(edge.from, measured);
-	const to = ancestryOf(edge.to, measured);
-	const common = from.find((id) => to.includes(id));
-	const leaving = from.slice(1, common === undefined ? undefined : from.indexOf(common));
-	const entering = to.slice(1, common === undefined ? undefined : to.indexOf(common));
-	return { leaving, entering: entering.toReversed() };
-}
-
-/** One frame a route crosses, and the face of that frame it crosses by. */
-interface Crossing {
-	/** The frame being crossed. */
-	readonly frame: string;
-	/** The face of it the crossing sits on. */
-	readonly side: Face;
-}
-
-/**
- * The frames a route crosses and the face it crosses each by, in traversal
- * order: the face the route leaves its source by for every frame it leaves,
- * and the face it reaches its target by for every frame it enters.
- *
- * A relationship with a sister crosses straight on rather than bundling down
- * the frame's flank, since the engine seats the crossings of a flank in an
- * order a reader cannot follow (`crossingFace`). The engine accepts a
- * crossing on any face whatever faces the ends use.
- * @param boundaries Frames left and entered, in traversal order.
- * @param sides The faces this relationship leaves and arrives by.
- * @param header Where a frame's title band sits in the solving frame.
- * @param seat Which of the relationships sharing this pair of endpoints it is.
- * @returns The crossings, in the order the route makes them.
- */
-function crossingsOf(
-	boundaries: Boundaries,
-	sides: PortSides,
-	header: HeaderSide,
-	seat: Seat,
-): Crossing[] {
-	const straight = hasSister(seat);
-	const exitFace = crossingFace(sides[0], header, straight);
-	const entryFace = crossingFace(sides[1], header, straight);
-	return [
-		...boundaries.leaving.map((frame) => ({ frame, side: exitFace })),
-		...boundaries.entering.map((frame) => ({ frame, side: entryFace })),
-	];
-}
-
-/**
  * One explicit boundary port is shared by the two adjacent edge sections.
  * Only its face is the renderer's: the engine ignores the index a boundary
  * port carries, and seats the crossings of one face itself, in the order it
- * walks the source's face (measured on 2026-09-17, TASK-258).
+ * walks the source's face (measured on 2026-09-17, TASK-258). On a crowded
+ * frame the crossings straight through one face share the port as well, and
+ * the frame is crossed there once (`crowdedFrames`).
  * @param edge The semantic relationship that owns the crossing.
  * @param crossings The frames it crosses and the face of each, in traversal order.
  * @param nodes The engine hierarchy being constructed.
+ * @param crowded The frames whose crossings straight through share one corridor per face.
  * @returns Their port ids, in traversal order.
  */
 function boundaryPorts(
 	edge: SemanticEdge,
 	crossings: readonly Crossing[],
 	nodes: ReadonlyMap<string, ElkNode>,
+	crowded: ReadonlySet<string>,
 ): string[] {
-	return crossings.map(({ frame, side }, index) => {
-		const port = portOf(`${edge.id}:boundary:${index}`, side, 0);
-		nodes.get(frame)?.ports?.push(port);
-		return port.id;
+	return crossings.map((crossing, index) => {
+		const id = crossingPortId(edge, index, crossing, crowded);
+		const ports = nodes.get(crossing.frame)?.ports ?? [];
+		if (!ports.some((port) => port.id === id)) ports.push(portOf(id, crossing.side, 0));
+		return id;
 	});
 }
 
@@ -430,26 +365,57 @@ function attachPort(id: string, port: ElkPort, nodes: ReadonlyMap<string, ElkNod
 	nodes.get(id)?.ports?.push(port);
 }
 
+/** How one relationship attaches: the faces of its two ends, and the frames between them. */
+interface Attachment {
+	/** The faces it leaves and arrives by, or FREE for the engine to choose. */
+	readonly faces: Faces;
+	/** The frames it crosses and the face of each, in traversal order. */
+	readonly crossings: readonly Crossing[];
+}
+
 /**
- * Attach one connection and its measured label to the graph.
+ * How one relationship attaches, settled before any port exists so that every
+ * frame's crossings can be read together (`crowdedFrames`).
  * @param edge The semantic relationship.
- * @param nodes The already constructed nodes, for endpoint ownership.
- * @param measured All text sizes.
+ * @param measured The inclusion tree of this view.
  * @param ordering The semantic ordering that chooses faces.
  * @param predecessor Prior endpoint faces for unchanged relationships.
  * @param header Where a frame's title band sits in the solving frame.
- * @returns The contiguous engine sections, all owned by one semantic edge.
+ * @returns Its faces and its crossings.
  */
-function edgeOf(
+function attachmentOf(
 	edge: SemanticEdge,
-	nodes: ReadonlyMap<string, ElkNode>,
 	measured: MeasuredArchitecture,
 	ordering: Ordering,
 	predecessor: ArchitectureDrawing | undefined,
 	header: HeaderSide,
+): Attachment {
+	const faces = facesOf(edge, measured, ordering, predecessor);
+	if (faces === FREE) return { faces, crossings: [] };
+	const seat = ordering.seats.get(edge.id) ?? ALONE;
+	return { faces, crossings: crossingsOf(boundariesOf(edge, measured), faces, header, seat) };
+}
+
+/**
+ * Attach one connection and its measured label to the graph.
+ * @param edge The semantic relationship.
+ * @param attachment Its faces and the frames it crosses.
+ * @param nodes The already constructed nodes, for endpoint ownership.
+ * @param measured All text sizes.
+ * @param ordering The semantic ordering that seats the ends.
+ * @param crowded The frames whose crossings straight through share one corridor per face.
+ * @returns The contiguous engine sections, all owned by one semantic edge.
+ */
+function edgeOf(
+	edge: SemanticEdge,
+	attachment: Attachment,
+	nodes: ReadonlyMap<string, ElkNode>,
+	measured: MeasuredArchitecture,
+	ordering: Ordering,
+	crowded: ReadonlySet<string>,
 ): ElkExtendedEdge[] {
 	const { ranks, rule, seats } = ordering;
-	const faces = facesOf(edge, measured, ordering, predecessor);
+	const { faces, crossings } = attachment;
 	if (faces === FREE) {
 		// Node to node: the router chooses the faces, and a crossed frame is the
 		// engine's own hierarchy edge rather than a section per boundary.
@@ -461,12 +427,11 @@ function edgeOf(
 	const fromPort = `${edge.id}:from`;
 	const toPort = `${edge.id}:to`;
 	const seat = seats.get(edge.id) ?? ALONE;
-	const crossings = crossingsOf(boundariesOf(edge, measured), [fromSide, toSide], header, seat);
 	const fromIndex = portIndex(rule, fromSide, ranks.get(edge.to) ?? 0, seat);
 	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0, seat);
 	attachPort(edge.from, portOf(fromPort, fromSide, fromIndex), nodes);
 	attachPort(edge.to, portOf(toPort, toSide, toIndex), nodes);
-	const ports = [fromPort, ...boundaryPorts(edge, crossings, nodes), toPort];
+	const ports = [fromPort, ...boundaryPorts(edge, crossings, nodes, crowded), toPort];
 	return ports.slice(1).map((target, index) => ({
 		id: index === 0 ? edge.id : `${edge.id}:${index}`,
 		sources: [ports[index]!],
@@ -561,11 +526,17 @@ function compoundGraph(
 		added,
 		seats: seatsOf(edges),
 	};
+	const attachments = edges.map((edge) =>
+		attachmentOf(edge, measured, ordering, predecessor, header),
+	);
+	const crowded = crowdedFrames(attachments.map(({ crossings }) => crossings));
 	return {
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },
 		children: containNodes(content.nodes, nodes),
-		edges: edges.flatMap((edge) => edgeOf(edge, nodes, measured, ordering, predecessor, header)),
+		edges: edges.flatMap((edge, index) =>
+			edgeOf(edge, attachments[index]!, nodes, measured, ordering, crowded),
+		),
 	};
 }
 
