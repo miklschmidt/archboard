@@ -37,15 +37,42 @@ import type { GraderName, LoadedSuite } from "@/runtime/skill-evaluation/lib/sui
  * @returns The manifests.
  */
 function readManifests(batchRoot: string): RunManifest[] {
-	const runs = path.join(batchRoot, "runs");
-	if (!fs.existsSync(runs)) return [];
+	return manifestFiles(path.join(batchRoot, "runs")).map((file) =>
+		RunManifestSchema.parse(JSON.parse(fs.readFileSync(file, "utf8"))),
+	);
+}
+
+/**
+ * The manifest files under a batch's runs directory. A run keeps its whole
+ * world, its author's transcript and its codex home beside the manifest, so a
+ * batch's runs tree runs to tens of gigabytes; the layout is
+ * `runs/<arm>/<scenario>/<repetition>/run.json`, so the three levels are read
+ * by name and nothing below them is ever walked.
+ * @param runs The batch's runs directory.
+ * @returns The manifest paths, in directory order.
+ */
+function manifestFiles(runs: string): string[] {
+	return directories(runs)
+		.flatMap((arm) => directories(path.join(runs, arm)).map((scenario) => path.join(arm, scenario)))
+		.flatMap((scenario) =>
+			directories(path.join(runs, scenario)).map((repetition) =>
+				path.join(runs, scenario, repetition, "run.json"),
+			),
+		)
+		.filter((file) => fs.existsSync(file));
+}
+
+/**
+ * The subdirectory names of one directory, without descending into them.
+ * @param directory The directory, which need not exist.
+ * @returns The names, empty when it does not.
+ */
+function directories(directory: string): string[] {
+	if (!fs.existsSync(directory)) return [];
 	return fs
-		.readdirSync(runs, { recursive: true })
-		.map(String)
-		.filter((entry) => entry.endsWith("run.json"))
-		.map((entry) =>
-			RunManifestSchema.parse(JSON.parse(fs.readFileSync(path.join(runs, entry), "utf8"))),
-		);
+		.readdirSync(directory, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name);
 }
 
 /**
@@ -53,19 +80,26 @@ function readManifests(batchRoot: string): RunManifest[] {
  * @param loaded The suite, for the expected features.
  * @param scenario The run's scenario id.
  * @param verdict The filed verdict, or null.
- * @returns Compliance and waived features, unknown without a verdict.
+ * @returns Compliance, waived features and what the answer did with the checklist, unknown without a verdict.
  */
 function gradedOf(
 	loaded: LoadedSuite,
 	scenario: string,
 	verdict: RunVerdict | null,
-): Pick<RunRecord, "semanticallyCompliant" | "waivedFeatures"> {
-	if (verdict === null) return { semanticallyCompliant: null, waivedFeatures: [] };
+): Pick<RunRecord, "semanticallyCompliant" | "waivedFeatures" | "checklist"> {
+	if (verdict === null)
+		return { semanticallyCompliant: null, waivedFeatures: [], checklist: null };
 	const expected =
 		loaded.suite.evals.find((candidate) => candidate.id === scenario)?.expectedFeatures ?? [];
+	const gaps = checklistGaps(expected, verdict);
+	// An answer that skipped declared features to grade names of its own is
+	// about the grader, not the author: it can say neither that the run
+	// complied nor that it did not.
+	const offChecklist = gaps.unmentioned.length > 0 && gaps.invented.length > 0;
 	return {
-		semanticallyCompliant: semanticallyCompliant(expected, verdict),
-		waivedFeatures: checklistGaps(expected, verdict).waived,
+		semanticallyCompliant: offChecklist ? null : semanticallyCompliant(expected, verdict),
+		waivedFeatures: gaps.waived,
+		checklist: { unmentioned: gaps.unmentioned, invented: gaps.invented },
 	};
 }
 

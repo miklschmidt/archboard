@@ -304,7 +304,15 @@ describe("the grader contract", () => {
 		expect(checklistGaps(SCENARIO.expectedFeatures, verdict)).toEqual({
 			waived: ["render.svg"],
 			unmentioned: [],
+			invented: [],
 		});
+		// A name the scenario never declared is the grader's own, not a gap in the board.
+		expect(
+			checklistGaps(SCENARIO.expectedFeatures, {
+				...verdict,
+				features: [{ ...verdict.features[0]!, feature: "render.both" }],
+			}),
+		).toEqual({ waived: [], unmentioned: ["board.create", "render.svg"], invented: ["render.both"] });
 		expect(semanticallyCompliant(SCENARIO.expectedFeatures, verdict)).toBe(false);
 		expect(
 			semanticallyCompliant(SCENARIO.expectedFeatures, {
@@ -360,6 +368,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		},
 		semanticallyCompliant: true,
 		waivedFeatures: [],
+		checklist: { unmentioned: [], invented: [] },
 		...overrides,
 	};
 }
@@ -470,7 +479,17 @@ describe("the comparison report", () => {
 		expect(s01.candidate.runs).toBe(2);
 		expect(s01.candidate.succeeded).toBe(1);
 		expect(s01.candidate.outcomeFailures).toBe(1);
-		expect(s01.qualityRegressed).toBe(true);
+		// A pass/fail count that fell is named and sized; one scenario's three
+		// runs do not carry the row's verdict.
+		expect(s01.change.assessed).toBe(true);
+		expect(s01.change.assessed && s01.change.counts).toContainEqual({
+			measure: "succeeded",
+			before: 2,
+			after: 1,
+			delta: -1,
+			direction: "regressed",
+		});
+		expect(s01.change.assessed && s01.change.standing).toBeNull();
 		expect(report.failures.map((run) => run.run)).toEqual(["run-0000000004", "run-0000000005"]);
 		expect(report.graderUsage).toEqual(grader);
 		expect(report.authorUsage.candidate).toBeNull();

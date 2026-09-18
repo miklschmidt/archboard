@@ -289,13 +289,14 @@ function parseGraderOutput(text: string): GraderOutput {
  * surface rather than accept.
  * @param expected The scenario's checklist.
  * @param verdict The grader's answer for the run.
- * @returns The waived features, and the declared features the grader did not mention.
+ * @returns The waived features, the declared features the grader did not mention, and the names it answered that the checklist does not hold.
  */
 function checklistGaps(
 	expected: readonly { readonly feature: string }[],
 	verdict: RunVerdict,
-): { readonly waived: string[]; readonly unmentioned: string[] } {
+): { readonly waived: string[]; readonly unmentioned: string[]; readonly invented: string[] } {
 	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry.verdict]));
+	const declared = new Set(expected.map((entry) => entry.feature));
 	return {
 		waived: expected
 			.filter((entry) => answered.get(entry.feature) === "not-applicable")
@@ -303,6 +304,9 @@ function checklistGaps(
 		unmentioned: expected
 			.filter((entry) => !answered.has(entry.feature))
 			.map((entry) => entry.feature),
+		invented: [...new Set(verdict.features.map((entry) => entry.feature))].filter(
+			(feature) => !declared.has(feature),
+		),
 	};
 }
 
