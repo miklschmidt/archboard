@@ -1,5 +1,5 @@
 {
-	"$comment": "S02 with the contextvars proposal already drafted, so adoption is the only thing left to do.",
+	"$comment": "S02 with the contextvars proposal already drafted, so adoption is the only thing left to do. The two stacks in the historical variant are werkzeug's, outside the checkout, so they are `external` and carry no binding; every part that is Flask's own is bound to the file implementing it.",
 	"registerRepo": true,
 	"steps": [
 		{
@@ -30,12 +30,12 @@
 					},
 					{
 						"name": "App context stack",
-						"kind": "module",
+						"kind": "external",
 						"responsibility": "werkzeug LocalStack holding pushed app contexts"
 					},
 					{
 						"name": "Request context stack",
-						"kind": "module",
+						"kind": "external",
 						"responsibility": "werkzeug LocalStack holding pushed request contexts"
 					}
 				],
