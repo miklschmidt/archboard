@@ -1,0 +1,136 @@
+---
+id: TASK-268
+title: >-
+  The rubric judges a run by what the skill teaches, and says what it departed
+  from
+status: In Progress
+assignee:
+  - '@claude'
+created_date: '2026-09-18 11:51'
+updated_date: '2026-09-18 12:52'
+labels: []
+dependencies: []
+references:
+  - evals/rubric.md
+  - evals/evals.json
+  - src/runtime/skill-evaluation/lib/grader.ts
+  - src/runtime/skill-evaluation/lib/suite.ts
+  - skills/archboard/SKILL.md
+  - TASK-267
+  - TASK-266
+priority: high
+type: bug
+ordinal: 475000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+The grader answers to three authorities and none of them is the skill under test. It is given the scenario's expectedFeatures checklist (evals/evals.json), the rubric's own "What correct use means" catalogue (evals/rubric.md), and the source itself — src/runtime/skill-evaluation/lib/grader.ts:232 tells it to "Inspect the source the request names before judging a run's truth". On top of that, grader.ts:247 asks for `unprompted` and `behaviouralCompleteness`: a score for catalogue rows "the source justifies on the board whether or not the request named it", which awards and withholds points for work nobody asked for, against the rubric's taste.
+
+Nothing links any of it to the skill. So the rubric and the skill drift apart silently and the batch reports the drift as the author's failure. S07 is the worked example (TASK-267): flow.message-kinds encodes the rubric's idea of a good sequence, and when the skill moved under TASK-253.02 and TASK-256.06 the rubric stayed where it was; 4 of 6 runs were marked missing for a granularity choice the skill had positively taught them. A verdict said "missing" and nothing said what the run did or which passage it departed from, so acting on it meant reconstructing the argument by hand from the preserved worlds.
+
+The decision taken with the user is NOT to make the rubric purely skill-derived. A rubric that knows only the skill can only measure fidelity, and can never discover that the skill teaches something wrong — which is half of what these batches are for. The two axes are to be separated and labelled instead: conformance is judged against the skill and must cite it, truth stays judged against the source because a skill-derived rubric cannot catch a confidently wrong diagram, and the two are never reported as the same kind of failure.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Every expected feature carries the skill passage it derives from, and a scenario whose feature names no skill passage is refused by eval:skill check rather than graded
+- [ ] #2 A verdict that is not a pass states what the run did, what the skill told it to do with the passage quoted or located, and the gap between them
+- [ ] #3 A conformance finding and a truth finding are distinguishable in the report: a board that followed the skill and still says something the source contradicts reads as a truth finding, never as skill non-compliance
+- [ ] #4 An expectation that no skill passage supports is reported as a finding about the skill, not as a failed run
+- [ ] #5 unprompted and behaviouralCompleteness either grade against the skill catalogue they are meant to reflect, or are removed; whichever is chosen, the reason is recorded
+- [ ] #6 Re-grading a saved batch under the new rubric explains at least one previously unexplained failure in terms of a named skill passage
+- [ ] #7 unprompted[].feature is a closed set of the catalogue row keys and anything else is refused, so a report can sum missed rows into a comparable number
+<!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. New module src/runtime/skill-evaluation/lib/skill.ts: the skill as the harness cites it. A citation is `<file>#<anchor>` relative to skills/archboard (SKILL.md#everything-the-code-shows, references/authoring.md#groups); resolution reads the file's markdown headings and slugs them, so a citation survives line edits and breaks loudly when a heading is renamed. Also holds CATALOGUE_ROWS: the closed set of the 14 catalogue row keys with the skill passage each derives from (all from SKILL.md#everything-the-code-shows, some elaborated in references). No dependency on suite.ts or grader.ts, so both can import it without a cycle.
+2. suite.ts: ExpectedFeatureSchema gains a required `skill` citation (AC#1). suiteProblems gains skillPassageProblems: a citation whose file or anchor the skill does not hold is a problem, so `eval:skill check` refuses the scenario rather than grading it. Also rubricCatalogueProblems: parse the row keys out of rubric.md's catalogue table and refuse a rubric whose rows differ from CATALOGUE_ROWS — the same drift, caught at check time (read-only on rubric.md; no edit).
+3. evals/evals.json: annotate all 68 expected features across S00-S14 with the passage each derives from. Any expectation with no honest passage is reported rather than invented (AC#4's source of truth).
+4. grader.ts, the contract: each feature verdict gains a required `finding`, null for a pass and otherwise {axis, did, taught, passage, gap} (AC#2). axis is conformance | truth | skill (AC#3, AC#4). unprompted[].feature becomes z.enum(CATALOGUE_ROWS) so anything outside the 14 rows is refused (AC#5, AC#7). semanticallyCompliant ignores a feature whose finding axis is `skill`: an expectation the skill does not support is a finding about the skill, not a failed run (AC#4).
+5. grader.ts, the prompt: delete every sentence that paraphrases the rubric (the unprompted gloss at :250 that TASK-271 has already contradicted, the not-applicable gloss, the traffic gloss, the visual gloss) and point at the rubric's own headings instead. The prompt keeps only harness facts and field semantics. grader.ts:45's doc comment loses the stale gloss too.
+6. grading-run.ts: stage the canonical skill into the shared grader workspace as skill/, so the grader can read the passage a feature cites — the mechanical root of this task is that it never sees the skill. One skill for both arms, not each run's own: the instrument has to be identical across arms or the comparison measures two different rulers, and a per-run skill copy would also let a grader cluster runs by passage text and guess the arm. Refuse grading when skills/archboard's digest differs from the batch's recorded provenance.candidate, so conformance is never judged against a skill no run used.
+7. report.ts / report-markdown.ts: count findings by axis per arm, distinguish a conformance failure from a truth failure in the runs-that-did-not-succeed lines (AC#3), and add a section listing findings about the skill (AC#4).
+8. Focused tests only, by explicit file path: citation resolution and its refusals, the closed catalogue set, semanticallyCompliant's skill-axis exemption, the per-axis arithmetic in summarize, and that a saved verdict carrying a departure re-renders. No prose or prompt-wording assertions.
+9. AC#6's measured half needs a grading pass, which is the user's to run: state it as pending rather than claim it.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+A second concrete instance, found while TASK-263 restored the skill catalogue's "or hypothetical part" clause on 2026-09-18 — and this one is a disagreement between the rubric and a scenario, not between the rubric and the skill.
+
+evals/rubric.md:101 defines the external kind as "a caller, library, service, shell or hypothetical part lies outside the checkout", so a hypothetical part is external. S08 asks for "a hypothetical Metrics extension" and then grades it the other way: its node-kind outcome check requires kind `extension`, and its config.before-board feature says in terms that "a module instead of an extension fails this feature". An author who applied the rubric's own sentence to S08's hypothetical part would fail the scenario.
+
+The rubric row conflates two different things — a part outside the checkout, and a part that does not exist — and S08 is about the second while the row's other examples are all the first. Whatever provenance mechanism this task lands has to catch a rubric sentence that contradicts a scenario, not only one that is unanchored in the skill. Worth checking whether the same conflation sits elsewhere in the rubric's "What correct use means" catalogue.
+
+Related: TASK-270 now records the user's decision that existence is a fact about a variant and never about a node, which is the vocabulary this row should eventually be written against.
+
+Full sweep of evals/rubric.md against every scenario and the skill, 2026-09-18, read at 88112a64. All 221 rubric lines, all 15 scenarios, SKILL.md and all 9 references, evidenced against all 90 per-run verdicts of the 2026-09-18 batch.
+
+THE MECHANICAL ROOT. graders/claude/prompt-1.md shows the grader is given the scenario checklist, the rubric verbatim, the run bundle and the pinned Flask checkout, and NEVER the skill. rubric.md:97 claims its catalogue is "the vocabulary the skill's own catalogue uses", but no grader can check that claim. Every divergence between the rubric's paraphrase and SKILL.md is therefore invisible at grading time and lands as the author's failure. That is this task's thesis, confirmed mechanically rather than argued.
+
+CONFIRMED CONTRADICTIONS, by measured cost.
+
+A1. The unprompted catalogue is applied to boards the request fenced off. rubric.md:94-97 says to judge every run that "created or changed" a board against the source "independently of what the request said", row by row. SKILL.md:241-243 says to walk the catalogue before every write that "creates or extends" a board, and references/edit.md:9-13 says a board you were asked to extend is not yours to silently repair. An edit that removes a node changed the board but neither created nor extended it, so the rubric grades the whole inherited fixture on 14 rows the skill told the author to leave alone. The scenarios agree with the skill: S03 ends "Nothing else changes", S10 names exactly three edges, S13 is a removal plus a walkthrough repair. Measured: the edit arm scores completeness 4.4/4.8 with 19/19 missed rows, the lowest of any workflow, on the workflow whose requests are narrowest. S13 scores 5,5,5,3,3,3 with 12 missed rows on a two-edge fixture; S10 6,6,6,3,3,3 with missed flow and missed view on a request that asked only for traffic on three named edges; S03 carries missed traffic and missed emphasis under "Nothing else changes". Resolution: scope the unprompted walk to what the write created or extended, or say in the rubric that a row already absent from the inherited board is not the author's miss, which is the protection rubric.md:132-140 already grants to inherited inaccuracies but not to inherited omissions.
+
+A2. The emphasis row omits the skill's cap, its subject and its exemption. rubric.md:106 reads in full: "emphasis | a few lines are what the board exists to show, or lines are only context". SKILL.md:253 says hero goes on the spine, a third of the relationships and never past half; authoring.md:199-201 says emphasis is a property of a line, not of a part, and a node carries none of the four; authoring.md:166-171 says a board with no spine marks nothing, which is correct for it. emphasis appears nowhere in evals.json, so it is never a declared feature and is graded only through this one line, and it is the most-penalised row in the batch at 28 missed across 90 runs. Of those, 6 asked for emphasis on a NODE (S02, S03, S04), which the CLI refuses; 3 asked for a hero on S13's board, which has exactly one relationship left, so any hero is 100 per cent; 5 asked for hero on two of S01's three edges, which is 67 per cent and past the cap. Fourteen of the twenty-eight penalties are unsatisfiable or satisfiable only by breaking the skill. Resolution: carry SKILL.md:253 and authoring.md:166-171 into the row.
+
+A3. "repeat and note where the exchange has them" (rubric.md:76) contradicts the rubric's own repeat row (rubric.md:107, "a step loops over a list the source fixes") and the skill (SKILL.md:221-223, a loop over a list of unknown length is a note, not a repeat). The loose sentence is what graders used: 8 repeat misses, S00 x4 and S05 x3, all justified as "Two steps loop over lists the source fixes". They do not. At the pinned revision, app.py:1229-1239 iterates before_request_funcs over request.blueprints and app.py:1264-1267 iterates after_request_funcs the same way; both lengths are decided by what an application registered, not by the source, so by the skill both are notes. run-578b7391da was written up for saying repeats did not apply, which is exactly what SKILL.md:221 and SKILL.md:244 instruct. The S07 loop the graders cite, cli.py:311-317 over the literal pair, IS fixed and is correctly repeat 2 - so the rubric is failing to distinguish the two cases it has two sentences for. Resolution: delete "where the exchange has them" or restate it as "repeat exactly where the source fixes the count; note for a data-dependent loop, a branch or a caveat".
+
+A4. external carries "hypothetical" and S08 grades the other way. Already recorded above. Additionally the rubric row drops the closing "Never for a part of this codebase a reader reaches through another board", which CONTEXT.md:113-117 carries and archboard check enforces as DRILL_DOWN_LEVEL_MISMATCH. CONTEXT.md defines External purely as ownership, with no existence claim at all.
+
+A5. rubric.md:104 lets a relationship mean one body "returns to" another; authoring.md:218-219 says a return travelling back is a flow step, not a second architecture relationship. Textual contradiction on a row that decides unprompted verdicts and semanticCorrectness. No verdict in this batch turned on it.
+
+A6. unprompted labels are unconstrained, so the report's missed column is not comparable. rubric.md:116-118 says one entry per ROW, but the grader prompt names the field "feature" and says only "in the rubric's vocabulary". Graders invented about 18 labels outside the 14 rows (node description, relationship kind, step note, containment (parent), self step, variant summary, walkthrough beat body, claim/release, compare read-back, code investigation, self-correction and more). The description row was split in two: S13 runs carry both "description" missed and "node description" missed, one catalogue row counted twice per run. report.md's per-arm missed column sums catalogue rows and free text together, so edit 19 vs 19 and architecture-create 8 vs 11 are not comparable quantities. Resolution: make unprompted[].feature a closed enum of the 14 row keys and refuse anything else.
+
+A7. The tooling: prefix is defined at rubric.md:218-221 for exactly one thing, a command classed product-source. Of the six tooling: concerns in the batch, only run-04f27a34ab is that; two are harness rasterizer failures the author did not cause, and three are ordinary CLI refusals the author repaired, which SKILL.md:117 and authoring.md:252-263 treat as normal use.
+
+SUSPECTED, needing a judgement call.
+
+B1. rubric.md:83-84 says a proposal is a draft derived from a NAMED predecessor; variants.md:5-7 makes --from optional, and omitting it correctly derives from current. S12 run-53cffd48e9 was written up for doing what the skill permits.
+B2. rubric.md:69-70 "a planned part stays unbound" puts existence on a node, the same conflation as A4 on a different field - and the SKILL carries it too (SKILL.md:191, authoring.md:88-89). Belongs with TASK-270's ADR, not a rubric edit alone.
+B3. The rubric gives no vocabulary for "out of scope" and penalises the one the skill teaches. SKILL.md:244 tells the author to say which rows it judged not to apply; rubric.md:23-25 reserves not-applicable for what the request made impossible. Six runs were written up for using the skill's own phrasing.
+B4. rubric.md:22 "a display name where an id belongs" is grounded for group memberships and for relationships and steps, but SKILL.md:145-147 explicitly permits naming a NODE by name or id and every worked example does. The phrase should say which subjects it means.
+B5. rubric.md:130 glosses behaviouralCompleteness null as "a run that wrote nothing (a read-only request)", but graders returned null for all of S06 (adopt), S09 (read) AND S11 (resolve plus an ordinary edit) - 18 runs. S06 and S11 did write. propose-compare's 5.3/5.2 completeness figure rests on 9 of 15 runs per arm without saying so.
+B6. rubric.md:105 says traffic is "not setup or teardown"; SKILL.md:252 and authoring.md:186-189 add error paths, optional hooks most passes skip, startup, registration and one-shot calls. S07 run-d9445fe601 got a traffic miss reasoned "Startup is a one-shot path, so this is a defensible omission but still an unused row" - a miss awarded against the rubric's own line 120, on a scenario whose whole subject is startup.
+
+BLIND SPOTS - the skill teaches it and nothing can see it: claims and release (taught in runbook steps 2 and 19 and Essentials, absent from the rubric, from every scenario guardrail and from coverage.json); shelve (variants.md:133-140, absent from the rubric's lifecycle section and from coverage.json); drill-down's other two rules (authoring.md:109-136 - the kind is the linked board's level, and the link sits on a part that is really there); runbook steps 11 and 18 (model the subject a second way; read your own board back and simplify); and the emphasis and step-vs-relationship refusals authoring.md:196-208 teaches at length.
+
+CHECKED AND CLEAN, so the sweep's coverage is legible: verdict values and the evidence requirement; configured vocabulary; containment and receivers (the batch's 4 edge.actual-receiver and containment.parent failures are fair by the skill); identity including the one-property continuation count, whose property list matches variants.md exactly; traffic semantics; groups (all 12 runs passed); bindings; drill-down current vs named; flows apart from A3; views; walkthroughs; lifecycle apart from B1 and shelve; reading; what the run inherited and the fixture: prefix; what you can and cannot see; the scores including "fewer truer parts over many"; product-owned fields; and the binding, containment, note, groups, view, walkthrough and description catalogue rows, which are word-for-word compatible with SKILL.md:249-261.
+
+SUGGESTED ORDER: A1 and A2 together account for roughly 42 of the batch's ~120 missed rows and for the edit workflow's whole completeness figure, and both are one-paragraph rubric edits. A6 is the cheapest structural fix and is a prerequisite for AC#5 meaning anything. A3 is a one-sentence deletion. A4 and B2 should wait for TASK-270's ADR, being the same vocabulary question. A7 is a two-word clarification.
+
+NOT DETERMINED: how many points any single miss cost a holistic score; the product-source command classification (report.md shows 0 for every arm while run-04f27a34ab's concern names a genuine product read, and resolving it needs the run bundle under runs/**); whether A5 ever fired in an earlier batch; and S14's 25 missed rows, which are absent from report.md's per-scenario table because it is report: broad.
+
+Hard dependency discovered by TASK-271 while correcting the rubric, 2026-09-18. This task must carry it or TASK-271's corrections will not take effect.
+
+src/runtime/skill-evaluation/lib/grader.ts:250 restates the OLD rubric wording inside the grader prompt itself: "one entry per catalogue row the source justifies on the board whether or not the request named it", and "a run that wrote nothing returns an empty list and null". TASK-271 has now corrected both of those in evals/rubric.md - the unprompted walk is scoped to what the run wrote (the whole board on a create, the subjects added or restated on an edit), and the null gloss is "the walk had no subject: created and extended nothing". So the prompt and the rubric it carries verbatim now contradict each other in the same message, and the prompt's sentence is the one the grader reads first. grader.ts:45's doc comment repeats the same gloss.
+
+Both fields are exactly this task's AC#5 (unprompted and behaviouralCompleteness), so the fix belongs here. When implementing, check the whole grader prompt for any other sentence that paraphrases the rubric rather than pointing at it - a paraphrase in the prompt is the same drift this task exists to stop, one level closer to the model.
+
+HANDOVER, 2026-09-18, interrupted by a machine reboot before any code was written. The working tree carries NO changes from this work: nothing was edited, nothing is half-done. What survives is the plan above and the reading below.
+
+WHAT WAS READ, so a fresh worker need not repeat it: evals/rubric.md (247 lines, already carrying TASK-271's corrections at :120-142 and :148-149), evals/evals.json (68 expected features over S00-S14), skills/archboard/SKILL.md and the headings of all 9 references, and in src/runtime/skill-evaluation/lib: grader.ts, suite.ts, records.ts, report.ts, report-markdown.ts, blind.ts, grading-run.ts, grader-layout.ts, provenance.ts, plus scripts/evaluate-skill.ts and evals/graders.json.
+
+DECISIONS TAKEN AND WHY.
+
+(a) The grader is given the CANONICAL skill (skills/archboard), staged once into the shared grading workspace, NOT each run's own installed copy. Two reasons. The instrument must be identical across arms: a baseline run judged against the baseline skill and a candidate run against the candidate skill are measured with two different rulers and their scores cannot be compared, which is the whole purpose of a batch. And blind.ts's header records the standing rule that a printed SKILL.md is the unblinding — a per-run skill copy would let a grader cluster runs by passage text and infer the two arms. The cost, stated plainly: a conformance finding against a baseline run may cite a passage the baseline skill did not carry. That is informative rather than unfair — it is exactly the evidence that the candidate's wording changed behaviour — and the report labels the axis.
+
+(b) A citation is `<file>#<anchor>`, never a line number, because the user's brief warns SKILL.md was reworked today under TASK-263 and another worker owns that tree. The anchors chosen are headings the skill ALREADY relies on internally (SKILL.md links #which-recipe, #essentials, #evidence-before-a-write, #everything-the-code-shows to itself), so nothing needs adding to skills/**. references/authoring.md, variants.md, sequences-views-walkthroughs.md and schemas.md carry sub-headings fine enough to cite; the five recipe files have one heading each, so a citation to one names the whole recipe, which is honest — the grader still quotes the sentence it used.
+
+(c) AC#4 is implemented as an axis on the finding, not a new verdict value: a feature whose finding carries axis `skill` does not count against semanticallyCompliant and is listed in its own report section. This keeps FeatureVerdictSchema's four values intact and keeps old filed verdicts readable.
+
+(d) AC#5 is answered by KEEPING unprompted and behaviouralCompleteness and anchoring them, not by removing them: the fields measure what the request did not name, which is half of what the rubric is for, and the fix the sweep asked for (A6) is the closed set, not deletion. The reason is to be recorded in grader.ts's doc comment and here.
+
+RULED OUT. Making the rubric skill-derived (the user's standing decision). Per-run skill staging, see (a). Adding anchors to skills/** — not needed, and that tree is another worker's. Asserting prompt or rubric prose in tests, per CLAUDE.md's test policy.
+
+FOUND WHILE READING, worth keeping. assertBatchInputs (provenance.ts:108) hashes evals/rubric.md into the batch input digest, so TASK-271's rubric corrections have ALREADY made every earlier batch, the 2026-09-18 one included, refuse both grading and reporting. AC#6's 're-grading a saved batch' is therefore structurally unavailable for any existing batch whatever this task does; only the user's next batch can supply its measured half. Also note provenance.candidate records the canonical skill's digest at run time but nothing checks it at grading time — step 6 of the plan closes that.
+
+SEQUENCING STILL IN FORCE. evals/rubric.md is under review for TASK-271 and must NOT be edited. Nothing in steps 1-9 requires editing it: step 2 only READS its catalogue table. When the review closes, the rubric should gain a section defining the two axes and the departure fields, matching the field semantics the prompt states, so the prompt can point at it instead of defining it.
+
+EXACT NEXT STEP: write src/runtime/skill-evaluation/lib/skill.ts (plan step 1), then suite.ts (step 2), then annotate evals/evals.json (step 3). Steps 1-3 are one coherent commit and are independent of the grader changes.
+<!-- SECTION:NOTES:END -->
