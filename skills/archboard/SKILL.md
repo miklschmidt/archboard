@@ -71,9 +71,10 @@ recipe names.
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
 9. **Read the source again for what a flow shows only on a second pass**: a
-   call a participant makes on itself — a function or method invoking another
-   of its own, as `Setup block` reaches its own `chooseDoc` in the [sequence
-   recipe's example](references/create-sequence.md) — is one step with that
+   call a participant makes on itself (a recursive function, a method calling
+   another of its own, a component updating its own state, a handler
+   re-entering itself; the [sequence recipe's
+   example](references/create-sequence.md) shows one) is one step with that
    participant at both ends, and a count the source fixes (a literal list of
    candidates tried in turn, a retry limit, a batch of known size) is the
    repeating step's `repeat`, on a `self` step or a call to another column
