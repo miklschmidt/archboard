@@ -5,7 +5,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { resumeSelection } from "@/runtime/skill-evaluation/lib/batch";
-import { RunManifestSchema, type RunManifest } from "@/runtime/skill-evaluation/lib/run-manifest";
+import {
+	RunManifestSchema,
+	runDirectories,
+	type RunManifest,
+} from "@/runtime/skill-evaluation/lib/run-manifest";
 import {
 	checklistGaps,
 	semanticallyCompliant,
@@ -37,42 +41,10 @@ import type { GraderName, LoadedSuite } from "@/runtime/skill-evaluation/lib/sui
  * @returns The manifests.
  */
 function readManifests(batchRoot: string): RunManifest[] {
-	return manifestFiles(path.join(batchRoot, "runs")).map((file) =>
-		RunManifestSchema.parse(JSON.parse(fs.readFileSync(file, "utf8"))),
-	);
-}
-
-/**
- * The manifest files under a batch's runs directory. A run keeps its whole
- * world, its author's transcript and its codex home beside the manifest, so a
- * batch's runs tree runs to tens of gigabytes; the layout is
- * `runs/<arm>/<scenario>/<repetition>/run.json`, so the three levels are read
- * by name and nothing below them is ever walked.
- * @param runs The batch's runs directory.
- * @returns The manifest paths, in directory order.
- */
-function manifestFiles(runs: string): string[] {
-	return directories(runs)
-		.flatMap((arm) => directories(path.join(runs, arm)).map((scenario) => path.join(arm, scenario)))
-		.flatMap((scenario) =>
-			directories(path.join(runs, scenario)).map((repetition) =>
-				path.join(runs, scenario, repetition, "run.json"),
-			),
-		)
-		.filter((file) => fs.existsSync(file));
-}
-
-/**
- * The subdirectory names of one directory, without descending into them.
- * @param directory The directory, which need not exist.
- * @returns The names, empty when it does not.
- */
-function directories(directory: string): string[] {
-	if (!fs.existsSync(directory)) return [];
-	return fs
-		.readdirSync(directory, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name);
+	return runDirectories(batchRoot)
+		.map((directory) => path.join(directory, "run.json"))
+		.filter((file) => fs.existsSync(file))
+		.map((file) => RunManifestSchema.parse(JSON.parse(fs.readFileSync(file, "utf8"))));
 }
 
 /**
