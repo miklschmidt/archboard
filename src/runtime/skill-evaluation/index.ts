@@ -4,6 +4,7 @@
 // of the fast gate; `bun run eval:skill` is the entry.
 
 export { executeRun, statusOf, type RunJob } from "@/runtime/skill-evaluation/lib/author";
+export { digestOf, installSkill, type InstallRecord } from "@/runtime/skill-evaluation/lib/install";
 export { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 export { startCanvas } from "@/runtime/skill-evaluation/lib/canvas";
 export { landingProblems } from "@/runtime/skill-evaluation/lib/landings";

@@ -95,6 +95,11 @@ interface RunRecord {
 	 * the same quantity as one from words it had.
 	 */
 	readonly conformanceUnseen: readonly string[];
+	/**
+	 * The features whose finding cites a passage the candidate skill does not
+	 * hold at all: the grader's error, counted apart from every axis.
+	 */
+	readonly uncited: readonly string[];
 }
 
 /** How far a grader's answer kept to the scenario's checklist. */
@@ -166,12 +171,15 @@ interface ArmSummary {
 	/**
 	 * Feature findings summed over the arm, by the authority each answers to:
 	 * a departure from the skill, a board the source contradicts, and an
-	 * expectation the skill never taught, which fails no run. Conformance
-	 * counts only departures from a passage the run's own skill carried.
+	 * expectation the skill never taught, which fails no run. A finding citing
+	 * no passage of the skill counts under none of them, and conformance counts
+	 * only departures from a passage the run's own skill carried.
 	 */
 	readonly findings: Readonly<Record<FindingAxis, number>>;
 	/** Conformance findings on a passage the run's own skill never carried, summed over the arm. */
 	readonly conformanceUnseen: number;
+	/** Findings citing no passage of the skill, on any axis, summed over the arm. */
+	readonly uncited: number;
 }
 
 /** One row of the comparison: a scenario or a workflow. */
@@ -202,7 +210,7 @@ interface Report {
 	readonly skillFindings: readonly RunRecord[];
 	/**
 	 * Features the grader filed as untaught by the skill on some runs of a
-	 * scenario and judged otherwise on others. Whether the skill teaches an
+	 * scenario and held against the run on others. Whether the skill teaches an
 	 * expectation is a fact about the scenario, so a split is the grader
 	 * disagreeing with itself, and the place a real failure could be excused.
 	 */
@@ -369,12 +377,15 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 				(count, run) =>
 					count +
 					run.findings[axis].filter(
-						(feature) => axis !== "conformance" || !run.conformanceUnseen.includes(feature),
+						(feature) =>
+							!run.uncited.includes(feature) &&
+							(axis !== "conformance" || !run.conformanceUnseen.includes(feature)),
 					).length,
 				0,
 			),
 		),
 		conformanceUnseen: runs.reduce((count, run) => count + run.conformanceUnseen.length, 0),
+		uncited: runs.reduce((count, run) => count + run.uncited.length, 0),
 	};
 }
 

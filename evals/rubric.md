@@ -158,12 +158,11 @@ silently repeat. What the run added is:
   adds nothing.
 
 Every row is in the walk, each asked of what the run added and decided by its
-own condition. On a board the run changed, `flow`, `view` and `walkthrough` ask
-whether what the run added is an exchange, a subset or a why the request's
-question is about; a flow is owed only when the request asks for the exchange
-itself (SKILL.md's Which recipe table), not because what was added runs in some
-order. A flow, view or walkthrough the run added is walked like any other
-subject, its steps for `repeat` and `note`.
+own condition. On a board the run changed, `view` and `walkthrough` ask whether
+what the run added is a subset or a why the request's question is about; `flow`
+is decided by its row alone, on a board the run created or changed alike. A
+flow, view or walkthrough the run added is walked like any other subject, its
+steps for `repeat` and `note`.
 
 A row the request's own words rule out is not a miss: a request that says
 nothing else changes fences every row it did not name off the subjects it did,
@@ -186,7 +185,7 @@ behaviouralCompleteness is `null`; that is the rule, not a missing result.
 | `repeat`       | a step loops over a list the source fixes, or up to a retry limit                                                                                                                                                                                                                                                                                                                        |
 | `note`         | a step branches on a condition, loops over a list of unknown length (data, or what an application registered), reads an environment variable, or carries a caveat                                                                                                                                                                                                                        |
 | `groups`       | a part's concern is a configured group id                                                                                                                                                                                                                                                                                                                                                |
-| `flow`         | the question is about an ordered exchange                                                                                                                                                                                                                                                                                                                                                |
+| `flow`         | the request asks for the exchange itself (what happens, in what order, for one request, job, interaction or startup), on a new board or an existing one; a board about the parts and their wiring is not owed one because what it draws runs in some order                                                                                                                               |
 | `view`         | a reader wants one path, one container's internals or the two sides of a change alone                                                                                                                                                                                                                                                                                                    |
 | `walkthrough`  | the code enforces an ordering or invariant the reader needs explained                                                                                                                                                                                                                                                                                                                    |
 | `drillDown`    | a part's internals already have a board in the vault                                                                                                                                                                                                                                                                                                                                     |
@@ -233,12 +232,12 @@ request asked for (every board, view and variant it named, both sides of a
 comparison, the data-flow view of a sequence, and where the scenario asks,
 every view the author made on a board), taken by the harness from the
 final saved board at native scale, each with its provenance (board version,
-variant, view, dimensions, the digest of the SVG it was drawn from). The
-harness attaches every available capture and all required native-scale
-tiles directly to each grading prompt, including resumed calls; the prompt
-names them in attachment order. Visually inspect every attached image and
-tile. An image viewing tool is available for further inspection if useful.
-Reading the SVG text or the board
+variant, view, dimensions, the digest of the SVG it was drawn from). Every
+grading prompt, a resumed call's included, lists every available capture and
+every required native-scale tile in order, and says how they reach you: either
+attached to the prompt itself, or in the workspace at the listed paths for you
+to open with your file-reading tool. Either way, visually inspect every listed
+image and tile. Reading the SVG text or the board
 JSON, seeing that a file exists, or the author's claim to have looked is not
 looking at a diagram; only a picture you visually inspected counts, and you
 say which in
@@ -262,7 +261,8 @@ only for a run whose every listed capture and required tile you visually
 inspected and found legible;
 `fail` when you saw a defect; `incomplete` when a capture was not taken or
 you did not inspect one or a required tile was unavailable. The harness
-records which images it supplied on a successful call, binds that
+records which images reached you on a successful call (the ones it attached,
+or the ones it saw you open), binds that
 receipt to the exact image and verdict bytes, and requires an observation for
 every capture. Without complete required evidence, either a claimed pass or
 fail is incomplete for comparison; the raw verdict remains available. A still
@@ -280,7 +280,7 @@ traffic marks at their first frame and proves nothing about animation.
   it: sensible names, clear short responsibilities whose complete text is
   legible, no unexplained parts, views that isolate what they claim to, nothing
   clipped or overlapping? Score it
-  from the attached captures you visually inspected; a run with no capture you
+  from the listed captures you visually inspected; a run with no capture you
   could inspect scores
   what the saved names and views support and no more, and its summary says
   no picture was seen.

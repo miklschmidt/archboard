@@ -61,6 +61,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		checklist: { standing: "answered", unmentioned: [], invented: [] },
 		findings: { conformance: [], truth: [], skill: [] },
 		conformanceUnseen: [],
+		uncited: [],
 		...overrides,
 	};
 }
