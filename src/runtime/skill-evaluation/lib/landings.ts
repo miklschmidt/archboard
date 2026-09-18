@@ -67,10 +67,7 @@ interface Landing {
  * fixture writes rather than the ids the product would mint.
  */
 interface VariantState {
-	/**
-	 * The key each name a node has gone by folds onto: the name it was created
-	 * under, unless that name was taken by a newer part.
-	 */
+	/** The part each name means, by key: the name it was created under, or a newer part's. */
 	readonly keys: Map<string, string>;
 	/** The name each part goes by now, by its key. */
 	readonly names: Map<string, string>;
@@ -106,21 +103,15 @@ interface Statement {
 const nameOf = (state: VariantState, key: string): string => state.names.get(key) ?? key;
 
 /**
- * Whether a value is an object with fields, as fixture JSON holds one.
- * @param value The value.
- * @returns True when fields can be read off it.
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
-}
-
-/**
  * The entries of a fixture list, ignoring anything that is not an object.
  * @param value The list, as the loose input holds it.
  * @returns The entries.
  */
 function records(value: unknown): Record<string, unknown>[] {
-	return Array.isArray(value) ? value.filter(isRecord) : [];
+	if (!Array.isArray(value)) return [];
+	return value.filter(
+		(item): item is Record<string, unknown> => typeof item === "object" && !!item,
+	);
 }
 
 /**
@@ -155,15 +146,17 @@ function keyOf(state: VariantState, handles: Map<string, string>, reference: str
  * @param state The variant so far.
  * @param handles The handles this step gives.
  * @param node The stated node.
+ * @param carried Whether it was carried down from above.
  * @returns The key, or undefined when the entry names no node.
  */
 function fold(
 	state: VariantState,
 	handles: Map<string, string>,
 	node: Record<string, unknown>,
+	carried: boolean,
 ): string | undefined {
 	const name = referenced(node[NODE.name]);
-	const key = identify(state, handles, referenced(node[NODE.id]), name);
+	const key = identify(state, handles, referenced(node[NODE.id]), name, carried);
 	if (key === undefined) return undefined;
 	if (name !== undefined) {
 		state.keys.set(name, key);
@@ -178,11 +171,13 @@ function fold(
  * Which part a stated node is. One stated by id is the part the id names. One
  * stated by name alone is the part going by that name now, as the store matches
  * it; a name a renamed part used to go by names no part, so the store mints a
- * new one, and so does this.
+ * new one, and so does this. A carried statement never mints: the name was
+ * matched on the variant above, where a draft's rename does not reach.
  * @param state The variant so far.
  * @param handles The handles this step gives.
  * @param id What the node names as its id, if anything.
  * @param name Its name, if it has one.
+ * @param carried Whether it was carried down from above.
  * @returns The key, or undefined when the node names nothing.
  */
 function identify(
@@ -190,11 +185,13 @@ function identify(
 	handles: Map<string, string>,
 	id: string | undefined,
 	name: string | undefined,
+	carried: boolean,
 ): string | undefined {
 	if (id !== undefined) return keyOf(state, handles, id);
 	if (name === undefined) return undefined;
 	const known = keyOf(state, handles, name);
-	return (state.names.get(known) ?? name) === name ? known : fresh(state, name);
+	const current = carried || (state.names.get(known) ?? name) === name;
+	return current ? known : fresh(state, name);
 }
 
 /**
@@ -266,7 +263,7 @@ function carryNode(state: VariantState, key: string, parent: string | undefined)
  */
 function noteNodes(state: VariantState, handles: Map<string, string>, statement: Statement): void {
 	const folded = records(statement.input[EDIT.nodes]).flatMap((node) => {
-		const key = fold(state, handles, node);
+		const key = fold(state, handles, node, statement.carried);
 		return key === undefined ? [] : [{ key, parent: referenced(node[NODE.parent]) }];
 	});
 	for (const { key, parent } of folded) {
@@ -415,24 +412,28 @@ function followers(family: Family, name: string): VariantState[] {
 }
 
 /**
- * One step applied to the family it writes. An edit reaches the variant it
- * names and is carried down every draft that follows it.
+ * One step applied to the family it writes.
  *
  * This is a model of the store over the names a fixture writes, not the store.
- * It models: a part's identity across renames, and a name a new part takes
- * over; containment, with parents placed after every stated node is known;
- * handles within a step; removals a variant states itself; branching, adoption,
- * and carrying an edit into the drafts that follow the variant it changed.
+ * It models: a part's identity across renames on the variant an edit
+ * addresses, and a name a new part takes over; containment, with parents
+ * placed after every stated node is known; handles within a step; removals a
+ * variant states itself; branching, adoption, and carrying an edit into the
+ * drafts that follow the variant it changed.
  *
  * It does not model the store's field-by-field merge of a carried edit or which
- * side a resolution chooses, and it is built to err toward refusing where it
- * cannot tell: a carried statement may add to a draft but never takes away — a
- * carried node never loses a parent and a carried removal removes nothing —
- * and a resolution takes everything the predecessor has. A spurious refusal is
+ * side a resolution chooses, and it errs toward refusing where it cannot tell:
+ * a carried statement may add to a draft but never takes away — a carried node
+ * never loses a parent and a carried removal removes nothing — and a
+ * resolution takes everything the predecessor has. A spurious refusal is
  * visible and safe; a missed landing is the silent failure this guard exists
- * to prevent. Anything else the store decides that this does not reproduce can
- * still hide a landing; laying the fixture through the store itself is what
- * would close that for good.
+ * to prevent.
+ *
+ * One known miss: a part's name, when a draft and its predecessor disagree
+ * about it. A carried statement names the part as the predecessor does, and a
+ * draft that renamed it and then states it by its own name alone is read as a
+ * new part, so a child it adds there hides the landing. Laying fixtures
+ * through the store itself (TASK-272) closes this and anything like it.
  * @param families Every board so far, by name.
  * @param step The step.
  */
@@ -452,8 +453,7 @@ function applyStep(families: Map<string, Family>, step: RawFixtureStep): void {
 		apply(initial, { input: step.input, carried: false });
 		return;
 	}
-	if (family === undefined) return;
-	applyToFamily(family, step);
+	if (family !== undefined) applyToFamily(family, step);
 }
 
 /**

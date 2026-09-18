@@ -193,6 +193,25 @@ describe("variants", () => {
 		).toHaveLength(1);
 	});
 
+	test("a draft's rename survives edits carried down by the old name", () => {
+		// The predecessor still calls the part by its old name; the store merges
+		// by identity, so the child it adds there lands under the draft's
+		// renamed part, onto which the draft drew its relationship.
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers] } },
+				{ op: "branch", board: BOARD, as: "Draft" },
+				edit({
+					variant: "Draft",
+					nodes: [{ id: "$node(JSON helpers)", name: "Helpers", kind: "module" }],
+					edges: [{ ...call, to: "Helpers" }],
+				}),
+				edit({ nodes: [{ ...helpers, responsibility: "Serializes responses" }] }),
+				edit({ nodes: [dumps] }),
+			]),
+		).toHaveLength(1);
+	});
+
 	test("a resolution may restore what the draft removed, so it is assumed to", () => {
 		expect(
 			problems([
