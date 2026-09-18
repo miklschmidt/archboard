@@ -303,7 +303,7 @@
 				"src/flask/ctx.py",
 				"src/flask/sessions.py"
 			],
-			"prompt": "On the `Flask application` board, `Flask app` contains `WSGI entry` and `Dispatch`, `CLI` contains `Run command`, and `Contexts` contains `Request context push`. `Dispatch` and `Request context push` both belong to the configured `request-lifecycle` group; `Dispatch` also belongs to `wsgi-layer` (its functions live in the WSGI subclass in src/flask/app.py), and `Run command` belongs to `cli-startup`, because `flask run` starts the development server rather than handling a request. Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout. Nothing else changes.",
+			"prompt": "On the `Flask application` board, `Flask app` contains `WSGI entry`, `Dispatch`, `Finalize request` and `Process response`, `CLI` contains `Run command` and `App loader`, and `Contexts` contains `Request context push`. `Dispatch` and `Request context push` both belong to the configured `request-lifecycle` group; `Dispatch` also belongs to `wsgi-layer` (it is a method of the WSGI subclass in src/flask/app.py), and `Run command` belongs to `cli-startup`, because `flask run` starts the development server rather than handling a request. Record those three memberships, then bind `Dispatch` to src/flask/app.py in this checkout. Nothing else changes.",
 			"expectedFeatures": [
 				{
 					"feature": "groups.multi-membership",

@@ -1,5 +1,5 @@
 {
-	"$comment": "The pipeline with the session interface reached from two places, as Flask 3.0.0 has it: the request context opens the session and process_response saves it. Calls land where the source makes them: the WSGI server calls wsgi_app, which pushes the context and calls full_dispatch_request; finalize_request calls process_response. No views yet.",
+	"$comment": "The pipeline with the session interface reached from two places, as Flask 3.0.0 has it: the request context opens the session and process_response saves it. Calls land where the source makes them: the WSGI server calls wsgi_app, which pushes the context and calls full_dispatch_request; finalize_request calls process_response. The session is opened inside RequestContext.push, which the open_session relationship says rather than leaving the chain split. No views yet.",
 	"registerRepo": true,
 	"steps": [
 		{
@@ -118,7 +118,8 @@
 						"from": "Request context",
 						"to": "Session interface",
 						"kind": "call",
-						"label": "open_session"
+						"label": "open_session",
+						"description": "RequestContext.push opens the session while it binds the request, so this call happens inside the push above"
 					},
 					{
 						"from": "full_dispatch_request",
