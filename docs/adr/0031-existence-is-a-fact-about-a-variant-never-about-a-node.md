@@ -95,9 +95,12 @@ nothing was built.
 
 ## What this supersedes
 
-Two statements in the record put existence on a node, and one denies that a
-board can lack a current architecture. All three are superseded here; the
-edits themselves belong to the implementation of TASK-270.
+Two statements in the record put existence on a node, three define the current
+designation or adoption as though every board had one, and one denies that a
+board can lack a current architecture. All are superseded here. The glossary is
+edited in the same change as this decision, because CONTEXT.md is what a reader
+consults first; the ADR, code comment and refusal wording are edited by the
+implementation of TASK-270.
 
 - **ADR 0023:120-121** — "A node has at most one optional primary code binding.
   Nodes on the same board may bind to different repositories, and planned nodes
@@ -111,11 +114,19 @@ edits themselves belong to the implementation of TASK-270.
   likely to read it. It is corrected to say what optional actually means, and
   what it does not mean.
 
-- **CONTEXT.md:250-252** — "**Current**: The designation of the variant that
-  describes the architecture that exists." The sentence is right about what the
-  designation means and wrong to imply every board has one. The entry records
-  that the designation is optional and what its absence says: that nothing this
-  board describes has been built.
+- **CONTEXT.md, Current** — "The designation of the variant that describes the
+  architecture that exists." The sentence was right about what the designation
+  means and wrong to imply every board has one. The entry now says a board has
+  at most one, and that its absence is how a board says nothing it describes
+  exists.
+
+- **CONTEXT.md, Adoption**, and **ADR 0023:70-72** — adoption "retaining the
+  formerly current state as named history", and "preserves the former current
+  under its original name". Both describe adoption only as the designation
+  moving. On a board that had no current variant there is no former current:
+  adoption is the moment the architecture starts existing, and nothing becomes
+  history. The glossary entry now says both cases; ADR 0023's sentence stands for
+  a board that had a current variant and is superseded for one that did not.
 
 - **[ADR 0030](0030-a-proposal-nobody-will-carry-out-is-shelved-not-deleted.md):62-63**,
   and the refusal implementing it
@@ -136,7 +147,8 @@ edits themselves belong to the implementation of TASK-270.
   (`src/shared/semantic-board/lib/aggregate.ts`:122-124), a branch no board can
   reach today because creation designates the first variant without recording an
   adoption. A board created with no current variant is the first thing that
-  reaches it. Nothing becomes historical, because nothing was current.
+  reaches it. Nothing becomes historical, because nothing was current — which is
+  why the glossary's Adoption entry and ADR 0023:70-72 are superseded above.
 
 - **A drill-down that asks for whichever variant is current can now find
   nothing there** (`content.ts`:83). This is not a new case: ADR 0023:111-112
@@ -158,6 +170,14 @@ edits themselves belong to the implementation of TASK-270.
   (`src/runtime/semantic-board-store/lib/bindings.ts`:112-117). Giving an
   ahead-of-the-code binding its own standing, or deciding it is always wrong, is
   now a question this decision makes askable; TASK-270 owns the answer.
+
+- **Older builds refuse a board with no current variant rather than misread it**,
+  for the reason ADR 0030 gave for the fourth lifecycle: the contract is strict,
+  so a document missing a field an older build requires fails its parse. The
+  refusal is honest but says only that `current` is required, not that the
+  document is newer than the build — the schema parse runs before the version
+  check, and a later minor passes that check anyway. Whether the contract
+  version moves, and to what, is recorded in TASK-270's plan.
 
 - **Every reader of `current` must handle its absence or be shown unreachable
   for such a board.** The audit of those readers is recorded in TASK-270 as the
