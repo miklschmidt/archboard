@@ -37,6 +37,69 @@ card lines. Newlines are optional: the renderer wraps and shows the complete
 value, and rendered line count is not a validation limit. Put longer detail in
 `description`.
 
+## The runbook
+
+One ordered walk from an empty request to a board somebody can read, for
+either diagram type. Every step names where its own detail lives, so the walk
+is what reaches the rest of this file. Take the whole walk for a new board; an
+edit, a proposal or a question is the same walk with its own recipe at step 1
+and the steps that recipe names.
+
+1. **Pick the workflow and read its one recipe** before the first command of
+   it ([which recipe](#which-recipe)).
+2. **Put the vocabulary and the vault in hand**: read
+   `$ARCHBOARD_VAULT/.archboard/config.yaml` for the levels, kinds,
+   relationship kinds and groups you may use, run `archboard semantic` for a
+   board an existing part should `drillDown` to instead of being drawn again,
+   and `archboard claim` the board when the work runs to several writes.
+3. **Gather the source context**: read the code the request names and follow
+   it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists,
+   until what you have read covers the question the board answers.
+4. **Decide the parts**: the board's level and its subject, which parts hold
+   which as children, which belong to another codebase, and the one file whose
+   body implements each stated responsibility as its `binding`
+   ([evidence rule 2](#evidence-before-a-write)).
+5. **Map the relationships**: one line of evidence per `edge` — `from` → `to`,
+   the semantic kind, and the file and symbol that prove the mechanism
+   ([evidence rule 3](#evidence-before-a-write)).
+6. **Read the source again for what a flow needs** before you write one: a
+   count the source fixes (a literal list of candidates tried in turn, a retry
+   limit, a batch of known size) is that step's `repeat`, and a call a
+   participant makes on itself (a loader trying its own candidates, a
+   recursion, a server looping to serve) is a `self` step — a `note` that
+   states in prose what the source counts is a `repeat` left out.
+7. **Walk the catalogue** row by row against the source you read
+   ([everything the code shows](#everything-the-code-shows)), so every row the
+   source justifies is in the payload and you can name the rows you judged not
+   to apply.
+8. **Model the subject a second way** — cut at another level, another set of
+   participants, a container drawn whole instead of opened, one flow where you
+   had two — and keep the shape whose advantage over the other you can state
+   in one line.
+9. **Turn the request into checks** and write them down before the payload
+   ([evidence rule 4](#evidence-before-a-write)).
+10. **Write it as one payload** with the recipe's command, because one thing
+    somebody asked for is one write.
+11. **Read the answer against those checks**, taking the minted ids and the new
+    `version` from it rather than reading the board again.
+12. **Look at the picture** the reader gets, by opening the PNG that
+    `semantic rasterize <board> --out <file.png>` draws, with `--view <name>`
+    when a view is the reading.
+13. **Run `archboard semantic compare <board> --variant <name>`** when the
+    write was a proposal, and `archboard check` after a vocabulary edit or an
+    answer that carried `warnings`.
+14. **Repeat steps 4 to 13** for each further write the board still needs — the
+    flow over parts already drawn, the views a board nobody can follow whole
+    wants, the walkthrough, the correction the picture showed you — one
+    requested change per write.
+15. **Read your own board back with `archboard semantic show` and simplify it**:
+    spend a write removing every part, relationship, step and view the board's
+    question does not need and merging what the source does not distinguish,
+    then look at the picture again.
+16. **Release the claim and report**: `archboard release --board <board>`, the
+    catalogue rows you used and the ones you judged not to apply, the shape you
+    kept at step 8 and why, and any question this skill left open.
+
 ## Essentials
 
 - **The CLI is the only way a board changes.** Every board is a file the
@@ -103,15 +166,22 @@ is a claim about code, and the failures that recur are claims nobody checked.
 Do this in proportion to the request. A rename needs one line of it; a new
 board needs all of it.
 
-1. **Turn the request into checks.** Before the payload, write down what a
-   correct answer must show: the board and the `version` you read; the target
-   variant (a proposal names it in `variant`; a batch without `variant` edits
-   the current architecture, so a proposal-only request lands nothing there);
-   the ids and fields that must survive; and for a view, its exact `grammar`
-   and `scope` selectors: naming `edges` isolates those relationships and
-   draws no other, while naming `nodes` alone draws every relationship among
-   them. After the write, read the answer against that list.
-2. **Prove each relationship and step from source.** For every `edge` and
+1. **Find the boundaries on purpose.** Before deciding the parts, look for
+   what calls into this code (a server, a scheduler, a shell, a user event in
+   a browser, a message consumer), the external libraries and services it
+   depends on, the callbacks, hooks, handlers and plugins the application
+   registers into it, and where it persists or publishes (a store, a queue, a
+   socket, an event bus, a stream). Include the ones the board's question needs and
+   leave the rest out deliberately; a boundary you never looked for is an
+   omission, one you chose to omit is scope.
+2. **Bind to the owner.** A `binding` names the file that implements the
+   node's stated responsibility, not a file that imports, registers or calls
+   it. A planned part or an implementation unavailable for inspection stays
+   unbound. An implementation in another checkout may bind after you inspect
+   its owner and register that repository. When a node's responsibility spans
+   files, narrow the responsibility or split the node rather than bind to the
+   wrong one.
+3. **Prove each relationship and step from source.** For every `edge` and
    every flow step keep a one-line record: `from` → `to`, the semantic kind,
    and the source file and function or symbol that prove the mechanism. For a
    call (a function or method call, a hook, a component rendering another),
@@ -135,21 +205,14 @@ board needs all of it.
    or retry over a list the source fixes, such as two candidate file names, is a `repeat` of
    that count; a loop over a list of unknown length is a `note`, not a
    `repeat`).
-3. **Find the boundaries on purpose.** Before deciding the parts, look for
-   what calls into this code (a server, a scheduler, a shell, a user event in
-   a browser, a message consumer), the external libraries and services it
-   depends on, the callbacks, hooks, handlers and plugins the application
-   registers into it, and where it persists or publishes (a store, a queue, a
-   socket, an event bus, a stream). Include the ones the board's question needs and
-   leave the rest out deliberately; a boundary you never looked for is an
-   omission, one you chose to omit is scope.
-4. **Bind to the owner.** A `binding` names the file that implements the
-   node's stated responsibility, not a file that imports, registers or calls
-   it. A planned part or an implementation unavailable for inspection stays
-   unbound. An implementation in another checkout may bind after you inspect
-   its owner and register that repository. When a node's responsibility spans
-   files, narrow the responsibility or split the node rather than bind to the
-   wrong one.
+4. **Turn the request into checks.** Before the payload, write down what a
+   correct answer must show: the board and the `version` you read; the target
+   variant (a proposal names it in `variant`; a batch without `variant` edits
+   the current architecture, so a proposal-only request lands nothing there);
+   the ids and fields that must survive; and for a view, its exact `grammar`
+   and `scope` selectors: naming `edges` isolates those relationships and
+   draws no other, while naming `nodes` alone draws every relationship among
+   them. After the write, read the answer against that list.
 
 ## Everything the code shows
 
@@ -234,14 +297,12 @@ propose) reads each recipe it needs, in the order the request runs them.
 
 ## When to read more
 
-| Read                                                                            | When                                                                                                                              |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [create an architecture diagram](references/create-architecture.md)             | the recipe: level, registration, one payload with parts, containment, relationships and bindings, and its checks                  |
-| [create a sequence diagram](references/create-sequence.md)                      | the recipe: participants, message kinds, repeat and note, the data-flow view, and its checks                                      |
-| [edit an existing board](references/edit.md)                                    | the recipe: continuing, replacement and untouched subjects, one batch at the read version, and its checks                         |
-| [propose and compare a change](references/propose-compare.md)                   | the recipe: branch, variant-targeted edit, both pictures through one view, the comparison report, adoption                        |
-| [answer from a saved board](references/read.md)                                 | the recipe: `semantic show`, `semantic inspect --group`, `semantic compare`, what a view draws, what the answer reports, no write |
-| [authoring](references/authoring.md)                                            | groups, bindings with branch/commit, drill-down, traffic, emphasis, removals and handles, refusals                                |
-| [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md) | view scopes and grammars, message kinds, repeat/note, walkthrough beats and their identity                                        |
-| [variants](references/variants.md)                                              | what a comparison counts, edge identity, flow/step identity, reconciliation and `resolve`, adoption, claims                       |
-| [schemas](references/schemas.md)                                                | the exact JSON Schemas of the payloads, the persisted document and `config.yaml`; vault setup and installation                    |
+The recipe for the workflow at hand is in [which recipe](#which-recipe); these
+are what a branch of one needs on top of it.
+
+| Read                                                                            | When                                                                                                           |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [authoring](references/authoring.md)                                            | groups, bindings with branch/commit, drill-down, traffic, emphasis, removals and handles, refusals             |
+| [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md) | view scopes and grammars, message kinds, repeat/note, walkthrough beats and their identity                     |
+| [variants](references/variants.md)                                              | what a comparison counts, edge identity, flow/step identity, reconciliation and `resolve`, adoption, claims    |
+| [schemas](references/schemas.md)                                                | the exact JSON Schemas of the payloads, the persisted document and `config.yaml`; vault setup and installation |
