@@ -31,7 +31,8 @@ edge id, a render file, or a command. A verdict without evidence is not a verdic
 
 Missing or incorrect declared features fail semantic compliance even when the
 diagram looks plausible, except a feature whose finding is on the `skill` axis
-(below), which is a finding about the skill and fails no run.
+(below) and names a passage the feature does not cite, which is a finding about
+the skill and fails no run.
 
 ## Findings
 
@@ -63,6 +64,11 @@ failure:
   says nothing. It is never for what the request states (that is conformance,
   above), and never for a rule the skill states in a passage the feature did not
   cite: cite that passage and judge conformance.
+  A finding naming a passage the feature cites is counted as conformance
+  whatever axis it carries, since the scenario declares that passage teaches
+  the feature. If that passage does not in fact teach it, file the finding all
+  the same and name the feature and the passage in a concern beginning
+  `fixture:` (the scenario's citation).
 
 A `not-applicable` verdict carries the axis the feature would have been judged
 on, cites its passage, and says in `gap` how the request made the feature
