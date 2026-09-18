@@ -728,6 +728,7 @@
 					"feature": "board.create",
 					"requirement": "a module-level board with the participating parts as nodes",
 					"skill": [
+						"SKILL.md#evidence-before-a-write",
 						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/create-architecture.md#create-an-architecture-diagram-from-code"
 					]
