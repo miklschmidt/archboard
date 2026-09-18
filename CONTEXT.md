@@ -250,7 +250,7 @@ revision, branch, mode, state
 **Current**:
 The designation of the variant that describes the architecture that exists. A
 board has at most one. A board for something nobody has built yet has none: every
-variant on it is a proposal, and that absence is how the board says nothing it
+variant on it is a draft or shelved, and that absence is how the board says nothing it
 describes exists. Moving this designation preserves the names and identities of
 both states.
 _Avoid_: latest, default proposal
