@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:51'
-updated_date: '2026-09-18 11:48'
+updated_date: '2026-09-18 11:56'
 labels: []
 dependencies: []
 references:
@@ -98,4 +98,16 @@ The granularity dilemma was false, and the fact that dissolves it is in the prod
 Also fixed: the --variant conflict is a Warning diagnostic the write emits, not something the machine-readable answer carries, so SKILL.md and propose-compare.md now use the phrasing edit.md and variants.md already use ('the command line wins, and the write warns naming both'). The claim on a board this walk creates is an instruction on the write step instead of a fact no step acts on, and step 19 releases a claim you took. drillDown moved to step 3, the listing step that finds the board. The temporary-directory rule for a picture and 'archboard repo add' reach the walk through the Verification bullet and evidence rule 2, which its steps already link.
 
 Citation correction: the per-feature verdicts I counted are in .skill-evals/2026-09-18T01-50-12-580Z/graders/claude/verdict-*.json (S07 in verdict-1, -2, -5, -14), not in report.json, whose S07 node holds only the arm summary. The figures in the earlier note stand: flow.repeat missing in 4 of 6, flow.message-kinds missing in 4 of 6, 5 of 6 missing at least one.
+
+Review round 3 (commit 49d7dacc).
+
+Taken, not declined: the deciding axis for S07 is not column granularity. The run that passed both checks (run-9589d57705) kept prepare_import and locate_app as columns and still carried a self step with repeat 2; what separates it is that its author modelled the candidate search itself as one step with the searcher at both ends, separate from the call it makes per candidate. Step 9 now asks for exactly that: the work a part does to decide what to do next — choosing among candidates, searching, selecting a branch — is its own step with that part at both ends, separate from the calls it then makes per candidate, and it carries as its repeat the count the source fixes, which a note stating that count in prose leaves out. No wording about columns reaches an author reasoning 'ScriptInfo does not call itself, it calls prepare_import', which is run-d9445fe601's reasoning; this clause does. Step 7's column rule stays, true and useful in general, but it is no longer carrying weight the data does not put on it.
+
+The recipe held two rules for one case four lines apart — a part the board draws was both automatically a participant and free to stay out of the columns. One rule now: what the request names is a participant, anything else the board draws is a candidate for a column, and whether it takes one is the choice in the paragraph that follows.
+
+Where the subset fact lives, and which is authoritative: sequences-views-walkthroughs.md, on the participants bullet, is the DEFINITION; runbook step 7 is the INSTRUCTION. Evidence rule 3's copy is gone — it both duplicated and misstated it (its 'parent' is the container of the preceding sentences, which for a sibling helper points at the wrong column) and is now a disclaimer plus a pointer: a relationship lands on the child, and a flow's columns are chosen at step 7. Step 7's own wording generalised from 'a helper the board draws as that part's child' to any part the board draws, since the helpers in question are as often siblings.
+
+Scope of the earlier supersession, since two notes read as contradictory: commit 8d9a1530's note is right that column granularity alone cannot make flow.message-kinds deterministic — it cannot, and that half belongs to TASK-267. Commit 7bfc993f's note supersedes only the claim that an honest board and a self step are in competition; the subset fact dissolves that. What actually gives an author a self step on the fine-grained shape is the step-9 clause above.
+
+Also fixed: the recipe said chooseDoc 'is drawn inside' Setup block; chooseDoc is not a node of the worked payload at all, so it reads 'runs inside' again.
 <!-- SECTION:NOTES:END -->
