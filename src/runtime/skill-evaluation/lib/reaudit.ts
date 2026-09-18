@@ -72,12 +72,31 @@ function recordedBatchRoot(batchRoot: string, manifest: RunManifest): string {
 /**
  * The commands a run stored, as far as the classifier reads them.
  * @param file The run's commands.json.
- * @returns The commands.
+ * @returns The commands, or null when the file is absent or cannot be read as commands.
  */
-function storedCommands(file: string): CommandRecord[] {
-	return StoredCommandsSchema.parse(JSON.parse(fs.readFileSync(file, "utf8"))).map(
-		({ command, exitCode, status, output }) => ({ command, exitCode, status, output }),
-	);
+function storedCommands(file: string): CommandRecord[] | null {
+	if (!fs.existsSync(file)) return null;
+	let json: unknown;
+	try {
+		json = JSON.parse(fs.readFileSync(file, "utf8"));
+	} catch {
+		return null;
+	}
+	const parsed = StoredCommandsSchema.safeParse(json);
+	return parsed.success
+		? parsed.data.map(({ command, exitCode, status, output }) => ({
+				command,
+				exitCode,
+				status,
+				output,
+			}))
+		: null;
+}
+
+/** Where a batch ran from, read once for every run of it. */
+interface BatchPlaces {
+	readonly checkout: string;
+	readonly baseline: string;
 }
 
 /**
@@ -88,10 +107,7 @@ function storedCommands(file: string): CommandRecord[] {
  * @param loaded The suite.
  * @returns The checkout and the baseline package.
  */
-function batchPlaces(
-	batchRoot: string,
-	loaded: LoadedSuite,
-): { readonly checkout: string; readonly baseline: string } {
+function batchPlaces(batchRoot: string, loaded: LoadedSuite): BatchPlaces {
 	const file = path.join(batchRoot, "batch.json");
 	const places = fs.existsSync(file)
 		? BatchPlacesSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")))
@@ -105,16 +121,16 @@ function batchPlaces(
  * What the classifier knew of the run: the places its commands name, with
  * existence asked of the batch where it sits now.
  * @param batchRoot The batch as it sits now.
- * @param loaded The suite.
+ * @param places Where the batch ran from.
  * @param manifest The run.
  * @returns The classification context.
  */
 function recordedContext(
 	batchRoot: string,
-	loaded: LoadedSuite,
+	places: BatchPlaces,
 	manifest: RunManifest,
 ): ClassificationContext {
-	const { checkout, baseline } = batchPlaces(batchRoot, loaded);
+	const { checkout, baseline } = places;
 	const now = path.resolve(batchRoot);
 	const then = recordedBatchRoot(batchRoot, manifest);
 	const world = path.join(then, path.relative(now, runDirectory(now, manifest)), "world");
@@ -141,26 +157,27 @@ function recordedContext(
 	};
 }
 
+/** A run's exposure as the current classifier reads it; null when the run never recorded exposure. */
+type ExposureAudit = (manifest: RunManifest) => Readonly<Record<ExposureKind, number>> | null;
+
 /**
- * The run's exposure as the current classifier reads the commands it stored.
- * A manifest recorded before exposure was kept stays unaudited, and a run that
- * stored no commands keeps the count it recorded.
+ * Reads each run's exposure again from the commands it stored, with the
+ * current classifier. A manifest recorded before exposure was kept stays
+ * unaudited, and a run whose commands are missing or unreadable keeps the
+ * count it recorded rather than failing the report.
  * @param batchRoot The batch as it sits now.
  * @param loaded The suite, for the checkout of a batch that did not record one.
- * @param manifest The run.
- * @returns Counts by kind, or null when the run never recorded exposure.
+ * @returns The audit, for every run of the batch.
  */
-function reauditedExposure(
-	batchRoot: string,
-	loaded: LoadedSuite,
-	manifest: RunManifest,
-): Readonly<Record<ExposureKind, number>> | null {
-	const recorded = manifest.exposure ?? null;
-	const file = path.join(runDirectory(batchRoot, manifest), "commands.json");
-	if (recorded === null || !fs.existsSync(file)) return recorded;
-	return exposureCounts(
-		classifyCommands(storedCommands(file), recordedContext(batchRoot, loaded, manifest)),
-	);
+function exposureAudit(batchRoot: string, loaded: LoadedSuite): ExposureAudit {
+	const places = batchPlaces(batchRoot, loaded);
+	return (manifest) => {
+		const recorded = manifest.exposure ?? null;
+		if (recorded === null) return null;
+		const commands = storedCommands(path.join(runDirectory(batchRoot, manifest), "commands.json"));
+		if (commands === null) return recorded;
+		return exposureCounts(classifyCommands(commands, recordedContext(batchRoot, places, manifest)));
+	};
 }
 
-export { reauditedExposure };
+export { exposureAudit, type ExposureAudit };
