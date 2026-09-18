@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-16 02:26'
-updated_date: '2026-09-18 11:36'
+updated_date: '2026-09-18 11:46'
 labels: []
 dependencies: []
 parent_task_id: TASK-208
@@ -62,4 +62,20 @@ Reworked after the user's decision that --variant must always override a payload
 Verified: bun test tests/system/semantic-boards/variant-targeting.test.ts + lifecycle.test.ts (11 pass); workflow.test.ts + tests/system/cli/command-contract-artifacts.test.ts (19 pass); src/cli/command-routing/tests/help.test.ts + src/cli/command-contract/tests (47 pass); bunx tsc --noEmit clean for my files (the one remaining error, src/runtime/skill-evaluation/lib/report-markdown.ts, belongs to another worker's in-flight change); oxlint and oxfmt clean on every file I touched.
 
 Commits: c664873c (CLI + shared helper + tests), 39cfd42a (skill references).
+
+Round 2 review findings addressed.
+
+1. (must-fix) The override warning is now emitted at the point of detection through `context.diagnostic(...)` in both semantic.ts and semantic-lifecycle.ts, not carried in the returned `diagnostics`, which are only presented once a write comes back. A mistyped --variant is refused by the server, and the author still sees what the flag overrode. stdout is untouched; the success-path ordering is unchanged because the warning was already first.
+2. (must-fix) The line no longer claims the two are different variants — an id and a name for one variant are two spellings the CLI cannot tell apart without the read this task exists to spare, and that read would sit outside the lease. It now says what happened: `Warning: --variant "X" overrides the stated change's \`variant\` "Y"; this lands on "X".` The helper's comment records why identities are not resolved first.
+3. (should-fix) New pure owner src/cli/commands/tests/targeted-variant.test.ts covers all branches — no flag with and without a stated variant, flag alone, agreeing (whitespace included), overriding, and a stated variant that is not a name — asserting the resulting `stated.variant` and the diagnostics count, so a regression that warned on every --variant fails. Canvas case 2 dropped; the canvas suite keeps landing and side effects. The module-entrypoints lint rule forbids a test importing `commands/lib`, so `targetedVariant` is re-exported from the root file src/cli/commands/semantic.ts with a comment saying why.
+4. (should-fix) `toHaveLength(1)` restored on both warning assertions, and a fourth canvas case covers the refused write that must still warn.
+5. (optional) The positional `variants[0].content.nodes[0]` double cast is gone; a new `idOfPart(variant, part)` helper finds the part by name.
+6. (optional) The @-address refusal in src/server/canvas/lib/semantic-write-requests.ts now names --variant alongside the stated change. Its assertion in lifecycle.test.ts was a prose lock; it now asserts the refusal quotes the address it would not take, which is the behaviour.
+8. (optional) edit.md no longer caches a list of variant commands (already incomplete); it says "every variant command".
+
+Left to the coordinator as instructed: propose-compare.md (finding 7) and `bun scripts/sync-skills.ts` (finding 9). Correction to the earlier note: tests/** is capped at 500 lines, src/** at 600.
+
+Verified: bun test src/cli/commands/tests/targeted-variant.test.ts (6 pass); tests/system/semantic-boards/variant-targeting.test.ts + lifecycle.test.ts + workflow.test.ts (27 pass); src/cli/command-routing/tests/help.test.ts + src/cli/command-contract/tests + src/cli/commands/tests (60 pass); tests/system/cli/command-contract-artifacts.test.ts (3 pass); tsc clean for every file I touched (remaining errors are another worker's renderer test); oxlint and oxfmt clean.
+
+Commits: 6194678a (code and tests), bac0a3b8 (edit.md).
 <!-- SECTION:NOTES:END -->
