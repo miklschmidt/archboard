@@ -43,6 +43,7 @@ import {
 	type GraderName,
 	type LoadedSuite,
 } from "@/runtime/skill-evaluation/lib/suite";
+import { runDirectories } from "@/runtime/skill-evaluation/lib/run-manifest";
 import { executableVersion } from "@/runtime/skill-evaluation/lib/version";
 
 /** What a grading pass is given. */
@@ -118,14 +119,9 @@ interface BundledRun {
  * @returns Run directories with their anonymous ids and revisions.
  */
 function bundledRuns(batchRoot: string): BundledRun[] {
-	const runs = path.join(batchRoot, "runs");
-	if (!fs.existsSync(runs)) return [];
-	return fs
-		.readdirSync(runs, { recursive: true })
-		.map(String)
-		.filter((entry) => entry.endsWith("bundle.json"))
-		.map((entry) => {
-			const directory = path.join(runs, path.dirname(entry));
+	return runDirectories(batchRoot)
+		.filter((directory) => fs.existsSync(path.join(directory, "bundle.json")))
+		.map((directory) => {
 			const head = BundleHeadSchema.parse(
 				JSON.parse(fs.readFileSync(path.join(directory, "bundle.json"), "utf8")),
 			);
