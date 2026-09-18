@@ -20,8 +20,8 @@ a comparison, a view and a group inspection read.
    List the participants in reading order: the exchange is between the parts
    the board has, so a part drawn whole stays one column whatever functions,
    methods or hooks run inside it, and a call it makes on itself (a recursive
-   function, a component updating its own state, a loader trying its own
-   candidates) is one `self` step. A function, method or component the request
+   function, a method calling another of its own, a component updating its own
+   state) is one `self` step. A function, method or component the request
    names is a participant, and a call to it is a message to that column even
    when it lives inside its caller; one the board draws is a candidate for a
    column, and whether it takes one is the choice below.
