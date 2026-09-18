@@ -216,7 +216,9 @@ function aggregatesScenarios(runs: readonly RunRecord[]): boolean {
  * @returns True when a quality comparison has something complete to read.
  */
 function judged(arm: ArmSummary): boolean {
-	return arm.runs > 0 && arm.graded === arm.runs && arm.visualPassed + arm.visualFailed === arm.runs;
+	return (
+		arm.runs > 0 && arm.graded === arm.runs && arm.visualPassed + arm.visualFailed === arm.runs
+	);
 }
 
 /**
@@ -235,7 +237,8 @@ function changeOf(
 ): QualityChange {
 	if (!comparable || baseline.runs !== candidate.runs || baseline.runs === 0)
 		return { assessed: false, reason: "arms-not-comparable" };
-	if (![baseline, candidate].every(judged)) return { assessed: false, reason: "pictures-not-judged" };
+	if (![baseline, candidate].every(judged))
+		return { assessed: false, reason: "pictures-not-judged" };
 	const counts = countChanges(baseline, candidate);
 	const axes = axisChanges(
 		runs.filter((run) => run.arm === "baseline"),
