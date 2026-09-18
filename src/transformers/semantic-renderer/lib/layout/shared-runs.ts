@@ -25,13 +25,6 @@ const LANE = 20;
 /** Two runs at lane coordinates closer than this are the same line. */
 const COINCIDENT = 1;
 
-/**
- * How many lanes a fanned run may step over before it gives up and takes
- * the one it reached. A run that has passed four occupied lanes is in a
- * bundle a reader is counting across anyway.
- */
-const LANES_TRIED = 4;
-
 /** One straight piece of one route, as fanning reads it. */
 interface SharedRun {
 	/** The route it belongs to. */
@@ -205,15 +198,21 @@ function offsetsOf(group: readonly SharedRun[]): Map<string, number> {
  * The lane a run fans onto: the one its offset asks for, stepped on again
  * the same way while another route is already drawn along it, so fanning
  * never trades one overdrawn pair for another.
+ *
+ * A free lane is always reached. Each step is a whole lane and a run counts
+ * as drawn along one only within `COINCIDENT` of it, so every other run can
+ * block at most one step, and one more step than there are runs must land
+ * clear. Stepping that far would mean a bundle holding every route on the
+ * board, so there is no lane to give up on.
  * @param run The run being moved.
  * @param offset How far across the lane it was asked to move.
  * @param runs Every run of every route, at the lane each is on now.
- * @returns The lane to put it on.
+ * @returns The lane to put it on, which no other route is drawn along.
  */
 function clearLane(run: SharedRun, offset: number, runs: readonly SharedRun[]): number {
 	const step = Math.sign(offset) * LANE;
 	let lane = run.lane + offset;
-	for (let tried = 0; tried < LANES_TRIED; tried += 1) {
+	for (let tried = 0; tried <= runs.length; tried += 1) {
 		const taken = runs.some((other) => other.id !== run.id && overdrawnAt(run, other, lane));
 		if (!taken) break;
 		lane += step;
@@ -224,7 +223,10 @@ function clearLane(run: SharedRun, offset: number, runs: readonly SharedRun[]): 
 /**
  * Move one run onto a lane of its own. Both its ends move across the lane,
  * which is the axis the runs on either side of it travel along, so the route
- * stays square.
+ * stays square. Those two neighbours change length by the move and keep the
+ * extent they were read with, so a later `clearLane` reads them a lane short
+ * or long: it can only refuse a lane that is in fact free, never take one
+ * that is not.
  * @param run The run to move, whose lane is updated.
  * @param lane The lane to put it on.
  * @param points The route's corners, changed in place.
