@@ -42,6 +42,10 @@
 		"revision": "2026-09-18, TASK-264",
 		"note": "The starting vaults of S02, S03, S06, S09 and S12 changed with this revision, and S03's prompt with them: the collapsed `Dispatch` part was split into full_dispatch_request, finalize_request and process_response, the CLI's relationship onto the application container became the two calls the source makes, and werkzeug's LocalStacks became external parts. Scores for those five scenarios from a batch run before it measure different starting boards and cannot be compared with a later batch's; the other scenarios are unaffected."
 	},
+	"rubric": {
+		"revision": "2026-09-18, TASK-271",
+		"note": "rubric.md changed what it asks the grader for. The unprompted catalogue is now walked over what a run created or extended rather than over the whole inherited board; the emphasis, traffic and relationship rows carry the skill's cap, exclusions and flow-step rule; repeat is required only where the source fixes the count; behaviouralCompleteness is null for a run that created and extended nothing, not for one that wrote nothing. Missed-row counts, behaviouralCompleteness and the scores that rest on them measure a different question either side of this revision and cannot be compared across it. The rubric text is part of a batch's input digest, so a batch recorded before it is refused for grading or reporting under these inputs."
+	},
 	"repetitions": 3,
 	"defaultConcurrency": 3,
 	"baselineSkill": {
