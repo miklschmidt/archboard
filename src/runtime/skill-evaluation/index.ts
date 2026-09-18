@@ -6,6 +6,7 @@
 export { executeRun, statusOf, type RunJob } from "@/runtime/skill-evaluation/lib/author";
 export { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 export { startCanvas } from "@/runtime/skill-evaluation/lib/canvas";
+export { landingProblems } from "@/runtime/skill-evaluation/lib/landings";
 export { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 export {
 	ownProcess,
