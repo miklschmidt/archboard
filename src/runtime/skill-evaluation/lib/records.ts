@@ -14,6 +14,7 @@ import {
 	byAxis,
 	checklistGaps,
 	checklistStanding,
+	excusedDepartures,
 	findingsByAxis,
 	semanticallyCompliant,
 	type RunVerdict,
@@ -31,6 +32,7 @@ import {
 import { agreementOf } from "@/runtime/skill-evaluation/lib/report-agreement";
 import { renderBatchReportMarkdown } from "@/runtime/skill-evaluation/lib/report-markdown";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
+import { reauditedExposure } from "@/runtime/skill-evaluation/lib/reaudit";
 import {
 	buildReport,
 	type BatchReport,
@@ -142,19 +144,27 @@ function armSkill(batchRoot: string, loaded: LoadedSuite, arm: Arm): string {
  * absent there names no passage of the skill at all, which is the grader's
  * error and never the run's. A conformance passage the candidate holds but the
  * run's own skill did not is a departure from text the run was never shown.
+ * A skill finding naming a passage its feature cites is held as a departure,
+ * and named as one the grader tried to excuse.
  * @param batchRoot The batch.
  * @param loaded The suite.
  * @param manifest The run.
  * @param verdict The filed verdict, or null.
- * @returns The three fields; empty for an ungraded run.
+ * @returns The four fields; empty for an ungraded run.
  */
 function findingsOf(
 	batchRoot: string,
 	loaded: LoadedSuite,
 	manifest: RunManifest,
 	verdict: RunVerdict | null,
-): Pick<RunRecord, "findings" | "conformanceUnseen" | "uncited"> {
-	if (verdict === null) return { findings: byAxis(() => []), conformanceUnseen: [], uncited: [] };
+): Pick<RunRecord, "findings" | "conformanceUnseen" | "uncited" | "excusedDepartures"> {
+	if (verdict === null)
+		return {
+			findings: byAxis(() => []),
+			conformanceUnseen: [],
+			uncited: [],
+			excusedDepartures: [],
+		};
 	const expected =
 		loaded.suite.evals.find((candidate) => candidate.id === manifest.scenario)?.expectedFeatures ??
 		[];
@@ -179,18 +189,27 @@ function findingsOf(
 		conformanceUnseen: findings.conformance.filter(
 			(feature) => citedIn(candidate, feature) && !citedIn(own, feature),
 		),
+		excusedDepartures: excusedDepartures(expected, verdict),
 	};
 }
 
 /**
- * What a manifest recorded of the audit, each absent before its harness kept it.
+ * What a manifest recorded of the audit, each absent before its harness kept
+ * it. Exposure is read again from the run's stored commands, so a classifier
+ * fix reaches a batch already run.
+ * @param batchRoot The batch.
+ * @param loaded The suite, for the checkout.
  * @param manifest The manifest.
  * @returns The three audit fields, null where the manifest predates them.
  */
-function auditOf(manifest: RunManifest): Pick<RunRecord, "directWrites" | "exposure" | "guidance"> {
+function auditOf(
+	batchRoot: string,
+	loaded: LoadedSuite,
+	manifest: RunManifest,
+): Pick<RunRecord, "directWrites" | "exposure" | "guidance"> {
 	return {
 		directWrites: manifest.directWrites ?? null,
-		exposure: manifest.exposure ?? null,
+		exposure: reauditedExposure(batchRoot, loaded, manifest),
 		guidance: manifest.guidance ?? null,
 	};
 }
@@ -222,7 +241,7 @@ function recordOf(
 		durationMs: manifest.author?.durationMs ?? 0,
 		usage: manifest.usage,
 		commandCounts: manifest.commandCounts,
-		...auditOf(manifest),
+		...auditOf(batchRoot, loaded, manifest),
 		...visualOf(batchRoot, grader, manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,
 		guardrailsPassed: manifest.guardrailsPassed,

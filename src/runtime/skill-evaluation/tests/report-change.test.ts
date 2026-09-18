@@ -62,6 +62,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		findings: { conformance: [], truth: [], skill: [] },
 		conformanceUnseen: [],
 		uncited: [],
+		excusedDepartures: [],
 		...overrides,
 	};
 }

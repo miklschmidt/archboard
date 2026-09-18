@@ -53,6 +53,13 @@ interface ExposureRoots {
 	 * outside it, and reaching them is exposure like reaching another run's.
 	 */
 	readonly world: string;
+	/**
+	 * Whether a path in the batch tree exists. A command naming a literal path
+	 * that exists nowhere read nothing, however it was spelled: an author that
+	 * mis-expands a skill-root alias names a path beside its own world and gets
+	 * "No such file or directory" back.
+	 */
+	readonly exists: (file: string) => boolean;
 }
 
 /** What the classifier knows about where the run happened. */
@@ -256,7 +263,9 @@ function invokesWrite(script: string): boolean {
 /**
  * Whether a script reaches into the batch tree outside its own world: another
  * run, the blinding table that names every run's arm, the batch manifest, or
- * the harness's own records of this run.
+ * the harness's own records of this run. A path counts when it could have
+ * shown the author something: it exists, or it is a pattern the shell expands
+ * into whatever does. A literal path that exists nowhere read nothing.
  * @param script The unwrapped script.
  * @param roots Where the batch and this run's world live.
  * @param cwd The author's working directory.
@@ -265,12 +274,48 @@ function invokesWrite(script: string): boolean {
 function reachesBatchOutsideWorld(script: string, roots: ExposureRoots, cwd: string): boolean {
 	const batch = roots.batchRoot;
 	for (let at = script.indexOf(batch); at >= 0; at = script.indexOf(batch, at + batch.length)) {
-		if (!startsWithPath(script, at, roots.world)) return true;
+		if (startsWithPath(script, at, roots.world)) continue;
+		const word = pathWordAt(script, at);
+		if (couldReveal(word, roots, path.resolve(word))) return true;
 	}
 	return relativePathWords(script).some((word) => {
 		const reached = path.resolve(cwd, word);
-		return inside(batch, reached) && !inside(roots.world, reached);
+		return (
+			inside(batch, reached) && !inside(roots.world, reached) && couldReveal(word, roots, reached)
+		);
 	});
+}
+
+/** Characters the shell expands: a word holding one names whatever it matches. */
+const EXPANSION_RE = /[*?[\]{}$`~]/u;
+
+/**
+ * Whether naming a path could have shown the author anything.
+ * @param word The path as the script spells it.
+ * @param roots Where to ask whether it exists.
+ * @param resolved The path it resolves to.
+ * @returns True for a pattern, or for a literal path that exists.
+ */
+function couldReveal(word: string, roots: ExposureRoots, resolved: string): boolean {
+	return EXPANSION_RE.test(word) || roots.exists(resolved);
+}
+
+/**
+ * The path that begins at a position, as the shell would pass it: inside the
+ * quotes it opens in, or up to the first unescaped space, quote or operator.
+ * @param script The script.
+ * @param at Where the path begins.
+ * @returns The path, quoting and escapes removed.
+ */
+function pathWordAt(script: string, at: number): string {
+	const rest = script.slice(at);
+	const quote = script[at - 1];
+	if (quote === "'" || quote === '"') {
+		const end = rest.indexOf(quote);
+		return end < 0 ? rest : rest.slice(0, end);
+	}
+	const word = /^(?:\\.|[^\s'"|;&<>()])*/u.exec(rest)?.[0] ?? "";
+	return word.replaceAll(/\\(.)/gu, "$1");
 }
 
 /**
