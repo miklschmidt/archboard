@@ -1206,13 +1206,14 @@ evaluation batch their picture.
 
 ### What is refused
 
-Measured on the graph the renderer builds for the shape the owner now holds —
-`WSGI server` into a `Flask app` frame, the framed method with a sibling
+Measured on the graph the renderer builds for the shape the owner now holds
+— `WSGI server` into a `Flask app` frame, the framed method with a sibling
 inside it and a pair out to `Metrics extension`, under the first flank rule
-with the title on top — with the pair's shared corridor split back into a port
-each, and nothing changed but the `elk.port.side` of the frame's three
-boundary ports. Sixty-four combinations, the tuple being (the route in, the
-first of the pair out, the second):
+with the title on top — with the pair's shared corridor split back into a
+port each, and nothing changed but the `elk.port.side` of the frame's three
+boundary ports. Sixty-four combinations of the tuple (the route in, the
+pair's first relationship, its second), on the candidate that reserves a
+label for both of the pair:
 
 | tuple              | answer                        |
 | ------------------ | ----------------------------- |
@@ -1225,25 +1226,40 @@ first of the pair out, the second):
 
 The other fifty-eight are laid out. Reading them:
 
+- **Six rows, four configurations.** The two rows of each `NORTH` pair are
+  one picture with the pair's two relationships named the other way round.
+  Which is which is not a property of the graph: what the engine answers to
+  is **which sister it seats first along the source's face**, and that is an
+  outcome of the solve. Stated by geometry rather than by name, a frame is
+  refused when the route in is on NORTH, the sister seated first is on NORTH
+  and the other sister is on either flank; and when the route in is on
+  either flank and both sisters are on SOUTH. Everything else is laid out,
+  all three on one flow face and all three on flanks included.
 - **It is the assignment, not the faces.** `SOUTH, SOUTH, WEST` and
   `SOUTH, WEST, SOUTH` are both accepted while `WEST, SOUTH, SOUTH` is
-  refused, though the three hold the same faces between them. Which route
-  takes which face is the variable, so no rule counting a frame's ports can
-  state the condition, and none is claimed here.
+  refused, though the three hold the same faces between them. No rule
+  counting a frame's ports can state the condition, and none is claimed
+  here.
 - **Which flank makes no difference.** `WEST, SOUTH, SOUTH` and
   `EAST, SOUTH, SOUTH` refuse alike, so the far flank section 26 keeps for a
   pair into a frame does not rescue this.
-- **The order the ports are listed in makes no difference.** The same six
+- **The order the ports are listed in makes no difference.** The same rows
   refuse with the pair's two ports pushed onto the frame either way round.
-- **The set is a property of the graph, not of the rule.** The same six refuse
-  on a smaller hand-built board of the same shape; a different board of the
-  same shape is a different measurement, and this table is evidence that the
-  configuration the renderer reaches is refused, not a predicate to test a
-  frame against.
-- **The engine is right to refuse.** It expects the dummies in the frame's own
-  first and last layers to be accounted for by the frame's ports on that one
-  side; a flank port is on neither. The Rust engine panics where upstream ELK
-  throws, from the same function.
+- **The candidate moves both the rows and the count.** One render settles
+  several candidate drawings and solves each: three distinct graphs on this
+  board, and within one of them a candidate per label reservation. Swept
+  across them, the four rows naming one sister on NORTH or both on SOUTH
+  refuse in every candidate; the two `NORTH, NORTH, flank` rows refuse only
+  where both of the pair reserve a label, which is the same picture again,
+  a label dummy having moved which sister is seated first. The count follows
+  the candidate too: `Expected 2 hierarchical ports` on the NORTH rows with
+  no label reserved, `Expected 1` throughout once one is. So the table is
+  one candidate; the four are what this shape refuses however it is drawn;
+  and none of it is a predicate to test a frame against.
+- **The engine is right to refuse.** It expects the dummies in the frame's
+  own first and last layers to be accounted for by the frame's ports on that
+  one side; a flank port is on neither. The Rust engine panics where
+  upstream ELK throws, from the same function.
 
 ### What landed
 
