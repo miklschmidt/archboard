@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:10'
+updated_date: '2026-09-18 13:15'
 labels: []
 dependencies: []
 references:
@@ -97,4 +97,25 @@ Verified:
 - suite.test.ts: 9 pass.
 - eval:skill check: suite ok, 15 fixtures.
 - oxlint type-aware and baseline, oxfmt, and tsc: all clean.
+
+Round 4, after review.
+
+Carried removals now take nothing away. noteRemovals returns immediately for a carried statement, and `touched` is deleted. The per-part set could never be complete: the store keeps a draft's part when the draft changed it, and keeps the whole draft whenever a carried removal would leave anything in it naming a part that is gone. Neither can be told from names alone. The code now does exactly what the applyStep doc says: a carried statement adds and never takes away. A carried node never loses a parent, and a carried removal removes nothing. Its only cost is refusing in cases where the store would have dropped the part. That is the refusing direction.
+
+The reviewer's P1 and P2 are now separate tests:
+- P1: a child added on the draft under a part the current variant then removes.
+- P2: a carried removal of two parts where one is still named by the draft, so the store keeps the whole draft.
+Each fails against de9aecc2 and passes now. They are split so that each failure shows on its own.
+
+The round-3 'second quiet miss' (a carried removal recorded as the draft's own removal) can no longer happen: a carried removal records nothing. It therefore has no test of its own.
+
+The approximation caveat is unchanged in direction: the check is imprecise only toward refusing. A draft can hold a part under two parents after a carried restatement. It keeps parts the store would drop after a carried removal. A resolution is assumed to take every choice.
+
+Verified:
+- landings.test.ts: 12 pass. Against de9aecc2, the 2 new tests fail.
+- suite.test.ts: 9 pass.
+- eval:skill check: suite ok, 15 fixtures.
+- tsc --noEmit -p .: exit 0, with the whole output captured to a file (0 lines).
+- oxlint type-aware and baseline: exit 0.
+- oxfmt: clean.
 <!-- SECTION:NOTES:END -->

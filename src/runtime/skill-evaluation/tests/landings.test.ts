@@ -146,6 +146,35 @@ describe("variants", () => {
 		).toHaveLength(1);
 	});
 
+	test("a carried removal takes nothing away from a draft, even a part it did not state", () => {
+		// The store keeps a part the draft built on, here by adding a child
+		// under it, even though only the child was stated.
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers] } },
+				{ op: "branch", board: BOARD, as: "Draft" },
+				edit({ variant: "Draft", nodes: [dumps] }),
+				edit({ removeNodes: ["JSON helpers"] }),
+				edit({ variant: "Draft", edges: [call] }),
+			]),
+		).toHaveLength(1);
+	});
+
+	test("a carried removal the draft cannot take keeps the whole draft", () => {
+		// The store keeps the whole draft when the removal would leave it naming
+		// a part that is gone, so a part the draft never stated stays too.
+		const tag = { name: "Tagged JSON", kind: "module" };
+		expect(
+			problems([
+				{ op: "new", board: BOARD, input: { nodes: [app, helpers, tag, dumps] } },
+				{ op: "branch", board: BOARD, as: "Draft" },
+				edit({ variant: "Draft", edges: [{ ...call, to: "Tagged JSON" }] }),
+				edit({ removeNodes: ["dumps", "Tagged JSON"] }),
+				edit({ variant: "Draft", edges: [call] }),
+			]),
+		).toHaveLength(1);
+	});
+
 	test("a resolution may restore what the draft removed, so it is assumed to", () => {
 		expect(
 			problems([
