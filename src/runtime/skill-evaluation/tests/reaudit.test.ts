@@ -41,6 +41,8 @@ const PRESENT = new Set([
 	BATCH,
 	`${BATCH}/runs/baseline/S11/2/world/vault`,
 	`${BATCH}/blinding.json`,
+	`${BATCH}/runs/candidate/S11/3/author.jsonl`,
+	`${WORLD}/flask/README.md`,
 ]);
 const ROOTS: ExposureRoots = {
 	evaluationInputs: "/checkout/evals",
@@ -89,9 +91,19 @@ test("a plain batch path that does not exist, and that the command reports missi
 	expect(exposureOf(`bash -lc 'cat ${misread}'`, "---\nname: archboard\n")).toBe("other-run");
 });
 
-test("a relative path is read from the last absolute cd before it, not from the checkout alone", () => {
+test("a relative path is read from wherever the script may be: a cd that found its file takes the read with it", () => {
 	expect(exposureOf(`bash -lc 'cd ${WORLD}/flask/src/flask && cat ../../README.md'`)).toBeNull();
-	expect(exposureOf(`bash -lc 'cd ${WORLD}/vault && cat ../../author.jsonl'`)).toBe("other-run");
+	for (const script of [
+		`cd ${WORLD}/vault && cat ../../author.jsonl`,
+		// A cd in a subshell, or one that failed, leaves the script where it was.
+		`(cd ${WORLD}/flask/src/flask); cat ../../author.jsonl`,
+		`(cd ${WORLD}/flask/src/flask && ls) && cat ../../author.jsonl`,
+		"cd /does/not/exist || true; cat ../../author.jsonl",
+		"cd /does/not/exist; cat ../../../2/world/vault/x.json",
+		// A relative cd moves the script as surely as an absolute one.
+		"cd .. && cd .. && cd .. && cat ./2/author.jsonl",
+	])
+		expect(exposureOf(`bash -lc '${script}'`), script).toBe("other-run");
 });
 
 test("a path that exists, a pattern, the batch root, a quoted or joined word, or an escape from the world is exposure", () => {
