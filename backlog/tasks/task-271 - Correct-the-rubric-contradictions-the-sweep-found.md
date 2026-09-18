@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:34'
-updated_date: '2026-09-18 12:42'
+updated_date: '2026-09-18 12:53'
 labels: []
 dependencies: []
 references:
@@ -77,4 +77,34 @@ AC#8: pins.json gains a rubric block beside fixtures, naming the revision and wh
 VERIFIED: bun run eval:skill check passes (15 scenarios, 15 fixtures, 14 coverage parts); bun test src/runtime/skill-evaluation/tests 162 pass 0 fail; oxfmt clean on both files (the table repadded). No model evaluation was started, so the effect of these edits on grading is unmeasured and is not claimed.
 
 LEFT UNDONE, and it matters: src/runtime/skill-evaluation/lib/grader.ts:250 restates the old rubric wording in the prompt itself - "one entry per catalogue row the source justifies on the board whether or not the request named it" and "a run that wrote nothing returns an empty list and null" - which now contradicts A1 and B5 in the same prompt as the corrected rubric. grader.ts:45's doc comment repeats the same gloss. Both belong to TASK-268 (its AC#5 is about these two fields) and to whoever owns that file; this task did not touch it.
+
+REVIEW ROUND 1 FINDINGS, 2026-09-18, recorded here so they survive a machine reboot. Not yet addressed. Reviewer verified every cited skill passage against the rubric as it now stands, checked the batch's 90 verdicts, verified the digest claim in code, and ran eval:skill check (passes) and fmt:check (clean).
+
+Criteria 2,3,4,5,7,8 met. Criterion 1 met but defective (F1, F2). Criterion 6 met in substance but in the wrong section (F3).
+
+MUST FIX
+
+F1. rubric.md:140-142 contradicts rubric.md:120-121, on exactly S13. The subject is "the subjects it added or RESTATED"; the empty-list clause then names "a removal that added nothing" as an empty-list case, and the null gloss is "created and EXTENDED nothing". S13 is a removal that restated a walkthrough beat - a subject by the first sentence, an empty list by the second. The implementation notes say S13 is scored, which is the reading the rubric's own text denies. The crack is wider than S13: three of the four edit scenarios write only restatements - S03 (restates nodes to add memberships, under "Nothing else changes"), S10 (restates three edges to change traffic), S13 - so the whole edit arm's completeness could come back null from one grader and scored from the next. The skill's own answer is narrower than the rubric's: references/edit.md:27 says "Walk the catalogue for what you add", which the rubric's paragraph does not cite. Resolution: pick one and say it in both places - either "added or restated" throughout (then the empty-list clause must read "added and restated nothing" and "a removal that added nothing" must go), or follow edit.md:27 and drop "or restated" (then S03, S10 and S13 are all null, which must be stated so nobody reads the missing figure as a regression).
+
+F2. rubric.md:144-147 - the walk was rescoped, the score it feeds was not. behaviouralCompleteness still asks "does THE BOARD use every semantic the source justifies", with anchors "10 has every justified row used; 5 has the parts and calls and little else". On an edit the board is overwhelmingly inherited, so a grader can return an empty unprompted list under the new scoping and still score 5 because the BOARD has little else - which is precisely the 4.4/4.8 edit-arm figure finding A1 was measured on and meant to fix. AC#1 is therefore only half-delivered: the missed-row count moves, the score need not. Resolution: rescope the score sentence to the walk's subject ("does what the run wrote use every semantic the source justifies for it") and restate the 10/5/0 anchors against that subject.
+
+OPTIONAL
+
+F3. AC#6's correction is in the wrong section for the failure it names. The six write-ups were CONCERNS, not unprompted entries - four found verbatim in the batch (S01 run-d8418dceef, S14 run-f62d961d5a, S00 run-578b7391da, S14 run-04f27a34ab), each of the form "the final message claims X was not applicable, which overstates the case". The fix sits inside the unprompted section (rubric.md:139-140); the Concerns section (rubric.md:227-231) is unchanged and is the instruction the graders were following. The B3 distinction is sound and leaving rubric.md:23-27 alone is right. One clause in Concerns would close it.
+
+F4. A3's residual: the graders' error was factual, not only loose wording. Their reason was "Two steps loop over lists the source fixes", a wrong claim about Flask. The new paired clause says "a data-dependent loop" while the skill says "a loop over a list of unknown length" (SKILL.md:222), and the real discriminator is that before_request_funcs' length is decided by what an application registered - a grader can reason a registration list is not data-dependent. Naming the discriminator would make the 8 repeat misses on S00/S05 unreachable. S07 is unaffected either way.
+
+F5. The old null gloss survives in the report's own legend: report-markdown.ts:320 defines the Completeness column as "how far a board that wrote something uses the semantics", the pre-edit rule, and report-change.ts:160 and :225 repeat it in doc comments. The grader never sees these so they do not defeat the correction, but they are now the wrong definition of the column for every human reading report.md. Reviewer confirms that APART FROM grader.ts:250 and :45 (routed to TASK-268), no corrected rubric text is restated anywhere the grader sees it.
+
+F6. fixture: routing is real but low-visibility. Graders already use the prefix (19 prefixed concerns in the batch), nothing in the code consumes it, and report.md prints no concerns section at all - so an inherited omission reaches a human only through report.json or the verdict jsonl. The new rule will push noticeably more traffic down it, potentially one concern per justified row per untouched part.
+
+F7. rubric.md:112's note row omits "a caveat", which the new Flows bullet at :79 adds (SKILL.md:255 has it). rubric.md:108's relationship list is narrower than SKILL.md:251's - pre-existing, untouched by A5, harmless for the Flask scenarios, but a rubric/skill gap in a row this commit edited.
+
+F8. The walk's subject paragraph (rubric.md:120-127) sits AFTER the 14-row table, so a grading model reads every row before learning the scope. Moving it above the table would co-locate the scope with the rows it governs.
+
+ON THE CRITERION 1 JUDGEMENT CALL: the reviewer endorses scoping over exemption and would have made the same choice, for the reason given plus a stronger one - edit.md:27 says it more directly than SKILL.md:241 or edit.md:9-13. Checked against the batch, the scoping lands where A1 measured the damage: S03's 2 traffic + 2 emphasis misses, S10's 3 flow + 3 view misses, and S13's 12 misses all fall outside a scoped walk. Two caveats: a removal's scoping is under-defined (F1), and a removal is the one case where a scoped walk can miss real damage - an author removing a node and leaving inbound calls un-redirected wrote nothing, so unprompted sees nothing. That gap is covered by S13's declared features and by semanticCorrectness/architecturalTruth, so it is a tolerable consequence rather than a hole.
+
+NO MISFIRES FOUND beyond F1/F2: the emphasis cap retires the 14 unsatisfiable penalties without granting a blanket exemption (one hero of three on S01 is still within the cap and still markable), and the traffic exclusions make S07's startup board justify no traffic, with no scenario declaring traffic on a startup board.
+
+AC#8's digest claim verified TRUE and is the stronger guarantee: rubric is a LoadedSuite field (suite.ts:405, read at :503); inputDigest (provenance.ts:29-34) hashes the rubric bytes; assertBatchInputs (provenance.ts:107-119, called from grading-run.ts:40) refuses grading OR reporting on a mismatch; and boundByOlderPins cannot rescue an old batch because it recomputes the digest with today's rubric text.
 <!-- SECTION:NOTES:END -->
