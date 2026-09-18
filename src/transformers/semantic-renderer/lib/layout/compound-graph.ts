@@ -21,12 +21,8 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/flank-rules";
 import {
 	ancestryOf,
-	boundariesOf,
-	crossingPortId,
-	crossingsOf,
-	crowdedFrames,
+	frameCrossings,
 	type Crossing,
-	type PortSides,
 } from "@/transformers/semantic-renderer/lib/layout/frame-crossings";
 import {
 	SOLVING,
@@ -34,6 +30,7 @@ import {
 	nearestFace,
 	type Face,
 	type HeaderSide,
+	type PortSides,
 } from "@/transformers/semantic-renderer/lib/layout/reading";
 
 /** Room for a route alongside a card or inside its containing frame. */
@@ -329,29 +326,23 @@ function labelsOf(edge: SemanticEdge, measured: MeasuredArchitecture): ElkLabel[
 }
 
 /**
- * One explicit boundary port is shared by the two adjacent edge sections.
- * Only its face is the renderer's: the engine ignores the index a boundary
+ * Attach the boundary port of every crossing to the frame it crosses,
+ * sharing one where two crossings name one (`frame-crossings.ts`). Only a
+ * port's face is the renderer's: the engine ignores the index a boundary
  * port carries, and seats the crossings of one face itself, in the order it
- * walks the source's face (measured on 2026-09-17, TASK-258). On a crowded
- * frame the crossings straight through one face share the port as well, and
- * the frame is crossed there once (`crowdedFrames`).
- * @param edge The semantic relationship that owns the crossing.
- * @param crossings The frames it crosses and the face of each, in traversal order.
+ * walks the source's face (measured on 2026-09-17, TASK-258).
+ * @param crossings The frames a relationship crosses, the face of each and the port it takes.
  * @param nodes The engine hierarchy being constructed.
- * @param crowded The frames whose crossings straight through share one corridor per face.
  * @returns Their port ids, in traversal order.
  */
 function boundaryPorts(
-	edge: SemanticEdge,
 	crossings: readonly Crossing[],
 	nodes: ReadonlyMap<string, ElkNode>,
-	crowded: ReadonlySet<string>,
 ): string[] {
-	return crossings.map((crossing, index) => {
-		const id = crossingPortId(edge, index, crossing, crowded);
-		const ports = nodes.get(crossing.frame)?.ports ?? [];
-		if (!ports.some((port) => port.id === id)) ports.push(portOf(id, crossing.side, 0));
-		return id;
+	return crossings.map(({ frame, side, port }) => {
+		const ports = nodes.get(frame)?.ports ?? [];
+		if (!ports.some((existing) => existing.id === port)) ports.push(portOf(port, side, 0));
+		return port;
 	});
 }
 
@@ -365,57 +356,25 @@ function attachPort(id: string, port: ElkPort, nodes: ReadonlyMap<string, ElkNod
 	nodes.get(id)?.ports?.push(port);
 }
 
-/** How one relationship attaches: the faces of its two ends, and the frames between them. */
-interface Attachment {
-	/** The faces it leaves and arrives by, or FREE for the engine to choose. */
-	readonly faces: Faces;
-	/** The frames it crosses and the face of each, in traversal order. */
-	readonly crossings: readonly Crossing[];
-}
-
-/**
- * How one relationship attaches, settled before any port exists so that every
- * frame's crossings can be read together (`crowdedFrames`).
- * @param edge The semantic relationship.
- * @param measured The inclusion tree of this view.
- * @param ordering The semantic ordering that chooses faces.
- * @param predecessor Prior endpoint faces for unchanged relationships.
- * @param header Where a frame's title band sits in the solving frame.
- * @returns Its faces and its crossings.
- */
-function attachmentOf(
-	edge: SemanticEdge,
-	measured: MeasuredArchitecture,
-	ordering: Ordering,
-	predecessor: ArchitectureDrawing | undefined,
-	header: HeaderSide,
-): Attachment {
-	const faces = facesOf(edge, measured, ordering, predecessor);
-	if (faces === FREE) return { faces, crossings: [] };
-	const seat = ordering.seats.get(edge.id) ?? ALONE;
-	return { faces, crossings: crossingsOf(boundariesOf(edge, measured), faces, header, seat) };
-}
-
 /**
  * Attach one connection and its measured label to the graph.
  * @param edge The semantic relationship.
- * @param attachment Its faces and the frames it crosses.
+ * @param faces The faces its two ends take, or FREE for the engine to choose.
+ * @param crossings The frames it crosses, the face of each and the port it takes.
  * @param nodes The already constructed nodes, for endpoint ownership.
  * @param measured All text sizes.
  * @param ordering The semantic ordering that seats the ends.
- * @param crowded The frames whose crossings straight through share one corridor per face.
  * @returns The contiguous engine sections, all owned by one semantic edge.
  */
 function edgeOf(
 	edge: SemanticEdge,
-	attachment: Attachment,
+	faces: Faces,
+	crossings: readonly Crossing[],
 	nodes: ReadonlyMap<string, ElkNode>,
 	measured: MeasuredArchitecture,
 	ordering: Ordering,
-	crowded: ReadonlySet<string>,
 ): ElkExtendedEdge[] {
 	const { ranks, rule, seats } = ordering;
-	const { faces, crossings } = attachment;
 	if (faces === FREE) {
 		// Node to node: the router chooses the faces, and a crossed frame is the
 		// engine's own hierarchy edge rather than a section per boundary.
@@ -431,7 +390,7 @@ function edgeOf(
 	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0, seat);
 	attachPort(edge.from, portOf(fromPort, fromSide, fromIndex), nodes);
 	attachPort(edge.to, portOf(toPort, toSide, toIndex), nodes);
-	const ports = [fromPort, ...boundaryPorts(edge, crossings, nodes, crowded), toPort];
+	const ports = [fromPort, ...boundaryPorts(crossings, nodes), toPort];
 	return ports.slice(1).map((target, index) => ({
 		id: index === 0 ? edge.id : `${edge.id}:${index}`,
 		sources: [ports[index]!],
@@ -526,16 +485,22 @@ function compoundGraph(
 		added,
 		seats: seatsOf(edges),
 	};
-	const attachments = edges.map((edge) =>
-		attachmentOf(edge, measured, ordering, predecessor, header),
+	const faces = edges.map((edge) => facesOf(edge, measured, ordering, predecessor));
+	const crossings = frameCrossings(
+		edges.map((edge, index) => ({
+			edge,
+			faces: faces[index] === FREE ? undefined : faces[index],
+			seat: ordering.seats.get(edge.id) ?? ALONE,
+		})),
+		measured,
+		header,
 	);
-	const crowded = crowdedFrames(attachments.map(({ crossings }) => crossings));
 	return {
 		id: "architecture:root",
 		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },
 		children: containNodes(content.nodes, nodes),
 		edges: edges.flatMap((edge, index) =>
-			edgeOf(edge, attachments[index]!, nodes, measured, ordering, crowded),
+			edgeOf(edge, faces[index]!, crossings.get(edge.id) ?? [], nodes, measured, ordering),
 		),
 	};
 }

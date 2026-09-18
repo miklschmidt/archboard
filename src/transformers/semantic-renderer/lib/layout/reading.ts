@@ -28,6 +28,9 @@ import {
 /** A face of a card or frame, in whichever frame is being spoken of. */
 type Face = "NORTH" | "SOUTH" | "WEST" | "EAST";
 
+/** The two attachment faces of one relationship, chosen before coordinates exist. */
+type PortSides = readonly [Face, Face];
+
 /** A flank of the solving frame: a side a lane runs beside. */
 type Flank = Extract<Face, "WEST" | "EAST">;
 
@@ -466,6 +469,7 @@ export {
 	type Face,
 	type Flank,
 	type HeaderSide,
+	type PortSides,
 	type ReadingDirection,
 	SOLVING,
 	asFace,
