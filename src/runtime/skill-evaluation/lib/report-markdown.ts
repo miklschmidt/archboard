@@ -133,7 +133,7 @@ function armLine(key: string, arm: Arm, s: ArmSummary): string {
  * within-arm spread set, and whether the move cleared it, in either direction.
  * @param axes Every axis the row compared.
  * @param name The axis this column holds.
- * @returns The cell text, or a dash for an axis neither arm scored.
+ * @returns The cell text, or "n/a" for an axis no pair of runs both scored.
  */
 function axisCell(axes: readonly AxisChange[], name: AxisChange["axis"]): string {
 	const axis = axes.find((entry) => entry.axis === name);
@@ -142,14 +142,15 @@ function axisCell(axes: readonly AxisChange[], name: AxisChange["axis"]): string
 }
 
 /**
- * The cells a count fills on the change line.
+ * One count's cell on the change line. Every assessed row compares every
+ * count, so there is always one to show.
  * @param counts The count changes.
  * @param measure Which count.
- * @returns The signed movement, or nothing when the count is absent.
+ * @returns The signed movement.
  */
 function countCell(counts: readonly CountChange[], measure: CountChange["measure"]): string {
 	const count = counts.find((entry) => entry.measure === measure);
-	return count === undefined ? "" : signed(count.delta);
+	return count === undefined ? "n/a" : signed(count.delta);
 }
 
 /**
@@ -225,13 +226,29 @@ function failureLine(run: RunRecord): string {
 		run.status,
 		...(run.outcomesPassed ? [] : ["outcome checks failed"]),
 		...(run.guardrailsPassed ? [] : ["guardrail violated"]),
-		...(run.verdict === null ? ["awaiting grading"] : []),
-		...(run.semanticallyCompliant === false ? ["semantic compliance failed"] : []),
-		...visualReasons(run),
+		...gradingReasons(run),
 		...(run.waivedFeatures.length === 0 ? [] : [`waived: ${run.waivedFeatures.join(", ")}`]),
 		...auditReasons(run),
 	];
 	return `- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): ${reasons.join(", ")}`;
+}
+
+/**
+ * What the grading says of a run that did not succeed. A run set aside says
+ * so instead of failing its checklist, and still says what became of its
+ * pictures, which is its own and not the grader's.
+ * @param run The run.
+ * @returns Zero or more reasons.
+ */
+function gradingReasons(run: RunRecord): string[] {
+	return [
+		...(run.verdict === null ? ["awaiting grading"] : []),
+		...(run.semanticallyCompliant === false ? ["semantic compliance failed"] : []),
+		...(run.checklist?.standing === "off-checklist"
+			? ["set aside: the grader answered off the checklist"]
+			: []),
+		...visualReasons(run),
+	];
 }
 
 /**
@@ -298,7 +315,7 @@ function renderReportMarkdown(report: Report): string {
 	return [
 		`# ${reportHeading(report.grader)}`,
 		"",
-		"Each row's change line reports what moved rather than a single word. The ok and visual cells carry signed changes in the pass/fail counts, which are tallies of runs and are held to no bar. Each quality cell carries the candidate's mean minus the baseline's, then the noise bar this row's own runs set for that axis: the distance between the highest and lowest score one arm gave, divided by the runs it averaged, since moving one run by the whole spread moves a mean by exactly that, taken over whichever arm spread further. A move that clears its bar is marked with an exclamation mark, in either direction; an improvement is reported exactly as a regression is. The last column draws the row's one word only where more than one scenario's runs stand behind it, so a per-scenario row over three runs an arm says deltas only; where a row cannot be compared at all it says which precondition failed. Runs the grader answered off the checklist — it skipped declared features and graded names of its own — are set aside like contaminated runs: they enter neither comparison, they are listed below rather than counted as semantic failures, and they withhold their row's comparison.",
+		"Each row's change line reports what moved rather than a single word. The ok and visual cells carry signed changes in the pass/fail counts, which are tallies of runs and are held to no bar. Each quality cell carries the candidate's mean minus the baseline's, then the noise bar this row's own runs set for that axis. The two arms are paired run for run by scenario and repetition, so whatever a scenario scores in both arms cancels inside its own pair and one scenario being harder than another is never mistaken for noise; the bar is the distance between the largest and smallest of those paired differences, over the square root of how many were averaged, because the mean of many draws approaches the truth as the square root of their number. A move that clears its bar is marked with an exclamation mark, in either direction; an improvement is reported exactly as a regression is. The last column draws the row's one word only where more than one scenario's runs stand behind it, so a per-scenario row over three runs an arm says deltas only; where a row cannot be compared at all it says which precondition failed. Runs the grader answered off the checklist — it skipped declared features and graded names of its own — are set aside like contaminated runs: they enter neither comparison, they withhold their row's comparison, and they are listed below instead of being counted as semantic failures. Being set aside hides nothing else about them: such a run still appears among the runs that did not succeed, with whatever else went wrong with it.",
 		"",
 		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to have done what was asked with its pictures inspected, and complete usage; a visual failure counts against its arm's quality but, since both arms share the renderer, does not withhold the cost comparison. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation. Completeness is the grader's 0-10 judgment of how far a board that wrote something uses the semantics the source justifies beyond what the request named, and missed counts the justified catalogue rows its authors left out, summed over the arm. Product src counts runs whose author read the archboard product's source past the installed skill, its generated schemas and --help; reading the skill is expected and reading Flask is investigation, but a read of the product is a question the skill or a CLI answer left open, listed by the grader under concerns as tooling:, and is neither contamination nor a failure. Guidance counts runs that read every skill file their scenario names over runs that recorded their reads; a run that skipped one is listed below, since a cost saving over a recipe nobody read measures the wrong thing.",
 		"",

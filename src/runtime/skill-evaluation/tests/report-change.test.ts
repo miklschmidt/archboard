@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
 import {
-	armNoise,
 	buildReport,
+	checklistStanding,
 	directionOf,
+	pairedNoise,
 	standingOf,
 	type AxisChange,
 	type ComparisonRow,
@@ -57,7 +58,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		verdict,
 		semanticallyCompliant: true,
 		waivedFeatures: [],
-		checklist: { unmentioned: [], invented: [] },
+		checklist: { standing: "answered", unmentioned: [], invented: [] },
 		...overrides,
 	};
 }
@@ -103,12 +104,27 @@ function axisOf(row: ComparisonRow | undefined, axis: QualityAxis): AxisChange |
 		: undefined;
 }
 
-test("an arm's noise is the spread of its scores over the runs it averages", () => {
-	expect(armNoise([])).toBe(0);
-	expect(armNoise([9, 9, 9])).toBe(0);
-	// One run three points from its fellows moves a three-run mean by one.
-	expect(armNoise([8, 6, 9])).toBe(1);
-	expect(armNoise([9, 8])).toBe(0.5);
+test("the bar is the spread of the paired differences over the root of how many were averaged", () => {
+	expect(pairedNoise([])).toBe(0);
+	expect(pairedNoise([-1, -1, -1])).toBe(0);
+	expect(pairedNoise([0, 1, 2])).toBeCloseTo(2 / Math.sqrt(3), 10);
+	// It must fall as the root of the pairs, not as the pairs: a bar dividing
+	// by the count would shrink four times faster over sixteen pairs than the
+	// uncertainty it stands for, and would call a batch regressed on a
+	// fraction of a grader point.
+	const sixteen = Array.from({ length: 16 }, (_, index) => (index % 2 === 0 ? 0 : 2));
+	expect(pairedNoise(sixteen)).toBe(0.5);
+	expect(pairedNoise(sixteen)).toBe(pairedNoise([0, 2]) * Math.sqrt(2 / 16));
+});
+
+test("one grader point on one run can never be called a move, however many runs there are", () => {
+	for (const pairs of [3, 12, 42]) {
+		const differences: number[] = Array.from({ length: pairs }, (_, index) =>
+			index === 0 ? -1 : 0,
+		);
+		const delta = differences.reduce((sum, value) => sum + value, 0) / pairs;
+		expect(directionOf(delta, pairedNoise(differences))).toBe("held");
+	}
 });
 
 test("a move is called only past the bar, and the same way in both directions", () => {
@@ -128,7 +144,7 @@ test("a row's word says mixed rather than burying a rise under a fall", () => {
 	expect(standingOf(["regressed", "improved"])).toBe("mixed");
 });
 
-test("the bar a row is held to comes from its own arms, so consistent arms expose a one-point fall", () => {
+test("the bar a row is held to comes from its own runs, so consistent arms expose a one-point fall", () => {
 	const consistent = buildReport(
 		[...armRuns("baseline", "S01", [10, 10, 10]), ...armRuns("candidate", "S01", [9, 9, 9])],
 		null,
@@ -141,13 +157,29 @@ test("the bar a row is held to comes from its own arms, so consistent arms expos
 		noise: 0,
 		direction: "regressed",
 	});
-	// The same fall of a third, under arms that already spread by one, is noise.
+	// The same fall of a third, under runs that already disagree by two, is noise.
 	const spread = buildReport(
 		[...armRuns("baseline", "S01", [9, 9, 8]), ...armRuns("candidate", "S01", [8, 8, 9])],
 		null,
 	).scenarios[0];
-	expect(axisOf(spread, "correctness")?.noise).toBeCloseTo(1 / 3, 10);
+	expect(axisOf(spread, "correctness")?.noise).toBeCloseTo(2 / Math.sqrt(3), 10);
 	expect(axisOf(spread, "correctness")?.direction).toBe("held");
+});
+
+test("what a scenario scores in both arms cancels, so an aggregate row measures only the arms apart", () => {
+	// Two scenarios four points apart, each arm identical to the other but for
+	// a single point on one run of one of them. Pooling the raw scores would
+	// call that four-point gap noise; pairing sees it cancel.
+	const runs = [
+		...armRuns("baseline", "S01", [9, 9, 9]),
+		...armRuns("candidate", "S01", [9, 9, 9]),
+		...armRuns("baseline", "S03", [5, 5, 5]),
+		...armRuns("candidate", "S03", [5, 5, 4]),
+	];
+	const total = buildReport(runs, null).totals[0];
+	expect(axisOf(total, "correctness")?.noise).toBeCloseTo(1 / Math.sqrt(6), 10);
+	// And the one point still cannot carry the row.
+	expect(axisOf(total, "correctness")?.direction).toBe("held");
 });
 
 test("a rise past the bar is reported as readily as a fall", () => {
@@ -217,22 +249,53 @@ test("a row that cannot be compared says which precondition failed", () => {
 	expect(unopened?.change).toEqual({ assessed: false, reason: "pictures-not-judged" });
 });
 
-test("a verdict answered off the checklist sets its run aside without failing it", () => {
+test("what counts as answering off the checklist is one rule, and it needs both halves", () => {
+	const expected = [{ feature: "a" }, { feature: "b" }];
+	const answer = (...features: string[]): RunVerdict => ({
+		...verdict,
+		features: features.map((feature) => ({
+			feature,
+			verdict: "pass" as const,
+			evidence: "board",
+			reason: "seen",
+		})),
+	});
+	expect(checklistStanding(expected, answer("a", "b"))).toBe("answered");
+	// Only skipped: still an answer about these features, and a fair failure.
+	expect(checklistStanding(expected, answer("a"))).toBe("answered");
+	// Only added: everything asked was answered as well.
+	expect(checklistStanding(expected, answer("a", "b", "c"))).toBe("answered");
+	// Both: the grader graded a checklist of its own.
+	expect(checklistStanding(expected, answer("c", "d"))).toBe("off-checklist");
+});
+
+test("a verdict answered off the checklist sets its run aside without calling its board wrong", () => {
 	const offChecklist = {
-		checklist: { unmentioned: ["groups.multi-membership"], invented: ["node.groups"] },
+		checklist: {
+			standing: "off-checklist" as const,
+			unmentioned: ["groups.multi-membership"],
+			invented: ["node.groups"],
+		},
 		semanticallyCompliant: null,
 	};
 	const runs = [
 		...armRuns("baseline", "S01", [9, 9, 9]),
-		...withFirst(armRuns("candidate", "S01", [9, 9, 9]), offChecklist),
+		// The same run also never had a picture opened, which is its own defect.
+		...withFirst(armRuns("candidate", "S01", [9, 9, 9]), {
+			...offChecklist,
+			visual: "incomplete",
+		}),
 	];
 	const report = buildReport(runs, null);
 	const row = report.scenarios[0];
 	expect(report.ungradable.map((run) => run.run)).toEqual(["run-candidate-S01-0"]);
-	// Set aside, not failed, and not counted against semantic compliance.
-	expect(report.failures).toHaveLength(0);
+	// Not a semantic failure, since nothing was said about the checklist.
 	expect(row?.candidate.semanticFailures).toBe(0);
 	expect(row?.candidate.ungradable).toBe(1);
+	// Its own defects survive being set aside: it is still a run that did not
+	// succeed, and the report still has to account for the lost pass.
+	expect(report.failures.map((run) => run.run)).toEqual(["run-candidate-S01-0"]);
+	expect(row?.candidate.succeeded).toBe(2);
 	// Neither comparison may be drawn over it.
 	expect(row?.change).toEqual({ assessed: false, reason: "arms-not-comparable" });
 	expect(row?.tokenChangePercent).toBeNull();

@@ -1,13 +1,17 @@
 // What moved between a row's two arms, and whether the move is worth a word.
 // A pass/fail count is a tally of runs and any change to it is real; a grader
 // mean over three runs moves by a third for one grader point, so a mean is
-// held to the noise the batch measures in itself — the spread one arm showed
-// on the same scenario and axis — before it is called anything. Improvements
-// and regressions are read the same way, and the row's one word is drawn only
-// where more than one scenario's runs stand behind it.
+// held to the noise the batch measures in itself before it is called
+// anything. That noise is read off the runs the two arms hold in common,
+// paired scenario for scenario and repetition for repetition: whatever a
+// scenario scores in both arms cancels inside its pair, and the spread of what
+// is left, over the square root of how many pairs were averaged, is how far
+// the mean of them can sit from the truth. Improvements and regressions are
+// read the same way, and the row's one word is drawn only where more than one
+// scenario's runs stand behind it.
 
 import type { RunVerdict } from "@/runtime/skill-evaluation/lib/grader";
-import { mean, type Maybe } from "@/runtime/skill-evaluation/lib/report-numbers";
+import type { Maybe } from "@/runtime/skill-evaluation/lib/report-numbers";
 import type { ArmSummary, RunRecord } from "@/runtime/skill-evaluation/lib/report";
 
 /** Which way one measure moved, once the noise the batch measures in itself is allowed for. */
@@ -40,7 +44,7 @@ interface AxisChange {
 	readonly before: number;
 	readonly after: number;
 	readonly delta: number;
-	/** How far this row's own within-arm spread says a mean can move meaning nothing. */
+	/** How far the spread of this row's own paired differences says a mean can move meaning nothing. */
 	readonly noise: number;
 	readonly direction: Direction;
 }
@@ -77,12 +81,10 @@ const AXIS_SCORES: Readonly<
 /** The counts in the order the report prints them. */
 const COUNTS: readonly QualityCount[] = ["succeeded", "visualFailed"];
 
-/** The arm tally each count reads, and which way of it is the better outcome. */
-const COUNT_TALLIES: Readonly<
-	Record<QualityCount, { readonly field: QualityCount; readonly betterWhen: "higher" | "lower" }>
-> = {
-	succeeded: { field: "succeeded", betterWhen: "higher" },
-	visualFailed: { field: "visualFailed", betterWhen: "lower" },
+/** Which way of each count is the better outcome; the count names its own arm tally. */
+const COUNT_IS_BETTER: Readonly<Record<QualityCount, "higher" | "lower">> = {
+	succeeded: "higher",
+	visualFailed: "lower",
 };
 
 /**
@@ -92,16 +94,53 @@ const COUNT_TALLIES: Readonly<
  */
 const NOISE_SLACK = 1e-9;
 
+/** One pair of runs the two arms share, scored on one axis. */
+interface ScorePair {
+	readonly before: number;
+	readonly after: number;
+}
+
 /**
- * One axis's scores over the graded runs of one arm.
+ * One arm's scores on one axis, by the identity both arms share: a scenario
+ * and a repetition. A comparable row holds the same identities in both arms,
+ * so this is what pairs them.
  * @param runs The arm's runs.
  * @param axis The axis.
- * @returns The scores the graded runs carry on it.
+ * @returns The scores under each identity, in run order, absent where the run carries none.
  */
-function axisScores(runs: readonly RunRecord[], axis: QualityAxis): number[] {
-	return runs
-		.map((run): Maybe => (run.verdict === null ? null : scoreOf(run.verdict, axis)))
-		.filter((score): score is number => score !== null);
+function scoresByIdentity(runs: readonly RunRecord[], axis: QualityAxis): Map<string, Maybe[]> {
+	const scores = new Map<string, Maybe[]>();
+	for (const run of runs) {
+		const identity = JSON.stringify([run.scenario, run.repetition]);
+		const carried = scores.get(identity) ?? [];
+		carried.push(run.verdict === null ? null : scoreOf(run.verdict, axis));
+		scores.set(identity, carried);
+	}
+	return scores;
+}
+
+/**
+ * The two arms' scores on one axis, paired run for matched run. Pairing is
+ * what makes an aggregate row honest: whatever a scenario scores in both arms
+ * cancels inside its own pair, so what is left varies only between the arms,
+ * and one scenario being harder than another is not mistaken for noise.
+ * @param baselineRuns The baseline arm's runs.
+ * @param candidateRuns The candidate arm's runs.
+ * @param axis The axis.
+ * @returns One entry per pair both arms scored.
+ */
+function pairedScores(
+	baselineRuns: readonly RunRecord[],
+	candidateRuns: readonly RunRecord[],
+	axis: QualityAxis,
+): ScorePair[] {
+	const after = scoresByIdentity(candidateRuns, axis);
+	return [...scoresByIdentity(baselineRuns, axis)].flatMap(([identity, before]) =>
+		before.flatMap((score, index) => {
+			const other = after.get(identity)?.[index] ?? null;
+			return score === null || other === null ? [] : [{ before: score, after: other }];
+		}),
+	);
 }
 
 /**
@@ -116,16 +155,21 @@ function scoreOf(verdict: RunVerdict, axis: QualityAxis): Maybe {
 }
 
 /**
- * How far one arm's mean can move on the harness's own noise: the distance
- * between that arm's highest and lowest score on the axis, divided by the runs
- * it averages, because moving one run by the whole spread moves the mean by
- * exactly that. The same skill, the same scenario and the same axis, so
- * whatever it spans is what the batch measures in itself.
- * @param scores One arm's scores on one axis.
- * @returns The movement that means nothing; zero when the arm scored nothing.
+ * How far a mean of paired differences can sit from the truth on the noise the
+ * batch measures in itself: the distance between the largest and smallest
+ * difference, over the square root of how many were averaged. The spread is
+ * what the same skill on the same work varies by; a mean of many such draws
+ * approaches the truth as the square root of their number, not as their
+ * number, so a bar that divided by the count would shrink faster than the
+ * uncertainty it stands for and would call a whole batch regressed on a
+ * fraction of a grader point.
+ * @param differences One paired difference per run pair.
+ * @returns The movement that means nothing; zero when nothing was paired.
  */
-function armNoise(scores: readonly number[]): number {
-	return scores.length === 0 ? 0 : (Math.max(...scores) - Math.min(...scores)) / scores.length;
+function pairedNoise(differences: readonly number[]): number {
+	if (differences.length === 0) return 0;
+	const spread = Math.max(...differences) - Math.min(...differences);
+	return spread / Math.sqrt(differences.length);
 }
 
 /**
@@ -149,23 +193,23 @@ function directionOf(delta: number, noise: number): Direction {
  */
 function countChanges(baseline: ArmSummary, candidate: ArmSummary): CountChange[] {
 	return COUNTS.map((measure) => {
-		const tally = COUNT_TALLIES[measure];
-		const before = baseline[tally.field];
-		const after = candidate[tally.field];
+		const before = baseline[measure];
+		const after = candidate[measure];
 		const delta = after - before;
 		return {
 			measure,
 			before,
 			after,
 			delta,
-			direction: directionOf(tally.betterWhen === "higher" ? delta : -delta, 0),
+			direction: directionOf(COUNT_IS_BETTER[measure] === "higher" ? delta : -delta, 0),
 		};
 	});
 }
 
 /**
- * How each grader mean moved, against the bar this row's own within-arm spread
- * sets. An axis neither arm scored is left out rather than reported as flat.
+ * How each grader mean moved, pair by pair, against the bar the spread of
+ * those pairs sets. An axis no pair of runs both scored is left out rather
+ * than reported as flat.
  * @param baselineRuns The baseline arm's runs.
  * @param candidateRuns The candidate arm's runs.
  * @returns One entry per axis both arms scored.
@@ -175,15 +219,23 @@ function axisChanges(
 	candidateRuns: readonly RunRecord[],
 ): AxisChange[] {
 	return AXES.flatMap((axis) => {
-		const beforeScores = axisScores(baselineRuns, axis);
-		const afterScores = axisScores(candidateRuns, axis);
-		const before = mean(beforeScores);
-		const after = mean(afterScores);
-		if (before === null || after === null) return [];
-		const noise = Math.max(armNoise(beforeScores), armNoise(afterScores));
+		const pairs = pairedScores(baselineRuns, candidateRuns, axis);
+		if (pairs.length === 0) return [];
+		const before = average(pairs.map((pair) => pair.before));
+		const after = average(pairs.map((pair) => pair.after));
+		const noise = pairedNoise(pairs.map((pair) => pair.after - pair.before));
 		const delta = after - before;
 		return [{ axis, before, after, delta, noise, direction: directionOf(delta, noise) }];
 	});
+}
+
+/**
+ * The mean of values there is at least one of.
+ * @param values The values.
+ * @returns The mean.
+ */
+function average(values: readonly number[]): number {
+	return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 /**
@@ -255,7 +307,7 @@ function changeOf(
 }
 
 export {
-	armNoise,
+	pairedNoise,
 	axisChanges,
 	changeOf,
 	countChanges,
