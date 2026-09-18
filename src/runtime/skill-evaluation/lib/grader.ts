@@ -14,7 +14,6 @@ import {
 	CATALOGUE_ROWS,
 	CITATION_PATTERN,
 	RUBRIC_SECTIONS,
-	citesPassage,
 } from "@/runtime/skill-evaluation/lib/citations";
 
 /** Whether a grader answered the scenario it was given, or a checklist of its own. */
@@ -484,7 +483,8 @@ function excusedDepartures(
 	verdict: RunVerdict,
 ): ExcusedDeparture[] {
 	return foundFeatures(expected, verdict).flatMap(({ entry, cites }) =>
-		entry.finding?.axis === "skill" && citesPassage(cites, entry.finding.passage)
+		// CITATION_PATTERN fixes a citation's one form, so equal text is the same passage.
+		entry.finding?.axis === "skill" && cites.includes(entry.finding.passage)
 			? [{ feature: entry.feature, passage: entry.finding.passage, gap: entry.finding.gap }]
 			: [],
 	);
