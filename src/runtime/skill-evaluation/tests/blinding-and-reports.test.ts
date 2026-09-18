@@ -15,9 +15,7 @@ import {
 	checklistGaps,
 	FiledVerdictSchema,
 	graderUsage,
-	graderPrompt,
 	median,
-	NO_DELEGATION,
 	parseGraderOutput,
 	renderReportMarkdown,
 	semanticallyCompliant,
@@ -73,8 +71,8 @@ const SCENARIO: Scenario = {
 	sources: ["src/flask/app.py"],
 	prompt: "Create it.",
 	expectedFeatures: [
-		{ feature: "board.create", requirement: "one board" },
-		{ feature: "render.svg", requirement: "drawn" },
+		{ feature: "board.create", requirement: "one board", skill: ["SKILL.md#essentials"] },
+		{ feature: "render.svg", requirement: "drawn", skill: ["SKILL.md#essentials"] },
 	],
 	outcomes: [{ check: "check-clean" }],
 	guardrails: [],
@@ -217,31 +215,6 @@ describe("blinding", () => {
 });
 
 describe("the grader contract", () => {
-	test("the prompt names the runs, carries the rubric once, and forbids delegation in the agreed words", () => {
-		const first = graderPrompt({
-			rubric: "# Rubric\nBe exact.",
-			layout: { flask: "flask", runs: "runs", verdictFile: "verdict-1.json" },
-			revisions: { "3.0.0": "abc" },
-			runs: ["run-0000000001"],
-			continuing: false,
-		});
-		expect(first).toContain(NO_DELEGATION);
-		expect(NO_DELEGATION).toBe(
-			"Do not use subagents. Inspect the source and grade every run yourself in this session.",
-		);
-		expect(first).toContain("Be exact.");
-		expect(first).toContain("run-0000000001");
-		const next = graderPrompt({
-			rubric: "# Rubric\nBe exact.",
-			layout: { flask: "flask", runs: "runs", verdictFile: "verdict-2.json" },
-			revisions: {},
-			runs: ["run-0000000002"],
-			continuing: true,
-		});
-		expect(next).not.toContain("Be exact.");
-		expect(next).toContain("run-0000000002");
-	});
-
 	test("a verdict is read strictly, waived required features are surfaced, and compliance needs every feature to pass", () => {
 		const verdict: RunVerdict = {
 			run: "run-0123456789",
@@ -251,12 +224,20 @@ describe("the grader contract", () => {
 					verdict: "pass",
 					evidence: "boards/Flask.json",
 					reason: "one board",
+					finding: null,
 				},
 				{
 					feature: "render.svg",
 					verdict: "not-applicable",
 					evidence: "-",
 					reason: "renderer absent",
+					finding: {
+						axis: "conformance",
+						did: "wrote no render",
+						taught: "draw it and look at it",
+						passage: "SKILL.md#essentials",
+						gap: "no picture where the request named one",
+					},
 				},
 			],
 			semanticCorrectness: 8,

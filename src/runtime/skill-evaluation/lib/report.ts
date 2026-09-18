@@ -11,10 +11,12 @@ import type {
 } from "@/runtime/skill-evaluation/lib/events";
 import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
-import type {
-	ChecklistStanding,
-	RunVerdict,
-	VisualStanding,
+import {
+	byAxis,
+	type ChecklistStanding,
+	type FindingAxis,
+	type RunVerdict,
+	type VisualStanding,
 } from "@/runtime/skill-evaluation/lib/grader";
 import type { GraderIdentity } from "@/runtime/skill-evaluation/lib/grader-runner";
 import type { Agreement } from "@/runtime/skill-evaluation/lib/report-agreement";
@@ -81,6 +83,22 @@ interface ChecklistAnswer {
 	readonly invented: readonly string[];
 }
 
+/**
+ * What a grader's concern is about, by the prefix the rubric's "Concerns"
+ * and "What the run inherited" give it: the fixture the harness laid, a
+ * question the skill or a CLI answer left open, or anything else.
+ */
+type ConcernKind = "fixture" | "tooling" | "other";
+
+/** One concern a grader raised, with the run it was raised on. */
+interface RaisedConcern {
+	readonly run: string;
+	readonly arm: Arm;
+	readonly scenario: string;
+	readonly repetition: number;
+	readonly text: string;
+}
+
 /** One job expected in the saved batch, before a run has produced a manifest. */
 type PlannedRun = Pick<RunRecord, "arm" | "scenario" | "workflow" | "report" | "repetition">;
 
@@ -125,14 +143,22 @@ interface ArmSummary {
 	readonly meanSemanticCorrectness: Maybe;
 	readonly meanArchitecturalTruth: Maybe;
 	readonly meanReadability: Maybe;
-	/** Over graded runs that wrote a board and were judged for it; null when none was. */
+	/** Over graded runs that added something and were scored for it; null when none was. */
 	readonly meanBehaviouralCompleteness: Maybe;
-	/** Catalogue rows the source justified that the authors left out, summed over the arm. */
 	/** Runs that recorded their guidance reads and read every file their scenario names. */
 	readonly guidanceRead: number;
 	/** Runs that recorded their guidance reads at all. */
 	readonly guidanceRecorded: number;
+	/** Catalogue rows the source justified that the authors left out, summed over the arm. */
 	readonly missedUnprompted: number;
+	/**
+	 * Feature findings summed over the arm, by the authority each answers to.
+	 * A conformance finding is a departure from the skill, a truth finding a
+	 * board that did what the skill teaches and still contradicts the source,
+	 * and a skill finding an expectation the skill never taught — the last
+	 * fails no run. A non-pass filed before findings existed counts under none.
+	 */
+	readonly findings: Readonly<Record<FindingAxis, number>>;
 }
 
 /** One row of the comparison: a scenario or a workflow. */
@@ -159,6 +185,10 @@ interface Report {
 	readonly contamination: readonly RunRecord[];
 	/** Runs whose author did not read every guidance file the scenario names. */
 	readonly skippedGuidance: readonly RunRecord[];
+	/** Runs the grader found an expectation the skill never taught in: findings about the skill, not failures. */
+	readonly skillFindings: readonly RunRecord[];
+	/** Every concern the grader raised, by what it is about, so none is left only in the verdict files. */
+	readonly concerns: Readonly<Record<ConcernKind, readonly RaisedConcern[]>>;
 	readonly graderUsage: Usage | null;
 	/** Who graded and how its usage is counted; null when nothing was graded. */
 	readonly grader: GraderIdentity | null;
@@ -216,6 +246,51 @@ function didWhatWasAsked(run: RunRecord): boolean {
  */
 function answeredOffChecklist(run: RunRecord): boolean {
 	return run.checklist?.standing === "off-checklist";
+}
+
+/**
+ * The expected features a run's verdict carries a finding for, by axis.
+ * @param run The run.
+ * @returns The features on each axis; none for an ungraded run.
+ */
+function findingsOf(run: RunRecord): Readonly<Record<FindingAxis, string[]>> {
+	const features = run.verdict?.features ?? [];
+	return byAxis((axis) =>
+		features.filter((entry) => entry.finding?.axis === axis).map((entry) => entry.feature),
+	);
+}
+
+/**
+ * What a concern is about, by its prefix.
+ * @param text The concern.
+ * @returns Its kind.
+ */
+function concernKind(text: string): ConcernKind {
+	const head = text.trimStart();
+	if (head.startsWith("fixture:")) return "fixture";
+	return head.startsWith("tooling:") ? "tooling" : "other";
+}
+
+/**
+ * Every concern the graded runs carry, grouped by kind, in run order.
+ * @param runs The runs.
+ * @returns The concerns by kind.
+ */
+function concernsOf(runs: readonly RunRecord[]): Readonly<Record<ConcernKind, RaisedConcern[]>> {
+	const raised = runs.flatMap((run) =>
+		(run.verdict?.concerns ?? []).map((text) => ({
+			run: run.run,
+			arm: run.arm,
+			scenario: run.scenario,
+			repetition: run.repetition,
+			text,
+		})),
+	);
+	return {
+		fixture: raised.filter((entry) => concernKind(entry.text) === "fixture"),
+		tooling: raised.filter((entry) => concernKind(entry.text) === "tooling"),
+		other: raised.filter((entry) => concernKind(entry.text) === "other"),
+	};
 }
 
 /**
@@ -311,6 +386,9 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 				count +
 				(run.verdict?.unprompted ?? []).filter((entry) => entry.verdict === "missed").length,
 			0,
+		),
+		findings: byAxis((axis) =>
+			runs.reduce((count, run) => count + findingsOf(run)[axis].length, 0),
 		),
 	};
 }
@@ -464,6 +542,8 @@ function buildReport(
 		ungradable: runs.filter(answeredOffChecklist),
 		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
 		skippedGuidance: runs.filter((run) => (run.guidance?.missing.length ?? 0) > 0),
+		skillFindings: runs.filter((run) => findingsOf(run).skill.length > 0),
+		concerns: concernsOf(runs),
 		graderUsage,
 		grader,
 		authorUsage: {
@@ -476,6 +556,7 @@ function buildReport(
 export {
 	answeredOffChecklist,
 	buildReport,
+	findingsOf,
 	median,
 	mean,
 	percentChange,
@@ -486,7 +567,9 @@ export {
 	type BatchReport,
 	type ChecklistAnswer,
 	type ComparisonRow,
+	type ConcernKind,
 	type GraderReport,
+	type RaisedConcern,
 	type Report,
 	type RunRecord,
 	type PlannedRun,

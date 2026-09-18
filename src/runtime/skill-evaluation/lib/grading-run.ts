@@ -1,5 +1,6 @@
 // The grading session over one batch: a read-only workspace holding the
-// pinned Flask checkouts and every anonymous run bundle, one grader session
+// pinned Flask checkouts, the skill under evaluation and every anonymous run
+// bundle, one grader session
 // that grades the runs in chunks and is resumed rather than restarted, and
 // the verdicts and the session's own usage written beside the runs. Which
 // program grades is chosen here, by name, through the runner seam.
@@ -37,6 +38,7 @@ import {
 	imagesForRun,
 	type RunImages,
 } from "@/runtime/skill-evaluation/lib/grading-images";
+import { digestOf } from "@/runtime/skill-evaluation/lib/install";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import {
 	GRADER_NAMES,
@@ -144,6 +146,39 @@ function stageRun(run: BundledRun, workspace: string): void {
 		const source = path.join(run.directory, sub);
 		if (fs.existsSync(source)) fs.cpSync(source, path.join(target, sub), { recursive: true });
 	}
+}
+
+/** Where the skill under evaluation sits in the grading workspace. */
+const SKILL_DIRECTORY = "skill";
+
+/**
+ * Copies the skill under evaluation into the workspace, so a grader can read
+ * the passage an expected feature cites and judge conformance against the
+ * skill rather than against the rubric's summary of it.
+ *
+ * It is the canonical skill, once, for every run of both arms, and never a
+ * run's own copy. A comparison needs one instrument: judging each arm against
+ * its own skill measures two things with two rulers. And a per-run copy would
+ * let a grader sort runs by the text beside them, which is the unblinding
+ * blind.ts keeps a printed SKILL.md out of the bundle to prevent. It must be
+ * the skill the batch ran: one edited since would be judged against by no run
+ * that used it, so a changed skill is refused.
+ * @param options The pass.
+ * @param workspace The workspace.
+ */
+function stageSkill(options: GradingOptions, workspace: string): void {
+	const skill = path.join(options.checkout, "skills", "archboard");
+	const recorded = z
+		.object({ provenance: z.object({ candidate: z.string() }) })
+		.parse(JSON.parse(fs.readFileSync(path.join(options.batchRoot, "batch.json"), "utf8")))
+		.provenance.candidate;
+	if (digestOf(skill) !== recorded)
+		throw new Error(
+			"skills/archboard differs from the skill this batch ran. A grader judges conformance against it, so restore the batch's skill before grading.",
+		);
+	const target = path.join(workspace, SKILL_DIRECTORY);
+	fs.rmSync(target, { recursive: true, force: true });
+	fs.cpSync(skill, target, { recursive: true, dereference: true });
 }
 
 /**
@@ -287,7 +322,12 @@ async function gradeChunk(
 	};
 	const prompt = graderPrompt({
 		rubric: options.loaded.rubric,
-		layout: { flask: "flask", runs: "runs", verdictFile: path.basename(files.verdict) },
+		layout: {
+			flask: "flask",
+			runs: "runs",
+			skill: SKILL_DIRECTORY,
+			verdictFile: path.basename(files.verdict),
+		},
 		revisions: { ...options.loaded.pins.flask.revisions },
 		runs,
 		continuing: session.threadId !== null,
@@ -369,6 +409,7 @@ async function gradeBatch(
 	fs.writeFileSync(layout.schema, `${JSON.stringify(GRADER_OUTPUT_JSON_SCHEMA, null, "\t")}\n`);
 	runner.prepare(layout.root, layout.workspace);
 	const runs = bundledRuns(options.batchRoot);
+	stageSkill(options, layout.workspace);
 	await stageFlask(options, [...new Set(runs.map((run) => run.revision))], layout.workspace);
 	for (const run of runs) stageRun(run, layout.workspace);
 	const session = readSession(layout.session);

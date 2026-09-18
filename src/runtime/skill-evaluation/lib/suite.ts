@@ -15,6 +15,12 @@ import {
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { landingProblems } from "@/runtime/skill-evaluation/lib/landings";
 import { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
+import {
+	CITATION_PATTERN,
+	catalogueProblems,
+	citationProblem,
+	rubricSectionProblems,
+} from "@/runtime/skill-evaluation/lib/citations";
 
 const FLASK_REVISIONS = ["2.1.3", "2.2.0", "3.0.0"] as const;
 const WORKFLOWS = [
@@ -78,8 +84,18 @@ const CHECK_KINDS = [
 const SUBJECT_KINDS = ["node", "edge", "flow", "step"] as const;
 
 const ScenarioIdSchema = z.string().regex(/^S\d{2}$/u);
+/**
+ * One feature a scenario requires, with the skill passages it derives from.
+ * A feature that names no passage is an expectation nobody can check against
+ * the skill, which is how the rubric drifted from it unseen; it is refused.
+ */
 const ExpectedFeatureSchema = z
-	.object({ feature: z.string().min(1), requirement: z.string().min(1) })
+	.object({
+		feature: z.string().min(1),
+		requirement: z.string().min(1),
+		/** `<file>#<heading-anchor>` citations into the skill, e.g. `SKILL.md#essentials`. */
+		skill: z.array(z.string().regex(CITATION_PATTERN)).min(1),
+	})
 	.strict();
 const Names = z.array(z.string().min(1));
 const PolicyRecord = z.record(z.string(), z.record(z.string(), z.unknown()));
@@ -469,6 +485,34 @@ function guidanceProblems(loaded: LoadedSuite): string[] {
 }
 
 /**
+ * Expected features citing a passage the canonical skill does not hold, a
+ * catalogue — the skill's or the rubric's — whose rows are not the closed set
+ * the grader answers in, and a rubric missing a section the prompt points at. The candidate skill is the one cited: it is the one
+ * the grader is given, and the one a batch's instrument has to be constant to.
+ * @param loaded The loaded suite.
+ * @returns Problems, one line each.
+ */
+function skillProblems(loaded: LoadedSuite): string[] {
+	const skill = path.join(loaded.directory, "..", "skills", "archboard");
+	const skillFile = path.join(skill, "SKILL.md");
+	return [
+		...loaded.suite.evals.flatMap((scenario) =>
+			scenario.expectedFeatures.flatMap((feature) =>
+				feature.skill
+					.map((citation) => citationProblem(skill, citation))
+					.filter((problem) => problem !== null)
+					.map((problem) => `${scenario.id} ${feature.feature}: ${problem}`),
+			),
+		),
+		...(fs.existsSync(skillFile)
+			? catalogueProblems("skill SKILL.md", fs.readFileSync(skillFile, "utf8"))
+			: ["skill SKILL.md is missing"]),
+		...catalogueProblems(`rubric ${loaded.suite.rubric}`, loaded.rubric),
+		...rubricSectionProblems(`rubric ${loaded.suite.rubric}`, loaded.rubric),
+	];
+}
+
+/**
  * The problems a suite has beyond each file's own shape. Empty when whole.
  * @param loaded The loaded suite.
  * @returns Problems, each one line.
@@ -479,6 +523,7 @@ function suiteProblems(loaded: LoadedSuite): string[] {
 		...fixtureProblems(loaded),
 		...coverageProblems(loaded),
 		...guidanceProblems(loaded),
+		...skillProblems(loaded),
 		...leakageProblems(
 			loaded.suite.evals,
 			loaded.fixtures.values(),
