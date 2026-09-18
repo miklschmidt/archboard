@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 12:45'
+updated_date: '2026-09-18 13:03'
 labels: []
 dependencies: []
 references:
@@ -59,4 +59,20 @@ The two traps. Accumulation: the check runs after each step against everything t
 Tests, in src/runtime/skill-evaluation/tests/suite.test.ts: a call onto a parent is refused and the line names the scenario, both ends and the child; the same shape split across steps is refused while the first step alone is not; a rename between them does not hide it; dependency and extends onto a part with children pass; and landingProblems(loaded.fixtures) is empty for the 15 real fixtures.
 
 Verified: bun test src/runtime/skill-evaluation/tests/suite.test.ts (11 pass, 0 fail); eval:skill check (suite ok: 15 scenarios, 15 fixtures, 14 coverage parts); oxlint type-aware on src/runtime/skill-evaluation and baseline on its tests, clean; tsc --noEmit clean; oxfmt --check clean. End to end, a copy of evals/ in a scratch directory with one child added under a call's target under S01 makes loadSuite refuse with both offending relationships named — evals/ itself was not touched. No model evaluation was run.
+
+Round 2, after review.
+
+Kind rule flipped (review 1 and 6): every relationship kind lands except `dependency`. `extends` is not a kind in DEFAULT_SEMANTIC_POLICY. It was only a label on S04's dependency edges, so the old rationale was false. Every other kind names a receiver: call, http, rpc, event, queue, data, render, other. The run check no-edge-to-container-with-children filters no kind at all. The comment on WHOLE_MODULE_KINDS now states that dependency is the one kind that addresses the module itself. The test takes the kinds from DEFAULT_SEMANTIC_POLICY.relationshipKinds, so a new kind is covered without editing it.
+
+Two passes (review 2): noteNodes folds every stated node's names and handles first, then places parents, as the store does. A child stated before the parent it names, in the same step that renames that parent, is now refused.
+
+Variants (review 3): I chose per-variant state. The `new` step creates the first variant under its stated `variant` or the store's FIRST_VARIANT_NAME. A branch starts as a copy of its source and follows it. An edit applies to the variant it names, or to current, and is then carried into every draft that follows that variant, parent before child. An adoption makes the variant current and stops it following its source. Resolve steps are not followed. The carry approximates the store's three-way merge, and the comment on applyStep says so: a draft keeps the parts it removed (a carried statement does not bring them back, and a carried relationship to a removed end does not arrive), and it takes everything else. This closes (a): a removal on a draft no longer erases facts from the current variant. It also fixes (b): the relationship on one sibling draft and the child on another no longer combine. A landing is named once per board, on the first variant where it appears.
+
+Handles (review 4): fold records a node's `as` as a key for that step only, so a parent named by handle resolves. removeEdges (review 5): a comment beside the EDIT fields says it needs handling only if an $edge(...) placeholder is ever added. Optional 7: the doc comment on fixtureLandings says a landing is reported when it first appears, even if a later step moves the child away.
+
+Interface: the field names this reads are tied to the input types with `satisfies` (VariantEditInput, BoardCreateInput, SemanticNodeInput, SemanticEdgeInput). A renamed field now breaks type-check. landingProblems takes ReadonlyMap<string, Fixture> through a type-only import. My earlier stated reason, avoiding a cycle, was wrong.
+
+Tests moved to src/runtime/skill-evaluation/tests/landings.test.ts, and suite.test.ts is back to its pre-TASK-269 content. I dropped the duplicate real-fixture assertion: suiteProblems(loaded) in suite.test.ts already owns it. The new cases cover refusal naming, the later child (by $node, parent-first rename, child-first rename, handle), every configured kind except dependency, a draft removal followed by a current-variant child, a child added on a draft, a current edit carried into a draft, and sibling drafts that must not combine. Run against the round-1 predicate, 4 of the 7 tests fail, so each test catches a real gap.
+
+Verified: landings.test.ts 7 pass, suite.test.ts 9 pass, eval:skill check reports 'suite ok: 15 scenarios, 15 fixtures, 14 coverage parts', oxlint (type-aware on landings.ts/index.ts, baseline on tests) is clean, and oxfmt is clean. tsc --noEmit shows errors only in claude-grader.test.ts and report-completeness.test.ts, both from other workers' in-flight changes. There are none in these files.
 <!-- SECTION:NOTES:END -->
