@@ -134,7 +134,9 @@ const SelectorSchema = z.string().trim().min(1);
  * pair would turn a redundancy into a wasted call — but it does not win
  * quietly: where the two are not written the same, the write says which one it
  * took and which it passed over, on standard error with every other warning,
- * leaving the machine-readable answer on stdout the board and nothing else.
+ * leaving the machine-readable answer on stdout the board and nothing else. It
+ * says it where it notices, not with the answer: a flag naming no variant is
+ * refused by the server, and that is the run where hearing it matters most.
  *
  * What is compared is what was typed, because that is all there is here: the
  * board is on the server, reading it to resolve an id against a name would be
@@ -164,7 +166,7 @@ function targetedVariant(
 				: [
 						`Warning: --variant "${asked}" overrides the stated change's \`variant\` ` +
 							`${typeof inChange === "string" ? `"${inChange}"` : describeJson(inChange)}; ` +
-							`this lands on "${asked}".`,
+							`this write names "${asked}".`,
 					],
 	};
 }
