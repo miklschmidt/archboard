@@ -130,7 +130,7 @@ test("the command line pins the model, effort, tools, empty setting sources, str
 test("the prompt differs between runners only in how the pictures arrive", () => {
 	const brief = {
 		rubric: "# Rubric\nBe exact.",
-		layout: { flask: "flask", runs: "runs", verdictFile: "verdict-1.json" },
+		layout: { flask: "flask", runs: "runs", skill: "skill", verdictFile: "verdict-1.json" },
 		revisions: { "3.0.0": "abc" },
 		runs: ["run-0000000001"],
 		continuing: false,

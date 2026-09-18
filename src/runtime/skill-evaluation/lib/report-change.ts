@@ -157,8 +157,8 @@ function pairedScores(
 }
 
 /**
- * One verdict's score on one axis; a run that wrote nothing has no
- * completeness to score.
+ * One verdict's score on one axis; a run that added nothing has no
+ * completeness to score (the rubric's "What the skill adds unprompted").
  * @param verdict The verdict.
  * @param axis The axis.
  * @returns The score, or null when the verdict does not carry it.
@@ -222,7 +222,7 @@ function countChanges(baseline: ArmSummary, candidate: ArmSummary): CountChange[
 /**
  * How each grader mean moved, pair by pair, against the bar the spread of
  * those pairs sets. An axis fewer than two pairs of runs both scored is left
- * out rather than reported as flat: a run that wrote nothing has no
+ * out rather than reported as flat: a run that added nothing has no
  * completeness to score, so an axis can lose pairs the rest of the row keeps.
  * @param baselineRuns The baseline arm's runs.
  * @param candidateRuns The candidate arm's runs.

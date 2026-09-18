@@ -18,31 +18,51 @@
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
-					"requirement": "one board named exactly `Flask request pipeline` with level `service`"
+					"requirement": "one board named exactly `Flask request pipeline` with level `service`",
+					"skill": [
+						"references/create-architecture.md#create-an-architecture-diagram-from-code",
+						"SKILL.md#essentials"
+					]
 				},
 				{
 					"feature": "node.kind",
-					"requirement": "every node uses a configured kind; the WSGI server is `external`, dispatch steps are `function` or `module`"
+					"requirement": "every node uses a configured kind; the WSGI server is `external`, dispatch steps are `function` or `module`",
+					"skill": ["SKILL.md#essentials", "SKILL.md#everything-the-code-shows"]
 				},
 				{
 					"feature": "node.responsibility",
-					"requirement": "every node carries a clear short responsibility grounded in the source; responsibilities may wrap over two or three card lines without losing text"
+					"requirement": "every node carries a clear short responsibility grounded in the source; responsibilities may wrap over two or three card lines without losing text",
+					"skill": ["SKILL.md#archboard"]
 				},
 				{
 					"feature": "containment.parent",
-					"requirement": "app-internal parts are inside a single `Flask app` container; the WSGI server is outside it"
+					"requirement": "app-internal parts are inside a single `Flask app` container; the WSGI server is outside it",
+					"skill": [
+						"SKILL.md#everything-the-code-shows",
+						"references/authoring.md#containment-and-receivers"
+					]
 				},
 				{
 					"feature": "edge.actual-receiver",
-					"requirement": "each call lands on the internal function the source actually calls, from the function whose body calls it: full_dispatch_request calls preprocess_request, dispatch_request and finalize_request; finalize_request calls make_response and process_response; nothing lands on the container"
+					"requirement": "each call lands on the internal function the source actually calls, from the function whose body calls it: full_dispatch_request calls preprocess_request, dispatch_request and finalize_request; finalize_request calls make_response and process_response; nothing lands on the container",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/authoring.md#containment-and-receivers"
+					]
 				},
 				{
 					"feature": "binding.repo-path",
-					"requirement": "every Flask-internal part is bound with the registered repository identity and a repo-relative src/flask path; the WSGI server and the matched view function, which are outside the checkout, carry no binding"
+					"requirement": "every Flask-internal part is bound with the registered repository identity and a repo-relative src/flask path; the WSGI server and the matched view function, which are outside the checkout, carry no binding",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/authoring.md#bindings",
+						"SKILL.md#everything-the-code-shows"
+					]
 				},
 				{
 					"feature": "render.svg",
-					"requirement": "pipeline.svg is written from the saved board"
+					"requirement": "pipeline.svg is written from the saved board",
+					"skill": ["SKILL.md#essentials"]
 				}
 			],
 			"outcomes": [
@@ -106,23 +126,32 @@
 			"expectedFeatures": [
 				{
 					"feature": "read.version",
-					"requirement": "the board is read first and the edit states the read version"
+					"requirement": "the board is read first and the edit states the read version",
+					"skill": ["SKILL.md#essentials", "references/edit.md#edit-an-existing-board"]
 				},
 				{
 					"feature": "edit.batch",
-					"requirement": "the provider, its two relationships and the removal land in one `semantic edit`"
+					"requirement": "the provider, its two relationships and the removal land in one `semantic edit`",
+					"skill": ["SKILL.md#essentials", "references/edit.md#edit-an-existing-board"]
 				},
 				{
 					"feature": "identity.continuation",
-					"requirement": "`Flask app` and `JSON helpers` keep their ids; the restated app keeps its multiline responsibility and binding"
+					"requirement": "`Flask app` and `JSON helpers` keep their ids; the restated app keeps its multiline responsibility and binding",
+					"skill": ["SKILL.md#essentials", "references/edit.md#edit-an-existing-board"]
 				},
 				{
 					"feature": "edge.replacement-rule",
-					"requirement": "the direct app -> helpers edge is removed by id and two new edges are added without ids"
+					"requirement": "the direct app -> helpers edge is removed by id and two new edges are added without ids",
+					"skill": [
+						"SKILL.md#essentials",
+						"references/edit.md#edit-an-existing-board",
+						"references/authoring.md#handles-and-removals"
+					]
 				},
 				{
 					"feature": "binding.repo-path",
-					"requirement": "the provider is bound to src/flask/json/provider.py"
+					"requirement": "the provider is bound to src/flask/json/provider.py",
+					"skill": ["SKILL.md#evidence-before-a-write", "references/authoring.md#bindings"]
 				}
 			],
 			"outcomes": [
@@ -201,23 +230,43 @@
 			"expectedFeatures": [
 				{
 					"feature": "variant.branch",
-					"requirement": "a draft named `Context variables` derived from the current variant"
+					"requirement": "a draft named `Context variables` derived from the current variant",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/variants.md#branching"
+					]
 				},
 				{
 					"feature": "edit.variant-target",
-					"requirement": "the edit names the variant; the current variant is untouched"
+					"requirement": "the edit names the variant; the current variant is untouched",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/propose-compare.md#propose-and-compare-a-change"
+					]
 				},
 				{
 					"feature": "identity.replacement",
-					"requirement": "the stack nodes are removed and one new node is added without an id; the context nodes keep theirs"
+					"requirement": "the stack nodes are removed and one new node is added without an id; the context nodes keep theirs",
+					"skill": [
+						"references/edit.md#edit-an-existing-board",
+						"references/variants.md#what-a-comparison-counts"
+					]
 				},
 				{
 					"feature": "compare.same-view",
-					"requirement": "both states are rendered through the same board view"
+					"requirement": "both states are rendered through the same board view",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/sequences-views-walkthroughs.md#views"
+					]
 				},
 				{
 					"feature": "compare.reading",
-					"requirement": "the answer reports what the saved comparison shows: the two stack nodes removed, the context-variables node added and the two context relationships now landing on it (by name or id; the phrasing is free)"
+					"requirement": "the answer reports what the saved comparison shows: the two stack nodes removed, the context-variables node added and the two context relationships now landing on it (by name or id; the phrasing is free)",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/variants.md#comparing-before-you-report"
+					]
 				}
 			],
 			"outcomes": [
@@ -307,23 +356,28 @@
 			"expectedFeatures": [
 				{
 					"feature": "groups.multi-membership",
-					"requirement": "`Dispatch` lists both configured ids; `Request context push` lists `request-lifecycle` and `Run command` lists `cli-startup`"
+					"requirement": "`Dispatch` lists both configured ids; `Request context push` lists `request-lifecycle` and `Run command` lists `cli-startup`",
+					"skill": ["SKILL.md#everything-the-code-shows", "references/authoring.md#groups"]
 				},
 				{
 					"feature": "groups.no-inheritance",
-					"requirement": "the containers `Flask app`, `CLI` and `Contexts` gain no membership"
+					"requirement": "the containers `Flask app`, `CLI` and `Contexts` gain no membership",
+					"skill": ["references/authoring.md#groups"]
 				},
 				{
 					"feature": "groups.configured-ids",
-					"requirement": "memberships use the configured ids, never display names or a singular group field"
+					"requirement": "memberships use the configured ids, never display names or a singular group field",
+					"skill": ["references/authoring.md#groups"]
 				},
 				{
 					"feature": "binding.repo-registration",
-					"requirement": "the checkout is registered with `repo add` and the binding uses its identity"
+					"requirement": "the checkout is registered with `repo add` and the binding uses its identity",
+					"skill": ["SKILL.md#evidence-before-a-write", "references/authoring.md#bindings"]
 				},
 				{
 					"feature": "edit.field-retention",
-					"requirement": "restated nodes keep parent, kind and responsibility"
+					"requirement": "restated nodes keep parent, kind and responsibility",
+					"skill": ["SKILL.md#essentials", "references/edit.md#edit-an-existing-board"]
 				}
 			],
 			"outcomes": [
@@ -413,23 +467,31 @@
 			"expectedFeatures": [
 				{
 					"feature": "drilldown.current",
-					"requirement": "the current variant's node links to `Flask sansio` with `{kind: current}`"
+					"requirement": "the current variant's node links to `Flask sansio` with `{kind: current}`",
+					"skill": ["references/authoring.md#drill-down"]
 				},
 				{
 					"feature": "drilldown.named",
-					"requirement": "the proposal's node links with `{kind: named, name: Blueprint registration}`"
+					"requirement": "the proposal's node links with `{kind: named, name: Blueprint registration}`",
+					"skill": ["references/authoring.md#drill-down"]
 				},
 				{
 					"feature": "variant.branch",
-					"requirement": "the proposal is a draft derived from current"
+					"requirement": "the proposal is a draft derived from current",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/variants.md#branching"
+					]
 				},
 				{
 					"feature": "identity.continuation",
-					"requirement": "`Sansio core` keeps its id and fields in both variants"
+					"requirement": "`Sansio core` keeps its id and fields in both variants",
+					"skill": ["SKILL.md#essentials", "references/variants.md#what-a-comparison-counts"]
 				},
 				{
 					"feature": "linked-boards",
-					"requirement": "no second detail board is created; the existing one is reused"
+					"requirement": "no second detail board is created; the existing one is reused",
+					"skill": ["SKILL.md#keep-it-true", "SKILL.md#everything-the-code-shows"]
 				}
 			],
 			"outcomes": [
@@ -495,23 +557,41 @@
 			"expectedFeatures": [
 				{
 					"feature": "flow.participants-and-steps",
-					"requirement": "one flow with the named participants in column order and ordered steps"
+					"requirement": "one flow with the named participants in column order and ordered steps",
+					"skill": [
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/sequences-views-walkthroughs.md#flows"
+					]
 				},
 				{
 					"feature": "flow.message-kinds",
-					"requirement": "sync calls, at least one return, and a self message for the request context matching the URL during its own push (RequestContext.push calls self.match_request in ctx.py)"
+					"requirement": "sync calls, at least one return, and a self message for the request context matching the URL during its own push (RequestContext.push calls self.match_request in ctx.py)",
+					"skill": [
+						"SKILL.md#the-runbook",
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/sequences-views-walkthroughs.md#flows"
+					]
 				},
 				{
 					"feature": "view.data-flow",
-					"requirement": "a board view `Dispatch exchange` with the data-flow grammar scoped to the flow"
+					"requirement": "a board view `Dispatch exchange` with the data-flow grammar scoped to the flow",
+					"skill": [
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/sequences-views-walkthroughs.md#views"
+					]
 				},
 				{
 					"feature": "walkthrough.beat-subjects",
-					"requirement": "one beat that explains the ordering by itself: its subjects include the push step (by same-write handle or id), a step on the dispatch side the push enables, and the part they run on"
+					"requirement": "one beat that explains the ordering by itself: its subjects include the push step (by same-write handle or id), a step on the dispatch side the push enables, and the part they run on",
+					"skill": [
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/sequences-views-walkthroughs.md#walkthroughs"
+					]
 				},
 				{
 					"feature": "authoring.handles",
-					"requirement": "a step created in the same write is referenced by `as`"
+					"requirement": "a step created in the same write is referenced by `as`",
+					"skill": ["SKILL.md#essentials", "references/authoring.md#handles-and-removals"]
 				}
 			],
 			"outcomes": [
@@ -570,15 +650,24 @@
 			"expectedFeatures": [
 				{
 					"feature": "adopt.reason",
-					"requirement": "`semantic adopt` names the variant and a reason against the read version"
+					"requirement": "`semantic adopt` names the variant and a reason against the read version",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/variants.md#adoption"
+					]
 				},
 				{
 					"feature": "lifecycle.transition",
-					"requirement": "the adopted variant is current and the previous current is historical; nothing is renamed"
+					"requirement": "the adopted variant is current and the previous current is historical; nothing is renamed",
+					"skill": ["references/variants.md#adoption"]
 				},
 				{
 					"feature": "report.outcome",
-					"requirement": "the answer names the current and historical variants as the saved board says"
+					"requirement": "the answer names the current and historical variants as the saved board says",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/variants.md#adoption"
+					]
 				}
 			],
 			"outcomes": [
@@ -634,27 +723,50 @@
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
-					"requirement": "a module-level board with the participating parts as nodes"
+					"requirement": "a module-level board with the participating parts as nodes",
+					"skill": [
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/create-architecture.md#create-an-architecture-diagram-from-code"
+					]
 				},
 				{
 					"feature": "flow.repeat",
-					"requirement": "the loading step carries `repeat` of at least 2"
+					"requirement": "the loading step carries `repeat` of at least 2",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"SKILL.md#everything-the-code-shows",
+						"references/sequences-views-walkthroughs.md#flows"
+					]
 				},
 				{
 					"feature": "flow.note",
-					"requirement": "the loading step carries a note"
+					"requirement": "the loading step carries a note",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"SKILL.md#everything-the-code-shows",
+						"references/sequences-views-walkthroughs.md#flows"
+					]
 				},
 				{
 					"feature": "flow.message-kinds",
-					"requirement": "sync, return and at least one self or async message where the source justifies it"
+					"requirement": "sync, return and at least one self or async message where the source justifies it",
+					"skill": [
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/sequences-views-walkthroughs.md#flows"
+					]
 				},
 				{
 					"feature": "node.kind-external",
-					"requirement": "`run_simple` is `external`"
+					"requirement": "`run_simple` is `external`",
+					"skill": ["SKILL.md#everything-the-code-shows"]
 				},
 				{
 					"feature": "view.data-flow",
-					"requirement": "a board view named Startup exchange draws the flask run exchange in the data-flow grammar"
+					"requirement": "a board view named Startup exchange draws the flask run exchange in the data-flow grammar",
+					"skill": [
+						"references/create-sequence.md#create-a-sequence-diagram",
+						"references/sequences-views-walkthroughs.md#views"
+					]
 				}
 			],
 			"outcomes": [
@@ -725,19 +837,23 @@
 			"expectedFeatures": [
 				{
 					"feature": "config.vocabulary",
-					"requirement": "config.yaml gains `signal` (dashed, open), `extension` (RiPlugLine) and the `observability` group with its display name"
+					"requirement": "config.yaml gains `signal` (dashed, open), `extension` (RiPlugLine) and the `observability` group with its display name",
+					"skill": ["SKILL.md#essentials", "references/schemas.md#vault-setup"]
 				},
 				{
 					"feature": "config.schema",
-					"requirement": "the edited configuration validates; icon is a real RemixIcon export"
+					"requirement": "the edited configuration validates; icon is a real RemixIcon export",
+					"skill": ["references/schemas.md#vault-setup"]
 				},
 				{
 					"feature": "config.before-board",
-					"requirement": "the board says what the request means in the new vocabulary: either the configuration is extended before the write that needs it, or a write refused for the unknown kind is repaired by configuring; a run that bends the meaning to the old vocabulary (a `call` instead of a `signal`, a `module` instead of an `extension`) fails this feature"
+					"requirement": "the board says what the request means in the new vocabulary: either the configuration is extended before the write that needs it, or a write refused for the unknown kind is repaired by configuring; a run that bends the meaning to the old vocabulary (a `call` instead of a `signal`, a `module` instead of an `extension`) fails this feature",
+					"skill": ["SKILL.md#essentials", "SKILL.md#which-recipe"]
 				},
 				{
 					"feature": "check.clean",
-					"requirement": "`archboard check` reports no diagnostics at the end"
+					"requirement": "`archboard check` reports no diagnostics at the end",
+					"skill": ["SKILL.md#the-runbook", "SKILL.md#essentials"]
 				}
 			],
 			"outcomes": [
@@ -810,15 +926,21 @@
 			"expectedFeatures": [
 				{
 					"feature": "inspect.group",
-					"requirement": "`semantic inspect --group request-lifecycle` is used and its members, internal edges, boundary edges with direction and neighbours are reported"
+					"requirement": "`semantic inspect --group request-lifecycle` is used and its members, internal edges, boundary edges with direction and neighbours are reported",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
 				},
 				{
 					"feature": "inspect.hidden-members",
-					"requirement": "the answer names `Request context push` as a member the `Overview` view does not draw (the view selects neither the `Contexts` module nor the function inside it); how that is phrased is free"
+					"requirement": "the answer names `Request context push` as a member the `Overview` view does not draw (the view selects neither the `Contexts` module nor the function inside it); how that is phrased is free",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
 				},
 				{
 					"feature": "read-only",
-					"requirement": "no write happens"
+					"requirement": "no write happens",
+					"skill": [
+						"references/read.md#answer-a-question-from-a-saved-board",
+						"SKILL.md#which-recipe"
+					]
 				}
 			],
 			"outcomes": [
@@ -871,19 +993,23 @@
 			"expectedFeatures": [
 				{
 					"feature": "traffic.default",
-					"requirement": "`traffic: {}` on the first edge"
+					"requirement": "`traffic: {}` on the first edge",
+					"skill": ["references/authoring.md#relationships"]
 				},
 				{
 					"feature": "traffic.custom",
-					"requirement": "`traffic: {speed: 80, volume: 2}` on the second edge"
+					"requirement": "`traffic: {speed: 80, volume: 2}` on the second edge",
+					"skill": ["references/authoring.md#relationships"]
 				},
 				{
 					"feature": "traffic.off",
-					"requirement": "traffic omitted on the third edge"
+					"requirement": "traffic omitted on the third edge",
+					"skill": ["references/authoring.md#relationships"]
 				},
 				{
 					"feature": "identity.continuation",
-					"requirement": "all three edges keep their ids and other fields (one changed property each)"
+					"requirement": "all three edges keep their ids and other fields (one changed property each)",
+					"skill": ["SKILL.md#essentials", "references/edit.md#edit-an-existing-board"]
 				}
 			],
 			"outcomes": [
@@ -940,19 +1066,26 @@
 			"expectedFeatures": [
 				{
 					"feature": "resolve.choices",
-					"requirement": "`semantic resolve` with `theirs` for the name and `mine` for the responsibility"
+					"requirement": "`semantic resolve` with `theirs` for the name and `mine` for the responsibility",
+					"skill": ["references/variants.md#disagreements"]
 				},
 				{
 					"feature": "resolve.partial",
-					"requirement": "the deleted-and-changed disagreement is left open by the first resolve and reported"
+					"requirement": "the deleted-and-changed disagreement is left open by the first resolve and reported",
+					"skill": ["references/variants.md#disagreements"]
 				},
 				{
 					"feature": "resolve.third-answer",
-					"requirement": "the removed node is restored by an ordinary edit with its original id and the current variant's description (Serializes tagged values in signed session cookies), which settles the deletion"
+					"requirement": "the removed node is restored by an ordinary edit with its original id and the current variant's description (Serializes tagged values in signed session cookies), which settles the deletion",
+					"skill": ["references/variants.md#disagreements"]
 				},
 				{
 					"feature": "lifecycle.no-adopt",
-					"requirement": "the draft remains a draft"
+					"requirement": "the draft remains a draft",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/variants.md#adoption"
+					]
 				}
 			],
 			"outcomes": [
@@ -1031,19 +1164,32 @@
 			"expectedFeatures": [
 				{
 					"feature": "view.edge-isolation",
-					"requirement": "`Session path` selects exactly the `open_session` relationship (by id or same-write handle) and shows `process_response` without its `save_session` call; the saved scope names one relationship"
+					"requirement": "`Session path` selects exactly the `open_session` relationship (by id or same-write handle) and shows `process_response` without its `save_session` call; the saved scope names one relationship",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/sequences-views-walkthroughs.md#views"
+					]
 				},
 				{
 					"feature": "view.node-region",
-					"requirement": "`Dispatch only` selects the three parts and names no relationship, so its saved scope has an empty relationship list and the render draws both calls among them"
+					"requirement": "`Dispatch only` selects the three parts and names no relationship, so its saved scope has an empty relationship list and the render draws both calls among them",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/sequences-views-walkthroughs.md#views"
+					]
 				},
 				{
 					"feature": "view.board-owned",
-					"requirement": "views are added once and apply to both variants"
+					"requirement": "views are added once and apply to both variants",
+					"skill": ["references/sequences-views-walkthroughs.md#views"]
 				},
 				{
 					"feature": "compare.removal-visible",
-					"requirement": "the proposal's render through `Session path` still draws the removed node as removed"
+					"requirement": "the proposal's render through `Session path` still draws the removed node as removed",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/sequences-views-walkthroughs.md#views"
+					]
 				}
 			],
 			"outcomes": [
@@ -1127,15 +1273,21 @@
 			"expectedFeatures": [
 				{
 					"feature": "removal.collections",
-					"requirement": "`removeNodes` removes the node; its edges go with it"
+					"requirement": "`removeNodes` removes the node; its edges go with it",
+					"skill": ["references/authoring.md#handles-and-removals"]
 				},
 				{
 					"feature": "walkthrough.identity",
-					"requirement": "beat ids and order are retained; only the affected beat's body and subjects change"
+					"requirement": "beat ids and order are retained; only the affected beat's body and subjects change",
+					"skill": ["references/sequences-views-walkthroughs.md#walkthroughs"]
 				},
 				{
 					"feature": "walkthrough.repair",
-					"requirement": "the repaired beat references `Jinja environment` rather than a dangling id"
+					"requirement": "the repaired beat references `Jinja environment` rather than a dangling id",
+					"skill": [
+						"references/sequences-views-walkthroughs.md#walkthroughs",
+						"references/edit.md#edit-an-existing-board"
+					]
 				}
 			],
 			"outcomes": [
@@ -1180,23 +1332,35 @@
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
-					"requirement": "a system-level board named `Flask`"
+					"requirement": "a system-level board named `Flask`",
+					"skill": ["references/create-architecture.md#create-an-architecture-diagram-from-code"]
 				},
 				{
 					"feature": "node.kind",
-					"requirement": "configured kinds throughout; werkzeug, jinja and click are present as `external` parts"
+					"requirement": "configured kinds throughout; werkzeug, jinja and click are present as `external` parts",
+					"skill": ["SKILL.md#essentials", "SKILL.md#everything-the-code-shows"]
 				},
 				{
 					"feature": "binding.repo-path",
-					"requirement": "every Flask part bound to a src/flask path; the externals unbound"
+					"requirement": "every Flask part bound to a src/flask path; the externals unbound",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/authoring.md#bindings",
+						"SKILL.md#everything-the-code-shows"
+					]
 				},
 				{
 					"feature": "edge.actual-receiver",
-					"requirement": "relationships between the parts that actually depend on each other in the source, in the direction the source has them (Flask extends the sans-IO App; the request context, not the blueprint registry, matches the URL)"
+					"requirement": "relationships between the parts that actually depend on each other in the source, in the direction the source has them (Flask extends the sans-IO App; the request context, not the blueprint registry, matches the URL)",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/authoring.md#containment-and-receivers"
+					]
 				},
 				{
 					"feature": "readability",
-					"requirement": "between eight and twenty nodes, externals included; containment used only where the source has it"
+					"requirement": "between eight and twenty nodes, externals included; containment used only where the source has it",
+					"skill": ["SKILL.md#keep-it-true", "SKILL.md#everything-the-code-shows"]
 				}
 			],
 			"outcomes": [

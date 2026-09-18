@@ -12,12 +12,14 @@ import {
 	contaminationLine,
 	unauditedLine,
 } from "@/runtime/skill-evaluation/lib/report-audit";
-import type {
-	ArmSummary,
-	BatchReport,
-	ComparisonRow,
-	Report,
-	RunRecord,
+import {
+	findingsOf,
+	type ArmSummary,
+	type BatchReport,
+	type ComparisonRow,
+	type ConcernKind,
+	type Report,
+	type RunRecord,
 } from "@/runtime/skill-evaluation/lib/report";
 import type {
 	AxisChange,
@@ -51,6 +53,7 @@ const COLUMNS = [
 	"readability",
 	"completeness",
 	"missed",
+	"findings conf./truth/skill",
 	"what moved",
 ] as const;
 
@@ -125,6 +128,7 @@ function armLine(key: string, arm: Arm, s: ArmSummary): string {
 		readability: cell(s.meanReadability, 1),
 		completeness: cell(s.meanBehaviouralCompleteness, 1),
 		missed: String(s.missedUnprompted),
+		"findings conf./truth/skill": `${s.findings.conformance}/${s.findings.truth}/${s.findings.skill}`,
 	});
 }
 
@@ -243,11 +247,80 @@ function failureLine(run: RunRecord): string {
 function gradingReasons(run: RunRecord): string[] {
 	return [
 		...(run.verdict === null ? ["awaiting grading"] : []),
-		...(run.semanticallyCompliant === false ? ["semantic compliance failed"] : []),
+		...(run.semanticallyCompliant === false
+			? [`semantic compliance failed${onWhoseAccount(run)}`]
+			: []),
 		...(run.checklist?.standing === "off-checklist"
 			? ["set aside: the grader answered off the checklist"]
 			: []),
 		...visualReasons(run),
+	];
+}
+
+/**
+ * Which authority a failed checklist answers to, so a run that departed from
+ * the skill never reads like one whose board the source contradicts.
+ * @param run The run.
+ * @returns A parenthesis naming the features on each axis, or nothing when no finding was filed.
+ */
+function onWhoseAccount(run: RunRecord): string {
+	const findings = findingsOf(run);
+	const parts = [
+		...(findings.conformance.length === 0
+			? []
+			: [`departed from the skill: ${findings.conformance.join(", ")}`]),
+		...(findings.truth.length === 0
+			? []
+			: [`followed the skill, contradicted by the source: ${findings.truth.join(", ")}`]),
+	];
+	return parts.length === 0 ? "" : ` (${parts.join("; ")})`;
+}
+
+/**
+ * One line per expectation the skill never taught, with where the grader looked.
+ * @param run The run.
+ * @returns Markdown lines.
+ */
+function skillFindingLines(run: RunRecord): string[] {
+	return (run.verdict?.features ?? []).flatMap((entry) =>
+		entry.finding?.axis === "skill"
+			? [
+					`- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): ${entry.feature}, at ${entry.finding.passage}: ${entry.finding.gap}`,
+				]
+			: [],
+	);
+}
+
+/** Each kind of concern's heading, in the order the report prints them. */
+const CONCERN_HEADINGS: readonly (readonly [ConcernKind, string])[] = [
+	["fixture", "### About the fixture (fixture:)"],
+	["tooling", "### A question the skill or a CLI answer left open (tooling:)"],
+	["other", "### Anything else"],
+];
+
+/**
+ * The grader's concerns, grouped by what they are about.
+ * @param report The report.
+ * @returns Markdown lines.
+ */
+function concernLines(report: Report): string[] {
+	return [
+		"## Concerns the grader raised",
+		"",
+		...CONCERN_HEADINGS.flatMap(([kind, heading]) => {
+			const raised = report.concerns[kind];
+			return [
+				heading,
+				"",
+				...(raised.length === 0
+					? ["- none"]
+					: raised.map(
+							(entry) =>
+								`- ${entry.run} (${entry.arm}, ${entry.scenario} rep ${entry.repetition}): ${entry.text}`,
+						)),
+				"",
+			];
+		}),
 	];
 }
 
@@ -317,7 +390,7 @@ function renderReportMarkdown(report: Report): string {
 		"",
 		"Each row's change line reports what moved rather than a single word. The ok and visual cells carry signed changes in the pass/fail counts, which are tallies of runs and are held to no bar. Each quality cell carries the candidate's mean minus the baseline's, then the noise bar this row's own runs set for that axis. The two arms are paired run for run by scenario and repetition, so whatever a scenario scores in both arms cancels inside its own pair and one scenario being harder than another is never mistaken for noise; the bar is the distance between the largest and smallest of those paired differences, over the square root of how many were averaged, because the mean of many draws approaches the truth as the square root of their number. A move that clears its bar is marked with an exclamation mark, in either direction; an improvement is reported exactly as a regression is. The last column draws the row's one word only where more than one scenario's runs stand behind it, so a per-scenario row over three runs an arm says deltas only; where a row cannot be compared at all it says which precondition failed. Runs the grader answered off the checklist — it skipped declared features and graded names of its own — are set aside like contaminated runs: they enter neither comparison, they withhold their row's comparison, and they are listed below instead of being counted as semantic failures. Being set aside hides nothing else about them: such a run still appears among the runs that did not succeed, with whatever else went wrong with it.",
 		"",
-		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to have done what was asked with its pictures inspected, and complete usage; a visual failure counts against its arm's quality but, since both arms share the renderer, does not withhold the cost comparison. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation. Completeness is the grader's 0-10 judgment of how far a board that wrote something uses the semantics the source justifies beyond what the request named, and missed counts the justified catalogue rows its authors left out, summed over the arm. Product src counts runs whose author read the archboard product's source past the installed skill, its generated schemas and --help; reading the skill is expected and reading Flask is investigation, but a read of the product is a question the skill or a CLI answer left open, listed by the grader under concerns as tooling:, and is neither contamination nor a failure. Guidance counts runs that read every skill file their scenario names over runs that recorded their reads; a run that skipped one is listed below, since a cost saving over a recipe nobody read measures the wrong thing.",
+		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to have done what was asked with its pictures inspected, and complete usage; a visual failure counts against its arm's quality but, since both arms share the renderer, does not withhold the cost comparison. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI. The visual column counts graded runs whose bitmap captures the harness supplied and the grader inspected and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation. Completeness is the grader's 0-10 score for how far what a run added — the whole board it created, or on a board it changed the subjects it created or gave a new value in a field it authored, as the rubric's \"What the skill adds unprompted\" scopes it — uses the semantics the source justifies beyond what the request named, and a run that added nothing is not scored; missed counts the catalogue rows the source justified for what the runs added and they left out, summed over the arm. Findings count the expected features graded short of a pass, by the authority each answers to: conf. departed from what the skill teaches, truth followed the skill and says something the source contradicts, and skill expected what no passage of the skill teaches, which is a finding about the skill or the scenario and fails no run; a verdict filed before findings existed counts under none. Product src counts runs whose author read the archboard product's source past the installed skill, its generated schemas and --help; reading the skill is expected and reading Flask is investigation, but a read of the product is a question the skill or a CLI answer left open, listed by the grader under concerns as tooling:, and is neither contamination nor a failure. Guidance counts runs that read every skill file their scenario names over runs that recorded their reads; a run that skipped one is listed below, since a cost saving over a recipe nobody read measures the wrong thing.",
 		"",
 		...tableLines("Per scenario (primary)", report.scenarios),
 		...tableLines("Per primary workflow", report.workflows),
@@ -346,6 +419,13 @@ function renderReportMarkdown(report: Report): string {
 			? ["- none"]
 			: report.skippedGuidance.map(guidanceLine)),
 		"",
+		"## Findings about the skill (an expectation no passage teaches; no run failed for it)",
+		"",
+		...(report.skillFindings.length === 0
+			? ["- none"]
+			: report.skillFindings.flatMap(skillFindingLines)),
+		"",
+		...concernLines(report),
 		"## Runs that did not succeed",
 		"",
 		...(report.failures.length === 0 ? ["- none"] : report.failures.map(failureLine)),
