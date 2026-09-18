@@ -54,6 +54,7 @@ function jobAt(root: string, signal = new AbortController().signal): RunJob {
 			codex: { ...loaded.pins.codex, executable: path.join(root, "no-model") },
 		},
 		frozenSkill: "unused",
+		candidateSkill: "unused",
 		signal,
 	};
 }

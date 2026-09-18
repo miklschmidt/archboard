@@ -58,6 +58,9 @@ describe("a citation", () => {
 			expect(citationProblem(root, "references/read.md#edit-an-existing-board")).not.toBeNull();
 			expect(citationProblem(root, "../outside.md#x")).not.toBeNull();
 			expect(citationProblem(root, "references/edit.md")).not.toBeNull();
+			fs.mkdirSync(path.join(root, "references", "generated"));
+			fs.writeFileSync(path.join(root, "references", "generated", "INSTALL.md"), "# Install\n");
+			expect(citationProblem(root, "references/generated/INSTALL.md#install")).not.toBeNull();
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
 		}
