@@ -25,6 +25,7 @@ import {
 	unaudited,
 	wroteDirectly,
 } from "@/runtime/skill-evaluation/lib/report-audit";
+import { changeOf, type QualityChange } from "@/runtime/skill-evaluation/lib/report-change";
 
 /** One run as the report reads it. */
 interface RunRecord {
@@ -55,8 +56,23 @@ interface RunRecord {
 	readonly outcomesPassed: boolean;
 	readonly guardrailsPassed: boolean;
 	readonly verdict: RunVerdict | null;
+	/**
+	 * Whether every expected feature passed; null when the run is not graded,
+	 * and null when the grader answered off its checklist, which says nothing
+	 * about the author either way.
+	 */
 	readonly semanticallyCompliant: boolean | null;
 	readonly waivedFeatures: readonly string[];
+	/** What the grader's answer did with the scenario's checklist; null when the run is not graded. */
+	readonly checklist: ChecklistAnswer | null;
+}
+
+/** How far a grader's answer kept to the scenario's checklist. */
+interface ChecklistAnswer {
+	/** Expected features the grader's answer never mentioned. */
+	readonly unmentioned: readonly string[];
+	/** Names the grader answered that the scenario's checklist does not hold. */
+	readonly invented: readonly string[];
 }
 
 /** One job expected in the saved batch, before a run has produced a manifest. */
@@ -79,6 +95,8 @@ interface ArmSummary {
 	readonly directWrites: number;
 	/** Runs recorded before the harness kept file changes and exposure, which can say neither. */
 	readonly unaudited: number;
+	/** Runs whose grader answered names the scenario never asked for: set aside, not failed. */
+	readonly ungradable: number;
 	/** Graded runs whose every capture was taken, opened by the grader and found legible. */
 	readonly visualPassed: number;
 	/** Graded runs the grader looked at and found wanting. */
@@ -118,15 +136,19 @@ interface ComparisonRow {
 	readonly candidate: ArmSummary;
 	/** Candidate median total tokens over baseline, as a signed percentage; null when either is unavailable. */
 	readonly tokenChangePercent: Maybe;
-	readonly qualityRegressed: boolean | null;
+	readonly change: QualityChange;
 }
 
 /** The whole report. */
 interface Report {
 	readonly scenarios: readonly ComparisonRow[];
 	readonly workflows: readonly ComparisonRow[];
+	/** Every primary run of each arm as one row, where the run counts support a verdict. */
+	readonly totals: readonly ComparisonRow[];
 	readonly broad: readonly ComparisonRow[];
 	readonly failures: readonly RunRecord[];
+	/** Runs whose grader answered off the scenario's checklist: kept apart from every comparison, and not failures. */
+	readonly ungradable: readonly RunRecord[];
 	/** Runs that read evaluation material, reached another run, or wrote directly to the vault: kept apart from every comparison. */
 	readonly contamination: readonly RunRecord[];
 	/** Runs whose author did not read every guidance file the scenario names. */
@@ -174,6 +196,22 @@ function didWhatWasAsked(run: RunRecord): boolean {
 		run.guardrailsPassed &&
 		run.verdict !== null &&
 		run.semanticallyCompliant === true
+	);
+}
+
+/**
+ * Whether the grader answered something other than the scenario's checklist:
+ * it left an expected feature unmentioned and answered names the checklist
+ * does not hold. Such a verdict measures the grader, not the author, so the
+ * run is set aside the way a contaminated one is rather than failed.
+ * @param run The run.
+ * @returns True when the answer is not about this scenario.
+ */
+function answeredOffChecklist(run: RunRecord): boolean {
+	return (
+		run.checklist !== null &&
+		run.checklist.unmentioned.length > 0 &&
+		run.checklist.invented.length > 0
 	);
 }
 
@@ -245,6 +283,7 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 		contaminated: runs.filter(contaminated).length,
 		directWrites: runs.filter(wroteDirectly).length,
 		unaudited: runs.filter(unaudited).length,
+		ungradable: runs.filter(answeredOffChecklist).length,
 		visualPassed: runs.filter((run) => run.visual === "pass").length,
 		visualFailed: runs.filter((run) => run.visual === "fail").length,
 		visualIncomplete: runs.filter((run) => run.visual === "incomplete").length,
@@ -284,23 +323,6 @@ function percentChange(from: Maybe, to: Maybe): Maybe {
 }
 
 /**
- * Whether a candidate mean fell below the baseline's, where both exist.
- * @param baseline The baseline summary.
- * @param candidate The candidate summary.
- * @param pick The mean.
- * @returns True on a drop.
- */
-function dropped(
-	baseline: ArmSummary,
-	candidate: ArmSummary,
-	pick: (summary: ArmSummary) => Maybe,
-): boolean {
-	const before = pick(baseline);
-	const after = pick(candidate);
-	return before !== null && after !== null && after < before;
-}
-
-/**
  * Whether a run's cost can be compared: it did what was asked and the grader
  * looked at every picture. A failed picture does not withhold the comparison,
  * because the renderer that drew it is the same in both arms; what it drew
@@ -314,30 +336,6 @@ function measured(run: RunRecord): boolean {
 	return didWhatWasAsked(run) && (run.visual === "pass" || run.visual === "fail");
 }
 
-/**
- * Whether quality regressed from baseline to candidate on any measure.
- * @param baseline The baseline summary.
- * @param candidate The candidate summary.
- * @returns True on a regression.
- */
-function qualityRegressed(baseline: ArmSummary, candidate: ArmSummary): boolean | null {
-	const assessed = [baseline, candidate].every(
-		(arm) =>
-			arm.runs > 0 && arm.graded === arm.runs && arm.visualPassed + arm.visualFailed === arm.runs,
-	);
-	if (!assessed || baseline.runs !== candidate.runs) return null;
-	const measures: ((summary: ArmSummary) => Maybe)[] = [
-		(s) => s.meanSemanticCorrectness,
-		(s) => s.meanArchitecturalTruth,
-		(s) => s.meanReadability,
-		(s) => s.meanBehaviouralCompleteness,
-	];
-	return (
-		candidate.succeeded < baseline.succeeded ||
-		candidate.visualFailed > baseline.visualFailed ||
-		measures.some((pick) => dropped(baseline, candidate, pick))
-	);
-}
 
 /**
  * One comparison row over the runs sharing a key.
@@ -361,7 +359,11 @@ function compare(
 	);
 	const complete = completePair(runs, planned);
 	const comparableAudit = runs.every(
-		(run) => !contaminated(run) && !wroteDirectly(run) && !unaudited(run),
+		(run) =>
+			!contaminated(run) &&
+			!wroteDirectly(run) &&
+			!unaudited(run) &&
+			!answeredOffChecklist(run),
 	);
 	const comparable = complete && comparableAudit;
 	const allMeasured = runs.every(measured);
@@ -376,7 +378,7 @@ function compare(
 			comparable && allMeasured && runs.every((run) => run.usage !== null)
 				? percentChange(baseline.medianTotalTokens, candidate.medianTotalTokens)
 				: null,
-		qualityRegressed: comparable ? qualityRegressed(baseline, candidate) : null,
+		change: changeOf(runs, baseline, candidate, comparable),
 	};
 }
 
@@ -450,12 +452,14 @@ function buildReport(
 	return {
 		scenarios: rows(primary, expectedPrimary, (run) => run.scenario),
 		workflows: rows(primary, expectedPrimary, (run) => run.workflow),
+		totals: rows(primary, expectedPrimary, () => "all primary"),
 		broad: rows(
 			runs.filter((run) => run.report === "broad"),
 			planned.filter((run) => run.report === "broad"),
 			(run) => run.scenario,
 		),
-		failures: runs.filter((run) => !succeeded(run)),
+		failures: runs.filter((run) => !succeeded(run) && !answeredOffChecklist(run)),
+		ungradable: runs.filter(answeredOffChecklist),
 		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
 		skippedGuidance: runs.filter((run) => (run.guidance?.missing.length ?? 0) > 0),
 		graderUsage,
@@ -468,6 +472,7 @@ function buildReport(
 }
 
 export {
+	answeredOffChecklist,
 	buildReport,
 	median,
 	mean,
@@ -477,6 +482,7 @@ export {
 	summarize,
 	type ArmSummary,
 	type BatchReport,
+	type ChecklistAnswer,
 	type ComparisonRow,
 	type GraderReport,
 	type Report,
