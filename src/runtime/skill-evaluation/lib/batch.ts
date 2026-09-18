@@ -145,6 +145,38 @@ function saltOf(manifestFile: string): string {
 	return BatchManifestSchema.parse(JSON.parse(fs.readFileSync(manifestFile, "utf8"))).salt;
 }
 
+/** The candidate package a batch kept, and the digest it recorded of it. */
+interface KeptCandidate {
+	readonly directory: string;
+	readonly digest: string;
+}
+
+/**
+ * The batch's copy of the candidate skill: kept now for a new batch, and for
+ * a resumed one the copy it kept, checked against the digest it recorded when
+ * it kept it. A copy edited since would be installed for the remaining runs
+ * and pass grading's check if its digest were simply recorded again, so a
+ * mismatch is refused before any job runs and the saved digest is kept.
+ * @param skillRoot The candidate skill in the checkout.
+ * @param root The batch.
+ * @returns The kept copy and its digest.
+ */
+function keptCandidate(skillRoot: string, root: string): KeptCandidate {
+	const manifest = path.join(root, "batch.json");
+	const saved = fs.existsSync(manifest)
+		? z
+				.object({ candidateSkillDigest: z.string().optional() })
+				.parse(JSON.parse(fs.readFileSync(manifest, "utf8"))).candidateSkillDigest
+		: undefined;
+	const directory = keepBatchSkill(skillRoot, root);
+	const digest = digestOf(directory);
+	if (saved !== undefined && saved !== digest)
+		throw new Error(
+			`${directory} changed after the batch kept it; restore it to the copy the batch recorded before resuming.`,
+		);
+	return { directory, digest };
+}
+
 /**
  * Writes the batch manifest and the private blinding table.
  * @param root The batch directory.
@@ -153,7 +185,7 @@ function saltOf(manifestFile: string): string {
  * @param facts.salt The batch salt.
  * @param facts.version The Codex version found.
  * @param facts.jobs The planned jobs.
- * @param facts.candidateSkill The candidate package the batch kept.
+ * @param facts.candidate The candidate package the batch kept, and its digest.
  * @param provenance The immutable implementation and input identities.
  */
 function writeBatchFiles(
@@ -163,7 +195,7 @@ function writeBatchFiles(
 		readonly salt: string;
 		readonly version: string;
 		readonly jobs: readonly PlannedJob[];
-		readonly candidateSkill: string;
+		readonly candidate: KeptCandidate;
 	},
 	provenance: Provenance,
 ): void {
@@ -180,7 +212,7 @@ function writeBatchFiles(
 		archboard: options.checkout,
 		provenance,
 		/** The kept candidate's digest, which grading checks the copy it stages against. */
-		candidateSkillDigest: digestOf(facts.candidateSkill),
+		candidateSkillDigest: facts.candidate.digest,
 	};
 	fs.writeFileSync(path.join(root, "batch.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
 	const blinding = facts.jobs.map((job) => ({
@@ -319,7 +351,7 @@ async function runBatch(
 	const provenance = batchProvenance(options.checkout, loaded);
 	validateResume(options, provenance);
 	fs.mkdirSync(root, { recursive: true });
-	const candidateSkill = keepBatchSkill(path.join(options.checkout, "skills", "archboard"), root);
+	const candidate = keptCandidate(path.join(options.checkout, "skills", "archboard"), root);
 	const salt = saltOf(path.join(root, "batch.json"));
 	const cache = path.join(options.output, "cache", "flask.git");
 	await ensureFlaskCache(
@@ -329,12 +361,12 @@ async function runBatch(
 		options.signal,
 	);
 	const jobs = planJobs(options, root);
-	writeBatchFiles(root, options, { salt, version, jobs, candidateSkill }, provenance);
+	writeBatchFiles(root, options, { salt, version, jobs, candidate }, provenance);
 	const facts = {
 		salt,
 		cache,
 		frozenSkill: path.join(options.checkout, loaded.pins.baselineSkill.location),
-		candidateSkill,
+		candidateSkill: candidate.directory,
 		batchRoot: root,
 	};
 	const runs = await pool(
@@ -346,4 +378,11 @@ async function runBatch(
 	return { root, runs: runs.filter((run): run is CompletedRun => run !== null) };
 }
 
-export { planJobs, resumeSelection, runBatch, type BatchOptions };
+export {
+	keptCandidate,
+	planJobs,
+	resumeSelection,
+	runBatch,
+	type BatchOptions,
+	type KeptCandidate,
+};
