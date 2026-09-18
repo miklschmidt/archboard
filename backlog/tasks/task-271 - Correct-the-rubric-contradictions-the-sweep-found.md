@@ -1,11 +1,11 @@
 ---
 id: TASK-271
 title: Correct the rubric contradictions the sweep found
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:34'
-updated_date: '2026-09-18 13:05'
+updated_date: '2026-09-18 13:08'
 labels: []
 dependencies: []
 references:
@@ -34,29 +34,25 @@ A4 and B2 are deliberately NOT in scope here. They are the same vocabulary quest
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The unprompted catalogue is walked only over what a write created or extended, matching SKILL.md:241-243 and references/edit.md:9-13, or the rubric states that a row already absent from the inherited board is not the author's miss - the protection rubric.md:132-140 already grants to inherited inaccuracies
-- [ ] #2 The emphasis row carries the skill's cap, subject and exemption: hero on about a third of the relationships and never past half (SKILL.md:253), emphasis is a property of a line and never of a part (authoring.md:199-201), and a board with no spine correctly marks nothing (authoring.md:166-171)
-- [ ] #3 The Flows bullet no longer says repeat and note are given where the exchange has them; repeat is required exactly where the source fixes the count, and a data-dependent loop, a branch or a caveat is a note, agreeing with rubric.md:107 and SKILL.md:221-223
-- [ ] #4 The relationship row no longer invites an architecture edge for a return, which authoring.md:218-219 forbids
-- [ ] #5 The tooling prefix marks only what it was defined for: neither a harness failure the author did not cause nor an ordinary CLI refusal the author repaired carries it
-- [ ] #6 The rubric gives the author a way to say a row is out of scope, so a run following SKILL.md:244 is not written up for saying which rows it judged not to apply
-- [ ] #7 Each suspected finding B1, B3, B4, B5 and B6 is either corrected or explicitly judged correct as it stands, with the reason recorded
-- [ ] #8 evals/pins.json records that this rubric revision makes batches either side of it incomparable, beside the fixtures line TASK-264 added
+- [x] #1 The unprompted catalogue is walked only over what a write created or extended, matching SKILL.md:241-243 and references/edit.md:9-13, or the rubric states that a row already absent from the inherited board is not the author's miss - the protection rubric.md:132-140 already grants to inherited inaccuracies
+- [x] #2 The emphasis row carries the skill's cap, subject and exemption: hero on about a third of the relationships and never past half (SKILL.md:253), emphasis is a property of a line and never of a part (authoring.md:199-201), and a board with no spine correctly marks nothing (authoring.md:166-171)
+- [x] #3 The Flows bullet no longer says repeat and note are given where the exchange has them; repeat is required exactly where the source fixes the count, and a data-dependent loop, a branch or a caveat is a note, agreeing with rubric.md:107 and SKILL.md:221-223
+- [x] #4 The relationship row no longer invites an architecture edge for a return, which authoring.md:218-219 forbids
+- [x] #5 The tooling prefix marks only what it was defined for: neither a harness failure the author did not cause nor an ordinary CLI refusal the author repaired carries it
+- [x] #6 The rubric gives the author a way to say a row is out of scope, so a run following SKILL.md:244 is not written up for saying which rows it judged not to apply
+- [x] #7 Each suspected finding B1, B3, B4, B5 and B6 is either corrected or explicitly judged correct as it stands, with the reason recorded
+- [x] #8 evals/pins.json records that this rubric revision makes batches either side of it incomparable, beside the fixtures line TASK-264 added
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Verify every sweep citation in SKILL.md, authoring.md, edit.md, variants.md, the rubric and the scenarios before editing (done: all confirmed; B5's gloss sits at rubric.md:123-124, not 130).
-2. A1/AC#1: scope the unprompted walk to what the run wrote - the whole board on a create, the subjects added or restated on an edit - and route an inherited omission to a 'fixture:' concern. Chosen over the 'already-absent row' route because that route is row-granular and would blind the walk to a real omission on brand-new material.
-3. A2/AC#2: rewrite the emphasis row with SKILL.md:253's cap, authoring.md:199-201's subject and authoring.md:166-171's exemption.
-4. A3/AC#3: replace 'repeat and note where the exchange has them' with the repeat/note split SKILL.md:221-223 teaches.
-5. A5/AC#4: drop 'returns to' from the relationship row and name the flow step instead (authoring.md:218-219).
-6. A7/AC#5: say the 'tooling:' prefix marks product-source reads alone - a harness failure is a plain concern, a repaired CLI refusal is no concern.
-7. B3/AC#6: say the author naming the rows it judged not to apply is SKILL.md:244 obeyed; judge the judgement, never the saying.
-8. AC#7: correct B1 (--from is optional), B4 (name which subjects need an id), B5 (null is 'created or extended nothing', not 'wrote nothing'), B6 (the traffic row carries SKILL.md:252's full exclusion list); record the reason for each.
-9. AC#8: add a pins.json rubric revision note beside the fixtures one.
-10. Verify with bun run eval:skill check under the memory scope; no model evaluation.
+Final approach (replaces the round-1 plan; rounds 2-4 reshaped the scoping).
+1. Verify every sweep citation before editing.
+2. A1: scope the unprompted walk and behaviouralCompleteness to what the run added (references/edit.md:27): the whole board it created, or on a board it changed, every subject it created and every existing subject it gave a new value in a field it authored. Product-written consequences (owned fields, timestamps, what a removal takes with it, what a branch copies) add nothing. Every row stays in the walk, decided by its own condition; a flow is owed only when the request asks for the exchange (SKILL.md:283-284). A row the request's own words fence off, or one justified only on inherited subjects, is a fixture: concern. Null exactly when the run added nothing.
+3. A2, A3, A5, A7 and B1, B3, B4, B5, B6: one-clause corrections to the rows and bullets they name, each grounded in the passage the sweep cites; B3 also in Concerns.
+4. AC#8: pins.json rubric revision note, naming which scenarios are null under the rule.
+5. Verify with eval:skill check, focused skill-evaluation tests and oxfmt; no model evaluation.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -132,4 +128,37 @@ THE HONEST COST: S10's VIEW miss (and any view or walkthrough miss on an edit) i
 (b) taken. rubric.md now quotes edit.md:13 whole, 'not yours to silently repair or silently repeat'. A new clause says a row the request's own words rule out is not a miss - a request that says nothing else changes fences every row it did not name off the subjects it did - grounded in edit.md:12, 'change it only when the request covers it'. That closes S03's description exposure on its restated Dispatch and Request context push nodes.
 
 pins.json re-checked: null is S06 and S09 and any remove-only run; S03, S10, S11 and S13 author new values and are scored. Its note now says 'a field it authored' to match. Row keys still the same fourteen in the same order. eval:skill check passes; oxfmt clean on rubric.md and pins.json. No model evaluation run.
+
+ROUND 4, the round 3 review.
+
+FIX 1 taken. The consequence list pointed only at removal; a branch copies every subject with its id into a new draft (variants.md:7-8), which a before/after comparison on S02, S04 or S12 could read as 'every subject it created' and so walk the whole inherited board again - A1 for the propose-compare arm. The clause now points at the product-owned fields the Concerns section already lists (schemaVersion, ids, version, lifecycle, adoptions, reconciliation - which covers a resolve choice's reconciliation and an adoption's lifecycle and adoptions) and adds the branch copy. pins.json re-checked: nulls unchanged (S06 null as an adoption; S11 scored through its restored node; S02, S04, S12 scored through what they edit on the draft).
+
+FIX 2, correcting my round 3 note. What keeps S10's flow miss out on an existing board is SKILL.md:283-284, the Which recipe table: 'explain one request, job or startup as an ordered exchange ... on a new board or an existing one' goes to create-sequence, while 'change, extend, correct or repair what an existing board says' - S10's kind of request - goes to edit.md. SKILL.md:257 is the row's own condition and CANNOT exclude S10 alone: its examples include 'handling a request', and S10 illustrates flow on the request pipeline's hot path. SKILL.md:288-291 is the new-board statement of the same recipe rule. My round 3 note had :257 carrying the weight; that was wrong.
+
+OPTIONAL taken. The rubric now names 'SKILL.md's Which recipe table'. Fenced rows now go to fixture: concerns alongside rows justified only on inherited subjects, instead of silently disappearing. The fence is now said to come from the request's own words, with the skill's 'change it only where the request covers it' (edit.md:12) as its nearest rule rather than its source - edit.md:9-13 speaks of a contradiction in the touched region, so it is an analogue, not the ground.
+
+Verified: eval:skill check passes (15 scenarios, 15 fixtures, 14 coverage parts); oxfmt clean on rubric.md and pins.json; the fourteen row keys identical and in order.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Corrected the contradictions the TASK-268 sweep found between evals/rubric.md, the archboard skill and one scenario, and recorded the revision in evals/pins.json.
+
+What changed:
+- #1 (A1): the unprompted walk and behaviouralCompleteness now cover only what the run added (references/edit.md:27). That is the whole board on a create. On a changed board it is every subject the run created and every subject it gave a new value in a field it authored. What the product writes as a consequence adds nothing: owned fields, timestamps, what a removal takes with it, what a branch copies. Every catalogue row stays in the walk. A row the request's own words fence off, or one justified only on inherited subjects, goes to a fixture: concern. Null means exactly that the run added nothing. I chose scoping the walk over exempting already-absent rows, because the exemption drops whole rows regardless of content; the reviewer endorsed the choice.
+- #2 (A2): the emphasis row carries the cap (SKILL.md:253), the subject (authoring.md:199-201) and the no-spine exemption (authoring.md:166-171).
+- #3 (A3): the Flows bullet and the note row say repeat applies exactly where the source fixes the count. A loop over a list of unknown length, including one an application's registrations decide, is a note (SKILL.md:220-223).
+- #4 (A5): the relationship row sends a return to a flow step (authoring.md:218-219).
+- #5 (A7): the tooling: prefix marks product-source reads alone.
+- #6 (B3): naming the rows judged not to apply costs nothing, in both the unprompted section and Concerns.
+- #7: B1, B3, B4, B5 and B6 were all corrected, none judged correct as it stands; the reasons are in the notes.
+- #8: pins.json has a rubric revision block. Because the rubric text is part of inputDigest, older batches are already refused.
+- A4 and B2 are untouched and wait for TASK-270.
+
+Verification: bun run eval:skill check passes (15 scenarios, 15 fixtures, 14 coverage parts); bun test src/runtime/skill-evaluation/tests gives 180 pass, 0 fail; oxfmt is clean on both files; the fourteen catalogue row keys are unchanged. There were three review rounds.
+
+Not in force yet:
+- The effect of these corrections on grading is UNMEASURED until the user's next batch; no model evaluation was run.
+- grader.ts:250 and :45 still restate the old whole-board walk and the old null rule in the grader prompt. Until TASK-268 aligns them, the corrections are not fully in force on their own.
+<!-- SECTION:FINAL_SUMMARY:END -->
