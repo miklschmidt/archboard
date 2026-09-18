@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:03'
+updated_date: '2026-09-18 13:10'
 labels: []
 dependencies: []
 references:
@@ -75,4 +75,26 @@ Interface: the field names this reads are tied to the input types with `satisfie
 Tests moved to src/runtime/skill-evaluation/tests/landings.test.ts, and suite.test.ts is back to its pre-TASK-269 content. I dropped the duplicate real-fixture assertion: suiteProblems(loaded) in suite.test.ts already owns it. The new cases cover refusal naming, the later child (by $node, parent-first rename, child-first rename, handle), every configured kind except dependency, a draft removal followed by a current-variant child, a child added on a draft, a current edit carried into a draft, and sibling drafts that must not combine. Run against the round-1 predicate, 4 of the 7 tests fail, so each test catches a real gap.
 
 Verified: landings.test.ts 7 pass, suite.test.ts 9 pass, eval:skill check reports 'suite ok: 15 scenarios, 15 fixtures, 14 coverage parts', oxlint (type-aware on landings.ts/index.ts, baseline on tests) is clean, and oxfmt is clean. tsc --noEmit shows errors only in claude-grader.test.ts and report-completeness.test.ts, both from other workers' in-flight changes. There are none in these files.
+
+Round 3, after review.
+
+The check is now imprecise in only one direction: toward refusing. A spurious refusal is visible and safe, while a missed landing is the silent failure this guard exists to prevent. The comment on applyStep states this.
+
+Carried statements are add-only (must-fix). The store merges a carried edit field by field against what the draft last agreed with: it keeps a field only the draft changed, and it keeps a part the draft changed even when the predecessor removed it. I took the add-only minimum rather than per-node base tracking.
+- A carried node may add a parent on a draft but never takes one away (carryNode). A part the draft removed itself stays removed.
+- Each variant now records the parts it stated itself since branching (`touched`: nodes it stated, and the ends of relationships it stated). A carried removal skips any touched part.
+- A carried removal is no longer remembered as the draft's own removal, so a later re-addition from above still arrives. Before this change that was another quiet miss.
+- The reviewer's M1 (a carried restatement with no parent) and M2 (a carried removal of a part the draft restated) are now tests. Both fail against 2b50686b and pass now.
+
+Resolve (should-fix): a resolution is now followed with the same over-approximation. The resolved variant and its drafts clear their removed sets and absorb everything their predecessor has (names, containment, relationships), because a choice can restore a removed part or take the predecessor's parent. The test (a draft removes the child and adds the call, then a resolve naming the child) fails against 2b50686b and passes now.
+
+Optional: `addressed` now carries a comment saying why falling back to current is safe: the store refuses an edit to a variant that does not exist, so such a fixture never lays.
+
+Also fixed: a TS2322 narrowing error in noteRemovals (`statement.input[...]` does not narrow through Array.isArray). It was already in 2b50686b; my round-2 tsc run hid it behind `tail`. tsc --noEmit is now clean across the tree.
+
+Verified:
+- landings.test.ts: 10 pass. Against 2b50686b, the 3 new cases fail.
+- suite.test.ts: 9 pass.
+- eval:skill check: suite ok, 15 fixtures.
+- oxlint type-aware and baseline, oxfmt, and tsc: all clean.
 <!-- SECTION:NOTES:END -->
