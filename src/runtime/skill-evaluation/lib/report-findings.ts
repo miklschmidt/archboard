@@ -15,13 +15,17 @@ import type { RunRecord } from "@/runtime/skill-evaluation/lib/report";
  */
 type ConcernKind = "fixture" | "tooling" | "other";
 
-/** One expected feature filed as untaught by the skill on some runs and not on others. */
+/** One expected feature counted as untaught by the skill on some runs and against the run on others. */
 interface SkillDisagreement {
 	readonly scenario: string;
 	readonly feature: string;
-	/** Runs whose finding put it on the skill. */
+	/** Runs whose finding is counted on the skill. */
 	readonly untaught: readonly string[];
-	/** Runs whose finding held it against the run: a departure from the skill, or a contradicted board. */
+	/**
+	 * Runs whose finding is counted against the run: a departure from the
+	 * skill, or a contradicted board. A skill finding on a passage the feature
+	 * cites is counted here, whatever axis the grader gave it.
+	 */
 	readonly otherwise: readonly string[];
 }
 
@@ -43,13 +47,15 @@ interface ExcusedDepartureOnRun extends ExcusedDeparture {
 }
 
 /**
- * Every skill finding the runs carry on a passage its feature cites, in run order.
+ * Every skill finding the runs carry on a passage its feature cites, in run
+ * order. A run whose grader answered off the checklist is set aside and fails
+ * nothing, so its findings are not listed as failing it.
  * @param runs The runs.
  * @returns One entry per such finding.
  */
 function excusedDeparturesOf(runs: readonly RunRecord[]): ExcusedDepartureOnRun[] {
 	return runs.flatMap((run) =>
-		run.excusedDepartures.map((entry) => ({
+		(run.checklist?.standing === "off-checklist" ? [] : run.excusedDepartures).map((entry) => ({
 			run: run.run,
 			arm: run.arm,
 			scenario: run.scenario,
@@ -60,8 +66,9 @@ function excusedDeparturesOf(runs: readonly RunRecord[]): ExcusedDepartureOnRun[
 }
 
 /**
- * Features filed as untaught by the skill on some runs of a scenario and
- * held against the run on others.
+ * Features counted as untaught by the skill on some runs of a scenario and
+ * against the run on others, by the axis each finding is counted on rather
+ * than the one the grader named.
  * @param runs The runs, both arms.
  * @returns One entry per split feature, in scenario and feature order.
  */

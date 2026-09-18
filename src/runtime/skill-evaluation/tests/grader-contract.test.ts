@@ -281,6 +281,13 @@ test("a skill finding naming a passage its feature cites is a departure that fai
 			gap: "never opened it",
 		},
 	]);
+	// A run set aside as answered off the checklist fails nothing, so none is listed as failing it.
+	const offChecklist = {
+		...excused,
+		semanticallyCompliant: null,
+		checklist: { standing: "off-checklist", unmentioned: ["board.create"], invented: ["x"] },
+	} satisfies RunRecord;
+	expect(buildReport([offChecklist], null).excusedDepartures).toEqual([]);
 });
 
 test("a waiver is not a finding, and a departure from a passage the run's own skill lacked is counted apart", () => {
