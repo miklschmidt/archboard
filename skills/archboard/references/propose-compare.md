@@ -4,19 +4,21 @@ The recipe for a proposed evolution of the same diagram: branch a draft, edit
 only the draft, compare both through one view, adopt only when asked.
 
 1. `semantic show` the board; note `version` and the variant to derive from.
-   The checks: every edit names the proposal in `variant`, so the current
+   The checks: every edit names the proposal with `--variant`, so the current
    architecture is byte-for-byte what it was; the ids the proposal keeps; the
    view both pictures will go through.
 2. Branch, then edit the proposal. The two calls that landed on the lock files
    are restated by the ids step 1 read, with their new endpoint and the labels
    they already carry: one changed property keeps a relationship's id, so this
    is two relationships that moved rather than two deleted beside two added.
+   `--variant` says which variant the change lands on, and a payload `variant`
+   says the same thing; where the two differ the command line wins and the
+   answer says so.
 
 ```bash
 archboard semantic branch "Board lease" --as "Lease table" --summary "Hold leases in one table instead of one file per board" --expect-version 2 --doing "proposing a lease table"
-archboard semantic edit "Board lease" --expect-version 3 --doing "moving the lease records into a table" <<'JSON'
+archboard semantic edit "Board lease" --variant "Lease table" --expect-version 3 --doing "moving the lease records into a table" <<'JSON'
 {
-  "variant": "Lease table",
   "nodes": [{ "name": "Lease table", "kind": "datastore", "responsibility": "One row per held board, written in a transaction" }],
   "edges": [
     { "id": "aZ4vK1Rb", "from": "holdBoard", "to": "Lease table", "kind": "data", "label": "create exclusively" },
