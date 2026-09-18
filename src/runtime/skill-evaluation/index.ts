@@ -16,10 +16,12 @@ export {
 	type ProcessResult,
 } from "@/runtime/skill-evaluation/lib/process";
 export {
+	keptCandidate,
 	planJobs,
 	resumeSelection,
 	runBatch,
 	type BatchOptions,
+	type KeptCandidate,
 } from "@/runtime/skill-evaluation/lib/batch";
 export {
 	assertBatchInputs,
