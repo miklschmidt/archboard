@@ -1,11 +1,11 @@
 ---
 id: TASK-265
 title: Two relationships between the same pair across a frame crash the layout
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:52'
-updated_date: '2026-09-18 12:26'
+updated_date: '2026-09-18 12:41'
 labels: []
 dependencies: []
 references:
@@ -32,11 +32,11 @@ The fix belongs in archboard, not in the forked renderer at /home/msc/Projects/e
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A board with two relationships between the same ordered pair, one end inside a container, rasterizes instead of failing
-- [ ] #2 The sister relationships stay distinguishable where they cross the frame rather than being drawn over each other
-- [ ] #3 The boards preserved under .skill-evals/2026-09-18T01-50-12-580Z/runs/candidate/S05/1 and /2 render
-- [ ] #4 A renderer owner covers the shape, so the crash cannot return silently
-- [ ] #5 What TASK-258 fixed still holds
+- [x] #1 A board with two relationships between the same ordered pair, one end inside a container, rasterizes instead of failing
+- [x] #2 The sister relationships stay distinguishable where they cross the frame rather than being drawn over each other
+- [x] #3 The boards preserved under .skill-evals/2026-09-18T01-50-12-580Z/runs/candidate/S05/1 and /2 render
+- [x] #4 A renderer owner covers the shape, so the crash cannot return silently
+- [x] #5 What TASK-258 fixed still holds
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -80,4 +80,24 @@ Round 2, after review. Three must-fix items addressed.
 4. Optional seam taken. frame-crossings now answers one question — given every relationship's faces and seat, where each crosses and which boundary port it takes — and keeps Boundaries, the crowded-frame rule and the spelling of a port id to itself; the graph builder's two-phase attachment dance is gone. PortSides moves to reading.ts beside Face. No change to the graph handed to the engine.
 
 Re-verified after all of it: 223 renderer tests over 34 files pass, the rasterizer owner (11) and the rasterize system owner (3) pass, type-check clean, both lint lanes clean over what changed, oxfmt clean, and both preserved boards rasterize in both grammars.
+
+Round 3, the last correction. Section 27's table printed six rows under a tuple convention that names the pair, which reads as six configurations when it is four: the two rows of each NORTH pair are one picture with the pair named the other way round, and what the engine answers to is which sister it seats first along the source's face — an outcome of the solve, not a property of the graph. Section 27 now states the condition by geometry (refused when the route in is on NORTH, the sister seated first is on NORTH and the other is on either flank; and when the route in is on either flank and both sisters are on SOUTH; everything else laid out, all three on one flow face and all three on flanks included) and keeps the table as the evidence behind it.
+
+Sweeping every candidate of the board rather than one settled the earlier disagreement, and my own measurement now carries it: the label-stripped candidate the renderer actually solves for an ordinary run refuses four — NORTH,WEST,NORTH and NORTH,EAST,NORTH at 'Expected 2 hierarchical ports', WEST,SOUTH,SOUTH and EAST,SOUTH,SOUTH at 'Expected 1' — and reserving a label on one of the pair gives the same four at 'Expected 1' throughout. Reserving one on both gives the six in the table. So the four are what this shape refuses however it is drawn; the extra two and the count in the message both move with the candidate, a label dummy having moved which sister is seated first. Section 27 says so.
+
+Reviewer notes taken: clearLane no longer has a give-up branch to document — one more step than there are runs must land clear, since each step is a whole lane and a run counts as drawn along one only within a hair of it, so every other run can block at most one step; and moveRun records that a neighbour's stale extent can only refuse a free lane, never take an occupied one. Left alone: LANE sitting under SIDE_BY_SIDE is the intent (a fanned pair is a corridor a reader counts across, which is what section 25 measures), and ancestryOf's home is a one-symbol nit not worth the churn.
+
+Final verification after all of it: 223 renderer tests over 34 files pass (7112 assertions), the rasterizer owner and the rasterize system owner pass (14 tests), type-check clean, both lint lanes clean over what changed, oxfmt clean.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The task's own account of the crash was disproved. It blamed crossingsOf setting straight = hasSister(seat), so that crossingFace returned farFlank() and put a boundary port on a lateral face of the frame; the captured ElkNode shows the sister crossings sitting on SOUTH, the face they travel, and farFlank() reachable only at the end whose face is the title band. The one lateral-face port is the entering relationship's, from the CLEAR_OF_BAND rule that has bundled a crossing down a flank since section 11 — not from TASK-258. The cited comment at compound-graph.ts:204 is about a frame's own containment relationship, not a boundary crossing.
+
+The real mechanism: a frame crossed both down a flank and straight on through a face is one the engine can refuse outright. It expects the dummies in the frame's own first and last layers to be accounted for by the frame's ports on that one side, and a flank port is on neither, so it answers UnsupportedConfigurationException and the whole board draws nothing. Sixty-four combinations of the three boundary faces, swept on the graph the renderer builds and on every candidate solve of it, give four configurations refused however the board is drawn: the route in on NORTH with the sister seated first at the source on NORTH and the other on either flank, and the route in on either flank with both sisters on SOUTH. Which route holds which face is the variable, so no rule counting a frame's ports states the condition. TASK-258 is first cause only because it is what first puts a non-flank boundary port on a frame; elk-rs is a faithful port of upstream and needed no change.
+
+The repair is two parts, both in the renderer. A frame crossed both ways is crossed straight through once per face, the routes sharing a face there sharing the corridor, so the refused configuration is unreachable (frame-crossings.ts, which now answers that one question for a whole view at once and keeps the boundaries, the crowded-frame rule and the spelling of a port id to itself). Sharing a corridor then draws the sharers along one line either side of the point they share — 84 units of one ink on the first preserved board, 418 on the second — so a run two routes are drawn on top of each other along is fanned apart after the routes are placed and before they are rounded (shared-runs.ts): a lane each at the engine's own parallel spacing, each keeping the side it approached from, stepping out again where another route already runs there. Nothing about the graph handed to the engine changes.
+
+Verified: the new route-nesting shape, a frame the pair leaves that another route also crosses, fails before the fix with the engine's refusal and passes after, at two and three sisters, both edge orders and both themes; drawn-ink's overdrawnRun holds two relationships a reader must tell apart to a corner's length, and was confirmed to fail at 84 on the unfanned geometry. Both preserved boards under .skill-evals/2026-09-18T01-50-12-580Z/runs/candidate/S05/1 and /2 rasterize to PNG in both grammars, 1521x1164 and 1766x1155, and were looked at: push and pop are two parallel lines with their own labels and arrowheads. Over every relationship of all 24 drawings in the tree — 15 vault boards, 18 variants, 4 fixtures, both preserved boards — the worst overdrawn run is 0 and no route passes through a card. What TASK-258 fixed still holds, in code and in the suite: crossingFace returns a flank on both branches without a sister and crowdedFrames only admits a frame through a non-flank side, so a board with no pair hands the engine byte-identical input; no vault board, variant or fixture holds two relationships between one ordered pair. 223 renderer tests over 34 files pass, the rasterizer and rasterize system owners pass, type-check, both lint lanes and oxfmt are clean. Section 27 of docs/design/layout-rules.md records the measurement, what moves with the candidate solve, and why the two alternatives — bundling the pair back down a flank, and letting the entering route cross straight — are not available.
+<!-- SECTION:FINAL_SUMMARY:END -->
