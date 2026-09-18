@@ -1193,3 +1193,42 @@ picture of all — two straight descents, 404x498 against 601x572 — and runs
 both routes through the frame's own title: with a title of any length the
 lines cross the words, and every one crosses the rule under them. Section 11
 decided a crossing never runs across a title, and this does not change that.
+
+## 27. A frame crossed both ways (2026-09-18, TASK-265)
+
+Section 26 gave a pair the face it travels for a crossing. A frame crossed
+that way **and** down a flank by something else is one the engine refuses
+outright: `UnsupportedConfigurationException: Expected 1 hierarchical ports,
+but found only 0`, thrown from `LayerSweepCrossingMinimizer` while it sweeps
+into the frame, and the whole board draws nothing. It cost two runs of the
+2026-09-18 evaluation batch their picture. Measured here on the smallest board
+that reaches it — `WSGI server` into a `Flask app` frame, the framed method
+with a sibling inside and a pair out to `Request context` — by mutating the
+faces of the frame's three boundary ports over all sixty-four combinations:
+
+- **The frame's ports are refused by combination, not one at a time.** Two
+  ports on one face the reading runs along, together with one on a flank,
+  is refused; every other combination of the three is accepted. Three on one
+  such face is refused; three on flanks is not, and that is how every crossing
+  was made before section 26.
+- **Which flank makes no difference.** Near and far are refused alike, so the
+  far flank section 26 keeps for a pair into a frame does not rescue this.
+- **The engine is right to refuse.** It expects the dummies in the frame's own
+  first and last layers to be accounted for by the frame's ports on that one
+  side; a flank port is on neither. The Rust engine panics where upstream ELK
+  throws, from the same function.
+- **The order a pair reads in is a flank's own, whichever flank.** Bundling
+  the pair back down a flank draws it crossing itself on both, so the frame
+  rule outranking the sister rule is not available either.
+
+What landed: such a frame is crossed straight through **once per face**, and
+the routes sharing a face there share the corridor. One port is never two on
+one face, so the frame is accepted; a pair through one corridor has nothing
+left to order, so it still reads through the frame in the order it leaves by
+and meets only at the single point it crosses. A frame nothing bundles down is
+untouched, so every drawing section 26 measured is unchanged.
+
+No vault board, variant or fixture holds two relationships between one ordered
+pair, so no crossing anywhere in the tree is straight and the rule cannot
+reach any of them: all fifteen vault boards, their eighteen variants and the
+four fixtures draw exactly as before.
