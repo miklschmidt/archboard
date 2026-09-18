@@ -267,8 +267,11 @@ function invokesWrite(script: string): boolean {
  * counts, unless the command itself shows it read nothing: the word is a plain
  * literal, with no quote, escape or expansion that could make the shell pass
  * something else, the path does not exist, and the command's output says so.
- * Existence alone is not enough: the disk is read when the report is, and a
- * file deleted since the run was there when the author read it.
+ * A script that assigns or expands a variable, or substitutes a command, can
+ * build a path no word spells, so none of its paths is exempt. Existence alone
+ * is not enough: the disk is read when the report is, and a file deleted since
+ * the run was there when the author read it. A relative word is resolved from
+ * the last absolute `cd` before it, or from the author's working directory.
  * @param script The unwrapped script.
  * @param output What the command printed.
  * @param roots Where the batch and this run's world live.
@@ -281,13 +284,41 @@ function reachesBatchOutsideWorld(
 	roots: ExposureRoots,
 	cwd: string,
 ): boolean {
-	return shellWords(script).some((word) =>
-		batchPathsIn(word.value, roots.batchRoot).some((named) => {
-			const reached = path.resolve(cwd, named);
-			if (!inside(roots.batchRoot, reached) || inside(roots.world, reached)) return false;
-			return !(word.plain && !roots.exists(reached) && reportedMissing(output, named));
-		}),
-	);
+	const words = shellWords(script);
+	const exemptable = !/[$`]/u.test(script) && !words.some((word) => ASSIGNMENT_RE.test(word.value));
+	let directory = cwd;
+	return words.some((word, index) => {
+		const reached = batchPathsIn(word.value, roots.batchRoot).some((named) => {
+			const target = path.resolve(directory, named);
+			if (!inside(roots.batchRoot, target) || inside(roots.world, target)) return false;
+			return !(exemptable && readNothing(word, target, named, { roots, output }));
+		});
+		if (words[index - 1]?.value === "cd" && path.isAbsolute(word.value)) directory = word.value;
+		return reached;
+	});
+}
+
+/** A shell word that assigns a variable. */
+const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/u;
+
+/**
+ * Whether naming a path read nothing: its word is plain, the path does not
+ * exist, and the command's output reports it missing.
+ * @param word The shell word.
+ * @param target The path it resolves to.
+ * @param named The path as the word spells it.
+ * @param seen What the check reads.
+ * @param seen.roots Where to ask whether the path exists.
+ * @param seen.output What the command printed.
+ * @returns True when the command shows it read nothing.
+ */
+function readNothing(
+	word: ShellWord,
+	target: string,
+	named: string,
+	seen: { readonly roots: ExposureRoots; readonly output: string },
+): boolean {
+	return word.plain && !seen.roots.exists(target) && reportedMissing(seen.output, named);
 }
 
 /**

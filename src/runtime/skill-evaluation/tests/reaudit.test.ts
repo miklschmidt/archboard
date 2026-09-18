@@ -89,6 +89,11 @@ test("a plain batch path that does not exist, and that the command reports missi
 	expect(exposureOf(`bash -lc 'cat ${misread}'`, "---\nname: archboard\n")).toBe("other-run");
 });
 
+test("a relative path is read from the last absolute cd before it, not from the checkout alone", () => {
+	expect(exposureOf(`bash -lc 'cd ${WORLD}/flask/src/flask && cat ../../README.md'`)).toBeNull();
+	expect(exposureOf(`bash -lc 'cd ${WORLD}/vault && cat ../../author.jsonl'`)).toBe("other-run");
+});
+
 test("a path that exists, a pattern, the batch root, a quoted or joined word, or an escape from the world is exposure", () => {
 	for (const script of [
 		`ls ${BATCH}/runs/baseline/S11/2/world/vault`,
@@ -107,6 +112,14 @@ test("a path that exists, a pattern, the batch root, a quoted or joined word, or
 		expect(exposureOf(`bash -lc '${script}'`, missing(`${BATCH}/runs/base`)), script).toBe(
 			"other-run",
 		);
+	// A script that assigns or expands a variable exempts nothing, even where
+	// the output reports the prefix it assigned missing.
+	expect(
+		exposureOf(
+			`bash -lc 'X=${BATCH}/runs/base; ls $X; cat \${X}line/S11/2/run.json'`,
+			`ls: cannot access '${BATCH}/runs/base': No such file or directory\n{}`,
+		),
+	).toBe("other-run");
 	// A variable assembled from a prefix that does not exist reads what it expands to.
 	expect(exposureOf(`bash -lc 'X=${BATCH}/runs/base; cat \${X}line/S11/2/run.json'`, "{}")).toBe(
 		"other-run",
