@@ -38,6 +38,10 @@
 			"approvalPolicy": "never"
 		}
 	},
+	"fixtures": {
+		"revision": "2026-09-18, TASK-264",
+		"note": "The starting vaults of S02, S03, S06, S09 and S12 changed with this revision, and S03's prompt with them: the collapsed `Dispatch` part was split into full_dispatch_request, finalize_request and process_response, the CLI's relationship onto the application container became the two calls the source makes, and werkzeug's LocalStacks became external parts. Scores for those five scenarios from a batch run before it measure different starting boards and cannot be compared with a later batch's; the other scenarios are unaffected."
+	},
 	"repetitions": 3,
 	"defaultConcurrency": 3,
 	"baselineSkill": {

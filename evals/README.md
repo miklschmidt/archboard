@@ -183,8 +183,11 @@ The baseline is `docs/design/skill-evals/baseline/archboard`, a copy of
 `skills/archboard` frozen at the revision `pins.json` names (the last accepted
 skill; promoting a candidate replaces the copy and rewrites that pin), and it
 runs on the same CLI as the candidate. Both arms use
-identical prompts, fixtures, pins and settings. Changing any pin starts a new
-baseline; the harness refuses a Codex executable whose version differs from
+identical prompts, fixtures, pins and settings. A scenario whose fixture or
+prompt changed is comparable only within one side of that change:
+`pins.json` carries a `fixtures` note saying which scenarios each revision
+moved, so a batch from before it is not read against one from after.
+Changing any pin starts a new baseline; the harness refuses a Codex executable whose version differs from
 the pin. `graders.json` is deliberately outside that digest: a grader is
 chosen when grading runs, and changing its pins never makes a batch
 un-gradable. A batch recorded before `graders.json` existed carries a grader

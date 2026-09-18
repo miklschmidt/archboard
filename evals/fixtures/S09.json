@@ -1,5 +1,5 @@
 {
-	"$comment": "S03's board with the memberships recorded, every part in the checkout bound to the file implementing it, and an Overview view that keeps the app and the CLI but draws neither the contexts module nor the function inside it, so `Request context push` is the one request-lifecycle member the view leaves out. The development server is werkzeug's, outside the checkout, so it is `external` and carries no binding.",
+	"$comment": "S03's board with the memberships recorded — the three S03 asks its author for, and the whole response path besides, so the group's outgoing boundary carries save_session — every part in the checkout bound to the file implementing it, and an Overview view that keeps the app and the CLI but draws neither the contexts module nor the function inside it, so `Request context push` is the one request-lifecycle member the view leaves out. The development server is werkzeug's, outside the checkout, so it is `external` and carries no binding.",
 	"registerRepo": true,
 	"policy": {
 		"groups": {
@@ -56,7 +56,7 @@
 					{
 						"name": "CLI",
 						"kind": "module",
-						"responsibility": "The flask command group",
+						"responsibility": "The flask command group and the script info that loads the app",
 						"binding": { "repo": "$FLASK", "path": "src/flask/cli.py" }
 					},
 					{
