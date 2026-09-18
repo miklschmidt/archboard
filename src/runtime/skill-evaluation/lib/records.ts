@@ -32,7 +32,7 @@ import {
 import { agreementOf } from "@/runtime/skill-evaluation/lib/report-agreement";
 import { renderBatchReportMarkdown } from "@/runtime/skill-evaluation/lib/report-markdown";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
-import { reauditedExposure } from "@/runtime/skill-evaluation/lib/reaudit";
+import { exposureAudit, type ExposureAudit } from "@/runtime/skill-evaluation/lib/reaudit";
 import {
 	buildReport,
 	type BatchReport,
@@ -197,19 +197,17 @@ function findingsOf(
  * What a manifest recorded of the audit, each absent before its harness kept
  * it. Exposure is read again from the run's stored commands, so a classifier
  * fix reaches a batch already run.
- * @param batchRoot The batch.
- * @param loaded The suite, for the checkout.
+ * @param audit The batch's exposure audit.
  * @param manifest The manifest.
  * @returns The three audit fields, null where the manifest predates them.
  */
 function auditOf(
-	batchRoot: string,
-	loaded: LoadedSuite,
+	audit: ExposureAudit,
 	manifest: RunManifest,
 ): Pick<RunRecord, "directWrites" | "exposure" | "guidance"> {
 	return {
 		directWrites: manifest.directWrites ?? null,
-		exposure: reauditedExposure(batchRoot, loaded, manifest),
+		exposure: audit(manifest),
 		guidance: manifest.guidance ?? null,
 	};
 }
@@ -220,6 +218,7 @@ function auditOf(
  * @param loaded The suite, for the expected features.
  * @param manifest The manifest.
  * @param grader The grader, or null for a record with no verdict.
+ * @param audit The batch's exposure audit, read once for every run of a report.
  * @returns The record.
  */
 function recordOf(
@@ -227,6 +226,7 @@ function recordOf(
 	loaded: LoadedSuite,
 	manifest: RunManifest,
 	grader: GraderName | null = null,
+	audit: ExposureAudit = exposureAudit(batchRoot, loaded),
 ): RunRecord {
 	const verdict = verdictFor(batchRoot, grader, manifest.run);
 	const graded = gradedOf(loaded, manifest.scenario, verdict);
@@ -241,7 +241,7 @@ function recordOf(
 		durationMs: manifest.author?.durationMs ?? 0,
 		usage: manifest.usage,
 		commandCounts: manifest.commandCounts,
-		...auditOf(batchRoot, loaded, manifest),
+		...auditOf(audit, manifest),
 		...visualOf(batchRoot, grader, manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,
 		guardrailsPassed: manifest.guardrailsPassed,
@@ -290,7 +290,8 @@ function graderReport(
 	planned: readonly PlannedRun[],
 	grader: GraderName | null,
 ): GraderReport {
-	const runs = manifests.map((manifest) => recordOf(batchRoot, loaded, manifest, grader));
+	const audit = exposureAudit(batchRoot, loaded);
+	const runs = manifests.map((manifest) => recordOf(batchRoot, loaded, manifest, grader, audit));
 	const identity = grader === null ? null : graderIdentity(batchRoot, grader);
 	const usage = grader === null ? null : graderUsage(batchRoot, grader);
 	return { grader: identity, report: buildReport(runs, usage, planned, identity), runs };

@@ -263,59 +263,105 @@ function invokesWrite(script: string): boolean {
 /**
  * Whether a script reaches into the batch tree outside its own world: another
  * run, the blinding table that names every run's arm, the batch manifest, or
- * the harness's own records of this run. A path counts when it could have
- * shown the author something: it exists, or it is a pattern the shell expands
- * into whatever does. A literal path that exists nowhere read nothing.
+ * the harness's own records of this run. Every path a shell word names there
+ * counts, unless the command itself shows it read nothing: the word is a plain
+ * literal, with no quote, escape or expansion that could make the shell pass
+ * something else, the path does not exist, and the command's output says so.
+ * Existence alone is not enough: the disk is read when the report is, and a
+ * file deleted since the run was there when the author read it.
  * @param script The unwrapped script.
+ * @param output What the command printed.
  * @param roots Where the batch and this run's world live.
  * @param cwd The author's working directory.
  * @returns True when it names part of the batch that is not this run's world.
  */
-function reachesBatchOutsideWorld(script: string, roots: ExposureRoots, cwd: string): boolean {
-	const batch = roots.batchRoot;
-	for (let at = script.indexOf(batch); at >= 0; at = script.indexOf(batch, at + batch.length)) {
-		if (startsWithPath(script, at, roots.world)) continue;
-		const word = pathWordAt(script, at);
-		if (couldReveal(word, roots, path.resolve(word))) return true;
-	}
-	return relativePathWords(script).some((word) => {
-		const reached = path.resolve(cwd, word);
-		return (
-			inside(batch, reached) && !inside(roots.world, reached) && couldReveal(word, roots, reached)
-		);
-	});
+function reachesBatchOutsideWorld(
+	script: string,
+	output: string,
+	roots: ExposureRoots,
+	cwd: string,
+): boolean {
+	return shellWords(script).some((word) =>
+		batchPathsIn(word.value, roots.batchRoot).some((named) => {
+			const reached = path.resolve(cwd, named);
+			if (!inside(roots.batchRoot, reached) || inside(roots.world, reached)) return false;
+			return !(word.plain && !roots.exists(reached) && reportedMissing(output, named));
+		}),
+	);
+}
+
+/**
+ * The paths a shell word names that could lie in the batch: from each place
+ * the batch root appears in it, and the whole word when it is relative.
+ * @param value The word as the shell passes it.
+ * @param batchRoot The batch.
+ * @returns The paths, as spelled.
+ */
+function batchPathsIn(value: string, batchRoot: string): string[] {
+	const found: string[] = [];
+	for (let at = value.indexOf(batchRoot); at >= 0; at = value.indexOf(batchRoot, at + 1))
+		found.push(value.slice(at));
+	if (value.startsWith("./") || value.startsWith("../")) found.push(value);
+	return found;
+}
+
+/**
+ * Whether a command's output says a path it named does not exist, as sed, cat,
+ * ls, head and rg put it.
+ * @param output What the command printed.
+ * @param named The path as the command spelled it.
+ * @returns True when the output reports it missing.
+ */
+function reportedMissing(output: string, named: string): boolean {
+	return [`${named}: No such file or directory`, `${named}': No such file or directory`].some(
+		(line) => output.includes(line),
+	);
 }
 
 /** Characters the shell expands: a word holding one names whatever it matches. */
 const EXPANSION_RE = /[*?[\]{}$`~]/u;
 
+/** One shell word: what the shell passes, and whether it is spelled exactly so. */
+interface ShellWord {
+	readonly value: string;
+	/** True when the word has no quote, escape or expansion character: what is written is what is passed. */
+	readonly plain: boolean;
+}
+
+/** One shell word as written: quoted runs, escapes and plain characters, up to unquoted space or an operator. */
+const SHELL_WORD_RE = /(?:'[^']*'?|"(?:\\.|[^"\\])*"?|\\.?|[^\s|;&<>()'"\\])+/gsu;
+/** One quoted run or escape inside a word, to be replaced by what it passes. */
+const QUOTING_RE = /'([^']*)'?|"((?:\\.|[^"\\])*)"?|\\(.?)/gsu;
+
 /**
- * Whether naming a path could have shown the author anything.
- * @param word The path as the script spells it.
- * @param roots Where to ask whether it exists.
- * @param resolved The path it resolves to.
- * @returns True for a pattern, or for a literal path that exists.
+ * Splits a script into shell words, joining quoted and unquoted parts of one
+ * word as the shell does: `base"line"` and `..'/'..` are single words.
+ * @param script The unwrapped script.
+ * @returns The words in order.
  */
-function couldReveal(word: string, roots: ExposureRoots, resolved: string): boolean {
-	return EXPANSION_RE.test(word) || roots.exists(resolved);
+function shellWords(script: string): ShellWord[] {
+	return [...script.matchAll(SHELL_WORD_RE)].map(([raw]) => ({
+		value: raw.replaceAll(QUOTING_RE, unquoted),
+		plain: !/['"\\]/u.test(raw) && !EXPANSION_RE.test(raw),
+	}));
 }
 
 /**
- * The path that begins at a position, as the shell would pass it: inside the
- * quotes it opens in, or up to the first unescaped space, quote or operator.
- * @param script The script.
- * @param at Where the path begins.
- * @returns The path, quoting and escapes removed.
+ * What one quoted run or escape passes. Inside double quotes a backslash
+ * escapes only a dollar, a backtick, a double quote, a backslash or a newline.
+ * @param _match The whole quoted run.
+ * @param single The inside of single quotes.
+ * @param double The inside of double quotes.
+ * @param escaped The escaped character.
+ * @returns The text the shell passes.
  */
-function pathWordAt(script: string, at: number): string {
-	const rest = script.slice(at);
-	const quote = script[at - 1];
-	if (quote === "'" || quote === '"') {
-		const end = rest.indexOf(quote);
-		return end < 0 ? rest : rest.slice(0, end);
-	}
-	const word = /^(?:\\.|[^\s'"|;&<>()])*/u.exec(rest)?.[0] ?? "";
-	return word.replaceAll(/\\(.)/gu, "$1");
+function unquoted(
+	_match: string,
+	single: string | undefined,
+	double: string | undefined,
+	escaped: string | undefined,
+): string {
+	return single ?? double?.replaceAll(/\\([$`"\\\n])/gu, "$1") ?? escaped ?? "";
 }
 
 /**
@@ -344,17 +390,6 @@ function startsWithPath(text: string, at: number, root: string): boolean {
 }
 
 /**
- * Finds shell words that explicitly spell a path relative to the author's cwd.
- * @param script The unwrapped shell script.
- * @returns Relative path words without shell quoting.
- */
-function relativePathWords(script: string): string[] {
-	return [...script.matchAll(/'([^']*)'|"([^"$`]*)"|([^\s'"|;&<>]+)/gu)]
-		.map((match) => (match[1] ?? match[2] ?? match[3] ?? "").replaceAll("\\ ", " "))
-		.filter((word) => word.startsWith("../") || word.startsWith("./"));
-}
-
-/**
  * Tests whether a resolved path is the directory or one of its descendants.
  * @param directory The containing directory.
  * @param target The resolved path to test.
@@ -369,10 +404,15 @@ function inside(directory: string, target: string): boolean {
  * Finds canonical inputs, harness source, a skill package or the batch tree
  * outside the run's world named by a script.
  * @param script The unwrapped script.
+ * @param output What the command printed, which can show a path read nothing.
  * @param context Where the run happened.
  * @returns The kind of exposure, or null.
  */
-function exposureOf(script: string, context: ClassificationContext): ExposureKind | null {
+function exposureOf(
+	script: string,
+	output: string,
+	context: ClassificationContext,
+): ExposureKind | null {
 	const roots = context.exposure;
 	if (roots === undefined) return null;
 	const reached: readonly [ExposureKind, boolean][] = [
@@ -382,7 +422,7 @@ function exposureOf(script: string, context: ClassificationContext): ExposureKin
 		],
 		["harness-source", script.includes(roots.harnessSource) || HARNESS_SOURCE_RE.test(script)],
 		["skill-package", reachesSkillPackage(script, roots)],
-		["other-run", reachesBatchOutsideWorld(script, roots, context.checkoutRoot)],
+		["other-run", reachesBatchOutsideWorld(script, output, roots, context.checkoutRoot)],
 	];
 	return reached.find(([, found]) => found)?.[0] ?? null;
 }
@@ -405,7 +445,7 @@ function classifyCommands(
 			class: decided?.class ?? "ambiguous",
 			rule: decided?.rule ?? "no rule matched",
 			write: WRITE_RE.test(script) && invokesWrite(script),
-			exposure: exposureOf(script, context),
+			exposure: exposureOf(script, record.output, context),
 		};
 	});
 }
