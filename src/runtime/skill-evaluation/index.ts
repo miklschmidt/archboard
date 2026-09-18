@@ -54,6 +54,8 @@ export {
 	type Usage,
 } from "@/runtime/skill-evaluation/lib/events";
 export {
+	BATCH_SKILL_DIRECTORY,
+	keepBatchSkill,
 	CATALOGUE_PASSAGE,
 	CATALOGUE_ROWS,
 	CITATION_PATTERN,
@@ -168,6 +170,7 @@ export {
 	type ConcernKind,
 	type GraderReport,
 	type RaisedConcern,
+	type SkillDisagreement,
 	type Report,
 	type RunRecord,
 } from "@/runtime/skill-evaluation/lib/report";
