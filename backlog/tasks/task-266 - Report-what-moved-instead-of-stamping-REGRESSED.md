@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:02'
-updated_date: '2026-09-18 11:43'
+updated_date: '2026-09-18 12:03'
 labels: []
 dependencies: []
 references:
@@ -89,4 +89,18 @@ One expectation of step 8 does not hold, and did not hold before this task eithe
 No verdict word appears anywhere in this batch: the only comparable workflow is 'read', which holds S09 alone and therefore prints deltas only, and every other workflow and the arm total hold a set-aside or contaminated run. The verdict path is owned by tests/report-change.test.ts instead.
 
 Verification run (each under timeout 300 and a 6G memory-capped scope): bun run type-check clean; bun scripts/lint.ts type-aware over src/runtime/skill-evaluation clean; the baseline lint lane over its tests clean; oxfmt --check clean; bun test over tests/report-change.test.ts, report-completeness.test.ts, blinding-and-reports.test.ts, evidence.test.ts, grader-agreement.test.ts, run-manifest.test.ts and claude-grading.test.ts — 63 + 31 pass, 0 fail. The full gate was not run: four workers share this tree.
+
+Review round 1 addressed.
+
+The noise bar is recalibrated and re-based. It took one arm's raw spread over the runs it averaged; that falls as the count while the uncertainty of a mean falls as its square root, so the agreement at three runs was a coincidence and the bar was two to three times too small at the arm-total row — the clean 2026-09-17 batch would have been stamped regressed on a truth mean that moved 0.10 against a bar of 0.07. Pooling raw scores across scenarios also measured the wrong quantity: one scenario scoring higher than another is not noise and cancels in the delta. The two arms are now paired by the identity they already share (scenario and repetition), and the bar is the spread of those paired differences over the square root of how many were averaged. Replayed: the 2026-09-17 arm total holds, the 2026-09-16 arm total is mixed only on its pass counts (tallies, no bar), and the 2026-09-18 calls are unchanged but for S00's completeness +1.00, which now sits inside its bar while S00's correctness +1.33 against 1.15 still carries the improvement. The property the reviewer asked to keep survives at every size and is now owned by a test: one grader point on one run can never be called a move, because the pair holding it puts that point into the spread. This also subsumes the optional finding about taking the max of two arms' noise: a paired difference already carries both arms' variation.
+
+The off-checklist rule is now checklistStanding() in grader.ts, exported and unit-tested over its four cases (kept to, only skipped, only added to, replaced). It was a conjunction inside a private function of records.ts reachable only through buildBatchReport, which nothing tests; changing its && to || left all 63 tests green. The record now carries the standing the rule decided rather than re-deriving it, so there is one site.
+
+A run set aside is listed among the runs that did not succeed again. Three of the five never had a picture opened, which is the run's own defect; dropping them from failures hid that and left their arm's pass count short with nothing explaining it. The ungradable section stays as an additional listing, the way contamination is, and a set-aside run's failure line says so.
+
+Decided and not changed. The per-axis mark on a single-scenario row is kept: AC#4 withholds the row's one word at three runs, which it does, but a reader of that row still needs to see which deltas cleared their own bar, and the bar is printed beside each. One set-aside run still withholds its whole row rather than being dropped with its opposite-arm partner: it is the treatment contamination already has, it is what 'excluded from both comparisons' most conservatively means, and the cost measured today is S03, S07 and the edit workflow, whose old REGRESSED was the S03 artefact this task removes. index.ts publishes the change vocabulary because the import rule routes every consumer through it; two of those symbols cross back into report.ts.
+
+Correction to an earlier note: S08 does not sit inside its bar. It is unassessed, blocked by a contaminated run, exactly as S14 is; only S10 and S12 fall inside their bars.
+
+Re-verified: type-check clean, both lint lanes clean over src/runtime/skill-evaluation, oxfmt --check clean, 73 pass 0 fail over the seven affected test files. Commits: abc9b975, the slice inside ceea8546, e508be25, a604ef5c.
 <!-- SECTION:NOTES:END -->
