@@ -65,18 +65,19 @@ recipe names.
 7. **For a sequence, choose the columns before the messages**: a flow's
    participants are a subset of the board's nodes, so the parts the request
    names are columns, a part drawn whole stays one column whatever functions
-   run inside it, and a helper the board draws as that part's child needs no
-   column of its own — a loop the part runs over its own helpers is then that
-   part calling itself, and the choice settles which message kinds the exchange
-   can hold ([create a sequence diagram](references/create-sequence.md)).
+   run inside it, and any other part the board draws is a candidate for a
+   column rather than owed one — a choice that settles which message kinds the
+   exchange can hold ([create a sequence diagram](references/create-sequence.md)).
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
-9. **Read the source again for what a flow shows only on a second pass**: a
-   count the source fixes (a literal list of candidates tried in turn, a retry
-   limit, a batch of known size) is that step's `repeat` rather than a `note`
-   stating the count in prose, and a call a participant makes on itself is one
-   step whose `from` and `to` are both that participant
-   ([sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)).
+9. **Read the source again for what a flow shows only on a second pass**: the
+   work a part does to decide what to do next — choosing among candidates,
+   searching, selecting a branch — is its own step with that part at both ends,
+   separate from the calls it then makes per candidate, and it carries as its
+   `repeat` the count the source fixes (a literal list of candidates, a retry
+   limit, a batch of known size), which a `note` stating that count in prose
+   leaves out ([sequences, views and
+   walkthroughs](references/sequences-views-walkthroughs.md)).
 10. **Walk the catalogue** row by row against the source you read
     ([everything the code shows](#everything-the-code-shows)).
 11. **Model the subject a second way** — cut at another level, another set of
@@ -206,9 +207,8 @@ board needs all of it.
    the child whose body runs, not on the container,
    and giving an existing part children moves every relationship that landed
    on it to the child whose body runs. That is where a relationship lands, not
-   who takes part in an exchange: a flow's participants are a subset of the
-   board's nodes, so the same board draws the child and keeps the parent as the
-   column the flow moves through. For a return or a non-call
+   who takes part in an exchange; a flow's columns are chosen at step 7. For a
+   return or a non-call
    relationship, state the directional claim in words and make the endpoints
    follow it (for example, A returns to B, A reads from B, A emits an event B
    handles, A resolves a promise B awaits, A passes B a callback or props, or
