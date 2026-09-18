@@ -103,27 +103,37 @@ of what the request said, row by row in the vocabulary of the table below,
 which the skill's own catalogue uses.
 
 What the run added is the walk's subject, scoped as the skill scopes the
-author's own walk: walk the catalogue for what you add (references/edit.md), and
-a board you were asked to extend is not yours to silently repair. What the run
-added is:
+author's own walk: walk the catalogue for what you add (references/edit.md),
+and a board you were asked to extend is not yours to silently repair or
+silently repeat. What the run added is:
 
 - on a board the run created, the whole board;
 - on a board it changed, every subject it created, and every existing subject
-  it gave a new value in any field — a relationship restated to carry traffic,
-  a node restated with a membership or a binding, a beat restated to name a
-  different part. A subject restated with every field unchanged, a removal,
-  and every subject the run never wrote add nothing.
+  it gave a new value in a field the run authored — a relationship restated to
+  carry traffic, a node restated with a membership or a binding, a beat
+  restated to name a different part. A subject restated with every field
+  unchanged adds nothing, and neither does a removal: what the product changes
+  as its consequence (ids, `version`, timestamps, the relationships and
+  walkthrough references a removed part takes with it) is not authored by the
+  run. A subject the run never wrote adds nothing.
 
-The rows that ask whether the board should hold a new exchange, subset or
-explanation — `flow`, `view`, `walkthrough` — are in the walk only on a board
-the run created; a flow, view or walkthrough the run did add is walked like
-any other subject, its steps for `repeat` and `note`. A row the source
-justifies only on inherited subjects is the fixture's omission: leave it out of
-`unprompted` and list it under concerns as `fixture:`, the way an inherited
-inaccuracy is listed below. A run that added nothing has no subject: a
-read-only request, an adoption, a write that only removed. Its `unprompted`
-list is empty and its behaviouralCompleteness is `null`; that is the rule, not
-a missing result.
+Every row is in the walk, each asked of what the run added and decided by its
+own condition. On a board the run changed, `flow`, `view` and `walkthrough` ask
+whether what the run added is an exchange, a subset or a why the request's
+question is about; a flow is owed only when the request asks for the exchange
+itself (SKILL.md's recipe choice), not because what was added runs in some
+order. A flow, view or walkthrough the run added is walked like any other
+subject, its steps for `repeat` and `note`.
+
+A row the request's own words rule out is not a miss: the skill tells the
+author to change an existing board only where the request covers it, so a
+request that says nothing else changes fences every row it did not name off
+the subjects it did. A row the source justifies only on inherited subjects is
+the fixture's omission: leave it out of `unprompted` and list it under concerns
+as `fixture:`, the way an inherited inaccuracy is listed below. A run that
+added nothing has no subject: a read-only request, an adoption, a write that
+only removed. Its `unprompted` list is empty and its behaviouralCompleteness is
+`null`; that is the rule, not a missing result.
 
 | Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

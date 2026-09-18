@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:34'
-updated_date: '2026-09-18 13:01'
+updated_date: '2026-09-18 13:05'
 labels: []
 dependencies: []
 references:
@@ -122,4 +122,14 @@ F6 (noted, no change) - fixture: concerns are consumed by nothing and report.md 
 F5 - not mine; routed by the coordinator to TASK-268.
 
 Verified: eval:skill check passes (15/15/14); bun test src/runtime/skill-evaluation/tests 162 pass 0 fail; oxfmt clean on both files. Still no model evaluation run, so the effect on grading is unmeasured. grader.ts:250 and :45 still restate the pre-TASK-271 null gloss and whole-board walk; that remains with TASK-268.
+
+ROUND 3, addressing the round 2 review.
+
+MUST FIX, rule (c) replaced. The round 2 rule that walked flow, view and walkthrough only on a created board was the rubric choosing an outcome no passage supports: SKILL.md:241-243 walks every row before a write that creates OR extends, and edit.md:27 bounds WHAT is walked, never WHICH rows. It also repeated the flaw round 1 rejected - a whole row removed regardless of content, so a walkthrough justified by what an edit added (a lock around a new write) could never be missed and could not be a fixture: concern either. Now every row is in the walk, asked of what the run added and decided by its own condition. On a changed board, flow, view and walkthrough ask whether what the run added is an exchange, a subset or a why the request's question is about; a flow is owed only when the request asks for the exchange itself (SKILL.md:257's own condition, and SKILL.md:288-291's recipe choice - which is written about a new board, so on an edit it is the row's own condition that carries the weight and 288-291 is corroboration). S10 asks for traffic, not an exchange, so its flow miss is out by the skill's own passage.
+THE HONEST COST: S10's VIEW miss (and any view or walkthrough miss on an edit) is no longer ruled out by wording. It now depends on the grader judging whether the three edges S10 gave traffic are a subset a reader wants alone. That is deliberate: the rubric no longer decides the outcome, and a batch may still show view misses on S10.
+
+(a) taken. 'A new value in any field' became 'a new value in a field the run authored', and the rubric says the product's consequences add nothing: ids, version, timestamps, and the relationships and walkthrough references a removed part takes with it (edit.md:27-28). A remove-only run is null again, matching pins.json.
+(b) taken. rubric.md now quotes edit.md:13 whole, 'not yours to silently repair or silently repeat'. A new clause says a row the request's own words rule out is not a miss - a request that says nothing else changes fences every row it did not name off the subjects it did - grounded in edit.md:12, 'change it only when the request covers it'. That closes S03's description exposure on its restated Dispatch and Request context push nodes.
+
+pins.json re-checked: null is S06 and S09 and any remove-only run; S03, S10, S11 and S13 author new values and are scored. Its note now says 'a field it authored' to match. Row keys still the same fourteen in the same order. eval:skill check passes; oxfmt clean on rubric.md and pins.json. No model evaluation run.
 <!-- SECTION:NOTES:END -->
