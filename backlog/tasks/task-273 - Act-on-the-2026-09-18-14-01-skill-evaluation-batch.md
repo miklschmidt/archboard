@@ -1,9 +1,10 @@
 ---
 id: TASK-273
 title: 'Act on the 2026-09-18 14:01 skill evaluation batch'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-18 17:48'
+updated_date: '2026-09-18 23:44'
 labels: []
 dependencies: []
 priority: high
@@ -18,6 +19,12 @@ Batch .skill-evals/2026-09-18T14-01-43-895Z (grader claude-opus-5) came back wit
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The three subtasks are Done
-- [ ] #2 The user can re-run report on the 2026-09-18T14-01 batch and get assessed comparisons
+- [x] #1 The three subtasks are Done
+- [x] #2 The user can re-run report on the 2026-09-18T14-01 batch and get assessed comparisons
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Acted on batch 2026-09-18T14-01: 273.01 cleared 11 false contaminations (Codex skill-root alias) with a report-time re-audit; 273.02 made a skill-axis finding on a cited passage fail its run, in code and rubric; 273.03 cut SKILL.md from 32.4 KB to 21.9 KB. The user re-reported the batch: all primary improved, edit regressed (S01 ownership-as-containment, 2 runs), propose-compare and sequence-create improved, architecture-create held.
+<!-- SECTION:FINAL_SUMMARY:END -->

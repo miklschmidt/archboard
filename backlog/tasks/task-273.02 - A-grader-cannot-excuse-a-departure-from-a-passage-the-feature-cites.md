@@ -1,11 +1,11 @@
 ---
 id: TASK-273.02
 title: A grader cannot excuse a departure from a passage the feature cites
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 18:32'
+updated_date: '2026-09-18 23:44'
 labels: []
 dependencies: []
 parent_task_id: TASK-273
@@ -26,7 +26,7 @@ The rubric's 'skill' axis says an expectation no passage of the skill teaches; i
 - [x] #3 A skill-axis finding naming a passage the feature does not cite is unchanged
 - [x] #4 The rule applies when a saved batch is re-reported, without re-grading
 - [x] #5 Behavioural tests own the rule
-- [ ] #6 rubric.md's skill bullet states that a skill finding naming a passage the feature cites counts as conformance (if a cited passage does not teach the feature, judge conformance against it and raise a `fixture:` concern); lands after the user has re-reported the 2026-09-18T14-01 batch
+- [x] #6 rubric.md's skill bullet states that a skill finding naming a passage the feature cites counts as conformance (if a cited passage does not teach the feature, judge conformance against it and raise a `fixture:` concern); lands after the user has re-reported the 2026-09-18T14-01 batch
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,6 +62,8 @@ Gate re-run on HEAD b9934e77 plus the 273.01 worker's uncommitted files: fmt:che
 Independent review, two rounds; round 2 clean. Reviewer's refinement for AC#6's rubric sentence, preferred over the one above when it lands: 'A finding naming a passage the feature cites is counted as conformance whatever axis it carries, since the scenario declares that passage teaches the feature. If that passage does not in fact teach it, file the finding all the same and name the feature and the passage in a concern beginning `fixture:` (the scenario's citation).' (Judging conformance against a passage that does not state the rule is not something a grader can do honestly.)
 
 Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3338/0, test:system 168/0, test:repository 8/0, test:serial-browser 15 files 0 fail.
+
+AC#6 landed after the user re-reported the 14:01 batch: rubric.md's skill bullet carries the reviewer's refined sentence, and the compliance paragraph above it now excepts only skill findings on uncited passages (it had the same false claim). pins.json rubric revision bumped with a note. eval:skill check suite ok; skill-evaluation tests 205/0.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
