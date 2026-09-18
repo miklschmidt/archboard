@@ -55,7 +55,7 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		verdict,
 		semanticallyCompliant: true,
 		waivedFeatures: [],
-		checklist: { unmentioned: [], invented: [] },
+		checklist: { standing: "answered", unmentioned: [], invented: [] },
 		...overrides,
 	};
 }
