@@ -24,16 +24,17 @@ a comparison, a view and a group inspection read.
    candidates) is one `self` step. A function, method or component the request
    names, or one the board already draws, is a participant, and a call to it
    is a message to that column even when it lives inside its caller.
-   Past those two, which helpers get columns is a decision you make before
-   listing the messages rather than one that falls out of reading the source:
-   give a helper its own column and every call to it is a message between
-   columns; keep it inside the part whose body runs it and that work is a step
-   with that part at both ends. Neither shape is truer, and both carry a
+   Past those two the columns are chosen, not read off the board: a flow's
+   participants are a subset of the board's nodes, so a board that draws a
+   helper as a child of the part that runs it may still keep that part as the
+   only column, and a loop the part runs over its own helpers is then one step
+   with that part at both ends. Give the helper a column instead and the same
+   repetition is an ordinary message between columns. Both shapes carry the
    `repeat` the source fixes — the example below tries two candidate documents
-   in one `self` step because `chooseDoc` runs inside `Setup block`, and giving
-   `chooseDoc` a column of its own would make the same repetition an ordinary
-   call to it — but the choice settles which kinds the exchange can contain, so
-   make it once, apply it to every helper alike, and say which you chose.
+   in one `self` step because `chooseDoc` is drawn inside `Setup block` and
+   stays there — and the choice settles which kinds the exchange can contain,
+   so make it before listing the messages, apply it to every helper alike, and
+   say which you chose.
    Then list each message in sequence with its kind: `sync` (a call that
    waits, an awaited promise included; the default), `return`, `async` (fire
    and forget: an emitted event, a message, a promise nobody awaits), `self`

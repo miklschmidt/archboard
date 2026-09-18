@@ -49,10 +49,12 @@ recipe names.
 1. **Pick the workflow and read its one recipe** before the first command of
    it ([which recipe](#which-recipe)).
 2. **Claim a board that already exists** when the work runs to several writes
-   ([Claims](#essentials)); a board this walk creates is claimed once the
-   first write has made it.
-3. **Read the configured vocabulary and the boards the vault already holds**
-   ([Vocabulary](#essentials), [Reads](#essentials)).
+   ([Claims](#essentials)); a board this walk creates is claimed at step 13
+   instead.
+3. **Read the configured vocabulary and the boards the vault already holds**,
+   so a part whose internals already have a board links to it with `drillDown`
+   instead of being drawn again ([Vocabulary](#essentials),
+   [Reads](#essentials)).
 4. **Gather the source context**: read the code the request names and follow
    it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
 5. **Decide the parts**: the level, the subject, which parts hold which as
@@ -60,10 +62,13 @@ recipe names.
    ([evidence rule 2](#evidence-before-a-write)).
 6. **Map the relationships**, one line of evidence per `edge`
    ([evidence rule 3](#evidence-before-a-write)).
-7. **For a sequence, settle the columns before the messages** — which helpers
-   get one of their own and which stay inside the part whose body runs them —
-   on purpose, because that choice is what decides which message kinds the
-   exchange can hold ([create a sequence diagram](references/create-sequence.md)).
+7. **For a sequence, choose the columns before the messages**: a flow's
+   participants are a subset of the board's nodes, so the parts the request
+   names are columns, a part drawn whole stays one column whatever functions
+   run inside it, and a helper the board draws as that part's child needs no
+   column of its own — a loop the part runs over its own helpers is then that
+   part calling itself, and the choice settles which message kinds the exchange
+   can hold ([create a sequence diagram](references/create-sequence.md)).
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
 9. **Read the source again for what a flow shows only on a second pass**: a
@@ -82,7 +87,8 @@ recipe names.
     ([evidence rule 4](#evidence-before-a-write)).
 13. **Write one payload** carrying the parts, the relationships, the flow, the
     views each reading wants — a `data-flow` view over a flow — and the
-    walkthrough an ordering needs ([Writes](#essentials)).
+    walkthrough an ordering needs, then claim the board it just made when more
+    writes are coming ([Writes](#essentials), [Claims](#essentials)).
 14. **Read the answer against those checks and look at the picture it draws**
     ([Verification](#essentials)).
 15. **Compare a proposal against the variant it came from**
@@ -90,14 +96,14 @@ recipe names.
 16. **Run `archboard check`** after a vocabulary edit or an answer that
     carried `warnings` ([Vocabulary](#essentials)).
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
-    flow over parts already drawn, a drill-down to a board you found, the
-    correction the picture showed you — one requested change per write.
+    flow over parts already drawn, a view a later reading wants, the correction
+    the picture showed you.
 18. **Read your own board back** with `archboard semantic show`, and spend one
     more write removing what it shows that the board's question does not need
     ([authoring](references/authoring.md) for the removal keys).
-19. **Release the claim and report**: the line you kept at step 11, the columns
-    you settled at step 7, the catalogue rows you judged not to apply, and any
-    question this skill left open ([Claims](#essentials),
+19. **Release a claim you took, and report**: the line you kept at step 11, the
+    columns you settled at step 7, the catalogue rows you judged not to apply,
+    and any question this skill left open ([Claims](#essentials),
     [Open questions](#essentials)).
 
 ## Essentials
@@ -146,8 +152,10 @@ recipe names.
   down before writing (below). When the picture is the deliverable, draw it
   and look at it: `semantic rasterize <board> --out <file.png>` and open the
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
-  viewer. Reading the SVG's text is not looking at a diagram. `archboard check`
-  is for after a vocabulary edit or when an answer carries `warnings`.
+  viewer. Reading the SVG's text is not looking at a diagram. A picture the
+  request names goes where it says; one you draw only to look at goes in a
+  temporary directory, never into the checkout you are describing. `archboard
+check` is for after a vocabulary edit or when an answer carries `warnings`.
 - **Open questions.** A question about the product (a field, a selector, what
   a refusal means, what a command accepts) is answered by the references
   below, the generated JSON Schemas under `references/generated/`, and
@@ -181,7 +189,9 @@ board needs all of it.
    node's stated responsibility, not a file that imports, registers or calls
    it. A planned part or an implementation unavailable for inspection stays
    unbound. An implementation in another checkout may bind after you inspect
-   its owner and register that repository. When a node's responsibility spans
+   its owner and register that repository once with `archboard repo add
+<path>`, whose answer is the identity a `binding` names. When a node's
+   responsibility spans
    files, narrow the responsibility or split the node rather than bind to the
    wrong one.
 3. **Prove each relationship and step from source.** For every `edge` and
@@ -195,7 +205,10 @@ board needs all of it.
    holding its functions, methods or child components, a call into it lands on
    the child whose body runs, not on the container,
    and giving an existing part children moves every relationship that landed
-   on it to the child whose body runs. For a return or a non-call
+   on it to the child whose body runs. That is where a relationship lands, not
+   who takes part in an exchange: a flow's participants are a subset of the
+   board's nodes, so the same board draws the child and keeps the parent as the
+   column the flow moves through. For a return or a non-call
    relationship, state the directional claim in words and make the endpoints
    follow it (for example, A returns to B, A reads from B, A emits an event B
    handles, A resolves a promise B awaits, A passes B a callback or props, or
@@ -212,8 +225,9 @@ board needs all of it.
    correct answer must show: the board and the `version` you read; the target
    variant (`semantic edit --variant <id|name>` lands the change on a proposal,
    and a payload `variant` says the same thing — where the two differ the
-   command line wins and the answer says so; a write naming neither edits the
-   current architecture, so a proposal-only request lands nothing there);
+   command line wins, and the write warns naming both; a write naming neither
+   edits the current architecture, so a proposal-only request lands nothing
+   there);
    the ids and fields that must survive; and for a view, its exact `grammar`
    and `scope` selectors: naming `edges` isolates those relationships and
    draws no other, while naming `nodes` alone draws every relationship among

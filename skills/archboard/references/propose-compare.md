@@ -12,8 +12,8 @@ only the draft, compare both through one view, adopt only when asked.
    they already carry: one changed property keeps a relationship's id, so this
    is two relationships that moved rather than two deleted beside two added.
    `--variant` says which variant the change lands on, and a payload `variant`
-   says the same thing; where the two differ the command line wins and the
-   answer says so.
+   says the same thing; where the two differ the command line wins, and the
+   write warns naming both.
 
 ```bash
 archboard semantic branch "Board lease" --as "Lease table" --summary "Hold leases in one table instead of one file per board" --expect-version 2 --doing "proposing a lease table"
