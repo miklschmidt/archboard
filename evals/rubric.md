@@ -18,8 +18,10 @@ declared feature:
   source. Presence alone is not a pass.
 - `missing`: the feature is absent where the scenario required it.
 - `incorrect`: present, but it says something the source contradicts, or it
-  uses the product wrongly (a container as a call target, a display name where
-  an id belongs, a renamed identity, a variant edited when a proposal was asked).
+  uses the product wrongly (a container as a call target, a renamed identity, a
+  variant edited when a proposal was asked, or a display name where only an id
+  can name the subject: a group membership, or a relationship or step, which
+  have no name — a node takes either).
 - `not-applicable`: only when the request itself made the feature impossible.
   Every declared feature is required; a `not-applicable` is surfaced in the
   report as a waiver and needs a reason a reader can check.
@@ -73,14 +75,16 @@ diagram looks plausible.
   `{kind: "named", name}` opens that variant and never falls back to current.
 - **Flows**: participants in column order; steps in sequence; `sync`, `async`,
   `return` and `self` as the source justifies; `self` exactly when both ends
-  are the same node; `repeat` and `note` where the exchange has them.
+  are the same node; `repeat` exactly where the source fixes the count, and a
+  data-dependent loop, a branch or a caveat is a `note`.
 - **Views**: `architecture` or `data-flow`; a selection that names
   relationships shows only those; one that names none shows every relationship
   among the kept nodes; endpoints, participants and containers come along.
 - **Walkthroughs**: ordered beats with heading and body; subjects are nodes,
   relationships, flows or steps; an opening beat may name none; a beat keeps
   its id through rewording and reordering.
-- **Lifecycle**: a proposal is a draft derived from a named predecessor;
+- **Lifecycle**: a proposal is a draft derived from its predecessor, which is
+  the current variant unless `--from` names another;
   adoption moves the designation with a reason and leaves the previous current
   historical; a draft holding disagreements is settled with `mine`/`theirs`
   choices or a third answer through an ordinary edit, and only then adopted.
@@ -92,42 +96,57 @@ diagram looks plausible.
 ## What the skill adds unprompted
 
 A request names the question, the level and a few names; knowing the product
-is the author's job. For every run that created or changed a board, judge the
-board against the source independently of what the request said, row by row
-in this vocabulary, which the skill's own catalogue uses:
+is the author's job. Judge what the run wrote against the source independently
+of what the request said, row by row in this vocabulary, which the skill's own
+catalogue uses:
 
-| Row            | The source justifies it when                                                             |
-| -------------- | ---------------------------------------------------------------------------------------- |
-| `external`     | a caller, library, service, shell or hypothetical part lies outside the checkout         |
-| `binding`      | a file's body implements a part's responsibility                                         |
-| `containment`  | a part is defined inside another                                                         |
-| `relationship` | one body calls, returns to, reads, depends on or publishes to another                    |
-| `traffic`      | a relationship is on the path a request or event takes at runtime, not setup or teardown |
-| `emphasis`     | a few lines are what the board exists to show, or lines are only context                 |
-| `repeat`       | a step loops over a list the source fixes, or up to a retry limit                        |
-| `note`         | a step branches on a condition, loops over data, reads an environment variable           |
-| `groups`       | a part's concern is a configured group id                                                |
-| `flow`         | the question is about an ordered exchange                                                |
-| `view`         | a reader wants one path, one container's internals or the two sides of a change alone    |
-| `walkthrough`  | the code enforces an ordering or invariant the reader needs explained                    |
-| `drillDown`    | a part's internals already have a board in the vault                                     |
-| `description`  | a mechanism does not fit a one-line responsibility                                       |
+| Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `external`     | a caller, library, service, shell or hypothetical part lies outside the checkout                                                                                                                                                                                                                                                                                                         |
+| `binding`      | a file's body implements a part's responsibility                                                                                                                                                                                                                                                                                                                                         |
+| `containment`  | a part is defined inside another                                                                                                                                                                                                                                                                                                                                                         |
+| `relationship` | one body calls, reads, depends on or publishes to another; a return travelling back is a flow step, not a second relationship                                                                                                                                                                                                                                                            |
+| `traffic`      | a relationship is on the forward path one request or event takes on every pass, a call every normal pass makes included even where an error could skip it; never teardown or cleanup, an error path, an optional hook most passes skip, startup, registration or a one-shot call                                                                                                         |
+| `emphasis`     | the board's question has a spine, the path its answer runs along: `hero` on that spine — about a third of the relationships, never past half — and `muted` on the lines that are only context. Emphasis is a property of a line and of nothing else; a node and a step carry none. A board with no spine (a catalogue of parts, a dependency map) marks nothing, which is correct for it |
+| `repeat`       | a step loops over a list the source fixes, or up to a retry limit                                                                                                                                                                                                                                                                                                                        |
+| `note`         | a step branches on a condition, loops over data, reads an environment variable                                                                                                                                                                                                                                                                                                           |
+| `groups`       | a part's concern is a configured group id                                                                                                                                                                                                                                                                                                                                                |
+| `flow`         | the question is about an ordered exchange                                                                                                                                                                                                                                                                                                                                                |
+| `view`         | a reader wants one path, one container's internals or the two sides of a change alone                                                                                                                                                                                                                                                                                                    |
+| `walkthrough`  | the code enforces an ordering or invariant the reader needs explained                                                                                                                                                                                                                                                                                                                    |
+| `drillDown`    | a part's internals already have a board in the vault                                                                                                                                                                                                                                                                                                                                     |
+| `description`  | a mechanism does not fit a one-line responsibility                                                                                                                                                                                                                                                                                                                                       |
 
-Return `unprompted`: one entry per row the source justifies on this board at
-the request's level, with verdict `used` (the board has it, and it says what
-the source says) or `missed` (the board lacks it and a reader of the code would
+The walk's subject is what the run wrote: the whole board when the run created
+it, and on a board it changed, the subjects it added or restated. The skill
+sends the author round this catalogue before a write that creates or extends a
+board, and tells it that a board the author was asked to extend is not the
+author's to silently repair. A row the source justifies only elsewhere on the
+inherited board is therefore the fixture's omission: leave it out of
+`unprompted` and list it under concerns as `fixture:`, the way an inherited
+inaccuracy is listed below.
+
+Return `unprompted`: one entry per row the source justifies for what the run
+wrote, at the request's level, with verdict `used` (it is there, and it says
+what the source says) or `missed` (it is absent and a reader of the code would
 have wanted it), evidence and a one-line reason. Leave out rows the source does
 not justify, and rows the request itself named (those are expected features).
 A row added without source support is not `used`; it is an incorrect feature
 and lowers semanticCorrectness. The request not naming a row is no defence for
-a miss; the skill is expected to teach it. A run that wrote nothing (a
-read-only request) returns an empty list.
+a miss; the skill is expected to teach it. The skill also tells the author to
+say which rows it used and which it judged not to apply, so a run that names
+the rows it left out is obeying it: judge that judgement against the source — a
+row the source justifies is `missed` however well the author argued it away —
+and let the saying of it cost nothing. A run that created or extended nothing —
+a read-only request, an adoption, a removal that added nothing — returns an
+empty list.
 
 Score **behaviouralCompleteness** (0-10): does the board use every semantic the
 source justifies to explain the behaviour of the modelled code, beyond what the
 request named? 10 has every justified row used; 5 has the parts and calls and
 little else; 0 stops at what the request spelled out when the source showed
-much more. Return `null` for a run that wrote nothing.
+much more. Return `null` exactly when the walk had no subject: the run created
+and extended nothing.
 
 ## What the run inherited
 
@@ -135,9 +154,11 @@ The boards before the run are the request's premise, laid by the harness. An
 inaccuracy in them — a call that the source makes from somewhere else, a
 membership the source does not support — is not the author's doing and must
 not lower a feature verdict or a score when the request required keeping it.
-List such inaccuracies under concerns, each beginning with `fixture:`, so the
-harness can repair the fixture; judge the author on what the request asked it
-to change and on what it changed.
+The same goes for what the inherited boards leave out: a row the source
+justifies on a part the run never touched is the fixture's omission. List both
+under concerns, each beginning with `fixture:`, so the harness can repair the
+fixture; judge the author on what the request asked it to change and on what it
+changed.
 
 ## What you can and cannot see
 
@@ -219,3 +240,8 @@ concerns beginning with `tooling:`, saying what the author was looking for
 (the field, the command, the refusal it was repairing) and whether the skill,
 a generated schema or a CLI answer should have supplied it. Judge the board on
 what it says, not on the reading.
+
+The prefix marks that class alone. A harness failure the author did not cause —
+a rasterizer that produced no picture — is a concern without it. A CLI refusal
+the author read and repaired is the ordinary use the skill teaches, and is no
+concern at all.
