@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:15'
+updated_date: '2026-09-18 13:21'
 labels: []
 dependencies: []
 references:
@@ -113,6 +113,45 @@ The approximation caveat is unchanged in direction: the check is imprecise only 
 
 Verified:
 - landings.test.ts: 12 pass. Against de9aecc2, the 2 new tests fail.
+- suite.test.ts: 9 pass.
+- eval:skill check: suite ok, 15 fixtures.
+- tsc --noEmit -p .: exit 0, with the whole output captured to a file (0 lines).
+- oxlint type-aware and baseline: exit 0.
+- oxfmt: clean.
+
+Round 5, after review.
+
+Reused names (must-fix, R1). Each variant now records the name each part goes by now (`names`, by key). `fold` goes through `identify`:
+- A node stated by id is the part that id names.
+- A node stated by name alone is the part currently going by that name, which is how the store matches.
+- A name that only a renamed part used to go by names no part. The store mints a new part for it, so this mints a fresh key and points the name at it.
+- A later $node(name) on that variant, or on its drafts, therefore resolves to the new part, as vault.ts resolves it against the variant as it stands. The old name's mapping for carried references is untouched, because only an id-less statement of a new part mints a key.
+- I also dropped the old `keys.set(key, key)`: restating a renamed part by id would have pointed its reused old name back at it.
+- Problem lines now print current names rather than keys.
+- R1 is its own test. It fails against 79686f63 and passes now.
+
+The applyStep doc now says what the walk models and what it does not. It models identity across renames and name reuse, containment with parents placed in a second pass, handles, the variant's own removals, branching, adoption, and carry-down. It does not model the store's field-by-field merge or which side a resolution chooses; for those two it errs toward refusing. The doc says plainly that anything else the store decides and this does not reproduce can still hide a landing, and that laying through the store is what would close that. The earlier 'errs in one direction only' was not true in general, so I narrowed it to those two stated gaps.
+
+landings.ts is now exactly 600 lines, the policy cap. Any further growth needs a split, which is another argument for the structural change below.
+
+STRUCTURAL QUESTION: can the check lay fixtures through the real store? Yes, and cheaply.
+- The constraint is real but narrow. vault.ts imports FixtureStepSchema from suite.ts as a VALUE, so a suite.ts -> vault.ts import would be a runtime cycle.
+- Nothing requires the check to live in suite.ts. A new lib file, say lib/lay.ts, can import both suite.ts and vault.ts with no cycle. It would take resolvePlaceholders from vault.ts, and from the store's index the pure transitions: createBoardTransition, editVariantTransition, branchVariantTransition, settleVariantTransition, adoptVariantTransition.
+- suite.test.ts's 'every fixture lays' test already does exactly this in process, with no canvas, no CLI and no vault on disk: transitionOf(resolved).apply(before, at).
+- Rough cost:
+  - move transitionOf and variantOf from that test into lay.ts (about 50 lines);
+  - add a layFixture/fixtureLandingProblems that applies each step and, after each step, reads every variant's content with the same rule as no-edge-to-container-with-children, minus dependency edges (about 40 lines);
+  - call it from scripts/evaluate-skill.ts wherever loadedSuite() gates a batch (check, run), or add it to the module index next to loadSuite;
+  - rewrite landings.test.ts to go through it.
+  - About half a day, including moving the suite.test.ts laying test onto the shared lay.ts.
+- Benefits:
+  - It would retire landings.ts's model entirely: merge, carry-down, resolution, name resolution and containment would all be the store's own.
+  - A fixture that does not lay would be refused at check time instead of hours into a batch, which the suite.test.ts comment says eval:skill check cannot do today.
+  - The accumulated-state requirement falls out for free by checking after each step.
+- The one design point: loadSuite throws on suiteProblems, so either loadSuite moves beside lay.ts, or the scripts call the laying check separately after loadSuite. Both are small.
+
+Verified:
+- landings.test.ts: 13 pass. Against 79686f63, R1 fails and the other 12 pass.
 - suite.test.ts: 9 pass.
 - eval:skill check: suite ok, 15 fixtures.
 - tsc --noEmit -p .: exit 0, with the whole output captured to a file (0 lines).
