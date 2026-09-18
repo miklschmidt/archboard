@@ -106,6 +106,18 @@ test("a relative path is read from wherever the script may be: a cd that found i
 		expect(exposureOf(`bash -lc '${script}'`), script).toBe("other-run");
 });
 
+test("a cd's flags are not its directory, and many relative cds are weighed one by one", () => {
+	for (const flag of ["-P", "--", "-L --"])
+		expect(
+			exposureOf(`bash -lc 'cd ${flag} ${WORLD}/flask/src/flask && cat ../../README.md'`),
+			flag,
+		).toBeNull();
+	// Thirty cds into subdirectories and back out past the checkout. Weighing
+	// every combination of them would never finish.
+	const deep = Array.from({ length: 30 }, (_, index) => `cd d${index}`).join(" && ");
+	expect(exposureOf(`bash -lc '${deep} && cat ${"../".repeat(32)}author.jsonl'`)).toBe("other-run");
+});
+
 test("a path that exists, a pattern, the batch root, a quoted or joined word, or an escape from the world is exposure", () => {
 	for (const script of [
 		`ls ${BATCH}/runs/baseline/S11/2/world/vault`,

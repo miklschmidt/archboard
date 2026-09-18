@@ -35,12 +35,12 @@ function reachesBatchOutsideWorld(
 		output,
 		exemptable: !/[$`]/u.test(script) && !words.some((word) => ASSIGNMENT_RE.test(word.value)),
 	};
-	let places: Places = { latest: cwd, possible: [cwd] };
-	return words.some((word, index) => {
+	let places: Places = { start: cwd, latest: cwd, possible: [cwd], awaitingTarget: false };
+	return words.some((word) => {
 		const reached = batchPathsIn(word.value, roots.batchRoot).some((named) =>
 			namesOutsideWorld(word, named, places, check),
 		);
-		if (CD_RE.test(words[index - 1]?.value ?? "")) places = afterCd(places, word.value);
+		places = afterWord(places, word.value);
 		return reached;
 	});
 }
@@ -60,30 +60,37 @@ interface ReadCheck {
 
 /**
  * Where a relative word may be read from. A `cd` can fail, run in a subshell
- * or be undone, so every directory the script could be in is kept; the latest
- * is where it is if every `cd` took effect.
+ * or be undone, so the directories the script could be in are kept: where it
+ * started, where it is after each `cd` if every one took effect, and each
+ * `cd` target taken from where it started. That is one or two more per `cd`,
+ * never a product of them, so a script of many relative `cd`s stays cheap.
  */
 interface Places {
+	readonly start: string;
 	readonly latest: string;
 	readonly possible: readonly string[];
+	/** True after `cd` or `pushd` and its flags, until the directory it names. */
+	readonly awaitingTarget: boolean;
 }
 
 /**
- * Where the script may be after a `cd`: the target from the latest directory,
- * and from every directory it could be in, beside all of those.
+ * Where the script may be after one more word: a `cd` or `pushd` waits for
+ * its directory, past any flag; `cd -` goes back to a directory already kept.
  * @param places Where it may be before.
- * @param target The directory named.
+ * @param value The word as the shell passes it.
  * @returns Where it may be after.
  */
-function afterCd(places: Places, target: string): Places {
+function afterWord(places: Places, value: string): Places {
+	if (CD_RE.test(value)) return { ...places, awaitingTarget: true };
+	if (!places.awaitingTarget) return places;
+	if (value.startsWith("-") && value !== "-") return places;
+	if (value === "-") return { ...places, awaitingTarget: false };
+	const latest = path.resolve(places.latest, value);
 	return {
-		latest: path.resolve(places.latest, target),
-		possible: [
-			...new Set([
-				...places.possible,
-				...places.possible.map((directory) => path.resolve(directory, target)),
-			]),
-		],
+		start: places.start,
+		latest,
+		possible: [...new Set([...places.possible, latest, path.resolve(places.start, value)])],
+		awaitingTarget: false,
 	};
 }
 
