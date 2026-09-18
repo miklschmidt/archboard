@@ -199,13 +199,31 @@ test("what the skill added unprompted is scored, its misses counted, and a drop 
 	).scenarios[0];
 	expect(readOnly?.candidate.meanBehaviouralCompleteness).toBeNull();
 	expect(held(readOnly)).toBe(true);
-	const dropped = buildReport(
+	// One pair of runs cannot set a bar, so the axis says nothing until a
+	// second pair is there to spread against it.
+	const single = buildReport(
 		[record({ verdict: judged(8, 1) }), record({ arm: "candidate", verdict: judged(5, 3) })],
 		null,
 	).scenarios[0];
-	expect(dropped?.baseline.meanBehaviouralCompleteness).toBe(8);
-	expect(dropped?.candidate.meanBehaviouralCompleteness).toBe(5);
-	expect(dropped?.candidate.missedUnprompted).toBe(3);
+	expect(single?.baseline.meanBehaviouralCompleteness).toBe(8);
+	expect(single?.candidate.meanBehaviouralCompleteness).toBe(5);
+	expect(single?.candidate.missedUnprompted).toBe(3);
+	expect(axisOf(single, "completeness")).toBeUndefined();
+	const dropped = buildReport(
+		[
+			record({ verdict: judged(8, 1) }),
+			record({ run: "run-0000000003", repetition: 2, verdict: judged(8, 1) }),
+			record({ arm: "candidate", verdict: judged(5, 3) }),
+			record({
+				run: "run-0000000004",
+				arm: "candidate",
+				repetition: 2,
+				verdict: judged(5, 3),
+			}),
+		],
+		null,
+	).scenarios[0];
+	expect(dropped?.candidate.missedUnprompted).toBe(6);
 	expect(axisOf(dropped, "completeness")).toMatchObject({
 		before: 8,
 		after: 5,
