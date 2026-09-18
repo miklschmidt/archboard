@@ -110,10 +110,43 @@ function writeRunManifest(directory: string, manifest: RunManifestFields): strin
 	return file;
 }
 
+/**
+ * Every run directory of a batch. A run keeps its whole world, its author's
+ * transcript and its codex home beside its manifest, so a batch's runs tree
+ * runs to tens of gigabytes; the layout is `runs/<arm>/<scenario>/<repetition>`,
+ * so the three levels are read by name and nothing below them is ever walked.
+ * @param batchRoot The batch.
+ * @returns The directories, empty when the batch has no runs yet.
+ */
+function runDirectories(batchRoot: string): string[] {
+	const runs = path.join(batchRoot, "runs");
+	return subdirectories(runs)
+		.flatMap((arm) =>
+			subdirectories(path.join(runs, arm)).map((name) => path.join(runs, arm, name)),
+		)
+		.flatMap((scenario) =>
+			subdirectories(scenario).map((repetition) => path.join(scenario, repetition)),
+		);
+}
+
+/**
+ * The subdirectory names of one directory, without descending into them.
+ * @param directory The directory, which need not exist.
+ * @returns The names, empty when it does not.
+ */
+function subdirectories(directory: string): string[] {
+	if (!fs.existsSync(directory)) return [];
+	return fs
+		.readdirSync(directory, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name);
+}
+
 export {
 	CommandCountsSchema,
 	ExposureCountsSchema,
 	RunManifestSchema,
+	runDirectories,
 	writeRunManifest,
 	type RunManifest,
 	type RunManifestFields,
