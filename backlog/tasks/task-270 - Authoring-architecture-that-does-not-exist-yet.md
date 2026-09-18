@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:10'
-updated_date: '2026-09-18 12:54'
+updated_date: '2026-09-18 13:01'
 labels: []
 dependencies: []
 references:
@@ -326,4 +326,176 @@ Why: it is the only option under which both "the bare address opens something" a
 If the smallest possible change is wanted instead, (c) is defensible - but pane-registry.ts:286 must be fixed regardless, because a reconnecting pane currently loses its board SILENTLY rather than refusing visibly, and the refusal messages must say why rather than "no variant called """.
 
 CONFIRMED: outcomes-family.ts:265 is vacuous as flagged - currentJson returns JSON.stringify(undefined) -> undefined, and currentUntouched compares undefined === undefined. No other outcome check has that shape (currentIs fails honestly via isNamed; reading.ts:84/:173 report loudly). One adjacent thing for criterion 8's worker: reading.ts:84 means EVERY variant-unqualified eval check silently retargets on a draft-only board.
+
+## Review addressed, 2026-09-18: corrections to the audit above
+
+Where this note and the audit above disagree, this note wins.
+
+**1. CONTEXT.md has been edited, not left for later.** The Current entry now says a
+board has at most one, and that its absence is how a board says nothing it
+describes exists. The Adoption entry now covers both cases: a formerly current
+state is retained as history, while on a board that had none, adoption is the
+moment the architecture starts existing and nothing becomes history. ADR 0031's
+supersession list now describes these edits as done.
+
+**2. Two adoption contradictions added to the supersession list:** CONTEXT.md's
+Adoption entry (edited, above) and ADR 0023:70-72 ("preserves the former current
+under its original name"). The ADR 0023 sentence still holds for a board that had
+a current variant, and is superseded for a board that did not. The implementation
+slice amends it, together with ADR 0023:120-121.
+
+**3. Correction: `board-address.ts` is NOT out of scope.** The audit's bullet
+telling the implementation worker to leave it alone was wrong. There is one
+`src/runtime/engine/lib/board-address.ts`. Its filename and `.excalidraw.md`
+logic (`noteBaseName`, `BOARD_FILE_SUFFIX`, `archboardOwnPath`) is legacy and stays
+untouched. But `parseBoardKey` (L358), `makeIdentity` (L268, with
+`validateVariant(input.variant ?? CURRENT_VARIANT)` at L273) and
+`paneBoardAddress` form the **live semantic address grammar**. The semantic
+surfaces call them at `pane-registry.ts`:300, `pane-show-route.ts`:45,
+`semantic-board-context.ts`:177, `websocket-connection.ts`:99, `pane-routes.ts`:175
+and `semantic-board-store/lib/location.ts`:66,120. `BoardIdentity.variant` is a
+required string, so a bare key becomes the literal `"current"` before any semantic
+code sees it, and the pane layer cannot represent "no variant stated" today.
+Whatever the bare-address decision turns out to be, it lands here first.
+
+**4. Schema version: bump to 2.3.0, as a record rather than a guard.** Plan for
+criterion 2:
+- `SEMANTIC_BOARD_SCHEMA_VERSION` goes to `"2.3.0"`, with a doc-comment line in
+  `aggregate.ts`:31-40: "`2.3.0` makes the current designation optional: a board
+  for something nobody has built has none."
+- Rewrite `aggregate.ts`:42-50. It justifies accepting a later minor only for
+  additive changes, and that reasoning is now false twice over. ADR 0030's fourth
+  lifecycle loosened the lifecycle enum at 2.2.0 without a bump, and this change
+  loosens a required field.
+- The honest statement: a minor is accepted because the schema is strict, so a
+  document using anything this build does not know fails its parse and is refused,
+  never misread. The refusal names the field rather than the version, because
+  `parseSemanticBoard` runs the Zod parse (`index.ts`:28-31) before `versionIssues`
+  (`family.ts`:211-224), and a same-major version passes that check anyway.
+- Why not 3.0.0: a major is defined as moving or reinterpreting a field, and
+  making `current` optional changes nothing for any document that carries one.
+- Why bump at all, given the bump changes no older build's behaviour: the version
+  line is the only place the contract history is written down, and the shelving
+  change's omission from it is already a gap.
+- Nothing tests this, and nothing should: `artifacts.test.ts` compares the
+  generated artifacts with the live schema, and both move together.
+
+**5. Correction: `adopt.ts`:39 is not the only adoption change.** `adopt.ts`:48
+passes `board.current` as `was` into `designated(variant, becoming, was: string)`
+(`adopt.ts`:130), so the signature widens to `was: string | undefined`. The
+behaviour needs no change, because `undefined` matches no variant id. There are
+two edits in total: the conditional spread of `from` at L39, and the widened
+parameter.
+
+**Considered and out of scope:**
+- `transitions.ts`:366 (adopt) and :398 (shelve) also call `resolveVariant`.
+  Both are safe, because `BoardAdoptInputSchema.variant` (`resolution.ts`:66) and
+  the shelve input require a variant. There is one wording case: a user typing
+  `--variant current` on a draft-only board gets `this board has no variant called
+  "current"`. Criterion 2 should phrase that as "this board has no current
+  variant".
+
+**Agent-facing prose goes to criterion 7.** `skills/archboard/SKILL.md`:15 and
+`skills/archboard/references/variants.md`:7, 14 and 125-126 all assume a current
+variant exists: branch defaults from it, an unqualified edit lands on it, and
+adopt demotes "the previous current". Criterion 3 gives an agent a way to create a
+board with no current variant, and nothing in `skills/` yet tells an agent it can.
+Criterion 7 owns that, alongside `skill-distribution/lib/schemas.ts`:34.
+
+**Re-filed: `src/shared/semantic-board/tests/coherence.test.ts`:99 is NOT an
+old-invariant test.** It asserts that a DANGLING designation (`current: "nope"`) is
+refused, and that stays correct under the decision: absent is allowed, while
+naming a variant the board lacks is not. Do not weaken it. Likewise
+`branching.test.ts`:117, listed above, asserts that branching leaves exactly one
+current variant on a board that had one. That is "branching designates nothing",
+it stays true, and it should not be touched either. No test asserts that a
+zero-current board is refused: the `family.ts`:152-157 "N variants are marked
+current" issue has no test of its own. Criterion 2 therefore needs to add the
+positive owner, a draft-only board parses and is written, rather than
+remove any existing test.
+
+**Corrected: `src/runtime/skill-evaluation/tests/reading-fixture.ts`:41-42.**
+The audit said this makes every fixture board current-designated, which is
+misleading. The fixture sets `current: variants[0]?.id` but defaults every
+variant's lifecycle to `"draft"`, so it designates a current variant that is
+marked draft. `designationIssues` would already refuse that combination. The
+fixtures are evidently never re-parsed. This is harmless today but is criterion
+8's to straighten.
+
+**Regeneration:** both generated artifacts,
+`skills/archboard/references/generated/semantic-board.schema.json` and
+`docs/design/generated/command-contract-proof.md`, come from
+`bun run generate:skill-artifacts`.
+
+## The bare-address question: four candidates, NOT DECIDED
+
+This is the user's decision, and it gates the implementation slice. The question:
+on a board with no current variant, what does an address that names no variant
+open? Today `resolveVariant(board, undefined)` answers two different questions
+with one lookup:
+- **Q1, semantic:** which variant is the implemented architecture? On a planning
+  board the truthful answer is none.
+- **Q2, addressing:** which variant should be drawn when nobody said? This needs
+  an answer.
+
+ADR 0031 is about Q1 only.
+
+- **(a) The sole draft.** Resolve an unnamed address to the board's only draft.
+  This is usable at once for the commonest planning board. It leaves several drafts
+  with no current variant undefined. If implemented inside `resolveVariant` it
+  also answers Q1 wrongly (see below).
+- **(b) The root draft.** Resolve to the variant with no predecessor. This is
+  always defined, but it ages badly: the root becomes the least interesting
+  variant as soon as a planning board branches alternatives, which is the first
+  thing such a board does. Inside `resolveVariant` it has the same Q1 problem as (a).
+- **(c) Refuse, and require a named variant.** This is the smallest change, and
+  `currentVariant` and `resolveVariant` stay truthful. But a draft-only board has
+  no bare-name address at all. That is in tension with criterion 5 (a person
+  opening such a board sees it is unbuilt in the pane and the drawing), because a
+  drawing that refuses cannot be seen. Every refusal would also need rewording to
+  say why, instead of `no variant called ""`.
+- **(d) Give the address its own resolution, separate from the designation**
+  (the reviewer's recommendation). Keep `currentVariant()` and `resolveVariant()`
+  unchanged and truthful. Add a separate reading default, e.g.
+  `addressedVariant(board, asked)`:
+  - the current variant when there is one;
+  - otherwise the sole draft;
+  - with several drafts and no current, the root draft;
+  - refuse only when even that is ambiguous, naming the candidates.
+
+  Use it ONLY where the question is "what do I draw":
+  - `semantic-renderer/board.ts`:182;
+  - the address grammar (`makeIdentity` / `parseBoardKey`);
+  - `pane-registry.ts`:286, `pane-show-route.ts`:84 and
+    `code-opener/lib/routes.ts`:133;
+  - `local-pictures.ts`:247-248 and `board-catalog/listing.ts`:107-111.
+
+  Leave `resolveVariant` and `currentVariant` wherever the question is whether
+  something is implemented: the drill-down, adopt, shelve,
+  `semantic-board-context.ts`:252 and the eval outcome checks. The reviewer's
+  reasoning:
+  - It is the only option under which "the bare address opens something" and
+    "asking which variant is implemented answers nothing" are both true. (c) gives
+    up the first; (a) and (b), placed in `resolveVariant`, give up the second.
+  - There is a concrete casualty otherwise. `drill-target.ts`:42 calls
+    `resolveVariant(reading.board)` to serve a link whose author explicitly wrote
+    `kind: "current"`. Putting (a) or (b) inside `resolveVariant` would silently
+    turn `{kind: "no-current"}` into showing a draft. That breaks
+    `SemanticDrillDown.tsx`:95-97, contradicts ADR 0023:111-112, and contradicts
+    ADR 0031's own drill-down consequence.
+  - It keeps `current` meaning exactly one thing, which is ADR 0031's thesis.
+  - It is cheap. `SemanticVariantBar.tsx`:67, `pane-reading.ts`:31 and
+    `listing.ts`:33 already re-address everything as `board@<id>` after the first
+    draw, so the bare address matters only at a small, enumerable set of entry
+    points: a typed pane show, a catalogue row, a reconnect, a code-binding follow.
+
+**Regardless of which is chosen:** `pane-registry.ts`:286 must be fixed, because a
+reconnecting pane currently loses its board silently instead of refusing visibly.
+Every refusal on these paths must also say why, instead of `no variant called ""`.
+
+**Also for criterion 8, confirmed by the review:**
+- `outcomes-family.ts`:265 (`current-untouched`) passes vacuously on a board with
+  no current variant.
+- `reading.ts`:84 means every eval check that names no variant silently retargets
+  on a draft-only board.
 <!-- SECTION:NOTES:END -->
