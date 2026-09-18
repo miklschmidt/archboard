@@ -12,6 +12,7 @@ import {
 } from "@/runtime/skill-evaluation/lib/run-manifest";
 import {
 	checklistGaps,
+	checklistStanding,
 	semanticallyCompliant,
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
@@ -63,14 +64,14 @@ function gradedOf(
 	const expected =
 		loaded.suite.evals.find((candidate) => candidate.id === scenario)?.expectedFeatures ?? [];
 	const gaps = checklistGaps(expected, verdict);
-	// An answer that skipped declared features to grade names of its own is
-	// about the grader, not the author: it can say neither that the run
+	const standing = checklistStanding(expected, verdict);
+	// An answer that is not about this scenario can say neither that the run
 	// complied nor that it did not.
-	const offChecklist = gaps.unmentioned.length > 0 && gaps.invented.length > 0;
 	return {
-		semanticallyCompliant: offChecklist ? null : semanticallyCompliant(expected, verdict),
+		semanticallyCompliant:
+			standing === "off-checklist" ? null : semanticallyCompliant(expected, verdict),
 		waivedFeatures: gaps.waived,
-		checklist: { unmentioned: gaps.unmentioned, invented: gaps.invented },
+		checklist: { standing, unmentioned: gaps.unmentioned, invented: gaps.invented },
 	};
 }
 

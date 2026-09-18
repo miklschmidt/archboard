@@ -9,6 +9,9 @@ import type { ImageDelivery } from "@/runtime/skill-evaluation/lib/grader-runner
 import type { RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 
+/** Whether a grader answered the scenario it was given, or a checklist of its own. */
+type ChecklistStanding = "answered" | "off-checklist";
+
 const NO_DELEGATION =
 	"Do not use subagents. Inspect the source and grade every run yourself in this session.";
 
@@ -311,6 +314,25 @@ function checklistGaps(
 }
 
 /**
+ * What a grader's answer did with the scenario's checklist. An answer that
+ * left a declared feature unmentioned and graded names the checklist does not
+ * hold is not an answer about this scenario at all: it measures the grader,
+ * not the author, so nothing may be concluded from it either way. An answer
+ * that only skipped features is still about them, and one that only added
+ * names of its own answered everything asked as well.
+ * @param expected The scenario's checklist.
+ * @param verdict The grader's answer.
+ * @returns Whether the checklist was answered, or answered off.
+ */
+function checklistStanding(
+	expected: readonly { readonly feature: string }[],
+	verdict: RunVerdict,
+): ChecklistStanding {
+	const gaps = checklistGaps(expected, verdict);
+	return gaps.unmentioned.length > 0 && gaps.invented.length > 0 ? "off-checklist" : "answered";
+}
+
+/**
  * Whether a run passed semantic compliance: every expected feature passed.
  * @param expected The scenario's checklist.
  * @param verdict The grader's answer.
@@ -335,10 +357,12 @@ export {
 	GraderOutputSchema,
 	NO_DELEGATION,
 	checklistGaps,
+	checklistStanding,
 	graderPrompt,
 	parseGraderOutput,
 	semanticallyCompliant,
 	visualStandingOf,
+	type ChecklistStanding,
 	type GraderBrief,
 	type GraderOutput,
 	type RunVerdict,

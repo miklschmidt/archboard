@@ -11,7 +11,11 @@ import type {
 } from "@/runtime/skill-evaluation/lib/events";
 import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
 import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
-import type { RunVerdict, VisualStanding } from "@/runtime/skill-evaluation/lib/grader";
+import type {
+	ChecklistStanding,
+	RunVerdict,
+	VisualStanding,
+} from "@/runtime/skill-evaluation/lib/grader";
 import type { GraderIdentity } from "@/runtime/skill-evaluation/lib/grader-runner";
 import type { Agreement } from "@/runtime/skill-evaluation/lib/report-agreement";
 import {
@@ -69,6 +73,8 @@ interface RunRecord {
 
 /** How far a grader's answer kept to the scenario's checklist. */
 interface ChecklistAnswer {
+	/** Whether the answer was about this scenario at all, as the grader decides it. */
+	readonly standing: ChecklistStanding;
 	/** Expected features the grader's answer never mentioned. */
 	readonly unmentioned: readonly string[];
 	/** Names the grader answered that the scenario's checklist does not hold. */
@@ -147,7 +153,7 @@ interface Report {
 	readonly totals: readonly ComparisonRow[];
 	readonly broad: readonly ComparisonRow[];
 	readonly failures: readonly RunRecord[];
-	/** Runs whose grader answered off the scenario's checklist: kept apart from every comparison, and not failures. */
+	/** Runs whose grader answered off the scenario's checklist: kept apart from every comparison, and never a semantic failure. */
 	readonly ungradable: readonly RunRecord[];
 	/** Runs that read evaluation material, reached another run, or wrote directly to the vault: kept apart from every comparison. */
 	readonly contamination: readonly RunRecord[];
@@ -200,19 +206,16 @@ function didWhatWasAsked(run: RunRecord): boolean {
 }
 
 /**
- * Whether the grader answered something other than the scenario's checklist:
- * it left an expected feature unmentioned and answered names the checklist
- * does not hold. Such a verdict measures the grader, not the author, so the
- * run is set aside the way a contaminated one is rather than failed.
+ * Whether the grader answered something other than the scenario's checklist.
+ * Such a verdict measures the grader, not the author, so the run is set aside
+ * the way a contaminated one is: it enters no comparison, and its board is
+ * neither compliant nor not. What counts as answering off is
+ * `checklistStanding`'s to decide, not this.
  * @param run The run.
  * @returns True when the answer is not about this scenario.
  */
 function answeredOffChecklist(run: RunRecord): boolean {
-	return (
-		run.checklist !== null &&
-		run.checklist.unmentioned.length > 0 &&
-		run.checklist.invented.length > 0
-	);
+	return run.checklist?.standing === "off-checklist";
 }
 
 /**
@@ -454,7 +457,10 @@ function buildReport(
 			planned.filter((run) => run.report === "broad"),
 			(run) => run.scenario,
 		),
-		failures: runs.filter((run) => !succeeded(run) && !answeredOffChecklist(run)),
+		// A run set aside is still listed among the runs that did not succeed:
+		// what its grader did with the checklist says nothing about the picture
+		// it never opened or the check it failed, and those are the run's own.
+		failures: runs.filter((run) => !succeeded(run)),
 		ungradable: runs.filter(answeredOffChecklist),
 		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
 		skippedGuidance: runs.filter((run) => (run.guidance?.missing.length ?? 0) > 0),

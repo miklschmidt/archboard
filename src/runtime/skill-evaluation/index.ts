@@ -58,10 +58,12 @@ export {
 	GraderOutputSchema,
 	NO_DELEGATION,
 	checklistGaps,
+	checklistStanding,
 	graderPrompt,
 	parseGraderOutput,
 	semanticallyCompliant,
 	visualStandingOf,
+	type ChecklistStanding,
 	type GraderBrief,
 	type GraderOutput,
 	type RunVerdict,
@@ -151,7 +153,7 @@ export {
 	type RunRecord,
 } from "@/runtime/skill-evaluation/lib/report";
 export {
-	armNoise,
+	pairedNoise,
 	axisChanges,
 	changeOf,
 	countChanges,
