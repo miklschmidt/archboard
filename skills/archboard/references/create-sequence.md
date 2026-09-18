@@ -21,8 +21,8 @@ a comparison, a view and a group inspection read.
    the board has, so a part drawn whole stays one column whatever functions,
    methods or hooks run inside it, and a call it makes on itself (a recursive
    function, a method calling another of its own, a component updating its own
-   state) is one `self` step. A function, method or component the request
-   names is a participant, and a call to it is a message to that column even
+   state, a handler re-entering itself) is one `self` step. A function, method
+   or component the request names is a participant, and a call to it is a message to that column even
    when it lives inside its caller; one the board draws is a candidate for a
    column, and whether it takes one is the choice below.
    A flow's participants are a subset of the board's nodes, so the columns are
@@ -41,9 +41,10 @@ a comparison, a view and a group inspection read.
    than once carries `repeat` when the source fixes the count (a retry limit,
    a batch of a known size, a literal list of candidates tried in turn), on a
    `self` step as readily as on a call to another column: the example below
-   tries two candidate documents in one `self` step with `repeat: 2`. A loop
-   whose length depends on data is one step with a `note` that says so; use
-   `note` for a branch or a caveat too.
+   tries two candidate documents in one `self` step with `repeat: 2`. A `note`
+   stating a fixed count in prose leaves the `repeat` out. A loop whose length
+   depends on data is one step with a `note` that says so; use `note` for a
+   branch or a caveat too.
    Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
    are `external`; the relationships on the exchange's forward path carry
    `traffic` (a call a normal pass always makes stays on that path even when

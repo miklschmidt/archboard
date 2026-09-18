@@ -59,24 +59,14 @@ recipe names.
    one's `binding` ([evidence rule 2](#evidence-before-a-write)).
 6. **Map the relationships**, one line of evidence per `edge`
    ([evidence rule 3](#evidence-before-a-write)).
-7. **For a sequence, choose the columns before the messages**: a flow's
-   participants are a subset of the board's nodes, so the parts the request
-   names are columns, a part drawn whole stays one column whatever functions
-   run inside it, and any other part the board draws is a candidate for a
-   column rather than owed one — a choice that settles which message kinds the
-   exchange can hold ([create a sequence diagram](references/create-sequence.md)).
+7. **For a sequence, choose the columns before the messages**
+   ([create a sequence diagram](references/create-sequence.md)).
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
 9. **Read the source again for what a flow shows only on a second pass**: a
-   call a participant makes on itself (a recursive function, a method calling
-   another of its own, a component updating its own state, a handler
-   re-entering itself; the [sequence recipe's
-   example](references/create-sequence.md) shows one) is one step with that
-   participant at both ends, and a count the source fixes (a literal list of
-   candidates tried in turn, a retry limit, a batch of known size) is the
-   repeating step's `repeat`, on a `self` step or a call to another column
-   alike, which a `note` stating the count in prose leaves out ([sequences,
-   views and walkthroughs](references/sequences-views-walkthroughs.md)).
+   call a participant makes on itself (one step with it at both ends) and a
+   count the source fixes (that step's `repeat`)
+   ([create a sequence diagram](references/create-sequence.md)).
 10. **Walk the catalogue** row by row against the source you read
     ([everything the code shows](#everything-the-code-shows)).
 11. **Model the subject a second way** — cut at another level, another set of
@@ -130,10 +120,8 @@ recipe names.
 - **Reads.** `archboard semantic show <board>` prints the whole family: every
   variant with its `lifecycle`, `parent`, `content` and the board `version`.
   `archboard semantic` lists the boards. `archboard semantic compare <board>
-[--variant <id|name>]` reads one variant against the variant it came from:
-  every subject as `added`, `removed`, `changed` or `unchanged`, the fields
-  that moved, and the parts a relationship or step now lands on. A root
-  architecture has no predecessor and is refused.
+[--variant <id|name>]` reads one variant against the variant it came from
+  ([answer from a saved board](references/read.md) says what it reports).
 - **Writes.** `semantic new` needs `--doing "<present-tense line>"`. Every
   later write (`edit`, `branch`, `resolve`, `adopt`) also needs
   `--expect-version <n>` with the version you read; a moved board refuses the
@@ -203,29 +191,21 @@ board needs all of it.
    component holding its functions, methods or child components) is a
    container whatever its kind, and is an endpoint only when the source
    addresses the whole module; giving an existing part children moves every
-   relationship that landed on it to the child whose body runs. That is where a relationship lands, not
-   who takes part in an exchange; a flow's columns are chosen at step 7. For a
-   return or a non-call
-   relationship, state the directional claim in words and make the endpoints
+   relationship that landed on it to the child whose body runs. That is where
+   a relationship lands, not who takes part in an exchange; a flow's columns
+   are chosen at step 7. For a return or a non-call relationship, state the directional claim in words and make the endpoints
    follow it (for example, A returns to B, A reads from B, A emits an event B
    handles, A resolves a promise B awaits, A passes B a callback or props, or
    A depends on B). Sibling calls are not a chain: when `apply()` calls
    `validate()` and then `persist()`, the source shows two relationships from
    `apply`, and none from `validate` to `persist`, whatever order they run in.
-   For a sequence also check the order the source runs them in, which steps
-   return to their caller, which branch and under what condition (say it in a
-   `note`), and whether a repeat count is in the source at all (a loop, `map`
-   or retry over a list the source fixes, such as two candidate file names, is a `repeat` of
-   that count; a loop over a list of unknown length is a `note`, not a
-   `repeat`).
+   For a sequence, check each step's order, return, branch and repeat count
+   against the source as well
+   ([create a sequence diagram](references/create-sequence.md)).
 4. **Turn the request into checks.** Before the payload, write down what a
    correct answer must show: the board and the `version` you read; the target
-   variant (`semantic edit --variant <id|name>` lands the change on a proposal,
-   and a payload `variant` says the same thing — where the two differ the
-   command line wins, and the write warns naming both; a write naming neither
-   edits the current architecture, so a proposal-only request lands nothing
-   there);
-   the ids and fields that must survive; and for a view, its exact `grammar`
+   variant (a write naming none edits the current architecture;
+   [edit](references/edit.md) says how one names a proposal); the ids and fields that must survive; and for a view, its exact `grammar`
    and `scope` selectors: naming `edges` isolates those relationships and
    draws no other, while naming `nodes` alone draws every relationship among
    them. After the write, read the answer against that list.
