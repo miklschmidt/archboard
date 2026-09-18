@@ -11,10 +11,11 @@ are two drafts off the same predecessor; a proposal on a proposal names its
 draft in `--from`.
 
 An edit that names no variant — neither `--variant` nor a `variant` in the
-batch — edits the current architecture, and naming two different ones is
-refused naming both, with nothing written. A change meant
-as a proposal that landed there is not repaired by editing the file, but by
-reading the family again and moving the meaning with ordinary writes.
+batch — edits the current architecture. Where the two name different variants
+the command line wins, and the write warns naming both; `semantic resolve`
+settles the two the same way. A change meant as a proposal that landed on the
+current architecture is not repaired by editing the file, but by reading the
+family again and moving the meaning with ordinary writes.
 
 ## What a comparison counts
 
