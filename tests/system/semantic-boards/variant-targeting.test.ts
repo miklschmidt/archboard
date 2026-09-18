@@ -6,10 +6,11 @@ import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
 // Which variant a write lands on can be said on the command line, as it is for
-// every other variant command, or inside the stated change. This owner holds the
-// two to one meaning: the flag targets the variant, the two agreeing is one
-// statement, and two different ones land on the flag's variant with a warning
-// naming both — the same rule, said the same way, on edit and on resolve.
+// every other variant command, or inside the stated change. The rule itself is
+// owned by the unit test beside targetedVariant; what is owned here is what the
+// rule does to a board: the flag decides where the change lands, it says what it
+// overrode even when the write it aimed at is refused, and edit and resolve both
+// behave that way.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));
@@ -52,6 +53,20 @@ function partsOf(name: string): string[] {
 	const variant = board().variants.find((one) => one.name === name);
 	expect(variant, name).toBeDefined();
 	return (variant?.content.nodes ?? []).map((node) => node.name);
+}
+
+/**
+ * What one part of one variant is identified by.
+ * @param variant The variant's name.
+ * @param part The part's name.
+ * @returns The part's id.
+ */
+function idOfPart(variant: string, part: string): string {
+	const found = board()
+		.variants.find((one) => one.name === variant)
+		?.content.nodes.find((node) => node.name === part);
+	expect(found, `${variant}/${part}`).toBeDefined();
+	return found?.id ?? "";
 }
 
 /**
@@ -114,15 +129,6 @@ describe("saying which variant an edit lands on", () => {
 		expect(partsOf(currentName)).not.toContain("Ingest queue");
 	}, 20_000);
 
-	test("the flag and the batch saying the same variant is one statement, not two", () => {
-		const landed = edit(["--variant", "Queued ingest"], {
-			variant: "Queued ingest",
-			nodes: [{ name: "Dead letters", kind: "queue" }],
-		});
-		expect(landed.status, landed.stderr).toBe(0);
-		expect(partsOf("Queued ingest")).toContain("Dead letters");
-	}, 20_000);
-
 	test("the command line wins over a batch naming another variant, and says so", () => {
 		const before = board();
 		const currentName = before.variants.find((one) => one.id === before.current)?.name ?? "";
@@ -139,18 +145,40 @@ describe("saying which variant an edit lands on", () => {
 		const warned = landed.stderr
 			.split("\n")
 			.filter((line) => line.includes("Queued ingest") && line.includes(currentName));
-		expect(warned.length).toBeGreaterThan(0);
+		expect(warned).toHaveLength(1);
 		// And the answer an agent parses is still the board, with nothing said
 		// about the overridden variant mixed into it.
 		expect(JSON.parse(landed.stdout).board.version).toBe(before.version + 1);
 	}, 20_000);
 
+	test("a flag naming no variant is refused, and still says what it overrode", () => {
+		const before = board();
+		const currentName = before.variants.find((one) => one.id === before.current)?.name ?? "";
+		const refused = edit(["--variant", "Quued ingest"], {
+			variant: currentName,
+			nodes: [{ name: "Mistyped", kind: "queue" }],
+		});
+		// The mistyped flag is the case the override makes reachable, so it is the
+		// case the warning has to survive: the write never comes back, and the
+		// author still has to learn that what they stated was passed over.
+		expect(refused.status).not.toBe(0);
+		const warned = refused.stderr
+			.split("\n")
+			.filter((line) => line.includes("Quued ingest") && line.includes(currentName));
+		expect(warned).toHaveLength(1);
+		const after = board();
+		expect(after.version).toBe(before.version);
+		for (const variant of after.variants) {
+			expect(variant.content.nodes.map((node) => node.name)).not.toContain("Mistyped");
+		}
+	}, 20_000);
+
 	test("settling says the same thing the same way when the two disagree", () => {
 		// A disagreement to settle: the draft and the current variant rename one
 		// part differently, so the draft holds a competing field.
-		const intake = board().variants[0]?.content.nodes[0];
-		expect(intake?.id).toBeDefined();
-		const intakeId = intake?.id ?? "";
+		const start = board();
+		const startName = start.variants.find((one) => one.id === start.current)?.name ?? "";
+		const intakeId = idOfPart(startName, "Intake");
 		expect(
 			edit(["--variant", "Queued ingest"], {
 				nodes: [{ id: intakeId, name: "Ingest", kind: "service" }],
@@ -184,7 +212,7 @@ describe("saying which variant an edit lands on", () => {
 		const warned = settled.stderr
 			.split("\n")
 			.filter((line) => line.includes("Queued ingest") && line.includes(currentName));
-		expect(warned.length).toBeGreaterThan(0);
+		expect(warned).toHaveLength(1);
 		// The proposal the command line named is the one that was settled.
 		const after = board();
 		const draft = after.variants.find((one) => one.name === "Queued ingest");

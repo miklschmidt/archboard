@@ -144,11 +144,17 @@ const semanticResolveContract = defineCommand({
 			failStated(stated);
 		}
 		const targeted = targetedVariant(stated, input.variant);
+		// Said here rather than carried out with the answer, for the reason
+		// `semantic edit` says it here: a settle that is refused still overrode
+		// the stated variant, and the author has to be able to see that.
+		for (const line of targeted.diagnostics) {
+			context.diagnostic(line);
+		}
 		const resolution = context.parse(ResolutionInputSchema, targeted.stated);
 		const written = await resolveSemanticBoardOnCanvas(input.name, resolution);
 		return {
 			result: writeResult(written),
-			diagnostics: [...targeted.diagnostics, ...describedWrite(written)],
+			diagnostics: describedWrite(written),
 		};
 	},
 });
