@@ -734,10 +734,12 @@
 				},
 				{
 					"feature": "flow.repeat",
-					"requirement": "the loading step carries `repeat` of at least 2",
+					"requirement": "the loading step, whichever step draws the search over the candidate files, carries `repeat` of at least 2: a `self` step on ScriptInfo, or a per-candidate call (one call carrying it with a note naming the calls that repeat is enough)",
 					"skill": [
+						"SKILL.md#the-runbook",
 						"SKILL.md#evidence-before-a-write",
 						"SKILL.md#everything-the-code-shows",
+						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/sequences-views-walkthroughs.md#flows"
 					]
 				},
@@ -752,7 +754,7 @@
 				},
 				{
 					"feature": "flow.message-kinds",
-					"requirement": "sync and return, with the search over the candidate files drawn in either truthful shape: a `self` step on ScriptInfo carrying the repeat, or the per-candidate calls to prepare_import and locate_app carrying the repeat with a note; a `self` step is not required",
+					"requirement": "sync and return, with `self` or `async` only where drawn truthfully; neither is required",
 					"skill": [
 						"SKILL.md#the-runbook",
 						"references/create-sequence.md#create-a-sequence-diagram",
