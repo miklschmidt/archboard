@@ -336,7 +336,6 @@ function measured(run: RunRecord): boolean {
 	return didWhatWasAsked(run) && (run.visual === "pass" || run.visual === "fail");
 }
 
-
 /**
  * One comparison row over the runs sharing a key.
  * @param key The scenario or workflow.
@@ -360,10 +359,7 @@ function compare(
 	const complete = completePair(runs, planned);
 	const comparableAudit = runs.every(
 		(run) =>
-			!contaminated(run) &&
-			!wroteDirectly(run) &&
-			!unaudited(run) &&
-			!answeredOffChecklist(run),
+			!contaminated(run) && !wroteDirectly(run) && !unaudited(run) && !answeredOffChecklist(run),
 	);
 	const comparable = complete && comparableAudit;
 	const allMeasured = runs.every(measured);

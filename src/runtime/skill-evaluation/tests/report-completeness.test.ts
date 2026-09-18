@@ -206,7 +206,12 @@ test("what the skill added unprompted is scored, its misses counted, and a drop 
 	expect(dropped?.baseline.meanBehaviouralCompleteness).toBe(8);
 	expect(dropped?.candidate.meanBehaviouralCompleteness).toBe(5);
 	expect(dropped?.candidate.missedUnprompted).toBe(3);
-	expect(axisOf(dropped, "completeness")).toMatchObject({ before: 8, after: 5, delta: -3, direction: "regressed" });
+	expect(axisOf(dropped, "completeness")).toMatchObject({
+		before: 8,
+		after: 5,
+		delta: -3,
+		direction: "regressed",
+	});
 });
 
 test("runs that read the product source are counted per arm without failing or contaminating them", () => {

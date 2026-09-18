@@ -139,3 +139,34 @@ test("a run that cannot say what it did fails there, rather than reporting nough
 		fs.rmSync(directory, { recursive: true, force: true });
 	}
 });
+
+test("manifests are found by the layout, without walking the worlds a run preserves", () => {
+	const batchRoot = fs.mkdtempSync(path.join(os.tmpdir(), "run-manifest-layout-"));
+	try {
+		for (const [arm, repetition, run] of [
+			["baseline", "1", "run-00000000b1"],
+			["candidate", "1", "run-00000000c1"],
+			["candidate", "2", "run-00000000c2"],
+		] as const)
+			writeRunManifest(path.join(batchRoot, "runs", arm, scenario.id, repetition), {
+				...manifest(),
+				arm,
+				repetition: Number(repetition),
+				run,
+			});
+		// A run keeps its whole world beside its manifest, which is why the tree
+		// is never walked: anything below the repetition directory is not a
+		// manifest of this batch, however it is named.
+		const world = path.join(batchRoot, "runs", "baseline", scenario.id, "1", "world", "vault");
+		fs.mkdirSync(world, { recursive: true });
+		fs.writeFileSync(path.join(world, "run.json"), JSON.stringify({ not: "a manifest" }));
+		expect(
+			readManifests(batchRoot)
+				.map((read) => read.run)
+				.toSorted(),
+		).toEqual(["run-00000000b1", "run-00000000c1", "run-00000000c2"]);
+		expect(readManifests(path.join(batchRoot, "absent"))).toEqual([]);
+	} finally {
+		fs.rmSync(batchRoot, { recursive: true, force: true });
+	}
+});

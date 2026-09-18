@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:51'
-updated_date: '2026-09-18 11:26'
+updated_date: '2026-09-18 11:38'
 labels: []
 dependencies: []
 references:
@@ -60,4 +60,26 @@ Implemented in skills/archboard/SKILL.md (commit 280481c4).
 Acceptance criterion 3's second half (S07 passing flow.repeat and flow.message-kinds in a later batch) cannot be verified here: skill evaluations are run by hand by the user, never started from a session. The guidance change is in place and unmeasured until the next batch.
 
 Verified: bun scripts/sync-skills.ts synced both skills; bun test tests/system/cli/install-targets.test.ts 9 pass; oxfmt --check clean on both edited files.
+
+Review round 1: eight findings addressed (commit 2c689aff).
+
+Product truth. A claim is on a board the vault already holds — semantic-lock-routes.ts refuses BOARD_MISSING rather than claiming a board into existence — and claim.ts refuses a claim without --reason. Step 2 now claims a board that already exists and says a board this walk creates is claimed after the write that makes it; the Claims bullet carries both facts. The self check I added to create-sequence.md could not fail: edit-views.ts sets kind 'self' whenever from.node.id === to.node.id, so a saved from==to step always reads self. Both the recipe check and runbook step 8 now ask for the structural thing — a step whose from and to are both that participant — which is what can actually be missing.
+
+Duplication and pointers. The six steps that restated an Essentials bullet (claim, write, read the answer, look at the picture, compare/check, release and report) are now one clause plus a link into Essentials, the way the evidence steps already worked; steps that needed a reference got one (step 8 to sequences-views-walkthroughs, step 14 to variants, step 17 to authoring for the removal keys, the vocabulary step to Essentials which links schemas). The runbook's own claim about itself is now what it does: each step links the detail it needs where that detail lives.
+
+Shape. Views and walkthroughs moved out of the later-writes step into the one payload, where both recipes' worked examples have them; step 17 removes only what the read-back shows rather than commanding a write; steps 14 and 15 are separate conditionals (compare a proposal, check after a vocabulary edit or warnings) instead of one dense step.
+
+AC#1, both diagram types: I judged step 1's delegation insufficient and added a sequence step to the walk. Step 7 orders the exchange — participants in column order, every message in the order the source runs them, returns included — step 8 is the repeat/self pass, and step 12 names the data-flow view over the flow in the one payload. The walk now authors a sequence rather than handing the whole type to a reference.
+
+TASK-208.02 followed into the files I own: semantic edit --variant now exists, so evidence rule 4 and propose-compare.md teach the flag (the payload variant says the same thing; where they differ the command line wins and the answer says so). propose-compare's worked example moves the variant from the payload onto the command. edit.md and variants.md are another worker's.
+
+SKILL.md is 27.2 KB against 24.3 KB before this task: the duplication is gone, and what remains is the eighteen-step walk itself plus the sequence step.
+
+Correction to the evidence, and the counter-evidence, from the 2026-09-18 report's own verdicts (report.json, scenario S07, six runs).
+
+Per check, not per union: flow.repeat is missing in 4 of 6 runs and flow.message-kinds in 4 of 6; 5 of 6 runs miss at least one, which is the '5 of 6' figure the description uses. The passes are run-d9445fe601 (repeat) and run-0a5cb9fd81 (message kinds), plus run-9589d57705, whose verdict is keyed flow.steps and flow.step-repeat rather than the scenario's declared keys and which got both right.
+
+The counter-evidence, recorded so the next batch is read honestly: run-9589d57705 is the single S07 run the report lists as NOT having read references/create-sequence.md, and it is the one run that carried both — a self step with repeat 2 and a note naming the wsgi.py/app.py fallback, graded 'the strongest startup run seen'. Every run that did read the recipe missed at least one check. So the batch does not show the material was unreachable; it shows that reading it did not help. That is consistent with the premise this task acts on — the skill stated what to author and never sequenced it — but it is not proof of it, and a later batch that improves S07 is evidence for the runbook only if the runs that improve are runs that read their guidance.
+
+AC#3's second half stays unverifiable from a session: skill evaluations are run by hand by the user.
 <!-- SECTION:NOTES:END -->
