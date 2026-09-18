@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 13:21'
+updated_date: '2026-09-18 13:32'
 labels: []
 dependencies: []
 references:
@@ -157,4 +157,37 @@ Verified:
 - tsc --noEmit -p .: exit 0, with the whole output captured to a file (0 lines).
 - oxlint type-aware and baseline: exit 0.
 - oxfmt: clean.
+
+Round 6, after review.
+
+R2, a regression 4095d158 introduced (79686f63 refused it):
+- Steps: a draft renames X to X2 by id and draws A->X2. The current variant then restates X by name alone and adds a child c under X.
+- The store keeps the draft's name X2, puts c under that same part, and A->X2 lands.
+- The cause: the carried id-less restatement ran identify against the draft's names, where the part now goes by X2, so X looked like an old name and a fresh key was minted.
+- Fix: a carried statement never mints (identify takes `carried`). R2 is now a test; it fails against 4095d158 and passes now.
+
+KNOWN LIMITATION, R3, deferred to TASK-272:
+- Steps: after R2's steps up to the current restatement, the draft restates X2 by name alone and adds a child c under X2.
+- The store refuses (A->X2 lands). This walk reports it CLEAN.
+- The cause: the carried fold rewrote the draft's current name for the part to X, so the draft's own X2 reads as a new part.
+- R2 and R3 share one root, merging the `name` field between a draft and its predecessor, which this walk does not model. Either guess can split one part in two, and a split hides a landing.
+- I kept R2 closed over R3 because R2 was a regression and has the simpler trigger: only ordinary current-variant edits after a draft rename. R3 also needs the draft to restate by name.
+- The applyStep doc now names this as the one known miss, with R3 as the example, and points at TASK-272.
+
+Doc: 'a part's identity across renames' is now qualified to 'on the variant an edit addresses'.
+
+landings.ts stays at the 600-line cap, with no module split. The trims:
+- isRecord had one caller, so it folded into records.
+- VariantState.keys has a one-line doc.
+- applyStep's doc no longer repeats editFamily's sentence about carrying.
+- The two-line family guard is one line.
+
+Verified, with every output captured whole:
+- landings.test.ts + suite.test.ts: 23 pass, 0 fail. R2 fails against 4095d158.
+- tsc --noEmit -p .: exit 0, 0 lines.
+- oxlint type-aware on landings.ts: exit 0, 0 lines.
+- oxlint baseline on landings.test.ts: exit 0, 0 lines.
+- oxfmt: clean.
+- eval:skill check: exit 0, 'suite ok: 15 scenarios, 15 fixtures, 14 coverage parts'.
+- End to end: a scratch copy of evals/ with a child added under JSON helpers in S01 makes loadSuite refuse. The refusal names S01, the step, the board and variant, both relationships and the child. evals/ itself was not touched.
 <!-- SECTION:NOTES:END -->
