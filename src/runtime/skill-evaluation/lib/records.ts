@@ -87,8 +87,7 @@ function gradedOf(
 	scenario: string,
 	verdict: RunVerdict | null,
 ): Pick<RunRecord, "semanticallyCompliant" | "waivedFeatures" | "checklist"> {
-	if (verdict === null)
-		return { semanticallyCompliant: null, waivedFeatures: [], checklist: null };
+	if (verdict === null) return { semanticallyCompliant: null, waivedFeatures: [], checklist: null };
 	const expected =
 		loaded.suite.evals.find((candidate) => candidate.id === scenario)?.expectedFeatures ?? [];
 	const gaps = checklistGaps(expected, verdict);
