@@ -19,13 +19,16 @@ import {
 	type SemanticTransition,
 } from "@/runtime/semantic-board-store/index";
 import {
+	FixtureSchema,
 	FixtureStepSchema,
 	inspectionRequests,
+	landingProblems,
 	loadSuite,
 	renderRequests,
 	resolvePlaceholders,
 	stepCommand,
 	suiteProblems,
+	type Fixture,
 	type FixtureStep,
 	type RawFixtureStep,
 } from "@/runtime/skill-evaluation/index";
@@ -118,6 +121,15 @@ function transitionOf(step: FixtureStep): SemanticTransition {
 				...(step.reason === undefined ? {} : { reason: step.reason }),
 			});
 	}
+}
+
+/**
+ * A fixture as its file would hold it, parsed by the schema the loader uses.
+ * @param steps The steps, before any placeholder resolves.
+ * @returns The fixture.
+ */
+function fixtureOf(steps: unknown[]): Fixture {
+	return FixtureSchema.parse({ registerRepo: false, steps });
 }
 
 describe("the canonical suite", () => {
@@ -278,6 +290,82 @@ describe("fixtures", () => {
 			// Every board a step named is in the vault the fixture leaves behind.
 			expect(vault.size, id).toBe(new Set(fixture.steps.map((step) => step.board)).size);
 		}
+	});
+
+	test("a call that lands on a part with children is refused, whichever step put the child there", () => {
+		// TASK-264 took this shape out of the inherited fixtures by hand: a
+		// fixture teaches an author the shapes it uses, and four S00 runs and the
+		// S14 runs failed edge.actual-receiver over exactly it. Nothing but this
+		// stops it coming back.
+		const app = { name: "Flask app", kind: "app" };
+		const helpers = { name: "JSON helpers", kind: "module" };
+		const dumps = { name: "dumps", kind: "function", parent: "JSON helpers" };
+		const call = { from: "Flask app", to: "JSON helpers", kind: "call", label: "jsonify" };
+		const atOnce = fixtureOf([
+			{ op: "new", board: "Flask JSON", input: { nodes: [app, helpers, dumps], edges: [call] } },
+		]);
+		const [problem, ...rest] = landingProblems(new Map([["S99", atOnce]]));
+		expect(rest).toEqual([]);
+		for (const named of ["S99", "Flask app", "JSON helpers", "dumps"])
+			expect(problem).toContain(named);
+
+		// The same shape a step at a time: the call is clean where it is written
+		// and only the accumulated content says a part has children.
+		const drawn = {
+			op: "new",
+			board: "Flask JSON",
+			input: { nodes: [app, helpers], edges: [call] },
+		};
+		expect(landingProblems(new Map([["S99", fixtureOf([drawn])]]))).toEqual([]);
+		const laterChild = fixtureOf([
+			drawn,
+			{
+				op: "edit",
+				board: "Flask JSON",
+				input: { nodes: [{ ...dumps, parent: "$node(JSON helpers)" }] },
+			},
+		]);
+		expect(landingProblems(new Map([["S99", laterChild]])).length).toBe(1);
+
+		// And a rename in between does not hide it: the part the call named and
+		// the part the child names as its parent are the same part.
+		const renamed = fixtureOf([
+			drawn,
+			{
+				op: "edit",
+				board: "Flask JSON",
+				input: {
+					nodes: [
+						{ id: "$node(JSON helpers)", name: "Provider-backed helpers", kind: "module" },
+						{ ...dumps, parent: "Provider-backed helpers" },
+					],
+				},
+			},
+		]);
+		expect(landingProblems(new Map([["S99", renamed]])).length).toBe(1);
+	});
+
+	test("a relationship that addresses the whole module may end on a part with children, and no fixture today lands", () => {
+		const nodes = [
+			{ name: "Flask app", kind: "app" },
+			{ name: "Sansio core", kind: "module" },
+			{ name: "App", kind: "class", parent: "Sansio core" },
+		];
+		const wholeModule = fixtureOf([
+			{
+				op: "new",
+				board: "Flask",
+				input: {
+					nodes,
+					edges: [
+						{ from: "Flask app", to: "Sansio core", kind: "dependency", label: "extends App" },
+						{ from: "Flask app", to: "Sansio core", kind: "extends" },
+					],
+				},
+			},
+		]);
+		expect(landingProblems(new Map([["S99", wholeModule]]))).toEqual([]);
+		expect(landingProblems(loaded.fixtures)).toEqual([]);
 	});
 
 	test("a $node placeholder resolves on the targeted variant and is refused when the name is not there", () => {

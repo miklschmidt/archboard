@@ -13,6 +13,7 @@ import {
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { landingProblems } from "@/runtime/skill-evaluation/lib/landings";
 import { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 
 const FLASK_REVISIONS = ["2.1.3", "2.2.0", "3.0.0"] as const;
@@ -418,14 +419,18 @@ function readJson<T>(file: string, schema: z.ZodType<T>): T {
 }
 
 /**
- * Scenarios whose fixture file is missing.
+ * Scenarios whose fixture file is missing, and fixtures that teach a call
+ * landing on a part with children.
  * @param loaded The loaded suite.
  * @returns Problems, one line each.
  */
 function fixtureProblems(loaded: LoadedSuite): string[] {
-	return loaded.suite.evals
-		.filter((scenario) => !loaded.fixtures.has(scenario.id))
-		.map((scenario) => `${scenario.id}: fixture ${scenario.fixture} is missing`);
+	return [
+		...loaded.suite.evals
+			.filter((scenario) => !loaded.fixtures.has(scenario.id))
+			.map((scenario) => `${scenario.id}: fixture ${scenario.fixture} is missing`),
+		...landingProblems(loaded.fixtures),
+	];
 }
 
 /**
