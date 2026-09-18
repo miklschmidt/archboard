@@ -1,7 +1,7 @@
 // What a grader filed beyond its verdicts, gathered for the report a person
 // reads: the concerns it raised, grouped by what they are about, and the
 // features it called untaught by the skill on some runs of a scenario and
-// judged on others.
+// held against the run on others.
 
 import type { Arm } from "@/runtime/skill-evaluation/lib/blind";
 import type { RunRecord } from "@/runtime/skill-evaluation/lib/report";
@@ -19,7 +19,7 @@ interface SkillDisagreement {
 	readonly feature: string;
 	/** Runs whose finding put it on the skill. */
 	readonly untaught: readonly string[];
-	/** Runs that passed it or put its finding on the run. */
+	/** Runs whose finding held it against the run: a departure from the skill, or a contradicted board. */
 	readonly otherwise: readonly string[];
 }
 
@@ -34,7 +34,7 @@ interface RaisedConcern {
 
 /**
  * Features filed as untaught by the skill on some runs of a scenario and
- * judged otherwise on others.
+ * held against the run on others.
  * @param runs The runs, both arms.
  * @returns One entry per split feature, in scenario and feature order.
  */
@@ -46,12 +46,17 @@ function skillDisagreementsOf(runs: readonly RunRecord[]): SkillDisagreement[] {
 			feature: entry.feature,
 			run: run.run,
 			untaught: run.findings.skill.includes(entry.feature),
+			// A pass makes no claim about whether the skill teaches it; only a
+			// finding held against the run does.
+			heldAgainst:
+				run.findings.conformance.includes(entry.feature) ||
+				run.findings.truth.includes(entry.feature),
 		})),
 	);
 	return [...new Set(answered.map((entry) => entry.key))].toSorted().flatMap((key) => {
 		const entries = answered.filter((entry) => entry.key === key);
 		const untaught = entries.filter((entry) => entry.untaught).map((entry) => entry.run);
-		const otherwise = entries.filter((entry) => !entry.untaught).map((entry) => entry.run);
+		const otherwise = entries.filter((entry) => entry.heldAgainst).map((entry) => entry.run);
 		const [first] = entries;
 		return untaught.length === 0 || otherwise.length === 0 || first === undefined
 			? []

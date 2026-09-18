@@ -39,6 +39,7 @@ import {
 	type RunImages,
 } from "@/runtime/skill-evaluation/lib/grading-images";
 import { BATCH_SKILL_DIRECTORY } from "@/runtime/skill-evaluation/lib/citations";
+import { digestOf } from "@/runtime/skill-evaluation/lib/install";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import {
 	GRADER_NAMES,
@@ -164,15 +165,26 @@ const SKILL_DIRECTORY = "skill";
  * of the bundle to prevent. The cost falls on the baseline arm, which may be
  * found to depart from a passage it never carried; the report counts those
  * findings apart. A batch that kept no copy predates this and is refused: its
- * skill can no longer be known.
+ * skill can no longer be known. So is a copy whose digest is not the one the
+ * batch recorded when it kept it: a later edit to it would be judged against
+ * by no run.
  * @param options The pass.
  * @param workspace The workspace.
  */
 function stageSkill(options: GradingOptions, workspace: string): void {
 	const kept = path.join(options.batchRoot, BATCH_SKILL_DIRECTORY);
-	if (!fs.existsSync(path.join(kept, "SKILL.md")))
+	const recorded = z
+		.object({ candidateSkillDigest: z.string().optional() })
+		.parse(
+			JSON.parse(fs.readFileSync(path.join(options.batchRoot, "batch.json"), "utf8")),
+		).candidateSkillDigest;
+	if (recorded === undefined || !fs.existsSync(path.join(kept, "SKILL.md")))
 		throw new Error(
-			`${kept} is missing: this batch kept no copy of the skill it ran, so conformance cannot be judged against it. Grade a batch started since the copy was kept.`,
+			`${kept} is missing or unrecorded: this batch kept no copy of the skill it ran, so conformance cannot be judged against it. Grade a batch started since the copy was kept.`,
+		);
+	if (digestOf(kept) !== recorded)
+		throw new Error(
+			`${kept} changed after the batch kept it; restore it to the copy the batch recorded before grading.`,
 		);
 	const target = path.join(workspace, SKILL_DIRECTORY);
 	fs.rmSync(target, { recursive: true, force: true });

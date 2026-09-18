@@ -127,6 +127,7 @@ function graded(
 		checklist: { standing: "answered", unmentioned: [], invented: [] },
 		findings: findingsByAxis(EXPECTED, verdict),
 		conformanceUnseen: [],
+		uncited: [],
 	};
 }
 
@@ -226,7 +227,7 @@ test("the report counts findings by axis, lists findings about the skill apart, 
 			scenario: "S00",
 			feature: "render.svg",
 			untaught: ["run-00000000c1"],
-			otherwise: ["run-00000000b1", "run-00000000c2"],
+			otherwise: ["run-00000000b1"],
 		},
 	]);
 	expect(() => renderReportMarkdown(report)).not.toThrow();

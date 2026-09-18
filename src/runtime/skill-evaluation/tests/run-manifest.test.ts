@@ -10,6 +10,7 @@ import os from "node:os";
 import path from "node:path";
 import {
 	buildReport,
+	graderLayout,
 	loadSuite,
 	readManifests,
 	recordOf,
@@ -168,5 +169,72 @@ test("manifests are found by the layout, without walking the worlds a run preser
 		expect(readManifests(path.join(batchRoot, "absent"))).toEqual([]);
 	} finally {
 		fs.rmSync(batchRoot, { recursive: true, force: true });
+	}
+});
+
+/**
+ * A conformance finding citing one passage.
+ * @param passage The citation.
+ * @returns The finding.
+ */
+function finding(passage: string) {
+	return { axis: "conformance", did: "d", taught: "t", passage, gap: "g" };
+}
+
+test("a finding's passage is resolved against the run's own skill, and one the skill never held is the grader's", () => {
+	const [first, second, third] = scenario.expectedFeatures;
+	if (first === undefined || second === undefined || third === undefined)
+		throw new Error("the scenario has fewer than three features");
+	const verdict = (run: string) => ({
+		run,
+		features: [
+			// Only the candidate carries references/read.md; the frozen baseline never had it.
+			{
+				feature: first.feature,
+				verdict: "missing",
+				evidence: "e",
+				reason: "r",
+				finding: finding("references/read.md#answer-a-question-from-a-saved-board"),
+			},
+			// A heading neither skill holds is a citation the grader invented.
+			{
+				feature: second.feature,
+				verdict: "missing",
+				evidence: "e",
+				reason: "r",
+				finding: finding("SKILL.md#no-such-heading"),
+			},
+			// Both skills carry Essentials.
+			{
+				feature: third.feature,
+				verdict: "missing",
+				evidence: "e",
+				reason: "r",
+				finding: finding("SKILL.md#essentials"),
+			},
+		],
+		semanticCorrectness: 5,
+		architecturalTruth: 5,
+		readability: 5,
+		summary: "s",
+		concerns: [],
+	});
+	for (const arm of ["baseline", "candidate"] as const) {
+		const batchRoot = batchWith(manifest({ arm }));
+		try {
+			const verdicts = graderLayout(batchRoot, "claude").verdicts;
+			fs.mkdirSync(verdicts, { recursive: true });
+			fs.writeFileSync(
+				path.join(verdicts, "run-0000000001.json"),
+				JSON.stringify(verdict("run-0000000001")),
+			);
+			const [read] = readManifests(batchRoot);
+			if (read === undefined) throw new Error("no manifest was read");
+			const record = recordOf(batchRoot, loaded, read, "claude");
+			expect(record.uncited).toEqual([second.feature]);
+			expect(record.conformanceUnseen).toEqual(arm === "baseline" ? [first.feature] : []);
+		} finally {
+			fs.rmSync(batchRoot, { recursive: true, force: true });
+		}
 	}
 });

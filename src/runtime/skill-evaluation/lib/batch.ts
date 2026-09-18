@@ -16,6 +16,7 @@ import {
 	type Provenance,
 } from "@/runtime/skill-evaluation/lib/provenance";
 import { keepBatchSkill } from "@/runtime/skill-evaluation/lib/citations";
+import { digestOf } from "@/runtime/skill-evaluation/lib/install";
 import type { LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
 import { executableVersion } from "@/runtime/skill-evaluation/lib/version";
 
@@ -152,12 +153,18 @@ function saltOf(manifestFile: string): string {
  * @param facts.salt The batch salt.
  * @param facts.version The Codex version found.
  * @param facts.jobs The planned jobs.
+ * @param facts.candidateSkill The candidate package the batch kept.
  * @param provenance The immutable implementation and input identities.
  */
 function writeBatchFiles(
 	root: string,
 	options: BatchOptions,
-	facts: { readonly salt: string; readonly version: string; readonly jobs: readonly PlannedJob[] },
+	facts: {
+		readonly salt: string;
+		readonly version: string;
+		readonly jobs: readonly PlannedJob[];
+		readonly candidateSkill: string;
+	},
 	provenance: Provenance,
 ): void {
 	const manifest = {
@@ -172,6 +179,8 @@ function writeBatchFiles(
 		concurrency: options.concurrency,
 		archboard: options.checkout,
 		provenance,
+		/** The kept candidate's digest, which grading checks the copy it stages against. */
+		candidateSkillDigest: digestOf(facts.candidateSkill),
 	};
 	fs.writeFileSync(path.join(root, "batch.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
 	const blinding = facts.jobs.map((job) => ({
@@ -189,6 +198,7 @@ function writeBatchFiles(
  * @param facts.salt The batch salt.
  * @param facts.cache The Flask cache.
  * @param facts.frozenSkill The frozen baseline package.
+ * @param facts.candidateSkill The candidate package the batch kept.
  * @param facts.batchRoot The batch directory every run lives under.
  * @returns The run, or null when kept from before.
  */
@@ -199,6 +209,7 @@ async function runJob(
 		readonly salt: string;
 		readonly cache: string;
 		readonly frozenSkill: string;
+		readonly candidateSkill: string;
 		readonly batchRoot: string;
 	},
 ): Promise<CompletedRun | null> {
@@ -229,6 +240,7 @@ async function runJob(
 			},
 		},
 		frozenSkill: facts.frozenSkill,
+		candidateSkill: facts.candidateSkill,
 		signal: options.signal,
 	};
 	const run = await executeRun(request);
@@ -294,8 +306,6 @@ async function runBatch(
 ): Promise<{ readonly root: string; readonly runs: readonly CompletedRun[] }> {
 	const { loaded } = options;
 	validateBatchOptions(options);
-	const provenance = batchProvenance(options.checkout, loaded);
-	validateResume(options, provenance);
 	const version = await executableVersion(options.codexExecutable ?? loaded.pins.codex.executable);
 	if (version !== loaded.pins.codex.version)
 		throw new Error(
@@ -303,7 +313,13 @@ async function runBatch(
 		);
 	const root =
 		options.resume ?? path.join(options.output, new Date().toISOString().replaceAll(/[:.]/gu, "-"));
+	// The skill is read twice in a row and never again: the provenance digests
+	// it and the batch keeps its copy, which every candidate run installs from
+	// and the grader reads, however long the batch then runs.
+	const provenance = batchProvenance(options.checkout, loaded);
+	validateResume(options, provenance);
 	fs.mkdirSync(root, { recursive: true });
+	const candidateSkill = keepBatchSkill(path.join(options.checkout, "skills", "archboard"), root);
 	const salt = saltOf(path.join(root, "batch.json"));
 	const cache = path.join(options.output, "cache", "flask.git");
 	await ensureFlaskCache(
@@ -313,12 +329,12 @@ async function runBatch(
 		options.signal,
 	);
 	const jobs = planJobs(options, root);
-	writeBatchFiles(root, options, { salt, version, jobs }, provenance);
-	keepBatchSkill(path.join(options.checkout, "skills", "archboard"), root);
+	writeBatchFiles(root, options, { salt, version, jobs, candidateSkill }, provenance);
 	const facts = {
 		salt,
 		cache,
 		frozenSkill: path.join(options.checkout, loaded.pins.baselineSkill.location),
+		candidateSkill,
 		batchRoot: root,
 	};
 	const runs = await pool(

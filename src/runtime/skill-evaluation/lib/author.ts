@@ -87,6 +87,8 @@ interface RunJob {
 	readonly cache: string;
 	readonly pins: Pins;
 	readonly frozenSkill: string;
+	/** The candidate package: the copy the batch kept when it started. */
+	readonly candidateSkill: string;
 	readonly signal: AbortSignal;
 }
 
@@ -286,7 +288,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			job.arm,
 			world.cli,
 			world.paths,
-			job.frozenSkill,
+			job.arm === "baseline" ? job.frozenSkill : job.candidateSkill,
 		);
 		await layFixture(world.cli, job.fixture, world.paths.flask);
 		const snapshot = await readVault(world.cli);
@@ -302,8 +304,9 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			exposure: {
 				evaluationInputs: path.join(job.checkout, "evals"),
 				harnessSource: path.join(job.checkout, "src", "runtime", "skill-evaluation"),
-				// Both arms as the checkout holds them: the candidate the
-				// installer takes from, and the frozen baseline package.
+				// Both arms' packages: the candidate as the checkout holds it
+				// (its kept copy is under the batch, off limits already), and
+				// the frozen baseline package.
 				skillPackages: [path.join(job.checkout, "skills", "archboard"), job.frozenSkill],
 				batchRoot: job.batchRoot,
 				world: world.paths.world,

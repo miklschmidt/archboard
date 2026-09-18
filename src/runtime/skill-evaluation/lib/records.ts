@@ -111,50 +111,74 @@ function verdictFor(batchRoot: string, grader: GraderName | null, run: string): 
 }
 
 /**
+ * The candidate skill as the batch kept it, or the checkout's for a batch that
+ * kept none.
+ * @param batchRoot The batch.
+ * @param loaded The suite, for the checkout.
+ * @returns The skill's root directory.
+ */
+function candidateSkill(batchRoot: string, loaded: LoadedSuite): string {
+	const kept = path.join(batchRoot, BATCH_SKILL_DIRECTORY);
+	return fs.existsSync(kept) ? kept : path.join(loaded.directory, "..", "skills", "archboard");
+}
+
+/**
  * The skill a run's arm was given: the baseline's frozen package, or the
- * candidate as the batch kept it (the checkout's, for a batch that kept none).
+ * candidate as the batch kept it.
  * @param batchRoot The batch.
  * @param loaded The suite, for the checkout and the baseline's location.
  * @param arm The arm.
  * @returns The skill's root directory.
  */
 function armSkill(batchRoot: string, loaded: LoadedSuite, arm: Arm): string {
-	const checkout = path.join(loaded.directory, "..");
-	if (arm === "baseline") return path.join(checkout, loaded.pins.baselineSkill.location);
-	const kept = path.join(batchRoot, BATCH_SKILL_DIRECTORY);
-	return fs.existsSync(kept) ? kept : path.join(checkout, "skills", "archboard");
+	return arm === "baseline"
+		? path.join(loaded.directory, "..", loaded.pins.baselineSkill.location)
+		: candidateSkill(batchRoot, loaded);
 }
 
 /**
- * The verdict's findings by axis, and which conformance findings cite a
- * passage the run's own skill never carried.
+ * The verdict's findings by axis, and where each one's passage stands. A
+ * passage is resolved against the candidate the grader was given first: one
+ * absent there names no passage of the skill at all, which is the grader's
+ * error and never the run's. A conformance passage the candidate holds but the
+ * run's own skill did not is a departure from text the run was never shown.
  * @param batchRoot The batch.
  * @param loaded The suite.
  * @param manifest The run.
  * @param verdict The filed verdict, or null.
- * @returns The two fields; empty for an ungraded run.
+ * @returns The three fields; empty for an ungraded run.
  */
 function findingsOf(
 	batchRoot: string,
 	loaded: LoadedSuite,
 	manifest: RunManifest,
 	verdict: RunVerdict | null,
-): Pick<RunRecord, "findings" | "conformanceUnseen"> {
-	if (verdict === null) return { findings: byAxis(() => []), conformanceUnseen: [] };
+): Pick<RunRecord, "findings" | "conformanceUnseen" | "uncited"> {
+	if (verdict === null) return { findings: byAxis(() => []), conformanceUnseen: [], uncited: [] };
 	const expected =
 		loaded.suite.evals.find((candidate) => candidate.id === manifest.scenario)?.expectedFeatures ??
 		[];
 	const findings = findingsByAxis(expected, verdict);
-	const skill = armSkill(batchRoot, loaded, manifest.arm);
 	const passages = new Map(
-		verdict.features.map((entry) => [entry.feature, entry.finding?.passage ?? null]),
+		verdict.features.map((entry) => [entry.feature, entry.finding?.passage ?? ""]),
 	);
+	/**
+	 * Whether a feature's finding cites a passage the given skill holds.
+	 * @param skill The skill's root.
+	 * @param feature The feature.
+	 * @returns True when the passage resolves there.
+	 */
+	const citedIn = (skill: string, feature: string): boolean =>
+		citationProblem(skill, passages.get(feature) ?? "") === null;
+	const candidate = candidateSkill(batchRoot, loaded);
+	const own = armSkill(batchRoot, loaded, manifest.arm);
+	const found = [...findings.conformance, ...findings.truth, ...findings.skill];
 	return {
 		findings,
-		conformanceUnseen: findings.conformance.filter((feature) => {
-			const passage = passages.get(feature) ?? null;
-			return passage !== null && citationProblem(skill, passage) !== null;
-		}),
+		uncited: found.filter((feature) => !citedIn(candidate, feature)),
+		conformanceUnseen: findings.conformance.filter(
+			(feature) => citedIn(candidate, feature) && !citedIn(own, feature),
+		),
 	};
 }
 

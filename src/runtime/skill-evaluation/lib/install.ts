@@ -1,9 +1,10 @@
 // Installing the skill an author will read, and checking that it is really
-// there. The candidate is what `archboard install-skill` installs from this
-// checkout. The baseline is the frozen package pins.json names, put in place of
-// the candidate after the same install so the repository block, the vault
-// and the skills root are exactly as the installer leaves them, and prepared
-// with the same generated files.
+// there. `archboard install-skill` lays the repository block, the vault and
+// the skills root; the arm's own package is then put in place of what it
+// installed and prepared with the same generated files. The baseline's package
+// is the frozen one pins.json names; the candidate's is the copy the batch
+// kept when it started, never the checkout at the run's own time, so every
+// candidate run and the grader read one text however long the batch runs.
 
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -54,15 +55,15 @@ function digestOf(directory: string): string {
 }
 
 /**
- * Replaces the installed skill's authored files with the frozen package and
+ * Replaces the installed skill's authored files with an arm's package and
  * regenerates the derived files beside them.
  * @param installed The installed skill directory.
- * @param frozen The frozen package.
+ * @param source The arm's package.
  * @param checkout The archboard checkout the generated files derive from.
  */
-function swapInFrozen(installed: string, frozen: string, checkout: string): void {
+function swapInPackage(installed: string, source: string, checkout: string): void {
 	fs.rmSync(installed, { recursive: true, force: true });
-	fs.cpSync(frozen, installed, { recursive: true });
+	fs.cpSync(source, installed, { recursive: true });
 	prepareSkillArtifacts(installed, { root: checkout });
 }
 
@@ -89,14 +90,14 @@ function setupBlockIn(flask: string): string {
  * @param arm Which skill version.
  * @param cli How to reach the CLI in the run's environment.
  * @param paths The run.
- * @param frozen The frozen baseline package.
+ * @param source The arm's package: the frozen baseline, or the candidate the batch kept.
  * @returns What is installed.
  */
 async function installSkill(
 	arm: Arm,
 	cli: CliContext,
 	paths: RunPaths,
-	frozen: string,
+	source: string,
 ): Promise<InstallRecord> {
 	await archboardOk(cli, [
 		"install-skill",
@@ -109,7 +110,7 @@ async function installSkill(
 		"--yes",
 	]);
 	const skillRoot = path.join(paths.home, ".agents", "skills", "archboard");
-	if (arm === "baseline") swapInFrozen(skillRoot, frozen, cli.checkout);
+	swapInPackage(skillRoot, source, cli.checkout);
 	for (const required of [
 		"SKILL.md",
 		path.join("references", "generated", "semantic-board.schema.json"),
@@ -124,7 +125,7 @@ async function installSkill(
 	return {
 		arm,
 		skillRoot,
-		source: arm === "baseline" ? frozen : path.join(cli.checkout, "skills", "archboard"),
+		source,
 		files: filesUnder(skillRoot).length,
 		digest: digestOf(skillRoot),
 		setupBlock,
