@@ -1,7 +1,7 @@
 ---
 id: TASK-264
 title: Eval fixtures model the shapes the rubric fails runs for
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:52'
@@ -25,10 +25,10 @@ Nine grader concerns across the 2026-09-18 batch fault the inherited fixtures fo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No fixture relationship lands on a part that has children, unless the source addresses the whole module
-- [ ] #2 The Dispatch node is split so a group boundary can show finalize_request's own outgoing calls, and each resulting part binds to the file implementing it
-- [ ] #3 Fixture nodes typed module carry a binding or a stated reason they cannot
-- [ ] #4 S03, S06, S09 and S12 still test what they were written to test after the fixtures change, with their expected features unchanged or the change explained
+- [x] #1 No fixture relationship lands on a part that has children, unless the source addresses the whole module
+- [x] #2 The Dispatch node is split so a group boundary can show finalize_request's own outgoing calls, and each resulting part binds to the file implementing it
+- [x] #3 Fixture nodes typed module carry a binding or a stated reason they cannot
+- [x] #4 S03, S06, S09 and S12 still test what they were written to test after the fixtures change, with their expected features unchanged or the change explained
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,3 +62,15 @@ Review follow-up: restored S03's prompt to 'Record those memberships' (three nod
 
 Re-verified after the change: eval:skill check ok; S03 and S09 laid through the store again — no relationship lands on a part with children, the request-lifecycle boundary still carries 'outgoing Process response -> Session interface', the Overview view still draws every request-lifecycle member but 'Request context push', both render, and the vault check reports no diagnostics.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The evaluation fixtures now model the shapes the rubric grades.
+
+On the 'Flask application' board (S03 and S09) the 'Dispatch' part is Flask.full_dispatch_request alone, with 'Finalize request' and 'Process response' beside it, each bound in S09 to src/flask/app.py, which is what lets S09's group boundary carry finalize_request's own chain out to save_session. The relationship that landed on the 'Flask app' container is gone: 'flask run' now calls 'App loader' (ScriptInfo.load_app) and the 'Development server' (werkzeug run_simple), which calls 'WSGI entry' back, the shape S05, S10 and S12 already use. Every claim was read off the pinned Flask 3.0.0 (735a4701): cli.py:17, 293, 898, 924; app.py:854, 870, 889, 891, 1270; ctx.py:358-385, whose push is why S12's open_session relationship now says it happens inside the push.
+
+Werkzeug's two LocalStacks in S02 and S06 are 'external' parts rather than unbound 'module' nodes, and S03's comment states that its parts are unbound because its checkout is deliberately unregistered — which is what that scenario asks its author to fix. pins.json records which scenarios this revision moved so no batch is compared across it.
+
+Verified: 'bun run eval:skill check' passes (15 scenarios, 15 fixtures, 14 coverage parts), including the leakage check over both skill packages. Every fixture was laid through src/runtime/semantic-board-store into a scratch vault and all 15 resulting variants scanned: no relationship lands on a part that has children, and the only unbound module parts are S03's three. S09's inspection reports members Dispatch, Finalize request, Process response, Request context push with 'outgoing Process response -> Session interface' on the boundary; its Overview view draws every request-lifecycle member but 'Request context push', so its hidden-members feature still holds; both the board and the view render and rasterize, and the vault check reports no diagnostics. No expected feature and no outcome check of S03, S06, S09 or S12 changed; S03's prompt names the new containment and nothing else.
+<!-- SECTION:FINAL_SUMMARY:END -->
