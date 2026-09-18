@@ -245,22 +245,76 @@ the source you read, in this vocabulary (the grader uses the same words); every
 row the source justifies goes in the payload, and your answer says which rows
 you used and which you judged not to apply.
 
-| Row            | When the source shows                                                                                                                                                                                                                                                                                                                                                        | You author                                                                                                                                                                                                                                                                                                                                 |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `external`     | a caller, library, framework, runtime, shell or hosted service this codebase does not own, or a part nobody has built yet                                                                                                                                                                                                                                                    | a node of kind `external`, unbound; a part that does not exist yet is drawn and unbound the same way, taking the configured kind the request names for it when it names one. Never for a part of this codebase a reader reaches through another board                                                                                      |
-| `binding`      | the file whose body implements a part's responsibility                                                                                                                                                                                                                                                                                                                       | `binding: { repo, path }` to that file; nothing for a part you could not inspect                                                                                                                                                                                                                                                           |
-| `containment`  | a part defined inside another (a function of a module, a method of a class, a child component, a closure inside its factory)                                                                                                                                                                                                                                                 | `parent`                                                                                                                                                                                                                                                                                                                                   |
-| `relationship` | a call, render, read, event, message, dependency or publication one body makes to another                                                                                                                                                                                                                                                                                    | an `edge` of the configured kind, its `label` the message or mechanism                                                                                                                                                                                                                                                                     |
-| `traffic`      | the forward path one request or event takes at runtime: the calls that run on every pass                                                                                                                                                                                                                                                                                     | `traffic` on those relationships only (`{}`, or `speed`/`volume` to contrast a hotter path), a call an error could skip but a normal pass always makes (the handler every request reaches) included; never on teardown or cleanup, an error or exception path, an optional hook most passes skip, startup, registration or a one-shot call |
-| `emphasis`     | a spine: the path or backbone the board's question is about, and the lines that are only context                                                                                                                                                                                                                                                                             | `emphasis: "hero"` on the spine — a third of the relationships, never past half — and `"muted"` on the context. A board with a spine and no `hero` at all leaves the reader to find it                                                                                                                                                     |
-| `repeat`       | a loop over a list the source fixes, or a retry limit                                                                                                                                                                                                                                                                                                                        | `repeat` with that count on the step                                                                                                                                                                                                                                                                                                       |
-| `note`         | a branch and its condition, a data-dependent loop, an environment variable, a caveat                                                                                                                                                                                                                                                                                         | `note` on the step                                                                                                                                                                                                                                                                                                                         |
-| `groups`       | a part whose concern is a configured group id in `config.yaml` (read them before every write)                                                                                                                                                                                                                                                                                | `groups` on each member, explicit, across containers                                                                                                                                                                                                                                                                                       |
-| `flow`         | a request that asks for the exchange itself — what happens, in what order, for one request, job, interaction or startup — on a new board or an existing one. A board asked to describe how something travels through the parts is parts, containment and the calls between them ([which recipe](#which-recipe)), and owes no flow merely because what it draws runs in order | a `flow` and a `data-flow` view over it                                                                                                                                                                                                                                                                                                    |
-| `view`         | a subset a reader wants alone: one path, one container's internals, the two sides of a change                                                                                                                                                                                                                                                                                | a board `view`                                                                                                                                                                                                                                                                                                                             |
-| `walkthrough`  | a why the code enforces (an ordering, an invariant, a lock held around a write)                                                                                                                                                                                                                                                                                              | a walkthrough beat whose subjects are the parts, relationships or steps it explains                                                                                                                                                                                                                                                        |
-| `drillDown`    | a part whose internals already have a board (`archboard semantic` lists them; check first)                                                                                                                                                                                                                                                                                   | `drillDown` on that part instead of drawing its parts again, its `kind` the level of the board it opens (`system`, `service`, `module`); never a node added only to carry the link                                                                                                                                                         |
-| `description`  | a mechanism a one-line responsibility cannot hold                                                                                                                                                                                                                                                                                                                            | `description` on the node or relationship                                                                                                                                                                                                                                                                                                  |
+| Row            | Lands on                           |
+| -------------- | ---------------------------------- |
+| `external`     | a node                             |
+| `binding`      | a node                             |
+| `containment`  | a node (`parent`)                  |
+| `relationship` | an `edge`                          |
+| `traffic`      | a relationship                     |
+| `emphasis`     | a relationship                     |
+| `repeat`       | a flow step                        |
+| `note`         | a flow step                        |
+| `groups`       | a node                             |
+| `flow`         | the board, with a `data-flow` view |
+| `view`         | the board                          |
+| `walkthrough`  | the board, as a beat               |
+| `drillDown`    | a node                             |
+| `description`  | a node or a relationship           |
+
+What the source shows for each row, and what you author for it:
+
+- `external`. _Shows:_ a caller, library, framework, runtime, shell or hosted
+  service this codebase does not own, or a part nobody has built yet. _Author:_
+  a node of kind `external`, unbound; a part that does not exist yet is drawn
+  and unbound the same way, taking the configured kind the request names for it
+  when it names one. Never for a part of this codebase a reader reaches through
+  another board.
+- `binding`. _Shows:_ the file whose body implements a part's responsibility.
+  _Author:_ `binding: { repo, path }` to that file; nothing for a part you could
+  not inspect.
+- `containment`. _Shows:_ a part defined inside another (a function of a module,
+  a method of a class, a child component, a closure inside its factory).
+  _Author:_ `parent`.
+- `relationship`. _Shows:_ a call, render, read, event, message, dependency or
+  publication one body makes to another. _Author:_ an `edge` of the configured
+  kind, its `label` the message or mechanism.
+- `traffic`. _Shows:_ the forward path one request or event takes at runtime:
+  the calls that run on every pass. _Author:_ `traffic` on those relationships
+  only (`{}`, or `speed`/`volume` to contrast a hotter path), a call an error
+  could skip but a normal pass always makes (the handler every request reaches)
+  included; never on teardown or cleanup, an error or exception path, an
+  optional hook most passes skip, startup, registration or a one-shot call.
+- `emphasis`. _Shows:_ a spine: the path or backbone the board's question is
+  about, and the lines that are only context. _Author:_ `emphasis: "hero"` on
+  the spine — a third of the relationships, never past half — and `"muted"` on
+  the context. A board with a spine and no `hero` at all leaves the reader to
+  find it.
+- `repeat`. _Shows:_ a loop over a list the source fixes, or a retry limit.
+  _Author:_ `repeat` with that count on the step.
+- `note`. _Shows:_ a branch and its condition, a data-dependent loop, an
+  environment variable, a caveat. _Author:_ `note` on the step.
+- `groups`. _Shows:_ a part whose concern is a configured group id in
+  `config.yaml` (read them before every write). _Author:_ `groups` on each
+  member, explicit, across containers.
+- `flow`. _Shows:_ a request that asks for the exchange itself — what happens,
+  in what order, for one request, job, interaction or startup — on a new board
+  or an existing one. A board asked to describe how something travels through
+  the parts is parts, containment and the calls between them
+  ([which recipe](#which-recipe)), and owes no flow merely because what it draws
+  runs in order. _Author:_ a `flow` and a `data-flow` view over it.
+- `view`. _Shows:_ a subset a reader wants alone: one path, one container's
+  internals, the two sides of a change. _Author:_ a board `view`.
+- `walkthrough`. _Shows:_ a why the code enforces (an ordering, an invariant, a
+  lock held around a write). _Author:_ a walkthrough beat whose subjects are the
+  parts, relationships or steps it explains.
+- `drillDown`. _Shows:_ a part whose internals already have a board
+  (`archboard semantic` lists them; check first). _Author:_ `drillDown` on that
+  part instead of drawing its parts again, its `kind` the level of the board it
+  opens (`system`, `service`, `module`); never a node added only to carry the
+  link.
+- `description`. _Shows:_ a mechanism a one-line responsibility cannot hold.
+  _Author:_ `description` on the node or relationship.
 
 A row the source does not support stays out: an added relationship without a
 line of evidence is a wrong board, not a complete one.
@@ -279,13 +333,20 @@ payload shape, a worked example from archboard's own source and the checks to re
 against. Read the recipe before the first command of that workflow; it is the
 one reference a common path needs beyond this file.
 
-| The request asks you to                                                                                                                | Read                                                                |
-| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| make a new board: parts and their wiring at a level, whatever the subject (a service's modules, how a request travels, what starts up) | [create an architecture diagram](references/create-architecture.md) |
-| explain one request, job or startup as an ordered exchange: a `flow` with participants and steps, on a new board or an existing one    | [create a sequence diagram](references/create-sequence.md)          |
-| change, extend, correct or repair what an existing board says                                                                          | [edit an existing board](references/edit.md)                        |
-| propose a change as a variant, compare it, settle its disagreements, or adopt it                                                       | [propose and compare a change](references/propose-compare.md)       |
-| answer a question from a saved board and change nothing                                                                                | [answer from a saved board](references/read.md)                     |
+Each recipe, and the request it is for:
+
+- [create an architecture diagram](references/create-architecture.md): make a
+  new board: parts and their wiring at a level, whatever the subject (a
+  service's modules, how a request travels, what starts up).
+- [create a sequence diagram](references/create-sequence.md): explain one
+  request, job or startup as an ordered exchange: a `flow` with participants and
+  steps, on a new board or an existing one.
+- [edit an existing board](references/edit.md): change, extend, correct or
+  repair what an existing board says.
+- [propose and compare a change](references/propose-compare.md): propose a
+  change as a variant, compare it, settle its disagreements, or adopt it.
+- [answer from a saved board](references/read.md): answer a question from a
+  saved board and change nothing.
 
 A new board is the architecture recipe first, whatever the request calls its
 subject: a board that describes how a request travels is parts, containment
@@ -321,9 +382,12 @@ propose) reads each recipe it needs, in the order the request runs them.
 The recipe for the workflow at hand is in [which recipe](#which-recipe); these
 are what a branch of one needs on top of it.
 
-| Read                                                                            | When                                                                                                           |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [authoring](references/authoring.md)                                            | groups, bindings with branch/commit, drill-down, traffic, emphasis, removals and handles, refusals             |
-| [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md) | view scopes and grammars, message kinds, repeat/note, walkthrough beats and their identity                     |
-| [variants](references/variants.md)                                              | what a comparison counts, edge identity, flow/step identity, reconciliation and `resolve`, adoption, claims    |
-| [schemas](references/schemas.md)                                                | the exact JSON Schemas of the payloads, the persisted document and `config.yaml`; vault setup and installation |
+- [authoring](references/authoring.md): groups, bindings with branch/commit,
+  drill-down, traffic, emphasis, removals and handles, refusals.
+- [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
+  view scopes and grammars, message kinds, repeat/note, walkthrough beats and
+  their identity.
+- [variants](references/variants.md): what a comparison counts, edge identity,
+  flow/step identity, reconciliation and `resolve`, adoption, claims.
+- [schemas](references/schemas.md): the exact JSON Schemas of the payloads, the
+  persisted document and `config.yaml`; vault setup and installation.
