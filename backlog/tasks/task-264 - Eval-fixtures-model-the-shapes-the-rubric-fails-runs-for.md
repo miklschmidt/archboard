@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:52'
-updated_date: '2026-09-18 11:36'
+updated_date: '2026-09-18 11:50'
 labels: []
 dependencies: []
 references:
@@ -57,4 +57,8 @@ S02 and S06: the two werkzeug LocalStacks are 'external' rather than unbound 'mo
 S12: the open_session relationship now carries a description saying RequestContext.push opens the session (ctx.py:358-385), so the board does not split that call chain silently.
 
 evals.json: only S03's prompt changed, to name the board's new containment. No expected feature and no outcome check of S03, S06, S09 or S12 changed.
+
+Review follow-up: restored S03's prompt to 'Record those memberships' (three nodes carry four memberships, and 'three' could be read as satisfied without Dispatch's second one, which both the groups.multi-membership feature and the node-groups check require). Widened the CLI part's responsibility to 'The flask command group and the script info that loads the app', since ScriptInfo is not part of FlaskGroup and only shares the file. Said in S09's comment that it records the whole response path's memberships, not only the three S03 asks for. Recorded in pins.json, and pointed at from the README's baseline section, which scenarios this fixture revision moved, so nobody compares S02, S03, S06, S09 or S12 across it.
+
+Re-verified after the change: eval:skill check ok; S03 and S09 laid through the store again — no relationship lands on a part with children, the request-lifecycle boundary still carries 'outgoing Process response -> Session interface', the Overview view still draws every request-lifecycle member but 'Request context push', both render, and the vault check reports no diagnostics.
 <!-- SECTION:NOTES:END -->

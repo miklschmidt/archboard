@@ -40,7 +40,11 @@
 						"parent": "Flask app",
 						"responsibility": "Flask.process_response: runs after_request functions and saves the session"
 					},
-					{ "name": "CLI", "kind": "module", "responsibility": "The flask command group" },
+					{
+						"name": "CLI",
+						"kind": "module",
+						"responsibility": "The flask command group and the script info that loads the app"
+					},
 					{
 						"name": "Run command",
 						"kind": "function",
