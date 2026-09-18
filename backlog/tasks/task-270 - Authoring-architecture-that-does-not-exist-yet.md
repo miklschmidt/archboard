@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:10'
-updated_date: '2026-09-18 13:01'
+updated_date: '2026-09-18 13:04'
 labels: []
 dependencies: []
 references:
@@ -427,67 +427,104 @@ fixtures are evidently never re-parsed. This is harmless today but is criterion
 `docs/design/generated/command-contract-proof.md`, come from
 `bun run generate:skill-artifacts`.
 
-## The bare-address question: four candidates, NOT DECIDED
+## The bare-address question: WHERE is settled, WHAT is the user's decision
 
-This is the user's decision, and it gates the implementation slice. The question:
-on a board with no current variant, what does an address that names no variant
-open? Today `resolveVariant(board, undefined)` answers two different questions
-with one lookup:
-- **Q1, semantic:** which variant is the implemented architecture? On a planning
-  board the truthful answer is none.
-- **Q2, addressing:** which variant should be drawn when nobody said? This needs
-  an answer.
+This section replaces both earlier framings: the three candidates in the first
+audit note, and the four in the review response. The question is what an address
+that names no variant opens on a board with no current variant. Today
+`resolveVariant(board, undefined)` answers two different questions with one
+lookup:
+- **Q1, semantic:** which variant is the implemented architecture? On a board with
+  no current variant, the truthful answer is none. ADR 0031 is about this question.
+- **Q2, addressing:** which variant is drawn when nobody said which?
 
-ADR 0031 is about Q1 only.
+### WHERE the default lives: settled by ADR 0031, not an option
 
-- **(a) The sole draft.** Resolve an unnamed address to the board's only draft.
-  This is usable at once for the commonest planning board. It leaves several drafts
-  with no current variant undefined. If implemented inside `resolveVariant` it
-  also answers Q1 wrongly (see below).
-- **(b) The root draft.** Resolve to the variant with no predecessor. This is
-  always defined, but it ages badly: the root becomes the least interesting
-  variant as soon as a planning board branches alternatives, which is the first
-  thing such a board does. Inside `resolveVariant` it has the same Q1 problem as (a).
-- **(c) Refuse, and require a named variant.** This is the smallest change, and
-  `currentVariant` and `resolveVariant` stay truthful. But a draft-only board has
-  no bare-name address at all. That is in tension with criterion 5 (a person
-  opening such a board sees it is unbuilt in the pane and the drawing), because a
-  drawing that refuses cannot be seen. Every refusal would also need rewording to
-  say why, instead of `no variant called ""`.
-- **(d) Give the address its own resolution, separate from the designation**
-  (the reviewer's recommendation). Keep `currentVariant()` and `resolveVariant()`
-  unchanged and truthful. Add a separate reading default, e.g.
-  `addressedVariant(board, asked)`:
-  - the current variant when there is one;
-  - otherwise the sole draft;
-  - with several drafts and no current, the root draft;
-  - refuse only when even that is ambiguous, naming the candidates.
+Any default for Q2 lives in its own address resolution, separate from
+`resolveVariant` and `currentVariant`. Both of those stay unchanged and keep
+answering Q1.
 
-  Use it ONLY where the question is "what do I draw":
-  - `semantic-renderer/board.ts`:182;
-  - the address grammar (`makeIdentity` / `parseBoardKey`);
-  - `pane-registry.ts`:286, `pane-show-route.ts`:84 and
-    `code-opener/lib/routes.ts`:133;
-  - `local-pictures.ts`:247-248 and `board-catalog/listing.ts`:107-111.
+The reason is `drill-target.ts`:42. It calls `resolveVariant(reading.board)` to
+serve a link whose author explicitly wrote `kind: "current"`. A default placed
+inside `resolveVariant` would turn `{kind: "no-current"}` into opening a draft,
+which contradicts ADR 0023:111-112 and ADR 0031's own drill-down consequence.
+The same holds for every other Q1 reader: adopt, shelve,
+`semantic-board-context.ts`:252 and the eval outcome checks.
 
-  Leave `resolveVariant` and `currentVariant` wherever the question is whether
-  something is implemented: the drill-down, adopt, shelve,
-  `semantic-board-context.ts`:252 and the eval outcome checks. The reviewer's
-  reasoning:
-  - It is the only option under which "the bare address opens something" and
-    "asking which variant is implemented answers nothing" are both true. (c) gives
-    up the first; (a) and (b), placed in `resolveVariant`, give up the second.
-  - There is a concrete casualty otherwise. `drill-target.ts`:42 calls
-    `resolveVariant(reading.board)` to serve a link whose author explicitly wrote
-    `kind: "current"`. Putting (a) or (b) inside `resolveVariant` would silently
-    turn `{kind: "no-current"}` into showing a draft. That breaks
-    `SemanticDrillDown.tsx`:95-97, contradicts ADR 0023:111-112, and contradicts
-    ADR 0031's own drill-down consequence.
-  - It keeps `current` meaning exactly one thing, which is ADR 0031's thesis.
-  - It is cheap. `SemanticVariantBar.tsx`:67, `pane-reading.ts`:31 and
-    `listing.ts`:33 already re-address everything as `board@<id>` after the first
-    draw, so the bare address matters only at a small, enumerable set of entry
-    points: a typed pane show, a catalogue row, a reconnect, a code-binding follow.
+Whatever the policy below turns out to be, it applies only where the question is
+"what do I draw":
+- `semantic-renderer/board.ts`:182;
+- the address grammar: `makeIdentity` / `parseBoardKey` in `board-address.ts`;
+- `pane-registry.ts`:286, `pane-show-route.ts`:84 and
+  `code-opener/lib/routes.ts`:133;
+- `local-pictures.ts`:247-248 and `board-catalog/listing.ts`:107-111.
+
+On a board that has a current variant, every policy opens it, exactly as today.
+
+### Which variants count: settled by the lifecycle words
+
+"Draft" below means lifecycle `draft`. A shelved variant is not a draft (CONTEXT.md,
+Shelved variant), so it never counts toward "the sole draft". The root question
+settles itself too. Shelving refuses a variant any draft still stands on
+(`shelve.ts`:119-122), so while any draft exists, its whole ancestor chain is
+unshelved. A board with no current variant also has no historical one, because
+only adoption makes history. So whenever a draft exists, the root is a draft.
+
+One edge case remains, and it is part of the user's decision: a board where
+every variant is shelved. That means everything proposed was let go and nothing
+was built. None of the policies below opens anything there, unless the user
+wants a bare address to open a shelved variant.
+
+### WHAT the bare address opens: four policies, for the user
+
+1. **The sole draft.**
+   - *Case:* covers the commonest planning board (one draft, just created) with the
+     least rule, and never picks between alternatives on the author's behalf.
+   - *Cost:* undefined as soon as a second draft is branched. It then needs policy 4
+     behind it, and what a bare address opens changes the moment someone branches.
+2. **The root draft.**
+   - *Case:* always defined while any draft exists (see above), and stable: the
+     root never changes identity as drafts come and go.
+   - *Cost:* the root becomes the least interesting variant as soon as alternatives
+     are branched from it, which is the first thing a planning board tends to do.
+     A bare address would then open the starting point rather than any proposal
+     under discussion.
+3. **The cascade: the sole draft, else the root draft.**
+   - *Case:* always defined, and it opens the obvious variant in the one-draft case.
+   - *Cost:* what a bare address opens depends on the board's shape, and it shifts
+     when a draft is branched, shelved or adopted. That is tolerable, since
+     `current` already moves under an unchanged address, but it is a second moving
+     default for a reader to know about.
+4. **Refuse, and require a named variant.**
+   - *Case:* the most explicit policy. It never opens something by default, in the
+     spirit of ADR 0023:111-112, which refuses a silent fallback for links. It
+     costs little beyond the entry points: `SemanticVariantBar.tsx`:67,
+     `pane-reading.ts`:31 and `listing.ts`:33 already re-address everything as
+     `board@<id>` after the first draw. Only a typed `pane show`, a catalogue
+     row, a reconnect and a code-binding follow meet a bare address.
+   - *Cost:* a draft-only board has no bare-name address, so opening it by name
+     shows a refusal rather than the board. That is in tension with criterion 5,
+     which asks that a person opening such a board see from the pane and the
+     drawing that it is unbuilt.
+
+**Common cost of policies 1-3:** they add a second lookup beside `resolveVariant`,
+and every caller must choose between the two correctly. That is a new way to get
+it wrong: a Q1 reader that picks up the address lookup would silently present a
+draft as the implemented architecture. Policy 4 adds no second lookup, only
+refusals worded for this case.
+
+### The reviewer's recommendation, attributed
+
+The round-1 reviewer recommended policy 3. Its argument:
+- It is the only policy under which "a bare address opens something" and "asking
+  which variant is implemented answers nothing" are both true.
+- Policy 4 gives up the first, at the cost of criterion 5.
+- It keeps `current` meaning exactly one thing, which is ADR 0031's thesis.
+- It is cheap, because the bare address matters only at the handful of entry
+  points listed under policy 4.
+
+This is the reviewer's view, recorded here so it is not lost. It is not the plan's
+choice. The user decides, and the decision gates the implementation slice.
 
 **Regardless of which is chosen:** `pane-registry.ts`:286 must be fixed, because a
 reconnecting pane currently loses its board silently instead of refusing visibly.
