@@ -1,11 +1,11 @@
 ---
 id: TASK-273.01
 title: A read of a path that does not exist exposes nothing
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 18:27'
+updated_date: '2026-09-18 18:32'
 labels:
   - bug
 dependencies: []
@@ -65,4 +65,12 @@ Review round 3 fixed in 7ca95ef3. Relative words are resolved from every directo
 Review round 4 fixed in f37ff4f4. afterCd no longer doubles the candidates per relative cd: a relative word is weighed from the starting directory, the in-order latest directory after each cd, and each cd target resolved from the start, so one or two candidates per cd (probe4's 10-30 cd chains now take about 0 ms, where 18 took 358 ms and about 30 ran out of memory). Words starting with '-' after cd/pushd are flags and skipped; 'cd -' adds no directory (the previous one is already kept). A 'cd' inside heredoc text still adds a candidate; that is conservative and now costs at most one more entry. Tests: cd -P / -- / -L -- are not directories; a 30-cd chain resolves in the test's wall-clock budget and still counts.
 Accepted residual gap: a read counts as nothing when all of these hold together: the cd before it failed or ran in a subshell; the relative path read back to another run only from a directory other than where every cd would have left the script; the path the latest cd points at exists (or the output reports the word missing); and the file read has been deleted from disk by report time. Stated plainly: a failed or subshell cd, then a relative path that only reaches another run by being read in reverse from the starting directory, and a file deleted by report time.
 Batch re-report: contaminated none, report.md identical to round 3, per-run exposure identical, the same 11 differ from the saved report, saved report untouched. Gate: lint, fmt:check, type-check green; test:modules 3338 pass 0 fail.
+
+Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3338/0, test:system 168/0, test:repository 8/0, test:serial-browser 15 files 0 fail. Review clean after five rounds.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Codex 0.155.0's skill-root alias made 11 authors in batch 2026-09-18T14-01 read a mis-expanded path that did not exist; the text-only classifier counted it as another run. Now a batch path is exempt only when the shell word is plain, the path is missing, the script builds no path (no $, backtick or assignment) and the command's own output reports it missing; relative words resolve from a linear set of cd candidates; the report re-audits exposure from stored commands.json (lib/reaudit.ts, lib/other-run.ts), so saved batches benefit. Re-report of the 14:01 batch clears exactly those 11 and changes nothing else. Code landed in a06612d4 (shared with 273.02 by a staging race), c14a171e, 28f6d3bf, 7ca95ef3, f37ff4f4. Residual gap recorded in notes. Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3338/0, test:system 168/0, test:repository 8/0, test:serial-browser 15 files 0 fail.
+<!-- SECTION:FINAL_SUMMARY:END -->

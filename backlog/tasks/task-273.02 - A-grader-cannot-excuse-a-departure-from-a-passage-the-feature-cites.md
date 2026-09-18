@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 18:08'
+updated_date: '2026-09-18 18:32'
 labels: []
 dependencies: []
 parent_task_id: TASK-273
@@ -60,4 +60,12 @@ Gates after the fixes: type-check exit 0. lint and fmt:check fail only in tests/
 Gate re-run on HEAD b9934e77 plus the 273.01 worker's uncommitted files: fmt:check, type-check and test:modules (3336 pass, 0 fail) exit 0. lint fails only on complexity in lib/classify.ts (shellWords, wordPart), which is the 273.01 worker's uncommitted work; my files lint clean.
 
 Independent review, two rounds; round 2 clean. Reviewer's refinement for AC#6's rubric sentence, preferred over the one above when it lands: 'A finding naming a passage the feature cites is counted as conformance whatever axis it carries, since the scenario declares that passage teaches the feature. If that passage does not in fact teach it, file the finding all the same and name the feature and the passage in a concern beginning `fixture:` (the scenario's citation).' (Judging conformance against a passage that does not state the rule is not something a grader can do honestly.)
+
+Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3338/0, test:system 168/0, test:repository 8/0, test:serial-browser 15 files 0 fail.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A grader finding on the skill axis whose passage is one of its feature's declared citations now counts as conformance and fails the run, and the report lists each with the grader's gap. Re-report of the 14:01 batch: run-b98e641594 (S09 inspect.group) now fails. Code in a06612d4, 12409732, b9934e77, 2d9f2827. Independent review clean after two rounds. AC#6 (the rubric sentence) is deliberately open: editing rubric.md changes the input digest, so it lands after the user re-reports the 14:01 batch; the wording is in the notes. Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3338/0, test:system 168/0, test:repository 8/0, test:serial-browser 15 files 0 fail.
+<!-- SECTION:FINAL_SUMMARY:END -->
