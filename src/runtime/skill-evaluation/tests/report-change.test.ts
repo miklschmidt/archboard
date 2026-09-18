@@ -68,16 +68,29 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
  * @param side Which arm.
  * @param scenario The scenario.
  * @param scores One score per repetition.
+ * @param completeness One completeness per repetition, null where the run wrote nothing.
  * @returns The records.
  */
-function armRuns(side: RunRecord["arm"], scenario: string, scores: readonly number[]): RunRecord[] {
+function armRuns(
+	side: RunRecord["arm"],
+	scenario: string,
+	scores: readonly number[],
+	completeness?: readonly (number | null)[],
+): RunRecord[] {
 	return scores.map((score, index) =>
 		record({
 			run: `run-${side}-${scenario}-${index}`,
 			arm: side,
 			scenario,
 			repetition: index + 1,
-			verdict: { ...verdict, semanticCorrectness: score },
+			verdict: {
+				...verdict,
+				semanticCorrectness: score,
+				behaviouralCompleteness:
+					completeness === undefined
+						? verdict.behaviouralCompleteness
+						: (completeness[index] ?? null),
+			},
 		}),
 	);
 }
@@ -117,14 +130,28 @@ test("the bar is the spread of the paired differences over the root of how many 
 	expect(pairedNoise(sixteen)).toBe(pairedNoise([0, 2]) * Math.sqrt(2 / 16));
 });
 
-test("one grader point on one run can never be called a move, however many runs there are", () => {
-	for (const pairs of [3, 12, 42]) {
+test("one grader point on one run is never a move once two pairs can spread against it", () => {
+	for (const pairs of [2, 3, 12, 42]) {
 		const differences: number[] = Array.from({ length: pairs }, (_, index) =>
 			index === 0 ? -1 : 0,
 		);
 		const delta = differences.reduce((sum, value) => sum + value, 0) / pairs;
 		expect(directionOf(delta, pairedNoise(differences))).toBe("held");
 	}
+	// One pair spreads against nothing, so it could only ever call its own
+	// difference a move. A run that wrote nothing has no completeness to
+	// score, which is how an axis thins out while the row stays comparable;
+	// an axis down to one pair is not reported at all.
+	expect(pairedNoise([-1])).toBe(0);
+	const thin = buildReport(
+		[
+			...armRuns("baseline", "S01", [9, 9, 9], [6, null, null]),
+			...armRuns("candidate", "S01", [9, 9, 9], [7, 7, 7]),
+		],
+		null,
+	).scenarios[0];
+	expect(axisOf(thin, "completeness")).toBeUndefined();
+	expect(axisOf(thin, "correctness")).toBeDefined();
 });
 
 test("a move is called only past the bar, and the same way in both directions", () => {

@@ -41,6 +41,12 @@ interface CountChange {
 /** How one grader mean moved between the arms, against what the batch calls noise. */
 interface AxisChange {
 	readonly axis: QualityAxis;
+	/**
+	 * The arms' means over the runs they both scored on this axis, which is
+	 * what the delta is a difference of. Where a run scored nothing on the axis
+	 * its pair is dropped, so these are not the arm summaries' means of the
+	 * same names: those are over every graded run.
+	 */
 	readonly before: number;
 	readonly after: number;
 	readonly delta: number;
@@ -93,6 +99,13 @@ const COUNT_IS_BETTER: Readonly<Record<QualityCount, "higher" | "lower">> = {
  * can against 1/3.
  */
 const NOISE_SLACK = 1e-9;
+
+/**
+ * The fewest pairs that can set a bar. One pair spreads against nothing, so
+ * its bar would be zero and its difference, however small, would be called a
+ * move; two is where the spread starts carrying the odd run's point.
+ */
+const MINIMUM_PAIRS = 2;
 
 /** One pair of runs the two arms share, scored on one axis. */
 interface ScorePair {
@@ -208,8 +221,9 @@ function countChanges(baseline: ArmSummary, candidate: ArmSummary): CountChange[
 
 /**
  * How each grader mean moved, pair by pair, against the bar the spread of
- * those pairs sets. An axis no pair of runs both scored is left out rather
- * than reported as flat.
+ * those pairs sets. An axis fewer than two pairs of runs both scored is left
+ * out rather than reported as flat: a run that wrote nothing has no
+ * completeness to score, so an axis can lose pairs the rest of the row keeps.
  * @param baselineRuns The baseline arm's runs.
  * @param candidateRuns The candidate arm's runs.
  * @returns One entry per axis both arms scored.
@@ -220,7 +234,11 @@ function axisChanges(
 ): AxisChange[] {
 	return AXES.flatMap((axis) => {
 		const pairs = pairedScores(baselineRuns, candidateRuns, axis);
-		if (pairs.length === 0) return [];
+		// A single pair has nothing to spread against: its difference is the
+		// whole of what was seen, so it would be measured against a bar of
+		// zero and one grader point would carry the row. One pair is not
+		// evidence of a move, so the axis says nothing at all.
+		if (pairs.length < MINIMUM_PAIRS) return [];
 		const before = average(pairs.map((pair) => pair.before));
 		const after = average(pairs.map((pair) => pair.after));
 		const noise = pairedNoise(pairs.map((pair) => pair.after - pair.before));
