@@ -1196,39 +1196,93 @@ decided a crossing never runs across a title, and this does not change that.
 
 ## 27. A frame crossed both ways (2026-09-18, TASK-265)
 
-Section 26 gave a pair the face it travels for a crossing. A frame crossed
-that way **and** down a flank by something else is one the engine refuses
-outright: `UnsupportedConfigurationException: Expected 1 hierarchical ports,
-but found only 0`, thrown from `LayerSweepCrossingMinimizer` while it sweeps
-into the frame, and the whole board draws nothing. It cost two runs of the
-2026-09-18 evaluation batch their picture. Measured here on the smallest board
-that reaches it — `WSGI server` into a `Flask app` frame, the framed method
-with a sibling inside and a pair out to `Request context` — by mutating the
-faces of the frame's three boundary ports over all sixty-four combinations:
+Section 26 gave a relationship with a sister the face it travels for a
+crossing. A frame crossed that way **and** down a flank by something else is
+one the engine can refuse outright:
+`UnsupportedConfigurationException: Expected 1 hierarchical ports, but found
+only 0`, thrown from `LayerSweepCrossingMinimizer` while it sweeps into the
+frame, and the whole board draws nothing. It cost two runs of the 2026-09-18
+evaluation batch their picture.
 
-- **The frame's ports are refused by combination, not one at a time.** Two
-  ports on one face the reading runs along, together with one on a flank,
-  is refused; every other combination of the three is accepted. Three on one
-  such face is refused; three on flanks is not, and that is how every crossing
-  was made before section 26.
-- **Which flank makes no difference.** Near and far are refused alike, so the
-  far flank section 26 keeps for a pair into a frame does not rescue this.
+### What is refused
+
+Measured on the graph the renderer builds for the shape the owner now holds —
+`WSGI server` into a `Flask app` frame, the framed method with a sibling
+inside it and a pair out to `Metrics extension`, under the first flank rule
+with the title on top — with the pair's shared corridor split back into a port
+each, and nothing changed but the `elk.port.side` of the frame's three
+boundary ports. Sixty-four combinations, the tuple being (the route in, the
+first of the pair out, the second):
+
+| tuple              | answer                        |
+| ------------------ | ----------------------------- |
+| NORTH, NORTH, WEST | Expected 1 hierarchical ports |
+| NORTH, NORTH, EAST | Expected 1 hierarchical ports |
+| NORTH, WEST, NORTH | Expected 1 hierarchical ports |
+| NORTH, EAST, NORTH | Expected 1 hierarchical ports |
+| WEST, SOUTH, SOUTH | Expected 1 hierarchical ports |
+| EAST, SOUTH, SOUTH | Expected 1 hierarchical ports |
+
+The other fifty-eight are laid out. Reading them:
+
+- **It is the assignment, not the faces.** `SOUTH, SOUTH, WEST` and
+  `SOUTH, WEST, SOUTH` are both accepted while `WEST, SOUTH, SOUTH` is
+  refused, though the three hold the same faces between them. Which route
+  takes which face is the variable, so no rule counting a frame's ports can
+  state the condition, and none is claimed here.
+- **Which flank makes no difference.** `WEST, SOUTH, SOUTH` and
+  `EAST, SOUTH, SOUTH` refuse alike, so the far flank section 26 keeps for a
+  pair into a frame does not rescue this.
+- **The order the ports are listed in makes no difference.** The same six
+  refuse with the pair's two ports pushed onto the frame either way round.
+- **The set is a property of the graph, not of the rule.** The same six refuse
+  on a smaller hand-built board of the same shape; a different board of the
+  same shape is a different measurement, and this table is evidence that the
+  configuration the renderer reaches is refused, not a predicate to test a
+  frame against.
 - **The engine is right to refuse.** It expects the dummies in the frame's own
   first and last layers to be accounted for by the frame's ports on that one
   side; a flank port is on neither. The Rust engine panics where upstream ELK
   throws, from the same function.
-- **The order a pair reads in is a flank's own, whichever flank.** Bundling
-  the pair back down a flank draws it crossing itself on both, so the frame
-  rule outranking the sister rule is not available either.
 
-What landed: such a frame is crossed straight through **once per face**, and
-the routes sharing a face there share the corridor. One port is never two on
-one face, so the frame is accepted; a pair through one corridor has nothing
-left to order, so it still reads through the frame in the order it leaves by
-and meets only at the single point it crosses. A frame nothing bundles down is
-untouched, so every drawing section 26 measured is unchanged.
+### What landed
 
-No vault board, variant or fixture holds two relationships between one ordered
-pair, so no crossing anywhere in the tree is straight and the rule cannot
-reach any of them: all fifteen vault boards, their eighteen variants and the
-four fixtures draw exactly as before.
+Such a frame is crossed straight through **once per face**: the routes sharing
+a face there share the corridor. One port is never two on one face, so the
+configuration above is unreachable, and a frame nothing bundles down keeps a
+port per crossing, so every drawing section 26 measured is unchanged.
+
+The trigger is deliberately wider than the table: a frame is treated as
+crowded as soon as it carries both a flank crossing and a straight one, which
+collapses some crossings the engine would have accepted separately. That is
+the price of not owning a predicate the engine does not publish.
+
+Sharing a corridor draws the sharers through one point, and the engine then
+draws them along one line on the way in or out: 84 units of one ink for the
+pair on the first preserved board, 418 on the second — a third of its page,
+where a reader saw a single line with a jog at each end. So a run two routes
+are drawn on top of each other along is **fanned apart** after the routes are
+placed and before they are rounded (`shared-runs.ts`), each onto its own lane
+at the engine's own parallel spacing, each keeping the side it approached from,
+and stepping out a lane again where another route is already drawn along the
+one it asked for. Every board in the tree measures zero overdrawn ink after
+it, the two preserved ones among them, and none of them gains a route through
+a card. A corridor is then what
+it always was — two lines a reader counts across — and never one line standing
+for two relationships.
+
+Two unrelated pairs leaving one crowded frame share that frame's corridor too,
+and a reader sees four lines converging on one point and fanning out again,
+not four lines through one point.
+
+### Measured and not kept
+
+**The frame rule outranking the sister rule.** Bundling the pair back down a
+flank draws it crossing itself: down the near flank as section 26 measured,
+and down the far flank too, which this task measured and the owner caught.
+No flank keeps the order of a pair leaving a frame.
+
+**Letting the route that bundles cross straight instead.** For a route _into_
+a frame the face it travels is the header face, and section 11 decided a
+crossing never runs across a title. That is why the route in is on a flank at
+all, and why the two kinds of crossing cannot simply be made one.
