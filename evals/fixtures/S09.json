@@ -1,5 +1,5 @@
 {
-	"$comment": "S03 with the memberships recorded, the parts bound, and an Overview view that keeps the app and the CLI but draws neither the contexts module nor the function inside it.",
+	"$comment": "S03's board with the memberships recorded, every part in the checkout bound to the file implementing it, and an Overview view that keeps the app and the CLI but draws neither the contexts module nor the function inside it, so `Request context push` is the one request-lifecycle member the view leaves out. The development server is werkzeug's, outside the checkout, so it is `external` and carries no binding.",
 	"registerRepo": true,
 	"policy": {
 		"groups": {
@@ -34,7 +34,23 @@
 						"kind": "function",
 						"parent": "Flask app",
 						"groups": ["request-lifecycle", "wsgi-layer"],
-						"responsibility": "full_dispatch_request through finalize_request",
+						"responsibility": "Flask.full_dispatch_request: preprocesses, dispatches to the view, then finalizes",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Finalize request",
+						"kind": "function",
+						"parent": "Flask app",
+						"groups": ["request-lifecycle"],
+						"responsibility": "Flask.finalize_request: makes the response, then post-processes it",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Process response",
+						"kind": "function",
+						"parent": "Flask app",
+						"groups": ["request-lifecycle"],
+						"responsibility": "Flask.process_response: runs after_request functions and saves the session",
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
 					{
@@ -48,7 +64,15 @@
 						"kind": "function",
 						"parent": "CLI",
 						"groups": ["cli-startup"],
-						"responsibility": "flask run: load the app and start the development server",
+						"responsibility": "flask run: loads the app, then serves it",
+						"binding": { "repo": "$FLASK", "path": "src/flask/cli.py" }
+					},
+					{
+						"name": "App loader",
+						"kind": "function",
+						"parent": "CLI",
+						"groups": ["cli-startup"],
+						"responsibility": "ScriptInfo.load_app: imports the module and returns the application",
 						"binding": { "repo": "$FLASK", "path": "src/flask/cli.py" }
 					},
 					{
@@ -70,6 +94,11 @@
 						"kind": "module",
 						"responsibility": "Opens and saves the signed cookie session",
 						"binding": { "repo": "$FLASK", "path": "src/flask/sessions.py" }
+					},
+					{
+						"name": "Development server",
+						"kind": "external",
+						"responsibility": "werkzeug run_simple serves the loaded application"
 					}
 				],
 				"edges": [
@@ -79,13 +108,35 @@
 						"from": "Request context push",
 						"to": "Session interface",
 						"kind": "call",
-						"label": "open_session"
+						"label": "open_session",
+						"description": "RequestContext.push opens the session while it binds the request"
+					},
+					{ "from": "Dispatch", "to": "Finalize request", "kind": "call", "label": "rv" },
+					{
+						"from": "Finalize request",
+						"to": "Process response",
+						"kind": "call",
+						"label": "response"
 					},
 					{
-						"from": "Run command",
-						"to": "Flask app",
+						"from": "Process response",
+						"to": "Session interface",
 						"kind": "call",
-						"label": "loads the app and serves it with werkzeug run_simple"
+						"label": "save_session"
+					},
+					{ "from": "Run command", "to": "App loader", "kind": "call", "label": "info.load_app()" },
+					{
+						"from": "Run command",
+						"to": "Development server",
+						"kind": "call",
+						"label": "run_simple(host, port, app)"
+					},
+					{
+						"from": "Development server",
+						"to": "WSGI entry",
+						"kind": "call",
+						"label": "environ, start_response",
+						"description": "run_simple calls the application object, whose __call__ hands the request to wsgi_app"
 					}
 				],
 				"views": [
@@ -94,7 +145,14 @@
 						"grammar": "architecture",
 						"scope": {
 							"kind": "selection",
-							"nodes": ["Flask app", "WSGI entry", "Dispatch", "CLI"]
+							"nodes": [
+								"Flask app",
+								"WSGI entry",
+								"Dispatch",
+								"Finalize request",
+								"Process response",
+								"CLI"
+							]
 						}
 					}
 				]
