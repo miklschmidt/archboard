@@ -51,7 +51,7 @@ recipe names.
 2. **Claim a board that already exists** when the work runs to several writes
    ([Claims](#essentials)).
 3. **Read the configured vocabulary and the boards the vault already holds**
-   ([Vocabulary](#essentials), [Reads](#essentials), the `drillDown` row).
+   ([Vocabulary](#essentials), [Reads](#essentials), the [`drillDown` row](#everything-the-code-shows)).
 4. **Gather the source context**: read the code the request names and follow
    it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
 5. **Decide the parts**: the level, the subject, which parts hold which as
@@ -189,24 +189,29 @@ board needs all of it.
    `from` is the part whose body makes it and `to` is the part whose body runs,
    inside its `parent`. A part drawn with children (a module, class or
    component holding its functions, methods or child components) is a
-   container whatever its kind, and is an endpoint only when the source
+   container whatever its kind: a call into it lands on the child whose body
+   runs, not on the container, which is an endpoint only when the source
    addresses the whole module; giving an existing part children moves every
    relationship that landed on it to the child whose body runs. That is where
    a relationship lands, not who takes part in an exchange; a flow's columns
-   are chosen at step 7. For a return or a non-call relationship, state the directional claim in words and make the endpoints
-   follow it (for example, A returns to B, A reads from B, A emits an event B
+   are chosen at step 7. For a return or a non-call relationship, state the
+   directional claim in words and make the endpoints follow it (for example, A returns to B, A reads from B, A emits an event B
    handles, A resolves a promise B awaits, A passes B a callback or props, or
    A depends on B). Sibling calls are not a chain: when `apply()` calls
    `validate()` and then `persist()`, the source shows two relationships from
    `apply`, and none from `validate` to `persist`, whatever order they run in.
    For a sequence, check each step's order, return, branch and repeat count
-   against the source as well
-   ([create a sequence diagram](references/create-sequence.md)).
+   against the source as well (a branch or a loop of unknown length in a
+   `note`, a count the source fixes in `repeat`;
+   [create a sequence diagram](references/create-sequence.md)).
 4. **Turn the request into checks.** Before the payload, write down what a
    correct answer must show: the board and the `version` you read; the target
-   variant (a write naming none edits the current architecture;
-   [edit](references/edit.md) says how one names a proposal); the ids and fields that must survive; and for a view, its exact `grammar`
-   and `scope` selectors: naming `edges` isolates those relationships and
+   variant (a write naming none edits the current architecture, so a
+   proposal-only request lands nothing there;
+   [propose and compare](references/propose-compare.md) and
+   [edit](references/edit.md) say how a write names a proposal); the ids and
+   fields that must survive; and for a view, its exact `grammar` and `scope`
+   selectors: naming `edges` isolates those relationships and
    draws no other, while naming `nodes` alone draws every relationship among
    them. After the write, read the answer against that list.
 
@@ -225,7 +230,7 @@ you used and which you judged not to apply.
 | `external`     | a node                             |
 | `binding`      | a node                             |
 | `containment`  | a node (`parent`)                  |
-| `relationship` | an `edge`                          |
+| `relationship` | a relationship (`edge`)            |
 | `traffic`      | a relationship                     |
 | `emphasis`     | a relationship                     |
 | `repeat`       | a flow step                        |
@@ -335,6 +340,8 @@ propose) reads each recipe it needs, in the order the request runs them.
 - Reuse an existing detail board: link it with `drillDown` on a part the board
   draws anyway, never duplicating its parts. A node whose only reason to exist
   is the link is a button, and a diagram has no buttons.
+- Use the configured vocabulary and levels; extend `config.yaml` only when the
+  request is about vocabulary ([Vocabulary](#essentials)).
 - Fewer, truer parts: every node has a responsibility the source supports.
 
 ## When to read more

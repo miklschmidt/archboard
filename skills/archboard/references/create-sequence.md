@@ -42,7 +42,8 @@ a comparison, a view and a group inspection read.
    a batch of a known size, a literal list of candidates tried in turn), on a
    `self` step as readily as on a call to another column: the example below
    tries two candidate documents in one `self` step with `repeat: 2`. A `note`
-   stating a fixed count in prose leaves the `repeat` out. A loop whose length
+   that states the count in prose does not replace the `repeat`: the step
+   carries the `repeat`, with a note beside it if needed. A loop whose length
    depends on data is one step with a `note` that says so; use `note` for a
    branch or a caveat too.
    Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
