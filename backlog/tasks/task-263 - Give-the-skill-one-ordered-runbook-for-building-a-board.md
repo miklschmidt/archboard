@@ -1,11 +1,11 @@
 ---
 id: TASK-263
 title: Give the skill one ordered runbook for building a board
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:51'
-updated_date: '2026-09-18 11:56'
+updated_date: '2026-09-18 12:00'
 labels: []
 dependencies: []
 references:
@@ -26,12 +26,12 @@ The 2026-09-18 batch shows the skill states what to author but never sequences i
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 SKILL.md carries one numbered runbook covering both diagram types from empty request to verified board, one sentence per step
-- [ ] #2 The runbook names, at its own step, when to gather source context, when to decide the parts, when to map relationships, when to run semantic compare, when to run check, and which steps or spans of steps to repeat
-- [ ] #3 A step directs the author to look in the source for fixed-count repetition and participant self-calls before writing a flow, and S07 passes flow.repeat and flow.message-kinds in a later batch
-- [ ] #4 A step models the subject a second way and states why the chosen shape was kept
-- [ ] #5 A final step has the author read its own board back and simplify it before reporting
-- [ ] #6 The catalogue and evidence material is reached from a runbook step rather than standing as separate prose an author may pass over
+- [x] #1 SKILL.md carries one numbered runbook covering both diagram types from empty request to verified board, one sentence per step
+- [x] #2 The runbook names, at its own step, when to gather source context, when to decide the parts, when to map relationships, when to run semantic compare, when to run check, and which steps or spans of steps to repeat
+- [x] #3 A step directs the author to look in the source for fixed-count repetition and participant self-calls before writing a flow, and S07 passes flow.repeat and flow.message-kinds in a later batch
+- [x] #4 A step models the subject a second way and states why the chosen shape was kept
+- [x] #5 A final step has the author read its own board back and simplify it before reporting
+- [x] #6 The catalogue and evidence material is reached from a runbook step rather than standing as separate prose an author may pass over
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -110,4 +110,25 @@ Where the subset fact lives, and which is authoritative: sequences-views-walkthr
 Scope of the earlier supersession, since two notes read as contradictory: commit 8d9a1530's note is right that column granularity alone cannot make flow.message-kinds deterministic — it cannot, and that half belongs to TASK-267. Commit 7bfc993f's note supersedes only the claim that an honest board and a self step are in competition; the subset fact dissolves that. What actually gives an author a self step on the fine-grained shape is the step-9 clause above.
 
 Also fixed: the recipe said chooseDoc 'is drawn inside' Setup block; chooseDoc is not a node of the worked payload at all, so it reads 'runs inside' again.
+
+Acceptance verification (structural checks run against the shipped file, not against intent).
+
+AC1: the runbook parses as 19 contiguously numbered steps, each with exactly one sentence-terminating period; SKILL.md lines 40-107. Both diagram types are authored in the walk, not delegated: steps 5-6 the parts and relationships, steps 7-9 the columns, the ordered exchange and the deciding step, step 13 the one payload including the data-flow view over the flow. The walk runs from an empty request (step 1 picks the workflow) to a verified board (step 14 reads the answer and looks at the picture, step 18 reads the board back).
+AC2: source context at step 4, the parts at step 5, relationships at step 6, semantic compare at step 15, archboard check at step 16, and the span to repeat named at step 17 ('Repeat steps 4 to 16').
+AC3, guidance half: step 9 directs the author to the source before writing a flow for the work a part does to decide what to do next, its own step with that part at both ends, carrying the count the source fixes. Checked for that half only; the measured half is pending the user's batch, see the final summary.
+AC4: step 11 models the subject a second way and keeps the shape whose advantage over the other the author can state in one line; step 19 reports that line.
+AC5: step 18 reads the board back with archboard semantic show and removes what it shows the question does not need, before step 19 reports.
+AC6: the catalogue is reached at step 10 and the four evidence rules at steps 4, 5, 6 and 12; 16 of the 19 steps carry a link, and every link target in SKILL.md resolves (13 targets checked, anchors and files).
+
+Checks: oxfmt --check clean on all four edited skill files; bun scripts/sync-skills.ts syncs both skills; bun test tests/system/cli/install-targets.test.ts 9 pass. No test file was changed by this task.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+SKILL.md now opens with the runbook: 19 numbered steps, one sentence each, that walk an author from an empty request to a board somebody can read, for either diagram type, and route to the recipes, the evidence rules and the catalogue rather than restating them. The material the 2026-09-18 batch showed authors passing over was never unreachable — every candidate run read the recipe that teaches repeat and message kinds — so the fix is sequencing and two passes the skill never had: step 11 models the subject a second way and keeps the shape whose advantage it can state, and step 18 reads the board back and simplifies it before step 19 reports. Step 9 carries what the one S07 run that passed both checks actually did: the work a part does to decide what to do next is its own step with that part at both ends, separate from the calls it makes per candidate, carrying the count the source fixes. Supporting changes: a flow's participants are a subset of the board's nodes (defined in sequences-views-walkthroughs.md, instructed at step 7), so an honest fine-grained board and a self step were never in competition; create-sequence.md carries one participant rule instead of two contradictory ones; all four --variant files agree that the command line wins and the write warns naming both.
+
+Verified structurally against the shipped file: 19 contiguous steps with one sentence-terminating period each, 16 carrying links, and all 13 link targets resolving. oxfmt --check clean on SKILL.md, create-sequence.md, propose-compare.md and sequences-views-walkthroughs.md; bun scripts/sync-skills.ts syncs both skills byte-identically into .agents/ and .claude/; bun test tests/system/cli/install-targets.test.ts 9 pass. No test file was touched.
+
+AC3 is checked for its guidance half only. The measured half — S07 passing flow.repeat and flow.message-kinds in a later batch — is pending the user's next evaluation batch, which is theirs to run by hand and was never startable from a session. What would count as evidence for the runbook when it comes: S07 runs that READ their guidance carrying both checks, since the one run that passed both in the 2026-09-18 batch is also the only run the report lists as not having read create-sequence.md, so improvement concentrated in guidance-reading runs is the signal and improvement in runs that skipped it is not. TASK-267 owns the other half: whether a self message is truthful for that exchange at all, and making the scenario, the rubric and the harness flow-with-steps check (which today asks only for sync and return) agree.
+<!-- SECTION:FINAL_SUMMARY:END -->
