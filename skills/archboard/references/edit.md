@@ -26,7 +26,11 @@ onto its subjects, write one batch at the version you read, check the answer.
      limit. Restate one whose endpoint moved with its id, in the same batch.
      Walk the catalogue for what you add; a removed part takes its
      relationships and walkthrough references with it.
-3. Write it as one batch, naming the `variant` when it is not the current one:
+3. Write it as one batch. `--variant <id|name>` says which variant it lands on,
+   as it does on `inspect`, `render`, `rasterize` and `adopt`; leave it out and
+   the change lands on the current variant. The batch's own `variant` field
+   says the same thing, so say it once: two different ones in one call is
+   refused naming both, and nothing is written.
 
 ```bash
 archboard semantic edit "Board store" --expect-version 3 --doing "routing write warnings through their own module" <<'JSON'
@@ -41,6 +45,13 @@ archboard semantic edit "Board store" --expect-version 3 --doing "routing write 
   "removeEdges": ["e7Kq2mP1"]
 }
 JSON
+```
+
+The same batch lands on a proposal by naming it, with nothing else about the
+call changing:
+
+```bash
+archboard semantic edit "Board store" --variant "Warnings as their own module" --expect-version 3 --doing "routing write warnings through their own module" < change.json
 ```
 
 The evidence for the two relationships: `editContent` (`edit-content.ts`)

@@ -6,11 +6,13 @@
 [--summary "<one line>"] --expect-version <n> --doing "..."` derives a draft
 from the current variant, or from the variant `--from` names. The draft carries
 every subject with its id, designates nothing, and is changed afterwards by
-ordinary `semantic edit` batches that name it in `variant`. Competing proposals
+ordinary `semantic edit <board> --variant "<name>"` batches. Competing proposals
 are two drafts off the same predecessor; a proposal on a proposal names its
 draft in `--from`.
 
-A batch that names no `variant` edits the current architecture. A change meant
+An edit that names no variant — neither `--variant` nor a `variant` in the
+batch — edits the current architecture, and naming two different ones is
+refused naming both, with nothing written. A change meant
 as a proposal that landed there is not repaired by editing the file, but by
 reading the family again and moving the meaning with ordinary writes.
 
