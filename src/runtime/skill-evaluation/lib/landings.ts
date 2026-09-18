@@ -77,12 +77,6 @@ interface VariantState {
 	landings: Landing[];
 	/** Parts this variant removed itself, which an edit carried down from above does not bring back. */
 	readonly removed: Set<string>;
-	/**
-	 * Parts this variant stated itself since it branched, as a node or as an end
-	 * of a relationship: a removal carried down from above leaves them, because
-	 * the store keeps a part a draft changed even when its predecessor removed it.
-	 */
-	readonly touched: Set<string>;
 	/** The variant it follows while it is a draft; an adopted variant follows nothing. */
 	parent: string | undefined;
 }
@@ -199,7 +193,6 @@ function addChild(state: VariantState, parent: string, key: string): void {
  */
 function stateNode(state: VariantState, key: string, parent: string | undefined): void {
 	state.removed.delete(key);
-	state.touched.add(key);
 	place(state, key, parent);
 }
 
@@ -271,24 +264,24 @@ function noteEdges(state: VariantState, handles: Map<string, string>, statement:
 }
 
 /**
- * One receiving relationship added to a variant: its ends become the variant's
- * own when it states it, and one carried down does not reach a removed end.
+ * One receiving relationship added to a variant; one carried down does not
+ * reach a draft that removed one of its ends.
  * @param state The variant.
  * @param landing The relationship.
  * @param carried Whether it was carried down from above.
  */
 function admit(state: VariantState, landing: Landing, carried: boolean): void {
-	if (!carried) state.touched.add(landing.from).add(landing.to);
-	else if (state.removed.has(landing.from) || state.removed.has(landing.to)) return;
+	if (carried && (state.removed.has(landing.from) || state.removed.has(landing.to))) return;
 	state.landings.push(landing);
 }
 
 /**
  * The stated removals: each part taken off with its containment and the
- * relationships that ended on it. A removal the variant states itself is
- * remembered, so a carried edit does not bring the part back; one carried down
- * from above is skipped on a draft that stated the part itself, which the store
- * keeps, and is not remembered, so the predecessor may bring the part back.
+ * relationships that ended on it, and remembered, so a carried edit does not
+ * bring it back. A removal carried down from above takes nothing away: the
+ * store keeps a part a draft changed, and keeps the whole draft when the
+ * removal would leave anything in it naming a part that is gone, and neither
+ * can be told from names alone.
  * @param state The variant.
  * @param handles The handles this step gave.
  * @param statement What reaches it.
@@ -298,24 +291,23 @@ function noteRemovals(
 	handles: Map<string, string>,
 	statement: Statement,
 ): void {
+	if (statement.carried) return;
 	const listed = statement.input[EDIT.removeNodes];
 	const removals: unknown[] = Array.isArray(listed) ? listed : [];
 	for (const removal of removals) {
 		const reference = referenced(removal);
-		if (reference !== undefined)
-			removeNode(state, keyOf(state, handles, reference), statement.carried);
+		if (reference !== undefined) removeNode(state, keyOf(state, handles, reference));
 	}
 }
 
 /**
- * One part taken off a variant with its containment and its relationships.
+ * One part a variant removes itself, taken off with its containment and its
+ * relationships.
  * @param state The variant.
  * @param key The part's key.
- * @param carried Whether the removal was carried down from above.
  */
-function removeNode(state: VariantState, key: string, carried: boolean): void {
-	if (carried && state.touched.has(key)) return;
-	if (!carried) state.removed.add(key);
+function removeNode(state: VariantState, key: string): void {
+	state.removed.add(key);
 	state.children.delete(key);
 	for (const children of state.children.values()) children.delete(key);
 	state.landings = state.landings.filter((one) => one.from !== key && one.to !== key);
@@ -345,7 +337,6 @@ function derived(source: VariantState, parent: string): VariantState {
 		children: new Map([...source.children].map(([key, kids]) => [key, new Set(kids)])),
 		landings: [...source.landings],
 		removed: new Set(),
-		touched: new Set(),
 		parent,
 	};
 }
@@ -382,8 +373,9 @@ function followers(family: Family, name: string): VariantState[] {
  * The store merges a carried edit field by field against what each draft last
  * agreed with, and settles disagreements when a resolution chooses a side.
  * This does not track either, so it errs in one direction only: toward
- * refusing. A carried statement may add to a draft but never takes away, and a
- * resolution takes everything the predecessor has. A spurious refusal is
+ * refusing. A carried statement may add to a draft but never takes away — a
+ * carried node never loses a parent and a carried removal removes nothing —
+ * and a resolution takes everything the predecessor has. A spurious refusal is
  * visible and safe; a missed landing is the silent failure this guard exists
  * to prevent.
  * @param families Every board so far, by name.
@@ -398,7 +390,6 @@ function applyStep(families: Map<string, Family>, step: RawFixtureStep): void {
 			children: new Map(),
 			landings: [],
 			removed: new Set(),
-			touched: new Set(),
 			parent: undefined,
 		};
 		families.set(step.board, { current, variants: new Map([[current, initial]]) });
