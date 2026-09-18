@@ -2,7 +2,7 @@
 	"$comment": "Everything one grader runner holds constant. A grader is chosen when grading runs, not when a batch's authors run, so nothing here is part of a batch's input digest; a grading session records the block it ran under. The version pins are exact and grading refuses a mismatch; `bun run eval:skill pin` rewrites them from the executables on PATH.",
 	"codex": {
 		"executable": "codex",
-		"version": "0.154.0",
+		"version": "0.155.0",
 		"model": "gpt-6-astra",
 		"reasoningEffort": "high",
 		"sandbox": "read-only",
@@ -15,7 +15,7 @@
 	},
 	"claude": {
 		"executable": "claude",
-		"version": "2.1.269",
+		"version": "2.1.276",
 		"model": "claude-opus-5",
 		"effort": "high",
 		"tools": ["Read", "Grep", "Glob"],
