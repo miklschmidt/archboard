@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
-updated_date: '2026-09-18 12:52'
+updated_date: '2026-09-18 13:11'
 labels: []
 dependencies: []
 references:
@@ -133,4 +133,26 @@ FOUND WHILE READING, worth keeping. assertBatchInputs (provenance.ts:108) hashes
 SEQUENCING STILL IN FORCE. evals/rubric.md is under review for TASK-271 and must NOT be edited. Nothing in steps 1-9 requires editing it: step 2 only READS its catalogue table. When the review closes, the rubric should gain a section defining the two axes and the departure fields, matching the field semantics the prompt states, so the prompt can point at it instead of defining it.
 
 EXACT NEXT STEP: write src/runtime/skill-evaluation/lib/skill.ts (plan step 1), then suite.ts (step 2), then annotate evals/evals.json (step 3). Steps 1-3 are one coherent commit and are independent of the grader changes.
+
+IMPLEMENTED, commit ed245de6. Resumed after the reboot from the plan and handover above; the plan held, with the changes below.
+
+WHAT LANDED, by AC.
+- AC#1: ExpectedFeatureSchema (suite.ts) requires `skill`: a non-empty list of `<file>#<heading-anchor>` citations into skills/archboard. All 68 features of evals.json carry them (an array, since most features rest on a SKILL.md rule and the reference that elaborates it). suiteProblems gains skillProblems: a citation whose file or heading the canonical skill lacks is refused by eval:skill check. The module is lib/citations.ts (renamed from the planned skill.ts, since it also holds the rubric sections the prompt points at). Anchors are headings the skill already has and links to itself; nothing was added to skills/**.
+- AC#2: a feature verdict is two shapes in the output schema: a pass with finding null, or missing/incorrect/not-applicable with finding {axis, did, taught, passage, gap}, passage a citation. A union rather than a refinement so the JSON Schema the grader decodes against carries the rule and a paid call cannot return an answer the harness then refuses. FiledVerdictSchema reads a verdict filed before findings existed.
+- AC#3: axis is conformance | truth | skill. The report counts findings by axis per arm (column findings conf./truth/skill), and a failed run's line names which features departed from the skill and which followed it and were contradicted by the source.
+- AC#4: semanticallyCompliant exempts a feature whose finding axis is skill; such runs are listed under a report section of findings about the skill, not among failures.
+- AC#5: kept, not removed. unprompted and behaviouralCompleteness measure what the request did not name, which a checklist cannot; they now grade against the skill's own catalogue, the closed set CATALOGUE_ROWS, which check holds equal to both SKILL.md's catalogue table and rubric.md's. Reason recorded in grader.ts's doc comment on UnpromptedFields.
+- AC#7: unprompted[].feature is z.enum(CATALOGUE_ROWS) on both the output and the filed schema.
+- AC#6: NOT verified and not claimable in-session. assertBatchInputs hashes rubric.md into the batch input digest, so TASK-271's rubric edits (and this task's evals.json change) have locked every saved batch, the 2026-09-18 one included, out of grading and reporting. What is verified structurally: a verdict can carry a departure with a located passage, a verdict filed in the old shape still parses and re-renders under the new report, and the report places each finding on its axis. The measured half — a previously unexplained failure explained by a named passage — is pending the user's next batch.
+
+THE GRADER IS GIVEN THE SKILL. gradeBatch stages skills/archboard into the shared grading workspace as skill/, once for both arms, and refuses a batch whose recorded provenance.candidate digest differs from the skill now on disk. Reasons in grading-run.ts's stageSkill doc comment and in the handover above (constant instrument; a per-run copy would let a grader sort runs by passage text).
+
+THE PROMPT NO LONGER PARAPHRASES THE RUBRIC. Removed: the unprompted gloss (the old whole-board walk and 'a run that wrote nothing returns an empty list and null' that TASK-271 contradicted), the not-applicable gloss, the traffic gloss, the source-first gloss and the visual gloss. The answer instructions (ANSWER_LINES) name each field and the rubric section that governs it, by heading; the headings live in RUBRIC_SECTIONS and check refuses a rubric that lacks one. grader.ts:45's doc comment now says null exactly when the walk had no subject. The report legends (report-markdown.ts's Completeness sentence, report-change.ts's two doc comments, report.ts's meanBehaviouralCompleteness comment) follow the settled walk scope of rubric.md at 46f30125: what the run added, the whole board on a create.
+
+SCOPE ADDED, from TASK-271's F6 at the coordinator's recommendation: report.md prints a 'Concerns the grader raised' section grouped by prefix (fixture:, tooling:, the rest), and report.json carries them as report.concerns. Taken because it sits inside AC#3 — findings the grader files have to be legible in the report a person reads — and the walk scope now sends more down the fixture: channel.
+
+LEFT OPEN, for the reviewer.
+1. The three axis definitions are in the prompt (ANSWER_LINES), as the contract of the new field, because rubric.md was read-only to this task throughout. It would be drift-free to give the rubric a section defining the axes and the finding fields and have the prompt point at it; that is a rubric edit and needs its owner's go-ahead.
+2. A skill finding is the grader's judgement that no passage supports a feature; the static check only guarantees that every citation resolves, not that it supports. The citations were chosen by reading SKILL.md and the references against each requirement; the ones I would look at first are S14 readability (the 8-20 node bound is the scenario's, KT only supports fewer truer parts), S08 config.before-board (WR's combined-workflow sentence), and S07 flow.message-kinds (TASK-267's dispute).
+3. Verified in-session: bun x tsc clean; lint (policy config on lib, baseline config on tests) clean on this module; eval:skill check ok; focused tests pass: grader-contract, citations, blinding-and-reports, report-completeness, report-change, claude-grader, claude-grading, grader-agreement, suite. The full gate was not run, per instructions.
 <!-- SECTION:NOTES:END -->
