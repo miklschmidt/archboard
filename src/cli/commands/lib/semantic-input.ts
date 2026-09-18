@@ -132,14 +132,16 @@ const SelectorSchema = z.string().trim().min(1);
  * `--variant` flag every variant command takes, and the stated change's own
  * `variant`. The flag wins — it is the part somebody typed, and refusing the
  * pair would turn a redundancy into a wasted call — but it does not win
- * quietly: when the two name different variants the write says which one it
+ * quietly: where the two are not written the same, the write says which one it
  * took and which it passed over, on standard error with every other warning,
  * leaving the machine-readable answer on stdout the board and nothing else.
  *
- * The comparison is of what was typed, not of what it resolves to: a flag
- * naming a variant by id and a stated change naming the same variant by name
- * are two spellings this cannot tell apart, and saying so costs a line rather
- * than a write.
+ * What is compared is what was typed, because that is all there is here: the
+ * board is on the server, reading it to resolve an id against a name would be
+ * the extra call this exists to spare, and a read outside the lease could be
+ * stale before the write lands. So the line says what happened — the flag
+ * overrode the stated variant — rather than claiming the two are different
+ * variants, which two spellings of one variant would make untrue.
  * @param stated The stated change, as it arrived.
  * @param asked The variant the command line named, if any.
  * @returns The change to parse, and what is worth saying about it.
@@ -153,16 +155,16 @@ function targetedVariant(
 		return { stated: change, diagnostics: [] };
 	}
 	const inChange = change["variant"];
-	const agrees = typeof inChange === "string" && inChange.trim() === asked.trim();
+	const written = typeof inChange === "string" && inChange.trim() === asked.trim();
 	return {
 		stated: { ...change, variant: asked },
 		diagnostics:
-			inChange === undefined || agrees
+			inChange === undefined || written
 				? []
 				: [
-						`Warning: --variant "${asked}" and the stated change's \`variant\` ` +
-							`${typeof inChange === "string" ? `"${inChange}"` : describeJson(inChange)} name two ` +
-							`different variants. The command line wins, so this lands on "${asked}".`,
+						`Warning: --variant "${asked}" overrides the stated change's \`variant\` ` +
+							`${typeof inChange === "string" ? `"${inChange}"` : describeJson(inChange)}; ` +
+							`this lands on "${asked}".`,
 					],
 	};
 }

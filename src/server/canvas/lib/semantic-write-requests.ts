@@ -118,7 +118,8 @@ function usableBoard(
 			error:
 				`"${envelope.board}" is not a board a write can name: ` +
 				`${error instanceof Error ? error.message : "the name is not usable"}. ` +
-				"A write names the board; the variant it is about is stated inside the command.",
+				"A write names the board; the variant it is about is said with --variant, " +
+				"or in the stated change.",
 		});
 		return null;
 	}

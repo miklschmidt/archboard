@@ -255,11 +255,18 @@ const semanticEditContract = defineCommand({
 			failStated(stated);
 		}
 		const targeted = targetedVariant(stated, input.variant);
+		// Said here rather than carried out with the answer: a flag that overrode
+		// the stated variant is most worth hearing about when the write it aimed
+		// at does not come back, and an answer's diagnostics are only presented
+		// when there is an answer.
+		for (const line of targeted.diagnostics) {
+			context.diagnostic(line);
+		}
 		const edit = context.parse(VariantEditInputSchema, targeted.stated);
 		const written = await editSemanticBoardOnCanvas(input.name, edit);
 		return {
 			result: writeResult(written),
-			diagnostics: [...targeted.diagnostics, ...describedWrite(written)],
+			diagnostics: describedWrite(written),
 		};
 	},
 });
@@ -510,4 +517,8 @@ export {
 	semanticEditContract,
 	semanticBranchContract,
 	semanticShowContract,
+	// Where a write lands is this command's rule, kept with the rest of what a
+	// person types in `lib/semantic-input`, and settled by `semantic resolve` the
+	// same way. Named here because a module's tests reach it through a root file.
+	targetedVariant,
 };

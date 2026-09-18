@@ -342,7 +342,9 @@ describe("settling a proposal and adopting an architecture", () => {
 		const body = (await answer.json()) as { code?: string; error?: string };
 		expect(answer.status).toBe(400);
 		expect(body.code).toBe("BAD_BOARD_NAME");
-		expect(body.error).toContain("the variant it is about is stated inside the command");
+		// The refusal quotes the address it would not take, so a caller that built
+		// the name from two halves can see which one it sent.
+		expect(body.error).toContain(`addressing@${start.variants[0].id}`);
 
 		// And nothing was written: the board is where it was.
 		expect(JSON.parse(cli(["semantic", "show", "addressing"]).stdout).board.version).toBe(
