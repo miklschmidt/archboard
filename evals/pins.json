@@ -29,7 +29,7 @@
 	},
 	"codex": {
 		"executable": "codex",
-		"version": "0.154.0",
+		"version": "0.155.0",
 		"exec": "codex exec --json --skip-git-repo-check -C <checkout>",
 		"author": {
 			"model": "gpt-5.6-luna",
