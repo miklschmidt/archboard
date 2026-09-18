@@ -14,6 +14,7 @@ import {
 	CATALOGUE_ROWS,
 	CITATION_PATTERN,
 	RUBRIC_SECTIONS,
+	citesPassage,
 } from "@/runtime/skill-evaluation/lib/citations";
 
 /** Whether a grader answered the scenario it was given, or a checklist of its own. */
@@ -431,26 +432,85 @@ function checklistStanding(
 	return gaps.unmentioned.length > 0 && gaps.invented.length > 0 ? "off-checklist" : "answered";
 }
 
+/** An expected feature as findings are read against it: its name and the passages it cites. */
+interface CitedFeature {
+	readonly feature: string;
+	/** The `<file>#<heading-anchor>` passages the feature derives from; none for a checklist that cites nothing. */
+	readonly skill?: readonly string[];
+}
+
+/**
+ * A finding the grader put on the skill while naming a passage its feature
+ * cites. The scenario declares that passage teaches the feature, so "the
+ * skill never taught it" contradicts the scenario, and the finding is held
+ * against the run as a departure from the skill instead.
+ */
+interface ExcusedDeparture {
+	readonly feature: string;
+	readonly passage: string;
+	/** What the grader said the gap was, as it filed it. */
+	readonly gap: string;
+}
+
+/**
+ * The expected features a verdict answered with a finding, by their last
+ * answer, waivers left out.
+ * @param expected The scenario's checklist.
+ * @param verdict The grader's answer.
+ * @returns Each answered feature with the passages it cites.
+ */
+function foundFeatures(
+	expected: readonly CitedFeature[],
+	verdict: RunVerdict,
+): { readonly entry: RunVerdict["features"][number]; readonly cites: readonly string[] }[] {
+	const declared = new Map(expected.map((entry) => [entry.feature, entry.skill ?? []]));
+	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry]));
+	// A waiver is surfaced as a waiver, whatever axis its finding names.
+	return [...answered.values()].flatMap((entry) => {
+		const cites = declared.get(entry.feature);
+		return cites === undefined || entry.verdict === "not-applicable" ? [] : [{ entry, cites }];
+	});
+}
+
+/**
+ * The skill-axis findings whose passage the feature itself cites: the
+ * grader called untaught what the scenario declares that passage teaches.
+ * @param expected The scenario's checklist.
+ * @param verdict The grader's answer.
+ * @returns Each such finding, in answer order.
+ */
+function excusedDepartures(
+	expected: readonly CitedFeature[],
+	verdict: RunVerdict,
+): ExcusedDeparture[] {
+	return foundFeatures(expected, verdict).flatMap(({ entry, cites }) =>
+		entry.finding?.axis === "skill" && citesPassage(cites, entry.finding.passage)
+			? [{ feature: entry.feature, passage: entry.finding.passage, gap: entry.finding.gap }]
+			: [],
+	);
+}
+
 /**
  * The findings a verdict states about a scenario's features, by the authority
  * each answers to. A feature the grader answered twice counts once, by its
- * last answer, as compliance reads it.
- * @param expected The scenario's checklist.
+ * last answer, as compliance reads it. A skill-axis finding naming a passage
+ * the feature cites counts as conformance: the scenario says that passage
+ * teaches it, so the grader cannot excuse the run by calling it untaught.
+ * @param expected The scenario's checklist, with each feature's citations.
  * @param verdict The grader's answer.
  * @returns The features carrying a finding on each axis.
  */
 function findingsByAxis(
-	expected: readonly { readonly feature: string }[],
+	expected: readonly CitedFeature[],
 	verdict: RunVerdict,
 ): Readonly<Record<FindingAxis, string[]>> {
-	const declared = new Set(expected.map((entry) => entry.feature));
-	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry]));
-	// A waiver is surfaced as a waiver, whatever axis its finding names.
-	const found = [...answered.values()].filter(
-		(entry) => declared.has(entry.feature) && entry.verdict !== "not-applicable",
-	);
+	const excused = new Set(excusedDepartures(expected, verdict).map((entry) => entry.feature));
+	const found = foundFeatures(expected, verdict).map(({ entry }) => ({
+		feature: entry.feature,
+		axis: excused.has(entry.feature) ? "conformance" : entry.finding?.axis,
+	}));
 	return byAxis((axis) =>
-		found.filter((entry) => entry.finding?.axis === axis).map((entry) => entry.feature),
+		found.filter((entry) => entry.axis === axis).map((entry) => entry.feature),
 	);
 }
 
@@ -458,15 +518,13 @@ function findingsByAxis(
  * Whether a run passed semantic compliance: every expected feature passed, or
  * failed only on the skill's account. A feature the skill never teaches is a
  * finding about the skill, so the run that did what the skill taught is not
- * failed for it; it is reported apart instead.
- * @param expected The scenario's checklist.
+ * failed for it; it is reported apart instead. A skill finding naming a
+ * passage the feature cites is not on the skill's account (`findingsByAxis`).
+ * @param expected The scenario's checklist, with each feature's citations.
  * @param verdict The grader's answer.
  * @returns True only when nothing is missing, incorrect, waived or unmentioned on the run's own account.
  */
-function semanticallyCompliant(
-	expected: readonly { readonly feature: string }[],
-	verdict: RunVerdict,
-): boolean {
+function semanticallyCompliant(expected: readonly CitedFeature[], verdict: RunVerdict): boolean {
 	const gaps = checklistGaps(expected, verdict);
 	const onTheSkill = new Set(findingsByAxis(expected, verdict).skill);
 	const answered = new Map(verdict.features.map((entry) => [entry.feature, entry.verdict]));
@@ -487,6 +545,7 @@ export {
 	checklistGaps,
 	byAxis,
 	checklistStanding,
+	excusedDepartures,
 	FINDING_AXES,
 	findingsByAxis,
 	graderPrompt,
@@ -494,6 +553,8 @@ export {
 	semanticallyCompliant,
 	visualStandingOf,
 	type ChecklistStanding,
+	type CitedFeature,
+	type ExcusedDeparture,
 	type FindingAxis,
 	type GraderBrief,
 	type GraderOutput,

@@ -14,6 +14,7 @@ import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
 import {
 	byAxis,
 	type ChecklistStanding,
+	type ExcusedDeparture,
 	type FindingAxis,
 	type RunVerdict,
 	type VisualStanding,
@@ -35,8 +36,10 @@ import { changeOf, type QualityChange } from "@/runtime/skill-evaluation/lib/rep
 import { CATALOGUE_ROWS } from "@/runtime/skill-evaluation/lib/citations";
 import {
 	concernsOf,
+	excusedDeparturesOf,
 	skillDisagreementsOf,
 	type ConcernKind,
+	type ExcusedDepartureOnRun,
 	type RaisedConcern,
 	type SkillDisagreement,
 } from "@/runtime/skill-evaluation/lib/report-findings";
@@ -100,6 +103,12 @@ interface RunRecord {
 	 * hold at all: the grader's error, counted apart from every axis.
 	 */
 	readonly uncited: readonly string[];
+	/**
+	 * The skill-axis findings naming a passage their feature cites. Each is
+	 * counted under conformance in `findings`, since the scenario declares the
+	 * passage teaches the feature; these say what the grader filed instead.
+	 */
+	readonly excusedDepartures: readonly ExcusedDeparture[];
 }
 
 /** How far a grader's answer kept to the scenario's checklist. */
@@ -215,6 +224,11 @@ interface Report {
 	 * disagreeing with itself, and the place a real failure could be excused.
 	 */
 	readonly skillDisagreements: readonly SkillDisagreement[];
+	/**
+	 * Findings the grader put on the skill while naming a passage the feature
+	 * cites, each counted as a departure from the skill and failing its run.
+	 */
+	readonly excusedDepartures: readonly ExcusedDepartureOnRun[];
 	/** Every concern the grader raised, by what it is about, so none is left only in the verdict files. */
 	readonly concerns: Readonly<Record<ConcernKind, readonly RaisedConcern[]>>;
 	readonly graderUsage: Usage | null;
@@ -540,6 +554,7 @@ function buildReport(
 		skippedGuidance: runs.filter((run) => (run.guidance?.missing.length ?? 0) > 0),
 		skillFindings: runs.filter((run) => run.findings.skill.length > 0),
 		skillDisagreements: skillDisagreementsOf(runs),
+		excusedDepartures: excusedDeparturesOf(runs),
 		concerns: concernsOf(runs),
 		graderUsage,
 		grader,
@@ -564,6 +579,7 @@ export {
 	type ChecklistAnswer,
 	type ComparisonRow,
 	type ConcernKind,
+	type ExcusedDepartureOnRun,
 	type GraderReport,
 	type RaisedConcern,
 	type SkillDisagreement,

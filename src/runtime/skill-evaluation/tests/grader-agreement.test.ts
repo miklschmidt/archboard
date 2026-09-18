@@ -61,6 +61,7 @@ function record(overrides: Partial<RunRecord> & { scores?: [number, number, numb
 		findings: { conformance: [], truth: [], skill: [] },
 		conformanceUnseen: [],
 		uncited: [],
+		excusedDepartures: [],
 		...rest,
 	};
 }

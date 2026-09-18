@@ -79,6 +79,7 @@ export {
 	NO_DELEGATION,
 	checklistGaps,
 	checklistStanding,
+	excusedDepartures,
 	findingsByAxis,
 	graderPrompt,
 	parseGraderOutput,

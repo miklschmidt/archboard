@@ -310,6 +310,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 				skillPackages: [path.join(job.checkout, "skills", "archboard"), job.frozenSkill],
 				batchRoot: job.batchRoot,
 				world: world.paths.world,
+				exists: fs.existsSync,
 			},
 		});
 		const guidance = guidanceStanding(

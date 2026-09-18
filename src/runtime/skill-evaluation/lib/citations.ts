@@ -187,6 +187,29 @@ function citationProblem(skillRoot: string, citation: string): string | null {
 }
 
 /**
+ * A citation in the one form two citations of the same passage share: its
+ * file path normalised (`references/./read.md` is `references/read.md`), its
+ * anchor as written, since the pattern already fixes an anchor's form.
+ * @param citation The citation.
+ * @returns Its comparable form.
+ */
+function canonicalCitation(citation: string): string {
+	const [file = "", anchor = ""] = citation.trim().split("#");
+	return `${path.posix.normalize(file)}#${anchor}`;
+}
+
+/**
+ * Whether a passage is one of the given citations.
+ * @param citations The citations a feature declares.
+ * @param passage The passage a finding names.
+ * @returns True when the passage is one of them.
+ */
+function citesPassage(citations: readonly string[], passage: string): boolean {
+	const wanted = canonicalCitation(passage);
+	return citations.some((citation) => canonicalCitation(citation) === wanted);
+}
+
+/**
  * The body lines of a document's catalogue table: the table whose header's
  * first cell is `Row`, wherever it sits in the document.
  * @param markdown The document.
@@ -262,6 +285,7 @@ export {
 	catalogueProblems,
 	catalogueRowsOf,
 	citationProblem,
+	citesPassage,
 	headingAnchor,
 	type CatalogueRow,
 };
