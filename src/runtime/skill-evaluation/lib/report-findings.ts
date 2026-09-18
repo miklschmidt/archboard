@@ -1,9 +1,11 @@
 // What a grader filed beyond its verdicts, gathered for the report a person
 // reads: the concerns it raised, grouped by what they are about, and the
 // features it called untaught by the skill on some runs of a scenario and
-// held against the run on others.
+// held against the run on others, and the findings it put on the skill while
+// naming a passage the feature cites.
 
 import type { Arm } from "@/runtime/skill-evaluation/lib/blind";
+import type { ExcusedDeparture } from "@/runtime/skill-evaluation/lib/grader";
 import type { RunRecord } from "@/runtime/skill-evaluation/lib/report";
 
 /**
@@ -30,6 +32,31 @@ interface RaisedConcern {
 	readonly scenario: string;
 	readonly repetition: number;
 	readonly text: string;
+}
+
+/** A skill finding on a passage its feature cites, with the run it was filed on. */
+interface ExcusedDepartureOnRun extends ExcusedDeparture {
+	readonly run: string;
+	readonly arm: Arm;
+	readonly scenario: string;
+	readonly repetition: number;
+}
+
+/**
+ * Every skill finding the runs carry on a passage its feature cites, in run order.
+ * @param runs The runs.
+ * @returns One entry per such finding.
+ */
+function excusedDeparturesOf(runs: readonly RunRecord[]): ExcusedDepartureOnRun[] {
+	return runs.flatMap((run) =>
+		run.excusedDepartures.map((entry) => ({
+			run: run.run,
+			arm: run.arm,
+			scenario: run.scenario,
+			repetition: run.repetition,
+			...entry,
+		})),
+	);
 }
 
 /**
@@ -99,8 +126,10 @@ function concernsOf(runs: readonly RunRecord[]): Readonly<Record<ConcernKind, Ra
 
 export {
 	concernsOf,
+	excusedDeparturesOf,
 	skillDisagreementsOf,
 	type ConcernKind,
+	type ExcusedDepartureOnRun,
 	type RaisedConcern,
 	type SkillDisagreement,
 };

@@ -238,3 +238,73 @@ test("a finding's passage is resolved against the run's own skill, and one the s
 		}
 	}
 });
+
+/**
+ * A finding that puts a feature on the skill, naming one passage.
+ * @param passage The citation.
+ * @returns The finding.
+ */
+function onTheSkill(passage: string) {
+	return { axis: "skill", did: "d", taught: "t", passage, gap: "the agent never opened it" };
+}
+
+test("a filed skill finding on a passage its feature cites is read back as a departure, without re-grading", () => {
+	const [first, second] = scenario.expectedFeatures;
+	const [cited] = first?.skill ?? [];
+	if (first === undefined || second === undefined || cited === undefined)
+		throw new Error("the scenario has fewer than two cited features");
+	const elsewhere = [
+		"SKILL.md#essentials",
+		"SKILL.md#everything-the-code-shows",
+		"references/read.md#answer-a-question-from-a-saved-board",
+	].find((passage) => !second.skill.includes(passage));
+	if (elsewhere === undefined) throw new Error("the second feature cites every candidate passage");
+	const filed = {
+		run: "run-0000000001",
+		features: [
+			{
+				feature: first.feature,
+				verdict: "incorrect",
+				evidence: "e",
+				reason: "r",
+				finding: onTheSkill(cited),
+			},
+			{
+				feature: second.feature,
+				verdict: "missing",
+				evidence: "e",
+				reason: "r",
+				finding: onTheSkill(elsewhere),
+			},
+			...scenario.expectedFeatures.slice(2).map((entry) => ({
+				feature: entry.feature,
+				verdict: "pass",
+				evidence: "e",
+				reason: "r",
+				finding: null,
+			})),
+		],
+		semanticCorrectness: 5,
+		architecturalTruth: 5,
+		readability: 5,
+		summary: "s",
+		concerns: [],
+	};
+	const batchRoot = batchWith(manifest({ arm: "candidate" }));
+	try {
+		const verdicts = graderLayout(batchRoot, "claude").verdicts;
+		fs.mkdirSync(verdicts, { recursive: true });
+		fs.writeFileSync(path.join(verdicts, "run-0000000001.json"), JSON.stringify(filed));
+		const [read] = readManifests(batchRoot);
+		if (read === undefined) throw new Error("no manifest was read");
+		const record = recordOf(batchRoot, loaded, read, "claude");
+		expect(record.semanticallyCompliant).toBe(false);
+		expect(record.findings.conformance).toEqual([first.feature]);
+		expect(record.findings.skill).toEqual([second.feature]);
+		expect(record.excusedDepartures).toEqual([
+			{ feature: first.feature, passage: cited, gap: "the agent never opened it" },
+		]);
+	} finally {
+		fs.rmSync(batchRoot, { recursive: true, force: true });
+	}
+});

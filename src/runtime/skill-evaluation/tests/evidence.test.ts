@@ -45,6 +45,7 @@ const CONTEXT = {
 		],
 		batchRoot: BATCH,
 		world: WORLD,
+		exists: (): boolean => true,
 	},
 };
 
@@ -448,6 +449,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		findings: { conformance: [], truth: [], skill: [] },
 		conformanceUnseen: [],
 		uncited: [],
+		excusedDepartures: [],
 		...overrides,
 	};
 }

@@ -2,14 +2,16 @@
 // carry. A verdict short of a pass says what the run did, what the skill told
 // it and where, and which authority the gap answers to; the report keeps a
 // departure from the skill apart from a board the source contradicts, and
-// never fails a run for an expectation the skill never taught. None of this
-// runs a model.
+// never fails a run for an expectation the skill never taught, unless the
+// grader says so of a passage the feature itself cites. None of this runs a
+// model.
 
 import { expect, test } from "bun:test";
 import {
 	CATALOGUE_ROWS,
 	FiledVerdictSchema,
 	buildReport,
+	excusedDepartures,
 	findingsByAxis,
 	graderPrompt,
 	NO_DELEGATION,
@@ -29,13 +31,22 @@ const EXPECTED = [
 
 const BARE = { evidence: "e", reason: "r" };
 
+/** A passage of the skill no expected feature of EXPECTED cites. */
+const UNCITED_BY_FEATURE = "SKILL.md#which-recipe";
+
 /**
- * A finding on one axis.
+ * A finding on one axis. A skill finding names, by default, a passage the
+ * feature does not cite, as the axis requires; every other one the passage
+ * the feature cites.
  * @param axis The authority it answers to.
+ * @param passage The passage it names.
  * @returns The finding.
  */
-function finding(axis: FindingAxis) {
-	return { axis, did: "d", taught: "t", passage: "SKILL.md#essentials", gap: "g" };
+function finding(
+	axis: FindingAxis,
+	passage = axis === "skill" ? UNCITED_BY_FEATURE : "SKILL.md#essentials",
+) {
+	return { axis, did: "d", taught: "t", passage, gap: "g" };
 }
 
 /**
@@ -128,6 +139,7 @@ function graded(
 		findings: findingsByAxis(EXPECTED, verdict),
 		conformanceUnseen: [],
 		uncited: [],
+		excusedDepartures: excusedDepartures(EXPECTED, verdict),
 	};
 }
 
@@ -231,6 +243,44 @@ test("the report counts findings by axis, lists findings about the skill apart, 
 		},
 	]);
 	expect(() => renderReportMarkdown(report)).not.toThrow();
+});
+
+test("a skill finding naming a passage its feature cites is a departure that fails the run, listed with the grader's gap", () => {
+	const excused = graded("run-00000000c1", "candidate", [
+		{ ...BARE, feature: "board.create", verdict: "pass", finding: null },
+		{
+			...BARE,
+			feature: "render.svg",
+			verdict: "incorrect",
+			finding: { ...finding("skill", "SKILL.md#essentials"), gap: "never opened it" },
+		},
+	]);
+	const untaught = graded("run-00000000c2", "candidate", [
+		{ ...BARE, feature: "board.create", verdict: "pass", finding: null },
+		{ ...BARE, feature: "render.svg", verdict: "missing", finding: finding("skill") },
+	]);
+	expect(excused.semanticallyCompliant).toBe(false);
+	expect(excused.findings).toEqual({ conformance: ["render.svg"], truth: [], skill: [] });
+	// A passage the feature does not cite leaves the finding on the skill.
+	expect(untaught.semanticallyCompliant).toBe(true);
+	expect(untaught.findings.skill).toEqual(["render.svg"]);
+	expect(untaught.excusedDepartures).toEqual([]);
+	const report = buildReport([excused, untaught], null);
+	const row = report.scenarios[0];
+	expect(row?.candidate.findings).toEqual({ conformance: 1, truth: 0, skill: 1 });
+	expect(row?.candidate.semanticFailures).toBe(1);
+	expect(report.skillFindings.map((run) => run.run)).toEqual(["run-00000000c2"]);
+	expect(report.excusedDepartures).toEqual([
+		{
+			run: "run-00000000c1",
+			arm: "candidate",
+			scenario: "S00",
+			repetition: 1,
+			feature: "render.svg",
+			passage: "SKILL.md#essentials",
+			gap: "never opened it",
+		},
+	]);
 });
 
 test("a waiver is not a finding, and a departure from a passage the run's own skill lacked is counted apart", () => {
