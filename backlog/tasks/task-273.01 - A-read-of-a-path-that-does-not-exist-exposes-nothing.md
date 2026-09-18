@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 18:10'
+updated_date: '2026-09-18 18:14'
 labels:
   - bug
 dependencies: []
@@ -57,4 +57,6 @@ Review round 1 fixed in c14a171e (first round's code is in a06612d4, committed t
 - Tests (tests/reaudit.test.ts): the five review probes, <W>/../ and quote-split relative escapes as other-run; missing path with ENOENT output clean; missing path whose output shows a read counts, in the classifier and through the report; malformed commands.json keeps the recorded count.
 - Batch 2026-09-18T14-01 re-reported into the scratchpad: contaminated none; per-run exposure identical to round 1 for all 90 runs; exactly the 11 runs differ from the saved report; comparison rows unchanged (architecture-create held, edit regressed, propose-compare improved, sequence-create improved, all primary improved). Saved report.md/json untouched.
 - Gate: lint, fmt:check, type-check green; test:modules 3336 pass 0 fail.
+
+Review round 2 fixed in 28f6d3bf: a script holding an assignment word, a $ or a backtick exempts no path (X=<B>/runs/base; ls $X; cat ${X}line/... now counts even with ls reporting the prefix missing); relative words resolve from the last absolute cd before them, falling back to the checkout (cd <W>/flask/src/flask && cat ../../README.md is clean; cd <W>/vault && cat ../../author.jsonl counts). Reviewer probe2 all as expected; the 11 real commands hold neither and stay exempt. Batch re-report: contaminated none, per-run exposure identical to round 1 for all 90 runs, report.md identical to the previous round, saved report untouched. Gate: lint, fmt:check, type-check green; test:modules 3337 pass 0 fail.
 <!-- SECTION:NOTES:END -->
