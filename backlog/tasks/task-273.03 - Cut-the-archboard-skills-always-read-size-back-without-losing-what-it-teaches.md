@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 17:58'
+updated_date: '2026-09-18 18:03'
 labels: []
 dependencies: []
 parent_task_id: TASK-273
@@ -70,4 +70,6 @@ Lever 3 (38c3733e), moved to the recipe of the workflow that needs it:
 - Reads essential, what compare reports (added/removed/changed/unchanged, fields moved, where a relationship or step lands, root refused) -> references/read.md step 3; Reads keeps the command and links it.
 
 Gate: fmt:check, test:modules (3334 pass), test:system (168 pass), test:repository (8 pass) green. lint and type-check fail only in the other workers' in-flight src/runtime/skill-evaluation files (reaudit.ts, reaudit.test.ts, run-manifest.test.ts), none touched here. Derived copies resynced (bun scripts/sync-skills.ts; diff -r clean).
+
+Review round 1 (commit below): create-sequence.md now says a note stating the count does not replace the repeat (the step carries the repeat, a note beside it if needed); Keep it true regains 'use the configured vocabulary and levels; extend config.yaml only when the request is about vocabulary' (links Vocabulary essential, which also states it); evidence rule 3 regains 'a call into it lands on the child whose body runs, not on the container' and '(a branch or a loop of unknown length in a note, a count the source fixes in repeat)'; evidence rule 4 regains 'so a proposal-only request lands nothing there' and links propose-compare.md as well as edit.md; runbook 3 links the drillDown row; Lands-on column says 'a relationship (edge)'. evals.json and rubric.md untouched. Size now 21,873 bytes (~5.5k tokens), still under the 22 KB target. eval:skill check ok; fmt:check, test:modules (3334), test:repository (8) pass; derived copies resynced.
 <!-- SECTION:NOTES:END -->
