@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 10:51'
-updated_date: '2026-09-18 11:38'
+updated_date: '2026-09-18 11:48'
 labels: []
 dependencies: []
 references:
@@ -82,4 +82,20 @@ Per check, not per union: flow.repeat is missing in 4 of 6 runs and flow.message
 The counter-evidence, recorded so the next batch is read honestly: run-9589d57705 is the single S07 run the report lists as NOT having read references/create-sequence.md, and it is the one run that carried both — a self step with repeat 2 and a note naming the wsgi.py/app.py fallback, graded 'the strongest startup run seen'. Every run that did read the recipe missed at least one check. So the batch does not show the material was unreachable; it shows that reading it did not help. That is consistent with the premise this task acts on — the skill stated what to author and never sequenced it — but it is not proof of it, and a later batch that improves S07 is evidence for the runbook only if the runs that improve are runs that read their guidance.
 
 AC#3's second half stays unverifiable from a session: skill evaluations are run by hand by the user.
+
+Participant granularity (commit 8d9a1530), and my judgement on how far guidance can take it.
+
+What the source justifies is not a property of the source. Keep a helper inside the part whose body runs it and its repeated work is that part's own step; give the helper a column and the same repetition is an ordinary call between columns. Both boards are true, and the skill licenses both on purpose: create-sequence.md says a repeat sits on a self step as readily as on a call to another column (TASK-256.06 AC#1), and a function the request names or the board draws is a participant (TASK-253.02). An author who never makes that choice makes it by accident while reading source, and learns which message kinds the exchange can hold only after the flow is written. run-d9445fe601 is the measured case: repeat 2 on a call to another column, flow.repeat passed, flow.message-kinds failed, and its board is not the worse one.
+
+So the walk now settles the columns before the messages, as its own step (7) ahead of the ordering step (8), the recipe holds the rule — the request's names and the parts the board already draws are columns; past those two it is a decision, made once, applied to every helper alike, and stated — and the report step carries the choice. The example stays archboard's own chooseDoc inside Setup block, never a scenario's.
+
+What this does NOT do, stated plainly rather than papered over: it cannot make S07's flow.message-kinds deterministic. That check asks for a self or async message 'where the source justifies it', and with prepare_import and locate_app given their own columns — which the prompt's own wording invites — the repetition is an ordinary call and nothing else on the path is a participant acting on itself, unless the author counts run_simple's blocking serve as a self step, which is a framing choice too. An author can therefore do everything the runbook asks, deliberately and reportably, and still fail that check. Making the scenario, the rubric and the harness's flow-with-steps outcome check (which today asks only for sync and return) agree with the shapes the skill licenses belongs to TASK-267; TASK-263 owns the guidance and stops here. I edited no evals/ file.
+
+Review round 2 (commit 7bfc993f).
+
+The granularity dilemma was false, and the fact that dissolves it is in the product and was in no document: every participant must name a node (buildFlow resolves them, and settled() refuses NODE_IN_FLOW when one is gone) but no rule makes a node a participant, so a flow's participants are a subset of the board's nodes. A board may draw a helper as a child of the part that runs it and the flow still keep that part as the one column; the honest board and the self step were never in competition. It now sits in three places, because three things pushed the other way: runbook step 7 states it where the columns are chosen; evidence rule 3 adds that landing a call on the child is where a relationship goes rather than who takes part in an exchange; and sequences-views-walkthroughs states it where participants are defined, which is where step 9 sends the author. Neither the containment rule (TASK-253.02) nor the repeat-on-either-shape sentence (TASK-256.06 AC#1) moved — the subset is what lets all three stand together. This supersedes my earlier note that the conflict could not be closed in the skill: it can, and TASK-267 still owns whether a self message is truthful for that exchange and whether the scenario, the rubric and the flow-with-steps outcome check agree.
+
+Also fixed: the --variant conflict is a Warning diagnostic the write emits, not something the machine-readable answer carries, so SKILL.md and propose-compare.md now use the phrasing edit.md and variants.md already use ('the command line wins, and the write warns naming both'). The claim on a board this walk creates is an instruction on the write step instead of a fact no step acts on, and step 19 releases a claim you took. drillDown moved to step 3, the listing step that finds the board. The temporary-directory rule for a picture and 'archboard repo add' reach the walk through the Verification bullet and evidence rule 2, which its steps already link.
+
+Citation correction: the per-feature verdicts I counted are in .skill-evals/2026-09-18T01-50-12-580Z/graders/claude/verdict-*.json (S07 in verdict-1, -2, -5, -14), not in report.json, whose S07 node holds only the arm summary. The figures in the earlier note stand: flow.repeat missing in 4 of 6, flow.message-kinds missing in 4 of 6, 5 of 6 missing at least one.
 <!-- SECTION:NOTES:END -->
