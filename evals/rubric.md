@@ -76,7 +76,9 @@ diagram looks plausible.
 - **Flows**: participants in column order; steps in sequence; `sync`, `async`,
   `return` and `self` as the source justifies; `self` exactly when both ends
   are the same node; `repeat` exactly where the source fixes the count, and a
-  data-dependent loop, a branch or a caveat is a `note`.
+  `note` for a branch, a caveat, or a loop over a list of unknown length — one
+  whose length data or an application's own registrations decide, such as the
+  hooks an application registered.
 - **Views**: `architecture` or `data-flow`; a selection that names
   relationships shows only those; one that names none shows every relationship
   among the kept nodes; endpoints, participants and containers come along.
@@ -96,20 +98,43 @@ diagram looks plausible.
 ## What the skill adds unprompted
 
 A request names the question, the level and a few names; knowing the product
-is the author's job. Judge what the run wrote against the source independently
-of what the request said, row by row in this vocabulary, which the skill's own
-catalogue uses:
+is the author's job. Judge what the run added against the source independently
+of what the request said, row by row in the vocabulary of the table below,
+which the skill's own catalogue uses.
+
+What the run added is the walk's subject, scoped as the skill scopes the
+author's own walk: walk the catalogue for what you add (references/edit.md), and
+a board you were asked to extend is not yours to silently repair. What the run
+added is:
+
+- on a board the run created, the whole board;
+- on a board it changed, every subject it created, and every existing subject
+  it gave a new value in any field — a relationship restated to carry traffic,
+  a node restated with a membership or a binding, a beat restated to name a
+  different part. A subject restated with every field unchanged, a removal,
+  and every subject the run never wrote add nothing.
+
+The rows that ask whether the board should hold a new exchange, subset or
+explanation — `flow`, `view`, `walkthrough` — are in the walk only on a board
+the run created; a flow, view or walkthrough the run did add is walked like
+any other subject, its steps for `repeat` and `note`. A row the source
+justifies only on inherited subjects is the fixture's omission: leave it out of
+`unprompted` and list it under concerns as `fixture:`, the way an inherited
+inaccuracy is listed below. A run that added nothing has no subject: a
+read-only request, an adoption, a write that only removed. Its `unprompted`
+list is empty and its behaviouralCompleteness is `null`; that is the rule, not
+a missing result.
 
 | Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `external`     | a caller, library, service, shell or hypothetical part lies outside the checkout                                                                                                                                                                                                                                                                                                         |
 | `binding`      | a file's body implements a part's responsibility                                                                                                                                                                                                                                                                                                                                         |
 | `containment`  | a part is defined inside another                                                                                                                                                                                                                                                                                                                                                         |
-| `relationship` | one body calls, reads, depends on or publishes to another; a return travelling back is a flow step, not a second relationship                                                                                                                                                                                                                                                            |
+| `relationship` | one body calls, renders, reads from, emits an event or message to, depends on or publishes to another; a return travelling back is a flow step, not a second relationship                                                                                                                                                                                                                |
 | `traffic`      | a relationship is on the forward path one request or event takes on every pass, a call every normal pass makes included even where an error could skip it; never teardown or cleanup, an error path, an optional hook most passes skip, startup, registration or a one-shot call                                                                                                         |
 | `emphasis`     | the board's question has a spine, the path its answer runs along: `hero` on that spine — about a third of the relationships, never past half — and `muted` on the lines that are only context. Emphasis is a property of a line and of nothing else; a node and a step carry none. A board with no spine (a catalogue of parts, a dependency map) marks nothing, which is correct for it |
 | `repeat`       | a step loops over a list the source fixes, or up to a retry limit                                                                                                                                                                                                                                                                                                                        |
-| `note`         | a step branches on a condition, loops over data, reads an environment variable                                                                                                                                                                                                                                                                                                           |
+| `note`         | a step branches on a condition, loops over a list of unknown length (data, or what an application registered), reads an environment variable, or carries a caveat                                                                                                                                                                                                                        |
 | `groups`       | a part's concern is a configured group id                                                                                                                                                                                                                                                                                                                                                |
 | `flow`         | the question is about an ordered exchange                                                                                                                                                                                                                                                                                                                                                |
 | `view`         | a reader wants one path, one container's internals or the two sides of a change alone                                                                                                                                                                                                                                                                                                    |
@@ -117,17 +142,8 @@ catalogue uses:
 | `drillDown`    | a part's internals already have a board in the vault                                                                                                                                                                                                                                                                                                                                     |
 | `description`  | a mechanism does not fit a one-line responsibility                                                                                                                                                                                                                                                                                                                                       |
 
-The walk's subject is what the run wrote: the whole board when the run created
-it, and on a board it changed, the subjects it added or restated. The skill
-sends the author round this catalogue before a write that creates or extends a
-board, and tells it that a board the author was asked to extend is not the
-author's to silently repair. A row the source justifies only elsewhere on the
-inherited board is therefore the fixture's omission: leave it out of
-`unprompted` and list it under concerns as `fixture:`, the way an inherited
-inaccuracy is listed below.
-
 Return `unprompted`: one entry per row the source justifies for what the run
-wrote, at the request's level, with verdict `used` (it is there, and it says
+added, at the request's level, with verdict `used` (it is there, and it says
 what the source says) or `missed` (it is absent and a reader of the code would
 have wanted it), evidence and a one-line reason. Leave out rows the source does
 not justify, and rows the request itself named (those are expected features).
@@ -137,16 +153,16 @@ a miss; the skill is expected to teach it. The skill also tells the author to
 say which rows it used and which it judged not to apply, so a run that names
 the rows it left out is obeying it: judge that judgement against the source — a
 row the source justifies is `missed` however well the author argued it away —
-and let the saying of it cost nothing. A run that created or extended nothing —
-a read-only request, an adoption, a removal that added nothing — returns an
-empty list.
+and let the saying of it cost nothing.
 
-Score **behaviouralCompleteness** (0-10): does the board use every semantic the
-source justifies to explain the behaviour of the modelled code, beyond what the
-request named? 10 has every justified row used; 5 has the parts and calls and
-little else; 0 stops at what the request spelled out when the source showed
-much more. Return `null` exactly when the walk had no subject: the run created
-and extended nothing.
+Score **behaviouralCompleteness** (0-10): does what the run added use every
+semantic the source justifies for it, beyond what the request named? Score the
+walk's subject, never the inherited rest of the board. 10: every row the source
+justifies for what the run added is used, which includes the case where the
+source justifies nothing beyond what the request named; 5: what it added
+carries its parts and calls and little else the source justified for it; 0: it
+stops at what the request spelled out when the source justified much more for
+what it added. Return `null` exactly when the run added nothing.
 
 ## What the run inherited
 
@@ -155,7 +171,7 @@ inaccuracy in them — a call that the source makes from somewhere else, a
 membership the source does not support — is not the author's doing and must
 not lower a feature verdict or a score when the request required keeping it.
 The same goes for what the inherited boards leave out: a row the source
-justifies on a part the run never touched is the fixture's omission. List both
+justifies only on inherited subjects is the fixture's omission. List both
 under concerns, each beginning with `fixture:`, so the harness can repair the
 fixture; judge the author on what the request asked it to change and on what it
 changed.
@@ -228,7 +244,9 @@ List anything the harness should hear about: a guardrail the deterministic
 checks did not catch, a direct write into the vault, a fabricated field the
 product owns (`schemaVersion`, ids, `version`, `lifecycle`, `adoptions`,
 `reconciliation`), or a final message that claims something the board does
-not hold.
+not hold. A final message saying which catalogue rows the author judged not to
+apply is what the skill asks for, and is no concern: where you disagree, the
+row is a `missed` entry in `unprompted`.
 
 Reading the installed skill, its references and the generated schemas is what
 the skill asks for. Reading the archboard product's own source (the checkout
