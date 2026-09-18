@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:10'
-updated_date: '2026-09-18 13:04'
+updated_date: '2026-09-18 13:07'
 labels: []
 dependencies: []
 references:
@@ -461,40 +461,80 @@ Whatever the policy below turns out to be, it applies only where the question is
 
 On a board that has a current variant, every policy opens it, exactly as today.
 
-### Which variants count: settled by the lifecycle words
+### Which variants count
 
-"Draft" below means lifecycle `draft`. A shelved variant is not a draft (CONTEXT.md,
-Shelved variant), so it never counts toward "the sole draft". The root question
-settles itself too. Shelving refuses a variant any draft still stands on
-(`shelve.ts`:119-122), so while any draft exists, its whole ancestor chain is
-unshelved. A board with no current variant also has no historical one, because
-only adoption makes history. So whenever a draft exists, the root is a draft.
+Two things are settled, each checked against every path into the state it
+depends on.
 
-One edge case remains, and it is part of the user's decision: a board where
-every variant is shelved. That means everything proposed was let go and nothing
-was built. None of the policies below opens anything there, unless the user
-wants a bare address to open a shelved variant.
+- **"Draft" means lifecycle `draft`.** A shelved variant is not a draft (CONTEXT.md,
+  Shelved variant), so it never counts toward "the sole draft".
+- **A board with no current variant has no historical one.** Only adoption writes
+  `historical` (`adopt.ts`:134), and only onto the variant that was current. Only
+  creation (`transitions.ts`:168) and adoption (`adopt.ts`:47) write `current`.
+  Nothing removes it: shelve refuses the current variant, and adopt only moves the
+  designation. So a board with no current variant was never adopted, and every
+  variant on it is a draft or shelved.
+
+**"The root draft" is NOT settled, and must be defined as part of the user's
+decision.** A correction to the previous version of this note: it argued that
+"whenever a draft exists, the root is a draft". That is false. `shelve.ts`:119-122
+refuses to shelve only a variant with a DIRECT draft child. That protects a chain
+of drafts that already exists, but it does not stop a draft being branched from a
+variant that is already shelved. Branching checks no lifecycle
+(`transitions.ts`:213-248), BRANCH_INSTEAD (`shelve.ts`:38-40) tells people to do
+exactly that, and `shelving.test.ts`:278 tests it. Every step of this sequence is
+allowed today on a board with no current variant:
+1. Create root R as a draft.
+2. Shelve R. No draft stands on it.
+3. Branch D1 and D2 from R.
+
+Drafts now exist, the root is shelved, and there are two drafts with no draft
+ancestor. "The root draft" therefore needs a definition. The natural one is **a
+draft with no draft ancestor**. Under it, one board can hold several root drafts,
+and a board may have no root variant that is a draft at all.
+
+Two residues belong to the user's decision:
+- **The all-shelved board.** Everything proposed was let go and nothing was built.
+  No policy below opens anything there, unless the user wants a bare address to
+  open a shelved variant.
+- **The shelved-root board.** The family's root was let go and later drafts were
+  branched from it. This is the likelier of the two, because BRANCH_INSTEAD
+  teaches it as the way to take a let-go proposal back up. Policies 1 and 4 treat
+  it like any other board. Under policies 2 and 3 it is where "the root draft"
+  can be several variants.
 
 ### WHAT the bare address opens: four policies, for the user
 
-1. **The sole draft.**
+In each policy below, "refuse" means refusing with the candidates named, never
+`no variant called ""`.
+
+1. **The sole draft.** Open the one draft; when there are several, refuse.
    - *Case:* covers the commonest planning board (one draft, just created) with the
      least rule, and never picks between alternatives on the author's behalf.
-   - *Cost:* undefined as soon as a second draft is branched. It then needs policy 4
-     behind it, and what a bare address opens changes the moment someone branches.
-2. **The root draft.**
-   - *Case:* always defined while any draft exists (see above), and stable: the
-     root never changes identity as drafts come and go.
-   - *Cost:* the root becomes the least interesting variant as soon as alternatives
-     are branched from it, which is the first thing a planning board tends to do.
-     A bare address would then open the starting point rather than any proposal
-     under discussion.
-3. **The cascade: the sole draft, else the root draft.**
-   - *Case:* always defined, and it opens the obvious variant in the one-draft case.
-   - *Cost:* what a bare address opens depends on the board's shape, and it shifts
-     when a draft is branched, shelved or adopted. That is tolerable, since
-     `current` already moves under an unchanged address, but it is a second moving
-     default for a reader to know about.
+   - *Cost:* stops opening anything as soon as a second draft is branched, so it
+     needs policy 4's refusal behind it. What a bare address opens then changes
+     the moment someone branches.
+2. **The root draft**, defined as the draft with no draft ancestor. When several
+   drafts have none (the shelved-root board), refuse.
+   - *Case:* on a board whose root is still a draft, it is unique, and it stays the
+     same as drafts are branched below it.
+   - *Cost:* that stability holds only while the root stays a draft. Shelving the
+     root and then branching from it changes the answer from one variant to a
+     refusal. And while it holds, the root is the least interesting variant once
+     alternatives have been branched, so a bare address opens the starting point
+     rather than any proposal under discussion.
+3. **The cascade:** the sole draft, else the unique root draft, else refuse.
+   - *Case:* opens the obvious variant in the one-draft case, and still opens
+     something on a many-draft board whose root is a draft.
+   - *Cost:* it is not always defined: it refuses on a shelved-root board with
+     several root drafts. What a bare address opens also depends on the board's
+     shape, and it shifts when a draft is branched, shelved or adopted. That is
+     tolerable, since `current` already moves under an unchanged address, but it
+     is a second moving default for a reader to know about.
+
+   For policies 2 and 3, a different tiebreak among several root drafts (the most
+   recently created, say) would be a variant of the policy, and would need the
+   user to name it. As written, both refuse.
 4. **Refuse, and require a named variant.**
    - *Case:* the most explicit policy. It never opens something by default, in the
      spirit of ADR 0023:111-112, which refuses a silent fallback for links. It
@@ -523,8 +563,27 @@ The round-1 reviewer recommended policy 3. Its argument:
 - It is cheap, because the bare address matters only at the handful of entry
   points listed under policy 4.
 
+Qualification added in round 3: policy 3 is not always defined. It refuses on a
+shelved-root board with several root drafts, so the first point holds everywhere
+except there.
+
 This is the reviewer's view, recorded here so it is not lost. It is not the plan's
 choice. The user decides, and the decision gates the implementation slice.
+
+**Re-check of the audit's other "never" claims, against every path into the state
+they rely on (round 3):**
+- **"Adopting on a board with no current variant is accepted as it stands."** The
+  audit argued this only for the root draft, which has no predecessor. It also
+  holds for a draft branched from a shelved variant. `unsettledAncestor`
+  (`propagate.ts`:75-90) refuses only an ancestor holding a `reconciliation`.
+  Shelving strips that standing (`letGo`, `shelve.ts`:146-148). A shelved variant
+  never acquires one again, because only a draft follows its predecessor.
+- **"`ALREADY_CURRENT` cannot trigger" and "`designated` demotes nothing"** both
+  rest on `board.current` being absent. On a board with no current variant it is
+  absent by definition, as the lifecycle facts above establish.
+- **CONTEXT.md's "every variant on it is a draft or shelved"** rests on the
+  no-historical fact above. That fact was checked against every writer of
+  `historical` and `current`, and it holds.
 
 **Regardless of which is chosen:** `pane-registry.ts`:286 must be fixed, because a
 reconnecting pane currently loses its board silently instead of refusing visibly.
