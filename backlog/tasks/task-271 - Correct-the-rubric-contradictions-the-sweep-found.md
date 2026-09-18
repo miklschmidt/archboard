@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:34'
-updated_date: '2026-09-18 12:53'
+updated_date: '2026-09-18 13:01'
 labels: []
 dependencies: []
 references:
@@ -107,4 +107,19 @@ ON THE CRITERION 1 JUDGEMENT CALL: the reviewer endorses scoping over exemption 
 NO MISFIRES FOUND beyond F1/F2: the emphasis cap retires the 14 unsatisfiable penalties without granting a blanket exemption (one hero of three on S01 is still within the cap and still markable), and the traffic exclusions make S07's startup board justify no traffic, with no scenario declaring traffic on a startup board.
 
 AC#8's digest claim verified TRUE and is the stronger guarantee: rubric is a LoadedSuite field (suite.ts:405, read at :503); inputDigest (provenance.ts:29-34) hashes the rubric bytes; assertBatchInputs (provenance.ts:107-119, called from grading-run.ts:40) refuses grading OR reporting on a mismatch; and boundByOlderPins cannot rescue an old batch because it recomputes the digest with today's rubric text.
+
+ROUND 2, addressing the review findings.
+
+F1 (must fix) - one definition, stated once, used everywhere. The authority is references/edit.md:27, "Walk the catalogue for what you add". What the run added: on a board it created, the whole board; on a board it changed, every subject it created and every existing subject it gave a new value in any field (a relationship restated to carry traffic, a node restated with a membership or binding, a beat restated to name a different part). A subject restated unchanged, a removal, and every subject never written add nothing. Why 'a new value in any field' rather than 'a new semantic': the grader has the before and after boards, so a changed field is checkable by comparison, while 'new semantic' would need a grader judgement about which fields count; and S10's traffic write is scored under it, as the reviewer required. Walking every row of a touched subject (not only the changed field) follows SKILL.md:147-148: a restated subject is restated whole, so the author did write all of its fields. The rows that ask whether the board should hold a new exchange, subset or explanation (flow, view, walkthrough) are walked only on a board the run created - this is what keeps S10's flow and view misses out - while a flow, view or walkthrough the run did add is walked like any subject, its steps for repeat and note. The old 'added or restated' paragraph, the 'removal that added nothing' clause and the 'created and extended nothing' null gloss are gone; the inherited section says 'only on inherited subjects' in the same words. NULL IN THE CURRENT SUITE: S06 (adopt) and S09 (read), and any run that only removes. S03, S10, S11 and S13 add values and are scored; a null there is a grader error. This is written in pins.json so nobody reads a missing figure as a regression; the rubric itself names kinds, not scenario ids, because it is the grader's instruction and should not couple to the suite.
+
+F2 (must fix) - behaviouralCompleteness now asks whether what the run added uses every semantic the source justifies for it, says to score the walk's subject and never the inherited rest, restates 10/5/0 against that subject (10 includes the case where nothing beyond the request was justified), and is null exactly when the run added nothing.
+
+F3 (taken) - the Concerns section says a final message naming the rows the author judged not to apply is what the skill asks for and no concern; a disagreement is a missed entry in unprompted. rubric.md:23-27 still untouched.
+F4 (taken) - the Flows bullet and the note row now use the skill's discriminator, a list of unknown length (SKILL.md:222), and name what decides it: data or an application's own registrations, such as the hooks an application registered.
+F7 (taken) - the note row carries 'a caveat' (SKILL.md:255); the relationship row lists calls, renders, reads from, emits an event or message to, depends on or publishes to (SKILL.md:251). Row keys unchanged: the table still has exactly the fourteen keys TASK-268 reads.
+F8 (taken) - the scope now sits above the table.
+F6 (noted, no change) - fixture: concerns are consumed by nothing and report.md prints no concerns section, so an inherited omission reaches a human only through report.json or the verdict files; the scoping will send more down that channel. Surfacing concerns in report.md belongs to whoever owns the report code (TASK-268's module).
+F5 - not mine; routed by the coordinator to TASK-268.
+
+Verified: eval:skill check passes (15/15/14); bun test src/runtime/skill-evaluation/tests 162 pass 0 fail; oxfmt clean on both files. Still no model evaluation run, so the effect on grading is unmeasured. grader.ts:250 and :45 still restate the pre-TASK-271 null gloss and whole-board walk; that remains with TASK-268.
 <!-- SECTION:NOTES:END -->
