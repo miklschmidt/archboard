@@ -1,11 +1,11 @@
 ---
 id: TASK-266
 title: Report what moved instead of stamping REGRESSED
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:02'
-updated_date: '2026-09-18 12:03'
+updated_date: '2026-09-18 12:23'
 labels: []
 dependencies: []
 references:
@@ -33,13 +33,13 @@ A related defect feeds it. Five of ninety runs failed semantic compliance becaus
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A change row names the axis and the size of what moved rather than a single word
-- [ ] #2 A fall in the success or visual-failure counts is reported separately from a fall in a grader mean, since only the first is a pass/fail count
-- [ ] #3 A grader mean must fall by more than the harness's own within-arm spread before it is called a regression, and the bar is derived from the batch rather than written in
-- [ ] #4 Per-scenario rows at three runs report deltas only; the regression verdict is drawn at the workflow and arm rows, where the run counts support it
-- [ ] #5 An improvement is reported as readily as a regression
-- [ ] #6 A row that cannot be assessed says which precondition failed: the arms are not comparable, or a picture was never opened
-- [ ] #7 A run whose verdict does not answer its scenario's checklist is set aside as ungradable and excluded from both comparisons, listed like a contaminated run, and is not counted as a semantic failure
+- [x] #1 A change row names the axis and the size of what moved rather than a single word
+- [x] #2 A fall in the success or visual-failure counts is reported separately from a fall in a grader mean, since only the first is a pass/fail count
+- [x] #3 A grader mean must fall by more than the harness's own within-arm spread before it is called a regression, and the bar is derived from the batch rather than written in
+- [x] #4 Per-scenario rows at three runs report deltas only; the regression verdict is drawn at the workflow and arm rows, where the run counts support it
+- [x] #5 An improvement is reported as readily as a regression
+- [x] #6 A row that cannot be assessed says which precondition failed: the arms are not comparable, or a picture was never opened
+- [x] #7 A run whose verdict does not answer its scenario's checklist is set aside as ungradable and excluded from both comparisons, listed like a contaminated run, and is not counted as a semantic failure
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -103,4 +103,40 @@ Decided and not changed. The per-axis mark on a single-scenario row is kept: AC#
 Correction to an earlier note: S08 does not sit inside its bar. It is unassessed, blocked by a contaminated run, exactly as S14 is; only S10 and S12 fall inside their bars.
 
 Re-verified: type-check clean, both lint lanes clean over src/runtime/skill-evaluation, oxfmt --check clean, 73 pass 0 fail over the seven affected test files. Commits: abc9b975, the slice inside ceea8546, e508be25, a604ef5c.
+
+Review round 2 addressed, and four things recorded for whoever reads a report next.
+
+The bar's guarantee is bounded, and the boundary is now guarded. One grader point on one run can never be called a move AT TWO PAIRS OR MORE: the pair holding that point puts it into the spread, leaving a bar of 1/root(m) against a delta of 1/m, and 1/m is below 1/root(m) only above one pair. A SINGLE PAIR CANNOT SET A BAR AT ALL — the spread of one difference is zero, so pairedNoise([-1]) is 0 and one pair a grader point apart was being called a regression. It is reachable without touching a setting: a run that wrote nothing has no completeness to score and its pair drops out, which left S06's completeness in the 2026-09-15 batch on one surviving pair, and a batch run at one repetition would put every scenario row there on every axis. An axis fewer than two pairs both scored is now left out the way an axis neither arm scored already was, so it prints n/a and a reader sees that one pair says nothing. S06's completeness cell in that batch is now n/a; every other replayed row is unchanged.
+
+The bar is deliberately conservative, and increasingly so as a row grows. The paired standard error is sd/root(m); using the range in place of the standard deviation inflates it by about 1.7 times at three pairs, 2.5 at six, 3.3 at twelve and 4.2 at forty-two. So the bar sits near 1.7 standard errors on a scenario row and about 4 on the arm total. That is the opposite error from the one this task removed and much the safer of the two, and the range needs no assumption about how the scores are distributed — but the consequence is real: AGGREGATE ROWS WILL HARDLY EVER FIRE ON A MEAN.
+
+Which means the aggregate word is in practice set by the pass/fail counts. On the 2026-09-17T16-31 batch the arm total reads regressed off visualFailed +2 out of 42 runs while every mean is flat, -0.02 to +0.05 against bars of 0.31 to 1.23. That follows from the criterion that keeps counts apart from means — a count is a tally of runs and any move in it is real — and the row prints what drove it, so it is not hidden. It is still the one place a whole-batch word turns on two runs, and a reader should know it.
+
+AxisChange.before and after are means over the COMMON SUPPORT, not the arm means of the same names. A pair is dropped where either run has no score on that axis, so on the 2026-09-17 arm total completeness pairs at 39 while each arm holds 42 runs, and those means differ from meanBehaviouralCompleteness on the arm lines. The markdown prints only the delta and the bar, so no reader of the report sees the difference, but a consumer of report.json would; the field now says so where it is defined.
+
+Commits this round: e22a57ef. Signed commits were unavailable while the system rebuilt, so this one is unsigned with --no-gpg-sign at the user's explicit direction; no git config was changed.
+
+Final validation. 160 pass, 0 fail over all 22 test files of src/runtime/skill-evaluation (timeout 300 inside a 6G memory-capped scope). Type-aware lint over src/runtime/skill-evaluation clean; baseline lint over its tests clean; oxfmt --check clean. bun run type-check reports two errors, both in src/transformers/semantic-renderer/lib/layout/shared-runs.ts from another worker's in-flight edit; nothing in skill-evaluation. The full gate was not run: four workers share this tree.
+
+Evidence per criterion, all from src/runtime/skill-evaluation/tests/report-change.test.ts unless named otherwise, and from the report regenerated from the saved runs of .skill-evals/2026-09-18T01-50-12-580Z.
+
+#1 'the bar a row is held to comes from its own runs' asserts the whole AxisChange: axis, before, after, delta, noise and direction. In the regenerated markdown S09's change line reads -1.00/0.00! under the correctness column and again under truth, naming which axis moved and by how much where the old report said only REGRESSED.
+#2 'a count that fell is reported apart from the means' asserts succeeded 3 to 2 and visualFailed 0 to 1 as their own entries with their own directions, and that the correctness mean held through the same row.
+#3 'the bar is the spread of the paired differences over the root of how many were averaged', 'one grader point on one run is never a move once two pairs can spread against it' and 'what a scenario scores in both arms cancels' own the arithmetic; nothing is written in, every number comes from the row's own runs. Replayed: the clean 2026-09-17 arm total holds where the first bar would have called it regressed on a tenth of a point, and in the 2026-09-18 batch S10's -0.33 and S12's -0.33 sit inside their bars while S09's -1.00 against a bar of 0.00 does not.
+#4 'the verdict is drawn where scenarios are aggregated' asserts the scenario row's standing is null while the workflow row and the arm total read regressed off the same runs. Every per-scenario change line of the regenerated report ends 'deltas only (one scenario)'.
+#5 'a rise past the bar is reported as readily as a fall' asserts an improvement through the same path, and 'a row's word says mixed' asserts a rise is not buried under a fall. S00 in the regenerated report reads succeeded +2 and correctness +1.33/1.15! where the old report said held.
+#6 'a row that cannot be compared says which precondition failed' asserts arms-not-comparable for unpaired arms and pictures-not-judged for a capture never opened. The regenerated S03 line ends 'unassessed: the arms are not comparable'.
+#7 'what counts as answering off the checklist is one rule, and it needs both halves' owns the rule over its four cases; 'a verdict answered off the checklist sets its run aside without calling its board wrong' asserts it is listed in ungradable, that its arm's semanticFailures stays 0, that the row's change and tokenChangePercent are both withheld, and that the run keeps its place among the failures with its own unopened picture. The regenerated report lists all five named runs under 'Runs set aside as ungradable' with the features each grader skipped and the names it answered instead, and S03's candidate semantic-failure count falls from 1 to 0.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The change rows of a batch report stamped one word — REGRESSED, held or unassessed — over a boolean OR of four grader means and two counts where the mean test was a bare less-than. At three runs a mean moves by a third for one grader point, so the word fired on the least evidence a batch can produce, never said which axis moved or by how much, and had no opposite: the 2026-09-18 batch showed six regressions and no wins, one of them a grader defect rather than the author.
+
+A row now reports what moved. The pass/fail counts are compared on their own, since a tally of runs is real however small its change. Each grader axis carries the two means, the delta and the bar it was held to, and the bar comes from the row's own runs: the two arms are paired by the scenario and repetition they share, so whatever a scenario scores in both arms cancels inside its pair, and the spread of what is left over the square root of the pairs is how far the mean of them can sit from the truth. A move counts only past that bar, and reads the same in either direction, so an improvement is reported as readily as a regression. The row's one word is drawn only where more than one scenario's runs stand behind it — the workflow rows and a new arm-total row — while a per-scenario row at three runs carries deltas only. A row that cannot be compared says which precondition failed. A verdict that skipped the scenario's declared features to grade names of its own is set aside as ungradable: it enters neither comparison, withholds its row the way a contaminated run does, is listed with the features it skipped and the names it answered instead, and is no longer counted as a semantic failure — though it keeps its place among the runs that did not succeed, since what its grader did says nothing about the picture it never opened.
+
+Verified over 160 tests, 0 failures, across all 22 test files of src/runtime/skill-evaluation, with the arithmetic — the noise bar, the direction, the standing, the off-checklist rule over its four cases — owned by focused unit tests rather than by matching report wording; both lint lanes and the formatter are clean. The 2026-09-18 report was regenerated from its saved run records without grading or a model call: S03 no longer regresses and its candidate semantic-failure count falls to 0, S00 shows succeeded +2 and correctness +1.33 against a bar of 1.15 where the old report said held, S09 is the one surviving mean-driven regression at -1.00 on two axes against a bar of 0.00, and the five named runs are listed as ungradable — exactly the five, with every other run of the ninety answering its checklist. Replaying the other saved batches confirmed the bar behaves as the row grows: the clean 2026-09-17 arm total holds, where the first calibration would have called a whole batch regressed over a tenth of a point. S14 could not be shown as an improvement, before this task or after: its candidate arm holds a contaminated run, so the row was already withheld.
+
+One distinct defect rode along at the user's direction rather than as a task of its own: readManifests and bundledRuns reached their files with a recursive readdirSync over the batch's runs directory, which preserves a whole world, transcript and codex home per run and runs to about 15 GB, and the walk drove this machine into swap. One lister now reads runs/<arm>/<scenario>/<repetition> by name and neither reader descends into a preserved world.
+<!-- SECTION:FINAL_SUMMARY:END -->
