@@ -6,7 +6,10 @@ A flow is an ordered exchange between nodes of one variant.
 
 - `participants` are the columns, in the order they are drawn: put the caller
   first and read left to right. Participants compare as a set; their order is
-  presentation intent.
+  presentation intent. Every participant names a node of that variant, and the
+  participants are a subset of them: a board draws a helper as a child of the
+  part that runs it and the flow keeps that part as the column, so the work it
+  does through its own children is one step with that part at both ends.
 - `steps` are messages in sequence, each `from` one participant `to` another
   with a `label` and a `kind`:
 
