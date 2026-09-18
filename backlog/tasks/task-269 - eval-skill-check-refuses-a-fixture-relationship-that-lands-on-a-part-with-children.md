@@ -3,7 +3,7 @@ id: TASK-269
 title: >-
   eval:skill check refuses a fixture relationship that lands on a part with
   children
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 11:51'
@@ -31,20 +31,27 @@ Two things the predicate has to get right, from the worker that just did the fix
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 bun run eval:skill check refuses a fixture whose call relationship targets a node that some node names as its parent, and names the fixture, the relationship and the offending target
-- [ ] #2 The rule is evaluated against each fixture step's accumulated content, so a child added by a later edit step is caught
-- [ ] #3 A relationship that addresses a whole module is still allowed, and what distinguishes it from a landing is stated where the rule lives
-- [ ] #4 The 15 fixtures as they stand today pass
+- [x] #1 bun run eval:skill check refuses a fixture whose call relationship targets a node that some node names as its parent, and names the fixture, the relationship and the offending target
+- [x] #2 The rule is evaluated against each fixture step's accumulated content, so a child added by a later edit step is caught
+- [x] #3 A relationship that addresses a whole module is still allowed, and what distinguishes it from a landing is stated where the rule lives
+- [x] #4 The 15 fixtures as they stand today pass
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Read suite.ts, leakage.ts and the fixtures; confirm how a fixture states containment (a node's `parent`) and a relationship (an edge's `from`/`to`/`kind`), and that only `new` and `edit` steps carry content.
-2. Add landingProblems to src/runtime/skill-evaluation/lib/suite.ts, called from suiteProblems beside leakageProblems. It walks each fixture's steps in order over the raw JSON (vault.ts imports suite.ts, so the placeholder resolver and the store cannot be reached from here without a cycle), accumulating per board: a canonical key per node that survives renames ($node(name) and a stated id both fold onto the name the node was created under), children by parent key, and every `call` relationship's target. After each step it reports any accumulated call relationship whose target has children, so a child added by a later edit step is caught, and each relationship is named once.
-3. State beside the rule why `call` alone: a call names the part that runs the code, which is never the container drawn around it, while a `dependency` or `extends` addresses the whole module and may point at a part with children.
-4. Own it in src/runtime/skill-evaluation/tests/suite.test.ts: a fixture whose call lands on a parent is refused; the same shape split across steps (edge first, child added by a later edit) is refused; a dependency onto the same parent passes; the 15 real fixtures pass (the existing suiteProblems assertion already covers this, add the loaded-suite case explicitly).
-5. Verify with the focused test file and `bun run eval:skill check`; do not run a model evaluation.
+1. A new module file, src/runtime/skill-evaluation/lib/landings.ts, sibling to leakage.ts. Its landingProblems is called from fixtureProblems in suite.ts, so it runs inside suiteProblems and loadSuite refuses on it, which covers eval:skill check. A separate file because suite.ts sits at the line cap.
+2. A relationship lands when it ends on a part that some part names as its parent. Every kind lands except `dependency`, which addresses the whole module. This mirrors the run check no-edge-to-container-with-children (which allows no kind at all) and the skill's whole-module meaning.
+3. Each fixture is walked over the names it writes, keeping per-variant state:
+   - identity across renames, with a reused name minting a new part;
+   - containment, placed after every stated node's names are folded (the store's second pass);
+   - handles within a step;
+   - a variant's own removals;
+   - branch, adopt and resolve;
+   - an edit carried into the drafts that follow its variant.
+   After each step every variant is checked, so a later step that adds a child is caught.
+4. Where the walk cannot reproduce the store, it errs toward refusing: a carried statement adds and never takes away, and a resolution takes everything the predecessor has. The one known miss is the merge of a part's name between a draft and its predecessor (R3). The applyStep doc names it, and TASK-272, laying fixtures through the real store, retires the model.
+5. Tests live in src/runtime/skill-evaluation/tests/landings.test.ts. Verification: the focused tests, eval:skill check, tsc, oxlint, oxfmt, and an end-to-end probe on a scratch copy of evals/.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -191,3 +198,28 @@ Verified, with every output captured whole:
 - eval:skill check: exit 0, 'suite ok: 15 scenarios, 15 fixtures, 14 coverage parts'.
 - End to end: a scratch copy of evals/ with a child added under JSON helpers in S01 makes loadSuite refuse. The refusal names S01, the step, the board and variant, both relationships and the child. evals/ itself was not touched.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+`bun run eval:skill check` now refuses a fixture that draws a relationship onto a part with children. That is the shape TASK-264 removed by hand after graders found it in a paid batch.
+
+**What changed**
+- src/runtime/skill-evaluation/lib/landings.ts (new) holds landingProblems. It is called from fixtureProblems in suite.ts, so loadSuite refuses on it.
+- Every relationship kind lands except `dependency`, the one kind that addresses a whole module. This matches the skill and the run check no-edge-to-container-with-children. The reason is stated on WHOLE_MODULE_KINDS.
+- The rule is evaluated after every step against per-variant state accumulated over the fixture's names, so a child added by a later edit is caught.
+
+**Limits**
+- The walk is an approximate model of the store, not the store.
+- Where it cannot reproduce the store's field-by-field merge or a resolution's choice, it refuses rather than misses: a carried statement adds and never takes away, and a resolution takes everything the predecessor has.
+- There is one known miss. When a draft and its predecessor disagree about a part's name, the walk can split the part in two, which hides a landing (R3 in the notes). The applyStep doc names this.
+- TASK-272 is the structural fix: it lays fixtures through the real store and retires this model.
+
+**Verification**
+- AC1: a scratch copy of evals/ with a child added under a called part in S01 makes loadSuite refuse. The refusal names S01, the step, the board and variant, both relationships and the child. The same refusal is also owned in landings.test.ts.
+- AC2: landings.test.ts refuses a child added by a later edit (by $node, by rename in either order, by handle, on drafts, after carry-down and resolution), and shows the first step alone is clean.
+- AC3: a dependency onto a part with children passes, and every other configured kind (read from DEFAULT_SEMANTIC_POLICY) is refused.
+- AC4: eval:skill check reports 'suite ok: 15 scenarios, 15 fixtures, 14 coverage parts'.
+- Tests: landings.test.ts and suite.test.ts, 23 pass. Each review round's cases fail against the commit before its fix.
+- tsc --noEmit -p ., oxlint (type-aware and baseline) and oxfmt are all clean, each with its whole output captured.
+<!-- SECTION:FINAL_SUMMARY:END -->
