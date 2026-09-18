@@ -218,8 +218,9 @@ interface Report {
 	/** Runs the grader found an expectation the skill never taught in: findings about the skill, not failures. */
 	readonly skillFindings: readonly RunRecord[];
 	/**
-	 * Features the grader filed as untaught by the skill on some runs of a
-	 * scenario and held against the run on others. Whether the skill teaches an
+	 * Features counted as untaught by the skill on some runs of a scenario and
+	 * against the run on others; a skill finding on a passage the feature
+	 * cites counts against the run (`excusedDepartures`). Whether the skill teaches an
 	 * expectation is a fact about the scenario, so a split is the grader
 	 * disagreeing with itself, and the place a real failure could be excused.
 	 */
