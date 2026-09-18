@@ -29,8 +29,8 @@ onto its subjects, write one batch at the version you read, check the answer.
 3. Write it as one batch. `--variant <id|name>` says which variant it lands on,
    as it does on `inspect`, `render`, `rasterize` and `adopt`; leave it out and
    the change lands on the current variant. The batch's own `variant` field
-   says the same thing, so say it once: two different ones in one call is
-   refused naming both, and nothing is written.
+   says the same thing, so say it once: where the two differ the command line
+   wins, and the write warns naming both.
 
 ```bash
 archboard semantic edit "Board store" --expect-version 3 --doing "routing write warnings through their own module" <<'JSON'
