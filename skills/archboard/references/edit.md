@@ -27,10 +27,9 @@ onto its subjects, write one batch at the version you read, check the answer.
      Walk the catalogue for what you add; a removed part takes its
      relationships and walkthrough references with it.
 3. Write it as one batch. `--variant <id|name>` says which variant it lands on,
-   as it does on `inspect`, `render`, `rasterize` and `adopt`; leave it out and
-   the change lands on the current variant. The batch's own `variant` field
-   says the same thing, so say it once: where the two differ the command line
-   wins, and the write warns naming both.
+   as it does on every variant command; leave it out and the change lands on the
+   current variant. The batch's own `variant` field says the same thing, so say
+   it once: the command line wins over it, and the write warns naming both.
 
 ```bash
 archboard semantic edit "Board store" --expect-version 3 --doing "routing write warnings through their own module" <<'JSON'
