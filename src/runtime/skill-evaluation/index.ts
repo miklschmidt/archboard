@@ -135,6 +135,7 @@ export {
 	type RunManifestFields,
 } from "@/runtime/skill-evaluation/lib/run-manifest";
 export {
+	answeredOffChecklist,
 	buildReport,
 	median,
 	mean,
@@ -143,11 +144,28 @@ export {
 	summarize,
 	type ArmSummary,
 	type BatchReport,
+	type ChecklistAnswer,
 	type ComparisonRow,
 	type GraderReport,
 	type Report,
 	type RunRecord,
 } from "@/runtime/skill-evaluation/lib/report";
+export {
+	armNoise,
+	axisChanges,
+	changeOf,
+	countChanges,
+	directionOf,
+	standingOf,
+	type AxisChange,
+	type CountChange,
+	type Direction,
+	type QualityAxis,
+	type QualityChange,
+	type QualityCount,
+	type Standing,
+	type UnassessedReason,
+} from "@/runtime/skill-evaluation/lib/report-change";
 export {
 	CAPTURE_TILE_SIDE_PX,
 	captureDeclared,

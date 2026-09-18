@@ -2,6 +2,11 @@ import { expect, test } from "bun:test";
 import {
 	buildReport,
 	sumUsage,
+	type AxisChange,
+	type ComparisonRow,
+	type CountChange,
+	type QualityAxis,
+	type QualityCount,
 	type RunRecord,
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/index";
@@ -50,8 +55,45 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		verdict,
 		semanticallyCompliant: true,
 		waivedFeatures: [],
+		checklist: { unmentioned: [], invented: [] },
 		...overrides,
 	};
+}
+
+/**
+ * One axis of a row's change, when the row was assessed at all.
+ * @param row The comparison row.
+ * @param axis The axis.
+ * @returns The change, or undefined.
+ */
+function axisOf(row: ComparisonRow | undefined, axis: QualityAxis): AxisChange | undefined {
+	return row?.change.assessed === true
+		? row.change.axes.find((entry) => entry.axis === axis)
+		: undefined;
+}
+
+/**
+ * One pass/fail count of a row's change, when the row was assessed at all.
+ * @param row The comparison row.
+ * @param measure The count.
+ * @returns The change, or undefined.
+ */
+function countOf(row: ComparisonRow | undefined, measure: QualityCount): CountChange | undefined {
+	return row?.change.assessed === true
+		? row.change.counts.find((entry) => entry.measure === measure)
+		: undefined;
+}
+
+/**
+ * Whether a row was assessed and nothing on it moved either way.
+ * @param row The comparison row.
+ * @returns True when every count and axis held.
+ */
+function held(row: ComparisonRow | undefined): boolean {
+	return (
+		row?.change.assessed === true &&
+		[...row.change.counts, ...row.change.axes].every((entry) => entry.direction === "held")
+	);
 }
 
 test("ungraded runs stay unsuccessful and cannot establish held quality or token savings", () => {
@@ -61,7 +103,7 @@ test("ungraded runs stay unsuccessful and cannot establish held quality or token
 	);
 	expect(report.scenarios[0]?.candidate.succeeded).toBe(0);
 	expect(report.scenarios[0]?.candidate.graded).toBe(0);
-	expect(report.scenarios[0]?.qualityRegressed).toBeNull();
+	expect(report.scenarios[0]?.change).toEqual({ assessed: false, reason: "pictures-not-judged" });
 	expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
 	expect(report.failures).toHaveLength(1);
 });
@@ -74,14 +116,17 @@ test("failed, partial and unmatched arms cannot claim an efficiency improvement"
 	]) {
 		expect(buildReport([record(), candidate], null).scenarios[0]?.tokenChangePercent).toBeNull();
 	}
-	expect(buildReport([record()], null).scenarios[0]?.qualityRegressed).toBeNull();
+	expect(buildReport([record()], null).scenarios[0]?.change).toEqual({
+		assessed: false,
+		reason: "arms-not-comparable",
+	});
 	expect(sumUsage([record().usage, null])).toBeNull();
 });
 
 test("complete passing arms report measured token changes and assessed quality", () => {
 	const report = buildReport([record(), record({ arm: "candidate" })], null);
 	expect(report.scenarios[0]?.candidate.succeeded).toBe(1);
-	expect(report.scenarios[0]?.qualityRegressed).toBe(false);
+	expect(held(report.scenarios[0])).toBe(true);
 	expect(report.scenarios[0]?.tokenChangePercent).toBe(0);
 });
 
@@ -97,7 +142,7 @@ test("legacy unaudited and contaminated arms keep raw measurements but withhold 
 		const row = buildReport([record(), candidate], null).scenarios[0];
 		expect(row?.candidate.meanSemanticCorrectness).toBe(9);
 		expect(row?.tokenChangePercent).toBeNull();
-		expect(row?.qualityRegressed).toBeNull();
+		expect(row?.change).toEqual({ assessed: false, reason: "arms-not-comparable" });
 	}
 });
 
@@ -107,7 +152,7 @@ test("equally sized partial arms cannot replace the batch's planned repetitions"
 	const report = buildReport(runs, null, planned);
 	expect(report.scenarios[0]?.baseline.succeeded).toBe(1);
 	expect(report.scenarios[0]?.baseline.planned).toBe(2);
-	expect(report.scenarios[0]?.qualityRegressed).toBeNull();
+	expect(report.scenarios[0]?.change).toEqual({ assessed: false, reason: "arms-not-comparable" });
 	expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
 	expect(report.workflows[0]?.tokenChangePercent).toBeNull();
 });
@@ -119,7 +164,7 @@ test("paired counts must represent the same scenario and repetition identities",
 	]) {
 		const report = buildReport([record(), candidate], null);
 		expect(report.workflows[0]?.tokenChangePercent).toBeNull();
-		expect(report.workflows[0]?.qualityRegressed).toBeNull();
+		expect(report.workflows[0]?.change).toEqual({ assessed: false, reason: "arms-not-comparable" });
 	}
 });
 
@@ -128,7 +173,7 @@ test("unstarted planned scenarios stay visible without comparison conclusions", 
 	const report = buildReport([], null, planned);
 	expect(report.scenarios[0]?.key).toBe("S01");
 	expect(report.scenarios[0]?.baseline.runs).toBe(0);
-	expect(report.scenarios[0]?.qualityRegressed).toBeNull();
+	expect(report.scenarios[0]?.change).toEqual({ assessed: false, reason: "arms-not-comparable" });
 	expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
 });
 
@@ -146,13 +191,14 @@ test("what the skill added unprompted is scored, its misses counted, and a drop 
 	const unjudged = buildReport([record(), record({ arm: "candidate" })], null).scenarios[0];
 	expect(unjudged?.candidate.meanBehaviouralCompleteness).toBeNull();
 	expect(unjudged?.candidate.missedUnprompted).toBe(0);
-	expect(unjudged?.qualityRegressed).toBe(false);
+	expect(held(unjudged)).toBe(true);
+	expect(axisOf(unjudged, "completeness")).toBeUndefined();
 	const readOnly = buildReport(
 		[record({ verdict: judged(null, 0) }), record({ arm: "candidate", verdict: judged(null, 0) })],
 		null,
 	).scenarios[0];
 	expect(readOnly?.candidate.meanBehaviouralCompleteness).toBeNull();
-	expect(readOnly?.qualityRegressed).toBe(false);
+	expect(held(readOnly)).toBe(true);
 	const dropped = buildReport(
 		[record({ verdict: judged(8, 1) }), record({ arm: "candidate", verdict: judged(5, 3) })],
 		null,
@@ -160,7 +206,7 @@ test("what the skill added unprompted is scored, its misses counted, and a drop 
 	expect(dropped?.baseline.meanBehaviouralCompleteness).toBe(8);
 	expect(dropped?.candidate.meanBehaviouralCompleteness).toBe(5);
 	expect(dropped?.candidate.missedUnprompted).toBe(3);
-	expect(dropped?.qualityRegressed).toBe(true);
+	expect(axisOf(dropped, "completeness")).toMatchObject({ before: 8, after: 5, delta: -3, direction: "regressed" });
 });
 
 test("runs that read the product source are counted per arm without failing or contaminating them", () => {
@@ -187,7 +233,9 @@ test("visual defects regress quality but keep the shared renderer's cost measure
 	for (const visual of ["fail", "incomplete", null] as const) {
 		const report = buildReport([record(), record({ arm: "candidate", visual })], null);
 		expect(report.scenarios[0]?.tokenChangePercent).toBe(visual === "fail" ? 0 : null);
-		expect(report.scenarios[0]?.qualityRegressed).toBe(visual === "fail" ? true : null);
+		expect(countOf(report.scenarios[0], "visualFailed")?.direction).toBe(
+			visual === "fail" ? "regressed" : undefined,
+		);
 		expect(report.scenarios[0]?.candidate.succeeded).toBe(0);
 		expect(report.failures).toHaveLength(1);
 	}
