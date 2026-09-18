@@ -34,6 +34,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { straightenJogs } from "@/transformers/semantic-renderer/lib/layout/jogs";
+import { fanOverdrawnRuns } from "@/transformers/semantic-renderer/lib/layout/shared-runs";
 import {
 	chooseReading,
 	foldAspect,
@@ -267,17 +268,19 @@ function drawingEdges(
 		parts.set(id, [...(parts.get(id) ?? []), part]);
 	}
 	const routes = straightenJogs(
-		new Map(
-			content.edges.map((edge) => [
-				edge.id,
-				leaveFromTitle(
-					edge,
-					simplify((parts.get(edge.id) ?? []).flatMap(pointsOf)),
-					content,
-					nodes,
-					header,
-				),
-			]),
+		fanOverdrawnRuns(
+			new Map(
+				content.edges.map((edge) => [
+					edge.id,
+					leaveFromTitle(
+						edge,
+						simplify((parts.get(edge.id) ?? []).flatMap(pointsOf)),
+						content,
+						nodes,
+						header,
+					),
+				]),
+			),
 		),
 		nodes.map((node) => node.box),
 	);

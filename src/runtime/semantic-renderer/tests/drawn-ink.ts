@@ -76,6 +76,20 @@ const SIDE_BY_SIDE = 24;
 const CORRIDOR_RUN = 400;
 
 /**
+ * How near two routes have to be drawn across their lane to be one line and
+ * not two: a hair, since a reader telling two lines apart is only asking to
+ * see two of them. Rounding in the drawn path is the whole of the tolerance.
+ */
+const OVERDRAWN = 1;
+
+/**
+ * How long a corner is: where two routes part at a turn they share the turn
+ * itself, and the renderer rounds a turn over at most fourteen units. A
+ * stretch no longer than this is two lines meeting, not one line drawn twice.
+ */
+const CORNER = 16;
+
+/**
  * Every straight run of every route, with the id of the route that drew it.
  * Bridges are removed: a bridge lifts one route over another and is not a
  * place either of them goes.
@@ -373,13 +387,37 @@ function sharedCorridorOf(drawing: RenderedDiagram): Corridor {
 	return { longest, widest, share: total === 0 ? 0 : beside / total };
 }
 
+/**
+ * The longest stretch over which two of the named routes are drawn as one
+ * line: parallel, and so close across their lane that a reader sees a single
+ * line rather than two. Where routes share a corridor a reader can still count
+ * across it; where they are overdrawn there is nothing to count.
+ * @param drawing The rendered board.
+ * @param ids The routes a reader must be able to tell apart.
+ * @returns The longest such stretch, zero when none of them is overdrawn.
+ */
+function overdrawnRun(drawing: RenderedDiagram, ids: readonly string[]): number {
+	const runs = runsOf(drawing).filter((run) => ids.includes(run[2]));
+	let longest = 0;
+	for (const run of runs) {
+		for (const other of runs) {
+			if (other[2] === run[2]) continue;
+			const shared = besideRun(run, other, OVERDRAWN);
+			if (shared !== undefined) longest = Math.max(longest, shared[1] - shared[0]);
+		}
+	}
+	return longest;
+}
+
 export {
 	type Corridor,
 	type Ink,
 	type Reach,
 	type Run,
+	CORNER,
 	SIDE_BY_SIDE,
 	fitOf,
+	overdrawnRun,
 	flankFanOf,
 	inkOf,
 	labelReachOf,
