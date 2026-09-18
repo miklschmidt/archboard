@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 17:49'
-updated_date: '2026-09-18 18:14'
+updated_date: '2026-09-18 18:22'
 labels:
   - bug
 dependencies: []
@@ -59,4 +59,6 @@ Review round 1 fixed in c14a171e (first round's code is in a06612d4, committed t
 - Gate: lint, fmt:check, type-check green; test:modules 3336 pass 0 fail.
 
 Review round 2 fixed in 28f6d3bf: a script holding an assignment word, a $ or a backtick exempts no path (X=<B>/runs/base; ls $X; cat ${X}line/... now counts even with ls reporting the prefix missing); relative words resolve from the last absolute cd before them, falling back to the checkout (cd <W>/flask/src/flask && cat ../../README.md is clean; cd <W>/vault && cat ../../author.jsonl counts). Reviewer probe2 all as expected; the 11 real commands hold neither and stay exempt. Batch re-report: contaminated none, per-run exposure identical to round 1 for all 90 runs, report.md identical to the previous round, saved report untouched. Gate: lint, fmt:check, type-check green; test:modules 3337 pass 0 fail.
+
+Review round 3 fixed in 7ca95ef3. Relative words are resolved from every directory the script could be in (the checkout plus every cd/pushd target so far, relative targets included, since a cd may fail, run in a subshell or be undone); bare . and .. are relative words. From the latest directory the full rule applies; from any other directory a path counts when it exists, or when the latest reading names nothing either. The reviewer's literal 'count if any resolution counts' would have re-opened the false positive: from the checkout, cd <W>/flask/src/flask && cat ../../README.md reaches the run directory with output showing a read, so it would count. With this rule the command is clean when <W>/flask/README.md exists, and it counts when neither reading finds the file and nothing shows it missing (in S03/3 the checkout holds README.rst, so probe3's README.md line reports other-run). probe3: all other lines other-run, alias misread with ENOENT null. Subshell, failed-cd, relative-cd and existing-README cases in tests/reaudit.test.ts. The other-run detection moved to lib/other-run.ts to keep classify.ts under the 600-line limit. Batch re-report: contaminated none, report.md identical to round 2, per-run exposure identical, the same 11 differ from the saved report, saved report untouched. Gate: lint, fmt:check, type-check green; test:modules 3337 pass 0 fail.
 <!-- SECTION:NOTES:END -->
