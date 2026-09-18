@@ -60,41 +60,45 @@ recipe names.
    ([evidence rule 2](#evidence-before-a-write)).
 6. **Map the relationships**, one line of evidence per `edge`
    ([evidence rule 3](#evidence-before-a-write)).
-7. **For a sequence, order the exchange**: the participants in column order,
-   and every message between them in the order the source runs them, returns
-   included ([create a sequence diagram](references/create-sequence.md)).
-8. **Read the source again for what a flow shows only on a second pass**: a
+7. **For a sequence, settle the columns before the messages** — which helpers
+   get one of their own and which stay inside the part whose body runs them —
+   on purpose, because that choice is what decides which message kinds the
+   exchange can hold ([create a sequence diagram](references/create-sequence.md)).
+8. **Order the exchange**: the participants in column order, and every message
+   between them in the order the source runs them, returns included.
+9. **Read the source again for what a flow shows only on a second pass**: a
    count the source fixes (a literal list of candidates tried in turn, a retry
    limit, a batch of known size) is that step's `repeat` rather than a `note`
    stating the count in prose, and a call a participant makes on itself is one
    step whose `from` and `to` are both that participant
    ([sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)).
-9. **Walk the catalogue** row by row against the source you read
-   ([everything the code shows](#everything-the-code-shows)).
-10. **Model the subject a second way** — cut at another level, another set of
+10. **Walk the catalogue** row by row against the source you read
+    ([everything the code shows](#everything-the-code-shows)).
+11. **Model the subject a second way** — cut at another level, another set of
     participants, a container drawn whole instead of opened, one flow where
     you had two — and keep the shape whose advantage over the other you can
     state in one line.
-11. **Turn the request into checks** and write them down before the payload
+12. **Turn the request into checks** and write them down before the payload
     ([evidence rule 4](#evidence-before-a-write)).
-12. **Write one payload** carrying the parts, the relationships, the flow, the
+13. **Write one payload** carrying the parts, the relationships, the flow, the
     views each reading wants — a `data-flow` view over a flow — and the
     walkthrough an ordering needs ([Writes](#essentials)).
-13. **Read the answer against those checks and look at the picture it draws**
+14. **Read the answer against those checks and look at the picture it draws**
     ([Verification](#essentials)).
-14. **Compare a proposal against the variant it came from**
+15. **Compare a proposal against the variant it came from**
     ([variants](references/variants.md)).
-15. **Run `archboard check`** after a vocabulary edit or an answer that
+16. **Run `archboard check`** after a vocabulary edit or an answer that
     carried `warnings` ([Vocabulary](#essentials)).
-16. **Repeat steps 4 to 15** for each further write the board still needs — a
+17. **Repeat steps 4 to 16** for each further write the board still needs — a
     flow over parts already drawn, a drill-down to a board you found, the
     correction the picture showed you — one requested change per write.
-17. **Read your own board back** with `archboard semantic show`, and spend one
+18. **Read your own board back** with `archboard semantic show`, and spend one
     more write removing what it shows that the board's question does not need
     ([authoring](references/authoring.md) for the removal keys).
-18. **Release the claim and report**: the line you kept at step 10, the
-    catalogue rows you judged not to apply, and any question this skill left
-    open ([Claims](#essentials), [Open questions](#essentials)).
+19. **Release the claim and report**: the line you kept at step 11, the columns
+    you settled at step 7, the catalogue rows you judged not to apply, and any
+    question this skill left open ([Claims](#essentials),
+    [Open questions](#essentials)).
 
 ## Essentials
 
