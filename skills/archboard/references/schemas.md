@@ -45,16 +45,15 @@ Each generated schema carries an `x-archboard.runtimeObligations` list. A
 payload that validates against the schema can still be refused by the CLI when
 it breaks one of them. The ones that matter while authoring:
 
-- Every authored reference must resolve against the variant being changed: edge
-  ends, flow participants, step ends, a newly stated view selection and beat
-  subjects name things that write can see, and a name that matches two nodes is
-  ambiguous rather than picked. A board-owned view can later select an id that
-  another variant does not hold; inherited ids are what make the view carry
-  across the variants where that subject still exists.
-- Within one variant, every node, relationship, flow, step, walkthrough and beat
-  shares one id namespace. Inherited ids deliberately repeat across variants so
-  that a proposal remains comparable with its parent. Board, variant and
-  board-owned view ids must not collide with those subject ids.
+- Every authored reference (edge ends, flow participants, step ends, a newly
+  stated view selection, beat subjects) must resolve against the variant being
+  changed, and a name that matches two nodes is ambiguous rather than picked. A
+  board-owned view can later select an id another variant does not hold;
+  inherited ids carry the view across the variants where that subject exists.
+- Within one variant, nodes, relationships, flows, steps, walkthroughs and beats
+  share one id namespace; inherited ids repeat across variants on purpose, so a
+  proposal stays comparable with its parent. Board, variant and board-owned view
+  ids must not collide with those subject ids.
 - Node containment and variant ancestry must both resolve and be acyclic.
 - Variant ids and names and board-owned view ids and names are unique. The
   schema version must be supported, exactly one variant is marked current, and
