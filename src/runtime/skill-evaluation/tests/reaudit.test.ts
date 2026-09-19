@@ -178,6 +178,15 @@ test("a path under no entry the batch holds reaches nothing, whatever the comman
 		`cat ${BATCH}/world/../runs/baseline/S11/2/run.json`,
 	])
 		expect(exposureOf(`bash -lc '${script}'`, "{}"), script).toBe("other-run");
+	// A word that is a whole program can join the missing name with anything.
+	for (const program of [
+		`python3 -c "import os; print(open(os.path.join('${BATCH}/nope', '..', 'runs/baseline/S11/2/run.json')).read())"`,
+		`node -e "console.log(require('fs').readFileSync(require('path').join('${BATCH}/world','..','runs/baseline/S11/2/run.json'),'utf8'))"`,
+	])
+		expect(exposureOf(program, "{}"), program).toBe("other-run");
+	// A shell call's arguments after its script are read too.
+	const argument = `sh -c 'cat "$1"' _ ${BATCH}/runs/baseline/S11/2/run.json`;
+	expect(exposureOf(argument, "{}")).toBe("other-run");
 });
 
 test("a script is read as the shell receives it, so quoting inside a -lc argument names its own world", () => {
