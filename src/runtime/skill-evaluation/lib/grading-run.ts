@@ -3,7 +3,11 @@
 // bundle, one grader session
 // that grades the runs in chunks and is resumed rather than restarted, and
 // the verdicts and the session's own usage written beside the runs. Which
-// program grades is chosen here, by name, through the runner seam.
+// program grades is chosen here, by name, through the runner seam. An answer
+// short of what the report holds a run to (every declared feature by its
+// name, none invented, an observation of every capture) is asked for once
+// more in the same session, and the retry is a call of the session like any
+// other, so its usage counts and its record says what was asked and mended.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -17,9 +21,25 @@ import {
 	FiledVerdictSchema,
 	GRADER_OUTPUT_JSON_SCHEMA,
 	graderPrompt,
-	parseGraderOutput,
+	type GraderBrief,
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
+import {
+	graderRetryPrompt,
+	settleRetry,
+	shortAnswers,
+	type ShortAnswer,
+} from "@/runtime/skill-evaluation/lib/grading-retry";
+import {
+	UsageSchema,
+	fileVerdict,
+	fileVerdicts,
+	readAnswer,
+	readSession,
+	semanticsOf,
+	type GradingCall,
+	type GradingSession,
+} from "@/runtime/skill-evaluation/lib/grading-session";
 import {
 	graderLayout,
 	prepareGraderLayout,
@@ -29,23 +49,14 @@ import type {
 	GraderCallOutcome,
 	GraderIdentity,
 	GraderRunner,
-	UsageSemantics,
 } from "@/runtime/skill-evaluation/lib/grader-runner";
 import { callUsageFrom, sessionUsage } from "@/runtime/skill-evaluation/lib/grader-usage";
 import { sequentially, type ProcessResult } from "@/runtime/skill-evaluation/lib/process";
-import {
-	fileImageReceipt,
-	imagesForRun,
-	type RunImages,
-} from "@/runtime/skill-evaluation/lib/grading-images";
+import { imagesForRun, type RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
 import { BATCH_SKILL_DIRECTORY } from "@/runtime/skill-evaluation/lib/citations";
 import { digestOf } from "@/runtime/skill-evaluation/lib/install";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
-import {
-	GRADER_NAMES,
-	type GraderName,
-	type LoadedSuite,
-} from "@/runtime/skill-evaluation/lib/suite";
+import type { GraderName, LoadedSuite } from "@/runtime/skill-evaluation/lib/suite";
 import { runDirectories } from "@/runtime/skill-evaluation/lib/run-manifest";
 import { executableVersion } from "@/runtime/skill-evaluation/lib/version";
 
@@ -64,47 +75,6 @@ interface GradingOptions {
 	readonly executable: string;
 }
 
-const UsageSchema = z.object({
-	input: z.number(),
-	cached: z.number(),
-	cacheWrite: z.number().nullable(),
-	output: z.number(),
-	reasoning: z.number().nullable(),
-	total: z.number(),
-});
-const CallSchema = z.object({
-	index: z.number(),
-	runs: z.array(z.string()),
-	promptFile: z.string(),
-	verdictFile: z.string(),
-	eventsFile: z.string(),
-	exitCode: z.number().nullable(),
-	/**
-	 * What the call reported, under the runner's semantics: a Codex resumed
-	 * thread reports its cumulative usage so far; a Claude call reports its own.
-	 */
-	usage: UsageSchema.nullable(),
-	/** This call's own usage. Absent in sessions recorded before TASK-212. */
-	callUsage: UsageSchema.nullable().optional(),
-	/** The runner's raw usage record, kept beside the normalized one. Claude only. */
-	raw: z
-		.object({ usage: z.unknown(), modelUsage: z.unknown(), costUsd: z.number().nullable() })
-		.nullable()
-		.optional(),
-	graded: z.array(z.string()),
-	error: z.string().nullable(),
-});
-type GradingCall = z.infer<typeof CallSchema>;
-const SessionSchema = z.object({
-	/** The runner's session identity: a Codex thread id or a Claude session id. */
-	threadId: z.string().nullable(),
-	/** Absent in sessions recorded before there was a choice; those are Codex. */
-	runner: z.enum(GRADER_NAMES).optional(),
-	version: z.string().optional(),
-	settings: z.record(z.string(), z.unknown()).optional(),
-	calls: z.array(CallSchema),
-});
-type GradingSession = z.infer<typeof SessionSchema>;
 const BundleHeadSchema = z.object({ run: z.string(), revision: z.string() }).passthrough();
 /** A filed verdict, read leniently: one filed before captures existed carries no visual answer. */
 const RunVerdictSchema = FiledVerdictSchema;
@@ -217,26 +187,6 @@ async function stageFlask(
 }
 
 /**
- * The session as last written, or a fresh one.
- * @param file The session file.
- * @returns The session.
- */
-function readSession(file: string): GradingSession {
-	return fs.existsSync(file)
-		? SessionSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")))
-		: { threadId: null, calls: [] };
-}
-
-/**
- * The usage semantics a recorded session was written under.
- * @param session The session.
- * @returns Cumulative for Codex and for sessions recorded before the choice.
- */
-function semanticsOf(session: GradingSession): UsageSemantics {
-	return session.runner === "claude" ? "per-call" : "cumulative";
-}
-
-/**
  * The runner chosen by name.
  * @param options The pass.
  * @returns The runner.
@@ -245,43 +195,6 @@ function runnerFor(options: GradingOptions): GraderRunner {
 	return options.grader === "claude"
 		? claudeGrader(options.loaded.graders.claude, options.executable)
 		: codexGrader(options.loaded.graders.codex, options.executable);
-}
-
-/**
- * Files each run's verdict from a call's structured answer.
- * @param layout The grading layout.
- * @param verdictFile The answer file.
- * @param asked The runs the call was asked to grade.
- * @param images Delivery evidence, only when the call completed successfully.
- * @returns What was filed, and what went wrong reading the answer.
- */
-function fileVerdicts(
-	layout: GraderLayout,
-	verdictFile: string,
-	asked: readonly string[],
-	images: readonly RunImages[] | null,
-): { readonly graded: string[]; readonly error: string | null } {
-	if (!fs.existsSync(verdictFile))
-		return { graded: [], error: "the grader returned no structured answer" };
-	try {
-		const output = parseGraderOutput(fs.readFileSync(verdictFile, "utf8"));
-		const graded = output.runs
-			.filter((verdict) => asked.includes(verdict.run))
-			.map((verdict) => {
-				const file = path.join(layout.verdicts, `${verdict.run}.json`);
-				fs.writeFileSync(file, `${JSON.stringify(verdict, null, "\t")}\n`);
-				fileImageReceipt(file, images?.find((run) => run.run === verdict.run) ?? null);
-				return verdict.run;
-			});
-		const missing = asked.filter((id) => !graded.includes(id));
-		return {
-			graded,
-			error:
-				missing.length === 0 ? null : `the grader returned no verdict for ${missing.join(", ")}`,
-		};
-	} catch (error) {
-		return { graded: [], error: error instanceof Error ? error.message : String(error) };
-	}
 }
 
 /**
@@ -307,47 +220,52 @@ function callError(
 		: `${name} exited ${result.exitCode ?? result.signalCode}; ${result.stderr.trim().split("\n").at(-1) ?? ""}`;
 }
 
+/** One call's own files, numbered by its place in the session. */
+interface CallFiles {
+	readonly prompt: string;
+	readonly verdict: string;
+	readonly events: string;
+}
+
 /**
- * Runs one grading call and files its verdicts.
+ * Sends one prompt to the session, starting it on the first call and
+ * continuing it on every other, and keeps the prompt and the stream.
  * @param options The pass.
  * @param runner The chosen runner.
  * @param layout The grading layout.
- * @param session The session, updated in place.
- * @param runs The anonymous ids to grade.
- * @returns The call record.
+ * @param session The session, its id taken from the first call.
+ * @param images The pictures offered on this call.
+ * @param prompt The prompt, given the brief's layout for this call.
+ * @returns The call's number, files and outcome.
  */
-async function gradeChunk(
+async function sendCall(
 	options: GradingOptions,
 	runner: GraderRunner,
 	layout: GraderLayout,
 	session: GradingSession,
-	runs: readonly string[],
-): Promise<GradingCall> {
+	images: readonly RunImages[],
+	prompt: (brief: GraderBrief["layout"]) => string,
+): Promise<{
+	readonly index: number;
+	readonly files: CallFiles;
+	readonly outcome: GraderCallOutcome;
+}> {
 	const index = session.calls.length + 1;
-	const images = runs.map((run) => imagesForRun(layout.workspace, run));
 	const files = {
 		prompt: path.join(layout.root, `prompt-${index}.md`),
 		verdict: path.join(layout.root, `verdict-${index}.json`),
 		events: path.join(layout.root, `grader-${index}.jsonl`),
 	};
-	const prompt = graderPrompt({
-		rubric: options.loaded.rubric,
-		layout: {
-			flask: "flask",
-			runs: "runs",
-			skill: SKILL_DIRECTORY,
-			verdictFile: path.basename(files.verdict),
-		},
-		revisions: { ...options.loaded.pins.flask.revisions },
-		runs,
-		continuing: session.threadId !== null,
-		images,
-		delivery: runner.delivery,
+	const text = prompt({
+		flask: "flask",
+		runs: "runs",
+		skill: SKILL_DIRECTORY,
+		verdictFile: path.basename(files.verdict),
 	});
-	fs.writeFileSync(files.prompt, prompt);
-	const outcome: GraderCallOutcome = await runner.call({
+	fs.writeFileSync(files.prompt, text);
+	const outcome = await runner.call({
 		workspace: layout.workspace,
-		prompt,
+		prompt: text,
 		schemaFile: layout.schema,
 		verdictFile: files.verdict,
 		images,
@@ -357,10 +275,29 @@ async function gradeChunk(
 	});
 	fs.writeFileSync(files.events, outcome.events);
 	session.threadId ??= outcome.sessionId;
-	const filing = fileVerdicts(layout, files.verdict, runs, outcome.delivered);
+	return { index, files, outcome };
+}
+
+/**
+ * Records a finished call in the session and writes the session.
+ * @param runner The chosen runner.
+ * @param layout The grading layout.
+ * @param session The session, updated in place.
+ * @param sent The call as sent.
+ * @param fields What the call asked and filed.
+ * @returns The call record.
+ */
+function recordCall(
+	runner: GraderRunner,
+	layout: GraderLayout,
+	session: GradingSession,
+	sent: Awaited<ReturnType<typeof sendCall>>,
+	fields: Pick<GradingCall, "runs" | "graded" | "retry"> & { readonly filingError: string | null },
+): GradingCall {
+	const { index, files, outcome } = sent;
 	const call: GradingCall = {
 		index,
-		runs: [...runs],
+		runs: fields.runs,
 		promptFile: files.prompt,
 		verdictFile: files.verdict,
 		eventsFile: files.events,
@@ -368,24 +305,129 @@ async function gradeChunk(
 		usage: outcome.usage,
 		callUsage: callUsageFrom(session.calls, outcome.usage, runner.usageSemantics),
 		raw: outcome.raw,
-		graded: filing.graded,
-		error: callError(runner.name, filing, outcome.failure, outcome.result),
+		graded: fields.graded,
+		error: callError(runner.name, { error: fields.filingError }, outcome.failure, outcome.result),
+		...(fields.retry === undefined ? {} : { retry: fields.retry }),
 	};
 	session.calls.push(call);
 	fs.writeFileSync(layout.session, `${JSON.stringify(session, null, "\t")}\n`);
+	return call;
+}
+
+/**
+ * Asks the session once more for the runs a call's answer fell short on,
+ * naming what each lacks, in the same session so the grader keeps what it
+ * read and saw. Never itself retried.
+ * @param options The pass.
+ * @param runner The chosen runner.
+ * @param layout The grading layout.
+ * @param session The session.
+ * @param of The call whose answer fell short.
+ * @param shorts Its short answers.
+ * @returns The retry's call record.
+ */
+async function retryShortAnswers(
+	options: GradingOptions,
+	runner: GraderRunner,
+	layout: GraderLayout,
+	session: GradingSession,
+	of: GradingCall,
+	shorts: readonly ShortAnswer[],
+): Promise<GradingCall> {
+	const runs = shorts.map((short) => short.shortfall.run);
+	const images = shorts.map((short) => short.offered);
+	const sent = await sendCall(options, runner, layout, session, images, (brief) =>
+		graderRetryPrompt(
+			{
+				rubric: options.loaded.rubric,
+				layout: brief,
+				revisions: { ...options.loaded.pins.flask.revisions },
+				runs,
+				images,
+				delivery: runner.delivery,
+			},
+			shorts.map((short) => short.shortfall),
+		),
+	);
+	const answer = readAnswer(sent.files.verdict);
+	const retried = shorts.map((short) => {
+		const settled = settleRetry(
+			short,
+			answer.runs.find((verdict) => verdict.run === short.shortfall.run),
+			sent.outcome.delivered,
+		);
+		if (settled.replacement !== null)
+			fileVerdict(layout, settled.replacement.verdict, settled.replacement.images);
+		return settled.record;
+	});
+	const call = recordCall(runner, layout, session, sent, {
+		runs,
+		graded: retried.filter((entry) => entry.outcome === "replaced").map((entry) => entry.run),
+		retry: { of: of.index, runs: retried },
+		filingError: answer.error,
+	});
 	options.log(
-		`call ${call.index}: graded ${call.graded.length}/${call.runs.length}${call.error === null ? "" : ` (${call.error})`}`,
+		`call ${call.index}: re-asked call ${of.index} for ${runs.length}, replaced ${call.graded.length}${call.error === null ? "" : ` (${call.error})`}`,
 	);
 	return call;
 }
 
 /**
- * The ids in chunks of the given size.
- * @param ids The ids.
+ * Runs one grading call and files its verdicts; when an answer falls short of
+ * the harness's obligations, asks the session once more for those runs.
+ * @param options The pass.
+ * @param runner The chosen runner.
+ * @param layout The grading layout.
+ * @param session The session, updated in place.
+ * @param runs The runs to grade.
+ * @returns The call record, and the retry's when there was one.
+ */
+async function gradeChunk(
+	options: GradingOptions,
+	runner: GraderRunner,
+	layout: GraderLayout,
+	session: GradingSession,
+	runs: readonly BundledRun[],
+): Promise<GradingCall[]> {
+	const ids = runs.map((run) => run.id);
+	const images = ids.map((run) => imagesForRun(layout.workspace, run));
+	const sent = await sendCall(options, runner, layout, session, images, (brief) =>
+		graderPrompt({
+			rubric: options.loaded.rubric,
+			layout: brief,
+			revisions: { ...options.loaded.pins.flask.revisions },
+			runs: ids,
+			continuing: session.threadId !== null,
+			images,
+			delivery: runner.delivery,
+		}),
+	);
+	const filing = fileVerdicts(layout, sent.files.verdict, ids, sent.outcome.delivered);
+	const call = recordCall(runner, layout, session, sent, {
+		runs: ids,
+		graded: filing.filed.map((verdict) => verdict.run),
+		filingError: filing.error,
+	});
+	options.log(
+		`call ${call.index}: graded ${call.graded.length}/${call.runs.length}${call.error === null ? "" : ` (${call.error})`}`,
+	);
+	const shorts = shortAnswers(options.loaded, runs, filing.filed, images, sent.outcome.delivered);
+	if (shorts.length === 0 || options.signal.aborted) return [call];
+	// Only the same session can be asked again: a fresh one has read nothing.
+	if (session.threadId === null) {
+		options.log(`call ${call.index}: ${shorts.length} answers fell short; no session to re-ask`);
+		return [call];
+	}
+	return [call, await retryShortAnswers(options, runner, layout, session, call, shorts)];
+}
+
+/**
+ * The items in chunks of the given size.
+ * @param ids The items.
  * @param size The chunk size.
  * @returns The chunks.
  */
-function chunked(ids: readonly string[], size: number): string[][] {
+function chunked<T>(ids: readonly T[], size: number): T[][] {
 	return Array.from({ length: Math.ceil(ids.length / Math.max(1, size)) }, (_, index) =>
 		ids.slice(index * size, (index + 1) * size),
 	);
@@ -428,9 +470,9 @@ async function gradeBatch(
 	session.runner = runner.name;
 	session.version = runner.pinnedVersion;
 	session.settings = { ...runner.settings };
-	const pending = runs
-		.map((run) => run.id)
-		.filter((id) => !fs.existsSync(path.join(layout.verdicts, `${id}.json`)));
+	const pending = runs.filter(
+		(run) => !fs.existsSync(path.join(layout.verdicts, `${run.id}.json`)),
+	);
 	options.log(
 		`${runner.name}: ${runs.length} runs staged, ${pending.length} to grade, chunks of ${options.chunkSize}`,
 	);

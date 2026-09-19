@@ -30,6 +30,7 @@ export {
 } from "@/runtime/skill-evaluation/lib/claude-events";
 export { callSucceeded, type GraderCall } from "@/runtime/skill-evaluation/lib/grader-runner";
 export {
+	combinedDelivery,
 	fileImageReceipt,
 	imagesForRun,
 	suppliedCaptures,

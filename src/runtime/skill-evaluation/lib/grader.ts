@@ -260,10 +260,40 @@ function everyCaptureSeen(
 	visual: NonNullable<RunVerdict["visual"]>,
 	supplied: readonly string[],
 ): boolean {
-	if (captures === null || captures.declared.length === 0 || captures.failed.length > 0)
-		return false;
+	if (!capturesComplete(captures)) return false;
 	const observed = observedCaptures(captures, visual, supplied);
 	return captures.declared.every((label) => observed.has(label));
+}
+
+/**
+ * Whether some captures were declared and none failed; otherwise no answer completes them.
+ * @param captures The manifest's capture requirements.
+ * @returns Whether they can be seen in full.
+ */
+function capturesComplete(captures: CaptureSummary | null): captures is CaptureSummary {
+	return captures !== null && captures.declared.length > 0 && captures.failed.length === 0;
+}
+
+/**
+ * The taken captures an answer still owes, read as `everyCaptureSeen` reads
+ * it: not opened in full, not inspected, or not observed. None when the
+ * captures themselves are incomplete, since no answer could complete them.
+ * @param captures The manifest's capture requirements.
+ * @param visual The grader's answer, when it gave one.
+ * @param supplied Labels backed by successful delivery.
+ * @returns The capture labels, in declared order.
+ */
+function unobservedCaptures(
+	captures: CaptureSummary | null,
+	visual: RunVerdict["visual"],
+	supplied: readonly string[],
+): string[] {
+	if (!capturesComplete(captures)) return [];
+	const observed =
+		visual === undefined ? new Set<string>() : observedCaptures(captures, visual, supplied);
+	return captures.declared.filter(
+		(label) => captures.captured.includes(label) && !observed.has(label),
+	);
 }
 
 /** The JSON Schema handed to `codex exec --output-schema` and `claude --json-schema`, rendered from the parsing authority. */
@@ -291,6 +321,8 @@ interface GraderBrief {
 	readonly images?: readonly RunImages[];
 	/** How the pictures reach the grader; only the one sentence about that differs between runners. */
 	readonly delivery?: ImageDelivery;
+	/** What a continuing call says before the pictures, such as what a retry asks for. */
+	readonly preface?: readonly string[];
 }
 
 /** The one sentence that differs between runners: how the listed pictures reach the grader. */
@@ -344,6 +376,7 @@ function graderPrompt(brief: GraderBrief): string {
 			];
 	return [
 		...opening,
+		...(brief.preface ?? []),
 		DELIVERY_LINES[brief.delivery ?? "attached"],
 		...attachmentLines(brief.images ?? []),
 		`Grade these runs now: ${brief.runs.join(", ")}.`,
@@ -551,6 +584,7 @@ export {
 	graderPrompt,
 	parseGraderOutput,
 	semanticallyCompliant,
+	unobservedCaptures,
 	visualStandingOf,
 	type ChecklistStanding,
 	type CitedFeature,
