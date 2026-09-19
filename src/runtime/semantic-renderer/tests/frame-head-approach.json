@@ -1,0 +1,82 @@
+{
+	"nodes": [
+		{
+			"id": "NQs6vUYx",
+			"name": "DB 2",
+			"kind": "datastore",
+			"responsibility": "Existing shared production database."
+		},
+		{
+			"id": "t2QlUi5k",
+			"name": "Platform",
+			"kind": "service",
+			"responsibility": "Retains device trust and routes selected APIs to Platform services; unmatched requests stay on IIS."
+		},
+		{
+			"id": "j6TdeSth",
+			"name": "Windows / IIS VM pool",
+			"kind": "system",
+			"responsibility": "Four production VMs each carry the complete IIS API portfolio."
+		},
+		{
+			"id": "6cWbMS1Q",
+			"name": "IIS VM 1",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "TqDUcCHV",
+			"name": "IIS VM 2",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "WMA3YdsD",
+			"name": "IIS VM 3",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "yPJ2pkH0",
+			"name": "IIS VM 4",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "Pt2vjo40",
+			"name": "Migrated API capabilities",
+			"kind": "service",
+			"responsibility": "Proposed Platform-owned replacements, activated one verified API route at a time."
+		}
+	],
+	"edges": [
+		{
+			"id": "g1zvz5QO",
+			"from": "t2QlUi5k",
+			"to": "j6TdeSth",
+			"kind": "http",
+			"label": "Unmatched routes balance across healthy VMs",
+			"emphasis": "hero"
+		},
+		{
+			"id": "cKy6Pt3i",
+			"from": "t2QlUi5k",
+			"to": "Pt2vjo40",
+			"kind": "http",
+			"label": "Selected API hosts / paths",
+			"emphasis": "hero"
+		},
+		{
+			"id": "umAHrW7i",
+			"from": "WMA3YdsD",
+			"to": "NQs6vUYx",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal"
+		}
+	]
+}

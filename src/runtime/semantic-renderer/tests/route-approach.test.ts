@@ -1,63 +1,24 @@
-// How a drawn route meets the thing it points at.
-//
-// A reader photographed an arrowhead arriving at a card at an angle, on the
-// curve of its own turn rather than on a straight line into the side. Two
-// things were behind it, and only one of them was visible: a rounded corner
-// takes its radius off BOTH of its legs, so a fourteen-unit approach arrived on
-// seven units of line and seven of arc; and a track allowed to sit six units
-// off a card leaves an approach shorter than the arrowhead drawn on it.
-//
-// What these hold to is the reader's own words: a route leaves and arrives
-// square to the side it touches, with enough straight line before the turn for
-// the head and its rounding to sit on. Measured on a drawn page rather than
-// argued from the router, because every one of those numbers is the product of
-// the planner, the ports, the tracks and the rounding together.
+// An arrow must meet the subject it names squarely. The router may choose
+// any face, and a self-loop may travel around any side of its own card.
 
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
+import frameApproach from "./frame-head-approach.json";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
-import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
-import { roundBridges } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import {
+	routeCrosses,
+	routePoints,
+	type DrawnPoint,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
+import type { DiagramBox } from "@/shared/semantic-board/index";
 
-/**
- * How much straight line an endpoint must keep, which is `APPROACH_STRAIGHT` in
- * `lib/design.ts`: the widest arrowhead this renderer draws is 7.5 units, and a
- * head needs to sit on line rather than on arc.
- */
-const APPROACH = 12;
-
-/**
- * The smallest radius a turn may round at and still read as a turn, which is
- * `BEND_RADIUS_MIN` in `lib/design.ts`. Under it, an arc is shorter than the
- * line is wide and a reader sees a right angle.
- */
-const ROUNDING = 8;
-
-/** A point on the page. */
-interface At {
-	readonly x: number;
-	readonly y: number;
-}
-
-/** One step of a drawn path: what sort, where it started, where it ended. */
-interface Step {
-	readonly kind: string;
-	readonly from: At;
-	readonly to: At;
-}
-
-/**
- * An architecture with containment and enough traffic to crowd its corridors.
- *
- * Two services with modules inside them and a datastore beside them, wired
- * every way round: a shape that makes the track allocator pack runs into the
- * gaps beside cards, which is where a short approach comes from.
- */
+/** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = VariantContentSchema.parse({
 	nodes: [
-		{ id: "edge", name: "Edge", kind: "service", responsibility: "Public entry points" },
+		{ id: "edge", name: "Edge", kind: "service" },
 		{ id: "gw", name: "API Gateway", kind: "route", parent: "edge" },
 		{ id: "web", name: "Operator Console", kind: "ui", parent: "edge" },
-		{ id: "core", name: "Board Runtime", kind: "service", responsibility: "Owns every write" },
+		{ id: "core", name: "Board Runtime", kind: "service" },
 		{ id: "io", name: "board-io", kind: "module", parent: "core" },
 		{ id: "queue", name: "Edit Queue", kind: "queue", parent: "core" },
 		{ id: "lease", name: "Write Lease", kind: "module", parent: "core" },
@@ -65,7 +26,7 @@ const CROWDED: VariantContent = VariantContentSchema.parse({
 	],
 	edges: [
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board", emphasis: "hero" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board" },
 		{ id: "e3", from: "gw", to: "queue", kind: "event", label: "enqueue" },
 		{ id: "e4", from: "queue", to: "io", kind: "call", label: "drain" },
 		{ id: "e5", from: "io", to: "lease", kind: "call", label: "take" },
@@ -75,323 +36,54 @@ const CROWDED: VariantContent = VariantContentSchema.parse({
 	],
 });
 
-/**
- * Every path command's endpoint, in order.
- * @param d The `d` attribute.
- * @returns The steps.
- */
-function stepsOf(d: string): Step[] {
-	const steps: Step[] = [];
-	let at: At = { x: 0, y: 0 };
-	for (const command of d.matchAll(/([MLC])([-\d.,\s]+)/gu)) {
-		const numbers = (command[2] ?? "")
-			.trim()
-			.split(/[\s,]+/u)
-			.map(Number);
-		const pairs: At[] = [];
-		for (let index = 0; index + 1 < numbers.length; index += 2) {
-			pairs.push({ x: numbers[index]!, y: numbers[index + 1]! });
-		}
-		const to = pairs[pairs.length - 1] ?? at;
-		steps.push({ kind: command[1] ?? "", from: at, to });
-		at = to;
+/** A nonzero tangent beside an endpoint, toward the rest of its route. */
+function tangent(points: readonly DrawnPoint[], end: "first" | "last"): DrawnPoint {
+	const ordered = end === "first" ? points : points.toReversed();
+	const tip = ordered[0]!;
+	const beside = ordered.find(({ x, y }) => Math.hypot(x - tip.x, y - tip.y) > 0.01);
+	if (beside === undefined) throw new Error("Route has no visible departure or arrival");
+	return { x: beside.x - tip.x, y: beside.y - tip.y };
+}
+
+/** Outward normal of the named card face touched by an endpoint. */
+function faceNormal(point: DrawnPoint, box: DiagramBox): DrawnPoint {
+	const sides = [
+		{ distance: Math.abs(point.x - box.x), normal: { x: -1, y: 0 } },
+		{ distance: Math.abs(point.x - box.x - box.width), normal: { x: 1, y: 0 } },
+		{ distance: Math.abs(point.y - box.y), normal: { x: 0, y: -1 } },
+		{ distance: Math.abs(point.y - box.y - box.height), normal: { x: 0, y: 1 } },
+	].toSorted((a, b) => a.distance - b.distance);
+	expect(point.x).toBeGreaterThanOrEqual(box.x - 2);
+	expect(point.x).toBeLessThanOrEqual(box.x + box.width + 2);
+	expect(point.y).toBeGreaterThanOrEqual(box.y - 2);
+	expect(point.y).toBeLessThanOrEqual(box.y + box.height + 2);
+	expect(sides[0]!.distance).toBeLessThan(2);
+	return sides[0]!.normal;
+}
+
+/** The route approaches the actual named face perpendicularly. */
+function expectSquare(point: DrawnPoint, vector: DrawnPoint, box: DiagramBox): void {
+	const normal = faceNormal(point, box);
+	const length = Math.hypot(vector.x, vector.y);
+	expect(Math.abs((vector.x * normal.x + vector.y * normal.y) / length)).toBeGreaterThan(0.999);
+}
+
+test("every relationship of a crowded board leaves and arrives square to its named subject", async () => {
+	const drawing = await renderArchitecture({ content: CROWDED, theme: "light" });
+	const paths = routePoints(drawing.svg);
+	expect(paths.size).toBe(CROWDED.edges.length);
+	for (const edge of CROWDED.edges) {
+		const path = paths.get(edge.id)!;
+		expect(path.length, `${edge.id} is drawn`).toBeGreaterThan(1);
+		expectSquare(path[0]!, tangent(path, "first"), drawing.atlas.nodes[edge.from]!);
+		expectSquare(path.at(-1)!, tangent(path, "last"), drawing.atlas.nodes[edge.to]!);
 	}
-	return steps;
-}
-
-/** One box of the drawn page, in page coordinates. */
-interface Drawn {
-	readonly x: number;
-	readonly y: number;
-	readonly width: number;
-	readonly height: number;
-}
-
-/**
- * Which side of a box a point touches, and that side's outward normal.
- * @param point The point, in page coordinates.
- * @param box The box.
- * @returns The side and its normal, or null when the point is not on the box.
- */
-function faceAt(point: At, box: Drawn): { side: string; normal: At } | null {
-	const slack = 2;
-	const nearest = [
-		{ side: "left", away: Math.abs(point.x - box.x), normal: { x: -1, y: 0 } },
-		{ side: "right", away: Math.abs(point.x - (box.x + box.width)), normal: { x: 1, y: 0 } },
-		{ side: "top", away: Math.abs(point.y - box.y), normal: { x: 0, y: -1 } },
-		{ side: "bottom", away: Math.abs(point.y - (box.y + box.height)), normal: { x: 0, y: 1 } },
-	].toSorted((one, other) => one.away - other.away)[0]!;
-	const inside =
-		point.x >= box.x - slack &&
-		point.x <= box.x + box.width + slack &&
-		point.y >= box.y - slack &&
-		point.y <= box.y + box.height + slack;
-	return nearest.away <= slack && inside ? nearest : null;
-}
-
-/** One endpoint of one drawn route, as a reader meets it. */
-interface Approach {
-	/** Which relationship it belongs to. */
-	readonly id: string;
-	/** Whether it is where the route starts or where it ends. */
-	readonly what: "leaves" | "arrives";
-	/** The side of the box it touches. */
-	readonly side: string;
-	/** How square its direction is to that side: 1 is perpendicular. */
-	readonly square: number;
-	/** How much dead-straight line it has before the route turns. */
-	readonly straight: number;
-}
-
-/**
- * Every endpoint of every drawn route, measured against the side it touches.
- * @param drawn The rendered picture.
- * @returns One entry per endpoint that attaches to a drawn box.
- */
-function approaches(drawn: RenderedDiagram): Approach[] {
-	const boxes: Drawn[] = [
-		...Object.values(drawn.atlas.nodes),
-		...Object.values(drawn.atlas.regions),
-	];
-	const found = /<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(drawn.svg);
-	const shift: At = { x: Number(found?.[1] ?? 0), y: Number(found?.[2] ?? 0) };
-	const measured: Approach[] = [];
-	for (const group of drawn.svg.matchAll(
-		/<g data-semantic-kind="edge" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/gu,
-	)) {
-		const paths = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/gu)];
-		const steps = stepsOf(paths[paths.length - 1]?.[1] ?? "");
-		if (steps.length < 2) {
-			continue;
-		}
-		const ends = [
-			{ what: "leaves" as const, step: steps[1]!, point: steps[0]!.to },
-			{
-				what: "arrives" as const,
-				step: steps[steps.length - 1]!,
-				point: steps[steps.length - 1]!.to,
-			},
-		];
-		for (const end of ends) {
-			const on = { x: end.point.x + shift.x, y: end.point.y + shift.y };
-			const face = boxes.map((box) => faceAt(on, box)).find((side) => side !== null);
-			const run = { x: end.step.to.x - end.step.from.x, y: end.step.to.y - end.step.from.y };
-			const length = Math.hypot(run.x, run.y);
-			if (face === undefined || face === null || length < 0.01) {
-				continue;
-			}
-			measured.push({
-				id: group[1] ?? "",
-				what: end.what,
-				side: face.side,
-				square: Math.abs((run.x / length) * face.normal.x + (run.y / length) * face.normal.y),
-				// Only a line is straight: a route whose first or last command is a
-				// curve has no approach at all, which is the failure in the picture.
-				straight: end.step.kind === "L" ? length : 0,
-			});
-		}
-	}
-	return measured;
-}
-
-/** One turn of a drawn route. */
-interface Turn {
-	/** Which relationship it belongs to. */
-	readonly id: string;
-	/** Where in the path it is, for naming it in a failure. */
-	readonly at: number;
-	/** The radius it rounds at. */
-	readonly radius: number;
-}
-
-/** The leg one endpoint of a route stands on. */
-interface Leg {
-	/** Which relationship it belongs to. */
-	readonly id: string;
-	/** Which end of the route it is. */
-	readonly what: "leaves" | "arrives";
-	/** How long the whole leg is: the straight the reader sees, plus the arc that ends it. */
-	readonly length: number;
-}
-
-/**
- * The route's own path, as steps, for every relationship that drew one.
- * @param drawn The rendered picture.
- * @returns The steps of each route, by relationship id.
- */
-function drawnRoutes(drawn: RenderedDiagram): Map<string, Step[]> {
-	const routes = new Map<string, Step[]>();
-	for (const group of drawn.svg.matchAll(
-		/<g data-semantic-kind="(?:edge|step)" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/gu,
-	)) {
-		const paths = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/gu)];
-		if (paths.length > 0) {
-			routes.set(group[1] ?? "", stepsOf(paths[paths.length - 1]?.[1] ?? ""));
-		}
-	}
-	return routes;
-}
-
-/** How long one step is. */
-const stepLength = (step: Step): number =>
-	Math.hypot(step.to.x - step.from.x, step.to.y - step.from.y);
-
-/**
- * The radius a drawn turn rounds at: a quarter-turn of radius r is a cubic whose
- * ends are r*sqrt(2) apart, and a turn with no room is a chord of nothing.
- * @param step The cubic.
- * @returns Its radius.
- */
-const radiusOf = (step: Step): number => stepLength(step) / Math.SQRT2;
-
-/**
- * Every turn of every drawn route.
- * @param drawn The rendered picture.
- * @returns One entry per turn.
- */
-function turns(drawn: RenderedDiagram): Turn[] {
-	return [...drawnRoutes(drawn)].flatMap(([id, steps]) =>
-		steps.flatMap((step, at) => (step.kind === "C" ? [{ id, at, radius: radiusOf(step) }] : [])),
-	);
-}
-
-/**
- * The two legs a route's ends stand on: the straight a reader sees plus the arc
- * that ends it, which together are the room the router left between the card's
- * face and the turn. A route drawn as one straight line is left out.
- * @param drawn The rendered picture.
- * @returns One entry per end.
- */
-function endLegs(drawn: RenderedDiagram): Leg[] {
-	return [...drawnRoutes(drawn)].flatMap(([id, steps]) => {
-		const first = steps[1];
-		const last = steps[steps.length - 1];
-		if (first === undefined || last === undefined || steps.length < 4) {
-			return [];
-		}
-		const opening = steps[2];
-		const closing = steps[steps.length - 2];
-		return [
-			{
-				id,
-				what: "leaves" as const,
-				length:
-					stepLength(first) +
-					(opening !== undefined && opening.kind === "C" ? radiusOf(opening) : 0),
-			},
-			{
-				id,
-				what: "arrives" as const,
-				length:
-					stepLength(last) +
-					(closing !== undefined && closing.kind === "C" ? radiusOf(closing) : 0),
-			},
-		];
-	});
-}
-
-/** A labelled fork and return, with a skip route that must turn round the middle card. */
-const CROSSED: VariantContent = VariantContentSchema.parse({
-	nodes: [
-		{ id: "boundary", name: "Write boundary", kind: "service" },
-		{ id: "write", name: "Board write", kind: "module" },
-		{ id: "store", name: "Board store", kind: "module" },
-	],
-	edges: [
-		{ id: "lease", from: "boundary", to: "write", kind: "call", label: "under lease" },
-		{ id: "settled", from: "store", to: "boundary", kind: "event", label: "settled" },
-		{ id: "delta", from: "boundary", to: "store", kind: "data", label: "the delta" },
-		{ id: "save", from: "write", to: "store", kind: "call", label: "save" },
-	],
 });
 
-describe("a turn has room to round", () => {
-	test("the leg an endpoint stands on carries its approach and its turn", async () => {
-		// The allocation the router owns: the approach AND the turn after it.
-		for (const content of [CROWDED, CROSSED]) {
-			const measured = endLegs(await renderArchitecture({ content, theme: "light" }));
-			expect(measured.length).toBeGreaterThan(1);
-			expect(
-				measured
-					.filter((leg) => leg.length < APPROACH + ROUNDING - 0.01)
-					.map((leg) => `${leg.id} ${leg.what} on a leg of ${leg.length.toFixed(1)}`),
-			).toEqual([]);
-		}
-	});
-
-	test("and no turn anywhere is drawn square", async () => {
-		for (const content of [CROWDED, CROSSED]) {
-			const measured = turns(await renderArchitecture({ content, theme: "dark" }));
-			expect(measured.length).toBeGreaterThan(3);
-			expect(
-				measured
-					.filter((turn) => turn.radius <= 0)
-					.map((turn) => `${turn.id} at ${turn.at} rounds at ${turn.radius.toFixed(2)}`),
-			).toEqual([]);
-		}
-	});
-
-	test("beside a card it is the whole minimum, not a leftover", async () => {
-		// Endpoint turns reserve room for the arrowhead and a legible bend.
-		// Interior alignment jogs round within the engine's available corridor.
-		const drawing = await renderArchitecture({ content: CROWDED, theme: "light" });
-		// A bridge can precede the first turn and has its own smaller radius.
-		// Remove only recognized circular hops when measuring the route corners.
-		const svg = drawing.svg.replace(/ d="([^"]+)"/gu, (attribute, path: string) => {
-			let corridor = path;
-			for (const bridge of roundBridges(path)) corridor = corridor.replaceAll(bridge.span, "");
-			return attribute.replace(path, corridor);
-		});
-		const routes = drawnRoutes({ ...drawing, svg });
-		const adjacent = [...routes.values()].flatMap((steps) => {
-			const first = steps.find((step) => step.kind === "C");
-			const last = steps.findLast((step) => step.kind === "C");
-			return first === undefined || last === undefined ? [] : [first, last];
-		});
-		expect(adjacent.length).toBeGreaterThan(1);
-		expect(adjacent.every((turn) => radiusOf(turn) >= ROUNDING)).toBe(true);
-	});
-});
-
-describe("a route meets what it points at", () => {
-	test("every endpoint of a crowded page leaves and arrives square to its side", async () => {
-		const measured = approaches(await renderArchitecture({ content: CROWDED, theme: "light" }));
-		// A page this shape draws sixteen endpoints; an assertion over an empty
-		// list would pass while the router drew nothing at all.
-		expect(measured.length).toBeGreaterThan(10);
-		for (const approach of measured) {
-			expect(
-				approach.square,
-				`${approach.id} ${approach.what} its ${approach.side} side at ${(approach.square * 100).toFixed(0)}% square`,
-			).toBeGreaterThan(0.999);
-		}
-	});
-
-	test("every endpoint keeps enough straight line for the head drawn on it", async () => {
-		const measured = approaches(await renderArchitecture({ content: CROWDED, theme: "light" }));
-		const cramped = measured.filter((approach) => approach.straight < APPROACH);
-		expect(
-			cramped.map(
-				(approach) =>
-					`${approach.id} ${approach.what} ${approach.side}: ${approach.straight.toFixed(1)}`,
-			),
-		).toEqual([]);
-	});
-
-	test("the same holds on the other ground, because geometry is not a palette", async () => {
-		for (const theme of ["light", "dark"] as const) {
-			const measured = approaches(await renderArchitecture({ content: CROWDED, theme }));
-			expect(measured.every((approach) => approach.straight >= APPROACH)).toBe(true);
-			expect(measured.every((approach) => approach.square > 0.999)).toBe(true);
-		}
-	});
-});
-
-describe("a node that calls itself", () => {
-	/** One part that calls itself, beside a neighbour so the loop has a side to pick. */
-	const LOOPED: VariantContent = VariantContentSchema.parse({
+test("a self-loop meets its own card squarely and stays outside its interior", async () => {
+	const content = VariantContentSchema.parse({
 		nodes: [
-			{ id: "core", name: "Board Runtime", kind: "service", responsibility: "Owns every write" },
+			{ id: "core", name: "Board Runtime", kind: "service" },
 			{ id: "io", name: "board-io", kind: "module", parent: "core" },
 		],
 		edges: [
@@ -399,42 +91,53 @@ describe("a node that calls itself", () => {
 			{ id: "down", from: "core", to: "io", kind: "call" },
 		],
 	});
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	const path = routePoints(drawing.svg).get("self")!;
+	const card = drawing.atlas.nodes["io"]!;
+	expect(path.length).toBeGreaterThan(2);
+	expectSquare(path[0]!, tangent(path, "first"), card);
+	expectSquare(path.at(-1)!, tangent(path, "last"), card);
+	expect(
+		routeCrosses(path, {
+			x: card.x + 1,
+			y: card.y + 1,
+			width: card.width - 2,
+			height: card.height - 2,
+		}),
+	).toBe(false);
+});
 
-	test("its loop leaves and returns square to the face, with room for the head", async () => {
-		const measured = approaches(await renderArchitecture({ content: LOOPED, theme: "light" }));
-		const loop = measured.filter((approach) => approach.id === "self");
-		// Both ends of the loop, and both on the card it belongs to.
-		expect(loop).toHaveLength(2);
-		for (const end of loop) {
-			expect(
-				end.square,
-				`the loop ${end.what} its ${end.side} side at ${(end.square * 100).toFixed(0)}% square`,
-			).toBeGreaterThan(0.999);
-			expect(
-				end.straight,
-				`the loop ${end.what} on ${end.straight.toFixed(1)} of line`,
-			).toBeGreaterThanOrEqual(APPROACH);
-		}
-	});
-
-	test("the loop stays outside the card it belongs to", async () => {
-		const drawn = await renderArchitecture({ content: LOOPED, theme: "light" });
-		const card = drawn.atlas.nodes["io"]!;
-		const found = /<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(drawn.svg);
-		const shift: At = { x: Number(found?.[1] ?? 0), y: Number(found?.[2] ?? 0) };
-		const group = /<g data-semantic-kind="edge" data-semantic-id="self"[^>]*>([\s\S]*?)<\/g>/u.exec(
-			drawn.svg,
-		);
-		const paths = [...(group?.[1] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/gu)];
-		const points = stepsOf(paths[paths.length - 1]?.[1] ?? "").map((step) => ({
-			x: step.to.x + shift.x,
-			y: step.to.y + shift.y,
-		}));
-		expect(points.length).toBeGreaterThan(2);
-		// Every point of it is on the card's edge or beyond it: a loop that cut
-		// back through the card would be drawn over the words it belongs to.
-		for (const point of points) {
-			expect(point.x).toBeGreaterThanOrEqual(card.x + card.width - 0.01);
-		}
-	});
+// Reduced from Cloud platform-strangler: a hero route arrived at the IIS
+// frame on an eight-unit leg, with its arrowhead drawn over the square bend.
+test("an incoming frame arrow has a whole head and rounded bend before its endpoint", async () => {
+	const content = VariantContentSchema.parse(frameApproach);
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	const points = routePoints(drawing.svg).get("g1zvz5QO")!;
+	expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
+	const group = drawing.svg.match(
+		/<g data-semantic-kind="edge" data-semantic-id="g1zvz5QO"[^>]*>([\s\S]*?)<\/g>/,
+	)![1]!;
+	const route = [
+		...group.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),
+	].at(-1)!;
+	const width = Number(route[0].match(/stroke-width="([^"]+)"/)![1]);
+	const marker = drawing.svg.match(new RegExp(`<marker id="${route[2]}"[^>]*>`))![0];
+	const refX = Number(marker.match(/refX="([^"]+)"/)![1]);
+	const markerWidth = Number(marker.match(/markerWidth="([^"]+)"/)![1]);
+	const viewWidth = Number(marker.match(/viewBox="[^ ]+ [^ ]+ ([^ ]+) [^"]+"/)![1]);
+	const headReach = ((refX * markerWidth) / viewWidth) * width;
+	const steps = [...route[1]!.matchAll(/([MLC])([^MLC]+)/g)].map((match) => ({
+		kind: match[1],
+		values: match[2]!.trim().split(/[ ,]+/).map(Number),
+	}));
+	const end = steps.at(-1)!;
+	const corner = steps.at(-2)!;
+	expect(end.kind).toBe("L");
+	expect(corner.kind, "the incoming bend stays rounded").toBe("C");
+	const tip = end.values;
+	const beside = corner.values.slice(-2);
+	expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
+	const start = steps.at(-3)!.values.slice(-2);
+	const radius = Math.min(Math.abs(start[0]! - beside[0]!), Math.abs(start[1]! - beside[1]!));
+	expect(radius, "the bend has its own room before the head").toBeGreaterThanOrEqual(7.99);
 });

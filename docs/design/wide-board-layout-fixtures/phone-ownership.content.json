@@ -1,0 +1,110 @@
+{
+	"nodes": [
+		{
+			"id": "l3Eh3C1C",
+			"name": "Admin By Request mobile app",
+			"kind": "external",
+			"responsibility": "Its versioned mobile contract constrains Phone API cutover."
+		},
+		{
+			"id": "FuUQFqat",
+			"name": "Phone API host",
+			"kind": "service",
+			"responsibility": "Thin MobileApp-API IIS HTTP host."
+		},
+		{
+			"id": "FB5oiRXm",
+			"name": "Common-WebLib.dll",
+			"kind": "module",
+			"responsibility": "One shared release and code-owner boundary."
+		},
+		{
+			"id": "XLnKM6wi",
+			"name": "Ambient shared glue",
+			"kind": "module",
+			"responsibility": "HttpContext, caches, auth and logging create implicit runtime dependencies.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "0cQKXFuZ",
+			"name": "Phone behavior + DTOs",
+			"kind": "module",
+			"responsibility": "Mobile contract rules live inside the monolith.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "kfNDGF1F",
+			"name": "Common-DataLib",
+			"kind": "module",
+			"responsibility": "Generated LINQ-to-SQL model."
+		},
+		{
+			"id": "kw6lbbtf",
+			"name": "Shared customer databases",
+			"kind": "datastore",
+			"responsibility": "Shared persistence leaves residual schema coupling."
+		},
+		{
+			"id": "Yk7bz2cS",
+			"name": "External + cross-product systems",
+			"kind": "external",
+			"responsibility": "SMS, email and Azure topology remain shared dependencies."
+		}
+	],
+	"edges": [
+		{
+			"id": "fXPVXdiF",
+			"from": "l3Eh3C1C",
+			"to": "FuUQFqat",
+			"kind": "http",
+			"label": "Mobile contract",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "LaTdOSNr",
+			"from": "FuUQFqat",
+			"to": "0cQKXFuZ",
+			"kind": "dependency",
+			"label": "Compiles against",
+			"emphasis": "hero"
+		},
+		{
+			"id": "RRsjQqWr",
+			"from": "0cQKXFuZ",
+			"to": "XLnKM6wi",
+			"kind": "call",
+			"label": "Uses ambient helpers",
+			"emphasis": "normal"
+		},
+		{
+			"id": "YwmZQrSe",
+			"from": "kfNDGF1F",
+			"to": "kw6lbbtf",
+			"kind": "data",
+			"label": "LINQ-to-SQL persistence",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5YGlSYox",
+			"from": "XLnKM6wi",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model",
+			"emphasis": "normal"
+		},
+		{
+			"id": "avmOZp0l",
+			"from": "XLnKM6wi",
+			"to": "Yk7bz2cS",
+			"kind": "call",
+			"label": "Shared side effects",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

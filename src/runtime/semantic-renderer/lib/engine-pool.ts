@@ -1,45 +1,54 @@
-// The layout engine, run in a few private workers.
-//
-// One render settles several candidate drawings of a board (its readings, its
-// flank rules, each with its label reservations) and a worker answers its
-// messages one at a time, so with a single worker every candidate queued
-// behind every other. A few workers let independent candidates solve at once
-// (docs/design/layout-rules.md section 22). The engine is deterministic, so
-// which worker answers a solve never changes the drawing.
+// A few private Bun workers own the synchronous Graphviz/libavoid engine pair.
+// Candidate drawings can solve concurrently, while each worker processes its
+// own messages in order. Idle workers do not keep a CLI process alive.
 
 import { availableParallelism } from "node:os";
-import ELK from "@archboard/elk-rs/js/elk-api.js";
-import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
+import type { RendererHost } from "@/transformers/semantic-renderer/host";
 
-/**
- * The most workers that may solve at once: every core the host offers but
- * one, read from the host (macOS or Linux alike) rather than fixed for one
- * machine. Workers start only when a solve finds every running one busy, so a
- * render that never has more than a few candidates in hand starts only a few.
- */
-const WORKERS = Math.max(1, availableParallelism() - 1);
+type Solve = RendererHost["solve"];
+type Graph = Parameters<Solve>[0];
 
-/**
- * Use the supported worker transport: Bun's main thread exposes `self`, which
- * the vendor's fake-worker detection otherwise mistakes for a worker scope.
- * @returns A private worker running the installed layout engine.
- * @throws {Error} When the runtime has no worker lifetime control.
- */
-function layoutWorker(): Worker & Pick<Bun.Worker, "ref" | "unref"> {
-	// The repository also compiles DOM code, whose ambient Worker declaration
-	// hides Bun's ref/unref extensions. This server boundary always runs in Bun.
-	const worker = new Worker(import.meta.resolve("@archboard/elk-rs/js/elk-worker.js"));
-	if (!hasProcessLifetime(worker)) {
-		worker.terminate();
-		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");
-	}
-	return worker;
+interface EngineAnswer {
+	readonly id: number;
+	readonly data?: Graph;
+	readonly error?: string;
+	readonly fatal?: boolean;
+}
+
+interface PooledEngine {
+	readonly worker: Worker & Pick<Bun.Worker, "ref" | "unref">;
+	readonly waiting: Map<
+		number,
+		{ resolve: (graph: Graph) => void; reject: (error: Error) => void }
+	>;
+	answered: boolean;
 }
 
 /**
- * Narrow only Bun's process-lifetime additions to the standard worker API.
- * @param worker The worker created at this runtime boundary.
- * @returns Whether the worker provides the two native lifetime methods.
+ * Deliver one worker reply to its waiting solve.
+ * @param pending The solve waiting for this answer.
+ * @param pending.resolve Accepts the solved graph.
+ * @param pending.reject Rejects a failed solve.
+ * @param answer The worker's answer.
+ */
+function settleAnswer(
+	pending: { resolve: (graph: Graph) => void; reject: (error: Error) => void },
+	answer: EngineAnswer,
+): void {
+	if (answer.error !== undefined) pending.reject(new Error(answer.error));
+	else if (answer.data === undefined)
+		pending.reject(new Error("The layout worker answered with no graph"));
+	else pending.resolve(answer.data);
+}
+
+const ceiling = Math.max(1, availableParallelism() - 1);
+const engines: PooledEngine[] = [];
+let nextId = 0;
+
+/**
+ * Check native process lifetime controls.
+ * @param worker The Bun worker.
+ * @returns Whether it exposes process lifetime controls.
  */
 function hasProcessLifetime(worker: Worker): worker is Worker & Pick<Bun.Worker, "ref" | "unref"> {
 	return (
@@ -50,60 +59,82 @@ function hasProcessLifetime(worker: Worker): worker is Worker & Pick<Bun.Worker,
 	);
 }
 
-/** One worker, and how many solves it has in hand. */
-interface LayoutEngine {
-	readonly worker: ReturnType<typeof layoutWorker>;
-	readonly engine: InstanceType<typeof ELK>;
-	pending: number;
+/**
+ * Evict a stopped worker and reject its pending solves.
+ * @param engine The failed worker.
+ * @param reason Its failure.
+ */
+function discard(engine: PooledEngine, reason: string): void {
+	const index = engines.indexOf(engine);
+	if (index < 0) return;
+	engines.splice(index, 1);
+	for (const pending of engine.waiting.values()) pending.reject(new Error(reason));
+	engine.waiting.clear();
+	engine.worker.terminate();
 }
 
-const engines: LayoutEngine[] = [];
+/**
+ * Start an engine worker.
+ * @returns One worker with message and failure listeners installed.
+ */
+function start(): PooledEngine {
+	const worker = new Worker(new URL("./layout-worker.ts", import.meta.url).href);
+	if (!hasProcessLifetime(worker)) {
+		worker.terminate();
+		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");
+	}
+	const engine: PooledEngine = { worker, waiting: new Map(), answered: false };
+	worker.addEventListener("message", (event: MessageEvent<EngineAnswer>) => {
+		const answer = event.data;
+		if (typeof answer.id !== "number") return;
+		const pending = engine.waiting.get(answer.id);
+		if (pending === undefined) return;
+		engine.waiting.delete(answer.id);
+		engine.answered = true;
+		settleAnswer(pending, answer);
+		if (answer.fatal) discard(engine, answer.error ?? "The layout worker could not initialize");
+	});
+	worker.addEventListener("error", (event: ErrorEvent) => {
+		discard(engine, event.message || "The layout worker stopped");
+	});
+	engines.push(engine);
+	return engine;
+}
 
 /**
- * The least busy worker, started on the first request that finds every
- * existing one busy.
- * @returns The worker to send a solve to.
+ * Select an engine for the next solve.
+ * @returns An idle, newly started, or least busy worker.
  */
-function engineForSolve(): LayoutEngine {
-	const idle = engines.find((engine) => engine.pending === 0);
+function engineForSolve(): PooledEngine {
+	const idle = engines.find((engine) => engine.waiting.size === 0);
 	if (idle !== undefined) return idle;
-	if (engines.length < WORKERS) {
-		const worker = layoutWorker();
-		/**
-		 * Supply the already owned worker to the vendor API.
-		 * @returns The native worker whose lifetime this module owns.
-		 */
-		const workerFactory = (): Worker => worker;
-		const engine = {
-			worker,
-			engine: new ELK({ algorithms: ["layered"], workerFactory }),
-			pending: 0,
-		};
-		engines.push(engine);
-		return engine;
-	}
-	return engines.toSorted((one, other) => one.pending - other.pending)[0]!;
+	// Delay pool growth until the first worker has initialized both WASM engines.
+	if (engines.length < ceiling && engines.every((engine) => engine.answered)) return start();
+	return engines.toSorted((a, b) => a.waiting.size - b.waiting.size)[0]!;
 }
 
 /**
- * Solve one graph, keeping the process alive only while a worker has a solve
- * in hand.
- * @param graph The complete measured graph.
- * @param layoutOptions The options for this solve.
- * @returns Its solved geometry.
+ * Solve one graph on a worker, keeping Bun alive only for pending work.
+ * @param graph The measured graph.
+ * @param layoutOptions Options for placement.
+ * @returns The solved graph.
  */
-async function solveOnEngine(graph: ElkNode, layoutOptions: LayoutOptions): Promise<ElkNode> {
-	const owner = engineForSolve();
-	owner.pending += 1;
-	owner.worker.ref();
-	try {
-		return await owner.engine.layout(graph, { layoutOptions });
-	} finally {
-		owner.pending -= 1;
-		if (owner.pending === 0) {
-			owner.worker.unref();
+function solveOnEngine(graph: Graph, layoutOptions: Parameters<Solve>[1]): ReturnType<Solve> {
+	const engine = engineForSolve();
+	const id = nextId++;
+	engine.worker.ref();
+	return new Promise<Graph>((resolve, reject) => {
+		engine.waiting.set(id, { resolve, reject });
+		try {
+			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Bun Worker has no target origin
+			engine.worker.postMessage({ id, graph, layoutOptions });
+		} catch (error) {
+			engine.waiting.delete(id);
+			reject(error);
 		}
-	}
+	}).finally(() => {
+		if (engine.waiting.size === 0 && engines.includes(engine)) engine.worker.unref();
+	});
 }
 
 export { solveOnEngine };

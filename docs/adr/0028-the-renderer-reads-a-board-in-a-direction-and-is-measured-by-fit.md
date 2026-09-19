@@ -21,6 +21,10 @@ renderer uses them.
 
 ## The layout is ELK with reading conventions the renderer owns
 
+[ADR 0033](0033-graphviz-placement-and-obstacle-routing.md) supersedes this
+engine choice and its attachment conventions with Graphviz placement and
+libavoid routing. The following paragraphs record the earlier decision.
+
 The architecture grammar is laid out by ELK's layered algorithm. What the
 renderer decides itself is the reading of the board, expressed as conventions
 rather than geometry: an adjacent forward step leaves the source ahead and

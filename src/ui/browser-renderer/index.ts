@@ -22,7 +22,6 @@ import {
 	type ThemeColors,
 } from "@/transformers/semantic-renderer/host";
 import { loadDiagramFaces } from "@/ui/browser-renderer/lib/diagram-faces";
-import { compileEngine, workerOnSharedEngine } from "@/ui/browser-renderer/lib/shared-engine";
 import { loadDiagramIcons, loadedIconPaths } from "@/ui/browser-renderer/lib/diagram-icons";
 import {
 	createEnginePool,
@@ -34,10 +33,8 @@ import {
 interface BrowserRendererSetup {
 	/** The theme colours, as the build read them. */
 	readonly themeColors: ThemeColors;
-	/** Starts one bare layout engine worker. */
+	/** Starts one layout engine worker, having sent its initialization message. */
 	readonly startWorker: () => EngineWorker;
-	/** Where the page serves the engine binary, compiled once and shared by every worker. */
-	readonly engineBinaryUrl: string;
 }
 
 let started: Promise<void> | undefined;
@@ -70,11 +67,7 @@ function noEmbeddedFaces(): never {
  */
 function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	if (started !== undefined) return;
-	const engine = compileEngine(setup.engineBinaryUrl);
-	const solve = createEnginePool(
-		() => workerOnSharedEngine(setup.startWorker, engine),
-		workerCeiling(navigator.hardwareConcurrency),
-	);
+	const solve = createEnginePool(setup.startWorker, workerCeiling(navigator.hardwareConcurrency));
 	installRendererHost({
 		solve,
 		themeColors: setup.themeColors,
@@ -83,8 +76,8 @@ function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	});
 	started = loadDiagramFaces();
 	// Start one engine now, while the page boots and reads the board, rather
-	// than when the first picture needs it: a worker's first solve pays for
-	// fetching and compiling the engine, and a trivial graph pays it here.
+	// than when the first picture needs it: a worker's first solve initializes
+	// both engines, and a trivial graph pays that cost here.
 	void solve(WARM_UP_GRAPH, {}).catch(() => undefined);
 }
 

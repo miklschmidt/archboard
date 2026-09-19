@@ -1,13 +1,14 @@
-// A relationship between a frame and a part inside it is the frame's own: it
-// leaves the frame's back edge past the title band into the part, or the
-// part's front onto the frame's front edge, whichever way the page reads,
-// and never sets out from the frame's outer flank as though it came from
-// somewhere else on the page, and never through the title.
+// A frame and its own part meet at the title divider. The line stays inside
+// the frame, clears its title and touches its child, whichever way the page reads.
 import { expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { along, depth, faceOf, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
-import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
+import {
+	routePoints,
+	distanceToFrame,
+	routeCrosses,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
 
 const application = VariantContentSchema.parse({
@@ -86,21 +87,19 @@ test.each([
 	["a selection view", overview],
 	["a board that reads left to right", wide],
 ])(
-	"a frame's call into its own part leaves the frame's back edge past the title band, inside the frame, in %s",
+	"a frame's call into its own part leaves its title divider and stays inside in %s",
 	async (_, content: VariantContent) => {
 		const drawing = await renderArchitecture({ content, theme: "light" });
-		const direction = readingOf(drawing);
 		const app = drawing.atlas.nodes["app"]!;
 		const part = drawing.atlas.nodes["dispatch"]!;
 		const route = routePoints(drawing.svg).get("d")!;
 		const start = route[0]!;
 		const end = route.at(-1)!;
-		// The line leaves past the frame's title and never its outer front edge or
-		// a flank, so it cannot read as arriving from outside the frame.
 		expect(pastTitle(start, drawing, "app")).toBe(true);
-		expect(along(start, direction)).toBeGreaterThanOrEqual(along(app, direction));
-		expect(along(start, direction)).toBeLessThan(along(part, direction));
-		expect(faceOf(end, part, direction)).toBe("behind");
+		const headerHeight = measureArchitecture(content).nodes.get("app")!.headerHeight;
+		expect(start.y).toBeCloseTo(app.y + headerHeight, 1);
+		expect(distanceToFrame(end, part)).toBeLessThan(0.02);
+		expect(routeCrosses(route, { ...app, height: headerHeight })).toBe(false);
 		// And the whole of it stays inside the frame.
 		for (const point of route) {
 			expect(point.x).toBeGreaterThanOrEqual(app.x);
@@ -111,7 +110,7 @@ test.each([
 	},
 );
 
-test("a part's call up to its own frame ends on the frame's front edge", async () => {
+test("a part's call up to its own frame ends at the title divider", async () => {
 	const content = VariantContentSchema.parse({
 		nodes: [
 			{ id: "app", name: "Flask app", kind: "app", responsibility: "The application" },
@@ -120,15 +119,13 @@ test("a part's call up to its own frame ends on the frame's front edge", async (
 		edges: [{ id: "up", from: "hook", to: "app", kind: "call", label: "registers" }],
 	});
 	const drawing = await renderArchitecture({ content, theme: "light" });
-	const direction = readingOf(drawing);
 	const app = drawing.atlas.nodes["app"]!;
 	const part = drawing.atlas.nodes["hook"]!;
 	const route = routePoints(drawing.svg).get("up")!;
-	expect(faceOf(route[0]!, part, direction)).toBe("ahead");
-	expect(along(route.at(-1)!, direction)).toBeCloseTo(
-		along(app, direction) + depth(app, direction),
-		1,
-	);
+	expect(distanceToFrame(route[0]!, part)).toBeLessThan(0.02);
+	const headerHeight = measureArchitecture(content).nodes.get("app")!.headerHeight;
+	expect(route.at(-1)!.y).toBeCloseTo(app.y + headerHeight, 1);
+	expect(routeCrosses(route, { ...app, height: headerHeight })).toBe(false);
 	for (const point of route) {
 		expect(point.x).toBeGreaterThanOrEqual(app.x);
 		expect(point.x).toBeLessThanOrEqual(app.x + app.width);

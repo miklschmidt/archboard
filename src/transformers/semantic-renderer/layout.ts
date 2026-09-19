@@ -1,8 +1,12 @@
 // The layout's own rules that focused runtime checks hold without a whole
-// board: how label reservations settle, the spacing a label keeps, and which
-// of several drawings the scorecard keeps.
+// board: label reservations, spacing, corner rounding and crossing bridges.
+export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
+export { curveThrough } from "@/transformers/semantic-renderer/lib/layout/curves";
 export { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
-export { bestOf } from "@/transformers/semantic-renderer/lib/layout/scorecard";
+export {
+	foldColumnCounts,
+	foldColumns,
+} from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 export {
 	settleLabels,
 	type LabelAttempt,

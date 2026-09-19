@@ -1,3 +1,7 @@
+import {
+	ARCHITECTURE_CARD_PADDING,
+	ARCHITECTURE_HEADER_PADDING,
+} from "@/transformers/semantic-renderer/config";
 // Paint the measured words at supplied baselines. No fitting happens here.
 import { CARD_RADIUS, BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingNode, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
@@ -69,8 +73,8 @@ function paintMeasuredCard(
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
-	const chipX = box.x + 16;
-	const chipY = box.y + 16;
+	const chipX = box.x + ARCHITECTURE_CARD_PADDING;
+	const chipY = box.y + ARCHITECTURE_CARD_PADDING;
 	return wrap(
 		"g",
 		{ ...subjectGroup("node", measured.node.id, standing), ...appearanceAttributes(appearance) },
@@ -163,7 +167,12 @@ function paintMeasuredHeader(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			typeChip(placed.box.x + 20, placed.box.y + 20, appearance, palette),
+			typeChip(
+				placed.box.x + ARCHITECTURE_HEADER_PADDING,
+				placed.box.y + ARCHITECTURE_HEADER_PADDING,
+				appearance,
+				palette,
+			),
 			paintTextRuns(placed.measured.runs, placed.box, palette),
 			warningBadge(placed.box, unsettled, palette),
 		]),

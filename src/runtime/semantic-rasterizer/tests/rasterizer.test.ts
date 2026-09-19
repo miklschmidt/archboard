@@ -50,19 +50,23 @@ const SAMPLE = variant({
 });
 
 /**
- * A chain long enough that its page is taller than any display.
+ * An indivisible frame whose chain remains taller than a display after wrapping.
  * @param length How many parts.
  * @returns The content.
  */
 function tallChain(length: number): VariantContent {
 	const ids = Array.from({ length }, (_, index) => `n${index}`);
 	return variant({
-		nodes: ids.map((id, index) => ({
-			id,
-			name: `Stage ${index}`,
-			kind: "module",
-			responsibility: `Does step ${index}`,
-		})),
+		nodes: [
+			{ id: "frame", name: "External pipeline", kind: "external" },
+			...ids.map((id, index) => ({
+				id,
+				name: `Stage ${index}`,
+				kind: "module",
+				responsibility: `Does step ${index}`,
+				parent: "frame",
+			})),
+		],
 		edges: ids
 			.slice(1)
 			.map((id, index) => ({ id: `e${index}`, from: ids[index], to: id, kind: "call" })),

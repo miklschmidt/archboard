@@ -1,0 +1,413 @@
+{
+	"nodes": [
+		{
+			"id": "F6nlRDM4",
+			"name": "Public API consumers",
+			"kind": "external",
+			"responsibility": "Customer integrations depend on the external compatibility contract."
+		},
+		{
+			"id": "l3Eh3C1C",
+			"name": "Admin By Request mobile app",
+			"kind": "external",
+			"responsibility": "Its versioned mobile contract constrains Phone API cutover."
+		},
+		{
+			"id": "kw6lbbtf",
+			"name": "Shared customer databases",
+			"kind": "datastore",
+			"responsibility": "Shared persistence leaves residual schema coupling."
+		},
+		{
+			"id": "Yk7bz2cS",
+			"name": "External + cross-product systems",
+			"kind": "external",
+			"responsibility": "SMS, email and Azure topology remain shared dependencies."
+		},
+		{
+			"id": "veDVRaol",
+			"name": "Cilium / Envoy Gateway API",
+			"kind": "service",
+			"responsibility": "Cuts over Public and Phone HTTPRoutes independently.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "SP4BW793",
+			"name": "Compatibility Baseline",
+			"kind": "external",
+			"responsibility": "Compares legacy and replacement behavior; gates canary, rollback and route removal."
+		},
+		{
+			"id": "PKSgI9Dc",
+			"name": "Platform Public API",
+			"kind": "service",
+			"responsibility": "Proposed independently releasable compatibility protocol adapter.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "PE6mbrQ5",
+			"name": "Public application module",
+			"kind": "module",
+			"responsibility": "Owns auth, IDs and contract presentation.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "n7XpdtCI",
+			"name": "Public capability adapters",
+			"kind": "module",
+			"responsibility": "Keep interfaces inward and persistence replaceable.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "WdIWzgJX",
+			"name": "Platform Phone API",
+			"kind": "service",
+			"responsibility": "Proposed independently releasable mobile compatibility protocol adapter.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "iOx7yu6G",
+			"name": "Phone application module",
+			"kind": "module",
+			"responsibility": "Owns mobile sessions and app presence.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "ytd9lLZ1",
+			"name": "Phone capability adapters",
+			"kind": "module",
+			"responsibility": "Use owned interfaces with a separate Phone API release.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "R6mP1WZx",
+			"name": "Platform capability modules",
+			"kind": "module",
+			"responsibility": "Own Customer, Requests, Inventory, Auditlog and Events capabilities.",
+			"parent": "p1DkBz4Y"
+		},
+		{
+			"id": "Txck393b",
+			"name": "Public-API host",
+			"kind": "service",
+			"responsibility": "Thin .NET Framework 4.7.2 IIS HTTP host."
+		},
+		{
+			"id": "FuUQFqat",
+			"name": "Phone API host",
+			"kind": "service",
+			"responsibility": "Thin MobileApp-API IIS HTTP host."
+		},
+		{
+			"id": "FB5oiRXm",
+			"name": "Common-WebLib.dll",
+			"kind": "module",
+			"responsibility": "One shared release and code-owner boundary."
+		},
+		{
+			"id": "HAGTnr2K",
+			"name": "Customer behavior + DTOs",
+			"kind": "module",
+			"responsibility": "Public contract rules live inside the monolith.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "XLnKM6wi",
+			"name": "Ambient shared glue",
+			"kind": "module",
+			"responsibility": "HttpContext, caches, auth and logging create implicit runtime dependencies.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "0cQKXFuZ",
+			"name": "Phone behavior + DTOs",
+			"kind": "module",
+			"responsibility": "Mobile contract rules live inside the monolith.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "kfNDGF1F",
+			"name": "Common-DataLib",
+			"kind": "module",
+			"responsibility": "Generated LINQ-to-SQL model."
+		},
+		{
+			"id": "p1DkBz4Y",
+			"name": "Platform Kubernetes cluster",
+			"kind": "kubernetes",
+			"responsibility": "Runs the Platform gateway and independently released API workloads."
+		}
+	],
+	"edges": [
+		{
+			"id": "NHlWy1Yw",
+			"from": "F6nlRDM4",
+			"to": "veDVRaol",
+			"kind": "http",
+			"label": "Public contract",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "fXPVXdiF",
+			"from": "l3Eh3C1C",
+			"to": "veDVRaol",
+			"kind": "http",
+			"label": "Mobile contract",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "2L2brMps",
+			"from": "veDVRaol",
+			"to": "PKSgI9Dc",
+			"kind": "http",
+			"label": "Public HTTPRoute",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "SlxZ7y45",
+			"from": "veDVRaol",
+			"to": "WdIWzgJX",
+			"kind": "http",
+			"label": "Phone HTTPRoute",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "19Ua5i2j",
+			"from": "PKSgI9Dc",
+			"to": "PE6mbrQ5",
+			"kind": "call",
+			"label": "Compatibility input",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "PmbWVyS1",
+			"from": "WdIWzgJX",
+			"to": "iOx7yu6G",
+			"kind": "call",
+			"label": "Compatibility input",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "hcLpVekW",
+			"from": "PE6mbrQ5",
+			"to": "n7XpdtCI",
+			"kind": "call",
+			"label": "Owned interfaces",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "c6uEygYM",
+			"from": "iOx7yu6G",
+			"to": "ytd9lLZ1",
+			"kind": "call",
+			"label": "Owned interfaces",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "1MvNS1ZA",
+			"from": "n7XpdtCI",
+			"to": "R6mP1WZx",
+			"kind": "call",
+			"label": "Focused capability interfaces",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "pE6fb3nl",
+			"from": "ytd9lLZ1",
+			"to": "R6mP1WZx",
+			"kind": "call",
+			"label": "Focused capability interfaces",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "UybVIsxV",
+			"from": "R6mP1WZx",
+			"to": "kw6lbbtf",
+			"kind": "data",
+			"label": "Capability-owned persistence",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "J1GkzKgP",
+			"from": "iOx7yu6G",
+			"to": "Yk7bz2cS",
+			"kind": "call",
+			"label": "External side effects",
+			"emphasis": "normal"
+		},
+		{
+			"id": "6cV3k9jp",
+			"from": "SP4BW793",
+			"to": "PKSgI9Dc",
+			"kind": "http",
+			"label": "Differential scenarios",
+			"emphasis": "muted"
+		},
+		{
+			"id": "kJaF9nLs",
+			"from": "veDVRaol",
+			"to": "Txck393b",
+			"kind": "http",
+			"label": "Unmigrated Public routes",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "Y2jnDxOD",
+			"from": "Txck393b",
+			"to": "HAGTnr2K",
+			"kind": "dependency",
+			"label": "Compiles against",
+			"emphasis": "hero"
+		},
+		{
+			"id": "LaTdOSNr",
+			"from": "FuUQFqat",
+			"to": "0cQKXFuZ",
+			"kind": "dependency",
+			"label": "Compiles against",
+			"emphasis": "hero"
+		},
+		{
+			"id": "1ymkhKlO",
+			"from": "HAGTnr2K",
+			"to": "XLnKM6wi",
+			"kind": "call",
+			"label": "Uses ambient helpers",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "RRsjQqWr",
+			"from": "0cQKXFuZ",
+			"to": "XLnKM6wi",
+			"kind": "call",
+			"label": "Uses ambient helpers",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "pu3cHFEc",
+			"from": "HAGTnr2K",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model",
+			"emphasis": "normal"
+		},
+		{
+			"id": "YwmZQrSe",
+			"from": "kfNDGF1F",
+			"to": "kw6lbbtf",
+			"kind": "data",
+			"label": "LINQ-to-SQL persistence",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5YGlSYox",
+			"from": "XLnKM6wi",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model",
+			"emphasis": "normal"
+		},
+		{
+			"id": "avmOZp0l",
+			"from": "XLnKM6wi",
+			"to": "Yk7bz2cS",
+			"kind": "call",
+			"label": "Shared side effects",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HOKDAQTU",
+			"from": "veDVRaol",
+			"to": "FuUQFqat",
+			"kind": "http",
+			"label": "Unmigrated Phone routes",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "iIcmwjb6",
+			"from": "Txck393b",
+			"to": "HAGTnr2K",
+			"kind": "call",
+			"label": "Dispatch request",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "GfFfqsZy",
+			"from": "FuUQFqat",
+			"to": "0cQKXFuZ",
+			"kind": "call",
+			"label": "Dispatch request",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

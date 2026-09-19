@@ -244,8 +244,6 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		fonts: request.fonts ?? "linked",
 		body: painting.body,
 		reading: drawing.direction,
-		wrapped: drawing.wrapped,
-		flanks: drawing.flanks,
 	});
 
 	return {

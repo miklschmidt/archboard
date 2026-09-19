@@ -1452,3 +1452,29 @@ the root is 2162×2095, and both database targets start 64 pixels beneath their
 VM pool, with centers inside the pool's horizontal span. The final whole-board
 and named-view sweeps retain zero card crossings, off-run labels, label/card
 overlaps and labels covering unrelated routes.
+
+## 31. Graphviz placement and native obstacle routing (TASK-278)
+
+The user requested adoption of the shared-container-row prototype and explicitly
+rejected carrying the old renderer's extra constraints into it. Graphviz now
+places measured nodes across semantic clusters; libavoid routes around cards
+and complete measured title bands. Ports shared by relationship kind replace private
+ordered ports. There are no boundary sections, flank-policy candidates, endpoint
+checkpoints or post-layout lane/jog repairs. Every variant lays out fresh,
+always top-to-bottom; the user rejected automatic sideways readings.
+
+Labels first use clear native route runs. A placement reservation does not
+itself become a waypoint; only a label that still cannot fit asks for a reserved
+straight run. Independent leaf collections retain compact wrapping and the
+requested equal 24px side/bottom insets. Semantic identities, containment,
+Standing and the shared SVG/atlas geometry remain unchanged.
+
+The inspected Public API fixture improves fit by 82% and reduces route length
+by 52%, with 2.56 bends per relationship and one crossing. Broader results are
+mixed: total route length falls 40% and crossings fall from 289 to 146 across
+24 drawings, while two lose fit and 23 have more bends than the preceding
+ELK renderer. No routes cross cards and no labels leave their own route runs.
+The full before/after table, reproduction and test-policy changes are in
+[the adoption investigation](shared-container-rows.md#production-adoption-shared-ports-and-natural-routes).
+[ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md) records the
+engine decision; [container-rules.md](container-rules.md) is the current inventory.

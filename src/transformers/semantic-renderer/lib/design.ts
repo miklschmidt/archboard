@@ -1,26 +1,11 @@
-// The measurements of the picture, in one place. These are the design system:
-// change a number here and every diagram moves with it.
+// Typography and visual styling. Layout clearances live in ../config.ts.
 //
 // Forked from PR Lens's `design.ts` and retuned for Archboard's operator shell,
 // which is flat and dense: small corner radii, one-pixel rules, no shadow and
 // no gradient. Anything to do with a pull request — badge strips, dead bands,
 // pulse timings — is gone rather than retuned.
 
-const DIAGRAM_MARGIN = 20;
-
 const BAND_RADIUS = 6;
-
-/**
- * How far a sequence frame's participant columns are set in from its box.
- */
-const NEST_INSET = 18;
-
-/** The air between a flow's title block and its participant cards. */
-const HEADER_GAP = 8;
-/** The air between a flow's title block and the top edge of its frame. */
-const CONTAINER_TOP_PAD = 8;
-/** The air between a flow's last message and the bottom edge of its frame. */
-const CONTAINER_BOTTOM_PAD = 14;
 
 /** A flow header's height with a name alone, and with a summary under it. */
 const HEADER_HEIGHT = 19;
@@ -54,7 +39,6 @@ const CARD_RADIUS = 6;
 /** Minimum participant-card heights; each additional responsibility line adds its line height. */
 const CARD_HEIGHT = 46;
 const CARD_HEIGHT_WITH_NOTE = 58;
-const CARD_PADDING_X = 13;
 
 const ICON_CHIP_SIZE = 24;
 const ICON_CHIP_GAP = 10;
@@ -85,59 +69,8 @@ const PILL_PADDING_X = 8;
 const PILL_TEXT_SIZE = 9;
 const PILL_RADIUS = 4;
 
-/**
- * A turn's bend radius comes from the shorter of its two legs, capped here.
- * Deriving it from the longer leg balloons a route with one short leg and one
- * long one clear out of the channel the layout left for it.
- * Smaller than PR Lens's 34: the shell's chrome turns tight corners, and a
- * generous sweep reads as a different product.
- */
-const BEND_RADIUS_MAX = 14;
-
-/**
- * How much of the line an arrowhead covers, measured back from the tip: the
- * largest of `HEAD_SIZE` in `svg/document.ts`, drawn for a hero. A label that
- * comes nearer than this sits on the head and hides where the line points.
- */
-const HEAD_REACH = 7.5;
-
-/**
- * The smallest turn that still reads as one: under this an arc is barely longer
- * than the line is wide. Not a floor the rounding enforces — a leg too short to
- * turn on still comes out square — but the room the router leaves beside a
- * card, so a turn taken there has something to round with.
- */
-const BEND_RADIUS_MIN = 8;
-
-/**
- * How much dead-straight line an endpoint keeps before the route turns.
- *
- * A rounded corner takes its radius off BOTH of its legs — that is what makes
- * it tangent to each — so a route whose last leg was fourteen units long used
- * to arrive on seven units of straight line and seven of arc, with the
- * arrowhead sitting across the join. A head that meets a card at an angle
- * reads as pointing somewhere other than where it points, and the marker's own
- * rounding makes it worse: the widest head this renderer draws is 7.5 units, so
- * anything under that is a head drawn on a curve.
- *
- * Twelve is that head plus a little air. It is a floor on the straight run, not
- * a fixed stub: a leg with room to spare still rounds at `BEND_RADIUS_MAX`, and
- * a leg too short to give twelve gives everything it has and rounds not at all.
- */
-const APPROACH_STRAIGHT = 12;
-
-/** Small raised shoulders distinguish a crossing without rerouting its corridor. */
-const BRIDGE_RADIUS = 7;
-/** Clear air between bridge ink and unrelated turns, labels or cards. */
-const BRIDGE_CLEARANCE = 3;
-
 export {
-	DIAGRAM_MARGIN,
 	BAND_RADIUS,
-	NEST_INSET,
-	HEADER_GAP,
-	CONTAINER_TOP_PAD,
-	CONTAINER_BOTTOM_PAD,
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
 	HEADER_NAME_SIZE,
@@ -148,7 +81,6 @@ export {
 	CARD_RADIUS,
 	CARD_HEIGHT,
 	CARD_HEIGHT_WITH_NOTE,
-	CARD_PADDING_X,
 	ICON_CHIP_SIZE,
 	ICON_CHIP_GAP,
 	ICON_CHIP_RADIUS,
@@ -162,10 +94,18 @@ export {
 	PILL_PADDING_X,
 	PILL_TEXT_SIZE,
 	PILL_RADIUS,
+};
+
+export {
+	DIAGRAM_MARGIN,
+	NEST_INSET,
+	HEADER_GAP,
+	CONTAINER_TOP_PAD,
+	CONTAINER_BOTTOM_PAD,
+	CARD_PADDING_X,
+	BEND_RADIUS_MAX,
+	BEND_RADIUS_MIN,
 	APPROACH_STRAIGHT,
 	BRIDGE_RADIUS,
 	BRIDGE_CLEARANCE,
-	BEND_RADIUS_MAX,
-	BEND_RADIUS_MIN,
-	HEAD_REACH,
-};
+} from "@/transformers/semantic-renderer/config";

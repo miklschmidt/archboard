@@ -496,10 +496,38 @@
 				},
 				{
 					"path": "compact semantic containers and direct outgoing relationships",
-					"expectedUse": "author actual containment and relationships; the renderer packs independent cards, keeps compact equal insets and places outgoing targets in their relationship direction rather than forcing a flank",
+					"expectedUse": "author actual containment and relationships; the renderer packs independent cards, keeps compact equal insets and routes to real endpoints using shared ports without forcing a flank",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/runtime/semantic-renderer/tests/container-packing.test.ts"
+				},
+				{
+					"path": "outside relationships share container rows",
+					"expectedUse": "author real containment and relationships; outside callers and dependencies may sit beside their connected children without changing ownership",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/shared-container-rows.test.ts"
+				},
+				{
+					"path": "stable horizontal sibling ordering between variants",
+					"expectedUse": "preserve subject identities; equivalent sibling cards keep horizontal order in fresh slots without freezing positions or ranks",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/sibling-order.test.ts"
+				},
+				{
+					"path": "relationship-kind routing separation",
+					"expectedUse": "author real relationship kinds; one kind may share a port while different kinds use distinct ports and tracks",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts"
+				},
+				{
+					"path": "automatic downward column wrapping",
+					"expectedUse": "author the real branching path and containment; the renderer selects readable downward columns without authored placement",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/automatic-columns.test.ts; src/transformers/semantic-renderer/tests/fold-columns.test.ts"
 				},
 				{
 					"path": "restore absent inherited node and relationship identities",

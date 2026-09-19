@@ -1,0 +1,13 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index e84015ad35a1f2c37c59a38c35e4173c42e3e51f..4ee73f7160b4816680e520d8d1db050b27ca0636 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -38,5 +38,5 @@ declare interface Router {
+-  moveShape_poly(shape: ShapeRef, newPolygon: Polygon);
+-  moveShape_delta(shape: ShapeRef, xDiff: number, yDiff: number);
+-  deleteShape(shape: ShapeRef);
++  moveShape_poly(shape: ShapeRef, newPolygon: Polygon): void;
++  moveShape_delta(shape: ShapeRef, xDiff: number, yDiff: number): void;
++  deleteShape(shape: ShapeRef): void;
+   setRoutingParameter(parameter: RoutingParameter, value: number): void;
+   setRoutingOption(option: RoutingOption, value: boolean): void;

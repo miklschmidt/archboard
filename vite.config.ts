@@ -16,10 +16,15 @@ const RENDERER_MODULE = "virtual:archboard-renderer";
 /** Everything a picture drawn in the browser depends on, besides the board. */
 const RENDERER_SOURCES = [
 	"src/transformers/semantic-renderer",
+	"src/ui/browser-renderer",
+	"src/runtime/semantic-renderer/lib/layout-worker.ts",
+	"src/runtime/semantic-renderer/lib/engine-pool.ts",
 	"src/shared/semantic-board",
 	"src/shared/semantic-policy",
 	"src/shared/theme/theme.css",
-	"node_modules/@archboard/elk-rs/package.json",
+	"node_modules/@viz-js/viz/package.json",
+	"node_modules/libavoid-js/package.json",
+	"node_modules/libavoid-js/dist/libavoid.wasm",
 ];
 
 /**

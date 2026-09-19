@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, roundBridges } from "./drawn-routes";
-import cornerCrossing from "./corner-crossing.json";
 
 // Complete bipartite connections cannot all be drawn without crossings. Equal
 // node names keep text measurement from choosing a special-case layout.
@@ -11,29 +10,6 @@ const CROSSED = VariantContentSchema.parse({
 	edges: ["a", "b", "c"].flatMap((from) =>
 		["x", "y", "z"].map((to) => ({ id: from + to, from, to, kind: "call", traffic: {} })),
 	),
-});
-
-test("a crossing beside a rounded turn bridges whichever route has room", async () => {
-	// The fixture's first variant, drawn on its own, crosses these two routes
-	// ten units from one route's turn. A first render is the stable way to reach
-	// that geometry: how a proposal attaches the relationships it adds is the
-	// layout's to change (docs/design/layout-rules.md section 15).
-	const [before] = cornerCrossing.map((value) => VariantContentSchema.parse(value));
-	const drawing = await renderArchitecture({ content: before!, theme: "dark" });
-	const lines = routes(drawing.svg);
-	const pair = ["eKqUHYSH", "I1lGjMES"].map((id) => lines.find((line) => line.id === id)!);
-	const cutouts = masks(drawing.svg);
-	expect(
-		pair.some((lower, index) =>
-			(cutouts.get(lower.mask ?? "") ?? []).some((cutout) => {
-				const span = cutout.path.replace(/^M/u, "L");
-				return (
-					roundBridges(` ${span}`).length === 1 &&
-					pair[1 - index]!.paths.every((path) => path.includes(span))
-				);
-			}),
-		),
-	).toBe(true);
 });
 
 /** Read only the route groups, excluding separately painted relationship words. */
@@ -68,7 +44,7 @@ function masks(svg: string) {
 	);
 }
 
-test("round bridges share one curve and narrowly clear the ink beneath them", async () => {
+test("crossing clearances share the drawn curve and narrowly clear the ink beneath them", async () => {
 	const light = await renderArchitecture({ content: CROSSED, theme: "light" });
 	const dark = await renderArchitecture({ content: CROSSED, theme: "dark" });
 	const lines = routes(light.svg);
@@ -76,12 +52,18 @@ test("round bridges share one curve and narrowly clear the ink beneath them", as
 	const cutouts = masks(light.svg);
 	expect(lines).toHaveLength(9);
 	let crossings = 0;
+	for (const cutout of [...cutouts.values()].flat()) {
+		const localCommands = cutout.path.replace(/^M[-\d.,]+ /u, "");
+		const upper = lines.find((route) => route.paths[0]!.includes(localCommands));
+		expect(upper, "a cutout follows existing upper-route ink").toBeDefined();
+		expect(cutout.width - upper!.width).toBeCloseTo(3, 5);
+		crossings += 1;
+	}
 	for (const upper of lines) {
 		// The only route paths are line, halo and traffic: no background patch.
 		expect(upper.paths).toHaveLength(3);
 		expect(new Set(upper.paths).size).toBe(1);
 		for (const bridge of roundBridges(upper.paths[0]!)) {
-			crossings += 1;
 			const localCurve = bridge.span.trim().replace(/^L/u, "M");
 			const matchingCutouts = lines
 				.filter((lower) => lower.id !== upper.id)
@@ -103,7 +85,9 @@ test("round bridges share one curve and narrowly clear the ink beneath them", as
 			}
 		}
 	}
-	expect(crossings).toBeGreaterThan(1);
+	// K3,3 may cross on straight runs or meet at rounded corners. Either
+	// contact must have a visible overpass, without dictating native routing.
+	expect(crossings).toBeGreaterThan(0);
 	expect(masks(dark.svg)).toEqual(cutouts);
 	expect(routes(dark.svg)).toEqual(lines);
 	expect(dark.atlas).toEqual(light.atlas);

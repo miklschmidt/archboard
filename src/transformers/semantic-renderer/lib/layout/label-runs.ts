@@ -9,7 +9,6 @@ import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/lib/design";
 import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { curveBounds, pointAt } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
-import { headerAxis, type HeaderSide } from "@/transformers/semantic-renderer/lib/layout/reading";
 
 /** A route piece and its conservative bounds, including rounded corners. */
 interface RoutePiece {
@@ -59,8 +58,6 @@ interface Obstacles {
  * reservation makes a layer of its own, moving every row and bending the route.
  */
 const ROUTE_SNAP = 0.5;
-/** The run kept clear at each end of a badge when the node spacing leaves no room at all. */
-const TIGHT_AIR = 8;
 
 const DIMENSIONS = {
 	x: { cross: "y", length: "width", breadth: "height" },
@@ -260,15 +257,13 @@ function insidePage(box: Box, drawing: ArchitectureDrawing): boolean {
 /**
  * Protect card bodies and frame ink while leaving each frame's interior usable.
  * @param drawing The engine's cards and measured container headings.
- * @param header Where a frame's title band sits in the solving frame.
  * @returns Obstacles before the common label-to-node clearance is added.
  */
-function nodeObstacles(drawing: ArchitectureDrawing, header: HeaderSide): Box[] {
-	const extent = headerAxis(header) === "y" ? "height" : "width";
+function nodeObstacles(drawing: ArchitectureDrawing): Box[] {
 	return [
 		...drawing.cards.map(({ box }) => box),
 		...drawing.containers.flatMap(({ box, measured }) => [
-			{ ...box, [extent]: measured.headerHeight },
+			{ ...box, height: measured.headerHeight },
 			{ ...box, width: 0 },
 			{ ...box, x: box.x + box.width, width: 0 },
 			{ ...box, y: box.y + box.height, height: 0 },
@@ -282,13 +277,11 @@ function nodeObstacles(drawing: ArchitectureDrawing, header: HeaderSide): Box[] 
  * Reserved engine boxes remain a fallback when no clear alternative fits.
  * @param drawing Solved cards and routes, with any reserved label boxes.
  * @param measured Measured labels, including those awaiting their first placement.
- * @param header Where a frame's title band sits in the solving frame.
  * @returns The one final drawing, with only eligible label boxes replaced.
  */
 function placeLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
-	header: HeaderSide,
 ): ArchitectureDrawing {
 	const pieces = piecesOf(drawing.edges);
 	const labels = new Map(
@@ -299,23 +292,8 @@ function placeLabelsOnRuns(
 	const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 	const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
-	const cards = nodeObstacles(drawing, header);
-	// Grown once: the cards at each clearance asked for, every route piece, and
-	// each label as it is placed, kept in the order the labels map holds them.
-	const grownCards = new Map<number, Box[]>();
-	/**
-	 * The cards grown by a clearance, grown once for each clearance asked for.
-	 * @param air The clearance.
-	 * @returns The grown cards.
-	 */
-	const cardsAt = (air: number): Box[] => {
-		let grown = grownCards.get(air);
-		if (grown === undefined) {
-			grown = cards.map((box) => inflate(box, air));
-			grownCards.set(air, grown);
-		}
-		return grown;
-	};
+	const cards = nodeObstacles(drawing);
+	const grownCards = cards.map((box) => inflate(box, nodeAir));
 	const grownPieces = pieces.map(({ box }) => inflate(box, routeAir));
 	const grownLabels = new Map([...labels].map(([id, box]) => [id, inflate(box, labelAir)]));
 	for (const edge of drawing.edges.toSorted((one, other) =>
@@ -338,7 +316,7 @@ function placeLabelsOnRuns(
 			for (const [index, piece] of pieces.entries()) {
 				if (piece.edgeId !== edge.edge.id) continue;
 				const obstacles = {
-					groups: [cardsAt(air), otherLabels, grownPieces],
+					groups: [grownCards, otherLabels, grownPieces],
 					pieces: grownPieces,
 					ownPiece: index,
 				};
@@ -348,12 +326,7 @@ function placeLabelsOnRuns(
 			}
 			return found;
 		};
-		// A run between two rows is short: with the node spacing clear at both
-		// ends it holds nothing, and a label the runs cannot hold is reserved with
-		// the engine, which gives it a layer of its own and makes the page taller
-		// by a row. A tighter second pass keeps the label on its own line first.
-		const roomy = candidatesWith(nodeAir);
-		const candidates = roomy.length > 0 ? roomy : candidatesWith(TIGHT_AIR);
+		const candidates = candidatesWith(nodeAir);
 		const chosen = candidates.toSorted(
 			(one, other) =>
 				// Nearest an end first: a reader traces a line from a card and should
