@@ -122,8 +122,10 @@ unfamiliar codebase would. When it only holds with archboard's names, it is
 example material and goes in a recipe's worked example. When it only holds
 for one evaluation scenario, it is a fix for that scenario and stays out of
 the skill. A batch analysis names failing runs; the skill change is the
-portable pattern behind several of them, stated in portable terms and shown in
-an archboard example.
+portable pattern behind them, stated in portable terms and shown in an
+archboard example. One scenario may be what reveals the pattern: a rule is
+judged by whether it holds in any codebase, not by how many scenarios exposed
+it.
 
 The evaluated codebase appears nowhere in either package: `bun run eval:skill
 check` refuses its names and every board, view, variant, group and quoted
