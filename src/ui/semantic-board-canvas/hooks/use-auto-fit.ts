@@ -14,9 +14,9 @@
 // meant to be showing has changed because the reader moved, so the camera is
 // taken back and fitted to the step — and then it is theirs again: panning
 // inside one step sticks, and only moving to another step takes it back. While
-// a walkthrough is presented the camera glides between steps rather than
-// cutting, and leaving the presentation glides back to the camera the reader
-// had before it began.
+// a new picture arrives the camera glides from the last reading to its fit;
+// the very first picture fits before paint. Walkthrough steps glide too, and
+// leaving a presentation glides back to the camera the reader had before it.
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 
@@ -94,7 +94,7 @@ function giveBack(camera: BoardCamera, held: HeldCamera | null, reading: FitRead
 }
 
 /**
- * Move the camera to a subject: a glide while presenting, a fit otherwise.
+ * Move the camera to a subject: glide between readings, fit the first picture.
  * @param camera The camera.
  * @param target What to show.
  * @param reading How the pane is being read.
@@ -110,7 +110,7 @@ function moveTo(
 	picture: string | null,
 ): boolean {
 	const pictureChanged = fitted.picture !== picture;
-	if (reading.presenting && fitted.subject !== null) {
+	if (fitted.subject !== null && (reading.presenting || pictureChanged)) {
 		return camera.glide(target, stepDuration(reading, pictureChanged));
 	}
 	return camera.fit(target, pictureChanged);
@@ -223,9 +223,8 @@ function useAutoFit(
 	const room = roomKey(camera.room);
 	const { presenting } = request;
 	const reducedMotion = request.reducedMotion === true;
-	// Before paint: a picture that has just gone up is shown fitted from its
-	// first frame, at once, rather than sliding into place. A new beat of the
-	// same picture glides, because the reader is following it.
+	// Before paint: the first picture fits at once; later readings and
+	// walkthrough steps start their glide from the camera the reader saw.
 	useLayoutEffect(() => {
 		// Loading removes the viewport temporarily, not the reader’s camera.
 		if (target === null) {
