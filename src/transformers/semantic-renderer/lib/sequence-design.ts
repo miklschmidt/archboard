@@ -1,3 +1,4 @@
+import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import type { Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 // Sequence-diagram measurements, used by the data-flow renderer.
@@ -46,7 +47,7 @@ const ACTIVATION_RADIUS = 3;
 /** How far right a self-message reaches, and how far it drops before turning back. */
 const SELF_LOOP_REACH = 52;
 const SELF_LOOP_DROP = 8;
-const SELF_LOOP_CORNER = 7;
+const SELF_LOOP_CORNER = BEND_RADIUS;
 /** How far below its own row a self-message loop reaches. */
 const SELF_LOOP_EXTENT = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2;
 

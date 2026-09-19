@@ -3,6 +3,7 @@
 
 import { expect, test } from "bun:test";
 import frameApproach from "./frame-head-approach.json";
+import sideApproach from "./side-head-approach.json";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
@@ -141,4 +142,35 @@ test("an incoming frame arrow has a whole head and rounded bend before its endpo
 	const start = steps.at(-3)!.values.slice(-2);
 	const radius = Math.min(Math.abs(start[0]! - beside[0]!), Math.abs(start[1]! - beside[1]!));
 	expect(radius, "the bend has its own room before the head").toBeGreaterThanOrEqual(7.99);
+});
+
+// Reduced from Kubernetes runtime HIE4JB9t: Portal's ordinary OIDC connection
+// entered a crowded side corridor with only 12.1 units for the head and bend.
+test("an ordinary arrow reserves a full straight approach and bend beside neighboring cards", async () => {
+	const content = VariantContentSchema.parse(sideApproach);
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	const points = routePoints(drawing.svg).get("tPQRa40r")!;
+	expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["mVg3PdJf"]!);
+	const group = drawing.svg.match(
+		/<g data-semantic-kind="edge" data-semantic-id="tPQRa40r"[^>]*>([\s\S]*?)<\/g>/,
+	)![1]!;
+	const path = [...group.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)].at(-1)![1]!;
+	const steps = [...path.matchAll(/([MLC])([^MLC]+)/g)].map((match) => ({
+		kind: match[1],
+		point: match[2]!.trim().split(/[ ,]+/).map(Number).slice(-2),
+	}));
+	const tip = steps.at(-1)!;
+	const before = steps.at(-2)!;
+	expect(tip.kind).toBe("L");
+	expect(
+		Math.hypot(tip.point[0]! - before.point[0]!, tip.point[1]! - before.point[1]!),
+	).toBeGreaterThanOrEqual(11.99);
+	if (steps.length === 2) return; // A clear straight connection needs no bend.
+	expect(before.kind).toBe("C");
+	const start = steps.at(-3)!.point;
+	const radius = Math.min(
+		Math.abs(start[0]! - before.point[0]!),
+		Math.abs(start[1]! - before.point[1]!),
+	);
+	expect(radius).toBeCloseTo(8, 2);
 });

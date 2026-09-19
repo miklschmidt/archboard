@@ -523,6 +523,13 @@
 					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts; src/runtime/semantic-renderer/tests/matched-kind-channels.test.ts; src/runtime/semantic-renderer/tests/route-labels.test.ts"
 				},
 				{
+					"path": "fixed bend and arrow approach clearance",
+					"expectedUse": "author real relationships; the renderer reserves space for fixed-radius bends and full straight arrow approaches instead of shrinking visible geometry",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/route-approach.test.ts; src/runtime/semantic-renderer/tests/crossing-rounding.test.ts"
+				},
+				{
 					"path": "automatic downward column wrapping",
 					"expectedUse": "author the real branching path and containment; the renderer selects downward columns by how the completed routed picture fits the pane while keeping containers together, without authored placement",
 					"scenarios": [],

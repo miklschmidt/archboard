@@ -3,6 +3,7 @@
 export {
 	bridgeCrossings,
 	curveThrough,
+	curveClearanceIssue,
 	COMPOUND_OPTIONS,
 	settleLabels,
 	type ArchitectureDrawing,

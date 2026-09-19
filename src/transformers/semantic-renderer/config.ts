@@ -9,9 +9,9 @@ export const DIAGRAM_MARGIN = 20;
 export const PLACEMENT_MARGIN = 24;
 /** Equal space below a container title and at its sides/bottom. */
 export const CONTAINER_INSET = 24;
-/** Horizontal space between cards; also the gap in packed collections. */
+/** Preferred horizontal gap; routed cards also require room for bends and arrow approaches. */
 export const CARD_GAP = 24;
-/** Vertical space between ranks. Reserved labels add their measured height. */
+/** Preferred rank gap, subject to routing clearance. Reserved labels add their measured height. */
 export const RANK_GAP = 32;
 /** Space between downward columns, including continuation routes and labels. */
 export const COLUMN_GAP = 192;
@@ -31,11 +31,11 @@ export const ROUTE_OBSTACLE_CLEARANCE = 8;
 export const ROUTE_NUDGE_DISTANCE = 12;
 /** Native cost of adding a segment; larger values favor fewer bends. */
 export const ROUTE_SEGMENT_PENALTY = 20;
-/** Target corner radius; limited by available leg and label space. */
-export const BEND_RADIUS_MAX = 14;
-/** Bend space reserved together with the straight arrow approach. */
-export const BEND_RADIUS_MIN = 8;
-/** Hero arrow approach, scaled with rendered stroke width; exceeds its 9.735px marker reach. */
+/** Fixed radius of ordinary edge bends. Routing must provide enough room; this never shrinks. */
+export const BEND_RADIUS = 8;
+/** Open passage between opposing routing footprints; touching footprints block native routing. */
+export const ROUTE_OPEN_CORRIDOR = 2;
+/** Required straight run after the final bend, for every arrow (largest marker reaches 9.735px). */
 export const APPROACH_STRAIGHT = 12;
 /** Crossing bridge size and clearance from surrounding ink. */
 export const BRIDGE_RADIUS = 7;

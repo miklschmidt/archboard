@@ -1478,3 +1478,32 @@ The full before/after table, reproduction and test-policy changes are in
 [the adoption investigation](shared-container-rows.md#production-adoption-shared-ports-and-natural-routes).
 [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md) records the
 engine decision; [container-rules.md](container-rules.md) is the current inventory.
+
+## 32. Fixed bend geometry and required arrow approaches (TASK-278)
+
+Ordinary route bends use one `BEND_RADIUS` (8 diagram pixels), without adaptive
+minimum/maximum radii. Every target retains `APPROACH_STRAIGHT` (12 pixels),
+independent of stroke emphasis. Sequence self-loop corners use the same radius;
+crossing bridges retain their separate bridge radius. These distances and the
+other tuning values live in `src/transformers/semantic-renderer/config.ts`.
+
+Native solid obstacles reserve the bend plus approach outside each visible card
+or title. Inset native pins still attach to the physical border. Placement leaves
+an open passage between opposing routing footprints; disconnected collections
+retain their configured packing gaps. A connected container's title-to-content
+gap accommodates the same physical footprints. Forced label anchors must clear
+those footprints and other routes, as ordinary labels already do.
+
+Balanced port candidates check the obstacles actually offered to the router.
+Label anchors follow feasible existing runs; a forced waypoint that reveals a
+nearby channel can be corrected on its reserved row. A cramped approach near a
+card endpoint or external container arrival removes that face from the shared
+relationship-kind alternatives
+and lets the native router choose another. This search removes one face per solve
+and never removes the last alternative. A rejected native alternative retains
+the previous complete route set for label settlement; partial routes are never
+published. It does not move authored content or alter relationship identities.
+
+Completed routes must fit their fixed bends and full arrow approach. Intermediate
+label attempts may be incomplete, but reservation releases and final emission
+cannot accept reversed tangents, undersized runs, or labels occupying bends.

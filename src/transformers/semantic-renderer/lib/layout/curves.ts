@@ -6,7 +6,7 @@ import { SELF_LOOP_REACH } from "@/transformers/semantic-renderer/config";
 // here along its real seams: this is the geometry of a drawn route, with no
 // opinion about which gaps the route travelled through.
 
-import { APPROACH_STRAIGHT, BEND_RADIUS_MAX } from "@/transformers/semantic-renderer/lib/design";
+import { APPROACH_STRAIGHT, BEND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /** One piece of a route. */
@@ -190,7 +190,7 @@ function simplify(points: readonly Point[]): Point[] {
  * @returns True when they are the same place.
  */
 function samePoint(a: Point | undefined, b: Point): boolean {
-	return a !== undefined && a.x === b.x && a.y === b.y;
+	return a !== undefined && Math.hypot(a.x - b.x, a.y - b.y) < EPSILON;
 }
 
 /**
@@ -213,7 +213,10 @@ function redundantTail(kept: readonly Point[], point: Point): boolean {
  * @returns True when the middle point is redundant.
  */
 function collinear(a: Point, b: Point, c: Point): boolean {
-	return (a.x === b.x && b.x === c.x) || (a.y === b.y && b.y === c.y);
+	return (
+		(Math.abs(a.x - b.x) < EPSILON && Math.abs(b.x - c.x) < EPSILON) ||
+		(Math.abs(a.y - b.y) < EPSILON && Math.abs(b.y - c.y) < EPSILON)
+	);
 }
 
 /** The three points of one turn. */
@@ -253,34 +256,17 @@ function endOf(segments: readonly Segment[], first: Point): Point {
 }
 
 /**
- * The straight run into a turn and the turn itself, sized by the shorter of its
- * two legs. Deriving the radius from the longer leg is the known failure — it
- * balloons a route with one short leg clear out of the corridor the planner put
- * it in.
- *
- * The last turn leaves straight space for the target arrowhead. Its caller
- * supplies the reserve for the actual stroke width; the source has no head.
- * A corner takes the same radius from both legs, so the remaining target
- * space limits the whole bend.
+ * One ordinary turn always uses the same radius. Intermediate layout attempts
+ * may lack room; the completed reading is checked before it can be emitted.
  * @param corner The turn.
  * @param start Where the route currently stands.
- * @param reservedLeaving How much of the outgoing leg the target head needs straight.
- * @param maximum The radius allowed by a reserved label.
- * @returns The segments to append.
+ * @returns The straight approach and fixed-radius turn.
  */
-function bendThrough(
-	corner: Corner,
-	start: Point,
-	reservedLeaving: number,
-	maximum: number,
-): Segment[] {
+function bendThrough(corner: Corner, start: Point): Segment[] {
 	const { previous, vertex, next } = corner;
 	const inLength = Math.hypot(vertex.x - previous.x, vertex.y - previous.y);
 	const outLength = Math.hypot(next.x - vertex.x, next.y - vertex.y);
-	const radius = Math.max(
-		0,
-		Math.min(maximum, Math.min(inLength, outLength) / 2, outLength - reservedLeaving),
-	);
+	const radius = BEND_RADIUS;
 	const inDir = { x: (vertex.x - previous.x) / inLength, y: (vertex.y - previous.y) / inLength };
 	const outDir = { x: (next.x - vertex.x) / outLength, y: (next.y - vertex.y) / outLength };
 	const arrive = { x: vertex.x - inDir.x * radius, y: vertex.y - inDir.y * radius };
@@ -341,69 +327,164 @@ function distanceOnLeg(vertex: Point, end: Point, point: Point): number | undefi
  * @returns Its distance along the leg, or infinity when the label does not meet it.
  */
 function labelClearance(vertex: Point, end: Point, label: Box): number {
+	const inside = (
+		[
+			["x", "width"],
+			["y", "height"],
+		] as const
+	).every(
+		([axis, extent]) => vertex[axis] >= label[axis] && vertex[axis] <= label[axis] + label[extent],
+	);
+	if (inside) return 0;
 	const [axis, cross, extent, breadth] =
 		end.x === vertex.x
 			? (["y", "x", "height", "width"] as const)
 			: (["x", "y", "width", "height"] as const);
 	if (vertex[cross] < label[cross] || vertex[cross] > label[cross] + label[breadth])
 		return Infinity;
-	return (
-		Math.min(
-			...[label[axis], label[axis] + label[extent]].map(
-				(at) => distanceOnLeg(vertex, end, { ...vertex, [axis]: at }) ?? Infinity,
-			),
-		) - EPSILON
+	return Math.min(
+		...[label[axis], label[axis] + label[extent]].map(
+			(at) => distanceOnLeg(vertex, end, { ...vertex, [axis]: at }) ?? Infinity,
+		),
 	);
-}
-
-/**
- * Keep the engine's reserved label on its straight run when a nearby turn rounds.
- * @param corner The turn and its two legs.
- * @param label The route's reserved label, if one was needed.
- * @returns The usual radius, reduced only where a leg meets the label footprint.
- */
-function labelRadius(corner: Corner, label: Box | undefined): number {
-	return label === undefined
-		? BEND_RADIUS_MAX
-		: Math.min(
-				BEND_RADIUS_MAX,
-				...[corner.previous, corner.next].map((end) => labelClearance(corner.vertex, end, label)),
-			);
 }
 
 /**
  * The polyline as one continuous line: long runs stay dead straight and only
  * the turns curve.
- * @param points The waypoints.
- * @param label The reserved label whose footprint must remain straight.
- * @param targetApproach Straight space reserved for the target arrowhead.
+ * @param waypoints The native orthogonal waypoints.
  * @returns The route.
  */
-function curveThrough(
-	points: readonly Point[],
-	label?: Box,
-	targetApproach = APPROACH_STRAIGHT,
-): Curve {
+function curveThrough(waypoints: readonly Point[]): Curve {
+	const points = simplify(waypoints);
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
 	const last = points.length - 1;
 	for (let index = 1; index < last; index += 1) {
 		const corner = cornerAt(points, index);
 		if (corner !== undefined) {
-			// Only the target carries an arrowhead. Half-leg rounding already keeps
-			// the source tangent square without reserving space for invisible ink.
-			segments.push(
-				...bendThrough(
-					corner,
-					endOf(segments, first),
-					index === last - 1 ? targetApproach : 0,
-					labelRadius(corner, label),
-				),
-			);
+			segments.push(...bendThrough(corner, endOf(segments, first)));
 		}
 	}
 	closeOn(segments, first, points[points.length - 1]);
 	return { from: first, segments };
+}
+
+/**
+ * Recover native vertices from ordinary quarter-circle bends, before bridges.
+ * Each vertex is the intersection of the incoming and outgoing tangents.
+ * @param curve An ordinary rounded route, without crossing arcs.
+ * @returns Its original endpoint and corner positions.
+ */
+function verticesOf(curve: Curve): Point[] {
+	const points = [curve.from];
+	let from = curve.from;
+	for (const segment of curve.segments) {
+		if (segment.kind === "cubic") {
+			const vertical = Math.abs(segment.first.x - from.x) < Math.abs(segment.first.y - from.y);
+			points.push(vertical ? { x: from.x, y: segment.to.y } : { x: segment.to.x, y: from.y });
+		}
+		from = segment.to;
+	}
+	points.push(from);
+	return points;
+}
+
+/**
+ * A straight piece cannot run backward through an adjoining fixed bend.
+ * @param curve The ordinary route.
+ * @param index The straight segment being checked.
+ * @returns Whether its direction opposes either adjoining tangent.
+ */
+function reversesBend(curve: Curve, index: number): boolean {
+	const from = segmentStart(curve, index);
+	const to = curve.segments[index]!.to;
+	const previous = curve.segments[index - 1];
+	const next = curve.segments[index + 1];
+	const tangents = [
+		...(previous?.kind === "cubic"
+			? [{ x: from.x - previous.second.x, y: from.y - previous.second.y }]
+			: []),
+		...(next?.kind === "cubic" ? [{ x: next.first.x - to.x, y: next.first.y - to.y }] : []),
+	];
+	return tangents.some(
+		(tangent) => (to.x - from.x) * tangent.x + (to.y - from.y) * tangent.y < -EPSILON,
+	);
+}
+
+/**
+ * Check a completed route without interrupting intermediate label attempts.
+ * A source has no head; adjoining turns share a leg; the target keeps its full
+ * straight approach. Labels must leave the whole bend outside their footprint.
+ * @param curve The ordinary route, before crossing bridges are added.
+ * @param label Its final label footprint, if present.
+ * @returns The first shortage, or undefined when the fixed geometry fits.
+ */
+function curveClearanceIssue(curve: Curve, label?: Box): string | undefined {
+	const points = verticesOf(curve);
+	return segmentIssue(curve) ?? legIssue(points) ?? labelBendIssue(points, label);
+}
+
+/**
+ * Reject a shrunken bend or a straight run that reverses through its tangent.
+ * @param curve The ordinary rounded route.
+ * @returns The first malformed piece, if any.
+ */
+function segmentIssue(curve: Curve): string | undefined {
+	for (let index = 0; index < curve.segments.length; index += 1) {
+		const segment = curve.segments[index]!;
+		if (segment.kind !== "cubic") {
+			if (reversesBend(curve, index)) return `Route run ${index} reverses through a fixed bend`;
+			continue;
+		}
+		const from = segmentStart(curve, index);
+		if (
+			Math.abs(Math.abs(segment.to.x - from.x) - BEND_RADIUS) > EPSILON ||
+			Math.abs(Math.abs(segment.to.y - from.y) - BEND_RADIUS) > EPSILON
+		)
+			return `Route bend ${index} does not have the fixed radius ${BEND_RADIUS}`;
+	}
+	return undefined;
+}
+
+/**
+ * Check the space each original leg supplies to its turns and arrowhead.
+ * @param points Original endpoints and vertices.
+ * @returns The first leg lacking room, if any.
+ */
+function legIssue(points: readonly Point[]): string | undefined {
+	for (let index = 1; index < points.length; index += 1) {
+		const start = points[index - 1]!;
+		const end = points[index]!;
+		const required =
+			(index === 1 ? 0 : BEND_RADIUS) +
+			(index === points.length - 1 ? APPROACH_STRAIGHT : BEND_RADIUS);
+		const available = Math.hypot(end.x - start.x, end.y - start.y);
+		if (available + EPSILON < required)
+			return `Route leg ${index} has ${coord(available)} units; fixed bends and approach require ${required}`;
+	}
+	return undefined;
+}
+
+/**
+ * A settled badge cannot cover any part of an ordinary bend.
+ * @param points Original endpoints and vertices.
+ * @param label The final badge footprint.
+ * @returns The first corner entering the label, if any.
+ */
+function labelBendIssue(points: readonly Point[], label: Box | undefined): string | undefined {
+	if (label !== undefined) {
+		for (let index = 1; index < points.length - 1; index += 1) {
+			const corner = cornerAt(points, index)!;
+			if (
+				[corner.previous, corner.next].some(
+					(end) => labelClearance(corner.vertex, end, label) + EPSILON < BEND_RADIUS,
+				)
+			)
+				return `Label occupies the fixed bend at route corner ${index}`;
+		}
+	}
+	return undefined;
 }
 
 /**
@@ -441,5 +522,6 @@ export {
 	selfLoop,
 	simplify,
 	curveThrough,
+	curveClearanceIssue,
 	labelAnchorOf,
 };
