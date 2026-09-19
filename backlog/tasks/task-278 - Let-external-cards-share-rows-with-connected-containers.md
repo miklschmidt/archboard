@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 18:52'
+updated_date: '2026-09-19 22:29'
 labels:
   - renderer
   - layout
@@ -111,4 +111,6 @@ Approved fixed-radius geometry integrated: singular radius 8, unscaled approach 
 Final fixed-radius implementation reserves semantic-solid footprints, checks native pin feasibility against the same obstacles, keeps forced labels clear of foreign routes, and tries finite shared-kind endpoint alternatives for cramped card or external-frame arrivals. Native alternatives publish atomically; an unroutable alternative preserves the previous complete attempt for label settlement, with final fixed-radius validation unchanged. Final actual-vault sweep: 22/22 variants, 290 relationships, all original 20 verified. The 24-board corpus has zero routes through cards and zero off-run labels. Full repository gate and live refresh remain pending.
 
 Final fixed-radius verification: all 22 real variants (290 relationships) and the 24-case renderer corpus pass. Full check passed lint, formatting, both type checks, frontend build and 3356 module tests, then stopped on codex-pane-context.test.ts:83; the identical failure reproduces in a detached unchanged HEAD worktree. Repository gate separately passed 8 tests; serial browser voice test could not negotiate realtime and timed out. Live server on 3100 restarted with final source; refreshed user tab renders Cloud Infrastructure, and a temporary browser tab verified HIE4JB9t renders 23 nodes and 20 connections. Temporary tab closed. Column wrapping files were not changed. Task remains In Progress for earlier unrelated spacing/frame traversal investigations.
+
+2026-09-20 Cloud Infrastructure detour diagnosis after channel integration: native reproduction shows xCH4TAWg and ZQQI84PS each have four bends despite vertically aligned endpoints. A one-variable replay passing the existing placed fallback-label x coordinate to candidate alignment makes both straight without moving cards or labels. anchorCoordinate currently reads only explicit archboard.route-label.x and misses fallback label.x. Lower ghAjlN21 is distinct: alignedPins excludes frame endpoints, leaving the source channel fraction and frame arrival coordinate independently chosen. Read-only probes at /tmp/cloud-detour-repro.ts and /tmp/cloud-detour-native-align.ts; no production fix adopted for these detours yet.
 <!-- SECTION:NOTES:END -->
