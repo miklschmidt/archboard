@@ -11,20 +11,21 @@ through the CLI, report it in the board's own terms, and change nothing.
    selection of nodes draws those and their containers, a selection of flows
    draws the exchange, and a part a view does not select is not drawn there,
    however real its membership elsewhere.
-2. For a configured group, `archboard semantic inspect <board> --group <id>
-[--variant <name>]` reports, over the whole variant: the members, the
-   relationships between them, the relationships crossing the boundary with
-   their direction, and the immediate neighbours outside. A member a view
-   hides is still a member; to say which members a view leaves undrawn, read
-   that view's `scope` from step 1 against the inspection's member list.
-3. For what one variant changed, `archboard semantic compare <board> [--variant
-<id|name>]` reads it against the variant it came from: every part,
-   relationship, sequence, step, walkthrough and beat either state has, each
-   `added`, `removed`, `changed` or `unchanged`, with the fields that moved for
-   a change and the endpoints a relationship or step now lands on. A root
-   architecture came from nothing and is refused. Report a relationship whose
-   end moved as one relationship that moved, not as a removal beside an
-   addition.
+2. For a configured group,
+   `archboard semantic inspect <board> --group <id> [--variant <name>]` reports,
+   over the whole variant: the members, the relationships between them, the
+   relationships crossing the boundary with their direction, and the immediate
+   neighbours outside. A member a view hides is still a member; to say which
+   members a view leaves undrawn, read that view's `scope` from step 1 against
+   the inspection's member list.
+3. For what one variant changed,
+   `archboard semantic compare <board> [--variant <id|name>]` reads it against
+   the variant it came from: every part, relationship, sequence, step,
+   walkthrough and beat either state has, each `added`, `removed`, `changed` or
+   `unchanged`, with the fields that moved for a change and the endpoints a
+   relationship or step now lands on. A root architecture came from nothing and
+   is refused. Report a relationship whose end moved as one relationship that
+   moved, not as a removal beside an addition.
 4. Answer from what the CLI printed, naming subjects as the board names them:
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, and anything the

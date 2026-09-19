@@ -12,18 +12,18 @@ what it selects joined: a part whose only relationship points at a part the
 view leaves out stands in it unattached. A view is the answer to a tangle,
 never a smaller or falser board.
 
-1. Read the source you will describe, do the evidence steps in `SKILL.md` and walk
-   its catalogue. Decide the
-   board's level from `config.yaml` (`system`: collaborating services;
-   `service`: the modules of one; `module`: the functions inside one) and its
-   subject: a short name such as `Semantic board writes`, never a path. Two
-   rows need a read before the payload: the configured `groups`, so each
-   part lists the concerns it serves, and `archboard semantic`, so a part
-   whose internals already have a board links to it with `drillDown`.
+1. Read the source you will describe, do the evidence steps in `SKILL.md` and
+   walk its catalogue. Decide the board's level from `config.yaml` (`system`:
+   collaborating services; `service`: the modules of one; `module`: the
+   functions inside one) and its subject: a short name such as
+   `Semantic board writes`, never a path. Two rows need a read before the
+   payload: the configured `groups`, so each part lists the concerns it serves,
+   and `archboard semantic`, so a part whose internals already have a board
+   links to it with `drillDown`.
 2. If parts will be bound to code, register the checkout once:
    `archboard repo add /path/to/checkout` prints the repository identity
-   (`github.com/miklschmidt/archboard`); bindings use that identity and a repo-relative
-   path.
+   (`github.com/miklschmidt/archboard`); bindings use that identity and a
+   repo-relative path.
 3. State the architecture in one payload and create the board. The evidence
    behind this one, from archboard's own source: the canvas server's `editRoute`
    (`src/server/canvas/lib/semantic-board-writes.ts`) calls
@@ -69,11 +69,10 @@ JSON
 archboard semantic rasterize "Semantic board writes" --out writes.png
 ```
 
-Each relationship lands on the part that actually receives the call, inside
-its `parent`; the renderer carries the line across the container boundary.
-A container is an endpoint only for a relationship to the whole module.
-`Board lease` receives `withBoardLock` here because it has no children; the
-moment you draw its functions inside it, the call lands on `withBoardLock`.
+Each relationship lands on the part that receives the call ([evidence rule
+3](../SKILL.md#evidence-before-a-write)): `Board lease` receives `withBoardLock`
+here because it has no children; the moment you draw its functions inside it,
+the call lands on `withBoardLock`.
 
 4. Check the answer against your record: every part you meant is there with a
    configured `kind`; every relationship's `from`, `to` and `kind` match the
@@ -85,10 +84,7 @@ moment you draw its functions inside it, the call lands on `withBoardLock`.
    page thousands of pixels on both axes is the tangle this recipe opens with,
    and a second edit adding its views is the normal loop, not a repair. A
    request path the board carries is a `flow` drawn through a `data-flow`
-   view, not a row to declare inapplicable. A picture the request names goes
-   where it says; one you draw to look at goes in a temporary directory, never
-   into the checkout you are describing. Your answer names the catalogue rows
-   the board uses and the ones you judged not to apply.
+   view, not a row to declare inapplicable.
 
 Read [authoring](references/authoring.md) for groups, drill-down links to
 detail boards, traffic, emphasis, descriptions, and what a refusal means.

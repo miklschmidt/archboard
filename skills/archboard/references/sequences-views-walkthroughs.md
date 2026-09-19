@@ -30,11 +30,6 @@ A flow is an ordered exchange between nodes of one variant.
 - `note` is a caveat on one step, shown beside it: a condition under which the
   step happens (a branch), a loop whose count is not fixed, a detail the label
   cannot carry.
-- Before writing, record each step's evidence (caller, receiver, the function
-  that makes the call) and check three things against the source: the order
-  the steps run in, which steps come back as a `return` to their caller, and
-  which steps happen only on a branch. After the write, read the saved steps
-  in order against that record.
 - A flow may have one participant whose steps are all `self`: a component's own
   sequence is a real explanation.
 - A step's position is meaningful; a step keeps its identity by the action it
@@ -73,10 +68,11 @@ Both ends of a shown relationship, every participant of a shown flow, and every
 container they sit inside come with the selection. A selection that names
 nothing that exists on a variant draws nothing; it never falls back to the whole
 board. A comparison keeps a selected subject the proposal removed, drawn as
-removed. Draw a view with `semantic rasterize <board> --view <name> --out
-<file.png>` (or `semantic render` for SVG); without `--view` the whole variant
-is drawn, never the first view. When the request asks for a picture of a
-view, look at that view's picture, not the whole board's.
+removed. Draw a view with
+`semantic rasterize <board> --view <name> --out <file.png>` (or
+`semantic render` for SVG); without `--view` the whole variant is drawn, never
+the first view. When the request asks for a picture of a view, look at that
+view's picture, not the whole board's.
 
 ## Walkthroughs
 

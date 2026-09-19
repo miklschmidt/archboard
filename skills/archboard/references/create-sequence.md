@@ -15,49 +15,44 @@ between its participants, with the same line of evidence, because the
 relationship is what carries the kind, the traffic and the emphasis, and what
 a comparison, a view and a group inspection read.
 
-1. Read the code path and record each message with its evidence: who calls
-   whom, from which function, in which order, and which messages come back.
-   List the participants in reading order: the exchange is between the parts
-   the board has, so a part drawn whole stays one column whatever functions,
-   methods or hooks run inside it, and a call it makes on itself (a recursive
-   function, a method calling another method of a class that is one column, a
-   component updating its own state, a handler re-entering itself) is one
-   `self` step. A function, method or component the request names is a participant, and a call to it is a message to that column even
-   when it lives inside its caller; one the board draws is a candidate for a
-   column, and whether it takes one is the choice below.
-   A flow's participants are a subset of the board's nodes, so the columns are
-   chosen rather than read off the board: keep a candidate inside the part
-   whose body runs it and the work that part does through it is one step with
-   that part at both ends; give it a column and the same call is an ordinary
-   message between columns. Both shapes carry the `repeat` the source fixes —
-   the example below tries two candidate documents in one `self` step because
-   `chooseDoc` runs inside `Setup block` — and the choice settles which kinds
-   the exchange can contain, so make it before listing the messages, apply it
-   to every candidate alike, and say which you chose.
-   Then list each message in sequence with its kind: `sync` (a call that
-   waits, an awaited promise included; the default), `return`, `async` (fire
-   and forget: an emitted event, a message, a promise nobody awaits), `self`
-   (exactly when `from` and `to` are the same node). A step that runs more
-   than once carries `repeat` when the source fixes the count (a retry limit,
-   a batch of a known size, a literal list of candidates tried in turn), on a
-   `self` step as readily as on a call to another column: the example below
-   tries two candidate documents in one `self` step with `repeat: 2`. A `note`
-   that states the count in prose does not replace the `repeat`: the step
-   carries the `repeat`, with a note beside it if needed. A loop whose length
-   depends on data is one step with a `note` that says so; use `note` for a
-   branch or a caveat too.
-   Walk the catalogue in `SKILL.md` for the rest: the parts outside the checkout
-   are `external`; the relationships on the exchange's forward path carry
-   `traffic` (a call a normal pass always makes stays on that path even when
-   an error could skip it), and its returns, teardown, error branches and
-   one-shot startup calls do not; and an ordering the reader must understand
-   gets a walkthrough beat. A beat explains a step by naming it: give that
-   step an `as` handle in the same write and put the handle in the beat's
-   `subjects`. An ordering has two sides, so a beat about why one thing
-   happens before another names both: the earlier step by its handle, and
-   what relies on it having happened (a later step, or the part that acts on
-   its result), with the parts they run on. Set the beat's `view` to the
-   data-flow view so the reader looks at the exchange while reading it.
+1. Read the code path and record each message with its evidence: who calls whom,
+   from which function, in which order, and which messages come back. List the
+   participants in reading order: the exchange is between the parts the board
+   has, so a part drawn whole stays one column whatever functions, methods or
+   hooks run inside it, and a call it makes on itself (a recursive function, a
+   method calling another method of a class that is one column, a component
+   updating its own state, a handler re-entering itself) is one `self` step. A
+   function, method or component the request names is a participant, and a call
+   to it is a message to that column even when it lives inside its caller; one
+   the board draws is a candidate for a column, and whether it takes one is the
+   choice below. A flow's participants are a subset of the board's nodes, so the
+   columns are chosen rather than read off the board: keep a candidate inside
+   the part whose body runs it and the work that part does through it is one
+   step with that part at both ends; give it a column and the same call is an
+   ordinary message between columns. Both shapes carry the `repeat` the source
+   fixes, and the choice settles which kinds the exchange can contain, so make
+   it before listing the messages, apply it to every candidate alike, and say
+   which you chose. Then list each message in sequence with its kind: `sync` (a
+   call that waits, an awaited promise included; the default), `return`, `async`
+   (fire and forget: an emitted event, a message, a promise nobody awaits),
+   `self` (exactly when `from` and `to` are the same node). A step that runs
+   more than once carries `repeat` when the source fixes the count (a retry
+   limit, a batch of a known size, a literal list of candidates tried in turn),
+   on a `self` step as readily as on a call to another column: the example below
+   tries two candidate documents in one `self` step with `repeat: 2`, because
+   `chooseDoc` runs inside `Setup block`. A `note` that states the count in
+   prose does not replace the `repeat`: the step carries the `repeat`, with a
+   note beside it if needed. A loop whose length depends on data is one step
+   with a `note` that says so; use `note` for a branch or a caveat too. Walk the
+   catalogue in `SKILL.md` for the rest (`external`, `traffic` on the exchange's
+   forward path and never on its returns); an ordering the reader must
+   understand gets a walkthrough beat. A beat explains a step by naming it: give
+   that step an `as` handle in the same write and put the handle in the beat's
+   `subjects`. An ordering has two sides, so a beat about why one thing happens
+   before another names both: the earlier step by its handle, and what relies on
+   it having happened (a later step, or the part that acts on its result), with
+   the parts they run on. Set the beat's `view` to the data-flow view so the
+   reader looks at the exchange while reading it.
 2. Create a standalone sequence in one write. Against an existing board, use
    the same payload with `semantic edit` and the version you read. The
    evidence here, from archboard's own source: `executeInstallSkill`
@@ -128,11 +123,9 @@ archboard semantic rasterize "Skill install" --view "Setup exchange" --out setup
    Open the picture through
    the `data-flow` view you made, not the whole board: the columns in order,
    every message readable and in sequence, returns and repeats
-   distinguishable, nothing cut off. A picture the request names goes where
-   it says; one you draw to look at goes in a temporary directory, never into
-   the checkout you are describing. Your answer names the catalogue rows the
-   board uses and the ones you judged not to apply.
+   distinguishable, nothing cut off.
 
-Read [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)
-for view scopes (isolating one relationship, a region, the whole board), beat
-subjects and identity, and single-participant flows.
+Read [sequences, views and
+walkthroughs](references/sequences-views-walkthroughs.md) for view scopes
+(isolating one relationship, a region, the whole board), beat subjects and
+identity, and single-participant flows.
