@@ -1,3 +1,4 @@
+import { packChannels } from "@/transformers/semantic-renderer/lib/layout/label-channels";
 // Measured badges use clear runs in the layout owner. A missing fit requests
 // an engine reservation before the one complete drawing can be returned.
 import type {
@@ -172,7 +173,8 @@ function levelWith(box: Box, label: Box, axis: "x" | "y", across: number): boole
  * @param obstacles Boxes already enlarged by their required clearance, in the order they are applied.
  * @param ends Where the route leaves its source and reaches its target.
  * @param air How much of the run stays clear at each end.
- * @returns Feasible boxes, each as near an end of the route as its interval allows.
+ * @param anchoring Whether a native waypoint needs an open corridor around its buffered box.
+ * @returns Feasible boxes, near an endpoint or inside an open anchoring interval.
  */
 function candidatesOf(
 	piece: RoutePiece,
@@ -180,6 +182,7 @@ function candidatesOf(
 	obstacles: Obstacles,
 	ends: readonly [Point, Point],
 	air: number,
+	anchoring = false,
 ): Candidate[] {
 	const axis = piece.axis;
 	if (axis === undefined) return [];
@@ -189,17 +192,21 @@ function candidatesOf(
 	if (end < start) return [];
 	const across = piece.box[cross] - label[breadth] / 2;
 	const intervals = clearIntervals([[start, end]], obstacles, label, axis, across);
-	return intervals.map(([low, high]) => {
-		// A badge belongs where a reader tracing the line from either card finds
-		// it soonest: as near the nearer end as its clear interval allows.
-		const { along } = nearestPlacement(low, high, label, axis, ends);
-		return {
-			box: { ...label, [axis]: along, [cross]: across },
-			length: high - low + label[length],
-			index: piece.index,
-			reach: reachOf({ ...label, [axis]: along, [cross]: across }, ends),
-		};
-	});
+	return intervals
+		.filter(([low, high]) => !anchoring || high > low)
+		.map(([low, high]) => {
+			// A badge belongs where a reader tracing the line from either card finds
+			// it soonest: as near the nearer end as its clear interval allows.
+			const along = anchoring
+				? (low + high) / 2
+				: nearestPlacement(low, high, label, axis, ends).along;
+			return {
+				box: { ...label, [axis]: along, [cross]: across },
+				length: high - low + label[length],
+				index: piece.index,
+				reach: reachOf({ ...label, [axis]: along, [cross]: across }, ends),
+			};
+		});
 }
 
 /**
@@ -271,83 +278,243 @@ function nodeObstacles(drawing: ArchitectureDrawing): Box[] {
 	];
 }
 
+/** One placement pass shares inflated obstacles and accepted label boxes. */
+class LabelPlacement {
+	private readonly pieces: RoutePiece[];
+	private readonly labels: Map<string, Box>;
+	private readonly original: ReadonlyMap<string, Box>;
+	private readonly accepted = new Set<string>();
+	private readonly bounds = new Map<string, Interval>();
+	private readonly nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
+	private readonly labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
+	private readonly grownCards: Box[];
+	private readonly grownPieces: Box[];
+	private readonly grownLabels: Map<string, Box>;
+
+	/**
+	 * Prepare the unchanged drawing and its measured obstacles.
+	 * @param drawing Current native routes and available reservations.
+	 * @param measured Measured semantic labels.
+	 * @param eligible When present, propose waypoints only for these relationships.
+	 */
+	constructor(
+		private readonly drawing: ArchitectureDrawing,
+		private readonly measured: MeasuredArchitecture["labels"],
+		private readonly eligible?: ReadonlySet<string>,
+	) {
+		this.pieces = piecesOf(drawing.edges);
+		this.labels = new Map(
+			drawing.edges.flatMap(({ edge, label }) =>
+				label === undefined ? [] : [[edge.id, label.box] as const],
+			),
+		);
+		this.original = new Map(this.labels);
+		this.grownCards = nodeObstacles(drawing).map((box) => inflate(box, this.nodeAir));
+		const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
+		this.grownPieces = this.pieces.map(({ box }) => inflate(box, routeAir));
+		this.grownLabels = new Map(
+			[...this.labels].map(([id, box]) => [id, inflate(box, this.labelAir)]),
+		);
+	}
+
+	/** Place eligible labels in stable semantic order. */
+	place(): void {
+		for (const edge of this.drawing.edges.toSorted((one, other) =>
+			one.edge.id < other.edge.id ? -1 : one.edge.id > other.edge.id ? 1 : 0,
+		))
+			this.placeEdge(edge);
+		if (this.eligible === undefined) return;
+		packChannels(this.drawing, this.labels, this.accepted, this.original, this.bounds);
+		if (this.invalid()) {
+			this.labels.clear();
+			for (const [id, box] of this.original) this.labels.set(id, box);
+			this.accepted.clear();
+		}
+	}
+
+	/**
+	 * Natural labels may use any run; an anchor preserves an already straight connection.
+	 * @param edge Current native route.
+	 * @returns Whether this pass may move its label.
+	 */
+	private allows(edge: DrawingEdge): boolean {
+		return (
+			this.eligible === undefined ||
+			(this.eligible.has(edge.edge.id) &&
+				edge.curve.segments.length === 1 &&
+				edge.curve.segments[0]?.kind === "line")
+		);
+	}
+
+	/**
+	 * Select a clear label box without changing any native route.
+	 * @param edge One relationship and its solved curve.
+	 */
+	private placeEdge(edge: DrawingEdge): void {
+		const measured = this.measured.get(edge.edge.id);
+		if (measured === undefined || !this.allows(edge)) return;
+		const size = { x: 0, y: 0, width: measured.width, height: measured.height };
+		const chosen = this.candidates(edge, size).toSorted(
+			(one, other) =>
+				one.reach - other.reach || other.length - one.length || one.index - other.index,
+		)[0];
+		if (chosen === undefined || !this.boundChannel(edge, chosen.box)) return;
+		this.accepted.add(edge.edge.id);
+		this.labels.set(edge.edge.id, chosen.box);
+		this.grownLabels.set(edge.edge.id, inflate(chosen.box, this.labelAir));
+	}
+
+	/**
+	 * Reuse the same obstacle-free horizontal interval when balancing adjacent channels.
+	 * @param edge Relationship whose straight channel may shift.
+	 * @param box Proposed badge on that channel.
+	 * @returns Whether its original connected free interval exists.
+	 */
+	private boundChannel(edge: DrawingEdge, box: Box): boolean {
+		if (this.eligible === undefined || edge.curve.from.x !== pointAt(edge.curve, 1).x) return true;
+		const intervals = clearIntervals(
+			[[DIAGRAM_MARGIN, this.drawing.width - DIAGRAM_MARGIN - box.width]],
+			{ groups: [this.grownCards], pieces: [], ownPiece: -1 },
+			box,
+			"x",
+			box.y,
+		);
+		const interval = intervals.find(([low, high]) => box.x >= low && box.x <= high);
+		if (interval === undefined) return false;
+		this.bounds.set(edge.edge.id, [interval[0] + box.width / 2, interval[1] + box.width / 2]);
+		return true;
+	}
+
+	/**
+	 * Find clear intervals on this relationship's own runs.
+	 * @param edge Native route and semantic identity.
+	 * @param size Measured badge size.
+	 * @returns Candidate boxes ordered later by endpoint proximity.
+	 */
+	private candidates(edge: DrawingEdge, size: Box): Candidate[] {
+		const ends: readonly [Point, Point] = [edge.curve.from, pointAt(edge.curve, 1)];
+		const found: Candidate[] = [];
+		const obstacles = this.obstacles(edge.edge.id);
+		for (const [index, piece] of this.pieces.entries()) {
+			if (piece.edgeId !== edge.edge.id) continue;
+			const ownPiece = obstacles.pieces.indexOf(this.grownPieces[index]!);
+			for (const candidate of candidatesOf(
+				piece,
+				size,
+				{ ...obstacles, ownPiece },
+				ends,
+				this.nodeAir,
+				this.eligible !== undefined,
+			)) {
+				if (insidePage(candidate.box, this.drawing)) found.push(candidate);
+			}
+		}
+		return found;
+	}
+
+	/**
+	 * Anchors become native obstacles, so other routes may move around them.
+	 * @param id Relationship whose own label and run are excluded.
+	 * @returns Shared obstacle groups for this relationship.
+	 */
+	private obstacles(id: string): Omit<Obstacles, "ownPiece"> {
+		const natural = this.eligible === undefined;
+		const pieces = natural
+			? this.grownPieces
+			: this.grownPieces.filter((_, index) => this.pieces[index]!.edgeId === id);
+		const labels = natural
+			? [...this.grownLabels].filter(([other]) => other !== id).map(([, box]) => box)
+			: [];
+		return { groups: [this.grownCards, labels, pieces], pieces };
+	}
+
+	/**
+	 * Reject the complete proposal if an accepted anchor enters a reserved clearance.
+	 * @returns Whether any proposed anchor violates the unchanged obstacle set.
+	 */
+	private invalid(): boolean {
+		const labels = [...this.labels];
+		return labels.some(
+			([id, box]) =>
+				this.accepted.has(id) &&
+				(this.grownCards.some((other) => overlaps(box, other)) ||
+					labels.some(
+						([otherId, other]) => otherId !== id && overlaps(box, inflate(other, this.labelAir)),
+					)),
+		);
+	}
+
+	/**
+	 * Publish label placement without changing solved geometry.
+	 * @returns Drawing with natural labels and preserved fallbacks.
+	 */
+	drawn(): ArchitectureDrawing {
+		return {
+			...this.drawing,
+			edges: this.drawing.edges.map((edge) => {
+				const box = this.labels.get(edge.edge.id);
+				const measured = this.measured.get(edge.edge.id);
+				return box === undefined || measured === undefined
+					? edge
+					: { ...edge, label: { measured, box } };
+			}),
+		};
+	}
+
+	/**
+	 * Return only proposals that passed complete reservation-set validation.
+	 * @returns Accepted native waypoint boxes, with rejected proposals absent.
+	 */
+	anchors(): ReadonlyMap<string, Box> {
+		return new Map([...this.accepted].map((id) => [id, this.labels.get(id)!]));
+	}
+}
+
 /**
- * Place labels on clear runs near their route endpoints.
- *
- * Reserved engine boxes remain a fallback when no clear alternative fits.
- * @param drawing Solved cards and routes, with any reserved label boxes.
- * @param measured Measured labels, including those awaiting their first placement.
- * @returns The one final drawing, with only eligible label boxes replaced.
+ * Test meaningful overlap while tolerating floating-point addition at an exact clearance.
+ * @param one First box.
+ * @param two Second box, already inflated by the declared clearance.
+ * @returns Whether the interiors overlap beyond numerical noise.
+ */
+function overlaps(one: Box, two: Box): boolean {
+	return (
+		one.x < two.x + two.width - 0.000001 &&
+		one.x + one.width > two.x + 0.000001 &&
+		one.y < two.y + two.height - 0.000001 &&
+		one.y + one.height > two.y + 0.000001
+	);
+}
+
+/**
+ * Place measured labels on clear runs near their endpoints, preserving reserved fallbacks.
+ * @param drawing Solved cards and routes.
+ * @param measured Measured semantic labels.
+ * @returns Complete drawing with every naturally fitting label placed.
  */
 function placeLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
 ): ArchitectureDrawing {
-	const pieces = piecesOf(drawing.edges);
-	const labels = new Map(
-		drawing.edges.flatMap(({ edge, label }) =>
-			label === undefined ? [] : [[edge.id, label.box] as const],
-		),
-	);
-	const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
-	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
-	const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
-	const cards = nodeObstacles(drawing);
-	const grownCards = cards.map((box) => inflate(box, nodeAir));
-	const grownPieces = pieces.map(({ box }) => inflate(box, routeAir));
-	const grownLabels = new Map([...labels].map(([id, box]) => [id, inflate(box, labelAir)]));
-	for (const edge of drawing.edges.toSorted((one, other) =>
-		one.edge.id < other.edge.id ? -1 : one.edge.id > other.edge.id ? 1 : 0,
-	)) {
-		const label = measured.get(edge.edge.id);
-		if (label === undefined) continue;
-		const ends: readonly [Point, Point] = [edge.curve.from, pointAt(edge.curve, 1)];
-		const otherLabels = [...grownLabels]
-			.filter(([id]) => id !== edge.edge.id)
-			.map(([, box]) => box);
-		const size = { x: 0, y: 0, width: label.width, height: label.height };
-		/**
-		 * The places this label can sit with a given clearance from cards and run ends.
-		 * @param air The clearance.
-		 * @returns The candidates.
-		 */
-		const candidatesWith = (air: number) => {
-			const found: Candidate[] = [];
-			for (const [index, piece] of pieces.entries()) {
-				if (piece.edgeId !== edge.edge.id) continue;
-				const obstacles = {
-					groups: [grownCards, otherLabels, grownPieces],
-					pieces: grownPieces,
-					ownPiece: index,
-				};
-				for (const candidate of candidatesOf(piece, size, obstacles, ends, air)) {
-					if (insidePage(candidate.box, drawing)) found.push(candidate);
-				}
-			}
-			return found;
-		};
-		const candidates = candidatesWith(nodeAir);
-		const chosen = candidates.toSorted(
-			(one, other) =>
-				// Nearest an end first: a reader traces a line from a card and should
-				// meet its words soon; the longest run only breaks the tie.
-				one.reach - other.reach || other.length - one.length || one.index - other.index,
-		)[0];
-		if (chosen !== undefined) {
-			labels.set(edge.edge.id, chosen.box);
-			grownLabels.set(edge.edge.id, inflate(chosen.box, labelAir));
-		}
-	}
-	return {
-		...drawing,
-		edges: drawing.edges.map((edge) => {
-			const box = labels.get(edge.edge.id);
-			const label = measured.get(edge.edge.id);
-			return box === undefined || label === undefined
-				? edge
-				: { ...edge, label: { measured: label, box } };
-		}),
-	};
+	const placement = new LabelPlacement(drawing, measured);
+	placement.place();
+	return placement.drawn();
 }
 
-export { placeLabelsOnRuns };
+/**
+ * Propose clear waypoints along existing straight routes before accepting off-route reservations.
+ * @param drawing Native routes with all reserved label boxes retained.
+ * @param measured Measured semantic labels.
+ * @param eligible Relationships now requiring a waypoint.
+ * @returns An atomic set of feasible anchors, or no changes when the proposal is invalid.
+ */
+function anchorLabelsOnRuns(
+	drawing: ArchitectureDrawing,
+	measured: MeasuredArchitecture["labels"],
+	eligible: ReadonlySet<string>,
+): ReadonlyMap<string, Box> {
+	const placement = new LabelPlacement(drawing, measured, eligible);
+	placement.place();
+	return placement.anchors();
+}
+
+export { placeLabelsOnRuns, anchorLabelsOnRuns };

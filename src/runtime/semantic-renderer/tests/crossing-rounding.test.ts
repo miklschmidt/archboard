@@ -129,3 +129,27 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 	expect(distinct.bridges).toHaveLength(1);
 	expect(distinct.edges).toEqual(shared);
 });
+
+// The source has no arrowhead. Short endpoint legs from Common-WebLib and
+// the cloud's VM → DB connections must leave room for the target's own ink.
+test("short endpoint bends reserve arrow space only at the target", () => {
+	const points = [
+		{ x: 0, y: 0 },
+		{ x: 0, y: 16 },
+		{ x: 100, y: 16 },
+		{ x: 100, y: 29 },
+	];
+	const ordinary = curveThrough(points);
+	const narrowHead = curveThrough(points, undefined, 8);
+	for (const curve of [ordinary, narrowHead]) {
+		const departure = curve.segments[0]!;
+		expect(departure.kind).toBe("line");
+		expect(departure.to).toEqual({ x: 0, y: 8 });
+		expect(curve.segments[1]!.kind).toBe("cubic");
+	}
+	// Reducing only the target's reserved ink gives the last bend its space;
+	// the endpoint and the source's already-rounded departure stay unchanged.
+	expect(ordinary.segments.at(-2)!.to).toEqual({ x: 100, y: 17 });
+	expect(narrowHead.segments.at(-2)!.to).toEqual({ x: 100, y: 21 });
+	expect(narrowHead.segments.at(-1)).toEqual(ordinary.segments.at(-1));
+});

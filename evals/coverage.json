@@ -517,10 +517,10 @@
 				},
 				{
 					"path": "relationship-kind routing separation",
-					"expectedUse": "author real relationship kinds; one kind may share a port while different kinds use distinct ports and tracks",
+					"expectedUse": "author real relationship kinds; one kind may share a port while different kinds use distinct ports and tracks; overlapping card spans use balanced straight channels with room for their labels",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts"
+					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts; src/runtime/semantic-renderer/tests/matched-kind-channels.test.ts; src/runtime/semantic-renderer/tests/route-labels.test.ts"
 				},
 				{
 					"path": "automatic downward column wrapping",

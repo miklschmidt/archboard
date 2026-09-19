@@ -1,7 +1,16 @@
-import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
+import {
+	ROUTE_NUDGE_DISTANCE,
+	ROUTE_OBSTACLE_CLEARANCE,
+} from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import { boxOf, type Face } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
-import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import {
+	boxOf,
+	boxesOverlap,
+	facePoint,
+	obstacleOf,
+	type Face,
+} from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
+import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 
 export type AlignedPin = { face: Face; position: number };
 export type AlignedPins = Map<string, Map<string, AlignedPin[]>>;
@@ -37,6 +46,26 @@ function seed(index: number, count: number, face: Face): AlignedPin {
 }
 
 /**
+ * Prefer the reserved label center for vertical channels when one is supplied.
+ * @param one Source card bounds.
+ * @param two Target card bounds.
+ * @param axis Shared span axis.
+ * @param extent Dimension along that axis.
+ * @param anchor Optional label center.
+ * @returns Preferred global channel coordinate.
+ */
+function preferredCoordinate(
+	one: Box,
+	two: Box,
+	axis: "x" | "y",
+	extent: "width" | "height",
+	anchor?: number,
+): number {
+	if (axis === "x" && anchor !== undefined) return anchor;
+	return (one[axis] + one[extent] / 2 + two[axis] + two[extent] / 2) / 2;
+}
+
+/**
  * A self-loop uses two private native classes, so neither can be shared with an aligned pin.
  * @param index Kind's sorted index.
  * @param count Number of kinds.
@@ -53,9 +82,10 @@ function selfLoopPins(index: number, count: number): readonly AlignedPin[] {
  * Candidate straight channels through the two overlapping card spans.
  * @param one Source card bounds.
  * @param two Target card bounds.
+ * @param anchor Optional reserved-label center on the horizontal axis.
  * @returns One ordered group of source and target pins per available axis.
  */
-function candidates(one: Box, two: Box): [AlignedPin, AlignedPin][][] {
+function candidates(one: Box, two: Box, anchor?: number): [AlignedPin, AlignedPin][][] {
 	const result: [AlignedPin, AlignedPin][][] = [];
 	for (const [axis, extent, cross, crossExtent, forward, reverse] of AXES) {
 		const low = Math.max(one[axis], two[axis]) + ROUTE_NUDGE_DISTANCE;
@@ -74,13 +104,15 @@ function candidates(one: Box, two: Box): [AlignedPin, AlignedPin][][] {
 		 * @returns A point in the usable span.
 		 */
 		const clamp = (coordinate: number): number => Math.max(low, Math.min(high, coordinate));
-		const balanced = clamp((one[axis] + one[extent] / 2 + two[axis] + two[extent] / 2) / 2);
-		const coordinates = new Set([
-			balanced,
-			(low + high) / 2,
-			clamp(one[axis] + one[extent] / 2),
-			clamp(two[axis] + two[extent] / 2),
-		]);
+		const balanced = clamp(preferredCoordinate(one, two, axis, extent, anchor));
+		const coordinates = [
+			...new Set([
+				balanced,
+				(low + high) / 2,
+				clamp(one[axis] + one[extent] / 2),
+				clamp(two[axis] + two[extent] / 2),
+			]),
+		].toSorted((a, b) => Math.abs(a - balanced) - Math.abs(b - balanced) || a - b);
 		const pair: [AlignedPin, AlignedPin][] = [];
 		for (const coordinate of coordinates)
 			pair.push([
@@ -125,20 +157,23 @@ class PinCandidates {
 		const source = this.nodes.get(edge.sources[0]!)!;
 		const target = this.nodes.get(edge.targets[0]!)!;
 		if (source === target || !ordinaryCard(source) || !ordinaryCard(target)) return;
-		this.addCardPair(source, target, relationshipKind(edge));
+		const labelX = edge.layoutOptions?.["archboard.route-label.x"];
+		const anchor = labelX === undefined ? undefined : Number(labelX) + edge.labels![0]!.width! / 2;
+		this.addCardPair(source, target, relationshipKind(edge), anchor);
 	}
 
 	/**
-	 * Try the balanced candidate first for every separated card axis.
+	 * Try feasible candidates from nearest to farthest from the balanced center.
 	 * @param source Source card.
 	 * @param target Target card.
 	 * @param kind Shared semantic kind.
+	 * @param anchor Optional reserved-label center on the horizontal axis.
 	 */
-	private addCardPair(source: ElkNode, target: ElkNode, kind: string): void {
-		for (const axis of candidates(boxOf(source), boxOf(target))) {
-			for (const [index, [from, to]] of axis.entries()) {
+	private addCardPair(source: ElkNode, target: ElkNode, kind: string, anchor?: number): void {
+		for (const axis of candidates(boxOf(source), boxOf(target), anchor)) {
+			for (const [from, to] of axis) {
 				const accepted = this.addPair(source.id, target.id, kind, from, to);
-				if (index === 0 && accepted) break;
+				if (accepted) break;
 			}
 		}
 	}
@@ -160,8 +195,33 @@ class PinCandidates {
 		to: AlignedPin,
 	): boolean {
 		if (!this.available(source, kind, from) || !this.available(target, kind, to)) return false;
+		if (!this.clearSegment(source, target, from, to)) return false;
 		this.record(source, kind, from);
 		this.record(target, kind, to);
+		return true;
+	}
+
+	/**
+	 * A straight candidate must not enter another node's solid card or title band.
+	 * @param source Source node identity.
+	 * @param target Target node identity.
+	 * @param from Source card pin.
+	 * @param to Target card pin.
+	 * @returns Whether the whole physical segment is clear.
+	 */
+	private clearSegment(source: string, target: string, from: AlignedPin, to: AlignedPin): boolean {
+		const a = facePoint(boxOf(this.nodes.get(source)!), from.face, from.position);
+		const b = facePoint(boxOf(this.nodes.get(target)!), to.face, to.position);
+		const segment: Box = {
+			x: Math.min(a.x, b.x),
+			y: Math.min(a.y, b.y),
+			width: Math.abs(a.x - b.x),
+			height: Math.abs(a.y - b.y),
+		};
+		for (const [id, node] of this.nodes) {
+			if (id === source || id === target) continue;
+			if (boxesOverlap(segment, inflate(obstacleOf(node), ROUTE_OBSTACLE_CLEARANCE))) return false;
+		}
 		return true;
 	}
 
@@ -211,7 +271,7 @@ class PinCandidates {
 	}
 
 	/**
-	 * Avoid a redundant physical pin at the already registered ordinary seed.
+	 * Keep the accepted physical pin, including when it replaces the ordinary seed.
 	 * @param id Card identity.
 	 * @param kind Semantic relationship kind.
 	 * @param pin Candidate physical pin.
@@ -220,13 +280,7 @@ class PinCandidates {
 		const byKind = this.pins.get(id) ?? new Map<string, AlignedPin[]>();
 		const pins = byKind.get(kind) ?? [];
 		const box = boxOf(this.nodes.get(id)!);
-		const kinds = this.kinds.get(id)!;
-		const ordinary = seed(kinds.indexOf(kind), kinds.length, pin.face);
-		if (
-			!nearby(box, pin, ordinary, 0.000001) &&
-			!pins.some((prior) => nearby(box, pin, prior, 0.000001))
-		)
-			pins.push(pin);
+		if (!pins.some((prior) => nearby(box, pin, prior, 0.000001))) pins.push(pin);
 		byKind.set(kind, pins);
 		this.pins.set(id, byKind);
 	}

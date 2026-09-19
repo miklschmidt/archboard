@@ -249,13 +249,25 @@ visual comparison. Different relationship kinds are separated in the native
 router before crossing ink is painted; crossing decoration cannot repair
 coincident routes.
 
-Ordinary card faces with overlapping spans now offer a balanced aligned
-attachment, with other clear geometric candidates as fallback. Relationship
+Ordinary card faces with overlapping spans now offer the nearest feasible balanced
+attachment. A usable straight channel replaces its redundant fixed center
+choice; obstructed channels retain the original escape choices. Relationship
 kind separation still applies. The user selected this after comparing fixed
 ports, aligned ports and balanced offsets; there are no board-specific rules.
 Incoming side ports on a frame use its body below the title, keeping the
 existing head-and-bend corridor effective instead of bypassing it through a
 title-band pin.
+
+The subsequent approved label fix places missing badges within the clear
+interior of their existing straight runs before using the old reserved box.
+Neighboring channels can move together just enough to retain measured badge
+clearance. A complete reservation-set check accepts the proposal atomically or
+keeps the original boxes. In the inspected Observed VM pair, equal 1.85px shifts
+retain the configured 24px badge gap and make both connections straight.
+Common-WebLib's helper calls likewise remain straight instead of following
+off-axis label waypoints. Rounding reserves arrow space at the target according
+to the actual stroke width; departures do not reserve space for a nonexistent
+source arrow. No global rank spacing or container-obstacle change is included.
 
 Long branching paths can wrap into adjacent downward columns. The renderer
 keeps whole frames and overlapping rows together, retains side-entry sources
@@ -313,8 +325,9 @@ shorter than the original isolated experiment's baseline.
 Across the corpus, total route length falls 43% and crossings fall from 289 to 147. All 24 drawings have zero routes through cards and zero off-route labels.
 Beyond a 2% tolerance, 20 drawings improve fit and two lose fit; one has larger
 area and 21 have more bends than ELK. Total page area falls 28%. These numbers
-include the user-selected balanced aligned ports and early rejection of
-unhelpful column footprints. Forced-label detours remain under investigation.
+describe checkpoint `0f4b55ab`, including the user-selected balanced aligned
+ports and early rejection of unhelpful column footprints, before the subsequent
+label-anchor and ink-rounding fix above.
 Measurements remain available through `measure.ts`; previous baselines are retained.
 
 The corpus tests retain semantic completeness, card clearance and labels on their

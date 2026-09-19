@@ -35,7 +35,7 @@ export const ROUTE_SEGMENT_PENALTY = 20;
 export const BEND_RADIUS_MAX = 14;
 /** Bend space reserved together with the straight arrow approach. */
 export const BEND_RADIUS_MIN = 8;
-/** Straight line before the arrow tip; keep above the largest marker reach (9.735px). */
+/** Hero arrow approach, scaled with rendered stroke width; exceeds its 9.735px marker reach. */
 export const APPROACH_STRAIGHT = 12;
 /** Crossing bridge size and clearance from surrounding ink. */
 export const BRIDGE_RADIUS = 7;

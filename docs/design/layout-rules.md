@@ -1469,7 +1469,7 @@ straight run. Independent leaf collections retain compact wrapping and the
 requested equal 24px side/bottom insets. Semantic identities, containment,
 Standing and the shared SVG/atlas geometry remain unchanged.
 
-The inspected Public API fixture improves fit by 84% and reduces route length
+The adoption checkpoint at `0f4b55ab` improves the inspected Public API fixture's fit by 84% and reduces route length
 by 53%, with 1.56 bends per relationship and four crossings. Broader results are
 mixed: total route length falls 43% and crossings fall from 289 to 147 across
 24 drawings, while two lose fit and 21 have more bends than the preceding

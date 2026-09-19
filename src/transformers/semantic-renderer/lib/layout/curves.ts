@@ -258,24 +258,20 @@ function endOf(segments: readonly Segment[], first: Point): Point {
  * balloons a route with one short leg clear out of the corridor the planner put
  * it in.
  *
- * A turn next to one of the route's own ends is held back further, because that
- * leg is carrying an arrowhead or leaving a card and has to stay straight where
- * it touches: `APPROACH_STRAIGHT` of the leg is reserved, and the turn rounds
- * with whatever is left. It is the same arc either way — a corner takes its
- * radius off both legs — so the only way to keep an approach straight is to
- * turn later, which is what this does.
+ * The last turn leaves straight space for the target arrowhead. Its caller
+ * supplies the reserve for the actual stroke width; the source has no head.
+ * A corner takes the same radius from both legs, so the remaining target
+ * space limits the whole bend.
  * @param corner The turn.
  * @param start Where the route currently stands.
- * @param reserved How much of the incoming and outgoing legs the route's ends need left straight.
- * @param reserved.entering How much of the incoming leg to leave alone.
- * @param reserved.leaving How much of the outgoing leg to leave alone.
+ * @param reservedLeaving How much of the outgoing leg the target head needs straight.
  * @param maximum The radius allowed by a reserved label.
  * @returns The segments to append.
  */
 function bendThrough(
 	corner: Corner,
 	start: Point,
-	reserved: { readonly entering: number; readonly leaving: number },
+	reservedLeaving: number,
 	maximum: number,
 ): Segment[] {
 	const { previous, vertex, next } = corner;
@@ -283,12 +279,7 @@ function bendThrough(
 	const outLength = Math.hypot(next.x - vertex.x, next.y - vertex.y);
 	const radius = Math.max(
 		0,
-		Math.min(
-			maximum,
-			Math.min(inLength, outLength) / 2,
-			inLength - reserved.entering,
-			outLength - reserved.leaving,
-		),
+		Math.min(maximum, Math.min(inLength, outLength) / 2, outLength - reservedLeaving),
 	);
 	const inDir = { x: (vertex.x - previous.x) / inLength, y: (vertex.y - previous.y) / inLength };
 	const outDir = { x: (next.x - vertex.x) / outLength, y: (next.y - vertex.y) / outLength };
@@ -385,26 +376,27 @@ function labelRadius(corner: Corner, label: Box | undefined): number {
  * the turns curve.
  * @param points The waypoints.
  * @param label The reserved label whose footprint must remain straight.
+ * @param targetApproach Straight space reserved for the target arrowhead.
  * @returns The route.
  */
-function curveThrough(points: readonly Point[], label?: Box): Curve {
+function curveThrough(
+	points: readonly Point[],
+	label?: Box,
+	targetApproach = APPROACH_STRAIGHT,
+): Curve {
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
 	const last = points.length - 1;
 	for (let index = 1; index < last; index += 1) {
 		const corner = cornerAt(points, index);
 		if (corner !== undefined) {
-			// The first turn's incoming leg leaves the route's source, and the last
-			// turn's outgoing leg arrives at its target. Both have to stay straight
-			// where they touch; every leg in between is the planner's business.
+			// Only the target carries an arrowhead. Half-leg rounding already keeps
+			// the source tangent square without reserving space for invisible ink.
 			segments.push(
 				...bendThrough(
 					corner,
 					endOf(segments, first),
-					{
-						entering: index === 1 ? APPROACH_STRAIGHT : 0,
-						leaving: index === last - 1 ? APPROACH_STRAIGHT : 0,
-					},
+					index === last - 1 ? targetApproach : 0,
 					labelRadius(corner, label),
 				),
 			);
