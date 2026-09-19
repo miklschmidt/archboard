@@ -164,3 +164,99 @@ test("a proposal replaces an edge once two authored fields differ from its prede
 	});
 	expect(proposal.content.edges[0].id).not.toBe(edge.id);
 });
+
+test("one CLI edit consolidates copied proposal subjects under their inherited ids and reconnects the flow and view", () => {
+	const boardName = "restore-proposal-identity";
+	const created = cli(
+		["semantic", "new", boardName, "--doing", "stating the inherited path"],
+		JSON.stringify({
+			level: "service",
+			nodes: [
+				{ name: "Caller", kind: "module" },
+				{ name: "Worker", kind: "module", description: "Does the work" },
+			],
+			edges: [{ from: "Caller", to: "Worker", kind: "call", label: "work" }],
+			flows: [
+				{
+					name: "Work",
+					participants: ["Caller", "Worker"],
+					steps: [{ from: "Caller", to: "Worker", label: "work" }],
+				},
+			],
+			views: [
+				{
+					name: "Worker scope",
+					grammar: "architecture",
+					scope: { kind: "selection", nodes: ["Worker"], edges: [], flows: [] },
+				},
+			],
+		}),
+	);
+	expect(created.status, created.stderr).toBe(0);
+	const initial = JSON.parse(created.stdout).board;
+	const original = initial.variants[0].content;
+	const worker = original.nodes.find((node: { name: string }) => node.name === "Worker");
+	const edge = original.edges[0];
+	const flow = original.flows[0];
+	const branch = cli([
+		"semantic",
+		"branch",
+		boardName,
+		"--as",
+		"Proposal",
+		"--expect-version",
+		String(initial.version),
+		"--doing",
+		"proposing the path",
+	]);
+	expect(branch.status, branch.stderr).toBe(0);
+	const edit = (version: number, input: unknown) =>
+		cli(
+			[
+				"semantic",
+				"edit",
+				boardName,
+				"--variant",
+				"Proposal",
+				"--expect-version",
+				String(version),
+				"--doing",
+				"repairing the proposal identities",
+			],
+			JSON.stringify(input),
+		);
+	const copied = edit(JSON.parse(branch.stdout).board.version, {
+		removeNodes: [worker.id],
+		nodes: [{ name: worker.name, kind: worker.kind, description: worker.description }],
+		edges: [{ from: edge.from, to: "Worker", kind: edge.kind, label: edge.label }],
+		flows: [
+			{ ...flow, participants: [edge.from, "Worker"], steps: [{ ...flow.steps[0], to: "Worker" }] },
+		],
+	});
+	expect(copied.status, copied.stderr).toBe(0);
+	const before = JSON.parse(copied.stdout).board;
+	const proposal = before.variants.find((variant: { name: string }) => variant.name === "Proposal");
+	const copy = proposal.content.nodes.find((node: { name: string }) => node.name === "Worker");
+	expect(copy.id).not.toBe(worker.id);
+	expect(proposal.content.edges[0].id).not.toBe(edge.id);
+	const repaired = edit(before.version, {
+		removeNodes: [copy.id],
+		nodes: [worker],
+		edges: [edge],
+		flows: [flow],
+	});
+	expect(repaired.status, repaired.stderr).toBe(0);
+	const answer = JSON.parse(repaired.stdout);
+	const resulting = answer.board;
+	const restored = resulting.variants.find(
+		(variant: { name: string }) => variant.name === "Proposal",
+	);
+	expect(resulting.version).toBe(before.version + 1);
+	expect(restored.content).toEqual(original);
+	expect(resulting.views).toEqual(initial.views);
+	expect(answer.warnings).toEqual([]);
+	expect(resulting.variants[0]).toEqual(initial.variants[0]);
+	const persisted = cli(["semantic", "show", boardName]);
+	expect(persisted.status, persisted.stderr).toBe(0);
+	expect(JSON.parse(persisted.stdout).board).toEqual(resulting);
+});

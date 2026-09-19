@@ -29,6 +29,7 @@
 // stood, additions apply on top, and the only thing that has to hold is what
 // is left at the end.
 
+import type { RestorableSubjects } from "@/runtime/semantic-board-store/lib/restore";
 import {
 	persistedGroupIds,
 	type SemanticBoard,
@@ -113,6 +114,14 @@ function planRemovals(
 		}
 		nodes.add(found.node.id);
 	}
+	const contradictory = edit.nodes.find((node) => node.id !== undefined && nodes.has(node.id));
+	if (contradictory !== undefined) {
+		return refuse(
+			"UNKNOWN_NODE",
+			`this command removes node "${contradictory.id}" and states it again. Take it out of ` +
+				"removeNodes to change it, or leave the id out of the statement to add a new one",
+		);
+	}
 	const restated = new Set(
 		edit.edges.flatMap((input) => (input.id === undefined ? [] : [input.id])),
 	);
@@ -145,18 +154,13 @@ function planRemovals(
  * things come from the mint owner, which is also what keeps them unique across
  * the whole variant family rather than only this variant.
  *
- * The one id that may be stated without being on the variant is one the
- * variant is holding a disagreement about: a draft that removed a node its
- * predecessor went on to change is asked to keep the removal or take the
- * change, and the third answer — the node back, under the identity the whole
- * family knows it by, saying what this draft wants it to say — is an ordinary
- * edit stating that id. Which ids those are is decided by the transition from
- * the draft's recorded standing; here they are simply the ids allowed back.
+ * An absent inherited node may be restored under its original identity.
+ * The transition authorizes ids from the direct predecessor and recorded base;
+ * this content editor never treats an arbitrary explicit id as a new subject.
  * @param nodes The nodes as they stand after removals.
  * @param batch The batch; its ids and handles are extended.
  * @param stated The node as the agent wrote it.
- * @param restorable Ids absent from this variant that an open disagreement lets
- * an edit restore.
+ * @param restorable Absent inherited identities this edit may restore.
  * @returns The id to write it under, or why the reference could not be resolved.
  */
 function idForNode(
@@ -181,13 +185,13 @@ function idForNode(
 }
 
 /**
- * The id a stated node names, when it is on the variant or an open
- * disagreement lets it come back.
+ * The id a stated node names, when it is on the variant or its inheritance
+ * lets it come back.
  * @param nodes The nodes as they stand after removals.
  * @param batch The batch; its handles are extended.
  * @param stated The node as the agent wrote it.
  * @param id The id it stated.
- * @param restorable Ids an open disagreement lets an edit restore.
+ * @param restorable Inherited ids that an edit may restore.
  * @returns The id, or why it names nothing.
  */
 function statedId(
@@ -202,7 +206,7 @@ function statedId(
 	}
 	return refuse(
 		"UNKNOWN_NODE",
-		`there is no node "${id}" on this variant to replace. Leave the id out to add ` +
+		`there is no node "${id}" on this variant, its direct predecessor or its recorded reconciliation base. Leave the id out to add ` +
 			`"${stated.name}" as a new node, or state the id of the one you meant to change`,
 	);
 }
@@ -213,7 +217,7 @@ function statedId(
  * @param start The nodes as they stand after removals.
  * @param stated The nodes the agent wrote.
  * @param batch The batch; its ids and handles are extended.
- * @param restorable Ids an open disagreement lets this batch restore.
+ * @param restorable Inherited ids that this batch may restore.
  * @returns The nodes with containment still unresolved, or the refusal.
  */
 function placeStatedNodes(
@@ -339,16 +343,14 @@ function orphanRefusal(
  * @param before The content as it stands.
  * @param edit What the agent stated.
  * @param board The board the content belongs to, for the ids already in use.
- * @param restorable Node ids absent from this content that an open
- * disagreement lets the batch restore under their original identity; none
- * unless the transition found some in the variant's recorded standing.
+ * @param restorable Absent inherited node and edge ids the transition authorizes.
  * @returns The content after the edit, or why it was refused.
  */
 function editContent(
 	before: VariantContent,
 	edit: VariantEditInput,
 	board: SemanticBoard | null,
-	restorable: ReadonlySet<string> = new Set(),
+	restorable: RestorableSubjects = { nodes: new Set(), edges: new Set() },
 ): ContentEdit {
 	const batch = editBatch(board, before, edit);
 	const planned = planRemovals(before, edit, batch);
@@ -356,13 +358,14 @@ function editContent(
 		return planned;
 	}
 	const kept = remaining(before, planned.removals);
-	const nodes = statedNodes(before, kept.nodes, edit, batch, restorable);
+	const nodes = statedNodes(before, kept.nodes, edit, batch, restorable.nodes);
 	if (!nodes.ok) {
 		return nodes;
 	}
 	const edges = placeStatedEdges(kept.edges, nodes.nodes, edit.edges, batch, {
 		nodes: before.nodes.filter((node) => planned.removals.nodes.has(node.id)),
 		edges: planned.removals.statedEdges,
+		restorable: restorable.edges,
 	});
 	if (!edges.ok) {
 		return edges;
@@ -371,7 +374,12 @@ function editContent(
 	return placed.ok
 		? {
 				...placed,
-				notices: replacedRelationships(before.edges, planned.removals.edges, edges.edges),
+				notices: replacedRelationships(
+					before.edges,
+					planned.removals.edges,
+					edges.edges,
+					restorable.edges,
+				),
 			}
 		: placed;
 }
@@ -399,7 +407,7 @@ function remaining(
  * @param kept The nodes that survive the removals.
  * @param edit The batch as stated.
  * @param batch The batch; its ids and handles are extended.
- * @param restorable Ids an open disagreement lets this batch restore.
+ * @param restorable Inherited ids that this batch may restore.
  * @returns The nodes, or the first refusal.
  */
 function statedNodes(

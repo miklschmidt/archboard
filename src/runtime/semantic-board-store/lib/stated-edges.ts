@@ -27,6 +27,8 @@ interface TakenOff {
 	readonly nodes: readonly SemanticNode[];
 	/** The relationship ids the command itself named in `removeEdges`. */
 	readonly edges: ReadonlySet<string>;
+	/** Absent relationship identities inherited before this command. */
+	readonly restorable: ReadonlySet<string>;
 }
 
 /**
@@ -117,7 +119,7 @@ function removedEndpointRefusal(gone: TakenOff, reference: string): SemanticRefu
 
 /**
  * The id a stated edge should carry: the one it names, which must already be a
- * relationship on this variant, or a fresh one.
+ * relationship on this variant or inherited from its predecessor/base, or a fresh one.
  *
  * A relationship whose endpoint this command removes is not gone by the time
  * it is read here: the cascade leaves a restated relationship alone, so moving
@@ -139,7 +141,7 @@ function edgeId(
 	if (input.id === undefined) {
 		return held(batch, input.as, mintInto(batch));
 	}
-	if (edges.some((edge) => edge.id === input.id)) {
+	if (edges.some((edge) => edge.id === input.id) || gone.restorable.has(input.id)) {
 		return held(batch, input.as, input.id);
 	}
 	if (gone.edges.has(input.id)) {
@@ -151,7 +153,7 @@ function edgeId(
 	}
 	return refuse(
 		"UNKNOWN_EDGE",
-		`there is no relationship "${input.id}" on this variant to replace. Leave the id out to ` +
+		`there is no relationship "${input.id}" on this variant, its direct predecessor or its recorded reconciliation base. Leave the id out to ` +
 			"add a new one, or state the id of the one you meant to change",
 	);
 }
