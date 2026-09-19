@@ -66,7 +66,8 @@ function geometryFor(context: ChannelContext, id: string): ChannelGeometry {
 		from: context.cards.get(edge.edge.from),
 		to: context.cards.get(edge.edge.to),
 		vertical:
-			edge.curve.segments.length === 1 && edge.curve.from.x === edge.curve.segments[0]?.to.x,
+			context.bounds.has(id) ||
+			(edge.curve.segments.length === 1 && edge.curve.from.x === edge.curve.segments[0]?.to.x),
 	};
 }
 

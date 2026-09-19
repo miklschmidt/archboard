@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 22:49'
+updated_date: '2026-09-19 23:08'
 labels:
   - renderer
   - layout
@@ -37,6 +37,8 @@ The Phone API view places incoming cards above an entire Common-WebLib container
 4. Update renderer documentation, run full check, simplify and commit.
 
 Apply approved Cloud Infrastructure straight-route correction: use placed fallback-label coordinates when offering aligned card pins, and align ordinary sources with selected external container arrival points through existing clearance checks. Add minimal regression coverage, verify real variants and renderer checks, rebuild and refresh live canvas, then commit.
+
+User approved combined vib1439P routing preview. Generalize jointly aligned external frame arrivals and collision-validated pin/label projections, preserving distinct channels, fixed radius 8 and mandatory approach 12. Add minimal native regressions, rerender the real corpus, inspect approved variant, run required checks, simplify and commit. Do not modify column wrapping or user clearance configuration.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -121,4 +123,12 @@ Applied approved straight-route correction generally: forced fallback labels sup
 Final straight-route gate: lint, formatting, type checks, frontend build and 3365 module tests pass. System suite remains 168 pass / 1 known baseline voice-context failure; separate repository suite 8 pass. Server 3100 restarted with built frontend. Approved three-route correction complete; newly reported vib1439P proposal detours are a separate ongoing diagnosis.
 
 Proposal vib1439P isolated diagnosis: Approved devices alignment is blocked by a different-direction seed at the shared center; a nearby jointly aligned pin/label rail removes its dogleg without weakening channel separation. Public transport has disjoint endpoint spans and a forced label outside its target rail; projecting the label reduces five bends to three necessary bends. Fixed quarter-frame entry fractions cause the Platform loop and fallback attachment at 94.85 percent of its card; joint source/frame candidates make both straight and center fallback. Combined isolated proof: /tmp/mtls-combined-proof-vib1439P.png, runner /tmp/mtls-combined-runner.ts. Independent SVG audit: all 16 rendered nodes unchanged, 1817x1233 dimensions unchanged, 11 ordinary corners at radius 8, minimum final approach 13, zero conflicting channel overlaps or label collisions. Preview shown for user visual choice before adopting any new production treatment. Prototype remains under /tmp only; general implementation must replace targeted diagnostic label overrides with collision-validated candidate selection.
+
+Approved combined treatment generalized in production: card/frame aligned candidates replace source-only alignment; forced labels can propose one jointly packed channel projection accepted only for a complete physically valid routing improvement with identical subject boxes. No board IDs or geometry constants from the diagnostic prototype are used. Production corpus: 22 variants, 290 edges, zero failures, all canvas dimensions unchanged. Summed rendering 4795ms versus prior aligned baseline 3945ms in single runs; bounded extra solve costs about 39ms per variant on average. Native vib1439P image /tmp/proposal-production-vib1439P.png matches intended four-route geometry with additional label clearance. Full gate pending.
+
+Simplification: reused existing label channel packing and settlement; no new clearance constants or iterative optimization loop. Fixed-radius SVG audit finds 11 ordinary bends, shortest final approach 13px, zero label collisions. Frontend rebuilt and server 3100 restarted; temporary browser verification confirms vib1439P renders 17 nodes/16 relationships with intended geometry, then temporary tab closed. Existing user tab reloaded and remains on current Cloud Infrastructure.
+
+Final combined gate: lint, formatting, types, frontend build and module tests pass. System lane 168 pass/1 fail at the previously established baseline live-voice pane-context test; full check therefore is not green and serial browser lane is not reached. Requested renderer behavior independently verified in live browser and 22-variant native corpus. Keep broader TASK-278 In Progress.
+
+Final counts: 3369 module tests pass; separate repository lane 8/8 pass. Validation logs /tmp/proposal-full-check2.log and /tmp/proposal-repository.log.
 <!-- SECTION:NOTES:END -->

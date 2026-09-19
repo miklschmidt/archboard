@@ -1518,7 +1518,15 @@ A forced vertical label uses its placed coordinate when no explicit anchor overr
 it. Both endpoint candidates see that same coordinate, so routing does not introduce
 a sideways detour solely to reach a label whose position was already reserved.
 
-An ordinary card can offer a straight departure matching a selected external
-container arrival. The container keeps its existing arrival-face and clearance
-policy; the card candidate passes the same channel separation and obstacle checks
-as other aligned pins. Internal container connections keep their existing meaning.
+An ordinary card and an external destination container offer aligned departure
+and arrival candidates together. Both candidates pass channel separation and
+obstacle checks; the container retains its arrival-face clearance checks and
+fallback choices. A fixed proportional frame entry does not force the source
+toward a corner when a clear aligned entry is available. Internal container
+connections keep their existing meaning.
+
+For a valid route with a forced-label detour, settlement can project the label
+onto an existing vertical run or a neighboring channel. It packs nearby labels
+together to retain their clearance, then tries the proposal as one complete
+reroute. The proposal must preserve placement, fit every bend and arrow approach,
+and reduce bends or route length; otherwise the current drawing remains.

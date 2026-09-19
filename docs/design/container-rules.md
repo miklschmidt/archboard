@@ -23,9 +23,10 @@ The current rules are:
 - A frame's relationship with its own descendant meets its title divider;
   external relationships meet its outline. Incoming frame arrows use a clear
   face with room for their head and bend. Protect complete title bands.
-- Route around cards and title bands with libavoid. Relationships of one kind share ports
-  on each face; different kinds use distinct attachment positions and lanes.
-  Ordinary cards with overlapping facing spans offer balanced aligned ports
+- Route around cards and title bands with libavoid. Relationships with matching
+  kind, comparison standing and local direction share ports on each face;
+  different channels use distinct attachment positions and lanes.
+  Cards and external destination frames with overlapping facing spans offer aligned ports
   at the nearest feasible balanced position. On a face with an unobstructed
   aligned channel, omit the redundant center choice that would introduce a
   detour. Keep other faces available. This applies across

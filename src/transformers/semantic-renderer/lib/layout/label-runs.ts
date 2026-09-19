@@ -11,6 +11,7 @@ import {
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import { ANCHOR_CARD_CLEARANCE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import { packChannels } from "@/transformers/semantic-renderer/lib/layout/label-channels";
+import { projectionCoordinates } from "@/transformers/semantic-renderer/lib/layout/label-projections";
 // Measured badges use clear runs in the layout owner. A missing fit requests
 // an engine reservation before the one complete drawing can be returned.
 import type {
@@ -59,6 +60,15 @@ function nodeObstacles(drawing: ArchitectureDrawing): Box[] {
 			{ ...box, y: box.y + box.height, height: 0 },
 		]),
 	];
+}
+
+/**
+ * Recognize an existing single vertical native channel.
+ * @param edge Current relationship.
+ * @returns Whether its endpoints share one vertical run.
+ */
+function verticalChannel(edge: DrawingEdge): boolean {
+	return edge.curve.segments.length === 1 && edge.curve.from.x === pointAt(edge.curve, 1).x;
 }
 
 /** One placement pass shares inflated obstacles and accepted label boxes. */
@@ -127,6 +137,73 @@ class LabelPlacement {
 			if (candidate) this.accept(edge, candidate);
 		}
 		if (this.invalid()) this.reset();
+	}
+
+	/** Propose one collision-free joint pin/label adjustment per detouring ordinary relationship. */
+	projectChannels(): void {
+		for (const edge of this.drawing.edges.toSorted((a, b) => a.edge.id.localeCompare(b.edge.id)))
+			this.projectEdge(edge);
+		packChannels(this.drawing, this.labels, this.accepted, this.original, this.bounds);
+		if (
+			this.invalid() ||
+			[...this.accepted].some((id) => !this.clearProjection(id, this.labels.get(id)!))
+		)
+			this.reset();
+	}
+
+	/**
+	 * Select one clear native waypoint candidate for a detouring relationship.
+	 * @param edge Current native relationship.
+	 */
+	private projectEdge(edge: DrawingEdge): void {
+		if (!this.allows(edge) || edge.curve.segments.filter((s) => s.kind === "cubic").length < 2)
+			return;
+		const original = this.original.get(edge.edge.id);
+		if (original === undefined) return;
+		const box = projectionCoordinates(this.drawing, edge, original)
+			.map((center) => ({ ...original, x: center - original.width / 2 }))
+			.find((candidate) => this.clearProjection(edge.edge.id, candidate));
+		if (box === undefined) return;
+		if (!this.boundProjection(edge, box)) return;
+		this.accepted.add(edge.edge.id);
+		this.labels.set(edge.edge.id, { ...box, axis: "y", pinAlign: true });
+		this.grownLabels.set(edge.edge.id, inflate(box, this.labelAir));
+	}
+
+	/**
+	 * Mark only channels that can become straight between both endpoint spans as movable.
+	 * @param edge Relationship whose endpoints may align.
+	 * @param box Proposed waypoint.
+	 * @returns Whether the waypoint has a usable movement interval.
+	 */
+	private boundProjection(edge: DrawingEdge, box: Box): boolean {
+		const ends = this.drawing.cards.filter(({ measured }) =>
+			[edge.edge.from, edge.edge.to].includes(measured.node.id),
+		);
+		const center = box.x + box.width / 2;
+		if (
+			ends.length !== 2 ||
+			ends.some(({ box: card }) => center < card.x || center > card.x + card.width)
+		)
+			return true;
+		return this.boundChannel(edge, box, true);
+	}
+
+	/**
+	 * Retain foreign route, card and page clearance while jointly packing eligible labels.
+	 * @param id Relationship whose own route may cross its label.
+	 * @param box Proposed waypoint.
+	 * @returns Whether the fixed obstacles permit the waypoint.
+	 */
+	private clearProjection(id: string, box: Box): boolean {
+		const otherLabels = [...this.grownLabels]
+			.filter(([other]) => id !== other && !this.eligible?.has(other))
+			.map(([, b]) => b);
+		const otherRuns = this.grownPieces.filter((_, index) => this.pieces[index]!.edgeId !== id);
+		return (
+			insidePage(box, this.drawing) &&
+			![...this.grownCards, ...otherLabels, ...otherRuns].some((other) => overlaps(box, other))
+		);
 	}
 
 	/**
@@ -226,15 +303,12 @@ class LabelPlacement {
 	 * Reuse the same obstacle-free horizontal interval when balancing adjacent channels.
 	 * @param edge Relationship whose straight channel may shift.
 	 * @param box Proposed badge on that channel.
+	 * @param projected Whether a joint projection can create a straight channel.
 	 * @returns Whether its original connected free interval exists.
 	 */
-	private boundChannel(edge: DrawingEdge, box: Box): boolean {
-		if (
-			this.eligible === undefined ||
-			edge.curve.segments.length !== 1 ||
-			edge.curve.from.x !== pointAt(edge.curve, 1).x
-		)
-			return true;
+	private boundChannel(edge: DrawingEdge, box: Box, projected = false): boolean {
+		if (this.eligible === undefined) return true;
+		if (!projected && !verticalChannel(edge)) return true;
 		const intervals = clearIntervals(
 			[[DIAGRAM_MARGIN, this.drawing.width - DIAGRAM_MARGIN - box.width]],
 			{ groups: [this.grownCards], pieces: [], ownPiece: -1 },
@@ -395,4 +469,21 @@ function alignLabelRows(
 	return placement.anchors();
 }
 
-export { placeLabelsOnRuns, anchorLabelsOnRuns, alignLabelRows };
+/**
+ * Suggest one atomic set of joint channel adjustments for a complete reroute.
+ * @param drawing Current native geometry.
+ * @param measured Measured semantic labels.
+ * @param eligible Forced reservations that may move together.
+ * @returns Collision-validated native waypoint proposals.
+ */
+function projectLabelChannels(
+	drawing: ArchitectureDrawing,
+	measured: MeasuredArchitecture["labels"],
+	eligible: ReadonlySet<string>,
+): ReadonlyMap<string, LabelAnchor> {
+	const placement = new LabelPlacement(drawing, measured, eligible);
+	placement.projectChannels();
+	return placement.anchors();
+}
+
+export { placeLabelsOnRuns, anchorLabelsOnRuns, alignLabelRows, projectLabelChannels };

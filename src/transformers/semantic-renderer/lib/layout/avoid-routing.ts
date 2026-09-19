@@ -113,32 +113,7 @@ class RoutingScene {
 			}
 		}
 		for (const [id, present] of channels) this.channels.set(id, [...present].toSorted());
-		const arrivals = new Map(
-			edges.flatMap((edge) => {
-				const pin = this.frameArrivalPin(edge);
-				return pin === undefined ? [] : [[edge.id, pin] as const];
-			}),
-		);
-		// These are extra card alternatives, not cached frame decisions: later
-		// corridor reservations and endpoint retries still choose the actual arrival.
-		this.aligned = alignedPins(this.nodes, this.channels, edges, arrivals);
-	}
-
-	/**
-	 * Offer a card alternative facing the frame policy's current external arrival.
-	 * @param edge Relationship whose ordinary source could align with its frame target.
-	 * @returns The frame's physical pin, or no alternative for an internal or ordinary target.
-	 */
-	private frameArrivalPin(edge: ElkExtendedEdge): AlignedPin | undefined {
-		const source = this.nodes.get(edge.sources[0]!)!;
-		const target = this.nodes.get(edge.targets[0]!)!;
-		if (source.children?.length || !target.children?.length || internalFrame(target, source))
-			return undefined;
-		const channel = relationshipChannel(edge, target.id);
-		const channels = this.channels.get(target.id)!;
-		const position = (channels.indexOf(channel) + 0.5) / channels.length;
-		const { side, at } = this.arrivalPoint(target, source, position, channel);
-		return { face: side, position: positionOnFace(boxOf(target), side, at)! };
+		this.aligned = alignedPins(this.nodes, this.channels, edges);
 	}
 
 	/**
@@ -310,7 +285,7 @@ class RoutingScene {
 				point.delete();
 			}
 		}
-		return this.frameArrival(node.id, at, side, position);
+		return this.frameArrival(node.id, at, side);
 	}
 
 	/**
@@ -330,20 +305,35 @@ class RoutingScene {
 		channel: string,
 	): { side: Face; at: Point } {
 		const toward = boxCentre(boxOf(target));
-		const candidates = FACES.filter((side) => this.endpoints.allows(node.id, channel, side))
-			.map((side) => ({
-				side,
-				at: frameArrivalPoint(node, side, position),
-			}))
-			.toSorted(
-				(one, other) =>
-					Math.hypot(one.at.x - toward.x, one.at.y - toward.y) -
-					Math.hypot(other.at.x - toward.x, other.at.y - toward.y),
-			);
-		return (
-			candidates.find(({ side, at }) => this.clearArrival(node.id, side, at, position)) ??
-			candidates[0]!
+		const candidates = this.arrivalCandidates(node, position, channel).toSorted(
+			(one, other) =>
+				Math.hypot(one.at.x - toward.x, one.at.y - toward.y) -
+				Math.hypot(other.at.x - toward.x, other.at.y - toward.y),
 		);
+		return (
+			candidates.find(({ side, at }) => this.clearArrival(node.id, side, at)) ?? candidates[0]!
+		);
+	}
+
+	/**
+	 * Use matched arrival pins on their faces and ordinary seeds on all other faces.
+	 * @param node Destination frame.
+	 * @param position Its channel's ordinary fraction.
+	 * @param channel Shared channel whose rejected faces remain unavailable.
+	 * @returns Frame alternatives with the same physical pins the allocator reserved.
+	 */
+	private arrivalCandidates(
+		node: ElkNode,
+		position: number,
+		channel: string,
+	): { side: Face; at: Point }[] {
+		const pins = this.aligned.get(node.id)?.get(channel) ?? [];
+		return FACES.filter((side) => this.endpoints.allows(node.id, channel, side)).flatMap((side) => {
+			const matched = pins.filter((pin) => pin.face === side);
+			return matched.length === 0
+				? [{ side, at: frameArrivalPoint(node, side, position) }]
+				: matched.map((pin) => ({ side, at: facePoint(boxOf(node), side, pin.position) }));
+		});
 	}
 
 	/**
@@ -352,15 +342,14 @@ class RoutingScene {
 	 * @param frame The destination identity.
 	 * @param side Its candidate face.
 	 * @param at Its perimeter endpoint.
-	 * @param position The shared channel position.
 	 * @returns Whether its head and bend footprint is unobstructed.
 	 */
-	private clearArrival(frame: string, side: Face, at: Point, position: number): boolean {
+	private clearArrival(frame: string, side: Face, at: Point): boolean {
 		const corridor = inflate(arrivalCorridor(at, side), SHAPE_CLEARANCE);
 		return ![...this.obstacles].some(
 			([id, box]) =>
 				id !== frame &&
-				id !== `${frame}:approach:${side}:${position}` &&
+				id !== `${frame}:approach:${side}:${at.x}:${at.y}` &&
 				boxesOverlap(corridor, inflate(box, SHAPE_CLEARANCE)),
 		);
 	}
@@ -372,11 +361,10 @@ class RoutingScene {
 	 * @param id The semantic frame.
 	 * @param at Its visible perimeter endpoint.
 	 * @param side Its outward face.
-	 * @param position The shared channel position.
 	 * @returns The native endpoint shared by arrivals on this face.
 	 */
-	private frameArrival(id: string, at: Point, side: Face, position: number): ConnectionEnd {
-		const key = `${id}:approach:${side}:${position}`;
+	private frameArrival(id: string, at: Point, side: Face): ConnectionEnd {
+		const key = `${id}:approach:${side}:${at.x}:${at.y}`;
 		let pinClass = this.classes.get(key);
 		if (pinClass === undefined) {
 			const [x, y, direction] = SIDES[side];

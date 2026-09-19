@@ -1,0 +1,91 @@
+{
+	"content": {
+		"nodes": [
+			{
+				"id": "ywwZuKxy",
+				"name": "Portal API hostname",
+				"kind": "service",
+				"responsibility": "Preserves the hostname; health-checked DNS selects Platform first, then healthy IIS fallback."
+			},
+			{
+				"id": "lqxzyMcC",
+				"name": "Azure Standard Load Balancer",
+				"kind": "azure",
+				"responsibility": "Keeps its public IP as the healthy secondary for automatic DNS failover to IIS."
+			},
+			{
+				"id": "t2QlUi5k",
+				"name": "Platform",
+				"kind": "service",
+				"responsibility": "Checks approved devices and balances directly across IIS."
+			},
+			{
+				"id": "1yU3ivZL",
+				"name": "Approved devices",
+				"kind": "external",
+				"responsibility": "Use the dedicated secure hostname."
+			},
+			{
+				"id": "9BTlRpYl",
+				"name": "Platform Azure Load Balancer",
+				"kind": "azure",
+				"responsibility": "Uses a separate public IP as the primary DNS endpoint; forwards L4 traffic."
+			},
+			{
+				"id": "lIeLZtS6",
+				"name": "NLC Application Gateway",
+				"kind": "external",
+				"responsibility": "Provides the NLC regional entry."
+			}
+		],
+		"edges": [
+			{
+				"id": "TR9Ic6TU",
+				"from": "ywwZuKxy",
+				"to": "9BTlRpYl",
+				"kind": "other",
+				"label": "Public transport",
+				"emphasis": "hero"
+			},
+			{
+				"id": "1ABsFJsd",
+				"from": "9BTlRpYl",
+				"to": "t2QlUi5k",
+				"kind": "other",
+				"label": "L4 forwarding",
+				"emphasis": "hero"
+			},
+			{
+				"id": "d7kqpa89",
+				"from": "1yU3ivZL",
+				"to": "9BTlRpYl",
+				"kind": "other",
+				"label": "Secure device access",
+				"emphasis": "normal"
+			},
+			{
+				"id": "ZQQI84PS",
+				"from": "lIeLZtS6",
+				"to": "ywwZuKxy",
+				"kind": "http",
+				"label": "Regional entry",
+				"emphasis": "normal"
+			},
+			{
+				"id": "4D1O2GEw",
+				"from": "ywwZuKxy",
+				"to": "lqxzyMcC",
+				"kind": "fallback",
+				"label": "Automatic DNS failover",
+				"emphasis": "muted"
+			}
+		]
+	},
+	"standing": {
+		"TR9Ic6TU": "changed",
+		"1ABsFJsd": "added",
+		"d7kqpa89": "added",
+		"ZQQI84PS": "unchanged",
+		"4D1O2GEw": "added"
+	}
+}
