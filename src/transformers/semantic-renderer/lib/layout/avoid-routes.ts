@@ -6,7 +6,21 @@ import { simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
 export type Connection = InstanceType<AvoidEngine["ConnRef"]>;
 
 /** A native scene could not find an obstacle-free route; alternative scenes may still work. */
-class NativeRouteUnavailable extends Error {}
+class NativeRouteUnavailable extends Error {
+	override readonly name = "NativeRouteUnavailable";
+}
+
+/**
+ * Recognize only a native routing refusal, including its string-preserving worker transport.
+ * @param error Rejected native solve.
+ * @returns Whether the failure permits an optional candidate to retain its baseline.
+ */
+export function isNativeRouteUnavailable(error: unknown): boolean {
+	return (
+		error instanceof NativeRouteUnavailable ||
+		(error instanceof Error && error.message.startsWith("NativeRouteUnavailable: "))
+	);
+}
 
 /**
  * Copy a valid obstacle-free native polyline.

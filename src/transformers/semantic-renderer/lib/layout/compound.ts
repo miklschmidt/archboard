@@ -17,8 +17,10 @@ import {
 	type LabelAnchor,
 	anchorLabelsOnRuns,
 	alignLabelRows,
+	projectLabelChannels,
 	placeLabelsOnRuns,
 } from "@/transformers/semantic-renderer/lib/layout/label-runs";
+import { improveProjection } from "@/transformers/semantic-renderer/lib/layout/label-projections";
 import {
 	rememberSolves,
 	settleLabels,
@@ -387,7 +389,7 @@ async function attemptLabels(
 
 /**
  * A forced waypoint can reveal a nearby native corridor absent from the natural route.
- * Try that existing channel once, only when the completed route cannot fit its bends.
+ * Repair cramped geometry, or try one simpler channel proposal for a valid route.
  * @param problem Measured board and requested reading.
  * @param reserved Labels retaining placement space.
  * @param forced Current native waypoint positions.
@@ -408,7 +410,6 @@ async function correctLabelChannels(
 			)
 			.map(({ edge }) => edge.id),
 	);
-	if (invalid.size === 0) return attempt;
 	const drawing = {
 		...attempt.drawing,
 		edges: attempt.drawing.edges.map(({ edge, curve, path }) => {
@@ -416,6 +417,10 @@ async function correctLabelChannels(
 			return { edge, curve, path, ...(label === undefined ? {} : { label }) };
 		}),
 	};
+	if (invalid.size === 0) {
+		const anchors = projectLabelChannels(drawing, problem.measured.labels, new Set(forced.keys()));
+		return improveLabelChannels(problem, reserved, forced, attempt, anchors);
+	}
 	const anchors = alignLabelRows(drawing, problem.measured.labels, invalid);
 	const changed = [...anchors].filter(([id, box]) => {
 		const previous = attempt.reservedBoxes.get(id)!.box;
@@ -424,6 +429,28 @@ async function correctLabelChannels(
 	return changed.length === 0
 		? attempt
 		: drawAttempt(problem, reserved, new Map([...forced, ...changed]));
+}
+
+/**
+ * Try one whole-set waypoint proposal, retaining the complete current reading on refusal.
+ * @param problem Measured scene.
+ * @param reserved Current placement reservations.
+ * @param forced Current native waypoints.
+ * @param attempt Complete baseline.
+ * @param anchors Proposed joint channel coordinates.
+ * @returns The accepted complete reading.
+ */
+async function improveLabelChannels(
+	problem: Problem,
+	reserved: ReadonlySet<string>,
+	forced: ReadonlyMap<string, LabelAnchor | undefined>,
+	attempt: LabelAttempt,
+	anchors: ReadonlyMap<string, LabelAnchor>,
+): Promise<LabelAttempt> {
+	if (anchors.size === 0) return attempt;
+	return improveProjection(attempt, () =>
+		drawAttempt(problem, reserved, new Map([...forced, ...anchors])),
+	);
 }
 
 /**

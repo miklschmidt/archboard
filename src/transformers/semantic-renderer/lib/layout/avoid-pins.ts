@@ -6,10 +6,10 @@ import {
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import {
 	boxOf,
+	contains,
 	boxesOverlap,
 	facePoint,
 	obstacleOf,
-	SIDES,
 	type Face,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -81,7 +81,7 @@ function selfLoopPins(index: number, count: number): readonly AlignedPin[] {
 }
 
 /**
- * Candidate straight channels through the two overlapping card spans.
+ * Candidate straight channels through two overlapping endpoint spans.
  * @param one Source card bounds.
  * @param two Target card bounds.
  * @param anchor Optional reserved-label center on the horizontal axis.
@@ -126,31 +126,6 @@ function candidates(one: Box, two: Box, anchor?: number): [AlignedPin, AlignedPi
 	return result;
 }
 
-/**
- * Project a fixed arrival onto the facing source card when its outward run has room.
- * @param source Ordinary source card.
- * @param target Destination frame.
- * @param arrival Fixed frame arrival.
- * @returns The facing card pin within the usable span, or no straight alternative.
- */
-function oppositePin(source: Box, target: Box, arrival: AlignedPin): AlignedPin | undefined {
-	const opposite: Record<Face, Face> = {
-		NORTH: "SOUTH",
-		SOUTH: "NORTH",
-		WEST: "EAST",
-		EAST: "WEST",
-	};
-	const at = facePoint(target, arrival.face, arrival.position);
-	const [x, y] = SIDES[arrival.face];
-	const vertical = x === 0.5;
-	const extent = vertical ? source.width : source.height;
-	const offset = vertical ? at.x - source.x : at.y - source.y;
-	if (offset < ROUTE_NUDGE_DISTANCE || offset > extent - ROUTE_NUDGE_DISTANCE) return undefined;
-	const pin = { face: opposite[arrival.face], position: offset / extent };
-	const from = facePoint(source, pin.face, pin.position);
-	return (from.x - at.x) * (2 * x - 1) + (from.y - at.y) * (2 * y - 1) > 0 ? pin : undefined;
-}
-
 /** Construct stable, noncolliding candidate pins before native connector registration. */
 class PinCandidates {
 	readonly pins: AlignedPins = new Map();
@@ -161,14 +136,12 @@ class PinCandidates {
 	 * @param nodes Placed scene nodes.
 	 * @param channels Sorted connection channels at every endpoint.
 	 * @param edges All scene relationships.
-	 * @param arrivals Existing frame policy's candidate arrival pins, keyed by relationship.
 	 * @param offered Feasible first-pass pins whose replaced seeds need no clearance.
 	 */
 	constructor(
 		private readonly nodes: ReadonlyMap<string, ElkNode>,
 		private readonly channels: ReadonlyMap<string, readonly string[]>,
 		private readonly edges: readonly ElkExtendedEdge[],
-		private readonly arrivals: ReadonlyMap<string, AlignedPin>,
 		private readonly offered: AlignedPins = new Map(),
 	) {
 		for (const edge of edges) {
@@ -188,11 +161,7 @@ class PinCandidates {
 		const source = this.nodes.get(edge.sources[0]!)!;
 		const target = this.nodes.get(edge.targets[0]!)!;
 		if (source === target || !ordinaryCard(source)) return;
-		if (!ordinaryCard(target)) {
-			const arrival = this.arrivals.get(edge.id);
-			if (arrival !== undefined) this.addFrameArrival(edge, source, target, arrival);
-			return;
-		}
+		if (!ordinaryCard(target) && contains(boxOf(target), boxOf(source))) return;
 		this.addCardPair(
 			source,
 			target,
@@ -204,33 +173,9 @@ class PinCandidates {
 	}
 
 	/**
-	 * Offer a clear source pin opposite an external frame's existing arrival.
-	 * The frame keeps its own face and position policy; only the card gains a pin.
-	 * @param edge Relationship whose source channel may align.
-	 * @param source Ordinary source card.
-	 * @param target External destination frame.
-	 * @param arrival The frame policy's current candidate.
-	 */
-	private addFrameArrival(
-		edge: ElkExtendedEdge,
-		source: ElkNode,
-		target: ElkNode,
-		arrival: AlignedPin,
-	): void {
-		const from = oppositePin(boxOf(source), boxOf(target), arrival);
-		if (from === undefined) return;
-		const channel = relationshipChannel(edge, source.id);
-		if (
-			this.available(source.id, channel, from) &&
-			this.clearSegment(source.id, target.id, from, arrival, edge.id)
-		)
-			this.record(source.id, channel, from);
-	}
-
-	/**
 	 * Try feasible candidates from nearest to farthest from the balanced center.
 	 * @param source Source card.
-	 * @param target Target card.
+	 * @param target Target card or external frame.
 	 * @param sourceChannel Source endpoint's connection channel.
 	 * @param targetChannel Target endpoint's connection channel.
 	 * @param edgeId Relationship whose own label remains traversable.
@@ -280,6 +225,7 @@ class PinCandidates {
 		to: AlignedPin,
 		edgeId: string,
 	): boolean {
+		if (!arrivalBelowTitle(this.nodes.get(target)!, to)) return false;
 		if (!this.available(source, sourceChannel, from) || !this.available(target, targetChannel, to))
 			return false;
 		if (!this.clearSegment(source, target, from, to, edgeId)) return false;
@@ -388,7 +334,9 @@ class PinCandidates {
 	 */
 	private sharedPins(id: string, channel: string, fallback: AlignedPin): readonly AlignedPin[] {
 		const offered = this.offered.get(id)?.get(channel) ?? [];
-		const seeds = offered.some((pin) => pin.face === fallback.face) ? [] : [fallback];
+		const seeds = offered.some((pin) => pin.face === fallback.face)
+			? []
+			: seedPins(this.nodes.get(id)!, fallback);
 		return [...seeds, ...offered, ...(this.pins.get(id)?.get(channel) ?? [])];
 	}
 
@@ -409,24 +357,22 @@ class PinCandidates {
 }
 
 /**
- * Return optional shared-class pins for ordinary card ends, keyed by node and channel.
+ * Return feasible shared-class pins for cards and external frame arrivals.
  * @param nodes Placed scene nodes.
  * @param channels Sorted connection channels at every endpoint.
  * @param edges All scene relationships.
- * @param arrivals Existing frame policy's candidate arrivals.
  * @returns Available aligned pins.
  */
 export function alignedPins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	channels: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],
-	arrivals: ReadonlyMap<string, AlignedPin>,
 ): AlignedPins {
 	// The first pass protects every seed. The refinement can release seeds
 	// replaced by real matched pins, without losing those feasible alternatives.
-	const selected = new PinCandidates(nodes, channels, edges, arrivals);
+	const selected = new PinCandidates(nodes, channels, edges);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) selected.add(edge);
-	const refined = new PinCandidates(nodes, channels, edges, arrivals, selected.pins);
+	const refined = new PinCandidates(nodes, channels, edges, selected.pins);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) refined.add(edge);
 	return refined.pins;
 }
@@ -457,6 +403,33 @@ function reservedLabelX(edge: ElkExtendedEdge): string | number | undefined {
 	return (
 		options["archboard.route-label.x"] ??
 		(options["archboard.route-label"] === "true" ? edge.labels?.[0]?.x : undefined)
+	);
+}
+
+/**
+ * Frames have perimeter departure seeds and body-only side-arrival seeds.
+ * @param node Endpoint owning the shared channel.
+ * @param pin Ordinary channel fraction.
+ * @returns Every physical seed that remains available before matched pins replace the face.
+ */
+function seedPins(node: ElkNode, pin: AlignedPin): readonly AlignedPin[] {
+	if (ordinaryCard(node) || pin.face === "NORTH" || pin.face === "SOUTH") return [pin];
+	const header = obstacleOf(node).height;
+	const position = (header + (node.height! - header) * pin.position) / node.height!;
+	return [pin, { ...pin, position }];
+}
+
+/**
+ * Keep external side arrivals on the frame body, as the normal frame policy does.
+ * @param node Target card or frame.
+ * @param pin Proposed arrival.
+ * @returns Whether its face and position preserve title separation.
+ */
+function arrivalBelowTitle(node: ElkNode, pin: AlignedPin): boolean {
+	if (ordinaryCard(node) || pin.face === "NORTH" || pin.face === "SOUTH") return true;
+	return (
+		facePoint(boxOf(node), pin.face, pin.position).y >=
+		node.y! + obstacleOf(node).height + ROUTE_NUDGE_DISTANCE
 	);
 }
 

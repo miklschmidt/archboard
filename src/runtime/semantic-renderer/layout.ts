@@ -6,6 +6,7 @@ export {
 	curveClearanceIssue,
 	COMPOUND_OPTIONS,
 	settleLabels,
+	improveProjection,
 	type ArchitectureDrawing,
 	type DrawingEdge,
 	type LabelAttempt,

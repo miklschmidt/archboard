@@ -102,3 +102,59 @@ test("an ordinary source aligns to a fixed external frame arrival in its own cha
 	expect(route.endPoint.x).toBe(frame.x! + frame.width! / 2);
 	expect(route.endPoint.y).toBe(frame.y!);
 });
+
+test("distinct comparison channels align cards and external frame arrivals through their own labels", async () => {
+	const viz = await instance();
+	const placed = Object.assign(viz, {
+		renderJSON: () => ({
+			bb: "0,0,1000,600",
+			objects: [
+				{ name: "first", pos: "300,40" },
+				{ name: "second", pos: "700,40" },
+				{ name: "frame", pos: "500,450" },
+				{ name: "label_added", pos: "330,220" },
+				{ name: "label_changed", pos: "670,220" },
+			],
+		}),
+	});
+	await loaded;
+	const solve = createLayoutEngine(placed, AvoidLib.getInstance());
+	const graph: ElkNode = {
+		id: "root",
+		children: [
+			{ id: "first", width: 340, height: 80 },
+			{ id: "second", width: 340, height: 80 },
+			{
+				id: "frame",
+				width: 1000,
+				height: 200,
+				layoutOptions: { "archboard.header.size": "40" },
+				children: [{ id: "child", width: 960, height: 80 }],
+			},
+		],
+		edges: ["added", "changed"].map((standing, index) => ({
+			id: standing,
+			sources: [index === 0 ? "first" : "second"],
+			targets: ["frame"],
+			layoutOptions: {
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.standing": standing,
+				"archboard.route-label": "true",
+			},
+			labels: [{ id: `label_${standing}`, width: 80, height: 30 }],
+		})),
+	};
+	for (const edges of [graph.edges!, graph.edges!.toReversed()]) {
+		const result = solve({ ...graph, edges }, {});
+		const ends = [];
+		for (const edge of result.edges!) {
+			const section = edge.sections![0]!;
+			const label = edge.labels![0]!;
+			expect(section.startPoint.x).toBe(label.x! + label.width! / 2);
+			expect(section.endPoint.x).toBe(section.startPoint.x);
+			expect(section.bendPoints ?? []).toHaveLength(0);
+			ends.push(section.endPoint.x);
+		}
+		expect(Math.abs(ends[0]! - ends[1]!)).toBeGreaterThanOrEqual(12);
+	}
+});
