@@ -60,6 +60,10 @@ variant that came from nothing draws plain, so parts added to a derived variant
 (a proposal, or a current variant adopted from something) arrive already marked
 as added, and its picture is read against its predecessor, not on its own.
 
+Each variant is laid out fresh. Compare subjects by identity and Standing;
+a card moving or a container shrinking does not itself mean the architecture
+changed. The viewer animates continuing identities between their new positions.
+
 Read the saved family, draw predecessor and proposal through the same board view
 (`semantic rasterize <board> --view <view> --out /tmp/current.png`, then again
 with `--variant <draft>` to `/tmp/proposal.png`), and open both. Check the ids
@@ -106,10 +110,15 @@ and a JSON of `choices`, each naming the `subject` (and `field` where the issue
 has one) and a `side`: `mine` keeps the draft's answer, `theirs` takes the
 predecessor's. Answer part of it and the rest stays open, reported in the
 answer. A third answer is not a side: write it as an ordinary edit. For a
-`deleted-and-changed` node the draft removed, state the node again with its
+`deleted-and-changed` node or relationship the draft removed, state it again with its
 original `id` (the `subject` of the issue) and the fields you want; that one
-write restores the identity and settles that issue. Only an id an open
-disagreement names may come back this way; any other absent id is refused.
+write restores the identity and settles that issue. An ordinary edit can also
+restore a removed node or relationship without an open disagreement when its
+id remains in the direct predecessor or recorded reconciliation base. State
+the original id and full properties, reconnect references, and remove any
+copy in the same batch. Unknown ids, sibling-only ids, and ids of another
+subject kind are refused; a removal and restatement of the same id in one
+batch is contradictory.
 Settling also catches the draft up with everything else the predecessor decided.
 
 Every value in that third answer is read, never retyped: the issue's `changed`

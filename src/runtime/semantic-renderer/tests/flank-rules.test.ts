@@ -2,12 +2,10 @@
 // choice (docs/design/layout-rules.md section 21): a first render is settled
 // under each flank rule and the scorecard keeps the drawing that is better on
 // more measures, never buying a smaller page with a crossing or a route
-// through a card; and a proposal keeps its predecessor's rule, as it keeps
-// its reading.
+// through a card.
 
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	bestOf,
 	type ArchitectureDrawing,
@@ -100,48 +98,4 @@ describe("the scorecard keeps", () => {
 		});
 		expect(bestOf([first, through])).toBe(first);
 	});
-});
-
-/**
- * The flank rule a drawing was kept under.
- * @param svg The rendered document.
- * @returns The rule's name.
- */
-function ruleOf(svg: string): string | undefined {
-	return /data-flank-rule="([^"]+)"/u.exec(svg)?.[1];
-}
-
-test("a proposal keeps its predecessor's flank rule", async () => {
-	// Two skips to one card, listed so that a first render keeps the mirrored
-	// rule: its lanes nest on the right, and the page is narrower than today's.
-	const before = VariantContentSchema.parse({
-		nodes: [
-			{ id: "first", name: "Theme", kind: "module" },
-			{ id: "second", name: "Layout", kind: "module" },
-			{ id: "middle", name: "Intermediate stage", kind: "module" },
-			{ id: "last", name: "SVG painters", kind: "module" },
-			{ id: "end", name: "Other destination", kind: "module" },
-		],
-		edges: [
-			{ id: "near", from: "second", to: "last", kind: "data", label: "placed architecture" },
-			{ id: "far", from: "first", to: "last", kind: "data", label: "literal colors" },
-			{ id: "other", from: "middle", to: "end", kind: "data", label: "another destination" },
-			{ id: "step4", from: "last", to: "end", kind: "call" },
-			{ id: "step3", from: "middle", to: "last", kind: "call" },
-			{ id: "step2", from: "second", to: "middle", kind: "call" },
-			{ id: "step1", from: "first", to: "second", kind: "call" },
-		],
-	});
-	const first = ruleOf((await renderArchitecture({ content: before, theme: "light" })).svg);
-	expect(first, "the first render keeps a rule other than the default").not.toBe("bracketed");
-	const proposal = VariantContentSchema.parse({
-		nodes: [...before.nodes, { id: "extra", name: "Extra stage", kind: "module" }],
-		edges: [...before.edges, { id: "extra", from: "end", to: "extra", kind: "call" }],
-	});
-	const drawn = await renderArchitecture({
-		content: proposal,
-		predecessors: [before],
-		theme: "light",
-	});
-	expect(ruleOf(drawn.svg)).toBe(first);
 });

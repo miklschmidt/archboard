@@ -3,9 +3,9 @@ import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
-test("a comparison keeps an inherited label on a straight run when a connection is added", async () => {
+test("a comparison keeps an existing label on a straight run when a connection is added", async () => {
 	// Reduced from the Semantic renderer comparison: the added connection used
-	// to squeeze the inherited horizontal label onto a vertical staircase. Which
+	// to squeeze the existing horizontal label onto a vertical staircase. Which
 	// row a label shares with another is the engine's once a fanning card's skips
 	// are attached by the engine on a first render (docs/design/layout-rules.md);
 	// the run the label sits on is the reader's invariant.
@@ -53,7 +53,7 @@ test("a comparison keeps an inherited label on a straight run when a connection 
 	});
 	for (const drawing of [
 		await renderArchitecture({ content: before, theme: "light" }),
-		await renderArchitecture({ content, predecessors: [before], theme: "light" }),
+		await renderArchitecture({ content, theme: "light" }),
 	]) {
 		const labels = routeLabels(drawing.svg);
 		const label = labels.get("0s8raCUw")!,

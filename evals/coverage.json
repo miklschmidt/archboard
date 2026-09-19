@@ -488,6 +488,27 @@
 					"owner": "comparison-standing; grader compare.reading; src/shared/semantic-board/tests compare"
 				},
 				{
+					"path": "fresh architecture layout independent of variant ancestry",
+					"expectedUse": "compare stable identities and Standing; geometry may change without an architectural change",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/fresh-proposal.test.ts; src/ui/semantic-board-canvas/tests/picture-transition.test.tsx"
+				},
+				{
+					"path": "compact semantic containers and direct outgoing relationships",
+					"expectedUse": "author actual containment and relationships; the renderer packs independent cards, keeps compact equal insets and places outgoing targets in their relationship direction rather than forcing a flank",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/container-packing.test.ts"
+				},
+				{
+					"path": "restore absent inherited node and relationship identities",
+					"expectedUse": "repair a proposal by restating known predecessor or reconciliation-base identities in one ordinary edit; invented and wrong-kind ids stay refused",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/restoration.test.ts; src/runtime/semantic-board-store/tests/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
+				},
+				{
 					"path": "consistent shared-view comparison",
 					"expectedUse": "both states through one view",
 					"scenarios": ["S02", "S12"],

@@ -337,8 +337,7 @@ repository, folder
 
 **Reading direction**:
 The way a view's architecture reads across the page, down or left to right.
-The renderer derives it from the board's shape; a proposal keeps its
-predecessor's, and nobody authors it.
+It is a property of the rendered variant, derived from its shape.
 _Avoid_: orientation, rotation, layout direction, landscape, portrait
 
 **Reference pane**:
@@ -361,9 +360,7 @@ _Avoid_: score, cost, quality metric
 
 **Flank rule**:
 Which side of the page returns travel and how a skip over a rank attaches to
-its cards. The renderer draws a first render under each rule and keeps the one
-the scorecard prefers; a proposal keeps its predecessor's, and nobody authors
-it.
+its cards. It belongs to the rendered variant, independently of its ancestry.
 _Avoid_: side convention, port rule, lane side
 
 ### Working

@@ -247,6 +247,27 @@ function margin(one: readonly number[], other: readonly number[]): number {
 }
 
 /**
+ * Every badge stays within reach of an endpoint: its distance to the nearer
+ * endpoint cannot exceed the distance between the two endpoints. This is
+ * the drawn scorecard's existing label-strand legibility contract.
+ * @param drawing One settled candidate.
+ * @returns Whether none of its labels are stranded beyond both endpoints.
+ */
+function labelsWithinReach(drawing: ArchitectureDrawing): boolean {
+	return drawing.edges.every(({ label, curve }) => {
+		if (label === undefined) return true;
+		const from = curve.from;
+		const to = curve.segments.at(-1)?.to ?? from;
+		const between = Math.hypot(to.x - from.x, to.y - from.y);
+		if (between === 0) return true;
+		const x = label.box.x + label.box.width / 2;
+		const y = label.box.y + label.box.height / 2;
+		const reach = Math.min(Math.hypot(x - from.x, y - from.y), Math.hypot(x - to.x, y - to.y));
+		return reach <= between;
+	});
+}
+
+/**
  * The drawing a reader is better off with. The first drawing is the default;
  * another is a candidate only when it routes through no more cards and
  * crosses no more routes than the first, since a smaller page does not buy a
@@ -261,13 +282,17 @@ function bestOf(drawings: readonly ArchitectureDrawing[]): ArchitectureDrawing {
 	const [first, ...others] = drawings;
 	const throughCards = routesThroughCards(first!);
 	const crossed = crossingCount(first!.edges);
-	const candidates = [
+	const offered = [
 		first!,
 		...others.filter(
 			(drawing) =>
 				routesThroughCards(drawing) <= throughCards && crossingCount(drawing.edges) <= crossed,
 		),
 	];
+	const legible = offered.filter(labelsWithinReach);
+	// Preserve a renderable answer when no offered reading meets the reach
+	// contract, as with the existing card/crossing guards.
+	const candidates = legible.length > 0 ? legible : offered;
 	const scores = candidates.map(scoresOf);
 	const wins = scores.map(
 		(score, index) => scores.filter((other, at) => at !== index && margin(score, other) > 0).length,

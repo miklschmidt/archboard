@@ -8,6 +8,7 @@ import type {
 	DrawingEdge,
 	DrawingNode,
 	MeasuredArchitecture,
+	ReadingDirection,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
@@ -17,11 +18,6 @@ import {
 	measuredInFrame,
 	type HeaderSide,
 } from "@/transformers/semantic-renderer/lib/layout/reading";
-import {
-	preserveSizes,
-	reuseDrawing,
-	seedPredecessor,
-} from "@/transformers/semantic-renderer/lib/layout/compound-predecessor";
 import { placeLabelsOnRuns } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 import {
 	rememberSolves,
@@ -41,20 +37,25 @@ import {
 	type Reading,
 } from "@/transformers/semantic-renderer/lib/layout/reading-choice";
 import {
-	settleWithAddedSkips,
-	type Problem,
-} from "@/transformers/semantic-renderer/lib/layout/proposal-skips";
-import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import {
 	FLANK_RULES,
-	flankRule,
 	type FlankRule,
 } from "@/transformers/semantic-renderer/lib/layout/flank-rules";
 import { bestOf } from "@/transformers/semantic-renderer/lib/layout/scorecard";
 import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
+
+/** One measured architecture in the engine's solving frame. */
+interface Problem {
+	readonly content: VariantContent;
+	readonly measured: MeasuredArchitecture;
+	readonly direction: ReadingDirection;
+	readonly wrapped: boolean;
+	readonly header: HeaderSide;
+	readonly flanks: FlankRule;
+}
 
 /**
  * Solve a graph with room between rows for the labels on its runs.
@@ -267,21 +268,29 @@ function drawingEdges(
 		const id = part.id.split(":")[0]!;
 		parts.set(id, [...(parts.get(id) ?? []), part]);
 	}
-	const routes = straightenJogs(
-		fanOverdrawnRuns(
-			new Map(
-				content.edges.map((edge) => [
-					edge.id,
-					leaveFromTitle(
-						edge,
-						simplify((parts.get(edge.id) ?? []).flatMap(pointsOf)),
-						content,
-						nodes,
-						header,
-					),
-				]),
-			),
+	const labels = new Map(
+		[...results].flatMap(([id, result]) => {
+			const label = drawingLabel(result, measured).label;
+			return label === undefined ? [] : [[id, label] as const];
+		}),
+	);
+	const fanned = fanOverdrawnRuns(
+		new Map(
+			content.edges.map((edge) => [
+				edge.id,
+				leaveFromTitle(
+					edge,
+					simplify((parts.get(edge.id) ?? []).flatMap(pointsOf)),
+					content,
+					nodes,
+					header,
+				),
+			]),
 		),
+		new Map([...labels].map(([id, label]) => [id, label.box])),
+	);
+	const routes = straightenJogs(
+		fanned.routes,
 		nodes.map((node) => node.box),
 	);
 	return content.edges.map((edge) => {
@@ -290,34 +299,34 @@ function drawingEdges(
 			throw new Error(`Layout did not return relationship ${edge.id}`);
 		}
 		const points = routes.get(edge.id)!;
-		const curve = curveThrough(points, routeCrossings(points, routes.values()));
+		const measuredLabel = labels.get(edge.id);
+		const label =
+			measuredLabel === undefined
+				? {}
+				: { label: { ...measuredLabel, box: fanned.labels.get(edge.id)! } };
+		const curve = curveThrough(points, routeCrossings(points, routes.values()), label.label?.box);
 		return {
 			edge,
 			curve,
 			path: pathOf(curve),
-			...drawingLabel(result, measured),
+			...label,
 		};
 	});
 }
 
 /**
- * Settle a board read one way: solved in the one frame, turned back onto
- * the page, under its predecessor's flank rule or, on a first render, the
- * first rule.
- * @param reading The way the page reads, and whether its layers fold.
+ * Settle a board in one reading under the first flank rule.
+ * @param reading The page direction and folding choice.
  * @param content The architecture meaning.
- * @param measured Its measured sizes, on the page.
- * @param predecessor The preceding drawing of this view, on the page.
- * @returns The settled drawing, on the page.
+ * @param measured Its measured sizes on the page.
+ * @returns Its settled drawing.
  */
 async function settleIn(
 	reading: Reading,
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
 ): Promise<ArchitectureDrawing> {
-	const rule = predecessor === undefined ? FLANK_RULES[0]! : flankRule(predecessor.flanks);
-	return settleUnder(reading, rule, content, measured, predecessor);
+	return settleUnder(reading, FLANK_RULES[0]!, content, measured);
 }
 
 /**
@@ -335,14 +344,14 @@ async function otherRules(
 	const drawings = await Promise.all(
 		FLANK_RULES.slice(1).map((rule) =>
 			// A rule the engine refuses is simply not a candidate.
-			settleUnder(reading, rule, content, measured, undefined).catch(() => undefined),
+			settleUnder(reading, rule, content, measured).catch(() => undefined),
 		),
 	);
 	return drawings.filter((drawing) => drawing !== undefined);
 }
 
 /**
- * A first render: its reading chosen under the first flank rule, then every
+ * Each render: its reading chosen under the first flank rule, then every
  * other rule settled in that reading and the drawing the scorecard prefers
  * kept (docs/design/layout-rules.md section 21). Nearly every board reads
  * down the page, so the other rules are settled for that reading while the
@@ -353,7 +362,7 @@ async function otherRules(
  * @param measured Its measured sizes, on the page.
  * @returns The kept drawing.
  */
-async function firstRender(
+async function chooseLayout(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 ): Promise<ArchitectureDrawing> {
@@ -361,10 +370,9 @@ async function firstRender(
 	const ahead = otherRules(down, content, measured);
 	const chosen = await chooseReading(
 		measured,
-		undefined,
-		(reading) => settleIn(reading, content, measured, undefined),
+		(reading) => settleIn(reading, content, measured),
 		async (reading) => {
-			const problem = problemOf(reading, FLANK_RULES[0]!, content, measured, undefined);
+			const problem = problemOf(reading, FLANK_RULES[0]!, content, measured);
 			return drawingAcross(reading.direction, (await attemptLabels(problem, new Set(), 0)).drawing);
 		},
 	);
@@ -384,7 +392,6 @@ async function firstRender(
  * @param flanks Which flank returns travel and how skips attach.
  * @param content The architecture meaning.
  * @param measured Its measured sizes, on the page.
- * @param predecessor The preceding drawing of this view, on the page.
  * @returns The problem.
  */
 function problemOf(
@@ -392,12 +399,10 @@ function problemOf(
 	flanks: FlankRule,
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
 ): Problem {
 	return {
 		content,
 		measured: measuredInFrame(direction, measured),
-		predecessor: predecessor === undefined ? undefined : drawingAcross(direction, predecessor),
 		direction,
 		wrapped,
 		header: headerSideOf(direction),
@@ -413,7 +418,6 @@ function problemOf(
  * @param flanks Which flank returns travel and how skips attach.
  * @param content The architecture meaning.
  * @param measured Its measured sizes, on the page.
- * @param predecessor The preceding drawing of this view, on the page.
  * @returns The settled drawing, on the page.
  */
 async function settleUnder(
@@ -421,17 +425,11 @@ async function settleUnder(
 	flanks: FlankRule,
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
 ): Promise<ArchitectureDrawing> {
-	const problem = problemOf({ direction, wrapped }, flanks, content, measured, predecessor);
-	const drawing = await settleWithAddedSkips(
-		problem,
-		async (first) => (await attemptLabels(first, new Set(), 0)).drawing,
-		(each) =>
-			settleLabels(
-				rememberSolves((reserved, stacked) => attemptLabels(each, reserved, stacked)),
-				new Set(),
-			),
+	const problem = problemOf({ direction, wrapped }, flanks, content, measured);
+	const drawing = await settleLabels(
+		rememberSolves((reserved, stacked) => attemptLabels(problem, reserved, stacked)),
+		new Set(),
 	);
 	return drawingAcross(direction, drawing);
 }
@@ -440,31 +438,14 @@ async function settleUnder(
  * Route with measured spacing, reserving only labels that need their own layer.
  * @param content The architecture meaning, including its containment links.
  * @param measured Fixed card and label dimensions and minimum frame dimensions.
- * @param predecessor Geometry inherited from the preceding reading of this view.
  * @returns The only placement, routing and label result consumed by painting.
  */
 async function layoutCompound(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	predecessor?: ArchitectureDrawing,
 ): Promise<PaintedDrawing> {
-	if (predecessor !== undefined) measured = preserveSizes(measured, predecessor);
-	const reused =
-		predecessor === undefined ? undefined : reuseDrawing(content, measured, predecessor);
-	/**
-	 * A first render chooses its reading and flank rule; a proposal keeps its predecessor's.
-	 * @returns The settled drawing.
-	 */
-	const read = async (): Promise<ArchitectureDrawing> =>
-		predecessor === undefined
-			? firstRender(content, measured)
-			: chooseReading(measured, predecessor, (reading) =>
-					settleIn(reading, content, measured, predecessor),
-				);
-	const drawing = reused ?? (await read());
-	// Bridges are part of the geometry a reader sees, so they are settled here
-	// and not by a painter; the un-bridged routes stay beside them for a
-	// successor to seed from.
+	const drawing = await chooseLayout(content, measured);
+	// Bridges are settled here as part of the geometry a reader sees.
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 
@@ -475,9 +456,8 @@ async function layoutCompound(
  * @returns The next complete engine input.
  */
 function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNode {
-	const { content, measured, predecessor, header, added } = problem;
-	const graph = compoundGraph(content, measured, predecessor, header, problem.flanks, added);
-	if (predecessor !== undefined) seedPredecessor(graph, content, predecessor);
+	const { content, measured, header } = problem;
+	const graph = compoundGraph(content, measured, header, problem.flanks);
 	if (problem.wrapped) {
 		// Fold the layers toward the pane's shape, like a long line of text.
 		graph.layoutOptions = {
@@ -514,7 +494,7 @@ async function attemptLabels(
 	reserved: ReadonlySet<string>,
 	stacked: number,
 ): Promise<LabelAttempt> {
-	const { content, measured, predecessor, header } = problem;
+	const { content, measured, header } = problem;
 	const laidOut = await solveGraph(graphForLabels(problem, reserved), measured, stacked);
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
@@ -531,7 +511,6 @@ async function attemptLabels(
 			edges: solved,
 		},
 		measured.labels,
-		predecessor,
 		header,
 	);
 	const missing = drawing.edges.filter(

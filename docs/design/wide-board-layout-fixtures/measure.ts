@@ -115,7 +115,7 @@ async function everyReading(content: ReturnType<typeof VariantContentSchema.pars
 		all.map(async (reading) => {
 			const name = `${reading.direction}${reading.wrapped ? " folded" : ""}`;
 			try {
-				const read = await settleIn(reading, stepped, measureArchitecture(stepped), undefined);
+				const read = await settleIn(reading, stepped, measureArchitecture(stepped));
 				const bends =
 					read.edges.reduce(
 						(total, { curve }) =>

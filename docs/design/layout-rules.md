@@ -5,7 +5,9 @@ the two disagree. Written on 2026-09-15 after TASK-231 (route a forward skip
 to another column as a descent) could not be finished by adding a rule, and
 measured on the three Flask module maps of
 [wide-board-layout.md](wide-board-layout.md) with `measure.ts`. Rule numbers
-below are the inventory's; file references are the current tree.
+below are the dated inventory's; file references describe the tree at that time.
+[Section 28](#28-every-variant-is-laid-out-fresh-2026-09-19-task-276) records the
+removal of predecessor geometry constraints under ADR 0032.
 
 ## 1. The pipeline, and who decides what
 
@@ -1302,3 +1304,151 @@ No flank keeps the order of a pair leaving a frame.
 a frame the face it travels is the header face, and section 11 decided a
 crossing never runs across a title. That is why the route in is on a flank at
 all, and why the two kinds of crossing cannot simply be made one.
+
+## 28. Every variant is laid out fresh (2026-09-19, TASK-276)
+
+The migrated infrastructure boards exposed the cost of preserving placement:
+large empty frames, old cards separated from new branches, and routes that
+crossed much of the page to reach their neighbors. A seven-node reproduction
+with one edge drew twelve bends. Preserving the predecessor's expanded frame
+sizes accounted for some empty space; freeing those sizes alone left the long
+routes. Relaxing individual interactive placement strategies either left the
+large diagrams or broke the remaining placement assumptions.
+
+The user chose fresh layout, with Standing and transitions carrying the change
+story ([ADR 0032](../adr/0032-every-variant-is-laid-out-fresh.md)). The renderer
+now has one architecture layout path. It receives the comparison's subjects
+(including visible removals), measures their current words and chooses their
+reading, flank rule and geometry afresh. No ancestor picture, allocated frame
+size, port offset, route or reserved lane is an input. The viewer already pairs
+subjects by semantic identity and interpolates their boxes and routes.
+
+Measured through `renderBoard` on all eight migrated families, using their
+unchanged vocabulary and content. This isolates removal of predecessor geometry,
+before the container packing changes below. These are the nine drafts; the eight
+root variants retain exactly the same dimensions at this stage. Fit uses the
+reference-pane measure; bend counts are per route.
+
+| Board / proposal                                                       | Size before → after   | Fit before → after | Bends before → after |
+| ---------------------------------------------------------------------- | --------------------- | ------------------ | -------------------- |
+| platform-migration / strangler-foundation                              | 4744×2759 → 4572×1657 | 0.268 → 0.278      | 5.33 → 1.67          |
+| platform-prod-kubernetes-runtime / deterministic-portable-target       | 3113×1554 → 3217×1125 | 0.409 → 0.395      | 1.50 → 1.10          |
+| current-cloud-infrastructure / mtls-strangler                          | 5588×9045 → 4755×2143 | 0.099 → 0.268      | 6.44 → 0.89          |
+| current-cloud-infrastructure / platform-strangler                      | 5685×8110 → 4692×1756 | 0.111 → 0.271      | 6.00 → 0.62          |
+| platform-prod-azure-infrastructure / deterministic-portable-target     | 1237×1330 → 1212×1026 | 0.676 → 0.876      | 0.00 → 0.00          |
+| common-weblib / public-api-independent                                 | 3032×3272 → 1912×2375 | 0.275 → 0.379      | 3.94 → 2.00          |
+| platform-production-technology-choices / deterministic-portable-target | 2022×2193 → 2367×1622 | 0.410 → 0.537      | 1.94 → 0.25          |
+| platform-cluster / device-trust-azure-postgresql                       | 3717×5993 → 3475×4188 | 0.150 → 0.215      | 7.37 → 3.90          |
+| platform-cluster / device-trust-cloudnativepg                          | 4104×5971 → 4964×4511 | 0.151 → 0.199      | 6.70 → 3.10          |
+
+Every draft uses less page area and eight fit better. The runtime draft trades
+0.014 fit for a shorter page and fewer bends. Deeply nested cluster proposals
+still need substantial space; fresh layout removes historical reservations,
+not the cost of drawing their actual containment and relationships.
+
+The board-boundary regression compares a nested proposal's atlas and dimensions
+with a fresh drawing of its content, and verifies its Standing map. Existing
+comparison owners retain removal and identity coverage; transition owners
+verify arbitrary card movement, route changes and exact final pictures. Tests
+whose only contract was retaining old positions, faces or allocated sizes are
+retired with that mechanism.
+
+The named-view sweep covers 90 variant/view pairs (84 nonempty). It also exposed
+one reserved label extending two pixels into a rounded corner. Rounding now
+caps that corner's radius against its own reserved label footprint, keeping
+the engine's straight label run intact without increasing layout spacing. The
+focused fixture in `reserved-label-corner.json` owns that regression. All named
+views now have zero routes through cards and zero labels off their straight
+runs. Ordinary route crossings remain, and are drawn with bridges.
+
+The whole-board sweep exposed a second label failure: separating shared route
+segments moved their lines but left the engine's reserved labels behind. Labels
+now follow their segment, and the existing lane allocator checks label footprints
+when finding a clear lane. Moving the label by the original fixed offset alone
+covered neighboring routes. `reserved-label-lane.json` preserves that failure;
+its owner checks straight-run attachment, card/label overlap and unrelated route
+coverage. The two label fixes retain one routing pipeline.
+
+## 29. Pack independent cards and use equal container insets (2026-09-19, TASK-276)
+
+Fresh layout still drew a ten-application pool as one extremely wide row. Its
+children had no relationships, but the compound layered solve stretched the
+frame and left 132 pixels below the cards despite requesting only 48. Changing
+the inset alone could not remove that extra space.
+
+Frames containing only independent leaf cards now use the engine's rectangle
+packing algorithm with separate child layout. The existing reference-pane
+aspect ratio supplies the packing shape, transposed for a horizontal reading.
+The engine still owns all coordinates. A relationship touching a child or a
+nested frame keeps the compound router in charge.
+
+Side and bottom insets are 24 pixels; the measured title band and its existing
+air are unchanged. Independent cards use that same gap between cards. The
+actual ten-card pool changes from 4144×340 to 752×680, with 24 pixels on each
+side and below its grid. Connected frames may need additional space for route
+segments and labels. The renderer does not crop those routes to force a box to
+look padded equally.
+
+The compound engine also applies between-layer route spacing to invisible
+boundary-port nodes. Letting the longest label's global allowance inflate those
+nodes added empty side and bottom space. Leaf collections without inter-child
+relationships now retain the normal 20-pixel route spacing inside their frame;
+they have no inter-card label layers needing the larger allowance. Applying that
+change to every frame regressed an existing workbench fixture, so frames with
+internal relationships retain their label-driven routing space.
+
+`container-packing.test.ts` verifies small and large collections in both reading
+directions: multiple rows and columns for the large collection, equal compact
+side/bottom insets, and the unchanged header space.
+
+With fresh layout, label clearance and packing together, the cloud mtls proposal
+is 3054×2587 (fit 0.348, originally 0.099) and the platform proposal is 2892×2397
+(fit 0.375, originally 0.111). The observed cloud architecture is also narrower:
+4780×1843 becomes 3229×2190, improving fit from 0.266 to 0.394. The connected
+Windows frame's blank bottom margin shrinks from 103 to 45 pixels, leaving the
+24-pixel inset plus normal route spacing. All 17 whole
+variants and 90 named-view pairs (84 nonempty) have zero routes through cards,
+off-run labels, overlapping labels/cards or labels covering unrelated routes.
+
+## 30. Delete forced outgoing flank routing (2026-09-19, TASK-276)
+
+The user then identified database targets drawn far left of their callers'
+Windows VM frame, with long horizontal routes across an otherwise empty page,
+and explicitly asked to delete the rule responsible. The minimal reproduction
+has three nodes: a frame, its child and an external target. The ordinary
+cross-frame route was redirected to the frame's left flank even though its
+source faced down. Removing that redirection aligns the target beneath the
+frame. Title-band protection remains separate.
+
+The deletion exposed coupled engine workarounds. Native compound routing could
+not replace the explicit boundary sections: the three-node reproduction failed
+inside the engine. With explicit sections, the top-down hierarchy crossing
+sweep refused mixed side/forward ports. Bottom-up hierarchy ordering solves
+those crossings, but the old shared-corridor boundary ports then produced
+invalid geometry. Those shared ports are also deleted: each crossing now owns
+its port. There is no alternate forced-flank path.
+
+Candidate selection also now respects the already-tested label-reach limit.
+A mirrored candidate for Board viewer left a label at strand 1.139 despite
+other existing candidates satisfying the limit of 1. The chosen alternative
+has strand 0.637. The limit is unchanged; selecting a smaller picture cannot
+justify a label outside the existing readability contract.
+
+Deleting the routing policy is an explicit product choice, not an improvement
+on every historical metric. Two recorded fixture scorecards are updated while
+their card clearance, straight-run labels, label-reach and bend bounds remain:
+
+| Fixture         | Fit before → after | Area (Mpx) before → after | Bends/route before → after | Crossings before → after |
+| --------------- | ------------------ | ------------------------- | -------------------------- | ------------------------ |
+| Agent workbench | 0.466 → 0.407      | 4.981 → 4.257             | 1.8 → 2.0                  | 9 → 10                   |
+| Board viewer    | 0.444 → 0.413      | 3.075 → 2.988             | 1.111 → 1.889              | 4 → 7                    |
+
+The complete dated [container-rule inventory](container-rules.md) distinguishes
+semantic contracts, presentation policies and remaining engine workarounds.
+
+The live cloud board was also edited by its author during this work. Final
+verification uses version 12, separately from the earlier measurements above:
+the root is 2162×2095, and both database targets start 64 pixels beneath their
+VM pool, with centers inside the pool's horizontal span. The final whole-board
+and named-view sweeps retain zero card crossings, off-run labels, label/card
+overlaps and labels covering unrelated routes.
