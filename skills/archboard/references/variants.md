@@ -83,13 +83,18 @@ subject the other changed — a `changed` list of `{ field, before, after }`);
 a draft under an unsettled draft waits, and the family lands whole or not at
 all.
 
-| Kind                  | Meaning                                                                                 | Answered by                                         |
-| --------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `competing-field`     | Both changed one field of one subject.                                                  | `mine` or `theirs`                                  |
-| `competing-order`     | Both moved the same step or beat, to different positions.                               | `mine`, or an edit telling the order you mean       |
-| `deleted-and-changed` | One removed a subject the other changed.                                                | `mine`, or stating the subject again under its id   |
-| `reference-lost`      | Merging the predecessor would leave this draft referring to something no longer there.  | `mine`, or an edit saying what it should say        |
-| `left-empty`          | Both removed different parts of one flow or walkthrough; merged, it would hold nothing. | `mine`, or an edit putting back what it should hold |
+- `competing-field`: Both changed one field of one subject. Answered by `mine`
+  or `theirs`.
+- `competing-order`: Both moved the same step or beat, to different positions.
+  Answered by `mine`, or an edit telling the order you mean.
+- `deleted-and-changed`: One removed a subject the other changed. Answered by
+  `mine`, or stating the subject again under its id.
+- `reference-lost`: Merging the predecessor would leave this draft referring to
+  something no longer there. Answered by `mine`, or an edit saying what it
+  should say.
+- `left-empty`: Both removed different parts of one flow or walkthrough; merged,
+  it would hold nothing. Answered by `mine`, or an edit putting back what it
+  should hold.
 
 `theirs` is a choice between two values, and only `competing-field` has two:
 asking for it on any other kind is refused, the whole call lands nothing, and
