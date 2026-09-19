@@ -45,7 +45,9 @@ function emit(event: unknown): void {
 	process.stdout.write(`${JSON.stringify(event)}\n`);
 }
 
-emit({ type: "thread.started", thread_id: threadId });
+// FAKE_CODEX_THREAD=none: a stream that never says which thread it ran in.
+if (process.env["FAKE_CODEX_THREAD"] !== "none")
+	emit({ type: "thread.started", thread_id: threadId });
 emit({ type: "turn.started" });
 const attached = new Set(
 	argv.flatMap((word, index) => (argv[index - 1] === "--image" ? [word] : [])),
@@ -53,8 +55,9 @@ const attached = new Set(
 const seen = listedImages(prompt).filter((image) =>
 	[...attached].some((file) => file.endsWith(image.file)),
 );
-if (answerFile !== null)
-	fs.writeFileSync(answerFile, JSON.stringify({ runs: fakeVerdicts(prompt, seen) }));
+const verdicts = fakeVerdicts(prompt, seen);
+if (answerFile !== null && verdicts !== null)
+	fs.writeFileSync(answerFile, JSON.stringify({ runs: verdicts }));
 emit({
 	type: "turn.completed",
 	usage: { input_tokens: 10 * turns, cached_input_tokens: 4 * turns, output_tokens: 2 * turns },

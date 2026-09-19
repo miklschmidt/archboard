@@ -144,19 +144,32 @@ answer or one that violates the schema.
 
 After every grading call the harness checks each filed verdict against what
 the report holds a run to, with the report's own checks: every declared
-feature answered under its declared name and none invented, and an
-observation of every capture it took and the grader opened in full. A verdict
-short of that is asked for once more, in the same session (`--resume` for
-Claude, `codex exec resume` for Codex, pictures listed again), in a prompt
-naming each run and exactly what it lacks. The new answer replaces the filed
-verdict only when it matches the output schema and lacks nothing; its receipt
-is written for the replacing verdict's bytes and counts a picture delivered on
-either call, since both reached one session. An answer still short, or none,
-leaves the first verdict filed, and the report treats it as it always has. A
-retry is never retried. It is a call of the session like any other, so its
-usage is counted, and its record in `session.json` carries `retry`: the call
-it re-asked, and per run what was asked, the outcome (`replaced`,
-`still-short`, `no-answer`) and what remained.
+feature answered under its declared name, and an observation of every
+capture the harness offered and the grader opened in full. A verdict short of
+that is asked for once more, in the same session (`--resume` for Claude,
+`codex exec resume` for Codex, pictures listed again), in a prompt naming
+each run and exactly what it lacks, invented names included. A name invented
+beside every declared one is not by itself asked about: it changes nothing
+the report reads, and a retry redraws the whole verdict. Nor is a capture
+the harness could not offer. The new answer replaces the filed verdict when
+it matches the output schema and lacks nothing the report reads, or lacks
+only a strict part of what it was asked for; its receipt is written for the
+replacing verdict's bytes and counts a picture delivered on either call,
+since both reached one session. Any other answer, or none, leaves the first
+verdict filed, and the report treats it as it always has. A run is asked
+again once: never twice, and never in a new session. The retry is a call of
+the session like any other, so its usage is counted, and its record in
+`session.json` carries `retry`: the call whose verdicts it re-asked, and per
+run what was asked, the outcome (`replaced`, `still-short`, `no-answer`) and
+what the answer still lacked.
+
+A retry owed but never made, because a pass stopped between a call and its
+retry or because the batch was graded before retries existed, is made by
+the next `grade` of that batch with the same grader: after grading any runs
+left, it re-asks every filed verdict that is short by those checks and that
+no retry record names, reading what first reached the grader from the
+verdict's receipt, grouped by the call that filed it. Neither this nor the
+retry itself touches the batch's inputs or their digest.
 
 ## Reports
 

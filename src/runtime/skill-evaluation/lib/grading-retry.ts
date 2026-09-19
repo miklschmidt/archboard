@@ -26,12 +26,13 @@ const ShortfallSchema = z.object({
 	invented: z.array(z.string()),
 	unobserved: z.array(z.string()),
 });
+const SHORTFALL_LISTS = ["unanswered", "invented", "unobserved"] as const;
 /** One run a retry asked for again, as the retry's call records it. */
 const RetriedRunSchema = z.object({
 	run: z.string(),
 	asked: ShortfallSchema,
 	outcome: z.enum(["replaced", "still-short", "no-answer"]),
-	/** What the new answer still lacked, when it came back short. */
+	/** What the answer to the retry still lacked, whether or not it replaced the verdict. */
 	remaining: ShortfallSchema.nullable(),
 });
 type RetriedRun = z.infer<typeof RetriedRunSchema>;
@@ -188,14 +189,96 @@ function shortAnswer(
 	offered: RunImages,
 	delivered: readonly RunImages[] | null,
 ): ShortAnswer | null {
-	const supplied = delivered?.find((entry) => entry.run === verdict.run) ?? null;
-	const shortfall = verdictShortfall(
-		obligations.expected,
-		obligations.captures,
-		verdict,
-		supplied?.suppliedCaptures ?? [],
+	const supplied = deliveryFor(delivered, verdict.run);
+	const shortfall = askable(
+		owedOf(
+			verdictShortfall(obligations.expected, obligations.captures, verdict, labelsOf(supplied)),
+			offered,
+		),
 	);
 	return shortfall === null ? null : { shortfall, obligations, offered, delivered: supplied };
+}
+
+/**
+ * One run's delivery among a call's.
+ * @param delivered What the call vouched for, or null.
+ * @param run The run.
+ * @returns The run's delivery, or null.
+ */
+function deliveryFor(delivered: readonly RunImages[] | null, run: string): RunImages | null {
+	return delivered?.find((entry) => entry.run === run) ?? null;
+}
+
+/**
+ * The captures a delivery supplied.
+ * @param delivery The delivery, or null.
+ * @returns Their labels.
+ */
+function labelsOf(delivery: RunImages | null): readonly string[] {
+	return delivery?.suppliedCaptures ?? [];
+}
+
+/**
+ * A shortfall worth a retry, or null.
+ * @param shortfall What an answer owes, or null.
+ * @returns The shortfall when it is worth asking about.
+ */
+function askable(shortfall: VerdictShortfall | null): VerdictShortfall | null {
+	return shortfall !== null && worthAsking(shortfall) ? shortfall : null;
+}
+
+/**
+ * What a shortfall owes that an answer could give: a capture the harness
+ * could not offer the grader is left out, since no answer can observe it.
+ * @param shortfall The report's reading of an answer.
+ * @param offered What the harness offered for the run.
+ * @returns The shortfall without unoffered captures, or null when there was none.
+ */
+function owedOf(shortfall: VerdictShortfall | null, offered: RunImages): VerdictShortfall | null {
+	return shortfall === null
+		? null
+		: {
+				...shortfall,
+				unobserved: shortfall.unobserved.filter((label) =>
+					offered.suppliedCaptures.includes(label),
+				),
+			};
+}
+
+/**
+ * Whether a shortfall changes what the report reads: a declared feature
+ * unanswered or an offered capture unobserved. A name invented beside every
+ * declared one changes nothing the report reads, and a retry redraws the
+ * whole verdict, so it alone is not asked about.
+ * @param shortfall What an answer lacks.
+ * @returns Whether to ask again.
+ */
+function worthAsking(shortfall: VerdictShortfall): boolean {
+	return shortfall.unanswered.length > 0 || shortfall.unobserved.length > 0;
+}
+
+/**
+ * Whether what an answer still lacks is a strict part of what it was asked
+ * for: every lapse left was one asked about, and fewer remain. Such an answer
+ * is never worse by the report's checks than the one it replaces.
+ * @param remaining What the new answer lacks.
+ * @param asked What the retry asked for.
+ * @returns Whether it is an improvement.
+ */
+function improves(remaining: VerdictShortfall, asked: VerdictShortfall): boolean {
+	const within = SHORTFALL_LISTS.every((list) =>
+		remaining[list].every((entry) => asked[list].includes(entry)),
+	);
+	return within && sizeOf(remaining) < sizeOf(asked);
+}
+
+/**
+ * How many lapses a shortfall counts.
+ * @param shortfall The shortfall.
+ * @returns The number of entries across its lists.
+ */
+function sizeOf(shortfall: VerdictShortfall): number {
+	return SHORTFALL_LISTS.reduce((total, list) => total + shortfall[list].length, 0);
 }
 
 /**
@@ -203,7 +286,14 @@ function shortAnswer(
  * @param shortfall The shortfall.
  * @returns Its three lists.
  */
-function shortfallRecord(shortfall: VerdictShortfall): z.infer<typeof ShortfallSchema> {
+function shortfallRecord(shortfall: VerdictShortfall): z.infer<typeof ShortfallSchema>;
+function shortfallRecord(
+	shortfall: VerdictShortfall | null,
+): z.infer<typeof ShortfallSchema> | null;
+function shortfallRecord(
+	shortfall: VerdictShortfall | null,
+): z.infer<typeof ShortfallSchema> | null {
+	if (shortfall === null) return null;
 	return {
 		unanswered: [...shortfall.unanswered],
 		invented: [...shortfall.invented],
@@ -212,10 +302,11 @@ function shortfallRecord(shortfall: VerdictShortfall): z.infer<typeof ShortfallS
 }
 
 /**
- * Judges one run's answer to the retry: it replaces the filed verdict only
- * when it lacks nothing. A picture delivered on the first call or on the
- * retry reached the same session, so the replacing verdict's receipt covers
- * both; an answer still short, or none, leaves the first verdict filed.
+ * Judges one run's answer to the retry: it replaces the filed verdict when
+ * it lacks nothing the report reads, or lacks a strict part of what was
+ * asked. A picture delivered on the first call or on the retry reached the
+ * same session, so the replacing verdict's receipt covers both; any other
+ * answer, or none, leaves the first verdict filed.
  * @param short The run's short answer.
  * @param answer What the retry answered for it, if anything.
  * @param delivered What the retry vouched for, or null.
@@ -233,33 +324,117 @@ function settleRetry(
 	const run = short.shortfall.run;
 	if (answer === undefined || delivered === null)
 		return { record: { run, asked, outcome: "no-answer", remaining: null }, replacement: null };
-	const images = combinedDelivery(short.offered, [
-		short.delivered,
-		delivered.find((entry) => entry.run === run),
-	]);
-	const remaining = verdictShortfall(
-		short.obligations.expected,
-		short.obligations.captures,
-		answer,
-		images.suppliedCaptures,
+	const images = combinedDelivery(short.offered, [short.delivered, deliveryFor(delivered, run)]);
+	const remaining = owedOf(
+		verdictShortfall(
+			short.obligations.expected,
+			short.obligations.captures,
+			answer,
+			images.suppliedCaptures,
+		),
+		short.offered,
 	);
-	return remaining === null
-		? {
-				record: { run, asked, outcome: "replaced", remaining: null },
-				replacement: { verdict: answer, images },
-			}
-		: {
-				record: { run, asked, outcome: "still-short", remaining: shortfallRecord(remaining) },
-				replacement: null,
-			};
+	const replaces = mends(remaining, short.shortfall);
+	return {
+		record: {
+			run,
+			asked,
+			outcome: replaces ? "replaced" : "still-short",
+			remaining: shortfallRecord(remaining),
+		},
+		replacement: replaces ? { verdict: answer, images } : null,
+	};
+}
+
+/**
+ * Whether an answer to the retry is fit to replace the first: it lacks
+ * nothing the report reads, or only a strict part of what was asked.
+ * @param remaining What it still owes, or null.
+ * @param asked What the retry asked for.
+ * @returns Whether it replaces the first verdict.
+ */
+function mends(remaining: VerdictShortfall | null, asked: VerdictShortfall): boolean {
+	return askable(remaining) === null || improves(remaining ?? asked, asked);
+}
+
+/** A run as the batch holds it: its anonymous id and its directory. */
+interface StagedRun {
+	readonly id: string;
+	readonly directory: string;
+}
+
+/** How the owed retries read a run's filed evidence. */
+interface FiledEvidence {
+	/** The verdict filed for the run, if any. */
+	verdict(run: string): RunVerdict | null;
+	/** What the harness offers the grader for the run. */
+	offered(run: string): RunImages;
+	/** What the filed verdict's receipt says reached the grader, if it still vouches for it. */
+	receipt(run: string): RunImages | null;
+}
+
+/**
+ * The filed verdicts still owed their one retry, by the call that filed
+ * them: short by the report's checks and named by no retry record. A pass
+ * interrupted between a call and its retry leaves these, and so does a batch
+ * graded before retries existed; what first reached the grader is read back
+ * from each verdict's receipt.
+ * @param loaded The suite.
+ * @param calls The session's calls so far.
+ * @param runs Every bundled run, with its directory.
+ * @param filed How to read each run's filed evidence.
+ * @returns The short answers, grouped by the number of the call that filed each verdict.
+ */
+function owedRetries(
+	loaded: LoadedSuite,
+	calls: readonly {
+		readonly index: number;
+		readonly graded: readonly string[];
+		readonly retry?: { readonly runs: readonly { readonly run: string }[] } | undefined;
+	}[],
+	runs: readonly { readonly id: string; readonly directory: string }[],
+	filed: FiledEvidence,
+): Map<number, ShortAnswer[]> {
+	const asked = new Set(calls.flatMap((call) => call.retry?.runs ?? []).map((entry) => entry.run));
+	const owed = new Map<number, ShortAnswer[]>();
+	for (const run of runs.filter((entry) => !asked.has(entry.id))) {
+		const of = calls.findLast((call) => call.graded.includes(run.id));
+		const short = of === undefined ? null : owedFor(loaded, run, filed);
+		if (of !== undefined && short !== null)
+			owed.set(of.index, [...(owed.get(of.index) ?? []), short]);
+	}
+	return owed;
+}
+
+/**
+ * One run's filed verdict read against its obligations, with what its
+ * receipt says first reached the grader.
+ * @param loaded The suite.
+ * @param run The run, with its directory.
+ * @param filed How to read its filed evidence.
+ * @returns The short answer, or null when there is no verdict, nothing to hold it to, or nothing owed.
+ */
+function owedFor(loaded: LoadedSuite, run: StagedRun, filed: FiledEvidence): ShortAnswer | null {
+	const verdict = filed.verdict(run.id);
+	const obligations = verdict === null ? null : obligationsOf(loaded, run.directory);
+	if (verdict === null || obligations === null) return null;
+	const receipt = filed.receipt(run.id);
+	return shortAnswer(
+		obligations,
+		verdict,
+		filed.offered(run.id),
+		receipt === null ? null : [receipt],
+	);
 }
 
 export {
 	RetriedRunSchema,
 	graderRetryPrompt,
+	owedRetries,
 	settleRetry,
 	shortAnswers,
 	verdictShortfall,
+	type FiledEvidence,
 	type RetriedRun,
 	type ShortAnswer,
 	type VerdictShortfall,

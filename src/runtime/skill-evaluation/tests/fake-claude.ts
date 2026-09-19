@@ -137,5 +137,5 @@ const result: Record<string, unknown> = {
 	modelUsage: { "claude-fable-5-1": { inputTokens: 17, outputTokens: 3, costUSD: 0.25 } },
 	result: JSON.stringify({ runs: verdicts }),
 };
-if (mode !== "no-output") result["structured_output"] = { runs: verdicts };
+if (mode !== "no-output" && verdicts !== null) result["structured_output"] = { runs: verdicts };
 emit(result);

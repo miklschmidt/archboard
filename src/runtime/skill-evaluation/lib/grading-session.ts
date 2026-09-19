@@ -7,12 +7,21 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { parseGraderOutput, type RunVerdict } from "@/runtime/skill-evaluation/lib/grader";
-import type { GraderLayout } from "@/runtime/skill-evaluation/lib/grader-layout";
-import { fileImageReceipt, type RunImages } from "@/runtime/skill-evaluation/lib/grading-images";
+import {
+	FiledVerdictSchema,
+	parseGraderOutput,
+	type RunVerdict,
+} from "@/runtime/skill-evaluation/lib/grader";
+import { graderLayout, type GraderLayout } from "@/runtime/skill-evaluation/lib/grader-layout";
+import {
+	fileImageReceipt,
+	imagesForRun,
+	readReceipt,
+	type RunImages,
+} from "@/runtime/skill-evaluation/lib/grading-images";
 import type { UsageSemantics } from "@/runtime/skill-evaluation/lib/grader-runner";
-import { RetriedRunSchema } from "@/runtime/skill-evaluation/lib/grading-retry";
-import { GRADER_NAMES } from "@/runtime/skill-evaluation/lib/suite";
+import { RetriedRunSchema, type FiledEvidence } from "@/runtime/skill-evaluation/lib/grading-retry";
+import { GRADER_NAMES, type GraderName } from "@/runtime/skill-evaluation/lib/suite";
 
 const UsageSchema = z.object({
 	input: z.number(),
@@ -140,8 +149,60 @@ function fileVerdicts(
 	};
 }
 
+/* A filed verdict is read leniently: one filed before captures existed carries no visual answer. */
+/**
+ * The verdict one grader filed for one run, if any.
+ * @param batchRoot The batch.
+ * @param grader The grader.
+ * @param id The anonymous id.
+ * @returns The verdict, or null.
+ */
+function filedVerdict(batchRoot: string, grader: GraderName, id: string): RunVerdict | null {
+	const file = path.join(graderLayout(batchRoot, grader).verdicts, `${id}.json`);
+	return fs.existsSync(file)
+		? FiledVerdictSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")))
+		: null;
+}
+
+/**
+ * A grader's filed evidence for the runs of a batch, as the owed retries read it.
+ * @param batchRoot The batch.
+ * @param grader The grader.
+ * @returns The readers.
+ */
+function filedEvidence(batchRoot: string, grader: GraderName): FiledEvidence {
+	return {
+		/**
+		 * The verdict filed for a run.
+		 * @param run The run.
+		 * @returns The verdict, or null.
+		 */
+		verdict(run) {
+			return filedVerdict(batchRoot, grader, run);
+		},
+		/**
+		 * What the harness offers for a run.
+		 * @param run The run.
+		 * @returns The pictures.
+		 */
+		offered(run) {
+			return imagesForRun(graderLayout(batchRoot, grader).workspace, run);
+		},
+		/**
+		 * What a run's receipt says reached the grader.
+		 * @param run The run.
+		 * @returns The delivery, or null.
+		 */
+		receipt(run) {
+			return readReceipt(batchRoot, grader, run);
+		},
+	};
+}
+
 export {
 	UsageSchema,
+	filedEvidence,
+	filedVerdict,
 	fileVerdict,
 	fileVerdicts,
 	readAnswer,
