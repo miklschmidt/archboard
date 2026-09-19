@@ -61,3 +61,44 @@ for (const returning of [false, true]) {
 		).toBe(true);
 	});
 }
+
+test("a fallback reserved label aligns both card pins through its measured center", async () => {
+	const viz = await instance();
+	const placed = Object.assign(viz, {
+		renderJSON: () => ({
+			bb: "0,0,300,440",
+			objects: [
+				{ name: "upper", pos: "100,40" },
+				{ name: "lower", pos: "140,340" },
+				{ name: "label_entry", pos: "160,190" },
+			],
+		}),
+	});
+	await loaded;
+	const solve = createLayoutEngine(placed, AvoidLib.getInstance());
+	const result = solve(
+		{
+			id: "root",
+			children: [
+				{ id: "upper", width: 200, height: 80 },
+				{ id: "lower", width: 200, height: 80 },
+			],
+			edges: [
+				{
+					id: "entry",
+					sources: ["upper"],
+					targets: ["lower"],
+					layoutOptions: { "archboard.route-label": "true" },
+					labels: [{ id: "label", width: 80, height: 30 }],
+				},
+			],
+		},
+		{},
+	);
+	const edge = result.edges![0]!;
+	const label = edge.labels![0]!;
+	const section = edge.sections![0]!;
+	expect(section.startPoint.x).toBe(label.x! + label.width! / 2);
+	expect(section.endPoint.x).toBe(section.startPoint.x);
+	expect(section.bendPoints ?? []).toHaveLength(0);
+});
