@@ -14,17 +14,21 @@ import {
 } from "@/transformers/semantic-renderer/lib/geometry";
 import { simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
+	alignedPins,
+	relationshipKind,
+	type AlignedPins,
+} from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
+import {
 	boxOf,
 	boxesOverlap,
 	contains,
 	facePoint,
+	frameArrivalPoint,
 	FACES,
 	obstacleOf,
 	SIDES,
 	type Face,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
-
-/** Ordinary route clearance; frame arrivals reserve only their additional physical approach. */
 
 type Connection = InstanceType<AvoidEngine["ConnRef"]>;
 type ConnectionEnd = InstanceType<AvoidEngine["ConnEnd"]>;
@@ -37,6 +41,7 @@ class RoutingScene {
 	private readonly shapes = new Map<string, object>();
 	private readonly classes = new Map<string, number>();
 	private readonly kinds = new Map<string, readonly string[]>();
+	private aligned: AlignedPins = new Map();
 
 	/**
 	 * Configure the same obstacle routing as the accepted prototype.
@@ -100,6 +105,24 @@ class RoutingScene {
 			}
 		}
 		for (const [id, present] of kinds) this.kinds.set(id, [...present].toSorted());
+		this.aligned = alignedPins(this.nodes, this.kinds, edges);
+	}
+
+	/**
+	 * Add aligned physical alternatives under the card's ordinary shared native class.
+	 * @param id Card identity.
+	 * @param kind Semantic relationship kind.
+	 * @param position Ordinary proportional kind position.
+	 * @returns The native endpoint shared by all relationships of this kind.
+	 */
+	private cardPin(id: string, kind: string, position: number): ConnectionEnd {
+		const end = this.pin(id, undefined, position);
+		const pinClass = this.classes.get(`${id}:any:${position}`)!;
+		const byKind = this.aligned.get(id);
+		for (const pin of byKind?.get(kind) ?? [])
+			this.registerPins(this.shapes.get(id)!, pinClass, [SIDES[pin.face]], pin.position);
+		byKind?.delete(kind);
+		return end;
 	}
 
 	/**
@@ -180,7 +203,7 @@ class RoutingScene {
 				source ? "EAST" : "SOUTH",
 				(index + (source ? 1 / 3 : 2 / 3)) / kinds.length,
 			);
-		if (!node.children?.length) return this.pin(id, undefined, position);
+		if (!node.children?.length) return this.cardPin(id, kind, position);
 		return this.frameEndpoint(node, target, source, position);
 	}
 
@@ -200,9 +223,10 @@ class RoutingScene {
 	): ConnectionEnd {
 		const solid = this.obstacles.get(node.id)!;
 		const preferred = endpointFace(node, target);
-		const side =
-			source || internalFrame(node, target) ? preferred : this.arrivalFace(node, target, position);
-		const at = facePoint(boxOf(node), side, position);
+		const { side, at } =
+			source || internalFrame(node, target)
+				? { side: preferred, at: facePoint(boxOf(node), preferred, position) }
+				: this.arrivalPoint(node, target, position);
 		if (internalFrame(node, target)) return this.pin(node.id, side, position);
 		const onSolid = positionOnFace(solid, side, at);
 		if (onSolid !== undefined) return this.pin(node.id, side, onSolid);
@@ -224,21 +248,25 @@ class RoutingScene {
 	 * @param node The destination frame.
 	 * @param target The source subject.
 	 * @param position The shared kind position on each candidate face.
-	 * @returns The nearest clear face, or nearest face for native validation if all are crowded.
+	 * @returns The nearest clear endpoint, or nearest candidate for native validation if crowded.
 	 */
-	private arrivalFace(node: ElkNode, target: ElkNode, position: number): Face {
+	private arrivalPoint(
+		node: ElkNode,
+		target: ElkNode,
+		position: number,
+	): { side: Face; at: Point } {
 		const toward = boxCentre(boxOf(target));
 		const candidates = FACES.map((side) => ({
 			side,
-			at: facePoint(boxOf(node), side, position),
+			at: frameArrivalPoint(node, side, position),
 		})).toSorted(
 			(one, other) =>
 				Math.hypot(one.at.x - toward.x, one.at.y - toward.y) -
 				Math.hypot(other.at.x - toward.x, other.at.y - toward.y),
 		);
 		return (
-			candidates.find(({ side, at }) => this.clearArrival(node.id, side, at, position))?.side ??
-			candidates[0]!.side
+			candidates.find(({ side, at }) => this.clearArrival(node.id, side, at, position)) ??
+			candidates[0]!
 		);
 	}
 
@@ -367,15 +395,6 @@ function arrivalCorridor(at: Point, side: Face): Box {
 		width: dx === 0 ? 2 * half : length,
 		height: dy === 0 ? 2 * half : length,
 	};
-}
-
-/**
- * The shared port group carried from semantic meaning through the layout graph.
- * @param edge One routed relationship.
- * @returns Its semantic kind, or the default group for direct engine clients.
- */
-function relationshipKind(edge: ElkExtendedEdge): string {
-	return edge.layoutOptions?.["archboard.relationship.kind"] ?? "";
 }
 
 /**

@@ -182,9 +182,10 @@ async function chooseReading(
 	columns = 2,
 ): Promise<ArchitectureDrawing> {
 	const requiredFit = fitIn(best) * (1 + WRAP_MIN_FIT_GAIN);
-	if (!columnCounts(baseline, requiredFit).includes(columns)) return best;
-	const next = await betterReading({ ...problem, columns }, best, requiredFit);
-	return chooseReading(problem, baseline, next, columns + 1);
+	const count = columnCounts(baseline, requiredFit).find((candidate) => candidate >= columns);
+	if (count === undefined) return best;
+	const next = await betterReading({ ...problem, columns: count }, best, requiredFit);
+	return chooseReading(problem, baseline, next, count + 1);
 }
 
 /**
@@ -210,12 +211,23 @@ async function betterReading(
 
 /**
  * Find feasible column counts from the fully settled baseline geometry.
- * Frame boxes overlap their descendants, keeping their whole span together.
+ * Preserve hierarchy so proposed folds move whole frames and side-entry sources.
  * @param drawing The complete downward baseline.
  * @param minimumFit The fit any further candidate must improve.
  * @returns Increasing candidate counts; ties retain the earlier, simpler reading.
  */
 function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[] {
+	const subjects = [...drawing.cards, ...drawing.containers];
+	const nodes = new Map<string, ElkNode>(
+		subjects.map(({ measured, box }) => [measured.node.id, { id: measured.node.id, ...box }]),
+	);
+	const children: ElkNode[] = [];
+	for (const { measured } of subjects) {
+		const node = nodes.get(measured.node.id)!;
+		const parent = nodes.get(measured.node.parent ?? "");
+		if (parent === undefined) children.push(node);
+		else (parent.children ??= []).push(node);
+	}
 	return foldColumnCounts(
 		{
 			id: "column-candidates",
@@ -223,10 +235,7 @@ function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[
 			y: 0,
 			width: drawing.width,
 			height: drawing.height,
-			children: [...drawing.cards, ...drawing.containers].map(({ measured, box }) => ({
-				id: measured.node.id,
-				...box,
-			})),
+			children,
 			edges: drawing.edges.map(({ edge }) => ({
 				id: edge.id,
 				sources: [edge.from],

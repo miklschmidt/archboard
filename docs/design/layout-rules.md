@@ -1469,10 +1469,10 @@ straight run. Independent leaf collections retain compact wrapping and the
 requested equal 24px side/bottom insets. Semantic identities, containment,
 Standing and the shared SVG/atlas geometry remain unchanged.
 
-The inspected Public API fixture improves fit by 82% and reduces route length
-by 52%, with 2.56 bends per relationship and one crossing. Broader results are
-mixed: total route length falls 40% and crossings fall from 289 to 146 across
-24 drawings, while two lose fit and 23 have more bends than the preceding
+The inspected Public API fixture improves fit by 84% and reduces route length
+by 53%, with 1.56 bends per relationship and four crossings. Broader results are
+mixed: total route length falls 43% and crossings fall from 289 to 147 across
+24 drawings, while two lose fit and 21 have more bends than the preceding
 ELK renderer. No routes cross cards and no labels leave their own route runs.
 The full before/after table, reproduction and test-policy changes are in
 [the adoption investigation](shared-container-rows.md#production-adoption-shared-ports-and-natural-routes).

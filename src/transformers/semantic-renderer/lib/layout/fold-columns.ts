@@ -165,7 +165,7 @@ function appendColumn(
 }
 
 /**
- * Bound candidate counts by actual bands and the width needed to beat the baseline.
+ * Admit counts whose proposed card footprint can reach the required pane fit.
  * @param graph Complete native downward placement.
  * @param minimumFit The minimum fit another column must reach.
  * @returns Feasible additional column counts; one column is always the baseline.
@@ -186,7 +186,13 @@ export function foldColumnCounts(graph: ElkNode, minimumFit = fitIn(boxOf(graph)
 		bands.length,
 		1 + Math.floor((available - widest) / (narrowest + COLUMN_GAP)),
 	);
-	return Array.from({ length: Math.max(0, limit - 1) }, (_, index) => index + 2);
+	return Array.from({ length: Math.max(0, limit - 1) }, (_, index) => index + 2).filter((count) => {
+		// Check the actual balanced fold before paying for label settlement.
+		// Later reservations may change placement; only promising proposals
+		// enter that search, using the same settled geometry as their bands.
+		const proposed = foldColumns(graph, count);
+		return proposed !== undefined && fitIn(boxOf(proposed)) >= minimumFit;
+	});
 }
 
 /**

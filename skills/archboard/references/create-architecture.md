@@ -21,7 +21,8 @@ are still chosen fresh in a top-to-bottom reading. Long paths may wrap into
 side-by-side downward columns, keeping containers and small branches together.
 The renderer chooses the column count; authors do not encode layout in the board.
 Relationships of one kind may share card ports; different kinds use separate
-ports so their meaning remains distinguishable. Keep the real relationship kind
+ports so their meaning remains distinguishable. Overlapping card spans can
+use straight connections with balanced attachment offsets. Keep the real relationship kind
 when judging routing.
 
 1. Read the source you will describe, do the evidence steps in `SKILL.md` and
