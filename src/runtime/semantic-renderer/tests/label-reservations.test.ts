@@ -6,6 +6,7 @@
 import { describe, expect, test } from "bun:test";
 import {
 	settleLabels,
+	curveThrough,
 	type ArchitectureDrawing,
 	type DrawingEdge,
 	type LabelAttempt,
@@ -80,6 +81,24 @@ describe("an unused label reservation", () => {
 			b: { drawing: smaller },
 		});
 		expect(await settleLabels(solve, new Set(["a", "b"]))).toBe(smaller);
+	});
+
+	test("is kept when a smaller release cannot fit the fixed bends", async () => {
+		const kept = page(400, 500);
+		const tight = {
+			...route("tight", { x: 0, y: 0 }, { x: 200, y: 8 }),
+			curve: curveThrough([
+				{ x: 0, y: 0 },
+				{ x: 100, y: 0 },
+				{ x: 100, y: 8 },
+				{ x: 200, y: 8 },
+			]),
+		};
+		const { solve } = solveFrom({
+			a: { drawing: kept, unused: ["a"] },
+			"": { drawing: page(300, 400, [tight]) },
+		});
+		expect(await settleLabels(solve, new Set(["a"]))).toBe(kept);
 	});
 
 	test("is kept when releasing it only spreads the page sideways", async () => {

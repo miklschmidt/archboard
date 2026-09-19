@@ -1,18 +1,23 @@
+import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 import {
+	APPROACH_STRAIGHT,
 	ROUTE_OBSTACLE_CLEARANCE as SHAPE_CLEARANCE,
 	ROUTE_NUDGE_DISTANCE,
 	ROUTE_SEGMENT_PENALTY,
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
-import { APPROACH_STRAIGHT, BEND_RADIUS_MIN } from "@/transformers/semantic-renderer/lib/design";
+import { CARD_ROUTE_EXPANSION } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	boxCentre,
 	inflate,
 	type Box,
 	type Point,
 } from "@/transformers/semantic-renderer/lib/geometry";
-import { simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
+import {
+	publishRoutes,
+	type Connection,
+} from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 import {
 	alignedPins,
 	relationshipKind,
@@ -31,7 +36,6 @@ import {
 	type Face,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 
-type Connection = InstanceType<AvoidEngine["ConnRef"]>;
 type ConnectionEnd = InstanceType<AvoidEngine["ConnEnd"]>;
 
 /** One native obstacle scene; the router owns its shapes, shared pins and connectors. */
@@ -47,8 +51,12 @@ class RoutingScene {
 	/**
 	 * Configure the same obstacle routing as the accepted prototype.
 	 * @param avoid The initialized libavoid module.
+	 * @param endpoints Shared faces still capable of a complete rounded approach.
 	 */
-	constructor(private readonly avoid: AvoidEngine) {
+	constructor(
+		private readonly avoid: AvoidEngine,
+		private readonly endpoints: EndpointOptions,
+	) {
 		this.router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		this.router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, SHAPE_CLEARANCE);
 		this.router.setRoutingParameter(
@@ -87,7 +95,7 @@ class RoutingScene {
 	 */
 	visit(node: ElkNode): void {
 		this.nodes.set(node.id, node);
-		this.shape(node.id, obstacleOf(node));
+		this.shape(node.id, inflate(obstacleOf(node), nodeInset(node)));
 		for (const child of node.children ?? []) this.visit(child);
 	}
 
@@ -122,7 +130,7 @@ class RoutingScene {
 		const shape = this.shapes.get(id)!;
 		if (pinClass === undefined) {
 			pinClass = this.classes.size + 1;
-			this.registerCardPins(shape, pinClass, position, this.aligned.get(id)?.get(kind) ?? []);
+			this.registerCardPins(id, kind, pinClass, position, this.aligned.get(id)?.get(kind) ?? []);
 			this.classes.set(key, pinClass);
 		}
 		return new this.avoid.ConnEnd(shape, pinClass);
@@ -130,22 +138,28 @@ class RoutingScene {
 
 	/**
 	 * On matched faces, register only clear aligned positions; keep seeds on other faces.
-	 * @param shape Native card obstacle.
+	 * @param id Native card identity.
+	 * @param kind Shared relationship kind.
 	 * @param pinClass Shared relationship-kind class.
 	 * @param position Ordinary kind position.
 	 * @param pins Clear matched alternatives.
 	 */
 	private registerCardPins(
-		shape: object,
+		id: string,
+		kind: string,
 		pinClass: number,
 		position: number,
 		pins: readonly AlignedPin[],
 	): void {
 		for (const face of FACES) {
+			if (!this.endpoints.allows(id, kind, face)) continue;
 			if (!pins.some((pin) => pin.face === face))
-				this.registerPins(shape, pinClass, [SIDES[face]], position);
+				this.registerPins(id, pinClass, [SIDES[face]], position);
 		}
-		for (const pin of pins) this.registerPins(shape, pinClass, [SIDES[pin.face]], pin.position);
+		for (const pin of pins) {
+			if (this.endpoints.allows(id, kind, pin.face))
+				this.registerPins(id, pinClass, [SIDES[pin.face]], pin.position);
+		}
 	}
 
 	/**
@@ -173,7 +187,7 @@ class RoutingScene {
 		if (pinClass === undefined) {
 			pinClass = this.classes.size + 1;
 			const faces = side === undefined ? Object.values(SIDES) : [SIDES[side]];
-			this.registerPins(shape, pinClass, faces, position);
+			this.registerPins(id, pinClass, faces, position);
 			this.classes.set(key, pinClass);
 		}
 		return new this.avoid.ConnEnd(shape, pinClass);
@@ -181,25 +195,28 @@ class RoutingScene {
 
 	/**
 	 * Register candidate physical pins under one shared native class.
-	 * @param shape Native obstacle.
+	 * @param id Native obstacle identity.
 	 * @param pinClass Shared class selected by the connector.
 	 * @param faces Candidate centers and outward directions.
 	 * @param position Along-face position for a self-loop end.
 	 */
 	private registerPins(
-		shape: object,
+		id: string,
 		pinClass: number,
 		faces: readonly (typeof SIDES)[Face][],
 		position: number,
 	): void {
+		const shape = this.shapes.get(id)!;
+		const box = this.obstacles.get(id)!;
+		const inset = nodeInset(this.nodes.get(id));
 		for (const [x, y, direction] of faces) {
 			const pin = new this.avoid.ShapeConnectionPin(
 				shape,
 				pinClass,
-				x === 0.5 ? position : x,
-				y === 0.5 ? position : y,
+				x === 0.5 ? (inset + (box.width - 2 * inset) * position) / box.width : x,
+				y === 0.5 ? (inset + (box.height - 2 * inset) * position) / box.height : y,
 				true,
-				0,
+				inset,
 				direction,
 			);
 			pin.setExclusive(false);
@@ -227,7 +244,7 @@ class RoutingScene {
 				(index + (source ? 1 / 3 : 2 / 3)) / kinds.length,
 			);
 		if (!node.children?.length) return this.cardPin(id, kind, position);
-		return this.frameEndpoint(node, target, source, position);
+		return this.frameEndpoint(node, target, source, position, kind);
 	}
 
 	/**
@@ -236,6 +253,7 @@ class RoutingScene {
 	 * @param target The other endpoint.
 	 * @param source Whether this end has no incoming arrowhead.
 	 * @param position The shared kind position on each candidate face.
+	 * @param kind Shared relationship kind whose rejected faces remain unavailable.
 	 * @returns An owned native endpoint.
 	 */
 	private frameEndpoint(
@@ -243,13 +261,14 @@ class RoutingScene {
 		target: ElkNode,
 		source: boolean,
 		position: number,
+		kind: string,
 	): ConnectionEnd {
-		const solid = this.obstacles.get(node.id)!;
+		const solid = obstacleOf(node);
 		const preferred = endpointFace(node, target);
 		const { side, at } =
 			source || internalFrame(node, target)
 				? { side: preferred, at: facePoint(boxOf(node), preferred, position) }
-				: this.arrivalPoint(node, target, position);
+				: this.arrivalPoint(node, target, position, kind);
 		if (internalFrame(node, target)) return this.pin(node.id, side, position);
 		const onSolid = positionOnFace(solid, side, at);
 		if (onSolid !== undefined) return this.pin(node.id, side, onSolid);
@@ -271,22 +290,26 @@ class RoutingScene {
 	 * @param node The destination frame.
 	 * @param target The source subject.
 	 * @param position The shared kind position on each candidate face.
+	 * @param kind Shared relationship kind whose rejected faces remain unavailable.
 	 * @returns The nearest clear endpoint, or nearest candidate for native validation if crowded.
 	 */
 	private arrivalPoint(
 		node: ElkNode,
 		target: ElkNode,
 		position: number,
+		kind: string,
 	): { side: Face; at: Point } {
 		const toward = boxCentre(boxOf(target));
-		const candidates = FACES.map((side) => ({
-			side,
-			at: frameArrivalPoint(node, side, position),
-		})).toSorted(
-			(one, other) =>
-				Math.hypot(one.at.x - toward.x, one.at.y - toward.y) -
-				Math.hypot(other.at.x - toward.x, other.at.y - toward.y),
-		);
+		const candidates = FACES.filter((side) => this.endpoints.allows(node.id, kind, side))
+			.map((side) => ({
+				side,
+				at: frameArrivalPoint(node, side, position),
+			}))
+			.toSorted(
+				(one, other) =>
+					Math.hypot(one.at.x - toward.x, one.at.y - toward.y) -
+					Math.hypot(other.at.x - toward.x, other.at.y - toward.y),
+			);
 		return (
 			candidates.find(({ side, at }) => this.clearArrival(node.id, side, at, position)) ??
 			candidates[0]!
@@ -329,7 +352,7 @@ class RoutingScene {
 			const [x, y, direction] = SIDES[side];
 			this.shape(key, arrivalCorridor(at, side));
 			pinClass = this.classes.size + 1;
-			this.registerPins(this.shapes.get(key)!, pinClass, [[1 - x, 1 - y, direction]], 0.5);
+			this.registerPins(key, pinClass, [[1 - x, 1 - y, direction]], 0.5);
 			this.classes.set(key, pinClass);
 		}
 		return new this.avoid.ConnEnd(this.shapes.get(key)!, pinClass);
@@ -366,10 +389,7 @@ class RoutingScene {
 		if (forcedLabel(edge)) {
 			const sourceBox = boxOf(this.nodes.get(from)!);
 			const targetBox = boxOf(this.nodes.get(to)!);
-			const returning = sourceBox.y + sourceBox.height / 2 > targetBox.y + targetBox.height / 2;
-			const [entry, exit] = returning
-				? (["SOUTH", "NORTH"] as const)
-				: (["NORTH", "SOUTH"] as const);
+			const [entry, exit] = labelFaces(edge, sourceBox, targetBox);
 			return [
 				this.connect(source, this.pin(`label_${edge.id}`, entry)),
 				this.connect(this.pin(`label_${edge.id}`, exit), target),
@@ -377,6 +397,29 @@ class RoutingScene {
 		}
 		return [this.connect(source, target)];
 	}
+}
+
+/**
+ * Preserve the accepted label run's axis and semantic travel direction.
+ * @param edge The relationship carrying its accepted run axis.
+ * @param source Its source card.
+ * @param target Its target card.
+ * @returns Opposing entry and exit faces on the reserved label obstacle.
+ */
+function labelFaces(edge: ElkExtendedEdge, source: Box, target: Box): readonly [Face, Face] {
+	const horizontal = edge.layoutOptions?.["archboard.route-label.axis"] === "x";
+	const axis = horizontal ? "x" : "y";
+	const faces: readonly [Face, Face] = horizontal ? ["WEST", "EAST"] : ["NORTH", "SOUTH"];
+	return boxCentre(source)[axis] > boxCentre(target)[axis] ? [faces[1], faces[0]] : faces;
+}
+
+/**
+ * Every semantic endpoint solid needs an inset pin inside its enlarged native obstacle.
+ * @param node The semantic node, absent for labels and frame-arrival corridors.
+ * @returns Native shape expansion; the visible endpoint remains at its card or title border.
+ */
+function nodeInset(node: ElkNode | undefined): number {
+	return node === undefined ? 0 : CARD_ROUTE_EXPANSION;
 }
 
 /**
@@ -409,7 +452,7 @@ function arrivalCorridor(at: Point, side: Face): Box {
 	const [x, y] = SIDES[side];
 	const dx = 2 * x - 1;
 	const dy = 2 * y - 1;
-	const length = APPROACH_STRAIGHT + BEND_RADIUS_MIN - SHAPE_CLEARANCE;
+	const length = CARD_ROUTE_EXPANSION;
 	const half = APPROACH_STRAIGHT / 2;
 	return {
 		x: at.x + (dx === 0 ? -half : Math.min(0, dx * length)),
@@ -463,68 +506,6 @@ function towardFace(box: Box, toward: Box): Face {
 }
 
 /**
- * Copy a valid obstacle-free native polyline.
- * @param connection The router-owned connector.
- * @param id Relationship identity for diagnostics.
- * @returns Geometry independent of native lifetime.
- */
-function pointsOf(connection: Connection, id: string): Point[] {
-	if (!connection.hasValidRoute() || connection.hasCrossingObstacles())
-		throw new Error(`Layout could not route relationship ${id} clear of obstacles`);
-	const line = connection.displayRoute();
-	const points: Point[] = [];
-	for (let index = 0; index < line.size(); index++) {
-		const point = line.at(index);
-		points.push({ x: point.x, y: point.y });
-	}
-	return points;
-}
-
-/**
- * Whether one point and its incoming segment are finite and orthogonal.
- * @param point Current point.
- * @param index Its route index.
- * @param points Complete route.
- * @returns Whether this segment is invalid.
- */
-function invalidPoint(point: Point, index: number, points: readonly Point[]): boolean {
-	if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return true;
-	const previous = points[index - 1];
-	return (
-		previous !== undefined &&
-		Math.abs(point.x - previous.x) > 0.001 &&
-		Math.abs(point.y - previous.y) > 0.001
-	);
-}
-
-/**
- * Publish only complete valid relationship routes.
- * @param edge The semantic relationship.
- * @param connections Its native route segments.
- */
-function publish(edge: ElkExtendedEdge, connections: readonly Connection[]): void {
-	const points = simplify(connections.flatMap((connection) => pointsOf(connection, edge.id)));
-	if (points.length < 2 || points.some(invalidPoint))
-		throw new Error(`Layout returned an invalid orthogonal route for relationship ${edge.id}`);
-	edge.sections = [
-		{
-			id: `${edge.id}:route`,
-			startPoint: points[0]!,
-			bendPoints: points.slice(1, -1),
-			endPoint: points.at(-1)!,
-		},
-	];
-}
-
-/**
- * Apply reserved label coordinates after placement and before native obstacles are registered.
- * @param edges Complete placed relationships.
- */
-function positionReservedLabels(edges: readonly ElkExtendedEdge[]): void {
-	for (const edge of edges) positionReservedLabel(edge);
-}
-
-/**
  * Apply the accepted physical position of one reserved label when both axes exist.
  * @param edge One placed relationship.
  */
@@ -545,18 +526,24 @@ function positionReservedLabel(edge: ElkExtendedEdge): void {
  * @returns The hierarchy with finite orthogonal relationship routes.
  */
 export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
-	const scene = new RoutingScene(avoid);
-	try {
-		const edges = graph.edges ?? [];
-		positionReservedLabels(edges);
-		for (const node of graph.children ?? []) scene.visit(node);
-		scene.ports(edges);
-		scene.labels(edges);
-		const routes = new Map(edges.map((edge) => [edge.id, scene.relationship(edge)]));
-		scene.router.processTransaction();
-		for (const edge of edges) publish(edge, routes.get(edge.id)!);
-		return graph;
-	} finally {
-		scene.router.delete();
+	const endpoints = new EndpointOptions();
+	let routed = false;
+	for (;;) {
+		const scene = new RoutingScene(avoid, endpoints);
+		try {
+			const edges = graph.edges ?? [];
+			edges.forEach(positionReservedLabel);
+			graph.children?.forEach((node) => scene.visit(node));
+			scene.ports(edges);
+			scene.labels(edges);
+			const routes = new Map(edges.map((edge) => [edge.id, scene.relationship(edge)]));
+			scene.router.processTransaction();
+			if (!publishRoutes(edges, routes, routed)) return graph;
+			routed = true;
+			if (endpoints.reject(edges, scene.nodes)) continue;
+			return graph;
+		} finally {
+			scene.router.delete();
+		}
 	}
 }

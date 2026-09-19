@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
@@ -46,11 +47,11 @@ test.each([
 		const left = Math.min(...cards.map(({ x }) => x)) - frame.x;
 		const right = frame.x + frame.width - Math.max(...cards.map(({ x, width }) => x + width));
 		const bottom = frame.y + frame.height - Math.max(...cards.map(({ y, height }) => y + height));
-		expect(left).toBe(24);
+		expect(left).toBe(CONTAINER_INSET);
 		expect(right).toBe(left);
 		expect(bottom).toBe(left);
 		// The title keeps its existing band and air even though the other insets shrink.
-		expect(Math.min(...cards.map(({ y }) => y)) - frame.y).toBe(96);
+		expect(Math.min(...cards.map(({ y }) => y)) - frame.y).toBe(72 + CONTAINER_INSET);
 	},
 );
 

@@ -1,3 +1,15 @@
+import {
+	piecesOf,
+	clearIntervals,
+	candidatesOf,
+	reachOf,
+	type RoutePiece,
+	type Candidate,
+	type Interval,
+	type Obstacles,
+} from "@/transformers/semantic-renderer/lib/layout/label-run-geometry";
+import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
+import { ANCHOR_CARD_CLEARANCE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import { packChannels } from "@/transformers/semantic-renderer/lib/layout/label-channels";
 // Measured badges use clear runs in the layout owner. A missing fit requests
 // an engine reservation before the one complete drawing can be returned.
@@ -7,243 +19,14 @@ import type {
 	MeasuredArchitecture,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/lib/design";
-import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { curveBounds, pointAt } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { pointAt } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 
-/** A route piece and its conservative bounds, including rounded corners. */
-interface RoutePiece {
-	readonly edgeId: string;
-	readonly index: number;
-	readonly box: Box;
-	readonly axis: "x" | "y" | undefined;
-}
-
-/** A feasible badge box and the physical length of its unobstructed run. */
-interface Candidate {
-	readonly box: Box;
-	readonly length: number;
-	readonly index: number;
-	/** How far the badge sits from the nearer of its route's two ends. */
-	readonly reach: number;
-}
-
-/** A point on the page. */
-interface Point {
-	readonly x: number;
-	readonly y: number;
-}
-
-type Interval = readonly [number, number];
-
-/**
- * What a badge on one route piece must keep clear of, already grown by its
- * clearance: groups applied in order, one of which is every route piece, with
- * the piece the badge sits on skipped. Built once per placement and shared by
- * every piece, rather than copied and grown again for each.
- */
-interface Obstacles {
-	readonly groups: readonly (readonly Box[])[];
-	/** The route pieces, grown by the route clearance, in piece order. */
-	readonly pieces: readonly Box[];
-	/** The index, among them, of the piece the badge sits on. */
-	readonly ownPiece: number;
-}
-
-/**
- * How far a label may sit inside an obstacle's clearance before it counts as
- * meeting it. The engine spaces rows so that a label centred on a route has
- * exactly its clearance on each side, then snaps the route to a whole unit,
- * which leaves the label up to half a unit off that centre. Refusing the run
- * for that half unit would reserve the label with the engine instead, and a
- * reservation makes a layer of its own, moving every row and bending the route.
- */
-const ROUTE_SNAP = 0.5;
-
-const DIMENSIONS = {
-	x: { cross: "y", length: "width", breadth: "height" },
-	y: { cross: "x", length: "height", breadth: "width" },
-} as const;
-
-/**
- * Bound the actual rounded pieces; only straight pieces can hold a badge.
- * @param edges The authoritative routes.
- * @returns Runs and corner obstacles in drawing coordinates.
- */
-function piecesOf(edges: readonly DrawingEdge[]): RoutePiece[] {
-	return edges.flatMap(({ edge, curve }) => {
-		let from = curve.from;
-		return curve.segments.map((segment, index) => {
-			const box = curveBounds({ from, segments: [segment] });
-			from = segment.to;
-			return {
-				edgeId: edge.id,
-				index,
-				box,
-				axis:
-					segment.kind !== "line"
-						? undefined
-						: box.height <= 0.01
-							? "x"
-							: box.width <= 0.01
-								? "y"
-								: undefined,
-			};
-		});
-	});
-}
-
-/**
- * Remove the positions where a badge would enter an obstacle's clearance.
- *
- * A badge is seeded exactly the room it needs beside a corridor, so the last
- * position the run allows and the first the corridor allows can be the same
- * number computed two ways; a blocked span that overshoots the run's end by
- * no more than the route snap still leaves that end position.
- * @param intervals Currently available positions for the badge's leading edge.
- * @param blocked The forbidden positions along the same axis.
- * @returns The remaining disjoint intervals, in coordinate order.
- */
-function without(intervals: readonly Interval[], blocked: Interval): readonly Interval[] {
-	const [low, high] = blocked;
-	// Most obstacles miss every interval; those leave the intervals as they are.
-	if (intervals.every(([start, end]) => high <= start || low >= end)) return intervals;
-	return intervals.flatMap(([start, end]): Interval[] => {
-		if (high <= start || low >= end) return [[start, end]];
-		return [
-			...(low + ROUTE_SNAP >= start
-				? ([[start, Math.max(start, Math.min(low, end))]] as const)
-				: []),
-			...(high <= end + ROUTE_SNAP ? ([[Math.min(end, Math.max(high, start)), end]] as const) : []),
-		];
-	});
-}
-
-/**
- * What is left of a run once every obstacle beside it has taken its span.
- * @param run The badge's leading-edge positions the run allows.
- * @param obstacles The obstacles, in the order they are applied.
- * @param label The badge.
- * @param axis The run's axis.
- * @param across Where the badge's leading edge sits across the run.
- * @returns The clear intervals, in coordinate order.
- */
-function clearIntervals(
-	run: readonly Interval[],
-	obstacles: Obstacles,
-	label: Box,
-	axis: "x" | "y",
-	across: number,
-): readonly Interval[] {
-	const { length } = DIMENSIONS[axis];
-	let intervals = run;
-	for (const group of obstacles.groups) {
-		for (let index = 0; index < group.length; index += 1) {
-			const box = group[index]!;
-			const own = group === obstacles.pieces && index === obstacles.ownPiece;
-			if (!own && levelWith(box, label, axis, across)) {
-				intervals = without(intervals, [box[axis] - label[length], box[axis] + box[length]]);
-			}
-		}
-	}
-	return intervals;
-}
-
-/**
- * Whether an obstacle is level with a badge's line, so that it takes a span of
- * the run; one entirely beside the line takes nothing.
- * @param box The obstacle.
- * @param label The badge.
- * @param axis The run's axis.
- * @param across Where the badge's leading edge sits across the run.
- * @returns True when it overlaps the badge across the run.
- */
-function levelWith(box: Box, label: Box, axis: "x" | "y", across: number): boolean {
-	const { cross, breadth } = DIMENSIONS[axis];
-	return (
-		across + label[breadth] > box[cross] + ROUTE_SNAP &&
-		across + ROUTE_SNAP < box[cross] + box[breadth]
-	);
-}
-
-/**
- * Find the centers of clear spans on one horizontal or vertical straight run.
- * @param piece A piece of this badge's own route.
- * @param label Its measured dimensions.
- * @param obstacles Boxes already enlarged by their required clearance, in the order they are applied.
- * @param ends Where the route leaves its source and reaches its target.
- * @param air How much of the run stays clear at each end.
- * @param anchoring Whether a native waypoint needs an open corridor around its buffered box.
- * @returns Feasible boxes, near an endpoint or inside an open anchoring interval.
- */
-function candidatesOf(
-	piece: RoutePiece,
-	label: Box,
-	obstacles: Obstacles,
-	ends: readonly [Point, Point],
-	air: number,
-	anchoring = false,
-): Candidate[] {
-	const axis = piece.axis;
-	if (axis === undefined) return [];
-	const { cross, length, breadth } = DIMENSIONS[axis];
-	const start = piece.box[axis] + air;
-	const end = piece.box[axis] + piece.box[length] - label[length] - air;
-	if (end < start) return [];
-	const across = piece.box[cross] - label[breadth] / 2;
-	const intervals = clearIntervals([[start, end]], obstacles, label, axis, across);
-	return intervals
-		.filter(([low, high]) => !anchoring || high > low)
-		.map(([low, high]) => {
-			// A badge belongs where a reader tracing the line from either card finds
-			// it soonest: as near the nearer end as its clear interval allows.
-			const along = anchoring
-				? (low + high) / 2
-				: nearestPlacement(low, high, label, axis, ends).along;
-			return {
-				box: { ...label, [axis]: along, [cross]: across },
-				length: high - low + label[length],
-				index: piece.index,
-				reach: reachOf({ ...label, [axis]: along, [cross]: across }, ends),
-			};
-		});
-}
-
-/**
- * The distance from a badge's centre to the nearer end of its route.
- * @param box The badge.
- * @param ends The route's ends.
- * @returns The smaller distance.
- */
-function reachOf(box: Box, ends: readonly [Point, Point]): number {
-	const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-	return Math.min(...ends.map((end) => Math.hypot(centre.x - end.x, centre.y - end.y)));
-}
-
-/**
- * Where along a clear interval a badge sits nearest an end of its route.
- * @param low The lowest leading coordinate the interval allows.
- * @param high The highest.
- * @param label The badge.
- * @param axis The run's axis.
- * @param ends The route's ends.
- * @returns The leading coordinate to use.
- */
-function nearestPlacement(
-	low: number,
-	high: number,
-	label: Box,
-	axis: "x" | "y",
-	ends: readonly [Point, Point],
-): { readonly along: number } {
-	const half = label[DIMENSIONS[axis].length] / 2;
-	// Each end pulls the badge as close as the interval allows; the closer pull wins.
-	const choices = ends.map((end) => Math.max(low, Math.min(high, end[axis] - half)));
-	const reaches = choices.map((along) =>
-		Math.min(...ends.map((end) => Math.abs(along + half - end[axis]))),
-	);
-	const best = reaches.indexOf(Math.min(...reaches));
-	return { along: choices[best] ?? (low + high) / 2 };
+/** A native label waypoint and the straight-run orientation it preserves. */
+export interface LabelAnchor extends Box {
+	readonly axis?: "x" | "y";
+	readonly pinAlign?: boolean;
 }
 
 /**
@@ -281,7 +64,7 @@ function nodeObstacles(drawing: ArchitectureDrawing): Box[] {
 /** One placement pass shares inflated obstacles and accepted label boxes. */
 class LabelPlacement {
 	private readonly pieces: RoutePiece[];
-	private readonly labels: Map<string, Box>;
+	private readonly labels: Map<string, LabelAnchor>;
 	private readonly original: ReadonlyMap<string, Box>;
 	private readonly accepted = new Set<string>();
 	private readonly bounds = new Map<string, Interval>();
@@ -309,7 +92,14 @@ class LabelPlacement {
 			),
 		);
 		this.original = new Map(this.labels);
-		this.grownCards = nodeObstacles(drawing).map((box) => inflate(box, this.nodeAir));
+		this.grownCards = nodeObstacles(drawing).map((box) =>
+			inflate(
+				box,
+				this.eligible !== undefined && box.width > 0 && box.height > 0
+					? Math.max(this.nodeAir, ANCHOR_CARD_CLEARANCE)
+					: this.nodeAir,
+			),
+		);
 		const routeAir = Number(COMPOUND_OPTIONS["elk.spacing.edgeLabel"]);
 		this.grownPieces = this.pieces.map(({ box }) => inflate(box, routeAir));
 		this.grownLabels = new Map(
@@ -325,25 +115,27 @@ class LabelPlacement {
 			this.placeEdge(edge);
 		if (this.eligible === undefined) return;
 		packChannels(this.drawing, this.labels, this.accepted, this.original, this.bounds);
-		if (this.invalid()) {
-			this.labels.clear();
-			for (const [id, box] of this.original) this.labels.set(id, box);
-			this.accepted.clear();
+		if (this.invalid()) this.alignRows();
+	}
+
+	/** Retry only small channel corrections when moving whole label rows conflicted. */
+	alignRows(): void {
+		this.reset();
+		for (const edge of this.drawing.edges.toSorted((a, b) => a.edge.id.localeCompare(b.edge.id))) {
+			if (!this.allows(edge)) continue;
+			const candidate = this.channelCandidate(edge);
+			if (candidate) this.accept(edge, candidate);
 		}
+		if (this.invalid()) this.reset();
 	}
 
 	/**
-	 * Natural labels may use any run; an anchor preserves an already straight connection.
+	 * Natural labels and waypoints use their own runs; only eligible reservations may move.
 	 * @param edge Current native route.
 	 * @returns Whether this pass may move its label.
 	 */
 	private allows(edge: DrawingEdge): boolean {
-		return (
-			this.eligible === undefined ||
-			(this.eligible.has(edge.edge.id) &&
-				edge.curve.segments.length === 1 &&
-				edge.curve.segments[0]?.kind === "line")
-		);
+		return this.eligible === undefined || this.eligible.has(edge.edge.id);
 	}
 
 	/**
@@ -358,10 +150,76 @@ class LabelPlacement {
 			(one, other) =>
 				one.reach - other.reach || other.length - one.length || one.index - other.index,
 		)[0];
-		if (chosen === undefined || !this.boundChannel(edge, chosen.box)) return;
+		const selected =
+			chosen ?? (this.eligible === undefined ? undefined : this.channelCandidate(edge));
+		if (selected) this.accept(edge, selected);
+	}
+
+	/**
+	 * Retain the run orientation with an accepted physical waypoint.
+	 * @param edge Native relationship.
+	 * @param chosen Feasible badge placement on its own route.
+	 */
+	private accept(edge: DrawingEdge, chosen: Candidate): void {
+		if (!this.boundChannel(edge, chosen.box)) return;
 		this.accepted.add(edge.edge.id);
-		this.labels.set(edge.edge.id, chosen.box);
+		this.labels.set(
+			edge.edge.id,
+			this.eligible === undefined
+				? chosen.box
+				: { ...chosen.box, axis: chosen.axis, pinAlign: edge.curve.segments.length === 1 },
+		);
 		this.grownLabels.set(edge.edge.id, inflate(chosen.box, this.labelAir));
+	}
+
+	/** Restore the entire reservation set after a conflicting proposal. */
+	private reset(): void {
+		this.labels.clear();
+		this.grownLabels.clear();
+		this.accepted.clear();
+		this.bounds.clear();
+		for (const [id, box] of this.original) {
+			this.labels.set(id, box);
+			this.grownLabels.set(id, inflate(box, this.labelAir));
+		}
+	}
+	/**
+	 * Remove an unroundable sideways step by aligning the existing row to its own channel.
+	 * Larger established detours retain their original reservation; this is bounded
+	 * by the space two fixed-radius bends require, not another placement search.
+	 * @param edge Native relationship whose reserved row remains fixed.
+	 * @returns Nearest clear channel correction, when one fits.
+	 */
+	private channelCandidate(edge: DrawingEdge): Candidate | undefined {
+		const original = this.original.get(edge.edge.id);
+		if (!original) return undefined;
+		const ends = [edge.curve.from, pointAt(edge.curve, 1)] as const;
+		const others = [...this.grownLabels]
+			.filter(([id]) => id !== edge.edge.id)
+			.map(([, box]) => box);
+		return this.pieces
+			.filter((p) => p.edgeId === edge.edge.id && p.axis === "y")
+			.map((piece) => {
+				const box = { ...original, x: piece.box.x - original.width / 2 };
+				return {
+					axis: "y" as const,
+					box,
+					index: piece.index,
+					length: piece.box.height,
+					reach: reachOf(box, ends),
+				};
+			})
+			.filter(
+				(c) =>
+					Math.abs(c.box.x - original.x) > 0.000001 &&
+					Math.abs(c.box.x - original.x) < 2 * BEND_RADIUS &&
+					insidePage(c.box, this.drawing) &&
+					![...this.grownCards, ...others].some((box) => overlaps(c.box, box)),
+			)
+			.toSorted(
+				(a, b) =>
+					Math.abs(a.box.x - original.x) - Math.abs(b.box.x - original.x) || a.index - b.index,
+			)[0];
 	}
 
 	/**
@@ -371,7 +229,12 @@ class LabelPlacement {
 	 * @returns Whether its original connected free interval exists.
 	 */
 	private boundChannel(edge: DrawingEdge, box: Box): boolean {
-		if (this.eligible === undefined || edge.curve.from.x !== pointAt(edge.curve, 1).x) return true;
+		if (
+			this.eligible === undefined ||
+			edge.curve.segments.length !== 1 ||
+			edge.curve.from.x !== pointAt(edge.curve, 1).x
+		)
+			return true;
 		const intervals = clearIntervals(
 			[[DIAGRAM_MARGIN, this.drawing.width - DIAGRAM_MARGIN - box.width]],
 			{ groups: [this.grownCards], pieces: [], ownPiece: -1 },
@@ -413,15 +276,13 @@ class LabelPlacement {
 	}
 
 	/**
-	 * Anchors become native obstacles, so other routes may move around them.
+	 * Native waypoints preserve the same clear foreign runs as natural badges.
 	 * @param id Relationship whose own label and run are excluded.
 	 * @returns Shared obstacle groups for this relationship.
 	 */
 	private obstacles(id: string): Omit<Obstacles, "ownPiece"> {
 		const natural = this.eligible === undefined;
-		const pieces = natural
-			? this.grownPieces
-			: this.grownPieces.filter((_, index) => this.pieces[index]!.edgeId === id);
+		const pieces = this.grownPieces;
 		const labels = natural
 			? [...this.grownLabels].filter(([other]) => other !== id).map(([, box]) => box)
 			: [];
@@ -465,7 +326,7 @@ class LabelPlacement {
 	 * Return only proposals that passed complete reservation-set validation.
 	 * @returns Accepted native waypoint boxes, with rejected proposals absent.
 	 */
-	anchors(): ReadonlyMap<string, Box> {
+	anchors(): ReadonlyMap<string, LabelAnchor> {
 		return new Map([...this.accepted].map((id) => [id, this.labels.get(id)!]));
 	}
 }
@@ -511,10 +372,27 @@ function anchorLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
 	eligible: ReadonlySet<string>,
-): ReadonlyMap<string, Box> {
+): ReadonlyMap<string, LabelAnchor> {
 	const placement = new LabelPlacement(drawing, measured, eligible);
 	placement.place();
 	return placement.anchors();
 }
 
-export { placeLabelsOnRuns, anchorLabelsOnRuns };
+/**
+ * Correct only unroundable channel offsets while retaining existing label rows.
+ * @param drawing Native routes with their current reserved boxes.
+ * @param measured Measured semantic labels.
+ * @param eligible Forced labels whose final routes lack bend clearance.
+ * @returns One atomic set of small physical channel corrections.
+ */
+function alignLabelRows(
+	drawing: ArchitectureDrawing,
+	measured: MeasuredArchitecture["labels"],
+	eligible: ReadonlySet<string>,
+): ReadonlyMap<string, LabelAnchor> {
+	const placement = new LabelPlacement(drawing, measured, eligible);
+	placement.alignRows();
+	return placement.anchors();
+}
+
+export { placeLabelsOnRuns, anchorLabelsOnRuns, alignLabelRows };
