@@ -107,8 +107,9 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 	).toBe(false);
 });
 
-// Reduced from Cloud platform-strangler: a hero route arrived at the IIS
-// frame on an eight-unit leg, with its arrowhead drawn over the square bend.
+// Reduced from Cloud platform-strangler: two relationship kinds put the hero
+// arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
+// was shorter than the visible arrowhead and left no room for the bend.
 test("an incoming frame arrow has a whole head and rounded bend before its endpoint", async () => {
 	const content = VariantContentSchema.parse(frameApproach);
 	const drawing = await renderArchitecture({ content, theme: "light" });

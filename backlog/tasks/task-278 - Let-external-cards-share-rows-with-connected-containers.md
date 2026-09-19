@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 15:20'
+updated_date: '2026-09-19 15:34'
 labels:
   - renderer
   - layout
@@ -87,4 +87,10 @@ Acceptance updated to the user-selected Phone A one-column reading. The previous
 User selected B: geometrically aligned native pin choices after direct A/B gateway comparison. Preserve B while addressing remaining short arrow approaches and label detours; fixed-port alternative remains captured. B maintains zero measured mixed-kind collinear overlap across six actual readings and turns both gateway-to-Portal entries into straight lines.
 
 User asks to improve accepted B by balancing the offset between exit and entry. Compare a balanced aligned attachment across both card faces rather than placing nearly all offset at one endpoint; preserve straightness and relationship-type clearance. Baseline full bun run check and24casecorpus have passed; floating B and balanced candidate remain separate pending final verification.
+
+User selected C: balanced offsets. US-to-Portal now distributes offset equally (about81.5px per card) rather than5px/158px in B, while remaining straight. Candidate prefers the mean of endpoint centers within the clear overlap; B candidates remain fallback. No pin-cost ABI addition or new tuning weight was needed. Allfive reported variants retain clear cards/labels and zero measured mixed-kind collinear overlaps.
+
+Balanced aligned ports exposed expensive unhelpful fold candidates on Flask map 2. Candidate eligibility now checks the actual balanced card/frame footprint of the settled baseline before native routing and label settlement, preserving hierarchy and allowing feasible count gaps. This is a proposal eligibility rule on current geometry, not a claim that future label-driven placement is monotonic. Production Flask2 retained 2137x1553 while falling to 140 native solves and about 0.91s; proposed 2/3/4-column footprints have fit .440/.328/.237 against required .608. Phone1, full branching mTLS2, long24three and reading tests pass.
+
+New live screenshots after C integration: common-weblib gray Uses ambient helpers routes make label-induced S-bends, purple generated-model departures are square; current-cloud-infrastructure Observed VM-to-DB entries have tiny/square side turns even where source and target spans overlap. Investigate forced label positions overriding aligned ports on these exact edges before adding more approach geometry. Screenshots /tmp/codex-clipboard-7dbde3e7-6cca-421b-8285-9a7ab05300c6.png and /tmp/codex-clipboard-65175574-5b82-4f65-bb10-7c2e71241d1d.png.
 <!-- SECTION:NOTES:END -->

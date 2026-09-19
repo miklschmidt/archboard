@@ -520,7 +520,7 @@
 					"expectedUse": "author real relationship kinds; one kind may share a port while different kinds use distinct ports and tracks",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts"
+					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts"
 				},
 				{
 					"path": "automatic downward column wrapping",

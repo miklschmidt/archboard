@@ -1,6 +1,18 @@
 {
 	"nodes": [
 		{
+			"id": "lqxzyMcC",
+			"name": "Azure Standard Load Balancer",
+			"kind": "azure",
+			"responsibility": "Keeps its public IP as the healthy secondary for automatic DNS failover to IIS."
+		},
+		{
+			"id": "hlSwOqFY",
+			"name": "DB 1",
+			"kind": "datastore",
+			"responsibility": "Existing shared production database."
+		},
+		{
 			"id": "NQs6vUYx",
 			"name": "DB 2",
 			"kind": "datastore",
@@ -19,22 +31,8 @@
 			"responsibility": "Four production VMs each carry the complete IIS API portfolio."
 		},
 		{
-			"id": "6cWbMS1Q",
-			"name": "IIS VM 1",
-			"kind": "service",
-			"responsibility": "Legacy API's",
-			"parent": "j6TdeSth"
-		},
-		{
 			"id": "TqDUcCHV",
 			"name": "IIS VM 2",
-			"kind": "service",
-			"responsibility": "Legacy API's",
-			"parent": "j6TdeSth"
-		},
-		{
-			"id": "WMA3YdsD",
-			"name": "IIS VM 3",
 			"kind": "service",
 			"responsibility": "Legacy API's",
 			"parent": "j6TdeSth"
@@ -55,6 +53,14 @@
 	],
 	"edges": [
 		{
+			"id": "uDMYsoQs",
+			"from": "yPJ2pkH0",
+			"to": "NQs6vUYx",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal"
+		},
+		{
 			"id": "g1zvz5QO",
 			"from": "t2QlUi5k",
 			"to": "j6TdeSth",
@@ -71,12 +77,36 @@
 			"emphasis": "hero"
 		},
 		{
-			"id": "umAHrW7i",
-			"from": "WMA3YdsD",
+			"id": "FgEsApsS",
+			"from": "TqDUcCHV",
+			"to": "hlSwOqFY",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal"
+		},
+		{
+			"id": "7C6xGZco",
+			"from": "Pt2vjo40",
+			"to": "hlSwOqFY",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal"
+		},
+		{
+			"id": "hnLcA0yR",
+			"from": "Pt2vjo40",
 			"to": "NQs6vUYx",
 			"kind": "data",
 			"label": "Database connection",
 			"emphasis": "normal"
+		},
+		{
+			"id": "ghAjlN21",
+			"from": "lqxzyMcC",
+			"to": "j6TdeSth",
+			"kind": "other",
+			"label": "L4 forwarding",
+			"emphasis": "hero"
 		}
 	]
 }

@@ -249,6 +249,14 @@ visual comparison. Different relationship kinds are separated in the native
 router before crossing ink is painted; crossing decoration cannot repair
 coincident routes.
 
+Ordinary card faces with overlapping spans now offer a balanced aligned
+attachment, with other clear geometric candidates as fallback. Relationship
+kind separation still applies. The user selected this after comparing fixed
+ports, aligned ports and balanced offsets; there are no board-specific rules.
+Incoming side ports on a frame use its body below the title, keeping the
+existing head-and-bend corridor effective instead of bypassing it through a
+title-band pin.
+
 Long branching paths can wrap into adjacent downward columns. The renderer
 keeps whole frames and overlapping rows together, retains side-entry sources
 with their consumers, settles each candidate's labels and routes, and chooses
@@ -270,44 +278,44 @@ fit is the scale at which the complete drawing fits the reference pane.
 
 | Board / variant                           | Before size | After size | Fit before → after | Route length before → after | Bends/route before → after | Crossings before → after |
 | ----------------------------------------- | ----------- | ---------- | ------------------ | --------------------------- | -------------------------- | ------------------------ |
-| flask-map-1 fixture                       | 2311x1804   | 2180x1233  | 0.498 → 0.583      | 24024 → 14232               | 1.92 → 3.36                | 33 → 6                   |
-| flask-map-2 fixture                       | 2916x1653   | 2201x1553  | 0.436 → 0.578      | 36241 → 18621               | 1.81 → 3.35                | 34 → 15                  |
-| flask-map-3 fixture                       | 2230x1790   | 2189x1136  | 0.502 → 0.581      | 31249 → 19443               | 2.00 → 4.45                | 39 → 21                  |
-| phone-ownership fixture                   | 921x1034    | 796x1051   | 0.869 → 0.855      | 1086 → 1336                 | 0.67 → 2.00                | 0 → 0                    |
-| public-api-independent fixture            | 1919x3259   | 2538x1227  | 0.276 → 0.501      | 20550 → 9839                | 1.92 → 2.56                | 12 → 1                   |
-| system-map fixture                        | 2859x2161   | 2756x1383  | 0.416 → 0.462      | 45320 → 22534               | 2.38 → 3.56                | 36 → 28                  |
-| Agent workbench *Current architecture     | 1928x2208   | 2147x1620  | 0.407 → 0.555      | 17490 → 13945               | 2.00 → 2.90                | 10 → 10                  |
-| Archboard *Current architecture           | 1794x797    | 1477x754   | 0.709 → 0.861      | 4553 → 3260                 | 1.33 → 3.44                | 0 → 2                    |
-| Board persistence *Current architecture   | 2089x782    | 1658x852   | 0.609 → 0.767      | 6733 → 4971                 | 1.33 → 2.67                | 7 → 1                    |
-| Board rasterizer *Initial                 | 1826x1202   | 1623x883   | 0.697 → 0.784      | 5258 → 2797                 | 1.27 → 2.36                | 1 → 0                    |
-| Board viewer *Current architecture        | 1374x2175   | 1602x1529  | 0.413 → 0.588      | 10781 → 7960                | 1.89 → 3.67                | 7 → 9                    |
-| Browser application *Current architecture | 1964x1118   | 1486x1133  | 0.648 → 0.793      | 7282 → 5958                 | 1.71 → 2.86                | 4 → 1                    |
-| Canvas server *Current architecture       | 2406x1734   | 2237x1171  | 0.518 → 0.569      | 25511 → 14556               | 2.00 → 3.35                | 26 → 16                  |
-| Canvas server Readable layout             | 2406x1734   | 2237x1171  | 0.518 → 0.569      | 25511 → 14556               | 2.00 → 3.35                | 26 → 16                  |
-| Codex session *Current architecture       | 1459x1370   | 1671x1015  | 0.656 → 0.761      | 6683 → 5707                 | 1.67 → 3.08                | 3 → 3                    |
-| Codex workhorse *Initial                  | 2191x798    | 2428x623   | 0.581 → 0.524      | 8424 → 5732                 | 1.23 → 3.31                | 3 → 3                    |
-| Command dispatch *Current architecture    | 1521x836    | 1464x767   | 0.836 → 0.869      | 2953 → 2040                 | 1.00 → 1.12                | 0 → 1                    |
-| Command interface *Current architecture   | 3002x1692   | 2597x1172  | 0.424 → 0.490      | 18116 → 10191               | 1.81 → 1.71                | 13 → 0                   |
-| Renderer layout Initial                   | 972x500     | 876x454    | 1.000 → 1.000      | 1370 → 1065                 | 1.20 → 2.40                | 0 → 0                    |
-| Renderer layout *Readable layout          | 2279x774    | 2201x840   | 0.558 → 0.578      | 6363 → 5883                 | 1.23 → 2.77                | 0 → 2                    |
-| Semantic renderer *Current architecture   | 1606x1638   | 1858x1385  | 0.549 → 0.649      | 18527 → 9157                | 1.73 → 2.86                | 15 → 4                   |
-| Semantic renderer Readable layout         | 1606x1638   | 1850x1385  | 0.549 → 0.649      | 18527 → 9322                | 1.73 → 2.77                | 15 → 5                   |
-| Skill evaluation *Initial                 | 3188x1207   | 3352x1102  | 0.399 → 0.379      | 13323 → 10659               | 1.25 → 2.04                | 3 → 1                    |
-| Voice coordinator *Initial                | 2593x830    | 2083x717   | 0.491 → 0.611      | 6376 → 3838                 | 1.54 → 3.38                | 2 → 1                    |
+| flask-map-1 fixture                       | 2311x1804   | 2158x1128  | 0.498 → 0.589      | 24024 → 13637               | 1.92 → 2.96                | 33 → 8                   |
+| flask-map-2 fixture                       | 2916x1653   | 2137x1553  | 0.436 → 0.579      | 36241 → 18663               | 1.81 → 3.39                | 34 → 19                  |
+| flask-map-3 fixture                       | 2230x1790   | 2400x1136  | 0.502 → 0.530      | 31249 → 19896               | 2.00 → 3.52                | 39 → 30                  |
+| phone-ownership fixture                   | 921x1034    | 796x1051   | 0.869 → 0.855      | 1086 → 866                  | 0.67 → 1.00                | 0 → 0                    |
+| public-api-independent fixture            | 1919x3259   | 2512x1227  | 0.276 → 0.506      | 20550 → 9589                | 1.92 → 1.56                | 12 → 4                   |
+| system-map fixture                        | 2859x2161   | 2756x1383  | 0.416 → 0.462      | 45320 → 21769               | 2.38 → 3.41                | 36 → 19                  |
+| Agent workbench *Current architecture     | 1928x2208   | 2147x1620  | 0.407 → 0.555      | 17490 → 13521               | 2.00 → 2.25                | 10 → 10                  |
+| Archboard *Current architecture           | 1794x797    | 1477x754   | 0.709 → 0.861      | 4553 → 2885                 | 1.33 → 2.89                | 0 → 1                    |
+| Board persistence *Current architecture   | 2089x782    | 1658x852   | 0.609 → 0.767      | 6733 → 4541                 | 1.33 → 2.07                | 7 → 1                    |
+| Board rasterizer *Initial                 | 1826x1202   | 1623x883   | 0.697 → 0.784      | 5258 → 2383                 | 1.27 → 1.82                | 1 → 0                    |
+| Board viewer *Current architecture        | 1374x2175   | 1602x1529  | 0.413 → 0.588      | 10781 → 7676                | 1.89 → 2.56                | 7 → 7                    |
+| Browser application *Current architecture | 1964x1118   | 1486x1133  | 0.648 → 0.793      | 7282 → 5300                 | 1.71 → 1.50                | 4 → 1                    |
+| Canvas server *Current architecture       | 2406x1734   | 1749x1234  | 0.518 → 0.727      | 25511 → 12625               | 2.00 → 3.09                | 26 → 14                  |
+| Canvas server Readable layout             | 2406x1734   | 1749x1234  | 0.518 → 0.727      | 25511 → 12625               | 2.00 → 3.09                | 26 → 14                  |
+| Codex session *Current architecture       | 1459x1370   | 1671x1015  | 0.656 → 0.761      | 6683 → 5660                 | 1.67 → 2.92                | 3 → 3                    |
+| Codex workhorse *Initial                  | 2191x798    | 2428x623   | 0.581 → 0.524      | 8424 → 5463                 | 1.23 → 3.15                | 3 → 3                    |
+| Command dispatch *Current architecture    | 1521x836    | 1464x767   | 0.836 → 0.869      | 2953 → 1932                 | 1.00 → 1.12                | 0 → 1                    |
+| Command interface *Current architecture   | 3002x1692   | 2940x1172  | 0.424 → 0.433      | 18116 → 10313               | 1.81 → 1.00                | 13 → 0                   |
+| Renderer layout Initial                   | 972x500     | 876x454    | 1.000 → 1.000      | 1370 → 855                  | 1.20 → 1.40                | 0 → 0                    |
+| Renderer layout *Readable layout          | 2279x774    | 2201x840   | 0.558 → 0.578      | 6363 → 5501                 | 1.23 → 2.00                | 0 → 2                    |
+| Semantic renderer *Current architecture   | 1606x1638   | 1856x1385  | 0.549 → 0.649      | 18527 → 8470                | 1.73 → 2.18                | 15 → 2                   |
+| Semantic renderer Readable layout         | 1606x1638   | 1783x1385  | 0.549 → 0.649      | 18527 → 8531                | 1.73 → 2.45                | 15 → 6                   |
+| Skill evaluation *Initial                 | 3188x1207   | 3352x1102  | 0.399 → 0.379      | 13323 → 9998                | 1.25 → 1.50                | 3 → 1                    |
+| Voice coordinator *Initial                | 2593x830    | 2083x717   | 0.491 → 0.611      | 6376 → 3101                 | 1.54 → 2.85                | 2 → 1                    |
 
-Public API improves fit by 82% and cuts route length by 52%; its bends rise
-from 1.92 to 2.56 per relationship and crossings fall from 12 to one. The user
+Public API improves fit by 84% and cuts route length by 53%; bends fall
+from 1.92 to 1.56 per relationship and crossings fall from 12 to four. The user
 selected Phone's compact one-column reading over the marginally better fit of
-a two-column version. Its fit is 1.6% lower and routes 23% longer than the
-immediately preceding renderer, but fit remains 13% better and routes 18%
+a two-column version. Its fit is 1.6% lower and routes 20% shorter than the
+immediately preceding renderer; fit remains 13% better and routes 47%
 shorter than the original isolated experiment's baseline.
 
-Across the corpus, total route length falls 40% and crossings fall from 289 to 146. All 24 drawings have zero routes through cards and zero off-route labels.
+Across the corpus, total route length falls 43% and crossings fall from 289 to 147. All 24 drawings have zero routes through cards and zero off-route labels.
 Beyond a 2% tolerance, 20 drawings improve fit and two lose fit; one has larger
-area and 23 have more bends than ELK. Total page area falls 27%. These metrics
-expose the remaining cost of fixed attachment positions; aligned native port
-candidates are being compared separately before adoption. Measurements remain
-available through `measure.ts`; previous baselines are retained.
+area and 21 have more bends than ELK. Total page area falls 28%. These numbers
+include the user-selected balanced aligned ports and early rejection of
+unhelpful column footprints. Forced-label detours remain under investigation.
+Measurements remain available through `measure.ts`; previous baselines are retained.
 
 The corpus tests retain semantic completeness, card clearance and labels on their
 own runs. Focused label tests cover actual detours and proximity; the corpus
