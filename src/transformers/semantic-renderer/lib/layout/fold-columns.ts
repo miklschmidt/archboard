@@ -102,34 +102,75 @@ function spansOf(bands: readonly Band[]): Box[][] {
 }
 
 /**
- * Balance one column count without enumerating combinations of cut positions.
+ * Keep width/height tradeoffs until the complete partition can be compared by fit.
  * @param bands Indivisible horizontal bands.
  * @param count Requested columns.
  * @param gap Space for continuation routes and labels.
- * @returns One partition minimizing its tallest column, then its total width.
+ * @returns The best pane fit, with shorter then narrower columns breaking ties.
  */
 function partitionOf(bands: readonly Band[], count: number, gap: number): Partition | undefined {
 	const spans = spansOf(bands);
-	let previous = new Map<number, Partition>([[0, { height: 0, width: 0, ends: [] }]]);
+	let previous = new Map<number, Partition[]>([[0, [{ height: 0, width: 0, ends: [] }]]]);
 	for (let column = 1; column <= count; column++) {
-		const next = appendColumn(previous, spans, column, bands.length - (count - column), gap);
+		const next = appendColumn(
+			previous,
+			spans,
+			column,
+			bands.length - (count - column),
+			column === 1 ? 0 : gap,
+		);
 		previous = next;
 	}
-	return previous.get(bands.length);
+	return previous
+		.get(bands.length)
+		?.reduce((best, candidate) => (better(candidate, best) ? candidate : best));
 }
 
 /**
- * Compare balanced prefixes without adding a weighted score.
- * @param candidate The next prefix.
- * @param best The prefix already kept.
- * @returns Whether the candidate has a shorter tallest column or ties with less width.
+ * Include the drawing's margins when fitting its column footprint.
+ * @param partition Complete column footprint.
+ * @returns Its scale in the reference pane.
  */
-function better(candidate: Partition, best: Partition | undefined): boolean {
+function partitionFit(partition: Partition): number {
+	return fitIn({
+		width: partition.width + 2 * DIAGRAM_MARGIN,
+		height: partition.height + 2 * DIAGRAM_MARGIN,
+	});
+}
+
+/**
+ * Compare complete partitions in the same pane as the resulting drawing.
+ * @param candidate The next complete partition.
+ * @param best The complete partition already kept.
+ * @returns Whether fit improves, then height or width breaks an equal-fit tie.
+ */
+function better(candidate: Partition, best: Partition): boolean {
+	const difference = partitionFit(candidate) - partitionFit(best);
 	return (
-		best === undefined ||
-		candidate.height < best.height ||
-		(candidate.height === best.height && candidate.width < best.width)
+		difference > 0 ||
+		(difference === 0 &&
+			(candidate.height < best.height ||
+				(candidate.height === best.height && candidate.width < best.width)))
 	);
+}
+
+/**
+ * Drop a prefix only when another is no worse in either dimension.
+ * @param partitions Tradeoffs already retained at the same band and column count.
+ * @param candidate Another prefix with the same remaining work.
+ * @returns The nondominated prefixes; equal geometry retains the earlier cuts.
+ */
+function retain(partitions: Partition[], candidate: Partition): Partition[] {
+	if (
+		partitions.some((other) => other.height <= candidate.height && other.width <= candidate.width)
+	)
+		return partitions;
+	return [
+		...partitions.filter(
+			(other) => other.height < candidate.height || other.width < candidate.width,
+		),
+		candidate,
+	];
 }
 
 /**
@@ -138,34 +179,36 @@ function better(candidate: Partition, best: Partition | undefined): boolean {
  * @param spans Every consecutive band's bounds.
  * @param column The new column number.
  * @param limit Last end leaving room for remaining columns.
- * @param gap Space between columns.
- * @returns Best balanced prefix at each possible end.
+ * @param gap Space before this column, zero for the first.
+ * @returns Nondominated prefixes at each possible end.
  */
 function appendColumn(
-	previous: ReadonlyMap<number, Partition>,
+	previous: ReadonlyMap<number, Partition[]>,
 	spans: readonly Box[][],
 	column: number,
 	limit: number,
 	gap: number,
-): Map<number, Partition> {
-	const next = new Map<number, Partition>();
+): Map<number, Partition[]> {
+	const next = new Map<number, Partition[]>();
 	for (let end = column; end <= limit; end++) {
-		for (const [start, prefix] of previous) {
+		for (const [start, prefixes] of previous) {
 			if (start >= end) continue;
 			const box = spans[start]![end]!;
-			const candidate = {
-				height: Math.max(prefix.height, box.height),
-				width: prefix.width + box.width + (column === 1 ? 0 : gap),
-				ends: [...prefix.ends, end],
-			};
-			if (better(candidate, next.get(end))) next.set(end, candidate);
+			for (const prefix of prefixes) {
+				const candidate = {
+					height: Math.max(prefix.height, box.height),
+					width: prefix.width + box.width + gap,
+					ends: [...prefix.ends, end],
+				};
+				next.set(end, retain(next.get(end) ?? [], candidate));
+			}
 		}
 	}
 	return next;
 }
 
 /**
- * Admit counts whose proposed card footprint can reach the required pane fit.
+ * Bound candidate counts using fixed card widths, before fresh label settlement.
  * @param graph Complete native downward placement.
  * @param minimumFit The minimum fit another column must reach.
  * @returns Feasible additional column counts; one column is always the baseline.
@@ -174,11 +217,15 @@ export function foldColumnCounts(graph: ElkNode, minimumFit = fitIn(boxOf(graph)
 	const bands = bandsOf(graph);
 	if (bands.length < 2) return [];
 	const extent = boxOf(graph);
-	// Adjacent downward columns address a height bottleneck. A width-limited
-	// reading does not need more horizontal space or extra native route solves.
+	// Wrapping addresses a height bottleneck. A width-limited reading does
+	// not call for more horizontal space or additional native route solves.
 	if (REFERENCE_PANE.width / extent.width <= REFERENCE_PANE.height / extent.height) return [];
 	if (minimumFit > 1 || fitIn(extent) === 1) return [];
-	const widths = [...nodesById(graph).values()].map((node) => boxOf(node).width);
+	// Every column holds at least one fixed-size leaf card. Frame widths and
+	// row offsets can shrink when labels settle afresh, so neither is a bound.
+	const widths = [...nodesById(graph).values()]
+		.filter((node) => !node.children?.length)
+		.map((node) => boxOf(node).width);
 	const narrowest = Math.min(...widths);
 	const widest = Math.max(...widths);
 	const available = REFERENCE_PANE.width / minimumFit - 2 * DIAGRAM_MARGIN;
@@ -186,13 +233,7 @@ export function foldColumnCounts(graph: ElkNode, minimumFit = fitIn(boxOf(graph)
 		bands.length,
 		1 + Math.floor((available - widest) / (narrowest + COLUMN_GAP)),
 	);
-	return Array.from({ length: Math.max(0, limit - 1) }, (_, index) => index + 2).filter((count) => {
-		// Check the actual balanced fold before paying for label settlement.
-		// Later reservations may change placement; only promising proposals
-		// enter that search, using the same settled geometry as their bands.
-		const proposed = foldColumns(graph, count);
-		return proposed !== undefined && fitIn(boxOf(proposed)) >= minimumFit;
-	});
+	return Array.from({ length: Math.max(0, limit - 1) }, (_, index) => index + 2);
 }
 
 /**

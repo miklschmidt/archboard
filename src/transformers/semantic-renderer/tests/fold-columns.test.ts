@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
+import { fitIn } from "@/shared/shell-geometry/index";
+import { COLUMN_GAP, DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
 import { foldColumnCounts, foldColumns } from "@/transformers/semantic-renderer/layout";
 
 /**
@@ -105,8 +107,9 @@ test("candidate counts follow the pane and indivisible bands rather than a fixed
 		})),
 	};
 	expect(foldColumnCounts(graph)).toContain(3);
-	// Two columns remain too tall even though three can fit completely.
-	expect(foldColumnCounts(graph, 1)).toEqual([3]);
+	// The measured cards rule out four columns. Two and three must settle
+	// their labels afresh before their completed fit can be compared.
+	expect(foldColumnCounts(graph, 1)).toEqual([2, 3]);
 	expect(foldColumnCounts({ ...graph, width: 4000 })).toEqual([]);
 	expect(foldColumns(graph, 3)!.height!).toBeLessThan(foldColumns(graph, 2)!.height!);
 	expect(
@@ -126,7 +129,7 @@ test("candidate counts follow the pane and indivisible bands rather than a fixed
 	expect(foldColumns(framed, 2)).toBeUndefined();
 });
 
-test("broad branching rows reject folds whose combined footprint cannot improve fit", () => {
+test("settled row widths cannot reject candidates before their fresh label solve", () => {
 	const nodes = Array.from({ length: 6 }, (_, row) =>
 		[24, 924].map((x, branch) => ({
 			id: `n${row}${branch}`,
@@ -151,8 +154,54 @@ test("broad branching rows reject folds whose combined footprint cannot improve 
 			})),
 		),
 	};
-	expect(foldColumns(graph, 2)).toBeDefined();
-	expect(foldColumnCounts(graph, 0.61)).toEqual([]);
+	const estimate = foldColumns(graph, 2)!;
+	expect(fitIn({ width: estimate.width!, height: estimate.height! })).toBeLessThan(0.61);
+	expect(foldColumnCounts(graph, 0.61)).toContain(2);
+});
+
+test("expandable frame widths do not bound the number of candidate columns", () => {
+	const graph = branching();
+	graph.children![3]!.width = 2400;
+	graph.width = 2440;
+	graph.height = 4000;
+	expect(foldColumnCounts(graph, 0.7)).toContain(2);
+});
+
+test("a narrower taller prefix survives until its complete partition fits the pane better", () => {
+	const widths = [300, 300, 600, 900, 600, 400, 300];
+	const heights = [100, 400, 700, 100, 500, 400, 100];
+	let top = 0;
+	const graph: ElkNode = {
+		id: "root",
+		children: widths.map((width, index) => {
+			const node = { id: `n${index}`, x: 0, y: top, width, height: heights[index]! };
+			top += node.height + 40;
+			return node;
+		}),
+		edges: widths.slice(1).map((_, index) => ({
+			id: `e${index}`,
+			sources: [`n${index}`],
+			targets: [`n${index + 1}`],
+		})),
+	};
+	const folded = foldColumns(graph, 3)!;
+	// Cuts after the second and fifth cards keep the 900-wide card in one
+	// column. Minimizing prefix height (or prefix fit) loses this split.
+	expect(folded.width).toBe(300 + 900 + 400 + 2 * COLUMN_GAP + 2 * DIAGRAM_MARGIN);
+	expect(folded.height).toBe(1380 + 2 * DIAGRAM_MARGIN);
+	const columns = folded.children!.map((node) => node.x);
+	expect(columns).toEqual([
+		columns[0],
+		columns[0],
+		columns[2],
+		columns[2],
+		columns[2],
+		columns[5],
+		columns[5],
+	]);
+	expect(new Set(columns).size).toBe(3);
+	const reordered = foldColumns({ ...graph, children: graph.children!.toReversed() }, 3)!;
+	expect(reordered.children!.toReversed()).toEqual(folded.children!);
 });
 
 test("a side-entry source stays with its consumer without changing native offsets", () => {
