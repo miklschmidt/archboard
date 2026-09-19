@@ -32,11 +32,11 @@ archboard semantic rasterize "Board lease" --view Leases --out current.png
 archboard semantic rasterize "Board lease" --view Leases --variant "Lease table" --out proposal.png
 ```
 
-The proposal carries every subject of its predecessor with the same ids, so
-the comparison is exact: kept ids read as continuing, new subjects as added,
-removed ids as removed. Views belong to the board, so both pictures go through
-the same view and a removed subject stays drawn as removed. The current side
-comes from the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
+The proposal carries every subject of its predecessor with the same ids, so the
+comparison is exact: kept ids read as continuing, new subjects as added, removed
+ids as removed. Views belong to the board, so both pictures go through the same
+view and a removed subject stays drawn as removed. The current side comes from
+the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
 exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
 (`board-lock-state.ts`), and `watchBoardLocks` polls those files because a file
 cannot notify another canvas. The table is a proposal nobody has built, so it
@@ -56,17 +56,15 @@ stays unbound.
    parts removed, the parts added, and every relationship the answer does not
    call `unchanged`, with where it now lands. Here it says `Lock files` and
    `Lock watcher` are `removed`, `Lease table` is `added`, and both calls are
-   `changed` with one field each — `to` moved from `Lock files` to
-   `Lease table` — so the report is "the calls from `holdBoard` and
-   `releaseHold` are the same two relationships, now landing on the table",
-   not "two relationships went and two arrived". A relationship whose endpoint
-   moved is the change the comparison exists to show, so name it. The command
-   reads a variant against the one it came from; a root architecture came from
-   nothing and is refused.
-   When the proposal adds or changes a board view, read
-   [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md)
-   for the two meanings of a selection scope before writing it; views belong
-   to the board and apply to both pictures.
+   `changed` with one field each — `to` moved from `Lock files` to `Lease table`
+   — so the report is "the calls from `holdBoard` and `releaseHold` are the same
+   two relationships, now landing on the table", not "two relationships went and
+   two arrived". A relationship whose endpoint moved is the change the
+   comparison exists to show, so name it. The command reads a variant against
+   the one it came from; a root architecture came from nothing and is refused.
+   When the proposal adds or changes a board view, read [sequences, views and
+   walkthroughs](references/sequences-views-walkthroughs.md) for the two
+   meanings of a selection scope before writing it.
 
 4. Only when asked, adopt with the version returned by the proposal edit:
    `archboard semantic adopt "Board lease" --variant "Lease table" --reason "Leases moved into a table the canvas can be notified from" --expect-version 4 --doing "adopting the lease table"`.
@@ -74,5 +72,5 @@ stays unbound.
    nothing is renamed.
 
 Read [variants](references/variants.md) for what the comparison counts, for a
-proposal that holds disagreements after its predecessor moved (`semantic
-resolve`), and for adoption rules.
+proposal that holds disagreements after its predecessor moved
+(`semantic resolve`), and for adoption rules.

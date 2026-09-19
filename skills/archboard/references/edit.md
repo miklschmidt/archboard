@@ -64,9 +64,7 @@ calls it.
 4. Check the answer against your checks: the ids you meant to keep are
    unchanged, removed subjects are gone, restated subjects still carry the
    fields you kept, `version` moved by one, and nothing landed on a variant
-   you did not name. Draw and look when the picture matters. Your answer
-   names the catalogue rows the change uses and the ones you judged not to
-   apply.
+   you did not name. Draw and look when the picture matters.
 
 Read [authoring](references/authoring.md) only when the change needs it: a
 removal beyond `removeEdges`, a binding with revision evidence, group

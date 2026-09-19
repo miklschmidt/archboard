@@ -29,10 +29,9 @@ from the persisted document on purpose:
 
 - A reference is a **name, an id, or a same-write handle** (`as`). The write
   boundary resolves it; the document holds only ids.
-- A **new subject leaves `id` out**; the product mints one. A stated `id` must
-  name a subject already on the variant, or the write is refused.
-- Each restated subject **replaces its previous definition whole**, so restate
-  the fields you want to keep.
+- A **new subject leaves `id` out**, a stated `id` names one already on the
+  variant, and a restated subject **replaces its previous definition whole**
+  ([References](../SKILL.md#essentials)).
 - Everything the family owns — `schemaVersion`, `kind`, `id`, `version`,
   timestamps, variant ids, `lifecycle`, `parent`, `current`, `adoptions`,
   `reconciliation` — is an outcome of a write, never something you author.
@@ -69,8 +68,6 @@ it breaks one of them. The ones that matter while authoring:
   references readable with a warning.
 - `groups` is a set: duplicates and order do not matter on input, and the
   document stores it sorted with no duplicates, or omits it when empty.
-  Refusals name the rule and the subject, so read the refusal and repair the
-  payload rather than changing the vocabulary or inventing an id.
 
 ## Vault setup
 
