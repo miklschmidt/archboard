@@ -3,10 +3,12 @@
 // says, reads the images the prompt lists the way the real tool does (one
 // tool_use per file, an image tool_result back), and ends with a result line
 // carrying this call's usage and a structured verdict for every run the
-// prompt names. FAKE_CLAUDE_MODE changes what it does wrong.
+// prompt names. FAKE_CLAUDE_MODE changes what it does wrong as a process;
+// FAKE_GRADER_MODE what its answer lacks (fake-grader-answer.ts).
 
 import fs from "node:fs";
 import path from "node:path";
+import { fakeVerdicts, listedImages } from "@/runtime/skill-evaluation/tests/fake-grader-answer";
 
 const argv = process.argv.slice(2);
 const mode = process.env["FAKE_CLAUDE_MODE"] ?? "grade";
@@ -41,10 +43,7 @@ if (JSON.parse(flagValue("--json-schema") ?? "{}")["$schema"] !== undefined) {
 
 const sessionId = flagValue("--session-id") ?? flagValue("--resume") ?? "no-session";
 const prompt = argv.at(-1) ?? "";
-const images = [
-	...prompt.matchAll(/^Image \d+: (run-[0-9a-f]{10}), capture ([^,]+), (\S+) \(/gmu),
-].map((match) => ({ run: match[1] ?? "", capture: match[2] ?? "", file: match[3] ?? "" }));
-const runs = /Grade these runs now: ([^.]+)\./u.exec(prompt)?.[1]?.split(", ") ?? [];
+const images = listedImages(prompt);
 
 /**
  * Prints one event line.
@@ -120,37 +119,7 @@ images.forEach((image, index) => {
 	read(image.file, index, "image");
 });
 if (mode === "outside-read") read("/etc/hostname", images.length, "denied");
-const verdicts = runs.map((run) => {
-	const seen = [
-		...new Set(images.filter((image) => image.run === run).map((image) => image.capture)),
-	];
-	return {
-		run,
-		features: [
-			{
-				feature: "board.create",
-				verdict: "pass",
-				evidence: "boards/",
-				reason: "present",
-				finding: null,
-			},
-		],
-		semanticCorrectness: 8,
-		architecturalTruth: 7,
-		readability: 9,
-		unprompted: [
-			{ feature: "traffic", verdict: "missed", evidence: "boards/", reason: "runtime path bare" },
-		],
-		behaviouralCompleteness: 6,
-		summary: `graded ${run}`,
-		concerns: [],
-		visual: {
-			inspectedCaptures: seen,
-			verdict: "pass",
-			observations: seen.map((capture) => ({ capture, observation: "legible" })),
-		},
-	};
-});
+const verdicts = fakeVerdicts(prompt, images);
 const result: Record<string, unknown> = {
 	type: "result",
 	subtype: "success",

@@ -133,6 +133,34 @@ function imagesForRun(workspace: string, run: string): RunImages {
 }
 
 /**
+ * What reached the grader over several calls of one session: a picture
+ * delivered on any of them is in the session's context, so a verdict given on
+ * the last call rests on all of them. A capture counts as supplied only when
+ * every picture of it the harness offered was delivered on some call.
+ * @param offered What the harness offered for the run.
+ * @param deliveries What each call vouched for; null or absent for a call that vouches for nothing.
+ * @returns The run's combined delivery, in the order offered.
+ */
+function combinedDelivery(
+	offered: RunImages,
+	deliveries: readonly (RunImages | null | undefined)[],
+): RunImages {
+	const delivered = new Set(
+		deliveries.flatMap((delivery) => delivery?.images.map((image) => image.file) ?? []),
+	);
+	const images = offered.images.filter((image) => delivered.has(image.file));
+	return {
+		run: offered.run,
+		images,
+		suppliedCaptures: offered.suppliedCaptures.filter((label) => {
+			const pictures = offered.images.filter((image) => image.capture === label);
+			return pictures.length > 0 && pictures.every((image) => delivered.has(image.file));
+		}),
+		failures: offered.failures,
+	};
+}
+
+/**
  * Write a delivery receipt only for a successful grading call's exact verdict.
  * @param verdictFile The filed verdict.
  * @param images The images supplied on that call, or null for an unsuccessful call.
@@ -176,4 +204,4 @@ function suppliedCaptures(batchRoot: string, grader: GraderName, run: string): s
 	}
 }
 
-export { fileImageReceipt, imagesForRun, suppliedCaptures, type RunImages };
+export { combinedDelivery, fileImageReceipt, imagesForRun, suppliedCaptures, type RunImages };
