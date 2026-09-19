@@ -1,0 +1,362 @@
+{
+	"nodes": [
+		{
+			"id": "ywwZuKxy",
+			"name": "Portal API hostname",
+			"kind": "service",
+			"responsibility": "Preserves the hostname; health-checked DNS selects Platform first, then healthy IIS fallback.",
+			"description": "Proposed automatic DNS failover, requested 2026-09-19. Platform and legacy balancers keep separate public IPs. A DNS health-routing policy selects the primary while healthy and the secondary on primary failure. The authoritative provider and its integration with existing Cloudflare and regional steering must be confirmed; this is not a claim that the policy is deployed. DNS caching delays endpoint changes and existing connections are not transferred. Reference: https://learn.microsoft.com/en-us/azure/traffic-manager/traffic-manager-monitoring"
+		},
+		{
+			"id": "lqxzyMcC",
+			"name": "Azure Standard Load Balancer",
+			"kind": "external",
+			"responsibility": "Keeps its public IP as the healthy secondary for automatic DNS failover to IIS.",
+			"description": "Remains reachable and health-checked while Platform is primary. IIS must support every route and compatible data behind the failover hostname. This secondary does not accept the dedicated mTLS hostname unless equivalent device authentication is provided."
+		},
+		{
+			"id": "hlSwOqFY",
+			"name": "DB 1",
+			"kind": "datastore",
+			"responsibility": "Existing shared production database."
+		},
+		{
+			"id": "NQs6vUYx",
+			"name": "DB 2",
+			"kind": "datastore",
+			"responsibility": "Existing shared production database."
+		},
+		{
+			"id": "t2QlUi5k",
+			"name": "Platform",
+			"kind": "service",
+			"responsibility": "Checks approved devices and balances directly across IIS.",
+			"description": "Proposed device trust stays inside Platform. Failed checks are rejected; IIS still runs every API. See architecture-design/device-attestation-mtls-proposal.md and platform-migration@strangler-foundation.",
+			"drillDown": {
+				"board": "platform-migration",
+				"variant": {
+					"kind": "named",
+					"name": "strangler-foundation"
+				}
+			}
+		},
+		{
+			"id": "1yU3ivZL",
+			"name": "Approved devices",
+			"kind": "external",
+			"responsibility": "Use the dedicated secure hostname."
+		},
+		{
+			"id": "9BTlRpYl",
+			"name": "Platform Azure Load Balancer",
+			"kind": "external",
+			"responsibility": "Uses a separate public IP as the primary DNS endpoint; forwards L4 traffic.",
+			"description": "Proposed DNS cutover preserves client hostnames, not a shared public IP. No detach/attach operation is required during failover."
+		},
+		{
+			"id": "KBuciT76",
+			"name": "Partner / product traffic",
+			"kind": "external",
+			"responsibility": "Calls public hostnames; exact trunk URL was illegible in the original evidence.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+		},
+		{
+			"id": "rlrzJE6S",
+			"name": "Cloudflare proxy",
+			"kind": "external",
+			"responsibility": "Provides the edge and DNS layer.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+		},
+		{
+			"id": "XEYlnlQc",
+			"name": "Azure Traffic Manager",
+			"kind": "external",
+			"responsibility": "Steers regional entry.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+		},
+		{
+			"id": "qwI9rfoO",
+			"name": "US API Gateway",
+			"kind": "external",
+			"responsibility": "Provides the US regional entry.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+		},
+		{
+			"id": "lIeLZtS6",
+			"name": "NLC Application Gateway",
+			"kind": "external",
+			"responsibility": "Provides the NLC regional entry.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+		},
+		{
+			"id": "j6TdeSth",
+			"name": "Windows / IIS VM pool",
+			"kind": "system",
+			"responsibility": "Four production VMs each carry the complete IIS API portfolio.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"drillDown": {
+				"board": "production-iis-applications",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "6cWbMS1Q",
+			"name": "IIS VM 1",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "TqDUcCHV",
+			"name": "IIS VM 2",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "WMA3YdsD",
+			"name": "IIS VM 3",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"parent": "j6TdeSth"
+		},
+		{
+			"id": "yPJ2pkH0",
+			"name": "IIS VM 4",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"parent": "j6TdeSth"
+		}
+	],
+	"edges": [
+		{
+			"id": "TR9Ic6TU",
+			"from": "ywwZuKxy",
+			"to": "9BTlRpYl",
+			"kind": "other",
+			"label": "Public transport",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-portal-lb",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "rsKjzPuI",
+			"from": "6cWbMS1Q",
+			"to": "hlSwOqFY",
+			"kind": "data",
+			"label": "Database connection",
+			"description": "User-confirmed infrastructure mapping, 2026-09-19: IIS VMs 1 and 2 connect to DB 1; IIS VMs 3 and 4 connect to DB 2.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "uDMYsoQs",
+			"from": "yPJ2pkH0",
+			"to": "NQs6vUYx",
+			"kind": "data",
+			"label": "Database connection",
+			"description": "User-confirmed infrastructure mapping, 2026-09-19: IIS VMs 1 and 2 connect to DB 1; IIS VMs 3 and 4 connect to DB 2.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "1ABsFJsd",
+			"from": "9BTlRpYl",
+			"to": "t2QlUi5k",
+			"kind": "other",
+			"label": "L4 forwarding",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.excalidraw.md scene lead-ingress",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "d7kqpa89",
+			"from": "1yU3ivZL",
+			"to": "9BTlRpYl",
+			"kind": "other",
+			"label": "Secure device access",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.excalidraw.md scene lead-device-entry",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "g1zvz5QO",
+			"from": "t2QlUi5k",
+			"to": "j6TdeSth",
+			"kind": "http",
+			"label": "Balances directly across healthy VMs",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.excalidraw.md scene platform-direct-iis",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "GbN87DQV",
+			"from": "KBuciT76",
+			"to": "rlrzJE6S",
+			"kind": "http",
+			"label": "Public hostnames",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-traffic-cf",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "aq2tAN0X",
+			"from": "rlrzJE6S",
+			"to": "XEYlnlQc",
+			"kind": "other",
+			"label": "Regional DNS / entry path",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-cf-manager",
+			"emphasis": "normal"
+		},
+		{
+			"id": "JMgOxvOe",
+			"from": "XEYlnlQc",
+			"to": "qwI9rfoO",
+			"kind": "other",
+			"label": "US steering",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-manager-us",
+			"emphasis": "normal"
+		},
+		{
+			"id": "6xASyZPU",
+			"from": "XEYlnlQc",
+			"to": "lIeLZtS6",
+			"kind": "other",
+			"label": "NLC steering",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-manager-nlc",
+			"emphasis": "normal"
+		},
+		{
+			"id": "xCH4TAWg",
+			"from": "qwI9rfoO",
+			"to": "ywwZuKxy",
+			"kind": "http",
+			"label": "Regional entry",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-api-portal",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "ZQQI84PS",
+			"from": "lIeLZtS6",
+			"to": "ywwZuKxy",
+			"kind": "http",
+			"label": "Regional entry",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-app-portal",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "4D1O2GEw",
+			"from": "ywwZuKxy",
+			"to": "lqxzyMcC",
+			"kind": "fallback",
+			"label": "Automatic DNS failover",
+			"description": "Proposed health-checked DNS secondary, requested 2026-09-19: select the legacy balancer IP when the Platform endpoint is unhealthy and the secondary is healthy. Keep the public hostname; respect DNS cache expiry. No public-IP transfer or manual operator switch. Applies to compatible legacy HTTP hostnames, not device authentication bypass.",
+			"emphasis": "muted"
+		},
+		{
+			"id": "FgEsApsS",
+			"from": "TqDUcCHV",
+			"to": "hlSwOqFY",
+			"kind": "data",
+			"label": "Database connection",
+			"description": "User-confirmed infrastructure mapping, 2026-09-19: IIS VMs 1 and 2 connect to DB 1; IIS VMs 3 and 4 connect to DB 2.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "umAHrW7i",
+			"from": "WMA3YdsD",
+			"to": "NQs6vUYx",
+			"kind": "data",
+			"label": "Database connection",
+			"description": "User-confirmed infrastructure mapping, 2026-09-19: IIS VMs 1 and 2 connect to DB 1; IIS VMs 3 and 4 connect to DB 2.",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "ghAjlN21",
+			"from": "lqxzyMcC",
+			"to": "j6TdeSth",
+			"kind": "other",
+			"label": "L4 forwarding",
+			"description": "The same Azure Standard Load Balancer-to-IIS L4 connection is retained during migration; DNS failover changes whether it receives client traffic, not its identity. Connection continuity confirmed by the user on 2026-09-19. Original evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-lb-vm1.",
+			"emphasis": "hero"
+		}
+	],
+	"flows": [],
+	"walkthroughs": [
+		{
+			"id": "KfXJLGgr",
+			"name": "mTLS strangler proposal",
+			"beats": [
+				{
+					"id": "ujwa0xPz",
+					"heading": "Secure device access",
+					"body": "Proposed migration: preserve the public address; Platform checks approved devices and balances directly across Windows / IIS. The dedicated hostname and TLS pass-through to Endpoint Gateway preserve original API bytes. Device checks fail closed.",
+					"subjects": ["t2QlUi5k", "1yU3ivZL", "j6TdeSth"]
+				},
+				{
+					"id": "L1HqLOqa",
+					"heading": "Automatic DNS failover",
+					"body": "Keep both balancers reachable on separate public IPs. After proving direct IIS balancing, configure health-checked DNS with Platform as primary and the legacy balancer as secondary. Probe application readiness through both paths, test failure and recovery, and account for DNS cache expiry and existing connections. Platform reaches IIS through its fixed Azure outbound IP. Portal affinity must be tested through both entry paths; switching paths may require sign-in again.",
+					"subjects": ["ywwZuKxy", "9BTlRpYl", "lqxzyMcC", "j6TdeSth"],
+					"view": "2K7Q0unF"
+				},
+				{
+					"id": "FBRE4Z39",
+					"heading": "Retained operations and prerequisites",
+					"body": "Direct test access requires explicit controls; IIS monitoring is to be confirmed. This production DNS proposal supersedes the public-IP transfer and manual rollback procedure in the linked engineering foundation. Its test environment details remain evidence, not deployed production failover. Confirm the authoritative DNS provider and interaction with Cloudflare and regional gateways; deploy test IIS applications before exercising failover.",
+					"subjects": []
+				},
+				{
+					"id": "L9AGMNQX",
+					"heading": "Keep fallback compatible with the whole hostname",
+					"body": "DNS chooses an endpoint for an entire hostname, not an individual API path. Keep every route and its data compatible on IIS while that hostname can fail over. A Platform-only route needs a compatible secondary or a separate hostname before takeover. The dedicated mTLS hostname stays on the authenticated path; failed device checks never fall back to unauthenticated IIS. Failover is automatic after health detection and DNS cache expiry, not instantaneous connection migration.",
+					"subjects": ["ywwZuKxy", "lqxzyMcC", "t2QlUi5k", "1yU3ivZL"],
+					"view": "2K7Q0unF"
+				}
+			]
+		}
+	]
+}

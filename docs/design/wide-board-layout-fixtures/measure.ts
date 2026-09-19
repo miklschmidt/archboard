@@ -14,18 +14,14 @@
 // AGAINST=run.json   compare this run with a saved one, measure by measure
 // ALL=1              measure every variant of every board, not only the current one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
-// READINGS=1         also print page, fit and bends for every reading of a first render
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
 import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
-import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
+import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { settleIn } from "@/transformers/semantic-renderer/lib/layout/compound";
-import { measureArchitecture } from "@/transformers/semantic-renderer/lib/measurement";
-import { withStepLines } from "@/transformers/semantic-renderer/lib/step-lines";
 import {
 	scorecardOf,
 	verdictOf,
@@ -37,7 +33,6 @@ const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
 const pictures = process.env["PICTURES"] === "1";
-const readings = process.env["READINGS"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
 const rasterizer = pictures
@@ -98,38 +93,6 @@ function shown(measure: Measure): string {
 	return measure.value.toFixed(measure.digits);
 }
 
-/**
- * Page, fit and bends for every reading of a first render.
- * @param content The board.
- * @returns One printed cell per reading.
- */
-async function everyReading(content: ReturnType<typeof VariantContentSchema.parse>) {
-	const stepped = withStepLines(content).content;
-	const all = [
-		{ direction: "down", wrapped: false },
-		{ direction: "right", wrapped: false },
-		{ direction: "down", wrapped: true },
-		{ direction: "right", wrapped: true },
-	] as const;
-	return Promise.all(
-		all.map(async (reading) => {
-			const name = `${reading.direction}${reading.wrapped ? " folded" : ""}`;
-			try {
-				const read = await settleIn(reading, stepped, measureArchitecture(stepped));
-				const bends =
-					read.edges.reduce(
-						(total, { curve }) =>
-							total + curve.segments.filter((segment) => segment.kind === "cubic").length,
-						0,
-					) / Math.max(1, read.edges.length);
-				return `${name} ${Math.round(read.width)}x${Math.round(read.height)} fit ${fitIn(read).toFixed(2)} bends ${bends.toFixed(1)}`;
-			} catch (error) {
-				return `${name} throws ${String(error).slice(0, 40)}`;
-			}
-		}),
-	);
-}
-
 const saved: Record<string, Result> =
 	against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
 const results: Record<string, Result> = {};
@@ -141,7 +104,7 @@ for (const item of items) {
 	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
 	const key = `${item.name} ${item.variant}`;
 	const measures = scorecardOf(drawn, content);
-	const reads = `${drawn.readingDirection ?? "-"}${drawn.svg.includes("data-reading-wrapped") ? " folded" : ""} ${/data-flank-rule="([^"]+)"/u.exec(drawn.svg)?.[1] ?? "-"}`;
+	const reads = drawn.readingDirection ?? "-";
 	const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
 	results[key] = { page, reads, measures };
 	if (!header) {
@@ -149,7 +112,6 @@ for (const item of items) {
 		header = true;
 	}
 	console.log([key, reads, page, ...measures.map(shown)].join(" | "));
-	if (readings) console.log(`  readings: ${(await everyReading(content)).join("; ")}`);
 	if (rasterizer !== null) {
 		const shot = await rasterizer.rasterize({
 			svg: drawn.svg,

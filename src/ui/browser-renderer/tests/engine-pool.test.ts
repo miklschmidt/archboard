@@ -26,8 +26,9 @@ class HeldWorker extends EventTarget {
 	 * @param reply What the engine answers.
 	 * @param reply.data The solved graph.
 	 * @param reply.error The engine's refusal.
+	 * @param reply.fatal Whether the worker cannot accept another solve.
 	 */
-	answer(index: number, reply: { data?: unknown; error?: unknown }): void {
+	answer(index: number, reply: { data?: unknown; error?: unknown; fatal?: boolean }): void {
 		const message = this.sent[index]!;
 		this.dispatchEvent(new MessageEvent("message", { data: { id: message.id, ...reply } }));
 	}
@@ -91,6 +92,44 @@ test("an engine refusal rejects the solve with an error that keeps the engine's 
 	);
 	expect(failure).toBeInstanceOf(Error);
 	expect(String(failure)).toContain("nodeOrder[l][0].layer");
+});
+
+test("a worker failure rejects its work and the next solve starts a replacement", async () => {
+	const { solve, workers } = heldPool(1);
+	const first = solve({ id: "a" }, {});
+	workers[0]!.dispatchEvent(new Event("error"));
+	expect(
+		await first.then(
+			() => "solved",
+			() => "failed",
+		),
+	).toBe("failed");
+	const second = solve({ id: "b" }, {});
+	expect(workers).toHaveLength(2);
+	workers[1]!.answer(0, { data: { id: "b!" } });
+	expect(await second).toEqual({ id: "b!" });
+});
+
+test("failed engine initialization rejects queued work and replaces the worker", async () => {
+	const { solve, workers } = heldPool(1);
+	const first = solve({ id: "a" }, {});
+	const second = solve({ id: "b" }, {});
+	workers[0]!.answer(0, { error: "WASM failed to load", fatal: true });
+	expect(
+		await first.then(
+			() => "solved",
+			() => "failed",
+		),
+	).toBe("failed");
+	expect(
+		await second.then(
+			() => "solved",
+			() => "failed",
+		),
+	).toBe("failed");
+	const third = solve({ id: "c" }, {});
+	workers[1]!.answer(0, { data: { id: "c!" } });
+	expect(await third).toEqual({ id: "c!" });
 });
 
 test("the ceiling follows the cores the browser reports, and never falls below one", () => {

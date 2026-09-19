@@ -1,111 +1,41 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
-import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "@archboard/elk-rs";
-import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import type { ElkExtendedEdge, ElkNode, ElkShape } from "@archboard/elk-rs";
+import { fitIn } from "@/shared/shell-geometry/index";
+import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
+import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
+import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
 	PaintedDrawing,
 	DrawingEdge,
 	DrawingNode,
 	MeasuredArchitecture,
-	ReadingDirection,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import {
-	drawingAcross,
-	headerAxis,
-	headerSideOf,
-	measuredInFrame,
-	type HeaderSide,
-} from "@/transformers/semantic-renderer/lib/layout/reading";
 import { placeLabelsOnRuns } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 import {
 	rememberSolves,
 	settleLabels,
 	type LabelAttempt,
 } from "@/transformers/semantic-renderer/lib/layout/label-reservations";
-import {
-	bridgeCrossings,
-	routeCrossings,
-} from "@/transformers/semantic-renderer/lib/layout/crossings";
+import { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 import { curveThrough, pathOf, simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { straightenJogs } from "@/transformers/semantic-renderer/lib/layout/jogs";
-import { fanOverdrawnRuns } from "@/transformers/semantic-renderer/lib/layout/shared-runs";
-import {
-	chooseReading,
-	foldAspect,
-	type Reading,
-} from "@/transformers/semantic-renderer/lib/layout/reading-choice";
 import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
-import {
-	FLANK_RULES,
-	type FlankRule,
-} from "@/transformers/semantic-renderer/lib/layout/flank-rules";
-import { bestOf } from "@/transformers/semantic-renderer/lib/layout/scorecard";
 import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
 	readonly content: VariantContent;
 	readonly measured: MeasuredArchitecture;
-	readonly direction: ReadingDirection;
-	readonly wrapped: boolean;
-	readonly header: HeaderSide;
-	readonly flanks: FlankRule;
+	readonly columns: number;
 }
 
 /**
- * Solve a graph with room between rows for the labels on its runs.
- * @param graph The complete measured graph.
- * @param measured Label heights that leave room on ordinary route runs.
- * @param stacked How many badges beyond one a gap between rows must hold, stacked.
- * @returns Its solved geometry.
- */
-async function solveGraph(
-	graph: ElkNode,
-	measured: MeasuredArchitecture,
-	stacked = 0,
-): Promise<ElkNode> {
-	const height = Math.max(0, ...[...measured.labels.values()].map((label) => label.height));
-	const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
-	const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
-	const options: LayoutOptions = COMPOUND_OPTIONS;
-	return rendererHost().solve(
-		graph,
-		height === 0
-			? options
-			: {
-					...options,
-					"elk.layered.spacing.nodeNodeBetweenLayers": String(
-						Math.max(
-							Number(COMPOUND_OPTIONS["elk.layered.spacing.nodeNodeBetweenLayers"]),
-							// Badges stacked beside parallel runs in one gap each need
-							// their own height and air; only the gap between rows grows
-							// for them, never the room around every route track.
-							height + 2 * nodeAir + stacked * (height + labelAir),
-						),
-					),
-					"elk.layered.spacing.edgeNodeBetweenLayers": String(
-						Math.max(
-							Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeNodeBetweenLayers"]),
-							Math.ceil(height / 2 + nodeAir),
-						),
-					),
-					"elk.layered.spacing.edgeEdgeBetweenLayers": String(
-						Math.max(
-							Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeEdgeBetweenLayers"]),
-							height + labelAir,
-						),
-					),
-				},
-	);
-}
-
-/**
- * Read a complete box in the global coordinates requested from ELK.
+ * Read a complete box in the global coordinates returned by placement.
  * @param shape A node or edge label after layout.
  * @returns The geometry shared by painter and atlas.
  */
@@ -181,117 +111,26 @@ function drawingLabel(
 }
 
 /**
- * Whether one node is inside another, at any depth.
- * @param inner The part.
- * @param outer The frame.
- * @param content The content holding the parents.
- * @returns True when outer is an ancestor of inner.
- */
-function insideOf(inner: string, outer: string, content: VariantContent): boolean {
-	let at = content.nodes.find((node) => node.id === inner)?.parent;
-	while (at !== undefined) {
-		if (at === outer) return true;
-		at = content.nodes.find((node) => node.id === at)?.parent;
-	}
-	return false;
-}
-
-/**
- * A relationship a frame makes to a part inside it leaves the frame's title
- * band, not its outer edge: the engine attaches it to the frame's header
- * face, and read from there the line seems to arrive from outside the frame.
- * The first run crosses the band and is inside the frame, so its start moves
- * in to the bottom of the title.
- * @param edge The relationship.
- * @param points Its route as the engine solved it.
- * @param content The content, for containment.
- * @param nodes The placed cards and frames.
- * @param header Where a frame's title band sits in the solving frame.
- * @returns The route, its start moved when the frame is its source.
- */
-function leaveFromTitle(
-	edge: SemanticEdge,
-	points: readonly Point[],
-	content: VariantContent,
-	nodes: readonly DrawingNode[],
-	header: HeaderSide,
-): Point[] {
-	const frame = holdingFrame(edge, content, nodes);
-	const [start, next] = points;
-	if (frame === undefined || start === undefined || next === undefined) return [...points];
-	const across = headerAxis(header);
-	const along = across === "y" ? "x" : "y";
-	const title = frame.box[across] + frame.measured.headerHeight;
-	const fromBand = [start[along] === next[along], start[across] <= title, next[across] > title];
-	return fromBand.every(Boolean)
-		? [{ ...start, [across]: title }, ...points.slice(1)]
-		: [...points];
-}
-
-/**
- * The frame a relationship leaves for a part inside it, when that is what it is.
- * @param edge The relationship.
- * @param content The content, for containment.
- * @param nodes The placed cards and frames.
- * @returns The frame, or undefined for any other relationship.
- */
-function holdingFrame(
-	edge: SemanticEdge,
-	content: VariantContent,
-	nodes: readonly DrawingNode[],
-): DrawingNode | undefined {
-	const frame = nodes.find((node) => node.measured.node.id === edge.from);
-	if (frame === undefined || frame.measured.headerHeight === 0) return undefined;
-	return insideOf(edge.to, edge.from, content) ? frame : undefined;
-}
-
-/**
  * Match final route and label geometry to every relationship in the view.
  * @param content The semantic connections in drawing order.
  * @param laidOut The engine's complete graph.
  * @param measured Text measurement for the optional label.
- * @param nodes The placed cards and frames, for a frame's own departures.
- * @param header Where a frame's title band sits in the solving frame.
  * @returns Every drawn edge; missing routes are errors, never silent omissions.
  */
 function drawingEdges(
 	content: VariantContent,
 	laidOut: ElkNode,
 	measured: MeasuredArchitecture,
-	nodes: readonly DrawingNode[],
-	header: HeaderSide,
 ): DrawingEdge[] {
 	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
-	// The engine's parts of each relationship, grouped once in the engine's order.
-	const parts = new Map<string, ElkExtendedEdge[]>();
-	for (const part of laidOut.edges ?? []) {
-		const id = part.id.split(":")[0]!;
-		parts.set(id, [...(parts.get(id) ?? []), part]);
-	}
 	const labels = new Map(
 		[...results].flatMap(([id, result]) => {
 			const label = drawingLabel(result, measured).label;
 			return label === undefined ? [] : [[id, label] as const];
 		}),
 	);
-	const fanned = fanOverdrawnRuns(
-		new Map(
-			content.edges.map((edge) => [
-				edge.id,
-				leaveFromTitle(
-					edge,
-					simplify((parts.get(edge.id) ?? []).flatMap(pointsOf)),
-					content,
-					nodes,
-					header,
-				),
-			]),
-		),
-		new Map([...labels].map(([id, label]) => [id, label.box])),
-	);
-	const routes = straightenJogs(
-		fanned.routes,
-		nodes.map((node) => node.box),
+	const routes = new Map(
+		content.edges.map((edge) => [edge.id, simplify(pointsOf(results.get(edge.id)!))]),
 	);
 	return content.edges.map((edge) => {
 		const result = results.get(edge.id);
@@ -300,11 +139,8 @@ function drawingEdges(
 		}
 		const points = routes.get(edge.id)!;
 		const measuredLabel = labels.get(edge.id);
-		const label =
-			measuredLabel === undefined
-				? {}
-				: { label: { ...measuredLabel, box: fanned.labels.get(edge.id)! } };
-		const curve = curveThrough(points, routeCrossings(points, routes.values()), label.label?.box);
+		const label = measuredLabel === undefined ? {} : { label: measuredLabel };
+		const curve = curveThrough(points, label.label?.box);
 		return {
 			edge,
 			curve,
@@ -312,126 +148,6 @@ function drawingEdges(
 			...label,
 		};
 	});
-}
-
-/**
- * Settle a board in one reading under the first flank rule.
- * @param reading The page direction and folding choice.
- * @param content The architecture meaning.
- * @param measured Its measured sizes on the page.
- * @returns Its settled drawing.
- */
-async function settleIn(
-	reading: Reading,
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-): Promise<ArchitectureDrawing> {
-	return settleUnder(reading, FLANK_RULES[0]!, content, measured);
-}
-
-/**
- * A board settled read one way under every flank rule but the first.
- * @param reading The way the page reads.
- * @param content The architecture meaning.
- * @param measured Its measured sizes, on the page.
- * @returns The drawings the engine did not refuse.
- */
-async function otherRules(
-	reading: Reading,
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-): Promise<ArchitectureDrawing[]> {
-	const drawings = await Promise.all(
-		FLANK_RULES.slice(1).map((rule) =>
-			// A rule the engine refuses is simply not a candidate.
-			settleUnder(reading, rule, content, measured).catch(() => undefined),
-		),
-	);
-	return drawings.filter((drawing) => drawing !== undefined);
-}
-
-/**
- * Each render: its reading chosen under the first flank rule, then every
- * other rule settled in that reading and the drawing the scorecard prefers
- * kept (docs/design/layout-rules.md section 21). Nearly every board reads
- * down the page, so the other rules are settled for that reading while the
- * reading is still being chosen, and settled again only when another reading
- * wins (section 22). A folded reading keeps the first rule: whether a fold
- * reads well is judged when it is chosen.
- * @param content The architecture meaning.
- * @param measured Its measured sizes, on the page.
- * @returns The kept drawing.
- */
-async function chooseLayout(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-): Promise<ArchitectureDrawing> {
-	const down: Reading = { direction: "down", wrapped: false };
-	const ahead = otherRules(down, content, measured);
-	const chosen = await chooseReading(
-		measured,
-		(reading) => settleIn(reading, content, measured),
-		async (reading) => {
-			const problem = problemOf(reading, FLANK_RULES[0]!, content, measured);
-			return drawingAcross(reading.direction, (await attemptLabels(problem, new Set(), 0)).drawing);
-		},
-	);
-	if (chosen.wrapped) return chosen;
-	const others =
-		chosen.direction === "down"
-			? await ahead
-			: await otherRules({ direction: chosen.direction, wrapped: false }, content, measured);
-	return bestOf([chosen, ...others]);
-}
-
-/**
- * The board to lay out, in the solving frame.
- * @param reading The way the page reads, and whether its layers fold.
- * @param reading.direction Down the page, or left to right.
- * @param reading.wrapped Whether the layers fold toward the pane's shape.
- * @param flanks Which flank returns travel and how skips attach.
- * @param content The architecture meaning.
- * @param measured Its measured sizes, on the page.
- * @returns The problem.
- */
-function problemOf(
-	{ direction, wrapped }: Reading,
-	flanks: FlankRule,
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-): Problem {
-	return {
-		content,
-		measured: measuredInFrame(direction, measured),
-		direction,
-		wrapped,
-		header: headerSideOf(direction),
-		flanks,
-	};
-}
-
-/**
- * Settle a board read one way under one flank rule.
- * @param reading The way the page reads, and whether its layers fold.
- * @param reading.direction Down the page, or left to right.
- * @param reading.wrapped Whether the layers fold toward the pane's shape.
- * @param flanks Which flank returns travel and how skips attach.
- * @param content The architecture meaning.
- * @param measured Its measured sizes, on the page.
- * @returns The settled drawing, on the page.
- */
-async function settleUnder(
-	{ direction, wrapped }: Reading,
-	flanks: FlankRule,
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-): Promise<ArchitectureDrawing> {
-	const problem = problemOf({ direction, wrapped }, flanks, content, measured);
-	const drawing = await settleLabels(
-		rememberSolves((reserved, stacked) => attemptLabels(problem, reserved, stacked)),
-		new Set(),
-	);
-	return drawingAcross(direction, drawing);
 }
 
 /**
@@ -444,30 +160,114 @@ async function layoutCompound(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 ): Promise<PaintedDrawing> {
-	const drawing = await chooseLayout(content, measured);
+	const problem: Problem = { content, measured, columns: 1 };
+	const baseline = await settleReading(problem);
+	const drawing = await chooseReading(problem, baseline);
 	// Bridges are settled here as part of the geometry a reader sees.
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
+}
+
+/**
+ * Tighten the width bound after each improvement before trying another count.
+ * @param problem The measured semantic board.
+ * @param baseline Original settled geometry used to find indivisible bands.
+ * @param best Best complete reading so far.
+ * @param columns Next count, in increasing order so fewer columns win ties.
+ * @returns The best complete reading without solving impossible improvements.
+ */
+async function chooseReading(
+	problem: Problem,
+	baseline: ArchitectureDrawing,
+	best = baseline,
+	columns = 2,
+): Promise<ArchitectureDrawing> {
+	const requiredFit = fitIn(best) * (1 + WRAP_MIN_FIT_GAIN);
+	if (!columnCounts(baseline, requiredFit).includes(columns)) return best;
+	const next = await betterReading({ ...problem, columns }, best, requiredFit);
+	return chooseReading(problem, baseline, next, columns + 1);
+}
+
+/**
+ * Keep the complete baseline when an alternate cannot route or improve pane fit.
+ * @param problem One alternate column count.
+ * @param baseline Best complete reading so far; fewer columns win equal fit.
+ * @param requiredFit The material relative improvement another column must provide.
+ * @returns The better complete reading.
+ */
+async function betterReading(
+	problem: Problem,
+	baseline: ArchitectureDrawing,
+	requiredFit: number,
+): Promise<ArchitectureDrawing> {
+	try {
+		const candidate = await settleReading(problem);
+		const fit = fitIn(candidate);
+		return fit > fitIn(baseline) && fit >= requiredFit ? candidate : baseline;
+	} catch {
+		return baseline;
+	}
+}
+
+/**
+ * Find feasible column counts from the fully settled baseline geometry.
+ * Frame boxes overlap their descendants, keeping their whole span together.
+ * @param drawing The complete downward baseline.
+ * @param minimumFit The fit any further candidate must improve.
+ * @returns Increasing candidate counts; ties retain the earlier, simpler reading.
+ */
+function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[] {
+	return foldColumnCounts(
+		{
+			id: "column-candidates",
+			x: 0,
+			y: 0,
+			width: drawing.width,
+			height: drawing.height,
+			children: [...drawing.cards, ...drawing.containers].map(({ measured, box }) => ({
+				id: measured.node.id,
+				...box,
+			})),
+			edges: drawing.edges.map(({ edge }) => ({
+				id: edge.id,
+				sources: [edge.from],
+				targets: [edge.to],
+			})),
+		},
+		minimumFit,
+	);
+}
+
+/**
+ * Settle labels independently for one candidate reading.
+ * @param problem Measured content and requested downward column count.
+ * @returns A complete candidate or a routing/label failure.
+ */
+function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
+	return settleLabels(
+		rememberSolves((reserved) => attemptLabels(problem, reserved)),
+		new Set(),
+	);
 }
 
 /**
  * Seed all measured relationships before omitting unneeded label reservations.
  * @param problem The board, in the solving frame.
  * @param reserved Relationships that could not fit a badge on an ordinary run.
+ * @param forced Labels that also require a route through their reserved box.
  * @returns The next complete engine input.
  */
-function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNode {
-	const { content, measured, header } = problem;
-	const graph = compoundGraph(content, measured, header, problem.flanks);
-	if (problem.wrapped) {
-		// Fold the layers toward the pane's shape, like a long line of text.
-		graph.layoutOptions = {
-			...graph.layoutOptions,
-			"elk.layered.wrapping.strategy": "SINGLE_EDGE",
-			"elk.aspectRatio": String(foldAspect(problem.direction)),
-		};
-	}
+function graphForLabels(
+	problem: Problem,
+	reserved: ReadonlySet<string>,
+	forced: ReadonlySet<string>,
+): ElkNode {
+	const { content, measured } = problem;
+	const graph = compoundGraph(content, measured);
+
 	for (const edge of graph.edges ?? []) {
 		if (!reserved.has(edge.id)) edge.labels = [];
+		if (forced.has(edge.id))
+			edge.layoutOptions = { ...edge.layoutOptions, "archboard.route-label": "true" };
 	}
 	return graph;
 }
@@ -483,27 +283,54 @@ function movedOff(reserved: Box, drawn: Box | undefined): boolean {
 }
 
 /**
- * Solve once and place every label that has a clear run.
+ * Try natural routes before forcing only the labels that still cannot fit.
  * @param problem The board, in the solving frame.
- * @param reserved Labels given dedicated engine space.
- * @param stacked How many badges beyond one the gaps between rows hold.
- * @returns The drawing, the measured labels it left without a box, and the reserved labels drawn elsewhere.
+ * @param reserved Labels given dedicated placement space.
+ * @param forced Labels whose natural route has already proved insufficient.
+ * @returns The drawing and remaining placement requirements.
  */
 async function attemptLabels(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	stacked: number,
+	forced: ReadonlySet<string> = new Set(),
 ): Promise<LabelAttempt> {
-	const { content, measured, header } = problem;
-	const laidOut = await solveGraph(graphForLabels(problem, reserved), measured, stacked);
+	const attempt = await drawAttempt(problem, reserved, forced);
+	const missing = attempt.missing.filter(
+		({ edge }) => reserved.has(edge.id) && !forced.has(edge.id),
+	);
+	if (missing.length === 0) return attempt;
+	// Placement space is not a waypoint. Each retry forces only labels that
+	// still have no clear natural run, so every retry makes finite progress.
+	return attemptLabels(
+		problem,
+		reserved,
+		new Set([...forced, ...missing.map(({ edge }) => edge.id)]),
+	);
+}
+
+/**
+ * Draw one placement with only the explicitly needed label waypoints.
+ * @param problem Measured semantic content and reading direction.
+ * @param reserved Labels given placement space.
+ * @param forced Labels requiring the route to pass through that space.
+ * @returns The drawing and its remaining label requirements.
+ */
+async function drawAttempt(
+	problem: Problem,
+	reserved: ReadonlySet<string>,
+	forced: ReadonlySet<string>,
+): Promise<LabelAttempt> {
+	const { content, measured } = problem;
+	const laidOut = await rendererHost().solve(graphForLabels(problem, reserved, forced), {
+		...COMPOUND_OPTIONS,
+		"archboard.fold.columns": String(problem.columns),
+	});
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
-	const solved = drawingEdges(content, laidOut, measured, nodes, header);
+	const solved = drawingEdges(content, laidOut, measured);
 	const drawing = placeLabelsOnRuns(
 		{
-			direction: problem.direction,
-			wrapped: problem.wrapped,
-			flanks: problem.flanks.name,
+			direction: "down",
 			width: extent.width,
 			height: extent.height,
 			cards: nodes.filter((node) => node.measured.headerHeight === 0),
@@ -511,15 +338,17 @@ async function attemptLabels(
 			edges: solved,
 		},
 		measured.labels,
-		header,
 	);
 	const missing = drawing.edges.filter(
 		({ edge, label }) => measured.labels.has(edge.id) && label === undefined,
 	);
 	const unused = solved.flatMap(({ edge, label }, index) =>
-		label !== undefined && movedOff(label.box, drawing.edges[index]?.label?.box) ? [edge.id] : [],
+		reserved.has(edge.id) &&
+		(label === undefined || movedOff(label.box, drawing.edges[index]?.label?.box))
+			? [edge.id]
+			: [],
 	);
 	return { drawing, missing, unused };
 }
 
-export { layoutCompound, settleIn };
+export { layoutCompound };

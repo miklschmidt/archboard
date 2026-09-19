@@ -1,15 +1,11 @@
-// Which way a board reads is the renderer's decision (ADR 0028): a first
-// render is settled both ways and the reading that fits the reader's pane
-// better is kept, down the page when they tie; the choice is
-// deterministic and written on the document for the atlas, the measure
-// script and these tests to read.
+// Architecture diagrams always read top to bottom, including wide fans and long pipelines.
 
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
-import { across, along, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
+import { readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 
 /**
  * One hub with a fan of many dependents: a row of them across the page is
@@ -29,7 +25,7 @@ function fan(count: number): VariantContent {
 	});
 }
 
-/** A short chain: fits the pane whole either way, so the tie goes down the page. */
+/** A short chain that fits the pane at native scale. */
 const CHAIN = VariantContentSchema.parse({
 	nodes: ["a", "b", "c"].map((id) => ({ id, name: id, kind: "module" })),
 	edges: [
@@ -38,24 +34,23 @@ const CHAIN = VariantContentSchema.parse({
 	],
 });
 
-describe("a first render reads whichever way fits the pane better", () => {
-	test("a wide fan reads left to right, and the document says so", async () => {
+describe("architecture diagrams read top to bottom", () => {
+	test("a wide fan stays below its source, and the document records downward reading", async () => {
 		const drawing = await renderArchitecture({ content: fan(16), theme: "light" });
-		expect(drawing.readingDirection).toBe("right");
-		expect(readingOf(drawing)).toBe("right");
-		// Read that way, the fan is a column beside its hub, not a row under it.
+		expect(drawing.readingDirection).toBe("down");
+		expect(readingOf(drawing)).toBe("down");
+		// Width no longer rotates a fan into a column beside its source.
 		const hub = drawing.atlas.nodes["hub"]!;
 		for (const leaf of Object.entries(drawing.atlas.nodes)
 			.filter(([id]) => id !== "hub")
 			.map(([, box]) => box)) {
-			expect(along(leaf, "right")).toBeGreaterThan(along(hub, "right") + hub.width);
+			expect(leaf.y).toBeGreaterThan(hub.y + hub.height);
 		}
-		expect(
-			new Set(Object.values(drawing.atlas.nodes).map((box) => across(box, "right"))).size,
-		).toBe(Object.keys(drawing.atlas.nodes).length);
+		const leaves = Object.entries(drawing.atlas.nodes).filter(([id]) => id !== "hub");
+		expect(new Set(leaves.map(([, box]) => box.x)).size).toBe(leaves.length);
 	});
 
-	test("a fan read left to right keeps every label on a straight run of its own route", async () => {
+	test("a wide downward fan keeps every label on a straight run of its own route", async () => {
 		const labelled = fan(16);
 		const content = VariantContentSchema.parse({
 			...labelled,
@@ -68,19 +63,19 @@ describe("a first render reads whichever way fits the pane better", () => {
 			})),
 		});
 		const drawing = await renderArchitecture({ content, theme: "light" });
-		expect(drawing.readingDirection).toBe("right");
+		expect(drawing.readingDirection).toBe("down");
 		expect(labelsOffRuns(drawing)).toEqual([]);
 		expect(routesThroughCards(drawing, content)).toEqual([]);
 	});
 
-	test("a tie goes down the page", async () => {
+	test("a short chain reads down the page", async () => {
 		const drawing = await renderArchitecture({ content: CHAIN, theme: "light" });
 		expect(fitIn(drawing)).toBe(1);
 		expect(drawing.readingDirection).toBe("down");
 		expect(readingOf(drawing)).toBe("down");
 	});
 
-	test("the choice is the same on every render", async () => {
+	test("geometry is the same on every render", async () => {
 		const [one, other] = await Promise.all([
 			renderArchitecture({ content: fan(16), theme: "light" }),
 			renderArchitecture({ content: fan(16), theme: "dark" }),
@@ -114,28 +109,32 @@ function pipeline(length: number, framed = false): VariantContent {
 	});
 }
 
-/**
- * Whether the document says its layers fold.
- * @param drawing The rendered board.
- * @param drawing.svg Its document.
- * @returns True when the reading folds.
- */
-function folded(drawing: { readonly svg: string }): boolean {
-	return /<svg [^>]*data-reading-wrapped="true"/.test(drawing.svg);
-}
-
-describe("a long flat chain folds toward the pane's shape", () => {
-	test("when folding raises its fit, with no card crossed and every label on its run", async () => {
-		const content = pipeline(12);
+test.each([false, true])(
+	"a long chain preserves reading order and clear routes (framed: %s)",
+	async (framed) => {
+		const content = pipeline(12, framed);
 		const drawing = await renderArchitecture({ content, theme: "light" });
-		expect(folded(drawing)).toBe(true);
-		expect(fitIn(drawing)).toBe(1);
+		const direction = readingOf(drawing);
+		expect(direction).toBe("down");
+		let continuations = 0;
+		for (let index = 1; index < 12; index++) {
+			const before = drawing.atlas.nodes[`s${index - 1}`]!;
+			const after = drawing.atlas.nodes[`s${index}`]!;
+			if (after.y < before.y) {
+				continuations += 1;
+				expect(framed).toBe(false);
+				expect(after.x).toBeGreaterThan(before.x + before.width);
+				expect(after.y).toBe(drawing.atlas.nodes["s0"]!.y);
+			} else {
+				expect(after.y).toBeGreaterThan(before.y + before.height);
+				if (!framed) {
+					expect(after.x).toBeLessThan(before.x + before.width);
+					expect(after.x + after.width).toBeGreaterThan(before.x);
+				}
+			}
+		}
+		expect(continuations).toBe(framed ? 0 : 1);
 		expect(routesThroughCards(drawing, content)).toEqual([]);
 		expect(labelsOffRuns(drawing)).toEqual([]);
-	});
-
-	test("never inside a frame, which the fold is kept away from", async () => {
-		const drawing = await renderArchitecture({ content: pipeline(12, true), theme: "light" });
-		expect(folded(drawing)).toBe(false);
-	});
-});
+	},
+);

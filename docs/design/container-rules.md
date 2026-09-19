@@ -1,4 +1,58 @@
-# Container rules — 2026-09-19 audit
+# Container rules — Graphviz adoption
+
+TASK-278 replaces the ELK layout audited below. Spacing and clearance values
+are editable in [`config.ts`](../../src/transformers/semantic-renderer/config.ts);
+values use diagram pixels, independent of camera zoom. Rebuild the frontend,
+restart the canvas at its configured URL, and reload the viewer after editing.
+The current rules are:
+
+- Visible semantic children make a node a frame; preserve the parent hierarchy.
+- Measure the complete title and reserve its title band. Keep 24px of air
+  below it and 24px minimum side/bottom insets around content.
+- Use 24px base sibling spacing, matching the frame insets, and 32px between
+  ranks. Reserve measured label rows only where needed; do not also expand
+  every rank gap by the tallest label.
+- Pack disconnected leaf collections into rows. Connected children take part
+  in Graphviz's global ranking, including relationships crossing their frame.
+- Assign equal-sized leaf peers with the same kind and nonempty responsibility
+  on the same fresh row to their slots in stable identity order, before routing.
+  Different roles are not moved just because their dimensions match. No
+  predecessor positions, fixed ranks or reserved columns participate.
+- An outside caller or dependency may occupy the frame's vertical span.
+  A container does not reserve one opaque outer layer.
+- A frame's relationship with its own descendant meets its title divider;
+  external relationships meet its outline. Incoming frame arrows use a clear
+  face with room for their head and bend. Protect complete title bands.
+- Route around cards and title bands with libavoid. Relationships of one kind share ports
+  on each face; different kinds use distinct attachment positions and lanes.
+  The native router chooses among those faces. Relationships
+  keep their own identities and labels even when they share a port or trunk.
+  The final approach must fit the actual arrowhead and a rounded bend.
+- Put labels on clear runs of their own routes. Reserve measured space only
+  when ordinary placement cannot fit a label. Placement space does not force
+  a route through that box: try natural runs before adding a label waypoint.
+  Keep labels clear of titles,
+  frame outlines, cards and other routes.
+- Draw outer frames behind their contents, headings above them, and apply the
+  nearest configured container color to descendant borders/tints.
+
+Architecture boards read top-to-bottom and lay every variant out fresh. Long
+paths can wrap into adjacent downward columns when the complete routed result
+improves pane fit by at least 5%. Whole frames and overlapping rows remain together; side-entry
+sources stay with their consumers. Column count is chosen dynamically.
+The automatic down/right fit comparison was removed after the user rejected
+the resulting long horizontal chains. Corner rounding and crossing bridges remain shared drawing operations.
+
+Removed in this adoption: fixed flank policies, synthetic boundary sections
+and ports, bottom-up hierarchy ordering, forced forward faces for cross-frame
+skips, fixed title detour flanks, folded-layout exceptions, the multiple-flank
+scorecard search, and later route fanning/jog repair. Integration-added private
+port ordering, pin spreading, endpoint checkpoints, minimum jog/approach rules,
+label-axis scoring, and crossing-driven corner compression were also deleted at the user's request. Graphviz places the graph;
+libavoid routes it. [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md)
+and [the measured investigation](shared-container-rows.md) record the choice.
+
+## Historical audit before adoption
 
 Requested during TASK-276 after database targets were forced left of their
 containing callers. This is a dated inventory of the architecture renderer,

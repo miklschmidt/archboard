@@ -134,6 +134,12 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 		}
 		expect(replacement.pid).not.toBe(initial.pid);
 		expect(replacement.group).toBe(replacement.pid);
+		// Spawn is logged before the process census; wait for the actual evidence
+		// rather than racing the replacement's next synchronous log write.
+		await waitFor(
+			() => records(fixture.logPath).find((entry) => entry.kind === "prior_group_census_at_spawn"),
+			"the replacement's prior-group census",
+		);
 		const spawnRecords = [];
 		let census: FixtureRecord | undefined;
 		for (const entry of records(fixture.logPath)) {

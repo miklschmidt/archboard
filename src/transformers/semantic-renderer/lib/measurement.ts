@@ -1,3 +1,12 @@
+import {
+	ARCHITECTURE_CARD_PADDING,
+	ARCHITECTURE_HEADER_PADDING,
+	ARCHITECTURE_ICON_GAP,
+	ARCHITECTURE_NOTE_GAP,
+	ARCHITECTURE_LABEL_PADDING_X,
+	ARCHITECTURE_LABEL_PADDING_Y,
+} from "@/transformers/semantic-renderer/config";
+import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
 import { layoutWithLines, measureNaturalWidth, prepareWithSegments } from "@chenglou/pretext";
@@ -106,15 +115,15 @@ function measureNoteLines(
  * @returns Its minimum box and all relative text positions.
  */
 function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
-	const padding = container ? 20 : 16;
-	const left = container ? 56 : 52;
+	const padding = container ? ARCHITECTURE_HEADER_PADDING : ARCHITECTURE_CARD_PADDING;
+	const left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
 	const title = prepare(node.name, TITLE);
 	const note = prepare(node.responsibility ?? "", NOTE);
 	const natural = Math.max(measureNaturalWidth(title), measureNaturalWidth(note));
 	const width = Math.min(340, Math.max(260, natural + left + padding));
 	const available = width - left - padding;
 	const titles = runsFor(title, TITLE, available, left, padding);
-	const noteTop = padding + titles.length * TITLE.lineHeight + 2;
+	const noteTop = padding + titles.length * TITLE.lineHeight + ARCHITECTURE_NOTE_GAP;
 	const notes = runsFor(note, NOTE, available, left, noteTop);
 	const runs = [...titles, ...notes];
 	const bottom =
@@ -142,12 +151,21 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
  */
 function measureLabel(text: string): MeasuredLabel {
 	const prepared = prepare(text, LABEL);
-	const width = Math.min(200, Math.max(40, measureNaturalWidth(prepared) + 20));
-	const runs = runsFor(prepared, LABEL, width - 20, 10, 8);
+	const width = Math.min(
+		200,
+		Math.max(40, measureNaturalWidth(prepared) + 2 * ARCHITECTURE_LABEL_PADDING_X),
+	);
+	const runs = runsFor(
+		prepared,
+		LABEL,
+		width - 2 * ARCHITECTURE_LABEL_PADDING_X,
+		ARCHITECTURE_LABEL_PADDING_X,
+		ARCHITECTURE_LABEL_PADDING_Y,
+	);
 	const paintedWidth = runs.reduce((widest, run) => Math.max(widest, run.width), 0);
 	return {
-		width: Math.max(width, paintedWidth + 20),
-		height: Math.max(1, runs.length) * LABEL.lineHeight + 16,
+		width: Math.max(width, paintedWidth + 2 * ARCHITECTURE_LABEL_PADDING_X),
+		height: Math.max(1, runs.length) * LABEL.lineHeight + 2 * ARCHITECTURE_LABEL_PADDING_Y,
 		runs,
 	};
 }

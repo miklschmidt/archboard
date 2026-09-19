@@ -80,7 +80,7 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	// the server's render route was never asked.
 	const first = await fetched(browser);
 	expect(first.some((url) => url.includes("/api/semantic-boards/render"))).toBeFalse();
-	expect(first.some((url) => url.includes("worker.browser"))).toBeTrue();
+	expect(first.some((url) => /\/assets\/layout-worker-[^/]+\.js$/.test(url))).toBeTrue();
 	expect(first.some((url) => url.includes("/assets/diagram-icons/"))).toBeTrue();
 	expect(
 		await browser.eval<boolean>(

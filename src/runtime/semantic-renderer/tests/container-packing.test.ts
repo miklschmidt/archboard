@@ -7,8 +7,7 @@ import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/t
 test.each([
 	{ count: 2, fan: 0, direction: "down" },
 	{ count: 10, fan: 0, direction: "down" },
-	{ count: 2, fan: 14, direction: "right" },
-	{ count: 10, fan: 14, direction: "right" },
+	{ count: 10, fan: 14, direction: "down" },
 ])(
 	"$count independent cards keep compact insets when read $direction",
 	async ({ count, fan, direction }) => {
