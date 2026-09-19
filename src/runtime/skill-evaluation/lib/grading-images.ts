@@ -176,6 +176,32 @@ function fileImageReceipt(verdictFile: string, images: RunImages | null): void {
 }
 
 /**
+ * The delivery receipt filed with one grader's verdict, when it still
+ * vouches for that verdict: it names the run, its verdict digest is the
+ * filed verdict's, and every image it lists still has the bytes it recorded.
+ * @param batchRoot The batch.
+ * @param grader The grader.
+ * @param run The anonymous run.
+ * @returns What reached the grader for the verdict; null for missing, historical, damaged or stale evidence.
+ */
+function readReceipt(batchRoot: string, grader: GraderName, run: string): RunImages | null {
+	const layout = graderLayout(batchRoot, grader);
+	const verdict = path.join(layout.verdicts, `${run}.json`);
+	try {
+		const { verdictSha256, ...receipt } = ReceiptSchema.parse(
+			JSON.parse(fs.readFileSync(`${verdict}.images.json`, "utf8")),
+		);
+		if (receipt.run !== run || verdictSha256 !== digest(fs.readFileSync(verdict))) return null;
+		const stale = receipt.images.some(
+			(image) => digest(fs.readFileSync(path.join(layout.workspace, image.file))) !== image.sha256,
+		);
+		return stale ? null : receipt;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Captures verifiably supplied with one grader's verdict, still backed by the same bytes.
  * @param batchRoot The batch.
  * @param grader The grader.
@@ -183,25 +209,14 @@ function fileImageReceipt(verdictFile: string, images: RunImages | null): void {
  * @returns The supplied labels; missing, historical, damaged or stale evidence proves nothing.
  */
 function suppliedCaptures(batchRoot: string, grader: GraderName, run: string): string[] {
-	const layout = graderLayout(batchRoot, grader);
-	const verdict = path.join(layout.verdicts, `${run}.json`);
-	try {
-		const receipt = ReceiptSchema.parse(
-			JSON.parse(fs.readFileSync(`${verdict}.images.json`, "utf8")),
-		);
-		if (receipt.run !== run || receipt.verdictSha256 !== digest(fs.readFileSync(verdict)))
-			return [];
-		const workspace = layout.workspace;
-		if (
-			receipt.images.some(
-				(image) => digest(fs.readFileSync(path.join(workspace, image.file))) !== image.sha256,
-			)
-		)
-			return [];
-		return receipt.suppliedCaptures;
-	} catch {
-		return [];
-	}
+	return readReceipt(batchRoot, grader, run)?.suppliedCaptures ?? [];
 }
 
-export { combinedDelivery, fileImageReceipt, imagesForRun, suppliedCaptures, type RunImages };
+export {
+	combinedDelivery,
+	fileImageReceipt,
+	imagesForRun,
+	readReceipt,
+	suppliedCaptures,
+	type RunImages,
+};
