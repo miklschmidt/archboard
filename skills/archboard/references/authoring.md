@@ -42,19 +42,18 @@ valid ids alone cannot tell you this.
 
 ### Groups
 
-A group crosses containment: two modules in different services can be part of
-one effort, and one module of two. Membership is explicit on each member, never
-inherited by or from a container, and the ids come from `groups` in
-`config.yaml` (`{ "<id>": { "name": "<display name>" } }`). Renaming a group
-changes no board. Before every write that adds parts, read the configured groups
-and ask of each new part which of those concerns it serves; a configured group
-the source places a part in and the part does not list is a membership the board
-lacks. Groups assign no color: color is a property of a kind in `config.yaml`
-(`nodeKinds.<kind>.color`, `relationshipKinds.<kind>.color` from the curated
-palette), never of a board, a node or a group. A container with a colored kind
-tints its contents, and each node's icon chip says its own kind; a vault whose
-kinds carry no color draws every board neutral, which is a configuration
-question for the vault's owner, not a reason to touch `config.yaml` while
+A group crosses containment: modules in different services can share one, and
+one module can be in two. Membership is explicit on each member, never inherited
+by or from a container, and the ids come from `groups` in `config.yaml`
+(`{ "<id>": { "name": "<display name>" } }`); renaming a group changes no board.
+Before every write that adds parts, ask of each new part which configured
+concerns it serves: a group the source places a part in and the part does not
+list is a membership the board lacks. Groups assign no color: color belongs to a
+kind (`nodeKinds.<kind>.color`, `relationshipKinds.<kind>.color`, from the
+curated palette), never to a board, a node or a group. A container with a
+colored kind tints its contents and each node's icon chip says its own kind; a
+vault whose kinds carry no color draws every board neutral, which is the vault
+owner's configuration question, not a reason to touch `config.yaml` while
 authoring a board.
 
 ```json
@@ -73,11 +72,11 @@ whole variant: a member a view hides is still a member. A configured group
 nobody has joined answers empty; an id that is neither configured nor on any
 node is refused.
 
-On the canvas, choose a group from the sidebar's Board tab or from a selected
-node's membership. Its drawn members stand out across containers while boundary
-neighbours remain readable. Open **Details** for the complete report: every
-member including ones the current view hides, internal relationships, directed
-incoming and outgoing boundary relationships, and their immediate neighbours.
+On the canvas, pick a group from the sidebar's Board tab or a selected node's
+membership: its drawn members stand out across containers, boundary neighbours
+stay readable, and **Details** opens the complete report (every member,
+including those the view hides, internal relationships, directed incoming and
+outgoing boundary relationships, and their immediate neighbours).
 
 ### Bindings
 
@@ -87,12 +86,11 @@ Register each checkout whose implementation you bind with
 repo-relative `path`. `branch`, `commit` and `confirmedAt` record what you
 actually confirmed; restating the node keeps them only if you restate them.
 
-A binding names the implementation owner of the node's stated responsibility:
-the file whose body does what the responsibility says. It is not the file
-that imports the unit, registers it (a command table, a plugin table, a route
-mount), or calls it. A command's handler binds to the file where the handler
-is written, not to the table that registers the command and not to the
-dispatcher that calls it. A planned part or an implementation unavailable for
+A binding names the implementation owner: the file whose body does what the
+node's responsibility says, not a file that imports the unit, registers it (a
+command table, a plugin table, a route mount) or calls it. A command's handler
+binds where the handler is written, not to the table registering the command or
+the dispatcher calling it. A planned part or an implementation unavailable for
 inspection stays unbound; one in another checkout and one spread across files
 follow [evidence rule 2](../SKILL.md#evidence-before-a-write). `archboard check`
 reports `BINDING_PATH_MISSING` for a node whose binding names a path the
@@ -110,13 +108,12 @@ falls back to current when the name is gone. Reuse an existing detail board
 level.
 
 **The kind is the linked board's level.** A node standing for what another
-board describes carries that board's level as its kind: a `system` board is
-stood for by a node of kind `system`, a `service` board by `service`, a
-`module` board by `module`, so a reader sees where one level joins the next
-without opening anything. `external` is not that kind. It means code this
-codebase does not own — a library, a framework, a runtime, a shell, a hosted
-service, a caller outside the checkout — and saying it about one of our own
-parts tells the reader the opposite of what is true.
+board describes takes that board's level as its kind (`system`, `service`,
+`module`), so a reader sees where one level joins the next without opening
+anything. `external` is not that kind: it means code this codebase does not own
+(a library, a framework, a runtime, a shell, a hosted service, a caller outside
+the checkout), and saying it of one of our own parts tells the reader the
+opposite of what is true.
 
 **The link sits on a part that is really there.** A drill-down is a property of
 a part the board draws for its own sake, never a node added to carry it ([keep
@@ -131,19 +128,18 @@ relationships. Which way the link points says where it sits:
   `calls this module` draws an edge to a node of kind `module` whose drill-down
   opens it.
 
-`archboard check` reports all three mistakes on a saved board, as warnings
-naming the node: `DRILL_DOWN_ONLY_NODE` (nothing but the link — no
-relationship, no children, no part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (the
-vault holds no such board, so the link opens nothing) and
-`DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of the board it
-opens).
+`archboard check` warns on all three mistakes, naming the node:
+`DRILL_DOWN_ONLY_NODE` (nothing but the link: no relationship, no children, no
+part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (no such board, so the link opens
+nothing) and `DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of
+the board it opens).
 
-Those three and `BINDING_PATH_MISSING` are checks on a variant's content, so
-they run only over the variants a write can still change. A frozen variant is
-left alone: no accepted write could clear a warning there, and a binding that
-named a file which existed then is a correct record, not drift.
-`UNKNOWN_VOCABULARY` is not one of them — its subject is the vault
-configuration, so defining the kind again clears it wherever it sits.
+Those three and `BINDING_PATH_MISSING` check a variant's content, so they run
+only over the variants a write can still change: no accepted write could clear a
+warning on a frozen variant, and a binding to a file that existed then is a
+correct record, not drift. `UNKNOWN_VOCABULARY` is not one of them: its subject
+is the vault configuration, so defining the kind again clears it wherever it
+sits.
 
 ## Relationships
 
@@ -157,29 +153,27 @@ configuration, so defining the kind again clears it wherever it sits.
 - `traffic`: `{}` for moving dots at the defaults (speed 40, volume 0.5);
   `{ "speed", "volume" }` positive finite numbers; omit for none.
 
-Emphasis is the board's answer to "what am I looking at". Mark the spine: the
-path or backbone the board exists to show. On a board of how one write lands,
-that is the CLI's call into the canvas, the canvas's write through the board
-store and the store's atomic write to the file; the lease, the version check
-and the broadcast are the context that path runs through. Keep `hero` to about
-a third of the relationships and never past half. Weight is a contrast and
-spends itself: ten hero lines out of twelve is not an emphasised board, it is a
-heavier one, and the reader is back to reading every label to find the line
-that matters.
+Emphasis answers "what am I looking at": `hero` marks the spine, the path or
+backbone the board exists to show. On a board of how one write lands, that is
+the CLI's call into the canvas, the canvas's write through the board store and
+the store's atomic write to the file; the lease, the version check and the
+broadcast are the context that path runs through. Keep `hero` to about a third
+of the relationships and never past half: weight is a contrast and spends
+itself, and ten hero lines out of twelve make a heavier board, not an emphasised
+one, sending the reader back to every label to find the line that matters.
 
-The commoner mistake is the opposite one. A board whose question has an answer
-path, with every relationship left `normal`, hands the reader a flat picture and
-the work you already did. If you can say in one sentence which relationships
-carry the board's answer, those are the `hero` ones, and saying it is the check:
-a board with no such sentence — a catalogue of parts, a dependency map — has no
-spine and marks nothing, which is correct for it.
+The commoner mistake is the opposite: a board whose question has an answer
+path, left all `normal`, hands the reader a flat picture and the work you
+already did. If one sentence can say which relationships carry the board's
+answer, those are `hero`, and saying it is the check; a board with no such
+sentence (a catalogue of parts, a dependency map) has no spine and correctly
+marks nothing.
 
-`muted` is an instruction of its own, not a leftover. Put it on the
-relationships that have to be on the board for it to be honest but are not part
-of the answer: a registration made once at startup, a configuration read, a
-dependency that explains where a part comes from, a teardown path. Muting those
-is what lets the unmarked majority read as ordinary and the spine read as the
-subject.
+`muted` is an instruction of its own, not a leftover: it goes on relationships
+the board needs to be honest but that are not the answer (a registration made
+once at startup, a configuration read, a dependency explaining where a part
+comes from, a teardown path), so the unmarked majority reads as ordinary and the
+spine as the subject.
 
 Traffic goes where the [catalogue's `traffic`
 row](../SKILL.md#everything-the-code-shows) says: the forward path of every
@@ -194,11 +188,11 @@ relationship, restate that relationship with its `id`
 
 ### A step is not a relationship
 
-`emphasis` and `traffic` are properties of a relationship, and a flow step has
-neither. A step takes `from`, `to`, `label`, `kind`, `note` and `repeat` (with
-`id` or `as` to identify it) and nothing else; `repeat` and `note` in turn exist
-only there, never on a relationship. A node carries none of the four: emphasis
-is a property of a line, not of a part.
+`emphasis` and `traffic` belong to a relationship; a flow step has neither. A
+step takes `from`, `to`, `label`, `kind`, `note` and `repeat` (with `id` or `as`
+to identify it) and nothing else, and `repeat` and `note` exist only there,
+never on a relationship. A node carries none of the four: emphasis is a property
+of a line, not of a part.
 
 A step carrying `emphasis` is refused with `Unrecognized key: "emphasis"` over a
 second line locating it, `→ at flows[0].steps[0]`: the refusal is about those
@@ -215,12 +209,11 @@ siblings are not a chain (rule 3), the receiver is the part and not its
 container ([containment and receivers](#containment-and-receivers)), a return
 travelling back is a flow step and not a second architecture relationship, and:
 
-- **The kind follows the mechanism.** A function call is a `call`; a value
-  read or handed over is `data`; a component drawing another is `render`; an
-  emitted event or a subscription is `event`; a message put on a queue is
-  `queue`; an HTTP request is `http`; a dependency the
-  source imports but never calls at this level is a `dependency`. Use the
-  configured kind that names what the source does.
+**The kind follows the mechanism**: a function call is a `call`; a value read
+or handed over is `data`; a component drawing another is `render`; an emitted
+event or a subscription is `event`; a message put on a queue is `queue`; an HTTP
+request is `http`; a dependency the source imports but never calls at this level
+is a `dependency`. Use the configured kind that names what the source does.
 
 After the write, read the saved `edges` against the record: every relationship
 has a line, every line has a relationship, and no relationship exists without

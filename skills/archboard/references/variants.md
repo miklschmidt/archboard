@@ -38,12 +38,12 @@ as removed; ids only on the proposal as added.
 
 Count the authored properties that differ from the predecessor's relationship
 with the same id: `from`, `to`, `kind`, `label`, `description`, `emphasis`,
-`traffic` (once, as a whole). One difference keeps the id: a clarified label,
-or the same labelled call now landing on a new node. Two or more make it a
+`traffic` (once, as a whole). One difference keeps the id (a clarified label, or
+the same labelled call now landing on a new node); two or more make a
 replacement: put the old id in `removeEdges` and add the new relationship
 without an id, in the same batch. The CLI counts after resolving names and
-defaults, across separate edits too. Compare endpoint ids, not names; renaming
-a node changes no relationship.
+defaults, across separate edits too. Compare endpoint ids, not names: renaming a
+node changes no relationship.
 
 ### Sequence identity
 
@@ -54,33 +54,31 @@ A flow rewritten without ids compares as a deletion beside an addition.
 ## Comparing before you report
 
 **A variant with a predecessor is drawn as the comparison with it**, whatever
-you asked for: added, removed and changed subjects are marked, removed ones
-are still on the page, and the receipt names the other side under
-`comparedWith`. Only a variant that came from nothing draws plain. So parts
-added to a derived variant — a proposal, or a current variant that was adopted
-from something — arrive in the picture already marked as added, and a picture
-of one is read against its predecessor rather than as a board on its own.
+you asked for: added, removed and changed subjects are marked, removed ones stay
+on the page, and the receipt names the other side under `comparedWith`. Only a
+variant that came from nothing draws plain, so parts added to a derived variant
+(a proposal, or a current variant adopted from something) arrive already marked
+as added, and its picture is read against its predecessor, not on its own.
 
-Read the saved family and draw predecessor and proposal through the same
-board view (`semantic rasterize <board> --view <view> --out current.png`,
-then the same with `--variant <draft>` to `proposal.png`), and open both.
-Check both the ids and the pictures: the added, removed, changed and
-untouched subjects match the change you meant; a removed flow, call or
-participant is drawn as removed in the proposal's picture (absence from the
-picture is not evidence of a shown deletion); a continuing exchange compares
-step by step, so an entirely new sequence needs an explanation grounded in the
-change. When the saved comparison is right and the picture omits a change,
-report the renderer defect and leave the meaning as it is.
+Read the saved family, draw predecessor and proposal through the same board
+view (`semantic rasterize <board> --view <view> --out current.png`, then again
+with `--variant <draft>` to `proposal.png`), and open both. Check the ids and
+the pictures: the added, removed, changed and untouched subjects match the
+change you meant; a removed flow, call or participant is drawn as removed in the
+proposal's picture (absence from a picture is not evidence of a shown deletion);
+a continuing exchange compares step by step, so an entirely new sequence needs
+an explanation grounded in the change. When the saved comparison is right and
+the picture omits a change, report the renderer defect and leave the meaning as
+it is.
 
 ## Disagreements
 
 When the predecessor moves after a draft was branched, the write reaches the
-draft too. Where both changed the same thing, the draft holds a disagreement in
-its `reconciliation` (`issues`, each with a `subject`, a `kind`, an optional
-`field`, `mine`, `theirs`, a `repair` line, and — where one side removed a
-subject the other changed — a `changed` list of `{ field, before, after }`);
-a draft under an unsettled draft waits, and the family lands whole or not at
-all.
+draft too, and where both changed the same thing the draft holds a disagreement
+in its `reconciliation`: `issues`, each with a `subject`, a `kind`, an optional
+`field`, `mine`, `theirs`, a `repair` line and, where one side removed a subject
+the other changed, a `changed` list of `{ field, before, after }`. A draft under
+an unsettled draft waits, and the family lands whole or not at all.
 
 - `competing-field`: Both changed one field of one subject. Answered by `mine`
   or `theirs`.
@@ -97,10 +95,10 @@ all.
 
 `theirs` is a choice between two values, and only `competing-field` has two:
 asking for it on any other kind is refused, the whole call lands nothing, and
-the refusal names every choice in the batch rather than only the one it could
-not take — so read it as naming the payload, not the disagreements. Answer the
-competing fields as sides in one `resolve`, and settle the rest as ordinary
-edits. `mine` is always available, on every kind.
+the refusal names every choice in the batch, not only the one it could not take,
+so read it as naming the payload, not the disagreements. Answer the competing
+fields as sides in one `resolve` and settle the rest as ordinary edits; `mine`
+is available on every kind.
 
 Settle with
 `archboard semantic resolve <board> --variant <draft> --expect-version <n> --doing "..."`
@@ -115,13 +113,13 @@ disagreement names may come back this way; any other absent id is refused.
 Settling also catches the draft up with everything else the predecessor decided.
 
 Every value in that third answer is read, never retyped: the issue's `changed`
-carries each field the other side moved with the value it moved to, and
+carries each field the other side moved with its new value, and
 `archboard semantic show <board>` carries the rest of the node as the
-predecessor has it. Carry each one across character for character. A field
-composed from memory, or blended with the neighbouring `responsibility`, is a
-sentence nobody wrote, and reporting it as the current description is a false
-report. The disagreement lines printed under a write are an index into those
-values and not the values themselves: a long one is cut to fit the line.
+predecessor has it. Carry each across character for character: a field composed
+from memory, or blended with the neighbouring `responsibility`, is a sentence
+nobody wrote, and reporting it as the current description is a false report.
+The disagreement lines printed under a write are an index into those values, not
+the values: a long one is cut to fit the line.
 
 ## Adoption
 

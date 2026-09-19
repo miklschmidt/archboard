@@ -75,16 +75,15 @@ here because it has no children; the moment you draw its functions inside it,
 the call lands on `withBoardLock`.
 
 4. Check the answer against your record: every part you meant is there with a
-   configured `kind`; every relationship's `from`, `to` and `kind` match the
-   line of evidence you kept for it, and no relationship exists that you have
-   no line for; bound parts name the identity from step 2 and the owning file.
-   Open the picture and read it as the audience will: the labels legible,
-   nothing cut off, each arrow ending on the part its evidence names, and the
-   `width` and `height` the answer reports small enough to take in at once. A
-   page thousands of pixels on both axes is the tangle this recipe opens with,
-   and a second edit adding its views is the normal loop, not a repair. A
-   request path the board carries is a `flow` drawn through a `data-flow`
-   view, not a row to declare inapplicable.
+   configured `kind`; every relationship's `from`, `to` and `kind` match its
+   line of evidence, and none exists without one; bound parts name the
+   identity from step 2 and the owning file. Open the picture and read it as
+   the audience will: labels legible, nothing cut off, each arrow ending on the
+   part its evidence names, and the reported `width` and `height` small enough
+   to take in at once. A page thousands of pixels on both axes is the tangle
+   this recipe opens with, and a second edit adding its views is the normal
+   loop, not a repair. A request path the board carries is a `flow` drawn
+   through a `data-flow` view, not a row to declare inapplicable.
 
 Read [authoring](references/authoring.md) for groups, drill-down links to
 detail boards, traffic, emphasis, descriptions, and what a refusal means.

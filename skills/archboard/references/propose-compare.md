@@ -33,8 +33,8 @@ archboard semantic rasterize "Board lease" --view Leases --variant "Lease table"
 ```
 
 The proposal carries every subject of its predecessor with the same ids, so the
-comparison is exact: kept ids read as continuing, new subjects as added, removed
-ids as removed. Views belong to the board, so both pictures go through the same
+comparison is exact (kept ids continue, new subjects are added, removed ids are
+removed), and views belong to the board, so both pictures go through the same
 view and a removed subject stays drawn as removed. The current side comes from
 the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
 exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
@@ -52,16 +52,16 @@ stays unbound.
    Open both pictures: the removal is drawn as removed in the proposal's, and
    the current one shows what it showed before.
 
-   Report from that answer rather than from the change you meant to make: the
-   parts removed, the parts added, and every relationship the answer does not
-   call `unchanged`, with where it now lands. Here it says `Lock files` and
-   `Lock watcher` are `removed`, `Lease table` is `added`, and both calls are
-   `changed` with one field each — `to` moved from `Lock files` to `Lease table`
-   — so the report is "the calls from `holdBoard` and `releaseHold` are the same
-   two relationships, now landing on the table", not "two relationships went and
-   two arrived". A relationship whose endpoint moved is the change the
-   comparison exists to show, so name it. The command reads a variant against
-   the one it came from; a root architecture came from nothing and is refused.
+   Report from that answer, not from the change you meant to make: the parts
+   removed, the parts added, and every relationship the answer does not call
+   `unchanged`, with where it now lands. Here `Lock files` and `Lock watcher`
+   are `removed`, `Lease table` is `added`, and both calls are `changed` in one
+   field (`to` moved from `Lock files` to `Lease table`), so the report is "the
+   calls from `holdBoard` and `releaseHold` are the same two relationships, now
+   landing on the table", not "two relationships went and two arrived": an
+   endpoint that moved is the change the comparison exists to show, so name it.
+   The command reads a variant against the one it came from; a root
+   architecture came from nothing and is refused.
    When the proposal adds or changes a board view, read [sequences, views and
    walkthroughs](references/sequences-views-walkthroughs.md) for the two
    meanings of a selection scope before writing it.
