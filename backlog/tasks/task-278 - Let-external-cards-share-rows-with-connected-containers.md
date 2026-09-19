@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 15:34'
+updated_date: '2026-09-19 15:49'
 labels:
   - renderer
   - layout
@@ -93,4 +93,6 @@ User selected C: balanced offsets. US-to-Portal now distributes offset equally (
 Balanced aligned ports exposed expensive unhelpful fold candidates on Flask map 2. Candidate eligibility now checks the actual balanced card/frame footprint of the settled baseline before native routing and label settlement, preserving hierarchy and allowing feasible count gaps. This is a proposal eligibility rule on current geometry, not a claim that future label-driven placement is monotonic. Production Flask2 retained 2137x1553 while falling to 140 native solves and about 0.91s; proposed 2/3/4-column footprints have fit .440/.328/.237 against required .608. Phone1, full branching mTLS2, long24three and reading tests pass.
 
 New live screenshots after C integration: common-weblib gray Uses ambient helpers routes make label-induced S-bends, purple generated-model departures are square; current-cloud-infrastructure Observed VM-to-DB entries have tiny/square side turns even where source and target spans overlap. Investigate forced label positions overriding aligned ports on these exact edges before adding more approach geometry. Screenshots /tmp/codex-clipboard-7dbde3e7-6cca-421b-8285-9a7ab05300c6.png and /tmp/codex-clipboard-65175574-5b82-4f65-bb10-7c2e71241d1d.png.
+
+User requests two additional parallel investigations on live screenshots: excessive public/mobile incoming-chain gaps in common-weblib, and Migrated API capabilities to DB2 crossing the unrelated Windows/IIS VM Pool body in current-cloud-infrastructure@Nc8vWLvX. Investigate isolated candidates and show actual before/after images before adopting. Existing title-only obstacles allow unrelated frame-body traversal; preserve legitimate child boundary access in any fix. Balanced-port audit also found one Common helper at exact mean and the other displaced by an unused other-kind center seed; label-only straightening is insufficient.
 <!-- SECTION:NOTES:END -->
