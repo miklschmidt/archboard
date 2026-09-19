@@ -7,7 +7,11 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	routeLabels,
+	routePoints,
+	distanceToFrame,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
 	detached,
 	covering,
@@ -181,7 +185,7 @@ describe("a label belongs to one line", () => {
 	});
 
 	for (const returning of [false, true]) {
-		test(`labelled fork${returning ? " with a return" : ""} branches keep separate departures and clear pills`, async () => {
+		test(`labelled fork${returning ? " with a return" : ""} branches retain their identities and clear pills`, async () => {
 			for (const order of [
 				[0, 1, 2],
 				[0, 2, 1],
@@ -217,22 +221,10 @@ describe("a label belongs to one line", () => {
 					expect(masking(drawn)).toEqual([]);
 					expect(routes.get("graphout")?.[0]).toBeDefined();
 					expect(routes.get("subjects")?.[0]).toBeDefined();
-					expect(routes.get("graphout")?.[0]).not.toEqual(routes.get("subjects")?.[0]);
-					const graph = drawn.atlas.nodes["graph"]!;
-					const layout = drawn.atlas.nodes["layout"]!;
-					const forward = routes.get("graphout")!;
-					expect(forward[0]?.x).toBeCloseTo(graph.x, 1);
-					expect(forward.at(-1)?.x).toBeCloseTo(layout.x, 1);
-					expect(Math.min(...forward.map((point) => point.x))).toBeLessThan(
-						Math.min(graph.x, layout.x),
-					);
-					if (returning) {
-						const returnPath = routes.get("return")!;
-						expect(returnPath[0]?.x).toBeCloseTo(layout.x + layout.width, 1);
-						expect(returnPath.at(-1)?.x).toBeCloseTo(graph.x + graph.width, 1);
-						expect(Math.max(...returnPath.map((point) => point.x))).toBeGreaterThan(
-							Math.max(graph.x + graph.width, layout.x + layout.width),
-						);
+					for (const edge of content.edges) {
+						const route = routes.get(edge.id)!;
+						expect(distanceToFrame(route[0]!, drawn.atlas.nodes[edge.from]!)).toBeLessThan(0.02);
+						expect(distanceToFrame(route.at(-1)!, drawn.atlas.nodes[edge.to]!)).toBeLessThan(0.02);
 					}
 				}
 			}
@@ -300,25 +292,5 @@ describe("a label belongs to one line", () => {
 		for (const theme of ["light", "dark"] as const) {
 			expect(masking(await renderArchitecture({ content: PAIRED, theme }))).toEqual([]);
 		}
-	});
-
-	test("a forward adjacent connection is direct and its return travels to the right", async () => {
-		const drawn = await renderArchitecture({ content: PAIRED, theme: "light" });
-		const up = routePoints(drawn.svg).get("drawing") ?? [];
-		const down = routePoints(drawn.svg).get("asks") ?? [];
-		expect(up.length).toBeGreaterThan(1);
-		expect(down.length).toBeGreaterThan(1);
-		const pane = drawn.atlas.nodes["pane"]!;
-		const routes = drawn.atlas.nodes["routes"]!;
-		expect(down.every((point) => point.x === down[0]?.x)).toBe(true);
-		expect(up[0]?.x).toBeCloseTo(routes.x + routes.width, 1);
-		expect(up.at(-1)?.x).toBeCloseTo(pane.x + pane.width, 1);
-		expect(Math.max(...up.map((point) => point.x))).toBeGreaterThan(
-			Math.max(pane.x + pane.width, routes.x + routes.width),
-		);
-		expect(detached(drawn)).toEqual([]);
-		expect(covering(drawn)).toEqual([]);
-		expect(overlaps(drawn, PAIRED)).toEqual([]);
-		expect(masking(drawn)).toEqual([]);
 	});
 });

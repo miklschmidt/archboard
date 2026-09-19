@@ -12,13 +12,7 @@
 import type { DiagramBox, VariantContent } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
-import {
-	across,
-	along,
-	breadth,
-	faceOf,
-	readingOf,
-} from "@/runtime/semantic-renderer/tests/drawn-reading";
+import { across, along, breadth, faceOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
 	corridorPoints,
 	routeCrosses,
@@ -150,13 +144,12 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
  * @returns The largest count over the cards and flanks: a fan of routes down one flank.
  */
 function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
-	const direction = readingOf(drawing);
 	const counts = new Map<string, number>();
 	for (const [id, points] of corridorPoints(drawing.svg)) {
 		const edge = content.edges.find((candidate) => candidate.id === id);
 		const from = edge === undefined ? undefined : drawing.atlas.nodes[edge.from];
 		if (edge === undefined || from === undefined) continue;
-		const face = faceOf(points[0]!, from, direction);
+		const face = faceOf(points[0]!, from);
 		if (face !== "beside" && face !== "return") continue;
 		const key = `${edge.from}:${face}`;
 		counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -172,7 +165,6 @@ function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
  * @returns Corridor ink over all ink, and bends per route.
  */
 function inkOf(drawing: RenderedDiagram): Ink {
-	const direction = readingOf(drawing);
 	const cards = Object.values(drawing.atlas.nodes);
 	let total = 0,
 		corridor = 0,
@@ -185,16 +177,11 @@ function inkOf(drawing: RenderedDiagram): Ink {
 				end = points[index]!;
 			const length = Math.abs(end.x - start.x) + Math.abs(end.y - start.y);
 			total += length;
-			const lane = across(start, direction);
-			const alongReading =
-				lane === across(end, direction) && along(start, direction) !== along(end, direction);
+			const lane = across(start);
+			const alongReading = lane === across(end) && along(start) !== along(end);
 			if (
 				alongReading &&
-				!cards.some(
-					(box) =>
-						across(box, direction) <= lane &&
-						lane <= across(box, direction) + breadth(box, direction),
-				)
+				!cards.some((box) => across(box) <= lane && lane <= across(box) + breadth(box))
 			)
 				corridor += length;
 			if (index >= 2) {

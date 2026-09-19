@@ -1,472 +1,93 @@
-// Semantic containment and measured text become one compound graph. ELK owns
-// the coordinates; these constraints express only the diagram's reading order.
-import type { ElkExtendedEdge, ElkLabel, ElkNode, ElkPort, LayoutOptions } from "@archboard/elk-rs";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
-import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
+import {
+	LABEL_CARD_CLEARANCE,
+	LABEL_LABEL_CLEARANCE,
+	LABEL_ROUTE_CLEARANCE,
+	RANK_GAP,
+} from "@/transformers/semantic-renderer/config";
+// The adapter carries only semantic containment and measured dimensions.
+// Placement chooses ranks and the router chooses physical attachment faces.
+import type { ElkLabel, ElkNode, LayoutOptions } from "@archboard/elk-rs";
+import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	MeasuredArchitecture,
 	MeasuredNode,
 } from "@/transformers/semantic-renderer/lib/drawing";
-import { flankSkips } from "@/transformers/semantic-renderer/lib/layout/brackets";
-import { rankNodes } from "@/transformers/semantic-renderer/lib/layout/rank";
-import {
-	ALONE,
-	besideFlankOf,
-	portIndex,
-	seatsOf,
-	type FlankRule,
-	type Seat,
-} from "@/transformers/semantic-renderer/lib/layout/flank-rules";
-import {
-	ancestryOf,
-	frameCrossings,
-	type Crossing,
-} from "@/transformers/semantic-renderer/lib/layout/frame-crossings";
-import {
-	SOLVING,
-	headerInsets,
-	type Face,
-	type HeaderSide,
-	type PortSides,
-} from "@/transformers/semantic-renderer/lib/layout/reading";
 
-/** Room for a route alongside a card or inside its containing frame. */
-const FRAME_INSET = 24;
-/** The same air separates every title from the content below it. */
-const HEADER_AIR = 24;
-
-/** Defaults apply at every hierarchy level, not only the root graph. */
+/** Shared diagram spacing; legacy option names remain the transport spelling. */
 const COMPOUND_OPTIONS: LayoutOptions = {
-	"elk.algorithm": "layered",
-	"elk.direction": "DOWN",
-	"elk.edgeRouting": "ORTHOGONAL",
-	"elk.edgeLabels.inline": "true",
-	"elk.layered.edgeLabels.centerLabelPlacementStrategy": "TAIL_LAYER",
-	"elk.hierarchyHandling": "INCLUDE_CHILDREN",
-	"elk.json.shapeCoords": "ROOT",
-	"elk.json.edgeCoords": "ROOT",
-	"elk.randomSeed": "1",
-	"elk.layered.cycleBreaking.strategy": "DEPTH_FIRST",
-	"elk.layered.layering.strategy": "LONGEST_PATH_SOURCE",
-	// Network-simplex placement centres a card over the fan it feeds and keeps
-	// siblings on their layer line; post-compaction was tried and staircased a
-	// plain fan (docs/design/layout-rules.md section 7).
-	"elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-	"elk.layered.mergeEdges": "false",
-	"elk.layered.mergeHierarchyEdges": "false",
-	"elk.spacing.nodeNode": "72",
-	"elk.spacing.componentComponent": "96",
-	"elk.spacing.edgeNode": "24",
-	"elk.spacing.edgeEdge": "20",
-	"elk.spacing.labelNode": "16",
-	"elk.spacing.labelLabel": "24",
-	"elk.spacing.edgeLabel": "12",
-	"elk.spacing.portPort": "24",
-	"elk.spacing.nodeSelfLoop": "24",
-	"elk.layered.spacing.nodeNodeBetweenLayers": "24",
-	"elk.layered.spacing.edgeNodeBetweenLayers": "20",
-	"elk.layered.spacing.edgeEdgeBetweenLayers": "20",
+	"elk.spacing.labelNode": String(LABEL_CARD_CLEARANCE),
+	"elk.spacing.labelLabel": String(LABEL_LABEL_CLEARANCE),
+	"elk.spacing.edgeLabel": String(LABEL_ROUTE_CLEARANCE),
+	"elk.layered.spacing.nodeNodeBetweenLayers": String(RANK_GAP),
 };
 
 /**
- * Faces the engine chooses: a forward skip carries no reading convention the
- * way a descent, a return or a containment call does, and a face fixed for it
- * before layout is a guess about columns the engine has not made yet. Left
- * free, the router picks the face that fits its own columns, which is what
- * removes the margin corridors on wide boards (docs/design/layout-rules.md).
- */
-const FREE = "FREE";
-type Faces = PortSides | typeof FREE;
-
-/**
- * Adjacent forward steps are direct, returns take the return flank, a skip
- * beside its source's one chain brackets that chain from the beside flank:
- * those are reading conventions. Every other forward skip is the engine's
- * (docs/design/layout-rules.md sections 10 and 15).
- * @param edge The connection being read.
- * @param ordering The deterministic dependency ranks, with cycles broken in document order, the brackets and the free solve.
- * @param nested Whether the connection crosses a containment boundary.
- * @returns The source and target attachment faces, or FREE for the engine to choose.
- */
-function sidesOf(edge: SemanticEdge, ordering: Ordering, nested: boolean): Faces {
-	// rankNodes assigns every node before edge attachment begins.
-	const distance = ordering.ranks.get(edge.to)! - ordering.ranks.get(edge.from)!;
-	if (distance <= 0) return [ordering.rule.returnFlank, ordering.rule.returnFlank];
-	if (distance === 1) return [SOLVING.forwardOut, SOLVING.forwardIn];
-	// A skip across a frame boundary descends like any forward step: the engine
-	// refuses a port-less edge across a hierarchy, and the flank it used to take
-	// was a lane down the frame's edge that looped a route round the frame.
-	return nested ? [SOLVING.forwardOut, SOLVING.forwardIn] : ruleFaces(edge, ordering);
-}
-
-/**
- * A first render's skip faces under its flank rule: the beside flank for
- * every skip, for a bracket only, or for none.
- * @param edge The skip.
- * @param ordering The brackets and the flank rule.
- * @returns The faces, or FREE.
- */
-function ruleFaces(edge: SemanticEdge, ordering: Ordering): Faces {
-	const { skips } = ordering.rule;
-	const flanked = skips === "flanked" || (skips === "bracketed" && ordering.flank.has(edge.id));
-	const beside = besideFlankOf(ordering.rule);
-	return flanked ? [beside, beside] : FREE;
-}
-
-/** The semantic ordering of one view: ranks, the brackets and the flank rule. */
-interface Ordering {
-	readonly ranks: ReadonlyMap<string, number>;
-	readonly flank: ReadonlySet<string>;
-	readonly rule: FlankRule;
-	/** Which of the relationships sharing a pair of endpoints each one is, so a pair does not cross. */
-	readonly seats: ReadonlyMap<string, Seat>;
-}
-
-/**
- * Whether a relationship joins a frame to something outside it. The engine
- * attaches such relationships itself; explicit hierarchical frame ports
- * have produced unsupported layering configurations (TASK-237).
- * @param edge The connection being read.
- * @param measured The inclusion tree of this view.
- * @returns True when either end is a frame and neither holds the other.
- */
-function framesOutside(edge: SemanticEdge, measured: MeasuredArchitecture): boolean {
-	const nested =
-		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
-	return (
-		!nested &&
-		containmentOf(edge, measured) === undefined &&
-		[edge.from, edge.to].some((id) => (measured.nodes.get(id)?.headerHeight ?? 0) > 0)
-	);
-}
-
-/**
- * Whether one endpoint is a frame the other sits inside. Such a relationship
- * starts or ends on the frame itself, so it is drawn from the frame's top face
- * down into the part, or from the part down onto the frame's bottom face,
- * never from the frame's outer flank as if it came from outside.
- * @param edge The connection being read.
- * @param measured The inclusion tree of this view.
- * @returns Which end holds the other, or undefined for two separate parts.
- */
-function containmentOf(
-	edge: SemanticEdge,
-	measured: MeasuredArchitecture,
-): "holds" | "held" | undefined {
-	if (edge.from === edge.to) return undefined;
-	if (ancestryOf(edge.to, measured).includes(edge.from)) return "holds";
-	if (ancestryOf(edge.from, measured).includes(edge.to)) return "held";
-	return undefined;
-}
-
-/**
- * The faces of a frame's own relationship, which run the way the page reads.
- * @param edge The connection being read.
- * @param measured The inclusion tree of this view.
- * @returns The faces, or nothing when neither end holds the other.
- */
-function containmentSides(
-	edge: SemanticEdge,
-	measured: MeasuredArchitecture,
-): PortSides | undefined {
-	const containment = containmentOf(edge, measured);
-	if (containment === "holds") return [SOLVING.forwardIn, SOLVING.forwardIn];
-	if (containment === "held") return [SOLVING.forwardOut, SOLVING.forwardOut];
-	return undefined;
-}
-
-/**
- * The attachment faces of one connection: by containment when one end holds the other,
- * else by dependency rank. A frame's own relationship runs the way the page
- * reads: from the frame's back edge into the part, or from the part's front
- * onto the frame's front edge, never from a flank, which for a frame is a
- * hierarchical port on a lateral face that the engine's node placer refuses.
- * @param edge The connection being read.
- * @param measured The inclusion tree of this view.
- * @param ordering The deterministic dependency ranks and the bracketing skips.
- * @returns The source and target attachment faces, or FREE for the engine to choose.
- */
-function facesOf(edge: SemanticEdge, measured: MeasuredArchitecture, ordering: Ordering): Faces {
-	if (framesOutside(edge, measured)) return FREE;
-	const containment = containmentSides(edge, measured);
-	if (containment !== undefined) return containment;
-	const nested =
-		measured.nodes.get(edge.from)?.node.parent !== measured.nodes.get(edge.to)?.node.parent;
-	return sidesOf(edge, ordering, nested);
-}
-
-/**
- * A distinct port for each end prevents unrelated relationships sharing a path.
- * @param id The internal endpoint id, derived from the semantic edge id.
- * @param side The face to use; ELK chooses the location on that face.
- * @param index Its place among the ports of its face (`portIndex`).
- * @returns The engine's endpoint.
- */
-function portOf(id: string, side: Face, index: number): ElkPort {
-	return {
-		id,
-		width: 0,
-		height: 0,
-		layoutOptions: {
-			"elk.port.side": side,
-			"elk.port.index": String(index),
-		},
-	};
-}
-
-/**
- * A frame's padding: its title band on the header side, and room for a route
- * inside every other edge.
- * @param headerHeight The measured title band.
- * @param header Where the title band sits in the solving frame.
- * @returns The engine's padding option.
- */
-function framePadding(headerHeight: number, header: HeaderSide): string {
-	const { top, left } = headerInsets(header, headerHeight + HEADER_AIR, FRAME_INSET);
-	return `[top=${top},left=${left},bottom=${FRAME_INSET},right=${FRAME_INSET}]`;
-}
-
-/**
- * Convert measured dimensions to the graph's fixed card or expandable frame.
+ * Convert measured dimensions to a card or expandable frame.
  * @param measured The complete text measurement.
- * @param header Where a frame's title band sits in the solving frame.
- * @returns A node awaiting its children and ports.
+ * @returns The measured shape before containment is assembled.
  */
-function nodeOf(measured: MeasuredNode, header: HeaderSide): ElkNode {
+function nodeOf(measured: MeasuredNode): ElkNode {
 	const { node, width, height, headerHeight } = measured;
-	const result: ElkNode = {
+	return {
 		id: node.id,
 		width,
 		height,
-		ports: [],
-		layoutOptions: { "elk.portConstraints": "FIXED_ORDER" },
+		layoutOptions: {
+			"archboard.order-group":
+				node.responsibility === undefined
+					? node.id
+					: JSON.stringify([node.kind, node.responsibility]),
+			...(headerHeight === 0 ? {} : { "archboard.header.size": String(headerHeight) }),
+		},
+		...(headerHeight === 0 ? {} : { children: [] }),
 	};
-	if (headerHeight > 0) {
-		result.children = [];
-		result.layoutOptions = {
-			...result.layoutOptions,
-			"elk.padding": framePadding(headerHeight, header),
-			// Settle the child port order before the parent. The opposite sweep
-			// cannot match mixed flank/forward boundary dummies to their ports.
-			"org.eclipse.elk.alg.layered.crossingMinimization.hierarchicalSweepiness": "-2",
-			"elk.nodeSize.constraints": "MINIMUM_SIZE",
-			"elk.nodeSize.minimum": `(${width},${height})`,
-		};
-	}
-	return result;
 }
 
 /**
- * Preserve the board's parent links and document order in the engine graph.
- * @param nodes The semantic nodes in their authored order.
- * @param engineNodes The measured engine nodes keyed by semantic id.
- * @returns The nodes with no parent in this view.
- */
-function containNodes(
-	nodes: readonly SemanticNode[],
-	engineNodes: ReadonlyMap<string, ElkNode>,
-): ElkNode[] {
-	const roots: ElkNode[] = [];
-	for (const node of nodes) {
-		const engineNode = engineNodes.get(node.id);
-		const parent = node.parent === undefined ? undefined : engineNodes.get(node.parent);
-		if (engineNode !== undefined) {
-			(parent?.children ?? roots).push(engineNode);
-		}
-	}
-	return roots;
-}
-
-/**
- * A frame's leaf collection, excluding frames whose children have their own
- * containment or relationships with one another.
- * @param node The potential frame.
- * @param edges The view's relationships.
- * @returns Its independent leaves, or an empty collection.
- */
-function collectionOf(node: ElkNode, edges: readonly SemanticEdge[]): ElkNode[] {
-	const children = node.children ?? [];
-	if (children.some((child) => (child.children?.length ?? 0) > 0)) return [];
-	const members = new Set(children.map((child) => child.id));
-	return edges.some(({ from, to }) => members.has(from) && members.has(to)) ? [] : children;
-}
-
-/**
- * Cards with no relationships between them need no inter-card label layers.
- * Those with no external relationships either can be packed as a collection,
- * instead of stretching one layered row across the frame.
- * @param nodes The complete engine hierarchy.
- * @param edges Relationships that prevent a child from being packed independently.
- * @param header The title side, which identifies the transposed solving frame.
- */
-function configureCollections(
-	nodes: ReadonlyMap<string, ElkNode>,
-	edges: readonly SemanticEdge[],
-	header: HeaderSide,
-): void {
-	const connected = new Set(edges.flatMap(({ from, to }) => [from, to]));
-	const aspect = REFERENCE_PANE.width / REFERENCE_PANE.height;
-	for (const node of nodes.values()) {
-		const children = collectionOf(node, edges);
-		if (children.length === 0) continue;
-		// No relationship runs between these cards, so no inter-card layer
-		// needs badge-sized tracks. Otherwise boundary-port dummies reserve
-		// that same label allowance as empty space inside the frame's border.
-		node.layoutOptions = {
-			...node.layoutOptions,
-			"elk.layered.spacing.edgeEdgeBetweenLayers":
-				COMPOUND_OPTIONS["elk.layered.spacing.edgeEdgeBetweenLayers"]!,
-		};
-		if (children.some((child) => connected.has(child.id))) continue;
-		node.layoutOptions = {
-			...node.layoutOptions,
-			"elk.algorithm": "org.eclipse.elk.rectpacking",
-			"elk.hierarchyHandling": "SEPARATE_CHILDREN",
-			"elk.aspectRatio": String(header === "NORTH" ? aspect : 1 / aspect),
-			"elk.spacing.nodeNode": String(FRAME_INSET),
-		};
-	}
-}
-
-/**
- * Give the engine the complete padded label dimensions and its display lines.
- * @param edge The semantic relationship carrying these words.
- * @param measured The dimensions settled before layout.
- * @returns One label for named relationships, otherwise none.
+ * Pass the padded label dimensions already measured by the drawing host.
+ * @param edge The semantic relationship.
+ * @param measured All measured text.
+ * @returns Its label shape when the relationship carries words.
  */
 function labelsOf(edge: SemanticEdge, measured: MeasuredArchitecture): ElkLabel[] {
 	const label = measured.labels.get(edge.id);
-	if (label === undefined) {
-		return [];
-	}
-	return [
-		{
-			id: `${edge.id}:label`,
-			text: label.runs.map((run) => run.text).join("\n"),
-			width: label.width,
-			height: label.height,
-			layoutOptions: { "elk.edgeLabels.placement": "CENTER" },
-		},
-	];
+	return label === undefined
+		? []
+		: [
+				{
+					id: `${edge.id}:label`,
+					text: label.runs.map((run) => run.text).join("\n"),
+					width: label.width,
+					height: label.height,
+				},
+			];
 }
 
 /**
- * Attach the boundary port of every crossing to the frame it crosses,
- * with one distinct port per relationship (`frame-crossings.ts`). Only a
- * port's face is the renderer's: the engine ignores the index a boundary
- * port carries, and seats the crossings of one face itself, in the order it
- * walks the source's face (measured on 2026-09-17, TASK-258).
- * @param crossings The frames a relationship crosses, the face of each and the port it takes.
- * @param nodes The engine hierarchy being constructed.
- * @returns Their port ids, in traversal order.
- */
-function boundaryPorts(
-	crossings: readonly Crossing[],
-	nodes: ReadonlyMap<string, ElkNode>,
-): string[] {
-	return crossings.map(({ frame, side, port }) => {
-		const ports = nodes.get(frame)?.ports ?? [];
-		ports.push(portOf(port, side, 0));
-		return port;
-	});
-}
-
-/**
- * Attach an endpoint to its owning engine node.
- * @param id The semantic owner of the endpoint.
- * @param port Its fully specified endpoint constraint.
- * @param nodes The engine hierarchy under construction.
- */
-function attachPort(id: string, port: ElkPort, nodes: ReadonlyMap<string, ElkNode>): void {
-	nodes.get(id)?.ports?.push(port);
-}
-
-/**
- * Attach one connection and its measured label to the graph.
- * @param edge The semantic relationship.
- * @param faces The faces its two ends take, or FREE for the engine to choose.
- * @param crossings The frames it crosses, the face of each and the port it takes.
- * @param nodes The already constructed nodes, for endpoint ownership.
- * @param measured All text sizes.
- * @param ordering The semantic ordering that seats the ends.
- * @returns The contiguous engine sections, all owned by one semantic edge.
- */
-function edgeOf(
-	edge: SemanticEdge,
-	faces: Faces,
-	crossings: readonly Crossing[],
-	nodes: ReadonlyMap<string, ElkNode>,
-	measured: MeasuredArchitecture,
-	ordering: Ordering,
-): ElkExtendedEdge[] {
-	const { ranks, rule, seats } = ordering;
-	if (faces === FREE) {
-		// Node to node: the router chooses the faces, and a crossed frame is the
-		// engine's own hierarchy edge rather than a section per boundary.
-		return [
-			{ id: edge.id, sources: [edge.from], targets: [edge.to], labels: labelsOf(edge, measured) },
-		];
-	}
-	const [fromSide, toSide] = faces;
-	const fromPort = `${edge.id}:from`;
-	const toPort = `${edge.id}:to`;
-	const seat = seats.get(edge.id) ?? ALONE;
-	const fromIndex = portIndex(rule, fromSide, ranks.get(edge.to) ?? 0, seat);
-	const toIndex = portIndex(rule, toSide, ranks.get(edge.from) ?? 0, seat);
-	attachPort(edge.from, portOf(fromPort, fromSide, fromIndex), nodes);
-	attachPort(edge.to, portOf(toPort, toSide, toIndex), nodes);
-	const ports = [fromPort, ...boundaryPorts(crossings, nodes), toPort];
-	return ports.slice(1).map((target, index) => ({
-		id: index === 0 ? edge.id : `${edge.id}:${index}`,
-		sources: [ports[index]!],
-		targets: [target],
-		labels: index === 0 ? labelsOf(edge, measured) : [],
-	}));
-}
-
-/**
- * The complete measured architecture in the engine's compound representation,
- * in the solving frame.
+ * Construct one whole graph without rank, flank or boundary-port policies.
  * @param content The view's semantic content.
- * @param measured Text lines and dimensions settled before layout, in the solving frame.
- * @param header Where a frame's title band sits in the solving frame.
- * @param rule Which flank returns travel and how skips attach.
- * @returns One graph for one layout run.
+ * @param measured Its fixed text and card dimensions.
+ * @returns The hierarchy and complete semantic relationships.
  */
-function compoundGraph(
-	content: VariantContent,
-	measured: MeasuredArchitecture,
-	header: HeaderSide,
-	rule: FlankRule,
-): ElkNode {
-	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value, header)]));
-	const edges = content.edges.toSorted((one, other) => one.id.localeCompare(other.id));
-	const ranks = rankNodes(content.nodes, edges);
-	const ordering: Ordering = {
-		ranks,
-		flank: flankSkips(edges, ranks),
-		rule,
-		seats: seatsOf(edges),
-	};
-	const faces = edges.map((edge) => facesOf(edge, measured, ordering));
-	const crossings = frameCrossings(
-		edges.map((edge, index) => ({
-			edge,
-			faces: faces[index] === FREE ? undefined : faces[index],
-			seat: ordering.seats.get(edge.id) ?? ALONE,
-		})),
-		measured,
-		header,
-	);
-	const children = containNodes(content.nodes, nodes);
-	configureCollections(nodes, edges, header);
+function compoundGraph(content: VariantContent, measured: MeasuredArchitecture): ElkNode {
+	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value)]));
+	const children: ElkNode[] = [];
+	for (const node of content.nodes) {
+		const parent = node.parent === undefined ? undefined : nodes.get(node.parent);
+		(parent?.children ?? children).push(nodes.get(node.id)!);
+	}
 	return {
 		id: "architecture:root",
-		layoutOptions: { "elk.padding": "[top=24,left=24,bottom=24,right=24]" },
 		children,
-		edges: edges.flatMap((edge, index) =>
-			edgeOf(edge, faces[index]!, crossings.get(edge.id) ?? [], nodes, measured, ordering),
-		),
+		edges: content.edges
+			.toSorted((one, other) => one.id.localeCompare(other.id))
+			.map((edge) => ({
+				id: edge.id,
+				sources: [edge.from],
+				targets: [edge.to],
+				layoutOptions: { "archboard.relationship.kind": edge.kind },
+				labels: labelsOf(edge, measured),
+			})),
 	};
 }
 

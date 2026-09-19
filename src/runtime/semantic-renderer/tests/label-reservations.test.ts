@@ -47,8 +47,6 @@ function page(
 ): ArchitectureDrawing {
 	return {
 		direction: "down",
-		wrapped: false,
-		flanks: "bracketed",
 		width,
 		height,
 		cards: [],

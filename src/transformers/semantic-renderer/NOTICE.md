@@ -9,7 +9,7 @@ the `pr-lens` project at revision
 reads). It is a fork rather than a dependency because almost every adaptation
 below changes behaviour inside the renderer rather than around it.
 
-What remains from that fork: graph ranking for connection direction, the sequence skeleton of shared-width
+What remains from that fork: the sequence skeleton of shared-width
 participant columns over hanging lifelines, its derivation of activation bars from
 synchronous calls and the replies that answer them, its self-message loop, the kind
 glyphs, the deterministic coordinate rounding, and the XML-escaping SVG primitives.
@@ -18,11 +18,16 @@ What was changed, and what that change is:
 
 **Adapted to Archboard's contract — these are permanent.**
 
-- **Architecture layout uses ELK.** The former fixed seats, indexed corridors,
-  braid guards and late label settlement were removed. ELK, through its Rust
-  port `@archboard/elk-rs` (native under Bun, WASM in a browser), lays out the
-  semantic containment graph using measured cards and labels. Its final boxes,
-  ports and routes feed the SVG painter and interaction atlas together.
+- **Architecture layout uses Graphviz and libavoid.** Graphviz, through
+  `@viz-js/viz`, places measured cards across semantic containment clusters.
+  `libavoid-js` routes orthogonal relationships around cards and title bands.
+  Both run as WebAssembly in workers under Bun and in the browser. Final boxes,
+  routes and labels feed the SVG painter and interaction atlas together.
+  The pinned `libavoid-js` release's declarations describe its older WebIDL
+  interface, while its binary uses Embind. `engine.ts` records only the ABI
+  used by this adapter; real-engine rendering tests exercise that boundary.
+  The package patch adds three omitted `void` return annotations to its
+  fallback declarations, without modifying its JavaScript or WebAssembly.
 - **Architecture text wraps with Pretext.** Pretext measures through the canvas of
   the place drawing the picture (TASK-247). Prepared lines are supplied to
   the painter; the architecture painter neither shrinks fonts nor truncates text.

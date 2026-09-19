@@ -1,12 +1,20 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import {
 	distanceToFrame,
 	routeCrosses,
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	across,
+	along,
+	breadth,
+	depth,
+	faceOf,
+} from "@/runtime/semantic-renderer/tests/drawn-reading";
 
 const NESTED = VariantContentSchema.parse({
 	nodes: [
@@ -65,18 +73,18 @@ describe("compound architecture layout", () => {
 				[points?.[0], edge.from],
 				[points?.at(-1), edge.to],
 			] as const;
-			// A frame's own call to a part inside it leaves the title band, inside
-			// the frame; every other endpoint sits on its card's or frame's edge.
-			const holds = NESTED.nodes.some(
-				(node) => node.id === edge.to && ancestorsOf(node.id).includes(edge.from),
-			);
+			// A frame and its own descendant connect at the visible title divider;
+			// external relationships touch the card or frame outline.
 			for (const [point, id] of endpoints) {
 				const box = drawing.atlas.nodes[id];
 				expect(point).toBeDefined();
 				expect(box).toBeDefined();
 				if (point === undefined || box === undefined) throw new Error(`Missing endpoint ${id}`);
-				if (holds && id === edge.from) expect(point.y).toBeGreaterThan(box.y);
-				else expect(distanceToFrame(point, box)).toBeLessThan(0.02);
+				const other = id === edge.from ? edge.to : edge.from;
+				if (ancestorsOf(other).includes(id)) {
+					const header = measureArchitecture(NESTED).nodes.get(id)!.headerHeight;
+					expect(point.y).toBeCloseTo(box.y + header, 1);
+				} else expect(distanceToFrame(point, box)).toBeLessThan(0.02);
 				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.02);
 				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.02);
 				expect(point.y).toBeGreaterThanOrEqual(box.y - 0.02);
@@ -116,3 +124,29 @@ function ancestorsOf(id: string): string[] {
 	}
 	return found;
 }
+
+test("a container's external dependency ahead leaves its forward perimeter", async () => {
+	const content = VariantContentSchema.parse({
+		nodes: [
+			{ id: "frame", name: "Service", kind: "service" },
+			{ id: "one", name: "Worker one", kind: "module", parent: "frame" },
+			{ id: "two", name: "Worker two", kind: "module", parent: "frame" },
+			{ id: "store", name: "Storage", kind: "datastore" },
+		],
+		edges: [{ id: "write", from: "frame", to: "store", kind: "data" }],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light" });
+
+	const frame = drawing.atlas.nodes["frame"]!;
+	const target = drawing.atlas.nodes["store"]!;
+	// Establish the visible geometry that makes the forward face appropriate,
+	// whichever reading the renderer selected; no coordinates or ranks are fixed.
+	expect(along(target)).toBeGreaterThan(along(frame) + depth(frame));
+	const targetCenter = across(target) + breadth(target) / 2;
+	expect(targetCenter).toBeGreaterThan(across(frame));
+	expect(targetCenter).toBeLessThan(across(frame) + breadth(frame));
+	const origin = routePoints(drawing.svg).get("write")![0]!;
+	// A title-band-only router forces this ordinary dependency out a header flank.
+	// The actual frame perimeter is the container's external connection boundary.
+	expect(faceOf(origin, frame)).toBe("ahead");
+});

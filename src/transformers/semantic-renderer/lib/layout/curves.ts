@@ -1,3 +1,4 @@
+import { SELF_LOOP_REACH } from "@/transformers/semantic-renderer/config";
 // A route's shape: the polyline the planner produced, rounded at its turns,
 // and the handful of questions the painter and the label pass ask of it.
 //
@@ -5,12 +6,7 @@
 // here along its real seams: this is the geometry of a drawn route, with no
 // opinion about which gaps the route travelled through.
 
-import {
-	APPROACH_STRAIGHT,
-	BEND_RADIUS_MAX,
-	BRIDGE_RADIUS,
-	BRIDGE_CLEARANCE,
-} from "@/transformers/semantic-renderer/lib/design";
+import { APPROACH_STRAIGHT, BEND_RADIUS_MAX } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /** One piece of a route. */
@@ -134,8 +130,6 @@ function curveBounds(curve: Curve): Box {
 	const top = Math.min(...ys);
 	return { x: left, y: top, width: Math.max(...xs) - left, height: Math.max(...ys) - top };
 }
-
-const SELF_LOOP_REACH = 26;
 
 /**
  * A node that calls itself gets a loop off one of its side faces. There is no
@@ -275,7 +269,7 @@ function endOf(segments: readonly Segment[], first: Point): Point {
  * @param reserved How much of the incoming and outgoing legs the route's ends need left straight.
  * @param reserved.entering How much of the incoming leg to leave alone.
  * @param reserved.leaving How much of the outgoing leg to leave alone.
- * @param maximum The radius allowed by nearby crossings and a reserved label.
+ * @param maximum The radius allowed by a reserved label.
  * @returns The segments to append.
  */
 function bendThrough(
@@ -349,25 +343,6 @@ function distanceOnLeg(vertex: Point, end: Point, point: Point): number | undefi
 }
 
 /**
- * Leave enough straight route beside a crossing for the existing bridge policy.
- * @param corner The corner whose incoming and outgoing legs may cross other routes.
- * @param crossings Proper perpendicular crossings on this route.
- * @returns The usual radius, reduced only when a nearby crossing needs the space.
- */
-function crossingRadius(corner: Corner, crossings: readonly Point[] | undefined): number {
-	let radius = BEND_RADIUS_MAX;
-	// Touching obstacle bounds count as occupied; retain numerical clearance too.
-	const clearance = BRIDGE_RADIUS + BRIDGE_CLEARANCE + EPSILON;
-	for (const point of crossings ?? []) {
-		for (const end of [corner.previous, corner.next]) {
-			const distance = distanceOnLeg(corner.vertex, end, point);
-			if (distance !== undefined) radius = Math.min(radius, distance - clearance);
-		}
-	}
-	return radius;
-}
-
-/**
  * How far a corner may round along one leg before reaching its reserved label.
  * @param vertex The corner.
  * @param end The far end of the leg.
@@ -409,11 +384,10 @@ function labelRadius(corner: Corner, label: Box | undefined): number {
  * The polyline as one continuous line: long runs stay dead straight and only
  * the turns curve.
  * @param points The waypoints.
- * @param crossings Proper crossings whose bridge clearance must remain straight.
  * @param label The reserved label whose footprint must remain straight.
  * @returns The route.
  */
-function curveThrough(points: readonly Point[], crossings?: readonly Point[], label?: Box): Curve {
+function curveThrough(points: readonly Point[], label?: Box): Curve {
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
 	const last = points.length - 1;
@@ -431,7 +405,7 @@ function curveThrough(points: readonly Point[], crossings?: readonly Point[], la
 						entering: index === 1 ? APPROACH_STRAIGHT : 0,
 						leaving: index === last - 1 ? APPROACH_STRAIGHT : 0,
 					},
-					Math.min(crossingRadius(corner, crossings), labelRadius(corner, label)),
+					labelRadius(corner, label),
 				),
 			);
 		}

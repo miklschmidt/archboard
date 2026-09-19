@@ -13,7 +13,7 @@ import {
 	registeredFaces,
 	spanFits,
 } from "@/runtime/semantic-renderer/tests/drawn-text";
-import { across, along, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
+import { across, along } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -323,12 +323,12 @@ describe("renderArchitecture", () => {
 		const rendered = await render(
 			architecture(loose.map((name, index) => ({ id: `n${index}`, name, kind: "service" }))),
 		);
-		const direction = readingOf(rendered);
+
 		const boxes = loose.map((_, index) => rendered.atlas.nodes[`n${index}`]!);
-		const lanes = new Set(boxes.map((box) => across(box, direction)));
+		const lanes = new Set(boxes.map((box) => across(box)));
 		// Not ranked one after another as if they were a chain.
 		expect(lanes.size).toBeGreaterThan(2);
-		expect(new Set(boxes.map((box) => along(box, direction))).size).toBe(1);
+		expect(new Set(boxes.map((box) => along(box))).size).toBe(1);
 		// None of them belongs to a container, so none of them draws one.
 		expect(Object.keys(rendered.atlas.regions)).toHaveLength(0);
 	});
@@ -347,11 +347,11 @@ describe("renderArchitecture", () => {
 				],
 			),
 		);
-		const direction = readingOf(rendered);
+
 		const boxes = ["a", "b", "c"].map((id) => rendered.atlas.nodes[id]!);
-		expect(new Set(boxes.map((box) => across(box, direction))).size).toBe(1);
-		expect(along(boxes[0]!, direction)).toBeLessThan(along(boxes[1]!, direction));
-		expect(along(boxes[1]!, direction)).toBeLessThan(along(boxes[2]!, direction));
+		expect(new Set(boxes.map((box) => across(box))).size).toBe(1);
+		expect(along(boxes[0]!)).toBeLessThan(along(boxes[1]!));
+		expect(along(boxes[1]!)).toBeLessThan(along(boxes[2]!));
 	});
 
 	test("a node with no container and no children is still drawn", async () => {

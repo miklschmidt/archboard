@@ -12,6 +12,18 @@ what it selects joined: a part whose only relationship points at a part the
 view leaves out stands in it unattached. A view is the answer to a tangle,
 never a smaller or falser board.
 
+Containment says what belongs inside what, not which row it occupies. The
+renderer may place an outside caller or dependency beside the particular child
+it connects to. Keep real parents and relationships intact when judging a
+picture; changing them to force placement changes the architecture. Stable
+subject identities also guide sibling ordering between variants; positions and rows
+are still chosen fresh in a top-to-bottom reading. Long paths may wrap into
+side-by-side downward columns, keeping containers and small branches together.
+The renderer chooses the column count; authors do not encode layout in the board.
+Relationships of one kind may share card ports; different kinds use separate
+ports so their meaning remains distinguishable. Keep the real relationship kind
+when judging routing.
+
 1. Read the source you will describe, do the evidence steps in `SKILL.md` and
    walk its catalogue. Decide the board's level from `config.yaml` (`system`:
    collaborating services; `service`: the modules of one; `module`: the

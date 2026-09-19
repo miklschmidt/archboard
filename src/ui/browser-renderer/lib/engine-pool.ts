@@ -1,5 +1,5 @@
 // The layout engine in the browser: a few Web Workers, each running the
-// engine and answering one solve at a time.
+// Graphviz/libavoid engine pair and answering one solve at a time.
 //
 // A render settles several candidate drawings, and a worker answers its
 // messages in order, so one worker would queue every candidate behind every
@@ -9,9 +9,8 @@
 // candidates out without compiling the engine a dozen times at once. The engine
 // is deterministic: which worker answers a solve never changes the drawing.
 //
-// The workers speak the elkjs worker protocol, which the engine's own worker
-// entry answers: `{ id, cmd: "layout", graph, layoutOptions }` in, and
-// `{ id, data }` or `{ id, error }` back.
+// The workers accept `{ id, graph, layoutOptions }` and answer with
+// `{ id, data }` or `{ id, error }`.
 
 import type { RendererHost } from "@/transformers/semantic-renderer/host";
 
@@ -24,12 +23,14 @@ interface EngineAnswer {
 	readonly id: number;
 	readonly data?: SolveGraph;
 	readonly error?: { readonly message?: string } | string;
+	readonly fatal?: boolean;
 }
 
 /** What the pool uses of a worker: sending it a solve and hearing it answer or stop. */
 interface EngineWorker {
 	postMessage(message: unknown): void;
 	addEventListener(type: "message" | "error", listener: (event: Event) => void): void;
+	terminate?(): void;
 }
 
 /**
@@ -75,6 +76,23 @@ function engineError(error: NonNullable<EngineAnswer["error"]>): Error {
 }
 
 /**
+ * Deliver a worker reply to its waiting solve.
+ * @param pending The solve waiting for this answer.
+ * @param pending.resolve Accepts the solved graph.
+ * @param pending.reject Rejects a failed solve.
+ * @param answer The worker's answer.
+ */
+function settleAnswer(
+	pending: { resolve: (graph: SolveGraph) => void; reject: (error: Error) => void },
+	answer: EngineAnswer,
+): void {
+	if (answer.error !== undefined) pending.reject(engineError(answer.error));
+	else if (answer.data === undefined)
+		pending.reject(engineError("The layout engine answered with nothing."));
+	else pending.resolve(answer.data);
+}
+
+/**
  * A pool of engine workers.
  * @param startWorker Starts one engine worker.
  * @param ceiling The most workers that may run.
@@ -83,6 +101,20 @@ function engineError(error: NonNullable<EngineAnswer["error"]>): Error {
 function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Solve {
 	const engines: PooledEngine[] = [];
 	let nextId = 0;
+
+	/**
+	 * Evict a failed worker and reject the solves it still holds.
+	 * @param engine The failed worker.
+	 * @param failure Why it failed.
+	 */
+	function discard(engine: PooledEngine, failure: Error): void {
+		const index = engines.indexOf(engine);
+		if (index < 0) return;
+		engines.splice(index, 1);
+		for (const pending of engine.waiting.values()) pending.reject(failure);
+		engine.waiting.clear();
+		engine.worker.terminate?.();
+	}
 
 	/**
 	 * Start one worker and listen for its answers.
@@ -101,16 +133,14 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 			if (pending === undefined) return;
 			engine.waiting.delete(answer.id);
 			engine.answered = true;
-			if (answer.error !== undefined) pending.reject(engineError(answer.error));
-			else if (answer.data === undefined)
-				pending.reject(engineError("The layout engine answered with nothing."));
-			else pending.resolve(answer.data);
+			settleAnswer(pending, answer);
+			if (answer.fatal) {
+				discard(engine, engineError(answer.error ?? "The layout worker could not initialize"));
+			}
 		});
 		engine.worker.addEventListener("error", (event) => {
 			const said = event instanceof ErrorEvent ? event.message : "";
-			const failure = engineError(said === "" ? "The layout engine worker stopped." : said);
-			for (const pending of engine.waiting.values()) pending.reject(failure);
-			engine.waiting.clear();
+			discard(engine, engineError(said === "" ? "The layout engine worker stopped." : said));
 		});
 		engines.push(engine);
 		return engine;
@@ -136,8 +166,13 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		nextId += 1;
 		return new Promise<SolveGraph>((resolve, reject) => {
 			engine.waiting.set(id, { resolve, reject });
-			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin; the rule is about window.postMessage
-			engine.worker.postMessage({ id, cmd: "layout", graph, layoutOptions });
+			try {
+				// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin; the rule is about window.postMessage
+				engine.worker.postMessage({ id, graph, layoutOptions });
+			} catch (error) {
+				engine.waiting.delete(id);
+				reject(error);
+			}
 		});
 	};
 }

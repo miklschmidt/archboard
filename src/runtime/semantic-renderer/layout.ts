@@ -1,8 +1,9 @@
 // The layout's own rules, for focused runtime checks. None of these draws or
 // measures, so none needs the Bun host.
 export {
+	bridgeCrossings,
+	curveThrough,
 	COMPOUND_OPTIONS,
-	bestOf,
 	settleLabels,
 	type ArchitectureDrawing,
 	type DrawingEdge,

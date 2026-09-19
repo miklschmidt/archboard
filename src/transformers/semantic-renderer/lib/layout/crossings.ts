@@ -37,7 +37,7 @@ interface Crossing {
 	readonly lower: Run;
 }
 
-/** Local upper arc and the lower connections it crosses. */
+/** Local upper ink and the lower connections it crosses. */
 interface Bridge {
 	readonly edgeId: string;
 	readonly under: readonly string[];
@@ -292,7 +292,7 @@ function replaceRuns(
 /**
  * Raises connections over proper crossings, preferring later-painted ink.
  * No placement or label moves, and painters and interaction geometry share the
- * resulting curves. Tight crossings stay unchanged rather than acquiring knots.
+ * resulting curves. Corner contacts clear lower ink without distorting the turn.
  * @param drawing The drawing after routing, rounding and label placement.
  * @returns Updated edges and local arcs for narrowly clearing lower ink.
  */
@@ -333,7 +333,65 @@ function bridgeCrossings(drawing: ArchitectureDrawing): {
 		}
 	}
 	const edges = drawing.edges.map((edge, index) => replaceRuns(edge, replacements[index]!));
-	return { edges, bridges };
+	return { edges, bridges: [...bridges, ...cornerClearances(drawing.edges)] };
+}
+
+/**
+ * Clear contacts involving rounded corners, which have no straight bridge site.
+ * Shared endpoints deliberately share trunks within one kind; other connections
+ * need separation here. Refined bounds follow the actual curve, not its empty hull.
+ * @param edges The original rounded routes, before synthetic bridge arcs.
+ * @returns Existing corner ink to use as a narrow cutout on the other route.
+ */
+function cornerClearances(edges: readonly DrawingEdge[]): Bridge[] {
+	const pieces = edges.flatMap((edge, edgeIndex) =>
+		edge.curve.segments.map((segment, segmentIndex) => {
+			const curve = { from: segmentStart(edge.curve, segmentIndex), segments: [segment] };
+			return { edgeIndex, segmentIndex, curve, bounds: curveBounds(curve) };
+		}),
+	);
+	const cleared = new Set<string>();
+	const refinements = new Map<Curve, readonly Box[]>();
+	/**
+	 * Refine only segments whose broad bounds actually meet another route.
+	 * @param curve The one-segment curve.
+	 * @returns Its cached conservative local bounds.
+	 */
+	function boxes(curve: Curve): readonly Box[] {
+		let result = refinements.get(curve);
+		if (result === undefined) {
+			result = curveBoxes(curve);
+			refinements.set(curve, result);
+		}
+		return result;
+	}
+	const clearances: Bridge[] = [];
+	// Prefer the later-painted corner when both pieces curve. An earlier corner
+	// can also clear a later straight run, as a fallback bridge already does.
+	const corners = pieces.filter((piece) => piece.curve.segments[0]!.kind === "cubic");
+	for (const upper of corners.toReversed()) {
+		const edge = edges[upper.edgeIndex]!.edge;
+		const under = new Set<string>();
+		const contacts = pieces.filter((lower) => {
+			const other = edges[lower.edgeIndex]!.edge;
+			return (
+				upper.edgeIndex !== lower.edgeIndex &&
+				!(
+					edge.kind === other.kind &&
+					[edge.from, edge.to].some((endpoint) => endpoint === other.from || endpoint === other.to)
+				) &&
+				!cleared.has(crossingKey(upper, lower)) &&
+				overlaps(upper.bounds, lower.bounds) &&
+				boxes(upper.curve).some((a) => boxes(lower.curve).some((b) => overlaps(a, b)))
+			);
+		});
+		for (const lower of contacts) {
+			cleared.add(crossingKey(upper, lower));
+			under.add(edges[lower.edgeIndex]!.edge.id);
+		}
+		if (under.size > 0) clearances.push({ edgeId: edge.id, under: [...under], curve: upper.curve });
+	}
+	return clearances;
 }
 
 /**
@@ -342,130 +400,13 @@ function bridgeCrossings(drawing: ArchitectureDrawing): {
  * @param b The perpendicular run.
  * @returns A stable pair of segment identities.
  */
-function crossingKey(a: Run, b: Run): string {
+function crossingKey(
+	a: Pick<Run, "edgeIndex" | "segmentIndex">,
+	b: Pick<Run, "edgeIndex" | "segmentIndex">,
+): string {
 	return [`${a.edgeIndex}:${a.segmentIndex}`, `${b.edgeIndex}:${b.segmentIndex}`]
 		.toSorted()
 		.join("/");
-}
-
-/**
- * Intersect two perpendicular segments, excluding their endpoints.
- * @param from The first segment's start.
- * @param to The first segment's end.
- * @param start The other segment's start.
- * @param end The other segment's end.
- * @returns Their proper crossing, when neither segment ends there.
- */
-function perpendicularCrossing(
-	from: Point,
-	to: Point,
-	start: Point,
-	end: Point,
-): Point | undefined {
-	const dx = to.x - from.x,
-		dy = to.y - from.y;
-	const otherX = end.x - start.x,
-		otherY = end.y - start.y;
-	if (dx * otherX + dy * otherY !== 0) return undefined;
-	const determinant = dx * otherY - dy * otherX;
-	if (determinant === 0) return undefined;
-	const offsetX = start.x - from.x,
-		offsetY = start.y - from.y;
-	const along = (offsetX * otherY - offsetY * otherX) / determinant;
-	const across = (offsetX * dy - offsetY * dx) / determinant;
-	if (Math.min(along, 1 - along, across, 1 - across) <= 0) return undefined;
-	return { x: from.x + along * dx, y: from.y + along * dy };
-}
-
-/** The extent of a route's points. */
-interface Extent {
-	readonly minX: number;
-	readonly maxX: number;
-	readonly minY: number;
-	readonly maxY: number;
-}
-
-const extents = new WeakMap<readonly Point[], Extent>();
-
-/**
- * The extent of a route, worked out once per route.
- * @param route The route's points.
- * @returns Its extent.
- */
-function extentOf(route: readonly Point[]): Extent {
-	const known = extents.get(route);
-	if (known !== undefined) return known;
-	let minX = Infinity,
-		maxX = -Infinity,
-		minY = Infinity,
-		maxY = -Infinity;
-	for (const point of route) {
-		minX = Math.min(minX, point.x);
-		maxX = Math.max(maxX, point.x);
-		minY = Math.min(minY, point.y);
-		maxY = Math.max(maxY, point.y);
-	}
-	const extent = { minX, maxX, minY, maxY };
-	extents.set(route, extent);
-	return extent;
-}
-
-/**
- * Find proper perpendicular crossings before rounding consumes their straight legs.
- * Shared endpoints, overlapping lines and this route's own corners are excluded.
- * @param route One complete semantic route.
- * @param others All complete routes in this drawing.
- * @returns The crossings whose bridge space must survive corner rounding.
- */
-function routeCrossings(route: readonly Point[], others: Iterable<readonly Point[]>): Point[] {
-	const crossings: Point[] = [];
-	for (const other of others) {
-		// A proper crossing lies strictly inside both routes, so routes whose
-		// extents do not even touch cannot cross.
-		if (route !== other && extentsTouch(extentOf(route), extentOf(other))) {
-			crossingsBetween(route, other, crossings);
-		}
-	}
-	return crossings;
-}
-
-/**
- * Whether two extents touch or overlap.
- * @param one One extent.
- * @param other The other.
- * @returns False only when they are apart on some axis.
- */
-function extentsTouch(one: Extent, other: Extent): boolean {
-	return !(
-		one.maxX < other.minX ||
-		other.maxX < one.minX ||
-		one.maxY < other.minY ||
-		other.maxY < one.minY
-	);
-}
-
-/**
- * Add every proper perpendicular crossing of one route by another.
- * @param route The route.
- * @param other The route crossing it.
- * @param crossings Where the crossings are added, in segment order.
- */
-function crossingsBetween(
-	route: readonly Point[],
-	other: readonly Point[],
-	crossings: Point[],
-): void {
-	for (let index = 1; index < route.length; index += 1) {
-		for (let crossingIndex = 1; crossingIndex < other.length; crossingIndex += 1) {
-			const crossing = perpendicularCrossing(
-				route[index - 1]!,
-				route[index]!,
-				other[crossingIndex - 1]!,
-				other[crossingIndex]!,
-			);
-			if (crossing !== undefined) crossings.push(crossing);
-		}
-	}
 }
 
 /**
@@ -482,4 +423,4 @@ function crossingCount(edges: readonly DrawingEdge[]): number {
 	);
 }
 
-export { bridgeCrossings, crossingCount, routeCrossings };
+export { bridgeCrossings, crossingCount };
