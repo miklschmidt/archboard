@@ -14,6 +14,11 @@ onto its subjects, write one batch at the version you read, check the answer.
 2. Map the change onto what you read, subject by subject:
    - **Continuing**: the same part, relationship, exchange or step evolves; keep
      its `id` (a rename, a reworded responsibility, a new binding).
+   - **Restore**: a removed inherited node or relationship returns; use its
+     original `id` and full properties from the direct predecessor or recorded
+     reconciliation base. Remove any copy and reconnect edges, flows and view
+     selections in the same batch. Do not put the restored id in removals.
+     An id absent from both sources cannot be restored here.
    - **Replacement**: a different unit takes its place; remove the old id and
      add the new subject without one. Similar names or paths do not make two
      implementations one unit.

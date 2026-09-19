@@ -32,7 +32,11 @@ import {
 } from "@/runtime/semantic-board-store/lib/propagate";
 import { adoptVariant } from "@/runtime/semantic-board-store/lib/adopt";
 import { BRANCH_INSTEAD, shelveVariant } from "@/runtime/semantic-board-store/lib/shelve";
-import { restorableNodes, settleByRestoring } from "@/runtime/semantic-board-store/lib/restore";
+import {
+	restorableSubjects,
+	settleByRestoring,
+	type RestorableSubjects,
+} from "@/runtime/semantic-board-store/lib/restore";
 import { settleVariant } from "@/runtime/semantic-board-store/lib/settle";
 import { idsInUse, mintInto, openBatch } from "@/runtime/semantic-board-store/lib/batch";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
@@ -275,9 +279,8 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 				return editable;
 			}
 			const { variant } = editable;
-			// A draft holding a disagreement about a node it removed may state that
-			// node's id again: the third answer the reconciliation contract promises.
-			const restorable = restorableNodes(before, variant);
+			// Inherited identities can be restored without minting replacements.
+			const restorable = restorableSubjects(before, variant);
 			const content = editContent(variant.content, input, before, restorable);
 			if (!content.ok) {
 				return content;
@@ -515,15 +518,15 @@ function editableVariant(
  * The family after one edit: every draft derived from this variant answers the
  * change in the same candidate, so the parent's new state and its consequences
  * are one write and one version, never a parent that landed and children that
- * have not caught up (ADR 0023). An edit that restores a node this draft was
+ * have not caught up (ADR 0023). An edit that restores a subject this draft was
  * arguing about answers the draft's own disagreement, and that settlement is
- * part of the same write too: the restored node, the settled standing and the
+ * part of the same write too: the restored subject, the settled standing and the
  * descendants' answers land as one version.
  * @param board The board as it stands.
  * @param variant The edited variant, as it stood.
  * @param content Its content as the edit leaves it.
  * @param edit What the edit could and did do.
- * @param edit.restorable The ids the draft's standing let the edit restore.
+ * @param edit.restorable The absent inherited identities this edit may restore.
  * @param edit.changesContent Whether the command edited variant content.
  * @returns The variant family and effects, or the refusal.
  */
@@ -531,12 +534,17 @@ function carriedFamily(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	content: SemanticVariant["content"],
-	edit: { readonly restorable: ReadonlySet<string>; readonly changesContent: boolean },
+	edit: { readonly restorable: RestorableSubjects; readonly changesContent: boolean },
 ): ReturnType<typeof settleByRestoring> {
 	const restored = new Set(
-		content.nodes.map((node) => node.id).filter((id) => edit.restorable.has(id)),
+		[...content.nodes, ...content.edges]
+			.map((subject) => subject.id)
+			.filter((id) => edit.restorable.nodes.has(id) || edit.restorable.edges.has(id)),
 	);
-	return restored.size > 0
+	const settles = variant.reconciliation?.issues.some(
+		(issue) => issue.kind === "deleted-and-changed" && restored.has(issue.subject),
+	);
+	return settles
 		? settleByRestoring(board, variant, content, restored, nextVersion(board))
 		: editedFamily(board, variant, content, edit.changesContent);
 }

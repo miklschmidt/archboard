@@ -371,3 +371,122 @@ test("two calls between the same parts carrying different messages are not a res
 	const removed = await edit({ variant: "Proposal", removeEdges: [edge.id] });
 	expect(removed.outcome === "applied" ? removed.warnings : null).toEqual([]);
 });
+
+test("an ordinary edit restores an inherited relationship absent from a proposal", async () => {
+	const edge = variant().content.edges[0]!;
+	expect((await edit({ variant: "Proposal", removeEdges: [edge.id] })).outcome).toBe("applied");
+	const before = read().version;
+	const result = await edit({ variant: "Proposal", edges: [edge] });
+	expect(result.outcome).toBe("applied");
+	expect(variant().content.edges).toContainEqual(edge);
+	expect(read().version).toBe(before + 1);
+});
+
+test("restoring an inherited edge repairs its copy without reversing the identity warning", async () => {
+	const edge = variant().content.edges[0]!;
+	await edit({
+		variant: "Proposal",
+		edges: [{ from: edge.from, to: edge.to, kind: edge.kind, label: edge.label }],
+	});
+	const copy = variant().content.edges.find((one) => one.id !== edge.id)!;
+	await edit({ variant: "Proposal", removeEdges: [edge.id] });
+	const restoredBeside = await edit({ variant: "Proposal", edges: [edge] });
+	expect(warningsOf(restoredBeside)).toEqual([["RELATIONSHIP_DUPLICATED", `edges.${copy.id}`]]);
+	await edit({ variant: "Proposal", removeEdges: [edge.id] });
+	const result = await edit({ variant: "Proposal", removeEdges: [copy.id], edges: [edge] });
+	expect(warningsOf(result)).toEqual([]);
+	expect(variant().content.edges).toEqual([edge]);
+});
+
+test("restoration refuses unknown, sibling, wrong-kind and contradictory ids without changing the board", async () => {
+	await branch("current", "Sibling");
+	await edit({ variant: "Sibling", edges: [{ from: "Compound", to: "Driver", kind: "call" }] });
+	const siblingEdge = variant("Sibling").content.edges.find(
+		(edge) => edge.from === variant().content.nodes[2]!.id,
+	)!;
+	const edge = variant().content.edges[0]!;
+	const node = variant().content.nodes[1]!;
+	await edit({ variant: "Proposal", removeNodes: [node.id] });
+	const before = read();
+	for (const id of ["unknown1", siblingEdge.id, node.id]) {
+		const result = await edit({
+			variant: "Proposal",
+			edges: [{ id, from: "Driver", to: "Compound", kind: "call" }],
+		});
+		expect(result.outcome === "rejected" && result.code).toBe("UNKNOWN_EDGE");
+	}
+	const wrongNode = await edit({
+		variant: "Proposal",
+		nodes: [{ id: edge.id, name: "Wrong kind", kind: "module" }],
+	});
+	expect(wrongNode.outcome === "rejected" && wrongNode.code).toBe("UNKNOWN_NODE");
+	expect(read()).toEqual(before);
+	await edit({ variant: "Proposal", nodes: [node], edges: [edge] });
+	const restored = read();
+	for (const input of [
+		{ removeEdges: [edge.id], edges: [edge] },
+		{ removeNodes: [node.id], nodes: [node] },
+	]) {
+		expect((await edit({ variant: "Proposal", ...input })).outcome).toBe("rejected");
+	}
+	expect(read()).toEqual(restored);
+});
+
+test("restoring a changed inherited relationship settles its deletion and carries the answer to descendants", async () => {
+	const edge = variant().content.edges[0]!;
+	await edit({ variant: "Proposal", removeEdges: [edge.id] });
+	await branch("Proposal", "Child");
+	await edit({ edges: [{ ...edge, label: "place refreshed grid" }] });
+	expect(variant().reconciliation?.issues).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ subject: edge.id, kind: "deleted-and-changed" }),
+		]),
+	);
+	const before = read().version;
+	const result = await edit({
+		variant: "Proposal",
+		edges: [{ ...edge, label: "place chosen grid" }],
+	});
+	expect(result.outcome).toBe("applied");
+	expect(read().version).toBe(before + 1);
+	expect(variant().reconciliation).toBeUndefined();
+	expect(variant("Child").reconciliation).toBeUndefined();
+	expect(variant("Child").content.edges).toEqual(variant().content.edges);
+	await edit({
+		nodes: [{ ...variant("Initial").content.nodes[0]!, responsibility: "Runs layout" }],
+	});
+	expect(variant().reconciliation).toBeUndefined();
+});
+
+test("the recorded base restores absent subjects without settling an unrelated disagreement", async () => {
+	const [driver, grid] = variant().content.nodes;
+	const edge = variant().content.edges[0]!;
+	await edit({
+		variant: "Proposal",
+		removeNodes: [grid!.id],
+		nodes: [{ ...driver, name: "Proposal driver" }],
+	});
+	await edit({ removeNodes: [grid!.id], nodes: [{ ...driver, name: "Current driver" }] });
+	const standing = variant().reconciliation;
+	expect(standing?.issues).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ subject: driver!.id, kind: "competing-field", field: "name" }),
+		]),
+	);
+	expect(variant("Initial").content.nodes.some((node) => node.id === grid!.id)).toBe(false);
+	const result = await edit({ variant: "Proposal", nodes: [grid], edges: [edge] });
+	expect(result.outcome).toBe("applied");
+	expect(variant().reconciliation).toEqual(standing);
+	expect(variant().content.edges).toEqual([edge]);
+	expect(variant().content.nodes).toContainEqual(grid!);
+});
+
+test("an absent ancestor-only subject is not inherited by a newly branched child", async () => {
+	const grid = variant().content.nodes[1]!;
+	await edit({ variant: "Proposal", removeNodes: [grid.id] });
+	await branch("Proposal", "Child");
+	const before = read();
+	const result = await edit({ variant: "Child", nodes: [grid] });
+	expect(result.outcome === "rejected" && result.code).toBe("UNKNOWN_NODE");
+	expect(read()).toEqual(before);
+});

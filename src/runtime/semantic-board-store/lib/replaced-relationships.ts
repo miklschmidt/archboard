@@ -89,6 +89,20 @@ function named(edge: SemanticEdge): string {
 }
 
 /**
+ * Explain recovery without promising that a deleted root identity still exists.
+ * @param original The removed id.
+ * @param copy The replacement id.
+ * @returns The available repair and the limit of retained identity evidence.
+ */
+function repairAdvice(original: string, copy: string): string {
+	return (
+		`if ${original} remains in this variant's direct predecessor or recorded reconciliation base, ` +
+		`remove ${copy} and restate ${original} with its properties in one edit; otherwise the removed ` +
+		`identity is no longer available to restore here`
+	);
+}
+
+/**
  * Relationships the batch removed and stated again in the same batch.
  * @param gone The relationships the batch removed.
  * @param added The relationships the batch added.
@@ -105,7 +119,7 @@ function reAddedInBatch(
 			{
 				code: "RELATIONSHIP_REPLACED" as const,
 				path: `edges.${twin.id}`,
-				message: `relationship ${named(edge)} was removed and stated again as ${twin.id} with at most one property changed; a continuing relationship keeps its id, so restate it with "id": "${edge.id}" instead of removing it`,
+				message: `relationship ${named(edge)} was removed and stated again as ${twin.id} with at most one property changed; a continuing relationship keeps its id, so preserve its id when editing it. ${repairAdvice(edge.id, twin.id)}`,
 			},
 		];
 	});
@@ -115,20 +129,24 @@ function reAddedInBatch(
  * Relationships the batch added beside one they restate, which still stands.
  * @param added The relationships the batch added.
  * @param kept The relationships that were there before and still are.
+ * @param restored Inherited identities restored by this batch.
  * @returns One notice per copy.
  */
 function duplicatedBeside(
 	added: readonly SemanticEdge[],
 	kept: readonly SemanticEdge[],
+	restored: ReadonlySet<string>,
 ): WriteNotice[] {
 	return added.flatMap((edge) => {
-		const original = kept.find((candidate) => restates(candidate, edge));
-		if (original === undefined) return [];
+		const other = kept.find((candidate) => restates(candidate, edge));
+		if (other === undefined) return [];
+		const original = restored.has(edge.id) ? edge : other;
+		const copy = restored.has(edge.id) ? other : edge;
 		return [
 			{
 				code: "RELATIONSHIP_DUPLICATED" as const,
-				path: `edges.${edge.id}`,
-				message: `relationship ${edge.id} states ${named(original)} again beside it under a new id; to change the existing relationship, restate it with "id": "${original.id}", and do not remove ${original.id} afterwards, since that keeps the copy and loses the identity`,
+				path: `edges.${copy.id}`,
+				message: `relationship ${copy.id} states ${named(original)} again beside it under a new id; to change the existing relationship, restate it with "id": "${original.id}", and do not remove ${original.id} afterwards, since that keeps the copy and loses the identity`,
 			},
 		];
 	});
@@ -151,7 +169,7 @@ function removedForCopy(
 			{
 				code: "RELATIONSHIP_REPLACED" as const,
 				path: `edges.${copy.id}`,
-				message: `relationship ${named(edge)} was removed while ${copy.id}, stated earlier with the same ends, kind and label, still stands, so the relationship continues under a new id; to keep its identity, remove ${copy.id} and restate ${edge.id} with its properties instead`,
+				message: `relationship ${named(edge)} was removed while ${copy.id}, stated earlier with the same ends, kind and label, still stands, so the relationship continues under a new id; ${repairAdvice(edge.id, copy.id)}`,
 			},
 		];
 	});
@@ -164,20 +182,25 @@ function removedForCopy(
  * @param before The relationships as they stood.
  * @param removed The ids the batch removed.
  * @param after The relationships after the batch.
+ * @param restored Inherited identities this batch may bring back.
  * @returns One notice per restated relationship.
  */
 function replacedRelationships(
 	before: readonly SemanticEdge[],
 	removed: ReadonlySet<string>,
 	after: readonly SemanticEdge[],
+	restored: ReadonlySet<string> = new Set(),
 ): WriteNotice[] {
 	const known = new Set(before.map((edge) => edge.id));
 	const added = after.filter((edge) => !known.has(edge.id));
 	const kept = after.filter((edge) => known.has(edge.id));
 	const gone = before.filter((edge) => removed.has(edge.id));
 	return [
-		...reAddedInBatch(gone, added),
-		...duplicatedBeside(added, kept),
+		...reAddedInBatch(
+			gone,
+			added.filter((edge) => !restored.has(edge.id)),
+		),
+		...duplicatedBeside(added, kept, restored),
 		...removedForCopy(gone, kept),
 	];
 }
