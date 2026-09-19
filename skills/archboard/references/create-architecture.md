@@ -66,7 +66,7 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
   ]
 }
 JSON
-archboard semantic rasterize "Semantic board writes" --out writes.png
+archboard semantic rasterize "Semantic board writes" --out /tmp/writes.png
 ```
 
 Each relationship lands on the part that receives the call ([evidence rule
