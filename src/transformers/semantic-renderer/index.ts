@@ -177,27 +177,38 @@ function descriptionFor(names: readonly string[]): string | undefined {
 	return names.length === 0 ? undefined : `Grouped by ${names.join(", ")}.`;
 }
 
-/** How many distinct layouts are remembered across boards, variants and themes. */
+/** How many distinct layouts are remembered across boards, variants and comparisons. */
 const REMEMBERED_LAYOUTS = 64;
 
 /** Layouts by the content they were laid out from, least recently used first. */
 const layouts = new Map<string, Promise<PaintedDrawing>>();
 
 /**
- * Lay out each distinct content once, independent of theme and comparison standing.
+ * Lay out each distinct content and comparison channel set once, independent of theme.
  * @param content The architecture to draw.
+ * @param expanded The architecture after adding drawable flow-step lines.
+ * @param standing Comparison standing used to keep marked relationships apart.
  * @returns Its deterministic layout.
  */
-function layoutRemembered(content: VariantContent): Promise<PaintedDrawing> {
-	const key = JSON.stringify(content);
+function layoutRemembered(
+	content: VariantContent,
+	expanded: VariantContent,
+	standing: StatedStandings | undefined,
+): Promise<PaintedDrawing> {
+	const edgeStandings =
+		standing === undefined
+			? undefined
+			: Object.fromEntries(
+					expanded.edges.map((edge) => [edge.id, standing[edge.id] ?? "unchanged"]),
+				);
+	const key = JSON.stringify([content, edgeStandings]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
 		layouts.set(key, known);
 		return known;
 	}
-	const expanded = withStepLines(content).content;
-	const layout = layoutCompound(expanded, measureArchitecture(expanded));
+	const layout = layoutCompound(expanded, measureArchitecture(expanded), edgeStandings);
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.
 	layout.catch(() => layouts.delete(key));
@@ -223,8 +234,8 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		);
 	}
 
-	const { derived } = withStepLines(request.content);
-	const drawing = await layoutRemembered(request.content);
+	const stepLines = withStepLines(request.content);
+	const drawing = await layoutRemembered(request.content, stepLines.content, request.standing);
 	const palette = paletteFor(theme);
 	const painting = paintArchitecture(
 		drawing,
@@ -232,7 +243,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		standingsFrom(request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
-		derived,
+		stepLines.derived,
 	);
 
 	const svg = svgDocument({

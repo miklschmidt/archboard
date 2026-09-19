@@ -177,14 +177,14 @@ describe("a picture nobody stated a standing for", () => {
 		}
 	});
 
-	test("is the same picture, to the unit, as the same content stated against a predecessor", async () => {
-		// A standing changes how a subject is painted and never where it is. A pane
-		// hit-tests one atlas whichever of the two it was given.
+	test("keeps this simple fixture's cards stable while comparison channels change", async () => {
+		// This fixture needs separate comparison channels without additional card
+		// space. More crowded boards may need new layout reservations as routes change.
 		const plain = await drawn();
 		const compared = await drawn(STANDING);
-		expect(compared.width).toBe(plain.width);
-		expect(compared.height).toBe(plain.height);
-		expect(compared.atlas).toEqual(plain.atlas);
+		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
+		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
+		expect(compared.atlas.edges).not.toEqual(plain.atlas.edges);
 
 		const sequence = drawnSequence();
 		const comparedSequence = drawnSequence(SEQUENCE_STANDING);

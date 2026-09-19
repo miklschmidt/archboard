@@ -7,7 +7,7 @@ import {
 // The adapter carries only semantic containment and measured dimensions.
 // Placement chooses ranks and the router chooses physical attachment faces.
 import type { ElkLabel, ElkNode, LayoutOptions } from "@archboard/elk-rs";
-import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import type { ChangeKind, SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	MeasuredArchitecture,
 	MeasuredNode,
@@ -67,9 +67,14 @@ function labelsOf(edge: SemanticEdge, measured: MeasuredArchitecture): ElkLabel[
  * Construct one whole graph without rank, flank or boundary-port policies.
  * @param content The view's semantic content.
  * @param measured Its fixed text and card dimensions.
+ * @param standings Comparison standings used to distinguish marked relationship channels.
  * @returns The hierarchy and complete semantic relationships.
  */
-function compoundGraph(content: VariantContent, measured: MeasuredArchitecture): ElkNode {
+function compoundGraph(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	standings?: Readonly<Record<string, ChangeKind>>,
+): ElkNode {
 	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value)]));
 	const children: ElkNode[] = [];
 	for (const node of content.nodes) {
@@ -81,13 +86,19 @@ function compoundGraph(content: VariantContent, measured: MeasuredArchitecture):
 		children,
 		edges: content.edges
 			.toSorted((one, other) => one.id.localeCompare(other.id))
-			.map((edge) => ({
-				id: edge.id,
-				sources: [edge.from],
-				targets: [edge.to],
-				layoutOptions: { "archboard.relationship.kind": edge.kind },
-				labels: labelsOf(edge, measured),
-			})),
+			.map((edge) => {
+				const standing = standings === undefined ? undefined : (standings[edge.id] ?? "unchanged");
+				return {
+					id: edge.id,
+					sources: [edge.from],
+					targets: [edge.to],
+					layoutOptions: {
+						"archboard.relationship.kind": edge.kind,
+						...(standing === undefined ? {} : { "archboard.relationship.standing": standing }),
+					},
+					labels: labelsOf(edge, measured),
+				};
+			}),
 	};
 }
 

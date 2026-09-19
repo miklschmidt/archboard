@@ -38,9 +38,9 @@
 // ## What it deliberately does not touch
 //
 // Geometry. Every mark here is painted inside a box the layout had already
-// decided on, or under a route that was already routed, so the same content
-// draws at the same size and the atlas says the same thing whether or not a
-// standing was handed in.
+// decided on, or under a route that was already routed. Channel allocation
+// happens earlier in the layout owner and may change routes and their space
+// requirements when comparison standings differ. This painter moves nothing.
 //
 // The selection halo. That ring sits three units *outside* a subject and is
 // invisible until a viewer puts `is-selected` on the group; the standing sits on
@@ -229,8 +229,9 @@ function subjectGroup(
  * the standing's ink and texture.
  *
  * Taking the outline over rather than adding a second rule around it is what
- * keeps the geometry untouched — the rule was already being drawn, and it is
- * drawn differently.
+ * keeps the subject's geometry untouched — the rule was already being drawn,
+ * and it is drawn differently. Relationship-channel allocation happens in the
+ * layout owner, not in this paint-only helper.
  * @param standing How the subject stands, or undefined when this is not a proposal.
  * @param palette The theme's colours.
  * @returns Attributes to spread over the subject's own, empty when there is nothing to say.
