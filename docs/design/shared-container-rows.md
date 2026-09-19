@@ -188,10 +188,12 @@ The sections above record the isolated experiment. Production adoption follows b
 The user requested adoption, then rejected constraints introduced while trying
 to preserve the previous renderer's routing conventions. The final implementation
 uses Graphviz global cluster placement and libavoid obstacle routing in both
-Bun and browser workers. Relationships of the same kind share face ports; different kinds receive
-distinct physical attachment positions. libavoid chooses the attachment and
-routes between the separate ports. Relationships retain their own identities,
-labels, traffic and Standing even when their lines share a port or trunk.
+Bun and browser workers. Relationships in the same connection channel — the
+same kind, comparison standing and local direction at an endpoint — share face
+ports; differences receive distinct physical attachment positions. libavoid
+chooses the attachment and routes between the separate ports. Relationships
+retain their own identities, labels, traffic and Standing even when their lines
+share a port or trunk.
 
 Deleted: explicit boundary splitting and flank policies, port ordering and
 spreading, endpoint checkpoints, minimum jog/approach allocations, route fanning,
@@ -245,9 +247,12 @@ with label and endpoint protections intact.
 Straight crossings retain bridge arcs. Rounded-corner contacts use narrow
 cutouts while preserving the natural bend. Expanding the corner itself into a
 semicircle produced hooks across the real cluster board and was removed after
-visual comparison. Different relationship kinds are separated in the native
+visual comparison. Different relationship channels are separated in the native
 router before crossing ink is painted; crossing decoration cannot repair
-coincident routes.
+coincident routes. The channel includes relationship kind, comparison standing
+and local direction, so opposing directions and differently marked comparison
+relationships do not render on top of one another while same-direction,
+same-standing relationships can still share their natural trunk.
 
 Ordinary card faces with overlapping spans now offer the nearest feasible balanced
 attachment. A usable straight channel replaces its redundant fixed center

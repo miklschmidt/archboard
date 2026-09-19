@@ -21,8 +21,9 @@ are still chosen fresh in a top-to-bottom reading. Long paths may wrap into
 side-by-side downward columns when the completed picture fits the pane better,
 keeping containers and small branches together. The renderer chooses the column
 count; authors do not encode layout in the board.
-Relationships of one kind may share card ports; different kinds use separate
-ports so their meaning remains distinguishable. Overlapping card spans can
+Relationships may share card ports when their kind, comparison standing and
+direction at that card agree; differences use separate ports so their meaning
+remains distinguishable. Overlapping card spans can
 use straight connections with balanced attachment offsets, allowing small shifts
 to keep neighboring labels clear. Labels should follow those connections instead
 of forcing sideways detours. Bends retain their configured radius and arrows retain
