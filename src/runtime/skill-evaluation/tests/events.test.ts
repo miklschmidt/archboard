@@ -134,6 +134,31 @@ describe("classifying what an author ran", () => {
 		expect(unwrapped("archboard check")).toBe("archboard check");
 	});
 
+	test("the script of a shell -c call is what the shell receives: quoting, escapes and splices undone", () => {
+		expect(unwrapped('/usr/bin/bash -lc "archboard semantic show \\"Flask signals\\""')).toBe(
+			'archboard semantic show "Flask signals"',
+		);
+		expect(unwrapped(`bash -lc "find \\""'$V" -type f\nprintf '"'%s' x"`)).toBe(
+			`find "$V" -type f\nprintf '%s' x`,
+		);
+		expect(unwrapped("bash -lc 'rg '\"'\"'a b'\"'\"' src'")).toBe("rg 'a b' src");
+		expect(unwrapped("zsh -l -c 'ls src'")).toBe("ls src");
+		expect(unwrapped('sh -c "ls \\\nsrc"')).toBe("ls src");
+		// Invoked as bash -l -c, a write is still a write.
+		const [write] = classifyCommands(
+			[
+				{
+					command: "bash -l -c 'archboard semantic new x --doing y'",
+					exitCode: 0,
+					status: "completed",
+					output: "",
+				},
+			],
+			CONTEXT,
+		);
+		expect(write?.write).toBe(true);
+	});
+
 	test("each class has a rule that names why, and a write is a write", () => {
 		const records = [
 			"bash -lc 'cat /run/home/.agents/skills/archboard/references/schemas.md'",
