@@ -1,49 +1,41 @@
-// The third answer to a removal (TASK-213).
-//
-// A draft that removed a node its predecessor went on to change is asked to
-// keep the removal or take the change. The documented contract offers a third
-// answer: the node back, under the identity the whole family knows it by,
-// saying what this draft wants it to say — as an ordinary edit stating that
-// id. This module decides which ids an edit may bring back, from the draft's
-// recorded standing, and settles the disagreement the edit answered through
-// the same catch-up every `resolve` uses, so the restored node, the settled
-// standing and the descendants' answers are one write and one version.
+// Ordinary edits may bring inherited nodes and relationships back under their
+// original ids. When that also answers an open removal disagreement, the
+// restoration and settlement share the same atomic family write.
 
 import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
 import { refuse } from "@/runtime/semantic-board-store/lib/outcome";
 import { caughtUp, type Settlement } from "@/runtime/semantic-board-store/lib/settle";
 
+/** Identities inherited from the direct predecessor or recorded reconciliation base. */
+interface RestorableSubjects {
+	readonly nodes: ReadonlySet<string>;
+	readonly edges: ReadonlySet<string>;
+}
+
 /**
- * The node ids an ordinary edit to this proposal may restore under their
- * original identity: the subjects of the disagreements it holds about a node
- * it removed and its predecessor changed.
- *
- * Only a proposal that has been merged holds any. One waiting on an ancestor
- * has no disagreement of its own, so nothing on it is restorable, and a stated
- * id absent from it stays refused as it always was.
- * @param board The family whose recorded predecessor establishes the subject's kind.
- * @param draft The proposal.
- * @returns The ids allowed back.
+ * Find absent subjects whose identity and kind the inheritance boundary knows.
+ * Siblings and older ancestors are not sources of identities for this edit.
+ * @param board The variant family.
+ * @param variant The variant before the edit.
+ * @returns Known absent identities, separated by kind.
  */
-function restorableNodes(board: SemanticBoard, draft: SemanticVariant): Set<string> {
-	const present = new Set(draft.content.nodes.map((node) => node.id));
-	const standing = draft.reconciliation;
-	if (standing === undefined) return new Set();
-	const parent = board.variants.find((variant) => variant.id === standing.against);
-	if (parent === undefined) return new Set();
-	const inBase = new Set(standing.base.nodes.map((node) => node.id));
-	const inParent = new Set(parent.content.nodes.map((node) => node.id));
-	return new Set(
-		standing.issues
-			.filter(
-				(issue) =>
-					issue.kind === "deleted-and-changed" &&
-					!present.has(issue.subject) &&
-					inBase.has(issue.subject) &&
-					inParent.has(issue.subject),
-			)
-			.map((issue) => issue.subject),
-	);
+function restorableSubjects(board: SemanticBoard, variant: SemanticVariant): RestorableSubjects {
+	const parent = board.variants.find((one) => one.id === variant.parent);
+	const sources = [parent?.content, variant.reconciliation?.base];
+	/**
+	 * Collect absent inherited ids of one subject kind.
+	 * @param kind The collection whose identities may be restored.
+	 * @returns Absent ids known at the inheritance boundary.
+	 */
+	const absent = (kind: "nodes" | "edges") => {
+		const present = new Set(variant.content[kind].map((subject) => subject.id));
+		return new Set(
+			sources.flatMap((source) =>
+				(source?.[kind] ?? []).map((subject) => subject.id).filter((id) => !present.has(id)),
+			),
+		);
+	};
+	return { nodes: absent("nodes"), edges: absent("edges") };
 }
 
 /**
@@ -52,7 +44,7 @@ function restorableNodes(board: SemanticBoard, draft: SemanticVariant): Set<stri
  *
  * The edit's content is this proposal's third answer, whole: the base moves
  * to the predecessor's version of each restored subject, so what the restored
- * node says here reads as this proposal's own change and nothing reopens the
+ * subject says here reads as this proposal's own change and nothing reopens the
  * argument. Disagreements the edit did not touch stay exactly as they were.
  * @param board The board as it stands.
  * @param draft The proposal as it stood before the edit.
@@ -86,4 +78,4 @@ function settleByRestoring(
 	return caughtUp(board, { draft, parent, standing, atVersion }, content, { taken, kept });
 }
 
-export { restorableNodes, settleByRestoring };
+export { type RestorableSubjects, restorableSubjects, settleByRestoring };

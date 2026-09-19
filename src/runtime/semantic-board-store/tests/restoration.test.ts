@@ -1,7 +1,7 @@
 // The third answer to a removal (TASK-213): a draft that removed a node its
 // predecessor went on to change may bring it back, under the original id and
 // in its own words, with one ordinary edit — and that edit settles the
-// disagreement in the same write. Every other absent id stays refused.
+// disagreement in the same write. Unknown and wrong-kind ids stay refused.
 //
 // The shape is the S11 evaluation scenario: a draft renames, rewords and
 // removes; the predecessor then touches the same three nodes; a partial
@@ -302,7 +302,7 @@ test("restoring before the field disagreements are answered settles only the rem
 	);
 }, 30_000);
 
-test("an id the draft is not arguing about stays refused, and nothing is written", async () => {
+test("an unknown id stays refused, and nothing is written", async () => {
 	await settleFields();
 	const before = read();
 	for (const stated of ["nope1", ids.helpers.split("").toReversed().join(""), read().id]) {
@@ -312,12 +312,10 @@ test("an id the draft is not arguing about stays refused, and nothing is written
 		});
 		expect(refused.outcome === "rejected" && refused.code, stated).toBe("UNKNOWN_NODE");
 	}
-	// A predecessor-only id that no disagreement is about is not a way in either:
-	// the current variant removing the tagging quietly is not a disagreement.
 	expect(read()).toEqual(before);
 }, 30_000);
 
-test("a sibling's node and a settled removal are not restorable", async () => {
+test("a sibling's node is refused, and a settled removal may be restored later", async () => {
 	await settleFields();
 	await write(
 		store.branchVariantTransition(
@@ -332,7 +330,7 @@ test("a sibling's node and a settled removal are not restorable", async () => {
 		nodes: [{ id: sibling.id, name: "Only here", kind: "module" }],
 	});
 	expect(refused.outcome === "rejected" && refused.code).toBe("UNKNOWN_NODE");
-	// Once the removal is answered by keeping it, the id is gone for good here.
+	// Keeping a removal settles it, but does not discard the inherited identity.
 	const kept = await write(
 		store.settleVariantTransition(
 			contract.ResolutionInputSchema.parse({
@@ -347,7 +345,8 @@ test("a sibling's node and a settled removal are not restorable", async () => {
 		variant: DRAFT,
 		nodes: [{ id: ids.tagged, name: "Tagged JSON", kind: "module" }],
 	});
-	expect(late.outcome === "rejected" && late.code).toBe("UNKNOWN_NODE");
+	expect(late.outcome).toBe("applied");
+	expect(variant(DRAFT).reconciliation).toBeUndefined();
 }, 30_000);
 
 test("a node stated without an id is still new, even when a removed one has its name", async () => {

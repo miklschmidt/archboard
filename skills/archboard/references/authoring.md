@@ -279,7 +279,11 @@ configuration no longer defines (`archboard check` names each reference), and
 `RELATIONSHIP_REPLACED` means the batch removed a relationship and stated one
 with the same ends and kind and at most one other property changed, or removed
 one while such a restatement an earlier write added still stands: either way it
-is the same relationship under a new id; restate it with its `id` next time.
+is the same relationship under a new id. If the original remains in the
+direct predecessor or recorded reconciliation base, remove the copy and
+restate the original `id` with its full properties in one edit. Otherwise
+that removed identity is unavailable to restore here; preserve ids when
+changing continuing relationships.
 `RELATIONSHIP_DUPLICATED` means the batch stated an existing relationship again
 without its `id`, so both now stand; do not remove the original to tidy up, but
 remove the copy and restate the original with its `id`.
