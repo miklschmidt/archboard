@@ -11,9 +11,11 @@
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
+import { PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
 import {
 	cameraNow,
 	drawing,
+	surface,
 	viewport,
 	chooseVariantInShell,
 	mountStage,
@@ -60,6 +62,40 @@ const PROPOSED = {
 	content: { nodes: [{ id: "n1", name: "board-io", kind: "module" }], edges: [] },
 };
 
+/** The current state with a path to another board in the same pane. */
+const LINKED = {
+	...AS_IT_IS,
+	content: {
+		nodes: [
+			{
+				...AS_IT_IS.content.nodes[0],
+				drillDown: { board: "archive", variant: { kind: "current" } },
+			},
+		],
+		edges: [],
+	},
+};
+
+/** Open the selected card's linked board, through the real drill-down control. */
+async function openArchive(): Promise<void> {
+	await act(async () => {
+		fireEvent.click(document.querySelector<HTMLElement>("[data-slot='semantic-drill-down-open']")!);
+	});
+}
+
+/**
+ * Draw the next requested animation frame at a controlled time.
+ * @param frames Frames awaiting the test clock.
+ * @param now The frame time in milliseconds.
+ */
+function runFrames(frames: Map<number, FrameRequestCallback>, now: number): void {
+	act(() => {
+		const due = [...frames.values()];
+		frames.clear();
+		for (const frame of due) frame(now);
+	});
+}
+
 /**
  * Put a board and a drawing of one of its variants in front of a pane.
  * @param variants The board's variants.
@@ -93,7 +129,7 @@ test.each([false, true])(
 		const other = { id: "scope2", name: "Whole system", grammar: "architecture" };
 		serving([AS_IT_IS, PROPOSED]);
 		server.reply = { status: 200, body: { ...drawing(1), view, views: [view, other] } };
-		mountStage(null, { live: true, view: view.id });
+		mountStage(null, { live: true, view: view.id, reducedMotion: true });
 		await settle();
 		if (handled) {
 			act(() => {
@@ -175,4 +211,101 @@ test("Everything fits the whole proposal and current state instead of zooming to
 	chooseVariantInShell(undefined);
 	await settle();
 	expect(cameraNow()).toEqual(whole);
+});
+
+const MOVES = [
+	{
+		kind: "variant",
+		first: AS_IT_IS,
+		board: "pipeline",
+		selected: null,
+		next: PROPOSED,
+		variant: PROPOSED.id,
+	},
+	{ kind: "board", first: LINKED, board: "archive", selected: "n1", next: AS_IT_IS, variant: null },
+] as const;
+
+for (const move of MOVES) {
+	test(`switching ${move.kind}s animates the scale toward the selected view's fit`, async () => {
+		const realFrame = globalThis.requestAnimationFrame;
+		const realCancel = globalThis.cancelAnimationFrame;
+		const frames = new Map<number, FrameRequestCallback>();
+		let nextFrame = 0;
+		try {
+			serving([move.first, PROPOSED]);
+			server.documents["archive"] = { ...boardOf([AS_IT_IS]), name: "archive" };
+			mountStage(move.selected, { live: true });
+			await settle();
+			const before = cameraNow();
+			/**
+			 * Ask for a frame on the test's clock.
+			 * @param callback The frame callback.
+			 * @returns Its id for cancellation.
+			 */
+			globalThis.requestAnimationFrame = (callback): number => {
+				frames.set(++nextFrame, callback);
+				return nextFrame;
+			};
+			/**
+			 * Cancel a frame on the test's clock.
+			 * @param id The frame id.
+			 */
+			globalThis.cancelAnimationFrame = (id): void => {
+				frames.delete(id);
+			};
+			server.reply = {
+				status: 200,
+				body: {
+					...drawing(1, move.board),
+					width: 900,
+					height: 600,
+					variant: { id: move.next.id, name: move.next.name, lifecycle: move.next.lifecycle },
+				},
+			};
+			if (move.variant !== null) chooseVariantInShell(move.variant);
+			else await openArchive();
+			await settle();
+			expect(
+				document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-board"),
+			).toBe(move.board);
+			expect(surface().hasAttribute("data-camera-motion")).toBe(true);
+			expect(cameraNow()).toEqual(before);
+			let now = performance.now() + PICTURE_TRANSITION_MS / 2;
+			runFrames(frames, now);
+			const midway = cameraNow();
+			const destination = Math.min((800 - 48) / 900, (600 - 48) / 600);
+			expect(midway.scale).toBeLessThan(before.scale);
+			expect(midway.scale).not.toBe(destination);
+			now += PICTURE_TRANSITION_MS / 2 + 1;
+			runFrames(frames, now);
+			expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+			expect(cameraNow().scale).toBeCloseTo(destination, 6);
+			expect(cameraNow().x).toBeCloseTo((800 - 900 * destination) / 2, 6);
+			expect(cameraNow().y).toBeCloseTo((600 - 600 * destination) / 2, 6);
+			const arrived = cameraNow();
+			act(() => {
+				fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
+			});
+			expect(cameraNow().x - arrived.x).toBeCloseTo(64, 6);
+			await settle();
+		} finally {
+			globalThis.requestAnimationFrame = realFrame;
+			globalThis.cancelAnimationFrame = realCancel;
+		}
+	});
+}
+
+test("switching boards lands at once when motion is reduced", async () => {
+	serving([LINKED]);
+	server.documents["archive"] = { ...boardOf([AS_IT_IS]), name: "archive" };
+	mountStage("n1", { live: true, reducedMotion: true });
+	await settle();
+	server.reply = {
+		status: 200,
+		body: { ...drawing(1, "archive"), width: 900, height: 600 },
+	};
+	await openArchive();
+	await settle();
+	expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+	expect(cameraNow().scale).toBeCloseTo(Math.min((800 - 48) / 900, (600 - 48) / 600), 6);
 });
