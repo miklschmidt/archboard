@@ -3,11 +3,11 @@ id: TASK-274.03
 title: >-
   Teach that a held instance is a relationship, and fix step 9's self-call
   example
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-19 00:40'
-updated_date: '2026-09-19 00:48'
+updated_date: '2026-09-19 01:13'
 labels: []
 dependencies: []
 parent_task_id: TASK-274
@@ -26,7 +26,7 @@ Two portable gaps in skills/archboard. (1) The containment row says 'a part defi
 - [x] #1 The skill states, portably and across paradigms, that holding, constructing-and-storing or being handed an instance is a relationship from the holder, and containment is only where a part is defined; it sits where an author choosing between parent and an edge meets it
 - [x] #2 Every self-call example in SKILL.md and the references is true under the rule that a self step is exactly one whose from and to are the same drawn node
 - [x] #3 No evals/evals.json or rubric.md edit; every skill citation still resolves (bun run eval:skill check)
-- [ ] #4 SKILL.md grows by no more than about 400 bytes; derived copies resynced; gate passes
+- [x] #4 SKILL.md grows by no more than about 400 bytes; derived copies resynced; gate passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,4 +47,12 @@ Commit be8388bb. SKILL.md 21873 -> 22236 bytes (+363). Catalogue containment row
 Review fixes, commit 83ee9acf: 'holds/holding' -> 'defines/defining' in evidence rule 3 and authoring.md receivers section; containment row says 'a component defined inside another' and 'An instance a part holds or renders is not its child', naming '(a constructor argument, props, context)'; step 9 parenthesis now '(one step with it at both ends, never a call between two parts that each have a column)'; create-sequence step 1 'a method calling another method of a class that is one column', rewrapped. SKILL.md now 22265 bytes (+392 over 21873). eval:skill check ok; resynced; test:modules 3341 pass, test:repository 8 pass; fmt:check fails only on other workers' uncommitted src/runtime/skill-evaluation files, the three skill files pass oxfmt --check.
 
 Independent review, two rounds; round 2 clean (83ee9acf): 'holds' no longer means containment anywhere, containment row says 'a component defined inside another', held or rendered instances and constructor injection named. SKILL.md +392 bytes. AC#4 (gate) held for the final full gate.
+
+Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3361/0, test:system 168/0, test:repository 8/0, test:serial-browser 0 failing files.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The skill teaches that an instance a part holds, renders, captures or is handed (constructor argument, props, context) is a relationship from the holder, and containment is only where a part is defined; 'holds' no longer means containment anywhere, and every self-call example satisfies the same-drawn-node rule. SKILL.md +392 bytes. Commits be8388bb, 83ee9acf. Two review rounds. Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3361/0, test:system 168/0, test:repository 8/0, test:serial-browser 0 failing files.
+<!-- SECTION:FINAL_SUMMARY:END -->
