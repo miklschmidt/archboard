@@ -50,7 +50,9 @@ const ROOTS: ExposureRoots = {
 	skillPackages: ["/checkout/skills/archboard"],
 	batchRoot: BATCH,
 	world: WORLD,
-	exists: (file) => PRESENT.has(file),
+	// As on a disk: a present path's directories exist too.
+	exists: (file) =>
+		[...PRESENT].some((present) => present === file || present.startsWith(`${file}/`)),
 };
 
 /**
@@ -88,7 +90,7 @@ test("a plain batch path that does not exist, and that the command reports missi
 	const relative = "../../../9/world/vault/x.json";
 	expect(exposureOf(`bash -lc 'cat ${relative}'`, missing(relative))).toBeNull();
 	// The path is gone now, but the command's output shows it was read then.
-	expect(exposureOf(`bash -lc 'cat ${misread}'`, "---\nname: archboard\n")).toBe("other-run");
+	expect(exposureOf(`bash -lc 'cat ${gone(BATCH)}'`, "---\nname: archboard\n")).toBe("other-run");
 });
 
 test("a relative path is read from wherever the script may be: a cd that found its file takes the read with it", () => {
@@ -151,6 +153,44 @@ test("a path that exists, a pattern, the batch root, a quoted or joined word, or
 	expect(exposureOf(`bash -lc 'cat ${WORLD}/vault/"Flask JSON.semantic.json"'`)).toBeNull();
 });
 
+test("a path under no entry the batch holds reaches nothing, whatever the command printed", () => {
+	// Codex's alias again, handed to the CLI through the environment: nothing
+	// is read and nothing reports the path missing.
+	const vault = `${BATCH}/world/vault`;
+	for (const script of [
+		`ARCHBOARD_VAULT=${vault} archboard semantic list`,
+		`ARCHBOARD_VAULT=${WORLD}/vault archboard semantic render x && ARCHBOARD_VAULT=${vault} archboard semantic rasterize x`,
+		`cat ${BATCH}/nope 2>/dev/null`,
+	])
+		expect(exposureOf(`bash -lc '${script}'`, '{"success":true}'), script).toBeNull();
+	// The batch root, an entry it holds, a pattern or expansion at that
+	// segment, and a name the script can carry elsewhere all still count.
+	for (const script of [
+		`ls ${BATCH}`,
+		`ls ${BATCH}/runs/nope`,
+		`cat ${BATCH}/blinding.json`,
+		`cat ${BATCH}/blind*`,
+		`cat ${BATCH}/{world,runs}/baseline/S11/2/run.json`,
+		`cat ${BATCH}/$E/baseline/S11/2/run.json`,
+		`V=${vault}; cat $V/../../runs/baseline/S11/2/run.json`,
+		`X=${BATCH}/r; cat \${X}uns/baseline/S11/2/run.json`,
+		`echo ${BATCH}/world/ | xargs -I{} cat {}../runs/baseline/S11/2/run.json`,
+		`cat ${BATCH}/world/../runs/baseline/S11/2/run.json`,
+	])
+		expect(exposureOf(`bash -lc '${script}'`, "{}"), script).toBe("other-run");
+});
+
+test("a script is read as the shell receives it, so quoting inside a -lc argument names its own world", () => {
+	// An escaped and spliced -lc script whose every path lies in the run's world.
+	const script = [
+		`export ARCHBOARD_VAULT=${WORLD}/vault`,
+		`find \\""'$ARCHBOARD_VAULT" -maxdepth 3 -type f -print | sort`,
+		`printf '"'%s\\n' '--- workspace status ---'`,
+		`git -C ${WORLD} status --short`,
+	].join("\n");
+	expect(exposureOf(`bash -lc "${script}"`, "")).toBeNull();
+});
+
 /**
  * A batch whose one run recorded an other-run read at run time and stored the
  * command that earned it, as a batch that sat at `recordedRoot` when it ran.
@@ -201,6 +241,15 @@ function batchWithStoredCommand(
 }
 
 /**
+ * Another run's installed skill, in a run the batch no longer holds.
+ * @param root Where the batch sat.
+ * @returns The path.
+ */
+function gone(root: string): string {
+	return `${root}/runs/baseline/S99/1/world/home/.agents/skills/archboard/SKILL.md`;
+}
+
+/**
  * The mis-expanded skill alias.
  * @param root Where the batch sat.
  * @returns The path.
@@ -220,7 +269,7 @@ test("the report re-reads a run's stored commands, so a read the command shows f
 		],
 		[
 			"a path gone since the run, whose output shows it was read",
-			(root: string) => [`bash -lc 'cat ${alias(root)}'`, "---\nname: archboard\n"] as const,
+			(root: string) => [`bash -lc 'cat ${gone(root)}'`, "---\nname: archboard\n"] as const,
 			undefined,
 			true,
 		],

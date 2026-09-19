@@ -10,13 +10,14 @@ import type { ExposureRoots } from "@/runtime/skill-evaluation/lib/classify";
  * Whether a script reaches into the batch tree outside its own world: another
  * run, the blinding table that names every run's arm, the batch manifest, or
  * the harness's own records of this run. Every path a shell word names there
- * counts, unless the command itself shows it read nothing: the word is a plain
- * literal, with no quote, escape or expansion that could make the shell pass
- * something else, the path does not exist, and the command's output says so.
- * A script that assigns or expands a variable, or substitutes a command, can
- * build a path no word spells, so none of its paths is exempt. Existence alone
- * is not enough: the disk is read when the report is, and a file deleted since
- * the run was there when the author read it.
+ * counts, unless it lies under no entry the batch holds, or the command itself
+ * shows it read nothing: the word is a plain literal, with no quote, escape or
+ * expansion that could make the shell pass something else, the path does not
+ * exist, and the command's output says so. A script that assigns or expands a
+ * variable, or substitutes a command, can build a path no word spells, so none
+ * of its paths is exempt that way. Below the batch root, existence alone is not
+ * enough: the disk is read when the report is, and a file deleted since the
+ * run was there when the author read it.
  * @param script The unwrapped script.
  * @param output What the command printed.
  * @param roots Where the batch and this run's world live.
@@ -30,10 +31,13 @@ function reachesBatchOutsideWorld(
 	cwd: string,
 ): boolean {
 	const words = shellWords(script);
+	const expands = /[$`]/u.test(script);
 	const check: ReadCheck = {
 		roots,
 		output,
-		exemptable: !/[$`]/u.test(script) && !words.some((word) => ASSIGNMENT_RE.test(word.value)),
+		exemptable: !expands && !words.some((word) => ASSIGNMENT_RE.test(word.value)),
+		fixed: !expands,
+		walkingBack: words.filter((word) => word.value.includes("..")),
 	};
 	let places: Places = { start: cwd, latest: cwd, possible: [cwd], awaitingTarget: false };
 	return words.some((word) => {
@@ -56,6 +60,10 @@ interface ReadCheck {
 	readonly output: string;
 	/** False when the script can build a path no word spells, so nothing is exempt. */
 	readonly exemptable: boolean;
+	/** False when the script expands a variable or substitutes a command, so a word can carry a name elsewhere. */
+	readonly fixed: boolean;
+	/** The words holding `..`, which can walk a name that holds nothing back into one that does. */
+	readonly walkingBack: readonly ShellWord[];
 }
 
 /**
@@ -144,8 +152,31 @@ function outsideWorld(target: string, roots: ExposureRoots): boolean {
 function countsAsRead(word: ShellWord, named: string, target: string, check: ReadCheck): boolean {
 	return (
 		outsideWorld(target, check.roots) &&
+		!namesNoEntry(word, target, check) &&
 		!(check.exemptable && readNothing(word, target, named, check))
 	);
+}
+
+/**
+ * Whether a path lies under an entry the batch does not hold. The batch root
+ * holds only what the harness writes there — the runs, the skills, the
+ * graders, the manifest, the blinding table, the report — and removes none of
+ * it, so a first segment naming nothing on disk named nothing when the author
+ * ran either. An author that mis-expands a skill-root alias names
+ * `<batch>/world/...` and reaches nothing, whatever it printed. The segment
+ * must be a literal name, and the script must give no way to carry the name
+ * somewhere real: no expansion that could append to it, and no other word
+ * holding `..` that could walk back out of it.
+ * @param word The shell word.
+ * @param target The path it resolves to.
+ * @param check Where the batch is, and what the script can do with a name.
+ * @returns True when the path is under no entry the batch holds.
+ */
+function namesNoEntry(word: ShellWord, target: string, check: ReadCheck): boolean {
+	const [entry] = path.relative(check.roots.batchRoot, target).split(path.sep);
+	if (entry === undefined || entry === "" || EXPANSION_RE.test(entry)) return false;
+	if (!check.fixed || check.walkingBack.some((other) => other !== word)) return false;
+	return !check.roots.exists(path.join(check.roots.batchRoot, entry));
 }
 
 /**
@@ -220,7 +251,8 @@ function shellWords(script: string): ShellWord[] {
 
 /**
  * What one quoted run or escape passes. Inside double quotes a backslash
- * escapes only a dollar, a backtick, a double quote, a backslash or a newline.
+ * escapes only a dollar, a backtick, a double quote, a backslash or a newline;
+ * an escaped newline, quoted or not, joins the lines and passes nothing.
  * @param _match The whole quoted run.
  * @param single The inside of single quotes.
  * @param double The inside of double quotes.
@@ -233,7 +265,12 @@ function unquoted(
 	double: string | undefined,
 	escaped: string | undefined,
 ): string {
-	return single ?? double?.replaceAll(/\\([$`"\\\n])/gu, "$1") ?? escaped ?? "";
+	if (single !== undefined) return single;
+	if (double !== undefined)
+		return double.replaceAll(/\\([$`"\\\n])/gu, (_escape, character: string) =>
+			character === "\n" ? "" : character,
+		);
+	return escaped === "\n" ? "" : (escaped ?? "");
 }
 
 /**
@@ -247,4 +284,4 @@ function inside(directory: string, target: string): boolean {
 	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
-export { reachesBatchOutsideWorld };
+export { reachesBatchOutsideWorld, shellWords };
