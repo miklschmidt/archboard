@@ -20,9 +20,9 @@ a comparison, a view and a group inspection read.
    List the participants in reading order: the exchange is between the parts
    the board has, so a part drawn whole stays one column whatever functions,
    methods or hooks run inside it, and a call it makes on itself (a recursive
-   function, a method of a class drawn whole calling another, a component
-   updating its own state, a handler re-entering itself) is one `self` step. A function, method
-   or component the request names is a participant, and a call to it is a message to that column even
+   function, a method calling another method of a class that is one column, a
+   component updating its own state, a handler re-entering itself) is one
+   `self` step. A function, method or component the request names is a participant, and a call to it is a message to that column even
    when it lives inside its caller; one the board draws is a candidate for a
    column, and whether it takes one is the choice below.
    A flow's participants are a subset of the board's nodes, so the columns are
