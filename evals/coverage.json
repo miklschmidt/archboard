@@ -524,7 +524,7 @@
 				},
 				{
 					"path": "automatic downward column wrapping",
-					"expectedUse": "author the real branching path and containment; the renderer selects readable downward columns without authored placement",
+					"expectedUse": "author the real branching path and containment; the renderer selects downward columns by how the completed routed picture fits the pane while keeping containers together, without authored placement",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/runtime/semantic-renderer/tests/automatic-columns.test.ts; src/transformers/semantic-renderer/tests/fold-columns.test.ts"
