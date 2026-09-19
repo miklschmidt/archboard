@@ -517,10 +517,10 @@
 				},
 				{
 					"path": "relationship channel routing separation",
-					"expectedUse": "author real relationships; matching kind, comparison standing and local direction may share a port while differing channels use distinct ports and tracks; overlapping card spans and clear external container arrivals offer aligned channels with room for reserved labels",
+					"expectedUse": "author real relationships; matching kind, comparison standing and local direction may share a port while differing channels use distinct ports and tracks; cards and external container arrivals jointly offer aligned channels with room for reserved labels",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts; src/runtime/semantic-renderer/tests/matched-kind-channels.test.ts; src/runtime/semantic-renderer/tests/route-labels.test.ts; src/runtime/semantic-renderer/tests/forced-label-direction.test.ts"
+					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts; src/runtime/semantic-renderer/tests/matched-kind-channels.test.ts; src/runtime/semantic-renderer/tests/route-labels.test.ts; src/runtime/semantic-renderer/tests/forced-label-direction.test.ts; src/runtime/semantic-renderer/tests/channel-projection.test.ts; src/runtime/semantic-renderer/tests/projection-fallback.test.ts"
 				},
 				{
 					"path": "fixed bend and arrow approach clearance",
