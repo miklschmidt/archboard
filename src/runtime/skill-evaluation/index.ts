@@ -93,6 +93,10 @@ export {
 	type VisualStanding,
 } from "@/runtime/skill-evaluation/lib/grader";
 export {
+	verdictShortfall,
+	type VerdictShortfall,
+} from "@/runtime/skill-evaluation/lib/grading-retry";
+export {
 	bundledRuns,
 	filedVerdict,
 	gradeBatch,

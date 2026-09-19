@@ -142,6 +142,22 @@ files any call whose stream shows a read or a refusal outside the workspace
 as an error rather than a verdict, as it does a call with no structured
 answer or one that violates the schema.
 
+After every grading call the harness checks each filed verdict against what
+the report holds a run to, with the report's own checks: every declared
+feature answered under its declared name and none invented, and an
+observation of every capture it took and the grader opened in full. A verdict
+short of that is asked for once more, in the same session (`--resume` for
+Claude, `codex exec resume` for Codex, pictures listed again), in a prompt
+naming each run and exactly what it lacks. The new answer replaces the filed
+verdict only when it matches the output schema and lacks nothing; its receipt
+is written for the replacing verdict's bytes and counts a picture delivered on
+either call, since both reached one session. An answer still short, or none,
+leaves the first verdict filed, and the report treats it as it always has. A
+retry is never retried. It is a call of the session like any other, so its
+usage is counted, and its record in `session.json` carries `retry`: the call
+it re-asked, and per run what was asked, the outcome (`replaced`,
+`still-short`, `no-answer`) and what remained.
+
 ## Reports
 
 `grade` ends by writing the report, and `report` writes it again without grading. It joins each run's manifest with each grader's verdict and writes
