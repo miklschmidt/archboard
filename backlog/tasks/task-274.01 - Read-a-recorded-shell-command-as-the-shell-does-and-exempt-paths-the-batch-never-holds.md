@@ -3,11 +3,11 @@ id: TASK-274.01
 title: >-
   Read a recorded shell command as the shell does, and exempt paths the batch
   never holds
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-19 00:40'
-updated_date: '2026-09-19 01:07'
+updated_date: '2026-09-19 01:13'
 labels:
   - bug
 dependencies: []
@@ -61,4 +61,12 @@ Review round 1 fixed in b0077e05.
 - Gate: lint (my files clean; lint:policy red only in grading-retry.ts and grading-run.ts, 274.02 in progress), fmt:check red only in tests/fake-codex.ts and tests/fake-grader-answer.ts (274.02), type-check 0, test:modules 3361 pass 0 fail.
 
 Independent review, two rounds; round 2 clean (b0077e05). Accepted gap widened on the reviewer's evidence: a program that rewrites a name the batch does not hold into one it does, whether through a pipeline (xargs, sed) or inside one interpreter word (e.g. perl s|nope|runs|r), escapes; it takes deliberate obfuscation. Older gap, not this task's: a relative climb inside a nested bash -c script word is never resolved (clean before 570d1288 too); filed as a follow-up.
+
+Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3361/0, test:system 168/0, test:repository 8/0, test:serial-browser 0 failing files.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Recorded bash -c/-lc commands are now classified as the shell receives them (shared shell-word splitter; script taken only when it is the last word), and a batch path whose first segment names no entry the batch holds is not exposure when it is a single plain path in a script that builds no path. Re-report of the 23:44 batch clears its three false contaminations (S08 baseline unwrap; S02/S12 candidate ARCHBOARD_VAULT alias) with no class shift across 1,286 commands. Commits 570d1288, b0077e05. Two review rounds. Accepted gap: a program rewriting a missing name into a real one. Nested-shell relative climbs filed as TASK-275. Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3361/0, test:system 168/0, test:repository 8/0, test:serial-browser 0 failing files.
+<!-- SECTION:FINAL_SUMMARY:END -->

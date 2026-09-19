@@ -1,11 +1,11 @@
 ---
 id: TASK-274.04
 title: Cut the archboard references back without losing what they teach
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-19 00:40'
-updated_date: '2026-09-19 01:05'
+updated_date: '2026-09-19 01:13'
 labels: []
 dependencies:
   - TASK-274.03
@@ -25,7 +25,7 @@ SKILL.md was trimmed under TASK-273.03 (32.4 -> 21.9 KB), yet median author toke
 - [x] #1 The references total materially less than 90 KB; per-file before/after recorded in the task
 - [x] #2 Every rule the references taught is still taught somewhere a run that needs it will read; a reviewer diff-checks the ledger rule by rule
 - [x] #3 No evals/evals.json or rubric.md edit and no heading moved, so every skill citation still resolves (bun run eval:skill check)
-- [ ] #4 Derived copies resynced and bun run check passes
+- [x] #4 Derived copies resynced and bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,4 +79,12 @@ Sizes after review fixes (bytes): authoring 15,339; create-architecture 5,749; c
 Gate after fixes: skills resynced (diff -r clean); eval:skill check suite ok (15 scenarios, 15 fixtures, 14 coverage parts); oxfmt --check skills/archboard clean; test:modules 3351/0; test:repository 8/0; type-check exit 0; lint red only in other workers' uncommitted src/runtime/skill-evaluation/lib/grading-run.ts (require-jsdoc) and grading-retry.ts (complexity, require-jsdoc), none touched here. Left In Progress.
 
 Independent review, two rounds; round 2 clean (2f92bbc9). AC#4 held for the final full gate on a quiet tree.
+
+Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3361/0, test:system 168/0, test:repository 8/0, test:serial-browser 0 failing files.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+References cut from 68,095 to 58,562 bytes (skill total 90,360 -> 80,827) by turning padded tables into lists, linking to SKILL.md instead of restating it, and tightening prose; the ledger in the notes accounts for every rule, recipe example renders now go to /tmp. No heading moved; evals.json, rubric.md and SKILL.md untouched. Commits 36b7f88d, a7aa9046, 51901313, 2f92bbc9. Two review rounds. Full gate on a quiet tree: lint, fmt:check, type-check, build:frontend exit 0; test:modules 3361/0, test:system 168/0, test:repository 8/0, test:serial-browser 0 failing files.
+<!-- SECTION:FINAL_SUMMARY:END -->
