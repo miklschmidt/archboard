@@ -80,8 +80,8 @@ const SCRIPT_OPTION_RE = /^-[A-Za-z]*c[A-Za-z]*$/u;
 /**
  * The script a recorded `bash -lc`, `sh -c` or `zsh -c` command hands its
  * shell, as the shell receives it: the argument after the option holding `c`,
- * with its quoting and escapes undone. A command that is not such a call is
- * read as recorded, less any outer quotes.
+ * with its quoting and escapes undone. A command that is not such a call, or
+ * that goes on past the script, is read as recorded, less any outer quotes.
  * @param command The command as recorded.
  * @returns The inner script.
  */
@@ -95,7 +95,7 @@ function unwrapped(command: string): string {
 /**
  * The script argument of a shell call, if the words are one.
  * @param words The command's words as the shell passes them.
- * @returns The word after the shell's option holding `c`, or undefined for any other command.
+ * @returns The word after the shell's option holding `c` when it is the last word, or undefined.
  */
 function shellScript(words: readonly string[]): string | undefined {
 	const [shell, ...options] = words;
@@ -103,7 +103,10 @@ function shellScript(words: readonly string[]): string | undefined {
 	const at = options.findIndex(
 		(option) => !option.startsWith("-") || SCRIPT_OPTION_RE.test(option),
 	);
-	return SCRIPT_OPTION_RE.test(options[at] ?? "") ? (options[at + 1] ?? "") : undefined;
+	// Only a script that ends the command: words after it are arguments to it
+	// or further commands, and the recorded text read whole keeps them.
+	if (!SCRIPT_OPTION_RE.test(options[at] ?? "") || options.length !== at + 2) return undefined;
+	return options[at + 1];
 }
 
 const WRITE_RE = /\barchboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u;

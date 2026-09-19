@@ -152,7 +152,7 @@ function outsideWorld(target: string, roots: ExposureRoots): boolean {
 function countsAsRead(word: ShellWord, named: string, target: string, check: ReadCheck): boolean {
 	return (
 		outsideWorld(target, check.roots) &&
-		!namesNoEntry(word, target, check) &&
+		!namesNoEntry(word, named, target, check) &&
 		!(check.exemptable && readNothing(word, target, named, check))
 	);
 }
@@ -165,18 +165,40 @@ function countsAsRead(word: ShellWord, named: string, target: string, check: Rea
  * ran either. An author that mis-expands a skill-root alias names
  * `<batch>/world/...` and reaches nothing, whatever it printed. The segment
  * must be a literal name, and the script must give no way to carry the name
- * somewhere real: no expansion that could append to it, and no other word
- * holding `..` that could walk back out of it.
+ * somewhere real: no expansion that could append to it, and no `..` that
+ * could walk back out of it, in another word or in this one outside the path.
+ * The word must name one path and nothing else: a word that is a whole
+ * program, such as a `python3 -c` or `node -e` argument, can join the name
+ * with anything.
  * @param word The shell word.
+ * @param named The path as the word spells it, from the batch root to the word's end.
  * @param target The path it resolves to.
  * @param check Where the batch is, and what the script can do with a name.
  * @returns True when the path is under no entry the batch holds.
  */
-function namesNoEntry(word: ShellWord, target: string, check: ReadCheck): boolean {
+function namesNoEntry(word: ShellWord, named: string, target: string, check: ReadCheck): boolean {
 	const [entry] = path.relative(check.roots.batchRoot, target).split(path.sep);
 	if (entry === undefined || entry === "" || EXPANSION_RE.test(entry)) return false;
+	return (
+		staysPut(word, named, check) && !check.roots.exists(path.join(check.roots.batchRoot, entry))
+	);
+}
+
+/**
+ * Whether a name stays what its word spells: the script expands nothing, no
+ * other word holds `..`, and the word's slice is one path and nothing else —
+ * no space, quote, parenthesis or comma that would make it a program, and
+ * every `..` in the word a whole segment of the path.
+ * @param word The shell word.
+ * @param named The slice of it that names the path.
+ * @param check What the script can do with a name.
+ * @returns True when nothing can carry the name elsewhere.
+ */
+function staysPut(word: ShellWord, named: string, check: ReadCheck): boolean {
 	if (!check.fixed || check.walkingBack.some((other) => other !== word)) return false;
-	return !check.roots.exists(path.join(check.roots.batchRoot, entry));
+	if (/[\s'"(),]/u.test(named)) return false;
+	const walks = named.split("/").filter((segment) => segment === "..").length;
+	return word.value.split("..").length - 1 === walks;
 }
 
 /**
