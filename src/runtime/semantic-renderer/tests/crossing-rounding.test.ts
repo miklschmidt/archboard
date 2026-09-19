@@ -4,6 +4,7 @@ import { expect, test } from "bun:test";
 import {
 	bridgeCrossings,
 	curveThrough,
+	curveClearanceIssue,
 	type ArchitectureDrawing,
 	type DrawingEdge,
 	type Point,
@@ -71,8 +72,8 @@ test("a crossing near a turn preserves natural rounding while separating its ink
 	expect(before.edges[1]!.curve).toEqual(cornerRoute);
 	expect(result.edges[1]!.curve).toEqual(cornerRoute);
 	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]!.edgeId).toBe("1");
-	expect(result.bridges[0]!.under).toEqual(["0"]);
+	expect(result.bridges[0]!.edgeId).toBe("0");
+	expect(result.bridges[0]!.under).toEqual(["1"]);
 });
 
 // Opposing rounded turns from the cloud board's VM → DB and API → DB
@@ -130,26 +131,52 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 	expect(distinct.edges).toEqual(shared);
 });
 
-// The source has no arrowhead. Short endpoint legs from Common-WebLib and
-// the cloud's VM → DB connections must leave room for the target's own ink.
-test("short endpoint bends reserve arrow space only at the target", () => {
+// Native endpoint and inner-leg shortages must never produce smaller bends.
+test("ordinary bends stay fixed while completed routes require room for every turn and head", () => {
 	const points = [
 		{ x: 0, y: 0 },
-		{ x: 0, y: 16 },
-		{ x: 100, y: 16 },
-		{ x: 100, y: 29 },
+		{ x: 0, y: 8 },
+		{ x: 16, y: 8 },
+		{ x: 16, y: 28 },
 	];
-	const ordinary = curveThrough(points);
-	const narrowHead = curveThrough(points, undefined, 8);
-	for (const curve of [ordinary, narrowHead]) {
-		const departure = curve.segments[0]!;
-		expect(departure.kind).toBe("line");
-		expect(departure.to).toEqual({ x: 0, y: 8 });
-		expect(curve.segments[1]!.kind).toBe("cubic");
+	const curve = curveThrough(points);
+	expect(curveClearanceIssue(curve)).toBeUndefined();
+	let from = curve.from;
+	for (const segment of curve.segments) {
+		if (segment.kind === "cubic") {
+			expect(Math.abs(segment.to.x - from.x)).toBe(8);
+			expect(Math.abs(segment.to.y - from.y)).toBe(8);
+		}
+		from = segment.to;
 	}
-	// Reducing only the target's reserved ink gives the last bend its space;
-	// the endpoint and the source's already-rounded departure stay unchanged.
-	expect(ordinary.segments.at(-2)!.to).toEqual({ x: 100, y: 17 });
-	expect(narrowHead.segments.at(-2)!.to).toEqual({ x: 100, y: 21 });
-	expect(narrowHead.segments.at(-1)).toEqual(ordinary.segments.at(-1));
+	// Each invalid intermediate still rounds at eight; only final validation
+	// refuses it, letting label settlement try another native route first.
+	for (const short of [
+		[{ x: 0, y: 1 }, ...points.slice(1)],
+		[points[0]!, points[1]!, { x: 15, y: 8 }, { x: 15, y: 28 }],
+		[...points.slice(0, -1), { x: 16, y: 27 }],
+	]) {
+		expect(() => curveThrough(short)).not.toThrow();
+		expect(curveClearanceIssue(curveThrough(short))).toBeDefined();
+	}
+	const labelled = curveThrough([
+		{ x: 0, y: 0 },
+		{ x: 0, y: 40 },
+		{ x: 60, y: 40 },
+	]);
+	expect(curveClearanceIssue(labelled, { x: 8, y: 35, width: 20, height: 10 })).toBeUndefined();
+	expect(curveClearanceIssue(labelled, { x: 7, y: 35, width: 20, height: 10 })).toBeDefined();
+});
+
+test("native coordinate jitter does not create an artificial rounded turn", () => {
+	const points = [
+		{ x: 1, y: 0 },
+		{ x: 1, y: 25 },
+		{ x: 1 + 1e-13, y: 25 },
+		{ x: 1 + 1e-13, y: 50 },
+	];
+	const curve = curveThrough(points);
+	expect(curve.segments).toHaveLength(1);
+	expect(curve.segments[0]!.kind).toBe("line");
+	expect(curveClearanceIssue(curve)).toBeUndefined();
 });

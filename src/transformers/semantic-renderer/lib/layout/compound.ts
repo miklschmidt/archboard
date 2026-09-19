@@ -2,7 +2,7 @@
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
 import type { ElkExtendedEdge, ElkNode, ElkShape } from "@archboard/elk-rs";
 import { fitIn } from "@/shared/shell-geometry/index";
-import { APPROACH_STRAIGHT, WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
+import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
@@ -14,7 +14,9 @@ import type {
 } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
+	type LabelAnchor,
 	anchorLabelsOnRuns,
+	alignLabelRows,
 	placeLabelsOnRuns,
 } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 import {
@@ -23,12 +25,16 @@ import {
 	type LabelAttempt,
 } from "@/transformers/semantic-renderer/lib/layout/label-reservations";
 import { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
-import { curveThrough, pathOf, simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
+import {
+	curveClearanceIssue,
+	curveThrough,
+	pathOf,
+	simplify,
+} from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
-import { strokeWidthOf, STROKE_WIDTH } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
 
 /** One measured architecture in the engine's solving frame. */
@@ -145,11 +151,7 @@ function drawingEdges(
 		const points = routes.get(edge.id)!;
 		const measuredLabel = labels.get(edge.id);
 		const label = measuredLabel === undefined ? {} : { label: measuredLabel };
-		const curve = curveThrough(
-			points,
-			label.label?.box,
-			(APPROACH_STRAIGHT * strokeWidthOf(edge)) / STROKE_WIDTH.hero,
-		);
+		const curve = curveThrough(points);
 		return {
 			edge,
 			curve,
@@ -260,11 +262,16 @@ function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[
  * @param problem Measured content and requested downward column count.
  * @returns A complete candidate or a routing/label failure.
  */
-function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
-	return settleLabels(
+async function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
+	const drawing = await settleLabels(
 		rememberSolves((reserved) => attemptLabels(problem, reserved)),
 		new Set(),
 	);
+	for (const { edge, curve, label } of drawing.edges) {
+		const issue = curveClearanceIssue(curve, label?.box);
+		if (issue !== undefined) throw new Error(`Layout relationship ${edge.id}: ${issue}`);
+	}
+	return drawing;
 }
 
 /**
@@ -277,7 +284,7 @@ function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
 function graphForLabels(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	forced: ReadonlyMap<string, Box | undefined>,
+	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 ): ElkNode {
 	const { content, measured } = problem;
 	const graph = compoundGraph(content, measured);
@@ -301,11 +308,13 @@ function graphForLabels(
  * @param box Optional accepted anchor; absent means keep the engine reservation.
  * @returns Routing metadata for the accepted physical position.
  */
-function anchorOptions(box: Box | undefined): Record<string, string> {
+function anchorOptions(box: LabelAnchor | undefined): Record<string, string> {
 	return box === undefined
 		? {}
 		: {
 				"archboard.route-label.x": String(box.x),
+				"archboard.route-label.axis": box.axis ?? "y",
+				"archboard.route-label.pin-align": String(box.pinAlign ?? true),
 				"archboard.route-label.y": String(box.y),
 			};
 }
@@ -351,13 +360,13 @@ function movedOff(reserved: Box, drawn: Box | undefined): boolean {
 async function attemptLabels(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	forced: ReadonlyMap<string, Box | undefined> = new Map(),
+	forced: ReadonlyMap<string, LabelAnchor | undefined> = new Map(),
 ): Promise<LabelAttempt> {
 	const attempt = await drawAttempt(problem, reserved, forced);
 	const missing = attempt.missing.filter(
 		({ edge }) => reserved.has(edge.id) && !forced.has(edge.id),
 	);
-	if (missing.length === 0) return attempt;
+	if (missing.length === 0) return correctLabelChannels(problem, reserved, forced, attempt);
 	// Placement space is not a waypoint. Each retry forces only labels that
 	// still have no clear natural run, so every retry makes finite progress.
 	const eligible = new Set([...forced.keys(), ...missing.map(({ edge }) => edge.id)]);
@@ -374,6 +383,47 @@ async function attemptLabels(
 }
 
 /**
+ * A forced waypoint can reveal a nearby native corridor absent from the natural route.
+ * Try that existing channel once, only when the completed route cannot fit its bends.
+ * @param problem Measured board and requested reading.
+ * @param reserved Labels retaining placement space.
+ * @param forced Current native waypoint positions.
+ * @param attempt Completed route attempt before optional release.
+ * @returns The same attempt, or one reroute with physically feasible row corrections.
+ */
+async function correctLabelChannels(
+	problem: Problem,
+	reserved: ReadonlySet<string>,
+	forced: ReadonlyMap<string, LabelAnchor | undefined>,
+	attempt: Awaited<ReturnType<typeof drawAttempt>>,
+): Promise<LabelAttempt> {
+	const invalid = new Set(
+		attempt.drawing.edges
+			.filter(
+				({ edge, curve, label }) =>
+					forced.has(edge.id) && curveClearanceIssue(curve, label?.box) !== undefined,
+			)
+			.map(({ edge }) => edge.id),
+	);
+	if (invalid.size === 0) return attempt;
+	const drawing = {
+		...attempt.drawing,
+		edges: attempt.drawing.edges.map(({ edge, curve, path }) => {
+			const label = attempt.reservedBoxes.get(edge.id);
+			return { edge, curve, path, ...(label === undefined ? {} : { label }) };
+		}),
+	};
+	const anchors = alignLabelRows(drawing, problem.measured.labels, invalid);
+	const changed = [...anchors].filter(([id, box]) => {
+		const previous = attempt.reservedBoxes.get(id)!.box;
+		return Math.hypot(previous.x - box.x, previous.y - box.y) > 0.000001;
+	});
+	return changed.length === 0
+		? attempt
+		: drawAttempt(problem, reserved, new Map([...forced, ...changed]));
+}
+
+/**
  * Draw one placement with only the explicitly needed label waypoints.
  * @param problem Measured semantic content and reading direction.
  * @param reserved Labels given placement space.
@@ -383,7 +433,7 @@ async function attemptLabels(
 async function drawAttempt(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	forced: ReadonlyMap<string, Box | undefined>,
+	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 ): Promise<
 	LabelAttempt & { readonly reservedBoxes: ReadonlyMap<string, NonNullable<DrawingEdge["label"]>> }
 > {

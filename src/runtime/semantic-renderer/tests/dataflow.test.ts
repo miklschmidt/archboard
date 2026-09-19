@@ -414,6 +414,15 @@ describe("renderDataFlow", () => {
 		);
 		expect(rendered.atlas.nodes["job"]).toBeDefined();
 		expect(rendered.atlas.edges["a1"]!.width).toBeGreaterThan(0);
+		const loop = [...rendered.svg.matchAll(/<path\b[^>]*\sd="([^"]+)"/g)]
+			.map((match) => match[1]!)
+			.find((path) => /\ba[\d.]+,/.test(path))!;
+		expect(
+			[...loop.matchAll(/\ba([\d.]+),([\d.]+)/g)].map((arc) => [Number(arc[1]), Number(arc[2])]),
+		).toEqual([
+			[8, 8],
+			[8, 8],
+		]);
 	});
 
 	test("content with no flow is refused rather than drawn", () => {

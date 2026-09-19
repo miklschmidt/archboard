@@ -1,3 +1,4 @@
+import { CARD_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	ROUTE_NUDGE_DISTANCE,
 	ROUTE_OBSTACLE_CLEARANCE,
@@ -134,11 +135,13 @@ class PinCandidates {
 	 * @param nodes Placed scene nodes.
 	 * @param kinds Sorted kinds at every endpoint.
 	 * @param edges All scene relationships.
+	 * @param offered Feasible first-pass pins whose replaced seeds need no clearance.
 	 */
 	constructor(
 		private readonly nodes: ReadonlyMap<string, ElkNode>,
 		private readonly kinds: ReadonlyMap<string, readonly string[]>,
-		edges: readonly ElkExtendedEdge[],
+		private readonly edges: readonly ElkExtendedEdge[],
+		private readonly offered: AlignedPins = new Map(),
 	) {
 		for (const edge of edges) {
 			if (edge.sources[0] !== edge.targets[0]) continue;
@@ -157,9 +160,7 @@ class PinCandidates {
 		const source = this.nodes.get(edge.sources[0]!)!;
 		const target = this.nodes.get(edge.targets[0]!)!;
 		if (source === target || !ordinaryCard(source) || !ordinaryCard(target)) return;
-		const labelX = edge.layoutOptions?.["archboard.route-label.x"];
-		const anchor = labelX === undefined ? undefined : Number(labelX) + edge.labels![0]!.width! / 2;
-		this.addCardPair(source, target, relationshipKind(edge), anchor);
+		this.addCardPair(source, target, relationshipKind(edge), edge.id, anchorCoordinate(edge));
 	}
 
 	/**
@@ -167,12 +168,19 @@ class PinCandidates {
 	 * @param source Source card.
 	 * @param target Target card.
 	 * @param kind Shared semantic kind.
+	 * @param edgeId Relationship whose own label remains traversable.
 	 * @param anchor Optional reserved-label center on the horizontal axis.
 	 */
-	private addCardPair(source: ElkNode, target: ElkNode, kind: string, anchor?: number): void {
+	private addCardPair(
+		source: ElkNode,
+		target: ElkNode,
+		kind: string,
+		edgeId: string,
+		anchor?: number,
+	): void {
 		for (const axis of candidates(boxOf(source), boxOf(target), anchor)) {
 			for (const [from, to] of axis) {
-				const accepted = this.addPair(source.id, target.id, kind, from, to);
+				const accepted = this.addPair(source.id, target.id, kind, from, to, edgeId);
 				if (accepted) break;
 			}
 		}
@@ -185,6 +193,7 @@ class PinCandidates {
 	 * @param kind Shared semantic kind.
 	 * @param from Source candidate.
 	 * @param to Target candidate.
+	 * @param edgeId Relationship whose own label remains traversable.
 	 * @returns Whether both ends accepted it.
 	 */
 	private addPair(
@@ -193,9 +202,10 @@ class PinCandidates {
 		kind: string,
 		from: AlignedPin,
 		to: AlignedPin,
+		edgeId: string,
 	): boolean {
 		if (!this.available(source, kind, from) || !this.available(target, kind, to)) return false;
-		if (!this.clearSegment(source, target, from, to)) return false;
+		if (!this.clearSegment(source, target, from, to, edgeId)) return false;
 		this.record(source, kind, from);
 		this.record(target, kind, to);
 		return true;
@@ -207,9 +217,16 @@ class PinCandidates {
 	 * @param target Target node identity.
 	 * @param from Source card pin.
 	 * @param to Target card pin.
+	 * @param edgeId Relationship whose own label remains traversable.
 	 * @returns Whether the whole physical segment is clear.
 	 */
-	private clearSegment(source: string, target: string, from: AlignedPin, to: AlignedPin): boolean {
+	private clearSegment(
+		source: string,
+		target: string,
+		from: AlignedPin,
+		to: AlignedPin,
+		edgeId: string,
+	): boolean {
 		const a = facePoint(boxOf(this.nodes.get(source)!), from.face, from.position);
 		const b = facePoint(boxOf(this.nodes.get(target)!), to.face, to.position);
 		const segment: Box = {
@@ -220,9 +237,26 @@ class PinCandidates {
 		};
 		for (const [id, node] of this.nodes) {
 			if (id === source || id === target) continue;
-			if (boxesOverlap(segment, inflate(obstacleOf(node), ROUTE_OBSTACLE_CLEARANCE))) return false;
+			if (boxesOverlap(segment, inflate(obstacleOf(node), CARD_ROUTE_CLEARANCE))) return false;
 		}
-		return true;
+
+		return this.clearLabels(segment, edgeId);
+	}
+
+	/**
+	 * Aligned channels must clear the same foreign label obstacles as native routing.
+	 * @param segment Proposed physical channel.
+	 * @param ownId Its relationship, whose own label is traversable.
+	 * @returns Whether all foreign buffered labels leave this channel open.
+	 */
+	private clearLabels(segment: Box, ownId: string): boolean {
+		return this.edges.every((edge) => {
+			if (edge.id === ownId || edge.layoutOptions?.["archboard.route-label"] !== "true")
+				return true;
+			return (edge.labels ?? []).every(
+				(label) => !boxesOverlap(segment, inflate(boxOf(label), ROUTE_OBSTACLE_CLEARANCE)),
+			);
+		});
 	}
 
 	/**
@@ -261,13 +295,23 @@ class PinCandidates {
 		count: number,
 	): boolean {
 		const loop = this.selfLoops.get(id)?.has(other) ? selfLoopPins(index, count) : [];
-		const shared =
-			other === kind
-				? []
-				: [seed(index, count, pin.face), ...(this.pins.get(id)?.get(other) ?? [])];
+		const shared = other === kind ? [] : this.sharedPins(id, other, seed(index, count, pin.face));
 		return ![...loop, ...shared].some((reserved) =>
 			nearby(box, pin, reserved, ROUTE_NUDGE_DISTANCE),
 		);
+	}
+
+	/**
+	 * Keep only physical pins that native registration will actually offer.
+	 * @param id Card identity.
+	 * @param kind Other relationship kind.
+	 * @param fallback Seed used when no matched candidate replaces this face.
+	 * @returns Previously feasible and newly selected pins.
+	 */
+	private sharedPins(id: string, kind: string, fallback: AlignedPin): readonly AlignedPin[] {
+		const offered = this.offered.get(id)?.get(kind) ?? [];
+		const seeds = offered.some((pin) => pin.face === fallback.face) ? [] : [fallback];
+		return [...seeds, ...offered, ...(this.pins.get(id)?.get(kind) ?? [])];
 	}
 
 	/**
@@ -298,9 +342,29 @@ export function alignedPins(
 	kinds: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],
 ): AlignedPins {
+	// The first pass protects every seed. The refinement can release seeds
+	// replaced by real matched pins, without losing those feasible alternatives.
 	const selected = new PinCandidates(nodes, kinds, edges);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) selected.add(edge);
-	return selected.pins;
+	const refined = new PinCandidates(nodes, kinds, edges, selected.pins);
+	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) refined.add(edge);
+	return refined.pins;
+}
+
+/**
+ * Only an entire vertical channel may move both card pins with its badge.
+ * @param edge Relationship carrying an optional accepted waypoint.
+ * @returns Physical channel coordinate, or no pin hint for a bent route.
+ */
+function anchorCoordinate(edge: ElkExtendedEdge): number | undefined {
+	const options = edge.layoutOptions ?? {};
+	if (
+		options["archboard.route-label.pin-align"] === "false" ||
+		options["archboard.route-label.axis"] === "x"
+	)
+		return undefined;
+	const x = options["archboard.route-label.x"];
+	return x === undefined ? undefined : Number(x) + edge.labels![0]!.width! / 2;
 }
 
 /**

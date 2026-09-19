@@ -1,0 +1,64 @@
+{
+	"nodes": [
+		{
+			"id": "Skn6n4d4",
+			"name": "Portal API",
+			"kind": "service",
+			"responsibility": "Externalized session state makes HPA possible; Service 80 → 5053."
+		},
+		{
+			"id": "lCzwnR8Z",
+			"name": "Exporter",
+			"kind": "service",
+			"responsibility": "HPA scales PDF, CSV and XLSX rendering."
+		},
+		{
+			"id": "LGfpdNOO",
+			"name": "Email Renderer",
+			"kind": "service",
+			"responsibility": "HPA scales rendering from a pinned OCI digest."
+		},
+		{
+			"id": "w58extnh",
+			"name": "Managed PostgreSQL",
+			"kind": "external",
+			"responsibility": "Standard migrations with CloudNativePG as an escape hatch."
+		},
+		{
+			"id": "mVg3PdJf",
+			"name": "OIDC provider adapter",
+			"kind": "external",
+			"responsibility": "Entra today, portable claims contract; mail provider is separate."
+		}
+	],
+	"edges": [
+		{
+			"id": "LJvM5VoD",
+			"from": "Skn6n4d4",
+			"to": "lCzwnR8Z",
+			"kind": "http",
+			"label": "export request"
+		},
+		{
+			"id": "i3hbY2kt",
+			"from": "Skn6n4d4",
+			"to": "LGfpdNOO",
+			"kind": "http",
+			"label": "render mail"
+		},
+		{
+			"id": "AFOTNJL1",
+			"from": "Skn6n4d4",
+			"to": "w58extnh",
+			"kind": "data",
+			"label": "PostgreSQL migrations and data"
+		},
+		{
+			"id": "tPQRa40r",
+			"from": "Skn6n4d4",
+			"to": "mVg3PdJf",
+			"kind": "http",
+			"label": "portable OIDC claims"
+		}
+	]
+}

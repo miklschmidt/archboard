@@ -11,6 +11,7 @@
 // every label still finds a box and the page is no taller.
 
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
+import { curveClearanceIssue } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { crossingCount } from "@/transformers/semantic-renderer/lib/layout/crossings";
 
 /** One solve with its labels placed. */
@@ -119,6 +120,7 @@ function noLarger(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean
 	const area = one.width * one.height;
 	const before = other.width * other.height;
 	return (
+		one.edges.every(({ curve, label }) => curveClearanceIssue(curve, label?.box) === undefined) &&
 		one.height <= other.height &&
 		area <= before &&
 		(one.height < other.height || area < before) &&

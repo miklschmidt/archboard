@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 16:26'
+updated_date: '2026-09-19 18:52'
 labels:
   - renderer
   - layout
@@ -101,4 +101,14 @@ Parallel investigations confirmed: a Public compile label represented as a Graph
 User explicitly approved final matched /tmp/ink-atomic routing images: adopt nearest feasible balanced ports, natural-run label anchors with conservative whole-set feasibility, and ink-aware rounded bends. These changes keep page dimensions unchanged in Common v15 and Observed cloud v34. Spacing-rank alternatives and unrelated-frame scoped-routing prototype remain unapproved and are excluded. Integrating exact frozen candidate, focused regression checks, full check and corpus, then rebuild/restart live3100 and commit.
 
 Approved routing fix integrated and verified:201 renderer tests pass, full bun run check exits0,24-case corpus exits0 with no card-crossing or off-route-label violations. Normal production worker generates byte-identical SVGs to approved Commonv15/Observedv34 pictures. Rebuilt via fullcheck, restarted3100 with correct architecture-design vault (pid1949366), reloaded browser and visually confirmed straight helper and four VM-to-DB connections on renamed live boards common-weblib architecture and cloud infrastructure. Task remains In Progress for separately reported excessive label-rank spacing and foreign-container traversal; these were not included in the approved change.
+
+New explicit user contract: ordinary bends must have fixed radius8 with no min/max shrinking; full APPROACH_STRAIGHT12 is mandatory, not scaled by stroke. Cramped side entries must be prevented or receive enough space. Exact screenshot platform production kubernetes runtime@HIE4JB9t. Reproduce current layout first, compare isolated native routing/clearance candidate images before adoption. Another worker is actively changing column wrapping: do not edit fold-columns, automatic-columns tests, TASK282, or overwrite its shared skill/eval/config changes. Preserve user CONTAINER_INSET20 and current radius8 edits.
+
+User approved the isolated fixed8/full12 geometry in /tmp/fixed8-detail-after.png. Positive12px native card inset plus derived42px routing spacing makes exact23node20edge HIE board valid,18corners exactly8,min finalstraight12.945; page2427x1234 to2535x1354. Same native footprint now constrains forced-label anchors28px (20approach+8labelbuffer), ordinary visible-label whitespace stays16.20reading isolated corpus allrender, remainingshortinternal labeljogs are being resolved before adoption. User approval covers intended geometry; column-wrapping worker remains separate.
+
+Approved fixed-radius geometry integrated: singular radius 8, unscaled approach 12, native semantic-solid footprints and physical placement gaps, shared-kind face alternatives for cramped endpoint approaches, and label anchors respecting actual route obstacles. Adaptive bend shrinking removed. Reported Kubernetes render matched approved candidate through production renderer; final full gate and 20-variant sweep pending. Column-folding source left untouched.
+
+Final fixed-radius implementation reserves semantic-solid footprints, checks native pin feasibility against the same obstacles, keeps forced labels clear of foreign routes, and tries finite shared-kind endpoint alternatives for cramped card or external-frame arrivals. Native alternatives publish atomically; an unroutable alternative preserves the previous complete attempt for label settlement, with final fixed-radius validation unchanged. Final actual-vault sweep: 22/22 variants, 290 relationships, all original 20 verified. The 24-board corpus has zero routes through cards and zero off-run labels. Full repository gate and live refresh remain pending.
+
+Final fixed-radius verification: all 22 real variants (290 relationships) and the 24-case renderer corpus pass. Full check passed lint, formatting, both type checks, frontend build and 3356 module tests, then stopped on codex-pane-context.test.ts:83; the identical failure reproduces in a detached unchanged HEAD worktree. Repository gate separately passed 8 tests; serial browser voice test could not negotiate realtime and timed out. Live server on 3100 restarted with final source; refreshed user tab renders Cloud Infrastructure, and a temporary browser tab verified HIE4JB9t renders 23 nodes and 20 connections. Temporary tab closed. Column wrapping files were not changed. Task remains In Progress for earlier unrelated spacing/frame traversal investigations.
 <!-- SECTION:NOTES:END -->

@@ -10,6 +10,8 @@ import {
 	RANK_GAP,
 } from "@/transformers/semantic-renderer/config";
 
+import { CARD_ROUTING_GAP } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+
 // Viz publishes graph input types, but returns only `object` for Graphviz JSON.
 const objectSchema = z.object({
 	name: z.string(),
@@ -126,8 +128,12 @@ class Placement {
 				rankdir: "TB",
 				splines: "ortho",
 				// Graphviz uses inches; spacing constants use diagram points.
-				nodesep: CARD_GAP / 72,
-				ranksep: Number(options["elk.layered.spacing.nodeNodeBetweenLayers"] ?? RANK_GAP) / 72,
+				nodesep: Math.max(CARD_GAP, CARD_ROUTING_GAP) / 72,
+				ranksep:
+					Math.max(
+						Number(options["elk.layered.spacing.nodeNodeBetweenLayers"] ?? RANK_GAP),
+						CARD_ROUTING_GAP,
+					) / 72,
 				pad: 0,
 				margin: 0,
 			},
@@ -358,7 +364,8 @@ class Placement {
 		const contents = [...node.children, ...labels];
 		const inset = {
 			x: CONTAINER_INSET,
-			y: size + CONTAINER_INSET,
+			// Connected children must leave an open corridor below the buffered title.
+			y: size + Math.max(CONTAINER_INSET, CARD_ROUTING_GAP),
 			width: this.minimums.get(node.id)!.width,
 		};
 		const x = Math.min(...contents.map((child) => child.x!)) - inset.x;
