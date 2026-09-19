@@ -109,7 +109,7 @@ archboard semantic new "Skill install" --doing "explaining how install-skill wri
   }]
 }
 JSON
-archboard semantic rasterize "Skill install" --view "Setup exchange" --out setup.png
+archboard semantic rasterize "Skill install" --view "Setup exchange" --out /tmp/setup.png
 ```
 
 3. Check the answer's flow against your record: participants in the order you

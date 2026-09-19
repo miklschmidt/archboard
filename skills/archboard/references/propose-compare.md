@@ -28,8 +28,8 @@ archboard semantic edit "Board lease" --variant "Lease table" --expect-version 3
 }
 JSON
 archboard semantic compare "Board lease" --variant "Lease table"
-archboard semantic rasterize "Board lease" --view Leases --out current.png
-archboard semantic rasterize "Board lease" --view Leases --variant "Lease table" --out proposal.png
+archboard semantic rasterize "Board lease" --view Leases --out /tmp/current.png
+archboard semantic rasterize "Board lease" --view Leases --variant "Lease table" --out /tmp/proposal.png
 ```
 
 The proposal carries every subject of its predecessor with the same ids, so the

@@ -60,10 +60,10 @@ variant that came from nothing draws plain, so parts added to a derived variant
 (a proposal, or a current variant adopted from something) arrive already marked
 as added, and its picture is read against its predecessor, not on its own.
 
-Read the saved family, draw predecessor and proposal through the same board
-view (`semantic rasterize <board> --view <view> --out current.png`, then again
-with `--variant <draft>` to `proposal.png`), and open both. Check the ids and
-the pictures: the added, removed, changed and untouched subjects match the
+Read the saved family, draw predecessor and proposal through the same board view
+(`semantic rasterize <board> --view <view> --out /tmp/current.png`, then again
+with `--variant <draft>` to `/tmp/proposal.png`), and open both. Check the ids
+and the pictures: the added, removed, changed and untouched subjects match the
 change you meant; a removed flow, call or participant is drawn as removed in the
 proposal's picture (absence from a picture is not evidence of a shown deletion);
 a continuing exchange compares step by step, so an entirely new sequence needs

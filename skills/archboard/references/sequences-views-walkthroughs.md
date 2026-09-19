@@ -12,14 +12,12 @@ A flow is an ordered exchange between nodes of one variant.
   with that part at both ends.
 - `steps` are messages in sequence, each `from` one participant `to` another
   with a `label` and a `kind`:
-
-- `sync`: A call that waits (the default), an awaited promise included.
-- `return`: The answer travelling back.
-- `async`: Sent and not waited for: an event, a queue put, a promise nobody
-  awaits.
-- `self`: A participant's own step. Exactly when `from` and `to` are the same
-  node.
-
+  - `sync`: A call that waits (the default), an awaited promise included.
+  - `return`: The answer travelling back.
+  - `async`: Sent and not waited for: an event, a queue put, a promise nobody
+    awaits.
+  - `self`: A participant's own step. Exactly when `from` and `to` are the same
+    node.
 - `repeat` (an integer of 2 or more) says one step happens exactly that many
   times in a run, and only when the source fixes the count: a retry limit
   written as a number, a batch of a stated size, a literal list of candidates

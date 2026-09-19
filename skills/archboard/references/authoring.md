@@ -92,7 +92,9 @@ command table, a plugin table, a route mount) or calls it. A command's handler
 binds where the handler is written, not to the table registering the command or
 the dispatcher calling it. A planned part or an implementation unavailable for
 inspection stays unbound; one in another checkout and one spread across files
-follow [evidence rule 2](../SKILL.md#evidence-before-a-write). `archboard check`
+follow [evidence rule 2](../SKILL.md#evidence-before-a-write): never bind to a
+file that does only part of the responsibility; narrow it to what one file owns,
+or split the node. `archboard check`
 reports `BINDING_PATH_MISSING` for a node whose binding names a path the
 repository does not have, naming the node, the path, the repo and the
 checkout; a repository this machine has not registered draws no warning,
@@ -179,12 +181,13 @@ Traffic goes where the [catalogue's `traffic`
 row](../SKILL.md#everything-the-code-shows) says: the forward path of every
 pass, so a reader sees the hot path against everything else; stamping it on
 every relationship says nothing. The call that hands a request to its handler
-carries it, and so does every call between the entry point and that handler,
-even when a short-circuit could skip them; teardown means closing a connection
-or a cleanup hook. `speed`/`volume` above the defaults mark the hotter of two
-runtime paths, not a busier-looking picture. To add or change it on an existing
-relationship, restate that relationship with its `id`
-([References](../SKILL.md#essentials)).
+carries it, and so does every call between the entry point and that handler;
+never on the paths the row excludes (teardown there includes closing a
+connection or a cleanup hook); a call a normal pass always makes stays on even
+when an error or short-circuit could skip it. `speed`/`volume` above the
+defaults mark the hotter of two runtime paths, not a busier-looking picture. To
+add or change it on an existing relationship, restate that relationship with its
+`id` ([References](../SKILL.md#essentials)).
 
 ### A step is not a relationship
 
@@ -205,15 +208,18 @@ dropping it everywhere.
 Every relationship is a directional claim the source must support: hold the
 one-line record of [evidence rule 3](../SKILL.md#evidence-before-a-write)
 before it goes in a payload. That record decides what a valid payload cannot:
-siblings are not a chain (rule 3), the receiver is the part and not its
-container ([containment and receivers](#containment-and-receivers)), a return
-travelling back is a flow step and not a second architecture relationship, and:
 
-**The kind follows the mechanism**: a function call is a `call`; a value read
-or handed over is `data`; a component drawing another is `render`; an emitted
-event or a subscription is `event`; a message put on a queue is `queue`; an HTTP
-request is `http`; a dependency the source imports but never calls at this level
-is a `dependency`. Use the configured kind that names what the source does.
+- **Siblings are not a chain** (rule 3).
+- **The receiver is the part, not its container**
+  ([containment and receivers](#containment-and-receivers)).
+- **A return travelling back is a flow step**, not a second architecture
+  relationship.
+- **The kind follows the mechanism**: a function call is a `call`; a value read
+  or handed over is `data`; a component drawing another is `render`; an emitted
+  event or a subscription is `event`; a message put on a queue is `queue`; an
+  HTTP request is `http`; a dependency the source imports but never calls at
+  this level is a `dependency`. Use the configured kind that names what the
+  source does.
 
 After the write, read the saved `edges` against the record: every relationship
 has a line, every line has a relationship, and no relationship exists without
@@ -240,31 +246,32 @@ the commands cannot satisfy (an operation the CLI does not offer, an id nothing
 on the board can name) is reported as unresolved, with why, rather than
 approximated another way.
 
-- unknown field: The payload has a key the schema lacks, and the line under it
-  locates the subject. Check the spelling against [schemas](schemas.md), and
+- **unknown field**: The payload has a key the schema lacks, and the line under
+  it locates the subject. Check the spelling against [schemas](schemas.md), and
   check the key belongs on that subject: a step is not a relationship.
-- unknown kind, level or group: Not a key of `config.yaml`. Use a configured
+- **unknown kind, level or group**: Not a key of `config.yaml`. Use a configured
   one ([Vocabulary](../SKILL.md#essentials)).
-- ambiguous name: Two nodes share the name; use the id from the family you read.
-- unknown id: A stated `id` names nothing on that variant; new subjects leave
-  `id` out. The one exception: a draft may restate a node it removed under the
-  `subject` id of its open `deleted-and-changed` issue
+- **ambiguous name**: Two nodes share the name; use the id from the family you
+  read.
+- **unknown id**: A stated `id` names nothing on that variant; new subjects
+  leave `id` out. The one exception: a draft may restate a node it removed under
+  the `subject` id of its open `deleted-and-changed` issue
   ([variants](variants.md)).
-- dangling reference: An edge end, participant, step end, view selection or beat
-  subject names nothing; fix the reference.
-- containment cycle: A `parent` chain loops.
-- self step: `kind: "self"` exactly when `from` and `to` are the same node.
-- empty selection or empty walkthrough: A selection view names nothing; a
+- **dangling reference**: An edge end, participant, step end, view selection or
+  beat subject names nothing; fix the reference.
+- **containment cycle**: A `parent` chain loops.
+- **self step**: `kind: "self"` exactly when `from` and `to` are the same node.
+- **empty selection or empty walkthrough**: A selection view names nothing; a
   walkthrough has no beats.
-- invalid traffic or repeat: `speed`/`volume` are positive finite; `repeat` is
-  an integer of 2 or more.
-- too long: Names, labels and handles are single-line and bounded;
+- **invalid traffic or repeat**: `speed`/`volume` are positive finite; `repeat`
+  is an integer of 2 or more.
+- **too long**: Names, labels and handles are single-line and bounded;
   responsibilities are bounded prose and may contain line breaks; descriptions
   are bounded.
-- version moved (exit 5): Somebody wrote since you read; `semantic show` again
-  and redo the change on what is there.
-- held or claim revoked (exit 5): Another writer holds the board, or a person
-  released your claim; stop and say so.
+- **version moved (exit 5)**: Somebody wrote since you read; `semantic show`
+  again and redo the change on what is there.
+- **held or claim revoked (exit 5)**: Another writer holds the board, or a
+  person released your claim; stop and say so.
 
 A `warnings` list on a successful answer says what the write did that you
 should know: `UNKNOWN_VOCABULARY` means the board references vocabulary the
