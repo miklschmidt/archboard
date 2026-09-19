@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 22:40'
+updated_date: '2026-09-19 22:49'
 labels:
   - renderer
   - layout
@@ -119,4 +119,6 @@ Final fixed-radius verification: all 22 real variants (290 relationships) and th
 Applied approved straight-route correction generally: forced fallback labels supply their placed coordinate to aligned-pin selection; ordinary sources offer a collision-checked pin facing the existing external frame arrival. Frame policy remains authoritative and recomputes after corridor reservations/retries. Two native regressions failed before the fix and pass after it; full renderer suite 215 pass. Actual 22-variant corpus / 290 edges passes; Cloud Regional entry routes and L4 forwarding are straight with original cards/labels, legitimate crossing bridge retained. HIE fixed-radius SVG unchanged and Common conflicting-channel separation preserved. Final full gate/live rebuild pending.
 
 Final straight-route gate: lint, formatting, type checks, frontend build and 3365 module tests pass. System suite remains 168 pass / 1 known baseline voice-context failure; separate repository suite 8 pass. Server 3100 restarted with built frontend. Approved three-route correction complete; newly reported vib1439P proposal detours are a separate ongoing diagnosis.
+
+Proposal vib1439P isolated diagnosis: Approved devices alignment is blocked by a different-direction seed at the shared center; a nearby jointly aligned pin/label rail removes its dogleg without weakening channel separation. Public transport has disjoint endpoint spans and a forced label outside its target rail; projecting the label reduces five bends to three necessary bends. Fixed quarter-frame entry fractions cause the Platform loop and fallback attachment at 94.85 percent of its card; joint source/frame candidates make both straight and center fallback. Combined isolated proof: /tmp/mtls-combined-proof-vib1439P.png, runner /tmp/mtls-combined-runner.ts. Independent SVG audit: all 16 rendered nodes unchanged, 1817x1233 dimensions unchanged, 11 ordinary corners at radius 8, minimum final approach 13, zero conflicting channel overlaps or label collisions. Preview shown for user visual choice before adopting any new production treatment. Prototype remains under /tmp only; general implementation must replace targeted diagnostic label overrides with collision-validated candidate selection.
 <!-- SECTION:NOTES:END -->
