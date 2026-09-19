@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 15:49'
+updated_date: '2026-09-19 16:04'
 labels:
   - renderer
   - layout
@@ -95,4 +95,6 @@ Balanced aligned ports exposed expensive unhelpful fold candidates on Flask map 
 New live screenshots after C integration: common-weblib gray Uses ambient helpers routes make label-induced S-bends, purple generated-model departures are square; current-cloud-infrastructure Observed VM-to-DB entries have tiny/square side turns even where source and target spans overlap. Investigate forced label positions overriding aligned ports on these exact edges before adding more approach geometry. Screenshots /tmp/codex-clipboard-7dbde3e7-6cca-421b-8285-9a7ab05300c6.png and /tmp/codex-clipboard-65175574-5b82-4f65-bb10-7c2e71241d1d.png.
 
 User requests two additional parallel investigations on live screenshots: excessive public/mobile incoming-chain gaps in common-weblib, and Migrated API capabilities to DB2 crossing the unrelated Windows/IIS VM Pool body in current-cloud-infrastructure@Nc8vWLvX. Investigate isolated candidates and show actual before/after images before adopting. Existing title-only obstacles allow unrelated frame-body traversal; preserve legitimate child boundary access in any fix. Balanced-port audit also found one Common helper at exact mean and the other displaced by an unused other-kind center seed; label-only straightening is insufficient.
+
+Parallel investigations confirmed: a Public compile label represented as a Graphviz node adds rank coupling, expanding both incoming gaps from98.5/98.5 to152/139.5px. User did not approve smaller-rank-unit B. Native edge labels target cause but cross-container title collisions remain; hybrid exceptions add detours. Alternatives frozen under /tmp/common-weblib-gap-probe/REPORT.md; no spacing implementation adopted. Foreign-frame intrusion is already present in native routes with no forced label on the offending edge; six-node/three-edge reproduction. Recommended contract: avoid containers containing neither endpoint and not themselves endpoints. Scoped solid-frame prototype proves geometry but loses cross-group lane coordination, so not adopted. The production renderer remains unchanged during these investigations.
 <!-- SECTION:NOTES:END -->
