@@ -65,8 +65,8 @@ recipe names.
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
 9. **Read the source again for what a flow shows only on a second pass**: a
-   call a participant makes on itself (one step with it at both ends; a call
-   between two parts that each have a column is a message between them) and a
+   call a participant makes on itself (one step with it at both ends, never a
+   call between two parts that each have a column) and a
    count the source fixes (that step's `repeat`)
    ([create a sequence diagram](references/create-sequence.md)).
 10. **Walk the catalogue** row by row against the source you read
@@ -190,7 +190,7 @@ board needs all of it.
    call (a function or method call, a hook, a component rendering another),
    `from` is the part whose body makes it and `to` is the part whose body runs,
    inside its `parent`. A part drawn with children (a module, class or
-   component holding its functions, methods or child components) is a
+   component defining its functions, methods or components) is a
    container whatever its kind: a call into it lands on the child whose body
    runs, not on the container, which is an endpoint only when the source
    addresses the whole module; giving an existing part children moves every
@@ -256,11 +256,12 @@ What the source shows for each row, and what you author for it:
   _Author:_ `binding: { repo, path }` to that file
   ([evidence rule 2](#evidence-before-a-write)).
 - `containment`. _Shows:_ a part defined inside another (a function of a module,
-  a method of a class, a child component, a closure inside its factory).
-  _Author:_ `parent`. An instance a part holds is not its child: an object in a
-  field, a value a closure captures, a dependency a function or component is
-  handed (props, context) or builds and keeps is a `relationship` from the
-  holder, even when the request says the holder owns it.
+  a method of a class, a component defined inside another, a closure inside its
+  factory). _Author:_ `parent`. An instance a part holds or renders is not its
+  child: an object in a field, a value a closure captures, a dependency a
+  function or component is handed (a constructor argument, props, context) or
+  builds and keeps is a `relationship` from the holder, even when the request
+  says the holder owns it.
 - `relationship`. _Shows:_ a call, render, read, event, message, dependency or
   publication one body makes to another. _Author:_ an `edge` of the configured
   kind, its `label` the message or mechanism.

@@ -27,7 +27,7 @@ viewer`, not `Browser client -> Semantic viewer -> Fetch`. The renderer carries 
 line across a container's boundary. A container is the endpoint only when the
 source addresses the whole module (a dependency in a higher-level view). Any
 part drawn with children is a container, whatever its `kind`: a module, class
-or component node that holds its functions, methods or child components
+or component node that defines its functions, methods or components
 receives nothing itself, and a call to it lands on the child whose body runs.
 When
 you give an existing part children, move every relationship that landed on it
