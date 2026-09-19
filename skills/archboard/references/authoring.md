@@ -19,7 +19,8 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
 
 ### Containment and receivers
 
-`parent` says the child is part of the parent, and nothing about calls. A
+`parent` says the child is defined inside the parent, and nothing about calls
+or about who holds an instance of it: holding one is a relationship. A
 relationship lands on the part that receives it: `Browser client -> Viewer
 entry point -> Fetch semantic reads`, both internal parts parented to `Semantic
 viewer`, not `Browser client -> Semantic viewer -> Fetch`. The renderer carries a

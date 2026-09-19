@@ -54,9 +54,10 @@ recipe names.
    ([Vocabulary](#essentials), [Reads](#essentials), the [`drillDown` row](#everything-the-code-shows)).
 4. **Gather the source context**: read the code the request names and follow
    it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
-5. **Decide the parts**: the level, the subject, which parts hold which as
-   children, which belong to another codebase or nobody has built yet, and each
-   one's `binding` ([evidence rule 2](#evidence-before-a-write)).
+5. **Decide the parts**: the level, the subject, which parts are defined
+   inside which as children, which belong to another codebase or nobody has
+   built yet, and each one's `binding`
+   ([evidence rule 2](#evidence-before-a-write)).
 6. **Map the relationships**, one line of evidence per `edge`
    ([evidence rule 3](#evidence-before-a-write)).
 7. **For a sequence, choose the columns before the messages**
@@ -64,7 +65,8 @@ recipe names.
 8. **Order the exchange**: the participants in column order, and every message
    between them in the order the source runs them, returns included.
 9. **Read the source again for what a flow shows only on a second pass**: a
-   call a participant makes on itself (one step with it at both ends) and a
+   call a participant makes on itself (one step with it at both ends; a call
+   between two parts that each have a column is a message between them) and a
    count the source fixes (that step's `repeat`)
    ([create a sequence diagram](references/create-sequence.md)).
 10. **Walk the catalogue** row by row against the source you read
@@ -255,7 +257,10 @@ What the source shows for each row, and what you author for it:
   ([evidence rule 2](#evidence-before-a-write)).
 - `containment`. _Shows:_ a part defined inside another (a function of a module,
   a method of a class, a child component, a closure inside its factory).
-  _Author:_ `parent`.
+  _Author:_ `parent`. An instance a part holds is not its child: an object in a
+  field, a value a closure captures, a dependency a function or component is
+  handed (props, context) or builds and keeps is a `relationship` from the
+  holder, even when the request says the holder owns it.
 - `relationship`. _Shows:_ a call, render, read, event, message, dependency or
   publication one body makes to another. _Author:_ an `edge` of the configured
   kind, its `label` the message or mechanism.
