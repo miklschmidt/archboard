@@ -9,6 +9,7 @@ import {
 	boxesOverlap,
 	facePoint,
 	obstacleOf,
+	SIDES,
 	type Face,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -125,6 +126,31 @@ function candidates(one: Box, two: Box, anchor?: number): [AlignedPin, AlignedPi
 	return result;
 }
 
+/**
+ * Project a fixed arrival onto the facing source card when its outward run has room.
+ * @param source Ordinary source card.
+ * @param target Destination frame.
+ * @param arrival Fixed frame arrival.
+ * @returns The facing card pin within the usable span, or no straight alternative.
+ */
+function oppositePin(source: Box, target: Box, arrival: AlignedPin): AlignedPin | undefined {
+	const opposite: Record<Face, Face> = {
+		NORTH: "SOUTH",
+		SOUTH: "NORTH",
+		WEST: "EAST",
+		EAST: "WEST",
+	};
+	const at = facePoint(target, arrival.face, arrival.position);
+	const [x, y] = SIDES[arrival.face];
+	const vertical = x === 0.5;
+	const extent = vertical ? source.width : source.height;
+	const offset = vertical ? at.x - source.x : at.y - source.y;
+	if (offset < ROUTE_NUDGE_DISTANCE || offset > extent - ROUTE_NUDGE_DISTANCE) return undefined;
+	const pin = { face: opposite[arrival.face], position: offset / extent };
+	const from = facePoint(source, pin.face, pin.position);
+	return (from.x - at.x) * (2 * x - 1) + (from.y - at.y) * (2 * y - 1) > 0 ? pin : undefined;
+}
+
 /** Construct stable, noncolliding candidate pins before native connector registration. */
 class PinCandidates {
 	readonly pins: AlignedPins = new Map();
@@ -135,12 +161,14 @@ class PinCandidates {
 	 * @param nodes Placed scene nodes.
 	 * @param channels Sorted connection channels at every endpoint.
 	 * @param edges All scene relationships.
+	 * @param arrivals Existing frame policy's candidate arrival pins, keyed by relationship.
 	 * @param offered Feasible first-pass pins whose replaced seeds need no clearance.
 	 */
 	constructor(
 		private readonly nodes: ReadonlyMap<string, ElkNode>,
 		private readonly channels: ReadonlyMap<string, readonly string[]>,
 		private readonly edges: readonly ElkExtendedEdge[],
+		private readonly arrivals: ReadonlyMap<string, AlignedPin>,
 		private readonly offered: AlignedPins = new Map(),
 	) {
 		for (const edge of edges) {
@@ -159,7 +187,12 @@ class PinCandidates {
 	add(edge: ElkExtendedEdge): void {
 		const source = this.nodes.get(edge.sources[0]!)!;
 		const target = this.nodes.get(edge.targets[0]!)!;
-		if (source === target || !ordinaryCard(source) || !ordinaryCard(target)) return;
+		if (source === target || !ordinaryCard(source)) return;
+		if (!ordinaryCard(target)) {
+			const arrival = this.arrivals.get(edge.id);
+			if (arrival !== undefined) this.addFrameArrival(edge, source, target, arrival);
+			return;
+		}
 		this.addCardPair(
 			source,
 			target,
@@ -168,6 +201,30 @@ class PinCandidates {
 			edge.id,
 			anchorCoordinate(edge),
 		);
+	}
+
+	/**
+	 * Offer a clear source pin opposite an external frame's existing arrival.
+	 * The frame keeps its own face and position policy; only the card gains a pin.
+	 * @param edge Relationship whose source channel may align.
+	 * @param source Ordinary source card.
+	 * @param target External destination frame.
+	 * @param arrival The frame policy's current candidate.
+	 */
+	private addFrameArrival(
+		edge: ElkExtendedEdge,
+		source: ElkNode,
+		target: ElkNode,
+		arrival: AlignedPin,
+	): void {
+		const from = oppositePin(boxOf(source), boxOf(target), arrival);
+		if (from === undefined) return;
+		const channel = relationshipChannel(edge, source.id);
+		if (
+			this.available(source.id, channel, from) &&
+			this.clearSegment(source.id, target.id, from, arrival, edge.id)
+		)
+			this.record(source.id, channel, from);
 	}
 
 	/**
@@ -356,18 +413,20 @@ class PinCandidates {
  * @param nodes Placed scene nodes.
  * @param channels Sorted connection channels at every endpoint.
  * @param edges All scene relationships.
+ * @param arrivals Existing frame policy's candidate arrivals.
  * @returns Available aligned pins.
  */
 export function alignedPins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	channels: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],
+	arrivals: ReadonlyMap<string, AlignedPin>,
 ): AlignedPins {
 	// The first pass protects every seed. The refinement can release seeds
 	// replaced by real matched pins, without losing those feasible alternatives.
-	const selected = new PinCandidates(nodes, channels, edges);
+	const selected = new PinCandidates(nodes, channels, edges, arrivals);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) selected.add(edge);
-	const refined = new PinCandidates(nodes, channels, edges, selected.pins);
+	const refined = new PinCandidates(nodes, channels, edges, arrivals, selected.pins);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) refined.add(edge);
 	return refined.pins;
 }
@@ -384,8 +443,21 @@ function anchorCoordinate(edge: ElkExtendedEdge): number | undefined {
 		options["archboard.route-label.axis"] === "x"
 	)
 		return undefined;
-	const x = options["archboard.route-label.x"];
+	const x = reservedLabelX(edge);
 	return x === undefined ? undefined : Number(x) + edge.labels![0]!.width! / 2;
+}
+
+/**
+ * Use the accepted explicit label position or the measured fallback reservation.
+ * @param edge Relationship carrying its reserved label.
+ * @returns Its horizontal label coordinate when a reservation exists.
+ */
+function reservedLabelX(edge: ElkExtendedEdge): string | number | undefined {
+	const options = edge.layoutOptions ?? {};
+	return (
+		options["archboard.route-label.x"] ??
+		(options["archboard.route-label"] === "true" ? edge.labels?.[0]?.x : undefined)
+	);
 }
 
 /**

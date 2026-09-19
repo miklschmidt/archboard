@@ -113,7 +113,32 @@ class RoutingScene {
 			}
 		}
 		for (const [id, present] of channels) this.channels.set(id, [...present].toSorted());
-		this.aligned = alignedPins(this.nodes, this.channels, edges);
+		const arrivals = new Map(
+			edges.flatMap((edge) => {
+				const pin = this.frameArrivalPin(edge);
+				return pin === undefined ? [] : [[edge.id, pin] as const];
+			}),
+		);
+		// These are extra card alternatives, not cached frame decisions: later
+		// corridor reservations and endpoint retries still choose the actual arrival.
+		this.aligned = alignedPins(this.nodes, this.channels, edges, arrivals);
+	}
+
+	/**
+	 * Offer a card alternative facing the frame policy's current external arrival.
+	 * @param edge Relationship whose ordinary source could align with its frame target.
+	 * @returns The frame's physical pin, or no alternative for an internal or ordinary target.
+	 */
+	private frameArrivalPin(edge: ElkExtendedEdge): AlignedPin | undefined {
+		const source = this.nodes.get(edge.sources[0]!)!;
+		const target = this.nodes.get(edge.targets[0]!)!;
+		if (source.children?.length || !target.children?.length || internalFrame(target, source))
+			return undefined;
+		const channel = relationshipChannel(edge, target.id);
+		const channels = this.channels.get(target.id)!;
+		const position = (channels.indexOf(channel) + 0.5) / channels.length;
+		const { side, at } = this.arrivalPoint(target, source, position, channel);
+		return { face: side, position: positionOnFace(boxOf(target), side, at)! };
 	}
 
 	/**

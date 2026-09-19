@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 22:29'
+updated_date: '2026-09-19 22:40'
 labels:
   - renderer
   - layout
@@ -35,6 +35,8 @@ The Phone API view places incoming cards above an entire Common-WebLib container
 2. Replace Bun and browser engine loading and worker transport; remove obsolete engine paths.
 3. Verify Phone/Public API and existing layout corpus, address regressions, and inspect live boards.
 4. Update renderer documentation, run full check, simplify and commit.
+
+Apply approved Cloud Infrastructure straight-route correction: use placed fallback-label coordinates when offering aligned card pins, and align ordinary sources with selected external container arrival points through existing clearance checks. Add minimal regression coverage, verify real variants and renderer checks, rebuild and refresh live canvas, then commit.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -113,4 +115,8 @@ Final fixed-radius implementation reserves semantic-solid footprints, checks nat
 Final fixed-radius verification: all 22 real variants (290 relationships) and the 24-case renderer corpus pass. Full check passed lint, formatting, both type checks, frontend build and 3356 module tests, then stopped on codex-pane-context.test.ts:83; the identical failure reproduces in a detached unchanged HEAD worktree. Repository gate separately passed 8 tests; serial browser voice test could not negotiate realtime and timed out. Live server on 3100 restarted with final source; refreshed user tab renders Cloud Infrastructure, and a temporary browser tab verified HIE4JB9t renders 23 nodes and 20 connections. Temporary tab closed. Column wrapping files were not changed. Task remains In Progress for earlier unrelated spacing/frame traversal investigations.
 
 2026-09-20 Cloud Infrastructure detour diagnosis after channel integration: native reproduction shows xCH4TAWg and ZQQI84PS each have four bends despite vertically aligned endpoints. A one-variable replay passing the existing placed fallback-label x coordinate to candidate alignment makes both straight without moving cards or labels. anchorCoordinate currently reads only explicit archboard.route-label.x and misses fallback label.x. Lower ghAjlN21 is distinct: alignedPins excludes frame endpoints, leaving the source channel fraction and frame arrival coordinate independently chosen. Read-only probes at /tmp/cloud-detour-repro.ts and /tmp/cloud-detour-native-align.ts; no production fix adopted for these detours yet.
+
+Applied approved straight-route correction generally: forced fallback labels supply their placed coordinate to aligned-pin selection; ordinary sources offer a collision-checked pin facing the existing external frame arrival. Frame policy remains authoritative and recomputes after corridor reservations/retries. Two native regressions failed before the fix and pass after it; full renderer suite 215 pass. Actual 22-variant corpus / 290 edges passes; Cloud Regional entry routes and L4 forwarding are straight with original cards/labels, legitimate crossing bridge retained. HIE fixed-radius SVG unchanged and Common conflicting-channel separation preserved. Final full gate/live rebuild pending.
+
+Final straight-route gate: lint, formatting, type checks, frontend build and 3365 module tests pass. System suite remains 168 pass / 1 known baseline voice-context failure; separate repository suite 8 pass. Server 3100 restarted with built frontend. Approved three-route correction complete; newly reported vib1439P proposal detours are a separate ongoing diagnosis.
 <!-- SECTION:NOTES:END -->
