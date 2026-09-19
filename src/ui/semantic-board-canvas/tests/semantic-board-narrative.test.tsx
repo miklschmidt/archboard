@@ -354,7 +354,9 @@ test("a reader who did not ask for reduced motion is glided to the step, and it 
 	serving();
 	mountStage();
 	await presenting();
-	await new Promise((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 200));
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 200));
+	});
 	await settle();
 	goTo(1);
 	await settle();
