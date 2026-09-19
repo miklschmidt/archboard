@@ -4,8 +4,7 @@
 // reading conventions. Which flank the returns take, and whether a skip over
 // a rank takes the other flank, is not: every rule measured on 2026-09-16 drew
 // some boards better and others worse (docs/design/layout-rules.md section 21).
-// A first render is settled under each rule here and the scorecard keeps one;
-// a proposal keeps its predecessor's.
+// Every render is settled under each rule and the scorecard keeps one.
 //
 // Where each end of a relationship attaches along its face is here too, since
 // the flanks a rule chooses and the order the engine walks them are the same
@@ -47,15 +46,6 @@ const FLANK_RULES: readonly FlankRule[] = [
 	{ name: "mirrored", returnFlank: SOLVING.besideFlank, skips: "flanked" },
 	{ name: "returns-left", returnFlank: SOLVING.besideFlank, skips: "free" },
 ];
-
-/**
- * The rule of a name.
- * @param name The rule's name.
- * @returns The rule.
- */
-function flankRule(name: FlankRuleName): FlankRule {
-	return FLANK_RULES.find((rule) => rule.name === name)!;
-}
 
 /**
  * The flank a skip takes under a rule: the one returns do not.
@@ -174,7 +164,6 @@ export {
 	ALONE,
 	FLANK_RULES,
 	besideFlankOf,
-	flankRule,
 	hasSister,
 	portIndex,
 	seatsOf,

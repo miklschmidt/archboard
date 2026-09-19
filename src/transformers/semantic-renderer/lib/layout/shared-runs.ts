@@ -12,7 +12,7 @@
 // the side it already came in on, so fanning a run cannot make two routes
 // cross that did not.
 
-import { roundCoord, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { roundCoord, type Point, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 
 /**
  * How far apart a fanned pair is drawn: the engine's own spacing between two
@@ -24,6 +24,12 @@ const LANE = 20;
 
 /** Two runs at lane coordinates closer than this are the same line. */
 const COINCIDENT = 1;
+
+/** The axes and extents of a lane and its reserved label. */
+const DIMENSIONS = {
+	x: { across: "y", extent: "width", breadth: "height" },
+	y: { across: "x", extent: "height", breadth: "width" },
+} as const;
 
 /** One straight piece of one route, as fanning reads it. */
 interface SharedRun {
@@ -195,29 +201,90 @@ function offsetsOf(group: readonly SharedRun[]): Map<string, number> {
 }
 
 /**
+ * Whether a route run would cut through a reserved label's footprint.
+ * @param run The run.
+ * @param lane Its candidate position across the reading.
+ * @param label A reserved label, if there is one.
+ * @returns Whether the run crosses its box.
+ */
+function crossesLabel(run: SharedRun, lane: number, label: Box | undefined): boolean {
+	if (label === undefined) return false;
+	const { across, extent, breadth } = DIMENSIONS[run.along];
+	return (
+		lane > label[across] &&
+		lane < label[across] + label[breadth] &&
+		Math.max(run.span[0], label[run.along]) <
+			Math.min(run.span[1], label[run.along] + label[extent])
+	);
+}
+
+/**
+ * Whether a lane would hide another route beneath a label.
+ * @param run The moving run.
+ * @param lane Its proposed lane.
+ * @param other A neighboring run.
+ * @param labels Reserved label boxes at their current positions.
+ * @returns Whether either label would cover the other's route.
+ */
+function labelLaneTaken(
+	run: SharedRun,
+	lane: number,
+	other: SharedRun,
+	labels: ReadonlyMap<string, Box>,
+): boolean {
+	const moved = shiftedLabel(run, lane, labels.get(run.id));
+	return crossesLabel(other, other.lane, moved) || crossesLabel(run, lane, labels.get(other.id));
+}
+
+/**
  * The lane a run fans onto: the one its offset asks for, stepped on again
  * the same way while another route is already drawn along it, so fanning
  * never trades one overdrawn pair for another.
  *
- * A free lane is always reached. Each step is a whole lane and a run counts
- * as drawn along one only within `COINCIDENT` of it, so every other run can
- * block at most one step, and one more step than there are runs must land
- * clear. Stepping that far would mean a bundle holding every route on the
- * board, so there is no lane to give up on.
+ * Each obstacle occupies a bounded interval across the moving run. Stepping
+ * in one direction therefore reaches a clear lane, including enough room
+ * for a reserved label that spans several ordinary lane widths.
  * @param run The run being moved.
  * @param offset How far across the lane it was asked to move.
  * @param runs Every run of every route, at the lane each is on now.
+ * @param labels Reserved label boxes that must stay clear of neighboring routes.
  * @returns The lane to put it on, which no other route is drawn along.
  */
-function clearLane(run: SharedRun, offset: number, runs: readonly SharedRun[]): number {
+function clearLane(
+	run: SharedRun,
+	offset: number,
+	runs: readonly SharedRun[],
+	labels: ReadonlyMap<string, Box>,
+): number {
 	const step = Math.sign(offset) * LANE;
 	let lane = run.lane + offset;
-	for (let tried = 0; tried <= runs.length; tried += 1) {
-		const taken = runs.some((other) => other.id !== run.id && overdrawnAt(run, other, lane));
-		if (!taken) break;
+	while (
+		runs.some(
+			(other) =>
+				other.id !== run.id &&
+				(overdrawnAt(run, other, lane) || labelLaneTaken(run, lane, other, labels)),
+		)
+	) {
 		lane += step;
 	}
 	return lane;
+}
+
+/**
+ * Carry a reserved label only when it belongs to the moving run.
+ * @param run The run before it moves.
+ * @param lane Its destination lane.
+ * @param label The route's reserved label, if any.
+ * @returns The translated box, or nothing when another run holds the label.
+ */
+function shiftedLabel(run: SharedRun, lane: number, label: Box | undefined): Box | undefined {
+	if (label === undefined) return undefined;
+	const { across, extent, breadth } = DIMENSIONS[run.along];
+	const center = label[across] + label[breadth] / 2;
+	if (Math.abs(center - run.lane) > COINCIDENT) return undefined;
+	if (label[run.along] < run.span[0] || label[run.along] + label[extent] > run.span[1])
+		return undefined;
+	return { ...label, [across]: label[across] + lane - run.lane };
 }
 
 /**
@@ -244,17 +311,22 @@ function moveRun(run: SharedRun, lane: number, points: Point[]): void {
  * @param group The runs drawn as one line.
  * @param runs Every run of every route, at the lane each is on now.
  * @param fanned Every route's corners, changed in place.
+ * @param labels Reserved label boxes that follow their lanes.
  */
 function fanGroup(
 	group: readonly SharedRun[],
 	runs: readonly SharedRun[],
 	fanned: Map<string, Point[]>,
+	labels: Map<string, Box>,
 ): void {
 	const offsets = offsetsOf(group);
 	for (const run of group) {
 		const offset = offsets.get(run.id) ?? 0;
 		if (!run.movable || offset === 0) continue;
-		moveRun(run, clearLane(run, offset, runs), fanned.get(run.id)!);
+		const lane = clearLane(run, offset, runs, labels);
+		const label = shiftedLabel(run, lane, labels.get(run.id));
+		if (label !== undefined) labels.set(run.id, label);
+		moveRun(run, lane, fanned.get(run.id)!);
 	}
 }
 
@@ -262,14 +334,19 @@ function fanGroup(
  * Fan apart every set of routes the engine drew as one line, so a reader has
  * one line to follow per relationship.
  * @param routes Every route's corners, by relationship id.
- * @returns The same routes, the shared runs moved onto a lane each.
+ * @param labels The engine's reserved label boxes.
+ * @returns The routes and reserved labels, with each shared run on its own lane.
  */
-function fanOverdrawnRuns(routes: ReadonlyMap<string, readonly Point[]>): Map<string, Point[]> {
+function fanOverdrawnRuns(
+	routes: ReadonlyMap<string, readonly Point[]>,
+	labels: ReadonlyMap<string, Box>,
+): { readonly routes: Map<string, Point[]>; readonly labels: Map<string, Box> } {
+	const movedLabels = new Map(labels);
 	const fanned = new Map(
 		[...routes].map(([id, points]) => [id, points.map((point) => ({ ...point }))]),
 	);
 	const runs = [...fanned].flatMap(([id, points]) => runsOf(id, points));
-	for (const group of overdrawnGroups(runs)) fanGroup(group, runs, fanned);
-	return fanned;
+	for (const group of overdrawnGroups(runs)) fanGroup(group, runs, fanned, movedLabels);
+	return { routes: fanned, labels: movedLabels };
 }
 export { LANE, fanOverdrawnRuns };
