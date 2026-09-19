@@ -25,6 +25,9 @@ The current rules are:
   face with room for their head and bend. Protect complete title bands.
 - Route around cards and title bands with libavoid. Relationships of one kind share ports
   on each face; different kinds use distinct attachment positions and lanes.
+  Ordinary cards with overlapping facing spans offer balanced aligned ports
+  first, with other clear aligned positions as fallback. This applies across
+  boards and variants; it uses measured geometry, never board-specific hints.
   The native router chooses among those faces. Relationships
   keep their own identities and labels even when they share a port or trunk.
   The final approach must fit the actual arrowhead and a rounded bend.
@@ -40,6 +43,8 @@ Architecture boards read top-to-bottom and lay every variant out fresh. Long
 paths can wrap into adjacent downward columns when the complete routed result
 improves pane fit by at least 5%. Whole frames and overlapping rows remain together; side-entry
 sources stay with their consumers. Column count is chosen dynamically.
+Candidates whose proposed card footprint cannot meet that gain are skipped
+before the more expensive label and routing settlement.
 The automatic down/right fit comparison was removed after the user rejected
 the resulting long horizontal chains. Corner rounding and crossing bridges remain shared drawing operations.
 

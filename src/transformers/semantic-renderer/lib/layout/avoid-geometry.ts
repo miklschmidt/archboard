@@ -55,6 +55,22 @@ export function facePoint(box: Box, side: Face, position = 0.5): Point {
 }
 
 /**
+ * Place a shared arrival on the frame perimeter, below its title on vertical sides.
+ * The transparent body can reserve a whole arrow approach without overlapping
+ * the separate solid title obstacle.
+ * @param node The destination frame.
+ * @param side Its candidate perimeter face.
+ * @param position The shared relationship-kind fraction along that face.
+ * @returns A point on the visible frame perimeter.
+ */
+export function frameArrivalPoint(node: ElkNode, side: Face, position: number): Point {
+	const box = boxOf(node);
+	if (side === "NORTH" || side === "SOUTH") return facePoint(box, side, position);
+	const header = obstacleOf(node).height;
+	return facePoint({ ...box, y: box.y + header, height: box.height - header }, side, position);
+}
+
+/**
  * Whether a semantic frame contains another semantic node.
  * @param outer The frame.
  * @param inner The candidate descendant.

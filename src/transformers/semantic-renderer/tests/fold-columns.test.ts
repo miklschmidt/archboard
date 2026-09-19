@@ -105,6 +105,8 @@ test("candidate counts follow the pane and indivisible bands rather than a fixed
 		})),
 	};
 	expect(foldColumnCounts(graph)).toContain(3);
+	// Two columns remain too tall even though three can fit completely.
+	expect(foldColumnCounts(graph, 1)).toEqual([3]);
 	expect(foldColumnCounts({ ...graph, width: 4000 })).toEqual([]);
 	expect(foldColumns(graph, 3)!.height!).toBeLessThan(foldColumns(graph, 2)!.height!);
 	expect(
@@ -122,6 +124,35 @@ test("candidate counts follow the pane and indivisible bands rather than a fixed
 	};
 	expect(foldColumnCounts(framed)).toEqual([]);
 	expect(foldColumns(framed, 2)).toBeUndefined();
+});
+
+test("broad branching rows reject folds whose combined footprint cannot improve fit", () => {
+	const nodes = Array.from({ length: 6 }, (_, row) =>
+		[24, 924].map((x, branch) => ({
+			id: `n${row}${branch}`,
+			x,
+			y: 24 + row * 250,
+			width: 260,
+			height: 200,
+		})),
+	);
+	const graph: ElkNode = {
+		id: "root",
+		x: 0,
+		y: 0,
+		width: 1208,
+		height: 1548,
+		children: nodes.flat(),
+		edges: nodes.slice(1).flatMap((row, index) =>
+			row.map((node, branch) => ({
+				id: `e${index}${branch}`,
+				sources: [nodes[index]![branch]!.id],
+				targets: [node.id],
+			})),
+		),
+	};
+	expect(foldColumns(graph, 2)).toBeDefined();
+	expect(foldColumnCounts(graph, 0.61)).toEqual([]);
 });
 
 test("a side-entry source stays with its consumer without changing native offsets", () => {
