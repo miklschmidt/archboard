@@ -2,20 +2,19 @@
 
 ## Branching
 
-`archboard semantic branch <board> --as "<name>" [--from <variant>]
-[--summary "<one line>"] --expect-version <n> --doing "..."` derives a draft
-from the current variant, or from the variant `--from` names. The draft carries
-every subject with its id, designates nothing, and is changed afterwards by
-ordinary `semantic edit <board> --variant "<name>"` batches. Competing proposals
-are two drafts off the same predecessor; a proposal on a proposal names its
-draft in `--from`.
+`archboard semantic branch <board> --as "<name>" [--from <variant>] [--summary "<one line>"] --expect-version <n> --doing "..."`
+derives a draft from the current variant, or from the variant `--from` names.
+The draft carries every subject with its id, designates nothing, and is changed
+afterwards by ordinary `semantic edit <board> --variant "<name>"` batches.
+Competing proposals are two drafts off the same predecessor; a proposal on a
+proposal names its draft in `--from`.
 
-An edit that names no variant — neither `--variant` nor a `variant` in the
-batch — edits the current architecture. Where the two name different variants
-the command line wins, and the write warns naming both; `semantic resolve`
-settles the two the same way. A change meant as a proposal that landed on the
-current architecture is not repaired by editing the file, but by reading the
-family again and moving the meaning with ordinary writes.
+An edit that names no variant — neither `--variant` nor a `variant` in the batch
+— edits the current architecture; where the two differ, the command line wins
+([edit](edit.md) step 3), on `semantic resolve` too. A change meant as a
+proposal that landed on the current architecture is not repaired by editing the
+file, but by reading the family again and moving the meaning with ordinary
+writes.
 
 ## What a comparison counts
 
@@ -103,17 +102,17 @@ not take — so read it as naming the payload, not the disagreements. Answer the
 competing fields as sides in one `resolve`, and settle the rest as ordinary
 edits. `mine` is always available, on every kind.
 
-Settle with `archboard semantic resolve <board> --variant <draft>
---expect-version <n> --doing "..."` and a JSON of `choices`, each naming the
-`subject` (and `field` where the issue has one) and a `side`: `mine` keeps the
-draft's answer, `theirs` takes the predecessor's. Answer part of it and the
-rest stays open, reported in the answer. A third answer is not a side: write it
-as an ordinary edit. For a `deleted-and-changed` node the draft removed, state
-the node again with its original `id` (the `subject` of the issue) and the
-fields you want; that one write restores the identity and settles that issue.
-Only an id an open disagreement names may come back this way; any other absent
-id is refused. Settling also catches the draft up with everything else the
-predecessor decided.
+Settle with
+`archboard semantic resolve <board> --variant <draft> --expect-version <n> --doing "..."`
+and a JSON of `choices`, each naming the `subject` (and `field` where the issue
+has one) and a `side`: `mine` keeps the draft's answer, `theirs` takes the
+predecessor's. Answer part of it and the rest stays open, reported in the
+answer. A third answer is not a side: write it as an ordinary edit. For a
+`deleted-and-changed` node the draft removed, state the node again with its
+original `id` (the `subject` of the issue) and the fields you want; that one
+write restores the identity and settles that issue. Only an id an open
+disagreement names may come back this way; any other absent id is refused.
+Settling also catches the draft up with everything else the predecessor decided.
 
 Every value in that third answer is read, never retyped: the issue's `changed`
 carries each field the other side moved with the value it moved to, and
@@ -126,23 +125,22 @@ values and not the values themselves: a long one is cut to fit the line.
 
 ## Adoption
 
-`archboard semantic adopt <board> --variant <name> --reason "<why>"
---expect-version <n> --doing "..."` moves the current designation: the adopted
-variant becomes current and stays editable, the previous current becomes
-historical and stops being editable, every proposal still says what it was
-derived from, and nothing is renamed. The move is recorded with its reason. A
-draft holding a disagreement, or derived from one that is, is refused until it
-is settled. Adopt when asked, and report which variant is current and which
-became historical.
+`archboard semantic adopt <board> --variant <name> --reason "<why>" --expect-version <n> --doing "..."`
+moves the current designation: the adopted variant becomes current and stays
+editable, the previous current becomes historical and stops being editable,
+every proposal still says what it was derived from, and nothing is renamed. The
+move is recorded with its reason. A draft holding a disagreement, or derived
+from one that is, is refused until it is settled. Adopt when asked, and report
+which variant is current and which became historical.
 
 A proposal nobody will carry out is shelved rather than left standing:
-`archboard semantic shelve <board> --variant <name> --reason "<why>"
---expect-version <n> --doing "..."`. It keeps its name and everything it says,
-and a link naming it still opens it, but it stops following its predecessor —
-so it no longer collects disagreements somebody has to settle for a change
-nobody will make. Like history it takes no content edits and cannot be adopted;
-branch from it to propose it again. Shelve only when asked, or when a draft you
-were told to reconcile turns out to propose nothing.
+`archboard semantic shelve <board> --variant <name> --reason "<why>" --expect-version <n> --doing "..."`.
+It keeps its name and everything it says, and a link naming it still opens it,
+but it stops following its predecessor — so it no longer collects disagreements
+somebody has to settle for a change nobody will make. Like history it takes no
+content edits and cannot be adopted; branch from it to propose it again. Shelve
+only when asked, or when a draft you were told to reconcile turns out to propose
+nothing.
 
 ## Claims
 
