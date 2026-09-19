@@ -7,8 +7,8 @@
 // that no longer exists. So the stage fits itself again every time its size
 // changes, and stops the moment a person pans or zooms: from then on the camera
 // is theirs, and widening the pane leaves it exactly where they put it. A new
-// board or view starts the whole arrangement over. Moving to another state of
-// the board glides to what that state changes, zooming in or out to fit it.
+// board, variant or view starts the whole arrangement over, fitting the entire
+// selected reading rather than zooming to the subjects a proposal changed.
 //
 // A walkthrough step is a new subject in exactly that sense. What the pane is
 // meant to be showing has changed because the reader moved, so the camera is
@@ -26,8 +26,6 @@ import {
 	type BoardCamera,
 } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import { changeFocus } from "@/ui/semantic-board-canvas/lib/change-focus";
-import { sameReading } from "@/ui/semantic-board-canvas/lib/picture-transition";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import type { Camera, FitTarget, Size } from "@/ui/semantic-board-canvas/lib/camera";
 
@@ -194,51 +192,8 @@ function keepFitted(
 }
 
 /**
- * Whether two pictures are two states of one board read the same way, outside a
- * presentation, which decides the camera itself.
- * @param before The picture being left.
- * @param after The picture arriving.
- * @param reading How the pane is being read.
- * @returns True for a move between states.
- */
-function anotherState(
-	before: SemanticDrawing,
-	after: SemanticDrawing,
-	reading: FitReading,
-): boolean {
-	return (
-		!reading.presenting && before.variant.id !== after.variant.id && sameReading(before, after)
-	);
-}
-
-/**
- * Glide to the changes when the pane moves from one state of a board to another,
- * read the same way: from the current architecture to a proposal, or back. That
- * move is a request to see what the proposal changes, so the camera is taken to
- * it, zooming in or out as far as the changes need, whoever moved it last.
- * @param camera The camera.
- * @param before The picture being left, or null.
- * @param after The picture arriving, or null.
- * @param reading How the pane is being read.
- */
-function showChanges(
-	camera: BoardCamera,
-	before: SemanticDrawing | null,
-	after: SemanticDrawing | null,
-	reading: FitReading,
-): void {
-	if (before === null || after === null || !anotherState(before, after, reading)) {
-		return;
-	}
-	const target = changeFocus(before, after);
-	if (target !== null) {
-		camera.glide(target, reading.reducedMotion ? 0 : PICTURE_TRANSITION_MS);
-	}
-}
-
-/**
  * Own the stage camera across loading, empty and drawn states. Variants share
- * the camera; another board, view or walkthrough focus fits afresh.
+ * presentation state; another board, variant, view or walkthrough focus fits afresh.
  * @param drawing The resolved drawing, or null while no picture is available.
  * @param focus The walkthrough's focus, when one is being read.
  * @param request Whether a walkthrough is presented, and whether motion is reduced.
@@ -260,11 +215,11 @@ function useAutoFit(
 					}),
 		[drawing, focus.target, camera.room],
 	);
-	const picture = drawing === null ? null : JSON.stringify([drawing.board, drawing.view?.id]);
+	const picture =
+		drawing === null ? null : JSON.stringify([drawing.board, drawing.variant.id, drawing.view?.id]);
 	const subject = picture === null ? null : JSON.stringify([picture, focus.key]);
 	const fitted = useRef<Fitted>({ subject: null, picture: null, room: null });
 	const held = useRef<HeldCamera | null>(null);
-	const shown = useRef<SemanticDrawing | null>(null);
 	const room = roomKey(camera.room);
 	const { presenting } = request;
 	const reducedMotion = request.reducedMotion === true;
@@ -279,15 +234,6 @@ function useAutoFit(
 		const reading = { presenting, reducedMotion };
 		keepFitted(camera, { target, subject, picture, room, reading }, fitted, held);
 	}, [camera, target, subject, picture, room, presenting, reducedMotion]);
-	// After the fit above, which leaves a change of state alone: another state of
-	// the same reading is the same subject.
-	useLayoutEffect(() => {
-		const before = shown.current;
-		shown.current = drawing;
-		if (before !== drawing) {
-			showChanges(camera, before, drawing, { presenting, reducedMotion });
-		}
-	}, [camera, drawing, presenting, reducedMotion]);
 	return camera;
 }
 
