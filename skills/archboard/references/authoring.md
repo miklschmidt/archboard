@@ -6,16 +6,24 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
 
 ## Nodes
 
-| Field            | Meaning                                                                                                                                                                  |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`           | One line a reader sees; unique enough to name the node in later payloads.                                                                                                |
-| `kind`           | A key of `nodeKinds` in `config.yaml`. What the unit IS, whether it is drawn as a card or a container. A node standing for another board takes that board's level.       |
-| `responsibility` | Clear short prose the source supports, usually two or three rendered lines. Newlines are optional; the renderer wraps the complete value without a line-count limit.     |
-| `description`    | Longer detail, shown on inspection.                                                                                                                                      |
-| `parent`         | The containing node, by name or id. At most one; containment is acyclic.                                                                                                 |
-| `groups`         | The configured group ids the node belongs to. Omit for none.                                                                                                             |
-| `binding`        | Where the code is: `{ "repo", "path" }` plus optional `branch`, `commit`, `confirmedAt`.                                                                                 |
-| `drillDown`      | The board this part opens: `{ "board": "<name>", "variant": { "kind": "current" } }` or `{ "kind": "named", "name": "<variant>" }`. Only on a part that is really there. |
+- `name`: One line a reader sees; unique enough to name the node in later
+  payloads.
+- `kind`: A key of `nodeKinds` in `config.yaml`. What the unit IS, whether it is
+  drawn as a card or a container. A node standing for another board takes that
+  board's level.
+- `responsibility`: Clear short prose the source supports, usually two or three
+  rendered lines. Newlines are optional; the renderer wraps the complete value
+  without a line-count limit.
+- `description`: Longer detail, shown on inspection.
+- `parent`: The containing node, by name or id. At most one; containment is
+  acyclic.
+- `groups`: The configured group ids the node belongs to. Omit for none.
+- `binding`: Where the code is: `{ "repo", "path" }` plus optional `branch`,
+  `commit`, `confirmedAt`.
+- `drillDown`: The board this part opens:
+  `{ "board": "<name>", "variant": { "kind": "current" } }` or
+  `{ "kind": "named", "name": "<variant>" }`. Only on a part that is really
+  there.
 
 ### Containment and receivers
 
@@ -145,14 +153,15 @@ configuration, so defining the kind again clears it wherever it sits.
 
 ## Relationships
 
-| Field         | Meaning                                                                                                                      |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `from`, `to`  | Node names or ids.                                                                                                           |
-| `kind`        | A key of `relationshipKinds` in `config.yaml`; it decides dash and arrowhead.                                                |
-| `label`       | What crosses, in a few words.                                                                                                |
-| `description` | Longer prose.                                                                                                                |
-| `emphasis`    | `normal` (default), `hero` for the board's spine, `muted` for context. Line weight only.                                     |
-| `traffic`     | `{}` for moving dots at the defaults (speed 40, volume 0.5); `{ "speed", "volume" }` positive finite numbers; omit for none. |
+- `from`, `to`: Node names or ids.
+- `kind`: A key of `relationshipKinds` in `config.yaml`; it decides dash and
+  arrowhead.
+- `label`: What crosses, in a few words.
+- `description`: Longer prose.
+- `emphasis`: `normal` (default), `hero` for the board's spine, `muted` for
+  context. Line weight only.
+- `traffic`: `{}` for moving dots at the defaults (speed 40, volume 0.5);
+  `{ "speed", "volume" }` positive finite numbers; omit for none.
 
 Emphasis is the board's answer to "what am I looking at". Mark the spine: the
 path or backbone the board exists to show. On a board of how one write lands,
@@ -263,20 +272,32 @@ request (an operation the CLI does not offer, an id nothing on the board can
 name), stop with the board valid as it stands and report what remains
 unresolved and why, rather than approximate it another way.
 
-| Refusal                              | Meaning and repair                                                                                                                                                                                                           |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| unknown field                        | The payload has a key the schema lacks, and the line under it locates the subject. Check the spelling against [schemas](schemas.md), and check the key belongs on that subject: a step is not a relationship.                |
-| unknown kind, level or group         | Not a key of `config.yaml`. Use a configured one; extend the file only when the request is about vocabulary, then `archboard check`.                                                                                         |
-| ambiguous name                       | Two nodes share the name; use the id from the family you read.                                                                                                                                                               |
-| unknown id                           | A stated `id` names nothing on that variant; new subjects leave `id` out. The one exception: a draft may restate a node it removed under the `subject` id of its open `deleted-and-changed` issue ([variants](variants.md)). |
-| dangling reference                   | An edge end, participant, step end, view selection or beat subject names nothing; fix the reference.                                                                                                                         |
-| containment cycle                    | A `parent` chain loops.                                                                                                                                                                                                      |
-| self step                            | `kind: "self"` exactly when `from` and `to` are the same node.                                                                                                                                                               |
-| empty selection or empty walkthrough | A selection view names nothing; a walkthrough has no beats.                                                                                                                                                                  |
-| invalid traffic or repeat            | `speed`/`volume` are positive finite; `repeat` is an integer of 2 or more.                                                                                                                                                   |
-| too long                             | Names, labels and handles are single-line and bounded; responsibilities are bounded prose and may contain line breaks; descriptions are bounded.                                                                             |
-| version moved (exit 5)               | Somebody wrote since you read; `semantic show` again and redo the change on what is there.                                                                                                                                   |
-| held or claim revoked (exit 5)       | Another writer holds the board, or a person released your claim; stop and say so.                                                                                                                                            |
+- unknown field: The payload has a key the schema lacks, and the line under it
+  locates the subject. Check the spelling against [schemas](schemas.md), and
+  check the key belongs on that subject: a step is not a relationship.
+- unknown kind, level or group: Not a key of `config.yaml`. Use a configured
+  one; extend the file only when the request is about vocabulary, then
+  `archboard check`.
+- ambiguous name: Two nodes share the name; use the id from the family you read.
+- unknown id: A stated `id` names nothing on that variant; new subjects leave
+  `id` out. The one exception: a draft may restate a node it removed under the
+  `subject` id of its open `deleted-and-changed` issue
+  ([variants](variants.md)).
+- dangling reference: An edge end, participant, step end, view selection or beat
+  subject names nothing; fix the reference.
+- containment cycle: A `parent` chain loops.
+- self step: `kind: "self"` exactly when `from` and `to` are the same node.
+- empty selection or empty walkthrough: A selection view names nothing; a
+  walkthrough has no beats.
+- invalid traffic or repeat: `speed`/`volume` are positive finite; `repeat` is
+  an integer of 2 or more.
+- too long: Names, labels and handles are single-line and bounded;
+  responsibilities are bounded prose and may contain line breaks; descriptions
+  are bounded.
+- version moved (exit 5): Somebody wrote since you read; `semantic show` again
+  and redo the change on what is there.
+- held or claim revoked (exit 5): Another writer holds the board, or a person
+  released your claim; stop and say so.
 
 A `warnings` list on a successful answer says what the write did that you
 should know: `UNKNOWN_VOCABULARY` means the board references vocabulary the

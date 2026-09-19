@@ -5,13 +5,22 @@ archboard build that installed this skill. They are regenerated on every
 install and every skill sync, so the copy you are reading matches the CLI you
 are running. Do not edit them.
 
-| File                                                                                         | Describes                                                                                                                                                   |
-| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`generated/semantic-create-input.schema.json`](generated/semantic-create-input.schema.json) | The JSON you give `archboard semantic new`: `level`, then `nodes`, `edges`, `flows`, `views`, `walkthroughs`, using authoring names and same-write handles. |
-| [`generated/semantic-edit-input.schema.json`](generated/semantic-edit-input.schema.json)     | The JSON you give `archboard semantic edit`: one batch of restated subjects and `remove...` lists against one `variant`.                                    |
-| [`generated/semantic-board.schema.json`](generated/semantic-board.schema.json)               | One persisted board family as `archboard semantic show` prints it and the vault stores it: variants, lifecycle, ancestry, ids.                              |
-| [`generated/vault-config.schema.json`](generated/vault-config.schema.json)                   | `<vault>/.archboard/config.yaml`: levels, node kinds with icons and colors, relationship kinds, groups.                                                     |
-| [`generated/INSTALL.md`](generated/INSTALL.md)                                               | The installation and vault setup manual, copied from the active checkout that supplies the installed CLI; links into that checkout are absolute.            |
+- [`generated/semantic-create-input.schema.json`](generated/semantic-create-input.schema.json):
+  The JSON you give `archboard semantic new`: `level`, then `nodes`, `edges`,
+  `flows`, `views`, `walkthroughs`, using authoring names and same-write
+  handles.
+- [`generated/semantic-edit-input.schema.json`](generated/semantic-edit-input.schema.json):
+  The JSON you give `archboard semantic edit`: one batch of restated subjects
+  and `remove...` lists against one `variant`.
+- [`generated/semantic-board.schema.json`](generated/semantic-board.schema.json):
+  One persisted board family as `archboard semantic show` prints it and the
+  vault stores it: variants, lifecycle, ancestry, ids.
+- [`generated/vault-config.schema.json`](generated/vault-config.schema.json):
+  `<vault>/.archboard/config.yaml`: levels, node kinds with icons and colors,
+  relationship kinds, groups.
+- [`generated/INSTALL.md`](generated/INSTALL.md): The installation and vault
+  setup manual, copied from the active checkout that supplies the installed CLI;
+  links into that checkout are absolute.
 
 ## Authoring payloads are not the persisted document
 
