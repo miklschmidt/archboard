@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 16:04'
+updated_date: '2026-09-19 16:26'
 labels:
   - renderer
   - layout
@@ -97,4 +97,8 @@ New live screenshots after C integration: common-weblib gray Uses ambient helper
 User requests two additional parallel investigations on live screenshots: excessive public/mobile incoming-chain gaps in common-weblib, and Migrated API capabilities to DB2 crossing the unrelated Windows/IIS VM Pool body in current-cloud-infrastructure@Nc8vWLvX. Investigate isolated candidates and show actual before/after images before adopting. Existing title-only obstacles allow unrelated frame-body traversal; preserve legitimate child boundary access in any fix. Balanced-port audit also found one Common helper at exact mean and the other displaced by an unused other-kind center seed; label-only straightening is insufficient.
 
 Parallel investigations confirmed: a Public compile label represented as a Graphviz node adds rank coupling, expanding both incoming gaps from98.5/98.5 to152/139.5px. User did not approve smaller-rank-unit B. Native edge labels target cause but cross-container title collisions remain; hybrid exceptions add detours. Alternatives frozen under /tmp/common-weblib-gap-probe/REPORT.md; no spacing implementation adopted. Foreign-frame intrusion is already present in native routes with no forced label on the offending edge; six-node/three-edge reproduction. Recommended contract: avoid containers containing neither endpoint and not themselves endpoints. Scoped solid-frame prototype proves geometry but loses cross-group lane coordination, so not adopted. The production renderer remains unchanged during these investigations.
+
+User explicitly approved final matched /tmp/ink-atomic routing images: adopt nearest feasible balanced ports, natural-run label anchors with conservative whole-set feasibility, and ink-aware rounded bends. These changes keep page dimensions unchanged in Common v15 and Observed cloud v34. Spacing-rank alternatives and unrelated-frame scoped-routing prototype remain unapproved and are excluded. Integrating exact frozen candidate, focused regression checks, full check and corpus, then rebuild/restart live3100 and commit.
+
+Approved routing fix integrated and verified:201 renderer tests pass, full bun run check exits0,24-case corpus exits0 with no card-crossing or off-route-label violations. Normal production worker generates byte-identical SVGs to approved Commonv15/Observedv34 pictures. Rebuilt via fullcheck, restarted3100 with correct architecture-design vault (pid1949366), reloaded browser and visually confirmed straight helper and four VM-to-DB connections on renamed live boards common-weblib architecture and cloud infrastructure. Task remains In Progress for separately reported excessive label-rank spacing and foreign-container traversal; these were not included in the approved change.
 <!-- SECTION:NOTES:END -->

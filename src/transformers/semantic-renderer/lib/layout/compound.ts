@@ -2,7 +2,7 @@
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
 import type { ElkExtendedEdge, ElkNode, ElkShape } from "@archboard/elk-rs";
 import { fitIn } from "@/shared/shell-geometry/index";
-import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
+import { APPROACH_STRAIGHT, WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import type {
@@ -13,7 +13,10 @@ import type {
 	MeasuredArchitecture,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { placeLabelsOnRuns } from "@/transformers/semantic-renderer/lib/layout/label-runs";
+import {
+	anchorLabelsOnRuns,
+	placeLabelsOnRuns,
+} from "@/transformers/semantic-renderer/lib/layout/label-runs";
 import {
 	rememberSolves,
 	settleLabels,
@@ -25,6 +28,7 @@ import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
+import { strokeWidthOf, STROKE_WIDTH } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
 
 /** One measured architecture in the engine's solving frame. */
@@ -99,6 +103,7 @@ function drawingLabel(
 	result: ElkExtendedEdge,
 	measured: MeasuredArchitecture,
 ): Pick<DrawingEdge, "label"> {
+	if (result.layoutOptions?.["archboard.route-label"] !== "true") return {};
 	const label = measured.labels.get(result.id);
 	if (label === undefined) {
 		return {};
@@ -140,7 +145,11 @@ function drawingEdges(
 		const points = routes.get(edge.id)!;
 		const measuredLabel = labels.get(edge.id);
 		const label = measuredLabel === undefined ? {} : { label: measuredLabel };
-		const curve = curveThrough(points, label.label?.box);
+		const curve = curveThrough(
+			points,
+			label.label?.box,
+			(APPROACH_STRAIGHT * strokeWidthOf(edge)) / STROKE_WIDTH.hero,
+		);
 		return {
 			edge,
 			curve,
@@ -268,17 +277,58 @@ function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
 function graphForLabels(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	forced: ReadonlySet<string>,
+	forced: ReadonlyMap<string, Box | undefined>,
 ): ElkNode {
 	const { content, measured } = problem;
 	const graph = compoundGraph(content, measured);
 
 	for (const edge of graph.edges ?? []) {
 		if (!reserved.has(edge.id)) edge.labels = [];
-		if (forced.has(edge.id))
-			edge.layoutOptions = { ...edge.layoutOptions, "archboard.route-label": "true" };
+		if (forced.has(edge.id)) {
+			const box = forced.get(edge.id);
+			edge.layoutOptions = {
+				...edge.layoutOptions,
+				"archboard.route-label": "true",
+				...anchorOptions(box),
+			};
+		}
 	}
 	return graph;
+}
+
+/**
+ * Carry an accepted native waypoint through placement without changing its measured size.
+ * @param box Optional accepted anchor; absent means keep the engine reservation.
+ * @returns Routing metadata for the accepted physical position.
+ */
+function anchorOptions(box: Box | undefined): Record<string, string> {
+	return box === undefined
+		? {}
+		: {
+				"archboard.route-label.x": String(box.x),
+				"archboard.route-label.y": String(box.y),
+			};
+}
+
+/**
+ * Retain every reserved box so proposed anchors cannot occupy a later fallback.
+ * @param graph Complete native scene, including currently unforced reservations.
+ * @param measured Semantic label dimensions and text.
+ * @returns Reservation boxes keyed by relationship identity.
+ */
+function reservedLabels(
+	graph: ElkNode,
+	measured: MeasuredArchitecture,
+): ReadonlyMap<string, NonNullable<DrawingEdge["label"]>> {
+	return new Map(
+		(graph.edges ?? []).flatMap((edge) => {
+			const shape = edge.labels?.[0];
+			const label = measured.labels.get(edge.id);
+			return shape === undefined || label === undefined
+				? []
+				: [[edge.id, { measured: label, box: boxOf(shape) }] as const];
+		}),
+	);
 }
 
 /**
@@ -301,7 +351,7 @@ function movedOff(reserved: Box, drawn: Box | undefined): boolean {
 async function attemptLabels(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	forced: ReadonlySet<string> = new Set(),
+	forced: ReadonlyMap<string, Box | undefined> = new Map(),
 ): Promise<LabelAttempt> {
 	const attempt = await drawAttempt(problem, reserved, forced);
 	const missing = attempt.missing.filter(
@@ -310,11 +360,17 @@ async function attemptLabels(
 	if (missing.length === 0) return attempt;
 	// Placement space is not a waypoint. Each retry forces only labels that
 	// still have no clear natural run, so every retry makes finite progress.
-	return attemptLabels(
-		problem,
-		reserved,
-		new Set([...forced, ...missing.map(({ edge }) => edge.id)]),
-	);
+	const eligible = new Set([...forced.keys(), ...missing.map(({ edge }) => edge.id)]);
+	const drawing = {
+		...attempt.drawing,
+		edges: attempt.drawing.edges.map(({ edge, curve, path }) => {
+			const label = attempt.reservedBoxes.get(edge.id);
+			return { edge, curve, path, ...(label === undefined ? {} : { label }) };
+		}),
+	};
+	const anchors = anchorLabelsOnRuns(drawing, problem.measured.labels, eligible);
+	const next = new Map([...eligible].map((id) => [id, anchors.get(id) ?? forced.get(id)]));
+	return attemptLabels(problem, reserved, next);
 }
 
 /**
@@ -327,8 +383,10 @@ async function attemptLabels(
 async function drawAttempt(
 	problem: Problem,
 	reserved: ReadonlySet<string>,
-	forced: ReadonlySet<string>,
-): Promise<LabelAttempt> {
+	forced: ReadonlyMap<string, Box | undefined>,
+): Promise<
+	LabelAttempt & { readonly reservedBoxes: ReadonlyMap<string, NonNullable<DrawingEdge["label"]>> }
+> {
 	const { content, measured } = problem;
 	const laidOut = await rendererHost().solve(graphForLabels(problem, reserved, forced), {
 		...COMPOUND_OPTIONS,
@@ -357,7 +415,7 @@ async function drawAttempt(
 			? [edge.id]
 			: [],
 	);
-	return { drawing, missing, unused };
+	return { drawing, missing, unused, reservedBoxes: reservedLabels(laidOut, measured) };
 }
 
 export { layoutCompound };

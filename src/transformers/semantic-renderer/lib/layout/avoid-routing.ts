@@ -16,6 +16,7 @@ import { simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	alignedPins,
 	relationshipKind,
+	type AlignedPin,
 	type AlignedPins,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import {
@@ -116,13 +117,35 @@ class RoutingScene {
 	 * @returns The native endpoint shared by all relationships of this kind.
 	 */
 	private cardPin(id: string, kind: string, position: number): ConnectionEnd {
-		const end = this.pin(id, undefined, position);
-		const pinClass = this.classes.get(`${id}:any:${position}`)!;
-		const byKind = this.aligned.get(id);
-		for (const pin of byKind?.get(kind) ?? [])
-			this.registerPins(this.shapes.get(id)!, pinClass, [SIDES[pin.face]], pin.position);
-		byKind?.delete(kind);
-		return end;
+		const key = `${id}:any:${position}`;
+		let pinClass = this.classes.get(key);
+		const shape = this.shapes.get(id)!;
+		if (pinClass === undefined) {
+			pinClass = this.classes.size + 1;
+			this.registerCardPins(shape, pinClass, position, this.aligned.get(id)?.get(kind) ?? []);
+			this.classes.set(key, pinClass);
+		}
+		return new this.avoid.ConnEnd(shape, pinClass);
+	}
+
+	/**
+	 * On matched faces, register only clear aligned positions; keep seeds on other faces.
+	 * @param shape Native card obstacle.
+	 * @param pinClass Shared relationship-kind class.
+	 * @param position Ordinary kind position.
+	 * @param pins Clear matched alternatives.
+	 */
+	private registerCardPins(
+		shape: object,
+		pinClass: number,
+		position: number,
+		pins: readonly AlignedPin[],
+	): void {
+		for (const face of FACES) {
+			if (!pins.some((pin) => pin.face === face))
+				this.registerPins(shape, pinClass, [SIDES[face]], position);
+		}
+		for (const pin of pins) this.registerPins(shape, pinClass, [SIDES[pin.face]], pin.position);
 	}
 
 	/**
@@ -352,7 +375,6 @@ class RoutingScene {
 				this.connect(this.pin(`label_${edge.id}`, exit), target),
 			];
 		}
-		edge.labels = [];
 		return [this.connect(source, target)];
 	}
 }
@@ -495,6 +517,28 @@ function publish(edge: ElkExtendedEdge, connections: readonly Connection[]): voi
 }
 
 /**
+ * Apply reserved label coordinates after placement and before native obstacles are registered.
+ * @param edges Complete placed relationships.
+ */
+function positionReservedLabels(edges: readonly ElkExtendedEdge[]): void {
+	for (const edge of edges) positionReservedLabel(edge);
+}
+
+/**
+ * Apply the accepted physical position of one reserved label when both axes exist.
+ * @param edge One placed relationship.
+ */
+function positionReservedLabel(edge: ElkExtendedEdge): void {
+	const label = edge.labels?.[0];
+	const options = edge.layoutOptions;
+	if (!label || !options) return;
+	const x = options["archboard.route-label.x"];
+	const y = options["archboard.route-label.y"];
+	if (x === undefined || y === undefined) return;
+	Object.assign(label, { x: Number(x), y: Number(y) });
+}
+
+/**
  * Route placed cards and title bands through one native obstacle scene.
  * @param avoid The initialized libavoid module.
  * @param graph Complete globally placed semantic geometry.
@@ -503,8 +547,9 @@ function publish(edge: ElkExtendedEdge, connections: readonly Connection[]): voi
 export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	const scene = new RoutingScene(avoid);
 	try {
-		for (const node of graph.children ?? []) scene.visit(node);
 		const edges = graph.edges ?? [];
+		positionReservedLabels(edges);
+		for (const node of graph.children ?? []) scene.visit(node);
 		scene.ports(edges);
 		scene.labels(edges);
 		const routes = new Map(edges.map((edge) => [edge.id, scene.relationship(edge)]));

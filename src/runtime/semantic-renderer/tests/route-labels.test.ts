@@ -10,6 +10,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	routeLabels,
 	routePoints,
+	corridorPoints,
 	distanceToFrame,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
@@ -293,4 +294,32 @@ describe("a label belongs to one line", () => {
 			expect(masking(await renderArchitecture({ content: PAIRED, theme }))).toEqual([]);
 		}
 	});
+});
+
+// A native straight channel must survive the reservation needed by two wide badges.
+test("parallel database badges keep their straight channels and measured separation", async () => {
+	const content = VariantContentSchema.parse({
+		nodes: [
+			{ id: "pool", name: "VM Pool", kind: "container" },
+			{ id: "one", name: "VM 3", kind: "service", parent: "pool" },
+			{ id: "two", name: "VM 4", kind: "service", parent: "pool" },
+			{ id: "db", name: "Database 2", kind: "database" },
+		],
+		edges: [
+			{ id: "one-db", from: "one", to: "db", kind: "data", label: "Database connection" },
+			{ id: "two-db", from: "two", to: "db", kind: "data", label: "Database connection" },
+		],
+	});
+	const drawn = await renderArchitecture({ content, theme: "dark" });
+	const routes = corridorPoints(drawn.svg);
+	for (const edge of content.edges) {
+		const points = routes.get(edge.id)!;
+		expect(points).toHaveLength(2);
+		expect(points[0]!.x).toBe(points[1]!.x);
+	}
+	const labels = [...routeLabels(drawn.svg).values()].toSorted((one, two) => one.x - two.x);
+	expect(labels).toHaveLength(2);
+	expect(labels[1]!.x - labels[0]!.x - labels[0]!.width).toBeGreaterThanOrEqual(23.95);
+	expect(detached(drawn)).toEqual([]);
+	expect(overlaps(drawn, content)).toEqual([]);
 });

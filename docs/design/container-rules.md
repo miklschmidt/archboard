@@ -26,7 +26,9 @@ The current rules are:
 - Route around cards and title bands with libavoid. Relationships of one kind share ports
   on each face; different kinds use distinct attachment positions and lanes.
   Ordinary cards with overlapping facing spans offer balanced aligned ports
-  first, with other clear aligned positions as fallback. This applies across
+  at the nearest feasible balanced position. On a face with an unobstructed
+  aligned channel, omit the redundant center choice that would introduce a
+  detour. Keep other faces available. This applies across
   boards and variants; it uses measured geometry, never board-specific hints.
   The native router chooses among those faces. Relationships
   keep their own identities and labels even when they share a port or trunk.
@@ -34,7 +36,11 @@ The current rules are:
 - Put labels on clear runs of their own routes. Reserve measured space only
   when ordinary placement cannot fit a label. Placement space does not force
   a route through that box: try natural runs before adding a label waypoint.
-  Keep labels clear of titles,
+  Prefer anchoring a missing label on its existing straight channel and let
+  other routes avoid it. Nearby parallel labels may shift their channels
+  together within their clear intervals to preserve label spacing. Validate
+  the complete proposed reservation set before accepting it; otherwise keep
+  the original reservations. Keep labels clear of titles,
   frame outlines, cards and other routes.
 - Draw outer frames behind their contents, headings above them, and apply the
   nearest configured container color to descendant borders/tints.
