@@ -6,7 +6,7 @@
 // second time (a board a level down is another matter, held by the levels
 // tests). These check what the pane still owns: the state it is told to show is
 // the one it asks the server for, and moving between states is reading rather
-// than editing, which leaves where the reader was looking alone.
+// than editing, which fits the selected view to the arriving variant.
 
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
@@ -87,7 +87,7 @@ test("the variant the pane is told to show rides in the request", async () => {
 });
 
 test.each([false, true])(
-	"switching variants preserves the camera, including after a gesture: %s",
+	"switching variants fits the selected view, including after a gesture: %s",
 	async (handled) => {
 		const view = { id: "scope1", name: "Integration", grammar: "architecture" };
 		const other = { id: "scope2", name: "Whole system", grammar: "architecture" };
@@ -100,7 +100,6 @@ test.each([false, true])(
 				fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
 			});
 		}
-		const before = cameraNow();
 		server.reply = {
 			status: 200,
 			body: {
@@ -122,10 +121,6 @@ test.each([false, true])(
 		await settle();
 		expect(stage?.getAttribute("data-variant")).toBe(PROPOSED.name);
 		expect(renderCalls().at(-1)).toContain("variant=v2");
-		expect(cameraNow()).toEqual(before);
-		act(() => {
-			fireEvent.keyDown(viewport(), { key: "0" });
-		});
 		expect(cameraNow().scale).toBeCloseTo(Math.min((800 - 48) / 900, (600 - 48) / 600), 6);
 		const fitted = cameraNow();
 		act(() => {
@@ -151,7 +146,7 @@ test.each([false, true])(
 	},
 );
 
-test("moving to a proposal and back fits what the proposal changes in view", async () => {
+test("Everything fits the whole proposal and current state instead of zooming to changed subjects", async () => {
 	serving([AS_IT_IS, PROPOSED]);
 	mountStage(null, { live: true, reducedMotion: true });
 	await settle();
@@ -160,6 +155,8 @@ test("moving to a proposal and back fits what the proposal changes in view", asy
 		status: 200,
 		body: {
 			...drawing(1),
+			width: 900,
+			height: 600,
 			variant: { id: PROPOSED.id, name: PROPOSED.name, lifecycle: PROPOSED.lifecycle },
 			changes: {
 				predecessor: { id: AS_IT_IS.id, name: AS_IT_IS.name, lifecycle: AS_IT_IS.lifecycle },
@@ -169,16 +166,13 @@ test("moving to a proposal and back fits what the proposal changes in view", asy
 	};
 	chooseVariantInShell(PROPOSED.id);
 	await settle();
-	// n1 is 80×40 at the origin: the camera goes to it, as close as a fit to one
-	// region may, rather than staying on the whole picture.
-	expect(cameraNow()).not.toEqual(whole);
-	expect(cameraNow()).toEqual({ x: 340, y: 270, scale: 1.5 });
+	// Only n1 changed, but Everything must still show the entire larger picture.
+	const fitted = cameraNow();
+	expect(fitted.scale).toBeCloseTo(Math.min((800 - 48) / 900, (600 - 48) / 600), 6);
+	expect(fitted.x).toBeCloseTo((800 - 900 * fitted.scale) / 2, 6);
+	expect(fitted.y).toBeCloseTo((600 - 600 * fitted.scale) / 2, 6);
 
-	// And back to the current state, the same changes are what the reader is shown.
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "0" });
-	});
 	chooseVariantInShell(undefined);
 	await settle();
-	expect(cameraNow()).toEqual({ x: 340, y: 270, scale: 1.5 });
+	expect(cameraNow()).toEqual(whole);
 });
