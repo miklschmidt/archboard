@@ -18,20 +18,21 @@ import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 import { claudeGrader } from "@/runtime/skill-evaluation/lib/claude-grader";
 import { codexGrader } from "@/runtime/skill-evaluation/lib/codex-grader";
 import {
-	FiledVerdictSchema,
 	GRADER_OUTPUT_JSON_SCHEMA,
 	graderPrompt,
 	type GraderBrief,
-	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
 import {
 	graderRetryPrompt,
+	owedRetries,
 	settleRetry,
 	shortAnswers,
 	type ShortAnswer,
 } from "@/runtime/skill-evaluation/lib/grading-retry";
 import {
 	UsageSchema,
+	filedEvidence,
+	filedVerdict,
 	fileVerdict,
 	fileVerdicts,
 	readAnswer,
@@ -76,8 +77,6 @@ interface GradingOptions {
 }
 
 const BundleHeadSchema = z.object({ run: z.string(), revision: z.string() }).passthrough();
-/** A filed verdict, read leniently: one filed before captures existed carries no visual answer. */
-const RunVerdictSchema = FiledVerdictSchema;
 
 /** One bundled run, found under the batch. */
 interface BundledRun {
@@ -322,7 +321,7 @@ function recordCall(
  * @param runner The chosen runner.
  * @param layout The grading layout.
  * @param session The session.
- * @param of The call whose answer fell short.
+ * @param of The number of the call whose answer fell short.
  * @param shorts Its short answers.
  * @returns The retry's call record.
  */
@@ -331,7 +330,7 @@ async function retryShortAnswers(
 	runner: GraderRunner,
 	layout: GraderLayout,
 	session: GradingSession,
-	of: GradingCall,
+	of: number,
 	shorts: readonly ShortAnswer[],
 ): Promise<GradingCall> {
 	const runs = shorts.map((short) => short.shortfall.run);
@@ -363,11 +362,11 @@ async function retryShortAnswers(
 	const call = recordCall(runner, layout, session, sent, {
 		runs,
 		graded: retried.filter((entry) => entry.outcome === "replaced").map((entry) => entry.run),
-		retry: { of: of.index, runs: retried },
+		retry: { of, runs: retried },
 		filingError: answer.error,
 	});
 	options.log(
-		`call ${call.index}: re-asked call ${of.index} for ${runs.length}, replaced ${call.graded.length}${call.error === null ? "" : ` (${call.error})`}`,
+		`call ${call.index}: re-asked call ${of} for ${runs.length}, replaced ${call.graded.length}${call.error === null ? "" : ` (${call.error})`}`,
 	);
 	return call;
 }
@@ -418,7 +417,40 @@ async function gradeChunk(
 		options.log(`call ${call.index}: ${shorts.length} answers fell short; no session to re-ask`);
 		return [call];
 	}
-	return [call, await retryShortAnswers(options, runner, layout, session, call, shorts)];
+	return [call, await retryShortAnswers(options, runner, layout, session, call.index, shorts)];
+}
+
+/**
+ * Asks the session once for every filed verdict still owed its retry, in
+ * chunks, each retry naming the call that filed its verdicts.
+ * @param options The pass.
+ * @param runner The chosen runner.
+ * @param layout The grading layout.
+ * @param session The session.
+ * @param runs Every bundled run.
+ */
+async function retryOwed(
+	options: GradingOptions,
+	runner: GraderRunner,
+	layout: GraderLayout,
+	session: GradingSession,
+	runs: readonly BundledRun[],
+): Promise<void> {
+	if (session.threadId === null) return;
+	const owed = [
+		...owedRetries(
+			options.loaded,
+			session.calls,
+			runs,
+			filedEvidence(options.batchRoot, options.grader),
+		),
+	].flatMap(([of, shorts]) => chunked(shorts, options.chunkSize).map((chunk) => ({ of, chunk })));
+	if (owed.length > 0)
+		options.log(`${runner.name}: ${owed.length} retries owed from earlier calls`);
+	await sequentially(owed, async ({ of, chunk }) => {
+		if (!options.signal.aborted)
+			await retryShortAnswers(options, runner, layout, session, of, chunk);
+	});
 }
 
 /**
@@ -479,23 +511,10 @@ async function gradeBatch(
 	await sequentially(chunked(pending, options.chunkSize), async (chunk) => {
 		if (!options.signal.aborted) await gradeChunk(options, runner, layout, session, chunk);
 	});
+	await retryOwed(options, runner, layout, session, runs);
 	const usage = sessionUsage(session.calls, runner.usageSemantics);
 	fs.writeFileSync(path.join(layout.root, "usage.json"), `${JSON.stringify(usage, null, "\t")}\n`);
 	return { session, usage };
-}
-
-/**
- * The verdict one grader filed for one run, if any.
- * @param batchRoot The batch.
- * @param grader The grader.
- * @param id The anonymous id.
- * @returns The verdict, or null.
- */
-function filedVerdict(batchRoot: string, grader: GraderName, id: string): RunVerdict | null {
-	const file = path.join(graderLayout(batchRoot, grader).verdicts, `${id}.json`);
-	return fs.existsSync(file)
-		? RunVerdictSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")))
-		: null;
 }
 
 /**

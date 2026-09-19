@@ -62,9 +62,21 @@ const png = (): Buffer =>
  * A batch of two bundled runs of one scenario, with manifests, and a fake grader.
  * @param grader Which runner grades.
  * @param mode What the fake's answers lack (fake-grader-answer.ts).
- * @returns The batch root, the grading options and the fake's argv log.
+ * @param extra What else differs.
+ * @param extra.runModes A mode per run, overriding `mode`.
+ * @param extra.environment More of the fake's environment.
+ * @param extra.unofferable Whether each run also declares a capture the harness cannot offer.
+ * @returns The batch root, the grading options, the fake's argv log, and a way to change the fake's mode.
  */
-function batch(grader: GraderName, mode: string) {
+function batch(
+	grader: GraderName,
+	mode: string,
+	extra: {
+		readonly runModes?: Readonly<Record<string, string>>;
+		readonly environment?: readonly string[];
+		readonly unofferable?: boolean;
+	} = {},
+) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-grader-retry-"));
 	roots.push(root);
 	const candidateSkill = digestOf(keepBatchSkill(path.join(checkout, "skills", "archboard"), root));
@@ -104,12 +116,29 @@ function batch(grader: GraderName, mode: string) {
 						provenance: { width: 1, height: 1 },
 						tiles: [],
 					},
+					// A picture whose dimensions disagree with its provenance is never offered.
+					...(extra.unofferable === true
+						? [
+								{
+									label: "detail",
+									ok: true,
+									file: "captures/main.png",
+									provenance: { width: 2, height: 1 },
+									tiles: [],
+								},
+							]
+						: []),
 				],
 			}),
 		);
+		const labels = extra.unofferable === true ? ["overview", "detail"] : ["overview"];
 		fs.writeFileSync(
 			path.join(directory, "run.json"),
-			JSON.stringify({ run, scenario: SCENARIO, captures: CAPTURES }),
+			JSON.stringify({
+				run,
+				scenario: SCENARIO,
+				captures: { declared: labels, captured: labels, failed: [] },
+			}),
 		);
 	});
 	fs.mkdirSync(path.join(root, "graders", "workspace", "flask", "3.0.0", ".git"), {
@@ -119,20 +148,31 @@ function batch(grader: GraderName, mode: string) {
 	const executable = path.join(root, grader);
 	const version = loaded.graders[grader].version;
 	const fake = grader === "claude" ? "fake-claude.ts" : "fake-codex.ts";
-	const environment = [
-		`FAKE_CLAUDE_VERSION=${version}`,
-		`FAKE_CLAUDE_LOG=${log}`,
-		`FAKE_CODEX_VERSION=${version}`,
-		`FAKE_CODEX_LOG=${log}`,
-		`FAKE_GRADER_MODE=${mode}`,
-		`FAKE_GRADER_FEATURES=${DECLARED.join(",")}`,
-		`FAKE_GRADER_STATE=${path.join(root, "fake-state.json")}`,
-	].join(" ");
-	fs.writeFileSync(
-		executable,
-		`#!/bin/sh\n${environment} exec "${process.execPath}" "${path.join(import.meta.dir, fake)}" "$@"\n`,
-		{ mode: 0o755 },
-	);
+	/**
+	 * Writes the fake with the mode its answers take from now on.
+	 * @param now The mode.
+	 */
+	const refake = (now: string): void => {
+		const environment = [
+			`FAKE_CLAUDE_VERSION=${version}`,
+			`FAKE_CLAUDE_LOG=${log}`,
+			`FAKE_CODEX_VERSION=${version}`,
+			`FAKE_CODEX_LOG=${log}`,
+			`FAKE_GRADER_MODE=${now}`,
+			`FAKE_GRADER_RUN_MODES=${Object.entries(extra.runModes ?? {})
+				.map(([run, runMode]) => `${run}=${runMode}`)
+				.join(",")}`,
+			`FAKE_GRADER_FEATURES=${DECLARED.join(",")}`,
+			`FAKE_GRADER_STATE=${path.join(root, "fake-state.json")}`,
+			...(extra.environment ?? []),
+		].join(" ");
+		fs.writeFileSync(
+			executable,
+			`#!/bin/sh\n${environment} exec "${process.execPath}" "${path.join(import.meta.dir, fake)}" "$@"\n`,
+			{ mode: 0o755 },
+		);
+	};
+	refake(mode);
 	const options: GradingOptions = {
 		batchRoot: root,
 		checkout,
@@ -144,7 +184,7 @@ function batch(grader: GraderName, mode: string) {
 		grader,
 		executable,
 	};
-	return { root, options, log };
+	return { root, options, log, refake };
 }
 
 /**
@@ -257,6 +297,89 @@ describe.each(["claude", "codex"] as const)("the %s runner", (grader) => {
 		expect(graded.session.calls.map((call) => call.retry)).toEqual([undefined]);
 		expect(fs.existsSync(path.join(graderLayout(root, grader).root, "prompt-2.md"))).toBe(false);
 	});
+
+	test("a name invented beside every declared one, or a capture the harness could not offer, is not asked about", async () => {
+		const invented = batch(grader, "invent-extra");
+		await gradeBatch(invented.options);
+		expect(gradingCalls(invented.log)).toHaveLength(1);
+		const unofferable = batch(grader, "mend", { unofferable: true });
+		await gradeBatch(unofferable.options);
+		expect(gradingCalls(unofferable.log)).toHaveLength(1);
+	});
+
+	test("one retry settles each run on its own: mended, improved, or still short", async () => {
+		const { root, options } = batch(grader, "lapse-once", {
+			runModes: { [RUNS[1]]: "lapse-always" },
+		});
+		const graded = await gradeBatch(options);
+		expect(graded.session.calls[1]?.retry?.runs.map((entry) => entry.outcome)).toEqual([
+			"replaced",
+			"still-short",
+		]);
+		expect(graded.session.calls[1]?.graded).toEqual([RUNS[0]]);
+		expect(filedVerdict(root, grader, RUNS[0])?.summary).toBe(`graded ${RUNS[0]} (answer 2)`);
+		expect(filedVerdict(root, grader, RUNS[1])?.summary).toBe(`graded ${RUNS[1]} (answer 1)`);
+
+		// An answer that mends part of what was asked, and breaks nothing else, replaces the first.
+		const half = batch(grader, "half-mend");
+		const halfGraded = await gradeBatch(half.options);
+		const settled = halfGraded.session.calls[1]?.retry?.runs[0];
+		expect(settled?.outcome).toBe("replaced");
+		expect(settled?.remaining).toEqual({ unanswered: [], invented: [], unobserved: ["overview"] });
+		expect(reportReading(half.root, grader, RUNS[0])).toEqual({
+			checklist: "answered",
+			visual: "incomplete",
+		});
+	});
+
+	test("a retry that brings no answer leaves every first verdict filed and is not made again", async () => {
+		const { root, options, log } = batch(grader, "lapse-then-silent");
+		const graded = await gradeBatch(options);
+		const retry = graded.session.calls[1];
+		expect(retry?.retry?.runs.map((entry) => entry.outcome)).toEqual(["no-answer", "no-answer"]);
+		expect(retry?.error).not.toBeNull();
+		for (const run of RUNS)
+			expect(filedVerdict(root, grader, run)?.summary).toBe(`graded ${run} (answer 1)`);
+		await gradeBatch(options);
+		expect(gradingCalls(log)).toHaveLength(2);
+	});
+
+	test("a verdict filed without its retry, as by an interrupted pass or before retries existed, is re-asked on the next pass", async () => {
+		const { root, options, log, refake } = batch(grader, "lapse-always");
+		const first = await gradeBatch(options);
+		// Make it a batch graded before retries: its session holds no retry, its receipts stand.
+		const layout = graderLayout(root, grader);
+		const session = JSON.parse(fs.readFileSync(layout.session, "utf8")) as {
+			calls: { retry?: unknown }[];
+		};
+		session.calls = session.calls.filter((call) => call.retry === undefined);
+		fs.writeFileSync(layout.session, JSON.stringify(session));
+		refake("mend");
+		const second = await gradeBatch(options);
+		const retry = second.session.calls[1];
+		expect(second.session.calls).toHaveLength(2);
+		expect(retry?.retry?.of).toBe(1);
+		expect(retry?.retry?.runs.map((entry) => entry.outcome)).toEqual(["replaced", "replaced"]);
+		const argvs = gradingCalls(log);
+		expect(argvs).toHaveLength(3);
+		expect(continuedSession(grader, argvs[2] ?? [])).toBe(first.session.threadId);
+		for (const run of RUNS)
+			expect(reportReading(root, grader, run)).toEqual({ checklist: "answered", visual: "pass" });
+		// Once asked, never again.
+		await gradeBatch(options);
+		expect(gradingCalls(log)).toHaveLength(3);
+	});
+});
+
+test("a session whose runner named no session is never re-asked: a fresh one has read nothing", async () => {
+	const { options, log } = batch("codex", "lapse-always", {
+		environment: ["FAKE_CODEX_THREAD=none"],
+	});
+	const graded = await gradeBatch(options);
+	expect(graded.session.threadId).toBeNull();
+	expect(gradingCalls(log)).toHaveLength(1);
+	await gradeBatch(options);
+	expect(gradingCalls(log)).toHaveLength(1);
 });
 
 /**
@@ -307,6 +430,15 @@ describe("the obligations a retry is asked for are the report's", () => {
 		expect(verdictShortfall(expected, taken, whole, ["x", "y"])).toBeNull();
 		expect(checklistStanding(expected, whole)).toBe("answered");
 		expect(visualStandingOf(taken, whole, ["x", "y"])).toBe("pass");
+	});
+
+	test("an answer that skipped a declared feature owes it, and invented nothing", () => {
+		expect(verdictShortfall(expected, taken, answering(["a"], ["x", "y"]), ["x", "y"])).toEqual({
+			run: "run-00000000b1",
+			unanswered: ["b"],
+			invented: [],
+			unobserved: [],
+		});
 	});
 
 	test("an answer off its checklist owes the declared names and drops the invented ones", () => {
