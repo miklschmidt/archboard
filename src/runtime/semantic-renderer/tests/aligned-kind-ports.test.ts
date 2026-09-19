@@ -49,3 +49,56 @@ test("overlapping cards share a straight, balanced attachment despite different 
 		expect(route.startPoint.x).toBeCloseTo((centers[0]! + centers[1]!) / 2, 6);
 	}
 });
+
+test("an ordinary source aligns to a fixed external frame arrival in its own channel", async () => {
+	const viz = await instance();
+	const placed = Object.assign(viz, {
+		renderJSON: () => ({
+			bb: "0,0,600,440",
+			objects: [
+				{ name: "before", pos: "500,40" },
+				{ name: "source", pos: "100,40" },
+				{ name: "frame", pos: "100,340" },
+				{ name: "label_arrival", pos: "100,180" },
+			],
+		}),
+	});
+	await loaded;
+	const solve = createLayoutEngine(placed, AvoidLib.getInstance());
+	const graph: ElkNode = {
+		id: "root",
+		children: [
+			{ id: "before", width: 200, height: 80 },
+			{ id: "source", width: 200, height: 80 },
+			{
+				id: "frame",
+				width: 200,
+				height: 200,
+				layoutOptions: { "archboard.header.size": "40" },
+				children: [{ id: "child", width: 160, height: 80 }],
+			},
+		],
+		edges: [
+			{
+				id: "incoming",
+				sources: ["before"],
+				targets: ["source"],
+				layoutOptions: { "archboard.relationship.kind": "call" },
+			},
+			{
+				id: "arrival",
+				sources: ["source"],
+				targets: ["frame"],
+				layoutOptions: { "archboard.relationship.kind": "call", "archboard.route-label": "true" },
+				labels: [{ id: "label", width: 80, height: 30 }],
+			},
+		],
+	};
+	const result = solve(graph, {});
+	const route = result.edges!.find((edge) => edge.id === "arrival")!.sections![0]!;
+	expect(route.startPoint.x).toBe(route.endPoint.x);
+	expect(route.bendPoints ?? []).toHaveLength(0);
+	const frame = result.children!.find((node) => node.id === "frame")!;
+	expect(route.endPoint.x).toBe(frame.x! + frame.width! / 2);
+	expect(route.endPoint.y).toBe(frame.y!);
+});

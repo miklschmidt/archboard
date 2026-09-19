@@ -1502,7 +1502,7 @@ Balanced port candidates check the obstacles actually offered to the router.
 Label anchors follow feasible existing runs; a forced waypoint that reveals a
 nearby channel can be corrected on its reserved row. A cramped approach near a
 card endpoint or external container arrival removes that face from the shared
-relationship-kind alternatives
+relationship-channel alternatives
 and lets the native router choose another. This search removes one face per solve
 and never removes the last alternative. A rejected native alternative retains
 the previous complete route set for label settlement; partial routes are never
@@ -1511,3 +1511,14 @@ published. It does not move authored content or alter relationship identities.
 Completed routes must fit their fixed bends and full arrow approach. Intermediate
 label attempts may be incomplete, but reservation releases and final emission
 cannot accept reversed tangents, undersized runs, or labels occupying bends.
+
+## 33. Align routing with reserved labels and container arrivals (TASK-278)
+
+A forced vertical label uses its placed coordinate when no explicit anchor overrides
+it. Both endpoint candidates see that same coordinate, so routing does not introduce
+a sideways detour solely to reach a label whose position was already reserved.
+
+An ordinary card can offer a straight departure matching a selected external
+container arrival. The container keeps its existing arrival-face and clearance
+policy; the card candidate passes the same channel separation and obstacle checks
+as other aligned pins. Internal container connections keep their existing meaning.
