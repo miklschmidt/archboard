@@ -5,7 +5,7 @@
 
 import path from "node:path";
 import type { CommandRecord } from "@/runtime/skill-evaluation/lib/events";
-import { reachesBatchOutsideWorld } from "@/runtime/skill-evaluation/lib/other-run";
+import { reachesBatchOutsideWorld, shellWords } from "@/runtime/skill-evaluation/lib/other-run";
 
 type CommandClass =
 	| "discovery"
@@ -74,15 +74,36 @@ interface ClassificationContext {
 	readonly exposure?: ExposureRoots | undefined;
 }
 
+/** A shell option that takes the script from the next argument: `-c`, `-lc`, `-ic`. */
+const SCRIPT_OPTION_RE = /^-[A-Za-z]*c[A-Za-z]*$/u;
+
 /**
- * The command without its `bash -lc` wrapper and outer quotes.
+ * The script a recorded `bash -lc`, `sh -c` or `zsh -c` command hands its
+ * shell, as the shell receives it: the argument after the option holding `c`,
+ * with its quoting and escapes undone. A command that is not such a call is
+ * read as recorded, less any outer quotes.
  * @param command The command as recorded.
  * @returns The inner script.
  */
 function unwrapped(command: string): string {
-	const match = /^(?:\S*\/)?(?:ba|z)?sh\s+-l?c\s+(.*)$/su.exec(command.trim());
-	const inner = match?.[1] ?? command;
-	return inner.replace(/^(['"])(.*)\1$/su, "$2").trim();
+	return (
+		shellScript(shellWords(command.trim()).map((word) => word.value)) ??
+		command.trim().replace(/^(['"])(.*)\1$/su, "$2")
+	).trim();
+}
+
+/**
+ * The script argument of a shell call, if the words are one.
+ * @param words The command's words as the shell passes them.
+ * @returns The word after the shell's option holding `c`, or undefined for any other command.
+ */
+function shellScript(words: readonly string[]): string | undefined {
+	const [shell, ...options] = words;
+	if (shell === undefined || !/^(?:.*\/)?(?:ba|z)?sh$/u.test(shell)) return undefined;
+	const at = options.findIndex(
+		(option) => !option.startsWith("-") || SCRIPT_OPTION_RE.test(option),
+	);
+	return SCRIPT_OPTION_RE.test(options[at] ?? "") ? (options[at + 1] ?? "") : undefined;
 }
 
 const WRITE_RE = /\barchboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u;
