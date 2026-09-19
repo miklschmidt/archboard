@@ -46,6 +46,9 @@ board keep the reader's bearings. The direction is recorded on the drawing so
 the atlas, the measure script and the tests can read it, and it is never
 authored, stored in a board or chosen by a person.
 
+[ADR 0032](0032-every-variant-is-laid-out-fresh.md) supersedes the predecessor
+direction rule above: every variant now chooses its own fresh layout.
+
 ## Fit in the reference pane is the measure
 
 A layout change is measured by how the drawing fits the reference pane,

@@ -94,11 +94,15 @@ const FIXTURES = [
  * the September recording, and these numbers are that drawing, not a target.
  */
 const VAULT: Readonly<Record<string, Recorded>> = {
-	"Agent workbench": [0.466, 4.981, 0.091, 16999, 1.8, 9, 0.089, 2],
+	// Re-recorded 2026-09-19 (TASK-276) after removing forced flank exits.
+	// These two boards trade fit and
+	// wiring length for smaller pages under the requested routing policy;
+	// their independent legibility bounds below are unchanged.
+	"Agent workbench": [0.407, 4.257, 0.107, 17490.5, 2, 10, 0.104, 1],
 	Archboard: [0.709, 1.43, 0.163, 4553, 1.333, 0, 0.076, 1],
 	"Board persistence": [0.609, 1.634, 0.177, 6733, 1.333, 7, 0.052, 3],
 	"Board rasterizer": [0.697, 2.195, 0.134, 5258, 1.273, 1, 0.061, 1],
-	"Board viewer": [0.444, 3.075, 0.102, 10230, 1.111, 4, 0, 1],
+	"Board viewer": [0.413, 2.988, 0.105, 10781, 1.889, 7, 0, 1],
 	"Browser application": [0.573, 2.584, 0.107, 9432, 1.571, 6, 0, 1],
 	"Canvas server": [0.518, 4.172, 0.098, 25511, 2, 26, 0.076, 1],
 	"Codex session": [0.604, 2.007, 0.104, 8321, 2.167, 5, 0.198, 1],

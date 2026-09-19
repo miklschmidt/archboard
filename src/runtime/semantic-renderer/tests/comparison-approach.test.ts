@@ -1,11 +1,8 @@
-// A proposal's added relationship must not be drawn through what the proposal
-// removed. The removed cards stay in the picture as ghosts, in the rows they
-// had, and a new card lands beside its dependencies in one of those rows; a
-// skip that reaches the new card along that row would cross the ghost.
+// Removed cards remain comparison context, so the routes to a replacement
+// must clear them even though the complete comparison is laid out afresh.
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { along, faceOf, readingOf } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routeCrosses, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /**
@@ -60,7 +57,15 @@ const proposal = VariantContentSchema.parse({
 test("relationships added to a new card do not run through the cards the proposal removed", async () => {
 	const drawing = await renderArchitecture({
 		content: proposal,
-		predecessors: [stacks],
+		standing: {
+			appstack: "removed",
+			reqstack: "removed",
+			cv: "added",
+			e1: "removed",
+			e2: "removed",
+			e4: "added",
+			e5: "added",
+		},
 		theme: "light",
 	});
 	const routes = routePoints(drawing.svg);
@@ -71,10 +76,4 @@ test("relationships added to a new card do not run through the cards the proposa
 			expect(routeCrosses(route, box), `${edge.id} through ${id}`).toBe(false);
 		}
 	}
-	// The two contexts still reach the new card, and the picture kept its rows.
-	const direction = readingOf(drawing);
-	expect(faceOf(routes.get("e5")!.at(-1)!, drawing.atlas.nodes["cv"]!, direction)).toBe("behind");
-	expect(along(drawing.atlas.nodes["reqctx"]!, direction)).toBeLessThan(
-		along(drawing.atlas.nodes["appctx"]!, direction),
-	);
 });

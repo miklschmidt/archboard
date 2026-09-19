@@ -174,7 +174,6 @@ function levelWith(box: Box, label: Box, axis: "x" | "y", across: number): boole
  * @param label Its measured dimensions.
  * @param obstacles Boxes already enlarged by their required clearance, in the order they are applied.
  * @param ends Where the route leaves its source and reaches its target.
- * @param preferred Inherited position translated with its source card.
  * @param air How much of the run stays clear at each end.
  * @returns Feasible boxes, each as near an end of the route as its interval allows.
  */
@@ -183,7 +182,6 @@ function candidatesOf(
 	label: Box,
 	obstacles: Obstacles,
 	ends: readonly [Point, Point],
-	preferred: Box | undefined,
 	air: number,
 ): Candidate[] {
 	const axis = piece.axis;
@@ -196,11 +194,8 @@ function candidatesOf(
 	const intervals = clearIntervals([[start, end]], obstacles, label, axis, across);
 	return intervals.map(([low, high]) => {
 		// A badge belongs where a reader tracing the line from either card finds
-		// it soonest: as near the nearer end as its clear interval allows, or where
-		// the predecessor had it.
-		const nearest = nearestPlacement(low, high, label, axis, ends);
-		const along =
-			preferred === undefined ? nearest.along : Math.max(low, Math.min(high, preferred[axis]));
+		// it soonest: as near the nearer end as its clear interval allows.
+		const { along } = nearestPlacement(low, high, label, axis, ends);
 		return {
 			box: { ...label, [axis]: along, [cross]: across },
 			length: high - low + label[length],
@@ -282,75 +277,20 @@ function nodeObstacles(drawing: ArchitectureDrawing, header: HeaderSide): Box[] 
 }
 
 /**
- * Translate retained labels with the cards their relationships leave.
- * @param drawing Current solved cards and relationships.
- * @param predecessor Their preceding reading, when this is a comparison.
- * @returns Preferred positions; collision checks still choose the final clear box.
- */
-function inheritedLabels(
-	drawing: ArchitectureDrawing,
-	predecessor?: ArchitectureDrawing,
-): Map<string, Box> {
-	if (predecessor === undefined) return new Map();
-	const previous = new Map(
-		predecessor.edges
-			.filter((edge) => edge.label !== undefined)
-			.map((edge) => [edge.edge.id, edge]),
-	);
-	const previousNodes = new Map(
-		[...predecessor.cards, ...predecessor.containers].map((node) => [
-			node.measured.node.id,
-			node.box,
-		]),
-	);
-	const nodes = new Map(
-		[...drawing.cards, ...drawing.containers].map((node) => [node.measured.node.id, node.box]),
-	);
-	return new Map(
-		drawing.edges.flatMap(({ edge }) => {
-			const before = previous.get(edge.id),
-				source = nodes.get(edge.from),
-				oldSource = previousNodes.get(edge.from);
-			if (
-				before === undefined ||
-				before.edge.from !== edge.from ||
-				before.edge.to !== edge.to ||
-				source === undefined ||
-				oldSource === undefined
-			)
-				return [];
-			return [
-				[
-					edge.id,
-					{
-						...before.label!.box,
-						x: before.label!.box.x + source.x - oldSource.x,
-						y: before.label!.box.y + source.y - oldSource.y,
-					},
-				],
-			];
-		}),
-	);
-}
-
-/**
- * Keep an inherited label near its source, otherwise use the longest clear run.
+ * Place labels on clear runs near their route endpoints.
  *
  * Reserved engine boxes remain a fallback when no clear alternative fits.
  * @param drawing Solved cards and routes, with any reserved label boxes.
  * @param measured Measured labels, including those awaiting their first placement.
- * @param predecessor Previous drawing whose label placement should stay recognizable.
  * @param header Where a frame's title band sits in the solving frame.
  * @returns The one final drawing, with only eligible label boxes replaced.
  */
 function placeLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
-	predecessor: ArchitectureDrawing | undefined,
 	header: HeaderSide,
 ): ArchitectureDrawing {
 	const pieces = piecesOf(drawing.edges);
-	const preferences = inheritedLabels(drawing, predecessor);
 	const labels = new Map(
 		drawing.edges.flatMap(({ edge, label }) =>
 			label === undefined ? [] : [[edge.id, label.box] as const],
@@ -383,7 +323,6 @@ function placeLabelsOnRuns(
 	)) {
 		const label = measured.get(edge.edge.id);
 		if (label === undefined) continue;
-		const preferred = preferences.get(edge.edge.id);
 		const ends: readonly [Point, Point] = [edge.curve.from, pointAt(edge.curve, 1)];
 		const otherLabels = [...grownLabels]
 			.filter(([id]) => id !== edge.edge.id)
@@ -403,7 +342,7 @@ function placeLabelsOnRuns(
 					pieces: grownPieces,
 					ownPiece: index,
 				};
-				for (const candidate of candidatesOf(piece, size, obstacles, ends, preferred, air)) {
+				for (const candidate of candidatesOf(piece, size, obstacles, ends, air)) {
 					if (insidePage(candidate.box, drawing)) found.push(candidate);
 				}
 			}
@@ -417,15 +356,9 @@ function placeLabelsOnRuns(
 		const candidates = roomy.length > 0 ? roomy : candidatesWith(TIGHT_AIR);
 		const chosen = candidates.toSorted(
 			(one, other) =>
-				(preferred === undefined
-					? 0
-					: Math.hypot(one.box.x - preferred.x, one.box.y - preferred.y) -
-						Math.hypot(other.box.x - preferred.x, other.box.y - preferred.y)) ||
 				// Nearest an end first: a reader traces a line from a card and should
 				// meet its words soon; the longest run only breaks the tie.
-				one.reach - other.reach ||
-				other.length - one.length ||
-				one.index - other.index,
+				one.reach - other.reach || other.length - one.length || one.index - other.index,
 		)[0];
 		if (chosen !== undefined) {
 			labels.set(edge.edge.id, chosen.box);

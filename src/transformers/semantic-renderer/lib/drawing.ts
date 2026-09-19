@@ -67,11 +67,11 @@ type FlankRuleName = "bracketed" | "flanked" | "mirrored" | "returns-left";
 
 /** The single geometry result consumed by both SVG painting and the atlas. */
 interface ArchitectureDrawing {
-	/** Which way the page reads, chosen on a first render and kept by a successor. */
+	/** Which way this content reads on the page. */
 	readonly direction: ReadingDirection;
 	/** Whether its layers fold toward the pane's shape, chosen and kept like the direction. */
 	readonly wrapped: boolean;
-	/** Its flank rule, chosen on a first render and kept like the direction. */
+	/** Its flank rule, chosen for this content. */
 	readonly flanks: FlankRuleName;
 	readonly width: number;
 	readonly height: number;
@@ -89,9 +89,8 @@ interface DrawingBridge {
 
 /**
  * The drawing as the painter draws it: the routes with their bridges spliced
- * in, beside the un-bridged routes a successor seeds from. The layout owner
- * returns both, so painter, atlas and interaction share one geometry and a
- * predecessor never seeds a hump.
+ * in, beside the un-bridged routes that identify their corridors. The layout
+ * owner returns both, so painter, atlas and interaction share one geometry.
  */
 interface PaintedDrawing extends ArchitectureDrawing {
 	readonly bridged: {

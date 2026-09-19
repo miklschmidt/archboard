@@ -36,7 +36,6 @@ import type {
 } from "@/shared/semantic-board/index";
 import { layoutCompound } from "@/transformers/semantic-renderer/lib/layout/compound";
 import type {
-	ArchitectureDrawing,
 	PaintedDrawing,
 	ReadingDirection,
 } from "@/transformers/semantic-renderer/lib/drawing";
@@ -86,8 +85,6 @@ interface DiagramRenderRequest {
 	readonly content: VariantContent;
 	/** Current vault presentation, shared by every variant. */
 	readonly policy?: SemanticPolicy;
-	/** Same-view ancestor drawings, oldest first and ending at the direct predecessor. */
-	readonly predecessors?: readonly VariantContent[];
 	/** Which of the two grounds to draw it on. */
 	readonly theme: DiagramTheme;
 	/**
@@ -138,8 +135,8 @@ interface RenderedDiagram {
 	readonly atlas: DiagramAtlas;
 	/**
 	 * Which way an architecture reads: down the page or left to right, the
-	 * renderer's choice on a first render and its predecessor's on a proposal
-	 * (ADR 0028). A sequence reads one way and says nothing.
+	 * renderer's choice for the content being drawn
+	 * (ADR 0032). A sequence reads one way and says nothing.
 	 */
 	readonly readingDirection?: ReadingDirection | undefined;
 }
@@ -180,50 +177,27 @@ function descriptionFor(names: readonly string[]): string | undefined {
 	return names.length === 0 ? undefined : `Grouped by ${names.join(", ")}.`;
 }
 
-/**
- * Resolve each ancestor from the geometry of its own predecessor.
- * @param predecessors The same-view lineage, oldest first.
- * @param index The ancestor whose drawing is needed.
- * @returns Its derived geometry, or no anchor for an empty predecessor view.
- */
-async function layoutPredecessors(
-	predecessors: readonly VariantContent[],
-	index = predecessors.length - 1,
-): Promise<ArchitectureDrawing | undefined> {
-	const predecessor = predecessors[index];
-	if (predecessor === undefined || predecessor.nodes.length === 0) return undefined;
-	return layoutRemembered(predecessors.slice(0, index + 1));
-}
-
-/** How many laid-out lineages are remembered: a few boards' variants, both themes of each. */
+/** How many distinct layouts are remembered across boards, variants and themes. */
 const REMEMBERED_LAYOUTS = 64;
 
-/** Layouts by the lineage they were laid out from, least recently used first. */
+/** Layouts by the content they were laid out from, least recently used first. */
 const layouts = new Map<string, Promise<PaintedDrawing>>();
 
 /**
- * The layout of the last content in a lineage, laid out once per distinct
- * lineage. Layout depends on the content and its predecessors alone, never on
- * the theme or the standing a picture is painted with, and the server draws
- * the same lineage again for every proposal that descends from it, for the
- * other theme and for another pane (docs/design/layout-rules.md section 22).
- * The engine is deterministic, so a remembered layout is the layout.
- * @param lineage The contents, oldest first, the last one to lay out.
- * @returns Its layout.
+ * Lay out each distinct content once, independent of theme and comparison standing.
+ * @param content The architecture to draw.
+ * @returns Its deterministic layout.
  */
-function layoutRemembered(lineage: readonly VariantContent[]): Promise<PaintedDrawing> {
-	const key = JSON.stringify(lineage);
+function layoutRemembered(content: VariantContent): Promise<PaintedDrawing> {
+	const key = JSON.stringify(content);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
 		layouts.set(key, known);
 		return known;
 	}
-	const layout = (async () => {
-		const before = await layoutPredecessors(lineage, lineage.length - 2);
-		const { content } = withStepLines(lineage.at(-1)!);
-		return layoutCompound(content, measureArchitecture(content), before);
-	})();
+	const expanded = withStepLines(content).content;
+	const layout = layoutCompound(expanded, measureArchitecture(expanded));
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.
 	layout.catch(() => layouts.delete(key));
@@ -250,7 +224,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 	}
 
 	const { derived } = withStepLines(request.content);
-	const drawing = await layoutRemembered([...(request.predecessors ?? []), request.content]);
+	const drawing = await layoutRemembered(request.content);
 	const palette = paletteFor(theme);
 	const painting = paintArchitecture(
 		drawing,

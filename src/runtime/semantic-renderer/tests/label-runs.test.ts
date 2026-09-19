@@ -1,6 +1,10 @@
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import reservedCorner from "./reserved-label-corner.json";
+import reservedLane from "./reserved-label-lane.json";
+import { covering, overlaps } from "@/runtime/semantic-renderer/tests/drawn-labels";
+import { labelsOffRuns } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
 import {
 	routeCrosses,
@@ -154,4 +158,22 @@ test("a long relationship's label sits on the run nearest an endpoint that can h
 	const span = Math.hypot(ends[0]!.x - ends[1]!.x, ends[0]!.y - ends[1]!.y);
 	expect(reach, "the label is nearer an end than the middle of its route").toBeLessThan(span / 2);
 	expect(reach, "within a lane and a clearance of the nearer card").toBeLessThanOrEqual(150);
+});
+
+// Reduced from the Public ownership comparison: parallel retained and added
+// relationships need an engine-reserved label just before a rounded corner.
+test("reserved labels keep their whole straight run when a neighboring corner rounds", async () => {
+	const content = VariantContentSchema.parse(reservedCorner);
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	expect(labelsOffRuns(drawing)).toEqual([]);
+});
+
+// Reduced from Common-Weblib public-api-independent: fanning a shared vertical
+// run left its label behind; moving only that label instead covered another route.
+test("reserved labels follow their shared lanes without covering routes, cards or other labels", async () => {
+	const content = VariantContentSchema.parse(reservedLane);
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	expect(labelsOffRuns(drawing)).toEqual([]);
+	expect(covering(drawing)).toEqual([]);
+	expect(overlaps(drawing, content)).toEqual([]);
 });

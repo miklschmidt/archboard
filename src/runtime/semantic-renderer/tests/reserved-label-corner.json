@@ -1,0 +1,120 @@
+{
+	"nodes": [
+		{
+			"id": "kw6lbbtf",
+			"name": "Shared customer databases",
+			"kind": "datastore",
+			"responsibility": "Shared persistence leaves residual schema coupling."
+		},
+		{
+			"id": "Yk7bz2cS",
+			"name": "External + cross-product systems",
+			"kind": "external",
+			"responsibility": "SMS, email and Azure topology remain shared dependencies."
+		},
+		{
+			"id": "Txck393b",
+			"name": "Public-API host",
+			"kind": "service",
+			"responsibility": "Thin .NET Framework 4.7.2 IIS HTTP host."
+		},
+		{
+			"id": "FB5oiRXm",
+			"name": "Common-WebLib.dll",
+			"kind": "module",
+			"responsibility": "One shared release and code-owner boundary."
+		},
+		{
+			"id": "HAGTnr2K",
+			"name": "Customer behavior + DTOs",
+			"kind": "module",
+			"responsibility": "Public contract rules live inside the monolith.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "XLnKM6wi",
+			"name": "Ambient shared glue",
+			"kind": "module",
+			"responsibility": "HttpContext, caches, auth and logging create implicit runtime dependencies.",
+			"parent": "FB5oiRXm"
+		},
+		{
+			"id": "kfNDGF1F",
+			"name": "Common-DataLib",
+			"kind": "module",
+			"responsibility": "Generated LINQ-to-SQL model."
+		}
+	],
+	"edges": [
+		{
+			"id": "DRdfW9ra",
+			"from": "HAGTnr2K",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model"
+		},
+		{
+			"id": "aH2JH59V",
+			"from": "kfNDGF1F",
+			"to": "kw6lbbtf",
+			"kind": "data",
+			"label": "LINQ-to-SQL persistence"
+		},
+		{
+			"id": "UX37LTba",
+			"from": "XLnKM6wi",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model"
+		},
+		{
+			"id": "7Sah5Npk",
+			"from": "XLnKM6wi",
+			"to": "Yk7bz2cS",
+			"kind": "call",
+			"label": "Shared side effects"
+		},
+		{
+			"id": "Y2jnDxOD",
+			"from": "Txck393b",
+			"to": "HAGTnr2K",
+			"kind": "dependency",
+			"label": "Compiles against"
+		},
+		{
+			"id": "1ymkhKlO",
+			"from": "HAGTnr2K",
+			"to": "XLnKM6wi",
+			"kind": "call",
+			"label": "Uses ambient helpers"
+		},
+		{
+			"id": "pu3cHFEc",
+			"from": "HAGTnr2K",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model"
+		},
+		{
+			"id": "YwmZQrSe",
+			"from": "kfNDGF1F",
+			"to": "kw6lbbtf",
+			"kind": "data",
+			"label": "LINQ-to-SQL persistence"
+		},
+		{
+			"id": "5YGlSYox",
+			"from": "XLnKM6wi",
+			"to": "kfNDGF1F",
+			"kind": "data",
+			"label": "Uses generated model"
+		},
+		{
+			"id": "avmOZp0l",
+			"from": "XLnKM6wi",
+			"to": "Yk7bz2cS",
+			"kind": "call",
+			"label": "Shared side effects"
+		}
+	]
+}

@@ -1,8 +1,6 @@
 // Which reading a board is drawn in (ADR 0028).
 //
-// A proposal keeps its predecessor's reading, so a comparison and the
-// transition between two pictures of one board keep the reader's bearings. A
-// first render is settled in every candidate reading and the one that fits
+// Each render is settled in every candidate reading and the one that fits
 // the reference pane best is kept: down the page, left to right, and, for a
 // board with no frame, each of those folded toward the pane's shape the way a
 // long line of text wraps (docs/design/layout-rules.md section 17). A folded
@@ -135,20 +133,15 @@ async function candidate(
 /**
  * The drawing of a board in the reading a reader gets.
  * @param measured The board's measured sizes.
- * @param predecessor The preceding drawing of this view, when there is one.
  * @param settle Settles the board in a reading.
  * @param screen Solves the board once in a reading, labels unreserved, to bound what settling it can fit.
  * @returns The settled drawing, with its reading on it.
  */
 async function chooseReading(
 	measured: MeasuredArchitecture,
-	predecessor: ArchitectureDrawing | undefined,
 	settle: SettleReading,
 	screen?: SettleReading,
 ): Promise<ArchitectureDrawing> {
-	if (predecessor !== undefined) {
-		return settle({ direction: predecessor.direction, wrapped: predecessor.wrapped });
-	}
 	const [first, ...others] = candidatesOf(measured);
 	const [settled, ...screens] = await Promise.all([
 		settle(first!),

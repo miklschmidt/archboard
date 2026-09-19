@@ -54,13 +54,8 @@ test("a new top-entry route preserves room to bridge the crossing beside its fir
 		],
 	});
 
-	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
-	// Which routes cross, and where, follows from the predecessor picture, and
-	// that picture is the engine's once a fanning card's skips are attached by
-	// the engine on a first render (docs/design/layout-rules.md). The reader's
-	// invariant is the bridge rule itself: every proper perpendicular crossing
-	// between two routes, a straight approach (12) away from both routes'
-	// ends, carries a bridge on one of them.
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	// Every proper perpendicular crossing with room for a bridge carries one.
 	const corridors = corridorPoints(drawing.svg);
 	const crossings = perpendicularCrossings(corridors).filter((crossing) =>
 		bridgeHasRoom(crossing, corridors, drawing),

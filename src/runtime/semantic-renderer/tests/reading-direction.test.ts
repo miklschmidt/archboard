@@ -1,7 +1,6 @@
 // Which way a board reads is the renderer's decision (ADR 0028): a first
 // render is settled both ways and the reading that fits the reader's pane
-// better is kept, down the page when they tie; a proposal keeps its
-// predecessor's reading whatever it would choose alone; and the choice is
+// better is kept, down the page when they tie; the choice is
 // deterministic and written on the document for the atlas, the measure
 // script and these tests to read.
 
@@ -91,44 +90,6 @@ describe("a first render reads whichever way fits the pane better", () => {
 	});
 });
 
-describe("a proposal keeps its predecessor's reading", () => {
-	test("whatever it would choose alone", async () => {
-		// A chain reads down; the proposal grows a fan off it that alone reads
-		// right, and still reads down beside its predecessor.
-		const grown = VariantContentSchema.parse({
-			nodes: [...CHAIN.nodes, ...fan(16).nodes.filter((node) => node.id !== "hub")],
-			edges: [
-				...CHAIN.edges,
-				...fan(16).edges.map((edge) => ({ id: edge.id, from: "c", to: edge.to, kind: edge.kind })),
-			],
-		});
-		const alone = await renderArchitecture({ content: grown, theme: "light" });
-		const proposal = await renderArchitecture({
-			content: grown,
-			predecessors: [CHAIN],
-			theme: "light",
-		});
-		expect(alone.readingDirection).toBe("right");
-		expect(proposal.readingDirection).toBe("down");
-		expect(readingOf(proposal)).toBe("down");
-	});
-
-	test("and the other way round", async () => {
-		const trimmed = VariantContentSchema.parse({
-			nodes: fan(16).nodes.slice(0, 3),
-			edges: fan(16).edges.slice(0, 2),
-		});
-		const alone = await renderArchitecture({ content: trimmed, theme: "light" });
-		const proposal = await renderArchitecture({
-			content: trimmed,
-			predecessors: [fan(16)],
-			theme: "light",
-		});
-		expect(alone.readingDirection).toBe("down");
-		expect(proposal.readingDirection).toBe("right");
-	});
-});
-
 /**
  * A pipeline of cards, long enough that a column of it is taller than the pane.
  * @param length How many stages.
@@ -176,15 +137,5 @@ describe("a long flat chain folds toward the pane's shape", () => {
 	test("never inside a frame, which the fold is kept away from", async () => {
 		const drawing = await renderArchitecture({ content: pipeline(12, true), theme: "light" });
 		expect(folded(drawing)).toBe(false);
-	});
-
-	test("and a proposal keeps the fold its predecessor had", async () => {
-		const before = pipeline(12);
-		const content = VariantContentSchema.parse({
-			nodes: [...before.nodes, { id: "side", name: "Side stage", kind: "module" }],
-			edges: [...before.edges, { id: "eside", from: "s3", to: "side", kind: "call" }],
-		});
-		const proposal = await renderArchitecture({ content, predecessors: [before], theme: "light" });
-		expect(folded(proposal)).toBe(true);
 	});
 });

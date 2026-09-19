@@ -11,7 +11,6 @@
 import {
 	drawingOf,
 	findView,
-	predecessorDrawingsOf,
 	resolveVariant,
 	type DiagramGrammar,
 	type DiagramTheme,
@@ -25,11 +24,7 @@ import {
 	type ViewScope,
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
-import {
-	SemanticRenderError,
-	renderSemanticView,
-	type DiagramRenderRequest,
-} from "@/transformers/semantic-renderer/index";
+import { SemanticRenderError, renderSemanticView } from "@/transformers/semantic-renderer/index";
 
 /** What a render of one board asks for. */
 interface BoardRenderChoices {
@@ -88,26 +83,6 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
 }
 
 /**
- * Same-view history for architecture placement, omitted when the renderer will
- * draw a sequence and has no use for architecture coordinates.
- * @param board The board holding the variant family.
- * @param variant The variant being drawn.
- * @param reading The requested grammar and shared scope.
- * @param reading.scope The selection applied to every ancestor.
- * @param reading.grammar The grammar deciding whether lineage is relevant.
- * @returns The architecture lineage field, or no field for data flow.
- */
-function predecessorsFor(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-	reading: { scope: ViewScope; grammar: DiagramGrammar },
-): Pick<DiagramRenderRequest, "predecessors"> {
-	return reading.grammar === "architecture"
-		? { predecessors: predecessorDrawingsOf(board, variant, reading.scope) }
-		: {};
-}
-
-/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
@@ -154,7 +129,6 @@ async function drawnReply(
 			grammar: reading.grammar,
 			theme: how.theme,
 			fonts: how.fonts,
-			...predecessorsFor(board, variant, reading),
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 		});

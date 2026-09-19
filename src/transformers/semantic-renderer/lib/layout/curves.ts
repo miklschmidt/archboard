@@ -275,7 +275,7 @@ function endOf(segments: readonly Segment[], first: Point): Point {
  * @param reserved How much of the incoming and outgoing legs the route's ends need left straight.
  * @param reserved.entering How much of the incoming leg to leave alone.
  * @param reserved.leaving How much of the outgoing leg to leave alone.
- * @param maximum The radius allowed by nearby perpendicular crossings.
+ * @param maximum The radius allowed by nearby crossings and a reserved label.
  * @returns The segments to append.
  */
 function bendThrough(
@@ -368,13 +368,52 @@ function crossingRadius(corner: Corner, crossings: readonly Point[] | undefined)
 }
 
 /**
+ * How far a corner may round along one leg before reaching its reserved label.
+ * @param vertex The corner.
+ * @param end The far end of the leg.
+ * @param label The reserved label footprint.
+ * @returns Its distance along the leg, or infinity when the label does not meet it.
+ */
+function labelClearance(vertex: Point, end: Point, label: Box): number {
+	const [axis, cross, extent, breadth] =
+		end.x === vertex.x
+			? (["y", "x", "height", "width"] as const)
+			: (["x", "y", "width", "height"] as const);
+	if (vertex[cross] < label[cross] || vertex[cross] > label[cross] + label[breadth])
+		return Infinity;
+	return (
+		Math.min(
+			...[label[axis], label[axis] + label[extent]].map(
+				(at) => distanceOnLeg(vertex, end, { ...vertex, [axis]: at }) ?? Infinity,
+			),
+		) - EPSILON
+	);
+}
+
+/**
+ * Keep the engine's reserved label on its straight run when a nearby turn rounds.
+ * @param corner The turn and its two legs.
+ * @param label The route's reserved label, if one was needed.
+ * @returns The usual radius, reduced only where a leg meets the label footprint.
+ */
+function labelRadius(corner: Corner, label: Box | undefined): number {
+	return label === undefined
+		? BEND_RADIUS_MAX
+		: Math.min(
+				BEND_RADIUS_MAX,
+				...[corner.previous, corner.next].map((end) => labelClearance(corner.vertex, end, label)),
+			);
+}
+
+/**
  * The polyline as one continuous line: long runs stay dead straight and only
  * the turns curve.
  * @param points The waypoints.
  * @param crossings Proper crossings whose bridge clearance must remain straight.
+ * @param label The reserved label whose footprint must remain straight.
  * @returns The route.
  */
-function curveThrough(points: readonly Point[], crossings?: readonly Point[]): Curve {
+function curveThrough(points: readonly Point[], crossings?: readonly Point[], label?: Box): Curve {
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
 	const last = points.length - 1;
@@ -392,7 +431,7 @@ function curveThrough(points: readonly Point[], crossings?: readonly Point[]): C
 						entering: index === 1 ? APPROACH_STRAIGHT : 0,
 						leaving: index === last - 1 ? APPROACH_STRAIGHT : 0,
 					},
-					crossingRadius(corner, crossings),
+					Math.min(crossingRadius(corner, crossings), labelRadius(corner, label)),
 				),
 			);
 		}

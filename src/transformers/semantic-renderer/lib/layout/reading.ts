@@ -171,16 +171,6 @@ function walksBackward(face: string | undefined): boolean {
 }
 
 /**
- * The flank two attachments share, when both lie on the same one.
- * @param side The source's face.
- * @param targetSide The target's face.
- * @returns The shared flank, or nothing.
- */
-function sharedFlank(side: string | undefined, targetSide: string | undefined): Flank | undefined {
-	return isFlank(side) && side === targetSide ? side : undefined;
-}
-
-/**
  * A face read back from the engine's port option, which is a string.
  * @param value The option's value.
  * @returns The face.
@@ -192,13 +182,8 @@ function asFace(value: string | undefined): Face {
 	return face;
 }
 
-/**
- * The flank a crossing bundles down when it cannot take the face it travels:
- * the one the title band is not on, which is the beside flank with the title
- * on top and the frame's foot on the page with the title on the left. A
- * crossing never runs across a title.
- */
-const CLEAR_OF_BAND: Record<HeaderSide, Flank> = { NORTH: "WEST", WEST: "EAST" };
+/** A route entering through the title instead takes this clear flank. */
+const HEADER_DETOUR: Record<HeaderSide, Flank> = { NORTH: "WEST", WEST: "EAST" };
 
 /**
  * The flank at the higher coordinate across the reading: the one the engine
@@ -211,35 +196,17 @@ function farFlank(): Flank {
 }
 
 /**
- * The face a route crosses a frame boundary by, given the face it would
- * otherwise take.
- *
- * A crossing normally takes a flank, so routes through a frame bundle down one
- * edge of it rather than cutting across its middle, and a route already
- * travelling a flank keeps the one it is on.
- *
- * A route that must not be reordered against a sister crosses straight on by
- * the face it travels instead. The engine will not be told where a crossing
- * sits: it ignores the index a boundary port carries and seats the crossings
- * of a face itself, in the order it walks the source's face — which is the
- * reverse of the order a reader follows them in when they bundle down the
- * flank `CLEAR_OF_BAND` names, so two relationships sharing both endpoints
- * meet twice there and not at all going straight through (TASK-258).
- *
- * The title band is the frame's own and never a corridor, so a route whose
- * face is the band bundles even when it must not be reordered — and then down
- * the far flank, where the engine's seating agrees with the order a reader
- * follows. That case is a route into a frame with its title on top; with the
- * title on the left the two flanks are the same one and the choice does not
- * arise.
- * @param face The face the route leaves or arrives by.
- * @param header Where the frame's title band sits.
- * @param straight Whether the route carries on by the face it travels rather than bundling down a flank.
- * @returns The face of the frame the crossing takes.
+ * Cross a frame in the relationship's direction. Only the title band changes
+ * that direction: a route cannot run through the frame's own words. A pair
+ * takes the far flank there so the engine preserves its endpoint order.
+ * @param face The endpoint's attachment face.
+ * @param header The frame's title side.
+ * @param paired Whether another relationship shares both endpoints.
+ * @returns The crossing face, clear of the title.
  */
-function crossingFace(face: Face, header: HeaderSide, straight: boolean): Face {
-	if (face !== header && (straight || isFlank(face))) return face;
-	return straight ? farFlank() : CLEAR_OF_BAND[header];
+function crossingFace(face: Face, header: HeaderSide, paired: boolean): Face {
+	if (face !== header) return face;
+	return paired ? farFlank() : HEADER_DETOUR[header];
 }
 
 /** How each face lies on a box: the axis along it, the one across it, and whether it is the far side. */
@@ -254,15 +221,6 @@ const FACE_GEOMETRY: Record<
 };
 
 /**
- * How a face lies on a box.
- * @param face The face.
- * @returns The axis along it, the axis across it, and whether it is the far side.
- */
-function faceGeometry(face: Face): (typeof FACE_GEOMETRY)[Face] {
-	return FACE_GEOMETRY[face];
-}
-
-/**
  * The coordinate across a face: where the face lies on its box.
  * @param face The face.
  * @param box The box.
@@ -271,21 +229,6 @@ function faceGeometry(face: Face): (typeof FACE_GEOMETRY)[Face] {
 function faceLine(face: Face, box: Box): number {
 	const { across, far } = FACE_GEOMETRY[face];
 	return box[across] + (far ? box[across === "x" ? "width" : "height"] : 0);
-}
-
-/**
- * A point on a face, some way along it.
- * @param face The face.
- * @param box The box.
- * @param fraction How far along the face, from 0 to 1.
- * @returns The point.
- */
-function pointOnFace(face: Face, box: Box, fraction: number): Point {
-	const { along } = FACE_GEOMETRY[face];
-	const alongStart = box[along] + box[along === "x" ? "width" : "height"] * fraction;
-	return along === "x"
-		? { x: alongStart, y: faceLine(face, box) }
-		: { x: faceLine(face, box), y: alongStart };
 }
 
 /**
@@ -421,8 +364,7 @@ function transposeEdge(edge: DrawingEdge): DrawingEdge {
 
 /**
  * A drawing with its axes swapped: the solved transposed problem turned back
- * onto the page, or a page drawing turned into the solving frame to seed a
- * successor. Its direction is what it was.
+ * onto the page. Its direction is what it was.
  * @param drawing The drawing.
  * @returns The same drawing in the other frame.
  */
@@ -476,7 +418,6 @@ export {
 	crossingFace,
 	drawingAcross,
 	faceDistance,
-	faceGeometry,
 	headerAxis,
 	headerInsets,
 	headerSideOf,
@@ -486,8 +427,6 @@ export {
 	nearestFace,
 	opposite,
 	pageFace,
-	pointOnFace,
-	sharedFlank,
 	transposeBox,
 	transposePoint,
 	walksBackward,

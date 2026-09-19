@@ -30,7 +30,7 @@ test("a skip a proposal adds beside its own chain is still drawn beside that cha
 			{ id: "skip", from: "source", to: "target", kind: "data", label: "complete drawing" },
 		],
 	});
-	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
+	const drawing = await renderArchitecture({ content, theme: "light" });
 	const direction = readingOf(drawing);
 	const points = routePoints(drawing.svg).get("skip")!;
 	// The card it skips stays on one side of it: the skip runs beside that

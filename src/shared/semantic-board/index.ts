@@ -137,7 +137,6 @@ export {
 export { scopedContent, findView } from "@/shared/semantic-board/lib/scope";
 export {
 	drawingOf,
-	predecessorDrawingsOf,
 	type DrawnChanges,
 	type DrawnProposal,
 } from "@/shared/semantic-board/lib/drawing";

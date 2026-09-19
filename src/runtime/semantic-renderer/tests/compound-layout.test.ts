@@ -25,7 +25,7 @@ const NESTED = VariantContentSchema.parse({
 });
 
 describe("compound architecture layout", () => {
-	test("predecessor boundary routes avoid cards after a nested insertion", async () => {
+	test("boundary routes avoid cards around nested content", async () => {
 		const content = VariantContentSchema.parse({
 			nodes: [
 				...NESTED.nodes,
@@ -37,7 +37,7 @@ describe("compound architecture layout", () => {
 				{ id: "newout", from: "added", to: "sink", kind: "call" },
 			],
 		});
-		const drawing = await renderArchitecture({ content, predecessors: [NESTED], theme: "light" });
+		const drawing = await renderArchitecture({ content, theme: "light" });
 		const routes = routePoints(drawing.svg);
 		for (const edge of content.edges) {
 			for (const id of ["entry", "worker", "added", "sink"]) {
