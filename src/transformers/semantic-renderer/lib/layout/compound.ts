@@ -4,7 +4,7 @@ import type { ElkExtendedEdge, ElkNode, ElkShape } from "@archboard/elk-rs";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
 	PaintedDrawing,
@@ -41,6 +41,7 @@ import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
 interface Problem {
 	readonly content: VariantContent;
 	readonly measured: MeasuredArchitecture;
+	readonly standings?: Readonly<Record<string, ChangeKind>> | undefined;
 	readonly columns: number;
 }
 
@@ -165,13 +166,15 @@ function drawingEdges(
  * Route with measured spacing, reserving only labels that need their own layer.
  * @param content The architecture meaning, including its containment links.
  * @param measured Fixed card and label dimensions and minimum frame dimensions.
+ * @param standings Comparison standings used to distinguish marked relationship channels.
  * @returns The only placement, routing and label result consumed by painting.
  */
 async function layoutCompound(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
+	standings?: Readonly<Record<string, ChangeKind>>,
 ): Promise<PaintedDrawing> {
-	const problem: Problem = { content, measured, columns: 1 };
+	const problem: Problem = { content, measured, standings, columns: 1 };
 	const baseline = await settleReading(problem);
 	const drawing = await chooseReading(problem, baseline);
 	// Bridges are settled here as part of the geometry a reader sees.
@@ -287,7 +290,7 @@ function graphForLabels(
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 ): ElkNode {
 	const { content, measured } = problem;
-	const graph = compoundGraph(content, measured);
+	const graph = compoundGraph(content, measured, problem.standings);
 
 	for (const edge of graph.edges ?? []) {
 		if (!reserved.has(edge.id)) edge.labels = [];

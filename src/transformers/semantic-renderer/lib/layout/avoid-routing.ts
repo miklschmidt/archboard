@@ -20,7 +20,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 import {
 	alignedPins,
-	relationshipKind,
+	relationshipChannel,
 	type AlignedPin,
 	type AlignedPins,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
@@ -45,7 +45,7 @@ class RoutingScene {
 	private readonly obstacles = new Map<string, Box>();
 	private readonly shapes = new Map<string, object>();
 	private readonly classes = new Map<string, number>();
-	private readonly kinds = new Map<string, readonly string[]>();
+	private readonly channels = new Map<string, readonly string[]>();
 	private aligned: AlignedPins = new Map();
 
 	/**
@@ -100,37 +100,42 @@ class RoutingScene {
 	}
 
 	/**
-	 * Group shared ports by semantic relationship kind at each endpoint.
+	 * Group shared ports by relationship kind, standing, and local direction.
 	 * @param edges All relationships, before native connectors are registered.
 	 */
 	ports(edges: readonly ElkExtendedEdge[]): void {
-		const kinds = new Map<string, Set<string>>();
+		const channels = new Map<string, Set<string>>();
 		for (const edge of edges) {
-			const kind = relationshipKind(edge);
 			for (const id of [...edge.sources, ...edge.targets]) {
-				const present = kinds.get(id) ?? new Set<string>();
-				present.add(kind);
-				kinds.set(id, present);
+				const present = channels.get(id) ?? new Set<string>();
+				present.add(relationshipChannel(edge, id));
+				channels.set(id, present);
 			}
 		}
-		for (const [id, present] of kinds) this.kinds.set(id, [...present].toSorted());
-		this.aligned = alignedPins(this.nodes, this.kinds, edges);
+		for (const [id, present] of channels) this.channels.set(id, [...present].toSorted());
+		this.aligned = alignedPins(this.nodes, this.channels, edges);
 	}
 
 	/**
 	 * Add aligned physical alternatives under the card's ordinary shared native class.
 	 * @param id Card identity.
-	 * @param kind Semantic relationship kind.
-	 * @param position Ordinary proportional kind position.
-	 * @returns The native endpoint shared by all relationships of this kind.
+	 * @param channel Relationship channel.
+	 * @param position Ordinary proportional channel position.
+	 * @returns The native endpoint shared by all relationships in this channel.
 	 */
-	private cardPin(id: string, kind: string, position: number): ConnectionEnd {
+	private cardPin(id: string, channel: string, position: number): ConnectionEnd {
 		const key = `${id}:any:${position}`;
 		let pinClass = this.classes.get(key);
 		const shape = this.shapes.get(id)!;
 		if (pinClass === undefined) {
 			pinClass = this.classes.size + 1;
-			this.registerCardPins(id, kind, pinClass, position, this.aligned.get(id)?.get(kind) ?? []);
+			this.registerCardPins(
+				id,
+				channel,
+				pinClass,
+				position,
+				this.aligned.get(id)?.get(channel) ?? [],
+			);
 			this.classes.set(key, pinClass);
 		}
 		return new this.avoid.ConnEnd(shape, pinClass);
@@ -139,25 +144,25 @@ class RoutingScene {
 	/**
 	 * On matched faces, register only clear aligned positions; keep seeds on other faces.
 	 * @param id Native card identity.
-	 * @param kind Shared relationship kind.
-	 * @param pinClass Shared relationship-kind class.
-	 * @param position Ordinary kind position.
+	 * @param channel Shared relationship channel.
+	 * @param pinClass Shared relationship-channel class.
+	 * @param position Ordinary channel position.
 	 * @param pins Clear matched alternatives.
 	 */
 	private registerCardPins(
 		id: string,
-		kind: string,
+		channel: string,
 		pinClass: number,
 		position: number,
 		pins: readonly AlignedPin[],
 	): void {
 		for (const face of FACES) {
-			if (!this.endpoints.allows(id, kind, face)) continue;
+			if (!this.endpoints.allows(id, channel, face)) continue;
 			if (!pins.some((pin) => pin.face === face))
 				this.registerPins(id, pinClass, [SIDES[face]], position);
 		}
 		for (const pin of pins) {
-			if (this.endpoints.allows(id, kind, pin.face))
+			if (this.endpoints.allows(id, channel, pin.face))
 				this.registerPins(id, pinClass, [SIDES[pin.face]], pin.position);
 		}
 	}
@@ -228,23 +233,23 @@ class RoutingScene {
 	 * @param id The semantic endpoint.
 	 * @param other The opposite semantic endpoint.
 	 * @param source Whether this is the source, distinguishing self-loop ends.
-	 * @param kind The shared semantic port group.
+	 * @param channel The relationship channel.
 	 * @returns An owned native endpoint.
 	 */
-	private endpoint(id: string, other: string, source: boolean, kind: string): ConnectionEnd {
+	private endpoint(id: string, other: string, source: boolean, channel: string): ConnectionEnd {
 		const node = this.nodes.get(id)!;
 		const target = this.nodes.get(other)!;
-		const kinds = this.kinds.get(id)!;
-		const index = kinds.indexOf(kind);
-		const position = (index + 0.5) / kinds.length;
+		const channels = this.channels.get(id)!;
+		const index = channels.indexOf(channel);
+		const position = (index + 0.5) / channels.length;
 		if (node === target)
 			return this.pin(
 				id,
 				source ? "EAST" : "SOUTH",
-				(index + (source ? 1 / 3 : 2 / 3)) / kinds.length,
+				(index + (source ? 1 / 3 : 2 / 3)) / channels.length,
 			);
-		if (!node.children?.length) return this.cardPin(id, kind, position);
-		return this.frameEndpoint(node, target, source, position, kind);
+		if (!node.children?.length) return this.cardPin(id, channel, position);
+		return this.frameEndpoint(node, target, source, position, channel);
 	}
 
 	/**
@@ -252,8 +257,8 @@ class RoutingScene {
 	 * @param node The semantic frame.
 	 * @param target The other endpoint.
 	 * @param source Whether this end has no incoming arrowhead.
-	 * @param position The shared kind position on each candidate face.
-	 * @param kind Shared relationship kind whose rejected faces remain unavailable.
+	 * @param position The shared channel position on each candidate face.
+	 * @param channel Shared relationship channel whose rejected faces remain unavailable.
 	 * @returns An owned native endpoint.
 	 */
 	private frameEndpoint(
@@ -261,14 +266,14 @@ class RoutingScene {
 		target: ElkNode,
 		source: boolean,
 		position: number,
-		kind: string,
+		channel: string,
 	): ConnectionEnd {
 		const solid = obstacleOf(node);
 		const preferred = endpointFace(node, target);
 		const { side, at } =
 			source || internalFrame(node, target)
 				? { side: preferred, at: facePoint(boxOf(node), preferred, position) }
-				: this.arrivalPoint(node, target, position, kind);
+				: this.arrivalPoint(node, target, position, channel);
 		if (internalFrame(node, target)) return this.pin(node.id, side, position);
 		const onSolid = positionOnFace(solid, side, at);
 		if (onSolid !== undefined) return this.pin(node.id, side, onSolid);
@@ -289,18 +294,18 @@ class RoutingScene {
 	 * face remains open; the frame's placement and insets do not need to grow.
 	 * @param node The destination frame.
 	 * @param target The source subject.
-	 * @param position The shared kind position on each candidate face.
-	 * @param kind Shared relationship kind whose rejected faces remain unavailable.
+	 * @param position The shared channel position on each candidate face.
+	 * @param channel Shared relationship channel whose rejected faces remain unavailable.
 	 * @returns The nearest clear endpoint, or nearest candidate for native validation if crowded.
 	 */
 	private arrivalPoint(
 		node: ElkNode,
 		target: ElkNode,
 		position: number,
-		kind: string,
+		channel: string,
 	): { side: Face; at: Point } {
 		const toward = boxCentre(boxOf(target));
-		const candidates = FACES.filter((side) => this.endpoints.allows(node.id, kind, side))
+		const candidates = FACES.filter((side) => this.endpoints.allows(node.id, channel, side))
 			.map((side) => ({
 				side,
 				at: frameArrivalPoint(node, side, position),
@@ -322,7 +327,7 @@ class RoutingScene {
 	 * @param frame The destination identity.
 	 * @param side Its candidate face.
 	 * @param at Its perimeter endpoint.
-	 * @param position The shared kind position.
+	 * @param position The shared channel position.
 	 * @returns Whether its head and bend footprint is unobstructed.
 	 */
 	private clearArrival(frame: string, side: Face, at: Point, position: number): boolean {
@@ -342,7 +347,7 @@ class RoutingScene {
 	 * @param id The semantic frame.
 	 * @param at Its visible perimeter endpoint.
 	 * @param side Its outward face.
-	 * @param position The shared kind position.
+	 * @param position The shared channel position.
 	 * @returns The native endpoint shared by arrivals on this face.
 	 */
 	private frameArrival(id: string, at: Point, side: Face, position: number): ConnectionEnd {
@@ -383,9 +388,8 @@ class RoutingScene {
 	relationship(edge: ElkExtendedEdge): Connection[] {
 		const from = edge.sources[0]!;
 		const to = edge.targets[0]!;
-		const kind = relationshipKind(edge);
-		const source = this.endpoint(from, to, true, kind);
-		const target = this.endpoint(to, from, false, kind);
+		const source = this.endpoint(from, to, true, relationshipChannel(edge, from));
+		const target = this.endpoint(to, from, false, relationshipChannel(edge, to));
 		if (forcedLabel(edge)) {
 			const sourceBox = boxOf(this.nodes.get(from)!);
 			const targetBox = boxOf(this.nodes.get(to)!);
@@ -424,7 +428,7 @@ function nodeInset(node: ElkNode | undefined): number {
 
 /**
  * Locate a semantic perimeter point on a solid title face when they overlap.
- * A kind port can meet the title partway down a frame's east or west face.
+ * A channel port can meet the title partway down a frame's east or west face.
  * @param box The title obstacle.
  * @param side The semantic endpoint face.
  * @param at The actual perimeter point.

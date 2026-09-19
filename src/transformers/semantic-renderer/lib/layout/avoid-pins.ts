@@ -36,9 +36,9 @@ function nearby(box: Box, one: AlignedPin, two: AlignedPin, distance: number): b
 }
 
 /**
- * Shared kind ports exist at their proportional position on every card face.
- * @param index Kind's sorted index.
- * @param count Number of kinds.
+ * Shared connection-channel ports exist at their proportional position on every card face.
+ * @param index Channel's sorted index.
+ * @param count Number of channels.
  * @param face Card face.
  * @returns The ordinary shared pin.
  */
@@ -68,8 +68,8 @@ function preferredCoordinate(
 
 /**
  * A self-loop uses two private native classes, so neither can be shared with an aligned pin.
- * @param index Kind's sorted index.
- * @param count Number of kinds.
+ * @param index Channel's sorted index.
+ * @param count Number of channels.
  * @returns Private east and south pins.
  */
 function selfLoopPins(index: number, count: number): readonly AlignedPin[] {
@@ -133,13 +133,13 @@ class PinCandidates {
 	/**
 	 * Gather private self-loop coordinates before evaluating ordinary edges.
 	 * @param nodes Placed scene nodes.
-	 * @param kinds Sorted kinds at every endpoint.
+	 * @param channels Sorted connection channels at every endpoint.
 	 * @param edges All scene relationships.
 	 * @param offered Feasible first-pass pins whose replaced seeds need no clearance.
 	 */
 	constructor(
 		private readonly nodes: ReadonlyMap<string, ElkNode>,
-		private readonly kinds: ReadonlyMap<string, readonly string[]>,
+		private readonly channels: ReadonlyMap<string, readonly string[]>,
 		private readonly edges: readonly ElkExtendedEdge[],
 		private readonly offered: AlignedPins = new Map(),
 	) {
@@ -147,7 +147,7 @@ class PinCandidates {
 			if (edge.sources[0] !== edge.targets[0]) continue;
 			const id = edge.sources[0]!;
 			const present = this.selfLoops.get(id) ?? new Set<string>();
-			present.add(relationshipKind(edge));
+			present.add(relationshipChannel(edge, id));
 			this.selfLoops.set(id, present);
 		}
 	}
@@ -160,27 +160,44 @@ class PinCandidates {
 		const source = this.nodes.get(edge.sources[0]!)!;
 		const target = this.nodes.get(edge.targets[0]!)!;
 		if (source === target || !ordinaryCard(source) || !ordinaryCard(target)) return;
-		this.addCardPair(source, target, relationshipKind(edge), edge.id, anchorCoordinate(edge));
+		this.addCardPair(
+			source,
+			target,
+			relationshipChannel(edge, source.id),
+			relationshipChannel(edge, target.id),
+			edge.id,
+			anchorCoordinate(edge),
+		);
 	}
 
 	/**
 	 * Try feasible candidates from nearest to farthest from the balanced center.
 	 * @param source Source card.
 	 * @param target Target card.
-	 * @param kind Shared semantic kind.
+	 * @param sourceChannel Source endpoint's connection channel.
+	 * @param targetChannel Target endpoint's connection channel.
 	 * @param edgeId Relationship whose own label remains traversable.
 	 * @param anchor Optional reserved-label center on the horizontal axis.
 	 */
 	private addCardPair(
 		source: ElkNode,
 		target: ElkNode,
-		kind: string,
+		sourceChannel: string,
+		targetChannel: string,
 		edgeId: string,
 		anchor?: number,
 	): void {
 		for (const axis of candidates(boxOf(source), boxOf(target), anchor)) {
 			for (const [from, to] of axis) {
-				const accepted = this.addPair(source.id, target.id, kind, from, to, edgeId);
+				const accepted = this.addPair(
+					source.id,
+					target.id,
+					sourceChannel,
+					targetChannel,
+					from,
+					to,
+					edgeId,
+				);
 				if (accepted) break;
 			}
 		}
@@ -190,7 +207,8 @@ class PinCandidates {
 	 * Reserve a candidate only when both endpoint pins have room.
 	 * @param source Source identity.
 	 * @param target Target identity.
-	 * @param kind Shared semantic kind.
+	 * @param sourceChannel Source endpoint's connection channel.
+	 * @param targetChannel Target endpoint's connection channel.
 	 * @param from Source candidate.
 	 * @param to Target candidate.
 	 * @param edgeId Relationship whose own label remains traversable.
@@ -199,15 +217,17 @@ class PinCandidates {
 	private addPair(
 		source: string,
 		target: string,
-		kind: string,
+		sourceChannel: string,
+		targetChannel: string,
 		from: AlignedPin,
 		to: AlignedPin,
 		edgeId: string,
 	): boolean {
-		if (!this.available(source, kind, from) || !this.available(target, kind, to)) return false;
+		if (!this.available(source, sourceChannel, from) || !this.available(target, targetChannel, to))
+			return false;
 		if (!this.clearSegment(source, target, from, to, edgeId)) return false;
-		this.record(source, kind, from);
-		this.record(target, kind, to);
+		this.record(source, sourceChannel, from);
+		this.record(target, targetChannel, to);
 		return true;
 	}
 
@@ -260,34 +280,34 @@ class PinCandidates {
 	}
 
 	/**
-	 * Check every other shared class and all private self-loop pin locations.
+	 * Check every other shared channel and all private self-loop pin locations.
 	 * @param id Card identity.
-	 * @param kind Candidate kind.
+	 * @param channel Candidate connection channel.
 	 * @param pin Candidate physical pin.
 	 * @returns Whether it has room.
 	 */
-	private available(id: string, kind: string, pin: AlignedPin): boolean {
+	private available(id: string, channel: string, pin: AlignedPin): boolean {
 		const box = boxOf(this.nodes.get(id)!);
-		const kinds = this.kinds.get(id)!;
-		return kinds.every((other, index) =>
-			this.freeOfKind(id, kind, pin, box, other, index, kinds.length),
+		const channels = this.channels.get(id)!;
+		return channels.every((other, index) =>
+			this.freeOfChannel(id, channel, pin, box, other, index, channels.length),
 		);
 	}
 
 	/**
 	 * An aligned pin may reuse its own class, but not another class's physical pin.
 	 * @param id Card identity.
-	 * @param kind Candidate kind.
+	 * @param channel Candidate connection channel.
 	 * @param pin Candidate physical pin.
 	 * @param box Card bounds.
-	 * @param other Existing kind.
-	 * @param index Other kind's sorted index.
-	 * @param count Number of kinds on the card.
-	 * @returns Whether the other kind has no nearby physical pin.
+	 * @param other Existing channel.
+	 * @param index Other channel's sorted index.
+	 * @param count Number of channels on the card.
+	 * @returns Whether the other channel has no nearby physical pin.
 	 */
-	private freeOfKind(
+	private freeOfChannel(
 		id: string,
-		kind: string,
+		channel: string,
 		pin: AlignedPin,
 		box: Box,
 		other: string,
@@ -295,7 +315,8 @@ class PinCandidates {
 		count: number,
 	): boolean {
 		const loop = this.selfLoops.get(id)?.has(other) ? selfLoopPins(index, count) : [];
-		const shared = other === kind ? [] : this.sharedPins(id, other, seed(index, count, pin.face));
+		const shared =
+			other === channel ? [] : this.sharedPins(id, other, seed(index, count, pin.face));
 		return ![...loop, ...shared].some((reserved) =>
 			nearby(box, pin, reserved, ROUTE_NUDGE_DISTANCE),
 		);
@@ -304,49 +325,49 @@ class PinCandidates {
 	/**
 	 * Keep only physical pins that native registration will actually offer.
 	 * @param id Card identity.
-	 * @param kind Other relationship kind.
+	 * @param channel Other relationship channel.
 	 * @param fallback Seed used when no matched candidate replaces this face.
 	 * @returns Previously feasible and newly selected pins.
 	 */
-	private sharedPins(id: string, kind: string, fallback: AlignedPin): readonly AlignedPin[] {
-		const offered = this.offered.get(id)?.get(kind) ?? [];
+	private sharedPins(id: string, channel: string, fallback: AlignedPin): readonly AlignedPin[] {
+		const offered = this.offered.get(id)?.get(channel) ?? [];
 		const seeds = offered.some((pin) => pin.face === fallback.face) ? [] : [fallback];
-		return [...seeds, ...offered, ...(this.pins.get(id)?.get(kind) ?? [])];
+		return [...seeds, ...offered, ...(this.pins.get(id)?.get(channel) ?? [])];
 	}
 
 	/**
 	 * Keep the accepted physical pin, including when it replaces the ordinary seed.
 	 * @param id Card identity.
-	 * @param kind Semantic relationship kind.
+	 * @param channel Connection channel.
 	 * @param pin Candidate physical pin.
 	 */
-	private record(id: string, kind: string, pin: AlignedPin): void {
-		const byKind = this.pins.get(id) ?? new Map<string, AlignedPin[]>();
-		const pins = byKind.get(kind) ?? [];
+	private record(id: string, channel: string, pin: AlignedPin): void {
+		const byChannel = this.pins.get(id) ?? new Map<string, AlignedPin[]>();
+		const pins = byChannel.get(channel) ?? [];
 		const box = boxOf(this.nodes.get(id)!);
 		if (!pins.some((prior) => nearby(box, pin, prior, 0.000001))) pins.push(pin);
-		byKind.set(kind, pins);
-		this.pins.set(id, byKind);
+		byChannel.set(channel, pins);
+		this.pins.set(id, byChannel);
 	}
 }
 
 /**
- * Return optional shared-class pins for ordinary card ends, keyed by node and kind.
+ * Return optional shared-class pins for ordinary card ends, keyed by node and channel.
  * @param nodes Placed scene nodes.
- * @param kinds Sorted kinds at every endpoint.
+ * @param channels Sorted connection channels at every endpoint.
  * @param edges All scene relationships.
  * @returns Available aligned pins.
  */
 export function alignedPins(
 	nodes: ReadonlyMap<string, ElkNode>,
-	kinds: ReadonlyMap<string, readonly string[]>,
+	channels: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],
 ): AlignedPins {
 	// The first pass protects every seed. The refinement can release seeds
 	// replaced by real matched pins, without losing those feasible alternatives.
-	const selected = new PinCandidates(nodes, kinds, edges);
+	const selected = new PinCandidates(nodes, channels, edges);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) selected.add(edge);
-	const refined = new PinCandidates(nodes, kinds, edges, selected.pins);
+	const refined = new PinCandidates(nodes, channels, edges, selected.pins);
 	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) refined.add(edge);
 	return refined.pins;
 }
@@ -383,4 +404,26 @@ function ordinaryCard(node: ElkNode): boolean {
  */
 export function relationshipKind(edge: ElkExtendedEdge): string {
 	return edge.layoutOptions?.["archboard.relationship.kind"] ?? "";
+}
+
+/**
+ * Return the channel an edge occupies at one of its endpoints.
+ *
+ * Same-kind relationships may share a trunk when they have the same local
+ * direction, but an incoming relationship must not reuse an outgoing one. A
+ * comparison standing is part of the visible identity of a connection, so it
+ * also gets its own channel whenever the render is a proposal.
+ * @param edge One routed relationship.
+ * @param endpoint The endpoint whose physical port is being allocated.
+ * @returns A stable channel key.
+ */
+export function relationshipChannel(edge: ElkExtendedEdge, endpoint: string): string {
+	const source = edge.sources[0]!;
+	const target = edge.targets[0]!;
+	const direction = source === target ? "self" : endpoint === source ? "outgoing" : "incoming";
+	return JSON.stringify([
+		relationshipKind(edge),
+		edge.layoutOptions?.["archboard.relationship.standing"] ?? "",
+		direction,
+	]);
 }

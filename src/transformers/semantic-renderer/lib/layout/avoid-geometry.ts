@@ -40,10 +40,10 @@ export function obstacleOf(node: ElkNode): Box {
 }
 
 /**
- * Locate a shared relationship-kind pin on a physical face.
+ * Locate a shared relationship-channel pin on a physical face.
  * @param box The semantic shape or title band.
  * @param side Its face.
- * @param position The proportional position along that face.
+ * @param position The proportional channel position along that face.
  * @returns The visible endpoint.
  */
 export function facePoint(box: Box, side: Face, position = 0.5): Point {
@@ -60,7 +60,7 @@ export function facePoint(box: Box, side: Face, position = 0.5): Point {
  * the separate solid title obstacle.
  * @param node The destination frame.
  * @param side Its candidate perimeter face.
- * @param position The shared relationship-kind fraction along that face.
+ * @param position The shared relationship-channel fraction along that face.
  * @returns A point on the visible frame perimeter.
  */
 export function frameArrivalPoint(node: ElkNode, side: Face, position: number): Point {

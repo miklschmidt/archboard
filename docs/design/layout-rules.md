@@ -1458,16 +1458,20 @@ overlaps and labels covering unrelated routes.
 The user requested adoption of the shared-container-row prototype and explicitly
 rejected carrying the old renderer's extra constraints into it. Graphviz now
 places measured nodes across semantic clusters; libavoid routes around cards
-and complete measured title bands. Ports shared by relationship kind replace private
-ordered ports. There are no boundary sections, flank-policy candidates, endpoint
+and complete measured title bands. Ports shared by connection channel replace
+private ordered ports. A channel is the relationship kind, comparison standing
+and local direction at an endpoint, so opposing or differently marked routes
+remain distinct while same-direction, same-standing routes can share a trunk.
+There are no boundary sections, flank-policy candidates, endpoint
 checkpoints or post-layout lane/jog repairs. Every variant lays out fresh,
 always top-to-bottom; the user rejected automatic sideways readings.
 
 Labels first use clear native route runs. A placement reservation does not
 itself become a waypoint; only a label that still cannot fit asks for a reserved
 straight run. Independent leaf collections retain compact wrapping and the
-requested equal 24px side/bottom insets. Semantic identities, containment,
-Standing and the shared SVG/atlas geometry remain unchanged.
+requested equal 24px side/bottom insets. Semantic identities, containment and
+the shared SVG/atlas coordinate contract remain; Standing affects route geometry
+only when it needs a distinct channel to stay legible.
 
 The adoption checkpoint at `0f4b55ab` improves the inspected Public API fixture's fit by 84% and reduces route length
 by 53%, with 1.56 bends per relationship and four crossings. Broader results are

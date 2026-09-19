@@ -1,6 +1,6 @@
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
-import { relationshipKind } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
+import { relationshipChannel } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import {
 	FACES,
 	boxOf,
@@ -58,12 +58,12 @@ export class EndpointOptions {
 	/**
 	 * Keep a shared face unless its approach has proved too cramped to round.
 	 * @param id Card identity.
-	 * @param kind Shared relationship kind.
+	 * @param channel Shared relationship channel.
 	 * @param face Candidate face.
 	 * @returns Whether to offer this face to the native router.
 	 */
-	allows(id: string, kind: string, face: Face): boolean {
-		return !this.removed.get(`${id}:${kind}`)?.has(face);
+	allows(id: string, channel: string, face: Face): boolean {
+		return !this.removed.get(`${id}:${channel}`)?.has(face);
 	}
 
 	/**
@@ -89,17 +89,18 @@ export class EndpointOptions {
 		const section = edge.sections?.[0];
 		if (!section || edge.sources[0] === edge.targets[0]) return false;
 		const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
-		const kind = relationshipKind(edge);
+		const from = edge.sources[0]!;
+		const to = edge.targets[0]!;
 		return (
-			this.rejectEnd(edge.targets[0]!, kind, points.toReversed(), nodes, edge.sources[0]) ||
-			this.rejectEnd(edge.sources[0]!, kind, points, nodes)
+			this.rejectEnd(to, relationshipChannel(edge, to), points.toReversed(), nodes, from) ||
+			this.rejectEnd(from, relationshipChannel(edge, from), points, nodes)
 		);
 	}
 
 	/**
-	 * Retain at least one native face for this card and relationship kind.
+	 * Retain at least one native face for this card and relationship channel.
 	 * @param id Card identity.
-	 * @param kind Shared relationship kind.
+	 * @param channel Shared relationship channel.
 	 * @param route Native route ordered from this endpoint outwards.
 	 * @param nodes Placed subjects, including frames whose boundary gates differ.
 	 * @param toward Source identity for arrivals; absent for departures.
@@ -107,7 +108,7 @@ export class EndpointOptions {
 	 */
 	private rejectEnd(
 		id: string,
-		kind: string,
+		channel: string,
 		route: readonly Point[],
 		nodes: ReadonlyMap<string, ElkNode>,
 		toward?: string,
@@ -116,18 +117,18 @@ export class EndpointOptions {
 		if (!allowsAlternatives(node, toward === undefined ? undefined : nodes.get(toward)))
 			return false;
 		if (!cramped(route)) return false;
-		return this.removeFace(id, kind, faceOf(route[0]!, route[1]!));
+		return this.removeFace(id, channel, faceOf(route[0]!, route[1]!));
 	}
 
 	/**
-	 * Remove one alternative, preserving the last face and shared-kind identity.
+	 * Remove one alternative, preserving the last face and shared-channel identity.
 	 * @param id Card identity.
-	 * @param kind Shared relationship kind.
+	 * @param channel Shared relationship channel.
 	 * @param face The insufficient approach selected by native routing.
 	 * @returns Whether the native choices changed.
 	 */
-	private removeFace(id: string, kind: string, face: Face): boolean {
-		const key = `${id}:${kind}`;
+	private removeFace(id: string, channel: string, face: Face): boolean {
+		const key = `${id}:${channel}`;
 		const removed = this.removed.get(key) ?? new Set<Face>();
 		if (removed.size >= FACES.length - 1 || removed.has(face)) return false;
 		removed.add(face);

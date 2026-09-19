@@ -516,8 +516,8 @@
 					"owner": "src/runtime/semantic-renderer/tests/sibling-order.test.ts"
 				},
 				{
-					"path": "relationship-kind routing separation",
-					"expectedUse": "author real relationship kinds; one kind may share a port while different kinds use distinct ports and tracks; overlapping card spans use balanced straight channels with room for their labels",
+					"path": "relationship channel routing separation",
+					"expectedUse": "author real relationships; matching kind, comparison standing and local direction may share a port while differing channels use distinct ports and tracks; overlapping card spans use balanced straight channels with room for their labels",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/runtime/semantic-renderer/tests/relationship-kind-routing.test.ts; src/runtime/semantic-renderer/tests/aligned-kind-ports.test.ts; src/runtime/semantic-renderer/tests/matched-kind-channels.test.ts; src/runtime/semantic-renderer/tests/route-labels.test.ts"
