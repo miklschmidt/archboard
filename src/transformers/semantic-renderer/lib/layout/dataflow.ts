@@ -13,11 +13,8 @@
 // number of either, and every fold over them is written as a loop rather than
 // as a spread into `Math.max`.
 //
-// The animation schedule is upstream's and is here: every message of every flow
-// takes a turn on ONE clock for the whole drawing, counted straight through the
-// stack in the order the flows are stated. A clock per flow would have every
-// exchange on the page crossing at once, which is the ladder the motion is
-// there to break.
+// One shared animation clock advances through all flows in stated order, so
+// messages animate sequentially instead of every exchange crossing at once.
 //
 // What is new is the frame. Upstream drew one band per column, in its lane
 // language; here a flow is a single named box around the whole exchange, which
@@ -55,6 +52,7 @@ import {
 	labelFor,
 	pitchOf,
 	placeNote,
+	requiredNoteColumnWidth,
 	type ColumnBounds,
 	type PlacedNote,
 } from "@/transformers/semantic-renderer/lib/layout/step-rows";
@@ -240,6 +238,7 @@ function measureColumns(
 			preferred,
 			Math.ceil(largest(painted, 0) + insets),
 			Math.ceil(largest(names, 0) + insets),
+			requiredNoteColumnWidth(flows),
 		),
 		notes,
 	};
@@ -508,7 +507,13 @@ function layoutFlow(
 	const steps = placeSteps(
 		flow,
 		new Map(flow.participants.map((participant, index) => [participant, centres[index] ?? 0])),
-		{ left: contentLeft, right: contentLeft + contentWidth },
+		{
+			left: contentLeft,
+			right: contentLeft + contentWidth,
+			pitch: columnWidth + COLUMN_GAP,
+			firstCentre: centres[0] ?? 0,
+			lastCentre: centres.at(-1) ?? 0,
+		},
 		lifelineTop + FIRST_MESSAGE_DROP,
 		start.turn,
 	);
