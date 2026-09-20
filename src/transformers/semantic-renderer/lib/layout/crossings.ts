@@ -34,7 +34,14 @@ interface Run {
 /** A lower run crossed at this distance along an upper run. */
 interface Crossing {
 	readonly at: number;
-	readonly lower: Run;
+	readonly lower: Pick<Run, "edgeIndex" | "segmentIndex">;
+}
+
+/** One rounded route piece that may cross a straight run. */
+interface Corner {
+	readonly edgeIndex: number;
+	readonly segmentIndex: number;
+	readonly curve: Curve;
 }
 
 /** Local upper ink and the lower connections it crosses. */
@@ -122,6 +129,72 @@ function crossingOf(upper: Run, lower: Run): Crossing | undefined {
 }
 
 /**
+ * One coordinate of a cubic at a given fraction of its run.
+ * @param values The start, two controls and end on one axis.
+ * @param t Position along the cubic.
+ * @returns The coordinate on that axis.
+ */
+function cubicAt(values: readonly [number, number, number, number], t: number): number {
+	const rest = 1 - t;
+	return (
+		rest * rest * rest * values[0] +
+		3 * rest * rest * t * values[1] +
+		3 * rest * t * t * values[2] +
+		t * t * t * values[3]
+	);
+}
+
+/**
+ * Locate one axis value inside a monotone rounded quarter-turn.
+ * @param values Cubic control positions on the intersected axis.
+ * @param coordinate The straight route's fixed coordinate.
+ * @returns A strictly interior curve fraction, if one exists.
+ */
+function cubicFractionAt(
+	values: readonly [number, number, number, number],
+	coordinate: number,
+): number | undefined {
+	const increasing = values[3] > values[0];
+	if (coordinate <= Math.min(values[0], values[3]) + EPSILON) return undefined;
+	if (coordinate >= Math.max(values[0], values[3]) - EPSILON) return undefined;
+	let low = 0;
+	let high = 1;
+	for (let iteration = 0; iteration < 32; iteration += 1) {
+		const middle = (low + high) / 2;
+		if (cubicAt(values, middle) < coordinate === increasing) low = middle;
+		else high = middle;
+	}
+	return (low + high) / 2;
+}
+
+/**
+ * A true contact between one straight run and a monotone rounded corner.
+ * @param run The straight route that could carry an arc.
+ * @param lower The other route's corner and its identity.
+ * @returns Its position along the straight run, if the ink crosses there.
+ */
+function cornerCrossingOf(run: Run, lower: Corner): Crossing | undefined {
+	const segment = lower.curve.segments[lower.segmentIndex];
+	if (segment?.kind !== "cubic") return undefined;
+	const from = segmentStart(lower.curve, lower.segmentIndex);
+	const fixedAxis = run.axis === "x" ? "y" : "x";
+	const fixedValues = [
+		from[fixedAxis],
+		segment.first[fixedAxis],
+		segment.second[fixedAxis],
+		segment.to[fixedAxis],
+	] as const;
+	const fraction = cubicFractionAt(fixedValues, run.from[fixedAxis]);
+	if (fraction === undefined) return undefined;
+	const axis = run.axis;
+	const values = [from[axis], segment.first[axis], segment.second[axis], segment.to[axis]] as const;
+	const at =
+		(cubicAt(values, fraction) - run.from[axis]) * Math.sign(run.to[axis] - run.from[axis]);
+	if (Math.min(at, run.length - at) <= EPSILON) return undefined;
+	return { at, lower };
+}
+
+/**
  * Close crossings share a crest, rather than producing touching humps.
  * @param crossings Sorted crossings on one run.
  * @returns Groups whose bridge footprints would otherwise touch.
@@ -159,24 +232,25 @@ function onRun(run: Run, distance: number, height = 0): Point {
  * @param run The upper run.
  * @param first Distance to the first crossing.
  * @param last Distance to the last crossing.
+ * @param side Which side of the run has room for the arc.
  * @returns Only the displaced piece of the route.
  */
-function hump(run: Run, first: number, last: number): Curve {
+function hump(run: Run, first: number, last: number, side: 1 | -1): Curve {
 	const radius = BRIDGE_RADIUS;
 	const tangent = (4 * (Math.sqrt(2) - 1) * radius) / 3;
 	const segments: Segment[] = [
 		{
 			kind: "cubic",
-			first: onRun(run, first - radius, tangent),
-			second: onRun(run, first - tangent, radius),
-			to: onRun(run, first, radius),
+			first: onRun(run, first - radius, tangent * side),
+			second: onRun(run, first - tangent, radius * side),
+			to: onRun(run, first, radius * side),
 		},
 	];
-	if (last > first) segments.push({ kind: "line", to: onRun(run, last, radius) });
+	if (last > first) segments.push({ kind: "line", to: onRun(run, last, radius * side) });
 	segments.push({
 		kind: "cubic",
-		first: onRun(run, last + tangent, radius),
-		second: onRun(run, last + radius, tangent),
+		first: onRun(run, last + tangent, radius * side),
+		second: onRun(run, last + radius, tangent * side),
 		to: onRun(run, last + radius),
 	});
 	return { from: onRun(run, first - radius), segments };
@@ -215,7 +289,16 @@ function routeObstructs(
 	bounds: Box,
 	curve: Curve,
 ): boolean {
-	const allowed = [run, ...group.map((crossing) => crossing.lower)];
+	// A rounded lower turn and its neighbouring straights are one connection;
+	// the bridge's mask clears that connection locally beneath the raised ink.
+	const allowed = [
+		run,
+		...group.flatMap(({ lower }) => [
+			lower,
+			{ edgeIndex: lower.edgeIndex, segmentIndex: lower.segmentIndex - 1 },
+			{ edgeIndex: lower.edgeIndex, segmentIndex: lower.segmentIndex + 1 },
+		]),
+	];
 	const bridgeBoxes = curveBoxes(curve).map((box) => inflate(box, BRIDGE_CLEARANCE));
 	return drawing.edges.some((edge, edgeIndex) =>
 		edge.curve.segments.some((segment, segmentIndex) => {
@@ -250,13 +333,21 @@ function bridgeFor(
 ): Curve | undefined {
 	const first = Math.min(...group.map((crossing) => crossing.at));
 	const last = Math.max(...group.map((crossing) => crossing.at));
-	if (first - BRIDGE_RADIUS < run.startRoom || last + BRIDGE_RADIUS > run.length - run.endRoom)
-		return undefined;
-	const curve = hump(run, first, last);
-	const bounds = inflate(curveBounds(curve), BRIDGE_CLEARANCE);
-	if (occupied.some((box) => overlaps(bounds, box))) return undefined;
-	if (routeObstructs(drawing, run, group, bounds, curve)) return undefined;
-	return curve;
+	// Leave a measurable gap from neighbouring bends, not a box edge that
+	// merely touches after clearance inflation.
+	const endPadding = BRIDGE_CLEARANCE / 6;
+	const minOffset = run.startRoom + endPadding + BRIDGE_RADIUS - first;
+	const maxOffset = run.length - run.endRoom - endPadding - BRIDGE_RADIUS - last;
+	if (minOffset > maxOffset) return undefined;
+	const offset = Math.min(Math.max(0, minOffset), maxOffset);
+	if (Math.abs(offset) > BRIDGE_CLEARANCE) return undefined;
+	for (const side of [1, -1] as const) {
+		const curve = hump(run, first + offset, last + offset, side);
+		const bounds = inflate(curveBounds(curve), BRIDGE_CLEARANCE);
+		if (occupied.some((box) => overlaps(bounds, box))) continue;
+		if (!routeObstructs(drawing, run, group, bounds, curve)) return curve;
+	}
+	return undefined;
 }
 
 /**
@@ -290,6 +381,40 @@ function replaceRuns(
 }
 
 /**
+ * Routes of one kind may intentionally share a trunk at a common endpoint.
+ * @param a One semantic edge.
+ * @param b Another semantic edge.
+ * @returns Whether their shared endpoint makes an apparent contact intentional.
+ */
+function sharedTrunk(a: DrawingEdge["edge"], b: DrawingEdge["edge"]): boolean {
+	return a.kind === b.kind && [a.from, a.to].some((id) => id === b.from || id === b.to);
+}
+
+/**
+ * A rounded corner is beneath a candidate straight run in this paint-order pass.
+ * @param run The straight route.
+ * @param corner The other route's corner.
+ * @param drawing Original drawing with semantic edge identities.
+ * @param fallback Whether this pass tries an earlier-painted route.
+ * @param crossed Already marked contacts.
+ * @returns A crossing that still needs an arc.
+ */
+function cornerCandidate(
+	run: Run,
+	corner: Corner,
+	drawing: ArchitectureDrawing,
+	fallback: boolean,
+	crossed: ReadonlySet<string>,
+): Crossing | undefined {
+	const under = fallback ? corner.edgeIndex > run.edgeIndex : corner.edgeIndex < run.edgeIndex;
+	if (!under) return undefined;
+	if (sharedTrunk(drawing.edges[run.edgeIndex]!.edge, drawing.edges[corner.edgeIndex]!.edge))
+		return undefined;
+	if (crossed.has(crossingKey(run, corner))) return undefined;
+	return cornerCrossingOf(run, corner);
+}
+
+/**
  * Raises connections over proper crossings, preferring later-painted ink.
  * No placement or label moves, and painters and interaction geometry share the
  * resulting curves. Corner contacts clear lower ink without distorting the turn.
@@ -301,6 +426,11 @@ function bridgeCrossings(drawing: ArchitectureDrawing): {
 	readonly bridges: readonly Bridge[];
 } {
 	const runs = straightRuns(drawing.edges);
+	const corners = drawing.edges.flatMap((edge, edgeIndex) =>
+		edge.curve.segments.flatMap((segment, segmentIndex) =>
+			segment.kind === "cubic" ? [{ edgeIndex, segmentIndex, curve: edge.curve }] : [],
+		),
+	);
 	const occupied = occupiedBoxes(drawing);
 	const bridges: Bridge[] = [];
 	const replacements = drawing.edges.map(() => new Map<number, Curve[]>());
@@ -318,6 +448,12 @@ function bridgeCrossings(drawing: ArchitectureDrawing): {
 				const crossing = crossingOf(run, lower);
 				return crossing === undefined || crossed.has(crossingKey(run, lower)) ? [] : [crossing];
 			})
+			.concat(
+				corners.flatMap((lower) => {
+					const crossing = cornerCandidate(run, lower, drawing, fallback, crossed);
+					return crossing === undefined ? [] : [crossing];
+				}),
+			)
 			.toSorted((a, b) => a.at - b.at);
 		for (const group of crossingGroups(crossings)) {
 			const curve = bridgeFor(drawing, run, group, occupied);
@@ -333,7 +469,7 @@ function bridgeCrossings(drawing: ArchitectureDrawing): {
 		}
 	}
 	const edges = drawing.edges.map((edge, index) => replaceRuns(edge, replacements[index]!));
-	return { edges, bridges: [...bridges, ...cornerClearances(drawing.edges)] };
+	return { edges, bridges: [...bridges, ...cornerClearances(drawing.edges, crossed)] };
 }
 
 /**
@@ -341,16 +477,17 @@ function bridgeCrossings(drawing: ArchitectureDrawing): {
  * Shared endpoints deliberately share trunks within one kind; other connections
  * need separation here. Refined bounds follow the actual curve, not its empty hull.
  * @param edges The original rounded routes, before synthetic bridge arcs.
+ * @param bridged Contacts already given a raised arc.
  * @returns Existing corner ink to use as a narrow cutout on the other route.
  */
-function cornerClearances(edges: readonly DrawingEdge[]): Bridge[] {
+function cornerClearances(edges: readonly DrawingEdge[], bridged: ReadonlySet<string>): Bridge[] {
 	const pieces = edges.flatMap((edge, edgeIndex) =>
 		edge.curve.segments.map((segment, segmentIndex) => {
 			const curve = { from: segmentStart(edge.curve, segmentIndex), segments: [segment] };
 			return { edgeIndex, segmentIndex, curve, bounds: curveBounds(curve) };
 		}),
 	);
-	const cleared = new Set<string>();
+	const cleared = new Set(bridged);
 	const refinements = new Map<Curve, readonly Box[]>();
 	/**
 	 * Refine only segments whose broad bounds actually meet another route.
@@ -376,10 +513,7 @@ function cornerClearances(edges: readonly DrawingEdge[]): Bridge[] {
 			const other = edges[lower.edgeIndex]!.edge;
 			return (
 				upper.edgeIndex !== lower.edgeIndex &&
-				!(
-					edge.kind === other.kind &&
-					[edge.from, edge.to].some((endpoint) => endpoint === other.from || endpoint === other.to)
-				) &&
+				!sharedTrunk(edge, other) &&
 				!cleared.has(crossingKey(upper, lower)) &&
 				overlaps(upper.bounds, lower.bounds) &&
 				boxes(upper.curve).some((a) => boxes(lower.curve).some((b) => overlaps(a, b)))

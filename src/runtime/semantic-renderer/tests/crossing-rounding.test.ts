@@ -17,8 +17,8 @@ const ROUTES: readonly (readonly Point[])[] = [
 	],
 	[
 		{ x: 50, y: 0 },
-		{ x: 50, y: 68 },
-		{ x: 100, y: 68 },
+		{ x: 50, y: 65 },
+		{ x: 100, y: 65 },
 	],
 ];
 
@@ -75,6 +75,52 @@ test("a crossing near a turn preserves natural rounding while separating its ink
 	expect(result.bridges).toHaveLength(1);
 	expect(result.bridges[0]!.edgeId).toBe("0");
 	expect(result.bridges[0]!.under).toEqual(["1"]);
+});
+
+test("a straight crossing four units before the other route turns still has an arc", () => {
+	// Cloud Infrastructure: the VM-to-database vertical route crosses a long
+	// horizontal database route immediately before that route turns downward.
+	const before = drawing([
+		[
+			{ x: 0, y: -60 },
+			{ x: 0, y: 100 },
+		],
+		[
+			{ x: -120, y: 0 },
+			{ x: 12, y: 0 },
+			{ x: 12, y: 80 },
+		],
+	]);
+	const result = bridgeCrossings(before);
+	expect(result.bridges.some((bridge) => bridge.edgeId === "0" && bridge.under.includes("1"))).toBe(
+		true,
+	);
+	expect(result.edges[0]!.curve).not.toEqual(before.edges[0]!.curve);
+	expect(result.edges[1]!.curve).toEqual(before.edges[1]!.curve);
+});
+
+test("a rounded corner crossing a straight route gains an arc on the straight route", () => {
+	// Common-WebLib: the dispatch route turns across a vertical dependency route.
+	// A cutout alone leaves the apparent junction; the vertical route can arc.
+	const before = drawing([
+		[
+			{ x: -20, y: -64 },
+			{ x: 0, y: -64 },
+			{ x: 0, y: 18 },
+			{ x: -8, y: 18 },
+		],
+		[
+			{ x: -100, y: 0 },
+			{ x: 6, y: 0 },
+			{ x: 6, y: 100 },
+		],
+	]);
+	const result = bridgeCrossings(before);
+	expect(result.bridges.some((bridge) => bridge.edgeId === "0" && bridge.under.includes("1"))).toBe(
+		true,
+	);
+	expect(result.edges[0]!.curve).not.toEqual(before.edges[0]!.curve);
+	expect(result.edges[1]!.curve).toEqual(before.edges[1]!.curve);
 });
 
 // Opposing rounded turns from the cloud board's VM → DB and API → DB
