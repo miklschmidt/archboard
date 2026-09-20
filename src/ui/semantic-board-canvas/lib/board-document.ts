@@ -37,8 +37,6 @@ interface NodeSubject {
 	readonly node: SemanticNode;
 	/** The containers above it, outermost first. */
 	readonly ancestry: readonly SemanticNode[];
-	/** What it contains, in document order; empty for a node that contains nothing. */
-	readonly holds: readonly SemanticNode[];
 }
 
 /** One relationship, with the nodes at its ends. */
@@ -165,7 +163,6 @@ function subjectOf(variant: SemanticVariant, id: string): Subject | undefined {
 			kind: "node",
 			node,
 			ancestry: ancestryOf(node, byId),
-			holds: variant.content.nodes.filter((other) => other.parent === node.id),
 		};
 	}
 	const edge = variant.content.edges.find((one) => one.id === id);

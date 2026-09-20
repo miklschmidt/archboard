@@ -120,6 +120,8 @@ function SemanticStageSidebar(props: {
 					groupFocus={view.groupFocus}
 					onChooseGroup={view.onChooseGroup}
 					appearances={appearances}
+					comparison={view.comparison}
+					onComparisonChange={view.onComparisonChange}
 				/>
 			</SidebarPanel>
 			<SidebarPanel tab="selection">

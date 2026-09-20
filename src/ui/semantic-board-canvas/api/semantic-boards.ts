@@ -92,6 +92,8 @@ interface SemanticRenderRequest {
 	 */
 	readonly view?: string | undefined;
 	readonly theme: SemanticTheme;
+	/** Whether to show proposal comparison treatment; defaults to true. */
+	readonly comparison?: boolean | undefined;
 }
 
 /**
@@ -228,6 +230,9 @@ function renderQuery(request: SemanticRenderRequest): string {
 	}
 	if (request.view !== undefined && request.view !== "") {
 		search.set("view", request.view);
+	}
+	if (request.comparison === false) {
+		search.set("comparison", "off");
 	}
 	return `?${search.toString()}`;
 }
