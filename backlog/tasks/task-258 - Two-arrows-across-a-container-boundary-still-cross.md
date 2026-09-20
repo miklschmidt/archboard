@@ -5,14 +5,13 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 20:34'
-updated_date: '2026-09-17 22:16'
+updated_date: '2026-09-20 10:35'
 labels:
   - renderer
 dependencies: []
 references:
   - src/transformers/semantic-renderer/lib/layout/flank-rules.ts
   - TASK-256.11
-  - TASK-239
   - .skill-evals/2026-09-17T16-31-08-093Z/report.md
 ordinal: 465000
 ---

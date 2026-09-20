@@ -5,13 +5,12 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 17:41'
-updated_date: '2026-09-17 23:10'
+updated_date: '2026-09-20 10:35'
 labels:
   - renderer
 dependencies: []
 references:
   - docs/design/layout-rules.md
-  - TASK-239
   - .skill-evals/2026-09-17T16-31-08-093Z/report.md
 parent_task_id: TASK-256
 ordinal: 462000
