@@ -97,13 +97,15 @@ interface DiagramRenderRequest {
 	/**
 	 * How each subject of this picture stands against the variant it came from.
 	 *
-	 * The caller derives it — by reading this variant against its predecessor,
-	 * on every render — and this module draws it. Absent means this is not a
-	 * proposal and the picture is drawn plainly; present means every drawn
-	 * subject says how it stands, and an id the map does not mention stands
-	 * unchanged. Nothing about it is persisted anywhere (ADR 0023).
+	 * The caller derives it by reading this variant against its predecessor on
+	 * every render. It keeps differently standing relationships on distinct
+	 * channels, even when their marks are hidden. Absent means this is not a
+	 * proposal; an id the map does not mention stands unchanged. Nothing about
+	 * it is persisted anywhere (ADR 0023).
 	 */
 	readonly standing?: StatedStandings | undefined;
+	/** Hide standing marks while retaining standing-aware relationship routing; shown by default. */
+	readonly paintStanding?: boolean | undefined;
 	/**
 	 * Which of this variant's subjects the board says nobody has decided yet.
 	 *
@@ -240,7 +242,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 	const painting = paintArchitecture(
 		drawing,
 		palette,
-		standingsFrom(request.standing),
+		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 		stepLines.derived,
@@ -313,7 +315,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		content.flows,
 		content.nodes,
 		palette,
-		standingsFrom(request.standing),
+		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 	);

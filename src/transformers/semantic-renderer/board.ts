@@ -87,12 +87,12 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
 }
 
 /**
- * Choose the picture's content and marks while retaining the proposal's change report.
+ * Choose the picture's content while retaining comparison standings for routing.
  * @param proposal The compared drawing.
  * @param variant The variant itself.
  * @param scope The view being read.
  * @param comparison Whether comparison treatment is visible.
- * @returns The inputs that differ between a compared and a clean picture.
+ * @returns The content and standing for either reading.
  */
 function pictureOf(
 	proposal: DrawnProposal,
@@ -100,11 +100,8 @@ function pictureOf(
 	scope: ViewScope,
 	comparison: boolean,
 ) {
-	if (!comparison) {
-		return { content: scopedContent(variant.content, scope) };
-	}
 	return {
-		content: proposal.content,
+		content: comparison ? proposal.content : scopedContent(variant.content, scope),
 		...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 	};
 }
@@ -154,6 +151,7 @@ async function drawnReply(
 		const picture = await renderSemanticView({
 			policy: how.policy,
 			...pictureOf(proposal, variant, reading.scope, how.comparison),
+			paintStanding: how.comparison,
 			grammar: reading.grammar,
 			theme: how.theme,
 			fonts: how.fonts,
