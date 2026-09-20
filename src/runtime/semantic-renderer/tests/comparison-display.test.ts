@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { renderBoard } from "@/runtime/semantic-renderer/index";
+import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
@@ -53,4 +54,56 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 	expect(plain.reply.svg).toContain('data-semantic-id="new"');
 	expect(plain.reply.changes).toEqual(decorated.reply.changes);
 	expect(plain.reply.variant).toEqual(decorated.reply.variant);
+});
+
+test("hiding comparison marks keeps the routes of continuing relationships", async () => {
+	const nodes = [
+		{ id: "source", name: "Source", kind: "service" },
+		{ id: "sink", name: "Sink", kind: "service" },
+	];
+	const existing = { id: "existing", from: "source", to: "sink", kind: "call" };
+	const added = { id: "added", from: "source", to: "sink", kind: "call" };
+	const board = SemanticBoardSchema.parse({
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		kind: "semantic-board",
+		id: "board",
+		name: "Parallel connections",
+		level: "system",
+		version: 1,
+		createdAt: "2026-09-20T00:00:00.000Z",
+		updatedAt: "2026-09-20T00:00:00.000Z",
+		current: "current",
+		variants: [
+			{
+				id: "current",
+				name: "Current",
+				lifecycle: "current",
+				content: orderedFixture({ nodes, edges: [existing] }),
+			},
+			{
+				id: "draft",
+				name: "Draft",
+				lifecycle: "draft",
+				parent: "current",
+				content: orderedFixture({ nodes, edges: [existing, added] }),
+			},
+		],
+	});
+	const compared = await renderBoard(
+		board,
+		{ variant: "draft", theme: "light", fonts: "linked" },
+		DEFAULT_SEMANTIC_POLICY,
+	);
+	const plain = await renderBoard(
+		board,
+		{ variant: "draft", theme: "light", fonts: "linked", comparison: false },
+		DEFAULT_SEMANTIC_POLICY,
+	);
+	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
+		throw new Error("Expected two drawn proposals");
+	}
+	const routes = routePoints(compared.reply.svg);
+	expect(routes.get(existing.id)).not.toEqual(routes.get(added.id));
+	expect(plain.reply.atlas.nodes).toEqual(compared.reply.atlas.nodes);
+	expect(routePoints(plain.reply.svg)).toEqual(routes);
 });
