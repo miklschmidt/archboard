@@ -509,6 +509,13 @@
 					"owner": "src/runtime/semantic-renderer/tests/shared-container-rows.test.ts"
 				},
 				{
+					"path": "relationships avoid unrelated containers",
+					"expectedUse": "author real containment and relationships; routes may enter an endpoint's container but do not pass through a container unrelated to either endpoint",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests/foreign-frame-routing.test.ts"
+				},
+				{
 					"path": "stable horizontal sibling ordering between variants",
 					"expectedUse": "preserve subject identities; equivalent sibling cards keep horizontal order in fresh slots without freezing positions or ranks",
 					"scenarios": [],

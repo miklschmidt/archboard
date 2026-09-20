@@ -19,7 +19,9 @@ The current rules are:
   Different roles are not moved just because their dimensions match. No
   predecessor positions, fixed ranks or reserved columns participate.
 - An outside caller or dependency may occupy the frame's vertical span.
-  A container does not reserve one opaque outer layer.
+  A container does not reserve one opaque outer layer for placement. A
+  relationship crosses a frame body only when one endpoint belongs to it;
+  relationships between outside parts route around the frame.
 - A frame's relationship with its own descendant meets its title divider;
   external relationships meet its outline. Incoming frame arrows use a clear
   face with room for their head and bend. Protect complete title bands.

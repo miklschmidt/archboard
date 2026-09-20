@@ -7,6 +7,7 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 export { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 export { improveProjection } from "@/transformers/semantic-renderer/lib/layout/label-projections";
+export { routeGraph } from "@/transformers/semantic-renderer/lib/layout/avoid-routing";
 export {
 	foldColumnCounts,
 	foldColumns,

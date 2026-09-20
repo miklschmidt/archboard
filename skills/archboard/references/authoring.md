@@ -35,7 +35,8 @@ lands on the part that receives it:
 `Browser client -> Viewer entry point -> Fetch semantic reads`, both internal
 parts parented to `Semantic viewer`, not
 `Browser client -> Semantic viewer -> Fetch`. The renderer carries a line across
-a container's boundary. A container is the endpoint only when the source
+a container's boundary when the receiver belongs inside it, and keeps other
+relationships outside. A container is the endpoint only when the source
 addresses the whole module (a dependency in a higher-level view). Any part drawn
 with children is a container, whatever its `kind`: a module, class or component
 node that defines its functions, methods or components receives nothing itself,

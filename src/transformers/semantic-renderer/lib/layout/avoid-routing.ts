@@ -8,6 +8,7 @@ import {
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { CARD_ROUTE_EXPANSION } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { ForeignFrames } from "@/transformers/semantic-renderer/lib/layout/foreign-frames";
 import {
 	boxCentre,
 	inflate,
@@ -15,6 +16,8 @@ import {
 	type Point,
 } from "@/transformers/semantic-renderer/lib/geometry";
 import {
+	forcedLabel,
+	positionReservedLabel,
 	publishRoutes,
 	type Connection,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
@@ -39,13 +42,14 @@ import {
 type ConnectionEnd = InstanceType<AvoidEngine["ConnEnd"]>;
 
 /** One native obstacle scene; the router owns its shapes, shared pins and connectors. */
-class RoutingScene {
+export class RoutingScene {
 	readonly router: InstanceType<AvoidEngine["Router"]>;
 	readonly nodes = new Map<string, ElkNode>();
 	private readonly obstacles = new Map<string, Box>();
 	private readonly shapes = new Map<string, object>();
 	private readonly classes = new Map<string, number>();
 	private readonly channels = new Map<string, readonly string[]>();
+	private readonly closedBodies: Box[] = [];
 	private aligned: AlignedPins = new Map();
 
 	/**
@@ -56,6 +60,7 @@ class RoutingScene {
 	constructor(
 		private readonly avoid: AvoidEngine,
 		private readonly endpoints: EndpointOptions,
+		private readonly closedFrames: ReadonlySet<string> = new Set(),
 	) {
 		this.router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		this.router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, SHAPE_CLEARANCE);
@@ -92,11 +97,23 @@ class RoutingScene {
 	/**
 	 * Register cards and measured title bands recursively.
 	 * @param node One placed semantic node.
+	 * @param hidden Whether an unrelated ancestor already blocks the whole subtree.
 	 */
-	visit(node: ElkNode): void {
+	visit(node: ElkNode, hidden = false): void {
 		this.nodes.set(node.id, node);
-		this.shape(node.id, inflate(obstacleOf(node), nodeInset(node)));
-		for (const child of node.children ?? []) this.visit(child);
+		const closed = this.closedFrames.has(node.id);
+		if (!hidden) this.registerNode(node, closed);
+		for (const child of node.children ?? []) this.visit(child, hidden || closed);
+	}
+
+	/**
+	 * Add this node's visible obstacle to the scene.
+	 * @param node A placed semantic node.
+	 * @param closed Whether its whole frame body blocks this relationship.
+	 */
+	private registerNode(node: ElkNode, closed: boolean): void {
+		if (closed) this.closedBodies.push(boxOf(node));
+		this.shape(node.id, closed ? boxOf(node) : inflate(obstacleOf(node), nodeInset(node)));
 	}
 
 	/**
@@ -170,11 +187,20 @@ class RoutingScene {
 	/**
 	 * Register only labels that natural routes could not carry.
 	 * @param edges The complete semantic relationships.
+	 * @param selected The relationship routed alone in a scoped scene, if any.
 	 */
-	labels(edges: readonly ElkExtendedEdge[]): void {
+	labels(edges: readonly ElkExtendedEdge[], selected?: string): void {
 		for (const edge of edges) {
 			if (!forcedLabel(edge)) continue;
-			this.shape(`label_${edge.id}`, boxOf(edge.labels![0]!));
+			const box = boxOf(edge.labels![0]!);
+			if (this.closedBodies.some((body) => boxesOverlap(box, body))) {
+				if (edge.id === selected)
+					throw new Error(
+						`NativeRouteUnavailable: relationship ${edge.id}'s label lies inside an unrelated frame`,
+					);
+				continue;
+			}
+			this.shape(`label_${edge.id}`, box);
 		}
 	}
 
@@ -480,15 +506,6 @@ function arrivalCorridor(at: Point, side: Face): Box {
 }
 
 /**
- * Whether natural label placement has requested a reserved straight run.
- * @param edge The relationship.
- * @returns Whether its measured label is a routing obstacle and waypoint.
- */
-function forcedLabel(edge: ElkExtendedEdge): boolean {
-	return edge.layoutOptions?.["archboard.route-label"] === "true" && Boolean(edge.labels?.length);
-}
-
-/**
  * Whether this frame endpoint refers to one of its own descendants.
  * @param node The endpoint.
  * @param target The opposite semantic endpoint.
@@ -523,20 +540,6 @@ function towardFace(box: Box, toward: Box): Face {
 }
 
 /**
- * Apply the accepted physical position of one reserved label when both axes exist.
- * @param edge One placed relationship.
- */
-function positionReservedLabel(edge: ElkExtendedEdge): void {
-	const label = edge.labels?.[0];
-	const options = edge.layoutOptions;
-	if (!label || !options) return;
-	const x = options["archboard.route-label.x"];
-	const y = options["archboard.route-label.y"];
-	if (x === undefined || y === undefined) return;
-	Object.assign(label, { x: Number(x), y: Number(y) });
-}
-
-/**
  * Route placed cards and title bands through one native obstacle scene.
  * @param avoid The initialized libavoid module.
  * @param graph Complete globally placed semantic geometry.
@@ -544,6 +547,7 @@ function positionReservedLabel(edge: ElkExtendedEdge): void {
  */
 export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	const endpoints = new EndpointOptions();
+	const frames = new ForeignFrames(graph);
 	let routed = false;
 	for (;;) {
 		const scene = new RoutingScene(avoid, endpoints);
@@ -557,7 +561,18 @@ export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 			scene.router.processTransaction();
 			if (!publishRoutes(edges, routes, routed)) return graph;
 			routed = true;
-			if (endpoints.reject(edges, scene.nodes)) continue;
+			if (
+				frames.settle(
+					avoid,
+					graph,
+					edges,
+					endpoints,
+					scene,
+					routes,
+					(closed) => new RoutingScene(avoid, endpoints, closed),
+				)
+			)
+				continue;
 			return graph;
 		} finally {
 			scene.router.delete();
