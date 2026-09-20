@@ -7,9 +7,9 @@ restart the canvas at its configured URL, and reload the viewer after editing.
 The current rules are:
 
 - Visible semantic children make a node a frame; preserve the parent hierarchy.
-- Measure the complete title and reserve its title band. Keep 24px of air
-  below it and 24px minimum side/bottom insets around content.
-- Use 24px base sibling spacing, matching the frame insets, and 32px between
+- Measure the complete title and reserve its title band. Keep 20px of air
+  below it and 20px minimum side/bottom insets around content.
+- Use 24px base sibling spacing and 32px between
   ranks. Reserve measured label rows only where needed; do not also expand
   every rank gap by the tallest label.
 - Pack disconnected leaf collections into rows. Connected children take part
