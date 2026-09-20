@@ -302,7 +302,6 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 						},
 					},
 				},
-				{ method: "thread/realtime/error", params: { threadId: "$THREAD", message: "recover" } },
 			],
 			pages: [
 				{
@@ -355,6 +354,14 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 		async (harness, generation) => {
 			const browser = browserCorrelation("-recovery");
 			await generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
+			generation.adapter.onNotification(
+				makeNotification(generation.identity, "thread/realtime/error", {
+					threadId: generation.identity.decoder.serializeCodexIdentity(
+						generation.binding.coordinatorThreadId,
+					),
+					message: "recover",
+				}),
+			);
 			await waitForState(harness);
 			expect(latestState(harness)).toMatchObject({
 				phase: "recoverable_error",
@@ -378,9 +385,6 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			]);
 
 			const looping = await createHarness({
-				afterStartEvents: [
-					{ method: "thread/realtime/error", params: { threadId: "$THREAD", message: "loop" } },
-				],
 				pages: [
 					{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: "$SESSION" },
 					{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: "$SESSION" },
@@ -390,6 +394,14 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 				const loopGeneration = await looping.start();
 				const loopBrowser = browserCorrelation("-loop");
 				await loopGeneration.adapter.createOffer({ ...loopBrowser, sdp: "offer-sdp" });
+				loopGeneration.adapter.onNotification(
+					makeNotification(loopGeneration.identity, "thread/realtime/error", {
+						threadId: loopGeneration.identity.decoder.serializeCodexIdentity(
+							loopGeneration.binding.coordinatorThreadId,
+						),
+						message: "loop",
+					}),
+				);
 				await waitForState(looping);
 				expect(await loopGeneration.adapter.recover(loopBrowser)).toMatchObject({
 					outcome: "outcome_unknown",
