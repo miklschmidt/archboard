@@ -1,0 +1,120 @@
+{
+	"nodes": [
+		{
+			"id": "lqxzyMcC",
+			"name": "Azure Standard Load Balancer",
+			"kind": "azure",
+			"responsibility": "Keeps its public IP as the healthy secondary for automatic DNS failover to IIS.",
+			"order": 1000
+		},
+		{
+			"id": "hlSwOqFY",
+			"name": "DB 1",
+			"kind": "datastore",
+			"responsibility": "Existing shared production database.",
+			"order": 2000
+		},
+		{
+			"id": "NQs6vUYx",
+			"name": "DB 2",
+			"kind": "datastore",
+			"responsibility": "Existing shared production database.",
+			"order": 3000
+		},
+		{
+			"id": "t2QlUi5k",
+			"name": "Platform",
+			"kind": "service",
+			"responsibility": "Retains device trust and routes selected APIs to Platform services; unmatched requests stay on IIS.",
+			"order": 4000
+		},
+		{
+			"id": "j6TdeSth",
+			"name": "Windows / IIS VM pool",
+			"kind": "system",
+			"responsibility": "Four production VMs each carry the complete IIS API portfolio.",
+			"order": 5000
+		},
+		{
+			"id": "6cWbMS1Q",
+			"name": "IIS VM 1",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"parent": "j6TdeSth",
+			"order": 6000
+		},
+		{
+			"id": "yPJ2pkH0",
+			"name": "IIS VM 4",
+			"kind": "service",
+			"responsibility": "Legacy API's",
+			"parent": "j6TdeSth",
+			"order": 7000
+		},
+		{
+			"id": "Pt2vjo40",
+			"name": "Migrated API capabilities",
+			"kind": "service",
+			"responsibility": "Proposed Platform-owned replacements, activated one verified API route at a time.",
+			"order": 8000
+		}
+	],
+	"edges": [
+		{
+			"id": "rsKjzPuI",
+			"from": "6cWbMS1Q",
+			"to": "hlSwOqFY",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal",
+			"order": 1000
+		},
+		{
+			"id": "uDMYsoQs",
+			"from": "yPJ2pkH0",
+			"to": "NQs6vUYx",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal",
+			"order": 2000
+		},
+		{
+			"id": "g1zvz5QO",
+			"from": "t2QlUi5k",
+			"to": "j6TdeSth",
+			"kind": "http",
+			"label": "Unmatched routes balance across healthy VMs",
+			"emphasis": "hero",
+			"order": 3000
+		},
+		{
+			"id": "7C6xGZco",
+			"from": "Pt2vjo40",
+			"to": "hlSwOqFY",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal",
+			"order": 4000
+		},
+		{
+			"id": "hnLcA0yR",
+			"from": "Pt2vjo40",
+			"to": "NQs6vUYx",
+			"kind": "data",
+			"label": "Database connection",
+			"emphasis": "normal",
+			"order": 5000
+		},
+		{
+			"id": "ghAjlN21",
+			"from": "lqxzyMcC",
+			"to": "j6TdeSth",
+			"kind": "http",
+			"label": "L4 forwarding",
+			"emphasis": "hero",
+			"order": 6000
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

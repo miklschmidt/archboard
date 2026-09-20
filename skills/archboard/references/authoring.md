@@ -6,6 +6,10 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
 
 ## Nodes
 
+- `order`: Layout priority among this variant's nodes. Omit it for automatic
+  positions 1000, 2000, 3000, ... in the order the nodes are added. Restating
+  a node by id keeps its position unless you state a new number. Lower numbers
+  come first; use a number between existing values to change layout.
 - `name`: One line a reader sees; unique enough to name the node in later
   payloads.
 - `kind`: A key of `nodeKinds` in `config.yaml`. What the unit IS, whether it is
@@ -145,6 +149,9 @@ sits.
 
 ## Relationships
 
+- `order`: Layout priority among this variant's relationships. Omit it for
+  automatic 1000-step positions; restating an existing id keeps its position.
+  Set a number between two existing values to try a different route/layout.
 - `from`, `to`: Node names or ids.
 - `kind`: A key of `relationshipKinds` in `config.yaml`; it decides dash and
   arrowhead.

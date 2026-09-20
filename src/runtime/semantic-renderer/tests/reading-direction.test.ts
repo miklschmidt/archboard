@@ -1,7 +1,8 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // Architecture diagrams always read top to bottom, including wide fans and long pipelines.
 
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
@@ -19,14 +20,14 @@ function fan(count: number): VariantContent {
 		name: `Dependent service number ${index + 1}`,
 		kind: "service",
 	}));
-	return VariantContentSchema.parse({
+	return orderedFixture({
 		nodes: [{ id: "hub", name: "Hub", kind: "service" }, ...leaves],
 		edges: leaves.map((leaf) => ({ id: `e${leaf.id}`, from: "hub", to: leaf.id, kind: "call" })),
 	});
 }
 
 /** A short chain that fits the pane at native scale. */
-const CHAIN = VariantContentSchema.parse({
+const CHAIN = orderedFixture({
 	nodes: ["a", "b", "c"].map((id) => ({ id, name: id, kind: "module" })),
 	edges: [
 		{ id: "ab", from: "a", to: "b", kind: "call" },
@@ -52,7 +53,7 @@ describe("architecture diagrams read top to bottom", () => {
 
 	test("a wide downward fan keeps every label on a straight run of its own route", async () => {
 		const labelled = fan(16);
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			...labelled,
 			edges: labelled.edges.map((edge, index) => ({
 				id: edge.id,
@@ -98,7 +99,7 @@ function pipeline(length: number, framed = false): VariantContent {
 		kind: "module",
 		...(framed ? { parent: "app" } : {}),
 	}));
-	return VariantContentSchema.parse({
+	return orderedFixture({
 		nodes: [...(framed ? [{ id: "app", name: "Application", kind: "service" }] : []), ...stages],
 		edges: stages.slice(1).map((stage, index) => ({
 			id: `e${index}`,

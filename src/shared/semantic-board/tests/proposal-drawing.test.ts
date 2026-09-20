@@ -7,6 +7,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import { drawingOf } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 const PLATFORM = { id: "pl", name: "Platform", kind: "service" };
 const GATEWAY = { id: "gw", name: "Gateway", kind: "module", parent: "pl" };
@@ -14,6 +15,8 @@ const LEGACY = { id: "lg", name: "Legacy intake", kind: "module", parent: "pl" }
 const LEDGER = { id: "ld", name: "Ledger", kind: "service" };
 const OLD_WIRE = { id: "e1", from: "gw", to: "lg", kind: "call" };
 const KEPT_WIRE = { id: "e2", from: "gw", to: "ld", kind: "call" };
+const parseBoard = (value: unknown): SemanticBoard =>
+	SemanticBoardSchema.parse(withFixtureOrders(value));
 
 /**
  * A board with a baseline and one proposal derived from it.
@@ -21,7 +24,7 @@ const KEPT_WIRE = { id: "e2", from: "gw", to: "ld", kind: "call" };
  * @returns The board.
  */
 const boardWith = (proposed: Record<string, unknown>): SemanticBoard =>
-	SemanticBoardSchema.parse({
+	parseBoard({
 		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
@@ -57,7 +60,7 @@ const boardWith = (proposed: Record<string, unknown>): SemanticBoard =>
  * @returns The content.
  */
 const content = (stated: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(stated);
+	VariantContentSchema.parse(withFixtureOrders(stated));
 
 describe("the picture drawn for a proposal", () => {
 	const PROPOSED = content({
@@ -113,7 +116,7 @@ describe("what a narrower reading is allowed to say", () => {
 		// The proposal dropped a module inside the platform and a whole service
 		// elsewhere; this view is only about the ledger.
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [KEPT_WIRE] });
-		const board = SemanticBoardSchema.parse({
+		const board = parseBoard({
 			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -207,7 +210,7 @@ describe("a sequence a proposal cut into", () => {
 			edges: [KEPT_WIRE],
 			flows: [{ ...FLOW, steps: [STEPS[1]] }],
 		});
-		const board = SemanticBoardSchema.parse({
+		const board = parseBoard({
 			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -271,7 +274,7 @@ describe("what a whole picture owes a reader", () => {
 	 * @returns The board.
 	 */
 	const droppedFlow = (): SemanticBoard =>
-		SemanticBoardSchema.parse({
+		parseBoard({
 			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -338,7 +341,7 @@ describe("a sequence read through a view that dropped a participant", () => {
 	 * @returns The board.
 	 */
 	const rerouted = (): SemanticBoard =>
-		SemanticBoardSchema.parse({
+		parseBoard({
 			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",

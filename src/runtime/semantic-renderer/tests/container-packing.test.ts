@@ -1,6 +1,6 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
@@ -12,7 +12,7 @@ test.each([
 ])(
 	"$count independent cards keep compact insets when read $direction",
 	async ({ count, fan, direction }) => {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: [
 				{ id: "pool", name: "Application pool", kind: "service" },
 				...Array.from({ length: count }, (_, index) => ({
@@ -56,7 +56,7 @@ test.each([
 );
 
 test("external dependencies follow their contained sources beneath the frame", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ id: "db1", name: "Database one", kind: "datastore" },
 			{ id: "db2", name: "Database two", kind: "datastore" },

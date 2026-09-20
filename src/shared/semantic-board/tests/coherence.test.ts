@@ -5,6 +5,7 @@ import {
 	parseSemanticBoard,
 	SemanticEdgeInputSchema,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A board that is coherent, so each case below can break exactly one thing.
@@ -43,18 +44,18 @@ const withContent = (content: Record<string, unknown>) => [
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (value: unknown): string => {
-	const parsed = parseSemanticBoard(value);
+	const parsed = parseSemanticBoard(withFixtureOrders(value));
 	return parsed.ok ? "" : parsed.problem;
 };
 
 describe("what a board has to be before it is drawn", () => {
 	test("a coherent board is accepted", () => {
-		expect(parseSemanticBoard(board()).ok).toBe(true);
+		expect(parseSemanticBoard(withFixtureOrders(board())).ok).toBe(true);
 	});
 
 	test("a document written for a different major contract is refused", () => {
 		expect(refusal(board({ schemaVersion: "999.0.0" }))).toContain("999.0.0");
-		expect(parseSemanticBoard(board({ schemaVersion: "2.7.0" })).ok).toBe(true);
+		expect(parseSemanticBoard(withFixtureOrders(board({ schemaVersion: "2.7.0" }))).ok).toBe(true);
 	});
 
 	test("two variants claiming to be the implemented architecture is refused", () => {
@@ -160,6 +161,29 @@ describe("what a board has to be before it is drawn", () => {
 				}),
 			),
 		).toContain("two nodes share the id");
+	});
+
+	test("duplicate node or relationship order is refused", () => {
+		for (const content of [
+			{
+				nodes: [
+					{ id: "n1", name: "A", kind: "module", order: 1000 },
+					{ id: "n2", name: "B", kind: "module", order: 1000 },
+				],
+				edges: [],
+			},
+			{
+				nodes: [
+					{ id: "n1", name: "A", kind: "module", order: 1000 },
+					{ id: "n2", name: "B", kind: "module", order: 2000 },
+				],
+				edges: [
+					{ id: "e1", from: "n1", to: "n2", kind: "call", order: 1000 },
+					{ id: "e2", from: "n1", to: "n2", kind: "call", order: 1000 },
+				],
+			},
+		])
+			expect(refusal(board({ variants: withContent(content) }))).toContain("order");
 	});
 
 	test("an edge taking an id a node already answers to is refused", () => {
@@ -278,12 +302,14 @@ describe("what a reader can address by name", () => {
 	test("two nodes may share a name; which one is meant is settled where it is used", () => {
 		expect(
 			parseSemanticBoard(
-				explaining({
-					nodes: [
-						{ id: "n1", name: "client", kind: "module", parent: undefined },
-						{ id: "n2", name: "client", kind: "module" },
-					],
-				}),
+				withFixtureOrders(
+					explaining({
+						nodes: [
+							{ id: "n1", name: "client", kind: "module", parent: undefined },
+							{ id: "n2", name: "client", kind: "module" },
+						],
+					}),
+				),
 			).ok,
 		).toBe(true);
 	});
@@ -415,23 +441,25 @@ describe("one namespace for every subject of a variant", () => {
 	test("two variants may hold the same entity, which is what makes them comparable", () => {
 		expect(
 			parseSemanticBoard(
-				board({
-					variants: [
-						{
-							id: "v1",
-							name: "Initial",
-							lifecycle: "current",
-							content: { nodes: [NODE], edges: [], flows: [] },
-						},
-						{
-							id: "v2",
-							name: "Proposed",
-							lifecycle: "draft",
-							parent: "v1",
-							content: { nodes: [NODE], edges: [], flows: [] },
-						},
-					],
-				}),
+				withFixtureOrders(
+					board({
+						variants: [
+							{
+								id: "v1",
+								name: "Initial",
+								lifecycle: "current",
+								content: { nodes: [NODE], edges: [], flows: [] },
+							},
+							{
+								id: "v2",
+								name: "Proposed",
+								lifecycle: "draft",
+								parent: "v1",
+								content: { nodes: [NODE], edges: [], flows: [] },
+							},
+						],
+					}),
+				),
 			).ok,
 		).toBe(true);
 	});

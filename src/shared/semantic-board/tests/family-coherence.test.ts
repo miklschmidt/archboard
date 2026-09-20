@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { parseSemanticBoard } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A board that is coherent, so each case below can break exactly one thing.
@@ -34,7 +35,7 @@ const board = (over: Record<string, unknown> = {}) => ({
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (value: unknown): string => {
-	const parsed = parseSemanticBoard(value);
+	const parsed = parseSemanticBoard(withFixtureOrders(value));
 	return parsed.ok ? "" : parsed.problem;
 };
 
@@ -114,6 +115,6 @@ describe("what a variant says it is waiting on", () => {
 	});
 
 	test("a draft waiting on something real is a board that opens", () => {
-		expect(parseSemanticBoard(waiting({})).ok).toBe(true);
+		expect(parseSemanticBoard(withFixtureOrders(waiting({}))).ok).toBe(true);
 	});
 });

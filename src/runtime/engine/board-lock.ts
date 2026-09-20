@@ -11,8 +11,8 @@
 // The lock lives beside the note in the vault rather than in this process, so
 // every canvas serving the vault observes the same exclusion. It is a lease,
 // not a flag: a dead holder costs one lease rather than wedging the board.
-// Reads never take this lock; note writes are atomic, and guarding reads would
-// only put every description behind whoever is drawing.
+// Ordinary reads never take this lock; note writes are atomic. A store read
+// that must rewrite an obsolete document uses a nonblocking migration lease.
 //
 // Human holds span the leading gesture and its write. Agent claims span a
 // larger campaign, but remain renewable short leases with a separate bounded
@@ -43,6 +43,7 @@ export {
 	sleep,
 	withBoardLock,
 } from "@/runtime/engine/lib/board-lock-acquisition";
+export { withBoardLockIfFreeSync } from "@/runtime/engine/lib/board-lock-migration";
 export {
 	BoardHeldError,
 	type Claim,

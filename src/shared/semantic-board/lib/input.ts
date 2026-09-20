@@ -18,6 +18,7 @@ import {
 	DrillDownSchema,
 	EdgeLabelSchema,
 	EdgeTrafficSchema,
+	SubjectOrderSchema,
 } from "@/shared/semantic-board/lib/content";
 import {
 	DescriptionSchema,
@@ -79,6 +80,7 @@ const HandleSchema = z
 const SemanticNodeInputSchema = z
 	.object({
 		id: StatedIdSchema.optional(),
+		order: SubjectOrderSchema.optional(),
 		as: HandleSchema.optional(),
 		name: DisplayNameSchema,
 		kind: NodeKindSchema,
@@ -102,6 +104,7 @@ type SemanticNodeInput = z.infer<typeof SemanticNodeInputSchema>;
 const SemanticEdgeInputSchema = z
 	.object({
 		id: StatedIdSchema.optional(),
+		order: SubjectOrderSchema.optional(),
 		as: HandleSchema.optional(),
 		from: NodeReferenceSchema,
 		to: NodeReferenceSchema,

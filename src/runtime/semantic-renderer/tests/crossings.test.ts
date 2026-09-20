@@ -1,11 +1,11 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, roundBridges } from "./drawn-routes";
 
 // Complete bipartite connections cannot all be drawn without crossings. Equal
 // node names keep text measurement from choosing a special-case layout.
-const CROSSED = VariantContentSchema.parse({
+const CROSSED = orderedFixture({
 	nodes: ["a", "b", "c", "x", "y", "z"].map((id) => ({ id, name: id, kind: "service" })),
 	edges: ["a", "b", "c"].flatMap((from) =>
 		["x", "y", "z"].map((to) => ({ id: from + to, from, to, kind: "call", traffic: {} })),
@@ -99,7 +99,7 @@ test("fan-in and fan-out connections do not acquire false crossing bridges", asy
 		{ from: "a", to: "c" },
 		{ from: "c", to: "b" },
 	]) {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: ["a", "b", "c"].map((id) => ({ id, name: id, kind: "service" })),
 			edges: [
 				{ id: "ab", from: "a", to: "b", kind: "call" },

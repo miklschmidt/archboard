@@ -22,7 +22,7 @@ import {
  */
 function route(id: string, from: Point, to: Point): DrawingEdge {
 	return {
-		edge: { id, from: `${id}-from`, to: `${id}-to`, kind: "call", emphasis: "normal" },
+		edge: { id, order: 1000, from: `${id}-from`, to: `${id}-to`, kind: "call", emphasis: "normal" },
 		curve: { from, segments: [{ kind: "line", to }] },
 		path: "",
 	};

@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { across, along, breadth, depth } from "@/runtime/semantic-renderer/tests/drawn-reading";
 import { routePoints, routeCrosses } from "@/runtime/semantic-renderer/tests/drawn-routes";
@@ -13,11 +13,11 @@ test("a skip a proposal adds beside its own chain is still drawn beside that cha
 		["other", "extra"],
 		["extra", "target"],
 	];
-	const before = VariantContentSchema.parse({
+	const before = orderedFixture({
 		nodes: [...new Set(pairs.flat())].map((id) => ({ id, name: id, kind: "module" })),
 		edges: pairs.map(([from, to], index) => ({ id: "e" + index, from, to, kind: "call" })),
 	});
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		...before,
 		edges: [
 			...before.edges,

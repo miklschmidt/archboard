@@ -9,6 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 
 /** The window on the diagram every measured element reports in these tests. */
 const VIEWPORT = Object.freeze({ width: 800, height: 600 });
@@ -219,7 +220,7 @@ function documentReply(board: string): StubReply {
 			},
 		};
 	}
-	return { status: 200, body: { success: true, board: held } };
+	return { status: 200, body: { success: true, board: withFixtureOrders(held) } };
 }
 
 /** A reply the fake server is about to give. */

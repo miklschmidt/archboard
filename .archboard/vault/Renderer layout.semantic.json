@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 15,
+	"version": 16,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-09-17T20:53:52.489Z",
+	"updatedAt": "2026-09-20T00:23:11.372Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -81,7 +81,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "weNj8ziG",
@@ -92,7 +93,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/text.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "kfgDUWyE",
@@ -103,7 +105,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "tBUl0ybN",
@@ -114,7 +117,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/layout/edges.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "H0xU45vp",
@@ -125,7 +129,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/svg/cards.ts"
-						}
+						},
+						"order": 5000
 					}
 				],
 				"edges": [
@@ -135,7 +140,8 @@
 						"to": "kfgDUWyE",
 						"kind": "call",
 						"label": "place grid",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 1000
 					},
 					{
 						"id": "VIDMaMpV",
@@ -143,7 +149,8 @@
 						"to": "weNj8ziG",
 						"kind": "call",
 						"label": "fit title size",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "tj0diTvb",
@@ -151,7 +158,8 @@
 						"to": "tBUl0ybN",
 						"kind": "call",
 						"label": "traffic and routes",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "my9Bj1QK",
@@ -159,7 +167,8 @@
 						"to": "H0xU45vp",
 						"kind": "render",
 						"label": "paint placed cards",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "jpAcngCZ",
@@ -167,7 +176,8 @@
 						"to": "weNj8ziG",
 						"kind": "call",
 						"label": "truncate to fit",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					}
 				],
 				"flows": [
@@ -336,7 +346,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "kHpIix5b",
@@ -346,7 +357,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "BKjOFlgb",
@@ -357,7 +369,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/compound.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "H0xU45vp",
@@ -367,20 +380,23 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "RvOyWmEb",
 						"name": "Pretext",
 						"kind": "external",
-						"responsibility": "Breaks a prepared string into lines at a given width"
+						"responsibility": "Breaks a prepared string into lines at a given width",
+						"order": 5000
 					},
 					{
 						"id": "dYxhsEhY",
 						"name": "Host canvas",
 						"kind": "external",
 						"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
-						"description": "An @napi-rs/canvas canvas installed as OffscreenCanvas under Bun, the tab's own canvas in a browser. Both the line breaking and the painted runs are measured through it, so a line and its words agree (TASK-247)."
+						"description": "An @napi-rs/canvas canvas installed as OffscreenCanvas under Bun, the tab's own canvas in a browser. Both the line breaking and the painted runs are measured through it, so a line and its words agree (TASK-247).",
+						"order": 6000
 					},
 					{
 						"id": "ZRFUJrjD",
@@ -390,14 +406,16 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/compound-graph.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "JwgvpLYJ",
 						"name": "Layout engine",
 						"kind": "external",
 						"responsibility": "Solves one compound graph into boxes and polylines",
-						"description": "@archboard/elk-rs, reached only through the host: a worker pool under Bun, Web Workers in a tab."
+						"description": "@archboard/elk-rs, reached only through the host: a worker pool under Bun, Web Workers in a tab.",
+						"order": 8000
 					},
 					{
 						"id": "sJEdCSmX",
@@ -408,7 +426,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/reading-choice.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "Jdtlq0lD",
@@ -418,7 +437,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/flank-rules.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "u1O704c8",
@@ -429,7 +449,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/scorecard.ts"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "1hNZb5CR",
@@ -439,7 +460,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/label-reservations.ts"
-						}
+						},
+						"order": 12000
 					}
 				],
 				"edges": [
@@ -453,7 +475,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "19pjtjrv",
@@ -461,7 +484,8 @@
 						"to": "RvOyWmEb",
 						"kind": "call",
 						"label": "prepare and wrap",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "aESGqkun",
@@ -469,7 +493,8 @@
 						"to": "dYxhsEhY",
 						"kind": "dependency",
 						"label": "measures its segments there",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "notKnIIz",
@@ -481,7 +506,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "TSsnxsV9",
@@ -489,7 +515,8 @@
 						"to": "dYxhsEhY",
 						"kind": "call",
 						"label": "the width of a painted line",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "eNHrvq6Y",
@@ -497,7 +524,8 @@
 						"to": "sJEdCSmX",
 						"kind": "call",
 						"label": "which way this board reads",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "tY9P0yad",
@@ -505,7 +533,8 @@
 						"to": "Jdtlq0lD",
 						"kind": "call",
 						"label": "seats and the side returns travel",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "lbUaPzWc",
@@ -517,7 +546,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "wCXK6KYw",
@@ -529,7 +559,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "hJ4xGthq",
@@ -537,7 +568,8 @@
 						"to": "1hNZb5CR",
 						"kind": "call",
 						"label": "settle the labels on their runs",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "kKBtoqI2",
@@ -545,7 +577,8 @@
 						"to": "u1O704c8",
 						"kind": "call",
 						"label": "keep the better first render",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 11000
 					},
 					{
 						"id": "L8jPgkA5",
@@ -553,7 +586,8 @@
 						"to": "u1O704c8",
 						"kind": "call",
 						"label": "reject a reading that runs through a card",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 12000
 					},
 					{
 						"id": "oYEzQ4k5",
@@ -565,7 +599,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 13000
 					}
 				],
 				"flows": [

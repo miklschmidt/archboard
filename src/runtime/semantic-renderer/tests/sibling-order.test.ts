@@ -1,9 +1,9 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
 import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
 import input from "@/runtime/semantic-renderer/tests/sibling-order-graph.json";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 
 const MEMBERS = ["vm1", "vm2", "vm3", "vm4"];
@@ -22,7 +22,7 @@ function horizontalOrder(drawing: RenderedDiagram): string[] {
 }
 
 test("unchanged sibling identities keep their horizontal order when a proposal changes surrounding content", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ id: "pool", name: "Application pool", kind: "service" },
 			...MEMBERS.map((id, index) => ({
@@ -51,7 +51,7 @@ test("unchanged sibling identities keep their horizontal order when a proposal c
 			})),
 		],
 	});
-	const proposal = VariantContentSchema.parse({
+	const proposal = orderedFixture({
 		...content,
 		// Array order carries no positioning intent; these identities are unchanged.
 		nodes: [

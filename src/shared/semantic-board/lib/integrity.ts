@@ -282,11 +282,37 @@ function beatIssues(
 function checkVariantContent(content: VariantContent, at: string): IntegrityIssue[] {
 	return [
 		...identityIssues(content, at),
+		...orderIssues(content, at),
 		...nodeIssues(content, at),
 		...edgeIssues(content, at),
 		...flowIssues(content, at),
 		...walkthroughIssues(content, at),
 	];
+}
+
+/**
+ * Each collection gives one layout position to one subject. An equal position
+ * would make array position a hidden tie-break again.
+ * @param content The variant to inspect.
+ * @param at The path to its content.
+ * @returns Duplicate-position problems, if any.
+ */
+function orderIssues(content: VariantContent, at: string): IntegrityIssue[] {
+	const issues: IntegrityIssue[] = [];
+	for (const kind of ["nodes", "edges"] as const) {
+		const seen = new Map<number, string>();
+		for (const subject of content[kind]) {
+			const other = seen.get(subject.order);
+			if (other !== undefined) {
+				issues.push({
+					at: `${at}.${kind}.${subject.id}.order`,
+					problem: `order ${subject.order} is already used by "${other}"; choose another number`,
+				});
+			}
+			seen.set(subject.order, subject.id);
+		}
+	}
+	return issues;
 }
 
 /**

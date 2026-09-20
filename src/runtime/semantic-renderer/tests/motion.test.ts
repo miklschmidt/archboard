@@ -1,5 +1,6 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
@@ -11,7 +12,7 @@ const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;
  * @returns The content.
  */
 function variant(content: Record<string, unknown>): VariantContent {
-	return VariantContentSchema.parse(content);
+	return orderedFixture(content);
 }
 
 /** Two parts, wired every way that matters, and one exchange between them. */

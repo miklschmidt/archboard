@@ -10,17 +10,18 @@ import {
 	reconcileVariant,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 const NODES = [
 	{ id: "api", name: "API", kind: "service" },
 	{ id: "db", name: "Database", kind: "datastore" },
 ];
-const EDGE = { id: "call", from: "api", to: "db", kind: "call", emphasis: "normal" };
+const EDGE = { id: "call", from: "api", to: "db", kind: "call", emphasis: "normal", order: 1000 };
 const EDGE_INPUT = { from: "API", to: "Database", kind: "call" };
 
 /** Parse one content value through the persisted contract. */
 function content(edge: Record<string, unknown>): VariantContent {
-	return VariantContentSchema.parse({ nodes: NODES, edges: [edge] });
+	return VariantContentSchema.parse(withFixtureOrders({ nodes: NODES, edges: [edge] }));
 }
 
 describe("traffic contract", () => {

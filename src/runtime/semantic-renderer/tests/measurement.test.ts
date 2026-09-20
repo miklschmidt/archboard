@@ -24,8 +24,10 @@ test("measurement preserves complete words at fixed readable sizes and bounds th
 	const label = "authentication and authorization requests delivered with the complete payload";
 	const content: VariantContent = {
 		...emptyContent(),
-		nodes: [{ id: "api", name, responsibility, kind: "service" }],
-		edges: [{ id: "call", from: "api", to: "api", kind: "call", label, emphasis: "normal" }],
+		nodes: [{ id: "api", order: 1000, name, responsibility, kind: "service" }],
+		edges: [
+			{ id: "call", order: 1000, from: "api", to: "api", kind: "call", label, emphasis: "normal" },
+		],
 	};
 	const measured = measureArchitecture(content);
 	const card = measured.nodes.get("api")!;
@@ -62,12 +64,13 @@ test("structural parents reserve the whole wrapped header and keep descriptions 
 		nodes: [
 			{
 				id: "parent",
+				order: 1000,
 				name: "Service ownership and request orchestration",
 				responsibility: "Coordinates authentication, authorization, and service request dispatch.",
 				description,
 				kind: "service",
 			},
-			{ id: "child", name: "Token store", parent: "parent", kind: "module" },
+			{ id: "child", order: 1000, name: "Token store", parent: "parent", kind: "module" },
 		],
 	};
 	const measured = measureArchitecture(content);
@@ -91,6 +94,7 @@ test("cached preparation keeps faces and sizes distinct across repeated renders"
 		nodes: [
 			{
 				id: "api",
+				order: 1000,
 				name: "AVAST Waterfall Office",
 				responsibility: "AVAST Waterfall Office",
 				kind: "service",
@@ -99,6 +103,7 @@ test("cached preparation keeps faces and sizes distinct across repeated renders"
 		edges: [
 			{
 				id: "call",
+				order: 1000,
 				from: "api",
 				to: "api",
 				kind: "call",
@@ -110,7 +115,7 @@ test("cached preparation keeps faces and sizes distinct across repeated renders"
 	const first = measureArchitecture(content);
 	measureArchitecture({
 		...emptyContent(),
-		nodes: [{ id: "other", name: "WWWW iii ffi To Vary AWAY", kind: "service" }],
+		nodes: [{ id: "other", order: 1000, name: "WWWW iii ffi To Vary AWAY", kind: "service" }],
 	});
 	expect(measureArchitecture(content)).toEqual(first);
 	const runs = [...first.nodes.get("api")!.runs, ...first.labels.get("call")!.runs];

@@ -1,10 +1,10 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { corridorPoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 test("different relationship kinds use distinct ports and tracks while one kind shares its port", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: ["a", "b"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
 			{ id: "call1", from: "a", to: "b", kind: "call" },

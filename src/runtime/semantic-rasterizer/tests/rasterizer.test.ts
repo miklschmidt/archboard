@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	paletteFor,
 	renderSemanticView,
@@ -26,7 +27,7 @@ import { pngRgbCounts } from "./png-colors.ts";
  * @returns The content.
  */
 function variant(content: Record<string, unknown>): VariantContent {
-	return VariantContentSchema.parse(content);
+	return VariantContentSchema.parse(withFixtureOrders(content));
 }
 
 /** Two parts, one relationship that carries traffic, and one exchange between them. */

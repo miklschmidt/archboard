@@ -1,10 +1,11 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // An arrow must meet the subject it names squarely. The router may choose
 // any face, and a self-loop may travel around any side of its own card.
 
 import { expect, test } from "bun:test";
 import frameApproach from "./frame-head-approach.json";
 import sideApproach from "./side-head-approach.json";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	routeCrosses,
@@ -14,7 +15,7 @@ import {
 import type { DiagramBox } from "@/shared/semantic-board/index";
 
 /** Containment and opposing relationships exercise each endpoint face. */
-const CROWDED: VariantContent = VariantContentSchema.parse({
+const CROWDED: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "edge", name: "Edge", kind: "service" },
 		{ id: "gw", name: "API Gateway", kind: "route", parent: "edge" },
@@ -82,7 +83,7 @@ test("every relationship of a crowded board leaves and arrives square to its nam
 });
 
 test("a self-loop meets its own card squarely and stays outside its interior", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ id: "core", name: "Board Runtime", kind: "service" },
 			{ id: "io", name: "board-io", kind: "module", parent: "core" },
@@ -112,7 +113,7 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
 test("an incoming frame arrow has a whole head and rounded bend before its endpoint", async () => {
-	const content = VariantContentSchema.parse(frameApproach);
+	const content = orderedFixture(frameApproach);
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	const points = routePoints(drawing.svg).get("g1zvz5QO")!;
 	expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
@@ -147,7 +148,7 @@ test("an incoming frame arrow has a whole head and rounded bend before its endpo
 // Reduced from Kubernetes runtime HIE4JB9t: Portal's ordinary OIDC connection
 // entered a crowded side corridor with only 12.1 units for the head and bend.
 test("an ordinary arrow reserves a full straight approach and bend beside neighboring cards", async () => {
-	const content = VariantContentSchema.parse(sideApproach);
+	const content = orderedFixture(sideApproach);
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	const points = routePoints(drawing.svg).get("tPQRa40r")!;
 	expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["mVg3PdJf"]!);

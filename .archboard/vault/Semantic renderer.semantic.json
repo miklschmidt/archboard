@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 13,
+	"version": 14,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-17T22:54:18.253Z",
+	"updatedAt": "2026-09-20T00:23:11.293Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -126,7 +126,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "wpI1LbzG",
@@ -137,7 +138,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/index.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "y8vuJJKu",
@@ -148,7 +150,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/atlas.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "Y0smyqtZ",
@@ -165,7 +168,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "L51bfquE",
@@ -175,7 +179,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/curves.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "wLF1X11D",
@@ -185,7 +190,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/dataflow.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "J3yMo4ag",
@@ -196,7 +202,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "u1OXg3Yy",
@@ -206,7 +213,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/theme.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "J7mPrUeP",
@@ -216,7 +224,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "eECDrhMc",
@@ -226,7 +235,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/document.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "wskEBeIy",
@@ -243,7 +253,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "0XCanbzp",
@@ -254,7 +265,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/index.ts"
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "4nyk76pY",
@@ -265,7 +277,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/host.ts"
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "yOV8Znnv",
@@ -276,7 +289,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/board.ts"
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "CtoOMxca",
@@ -286,7 +300,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts"
-						}
+						},
+						"order": 15000
 					}
 				],
 				"edges": [
@@ -300,7 +315,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "qJrkH2Qg",
@@ -308,7 +324,8 @@
 						"to": "L51bfquE",
 						"kind": "call",
 						"label": "round the routed polylines",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "WwNFCjLE",
@@ -316,7 +333,8 @@
 						"to": "u1OXg3Yy",
 						"kind": "call",
 						"label": "resolve theme",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "SIdU2g2Q",
@@ -324,7 +342,8 @@
 						"to": "J7mPrUeP",
 						"kind": "data",
 						"label": "the settled drawing",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "0s8raCUw",
@@ -332,7 +351,8 @@
 						"to": "J7mPrUeP",
 						"kind": "data",
 						"label": "curves and label anchors",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "I1lGjMES",
@@ -340,7 +360,8 @@
 						"to": "J7mPrUeP",
 						"kind": "data",
 						"label": "literal colours",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "qDiEFiIT",
@@ -348,7 +369,8 @@
 						"to": "eECDrhMc",
 						"kind": "render",
 						"label": "painted body and hit boxes",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 7000
 					},
 					{
 						"id": "4RbEQ6uO",
@@ -360,7 +382,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "veScCirT",
@@ -368,7 +391,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "installRendererHost",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 9000
 					},
 					{
 						"id": "NFop37Ak",
@@ -376,7 +400,8 @@
 						"to": "yOV8Znnv",
 						"kind": "call",
 						"label": "renderBoard, linked faces",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "aN2ABUiR",
@@ -384,7 +409,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "installRendererHost",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 11000
 					},
 					{
 						"id": "iyXO5GUb",
@@ -396,7 +422,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "ezsxPVcK",
@@ -408,7 +435,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "eJO5yog2",
@@ -420,7 +448,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "98et92HX",
@@ -432,7 +461,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 15000
 					},
 					{
 						"id": "NSEpn12D",
@@ -440,7 +470,8 @@
 						"to": "CtoOMxca",
 						"kind": "call",
 						"label": "paint the exchange",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 16000
 					},
 					{
 						"id": "rZknAbkb",
@@ -452,7 +483,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 17000
 					},
 					{
 						"id": "F5mgUBCT",
@@ -460,7 +492,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "solve on the layout engine",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 18000
 					},
 					{
 						"id": "4ZgfK8Ac",
@@ -468,7 +501,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "measure on the host canvas",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 19000
 					},
 					{
 						"id": "NIW5ioWQ",
@@ -476,7 +510,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "theme colours",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 20000
 					},
 					{
 						"id": "WMtzvSOO",
@@ -484,7 +519,8 @@
 						"to": "y8vuJJKu",
 						"kind": "call",
 						"label": "where every subject landed",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 21000
 					},
 					{
 						"id": "IvQqev1K",
@@ -492,7 +528,8 @@
 						"to": "wLF1X11D",
 						"kind": "call",
 						"label": "columns, lifelines and messages",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 22000
 					}
 				],
 				"flows": [
@@ -695,7 +732,8 @@
 								"kind": "named",
 								"name": "Readable layout"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "wpI1LbzG",
@@ -706,7 +744,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/index.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "y8vuJJKu",
@@ -717,7 +756,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/atlas.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "Y0smyqtZ",
@@ -734,7 +774,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "wLF1X11D",
@@ -744,7 +785,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/dataflow.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "J3yMo4ag",
@@ -755,7 +797,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "u1OXg3Yy",
@@ -765,7 +808,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/theme.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "J7mPrUeP",
@@ -775,7 +819,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "eECDrhMc",
@@ -785,7 +830,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/document.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "wskEBeIy",
@@ -802,7 +848,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "0XCanbzp",
@@ -813,7 +860,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/index.ts"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "4nyk76pY",
@@ -824,7 +872,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/host.ts"
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "yOV8Znnv",
@@ -835,7 +884,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/board.ts"
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "CtoOMxca",
@@ -845,7 +895,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts"
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "1Ho9I0eE",
@@ -855,7 +906,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/curves.ts"
-						}
+						},
+						"order": 15000
 					}
 				],
 				"edges": [
@@ -869,7 +921,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "WwNFCjLE",
@@ -877,7 +930,8 @@
 						"to": "u1OXg3Yy",
 						"kind": "call",
 						"label": "resolve theme",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "I1lGjMES",
@@ -885,7 +939,8 @@
 						"to": "J7mPrUeP",
 						"kind": "data",
 						"label": "literal colours",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "qDiEFiIT",
@@ -893,7 +948,8 @@
 						"to": "eECDrhMc",
 						"kind": "render",
 						"label": "painted body and hit boxes",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 4000
 					},
 					{
 						"id": "4RbEQ6uO",
@@ -905,7 +961,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "veScCirT",
@@ -913,7 +970,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "installRendererHost",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 6000
 					},
 					{
 						"id": "NFop37Ak",
@@ -921,7 +979,8 @@
 						"to": "yOV8Znnv",
 						"kind": "call",
 						"label": "renderBoard, linked faces",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "aN2ABUiR",
@@ -929,7 +988,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "installRendererHost",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 8000
 					},
 					{
 						"id": "iyXO5GUb",
@@ -941,7 +1001,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "ezsxPVcK",
@@ -953,7 +1014,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "eJO5yog2",
@@ -965,7 +1027,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "98et92HX",
@@ -977,7 +1040,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "NSEpn12D",
@@ -985,7 +1049,8 @@
 						"to": "CtoOMxca",
 						"kind": "call",
 						"label": "paint the exchange",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "rZknAbkb",
@@ -997,7 +1062,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "F5mgUBCT",
@@ -1005,7 +1071,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "solve on the layout engine",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 15000
 					},
 					{
 						"id": "4ZgfK8Ac",
@@ -1013,7 +1080,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "measure on the host canvas",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 16000
 					},
 					{
 						"id": "NIW5ioWQ",
@@ -1021,7 +1089,8 @@
 						"to": "4nyk76pY",
 						"kind": "call",
 						"label": "theme colours",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 17000
 					},
 					{
 						"id": "WMtzvSOO",
@@ -1029,7 +1098,8 @@
 						"to": "y8vuJJKu",
 						"kind": "call",
 						"label": "where every subject landed",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 18000
 					},
 					{
 						"id": "IvQqev1K",
@@ -1037,7 +1107,8 @@
 						"to": "wLF1X11D",
 						"kind": "call",
 						"label": "columns, lifelines and messages",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 19000
 					},
 					{
 						"id": "RoyAtsCH",
@@ -1045,7 +1116,8 @@
 						"to": "1Ho9I0eE",
 						"kind": "call",
 						"label": "round the routed polylines",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 20000
 					},
 					{
 						"id": "sx9dA1h1",
@@ -1053,7 +1125,8 @@
 						"to": "J7mPrUeP",
 						"kind": "data",
 						"label": "the settled drawing",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 21000
 					},
 					{
 						"id": "rSFC3xVY",
@@ -1061,7 +1134,8 @@
 						"to": "J7mPrUeP",
 						"kind": "data",
 						"label": "curves and label anchors",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 22000
 					}
 				],
 				"flows": [

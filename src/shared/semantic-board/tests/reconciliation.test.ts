@@ -6,6 +6,7 @@ import {
 	type ReconciliationIssue,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A variant's content as a document holds it.
@@ -13,7 +14,7 @@ import {
  * @returns The content.
  */
 const content = (stated: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(stated);
+	VariantContentSchema.parse(withFixtureOrders(stated));
 
 const API = { id: "n1", name: "API", kind: "service", responsibility: "Serves requests" };
 const STORE = { id: "n2", name: "Store", kind: "datastore" };
@@ -31,6 +32,17 @@ const about = (issues: readonly ReconciliationIssue[], subject: string): Reconci
 	issues.filter((issue) => issue.subject === subject);
 
 describe("a change nobody competed for", () => {
+	test("inherits a parent-only node and relationship order change", () => {
+		const theirs = content({
+			nodes: [{ ...API, order: 3000 }, STORE],
+			edges: [{ ...WIRE, order: 4000 }],
+		});
+		const settled = reconcileVariant({ base: BASE, mine: BASE, theirs });
+		expect(settled.issues).toEqual([]);
+		expect(settled.content.nodes[0]?.order).toBe(3000);
+		expect(settled.content.edges[0]?.order).toBe(4000);
+	});
+
 	test("is inherited, and what this proposal decided is kept", () => {
 		// The proposal gave the API a new responsibility; the predecessor renamed it.
 		const mine = content({
@@ -99,6 +111,30 @@ describe("two sides reaching the same conclusion", () => {
 });
 
 describe("a real disagreement", () => {
+	test("holds competing node and relationship order changes as authored fields", () => {
+		const mine = content({
+			nodes: [{ ...API, order: 3000 }, STORE],
+			edges: [{ ...WIRE, order: 3000 }],
+		});
+		const theirs = content({
+			nodes: [{ ...API, order: 4000 }, STORE],
+			edges: [{ ...WIRE, order: 4000 }],
+		});
+		const settled = reconcileVariant({ base: BASE, mine, theirs });
+		expect(about(settled.issues, "n1")[0]).toMatchObject({
+			kind: "competing-field",
+			field: "order",
+			mine: 3000,
+			theirs: 4000,
+		});
+		expect(about(settled.issues, "e1")[0]).toMatchObject({
+			kind: "competing-field",
+			field: "order",
+			mine: 3000,
+			theirs: 4000,
+		});
+	});
+
 	test("is held against the field it is about, and this proposal keeps what it said", () => {
 		const mine = content({ nodes: [{ ...API, name: "Gateway" }, STORE], edges: [WIRE] });
 		const theirs = content({ nodes: [{ ...API, name: "Public API" }, STORE], edges: [WIRE] });

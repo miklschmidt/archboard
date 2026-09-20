@@ -86,7 +86,10 @@ design.
   changing an edge does not automatically badge its endpoint nodes as changed.
   Changes to renderer geometry, styling, or bookkeeping do not count as changes
   to architecture.
-- Agents may express containment, ordered flows, focal subjects, and diagram grammar.
+- Agents may express containment, ordered flows, focal subjects, diagram grammar,
+  and the order in which nodes and relationships enter layout. Their numeric
+  `order` is persistent authoring intent, assigned automatically in 1000-step
+  document order when absent so agents can later adjust the picture.
   They do not author coordinates, font sizes, colours, or connector routes.
 - Fork/adapt PR Lens and inherit both supported grammars: architecture and its
   message-sequence grammar named data-flow. The user chose PR Lens after visually

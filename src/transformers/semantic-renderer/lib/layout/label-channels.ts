@@ -276,8 +276,11 @@ function packChannels(
 	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
 	const context: ChannelContext = { drawing, cards, movable, bounds };
 	const items = [...labels].map(([id, box]) => channelLabel(context, id, box));
+	const orders = new Map(drawing.edges.map(({ edge }) => [edge.id, edge.order]));
 	for (const row of overlappingRows(items)) {
-		const ordered = row.items.toSorted((a, b) => a.center - b.center || a.id.localeCompare(b.id));
+		const ordered = row.items.toSorted(
+			(a, b) => a.center - b.center || (orders.get(a.id) ?? 0) - (orders.get(b.id) ?? 0),
+		);
 		const blocks = projectRow(ordered);
 		if (blocks.some((block) => block.low > block.high))
 			restoreRow(ordered, labels, movable, originalLabels);

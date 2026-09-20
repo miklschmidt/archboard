@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 5,
+	"version": 6,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-09-17T21:04:35.020Z",
+	"updatedAt": "2026-09-20T00:23:11.309Z",
 	"views": [],
 	"variants": [
 		{
@@ -31,7 +31,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "tFTiAUKg",
@@ -43,7 +44,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/session.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "Ly6hUU5o",
@@ -55,7 +57,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/storage-proof.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "JBu1uGdl",
@@ -67,7 +70,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/session-operations.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "X6j6fViI",
@@ -79,7 +83,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/request-identities.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "aRDbMlep",
@@ -91,7 +96,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/response-contract.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "M3mPynLe",
@@ -103,7 +109,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/results.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "3FR6mev4",
@@ -115,7 +122,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/reverse-requests.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "8QpDaiD6",
@@ -127,7 +135,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/lib/session-failures.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "FPKa6YCR",
@@ -143,7 +152,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "ql0DevMk",
@@ -153,7 +163,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-transport/index.ts"
-						}
+						},
+						"order": 11000
 					}
 				],
 				"edges": [
@@ -163,7 +174,8 @@
 						"to": "tFTiAUKg",
 						"kind": "call",
 						"label": "establish phase",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 1000
 					},
 					{
 						"id": "pDFicWqC",
@@ -171,7 +183,8 @@
 						"to": "JBu1uGdl",
 						"kind": "call",
 						"label": "publish reviewed methods",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "SI5PTs6X",
@@ -179,7 +192,8 @@
 						"to": "X6j6fViI",
 						"kind": "call",
 						"label": "prepare parameters",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "VbFXAJfh",
@@ -187,7 +201,8 @@
 						"to": "aRDbMlep",
 						"kind": "rpc",
 						"label": "request and decoded reply",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 4000
 					},
 					{
 						"id": "HlhfxXJm",
@@ -195,7 +210,8 @@
 						"to": "M3mPynLe",
 						"kind": "data",
 						"label": "validated payload",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "mpJAeANo",
@@ -203,7 +219,8 @@
 						"to": "8QpDaiD6",
 						"kind": "call",
 						"label": "settle mutation failure",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "2sOEOJyN",
@@ -211,7 +228,8 @@
 						"to": "3FR6mev4",
 						"kind": "event",
 						"label": "route server request",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "6HSfPOXk",
@@ -219,7 +237,8 @@
 						"to": "X6j6fViI",
 						"kind": "dependency",
 						"label": "verify current epoch",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "7dDHchT9",
@@ -231,7 +250,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "EAKN00R4",
@@ -243,7 +263,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "ombpFl2A",
@@ -255,7 +276,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "blvoJ8p8",
@@ -263,7 +285,8 @@
 						"to": "3FR6mev4",
 						"kind": "event",
 						"label": "a request the child made of us",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 12000
 					}
 				],
 				"flows": [],

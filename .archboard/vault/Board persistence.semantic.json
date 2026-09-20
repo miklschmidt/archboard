@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-17T21:03:45.817Z",
+	"updatedAt": "2026-09-20T00:23:11.441Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -65,7 +65,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "hoh4xPWb",
@@ -76,7 +77,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/location.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "NM28UA5U",
@@ -87,7 +89,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/listing.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "tcwsrSQv",
@@ -98,7 +101,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/read.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "i2CrY6Xj",
@@ -109,7 +113,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/transitions.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "xoapCJNG",
@@ -120,7 +125,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/edit-content.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "8CAH6rSD",
@@ -131,7 +137,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/propagate.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "DJXluInA",
@@ -142,7 +149,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/settle.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "1gdbsn6M",
@@ -153,7 +161,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/write.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "qTv7HuBw",
@@ -164,7 +173,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/atomic-write.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "IKUAjnNG",
@@ -174,7 +184,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "wBw5FntC",
@@ -185,7 +196,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/drill-down.ts"
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "CxaaWj4x",
@@ -195,7 +207,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/edge-identity.ts"
-						}
+						},
+						"order": 13000
 					}
 				],
 				"edges": [
@@ -205,7 +218,8 @@
 						"to": "hoh4xPWb",
 						"kind": "call",
 						"label": "address board",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 1000
 					},
 					{
 						"id": "lcZxhHuv",
@@ -213,7 +227,8 @@
 						"to": "NM28UA5U",
 						"kind": "call",
 						"label": "catalogue boards",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "k1IwXpzd",
@@ -221,7 +236,8 @@
 						"to": "tcwsrSQv",
 						"kind": "call",
 						"label": "read current bytes",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "i6pk24Ov",
@@ -229,7 +245,8 @@
 						"to": "i2CrY6Xj",
 						"kind": "call",
 						"label": "state requested change",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "kOdz3Hxq",
@@ -237,7 +254,8 @@
 						"to": "xoapCJNG",
 						"kind": "call",
 						"label": "apply content edit",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "JRnj6xbQ",
@@ -245,7 +263,8 @@
 						"to": "8CAH6rSD",
 						"kind": "call",
 						"label": "reconcile descendants",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "3yXrbLgg",
@@ -253,7 +272,8 @@
 						"to": "DJXluInA",
 						"kind": "call",
 						"label": "resolve lifecycle",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "smLdyKlp",
@@ -261,7 +281,8 @@
 						"to": "1gdbsn6M",
 						"kind": "call",
 						"label": "submit transition",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 8000
 					},
 					{
 						"id": "E4f3pKJb",
@@ -269,7 +290,8 @@
 						"to": "hoh4xPWb",
 						"kind": "call",
 						"label": "resolve target",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "9O4o9jcE",
@@ -277,7 +299,8 @@
 						"to": "tcwsrSQv",
 						"kind": "call",
 						"label": "read under lease",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "VWo4vJh0",
@@ -285,7 +308,8 @@
 						"to": "i2CrY6Xj",
 						"kind": "call",
 						"label": "apply transition",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 11000
 					},
 					{
 						"id": "EqTEFYDa",
@@ -293,7 +317,8 @@
 						"to": "qTv7HuBw",
 						"kind": "data",
 						"label": "commit serialized board",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 12000
 					},
 					{
 						"id": "6HYXV63O",
@@ -301,7 +326,8 @@
 						"to": "IKUAjnNG",
 						"kind": "call",
 						"label": "check the vault",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "DPHKb9jc",
@@ -309,7 +335,8 @@
 						"to": "wBw5FntC",
 						"kind": "call",
 						"label": "the links out of every board",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 14000
 					},
 					{
 						"id": "gkXKmHDc",
@@ -317,7 +344,8 @@
 						"to": "CxaaWj4x",
 						"kind": "call",
 						"label": "same relationship, or a replacement",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 15000
 					}
 				],
 				"flows": [],

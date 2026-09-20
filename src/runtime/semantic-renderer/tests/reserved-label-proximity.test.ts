@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import nearby from "./reserved-label-near-endpoints.json";
@@ -8,7 +8,7 @@ test("an unrelated root card cannot displace a relationship from its reserved la
 	// The source formerly exchanged equal-size slots with Captures while its
 	// reserved label stayed behind: 463px from endpoints only 219px apart.
 	const drawing = await renderArchitecture({
-		content: VariantContentSchema.parse(nearby),
+		content: orderedFixture(nearby),
 		theme: "light",
 	});
 	const label = routeLabels(drawing.svg).get("25DiejPQ")!;

@@ -574,4 +574,4 @@ async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T
 	}
 }
 
-export { BoardLockCancelledError, holdBoard, sleep, withBoardLock };
+export { BoardLockCancelledError, holdBoard, sleep, withBoardLock, freshRecord, createExclusively };

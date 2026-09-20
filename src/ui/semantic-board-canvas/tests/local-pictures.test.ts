@@ -10,6 +10,7 @@ import { afterEach, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 import {
 	announceSemanticBoardChange,
 	createLocalPictureSource,
@@ -95,7 +96,7 @@ function listing(): Record<string, unknown> {
  * @returns The answer.
  */
 function boardRoute(): Record<string, unknown> {
-	return { success: true, board: document() };
+	return { success: true, board: withFixtureOrders(document()) };
 }
 
 /** What each route the page reads answers, by the path it starts with; the listing last. */

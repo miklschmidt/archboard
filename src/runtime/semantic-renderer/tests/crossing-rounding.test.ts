@@ -31,6 +31,7 @@ function drawing(routes: readonly (readonly Point[])[] = ROUTES): ArchitectureDr
 	const edges: DrawingEdge[] = routes.map((points, index) => ({
 		edge: {
 			id: String(index),
+			order: (index + 1) * 1000,
 			from: `source${index}`,
 			to: `target${index}`,
 			kind: "call",
@@ -95,6 +96,7 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 	const edges: DrawingEdge[] = routes.map((points, index) => ({
 		edge: {
 			id: String(index),
+			order: (index + 1) * 1000,
 			from: `source${index}`,
 			to: `target${index}`,
 			kind: "call",

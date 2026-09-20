@@ -12,7 +12,10 @@
 
 import fs from "node:fs";
 import { errnoCode, errorMessage } from "@/shared/thrown-error/index";
+import { mintId } from "@/shared/ids/ids";
 import { parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board/index";
+import { writeFileAtomic } from "@/runtime/engine/atomic-write";
+import { claimWriterId, withBoardLockIfFreeSync } from "@/runtime/engine/board-lock";
 import {
 	locateSemanticBoard,
 	semanticBoardAddress,
@@ -20,6 +23,7 @@ import {
 } from "@/runtime/semantic-board-store/lib/location";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
 import { semanticVocabularyDiagnostics } from "@/runtime/semantic-board-store/lib/vocabulary";
+import { migrateSemanticBoardDocument } from "@/runtime/semantic-board-store/lib/migrations";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 
 /** A board that was there and was coherent, or why it was neither. */
@@ -36,6 +40,16 @@ type SemanticBoardRead =
 			readonly problem: string;
 			readonly location: SemanticBoardLocation;
 	  };
+
+/** A validated legacy board awaiting the lease before its upgraded file lands. */
+interface PendingMigration {
+	readonly migration: true;
+	readonly read: Extract<SemanticBoardRead, { readonly ok: true }>;
+}
+
+type DecodedBoard =
+	| { readonly ok: true; readonly value: unknown; readonly changed: boolean }
+	| { readonly ok: false; readonly problem: string };
 
 /**
  * The bytes at a path, or nothing when no file is there. A missing board is
@@ -70,12 +84,14 @@ function unreadable(location: SemanticBoardLocation, problem: string): SemanticB
  * Read the board at a known location.
  * @param location Where the board lives.
  * @param configured Current interpreted vault configuration.
+ * @param persistMigration Whether the caller already owns the board lease.
  * @returns The board, or why it could not be read.
  */
-function readSemanticBoardAt(
+function readAt(
 	location: SemanticBoardLocation,
-	configured = readSemanticBoardConfiguration(),
-): SemanticBoardRead {
+	configured: ReturnType<typeof readSemanticBoardConfiguration>,
+	persistMigration: boolean,
+): SemanticBoardRead | PendingMigration {
 	let text: string | undefined;
 	try {
 		text = textAt(location.file);
@@ -90,30 +106,66 @@ function readSemanticBoardAt(
 			location,
 		};
 	}
-	return interpretBoard(text, location, configured);
+	return interpretBoard(text, location, configured, persistMigration);
 }
 /**
  * Interpret readable bytes without treating removed vocabulary as structural corruption.
  * @param text Board bytes.
  * @param location Board address.
  * @param configured Current interpreted policy.
+ * @param persistMigration Whether the caller already owns the board lease.
  * @returns The readable board or actionable error.
  */
 function interpretBoard(
 	text: string,
 	location: SemanticBoardLocation,
 	configured: ReturnType<typeof readSemanticBoardConfiguration>,
-): SemanticBoardRead {
+	persistMigration: boolean,
+): SemanticBoardRead | PendingMigration {
+	const decoded = decodeBoard(text, location);
+	if (!decoded.ok) return unreadable(location, decoded.problem);
+	const read = verifiedRead(decoded.value, location, configured);
+	if (!read.ok || !decoded.changed) return read;
+	if (!persistMigration) return { migration: true, read };
+	return persistBoardMigration(decoded.value, read, configured);
+}
+
+/**
+ * Decode and migrate raw JSON without accepting malformed legacy content.
+ * @param text The on-disk bytes.
+ * @param location The board address for diagnostics.
+ * @returns A decoded document or a refusal.
+ */
+function decodeBoard(text: string, location: SemanticBoardLocation): DecodedBoard {
 	let value: unknown;
 	try {
 		value = JSON.parse(text);
 	} catch (error) {
-		return unreadable(location, `${location.file} is not JSON: ${errorMessage(error)}`);
+		return { ok: false, problem: `${location.file} is not JSON: ${errorMessage(error)}` };
 	}
 	const legacy = legacyGroupProblem(value);
 	if (legacy !== null) {
-		return unreadable(location, `${location.file}: ${legacy}`);
+		return { ok: false, problem: `${location.file}: ${legacy}` };
 	}
+	const migration = migrateSemanticBoardDocument(value);
+	if (!migration.ok) {
+		return { ok: false, problem: `${location.file}: ${migration.problem}` };
+	}
+	return { ok: true, value: migration.value, changed: migration.changed };
+}
+
+/**
+ * Validate the current shape and board identity, with configuration warnings.
+ * @param value The decoded and optionally migrated document.
+ * @param location The board address.
+ * @param configured The vault configuration.
+ * @returns The validated board or refusal.
+ */
+function verifiedRead(
+	value: unknown,
+	location: SemanticBoardLocation,
+	configured: ReturnType<typeof readSemanticBoardConfiguration>,
+): SemanticBoardRead {
 	const parsed = parseSemanticBoard(value);
 	if (!parsed.ok) {
 		return unreadable(location, parsed.problem);
@@ -137,6 +189,129 @@ function interpretBoard(
 			...(configured.ok
 				? semanticVocabularyDiagnostics(parsed.board, location.file, configured.configuration)
 				: []),
+		],
+	};
+}
+
+/**
+ * Commit a validated migration as one board version under the caller's lease.
+ * @param value The decoded document already validated with added order.
+ * @param read The validated normalized board.
+ * @param configured The vault configuration.
+ * @returns The committed board or a persistence refusal.
+ */
+function persistBoardMigration(
+	value: unknown,
+	read: Extract<SemanticBoardRead, { readonly ok: true }>,
+	configured: ReturnType<typeof readSemanticBoardConfiguration>,
+): SemanticBoardRead {
+	if (!isRecord(value)) throw new Error("A migrated board must be a document");
+	value["version"] = read.board.version + 1;
+	value["updatedAt"] = new Date().toISOString();
+	const committed = verifiedRead(value, read.location, configured);
+	if (!committed.ok) return committed;
+	try {
+		// The caller holds this board's lease. Keep the validated raw document so
+		// the conversion does not introduce unrelated parser defaults.
+		writeFileAtomic(read.location.file, `${JSON.stringify(value, null, "\t")}\n`);
+	} catch (error) {
+		return unreadable(
+			read.location,
+			`${read.location.file}: could not persist schema migration: ${errorMessage(error)}`,
+		);
+	}
+	return committed;
+}
+
+/**
+ * Read and, if necessary, persist a migration inside an already-held lease.
+ * @param location The board address.
+ * @param configured The vault configuration.
+ * @returns The current board or refusal.
+ */
+function readSemanticBoardAtUnderLease(
+	location: SemanticBoardLocation,
+	configured = readSemanticBoardConfiguration(),
+): SemanticBoardRead {
+	const result = readAt(location, configured, true);
+	if ("migration" in result) {
+		throw new Error("A migration cannot remain pending inside the board lease");
+	}
+	return result;
+}
+
+/**
+ * Read without delaying current boards. A legacy document needs the same
+ * per-board lease that protects all writes, and is read again once held so a
+ * concurrent writer's committed version is never overwritten by a stale one.
+ * @param location The board address.
+ * @param configured The vault configuration.
+ * @returns The current board or refusal.
+ */
+function readSemanticBoardAt(
+	location: SemanticBoardLocation,
+	configured = readSemanticBoardConfiguration(),
+): SemanticBoardRead {
+	const first = readAt(location, configured, false);
+	if (!("migration" in first)) return first;
+	return migrateOnRead(location, configured);
+}
+
+/**
+ * Attempt one nonblocking migration and return a normalized pending read if held.
+ * @param location The board address.
+ * @param configured The vault configuration.
+ * @returns The migrated or still-pending board.
+ */
+function migrateOnRead(
+	location: SemanticBoardLocation,
+	configured: ReturnType<typeof readSemanticBoardConfiguration>,
+): SemanticBoardRead {
+	const claim = claimWriterId(location.key);
+	try {
+		const attempted = withBoardLockIfFreeSync(
+			{
+				board: location.key,
+				holder: {
+					id: claim ?? `schema-migration-${mintId()}`,
+					kind: "agent",
+					...(claim === null ? {} : { claimed: true }),
+				},
+			},
+			() => readSemanticBoardAtUnderLease(location, configured),
+		);
+		if (attempted.acquired) return attempted.value;
+	} catch (error) {
+		return unreadable(
+			location,
+			`${location.file}: could not migrate board: ${errorMessage(error)}`,
+		);
+	}
+	// A claimed or contested board must remain readable. A later read or write
+	// retries persistence when its lease becomes available.
+	const latest = readAt(location, configured, false);
+	if (!("migration" in latest)) return latest;
+	return pendingRead(latest.read);
+}
+
+/**
+ * Mark a coherent read whose migration could not yet take the lease.
+ * @param read The normalized board awaiting persistence.
+ * @returns The read with a pending warning.
+ */
+function pendingRead(read: Extract<SemanticBoardRead, { readonly ok: true }>): SemanticBoardRead {
+	return {
+		...read,
+		warnings: [
+			...read.warnings,
+			{
+				severity: "warning",
+				code: "SCHEMA_MIGRATION_PENDING",
+				file: read.location.file,
+				board: read.board.name,
+				message:
+					"Schema migration is pending while another writer holds the board. Read it again after the claim or write ends.",
+			},
 		],
 	};
 }
@@ -234,4 +409,9 @@ function readSemanticBoard(asked: string): SemanticBoardRead {
 	return readSemanticBoardAt(locateSemanticBoard(asked));
 }
 
-export { type SemanticBoardRead, readSemanticBoardAt, readSemanticBoard };
+export {
+	type SemanticBoardRead,
+	readSemanticBoardAt,
+	readSemanticBoardAtUnderLease,
+	readSemanticBoard,
+};

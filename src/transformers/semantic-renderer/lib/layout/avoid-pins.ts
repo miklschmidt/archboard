@@ -4,6 +4,7 @@ import {
 	ROUTE_OBSTACLE_CLEARANCE,
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
+import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import {
 	boxOf,
 	contains,
@@ -371,9 +372,11 @@ export function alignedPins(
 	// The first pass protects every seed. The refinement can release seeds
 	// replaced by real matched pins, without losing those feasible alternatives.
 	const selected = new PinCandidates(nodes, channels, edges);
-	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) selected.add(edge);
+	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two)))
+		selected.add(edge);
 	const refined = new PinCandidates(nodes, channels, edges, selected.pins);
-	for (const edge of edges.toSorted((one, two) => one.id.localeCompare(two.id))) refined.add(edge);
+	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two)))
+		refined.add(edge);
 	return refined.pins;
 }
 

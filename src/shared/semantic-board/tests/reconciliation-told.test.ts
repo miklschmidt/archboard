@@ -6,6 +6,7 @@ import {
 	type ReconciliationIssue,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A variant's content as a document holds it.
@@ -13,7 +14,7 @@ import {
  * @returns The content.
  */
 const content = (stated: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(stated);
+	VariantContentSchema.parse(withFixtureOrders(stated));
 
 const API = { id: "n1", name: "API", kind: "service", responsibility: "Serves requests" };
 const STORE = { id: "n2", name: "Store", kind: "datastore" };

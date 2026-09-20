@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { themeColor } from "@/shared/theme/server";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -29,7 +29,7 @@ describe("containment and type have independent visual channels", () => {
 	for (const theme of ["light", "dark"] as const) {
 		test(`expanded, inherited, collapsed and unknown types on ${theme}`, async () => {
 			const expanded = await renderArchitecture({
-				content: VariantContentSchema.parse({ nodes }),
+				content: orderedFixture({ nodes }),
 				theme,
 				policy,
 			});
@@ -62,7 +62,7 @@ describe("containment and type have independent visual channels", () => {
 			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-green")}"`);
 			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-violet")}"`);
 			const collapsed = await renderArchitecture({
-				content: VariantContentSchema.parse({ nodes: nodes.slice(0, 2) }),
+				content: orderedFixture({ nodes: nodes.slice(0, 2) }),
 				theme,
 				policy,
 			});
@@ -71,7 +71,7 @@ describe("containment and type have independent visual channels", () => {
 			expect(card).toContain('data-type-color="green"');
 			expect(card).toContain('data-type-icon="RiShipLine"');
 			const unknown = await renderArchitecture({
-				content: VariantContentSchema.parse({
+				content: orderedFixture({
 					nodes: [{ id: "u", name: "Old kind", kind: "retired" }],
 				}),
 				theme,
@@ -84,7 +84,7 @@ describe("containment and type have independent visual channels", () => {
 	}
 
 	test("groups do not affect appearance and current policy can restyle unchanged meaning", async () => {
-		const content = VariantContentSchema.parse({ nodes });
+		const content = orderedFixture({ nodes });
 		const plain = await renderArchitecture({ content, theme: "light", policy });
 		const groupedContent = structuredClone(content);
 		for (const node of groupedContent.nodes) node.groups = ["migration"];
@@ -95,7 +95,7 @@ describe("containment and type have independent visual channels", () => {
 		});
 		expect(grouped).toEqual(plain);
 		const aws = await renderArchitecture({
-			content: VariantContentSchema.parse({ nodes: [{ ...nodes[0], kind: "aws" }, nodes[1]] }),
+			content: orderedFixture({ nodes: [{ ...nodes[0], kind: "aws" }, nodes[1]] }),
 			theme: "light",
 			policy,
 		});
@@ -104,14 +104,14 @@ describe("containment and type have independent visual channels", () => {
 
 	test("comparison overrides the border while preserving body tint and type chips", async () => {
 		const rendered = await renderArchitecture({
-			content: VariantContentSchema.parse({ nodes }),
+			content: orderedFixture({ nodes }),
 			theme: "light",
 			policy,
 			standing: { api: "changed" },
 		});
 		const api = groupOf(rendered.svg, "node", "api")!.markup;
 		const unmarked = await renderArchitecture({
-			content: VariantContentSchema.parse({ nodes }),
+			content: orderedFixture({ nodes }),
 			theme: "light",
 			policy,
 		});
@@ -125,7 +125,7 @@ describe("containment and type have independent visual channels", () => {
 	});
 
 	test("relationship policy owns color, dash and arrowhead; emphasis changes only weight", async () => {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: nodes.slice(0, 2),
 			edges: [{ id: "e", from: "cloud", to: "cluster", kind: "call" }],
 		});
@@ -149,7 +149,7 @@ describe("containment and type have independent visual channels", () => {
 });
 
 test("inline panes never reuse an arrowhead ID for different appearance", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: nodes.slice(0, 2),
 		edges: [{ id: "e", from: "cloud", to: "cluster", kind: "call" }],
 	});
@@ -181,7 +181,7 @@ test("inline panes never reuse an arrowhead ID for different appearance", async 
 
 test("removed vocabulary keys matching object prototype names render neutral", async () => {
 	for (const kind of ["constructor", "toString"]) {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: [
 				{ id: "a", name: "A", kind },
 				{ id: "b", name: "B", kind: "api" },
