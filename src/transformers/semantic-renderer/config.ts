@@ -8,7 +8,7 @@ export const DIAGRAM_MARGIN = 20;
 /** Native placement coordinate margin, before final drawing bounds are measured. */
 export const PLACEMENT_MARGIN = 24;
 /** Equal space below a container title and at its sides/bottom. */
-export const CONTAINER_INSET = 24;
+export const CONTAINER_INSET = 20;
 /** Preferred horizontal gap; routed cards also require room for bends and arrow approaches. */
 export const CARD_GAP = 24;
 /** Preferred rank gap, subject to routing clearance. Reserved labels add their measured height. */
