@@ -1,10 +1,11 @@
 ---
 id: TASK-286
 title: Keep a continuing relationship ID across multi-field edits
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-20 00:02'
+updated_date: '2026-09-20 01:11'
 labels:
   - semantic-board
   - identity
@@ -22,10 +23,10 @@ On Cloud Infrastructure, L4 forwarding is the same load balancer-to-IIS connecti
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Restating a held or restorable relationship ID can change multiple authored fields while preserving identity; invalid references and duplicate IDs remain refused.
-- [ ] #2 Explicit remove plus add without an ID remains a replacement and comparison distinguishes continuation from replacement.
-- [ ] #3 The Cloud Infrastructure migration drafts use original L4 forwarding ID ghAjlN21 with fallback kind and muted emphasis, while observed current retains HTTP; board comparison reports continuation.
-- [ ] #4 Focused store and CLI contracts, consumer skill guidance and affected evaluation expectations, and complete check pass without weakening lint or type rules.
+- [x] #1 Restating a held or restorable relationship ID can change multiple authored fields while preserving identity; invalid references and duplicate IDs remain refused.
+- [x] #2 Explicit remove plus add without an ID remains a replacement and comparison distinguishes continuation from replacement.
+- [x] #3 The Cloud Infrastructure migration drafts use original L4 forwarding ID ghAjlN21 with fallback kind and muted emphasis, while observed current retains HTTP; board comparison reports continuation.
+- [x] #4 Focused store and CLI contracts, consumer skill guidance and affected evaluation expectations, and complete check pass without weakening lint or type rules.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,3 +34,15 @@ On Cloud Infrastructure, L4 forwarding is the same load balancer-to-IIS connecti
 <!-- SECTION:PLAN:BEGIN -->
 1. Replace the two-property identity refusal with the existing explicit-ID continuation contract; align the replacement warning and focused tests. 2. Update only consumer skill and evaluation guidance directly affected by the rule. 3. Restart the canvas, restore the Cloud Infrastructure arrow ID through the CLI in one atomic edit, verify both drafts and comparison, then run the complete gate and commit source and board changes separately.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Focused store and CLI contracts prove same-ID multi-field edits continue identity and explicit remove plus idless add remains a replacement. In Cloud Infrastructure, observed keeps ghAjlN21 as HTTP while both migration drafts use the same ID as fallback/muted; comparison reports a changed continuing relationship. Source commit e438c312 and external vault commit 0e975ba were verified. Clean integrated commit 8f19abc0 passed bun run check.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Preserved relationship identity for deliberate same-ID edits and restored ghAjlN21 in both Cloud Infrastructure drafts. Verified comparison continuity, focused contracts, and the complete clean gate.
+<!-- SECTION:FINAL_SUMMARY:END -->

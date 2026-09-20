@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-20 00:34'
+updated_date: '2026-09-20 01:07'
 labels:
   - renderer
   - layout
@@ -135,4 +135,6 @@ Final combined gate: lint, formatting, types, frontend build and module tests pa
 Final counts: 3369 module tests pass; separate repository lane 8/8 pass. Validation logs /tmp/proposal-full-check2.log and /tmp/proposal-repository.log.
 
 Foreign-frame routing correction in isolated worktree: preserve one shared libavoid scene, find routes entering frames unrelated to both endpoints, derive scoped clear detours, and constrain the shared connectors with native checkpoints; a final validation replaces any route still crossing. Platform Cluster@MBkKDE49 v18 audit: 19 edges, 3 frames, zero unrelated-frame or card crossings and zero off-run labels. Cloud Infrastructure@Nc8vWLvX v40: 19 edges, 1 frame, same zero violations. Native outside-versus-descendant regression and shared-container-rows tests pass; skill evaluation/install tests 237 pass. Full check passes lint, format, type checks and build, then module suite reports 3371 pass/1 fail: compact-inset container-packing test, independently reproduced on pristine e438c312 before this correction. Source checkout remains under concurrent edits, so implementation is committed only in this task's isolated worktree.
+
+Integrated the unrelated-frame routing correction from codex/foreign-frame-routing as f9ed89ad on feat/semantic-boards. With authored order and the current live server, Platform Cluster@MBkKDE49 renders all 19 relationships with zero crossings through its three unrelated frame interiors. Focused foreign-frame, order, and compact-packing renderer tests pass. Broader TASK-278 remains in progress under its original acceptance criteria.
 <!-- SECTION:NOTES:END -->
