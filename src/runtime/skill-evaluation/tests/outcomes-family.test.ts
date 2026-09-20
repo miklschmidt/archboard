@@ -419,7 +419,7 @@ describe("relationship identity", () => {
 			vault: "/run/vault",
 		})[0];
 
-	test("a relationship removed and added again with one property changed breaks identity", () => {
+	test("an explicit replacement with a close restatement does not fail the generic id guardrail", () => {
 		const verdict = judge(
 			withEdges(
 				[
@@ -436,11 +436,10 @@ describe("relationship identity", () => {
 				2,
 			),
 		);
-		expect(verdict?.passed).toBe(false);
-		expect(verdict?.detail).toContain("A -> B (call) was e1, re-added as e9");
+		expect(verdict?.passed).toBe(true);
 	});
 
-	test("a replacement that changes two properties, or a relationship left alone, keeps the guardrail", () => {
+	test("a replacement with several changed properties or a continuing id keeps the guardrail", () => {
 		const replaced = judge(
 			withEdges(
 				[

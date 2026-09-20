@@ -4,12 +4,7 @@
 // a read-only task writes nothing.
 
 import path from "node:path";
-import {
-	effectiveTraffic,
-	type SemanticBoard,
-	type SemanticEdge,
-	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
 import {
 	simpleCommands,
 	unwrapped,
@@ -48,71 +43,6 @@ function renamedIdentities(was: SemanticVariant, now: SemanticVariant): string[]
 }
 
 /**
- * The name of a node on a variant, or the id itself when nothing has it.
- * @param variant The variant.
- * @param id The node's id.
- * @returns The name.
- */
-function nodeName(variant: SemanticVariant, id: string): string {
-	return variant.content.nodes.find((node) => node.id === id)?.name ?? id;
-}
-
-/**
- * A relationship as identity compares it: its ends by node name, so a node
- * that kept its name still anchors the relationship, and the authored
- * properties a continuation may change one of.
- * @param edge The relationship.
- * @param variant The variant it is on.
- * @returns The shape.
- */
-function edgeShape(edge: SemanticEdge, variant: SemanticVariant) {
-	const traffic = effectiveTraffic(edge.traffic);
-	return {
-		from: nodeName(variant, edge.from),
-		to: nodeName(variant, edge.to),
-		kind: edge.kind,
-		properties: [
-			edge.label ?? "",
-			edge.description ?? "",
-			edge.emphasis,
-			traffic === undefined ? "" : `${traffic.speed}/${traffic.volume}`,
-		],
-	};
-}
-
-/**
- * Relationships of one variant that were removed by id and added again under
- * a new id with the same ends and kind and at most one other authored
- * property changed: the continuation rule says such a relationship keeps its
- * id, so the author broke an identity rather than replaced a unit.
- * @param was The variant before.
- * @param now The same variant after.
- * @returns One line per re-added relationship.
- */
-function reAddedRelationships(was: SemanticVariant, now: SemanticVariant): string[] {
-	const stillThere = new Set(now.content.edges.map((edge) => edge.id));
-	const before = new Set(was.content.edges.map((edge) => edge.id));
-	const added = now.content.edges.filter((edge) => !before.has(edge.id));
-	return was.content.edges.flatMap((edge) => {
-		if (stillThere.has(edge.id)) return [];
-		const old = edgeShape(edge, was);
-		const twin = added.find((candidate) => {
-			const fresh = edgeShape(candidate, now);
-			const changed = fresh.properties.filter((value, index) => value !== old.properties[index]);
-			return (
-				fresh.from === old.from &&
-				fresh.to === old.to &&
-				fresh.kind === old.kind &&
-				changed.length <= 1
-			);
-		});
-		return twin === undefined
-			? []
-			: [`${old.from} -> ${old.to} (${old.kind}) was ${edge.id}, re-added as ${twin.id}`];
-	});
-}
-
-/**
  * Every renamed identity across the boards and variants present on both sides.
  * @param context The context.
  * @returns The violations, each one line.
@@ -124,16 +54,15 @@ function identityViolations(context: GuardrailContext): string[] {
 			const now = after?.variants.find((variant) => variant.id === was.id);
 			return now === undefined
 				? []
-				: [...renamedIdentities(was, now), ...reAddedRelationships(was, now)].map(
-						(line) => `${name}@${was.name}: ${line}`,
-					);
+				: renamedIdentities(was, now).map((line) => `${name}@${was.name}: ${line}`);
 		});
 	});
 }
 
 /**
- * Whether every node that kept its name kept its id, and no relationship was
- * removed and added again as a new one.
+ * Whether every node that kept its name kept its id. Relationship identity is
+ * intentional: a saved before/after pair cannot distinguish an explicit
+ * replacement from an accidental id change, so scenarios check that contract.
  * @param context The context.
  * @returns The verdict.
  */
@@ -141,10 +70,7 @@ const idsStable: Guardrail = (context) => {
 	const violations = identityViolations(context);
 	return {
 		passed: violations.length === 0,
-		detail:
-			violations.length === 0
-				? "every retained node kept its id and no relationship was re-added"
-				: violations.join("; "),
+		detail: violations.length === 0 ? "every retained node kept its id" : violations.join("; "),
 	};
 };
 

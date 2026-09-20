@@ -276,14 +276,13 @@ approximated another way.
 A `warnings` list on a successful answer says what the write did that you
 should know: `UNKNOWN_VOCABULARY` means the board references vocabulary the
 configuration no longer defines (`archboard check` names each reference), and
-`RELATIONSHIP_REPLACED` means the batch removed a relationship and stated one
-with the same ends and kind and at most one other property changed, or removed
-one while such a restatement an earlier write added still stands: either way it
-is the same relationship under a new id. If the original remains in the
-direct predecessor or recorded reconciliation base, remove the copy and
-restate the original `id` with its full properties in one edit. Otherwise
-that removed identity is unavailable to restore here; preserve ids when
-changing continuing relationships.
+`RELATIONSHIP_REPLACED` means a relationship was implicitly removed with its
+endpoint and a close restatement received a new id, or one was removed while a
+close restatement from an earlier write still stands. If it was meant to
+continue and its id remains in the direct predecessor or recorded
+reconciliation base, remove the copy and restate the original `id` with its
+full properties in one edit. An explicit `removeEdges` plus idless addition
+declares a replacement without this warning.
 `RELATIONSHIP_DUPLICATED` means the batch stated an existing relationship again
 without its `id`, so both now stand; do not remove the original to tidy up, but
 remove the copy and restate the original with its `id`.

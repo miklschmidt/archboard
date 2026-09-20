@@ -1,9 +1,7 @@
-// A relationship removed and stated again, no more than one authored property
-// apart, is the identity break the continuation rule exists to prevent: one
-// changed property keeps the id, and an agent that removed the relationship to
-// add it again has minted a new identity for the same unit — including when
-// what changed is the part it lands on, because the part it was on went away
-// in the same batch. The break also spans two writes: a
+// An edge cascaded off a removed node and stated again without its id may have
+// lost its continuing identity. An explicit removeEdges plus an idless addition
+// instead declares a replacement, even when its properties resemble the old
+// edge. A possible accidental break also spans two writes: a
 // restatement without the id lands beside the original, and a later write
 // removes the original. The write lands (the board is valid), and the answer
 // says what happened at each step, so the rule teaches itself.
@@ -18,7 +16,7 @@ interface WriteNotice {
 }
 
 /**
- * The authored properties a continuation may change one of, as comparable text.
+ * Authored properties used to detect a close restatement, as comparable text.
  * @param edge The relationship.
  * @returns The four properties.
  */
@@ -33,11 +31,11 @@ function authoredProperties(edge: SemanticEdge): readonly string[] {
 }
 
 /**
- * Whether two relationships are one unit under the continuation rule: the
- * same ends and kind, and at most one other authored property apart.
+ * Whether two relationships are close enough to warrant a duplicate notice:
+ * the same ends and kind, and at most one other authored property apart.
  * @param was The relationship as it stood.
  * @param now The relationship stated in its place.
- * @returns True when the second should have kept the first's id.
+ * @returns True when the second closely restates the first.
  */
 function sameUnit(was: SemanticEdge, now: SemanticEdge): boolean {
 	if (was.from !== now.from || was.to !== now.to || was.kind !== now.kind) return false;
@@ -46,20 +44,18 @@ function sameUnit(was: SemanticEdge, now: SemanticEdge): boolean {
 }
 
 /**
- * Whether the relationship stated in place of one the same batch took off is
- * the same one continuing, counted the way the continuation rule counts: the
- * ends and the kind are authored properties like the rest, and one difference
- * among all seven keeps the id.
+ * Whether the relationship stated in place of an implicitly removed one may
+ * be the same one continuing. Ends and kind count like other authored fields.
  *
  * This is wider than `sameUnit` on purpose, and only here. When both
  * relationships stand on the board, two calls between different parts under
  * one label are ordinary and saying so would be noise. When one was taken off
  * and its near-twin put up in the same breath — which is what removing a part,
  * adding its replacement and drawing the relationship afresh comes to — the
- * identity was lost, and nothing else notices.
+ * identity may have been lost, and nothing else notices.
  * @param was The relationship the batch took off.
  * @param now The relationship the batch put up.
- * @returns True when the second should have kept the first's id.
+ * @returns True when the second may continue the first.
  */
 function continues(was: SemanticEdge, now: SemanticEdge): boolean {
 	const before = [was.from, was.to, was.kind, ...authoredProperties(was)];
@@ -106,20 +102,23 @@ function repairAdvice(original: string, copy: string): string {
  * Relationships the batch removed and stated again in the same batch.
  * @param gone The relationships the batch removed.
  * @param added The relationships the batch added.
+ * @param statedRemoved Relationships the batch explicitly removed as replacements.
  * @returns One notice per re-added relationship.
  */
 function reAddedInBatch(
 	gone: readonly SemanticEdge[],
 	added: readonly SemanticEdge[],
+	statedRemoved: ReadonlySet<string>,
 ): WriteNotice[] {
 	return gone.flatMap((edge) => {
+		if (statedRemoved.has(edge.id)) return [];
 		const twin = added.find((candidate) => continues(edge, candidate));
 		if (twin === undefined) return [];
 		return [
 			{
 				code: "RELATIONSHIP_REPLACED" as const,
 				path: `edges.${twin.id}`,
-				message: `relationship ${named(edge)} was removed and stated again as ${twin.id} with at most one property changed; a continuing relationship keeps its id, so preserve its id when editing it. ${repairAdvice(edge.id, twin.id)}`,
+				message: `relationship ${named(edge)} was removed with its endpoint and stated again as ${twin.id}; if it continues, preserve its id when editing it. ${repairAdvice(edge.id, twin.id)}`,
 			},
 		];
 	});
@@ -169,27 +168,30 @@ function removedForCopy(
 			{
 				code: "RELATIONSHIP_REPLACED" as const,
 				path: `edges.${copy.id}`,
-				message: `relationship ${named(edge)} was removed while ${copy.id}, stated earlier with the same ends, kind and label, still stands, so the relationship continues under a new id; ${repairAdvice(edge.id, copy.id)}`,
+				message: `relationship ${named(edge)} was removed while ${copy.id}, stated earlier with the same ends, kind and label, still stands; if this was meant to continue the relationship, ${repairAdvice(edge.id, copy.id)}`,
 			},
 		];
 	});
 }
 
 /**
- * Every relationship a batch stated again under a new id: removed and re-added
- * in the batch, added beside the relationship it restates, or removed while a
- * restatement of it an earlier write added still stands.
+ * Possible accidental identity breaks: an implicitly removed relationship
+ * re-added in the batch, one added beside a close restatement, or one removed
+ * while a close restatement from an earlier write still stands. An explicit
+ * removal and idless addition is a replacement and needs no notice.
  * @param before The relationships as they stood.
  * @param removed The ids the batch removed.
  * @param after The relationships after the batch.
  * @param restored Inherited identities this batch may bring back.
+ * @param statedRemoved Edge ids explicitly named in removeEdges.
  * @returns One notice per restated relationship.
  */
 function replacedRelationships(
 	before: readonly SemanticEdge[],
 	removed: ReadonlySet<string>,
 	after: readonly SemanticEdge[],
-	restored: ReadonlySet<string> = new Set(),
+	restored: ReadonlySet<string>,
+	statedRemoved: ReadonlySet<string>,
 ): WriteNotice[] {
 	const known = new Set(before.map((edge) => edge.id));
 	const added = after.filter((edge) => !known.has(edge.id));
@@ -199,6 +201,7 @@ function replacedRelationships(
 		...reAddedInBatch(
 			gone,
 			added.filter((edge) => !restored.has(edge.id)),
+			statedRemoved,
 		),
 		...duplicatedBeside(added, kept, restored),
 		...removedForCopy(gone, kept),

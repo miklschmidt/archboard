@@ -49,7 +49,6 @@ import {
 import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store/lib/outcome";
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
-import { edgeIdentityRefusal } from "@/runtime/semantic-board-store/lib/edge-identity";
 import type { WriteNotice } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
@@ -441,10 +440,7 @@ function acceptable(
 			location,
 		};
 	}
-	const identity = edgeIdentityRefusal(parsed.board);
-	return identity === null
-		? { board: parsed.board }
-		: { outcome: "rejected", code: identity.code, problem: identity.problem, location };
+	return { board: parsed.board };
 }
 
 /**

@@ -21,7 +21,7 @@ afterAll(async () => {
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 
-test("a proposal replaces an edge once two authored fields differ from its predecessor", () => {
+test("a proposal keeps a stated relationship id across multiple edits and distinguishes an explicit replacement", () => {
 	const created = cli(
 		["semantic", "new", "edge-identity", "--doing", "stating the current request path"],
 		JSON.stringify({
@@ -114,16 +114,17 @@ test("a proposal replaces an edge once two authored fields differ from its prede
 			],
 		}),
 	);
-	expect(relabelled.status).not.toBe(0);
-	const problem = `${relabelled.stderr}\n${relabelled.stdout}`;
-	expect(problem).toContain(edge.id);
-	expect(problem).toContain("Queued requests");
-	expect(problem).toContain("to");
-	expect(problem).toContain("label");
-	expect(problem).toContain("removeEdges");
-	expect(problem).toContain("without an ID");
-	expect(JSON.parse(cli(["semantic", "show", "edge-identity"]).stdout).board).toEqual(
-		afterDestination,
+	expect(relabelled.status, relabelled.stderr).toBe(0);
+	const afterRelabel = JSON.parse(relabelled.stdout).board;
+	const continuation = afterRelabel.variants.find(
+		(variant: { name: string }) => variant.name === "Queued requests",
+	).content.edges[0];
+	expect(continuation).toMatchObject({ id: edge.id, to: queue.id, label: "enqueue" });
+	expect(JSON.parse(cli(["semantic", "show", "edge-identity"]).stdout).board).toEqual(afterRelabel);
+	const compared = cli(["semantic", "compare", "edge-identity", "--variant", "Queued requests"]);
+	expect(compared.status, compared.stderr).toBe(0);
+	expect(JSON.parse(compared.stdout).edges).toEqual(
+		expect.arrayContaining([expect.objectContaining({ id: edge.id, standing: "changed" })]),
 	);
 
 	const replaced = cli(
@@ -132,7 +133,7 @@ test("a proposal replaces an edge once two authored fields differ from its prede
 			"edit",
 			"edge-identity",
 			"--expect-version",
-			String(afterDestination.version),
+			String(afterRelabel.version),
 			"--doing",
 			"replacing the request connection",
 		],
@@ -152,7 +153,7 @@ test("a proposal replaces an edge once two authored fields differ from its prede
 	);
 	expect(replaced.status, replaced.stderr).toBe(0);
 	const resulting = JSON.parse(replaced.stdout).board;
-	expect(resulting.version).toBe(afterDestination.version + 1);
+	expect(resulting.version).toBe(afterRelabel.version + 1);
 	const proposal = resulting.variants.find(
 		(variant: { name: string }) => variant.name === "Queued requests",
 	);
@@ -163,6 +164,20 @@ test("a proposal replaces an edge once two authored fields differ from its prede
 		label: "enqueue",
 	});
 	expect(proposal.content.edges[0].id).not.toBe(edge.id);
+	const replacedComparison = cli([
+		"semantic",
+		"compare",
+		"edge-identity",
+		"--variant",
+		"Queued requests",
+	]);
+	expect(replacedComparison.status, replacedComparison.stderr).toBe(0);
+	expect(JSON.parse(replacedComparison.stdout).edges).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ id: edge.id, standing: "removed" }),
+			expect.objectContaining({ id: proposal.content.edges[0].id, standing: "added" }),
+		]),
+	);
 });
 
 test("one CLI edit consolidates copied proposal subjects under their inherited ids and reconnects the flow and view", () => {
