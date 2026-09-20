@@ -69,6 +69,65 @@ function intersects(one: DiagramBox, other: DiagramBox): boolean {
 	);
 }
 
+/** The four numeric bounds of a painted rectangle. */
+function paintedBox(markup: string): DiagramBox {
+	const coordinate = (name: "x" | "y" | "width" | "height") =>
+		Number(new RegExp(`\\b${name}="([^"]+)"`, "u").exec(markup)?.[1]);
+	return {
+		x: coordinate("x"),
+		y: coordinate("y"),
+		width: coordinate("width"),
+		height: coordinate("height"),
+	};
+}
+
+test("a crossing step explanation stays clear of the receiver's activation bar", () => {
+	const rendered = renderDataFlow({
+		content: orderedFixture({
+			nodes: [
+				{ id: "client", name: "Client", kind: "service" },
+				{ id: "server", name: "Server", kind: "service" },
+			],
+			flows: [
+				{
+					id: "exchange",
+					name: "One exchange",
+					participants: ["client", "server"],
+					steps: [
+						{
+							id: "call",
+							from: "client",
+							to: "server",
+							kind: "sync",
+							label: "Request certificate",
+							note: "The current cert-manager workflow handles public certificates; private Service CA integration is proposed and not yet specified.",
+						},
+						{ id: "reply", from: "server", to: "client", kind: "return", label: "Certificate" },
+					],
+				},
+			],
+		}),
+		theme: "light",
+	});
+	const groups = rendered.svg.split(/(?=<g data-semantic-kind=)/u);
+	const words = groups.find(
+		(group) =>
+			group.startsWith('<g data-semantic-kind="step" data-semantic-id="call"') &&
+			[...group.matchAll(/<rect\b[^>]*\/>/gu)].length === 2,
+	);
+	const receiver = groups.find(
+		(group) =>
+			group.startsWith('<g data-semantic-kind="node" data-semantic-id="server"') &&
+			group.includes('rx="3"'),
+	);
+	const note = paintedBox([...words!.matchAll(/<rect\b[^>]*\/>/gu)][1]![0]);
+	const bar = paintedBox(/<rect\b[^>]*rx="3"[^>]*\/>/u.exec(receiver!)![0]);
+	const nextLabel = labelPlates(rendered.svg, "step").get("reply")!;
+
+	expect(intersects(note, bar)).toBe(false);
+	expect(note.y + note.height).toBeLessThan(nextLabel.y);
+});
+
 test("a self step's note is drawn whole under its loop, and the next message makes room for it", () => {
 	const plain = renderDataFlow({ content: startup(), theme: "light" });
 	const rendered = renderDataFlow({ content: startup(NOTE), theme: "light" });
