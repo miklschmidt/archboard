@@ -87,14 +87,12 @@ impossible; it is reported as a waiver whatever its axis.
   really addresses the whole module.
 - **Identity**: a restated node or relationship keeps its id. A rename that
   produced a new id, or a removal beside an addition where the source shows a
-  change, is incorrect. Compare a proposal against its direct predecessor:
+  continuing relationship, is incorrect. Compare a proposal against its direct predecessor:
   added, removed, changed and unchanged subjects, with continuing edges kept
-  and replaced edges new. A relationship is a continuation when at most one
-  of its authored properties (`from`, `to`, `kind`, `label`, `description`,
-  `emphasis`, effective `traffic`) differs from the predecessor's relationship
-  with the same id, so a call that now lands on a new node under its old id
-  is correct; two or more differences make it a replacement, which removes
-  the old id and adds a new relationship. Emphasis is presentation intent and
+  and replaced edges new. A continuing relationship keeps its id even when
+  its endpoint, kind or several authored properties change. Explicit removal
+  of the old id plus addition without an id declares a replacement and compares
+  as removed plus added. Emphasis is presentation intent and
   not a semantic change; effective traffic is. Board views belong to the
   board and are not variant changes.
 - **Traffic**: `traffic: {}` is the defaults; stated `speed`/`volume` are

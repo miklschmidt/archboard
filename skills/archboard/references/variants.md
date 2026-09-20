@@ -36,14 +36,12 @@ as removed; ids only on the proposal as added.
 
 ### Edge identity
 
-Count the authored properties that differ from the predecessor's relationship
-with the same id: `from`, `to`, `kind`, `label`, `description`, `emphasis`,
-`traffic` (once, as a whole). One difference keeps the id (a clarified label, or
-the same labelled call now landing on a new node); two or more make a
-replacement: put the old id in `removeEdges` and add the new relationship
-without an id, in the same batch. The CLI counts after resolving names and
-defaults, across separate edits too. Compare endpoint ids, not names: renaming a
-node changes no relationship.
+Keep the id when a relationship continues, including when its endpoint, kind,
+or several other properties change. To state a replacement, put the old id in
+`removeEdges` and add the new relationship without an id in the same batch.
+The comparison follows ids: the continuing relationship is changed, while the
+replacement is removed plus added. Renaming a node changes no relationship;
+its endpoint id still names the same node.
 
 ### Sequence identity
 

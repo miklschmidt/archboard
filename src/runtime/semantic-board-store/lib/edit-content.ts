@@ -379,6 +379,7 @@ function editContent(
 					planned.removals.edges,
 					edges.edges,
 					restorable.edges,
+					planned.removals.statedEdges,
 				),
 			}
 		: placed;
