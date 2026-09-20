@@ -48,6 +48,7 @@ const RenderThemeSchema = z.enum(["light", "dark"]).default("light");
  * viewer asks for on every change.
  */
 const RenderFontsSchema = z.enum(["linked", "embedded"]).default("linked");
+const RenderComparisonSchema = z.enum(["on", "off"]).default("on");
 
 /**
  * The board name a request is about.
@@ -155,10 +156,11 @@ interface RenderChoices {
 	readonly fonts: "linked" | "embedded";
 	readonly variant?: string;
 	readonly view?: string;
+	readonly comparison: boolean;
 }
 
 /** The selectors a render request may state, all of them optional. */
-const RENDER_SELECTORS = ["variant", "view", "theme", "fonts"] as const;
+const RENDER_SELECTORS = ["variant", "view", "theme", "fonts", "comparison"] as const;
 
 /**
  * One stated selector, or why it cannot be acted on.
@@ -234,11 +236,16 @@ function chosen(
 	if (!fonts.success) {
 		return { ok: false, why: `"fonts" says "${stated["fonts"]}"; they are linked or embedded` };
 	}
+	const comparison = RenderComparisonSchema.safeParse(stated["comparison"]);
+	if (!comparison.success) {
+		return { ok: false, why: `"comparison" says "${stated["comparison"]}"; choose on or off` };
+	}
 	return {
 		ok: true,
 		how: {
 			theme: theme.data,
 			fonts: fonts.data,
+			comparison: comparison.data === "on",
 			...(stated["variant"] === undefined ? {} : { variant: stated["variant"] }),
 			...(stated["view"] === undefined ? {} : { view: stated["view"] }),
 		},

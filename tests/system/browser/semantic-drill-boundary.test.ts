@@ -324,6 +324,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 			id: "Ld93kQ2p",
 			name: "board-version",
 			kind: "module",
+			order: 1,
 		});
 	});
 	await pollUntil(

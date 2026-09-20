@@ -1,5 +1,5 @@
 // The inspector's own small vocabulary: a heading, a definition row, a section,
-// a title block, a description, and the one way names are joined for reading.
+// a title block, and a description.
 //
 // These carry no knowledge of what a semantic board is. They are the shapes the
 // panel is built out of, kept together so that a section looks the same
@@ -12,7 +12,6 @@ import { useCallback, type JSX, type ReactNode } from "react";
 import { Button } from "@/ui/components/button";
 
 import type { CodeBinding } from "@/shared/code-target";
-import type { SemanticNode } from "@/shared/semantic-board/index";
 import { Badge } from "@/ui/components/badge";
 import { groupLabel, type GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 
@@ -247,15 +246,6 @@ function Described(props: DescribedProps): JSX.Element | null {
 	);
 }
 
-/**
- * The names of some nodes, in the order the board holds them.
- * @param nodes The nodes.
- * @returns Their names, joined for reading.
- */
-function namesOf(nodes: readonly SemanticNode[]): string {
-	return nodes.map((node) => node.name).join(", ");
-}
-
 /** How the panel names groups, which one is under inspection, and how to inspect one. */
 interface GroupControls {
 	/** What the vault calls each group, by id. */
@@ -355,6 +345,5 @@ export {
 	Section,
 	SectionLabel,
 	TitleBlock,
-	namesOf,
 	type GroupControls,
 };

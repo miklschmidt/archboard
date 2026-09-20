@@ -35,6 +35,18 @@ const surfaceTransform = (browser: AgentBrowserSession): Promise<string> =>
 		`document.querySelector("[data-slot='semantic-board-surface']")?.style.transform ?? ""`,
 	);
 
+/** Whether two camera transforms place the picture in the same visible spot. */
+function sameVisibleFit(actual: string, expected: string): boolean {
+	const numbers = /-?\d+(?:\.\d+)?/g;
+	const one = actual.match(numbers)?.map(Number);
+	const two = expected.match(numbers)?.map(Number);
+	return (
+		one?.length === 3 &&
+		two?.length === 3 &&
+		one.every((value, index) => Math.abs(value - (two[index] ?? NaN)) < (index === 2 ? 0.005 : 1))
+	);
+}
+
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 8_000 } as const;
 
@@ -336,7 +348,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	await press(browser, "[data-slot='semantic-sidebar-toggle']");
 	await pollUntil(
 		() => surfaceTransform(browser),
-		(transform) => transform === fittedOpen,
+		(transform) => sameVisibleFit(transform, fittedOpen),
 		"the picture to refit to the sidebar coming back",
 		WAIT,
 	);

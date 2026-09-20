@@ -471,18 +471,18 @@ describe("authoring and opening a semantic board", () => {
 		const endpoint = `${canvas.base}/api/semantic-boards/render?board=two-roots&variant=${proposal.id}`;
 		const draw = async (view = "") => (await fetch(`${endpoint}${view}`)).json();
 		const whole = await draw();
+		const plain = await draw("&comparison=off");
 		const named = await draw(`&view=${everything.id}`);
 		const selected = await draw(`&view=${reporting.id}`);
 
 		expect(whole.changes.standing[doomed.id]).toBe("removed");
-		// The same reading under another name: same subjects, same standing.
 		expect(named.changes.standing[doomed.id]).toBe("removed");
 		expect(named.changes.standing).toEqual(whole.changes.standing);
-		// And the picture holds what it says was lost: the removed node has a box
-		// in the atlas and the drawing marks it as absent rather than as part of
-		// the proposal.
 		expect(named.atlas.nodes[doomed.id]).toBeDefined();
 		expect(named.svg).toContain('data-semantic-standing="removed"');
+		expect(plain.svg).not.toContain("data-semantic-standing");
+		expect(plain.atlas.nodes[doomed.id]).toBeUndefined();
+		expect(plain.changes).toEqual(whole.changes);
 		// A selected deletion stays visible even when the proposal has none of it.
 		expect(selected.changes.standing).toEqual({ [doomed.id]: "removed" });
 		expect(selected.atlas.nodes[doomed.id]).toBeDefined();

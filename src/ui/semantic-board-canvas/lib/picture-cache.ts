@@ -48,7 +48,7 @@ type CachedPicture = z.infer<typeof CachedPictureSchema>;
  * @returns The key.
  */
 function pictureKey(request: SemanticRenderRequest): string {
-	return `${PREFIX}${JSON.stringify([request.board, request.variant ?? "", request.view ?? "", request.theme])}`;
+	return `${PREFIX}${JSON.stringify([request.board, request.variant ?? "", request.view ?? "", request.theme, request.comparison === false ? "plain" : "compared"])}`;
 }
 
 /**

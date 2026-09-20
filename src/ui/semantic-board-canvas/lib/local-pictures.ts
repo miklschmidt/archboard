@@ -114,7 +114,14 @@ async function drawHere(
 	// The same picture asked for again while it is still being laid out — a
 	// pane reading its board again as the first read lands — waits for that
 	// drawing rather than laying the board out a second time.
-	const key = JSON.stringify([request.board, request.variant, request.view, request.theme, stamp]);
+	const key = JSON.stringify([
+		request.board,
+		request.variant,
+		request.view,
+		request.theme,
+		request.comparison === false ? "plain" : "compared",
+		stamp,
+	]);
 	const reply =
 		kept ??
 		(await (drawing.get(key) ??
@@ -174,7 +181,12 @@ async function drawn(
 ): Promise<SemanticRenderReply> {
 	const outcome = await setup.draw(
 		board,
-		{ variant: request.variant, view: request.view, theme: request.theme },
+		{
+			variant: request.variant,
+			view: request.view,
+			theme: request.theme,
+			comparison: request.comparison,
+		},
 		policy,
 	);
 	if (!outcome.ok) throw new SemanticBoardError(outcome.code, outcome.error);

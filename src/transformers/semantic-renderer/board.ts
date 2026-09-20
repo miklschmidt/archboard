@@ -12,6 +12,8 @@ import {
 	drawingOf,
 	findView,
 	resolveVariant,
+	scopedContent,
+	type DrawnProposal,
 	type DiagramGrammar,
 	type DiagramTheme,
 	type FontSource,
@@ -32,6 +34,8 @@ interface BoardRenderChoices {
 	readonly variant?: string | undefined;
 	/** A view id or name; the whole variant when absent. */
 	readonly view?: string | undefined;
+	/** Whether the picture includes comparison marks and removed context. Defaults to true. */
+	readonly comparison?: boolean | undefined;
 	readonly theme: DiagramTheme;
 	readonly fonts: FontSource;
 }
@@ -83,6 +87,29 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
 }
 
 /**
+ * Choose the picture's content and marks while retaining the proposal's change report.
+ * @param proposal The compared drawing.
+ * @param variant The variant itself.
+ * @param scope The view being read.
+ * @param comparison Whether comparison treatment is visible.
+ * @returns The inputs that differ between a compared and a clean picture.
+ */
+function pictureOf(
+	proposal: DrawnProposal,
+	variant: SemanticVariant,
+	scope: ViewScope,
+	comparison: boolean,
+) {
+	if (!comparison) {
+		return { content: scopedContent(variant.content, scope) };
+	}
+	return {
+		content: proposal.content,
+		...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
+	};
+}
+
+/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
@@ -94,17 +121,18 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
  * @param how.theme Which colour scheme to draw for.
  * @param how.fonts Where the drawn faces come from.
  * @param how.policy The vault's presentation policy.
+ * @param how.comparison Whether to draw comparison treatment.
  * @returns The answer.
  */
 async function drawnReply(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	view: SemanticView | undefined,
-	how: { theme: DiagramTheme; fonts: FontSource; policy: SemanticPolicy },
+	how: { theme: DiagramTheme; fonts: FontSource; policy: SemanticPolicy; comparison: boolean },
 ): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
-	// What a change took away is half of what a reader came to see, and it lives
-	// only in the predecessor, so the picture — never the board — puts it back.
+	// The comparison restores what a change took away from the predecessor;
+	// a clean reading below draws only the variant's own content.
 	const proposal = drawingOf(board, variant, reading.scope);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
@@ -125,12 +153,11 @@ async function drawnReply(
 	try {
 		const picture = await renderSemanticView({
 			policy: how.policy,
-			content: proposal.content,
+			...pictureOf(proposal, variant, reading.scope, how.comparison),
 			grammar: reading.grammar,
 			theme: how.theme,
 			fonts: how.fonts,
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
-			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 		});
 		return { ...identity, ...picture };
 	} catch (error) {
@@ -173,6 +200,7 @@ async function renderBoard(
 		theme: choices.theme,
 		fonts: choices.fonts,
 		policy,
+		comparison: choices.comparison !== false,
 	});
 	return { ok: true, reply };
 }

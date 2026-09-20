@@ -1,9 +1,9 @@
 // What picking something out of a diagram tells a person, and where a link to
 // the level below leads.
 //
-// The card in the picture carries a name, a kind and one line. Everything else
+// The card in the picture carries a name, a kind and one line. More of what
 // an architecture says about a node — the longer description, where its code
-// is, what contains it, the board under it — is reached by inspecting, and that
+// is, and the board under it — is reached by inspecting, and that
 // is what these check. They read the rendered panel rather than the module's
 // internals, because "a person can find this out" is the claim being made.
 
@@ -146,8 +146,7 @@ test("picking a node shows what its card cannot: the description and the code", 
 	expect(slot("semantic-inspector-binding")?.textContent).toContain(
 		"src/runtime/engine/board-io.ts",
 	);
-	// And where it sits, which the picture shows but the panel has to say in words.
-	expect(slot("semantic-inspector-ancestry")?.textContent).toContain("Board Runtime");
+	expect(inspector()).not.toContain("Containment");
 });
 
 test("an unbound node says so plainly rather than showing an empty binding", async () => {
@@ -174,16 +173,6 @@ test("two nodes of one board can name two different repositories", async () => {
 
 	expect(slot("semantic-inspector-binding")?.textContent).toContain("coordinator");
 	expect(slot("semantic-inspector-binding")?.textContent).not.toContain("archboard");
-});
-
-test("a container says what it holds", async () => {
-	serving();
-	mountStage("svc");
-	await settled();
-
-	expect(slot("semantic-inspector-holds")?.textContent).toContain("board-io");
-	expect(slot("semantic-inspector-holds")?.textContent).toContain("Write Lease");
-	expect(slot("semantic-inspector-ancestry")?.textContent).toContain("Nothing contains it.");
 });
 
 test("a drill-down discloses the target variant and where it stands before opening it", async () => {

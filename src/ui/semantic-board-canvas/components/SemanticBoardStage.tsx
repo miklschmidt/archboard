@@ -18,7 +18,7 @@ import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { CodeBinding } from "@/shared/code-target";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, type JSX, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type {
@@ -141,6 +141,10 @@ interface SemanticBoardStageProps {
 
 /** What the view is assembled from. */
 interface RenderView extends SemanticBoardStageProps {
+	/** Whether the canvas shows comparison marks and removed context. */
+	readonly comparison: boolean;
+	/** Change this pane's comparison display. */
+	readonly onComparisonChange: (enabled: boolean) => void;
 	/** Camera retained while a different variant is being drawn. */
 	readonly camera: BoardCamera;
 	/** The cache's answer for this board, variant and theme. */
@@ -376,6 +380,7 @@ function useReported(
 function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	const { board, variant, onSelect } = props;
 	const theme = props.theme ?? "light";
+	const [comparison, onComparisonChange] = useState(true);
 	const drill = useDrillDown(board, variant);
 	// How the board on screen is read: the shell's answer for the pane's own
 	// board, and this pane's own for a level somebody drilled into, where there
@@ -401,6 +406,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 			variant: level.variant,
 			view: viewToRead(narrative.beat, level.view),
 			theme,
+			comparison,
 		}),
 	);
 	// The board on screen, not the pane's own: a change to the board somebody is
@@ -531,6 +537,8 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 
 	return renderedView({
 		...props,
+		comparison,
+		onComparisonChange,
 		camera,
 		render,
 		onRetry,

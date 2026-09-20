@@ -1,18 +1,26 @@
-import { useMemo, type JSX, type ReactNode } from "react";
+import { useId, useMemo, type JSX, type ReactNode } from "react";
 
 import { PaletteColorSchema } from "@/shared/semantic-policy/index";
 import { STANDING_COLORS } from "@/shared/theme/index";
+import { Checkbox } from "@/ui/components/checkbox";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
 /**
  * A browser-only key to the channels in the current picture.
  * @param props The appearance facts and theme of the drawing.
  * @param props.appearances Facts emitted for its visible subjects.
+ * @param props.comparison Whether comparison treatment is visible.
+ * @param props.comparisonAvailable Whether this variant has a predecessor.
+ * @param props.onComparisonChange Change the canvas treatment.
  * @returns The key, as a part of the sidebar's board tab.
  */
 function SemanticLegend(props: {
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
+	readonly comparison: boolean;
+	readonly comparisonAvailable: boolean;
+	readonly onComparisonChange: (enabled: boolean) => void;
 }): JSX.Element {
+	const comparisonId = useId();
 	const standing = STANDING_COLORS;
 	const entries = [...props.appearances.values()];
 	const kinds = uniqueTypes(entries.filter((item) => item.depiction !== ""));
@@ -21,12 +29,6 @@ function SemanticLegend(props: {
 		<section aria-label="Diagram legend" data-slot="semantic-legend" className="flex flex-col">
 			<h2 className="text-kicker text-muted-foreground px-4 pt-4 pb-1 uppercase">Legend</h2>
 			<div className="px-4 pb-4">
-				<LegendSection title="Containment">
-					<p className="text-muted-foreground text-body leading-relaxed">
-						Colored containers establish a body color for their contents. Cards inherit it; type
-						chips identify what each node is.
-					</p>
-				</LegendSection>
 				{kinds.length > 0 && (
 					<LegendSection title="Node types">
 						<ul className="space-y-2.5">
@@ -55,10 +57,25 @@ function SemanticLegend(props: {
 					</LegendSection>
 				)}
 				<LegendSection title="Comparison and attention">
+					{props.comparisonAvailable && (
+						<div className="text-body mb-4 flex items-center gap-2">
+							<Checkbox
+								id={comparisonId}
+								checked={props.comparison}
+								onCheckedChange={props.onComparisonChange}
+								data-slot="semantic-comparison-toggle"
+							/>
+							<label htmlFor={comparisonId}>Show comparison on canvas</label>
+						</div>
+					)}
 					<div className="text-body grid grid-cols-2 gap-x-3 gap-y-2.5">
-						<StandingSample color={standing.added}>Added</StandingSample>
-						<StandingSample color={standing.changed}>Changed</StandingSample>
-						<StandingSample color={standing.removed}>Removed</StandingSample>
+						{props.comparisonAvailable && props.comparison && (
+							<>
+								<StandingSample color={standing.added}>Added</StandingSample>
+								<StandingSample color={standing.changed}>Changed</StandingSample>
+								<StandingSample color={standing.removed}>Removed</StandingSample>
+							</>
+						)}
 						<StandingSample color={standing.selected} outer>
 							Selected
 						</StandingSample>

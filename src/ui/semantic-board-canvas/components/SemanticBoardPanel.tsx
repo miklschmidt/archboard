@@ -60,6 +60,10 @@ interface SemanticBoardPanelProps {
 	onChooseGroup: (group: string | null) => void;
 	/** What the picture on screen draws each kind with, for the key. */
 	appearances: ReadonlyMap<string, AppliedAppearance>;
+	/** Whether this pane draws comparison treatment. */
+	comparison: boolean;
+	/** Change the canvas comparison treatment. */
+	onComparisonChange: (enabled: boolean) => void;
 }
 
 /**
@@ -185,7 +189,12 @@ function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
 			<Part title="Groups" slot="semantic-board-panel-groups">
 				{groupControl(props)}
 			</Part>
-			<SemanticLegend appearances={props.appearances} />
+			<SemanticLegend
+				appearances={props.appearances}
+				comparison={props.comparison}
+				comparisonAvailable={props.answer !== undefined && props.answer.changes !== null}
+				onComparisonChange={props.onComparisonChange}
+			/>
 		</div>
 	);
 }

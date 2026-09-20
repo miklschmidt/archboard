@@ -58,6 +58,7 @@ const semanticBoardKeys = {
 			request.variant ?? "",
 			request.view ?? "",
 			request.theme,
+			request.comparison === false ? "plain" : "compared",
 		] as const,
 };
 

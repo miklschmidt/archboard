@@ -179,8 +179,7 @@ test("a subject the change takes away can still be asked about", async () => {
 	// "removed" is never removed-from-nowhere.
 	expect(slot("semantic-inspector-standing")?.textContent).toContain("Not on this proposal");
 	expect(slot("semantic-inspector-standing")?.textContent).toContain("as it is");
-	// What contains it comes back with it, so it is not explained as floating.
-	expect(slot("semantic-inspector-ancestry")?.textContent).toContain("Board Runtime");
+	expect(slot("semantic-inspector-ancestry")).toBeNull();
 });
 
 test("a changed subject says which field moved and what it moved between", async () => {

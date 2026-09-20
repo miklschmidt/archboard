@@ -3,8 +3,7 @@
 // The card in the picture says a node's name, its kind and, when it has one,
 // the single line it is responsible for. That is all a card can carry and stay
 // readable, and ADR 0023 makes the rest reachable rather than drawn: the longer
-// description, the one optional primary code binding, what contains the node
-// and what it contains, and the board one level down.
+// description, the one optional primary code binding, and the board one level down.
 //
 // Everything here comes from the board document rather than from the picture.
 // The atlas decides what can be picked out of the drawing on screen; the board
@@ -32,7 +31,6 @@ import {
 	Row,
 	Section,
 	TitleBlock,
-	namesOf,
 	type GroupControls,
 } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import {
@@ -120,7 +118,7 @@ function StepBody(props: StepBodyProps): JSX.Element {
 
 /** Inputs for the node body. */
 interface NodeBodyProps {
-	/** The selected node, with the containment around it. */
+	/** The selected node. */
 	subject: NodeSubject;
 	/**
 	 * Open the board one level down.
@@ -143,7 +141,7 @@ interface NodeBodyProps {
  * @returns The body.
  */
 function NodeBody(props: NodeBodyProps): JSX.Element {
-	const { node, ancestry, holds } = props.subject;
+	const { node } = props.subject;
 	return (
 		<>
 			<TitleBlock
@@ -153,16 +151,6 @@ function NodeBody(props: NodeBodyProps): JSX.Element {
 				responsibility={node.responsibility}
 			/>
 			<Memberships groups={node.groups} controls={props.groups} />
-			<Section title="Containment">
-				<p className="text-body" data-slot="semantic-inspector-ancestry">
-					{ancestry.length === 0 ? "Nothing contains it." : `In ${namesOf(ancestry)}`}
-				</p>
-				{holds.length > 0 && (
-					<p className="text-body" data-slot="semantic-inspector-holds">
-						Holds {namesOf(holds)}
-					</p>
-				)}
-			</Section>
 			<Described text={node.description} />
 			<Section title="Bound repository">
 				<BindingBody
