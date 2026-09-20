@@ -537,6 +537,13 @@
 					"owner": "src/runtime/semantic-renderer/tests/automatic-columns.test.ts; src/transformers/semantic-renderer/tests/fold-columns.test.ts"
 				},
 				{
+					"path": "continuing relationship identity across multiple changed fields or an endpoint",
+					"expectedUse": "restate a continuing relationship by id; explicit removal plus an idless addition declares replacement",
+					"scenarios": ["S01", "S10"],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
+				},
+				{
 					"path": "restore absent inherited node and relationship identities",
 					"expectedUse": "repair a proposal by restating known predecessor or reconciliation-base identities in one ordinary edit; invented and wrong-kind ids stay refused",
 					"scenarios": [],

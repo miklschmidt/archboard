@@ -137,8 +137,9 @@ recipe names.
   beat as much as a node — leaves `id` out. A restated subject replaces its
   previous definition whole, so restate the fields you keep. A relationship
   restated without its `id` is a new relationship, however familiar its ends: to
-  change one property of an existing relationship (its traffic, its label),
-  restate it with the `id` you read, and never remove it to add it again.
+  change a continuing relationship (including its ends, kind or several
+  properties), restate it with the `id` you read. Explicit `removeEdges` plus
+  an idless addition declares a replacement.
 - **Verification.** Read the write's answer back against the checks you wrote
   down before writing (below). When the picture is the deliverable, draw it
   and look at it: `semantic rasterize <board> --out <file.png>` and open the

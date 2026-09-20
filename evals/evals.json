@@ -142,7 +142,7 @@
 				},
 				{
 					"feature": "edge.replacement-rule",
-					"requirement": "the direct app -> helpers edge is removed by id and two new edges are added without ids",
+					"requirement": "the old direct app -> helpers call ends; app ownership and helpers delegation are new relationships, so the direct edge is removed by id and two new edges are added without ids",
 					"skill": [
 						"SKILL.md#essentials",
 						"references/edit.md#edit-an-existing-board",
@@ -1020,7 +1020,7 @@
 				},
 				{
 					"feature": "identity.continuation",
-					"requirement": "all three edges keep their ids and other fields (one changed property each)",
+					"requirement": "all three continuing edges keep their ids and other fields",
 					"skill": ["SKILL.md#essentials", "references/edit.md#edit-an-existing-board"]
 				}
 			],

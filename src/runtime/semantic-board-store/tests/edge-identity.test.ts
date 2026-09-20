@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
@@ -104,7 +104,7 @@ test.each([
 	{ label: "place architecture" },
 	{ description: "Calls the layout engine" },
 	{ emphasis: "hero" },
-])("one authored property may change: %j", async (change) => {
+])("a stated relationship keeps its id when %j changes", async (change) => {
 	const edge = variant().content.edges[0]!;
 	expect((await edit({ variant: "Proposal", edges: [{ ...edge, ...change }] })).outcome).toBe(
 		"applied",
@@ -135,7 +135,7 @@ test("endpoint names, renamed nodes and default emphasis do not create differenc
 	expect(variant().content.edges[0]).toEqual({ ...edge, label: "place architecture" });
 });
 
-test("traffic is one identity property and is preserved whole", async () => {
+test("traffic is preserved whole when a continuing relationship is restated", async () => {
 	const edge = variant().content.edges[0]!;
 	expect(
 		(
@@ -151,7 +151,7 @@ test("traffic is one identity property and is preserved whole", async () => {
 	});
 });
 
-test("equivalent traffic does not add an identity change", async () => {
+test("equivalent traffic can be restated on a continuing relationship", async () => {
 	const proposal = variant();
 	const predecessor = read().variants.find((one) => one.id === proposal.parent)!;
 	const edge = predecessor.content.edges[0]!;
@@ -182,54 +182,55 @@ test("equivalent traffic does not add an identity change", async () => {
 	).toBe("applied");
 });
 
-test("traffic plus destination requires a replacement identity", async () => {
+test("a continuing relationship keeps its id across endpoint, kind and traffic changes", async () => {
 	const edge = variant().content.edges[0]!;
-	expect(
-		await edit({
-			variant: "Proposal",
-			edges: [{ ...edge, to: "Compound", traffic: { speed: 72, volume: 2 } }],
-		}),
-	).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
-});
-
-test("two changes in one batch reject the whole write and explain replacement", async () => {
-	const edge = variant().content.edges[0]!;
-	const file = store.locateSemanticBoard(board).file;
-	const bytes = readFileSync(file, "utf8");
+	const predecessor = variant("Initial");
 	const result = await edit({
 		variant: "Proposal",
-		nodes: [{ name: "Must not land", kind: "module" }],
-		edges: [{ ...edge, to: "Compound", label: "graph and measured sizes" }],
+		edges: [
+			{
+				...edge,
+				to: "Compound",
+				kind: "data",
+				label: "measured sizes",
+				emphasis: "hero",
+				traffic: { speed: 72, volume: 2 },
+			},
+		],
 	});
-	expect(result).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
-	if (result.outcome !== "rejected") throw new Error("Expected rejection");
-	for (const text of [edge.id, "Proposal", "to, label", "removeEdges", "without an ID"]) {
-		expect(result.problem).toContain(text);
-	}
-	expect(readFileSync(file, "utf8")).toBe(bytes);
+	expect(result.outcome).toBe("applied");
+	expect(warningsOf(result)).toEqual([]);
+	expect(variant().content.edges[0]).toMatchObject({
+		id: edge.id,
+		to: variant().content.nodes[2]!.id,
+		kind: "data",
+	});
+	expect(
+		contract.compareVariants(predecessor.content, variant().content).edges.get(edge.id)?.kind,
+	).toBe("changed");
 });
 
-test("successive writes count against the predecessor, not the last edit", async () => {
+test("successive edits keep a continuing id despite multiple differences from the predecessor", async () => {
 	const edge = variant().content.edges[0]!;
 	expect((await edit({ variant: "Proposal", edges: [{ ...edge, to: "Compound" }] })).outcome).toBe(
 		"applied",
 	);
-	const before = read();
 	const changed = variant().content.edges[0]!;
 	expect(
 		await edit({ variant: "Proposal", edges: [{ ...changed, label: "measured graph" }] }),
-	).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
-	expect(read()).toEqual(before);
+	).toMatchObject({ outcome: "applied" });
+	expect(variant().content.edges[0]).toMatchObject({ id: edge.id, label: "measured graph" });
 });
 
-test("removing optional prose and changing emphasis counts as two changes", async () => {
+test("removing optional prose and changing emphasis preserves a continuing id", async () => {
 	const edge = variant().content.edges[0]!;
 	expect(
 		await edit({
 			variant: "Proposal",
 			edges: [{ id: edge.id, from: edge.from, to: edge.to, kind: edge.kind, emphasis: "hero" }],
 		}),
-	).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
+	).toMatchObject({ outcome: "applied" });
+	expect(variant().content.edges[0]).toMatchObject({ id: edge.id, emphasis: "hero" });
 });
 
 test("a replacement gets a new identity and compares as removed plus added", async () => {
@@ -264,7 +265,7 @@ test("a nested proposal compares to its direct parent, not the root", async () =
 	).toBe("applied");
 });
 
-test("a relationship removed and stated again with one property changed lands with a warning; two changed properties is a replacement", async () => {
+test("explicit removal and idless addition declares replacement even with one property changed", async () => {
 	const edge = variant().content.edges[0]!;
 	const reAdded = await edit({
 		variant: "Proposal",
@@ -273,11 +274,11 @@ test("a relationship removed and stated again with one property changed lands wi
 	});
 	expect(reAdded.outcome).toBe("applied");
 	const twin = variant().content.edges[0]!;
-	const warnings = reAdded.outcome === "applied" ? reAdded.warnings : [];
-	expect(warnings.map((warning) => [warning.code, warning.path])).toEqual([
-		["RELATIONSHIP_REPLACED", `edges.${twin.id}`],
-	]);
-	expect(warnings[0]?.message).toContain(edge.id);
+	expect(twin.id).not.toBe(edge.id);
+	expect(warningsOf(reAdded)).toEqual([]);
+	const comparison = contract.compareVariants(variant("Initial").content, variant().content);
+	expect(comparison.edges.get(edge.id)?.kind).toBe("removed");
+	expect(comparison.edges.get(twin.id)?.kind).toBe("added");
 	const replaced = await edit({
 		variant: "Proposal",
 		removeEdges: [twin.id],
@@ -307,7 +308,7 @@ test("a restatement without its id warns when it lands and again when a later wr
 	expect(removed.outcome === "applied" ? removed.warnings[0]?.message : "").toContain(edge.id);
 });
 
-test("moving a relationship onto the part that replaces the one removed keeps its id, and changing anything else with it is a replacement", async () => {
+test("moving a relationship onto successive replacement parts keeps its id across label changes", async () => {
 	const edge = variant().content.edges[0]!;
 	const moved = await edit({
 		variant: "Proposal",
@@ -321,18 +322,15 @@ test("moving a relationship onto the part that replaces the one removed keeps it
 	expect(kept.to).toBe(variant().content.nodes.find((node) => node.name === "Grid engine")!.id);
 	expect(warningsOf(moved)).toEqual([]);
 
-	const file = store.locateSemanticBoard(board).file;
-	const bytes = readFileSync(file, "utf8");
-	const replaced = await edit({
+	const changed = await edit({
 		variant: "Proposal",
 		removeNodes: ["Grid engine"],
 		nodes: [{ name: "Grid service", kind: "module", as: "service" }],
 		edges: [{ id: kept.id, from: "Driver", to: "service", kind: "call", label: "draw grid" }],
 	});
-	expect(replaced).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
-	// The refusal names the fields it changed, which is what says what to do next.
-	if (replaced.outcome === "rejected") expect(replaced.problem).toContain("to, label");
-	expect(readFileSync(file, "utf8")).toBe(bytes);
+	expect(changed.outcome).toBe("applied");
+	expect(warningsOf(changed)).toEqual([]);
+	expect(variant().content.edges[0]).toMatchObject({ id: edge.id, label: "draw grid" });
 });
 
 test("dropping the id while the part the relationship was on goes is answered as a replaced identity", async () => {

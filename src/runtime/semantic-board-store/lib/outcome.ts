@@ -19,8 +19,6 @@ type SemanticRefusalCode =
 	| "UNKNOWN_NODE"
 	/** An edit named an edge the board does not have. */
 	| "UNKNOWN_EDGE"
-	/** A retained connection changes multiple properties from its predecessor. */
-	| "EDGE_IDENTITY_REUSED"
 	/** An edit named a flow the board does not have. */
 	| "UNKNOWN_FLOW"
 	/** An edit named a view the board does not have. */
