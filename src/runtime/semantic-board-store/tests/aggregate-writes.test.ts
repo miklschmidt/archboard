@@ -99,6 +99,31 @@ describe("the semantic board aggregate", () => {
 		expect(read.board.variants[0]!.content.edges[0]!.from).toBe(engine.id);
 	});
 
+	test("new subjects get spaced order and restated subjects keep it", async () => {
+		const created = await create("authored-order", {
+			nodes: [
+				{ name: "First", kind: "module" },
+				{ name: "Second", kind: "module" },
+			],
+			edges: [{ from: "First", to: "Second", kind: "call" }],
+		});
+		expect(created.outcome).toBe("applied");
+		if (created.outcome !== "applied") return;
+		const original = created.board.variants[0]!.content;
+		expect(original.nodes.map((node) => node.order)).toEqual([1000, 2000]);
+		expect(original.edges.map((edge) => edge.order)).toEqual([1000]);
+		const second = original.nodes[1]!;
+		const arrow = original.edges[0]!;
+		const changed = await edit("authored-order", {
+			nodes: [{ id: second.id, name: "Second", kind: "module", order: 500 }],
+			edges: [{ id: arrow.id, from: "First", to: "Second", kind: "call" }],
+		});
+		expect(changed.outcome).toBe("applied");
+		if (changed.outcome !== "applied") return;
+		expect(changed.board.variants[0]!.content.nodes[1]!.order).toBe(500);
+		expect(changed.board.variants[0]!.content.edges[0]!.order).toBe(1000);
+	});
+
 	test("a board survives being read by a process that never wrote it", async () => {
 		await create("restart", { nodes: [{ name: "Vault", kind: "datastore" }] });
 		// A fresh module graph is the cheapest honest stand-in for a restart: the
@@ -229,8 +254,8 @@ describe("identity across edits", () => {
 		const location = store.locateSemanticBoard("ambiguous");
 		const board = JSON.parse(readFileSync(location.file, "utf-8"));
 		board.variants[0].content.nodes.push(
-			{ id: "cl1", name: "Client", kind: "module" },
-			{ id: "cl2", name: "Client", kind: "module" },
+			{ id: "cl1", order: 2000, name: "Client", kind: "module" },
+			{ id: "cl2", order: 3000, name: "Client", kind: "module" },
 		);
 		writeFileSync(location.file, JSON.stringify(board));
 

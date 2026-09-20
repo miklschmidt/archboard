@@ -18,6 +18,9 @@ import { z } from "zod";
 
 const MAX_EDGE_LABEL = 60;
 
+/** Author-controlled position among the nodes or relationships of one variant. */
+const SubjectOrderSchema = z.int().nonnegative();
+
 /** Effective traffic speed when an author enables traffic without stating one. */
 const DEFAULT_TRAFFIC_SPEED = 40;
 /** Effective dot-entry rate when an author enables traffic without stating one. */
@@ -123,6 +126,7 @@ type DrillDown = z.infer<typeof DrillDownSchema>;
 const SemanticNodeSchema = z
 	.object({
 		id: SemanticIdSchema,
+		order: SubjectOrderSchema,
 		name: DisplayNameSchema,
 		kind: NodeKindSchema,
 		responsibility: ResponsibilitySchema.optional(),
@@ -145,6 +149,7 @@ type SemanticNode = z.infer<typeof SemanticNodeSchema>;
 const SemanticEdgeSchema = z
 	.object({
 		id: SemanticIdSchema,
+		order: SubjectOrderSchema,
 		from: SemanticIdSchema,
 		to: SemanticIdSchema,
 		kind: EdgeKindSchema,
@@ -284,6 +289,7 @@ export {
 	SemanticNodeSchema,
 	type SemanticNode,
 	SemanticEdgeSchema,
+	SubjectOrderSchema,
 	type SemanticEdge,
 	VariantContentSchema,
 	type VariantContent,

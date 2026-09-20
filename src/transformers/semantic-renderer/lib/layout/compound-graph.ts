@@ -33,9 +33,10 @@ function nodeOf(measured: MeasuredNode): ElkNode {
 		width,
 		height,
 		layoutOptions: {
+			"archboard.order": String(node.order),
 			"archboard.order-group":
 				node.responsibility === undefined
-					? node.id
+					? String(node.order)
 					: JSON.stringify([node.kind, node.responsibility]),
 			...(headerHeight === 0 ? {} : { "archboard.header.size": String(headerHeight) }),
 		},
@@ -77,7 +78,7 @@ function compoundGraph(
 ): ElkNode {
 	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value)]));
 	const children: ElkNode[] = [];
-	for (const node of content.nodes) {
+	for (const node of content.nodes.toSorted((one, other) => one.order - other.order)) {
 		const parent = node.parent === undefined ? undefined : nodes.get(node.parent);
 		(parent?.children ?? children).push(nodes.get(node.id)!);
 	}
@@ -85,7 +86,7 @@ function compoundGraph(
 		id: "architecture:root",
 		children,
 		edges: content.edges
-			.toSorted((one, other) => one.id.localeCompare(other.id))
+			.toSorted((one, other) => one.order - other.order)
 			.map((edge) => {
 				const standing = standings === undefined ? undefined : (standings[edge.id] ?? "unchanged");
 				return {
@@ -93,6 +94,7 @@ function compoundGraph(
 					sources: [edge.from],
 					targets: [edge.to],
 					layoutOptions: {
+						"archboard.order": String(edge.order),
 						"archboard.relationship.kind": edge.kind,
 						...(standing === undefined ? {} : { "archboard.relationship.standing": standing }),
 					},

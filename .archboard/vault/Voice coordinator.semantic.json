@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 1,
+	"version": 2,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-17T21:07:17.695Z",
+	"updatedAt": "2026-09-20T00:23:11.344Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -68,7 +68,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "NUoTEPga",
@@ -78,7 +79,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator/index.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "2vHAg1Ei",
@@ -89,7 +91,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-realtime/index.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "5sWG4uuq",
@@ -99,7 +102,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-tools/index.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "ZDMIGM5P",
@@ -109,7 +113,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-tool-contract/index.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "B0SAnbtM",
@@ -119,7 +124,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-callbacks/index.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "fEiupnAD",
@@ -129,7 +135,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-spoken-approval/index.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "C3wBXyPG",
@@ -139,7 +146,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-approvals/index.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "qZsXIuQG",
@@ -149,7 +157,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-semantic-context/index.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "YVc05dVh",
@@ -159,7 +168,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-instructions/index.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "LHBPlItu",
@@ -169,7 +179,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-transport/index.ts"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "4A6j6Xk3",
@@ -185,7 +196,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "LIpURyJE",
@@ -201,7 +213,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 13000
 					}
 				],
 				"edges": [
@@ -211,7 +224,8 @@
 						"to": "4A6j6Xk3",
 						"kind": "call",
 						"label": "thread/start with the coordinator body",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 1000
 					},
 					{
 						"id": "QEitA6l5",
@@ -219,7 +233,8 @@
 						"to": "YVc05dVh",
 						"kind": "dependency",
 						"label": "the role extension, by digest",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 2000
 					},
 					{
 						"id": "ntLLD7Df",
@@ -231,7 +246,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "eRYh0zYO",
@@ -243,7 +259,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "jKgud5yQ",
@@ -251,7 +268,8 @@
 						"to": "qZsXIuQG",
 						"kind": "call",
 						"label": "what the board says now",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "oyurpL2B",
@@ -259,7 +277,8 @@
 						"to": "0eYa0szs",
 						"kind": "event",
 						"label": "the answer, then the transcript",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 6000
 					},
 					{
 						"id": "NfthRpE6",
@@ -271,7 +290,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "FRlXCCgx",
@@ -279,7 +299,8 @@
 						"to": "ZDMIGM5P",
 						"kind": "call",
 						"label": "validate against the frozen manifest",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "gxWbt0Mt",
@@ -291,7 +312,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "jWYpMYjr",
@@ -299,7 +321,8 @@
 						"to": "fEiupnAD",
 						"kind": "call",
 						"label": "arm the spoken gate",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "0yGbIQl9",
@@ -307,7 +330,8 @@
 						"to": "C3wBXyPG",
 						"kind": "call",
 						"label": "answer the one it was armed for",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 11000
 					},
 					{
 						"id": "5QnOXTuc",
@@ -315,7 +339,8 @@
 						"to": "LIpURyJE",
 						"kind": "dependency",
 						"label": "the turn it reports",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 12000
 					},
 					{
 						"id": "1joDYyhX",
@@ -323,7 +348,8 @@
 						"to": "2vHAg1Ei",
 						"kind": "event",
 						"label": "an outcome to say out loud",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					}
 				],
 				"flows": [],

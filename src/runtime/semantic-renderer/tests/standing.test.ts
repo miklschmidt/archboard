@@ -1,6 +1,7 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
 import type { DiagramTheme } from "@/shared/semantic-board/index";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import {
 	renderArchitecture,
 	renderDataFlow,
@@ -24,7 +25,7 @@ import {
  * @returns The content.
  */
 function architecture(nodes: readonly unknown[], edges: readonly unknown[] = []): VariantContent {
-	return VariantContentSchema.parse({ nodes, edges });
+	return orderedFixture({ nodes, edges });
 }
 
 const PROPOSAL: VariantContent = architecture(
@@ -59,7 +60,7 @@ const STANDING: StatedStandings = {
 	edge: "removed",
 };
 
-const SEQUENCE: VariantContent = VariantContentSchema.parse({
+const SEQUENCE: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "web", name: "Operator Console", kind: "ui" },
 		{ id: "gw", name: "API Gateway", kind: "route" },

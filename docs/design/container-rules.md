@@ -15,7 +15,7 @@ The current rules are:
 - Pack disconnected leaf collections into rows. Connected children take part
   in Graphviz's global ranking, including relationships crossing their frame.
 - Assign equal-sized leaf peers with the same kind and nonempty responsibility
-  on the same fresh row to their slots in stable identity order, before routing.
+  on the same fresh row to their slots in authored order, before routing.
   Different roles are not moved just because their dimensions match. No
   predecessor positions, fixed ranks or reserved columns participate.
 - An outside caller or dependency may occupy the frame's vertical span.

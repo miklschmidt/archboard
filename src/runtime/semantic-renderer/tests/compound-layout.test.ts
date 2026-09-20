@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import {
@@ -16,7 +16,7 @@ import {
 	faceOf,
 } from "@/runtime/semantic-renderer/tests/drawn-reading";
 
-const NESTED = VariantContentSchema.parse({
+const NESTED = orderedFixture({
 	nodes: [
 		{ id: "outer", name: "System", kind: "service" },
 		{ id: "entry", name: "Entry point", kind: "module", parent: "outer" },
@@ -34,7 +34,7 @@ const NESTED = VariantContentSchema.parse({
 
 describe("compound architecture layout", () => {
 	test("boundary routes avoid cards around nested content", async () => {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: [
 				...NESTED.nodes,
 				{ id: "added", name: "Additional processing", kind: "module", parent: "inner" },
@@ -94,7 +94,7 @@ describe("compound architecture layout", () => {
 	});
 
 	test("concurrent requests on the layout worker retain deterministic independent drawings", async () => {
-		const other = VariantContentSchema.parse({
+		const other = orderedFixture({
 			nodes: [{ id: "solo", name: "Another board", kind: "module" }],
 		});
 		const [first, separate, concurrent] = await Promise.all([
@@ -126,7 +126,7 @@ function ancestorsOf(id: string): string[] {
 }
 
 test("a container's external dependency ahead leaves its forward perimeter", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ id: "frame", name: "Service", kind: "service" },
 			{ id: "one", name: "Worker one", kind: "module", parent: "frame" },

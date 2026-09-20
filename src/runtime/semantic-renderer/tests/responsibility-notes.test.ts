@@ -1,9 +1,6 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import {
-	VariantContentSchema,
-	type DiagramBox,
-	type DiagramGrammar,
-} from "@/shared/semantic-board/index";
+import { type DiagramBox, type DiagramGrammar } from "@/shared/semantic-board/index";
 import { renderSemanticView, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	drawnSpan,
@@ -12,7 +9,7 @@ import {
 	spanFits,
 } from "@/runtime/semantic-renderer/tests/drawn-text";
 
-const content = VariantContentSchema.parse({
+const content = orderedFixture({
 	nodes: [
 		{
 			id: "system",

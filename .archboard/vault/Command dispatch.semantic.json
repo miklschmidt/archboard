@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-09-17T21:03:08.047Z",
+	"updatedAt": "2026-09-20T00:23:11.402Z",
 	"views": [],
 	"variants": [
 		{
@@ -24,7 +24,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/session.ts"
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "45uNvMac",
@@ -34,7 +35,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/registry.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "zs4XwBa9",
@@ -44,7 +46,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/global-flags.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "0R2ysy3p",
@@ -54,7 +57,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/dispatch.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "ZXGh0YmG",
@@ -64,7 +68,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/session.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "MmMnif7e",
@@ -74,7 +79,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-contract/runner.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "bV1RPiKW",
@@ -84,7 +90,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/exit-codes.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "Swj3xzmd",
@@ -100,7 +107,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "ogSW3Rjt",
@@ -110,7 +118,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/help.ts"
-						}
+						},
+						"order": 9000
 					}
 				],
 				"edges": [
@@ -120,7 +129,8 @@
 						"to": "45uNvMac",
 						"kind": "call",
 						"label": "help / version",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 1000
 					},
 					{
 						"id": "a4PkS2Do",
@@ -128,7 +138,8 @@
 						"to": "zs4XwBa9",
 						"kind": "call",
 						"label": "capture flags",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "GpvovZkt",
@@ -136,7 +147,8 @@
 						"to": "0R2ysy3p",
 						"kind": "call",
 						"label": "select",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "Kbtdm1ew",
@@ -144,7 +156,8 @@
 						"to": "ZXGh0YmG",
 						"kind": "call",
 						"label": "execute",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "MFROOcqh",
@@ -152,7 +165,8 @@
 						"to": "MmMnif7e",
 						"kind": "call",
 						"label": "contract + signal",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "HZqRR3f0",
@@ -160,7 +174,8 @@
 						"to": "bV1RPiKW",
 						"kind": "call",
 						"label": "on failure",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "Xqy7fxY0",
@@ -172,7 +187,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "Fr1yww70",
@@ -180,7 +196,8 @@
 						"to": "ogSW3Rjt",
 						"kind": "data",
 						"label": "the commands to project",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					}
 				],
 				"flows": [],

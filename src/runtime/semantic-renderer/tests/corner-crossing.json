@@ -3,42 +3,49 @@
 		"nodes": [
 			{
 				"id": "wpI1LbzG",
+				"order": 1000,
 				"name": "View dispatcher",
 				"kind": "function",
 				"responsibility": "Selects architecture or data flow"
 			},
 			{
 				"id": "y8vuJJKu",
+				"order": 2000,
 				"name": "Region builder",
 				"kind": "function",
 				"responsibility": "Builds visible containment regions"
 			},
 			{
 				"id": "Y0smyqtZ",
+				"order": 3000,
 				"name": "Architecture layout",
 				"kind": "function",
 				"responsibility": "Places cards and containers"
 			},
 			{
 				"id": "L51bfquE",
+				"order": 4000,
 				"name": "Edge routing",
 				"kind": "function",
 				"responsibility": "Routes readable relationships"
 			},
 			{
 				"id": "wLF1X11D",
+				"order": 5000,
 				"name": "Data-flow layout",
 				"kind": "function",
 				"responsibility": "Places participants and messages"
 			},
 			{
 				"id": "u1OXg3Yy",
+				"order": 6000,
 				"name": "Theme palette",
 				"kind": "function",
 				"responsibility": "Resolves every drawn color"
 			},
 			{
 				"id": "J7mPrUeP",
+				"order": 7000,
 				"name": "SVG painters",
 				"kind": "function",
 				"responsibility": "Paints geometry and standing"
@@ -47,6 +54,7 @@
 		"edges": [
 			{
 				"id": "v3e9dOLe",
+				"order": 1000,
 				"from": "y8vuJJKu",
 				"to": "Y0smyqtZ",
 				"kind": "data",
@@ -55,6 +63,7 @@
 			},
 			{
 				"id": "qJrkH2Qg",
+				"order": 2000,
 				"from": "Y0smyqtZ",
 				"to": "L51bfquE",
 				"kind": "call",
@@ -63,6 +72,7 @@
 			},
 			{
 				"id": "PjA6m5Ft",
+				"order": 3000,
 				"from": "wpI1LbzG",
 				"to": "wLF1X11D",
 				"kind": "call",
@@ -71,6 +81,7 @@
 			},
 			{
 				"id": "WwNFCjLE",
+				"order": 4000,
 				"from": "wpI1LbzG",
 				"to": "u1OXg3Yy",
 				"kind": "call",
@@ -79,6 +90,7 @@
 			},
 			{
 				"id": "SIdU2g2Q",
+				"order": 5000,
 				"from": "Y0smyqtZ",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -87,6 +99,7 @@
 			},
 			{
 				"id": "0s8raCUw",
+				"order": 6000,
 				"from": "L51bfquE",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -95,6 +108,7 @@
 			},
 			{
 				"id": "eKqUHYSH",
+				"order": 7000,
 				"from": "wLF1X11D",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -103,6 +117,7 @@
 			},
 			{
 				"id": "I1lGjMES",
+				"order": 8000,
 				"from": "u1OXg3Yy",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -117,42 +132,49 @@
 		"nodes": [
 			{
 				"id": "wpI1LbzG",
+				"order": 1000,
 				"name": "View dispatcher",
 				"kind": "function",
 				"responsibility": "Own the render pipeline"
 			},
 			{
 				"id": "y8vuJJKu",
+				"order": 2000,
 				"name": "Layout graph",
 				"kind": "function",
 				"responsibility": "Preserve semantic structure"
 			},
 			{
 				"id": "Y0smyqtZ",
+				"order": 3000,
 				"name": "Compound layout",
 				"kind": "function",
 				"responsibility": "Place and route together"
 			},
 			{
 				"id": "wLF1X11D",
+				"order": 4000,
 				"name": "Data-flow layout",
 				"kind": "function",
 				"responsibility": "Places participants and messages"
 			},
 			{
 				"id": "u1OXg3Yy",
+				"order": 5000,
 				"name": "Theme palette",
 				"kind": "function",
 				"responsibility": "Resolves every drawn color"
 			},
 			{
 				"id": "J7mPrUeP",
+				"order": 6000,
 				"name": "SVG painters",
 				"kind": "function",
 				"responsibility": "Paint the placed drawing"
 			},
 			{
 				"id": "L51bfquE",
+				"order": 7000,
 				"name": "Edge routing",
 				"kind": "function",
 				"responsibility": "Routes readable relationships"
@@ -161,6 +183,7 @@
 		"edges": [
 			{
 				"id": "v3e9dOLe",
+				"order": 1000,
 				"from": "y8vuJJKu",
 				"to": "Y0smyqtZ",
 				"kind": "data",
@@ -169,6 +192,7 @@
 			},
 			{
 				"id": "PjA6m5Ft",
+				"order": 2000,
 				"from": "wpI1LbzG",
 				"to": "wLF1X11D",
 				"kind": "call",
@@ -177,6 +201,7 @@
 			},
 			{
 				"id": "WwNFCjLE",
+				"order": 3000,
 				"from": "wpI1LbzG",
 				"to": "u1OXg3Yy",
 				"kind": "call",
@@ -185,6 +210,7 @@
 			},
 			{
 				"id": "eKqUHYSH",
+				"order": 4000,
 				"from": "wLF1X11D",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -193,6 +219,7 @@
 			},
 			{
 				"id": "I1lGjMES",
+				"order": 5000,
 				"from": "u1OXg3Yy",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -201,6 +228,7 @@
 			},
 			{
 				"id": "6zcjVgzh",
+				"order": 6000,
 				"from": "Y0smyqtZ",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -209,6 +237,7 @@
 			},
 			{
 				"id": "qJrkH2Qg",
+				"order": 7000,
 				"from": "Y0smyqtZ",
 				"to": "L51bfquE",
 				"kind": "call",
@@ -217,6 +246,7 @@
 			},
 			{
 				"id": "SIdU2g2Q",
+				"order": 8000,
 				"from": "Y0smyqtZ",
 				"to": "J7mPrUeP",
 				"kind": "data",
@@ -225,6 +255,7 @@
 			},
 			{
 				"id": "0s8raCUw",
+				"order": 9000,
 				"from": "L51bfquE",
 				"to": "J7mPrUeP",
 				"kind": "data",

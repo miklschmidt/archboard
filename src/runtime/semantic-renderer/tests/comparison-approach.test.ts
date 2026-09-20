@@ -1,7 +1,7 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // Removed cards remain comparison context, so the routes to a replacement
 // must clear them even though the complete comparison is laid out afresh.
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeCrosses, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
@@ -17,7 +17,7 @@ function card(id: string, name: string, responsibility: string) {
 }
 
 /** Flask 2.1's contexts pushed onto two stacks. */
-const stacks = VariantContentSchema.parse({
+const stacks = orderedFixture({
 	nodes: [
 		card("appctx", "App context", "Binds current_app and g for one unit of work"),
 		card("reqctx", "Request context", "Binds request and session for one request"),
@@ -42,7 +42,7 @@ const stacks = VariantContentSchema.parse({
 });
 
 /** The proposal as it is drawn: the stacks kept as removed context, one new card. */
-const proposal = VariantContentSchema.parse({
+const proposal = orderedFixture({
 	nodes: [
 		...stacks.nodes,
 		card("cv", "Context variables", "_cv_app and _cv_request hold the active contexts"),

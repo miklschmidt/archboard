@@ -8,6 +8,7 @@ import {
 	withRemoved,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /** The nodes, relationship and flow every case below explains. */
 const ARCHITECTURE = {
@@ -53,7 +54,7 @@ const board = (content: Record<string, unknown>) => ({
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (content: Record<string, unknown>): string => {
-	const parsed = parseSemanticBoard(board(content));
+	const parsed = parseSemanticBoard(withFixtureOrders(board(content)));
 	return parsed.ok ? "" : parsed.problem;
 };
 
@@ -88,7 +89,7 @@ const walkthrough = (over: Record<string, unknown> = {}) => ({
  * @returns The content.
  */
 const content = (content_: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(content_);
+	VariantContentSchema.parse(withFixtureOrders(content_));
 
 describe("what an explanation has to be before it is presented", () => {
 	test("a walkthrough about this variant is accepted", () => {

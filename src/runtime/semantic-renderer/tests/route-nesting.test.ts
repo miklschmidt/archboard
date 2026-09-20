@@ -1,8 +1,9 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // Relationships may share ports and trunks. Their identities, words, and
 // semantic endpoints must remain legible even when their geometry coincides.
 
 import { expect, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	covering,
@@ -50,7 +51,7 @@ async function expectReadableRoutes(
 }
 
 test("a fan shares a port where departures use the same card face", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: ["hub", "one", "two", "three", "four", "five"].map((id) => ({
 			id,
 			name: id,
@@ -84,7 +85,7 @@ test("a fan shares a port where departures use the same card face", async () => 
 
 for (const framed of [false, true]) {
 	test(`parallel relationships keep both identities and labels ${framed ? "across a frame" : "between cards"}`, async () => {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: [
 				...(framed ? [{ id: "frame", name: "Frame", kind: "service" }] : []),
 				{ id: "source", name: "Source", kind: "module", ...(framed ? { parent: "frame" } : {}) },

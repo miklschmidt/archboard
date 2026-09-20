@@ -129,10 +129,11 @@ interface VariantComparison {
  * the board — it is in the vault policy under the id — so renaming a group can
  * never make a variant read as changed.
  *
- * `emphasis` is deliberately absent from the relationship list. It is authored
- * presentation intent — how loudly to draw a connection — and a proposal whose
- * only difference is that one arrow got louder has changed nothing about the
- * architecture. Traffic is the explicit exception: ADR 0027 makes enabling or
+ * `order` and `emphasis` are deliberately absent from the relationship list.
+ * They are authored presentation intent — where a connection enters layout
+ * and how loudly it is drawn — so changing either alone does not mark the
+ * architecture as changed. Node order is absent for the same reason. Traffic
+ * is the explicit exception: ADR 0027 makes enabling or
  * retuning ongoing flow a connection change, compared as one normalized field.
  * Views are absent from the comparison entirely: naming a second way to read a
  * board is not a redesign of it.

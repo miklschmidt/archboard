@@ -11,15 +11,39 @@ import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/in
 /** The board as it stands: two callers, a lock file and the watcher on it. */
 const BEFORE: VariantContent = {
 	nodes: [
-		{ id: "hold", name: "holdBoard", kind: "route" },
-		{ id: "rel", name: "releaseHold", kind: "route" },
-		{ id: "locks", name: "Lock files", kind: "datastore" },
-		{ id: "watch", name: "Lock watcher", kind: "job" },
+		{ id: "hold", order: 1000, name: "holdBoard", kind: "route" },
+		{ id: "rel", order: 2000, name: "releaseHold", kind: "route" },
+		{ id: "locks", order: 3000, name: "Lock files", kind: "datastore" },
+		{ id: "watch", order: 4000, name: "Lock watcher", kind: "job" },
 	],
 	edges: [
-		{ id: "e1", from: "hold", to: "locks", kind: "data", label: "create", emphasis: "normal" },
-		{ id: "e2", from: "rel", to: "locks", kind: "data", label: "unlink", emphasis: "normal" },
-		{ id: "e3", from: "watch", to: "locks", kind: "data", label: "poll", emphasis: "normal" },
+		{
+			id: "e1",
+			order: 1000,
+			from: "hold",
+			to: "locks",
+			kind: "data",
+			label: "create",
+			emphasis: "normal",
+		},
+		{
+			id: "e2",
+			order: 2000,
+			from: "rel",
+			to: "locks",
+			kind: "data",
+			label: "unlink",
+			emphasis: "normal",
+		},
+		{
+			id: "e3",
+			order: 3000,
+			from: "watch",
+			to: "locks",
+			kind: "data",
+			label: "poll",
+			emphasis: "normal",
+		},
 	],
 	flows: [
 		{
@@ -47,13 +71,29 @@ const BEFORE: VariantContent = {
  */
 const AFTER: VariantContent = {
 	nodes: [
-		{ id: "hold", name: "holdBoard", kind: "route" },
-		{ id: "rel", name: "releaseHold", kind: "route" },
-		{ id: "table", name: "Lease table", kind: "datastore" },
+		{ id: "hold", order: 1000, name: "holdBoard", kind: "route" },
+		{ id: "rel", order: 2000, name: "releaseHold", kind: "route" },
+		{ id: "table", order: 3000, name: "Lease table", kind: "datastore" },
 	],
 	edges: [
-		{ id: "e1", from: "hold", to: "table", kind: "data", label: "create", emphasis: "normal" },
-		{ id: "e2", from: "rel", to: "table", kind: "data", label: "unlink", emphasis: "normal" },
+		{
+			id: "e1",
+			order: 1000,
+			from: "hold",
+			to: "table",
+			kind: "data",
+			label: "create",
+			emphasis: "normal",
+		},
+		{
+			id: "e2",
+			order: 2000,
+			from: "rel",
+			to: "table",
+			kind: "data",
+			label: "unlink",
+			emphasis: "normal",
+		},
 	],
 	flows: [
 		{

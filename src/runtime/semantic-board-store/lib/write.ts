@@ -1,4 +1,5 @@
-// The one place a semantic board changes.
+// The one place an authored semantic board change lands. Read-time schema
+// upgrades use the same lease and atomic writer in `read.ts`.
 //
 // Every command that will ever change a board — create, edit, and later branch,
 // resolve and adopt — arrives here, and the guarantees are made once rather
@@ -43,7 +44,7 @@ import {
 	type SemanticBoardLocation,
 } from "@/runtime/semantic-board-store/lib/location";
 import {
-	readSemanticBoardAt,
+	readSemanticBoardAtUnderLease,
 	type SemanticBoardRead,
 } from "@/runtime/semantic-board-store/lib/read";
 import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store/lib/outcome";
@@ -230,7 +231,7 @@ function boardBefore(
 ):
 	| { readonly ok: true; readonly board: SemanticBoard | null; readonly version: number | null }
 	| SemanticWriteRejection {
-	const read = readSemanticBoardAt(location);
+	const read = readSemanticBoardAtUnderLease(location);
 	const unusable = unusableRefusal(location, read);
 	if (unusable !== null) {
 		return unusable;

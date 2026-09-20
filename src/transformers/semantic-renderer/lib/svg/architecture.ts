@@ -268,7 +268,10 @@ function paintArchitecture(
 		union([...cardBoxes, ...framed, ...inked, ...labelled].map(({ box }) => box)),
 		DIAGRAM_MARGIN,
 	);
-	const boxes = containers.toSorted((a, b) => a.depth - b.depth);
+	const boxes = containers.toSorted(
+		(a, b) => a.depth - b.depth || a.measured.node.order - b.measured.node.order,
+	);
+	const orderedCards = cards.toSorted((a, b) => a.measured.node.order - b.measured.node.order);
 	const painted = lines([
 		definitions,
 		...boxes.map((held) =>
@@ -289,7 +292,7 @@ function paintArchitecture(
 				derived.has(edge.edge.id),
 			),
 		),
-		...cards.map((card) =>
+		...orderedCards.map((card) =>
 			paintMeasuredCard(
 				card,
 				palette,

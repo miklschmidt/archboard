@@ -8,6 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { SemanticBoardSchema } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	callUsageFrom,
 	countDirectBoardWrites,
@@ -63,31 +64,33 @@ function classified(command: string): ClassifiedCommand {
 	return one;
 }
 
-const BOARD = SemanticBoardSchema.parse({
-	schemaVersion: "2.2.0",
-	kind: "semantic-board",
-	id: "b1",
-	name: "Flask JSON",
-	level: "service",
-	version: 3,
-	createdAt: "2026-09-14T00:00:00.000Z",
-	updatedAt: "2026-09-14T00:00:00.000Z",
-	views: [],
-	current: "v1",
-	variants: [
-		{
-			id: "v1",
-			name: "Initial",
-			lifecycle: "current",
-			content: {
-				nodes: [{ id: "n1", name: "App", kind: "app" }],
-				edges: [],
-				flows: [],
-				walkthroughs: [],
+const BOARD = SemanticBoardSchema.parse(
+	withFixtureOrders({
+		schemaVersion: "2.2.0",
+		kind: "semantic-board",
+		id: "b1",
+		name: "Flask JSON",
+		level: "service",
+		version: 3,
+		createdAt: "2026-09-14T00:00:00.000Z",
+		updatedAt: "2026-09-14T00:00:00.000Z",
+		views: [],
+		current: "v1",
+		variants: [
+			{
+				id: "v1",
+				name: "Initial",
+				lifecycle: "current",
+				content: {
+					nodes: [{ id: "n1", name: "App", kind: "app" }],
+					edges: [],
+					flows: [],
+					walkthroughs: [],
+				},
 			},
-		},
-	],
-});
+		],
+	}),
+);
 
 /**
  * The write guardrail's verdict over some commands and file changes.

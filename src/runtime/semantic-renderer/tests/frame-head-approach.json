@@ -2,36 +2,42 @@
 	"nodes": [
 		{
 			"id": "lqxzyMcC",
+			"order": 1000,
 			"name": "Azure Standard Load Balancer",
 			"kind": "azure",
 			"responsibility": "Keeps its public IP as the healthy secondary for automatic DNS failover to IIS."
 		},
 		{
 			"id": "hlSwOqFY",
+			"order": 2000,
 			"name": "DB 1",
 			"kind": "datastore",
 			"responsibility": "Existing shared production database."
 		},
 		{
 			"id": "NQs6vUYx",
+			"order": 3000,
 			"name": "DB 2",
 			"kind": "datastore",
 			"responsibility": "Existing shared production database."
 		},
 		{
 			"id": "t2QlUi5k",
+			"order": 4000,
 			"name": "Platform",
 			"kind": "service",
 			"responsibility": "Retains device trust and routes selected APIs to Platform services; unmatched requests stay on IIS."
 		},
 		{
 			"id": "j6TdeSth",
+			"order": 5000,
 			"name": "Windows / IIS VM pool",
 			"kind": "system",
 			"responsibility": "Four production VMs each carry the complete IIS API portfolio."
 		},
 		{
 			"id": "TqDUcCHV",
+			"order": 6000,
 			"name": "IIS VM 2",
 			"kind": "service",
 			"responsibility": "Legacy API's",
@@ -39,6 +45,7 @@
 		},
 		{
 			"id": "yPJ2pkH0",
+			"order": 7000,
 			"name": "IIS VM 4",
 			"kind": "service",
 			"responsibility": "Legacy API's",
@@ -46,6 +53,7 @@
 		},
 		{
 			"id": "Pt2vjo40",
+			"order": 8000,
 			"name": "Migrated API capabilities",
 			"kind": "service",
 			"responsibility": "Proposed Platform-owned replacements, activated one verified API route at a time."
@@ -54,6 +62,7 @@
 	"edges": [
 		{
 			"id": "uDMYsoQs",
+			"order": 1000,
 			"from": "yPJ2pkH0",
 			"to": "NQs6vUYx",
 			"kind": "data",
@@ -62,6 +71,7 @@
 		},
 		{
 			"id": "g1zvz5QO",
+			"order": 2000,
 			"from": "t2QlUi5k",
 			"to": "j6TdeSth",
 			"kind": "http",
@@ -70,6 +80,7 @@
 		},
 		{
 			"id": "cKy6Pt3i",
+			"order": 3000,
 			"from": "t2QlUi5k",
 			"to": "Pt2vjo40",
 			"kind": "http",
@@ -78,6 +89,7 @@
 		},
 		{
 			"id": "FgEsApsS",
+			"order": 4000,
 			"from": "TqDUcCHV",
 			"to": "hlSwOqFY",
 			"kind": "data",
@@ -86,6 +98,7 @@
 		},
 		{
 			"id": "7C6xGZco",
+			"order": 5000,
 			"from": "Pt2vjo40",
 			"to": "hlSwOqFY",
 			"kind": "data",
@@ -94,6 +107,7 @@
 		},
 		{
 			"id": "hnLcA0yR",
+			"order": 6000,
 			"from": "Pt2vjo40",
 			"to": "NQs6vUYx",
 			"kind": "data",
@@ -102,6 +116,7 @@
 		},
 		{
 			"id": "ghAjlN21",
+			"order": 7000,
 			"from": "lqxzyMcC",
 			"to": "j6TdeSth",
 			"kind": "other",

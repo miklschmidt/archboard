@@ -1,14 +1,15 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import fixture from "./channel-projection.json";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { VariantContentSchema, type ChangeKind } from "@/shared/semantic-board/index";
+import { type ChangeKind } from "@/shared/semantic-board/index";
 import { corridorPoints, routeLabels, routeCrosses } from "./drawn-routes";
 
 // Six real cards retain the incoming/outgoing channel conflict and the
 // diagonal relationship whose reserved label used to add a return loop.
 test("label waypoints and distinct channels share clear direct approaches", async () => {
 	const drawing = await renderArchitecture({
-		content: VariantContentSchema.parse(fixture.content),
+		content: orderedFixture(fixture.content),
 		standing: fixture.standing as Record<string, ChangeKind>,
 		theme: "dark",
 	});

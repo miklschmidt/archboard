@@ -2,30 +2,35 @@
 	"nodes": [
 		{
 			"id": "8NS6WwkH",
+			"order": 1000,
 			"name": "Pinned checkout",
 			"kind": "module",
 			"responsibility": "A detached, verified checkout of one pinned commit per run, from a bare cache"
 		},
 		{
 			"id": "IFhUy8C6",
+			"order": 2000,
 			"name": "Skill install",
 			"kind": "module",
 			"responsibility": "Installs the arm being measured: the live package, or the frozen baseline swapped in and re-derived"
 		},
 		{
 			"id": "w4qCQkDU",
+			"order": 3000,
 			"name": "Author run",
 			"kind": "module",
 			"responsibility": "Brings the world up, runs one author turn, and reads everything back"
 		},
 		{
 			"id": "RqoYaLTK",
+			"order": 4000,
 			"name": "Captures",
 			"kind": "module",
 			"responsibility": "Takes the picture of every board, view and variant the scenario declared, and tiles an oversize one"
 		},
 		{
 			"id": "1snXnK3G",
+			"order": 5000,
 			"name": "Codex CLI",
 			"kind": "external",
 			"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from"
@@ -34,6 +39,7 @@
 	"edges": [
 		{
 			"id": "ZexKQEJK",
+			"order": 1000,
 			"from": "w4qCQkDU",
 			"to": "8NS6WwkH",
 			"kind": "call",
@@ -41,6 +47,7 @@
 		},
 		{
 			"id": "25DiejPQ",
+			"order": 2000,
 			"from": "w4qCQkDU",
 			"to": "IFhUy8C6",
 			"kind": "call",
@@ -48,6 +55,7 @@
 		},
 		{
 			"id": "9sL5gPEN",
+			"order": 3000,
 			"from": "w4qCQkDU",
 			"to": "1snXnK3G",
 			"kind": "call",

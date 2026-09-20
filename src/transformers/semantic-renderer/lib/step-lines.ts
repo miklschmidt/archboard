@@ -38,11 +38,13 @@ function drawable(step: FlowStep, content: VariantContent): boolean {
 /**
  * The line a step draws as: the step's own id, ends, kind and label.
  * @param step The step.
+ * @param order Its authored position in the flow reading.
  * @returns The line.
  */
-function lineOf(step: FlowStep): SemanticEdge {
+function lineOf(step: FlowStep, order: number): SemanticEdge {
 	return {
 		id: step.id,
+		order,
 		from: step.from,
 		to: step.to,
 		kind: step.kind,
@@ -67,11 +69,11 @@ function withStepLines(content: VariantContent): StepLines {
 	if (content.edges.length > 0) return { content, derived: new Set() };
 	const joined = new Set<string>();
 	const lines: SemanticEdge[] = [];
-	for (const step of content.flows.flatMap((flow) => flow.steps)) {
+	for (const [index, step] of content.flows.flatMap((flow) => flow.steps).entries()) {
 		const pair = `${step.from}>${step.to}`;
 		if (joined.has(pair) || !drawable(step, content)) continue;
 		joined.add(pair);
-		lines.push(lineOf(step));
+		lines.push(lineOf(step, (index + 1) * 1000));
 	}
 	const derived = new Set(lines.map((line) => line.id));
 	return derived.size === 0

@@ -146,22 +146,24 @@ function drawingEdges(
 	const routes = new Map(
 		content.edges.map((edge) => [edge.id, simplify(pointsOf(results.get(edge.id)!))]),
 	);
-	return content.edges.map((edge) => {
-		const result = results.get(edge.id);
-		if (result === undefined) {
-			throw new Error(`Layout did not return relationship ${edge.id}`);
-		}
-		const points = routes.get(edge.id)!;
-		const measuredLabel = labels.get(edge.id);
-		const label = measuredLabel === undefined ? {} : { label: measuredLabel };
-		const curve = curveThrough(points);
-		return {
-			edge,
-			curve,
-			path: pathOf(curve),
-			...label,
-		};
-	});
+	return content.edges
+		.toSorted((one, other) => one.order - other.order)
+		.map((edge) => {
+			const result = results.get(edge.id);
+			if (result === undefined) {
+				throw new Error(`Layout did not return relationship ${edge.id}`);
+			}
+			const points = routes.get(edge.id)!;
+			const measuredLabel = labels.get(edge.id);
+			const label = measuredLabel === undefined ? {} : { label: measuredLabel };
+			const curve = curveThrough(points);
+			return {
+				edge,
+				curve,
+				path: pathOf(curve),
+				...label,
+			};
+		});
 }
 
 /**
@@ -235,7 +237,14 @@ async function betterReading(
 function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[] {
 	const subjects = [...drawing.cards, ...drawing.containers];
 	const nodes = new Map<string, ElkNode>(
-		subjects.map(({ measured, box }) => [measured.node.id, { id: measured.node.id, ...box }]),
+		subjects.map(({ measured, box }) => [
+			measured.node.id,
+			{
+				id: measured.node.id,
+				...box,
+				layoutOptions: { "archboard.order": String(measured.node.order) },
+			},
+		]),
 	);
 	const children: ElkNode[] = [];
 	for (const { measured } of subjects) {
@@ -256,6 +265,7 @@ function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[
 				id: edge.id,
 				sources: [edge.from],
 				targets: [edge.to],
+				layoutOptions: { "archboard.order": String(edge.order) },
 			})),
 		},
 		minimumFit,

@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-09-17T21:13:00.069Z",
+	"updatedAt": "2026-09-20T00:23:11.388Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -67,7 +67,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "scripts/evaluate-skill.ts"
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "k8wziYS4",
@@ -77,7 +78,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/suite.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "7A4Joh1m",
@@ -88,7 +90,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/batch.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "IsMHIzoa",
@@ -98,7 +101,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/isolation.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "8NS6WwkH",
@@ -108,7 +112,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/flask.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "PEfE7dCL",
@@ -118,7 +123,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/canvas.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "IFhUy8C6",
@@ -128,7 +134,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/install.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "w4qCQkDU",
@@ -139,7 +146,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/author.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "7LcGoxWH",
@@ -149,7 +157,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/guardrails.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "xzOQOY33",
@@ -159,7 +168,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/outcomes.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "RqoYaLTK",
@@ -170,7 +180,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/captures.ts"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "PwYiE0Hr",
@@ -181,7 +192,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/grading-run.ts"
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "gwU9cyGm",
@@ -191,7 +203,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts"
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "bgEcePXZ",
@@ -201,7 +214,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts"
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "LcKROPw0",
@@ -211,7 +225,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/records.ts"
-						}
+						},
+						"order": 15000
 					},
 					{
 						"id": "IOCRa8GO",
@@ -222,7 +237,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "evals"
-						}
+						},
+						"order": 16000
 					},
 					{
 						"id": "fRFvnVRE",
@@ -238,7 +254,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 17000
 					},
 					{
 						"id": "EJ2b3Szn",
@@ -254,19 +271,22 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 18000
 					},
 					{
 						"id": "1snXnK3G",
 						"name": "Codex CLI",
 						"kind": "external",
-						"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from"
+						"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from",
+						"order": 19000
 					},
 					{
 						"id": "9TIT63Qz",
 						"name": "Claude CLI",
 						"kind": "external",
-						"responsibility": "The other grader, run with read-only tools and none of the operator's settings"
+						"responsibility": "The other grader, run with read-only tools and none of the operator's settings",
+						"order": 20000
 					},
 					{
 						"id": "JDTuIZQZ",
@@ -276,7 +296,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/archboard.ts"
-						}
+						},
+						"order": 21000
 					}
 				],
 				"edges": [
@@ -290,7 +311,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "ygYCKQLQ",
@@ -298,7 +320,8 @@
 						"to": "IOCRa8GO",
 						"kind": "data",
 						"label": "scenarios, fixtures, pins, rubric",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "gkJMDrW9",
@@ -310,7 +333,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "DJsFb8l6",
@@ -318,7 +342,8 @@
 						"to": "PwYiE0Hr",
 						"kind": "call",
 						"label": "grade what has not been graded",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 4000
 					},
 					{
 						"id": "hlCNYU50",
@@ -326,7 +351,8 @@
 						"to": "LcKROPw0",
 						"kind": "call",
 						"label": "write the report",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "GYwjzXJJ",
@@ -338,7 +364,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "r76TBNwY",
@@ -346,7 +373,8 @@
 						"to": "IsMHIzoa",
 						"kind": "call",
 						"label": "a private world for this run",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "ZexKQEJK",
@@ -354,7 +382,8 @@
 						"to": "8NS6WwkH",
 						"kind": "call",
 						"label": "the commit this scenario is about",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "i1FABJCb",
@@ -362,7 +391,8 @@
 						"to": "PEfE7dCL",
 						"kind": "call",
 						"label": "a canvas of its own",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "25DiejPQ",
@@ -370,7 +400,8 @@
 						"to": "IFhUy8C6",
 						"kind": "call",
 						"label": "install the arm being measured",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 10000
 					},
 					{
 						"id": "9sL5gPEN",
@@ -382,7 +413,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "VYAeNogH",
@@ -390,7 +422,8 @@
 						"to": "7LcGoxWH",
 						"kind": "call",
 						"label": "what the run was not allowed to do",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 12000
 					},
 					{
 						"id": "cm1J9TGU",
@@ -398,7 +431,8 @@
 						"to": "xzOQOY33",
 						"kind": "call",
 						"label": "what the vault now says",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "b3s3lWZn",
@@ -406,7 +440,8 @@
 						"to": "RqoYaLTK",
 						"kind": "call",
 						"label": "photograph everything declared",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 14000
 					},
 					{
 						"id": "uT0ylhOM",
@@ -414,7 +449,8 @@
 						"to": "EJ2b3Szn",
 						"kind": "call",
 						"label": "start it on a free port",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 15000
 					},
 					{
 						"id": "Kj1Dd9Y2",
@@ -422,7 +458,8 @@
 						"to": "gwU9cyGm",
 						"kind": "call",
 						"label": "one chunk of blinded runs",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 16000
 					},
 					{
 						"id": "GfcZMk6V",
@@ -430,7 +467,8 @@
 						"to": "bgEcePXZ",
 						"kind": "call",
 						"label": "one chunk of blinded runs",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 17000
 					},
 					{
 						"id": "xovfrY1j",
@@ -438,7 +476,8 @@
 						"to": "1snXnK3G",
 						"kind": "call",
 						"label": "resume the grading thread",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 18000
 					},
 					{
 						"id": "2X7jYiVB",
@@ -446,7 +485,8 @@
 						"to": "9TIT63Qz",
 						"kind": "call",
 						"label": "resume the grading session",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 19000
 					},
 					{
 						"id": "LzlhpsS7",
@@ -454,7 +494,8 @@
 						"to": "PwYiE0Hr",
 						"kind": "data",
 						"label": "each grader's filed verdicts",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 20000
 					},
 					{
 						"id": "oc71QCiH",
@@ -462,7 +503,8 @@
 						"to": "JDTuIZQZ",
 						"kind": "call",
 						"label": "install the arm",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 21000
 					},
 					{
 						"id": "EWbHFV2K",
@@ -470,7 +512,8 @@
 						"to": "JDTuIZQZ",
 						"kind": "call",
 						"label": "read the vault back",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 22000
 					},
 					{
 						"id": "5TtCOktb",
@@ -478,7 +521,8 @@
 						"to": "JDTuIZQZ",
 						"kind": "call",
 						"label": "rasterize each picture",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 23000
 					},
 					{
 						"id": "eclUOkMc",
@@ -490,7 +534,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 24000
 					}
 				],
 				"flows": [],

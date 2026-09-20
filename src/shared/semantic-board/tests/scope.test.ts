@@ -4,6 +4,7 @@ import {
 	VariantContentSchema,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A variant's content, as a document holds it.
@@ -11,7 +12,7 @@ import {
  * @returns The parsed content.
  */
 const content = (stated: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(stated);
+	VariantContentSchema.parse(withFixtureOrders(stated));
 
 const PLATFORM = { id: "pl", name: "Platform", kind: "service" };
 const GATEWAY = { id: "gw", name: "Gateway", kind: "module", parent: "pl" };

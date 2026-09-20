@@ -1,6 +1,6 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import type { DiagramBox } from "@/shared/semantic-board/index";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderDataFlow } from "@/runtime/semantic-renderer/index";
 import {
 	drawnSpan,
@@ -24,7 +24,7 @@ const NOTE =
  * @returns The content.
  */
 function startup(note?: string) {
-	return VariantContentSchema.parse({
+	return orderedFixture({
 		nodes: [
 			{ id: "cmd", name: "run_command", kind: "function" },
 			{ id: "info", name: "ScriptInfo", kind: "module" },
