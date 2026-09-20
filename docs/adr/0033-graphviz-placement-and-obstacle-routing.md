@@ -11,7 +11,9 @@ routes. Graphviz's global ranking across clusters allows those cards to share
 the container's vertical span while preserving semantic containment.
 
 Graphviz owns placement. libavoid owns orthogonal routing around measured cards
-and container title bands. Graphviz's own orthogonal routes are not used: the
+and container title bands. A relationship may enter a container only when that
+container holds one of its endpoints; other container bodies are routing
+obstacles. Graphviz's own orthogonal routes are not used: the
 prototype showed that they could cross headings or meet constrained endpoints
 diagonally. Relationship labels use clear runs of their routes; a label that
 cannot fit requests measured space from the layout owner.

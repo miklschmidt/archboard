@@ -5,6 +5,58 @@ import { simplify } from "@/transformers/semantic-renderer/lib/layout/curves";
 
 export type Connection = InstanceType<AvoidEngine["ConnRef"]>;
 
+/**
+ * Whether natural label placement has requested a reserved straight run.
+ * @param edge The relationship.
+ * @returns Whether its measured label is a routing obstacle and waypoint.
+ */
+export function forcedLabel(edge: ElkExtendedEdge): boolean {
+	return edge.layoutOptions?.["archboard.route-label"] === "true" && Boolean(edge.labels?.length);
+}
+
+/**
+ * Apply the accepted physical position of one reserved label when both axes exist.
+ * @param edge One placed relationship.
+ */
+export function positionReservedLabel(edge: ElkExtendedEdge): void {
+	const label = edge.labels?.[0];
+	const options = edge.layoutOptions;
+	if (!label || !options) return;
+	const x = options["archboard.route-label.x"];
+	const y = options["archboard.route-label.y"];
+	if (x === undefined || y === undefined) return;
+	Object.assign(label, { x: Number(x), y: Number(y) });
+}
+
+/**
+ * Keep an obstacle-clear detour in the shared scene so native lane nudging sees every edge.
+ * @param avoid The native engine module.
+ * @param connection The shared connector to constrain.
+ * @param points Interior points of its scoped detour.
+ */
+export function setRouteCheckpoints(
+	avoid: AvoidEngine,
+	connection: Connection,
+	points: readonly Point[],
+): void {
+	const list = new avoid.CheckpointVector();
+	try {
+		for (const point of points) {
+			const at = new avoid.Point(point.x, point.y);
+			const checkpoint = new avoid.Checkpoint(at);
+			try {
+				list.push_back(checkpoint);
+			} finally {
+				checkpoint.delete();
+				at.delete();
+			}
+		}
+		connection.setRoutingCheckpoints(list);
+	} finally {
+		list.delete();
+	}
+}
+
 /** A native scene could not find an obstacle-free route; alternative scenes may still work. */
 class NativeRouteUnavailable extends Error {
 	override readonly name = "NativeRouteUnavailable";
@@ -28,7 +80,7 @@ export function isNativeRouteUnavailable(error: unknown): boolean {
  * @param id Relationship identity for diagnostics.
  * @returns Geometry independent of native lifetime.
  */
-function pointsOf(connection: Connection, id: string): Point[] {
+export function nativeRoutePoints(connection: Connection, id: string): Point[] {
 	if (!connection.hasValidRoute() || connection.hasCrossingObstacles())
 		throw new NativeRouteUnavailable(
 			`Layout could not route relationship ${id} clear of obstacles`,
@@ -69,7 +121,9 @@ function sectionsOf(
 	edge: ElkExtendedEdge,
 	connections: readonly Connection[],
 ): NonNullable<ElkExtendedEdge["sections"]> {
-	const points = simplify(connections.flatMap((connection) => pointsOf(connection, edge.id)));
+	const points = simplify(
+		connections.flatMap((connection) => nativeRoutePoints(connection, edge.id)),
+	);
 	if (points.length < 2 || points.some(invalidPoint))
 		throw new Error(`Layout returned an invalid orthogonal route for relationship ${edge.id}`);
 	return [

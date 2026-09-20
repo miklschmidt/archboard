@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-19 23:08'
+updated_date: '2026-09-20 00:34'
 labels:
   - renderer
   - layout
@@ -39,6 +39,8 @@ The Phone API view places incoming cards above an entire Common-WebLib container
 Apply approved Cloud Infrastructure straight-route correction: use placed fallback-label coordinates when offering aligned card pins, and align ordinary sources with selected external container arrival points through existing clearance checks. Add minimal regression coverage, verify real variants and renderer checks, rebuild and refresh live canvas, then commit.
 
 User approved combined vib1439P routing preview. Generalize jointly aligned external frame arrivals and collision-validated pin/label projections, preserving distinct channels, fixed radius 8 and mandatory approach 12. Add minimal native regressions, rerender the real corpus, inspect approved variant, run required checks, simplify and commit. Do not modify column wrapping or user clearance configuration.
+
+Correct unrelated-frame traversal: (1) lock the four-node native failure and platform cluster@MBkKDE49 as regressions; (2) route each connection clear of containers containing neither endpoint while preserving legitimate descendant access and shared channel coordination; (3) verify the renderer corpus and live board, update the routing rule documentation, simplify, and commit.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -131,4 +133,6 @@ Simplification: reused existing label channel packing and settlement; no new cle
 Final combined gate: lint, formatting, types, frontend build and module tests pass. System lane 168 pass/1 fail at the previously established baseline live-voice pane-context test; full check therefore is not green and serial browser lane is not reached. Requested renderer behavior independently verified in live browser and 22-variant native corpus. Keep broader TASK-278 In Progress.
 
 Final counts: 3369 module tests pass; separate repository lane 8/8 pass. Validation logs /tmp/proposal-full-check2.log and /tmp/proposal-repository.log.
+
+Foreign-frame routing correction in isolated worktree: preserve one shared libavoid scene, find routes entering frames unrelated to both endpoints, derive scoped clear detours, and constrain the shared connectors with native checkpoints; a final validation replaces any route still crossing. Platform Cluster@MBkKDE49 v18 audit: 19 edges, 3 frames, zero unrelated-frame or card crossings and zero off-run labels. Cloud Infrastructure@Nc8vWLvX v40: 19 edges, 1 frame, same zero violations. Native outside-versus-descendant regression and shared-container-rows tests pass; skill evaluation/install tests 237 pass. Full check passes lint, format, type checks and build, then module suite reports 3371 pass/1 fail: compact-inset container-packing test, independently reproduced on pristine e438c312 before this correction. Source checkout remains under concurrent edits, so implementation is committed only in this task's isolated worktree.
 <!-- SECTION:NOTES:END -->

@@ -22,9 +22,13 @@ interface AvoidEnum {
 /** One connector owned by its router. */
 interface AvoidConnection {
 	setRoutingType(type: AvoidEnum): void;
+	setRoutingCheckpoints(checkpoints: AvoidCheckpointVector): void;
 	displayRoute(): { size(): number; at(index: number): AvoidPoint };
 	hasValidRoute(): boolean;
 	hasCrossingObstacles(): boolean;
+}
+interface AvoidCheckpointVector extends Owned {
+	push_back(checkpoint: Owned): void;
 }
 /** The router owns its shapes, pins and connectors until deletion. */
 interface AvoidRouter extends Owned {
@@ -56,6 +60,8 @@ export interface AvoidEngine {
 	) => { setExclusive(exclusive: boolean): void };
 	ConnEnd: { new (point: AvoidPoint): Owned; new (shape: object, pin: number): Owned };
 	ConnRef: new (router: AvoidRouter, from: Owned, to: Owned) => AvoidConnection;
+	Checkpoint: new (point: AvoidPoint) => Owned;
+	CheckpointVector: new () => AvoidCheckpointVector;
 	RouterFlag: { OrthogonalRouting: AvoidEnum };
 	ConnType: { ConnType_Orthogonal: AvoidEnum };
 	RoutingParameter: Record<
