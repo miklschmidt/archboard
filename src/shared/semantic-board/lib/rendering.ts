@@ -87,7 +87,9 @@ const SubjectStandingSchema = z.enum(["added", "removed", "changed", "unchanged"
 
 /**
  * What a proposal changed, as the answer carries it: its predecessor, and how
- * every subject of the drawn picture stands against that predecessor.
+ * every subject of the comparison picture stands against that predecessor. A
+ * clean canvas reading keeps this report even though it leaves the comparison
+ * marks and removed subjects out of its SVG.
  *
  * Derived on every render rather than stored. Nothing on a board says "this node
  * is new": a proposal states its architecture, and what it changed is read
@@ -95,9 +97,8 @@ const SubjectStandingSchema = z.enum(["added", "removed", "changed", "unchanged"
  * share (ADR 0023). A variant with no predecessor carries none of this, because
  * there is nothing for it to have changed.
  *
- * By subject id rather than nested by kind, because that is how every consumer
- * already works — an atlas box, a selection, an inspector — and the kind is one
- * lookup away in the atlas that comes with it.
+ * By subject id rather than nested by kind, because that is how the comparison
+ * atlas, selection, and inspector already work.
  */
 const RenderedChangesSchema = z.object({
 	predecessor: RenderedVariantSchema,

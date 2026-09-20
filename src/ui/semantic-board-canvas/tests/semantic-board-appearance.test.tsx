@@ -88,6 +88,7 @@ test("legend and inspection explain the picture and survive a policy-only restyl
 		fireEvent.click(part("semantic-sidebar-toggle"));
 	});
 	expect(part("semantic-legend").textContent).toContain("Comparison and attention");
+	expect(part("semantic-legend").textContent).not.toContain("Containment");
 	openSidebarTab("selection");
 	expect(part("semantic-inspector-appearance").textContent).toContain("blue from Kubernetes");
 });
