@@ -1,9 +1,6 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import {
-	VariantContentSchema,
-	type DiagramTheme,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { type DiagramTheme, type VariantContent } from "@/shared/semantic-board/index";
 import {
 	renderArchitecture,
 	renderDataFlow,
@@ -27,7 +24,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
-const CONTENT: VariantContent = VariantContentSchema.parse({
+const CONTENT: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "gw", name: "API Gateway", kind: "route", responsibility: "Takes requests" },
 		{ id: "io", name: "board-io", kind: "module" },

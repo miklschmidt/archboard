@@ -1,9 +1,6 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import {
-	VariantContentSchema,
-	type DiagramBox,
-	type VariantContent,
-} from "@/shared/semantic-board/index";
+import { type DiagramBox, type VariantContent } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
@@ -141,7 +138,7 @@ for (const fixture of [
 	},
 ]) {
 	test(`${fixture.name}: connected containers retain clearer, shorter wiring`, async () => {
-		const content = VariantContentSchema.parse(fixture.content);
+		const content = orderedFixture(fixture.content);
 		const drawing = await renderArchitecture({ content, theme: "dark" });
 		expectIntact(drawing, content);
 		// The baseline sizes and route totals are measured in shared-container-rows.md.

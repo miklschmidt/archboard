@@ -2,78 +2,91 @@
 	"nodes": [
 		{
 			"id": "kw6lbbtf",
+			"order": 1000,
 			"name": "Shared customer databases",
 			"kind": "datastore",
 			"responsibility": "Shared persistence leaves residual schema coupling."
 		},
 		{
 			"id": "Yk7bz2cS",
+			"order": 2000,
 			"name": "External + cross-product systems",
 			"kind": "external",
 			"responsibility": "SMS, email and Azure topology remain shared dependencies."
 		},
 		{
 			"id": "veDVRaol",
+			"order": 3000,
 			"name": "Cilium / Envoy Gateway API",
 			"kind": "service",
 			"responsibility": "Cuts over Public and Phone HTTPRoutes independently."
 		},
 		{
 			"id": "PKSgI9Dc",
+			"order": 4000,
 			"name": "Platform Public API",
 			"kind": "service",
 			"responsibility": "Proposed independently releasable compatibility protocol adapter."
 		},
 		{
 			"id": "PE6mbrQ5",
+			"order": 5000,
 			"name": "Public application module",
 			"kind": "module",
 			"responsibility": "Owns auth, IDs and contract presentation."
 		},
 		{
 			"id": "n7XpdtCI",
+			"order": 6000,
 			"name": "Public capability adapters",
 			"kind": "module",
 			"responsibility": "Keep interfaces inward and persistence replaceable."
 		},
 		{
 			"id": "iOx7yu6G",
+			"order": 7000,
 			"name": "Phone application module",
 			"kind": "module",
 			"responsibility": "Owns mobile sessions and app presence."
 		},
 		{
 			"id": "R6mP1WZx",
+			"order": 8000,
 			"name": "Platform capability modules",
 			"kind": "module",
 			"responsibility": "Own Customer, Requests, Inventory, Auditlog and Events capabilities."
 		},
 		{
 			"id": "vulVwdyr",
+			"order": 9000,
 			"name": "Legacy IIS fallback",
 			"kind": "service",
 			"responsibility": "Unmigrated route groups continue to the existing IIS API portfolio."
 		},
 		{
 			"id": "Txck393b",
+			"order": 10000,
 			"name": "Public-API host",
 			"kind": "service",
 			"responsibility": "Thin .NET Framework 4.7.2 IIS HTTP host."
 		},
 		{
 			"id": "FuUQFqat",
+			"order": 11000,
 			"name": "Phone API host",
 			"kind": "service",
 			"responsibility": "Thin MobileApp-API IIS HTTP host."
 		},
 		{
 			"id": "FB5oiRXm",
+			"order": 12000,
 			"name": "Common-WebLib.dll",
 			"kind": "module",
 			"responsibility": "One shared release and code-owner boundary."
 		},
 		{
 			"id": "HAGTnr2K",
+			"order": 13000,
 			"name": "Customer behavior + DTOs",
 			"kind": "module",
 			"responsibility": "Public contract rules live inside the monolith.",
@@ -81,6 +94,7 @@
 		},
 		{
 			"id": "XLnKM6wi",
+			"order": 14000,
 			"name": "Ambient shared glue",
 			"kind": "module",
 			"responsibility": "HttpContext, caches, auth and logging create implicit runtime dependencies.",
@@ -88,6 +102,7 @@
 		},
 		{
 			"id": "0cQKXFuZ",
+			"order": 15000,
 			"name": "Phone behavior + DTOs",
 			"kind": "module",
 			"responsibility": "Mobile contract rules live inside the monolith.",
@@ -95,6 +110,7 @@
 		},
 		{
 			"id": "kfNDGF1F",
+			"order": 16000,
 			"name": "Common-DataLib",
 			"kind": "module",
 			"responsibility": "Generated LINQ-to-SQL model."
@@ -103,6 +119,7 @@
 	"edges": [
 		{
 			"id": "19Ua5i2j",
+			"order": 1000,
 			"from": "PKSgI9Dc",
 			"to": "PE6mbrQ5",
 			"kind": "call",
@@ -110,6 +127,7 @@
 		},
 		{
 			"id": "hcLpVekW",
+			"order": 2000,
 			"from": "PE6mbrQ5",
 			"to": "n7XpdtCI",
 			"kind": "call",
@@ -117,6 +135,7 @@
 		},
 		{
 			"id": "UybVIsxV",
+			"order": 3000,
 			"from": "R6mP1WZx",
 			"to": "kw6lbbtf",
 			"kind": "data",
@@ -124,6 +143,7 @@
 		},
 		{
 			"id": "J1GkzKgP",
+			"order": 4000,
 			"from": "iOx7yu6G",
 			"to": "Yk7bz2cS",
 			"kind": "call",
@@ -131,6 +151,7 @@
 		},
 		{
 			"id": "kJaF9nLs",
+			"order": 5000,
 			"from": "veDVRaol",
 			"to": "vulVwdyr",
 			"kind": "http",
@@ -138,6 +159,7 @@
 		},
 		{
 			"id": "3XJ487y8",
+			"order": 6000,
 			"from": "Txck393b",
 			"to": "HAGTnr2K",
 			"kind": "dependency",
@@ -145,6 +167,7 @@
 		},
 		{
 			"id": "AMKwGocQ",
+			"order": 7000,
 			"from": "0cQKXFuZ",
 			"to": "XLnKM6wi",
 			"kind": "call",
@@ -152,6 +175,7 @@
 		},
 		{
 			"id": "DRdfW9ra",
+			"order": 8000,
 			"from": "HAGTnr2K",
 			"to": "kfNDGF1F",
 			"kind": "data",
@@ -159,6 +183,7 @@
 		},
 		{
 			"id": "aH2JH59V",
+			"order": 9000,
 			"from": "kfNDGF1F",
 			"to": "kw6lbbtf",
 			"kind": "data",
@@ -166,6 +191,7 @@
 		},
 		{
 			"id": "UX37LTba",
+			"order": 10000,
 			"from": "XLnKM6wi",
 			"to": "kfNDGF1F",
 			"kind": "data",
@@ -173,6 +199,7 @@
 		},
 		{
 			"id": "7Sah5Npk",
+			"order": 11000,
 			"from": "XLnKM6wi",
 			"to": "Yk7bz2cS",
 			"kind": "call",
@@ -180,6 +207,7 @@
 		},
 		{
 			"id": "oZU3WY1A",
+			"order": 12000,
 			"from": "vulVwdyr",
 			"to": "Txck393b",
 			"kind": "http",
@@ -187,6 +215,7 @@
 		},
 		{
 			"id": "HOKDAQTU",
+			"order": 13000,
 			"from": "vulVwdyr",
 			"to": "FuUQFqat",
 			"kind": "http",
@@ -194,6 +223,7 @@
 		},
 		{
 			"id": "Y2jnDxOD",
+			"order": 14000,
 			"from": "Txck393b",
 			"to": "HAGTnr2K",
 			"kind": "dependency",
@@ -201,6 +231,7 @@
 		},
 		{
 			"id": "LaTdOSNr",
+			"order": 15000,
 			"from": "FuUQFqat",
 			"to": "0cQKXFuZ",
 			"kind": "dependency",
@@ -208,6 +239,7 @@
 		},
 		{
 			"id": "1ymkhKlO",
+			"order": 16000,
 			"from": "HAGTnr2K",
 			"to": "XLnKM6wi",
 			"kind": "call",
@@ -215,6 +247,7 @@
 		},
 		{
 			"id": "RRsjQqWr",
+			"order": 17000,
 			"from": "0cQKXFuZ",
 			"to": "XLnKM6wi",
 			"kind": "call",
@@ -222,6 +255,7 @@
 		},
 		{
 			"id": "pu3cHFEc",
+			"order": 18000,
 			"from": "HAGTnr2K",
 			"to": "kfNDGF1F",
 			"kind": "data",
@@ -229,6 +263,7 @@
 		},
 		{
 			"id": "YwmZQrSe",
+			"order": 19000,
 			"from": "kfNDGF1F",
 			"to": "kw6lbbtf",
 			"kind": "data",
@@ -236,6 +271,7 @@
 		},
 		{
 			"id": "5YGlSYox",
+			"order": 20000,
 			"from": "XLnKM6wi",
 			"to": "kfNDGF1F",
 			"kind": "data",
@@ -243,6 +279,7 @@
 		},
 		{
 			"id": "avmOZp0l",
+			"order": 21000,
 			"from": "XLnKM6wi",
 			"to": "Yk7bz2cS",
 			"kind": "call",

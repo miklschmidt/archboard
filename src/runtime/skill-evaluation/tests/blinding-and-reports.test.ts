@@ -7,6 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { SemanticBoardSchema } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import {
 	anonymousRunId,
@@ -35,31 +36,33 @@ const usage = (input: number, output: number) => ({
 	total: input + output,
 });
 
-const BOARD = SemanticBoardSchema.parse({
-	schemaVersion: "2.2.0",
-	kind: "semantic-board",
-	id: "b1",
-	name: "Flask",
-	level: "system",
-	version: 1,
-	createdAt: "2026-09-14T00:00:00.000Z",
-	updatedAt: "2026-09-14T00:00:00.000Z",
-	views: [],
-	current: "v1",
-	variants: [
-		{
-			id: "v1",
-			name: "Initial",
-			lifecycle: "current",
-			content: {
-				nodes: [{ id: "n1", name: "App", kind: "app" }],
-				edges: [],
-				flows: [],
-				walkthroughs: [],
+const BOARD = SemanticBoardSchema.parse(
+	withFixtureOrders({
+		schemaVersion: "2.2.0",
+		kind: "semantic-board",
+		id: "b1",
+		name: "Flask",
+		level: "system",
+		version: 1,
+		createdAt: "2026-09-14T00:00:00.000Z",
+		updatedAt: "2026-09-14T00:00:00.000Z",
+		views: [],
+		current: "v1",
+		variants: [
+			{
+				id: "v1",
+				name: "Initial",
+				lifecycle: "current",
+				content: {
+					nodes: [{ id: "n1", name: "App", kind: "app" }],
+					edges: [],
+					flows: [],
+					walkthroughs: [],
+				},
 			},
-		},
-	],
-});
+		],
+	}),
+);
 
 const SCENARIO: Scenario = {
 	id: "S00",

@@ -1,10 +1,10 @@
 // The one owner of a semantic board on disk (ADR 0023).
 //
-// Reads go through `readSemanticBoard`, and every change — whatever command
-// asked for it — goes through `writeSemanticBoard`, which is where the claim,
-// the expected-version check, the single version advance and the one atomic
-// fsync write live. Nothing else in the repository writes a `.semantic.json`,
-// and nothing here can touch an Excalidraw note.
+// Reads go through `readSemanticBoard`. Authored changes go through
+// `writeSemanticBoard`, which owns the claim, expected-version check, version
+// advance and atomic fsync write. A read of an older contract runs a registered
+// schema migration under the same board lease and persists it before answering.
+// Nothing here touches an Excalidraw note.
 
 export {
 	SEMANTIC_BOARD_FILE_SUFFIX,

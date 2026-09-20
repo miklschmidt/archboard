@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "6E6hL0Zk",
 	"name": "Canvas server",
 	"level": "service",
-	"version": 8,
+	"version": 9,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-17T22:54:12.717Z",
+	"updatedAt": "2026-09-20T00:23:11.465Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -82,7 +82,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/application.ts"
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "J7yOKraz",
@@ -92,7 +93,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/canvas-startup.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "K6P74fM7",
@@ -102,7 +104,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/mutation-admission.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "Y70KOm9C",
@@ -112,7 +115,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-routes.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "wYcdVszt",
@@ -128,7 +132,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "xP18j2Co",
@@ -144,7 +149,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "yiSc1qWU",
@@ -154,7 +160,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/pane-registry.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "ZuLyutvj",
@@ -164,7 +171,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-disk-watch.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "6a2R1ddu",
@@ -174,7 +182,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/code-opener"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "9G6CmNgt",
@@ -190,7 +199,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "mTtiV3hX",
@@ -206,7 +216,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "Eh7icS73",
@@ -222,7 +233,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "8B8O9ZiT",
@@ -233,7 +245,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-writes.ts"
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "Ck9cBsJC",
@@ -244,7 +257,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-lock-routes.ts"
-						}
+						},
+						"order": 14000
 					}
 				],
 				"edges": [
@@ -254,7 +268,8 @@
 						"to": "2naazvac",
 						"kind": "dependency",
 						"label": "owns listener",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 1000
 					},
 					{
 						"id": "W2BXIpq7",
@@ -262,7 +277,8 @@
 						"to": "K6P74fM7",
 						"kind": "dependency",
 						"label": "admits writes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 2000
 					},
 					{
 						"id": "C9PQBOwg",
@@ -270,7 +286,8 @@
 						"to": "Y70KOm9C",
 						"kind": "dependency",
 						"label": "mounts the read routes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 3000
 					},
 					{
 						"id": "dHru8Ng6",
@@ -278,7 +295,8 @@
 						"to": "yiSc1qWU",
 						"kind": "dependency",
 						"label": "mounts panes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 4000
 					},
 					{
 						"id": "ibCZHaRq",
@@ -286,7 +304,8 @@
 						"to": "6a2R1ddu",
 						"kind": "dependency",
 						"label": "mounts opener",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 5000
 					},
 					{
 						"id": "2SS8e4D0",
@@ -294,7 +313,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "read the board family",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "4jlBP8Y2",
@@ -302,7 +322,8 @@
 						"to": "xP18j2Co",
 						"kind": "render",
 						"label": "render selected view",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "sgeiS1Hj",
@@ -310,7 +331,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "locate watched file",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "4c7u4tN8",
@@ -318,7 +340,8 @@
 						"to": "yiSc1qWU",
 						"kind": "event",
 						"label": "announce file change",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "fISQ9jAX",
@@ -326,7 +349,8 @@
 						"to": "9G6CmNgt",
 						"kind": "event",
 						"label": "bridge browser session",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "oYfZ2qnC",
@@ -334,7 +358,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "resolve node binding",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 11000
 					},
 					{
 						"id": "elH6AHHL",
@@ -342,7 +367,8 @@
 						"to": "9G6CmNgt",
 						"kind": "dependency",
 						"label": "start and stop",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 12000
 					},
 					{
 						"id": "sn8CVTf4",
@@ -350,7 +376,8 @@
 						"to": "Y70KOm9C",
 						"kind": "http",
 						"label": "read a board",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "BiJamQt9",
@@ -362,7 +389,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "jNIxQ6gv",
@@ -370,7 +398,8 @@
 						"to": "Ck9cBsJC",
 						"kind": "http",
 						"label": "claim and release",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 15000
 					},
 					{
 						"id": "3verBPcG",
@@ -378,7 +407,8 @@
 						"to": "Y70KOm9C",
 						"kind": "http",
 						"label": "a board and its picture",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 16000
 					},
 					{
 						"id": "VkGzebtq",
@@ -386,7 +416,8 @@
 						"to": "yiSc1qWU",
 						"kind": "event",
 						"label": "what this pane is reading",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 17000
 					},
 					{
 						"id": "VO9ngl7m",
@@ -394,7 +425,8 @@
 						"to": "Eh7icS73",
 						"kind": "event",
 						"label": "board and agent news",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 18000
 					},
 					{
 						"id": "ppZ60bja",
@@ -402,7 +434,8 @@
 						"to": "8B8O9ZiT",
 						"kind": "dependency",
 						"label": "mounts the write boundary",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 19000
 					},
 					{
 						"id": "Ep4ins2T",
@@ -410,7 +443,8 @@
 						"to": "Ck9cBsJC",
 						"kind": "dependency",
 						"label": "mounts the claim routes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 20000
 					},
 					{
 						"id": "iG4T44Pd",
@@ -422,7 +456,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 21000
 					},
 					{
 						"id": "9wogU6N3",
@@ -430,7 +465,8 @@
 						"to": "yiSc1qWU",
 						"kind": "event",
 						"label": "announce the accepted write",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 22000
 					},
 					{
 						"id": "JnPKFYwB",
@@ -438,7 +474,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "take, release or override the claim",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 23000
 					}
 				],
 				"flows": [],
@@ -508,7 +545,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/application.ts"
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "J7yOKraz",
@@ -518,7 +556,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/canvas-startup.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "K6P74fM7",
@@ -528,7 +567,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/mutation-admission.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "Y70KOm9C",
@@ -538,7 +578,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-routes.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "wYcdVszt",
@@ -554,7 +595,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "xP18j2Co",
@@ -571,7 +613,8 @@
 								"kind": "named",
 								"name": "Readable layout"
 							}
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "yiSc1qWU",
@@ -581,7 +624,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/pane-registry.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "ZuLyutvj",
@@ -591,7 +635,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-disk-watch.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "6a2R1ddu",
@@ -601,7 +646,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/code-opener"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "9G6CmNgt",
@@ -617,7 +663,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "mTtiV3hX",
@@ -633,7 +680,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "Eh7icS73",
@@ -649,7 +697,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "8B8O9ZiT",
@@ -660,7 +709,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-board-writes.ts"
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "Ck9cBsJC",
@@ -671,7 +721,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/semantic-lock-routes.ts"
-						}
+						},
+						"order": 14000
 					}
 				],
 				"edges": [
@@ -681,7 +732,8 @@
 						"to": "2naazvac",
 						"kind": "dependency",
 						"label": "owns listener",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 1000
 					},
 					{
 						"id": "W2BXIpq7",
@@ -689,7 +741,8 @@
 						"to": "K6P74fM7",
 						"kind": "dependency",
 						"label": "admits writes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 2000
 					},
 					{
 						"id": "C9PQBOwg",
@@ -697,7 +750,8 @@
 						"to": "Y70KOm9C",
 						"kind": "dependency",
 						"label": "mounts the read routes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 3000
 					},
 					{
 						"id": "dHru8Ng6",
@@ -705,7 +759,8 @@
 						"to": "yiSc1qWU",
 						"kind": "dependency",
 						"label": "mounts panes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 4000
 					},
 					{
 						"id": "ibCZHaRq",
@@ -713,7 +768,8 @@
 						"to": "6a2R1ddu",
 						"kind": "dependency",
 						"label": "mounts opener",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 5000
 					},
 					{
 						"id": "2SS8e4D0",
@@ -721,7 +777,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "read the board family",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "4jlBP8Y2",
@@ -729,7 +786,8 @@
 						"to": "xP18j2Co",
 						"kind": "render",
 						"label": "render selected view",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "sgeiS1Hj",
@@ -737,7 +795,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "locate watched file",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "4c7u4tN8",
@@ -745,7 +804,8 @@
 						"to": "yiSc1qWU",
 						"kind": "event",
 						"label": "announce file change",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "fISQ9jAX",
@@ -753,7 +813,8 @@
 						"to": "9G6CmNgt",
 						"kind": "event",
 						"label": "bridge browser session",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "oYfZ2qnC",
@@ -761,7 +822,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "resolve node binding",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 11000
 					},
 					{
 						"id": "elH6AHHL",
@@ -769,7 +831,8 @@
 						"to": "9G6CmNgt",
 						"kind": "dependency",
 						"label": "start and stop",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 12000
 					},
 					{
 						"id": "sn8CVTf4",
@@ -777,7 +840,8 @@
 						"to": "Y70KOm9C",
 						"kind": "http",
 						"label": "read a board",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "BiJamQt9",
@@ -789,7 +853,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "jNIxQ6gv",
@@ -797,7 +862,8 @@
 						"to": "Ck9cBsJC",
 						"kind": "http",
 						"label": "claim and release",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 15000
 					},
 					{
 						"id": "3verBPcG",
@@ -805,7 +871,8 @@
 						"to": "Y70KOm9C",
 						"kind": "http",
 						"label": "a board and its picture",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 16000
 					},
 					{
 						"id": "VkGzebtq",
@@ -813,7 +880,8 @@
 						"to": "yiSc1qWU",
 						"kind": "event",
 						"label": "what this pane is reading",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 17000
 					},
 					{
 						"id": "VO9ngl7m",
@@ -821,7 +889,8 @@
 						"to": "Eh7icS73",
 						"kind": "event",
 						"label": "board and agent news",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 18000
 					},
 					{
 						"id": "ppZ60bja",
@@ -829,7 +898,8 @@
 						"to": "8B8O9ZiT",
 						"kind": "dependency",
 						"label": "mounts the write boundary",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 19000
 					},
 					{
 						"id": "Ep4ins2T",
@@ -837,7 +907,8 @@
 						"to": "Ck9cBsJC",
 						"kind": "dependency",
 						"label": "mounts the claim routes",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 20000
 					},
 					{
 						"id": "iG4T44Pd",
@@ -849,7 +920,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 21000
 					},
 					{
 						"id": "9wogU6N3",
@@ -857,7 +929,8 @@
 						"to": "yiSc1qWU",
 						"kind": "event",
 						"label": "announce the accepted write",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 22000
 					},
 					{
 						"id": "JnPKFYwB",
@@ -865,7 +938,8 @@
 						"to": "wYcdVszt",
 						"kind": "call",
 						"label": "take, release or override the claim",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 23000
 					}
 				],
 				"flows": [],

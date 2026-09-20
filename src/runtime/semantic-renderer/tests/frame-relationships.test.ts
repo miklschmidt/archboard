@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 
@@ -22,11 +22,11 @@ test.each([
 	["from the frame back to a card", { id: "e5", from: "server", to: "pane", kind: "data" }],
 	["from a card back to the frame", { id: "e4", from: "vault", to: "server", kind: "data" }],
 ])("a frame draws a relationship %s", async (_, relationship) => {
-	const before = VariantContentSchema.parse({
+	const before = orderedFixture({
 		...BASE,
 		edges: [...BASE.edges, relationship],
 	});
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [...before.nodes, { id: "extra", name: "Another card", kind: "module" }],
 		edges: [...before.edges, { id: "e9", from: "pane", to: "extra", kind: "call" }],
 	});

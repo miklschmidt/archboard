@@ -36,8 +36,10 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * `2.2.0` replaces a node's singular `group` label with `groups`, a set of
  * configured group ids. A document still carrying `group` is refused with
  * the one-time conversion it needs, never rewritten in silence.
+ * `2.3.0` records authored node and relationship order. Older documents are
+ * migrated by the store on read, preserving their array positions.
  */
-const SEMANTIC_BOARD_SCHEMA_VERSION = "2.2.0";
+const SEMANTIC_BOARD_SCHEMA_VERSION = "2.3.0";
 
 /**
  * The major version this build implements. A document whose major differs is

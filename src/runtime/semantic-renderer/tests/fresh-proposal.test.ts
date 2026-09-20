@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderBoard } from "@/runtime/semantic-renderer/index";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 
 test("a nested proposal lays out its comparison content fresh and retains subject standing", async () => {
 	const retained = [
@@ -30,8 +31,19 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		updatedAt: "2026-09-19T00:00:00.000Z",
 		current: "current",
 		variants: [
-			{ id: "current", name: "Current", lifecycle: "current", content: { nodes: retained } },
-			{ id: "draft", name: "Draft", lifecycle: "draft", parent: "current", content },
+			{
+				id: "current",
+				name: "Current",
+				lifecycle: "current",
+				content: orderedFixture({ nodes: retained }),
+			},
+			{
+				id: "draft",
+				name: "Draft",
+				lifecycle: "draft",
+				parent: "current",
+				content: orderedFixture(content),
+			},
 		],
 	});
 	const proposal = await renderBoard(

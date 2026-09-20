@@ -1,3 +1,4 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // A label belongs to one line, visibly: the pill sits on the run it names and
 // does not lie across the neighbour's run. Either alone leaves a reader
 // guessing, which is what a photographed pair of opposed labelled arrows did.
@@ -5,7 +6,7 @@
 // together decide where a pill lands.
 
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	routeLabels,
@@ -21,7 +22,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-labels";
 
 /** The reported shape: a pane and its routes, wired both ways and labelled both ways. */
-const PAIRED: VariantContent = VariantContentSchema.parse({
+const PAIRED: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "pane", name: "Pane", kind: "external", responsibility: "Shows a board" },
 		{ id: "routes", name: "Routes", kind: "module" },
@@ -41,7 +42,7 @@ const PAIRED: VariantContent = VariantContentSchema.parse({
 });
 
 /** Three labelled crossings of one gap, which is more than any pair of cards. */
-const THREE_WAYS: VariantContent = VariantContentSchema.parse({
+const THREE_WAYS: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "boundary", name: "Write boundary", kind: "service" },
 		{ id: "write", name: "Board write", kind: "module" },
@@ -54,7 +55,7 @@ const THREE_WAYS: VariantContent = VariantContentSchema.parse({
 });
 
 /** The renderer proposal's labelled fork: one branch skips the middle card. */
-const LABELLED_FORK: VariantContent = VariantContentSchema.parse({
+const LABELLED_FORK: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "graph", name: "Layout graph", kind: "module" },
 		{ id: "measure", name: "Card measurement", kind: "module" },
@@ -68,7 +69,7 @@ const LABELLED_FORK: VariantContent = VariantContentSchema.parse({
 });
 
 /** A real fanout whose longest run is crowded but another segment can host its label. */
-const LIFECYCLE: VariantContent = VariantContentSchema.parse({
+const LIFECYCLE: VariantContent = orderedFixture({
 	nodes: [
 		{
 			id: "life",
@@ -103,7 +104,7 @@ const LIFECYCLE: VariantContent = VariantContentSchema.parse({
 });
 
 /** A long container route must leave the short camera crossing its only label space. */
-const CAMERA_FOCUS: VariantContent = VariantContentSchema.parse({
+const CAMERA_FOCUS: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "viewer", name: "Semantic viewer", kind: "module" },
 		{ id: "fetch", name: "Fetch semantic reads", kind: "function", parent: "viewer" },
@@ -136,7 +137,7 @@ const CAMERA_FOCUS: VariantContent = VariantContentSchema.parse({
 });
 
 /** An architecture whose corridors carry labelled traffic in both directions. */
-const CROWDED: VariantContent = VariantContentSchema.parse({
+const CROWDED: VariantContent = orderedFixture({
 	nodes: [
 		{ id: "edge", name: "Edge", kind: "service", responsibility: "Public entry points" },
 		{ id: "gw", name: "API Gateway", kind: "route", parent: "edge" },
@@ -195,7 +196,7 @@ describe("a label belongs to one line", () => {
 				[2, 0, 1],
 				[2, 1, 0],
 			]) {
-				const content = VariantContentSchema.parse({
+				const content = orderedFixture({
 					...LABELLED_FORK,
 					edges: [
 						...order.flatMap((index) => LABELLED_FORK.edges[index] ?? []),
@@ -233,7 +234,7 @@ describe("a label belongs to one line", () => {
 	}
 
 	test("parallel labelled skips reserve measured room beside their tracks", async () => {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			...LABELLED_FORK,
 			edges: [
 				...LABELLED_FORK.edges,
@@ -298,7 +299,7 @@ describe("a label belongs to one line", () => {
 
 // A native straight channel must survive the reservation needed by two wide badges.
 test("parallel database badges keep their straight channels and measured separation", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ id: "pool", name: "VM Pool", kind: "container" },
 			{ id: "one", name: "VM 3", kind: "service", parent: "pool" },

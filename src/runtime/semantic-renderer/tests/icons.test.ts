@@ -1,3 +1,4 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // A picture draws a type's icon as the icon package itself renders it, and the
 // renderer core writes that markup from path data its host supplies rather
 // than bundling the set (TASK-247). These hold the two ends: the path data a
@@ -8,7 +9,6 @@ import { describe, expect, test } from "bun:test";
 import * as RemixIcons from "@remixicon/react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import {
 	diagramIconNames,
@@ -57,7 +57,7 @@ describe("type icons", () => {
 				call: { name: "Request", color: "rose", dash: "solid", arrowhead: "filled" },
 			},
 		});
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: icons.map((icon, index) => ({ id: `n${index}`, name: icon, kind: `kind${index}` })),
 		});
 		const drawing = await renderArchitecture({ content, theme: "light", policy });

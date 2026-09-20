@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	corridorPoints,
@@ -11,7 +11,7 @@ import {
 test("a flank label clears an unrelated corridor without bending away from its route", async () => {
 	// Reduced from the actual 25px label detour: the new parallel route's label
 	// overlaps the palette's older lane, although the rest of its flank is clear.
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{
 				id: "Y0smyqtZ",
@@ -90,7 +90,7 @@ test("flank label allocation keeps an outer corridor clear of an adjacent card",
 	// Reduced from the literal-colors route: another labeled flank starts farther
 	// inside, and will move outward. Clearing it first must not push this route
 	// into the adjacent card and force a detour below that card.
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{
 				id: "Y0smyqtZ",
@@ -143,7 +143,7 @@ test("flank label allocation keeps an outer corridor clear of an adjacent card",
 });
 
 test("a skip keeps its label on its own run and clears every card", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{
 				id: "Y0smyqtZ",

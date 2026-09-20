@@ -6,6 +6,7 @@ import {
 	VariantContentSchema,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A variant's content, stated as an agent's document would hold it.
@@ -13,7 +14,7 @@ import {
  * @returns The parsed content.
  */
 const content = (stated: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(stated);
+	VariantContentSchema.parse(withFixtureOrders(stated));
 
 const GATEWAY = { id: "gw", name: "Gateway", kind: "service" };
 const ORDERS = { id: "or", name: "Orders", kind: "service" };
@@ -83,6 +84,28 @@ describe("what a proposal changed about the variant it came from", () => {
 });
 
 describe("what is not a change to the architecture", () => {
+	test("changing only node and relationship order keeps their standing unchanged", () => {
+		const before = content({
+			nodes: [
+				{ ...GATEWAY, order: 1000 },
+				{ ...ORDERS, order: 2000 },
+			],
+			edges: [{ ...WIRE, order: 1000 }],
+		});
+		const after = content({
+			nodes: [
+				{ ...GATEWAY, order: 9000 },
+				{ ...ORDERS, order: 4000 },
+			],
+			edges: [{ ...WIRE, order: 8000 }],
+		});
+
+		const comparison = compareVariants(before, after);
+		expect(standingOf(comparison, "gw")).toBe("unchanged");
+		expect(standingOf(comparison, "or")).toBe("unchanged");
+		expect(standingOf(comparison, "w1")).toBe("unchanged");
+	});
+
 	test("a relationship asking for more attention is not a redesign", () => {
 		const after = content({ nodes: [GATEWAY, ORDERS], edges: [{ ...WIRE, emphasis: "hero" }] });
 		const comparison = compareVariants(BASELINE, after);

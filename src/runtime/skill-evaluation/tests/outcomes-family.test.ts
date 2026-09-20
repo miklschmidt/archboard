@@ -13,6 +13,7 @@ import {
 	type Reading,
 } from "@/runtime/skill-evaluation/index";
 import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 import { AFTER, BEFORE, passes, READING } from "@/runtime/skill-evaluation/tests/reading-fixture";
 
 type Walkthroughs = SemanticBoard["variants"][number]["content"]["walkthroughs"];
@@ -386,21 +387,23 @@ describe("relationship identity", () => {
 		{ id: "c", name: "C", kind: "module", responsibility: "c" },
 	];
 	const withEdges = (edges: readonly object[], version: number): SemanticBoard =>
-		SemanticBoardSchema.parse({
-			schemaVersion: "2.2.0",
-			kind: "semantic-board",
-			id: "bd",
-			name: "Flask",
-			level: "service",
-			version,
-			createdAt: "2026-09-14T00:00:00.000Z",
-			updatedAt: "2026-09-14T00:00:00.000Z",
-			views: [],
-			current: "v1",
-			variants: [
-				{ id: "v1", name: "Initial", lifecycle: "current", content: { nodes: NODES, edges } },
-			],
-		});
+		SemanticBoardSchema.parse(
+			withFixtureOrders({
+				schemaVersion: "2.2.0",
+				kind: "semantic-board",
+				id: "bd",
+				name: "Flask",
+				level: "service",
+				version,
+				createdAt: "2026-09-14T00:00:00.000Z",
+				updatedAt: "2026-09-14T00:00:00.000Z",
+				views: [],
+				current: "v1",
+				variants: [
+					{ id: "v1", name: "Initial", lifecycle: "current", content: { nodes: NODES, edges } },
+				],
+			}),
+		);
 	const before = withEdges(
 		[
 			{ id: "e1", from: "a", to: "b", kind: "call", label: "x", traffic: {} },

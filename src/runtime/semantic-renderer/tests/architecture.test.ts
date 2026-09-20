@@ -1,3 +1,4 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
 import type { DiagramBox, DiagramTheme } from "@/shared/semantic-board/index";
 import {
@@ -20,7 +21,7 @@ import {
 	routeEnds,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 
 /**
  * One architecture, as its own contract reads it.
@@ -32,7 +33,7 @@ import { VariantContentSchema, type VariantContent } from "@/shared/semantic-boa
  * @returns The content.
  */
 function architecture(nodes: readonly unknown[], edges: readonly unknown[] = []): VariantContent {
-	return VariantContentSchema.parse({ nodes, edges });
+	return orderedFixture({ nodes, edges });
 }
 
 const SAMPLE: VariantContent = architecture(

@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 1,
+	"version": 2,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-09-17T21:06:43.257Z",
+	"updatedAt": "2026-09-20T00:23:11.321Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -61,7 +61,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/codex-workbench/index.ts"
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "npbOHMgi",
@@ -77,7 +78,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "glxfDGYq",
@@ -88,7 +90,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-operations/index.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "fDdhxdXp",
@@ -98,7 +101,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-start/index.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "5SYKj5bN",
@@ -108,7 +112,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-queue/index.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "p05yEm5U",
@@ -118,7 +123,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-thread-link/index.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "Fxm7RW2x",
@@ -128,7 +134,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-thread-tools/index.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "L4s2Ndtt",
@@ -138,7 +145,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-instructions/index.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "6T3oOpxS",
@@ -148,7 +156,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-epoch/index.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "ZGoXFusm",
@@ -158,7 +167,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-dynamic-tools/index.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "abHx4peq",
@@ -168,7 +178,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-wait-graph/index.ts"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "4slFgCMu",
@@ -184,7 +195,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 12000
 					}
 				],
 				"edges": [
@@ -198,7 +210,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "e1viO4QT",
@@ -210,7 +223,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "l3RkMYAH",
@@ -222,7 +236,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "KGiq6epE",
@@ -230,7 +245,8 @@
 						"to": "p05yEm5U",
 						"kind": "call",
 						"label": "which thread this is for",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "yR5sjMnY",
@@ -238,7 +254,8 @@
 						"to": "6T3oOpxS",
 						"kind": "call",
 						"label": "stage and settle the operation",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "zgS5gisx",
@@ -250,7 +267,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "5B5ZeO2k",
@@ -258,7 +276,8 @@
 						"to": "p05yEm5U",
 						"kind": "call",
 						"label": "classify and bind the pane's thread",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "uiPv1wnk",
@@ -266,7 +285,8 @@
 						"to": "6T3oOpxS",
 						"kind": "call",
 						"label": "stage, commit or roll back the start",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "W87z7uEB",
@@ -274,7 +294,8 @@
 						"to": "4slFgCMu",
 						"kind": "call",
 						"label": "thread/start with the authored body",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "zIWijDn9",
@@ -282,7 +303,8 @@
 						"to": "Fxm7RW2x",
 						"kind": "dependency",
 						"label": "the manifest, by digest",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 10000
 					},
 					{
 						"id": "jAdLjEha",
@@ -290,7 +312,8 @@
 						"to": "L4s2Ndtt",
 						"kind": "dependency",
 						"label": "the instructions, by digest",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 11000
 					},
 					{
 						"id": "CHkvrU1f",
@@ -298,7 +321,8 @@
 						"to": "abHx4peq",
 						"kind": "call",
 						"label": "register and release a wait edge",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 12000
 					},
 					{
 						"id": "Uflv9hM7",
@@ -306,7 +330,8 @@
 						"to": "6T3oOpxS",
 						"kind": "call",
 						"label": "the generation that may act",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					}
 				],
 				"flows": [],

@@ -15,6 +15,7 @@ import {
 	VariantContentSchema,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 
 /**
  * A variant's content as a document holds it.
@@ -22,7 +23,7 @@ import {
  * @returns The content.
  */
 const content = (stated: Record<string, unknown>): VariantContent =>
-	VariantContentSchema.parse(stated);
+	VariantContentSchema.parse(withFixtureOrders(stated));
 
 // Fulfillment spans two services; the worker inside Shipping is also Billing's.
 const ORDERS = { id: "orders", name: "Orders", kind: "service" };
@@ -42,7 +43,7 @@ const WORKER = {
 	parent: "shipping",
 	groups: ["billing", "fulfillment"],
 };
-const LEDGER = { id: "l", name: "Ledger", kind: "datastore", groups: ["billing"] };
+const LEDGER = { id: "l", name: "Ledger", kind: "datastore", groups: ["billing"], order: 1000 };
 const GATEWAY = { id: "g", name: "Gateway", kind: "route" };
 const BOARD = content({
 	nodes: [ORDERS, SHIPPING, HANDLER, QUEUE, WORKER, LEDGER, GATEWAY],

@@ -10,6 +10,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	adoptVariantTransition,
 	branchVariantTransition,
@@ -33,51 +34,53 @@ import {
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const loaded = loadSuite(join(root, "evals"));
 
-const BOARD = SemanticBoardSchema.parse({
-	schemaVersion: "2.2.0",
-	kind: "semantic-board",
-	id: "b",
-	name: "Flask JSON",
-	level: "service",
-	version: 4,
-	createdAt: "2026-09-14T00:00:00.000Z",
-	updatedAt: "2026-09-14T00:00:00.000Z",
-	views: [],
-	current: "v1",
-	variants: [
-		{
-			id: "v1",
-			name: "Initial",
-			lifecycle: "current",
-			content: {
-				nodes: [
-					{ id: "helpers", name: "JSON helpers", kind: "module" },
-					{ id: "app", name: "Flask app", kind: "app" },
-					{ id: "tag", name: "Tagged JSON", kind: "module" },
-				],
-				edges: [],
-				flows: [],
-				walkthroughs: [],
+const BOARD = SemanticBoardSchema.parse(
+	withFixtureOrders({
+		schemaVersion: "2.2.0",
+		kind: "semantic-board",
+		id: "b",
+		name: "Flask JSON",
+		level: "service",
+		version: 4,
+		createdAt: "2026-09-14T00:00:00.000Z",
+		updatedAt: "2026-09-14T00:00:00.000Z",
+		views: [],
+		current: "v1",
+		variants: [
+			{
+				id: "v1",
+				name: "Initial",
+				lifecycle: "current",
+				content: {
+					nodes: [
+						{ id: "helpers", name: "JSON helpers", kind: "module" },
+						{ id: "app", name: "Flask app", kind: "app" },
+						{ id: "tag", name: "Tagged JSON", kind: "module" },
+					],
+					edges: [],
+					flows: [],
+					walkthroughs: [],
+				},
 			},
-		},
-		{
-			id: "v2",
-			name: "Provider rewrite",
-			lifecycle: "draft",
-			parent: "v1",
-			content: {
-				nodes: [
-					{ id: "helpers", name: "JSON helpers", kind: "module" },
-					{ id: "app", name: "Flask app", kind: "app" },
-					{ id: "tag", name: "Tagged JSON", kind: "module" },
-				],
-				edges: [],
-				flows: [],
-				walkthroughs: [],
+			{
+				id: "v2",
+				name: "Provider rewrite",
+				lifecycle: "draft",
+				parent: "v1",
+				content: {
+					nodes: [
+						{ id: "helpers", name: "JSON helpers", kind: "module" },
+						{ id: "app", name: "Flask app", kind: "app" },
+						{ id: "tag", name: "Tagged JSON", kind: "module" },
+					],
+					edges: [],
+					flows: [],
+					walkthroughs: [],
+				},
 			},
-		},
-	],
-});
+		],
+	}),
+);
 
 /**
  * The variant a step targets, for resolving its placeholders.

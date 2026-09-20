@@ -1,10 +1,10 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import { themeColor } from "@/shared/theme/server";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { paletteFor, renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 
-const content = VariantContentSchema.parse({
+const content = orderedFixture({
 	nodes: [
 		{ id: "one", name: "One", kind: "service" },
 		{ id: "two", name: "Two", kind: "service" },

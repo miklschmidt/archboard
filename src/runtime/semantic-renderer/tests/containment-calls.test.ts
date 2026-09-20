@@ -1,7 +1,8 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // A frame and its own part meet at the title divider. The line stays inside
 // the frame, clears its title and touches its child, whichever way the page reads.
 import { expect, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
 
-const application = VariantContentSchema.parse({
+const application = orderedFixture({
 	nodes: [
 		{ id: "app", name: "Flask app", kind: "app", responsibility: "The WSGI application object" },
 		{
@@ -37,7 +38,7 @@ const application = VariantContentSchema.parse({
 });
 
 /** The same board read through a view that keeps the frame, its part and a sibling. */
-const overview = VariantContentSchema.parse({
+const overview = orderedFixture({
 	nodes: application.nodes.filter((node) => node.id !== "run"),
 	edges: application.edges.filter((edge) => edge.id === "d"),
 });
@@ -47,7 +48,7 @@ const overview = VariantContentSchema.parse({
  * left to right, so the frame's own call has to come in past the title band
  * from the frame's left edge rather than down through it.
  */
-const wide = VariantContentSchema.parse({
+const wide = orderedFixture({
 	nodes: [
 		...application.nodes.filter((node) => node.id !== "run" && node.id !== "cli"),
 		...Array.from({ length: 14 }, (_, index) => ({
@@ -111,7 +112,7 @@ test.each([
 );
 
 test("a part's call up to its own frame ends at the title divider", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ id: "app", name: "Flask app", kind: "app", responsibility: "The application" },
 			{ id: "hook", name: "Hook", kind: "function", parent: "app", responsibility: "Runs first" },

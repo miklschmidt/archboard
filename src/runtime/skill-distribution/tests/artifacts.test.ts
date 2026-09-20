@@ -16,6 +16,7 @@ import {
 	SemanticBoardSchema,
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "./fixture-orders.ts";
 import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
 import {
 	generatedSchemas,
@@ -72,7 +73,7 @@ const CONFIG = {
 };
 
 /** A persisted family with nested content: a view, a flow, a walkthrough and groups. */
-const BOARD = {
+const BOARD = withFixtureOrders({
 	schemaVersion: "2.2.0",
 	kind: "semantic-board",
 	id: "bd",
@@ -119,7 +120,7 @@ const BOARD = {
 			},
 		},
 	],
-};
+});
 
 describe("generated schemas agree with the Zod authorities", () => {
 	test("a configuration with groups and a real icon validates; a fake icon, an unknown field and a bad color do not", () => {
@@ -203,8 +204,8 @@ describe("generated schemas agree with the Zod authorities", () => {
 				{ ...variant, id: "v2", name: "proposal", lifecycle: "draft", parent: "v1" },
 			],
 		};
-		expect(parseSemanticBoard(inherited).ok).toBe(true);
-		expect(accepts("semantic-board.schema.json", inherited)).toBe(true);
+		expect(parseSemanticBoard(withFixtureOrders(inherited)).ok).toBe(true);
+		expect(accepts("semantic-board.schema.json", withFixtureOrders(inherited))).toBe(true);
 
 		const cyclic = {
 			...inherited,
@@ -213,8 +214,8 @@ describe("generated schemas agree with the Zod authorities", () => {
 				{ ...inherited.variants[1]!, parent: "v1" },
 			],
 		};
-		expect(parseSemanticBoard(cyclic).ok).toBe(false);
-		expect(accepts("semantic-board.schema.json", cyclic)).toBe(true);
+		expect(parseSemanticBoard(withFixtureOrders(cyclic)).ok).toBe(false);
+		expect(accepts("semantic-board.schema.json", withFixtureOrders(cyclic))).toBe(true);
 	});
 
 	test("authoring payloads validate by name and handle, and refuse what the CLI refuses at the shape", () => {

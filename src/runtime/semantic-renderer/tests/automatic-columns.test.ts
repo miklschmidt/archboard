@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { observedCloud, platformCloud } from "@/runtime/semantic-renderer/tests/cloud-readings";
@@ -42,7 +42,7 @@ test("a long reading selects three downward columns when two cannot fit", async 
 		name: `Stage ${index + 1}`,
 		kind: "module",
 	}));
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes,
 		edges: nodes.slice(1).map((node, index) => ({
 			id: `e${index}`,
@@ -60,7 +60,7 @@ test("a long reading selects three downward columns when two cannot fit", async 
 });
 
 test("a branching reading wraps and keeps side-entry sources with consumers", async () => {
-	const content = VariantContentSchema.parse(cloud);
+	const content = orderedFixture(cloud);
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	const at = drawing.atlas.nodes;
 	const traffic = at["KBuciT76"]!;
@@ -89,7 +89,7 @@ test("a branching reading wraps and keeps side-entry sources with consumers", as
 });
 
 test("a marginal fit gain keeps the compact ownership reading in one column", async () => {
-	const content = VariantContentSchema.parse(phone);
+	const content = orderedFixture(phone);
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	const frame = drawing.atlas.nodes["FB5oiRXm"]!;
 	const database = drawing.atlas.nodes["kw6lbbtf"]!;

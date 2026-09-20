@@ -33,6 +33,9 @@ onto its subjects, write one batch at the version you read, check the answer.
    as it does on every variant command; leave it out and the change lands on the
    current variant. The batch's own `variant` field says the same thing, so say
    it once: the command line wins over it, and the write warns naming both.
+   To adjust layout, restate a node or relationship with its id and an `order`
+   between its neighbours' values. Omit `order` in ordinary edits to keep the
+   existing position. The store assigns new subjects 1000-step positions.
 
 ```bash
 archboard semantic edit "Board store" --expect-version 3 --doing "routing write warnings through their own module" <<'JSON'

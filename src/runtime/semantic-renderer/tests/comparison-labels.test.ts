@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
@@ -9,7 +9,7 @@ test("a comparison keeps an existing label on a straight run when a connection i
 	// row a label shares with another is the engine's once a fanning card's skips
 	// are attached by the engine on a first render (docs/design/layout-rules.md);
 	// the run the label sits on is the reader's invariant.
-	const before = VariantContentSchema.parse({
+	const before = orderedFixture({
 		nodes: [
 			["y8vuJJKu", "Region builder"],
 			["Y0smyqtZ", "Architecture layout"],
@@ -28,7 +28,7 @@ test("a comparison keeps an existing label on a straight run when a connection i
 			["I1lGjMES", "u1OXg3Yy", "J7mPrUeP", "literal colors", "data"],
 		].map(([id, from, to, label, kind]) => ({ id, from, to, label, kind })),
 	});
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			{ ...before.nodes[0], name: "Layout graph" },
 			{ ...before.nodes[1], name: "Compound layout" },

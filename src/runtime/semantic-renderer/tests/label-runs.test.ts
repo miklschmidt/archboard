@@ -1,5 +1,5 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import reservedCorner from "./reserved-label-corner.json";
 import reservedLane from "./reserved-label-lane.json";
@@ -21,7 +21,7 @@ const LABEL_AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 test.each([false, true])(
 	"badges use their own clear runs with room from cards and other routes (nested: %s)",
 	async (nested) => {
-		const content = VariantContentSchema.parse({
+		const content = orderedFixture({
 			nodes: [
 				...(nested ? [{ id: "outer", name: "Worker system", kind: "service" }] : []),
 				...["source", "first", "second", "third"].map((id) => ({
@@ -85,7 +85,7 @@ test.each([false, true])(
 test("a long relationship's label remains within reach of its endpoints on a clear run", async () => {
 	// A skip over two stages may have no clear endpoint-adjacent segment.
 	// Its label must still remain within the span of the relationship.
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: ["a", "b", "c", "d"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
 			{ id: "ab", from: "a", to: "b", kind: "call" },
@@ -110,7 +110,7 @@ test("a long relationship's label remains within reach of its endpoints on a cle
 // Reduced from the Public ownership comparison: parallel retained and added
 // relationships need an engine-reserved label just before a rounded corner.
 test("reserved labels keep their whole straight run when a neighboring corner rounds", async () => {
-	const content = VariantContentSchema.parse(reservedCorner);
+	const content = orderedFixture(reservedCorner);
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	expect(labelsOffRuns(drawing)).toEqual([]);
 });
@@ -118,7 +118,7 @@ test("reserved labels keep their whole straight run when a neighboring corner ro
 // Reduced from Common-Weblib public-api-independent: fanning a shared vertical
 // run left its label behind; moving only that label instead covered another route.
 test("reserved labels follow their shared lanes without covering routes, cards or other labels", async () => {
-	const content = VariantContentSchema.parse(reservedLane);
+	const content = orderedFixture(reservedLane);
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	expect(labelsOffRuns(drawing)).toEqual([]);
 	expect(covering(drawing)).toEqual([]);

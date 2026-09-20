@@ -3,36 +3,42 @@
 		"nodes": [
 			{
 				"id": "ywwZuKxy",
+				"order": 1000,
 				"name": "Portal API hostname",
 				"kind": "service",
 				"responsibility": "Preserves the hostname; health-checked DNS selects Platform first, then healthy IIS fallback."
 			},
 			{
 				"id": "lqxzyMcC",
+				"order": 2000,
 				"name": "Azure Standard Load Balancer",
 				"kind": "azure",
 				"responsibility": "Keeps its public IP as the healthy secondary for automatic DNS failover to IIS."
 			},
 			{
 				"id": "t2QlUi5k",
+				"order": 3000,
 				"name": "Platform",
 				"kind": "service",
 				"responsibility": "Checks approved devices and balances directly across IIS."
 			},
 			{
 				"id": "1yU3ivZL",
+				"order": 4000,
 				"name": "Approved devices",
 				"kind": "external",
 				"responsibility": "Use the dedicated secure hostname."
 			},
 			{
 				"id": "9BTlRpYl",
+				"order": 5000,
 				"name": "Platform Azure Load Balancer",
 				"kind": "azure",
 				"responsibility": "Uses a separate public IP as the primary DNS endpoint; forwards L4 traffic."
 			},
 			{
 				"id": "lIeLZtS6",
+				"order": 6000,
 				"name": "NLC Application Gateway",
 				"kind": "external",
 				"responsibility": "Provides the NLC regional entry."
@@ -41,6 +47,7 @@
 		"edges": [
 			{
 				"id": "TR9Ic6TU",
+				"order": 1000,
 				"from": "ywwZuKxy",
 				"to": "9BTlRpYl",
 				"kind": "other",
@@ -49,6 +56,7 @@
 			},
 			{
 				"id": "1ABsFJsd",
+				"order": 2000,
 				"from": "9BTlRpYl",
 				"to": "t2QlUi5k",
 				"kind": "other",
@@ -57,6 +65,7 @@
 			},
 			{
 				"id": "d7kqpa89",
+				"order": 3000,
 				"from": "1yU3ivZL",
 				"to": "9BTlRpYl",
 				"kind": "other",
@@ -65,6 +74,7 @@
 			},
 			{
 				"id": "ZQQI84PS",
+				"order": 4000,
 				"from": "lIeLZtS6",
 				"to": "ywwZuKxy",
 				"kind": "http",
@@ -73,6 +83,7 @@
 			},
 			{
 				"id": "4D1O2GEw",
+				"order": 5000,
 				"from": "ywwZuKxy",
 				"to": "lqxzyMcC",
 				"kind": "fallback",

@@ -58,6 +58,7 @@ import {
 	type WriteNotice,
 } from "@/runtime/semantic-board-store/lib/replaced-relationships";
 import { placeStatedEdges } from "@/runtime/semantic-board-store/lib/stated-edges";
+import { subjectOrder } from "@/runtime/semantic-board-store/lib/subject-order";
 
 /** A content value, or why the edit could not produce one. */
 type ContentEdit =
@@ -234,7 +235,12 @@ function placeStatedNodes(
 			return chosen;
 		}
 		ids.push(chosen.id);
-		nodes = place(nodes, { ...saidOfNode(input), ...membershipsOf(input), id: chosen.id });
+		nodes = place(nodes, {
+			...saidOfNode(input),
+			...membershipsOf(input),
+			id: chosen.id,
+			order: subjectOrder(nodes, chosen.id, input.order),
+		});
 	}
 	return { ok: true, nodes, ids };
 }

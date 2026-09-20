@@ -1,18 +1,17 @@
-// Ranking is semantic and deterministic: a cycle is broken by a depth-first
-// walk in document order, so which edge of a cycle runs back up the page is
-// fixed by the board text, and a chain always reads down the page.
+// Cycles use authored order, so rearranging the stored arrays cannot silently
+// change which part starts the reading.
 
 import { expect, test } from "bun:test";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 
 /**
- * Two parts calling each other, in the given document order.
+ * Two parts calling each other, in the given authored order.
  * @param order The node ids, first to last.
  * @returns The content.
  */
 function cycle(order: readonly [string, string]) {
-	return VariantContentSchema.parse({
+	return orderedFixture({
 		nodes: order.map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
 			{ id: "ab", from: "a", to: "b", kind: "call" },
@@ -21,15 +20,21 @@ function cycle(order: readonly [string, string]) {
 	});
 }
 
-test("a two-part cycle is broken from the first part in document order: it reads down from that part, and reordering the document flips it", async () => {
-	const first = await renderArchitecture({ content: cycle(["a", "b"]), theme: "light" });
+test("a two-part cycle follows authored order across document array permutations", async () => {
+	const content = cycle(["a", "b"]);
+	const first = await renderArchitecture({ content, theme: "light" });
 	expect(first.atlas.nodes["a"]!.y).toBeLessThan(first.atlas.nodes["b"]!.y);
+	const reordered = await renderArchitecture({
+		content: { ...content, nodes: content.nodes.toReversed(), edges: content.edges.toReversed() },
+		theme: "light",
+	});
+	expect(reordered.atlas.nodes).toEqual(first.atlas.nodes);
 	const flipped = await renderArchitecture({ content: cycle(["b", "a"]), theme: "light" });
 	expect(flipped.atlas.nodes["b"]!.y).toBeLessThan(flipped.atlas.nodes["a"]!.y);
 });
 
 test("a longer cycle drops exactly the edge that closes it from the first part, and every other step reads down", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: ["a", "b", "c", "d"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
 			{ id: "da", from: "d", to: "a", kind: "call" },

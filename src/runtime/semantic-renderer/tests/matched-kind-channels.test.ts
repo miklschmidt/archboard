@@ -1,8 +1,8 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
-import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
 import { overdrawnRun } from "@/runtime/semantic-renderer/tests/drawn-ink";
@@ -22,7 +22,7 @@ const CHANNEL_EDGE_IDS = [
 ] as const;
 
 const channelContent = (() => {
-	const complete = VariantContentSchema.parse(publicApi);
+	const complete = orderedFixture(publicApi);
 	const edges = complete.edges.filter((edge) =>
 		CHANNEL_EDGE_IDS.includes(edge.id as (typeof CHANNEL_EDGE_IDS)[number]),
 	);
@@ -30,7 +30,7 @@ const channelContent = (() => {
 	for (const node of complete.nodes) {
 		if (node.parent !== undefined && ids.has(node.id)) ids.add(node.parent);
 	}
-	return VariantContentSchema.parse({
+	return orderedFixture({
 		nodes: complete.nodes.filter((node) => ids.has(node.id)),
 		edges,
 	});

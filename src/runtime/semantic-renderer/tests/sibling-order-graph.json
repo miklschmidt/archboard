@@ -5,19 +5,26 @@
 			{
 				"id": "ywwZuKxy",
 				"width": 340,
-				"height": 88
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "1000"
+				}
 			},
 			{
 				"id": "lqxzyMcC",
 				"width": 340,
-				"height": 88
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "2000"
+				}
 			},
 			{
 				"id": "hlSwOqFY",
 				"width": 260,
 				"height": 72,
 				"layoutOptions": {
-					"archboard.order-group": "database-replicas"
+					"archboard.order-group": "database-replicas",
+					"archboard.order": "3000"
 				}
 			},
 			{
@@ -25,48 +32,73 @@
 				"width": 260,
 				"height": 72,
 				"layoutOptions": {
-					"archboard.order-group": "database-replicas"
+					"archboard.order-group": "database-replicas",
+					"archboard.order": "4000"
 				}
 			},
 			{
 				"id": "t2QlUi5k",
 				"width": 340,
-				"height": 88
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "5000"
+				}
 			},
 			{
 				"id": "1yU3ivZL",
 				"width": 260,
-				"height": 72
+				"height": 72,
+				"layoutOptions": {
+					"archboard.order": "6000"
+				}
 			},
 			{
 				"id": "9BTlRpYl",
 				"width": 340,
-				"height": 88
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "7000"
+				}
 			},
 			{
 				"id": "KBuciT76",
 				"width": 341.1300048828125,
-				"height": 88
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "8000"
+				}
 			},
 			{
 				"id": "rlrzJE6S",
 				"width": 260,
-				"height": 72
+				"height": 72,
+				"layoutOptions": {
+					"archboard.order": "9000"
+				}
 			},
 			{
 				"id": "XEYlnlQc",
 				"width": 260,
-				"height": 72
+				"height": 72,
+				"layoutOptions": {
+					"archboard.order": "10000"
+				}
 			},
 			{
 				"id": "qwI9rfoO",
 				"width": 260,
-				"height": 72
+				"height": 72,
+				"layoutOptions": {
+					"archboard.order": "11000"
+				}
 			},
 			{
 				"id": "lIeLZtS6",
 				"width": 260,
-				"height": 72
+				"height": 72,
+				"layoutOptions": {
+					"archboard.order": "12000"
+				}
 			},
 			{
 				"id": "j6TdeSth",
@@ -78,7 +110,8 @@
 						"width": 260,
 						"height": 72,
 						"layoutOptions": {
-							"archboard.order-group": "vm-replicas"
+							"archboard.order-group": "vm-replicas",
+							"archboard.order": "1000"
 						}
 					},
 					{
@@ -86,7 +119,8 @@
 						"width": 260,
 						"height": 72,
 						"layoutOptions": {
-							"archboard.order-group": "vm-replicas"
+							"archboard.order-group": "vm-replicas",
+							"archboard.order": "2000"
 						}
 					},
 					{
@@ -94,7 +128,8 @@
 						"width": 260,
 						"height": 72,
 						"layoutOptions": {
-							"archboard.order-group": "vm-replicas"
+							"archboard.order-group": "vm-replicas",
+							"archboard.order": "3000"
 						}
 					},
 					{
@@ -102,18 +137,23 @@
 						"width": 260,
 						"height": 72,
 						"layoutOptions": {
-							"archboard.order-group": "vm-replicas"
+							"archboard.order-group": "vm-replicas",
+							"archboard.order": "4000"
 						}
 					}
 				],
 				"layoutOptions": {
-					"archboard.header.size": "96"
+					"archboard.header.size": "96",
+					"archboard.order": "13000"
 				}
 			},
 			{
 				"id": "Pt2vjo40",
 				"width": 340,
-				"height": 88
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "14000"
+				}
 			}
 		],
 		"edges": [
@@ -127,7 +167,10 @@
 						"width": 87.54000115394592,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "1000"
+				}
 			},
 			{
 				"id": "4D1O2GEw",
@@ -141,7 +184,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "2000"
 				}
 			},
 			{
@@ -156,7 +200,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "3000"
 				}
 			},
 			{
@@ -169,7 +214,10 @@
 						"width": 121.70000004768372,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "4000"
+				}
 			},
 			{
 				"id": "aq2tAN0X",
@@ -181,7 +229,10 @@
 						"width": 145.51000261306763,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "5000"
+				}
 			},
 			{
 				"id": "cKy6Pt3i",
@@ -195,7 +246,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "6000"
 				}
 			},
 			{
@@ -208,7 +260,10 @@
 						"width": 123.22000169754028,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "7000"
+				}
 			},
 			{
 				"id": "FgEsApsS",
@@ -222,7 +277,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "8000"
 				}
 			},
 			{
@@ -237,7 +293,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "9000"
 				}
 			},
 			{
@@ -250,7 +307,10 @@
 						"width": 103.7300033569336,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "10000"
+				}
 			},
 			{
 				"id": "ghAjlN21",
@@ -262,7 +322,10 @@
 						"width": 87.54000115394592,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "11000"
+				}
 			},
 			{
 				"id": "hnLcA0yR",
@@ -274,7 +337,10 @@
 						"width": 121.70000004768372,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "12000"
+				}
 			},
 			{
 				"id": "JMgOxvOe",
@@ -288,7 +354,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "13000"
 				}
 			},
 			{
@@ -303,7 +370,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "14000"
 				}
 			},
 			{
@@ -316,13 +384,19 @@
 						"width": 96.5199978351593,
 						"height": 31
 					}
-				]
+				],
+				"layoutOptions": {
+					"archboard.order": "15000"
+				}
 			},
 			{
 				"id": "uDMYsoQs",
 				"sources": ["yPJ2pkH0"],
 				"targets": ["NQs6vUYx"],
-				"labels": []
+				"labels": [],
+				"layoutOptions": {
+					"archboard.order": "16000"
+				}
 			},
 			{
 				"id": "umAHrW7i",
@@ -336,7 +410,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "17000"
 				}
 			},
 			{
@@ -351,7 +426,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "18000"
 				}
 			},
 			{
@@ -366,7 +442,8 @@
 					}
 				],
 				"layoutOptions": {
-					"archboard.route-label": "true"
+					"archboard.route-label": "true",
+					"archboard.order": "19000"
 				}
 			}
 		]

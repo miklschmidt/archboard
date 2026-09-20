@@ -83,6 +83,7 @@ interface ThreeStates {
 /** The fields that say what each kind of subject is. */
 const MERGED = {
 	node: [
+		"order",
 		"name",
 		"kind",
 		"responsibility",
@@ -92,7 +93,7 @@ const MERGED = {
 		"binding",
 		"drillDown",
 	],
-	edge: ["from", "to", "kind", "label", "description", "emphasis", "traffic"],
+	edge: ["order", "from", "to", "kind", "label", "description", "emphasis", "traffic"],
 	flow: ["name", "summary", "participants"],
 	walkthrough: ["name", "summary"],
 } as const;
@@ -152,9 +153,9 @@ interface Merged<Entity> {
 /**
  * Merge one kind of subject by identity.
  *
- * Order of the result follows this proposal's own order, with anything the
- * predecessor added appended: where a card sits in an array is not meaning, and
- * two sides appending independently must not read as a conflict.
+ * Array order of the result follows this proposal's own array, with anything
+ * the predecessor added appended. Node and relationship layout order is a
+ * separate authored field and is reconciled like their other fields.
  * @param sides The three states of that kind.
  * @param fields The fields that say what the subject is.
  * @param what The word for that kind in an issue.

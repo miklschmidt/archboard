@@ -1,10 +1,10 @@
-import { VariantContentSchema } from "@/shared/semantic-board/index";
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import cloud from "@/runtime/semantic-renderer/tests/branching-cloud.json";
 
 // The predecessor and successor of the existing device migration fixture.
 // Keep the measured words and topology responsible for their different folds.
 const deviceOnly = new Set(["t2QlUi5k", "1yU3ivZL", "9BTlRpYl"]);
-export const observedCloud = VariantContentSchema.parse({
+export const observedCloud = orderedFixture({
 	nodes: cloud.nodes
 		.filter((node) => !deviceOnly.has(node.id))
 		.map((node) =>
@@ -24,6 +24,7 @@ export const observedCloud = VariantContentSchema.parse({
 		)
 		.concat({
 			id: "TR9Ic6TU",
+			order: 17000,
 			from: "ywwZuKxy",
 			to: "lqxzyMcC",
 			kind: "other",
@@ -33,7 +34,7 @@ export const observedCloud = VariantContentSchema.parse({
 		}),
 });
 
-export const platformCloud = VariantContentSchema.parse({
+export const platformCloud = orderedFixture({
 	nodes: [
 		...cloud.nodes.map((node) =>
 			Object.assign(

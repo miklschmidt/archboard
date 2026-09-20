@@ -193,7 +193,7 @@ function largest(values: Iterable<number>, floor: number): number {
  * @returns The node, or a stand-in carrying its id.
  */
 function participantNode(id: string, byId: ReadonlyMap<string, SemanticNode>): SemanticNode {
-	return byId.get(id) ?? { id, name: id, kind: "other" };
+	return byId.get(id) ?? { id, order: 0, name: id, kind: "other" };
 }
 
 /**

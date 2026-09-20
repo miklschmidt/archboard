@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 5,
+	"version": 6,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-17T21:08:05.036Z",
+	"updatedAt": "2026-09-20T00:23:11.453Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -69,7 +69,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "HggZR41l",
@@ -81,7 +82,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/application"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "dtYjWvlf",
@@ -99,7 +101,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "xsn0RvSi",
@@ -111,7 +114,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/pane-session"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "HCghQa6I",
@@ -123,7 +127,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/board-routing"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "zWQG6LJZ",
@@ -135,7 +140,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/board-catalog"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "0x47EMoO",
@@ -152,7 +158,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "0SRnYXnC",
@@ -169,7 +176,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "4LDuKQvq",
@@ -181,7 +189,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/code-target"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "G4NHQC25",
@@ -197,7 +206,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "c4LPnwh5",
@@ -208,7 +218,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/shell/index.tsx"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "hDWpDois",
@@ -225,7 +236,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "6uWT4mUj",
@@ -236,7 +248,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/server-requests/index.ts"
-						}
+						},
+						"order": 13000
 					}
 				],
 				"edges": [
@@ -246,7 +259,8 @@
 						"to": "c4LPnwh5",
 						"kind": "render",
 						"label": "the desktop frame",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 1000
 					},
 					{
 						"id": "x9gy2EYu",
@@ -254,7 +268,8 @@
 						"to": "xsn0RvSi",
 						"kind": "call",
 						"label": "owns pane lifecycle",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "zfz9dQDf",
@@ -262,7 +277,8 @@
 						"to": "xsn0RvSi",
 						"kind": "call",
 						"label": "opens board keys",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "4iVsoxG0",
@@ -270,7 +286,8 @@
 						"to": "6uWT4mUj",
 						"kind": "call",
 						"label": "fetch the board list",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "pqG9kqlF",
@@ -282,7 +299,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "PuILGsjg",
@@ -290,7 +308,8 @@
 						"to": "G4NHQC25",
 						"kind": "event",
 						"label": "report reading and receive news",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 6000
 					},
 					{
 						"id": "Z6caFkg7",
@@ -298,7 +317,8 @@
 						"to": "xsn0RvSi",
 						"kind": "dependency",
 						"label": "rides current socket",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "YZqZjfIj",
@@ -306,7 +326,8 @@
 						"to": "0x47EMoO",
 						"kind": "call",
 						"label": "steer session",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "Cw08FQeQ",
@@ -314,7 +335,8 @@
 						"to": "4LDuKQvq",
 						"kind": "call",
 						"label": "open binding",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "ygbcyDVT",
@@ -322,7 +344,8 @@
 						"to": "6uWT4mUj",
 						"kind": "call",
 						"label": "request activation",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "VbLQ6rfX",
@@ -330,7 +353,8 @@
 						"to": "dtYjWvlf",
 						"kind": "render",
 						"label": "one canvas per pane",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 11000
 					},
 					{
 						"id": "G55H6teG",
@@ -342,7 +366,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "WchncnH1",
@@ -350,7 +375,8 @@
 						"to": "0x47EMoO",
 						"kind": "render",
 						"label": "the dock",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "chjmKQLj",
@@ -362,7 +388,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 14000
 					}
 				],
 				"flows": [],

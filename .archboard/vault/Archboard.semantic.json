@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-17T21:09:58.769Z",
+	"updatedAt": "2026-09-20T00:22:58.428Z",
 	"views": [],
 	"variants": [
 		{
@@ -31,7 +31,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "cPOdAA3f",
@@ -48,7 +49,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "6nZjwK9W",
@@ -64,21 +66,24 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "8XKRkSHl",
 						"name": "Board vault",
 						"kind": "datastore",
 						"responsibility": "One document per board, holding every variant of it",
-						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023)."
+						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023).",
+						"order": 4000
 					},
 					{
 						"id": "xr1MHYE7",
 						"name": "Codex app-server",
 						"kind": "external",
 						"responsibility": "Runs the linked agent threads, as one private child of the canvas",
-						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the canvas server."
+						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the canvas server.",
+						"order": 5000
 					},
 					{
 						"id": "19855Ply",
@@ -89,7 +94,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/repo-registry.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "PxnjFfV3",
@@ -106,13 +112,15 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "t7W7wJHv",
 						"name": "Headless Chromium",
 						"kind": "external",
-						"responsibility": "Paints an SVG and answers with the bitmap, when a command asks for a picture"
+						"responsibility": "Paints an SVG and answers with the bitmap, when a command asks for a picture",
+						"order": 8000
 					}
 				],
 				"edges": [
@@ -126,7 +134,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "iF6W48DS",
@@ -138,7 +147,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "mjjIPV4U",
@@ -150,7 +160,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "4p2LMrOt",
@@ -158,7 +169,8 @@
 						"to": "6nZjwK9W",
 						"kind": "event",
 						"label": "board and agent news",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 4000
 					},
 					{
 						"id": "2OeapIzk",
@@ -166,7 +178,8 @@
 						"to": "xr1MHYE7",
 						"kind": "rpc",
 						"label": "private stdio session",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "oK9fPKdv",
@@ -174,7 +187,8 @@
 						"to": "19855Ply",
 						"kind": "data",
 						"label": "resolve code targets",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "chzSzpL4",
@@ -182,7 +196,8 @@
 						"to": "t7W7wJHv",
 						"kind": "call",
 						"label": "photograph a board",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 7000
 					},
 					{
 						"id": "xKVVomRU",
@@ -190,7 +205,8 @@
 						"to": "TBnOCNx2",
 						"kind": "call",
 						"label": "the CLI under test",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "SoK3eMhj",
@@ -198,7 +214,8 @@
 						"to": "cPOdAA3f",
 						"kind": "call",
 						"label": "one per run, on its own port",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 9000
 					}
 				],
 				"flows": [],

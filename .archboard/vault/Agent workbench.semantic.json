@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 5,
+	"version": 6,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-17T21:05:51.838Z",
+	"updatedAt": "2026-09-20T00:23:11.357Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -88,7 +88,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "skyIeErO",
@@ -99,7 +100,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/canvas/lib/codex-workbench-factories.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "u2LFaG7R",
@@ -110,7 +112,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/codex-workbench/index.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "9diqPrFw",
@@ -121,7 +124,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-process/index.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "FxzIjbIO",
@@ -133,7 +137,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-transport/index.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "jylkTBp7",
@@ -150,7 +155,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "byMaoUe0",
@@ -161,7 +167,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-thread-link/index.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "2ffhMTdn",
@@ -172,7 +179,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-queue/index.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "Fg9dkGj3",
@@ -189,14 +197,16 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "giL6EI28",
 						"name": "Codex app-server",
 						"kind": "external",
 						"responsibility": "The Codex binary, run as one private child over stdio with its own storage",
-						"description": "Spawned as `app-server --stdio --strict-config`. Its threads are the workhorse and the coordinator; nothing here describes its internals."
+						"description": "Spawned as `app-server --stdio --strict-config`. Its threads are the workhorse and the coordinator; nothing here describes its internals.",
+						"order": 10000
 					},
 					{
 						"id": "tzyaOHwF",
@@ -212,7 +222,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "Uz2qReYK",
@@ -223,7 +234,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-epoch/index.ts"
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "tlC2W839",
@@ -240,7 +252,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "ZQxB1ZaK",
@@ -252,7 +265,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-realtime/index.ts"
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "QGVPyMwG",
@@ -263,7 +277,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-approvals/index.ts"
-						}
+						},
+						"order": 15000
 					},
 					{
 						"id": "DNQTPTxE",
@@ -274,7 +289,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-dynamic-tools/index.ts"
-						}
+						},
+						"order": 16000
 					}
 				],
 				"edges": [
@@ -284,7 +300,8 @@
 						"to": "9diqPrFw",
 						"kind": "call",
 						"label": "start a generation",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 1000
 					},
 					{
 						"id": "9GaG5ItC",
@@ -292,7 +309,8 @@
 						"to": "giL6EI28",
 						"kind": "call",
 						"label": "spawn the child",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "FZnS78FX",
@@ -300,7 +318,8 @@
 						"to": "FxzIjbIO",
 						"kind": "dependency",
 						"label": "send reviewed methods",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "3vlSu8a3",
@@ -312,7 +331,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "SRifquBt",
@@ -320,7 +340,8 @@
 						"to": "jylkTBp7",
 						"kind": "call",
 						"label": "discover and bind a thread",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "b9HU99hH",
@@ -332,7 +353,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "XAd3chIR",
@@ -340,7 +362,8 @@
 						"to": "jylkTBp7",
 						"kind": "call",
 						"label": "run the coordinator thread",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "3C7aLx0q",
@@ -348,7 +371,8 @@
 						"to": "byMaoUe0",
 						"kind": "call",
 						"label": "which thread this pane has",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "Qh7VZ9MQ",
@@ -360,7 +384,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "Lo6Q7GDB",
@@ -372,7 +397,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "nw9nYSMn",
@@ -380,7 +406,8 @@
 						"to": "u2LFaG7R",
 						"kind": "call",
 						"label": "bind the gateway to this generation",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 11000
 					},
 					{
 						"id": "2wlebJ2T",
@@ -388,7 +415,8 @@
 						"to": "tzyaOHwF",
 						"kind": "event",
 						"label": "one snapshot, then deltas",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 12000
 					},
 					{
 						"id": "uK6QAuru",
@@ -400,7 +428,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "NeJ30W7X",
@@ -408,7 +437,8 @@
 						"to": "byMaoUe0",
 						"kind": "call",
 						"label": "the thread this operation is for",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 14000
 					},
 					{
 						"id": "2ed6AqSF",
@@ -416,7 +446,8 @@
 						"to": "Uz2qReYK",
 						"kind": "call",
 						"label": "stage, commit or roll back",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 15000
 					},
 					{
 						"id": "mhknqBOz",
@@ -424,7 +455,8 @@
 						"to": "tlC2W839",
 						"kind": "call",
 						"label": "delegate, steer, inspect, queue",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 16000
 					},
 					{
 						"id": "TFjDY5zE",
@@ -432,7 +464,8 @@
 						"to": "jylkTBp7",
 						"kind": "call",
 						"label": "start the realtime leg",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 17000
 					},
 					{
 						"id": "YOaSBuBr",
@@ -440,7 +473,8 @@
 						"to": "u2LFaG7R",
 						"kind": "event",
 						"label": "an approval to answer",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 18000
 					},
 					{
 						"id": "aoHKAkWD",
@@ -448,7 +482,8 @@
 						"to": "DNQTPTxE",
 						"kind": "event",
 						"label": "a tool call from a thread",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 19000
 					},
 					{
 						"id": "mxl6bmYW",
@@ -456,7 +491,8 @@
 						"to": "Uz2qReYK",
 						"kind": "call",
 						"label": "the generation that may act",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 20000
 					}
 				],
 				"flows": [],

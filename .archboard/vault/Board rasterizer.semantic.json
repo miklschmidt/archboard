@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 1,
+	"version": 2,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-09-17T21:02:37.619Z",
+	"updatedAt": "2026-09-20T00:23:11.430Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -62,7 +62,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "KyQxypRC",
@@ -73,7 +74,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/index.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "7N0JLb2b",
@@ -83,7 +85,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/bounds.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "8c0zvhQW",
@@ -93,7 +96,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/session.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "6uHnaygd",
@@ -103,7 +107,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/chromium.ts"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "AVCQVNqI",
@@ -113,7 +118,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/devtools.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "FXGZhgKo",
@@ -124,7 +130,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/page.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "ctgF3OPk",
@@ -134,7 +141,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/png.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "EqEyDg2D",
@@ -144,14 +152,16 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/receipt.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "R9St060W",
 						"name": "Headless Chromium",
 						"kind": "external",
 						"responsibility": "The browser that paints the SVG and answers with the bitmap",
-						"description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group."
+						"description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group.",
+						"order": 10000
 					}
 				],
 				"edges": [
@@ -165,7 +175,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "7gIxznvp",
@@ -173,7 +184,8 @@
 						"to": "7N0JLb2b",
 						"kind": "call",
 						"label": "refuse what is past the limits first",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 2000
 					},
 					{
 						"id": "IiA7nIxT",
@@ -185,7 +197,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "tJ3SgMcL",
@@ -197,7 +210,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "wI4kxS9L",
@@ -205,7 +219,8 @@
 						"to": "R9St060W",
 						"kind": "call",
 						"label": "spawn in its own group and temp root",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "aYI0EhkT",
@@ -217,7 +232,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "JgtXFRyO",
@@ -229,7 +245,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "TBd33jdx",
@@ -241,7 +258,8 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "6dBMtPdX",
@@ -249,7 +267,8 @@
 						"to": "7N0JLb2b",
 						"kind": "call",
 						"label": "the clip region",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "68lKuaPg",
@@ -257,7 +276,8 @@
 						"to": "ctgF3OPk",
 						"kind": "call",
 						"label": "the size of the answered bitmap",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "2nhl0tv0",
@@ -265,7 +285,8 @@
 						"to": "EqEyDg2D",
 						"kind": "data",
 						"label": "what the picture is of",
-						"emphasis": "muted"
+						"emphasis": "muted",
+						"order": 11000
 					}
 				],
 				"flows": [

@@ -50,7 +50,12 @@ function boardDocument(nodes: Array<Record<string, unknown>>): Record<string, un
 				id: "Vinitial",
 				name: "Initial",
 				lifecycle: "current",
-				content: { nodes, edges: [], flows: [], walkthroughs: [] },
+				content: {
+					nodes: nodes.map((item, index) => ({ ...item, order: (index + 1) * 1000 })),
+					edges: [],
+					flows: [],
+					walkthroughs: [],
+				},
 			},
 		],
 	};
@@ -109,10 +114,17 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	const file = join(vault, "payments.semantic.json");
 	const board = JSON.parse(readFileSync(file, "utf8")) as {
 		version: number;
-		variants: Array<{ content: { nodes: Array<{ id: string; name: string; kind: string }> } }>;
+		variants: Array<{
+			content: { nodes: Array<{ id: string; order: number; name: string; kind: string }> };
+		}>;
 	};
 	board.version += 1;
-	board.variants[0]!.content.nodes.push({ id: "Xk3p91aQ", name: "Ledger", kind: "datastore" });
+	board.variants[0]!.content.nodes.push({
+		id: "Xk3p91aQ",
+		order: 2000,
+		name: "Ledger",
+		kind: "datastore",
+	});
 	replaceBoard(file, board as unknown as Record<string, unknown>);
 
 	// The pane is told, in the same words a write in this process uses, so it

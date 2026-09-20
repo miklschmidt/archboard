@@ -11,6 +11,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 
 import { CARD_ROUTING_GAP } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 
 // Viz publishes graph input types, but returns only `object` for Graphviz JSON.
 const objectSchema = z.object({
@@ -66,7 +67,9 @@ function rectangle(
  */
 function pack(node: ElkNode): Offset[] {
 	const size = Number(node.layoutOptions?.["archboard.header.size"] ?? 0);
-	const children = node.children!.toSorted((one, other) => one.id.localeCompare(other.id));
+	const children = node.children!.toSorted(
+		(one, other) => semanticOrder(one) - semanticOrder(other),
+	);
 	const sizes = children.map(dimensions);
 	const width = Math.max(...sizes.map((child) => child.width));
 	const height = Math.max(...sizes.map((child) => child.height));
@@ -250,7 +253,7 @@ class Placement {
 	order(node: ElkNode): void {
 		if (!node.children?.length || this.packed.has(node.id)) return;
 		const members = node.children
-			.toSorted((one, other) => one.id.localeCompare(other.id))
+			.toSorted((one, other) => semanticOrder(one) - semanticOrder(other))
 			.map((child) => this.endpoints.get(child.id)!);
 		for (const head of members) {
 			this.graph.edges.push({
@@ -321,7 +324,7 @@ class Placement {
 
 	/** Keep reserved labels aligned with their endpoints after sibling slots change. */
 	orderLabels(): void {
-		const rows = new Map<string, { label: ElkLabel; center: number }[]>();
+		const rows = new Map<string, { label: ElkLabel; center: number; order: number }[]>();
 		for (const edge of this.edges) {
 			const id = `label_${edge.id}`;
 			const label = this.reserved.get(id);
@@ -330,14 +333,16 @@ class Placement {
 			const to = this.nodes.get(edge.targets[0]!)!;
 			const key = `${this.labelParents.get(id)!.name}:${label.y}:${label.width}:${label.height}`;
 			const row = rows.get(key) ?? [];
-			row.push({ label, center: from.x! + from.width! / 2 + to.x! + to.width! / 2 });
+			row.push({
+				label,
+				center: from.x! + from.width! / 2 + to.x! + to.width! / 2,
+				order: semanticOrder(edge),
+			});
 			rows.set(key, row);
 		}
 		for (const row of rows.values()) {
 			const positions = row.map(({ label }) => label.x!).toSorted((one, other) => one - other);
-			row.sort(
-				(one, other) => one.center - other.center || one.label.id!.localeCompare(other.label.id!),
-			);
+			row.sort((one, other) => one.center - other.center || one.order - other.order);
 			for (const [index, { label }] of row.entries()) label.x = positions[index]!;
 		}
 	}
@@ -392,8 +397,8 @@ function orderSiblingSlots(parent: ElkNode): void {
 	children.forEach(orderSiblingSlots);
 	children
 		.filter((node) => !node.children?.length)
-		.forEach((child) => {
-			const group = child.layoutOptions?.["archboard.order-group"] ?? child.id;
+		.forEach((child, index) => {
+			const group = child.layoutOptions?.["archboard.order-group"] ?? String(index);
 			const key = `${group}:${child.y}:${child.width}:${child.height}`;
 			const row = rows.get(key) ?? [];
 			row.push(child);
@@ -401,7 +406,7 @@ function orderSiblingSlots(parent: ElkNode): void {
 		});
 	for (const row of rows.values()) {
 		const positions = row.map((child) => child.x!).toSorted((one, other) => one - other);
-		row.sort((one, other) => one.id.localeCompare(other.id));
+		row.sort((one, other) => semanticOrder(one) - semanticOrder(other));
 		for (const [index, child] of row.entries()) child.x = positions[index]!;
 	}
 }

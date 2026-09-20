@@ -167,7 +167,12 @@ describe("content checks", () => {
 function alsoNamed(board: SemanticBoard, names: readonly string[]): SemanticBoard {
 	const [first, ...rest] = board.variants;
 	if (first === undefined) return board;
-	const added = names.map((name, index) => ({ id: `add${index}`, name, kind: "module" }));
+	const added = names.map((name, index) => ({
+		id: `add${index}`,
+		order: (first.content.nodes.length + index + 1) * 1000,
+		name,
+		kind: "module",
+	}));
 	const nodes = [...first.content.nodes, ...added];
 	return { ...board, variants: [{ ...first, content: { ...first.content, nodes } }, ...rest] };
 }

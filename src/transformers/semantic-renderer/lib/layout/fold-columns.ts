@@ -8,6 +8,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import { covering, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
+import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 
 interface Band {
 	readonly nodes: ElkNode[];
@@ -45,7 +46,7 @@ function nodesById(graph: ElkNode): Map<string, ElkNode> {
 function rowsOf(graph: ElkNode): Band[] {
 	const rows: Band[] = [];
 	for (const node of (graph.children ?? []).toSorted(
-		(one, other) => boxOf(one).y - boxOf(other).y || one.id.localeCompare(other.id),
+		(one, other) => boxOf(one).y - boxOf(other).y || semanticOrder(one) - semanticOrder(other),
 	)) {
 		const box = boxOf(node);
 		const previous = rows.at(-1);
@@ -300,10 +301,14 @@ function translateLabels(
  * @param gutters Reserved labels grouped by their actual column gutter.
  */
 function stackLabels(graph: ElkNode, gutters: readonly ElkLabel[][]): void {
+	const order = new Map(
+		(graph.edges ?? []).map((edge) => [edge.labels?.[0]?.id, semanticOrder(edge)]),
+	);
 	for (const labels of gutters) {
 		let bottom = DIAGRAM_MARGIN;
 		for (const label of labels.toSorted(
-			(one, other) => boxOf(one).y - boxOf(other).y || one.id!.localeCompare(other.id!),
+			(one, other) =>
+				boxOf(one).y - boxOf(other).y || (order.get(one.id) ?? 0) - (order.get(other.id) ?? 0),
 		)) {
 			label.y = Math.max(boxOf(label).y, bottom);
 			bottom = label.y + boxOf(label).height + LABEL_LABEL_CLEARANCE;
@@ -352,8 +357,8 @@ function columnMembers(graph: ElkNode, bands: readonly Band[], partition: Partit
 	const membership = new Map(
 		columns.flatMap((nodes, column) => flattened(nodes).map((node) => [node.id, column] as const)),
 	);
-	for (const node of (graph.children ?? []).toSorted((one, other) =>
-		one.id.localeCompare(other.id),
+	for (const node of (graph.children ?? []).toSorted(
+		(one, other) => semanticOrder(one) - semanticOrder(other),
 	)) {
 		const from = membership.get(node.id)!;
 		const to = consumerColumn(node, graph, membership);

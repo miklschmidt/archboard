@@ -1,6 +1,7 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
 import type { DiagramBox, DiagramTheme } from "@/shared/semantic-board/index";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import {
 	renderDataFlow,
 	renderSemanticView,
@@ -26,7 +27,7 @@ function variant(content: {
 	edges?: readonly unknown[];
 	flows?: readonly unknown[];
 }): VariantContent {
-	return VariantContentSchema.parse(content);
+	return orderedFixture(content);
 }
 
 /**

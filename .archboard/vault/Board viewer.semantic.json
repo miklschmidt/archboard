@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.2.0",
+	"schemaVersion": "2.3.0",
 	"kind": "semantic-board",
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 5,
+	"version": 6,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-17T21:04:05.584Z",
+	"updatedAt": "2026-09-20T00:23:11.414Z",
 	"views": [],
 	"variants": [
 		{
@@ -30,7 +30,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 1000
 					},
 					{
 						"id": "pZRxBz2h",
@@ -41,7 +42,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/index.ts"
-						}
+						},
+						"order": 2000
 					},
 					{
 						"id": "tmwUm8BL",
@@ -53,7 +55,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts"
-						}
+						},
+						"order": 3000
 					},
 					{
 						"id": "ntOE7caV",
@@ -65,7 +68,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/board-document.ts"
-						}
+						},
+						"order": 4000
 					},
 					{
 						"id": "3KqRuOEN",
@@ -77,7 +81,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
-						}
+						},
+						"order": 5000
 					},
 					{
 						"id": "ijZRg0FU",
@@ -89,7 +94,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/camera.ts"
-						}
+						},
+						"order": 6000
 					},
 					{
 						"id": "UDkL7Tn6",
@@ -101,7 +107,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/subjects.ts"
-						}
+						},
+						"order": 7000
 					},
 					{
 						"id": "yUjSLnkw",
@@ -113,7 +120,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/drill-target.ts"
-						}
+						},
+						"order": 8000
 					},
 					{
 						"id": "z0dvHsUt",
@@ -125,7 +133,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/narrative.ts"
-						}
+						},
+						"order": 9000
 					},
 					{
 						"id": "VC7yvPZB",
@@ -137,7 +146,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts"
-						}
+						},
+						"order": 10000
 					},
 					{
 						"id": "aYC7if1N",
@@ -149,7 +159,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
-						}
+						},
+						"order": 11000
 					},
 					{
 						"id": "38hwLCO1",
@@ -160,7 +171,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/picture-source.ts"
-						}
+						},
+						"order": 12000
 					},
 					{
 						"id": "AaCxSfhT",
@@ -172,7 +184,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/picture-cache.ts"
-						}
+						},
+						"order": 13000
 					},
 					{
 						"id": "F90402mH",
@@ -188,7 +201,8 @@
 							"variant": {
 								"kind": "current"
 							}
-						}
+						},
+						"order": 14000
 					},
 					{
 						"id": "3eeEnf3E",
@@ -199,7 +213,8 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/change-focus.ts"
-						}
+						},
+						"order": 15000
 					}
 				],
 				"edges": [
@@ -209,7 +224,8 @@
 						"to": "aYC7if1N",
 						"kind": "render",
 						"label": "mount in pane",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 1000
 					},
 					{
 						"id": "ACKA5I1k",
@@ -217,7 +233,8 @@
 						"to": "tmwUm8BL",
 						"kind": "call",
 						"label": "request authoritative bytes",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 2000
 					},
 					{
 						"id": "55rosWUN",
@@ -225,7 +242,8 @@
 						"to": "ntOE7caV",
 						"kind": "data",
 						"label": "decoded board",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 3000
 					},
 					{
 						"id": "IJQe6RQy",
@@ -233,7 +251,8 @@
 						"to": "3KqRuOEN",
 						"kind": "data",
 						"label": "render query state",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 4000
 					},
 					{
 						"id": "axWdg78p",
@@ -241,7 +260,8 @@
 						"to": "3KqRuOEN",
 						"kind": "data",
 						"label": "inspection and standing",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 5000
 					},
 					{
 						"id": "cdwXdyXo",
@@ -249,7 +269,8 @@
 						"to": "ijZRg0FU",
 						"kind": "call",
 						"label": "frame drawing",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 6000
 					},
 					{
 						"id": "I1b9UiOY",
@@ -257,7 +278,8 @@
 						"to": "UDkL7Tn6",
 						"kind": "call",
 						"label": "pick attention",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 7000
 					},
 					{
 						"id": "EIAfMMlW",
@@ -265,7 +287,8 @@
 						"to": "yUjSLnkw",
 						"kind": "data",
 						"label": "exact link target",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 8000
 					},
 					{
 						"id": "6pPtofwF",
@@ -273,7 +296,8 @@
 						"to": "tmwUm8BL",
 						"kind": "call",
 						"label": "read target board",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 9000
 					},
 					{
 						"id": "8HTCy24H",
@@ -281,7 +305,8 @@
 						"to": "z0dvHsUt",
 						"kind": "call",
 						"label": "advance explanation",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 10000
 					},
 					{
 						"id": "ttcJkRoJ",
@@ -289,7 +314,8 @@
 						"to": "ijZRg0FU",
 						"kind": "call",
 						"label": "fit beat subjects",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 11000
 					},
 					{
 						"id": "xpOUXS7t",
@@ -297,7 +323,8 @@
 						"to": "tmwUm8BL",
 						"kind": "event",
 						"label": "invalidate matching queries",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 12000
 					},
 					{
 						"id": "rlrH32yx",
@@ -305,7 +332,8 @@
 						"to": "38hwLCO1",
 						"kind": "data",
 						"label": "the board a picture must match",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 13000
 					},
 					{
 						"id": "R4zJCAXX",
@@ -313,7 +341,8 @@
 						"to": "AaCxSfhT",
 						"kind": "call",
 						"label": "a drawing stamped for this version",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 14000
 					},
 					{
 						"id": "9yW8SET1",
@@ -321,7 +350,8 @@
 						"to": "F90402mH",
 						"kind": "call",
 						"label": "draw it here",
-						"emphasis": "hero"
+						"emphasis": "hero",
+						"order": 15000
 					},
 					{
 						"id": "QA6Vg8BG",
@@ -329,7 +359,8 @@
 						"to": "3KqRuOEN",
 						"kind": "data",
 						"label": "the picture to show",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 16000
 					},
 					{
 						"id": "Hk1A9VKy",
@@ -337,7 +368,8 @@
 						"to": "3eeEnf3E",
 						"kind": "event",
 						"label": "what this write changed",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 17000
 					},
 					{
 						"id": "XssnNMPJ",
@@ -345,7 +377,8 @@
 						"to": "ijZRg0FU",
 						"kind": "call",
 						"label": "fit the changed subjects",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"order": 18000
 					}
 				],
 				"flows": [],

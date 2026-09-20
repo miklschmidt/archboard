@@ -24,6 +24,16 @@ import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/
 import { pointAt } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 
+/**
+ * The authored relationship order also determines label placement priority.
+ * @param one First relationship.
+ * @param other Second relationship.
+ * @returns Their authored order.
+ */
+function byOrder(one: DrawingEdge, other: DrawingEdge): number {
+	return one.edge.order - other.edge.order;
+}
+
 /** A native label waypoint and the straight-run orientation it preserves. */
 export interface LabelAnchor extends Box {
 	readonly axis?: "x" | "y";
@@ -119,10 +129,7 @@ class LabelPlacement {
 
 	/** Place eligible labels in stable semantic order. */
 	place(): void {
-		for (const edge of this.drawing.edges.toSorted((one, other) =>
-			one.edge.id < other.edge.id ? -1 : one.edge.id > other.edge.id ? 1 : 0,
-		))
-			this.placeEdge(edge);
+		for (const edge of this.drawing.edges.toSorted(byOrder)) this.placeEdge(edge);
 		if (this.eligible === undefined) return;
 		packChannels(this.drawing, this.labels, this.accepted, this.original, this.bounds);
 		if (this.invalid()) this.alignRows();
@@ -131,7 +138,7 @@ class LabelPlacement {
 	/** Retry only small channel corrections when moving whole label rows conflicted. */
 	alignRows(): void {
 		this.reset();
-		for (const edge of this.drawing.edges.toSorted((a, b) => a.edge.id.localeCompare(b.edge.id))) {
+		for (const edge of this.drawing.edges.toSorted(byOrder)) {
 			if (!this.allows(edge)) continue;
 			const candidate = this.channelCandidate(edge);
 			if (candidate) this.accept(edge, candidate);
@@ -141,8 +148,7 @@ class LabelPlacement {
 
 	/** Propose one collision-free joint pin/label adjustment per detouring ordinary relationship. */
 	projectChannels(): void {
-		for (const edge of this.drawing.edges.toSorted((a, b) => a.edge.id.localeCompare(b.edge.id)))
-			this.projectEdge(edge);
+		for (const edge of this.drawing.edges.toSorted(byOrder)) this.projectEdge(edge);
 		packChannels(this.drawing, this.labels, this.accepted, this.original, this.bounds);
 		if (
 			this.invalid() ||

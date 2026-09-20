@@ -11,6 +11,7 @@
 import type { SemanticEdge, SemanticEdgeInput, SemanticNode } from "@/shared/semantic-board/index";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { place, resolveNode } from "@/runtime/semantic-board-store/lib/references";
+import { subjectOrder } from "@/runtime/semantic-board-store/lib/subject-order";
 import {
 	held,
 	mintInto,
@@ -67,6 +68,7 @@ function buildEdge(
 			to: to.node.id,
 			...saidOfEdge(input),
 			emphasis: input.emphasis ?? "normal",
+			order: subjectOrder(edges, id.id, input.order),
 		},
 	};
 }

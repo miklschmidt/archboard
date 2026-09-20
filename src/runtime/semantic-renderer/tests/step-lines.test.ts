@@ -1,10 +1,11 @@
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 // A flow drawn on the board it lives on: the architecture reading draws each
 // message between two participants as a step line unless an authored
 // relationship already joins them, a self step draws nothing, and a standing
 // keyed by the step's id lands on its line.
 
 import { describe, expect, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
+import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routeEnds } from "@/runtime/semantic-renderer/tests/drawn-routes";
 
@@ -34,7 +35,7 @@ const FLOW = {
  * @returns The content.
  */
 function board(edges: readonly unknown[] = []): VariantContent {
-	return VariantContentSchema.parse({ nodes: NODES, edges, flows: [FLOW] });
+	return orderedFixture({ nodes: NODES, edges, flows: [FLOW] });
 }
 
 /**
@@ -87,7 +88,7 @@ describe("a flow drawn on its board", () => {
 });
 
 test("a step to a part drawn with children draws nothing: the container receives no line", async () => {
-	const content = VariantContentSchema.parse({
+	const content = orderedFixture({
 		nodes: [
 			...NODES,
 			{ id: "inner", name: "load_app", kind: "function", parent: "info", responsibility: "Loads" },
