@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import type { PanePresentRequest } from "@/shared/semantic-pane-context";
+import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { PaneHost } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { readingOf } from "@/ui/application/pane-reading";
@@ -207,6 +207,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 					address={address}
 					openCode={session.openCode}
 					onReading={setOnScreen}
+					onUserChanged={session.userChanged}
 					driven={asked}
 					{...props}
 				/>
@@ -229,6 +230,11 @@ interface PaneDiagramProps extends ApplicationPaneProps {
 	 * @param reading The board, variant, view and selection on screen.
 	 */
 	readonly onReading: (reading: SemanticPaneReading) => void;
+	/**
+	 * The user asked, by hand, for a part of the reading to change (ADR 0034).
+	 * @param part The part their gesture was about.
+	 */
+	readonly onUserChanged: (part: SemanticPanePart) => void;
 	/** A walkthrough step somebody narrating it asked for, or null. */
 	readonly driven: PanePresentRequest | null;
 }
@@ -243,12 +249,23 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  * @returns The drawn board.
  */
 function PaneDiagram(props: PaneDiagramProps): JSX.Element {
-	const { address, openCode, onPick, picked, view } = props;
+	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
+	// The stage calls these from a click or a key and from nothing else: a walkthrough step
+	// highlights its subjects and reads through its own view without going through either, and
+	// a pane that moves has its pick cleared above this. So this is where the user's hand is.
 	const onSelect = useCallback(
 		(id: string | null, subject?: SelectedSubject): void => {
+			onUserChanged("selection");
 			onPick(id === null ? null : pickedSubject(id, subject));
 		},
-		[onPick],
+		[onPick, onUserChanged],
+	);
+	const onView = useCallback(
+		(next: string | null): void => {
+			onUserChanged("view");
+			onViewChange(next);
+		},
+		[onUserChanged, onViewChange],
 	);
 	const onOpenCode = useCallback((): void => {
 		if (picked !== null) {
@@ -261,10 +278,11 @@ function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 			variant={address.variant}
 			onVariantChange={props.onVariantChange}
 			view={view === null ? undefined : view}
-			onViewChange={props.onViewChange}
+			onViewChange={onView}
 			theme={props.theme}
 			selection={picked === null ? null : picked.id}
 			onSelect={onSelect}
+			onUserChanged={onUserChanged}
 			onOpenCode={onOpenCode}
 			onReading={props.onReading}
 			driven={props.driven}

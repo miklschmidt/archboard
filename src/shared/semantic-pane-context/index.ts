@@ -140,6 +140,15 @@ const PanePresentRequestSchema = z
 type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /**
+ * A part of a pane's reading the user can change by hand.
+ *
+ * The walkthrough position is not one of them: `answering` already tells a step somebody asked
+ * for from one the user chose.
+ */
+const SemanticPanePartSchema = z.enum(["board", "variant", "view", "selection"]);
+type SemanticPanePart = z.infer<typeof SemanticPanePartSchema>;
+
+/**
  * What one pane is reading, as the pane last said it.
  *
  * Every part of it but the pane itself is nullable, and deliberately: a pane is
@@ -162,6 +171,15 @@ const SemanticPaneContextSchema = z
 		version: z.int().min(1).nullable(),
 		/** Where a presented walkthrough has got to; null or absent when none is. */
 		presentation: SemanticPanePresentationSchema.nullable().optional(),
+		/**
+		 * Which parts of this reading changed because the user's own hand changed them since the
+		 * pane's last report (ADR 0034). Only the pane can tell a click from a change that reached
+		 * it over its socket, and one report is a settled snapshot that can hold both, so the
+		 * cause is said per part. Absent and empty mean the same: nobody is told about this
+		 * report, which is what a part nobody marked must mean, or an agent's change could be
+		 * told to the voice model as the user's and answered by it.
+		 */
+		byUser: z.array(SemanticPanePartSchema).max(4).optional(),
 		/** When the pane observed all of this. */
 		at: z.iso.datetime(),
 		/**
@@ -215,6 +233,8 @@ export {
 	type SemanticSubjectKind,
 	SemanticSubjectRefSchema,
 	type SemanticSubjectRef,
+	SemanticPanePartSchema,
+	type SemanticPanePart,
 	SemanticPanePresentationSchema,
 	type SemanticPanePresentation,
 	PanePresentRequestSchema,

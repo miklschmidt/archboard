@@ -9,6 +9,7 @@ import { unreachableBoardsNotice } from "@/ui/application/notices";
 import { PANE_IDS, paneListOf, type PaneList } from "@/ui/application/pane-list";
 import { paneReady, recordFor } from "@/ui/application/pane-records";
 import type { LiveBinding } from "@/ui/application/lib/live-binding";
+import { userMoves } from "@/ui/application/lib/user-moves";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { PaneReadings } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
@@ -198,9 +199,13 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 */
 		open: async (paneId: string, boardKey: string): Promise<OpenOutcome> => {
 			const { clientId } = recordFor(panes.records, paneId).status;
+			// An address is opened, and Back and Forward are pressed, by the user and by nobody
+			// else, so what the address bar asks for is theirs.
+			const move = userMoves(panes.handles, paneId);
 			try {
 				return { kind: "opened", boardKey: await show(clientId, boardKey) };
 			} catch {
+				move.failed();
 				return { kind: "unreachable" };
 			}
 		},
@@ -214,6 +219,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			if (readings.viewOf(paneId) === view) {
 				return false;
 			}
+			panes.handles.session(paneId)?.userChanged("view");
 			readings.showView(paneId, view);
 			return true;
 		},

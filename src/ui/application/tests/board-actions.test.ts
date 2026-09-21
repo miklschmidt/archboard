@@ -18,6 +18,7 @@ function picker() {
 	const notices: ShellNotice[] = [];
 	const shown: string[] = [];
 	const moved: string[] = [];
+	const marked: string[] = [];
 	let failures = 0;
 	let dismissed = 0;
 	const deps: ShellActionDeps = {
@@ -129,6 +130,15 @@ function picker() {
 			},
 		},
 		/**
+		 * Keep what the picker says the user asked to change by hand (ADR 0034).
+		 * @param paneId The pane.
+		 * @returns A move nothing here fails.
+		 */
+		userMoves: (paneId) => {
+			marked.push(paneId);
+			return { failed: unrelated };
+		},
+		/**
 		 * Emulate the server refusing an unknown pane.
 		 * @param board The board to show.
 		 * @param clientId The pane being addressed.
@@ -146,6 +156,7 @@ function picker() {
 		actions: createShellActions(deps),
 		shown,
 		moved,
+		marked,
 		notices,
 		/**
 		 * Record the lifecycle event.
@@ -184,5 +195,8 @@ test("the board picker does not address a reconnecting pane before registration"
 
 	expect(fixture.shown).toEqual(["A-qz99fo"]);
 	expect(fixture.moved).toEqual(["Payments"]);
+	// The board arrives over the pane's socket looking like one an agent opened, so the picker
+	// says beforehand that this one is the user's.
+	expect(fixture.marked).toEqual(["A"]);
 	expect(fixture.outcomes().dismissed).toBe(1);
 });

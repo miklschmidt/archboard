@@ -4,7 +4,7 @@
 // other's internals.
 
 import type { CodeTargetNotice } from "@/shared/code-target";
-import type { PanePresentRequest } from "@/shared/semantic-pane-context";
+import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { PaneReading } from "@/ui/pane-session/lib/pane-reading";
 import type {
 	AgentActivityEntry,
@@ -163,6 +163,17 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * @param reading The board, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
+	/**
+	 * The user asked, by hand, for a part of this pane's reading to change. The report in which
+	 * it does change says so, and a part that changes without this is told to nobody (ADR 0034).
+	 * @param part The part their gesture was about.
+	 */
+	readonly userChanged: (part: SemanticPanePart) => void;
+	/**
+	 * What the user asked for came to nothing, so that part is not waiting to change.
+	 * @param part The part.
+	 */
+	readonly userChangeFailed: (part: SemanticPanePart) => void;
 	/**
 	 * The transport retained by the current socket generation, or null.
 	 * @returns The transport.

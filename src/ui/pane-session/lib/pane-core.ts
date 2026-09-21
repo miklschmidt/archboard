@@ -6,6 +6,7 @@
 // writing it and that the board has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
+import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import { takeBoardBack } from "@/ui/pane-session/api";
 import { createPaneReportDeadline } from "@/ui/pane-session/lib/pane-deadline";
@@ -69,6 +70,16 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 * @param reading The board, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
+	/**
+	 * The user asked, by hand, for a part of this pane's reading to change (ADR 0034).
+	 * @param part The part their gesture was about.
+	 */
+	readonly userChanged: (part: SemanticPanePart) => void;
+	/**
+	 * What the user asked for came to nothing.
+	 * @param part The part that is not going to change after all.
+	 */
+	readonly userChangeFailed: (part: SemanticPanePart) => void;
 	readonly takeBack: () => Promise<TakeBackResult>;
 	/**
 	 * Open the file a subject's binding names.
@@ -536,6 +547,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		facetsChanged,
 		paneElementChanged: facetsChanged,
 		readingChanged,
+		userChanged: reading.userChanged,
+		userChangeFailed: reading.userChangeFailed,
 		takeBack,
 		openCode,
 		workbenchTransport,

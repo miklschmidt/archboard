@@ -60,6 +60,31 @@ const onScreen = (browser: AgentBrowserSession): Promise<OnScreen> =>
 			` }; })()`,
 	);
 
+/** The part of a board file a pick is found in. */
+interface Drawn {
+	readonly variants: { content: { nodes: { id: string; name: string }[] } }[];
+}
+
+/** What the one open pane last said it is reading. */
+interface Said {
+	readonly selection: { id: string }[];
+	readonly byUser?: string[];
+}
+
+/**
+ * Read the one open pane's last report from the canvas.
+ * @param request The canvas requester.
+ * @returns The report.
+ */
+async function reading(request: ReturnType<typeof createJsonRequester>): Promise<Said> {
+	const said = await request<{ panes: Said[] }>("/api/panes/semantic-context");
+	const [only] = said.body.panes;
+	if (only === undefined) {
+		throw new Error("No pane has reported a reading.");
+	}
+	return only;
+}
+
 test("a step the server asks for is answered once it has landed, and a person's step is told apart", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -133,6 +158,9 @@ test("a step the server asks for is answered once it has landed, and a person's 
 		presentation: { beat: 1, of: 3, arrived: true },
 	});
 	expect(await onScreen(browser)).toEqual({ step: "1", moving: false, heading: "The gateway" });
+	// The step lit the gateway and nobody's hand did it, so the pane credits nobody (ADR 0034):
+	// a driven step told to the voice model as the user's pick is a talk that answers itself.
+	expect((await reading(request)).byUser).toBeUndefined();
 
 	// A person steps by hand while the narrator asks for the first step again:
 	// whichever lands, the server is never told a step arrived that is not the
@@ -158,6 +186,30 @@ test("a step the server asks for is answered once it has landed, and a person's 
 	});
 	expect(left.body.outcome.kind).toBe("left");
 	expect((await onScreen(browser)).step).toBeNull();
+
+	// The same subject picked out by a real pointer is the user's, and the pane says so.
+	const gateway = (JSON.parse(before) as Drawn).variants[0]?.content.nodes.find(
+		(node) => node.name === "Gateway",
+	)?.id;
+	await browser.eval(
+		`(() => {` +
+			` const card = document.querySelector("[data-slot='semantic-board-surface'] [data-semantic-id='${gateway}']");` +
+			` const view = document.querySelector("[data-slot='semantic-board-viewport']");` +
+			` const at = card.getBoundingClientRect();` +
+			` const where = { pointerId: 1, isPrimary: true, button: 0, bubbles: true,` +
+			`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) };` +
+			` card.dispatchEvent(new PointerEvent("pointerdown", where));` +
+			` view.dispatchEvent(new PointerEvent("pointerup", where));` +
+			` view.dispatchEvent(new MouseEvent("click", where)); })()`,
+	);
+	const picked = await pollUntil(
+		() => reading(request),
+		(said) => said.selection.length === 1,
+		"the pane to report the pick",
+		{ timeoutMs: 8_000 },
+	);
+	expect(picked.selection[0]?.id).toBe(gateway);
+	expect(picked.byUser).toEqual(["selection"]);
 
 	// A pane that is not there is refused rather than waited for.
 	const nobody = await request<Presented>("/api/panes/present", {

@@ -18,6 +18,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
 
 /** What the shell says about the pane's own board. */
@@ -34,6 +35,12 @@ interface OwnReading {
 	 * @param variant The variant's id, or null for whichever is current.
 	 */
 	readonly onVariant: ((variant: string | null) => void) | undefined;
+	/**
+	 * The user changed, by hand, how a board they walked down into is read. The shell hears of
+	 * a choice about the pane's own board through the two above, and of this no other way.
+	 * @param part What their choice was about.
+	 */
+	readonly onUserChanged?: ((part: SemanticPanePart) => void) | undefined;
 }
 
 /** How the board on screen is being read, whoever owns the answer. */
@@ -87,8 +94,10 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	// the reader would be looking at a different thing than the one they asked
 	// for. What the link asked for stands until somebody chooses otherwise.
 	const asked = drill.variant ?? null;
+	const { onUserChanged } = own;
 	const onView = useCallback(
 		(view: string | null): void => {
+			onUserChanged?.("view");
 			setPlace((current) => {
 				// Nothing chosen here yet and "the current one, please" are different
 				// answers that look alike: both are null. Falling through the second
@@ -99,11 +108,12 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 				return { depth, board, view, variant: held === null ? asked : held.variant };
 			});
 		},
-		[asked, board, depth],
+		[asked, board, depth, onUserChanged],
 	);
 	// A board owns its views, so changing its state keeps the question being read.
 	const onVariant = useCallback(
 		(variant: string | null): void => {
+			onUserChanged?.("variant");
 			setPlace((current) => ({
 				depth,
 				board,
@@ -111,7 +121,7 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 				variant,
 			}));
 		},
-		[board, depth],
+		[board, depth, onUserChanged],
 	);
 
 	return useMemo(() => {

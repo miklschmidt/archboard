@@ -8,6 +8,7 @@ import { paneReady, recordFor } from "@/ui/application/pane-records";
 import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { Panes } from "@/ui/application/hooks/use-panes";
+import { userMoves, type UserMove } from "@/ui/application/lib/user-moves";
 import type { BoardCatalog } from "@/ui/board-catalog";
 import { showBoard } from "@/ui/pane-session";
 import type { SettingsSurface, ShellActions, ShellPresentation, ThemeChoice } from "@/ui/shell";
@@ -29,6 +30,13 @@ interface ShellActionDeps {
 	 * @returns What the server says the pane is showing.
 	 */
 	readonly show?: (board: string, pane: string) => Promise<{ board: string }>;
+	/**
+	 * Say that the user asked for a pane to move (ADR 0034). Supplied by a test; the pane's own
+	 * session otherwise.
+	 * @param paneId The pane they asked about.
+	 * @returns The move, to be failed if the server refuses it.
+	 */
+	readonly userMoves?: (paneId: string) => UserMove;
 }
 
 /** The board actions. */
@@ -41,6 +49,7 @@ type BoardActions = Pick<ShellActions, "selectBoard" | "refreshBoards">;
  */
 function boardActions(deps: ShellActionDeps): BoardActions {
 	const { panes } = deps;
+	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
 		((board: string, pane: string): Promise<{ board: string }> => showBoard({ board, pane }));
@@ -69,6 +78,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		// The command waits for the address bar's one slot, so what the person
 		// just asked for is the last thing the server is given.
 		const permission = await deps.addressing.claim({ kind: "board", paneId, from: boardKey });
+		const move = moving(paneId);
 		try {
 			const opened = await show(key, clientId);
 			permission.move.done(opened.board);
@@ -77,6 +87,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			deps.catalog.refresh();
 		} catch (error) {
 			permission.move.failed();
+			move.failed();
 			deps.notices.raise(
 				failureNotice(
 					"board-command",
