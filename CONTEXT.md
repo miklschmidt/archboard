@@ -1,6 +1,6 @@
 # Archboard
 
-A shared architecture surface. An agent and a human build, explore, and refactor
+A shared architecture surface. An agent and a user build, explore, and refactor
 a codebase's structure through boards that express architectural meaning.
 
 ## Language
@@ -28,6 +28,11 @@ _Avoid_: board, pane, variant
 One of several side-by-side slots, each holding its own canvas, so that two
 boards can be worked on at once.
 _Avoid_: split, view, tab, panel, frame, window
+
+**User**:
+Whoever is reading the canvas and talking to it. A user reads, picks things out
+and speaks; agents author.
+_Avoid_: person, human, operator, viewer
 
 **Element**:
 A primitive on the canvas — a rectangle, arrow, or piece of text — carrying no
@@ -152,7 +157,7 @@ has at most one binding, and nodes on the same board may name different reposito
 _Avoid_: link, mapping, reference, pointer, association
 
 **Code target**:
-The action offered when a person activates a binding. It is derived anew for
+The action offered when a user activates a binding. It is derived anew for
 this machine and is never part of the board.
 _Avoid_: binding, persisted link, file URL, local binding, remote binding
 
@@ -294,8 +299,8 @@ _Avoid_: variant, flow
 A voice session started to present one walkthrough as a talk. The voice model
 paces it, asking for one step at a time; the coordinator presents each step in
 the linked pane and hands it back once the pane says it has arrived. The
-position in the walkthrough stays the pane's, and a person stepping by hand or
-leaving is told to the narrator so the words follow the picture.
+position in the walkthrough stays the pane's. What the user does to the pane by
+hand is pane news the narrator stops for, so the words follow the picture.
 _Avoid_: playback, autoplay, slideshow
 
 **Subtitle**:
@@ -303,9 +308,22 @@ What the voice model is saying, laid over the picture of the pane voice runs
 for, one cue of two lines at a time. The transcript arrives a word at a time on
 the audio clock, so each word is shown as it arrives, and the subtitle goes once
 the voice has been silent longer than it pauses mid-thought. It is presentation:
-the browser's own, written nowhere, and the person can turn it off. What the
-person says is never subtitled.
+the browser's own, written nowhere, and the user can turn it off. What the
+user says is never subtitled.
 _Avoid_: caption (the walkthrough's step text), transcript (the dock's record)
+
+**Pane news**:
+Where a user's reading of a pane stands after they changed it by hand: the board,
+variant or view they are now looking at, what they now have selected, or the pane
+they moved to. It is told to the voice model as one sentence of names, saying
+only what changed. A change an agent or the canvas caused is never pane news.
+_Avoid_: callback, telemetry, event, selection report
+
+**Outside change**:
+A board change made by an agent that is neither the workhorse nor the voice
+coordinator. The voice model and the coordinator are both told, because neither
+asked for it and what they know of the board has stopped being true.
+_Avoid_: external edit, foreign write, third-party change
 
 **Comparison**:
 The differences between two board variants, identified by the stable identities
@@ -332,7 +350,7 @@ architectural state, rather than the board's edit counter)
 **Hold**:
 The state of a board the canvas has stopped saving, because its note changed
 underneath and writing would delete somebody else's work. Drawing carries on
-into a copy the canvas keeps until a person picks reload, overwrite or save
+into a copy the canvas keeps until a user picks reload, overwrite or save
 elsewhere. It is about another application writing the note, never about
 another archboard writer, which is a lock and has a holder.
 _Avoid_: lock, conflict, freeze, pause, dirty, detached
