@@ -8,7 +8,6 @@ import {
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { CARD_ROUTE_EXPANSION } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
-import { ForeignFrames } from "@/transformers/semantic-renderer/lib/layout/foreign-frames";
 import {
 	boxCentre,
 	inflate,
@@ -17,12 +16,12 @@ import {
 } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	forcedLabel,
-	positionReservedLabel,
-	publishRoutes,
 	type Connection,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 import {
 	alignedPins,
+	refinedPins,
+	nearby,
 	relationshipChannel,
 	type AlignedPin,
 	type AlignedPins,
@@ -119,8 +118,9 @@ export class RoutingScene {
 	/**
 	 * Group shared ports by relationship kind, standing, and local direction.
 	 * @param edges All relationships, before native connectors are registered.
+	 * @param pins Optional feedback alternatives preserving baseline attachments.
 	 */
-	ports(edges: readonly ElkExtendedEdge[]): void {
+	ports(edges: readonly ElkExtendedEdge[], pins?: AlignedPins): void {
 		const channels = new Map<string, Set<string>>();
 		for (const edge of edges) {
 			for (const id of [...edge.sources, ...edge.targets]) {
@@ -130,7 +130,16 @@ export class RoutingScene {
 			}
 		}
 		for (const [id, present] of channels) this.channels.set(id, [...present].toSorted());
-		this.aligned = alignedPins(this.nodes, this.channels, edges);
+		this.aligned = pins ?? alignedPins(this.nodes, this.channels, edges);
+	}
+
+	/**
+	 * Ask the allocator for one improvement informed by complete native routes.
+	 * @param edges Settled baseline relationships.
+	 * @returns A new feasible pin map, or nothing when the baseline offers every candidate.
+	 */
+	refinePorts(edges: readonly ElkExtendedEdge[]): AlignedPins | undefined {
+		return refinedPins(this.nodes, this.channels, edges);
 	}
 
 	/**
@@ -175,13 +184,33 @@ export class RoutingScene {
 	): void {
 		for (const face of FACES) {
 			if (!this.endpoints.allows(id, channel, face)) continue;
-			if (!pins.some((pin) => pin.face === face))
+			if (
+				!pins.some((pin) => pin.face === face) &&
+				this.seedAvailable(id, channel, { face, position })
+			)
 				this.registerPins(id, pinClass, [SIDES[face]], position);
 		}
-		for (const pin of pins) {
-			if (this.endpoints.allows(id, channel, pin.face))
-				this.registerPins(id, pinClass, [SIDES[pin.face]], pin.position);
+		for (const pin of pins.filter((candidate) =>
+			this.endpoints.allows(id, channel, candidate.face),
+		)) {
+			this.registerPins(id, pinClass, [SIDES[pin.face]], pin.position);
 		}
+	}
+
+	/**
+	 * Release an unused seed only where another channel has a reserved physical pin.
+	 * Actual baseline attachments are always included among the selected pins.
+	 * @param id Ordinary endpoint card.
+	 * @param channel Seed's shared relationship channel.
+	 * @param seed Candidate fallback attachment.
+	 * @returns Whether no other channel owns this part of the face.
+	 */
+	private seedAvailable(id: string, channel: string, seed: AlignedPin): boolean {
+		const box = boxOf(this.nodes.get(id)!);
+		return [...(this.aligned.get(id) ?? [])].every(
+			([other, pins]) =>
+				other === channel || !pins.some((pin) => nearby(box, seed, pin, ROUTE_NUDGE_DISTANCE)),
+		);
 	}
 
 	/**
@@ -537,45 +566,4 @@ function towardFace(box: Box, toward: Box): Face {
 	const dy = toward.y + toward.height / 2 - box.y - box.height / 2;
 	if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "EAST" : "WEST";
 	return dy > 0 ? "SOUTH" : "NORTH";
-}
-
-/**
- * Route placed cards and title bands through one native obstacle scene.
- * @param avoid The initialized libavoid module.
- * @param graph Complete globally placed semantic geometry.
- * @returns The hierarchy with finite orthogonal relationship routes.
- */
-export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
-	const endpoints = new EndpointOptions();
-	const frames = new ForeignFrames(graph);
-	let routed = false;
-	for (;;) {
-		const scene = new RoutingScene(avoid, endpoints);
-		try {
-			const edges = graph.edges ?? [];
-			edges.forEach(positionReservedLabel);
-			graph.children?.forEach((node) => scene.visit(node));
-			scene.ports(edges);
-			scene.labels(edges);
-			const routes = new Map(edges.map((edge) => [edge.id, scene.relationship(edge)]));
-			scene.router.processTransaction();
-			if (!publishRoutes(edges, routes, routed)) return graph;
-			routed = true;
-			if (
-				frames.settle(
-					avoid,
-					graph,
-					edges,
-					endpoints,
-					scene,
-					routes,
-					(closed) => new RoutingScene(avoid, endpoints, closed),
-				)
-			)
-				continue;
-			return graph;
-		} finally {
-			scene.router.delete();
-		}
-	}
 }

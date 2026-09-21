@@ -1530,3 +1530,18 @@ onto an existing vertical run or a neighboring channel. It packs nearby labels
 together to retain their clearance, then tries the proposal as one complete
 reroute. The proposal must preserve placement, fit every bend and arrow approach,
 and reduce bends or route length; otherwise the current drawing remains.
+
+After native routing establishes which card ports are actually used, a bounded
+refinement preserves those ports and offers clear projections of existing route
+runs onto card faces. Unused proportional ports must not reserve space against
+these alternatives: only conflicting unused choices are removed. Actual ports
+remain separated by relationship kind, standing, and direction. This lets an
+existing downward run reach a top face without looping around the card, and lets
+reserved labels align without being blocked by ports on unused faces. The native
+router still chooses and validates the complete routes; no board-specific pins
+or coordinates are stored.
+
+A native run between disjoint card spans remains eligible to carry its label.
+Only a newly proposed adjacent channel requires an aligned endpoint; an
+existing run has already established its approach through native routing. The
+whole drawing still has to pass the existing label and curve-clearance checks.
