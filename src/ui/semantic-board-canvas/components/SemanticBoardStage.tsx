@@ -17,6 +17,7 @@ import { SemanticStanding } from "@/ui/semantic-board-canvas/components/Semantic
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address";
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { CodeBinding } from "@/shared/code-target";
+import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 
@@ -135,6 +136,8 @@ interface SemanticBoardStageProps {
 	 * @param id The semantic id, or null.
 	 */
 	onSelect: (id: string | null, subject?: SelectedSubject) => void;
+	/** The user changed a part of the reading by hand that the shell hears of no other way. */
+	onUserChanged?: ((part: SemanticPanePart) => void) | undefined;
 	/**
 	 * A place in a walkthrough that something driving the presentation asked
 	 * for, or null. The position stays this pane's: a request is one more way of
@@ -388,7 +391,7 @@ function renderedView(view: RenderView): JSX.Element {
  * @returns Whichever of the four states is true.
  */
 function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
-	const { board, variant, onSelect } = props;
+	const { board, variant, onSelect, onUserChanged } = props;
 	const theme = props.theme ?? "light";
 	const [comparison, onComparisonChange] = useState(true);
 	const drill = useDrillDown(board, variant);
@@ -399,6 +402,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		view: props.view,
 		onView: props.onViewChange,
 		onVariant: props.onVariantChange,
+		onUserChanged,
 	});
 	// The explanations belong to the board on screen, so drilling into another
 	// one closes whatever was being read: the beats were about a different
@@ -545,15 +549,17 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		(target: string, asked: string): void => {
 			leave("into", picked);
 			onSelect(null);
+			onUserChanged?.("board");
 			drill.open(target, asked);
 		},
-		[drill, leave, onSelect, picked],
+		[drill, leave, onSelect, onUserChanged, picked],
 	);
 	const onBack = useCallback((): void => {
 		leave("out");
 		onSelect(null);
+		onUserChanged?.("board");
 		drill.back();
-	}, [drill, leave, onSelect]);
+	}, [drill, leave, onSelect, onUserChanged]);
 
 	return renderedView({
 		...props,

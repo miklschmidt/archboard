@@ -5,6 +5,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import type { SemanticPanePart } from "@/shared/semantic-pane-context";
+
 import { createPaneCore, type PaneCore } from "@/ui/pane-session/core";
 import { usePaneContact, type PaneContact } from "@/ui/pane-session/hooks/use-pane-contact";
 import type { PaneReading } from "@/ui/pane-session/lib/pane-reading";
@@ -174,6 +176,14 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		(reading: PaneReading): void => core.readingChanged(reading),
 		[core],
 	);
+	const userChanged = useCallback(
+		(part: SemanticPanePart): void => core.userChanged(part),
+		[core],
+	);
+	const userChangeFailed = useCallback(
+		(part: SemanticPanePart): void => core.userChangeFailed(part),
+		[core],
+	);
 	const workbenchTransport = useCallback((): Transport | null => core.workbenchTransport(), [core]);
 
 	return {
@@ -187,6 +197,8 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		takeBack,
 		openCode,
 		readingChanged,
+		userChanged,
+		userChangeFailed,
 		workbenchTransport,
 	};
 }

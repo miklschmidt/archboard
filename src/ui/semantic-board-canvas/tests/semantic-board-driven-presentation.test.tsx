@@ -101,6 +101,29 @@ test("a requested step is presented without anybody choosing the walkthrough, an
 	});
 });
 
+test("a requested step lights its subjects without raising anything a user's hand raises", async () => {
+	// What the shell marks as the user's own doing hangs on these two callbacks (ADR 0034). A
+	// driven step that raised either would be told to the voice model as the user's pick, and
+	// answered by it: the loop of 2026-09-20.
+	serving();
+	const views: (string | null)[] = [];
+	const mounted = mountStage(null, {
+		reducedMotion: true,
+		driven: { request: "request-1", walkthrough: WALKTHROUGH.id, beat: 1 },
+		/**
+		 * Keep every view change the stage raises.
+		 * @param view The view it named.
+		 */
+		onViewChange: (view) => {
+			views.push(view);
+		},
+	});
+	await settle();
+	expect(part("semantic-presentation-heading").textContent).toBe("One writer");
+	expect(mounted.picks).toEqual([]);
+	expect(views).toEqual([]);
+});
+
 test("a step still gliding is reported as on its way, and as arrived once the glide lands", async () => {
 	serving();
 	const reported = driven(1, false);
