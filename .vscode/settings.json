@@ -1,0 +1,17 @@
+{
+	// The editor's own file watcher never reads tsconfig.json. On Linux it puts one inotify watch
+	// on every directory it is not told to skip, and .skill-evals alone holds millions of them.
+	"files.watcherExclude": {
+		"**/.git/objects/**": true,
+		"**/.skill-evals/**": true,
+		"**/.claude/worktrees/**": true,
+		"**/.agents/**": true,
+		"**/dist/**": true
+	},
+	"search.exclude": {
+		"**/.skill-evals": true,
+		"**/.claude/worktrees": true,
+		"**/.agents": true,
+		"**/dist": true
+	}
+}

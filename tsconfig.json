@@ -42,6 +42,12 @@
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false
 	},
-	"include": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
-	"exclude": ["node_modules", "dist", "frontend", "src/server/board-rendering/browser.ts"]
+	// Name the folders that hold TypeScript, never the repository root: on Linux tsserver puts one
+	// inotify watch on every directory under each include base, dot-directories too, and
+	// .skill-evals alone holds millions of them.
+	"include": ["src", "frontend", "tests", "scripts", "tools", "docs", "vite.config.ts"],
+	"exclude": ["node_modules", "dist"],
+	"watchOptions": {
+		"excludeDirectories": ["**/.skill-evals", "**/.claude", "**/.agents", "**/.git", "**/dist"]
+	}
 }
