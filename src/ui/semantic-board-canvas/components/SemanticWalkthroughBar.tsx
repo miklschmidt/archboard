@@ -114,7 +114,9 @@ function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element
 		<fieldset
 			data-slot="semantic-walkthrough-bar"
 			aria-label="Explanations of this board"
-			className="flex flex-col items-stretch gap-0.5 border-0 p-0"
+			// A fieldset is as wide as its longest line unless told otherwise, which pushes the
+			// narrate button out of the sidebar instead of truncating the name.
+			className="flex min-w-0 flex-col items-stretch gap-0.5 border-0 p-0"
 		>
 			<legend className="sr-only">Explanations of this board</legend>
 			{walkthroughs.map((walkthrough) => (
