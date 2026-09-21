@@ -84,6 +84,14 @@ const producers = [
 		operationIdSource: "host_minted",
 		omitWhen: [],
 	},
+	{
+		// The coordinator is told that delegated work reached a terminal outcome while voice is
+		// live, and decides whether the person hears about it (TASK-291).
+		kind: "workhorse_outcome_report",
+		rpcs: ["turn/start"],
+		operationIdSource: "host_minted",
+		omitWhen: [],
+	},
 ] as const;
 
 const tupleStates = [

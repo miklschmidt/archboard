@@ -291,6 +291,7 @@ export const requirementsFixture = (
 		allowLoginShell: null,
 		feedback: null,
 		windowsSandboxPrivateDesktop: null,
+		application: null,
 	},
 });
 
@@ -331,7 +332,7 @@ export const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.151.0",
+	cliVersion: "0.155.1",
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -340,6 +341,11 @@ export const threadFixture = {
 	gitInfo: null,
 	name: null,
 	turns: [turnFixture],
+	environments: null,
+	model: null,
+	reasoningEffort: null,
+	originator: null,
+	daybreakEnabled: null,
 } satisfies ResponsePayloads["thread/read"]["thread"];
 
 export const emptyResponse = {};
@@ -390,7 +396,7 @@ export function createSessionFixture(
 	const identity = createIdentityAuthority();
 	const transport = new FakeTransport(identity);
 	transport.enqueueResponse("initialize", {
-		userAgent: "Codex Desktop/0.151.0",
+		userAgent: "Codex Desktop/0.155.1",
 		codexHome: options.initializeCodexHome ?? storage.codexHome,
 		platformFamily: "unix",
 		platformOs: "linux",

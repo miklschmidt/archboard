@@ -18,7 +18,7 @@ import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { CodeBinding } from "@/shared/code-target";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type {
@@ -49,6 +49,11 @@ import type { GroupControls } from "@/ui/semantic-board-canvas/components/Semant
 import { useDeparture, type Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { useGroupInspection } from "@/ui/semantic-board-canvas/hooks/use-group-focus";
+import {
+	usePresentationPosition,
+	type PresentationPosition,
+} from "@/ui/semantic-board-canvas/hooks/use-presentation-position";
+import { useReported } from "@/ui/semantic-board-canvas/hooks/use-reported-reading";
 import { useSettledFocus } from "@/ui/semantic-board-canvas/hooks/use-settled-focus";
 import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
@@ -61,6 +66,7 @@ import {
 import { useVariantReading } from "@/ui/semantic-board-canvas/hooks/use-variant-reading";
 import {
 	useWalkthrough,
+	type DrivenPlace,
 	type WalkthroughReading,
 } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
@@ -130,6 +136,21 @@ interface SemanticBoardStageProps {
 	 */
 	onSelect: (id: string | null, subject?: SelectedSubject) => void;
 	/**
+	 * A place in a walkthrough that something driving the presentation asked
+	 * for, or null. The position stays this pane's: a request is one more way of
+	 * choosing it, and the pane's own report says where it got to (TASK-251).
+	 */
+	driven?: DrivenPlace | null | undefined;
+	/**
+	 * Have the open walkthrough narrated aloud, when the shell can start voice for
+	 * this pane. The pane knows nothing about voice: the control appears only when
+	 * the shell supplies this, and the pane goes back to the first step for it.
+	 * @param walkthrough The open walkthrough's id.
+	 */
+	onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** What the shell lays over the picture, such as subtitles of a voice; clear of the caption. */
+	overlay?: ReactNode;
+	/**
 	 * Whether the person asked for reduced motion.
 	 *
 	 * Passed in rather than read here: the shell owns that preference through
@@ -168,6 +189,12 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly heading: Departure | null;
 	/** What this variant explains about itself, and what is being read. */
 	readonly narrative: WalkthroughReading;
+	/** Where a presented walkthrough has got to, and how the surface says it arrived. */
+	readonly presented: PresentationPosition;
+	/** Have the open walkthrough narrated, when the shell can. */
+	readonly onNarrate: ((walkthrough: string) => void) | undefined;
+	/** What the shell lays over the picture, or nothing. */
+	readonly overlay: ReactNode;
 	/** How the board on screen is being read, at whatever level it is. */
 	readonly level: PaneReading;
 	/** What the board says about itself, or null while it has not arrived. */
@@ -303,6 +330,8 @@ function stageBody(view: RenderView): JSX.Element {
 			{...pictureMarks(view)}
 			heading={view.heading}
 			presenting={view.narrative.open === null ? null : view.narrative.beatIndex}
+			arrivalKey={view.presented.arrivalKey}
+			onSettled={view.presented.onSettled}
 		/>
 	);
 }
@@ -354,25 +383,6 @@ function renderedView(view: RenderView): JSX.Element {
 }
 
 /**
- * Tell whoever is listening what this pane is reading, when it changes.
- *
- * Only when it changes. A pane re-renders for every hover and every camera
- * move, and a shell told the same four values sixty times a second would
- * publish sixty identical readings for anybody downstream to filter.
- * @param report Who to tell, when anybody is listening.
- * @param reading What the pane is reading now.
- */
-function useReported(
-	report: ((reading: SemanticPaneReading) => void) | undefined,
-	reading: SemanticPaneReading,
-): void {
-	const { board, variant, view, selection, drawn } = reading;
-	useEffect(() => {
-		report?.({ board, variant, view, selection, drawn });
-	}, [report, board, variant, view, selection, drawn]);
-}
-
-/**
  * A read-only semantic board in one pane.
  * @param props The board, the variant, the theme, the selection and the pick.
  * @returns Whichever of the four states is true.
@@ -394,7 +404,11 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// one closes whatever was being read: the beats were about a different
 	// architecture.
 	const reading = useVariantReading(drill.board, level.variant);
-	const narrative = useWalkthrough({ board: drill.board, variant: level.variant }, reading);
+	const narrative = useWalkthrough(
+		{ board: drill.board, variant: level.variant },
+		reading,
+		props.driven,
+	);
 	// A beat told through a view is read through that view, which is a different
 	// picture to ask the server for. It overrides the pane's own choice for as
 	// long as that beat is the one being read, and hands it straight back: the
@@ -414,6 +428,11 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	useSemanticBoardChanges(drill.board);
 
 	const drawn = drawingIn(render.data);
+	const presented = usePresentationPosition(
+		narrative,
+		drawn,
+		viewToRead(narrative.beat, level.view),
+	);
 	const focus = useSettledFocus(narrative.beat, drawn, viewToRead(narrative.beat, level.view));
 	const camera = useAutoFit(drawn, focus, {
 		presenting: narrative.open !== null,
@@ -505,6 +524,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		view: viewToRead(narrative.beat, level.view) ?? null,
 		selection: props.selection,
 		drawn: identity,
+		presentation: presented.position,
 	});
 
 	const { refetch } = render;
@@ -551,6 +571,9 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		appearances,
 		heading: departure.heading,
 		narrative,
+		presented,
+		onNarrate: props.onNarrate,
+		overlay: props.overlay,
 		level,
 		reading,
 		focus,

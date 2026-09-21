@@ -25,6 +25,6 @@ test("retains install recovery for a true child spawn failure", () => {
 	});
 
 	const message = canvasStartupFailureMessage(failure);
-	expect(message).toContain("Run bun install to restore @openai/codex 0.151.0");
+	expect(message).toContain("Run bun install to restore @openai/codex 0.155.1");
 	expect(message).toContain("Could not spawn the exact Codex app-server child");
 });

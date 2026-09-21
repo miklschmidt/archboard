@@ -199,6 +199,21 @@ is on screen and whether it has finished arriving, so something driving the
 presentation can wait for it. Nothing about a walkthrough is written by
 presenting it.
 
+## A narrator asks for a step; the pane says where it is (TASK-251, 2026-09-20)
+
+A voice agent narrating a walkthrough drives the presentation without taking
+the position from the browser. The canvas sends a pane `pane_present`, which is
+one more way of choosing a step beside the keys and the controls, and the next
+thing a person does replaces it. The pane's semantic report gains where a
+presented walkthrough has got to: the walkthrough, the beat, how many there
+are, whether the beat has finished arriving, and which request the position
+answers, or none when a person chose it. That report is read-only telemetry, in
+the same class as the view and the selection it already carries, and it is the
+only acknowledgement there is: a narrator is told a step is on screen because
+the pane said so, never because the canvas asked for it. A position no request
+put there is a person's hand, and the narrator is told so that the narration
+follows the picture. Nothing about a walkthrough is written by narrating it.
+
 ## Delivery
 
 The later TASK-203 decisions refine consumer vocabulary and appearance in

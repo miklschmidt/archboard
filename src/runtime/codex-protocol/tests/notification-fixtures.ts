@@ -268,6 +268,7 @@ const serverNotificationFixtures: Record<ServerNotificationMethod, unknown> = {
 			spendControlReached: null,
 			planType: null,
 			rateLimitReachedType: null,
+			normalModelSlug: null,
 		},
 	},
 	"app/list/updated": { data: [appFixture] },

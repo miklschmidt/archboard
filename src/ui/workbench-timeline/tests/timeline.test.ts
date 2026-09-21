@@ -42,6 +42,7 @@ function completeItems(longOutput = "command output"): readonly CodexWorkbenchIt
 			phase: null,
 			memoryCitation: null,
 			delivery: null,
+			questions: null,
 		},
 		{
 			type: "functionCallOutput",

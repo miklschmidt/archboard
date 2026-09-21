@@ -143,6 +143,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 				},
 				appendText: async (input: unknown) => void realtimeCalls.push({ name: "append", input }),
 				stop: async (input: unknown) => void realtimeCalls.push({ name: "stop", input }),
+				onSemanticEvent: () => () => undefined,
 			},
 		} as never);
 		const actions: BrowserWorkbenchActions = {

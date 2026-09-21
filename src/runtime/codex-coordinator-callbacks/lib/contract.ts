@@ -161,6 +161,29 @@ interface CoordinatorCallbackRealtimePort {
 	) => Promise<CoordinatorCallbackMutationResult>;
 }
 
+/**
+ * What starting the coordinator's turn came to: an ordinary mutation result, or busy when the
+ * coordinator was still in a turn of its own at the host's bound and no turn was started.
+ */
+type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "busy";
+
+/**
+ * Starts one ordinary coordinator turn that reports a terminal workhorse outcome (TASK-291).
+ *
+ * In a full-duplex voice session text appended to the voice model is quiet context and nothing
+ * answers it, so work that ended would sit unheard until the person asked again. The coordinator
+ * is the one that knows whether the work came from a voice request, so it is run with the
+ * outcome and its reply decides what the person hears. The host owns the turn's body: its message
+ * identity, its canonical context and waiting for an idle coordinator.
+ */
+interface CoordinatorCallbackTurnPort {
+	readonly report: (request: {
+		readonly threadId: ThreadId;
+		/** The callback as the coordinator already receives it: canonical JSON. */
+		readonly text: string;
+	}) => Promise<CoordinatorCallbackTurnResult>;
+}
+
 interface CoordinatorCallbackCurrentChild {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -177,7 +200,9 @@ type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
-	| "thread_inject_items";
+	| "thread_inject_items"
+	/** An ordinary coordinator turn, for a terminal workhorse outcome while voice is live. */
+	| "coordinator_turn";
 type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
 type CoordinatorCallbackDeliveryReason =
 	| CallbackBufferOverflowReason
@@ -192,6 +217,7 @@ type CoordinatorCallbackDeliveryReason =
 	| "stale_link"
 	| "stale_session"
 	| "voice_inactive"
+	| "recorded_only"
 	| "session_rejected"
 	| "response_lost"
 	| "transport_failure";
@@ -234,6 +260,8 @@ interface CoordinatorCallbackOptions {
 	readonly operations: Pick<CodexWorkhorseOperations, "subscribe">;
 	readonly session: Pick<CodexSession, "threadInjectItems">;
 	readonly realtime: CoordinatorCallbackRealtimePort;
+	/** Absent where nothing can start a coordinator turn; terminal outcomes then stay quiet. */
+	readonly coordinatorTurn?: CoordinatorCallbackTurnPort;
 	readonly threadLink: Pick<CodexThreadLinkClassifier, "classify">;
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
@@ -289,6 +317,8 @@ export {
 	type CoordinatorCallbackDeliveryOutcome,
 	type CoordinatorCallbackMutationResult,
 	type CoordinatorCallbackRealtimePort,
+	type CoordinatorCallbackTurnPort,
+	type CoordinatorCallbackTurnResult,
 	type CoordinatorCallbackCurrentChild,
 	type CoordinatorCallbackReadyCoordinator,
 	type CoordinatorCallbackDeliveryPath,

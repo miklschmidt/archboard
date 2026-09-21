@@ -40,6 +40,36 @@ interface NarrativePlace {
 	readonly beat: number;
 }
 
+/**
+ * A place somebody driving the presentation asked for (TASK-251).
+ *
+ * The position is still this pane's: a request is one more way of choosing it,
+ * beside the keys and the controls, and the next thing a person does replaces
+ * it. It names itself so the pane can say which request the place on screen
+ * answers, and each one is acted on once however often it is handed in.
+ */
+interface DrivenPlace {
+	/** Names the request. */
+	readonly request: string;
+	/** The walkthrough to present, or null to leave the presentation. */
+	readonly walkthrough: string | null;
+	/** Which beat of it, counted from zero. */
+	readonly beat: number;
+}
+
+/** Where the reader is, and who put them there. */
+interface Standing {
+	/** Where the reader is, or null when nowhere. */
+	readonly place: NarrativePlace | null;
+	/** The request that place answers, or null when a person chose it. */
+	readonly answering: string | null;
+	/** The last request acted on, so handing it in again changes nothing. */
+	readonly handled: string | null;
+}
+
+/** Nobody is reading anything and nobody has asked for anything. */
+const NOWHERE: Standing = Object.freeze({ place: null, answering: null, handled: null });
+
 /** What a pane offers and what is being read. */
 interface WalkthroughReading {
 	/** Every explanation this variant states, in the order it states them. */
@@ -50,6 +80,8 @@ interface WalkthroughReading {
 	readonly beat: WalkthroughBeat | null;
 	/** Which beat that is, or -1 when no walkthrough is open. */
 	readonly beatIndex: number;
+	/** The request the place on screen answers, or null when a person chose it. */
+	readonly answering: string | null;
 	/**
 	 * What to call one of the variant's subjects in a sentence.
 	 * @param id The semantic id.
@@ -129,36 +161,82 @@ function openNarrative(
 }
 
 /**
+ * The request that has not been acted on yet.
+ * @param driven What was handed in, if anything.
+ * @param standing Where the reader is, and the last request acted on.
+ * @returns The request, or null when there is none or it was already spent.
+ */
+function unspent(driven: DrivenPlace | null | undefined, standing: Standing): DrivenPlace | null {
+	return driven == null || driven.request === standing.handled ? null : driven;
+}
+
+/**
+ * Where a request puts the reader.
+ * @param asked The request.
+ * @param board The board on screen.
+ * @returns The standing that answers it.
+ */
+function standingAsked(asked: DrivenPlace, board: string): Standing {
+	const place =
+		asked.walkthrough === null ? null : { board, walkthrough: asked.walkthrough, beat: asked.beat };
+	return { place, answering: asked.request, handled: asked.request };
+}
+
+/**
+ * Where a person's own choice puts them: it answers no request, and spends none.
+ * @param current Where the reader was.
+ * @param place Where they chose to be, or null to stop reading.
+ * @returns The standing.
+ */
+function byHand(current: Standing, place: NarrativePlace | null): Standing {
+	return { place, answering: null, handled: current.handled };
+}
+
+/**
  * The explanations one variant offers, and which of them is being read.
  * @param source The board and variant on screen.
  * @param reading What the board says, or null while it has not arrived.
+ * @param driven A place somebody driving the presentation asked for, or null.
  * @returns What is offered, what is open, and the two ways a reader moves.
  */
 function useWalkthrough(
 	source: WalkthroughSource,
 	reading: VariantReading | null,
+	driven?: DrivenPlace | null,
 ): WalkthroughReading {
 	const { board } = source;
-	const [place, setPlace] = useState<NarrativePlace | null>(null);
+	const [standing, setStanding] = useState<Standing>(NOWHERE);
+	// Acted on during render, as React asks for state that follows a prop: the
+	// request is an event that arrived as a value, and it is spent once.
+	const asked = unspent(driven, standing);
+	if (asked !== null) {
+		setStanding(standingAsked(asked, board));
+	}
 
 	const offered = reading?.walkthroughs ?? NO_WALKTHROUGHS;
-	const { open, beat, beatIndex } = openNarrative(offered, placeIn(place, source));
+	const { open, beat, beatIndex } = openNarrative(offered, placeIn(standing.place, source));
+	const answering = open === null ? null : standing.answering;
 
 	const choose = useCallback(
 		(walkthrough: string | null): void => {
-			setPlace(walkthrough === null ? null : { board, walkthrough, beat: 0 });
+			const place = walkthrough === null ? null : { board, walkthrough, beat: 0 };
+			setStanding((current) => byHand(current, place));
 		},
 		[board],
 	);
 	const goTo = useCallback((index: number): void => {
-		setPlace((current) => (current === null ? current : { ...current, beat: Math.max(0, index) }));
+		setStanding((current) =>
+			current.place === null
+				? current
+				: byHand(current, { ...current.place, beat: Math.max(0, index) }),
+		);
 	}, []);
 	const nameOf = useCallback((id: string): string => reading?.nameOf(id) ?? id, [reading]);
 
 	return useMemo(
-		() => ({ offered, open, beat, beatIndex, nameOf, choose, goTo }),
-		[offered, open, beat, beatIndex, nameOf, choose, goTo],
+		() => ({ offered, open, beat, beatIndex, answering, nameOf, choose, goTo }),
+		[offered, open, beat, beatIndex, answering, nameOf, choose, goTo],
 	);
 }
 
-export { useWalkthrough, type WalkthroughReading, type WalkthroughSource };
+export { useWalkthrough, type DrivenPlace, type WalkthroughReading, type WalkthroughSource };

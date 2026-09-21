@@ -50,7 +50,7 @@ const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
-	// Codex 0.151.0 omits this nullable generated field when the layer is enabled.
+	// Codex 0.155.1 omits this nullable generated field when the layer is enabled.
 	disabledReason: z
 		.string()
 		.nullable()
@@ -109,6 +109,10 @@ const AppsDefaultConfigSchema = looseObject({
 	open_world_enabled: z.boolean(),
 	default_tools_approval_mode: AppToolApprovalSchema.nullable(),
 });
+const AppLinkConfigSchema = looseObject({
+	approvals_reviewer: ApprovalsReviewerSchema.nullable(),
+	default_tools_approval_mode: AppToolApprovalSchema.nullable(),
+});
 const AppConfigEntrySchema = looseObject({
 	enabled: z.boolean(),
 	approvals_reviewer: ApprovalsReviewerSchema.nullable(),
@@ -117,6 +121,8 @@ const AppConfigEntrySchema = looseObject({
 	default_tools_approval_mode: AppToolApprovalSchema.nullable(),
 	default_tools_enabled: z.boolean().nullable(),
 	tools: AppToolsConfigSchema.nullable(),
+	/** Link ids are generated map keys for per-account approval settings. */
+	links: z.record(z.string(), AppLinkConfigSchema).nullable(),
 });
 /** App ids are an intentionally open map; each value has a closed config shape. */
 const AppsConfigSchema = z
@@ -221,6 +227,7 @@ const BrowserUseOriginPolicySchema = looseObject({
 	accessApprovalLifetime: z.enum(["turn", "thread"]).nullable(),
 });
 const BrowserUseRequirementsSchema = looseObject({
+	allowWebmcp: z.boolean().nullable(),
 	allowHistoryAccess: z.boolean().nullable(),
 	disableAutoReview: z.boolean().nullable(),
 	allowGlobalPersistentApproval: z.boolean().nullable(),
@@ -304,6 +311,14 @@ const ModelsRequirementsSchema = looseObject({
 });
 const FeedbackRequirementsSchema = looseObject({ enabled: z.boolean().nullable() });
 
+const ApplicationRequirementsSchema = looseObject({
+	network: looseObject({
+		enabled: z.boolean(),
+		/** Domain names are generated map keys supplied by managed requirements. */
+		domains: z.record(z.string(), NetworkPermissionSchema),
+	}).nullable(),
+});
+
 const ConfigRequirementsSchema = looseObject({
 	cliAuthCredentialsStore: CliAuthCredentialsStoreModeSchema.nullable(),
 	chatgptBaseUrl: z.string().nullable(),
@@ -337,6 +352,7 @@ const ConfigRequirementsSchema = looseObject({
 	allowLoginShell: z.boolean().nullable(),
 	feedback: FeedbackRequirementsSchema.nullable(),
 	windowsSandboxPrivateDesktop: z.boolean().nullable(),
+	application: ApplicationRequirementsSchema.nullable(),
 });
 
 const ModelServiceTierSchema = looseObject({
@@ -448,6 +464,7 @@ const RateLimitSnapshotSchema = looseObject({
 			"workspace_member_usage_limit_reached",
 		])
 		.nullable(),
+	normalModelSlug: z.string().nullable(),
 });
 
 export {

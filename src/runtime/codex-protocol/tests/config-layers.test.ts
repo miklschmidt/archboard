@@ -31,7 +31,7 @@ function localShellNotification(timeout_ms: number | bigint): unknown {
 	};
 }
 
-test("config/read accepts Codex 0.151.0 omitting enabled-layer disabledReason", () => {
+test("config/read accepts Codex 0.155.1 omitting enabled-layer disabledReason", () => {
 	const configResponse = decodeResponse("config/read", responseFixtures["config/read"]);
 	const layer = {
 		name: { type: "system", file: "/etc/codex/config.toml" },

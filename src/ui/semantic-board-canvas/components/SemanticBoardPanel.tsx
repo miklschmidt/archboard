@@ -49,6 +49,8 @@ interface SemanticBoardPanelProps {
 	 * @param walkthrough The walkthrough's id, or null to close the rail.
 	 */
 	onChooseWalkthrough: (walkthrough: string | null) => void;
+	/** Have an explanation narrated aloud, when the shell can start voice for this pane. */
+	onNarrate?: ((walkthrough: string) => void) | undefined;
 	/** Every group the variant on screen uses. */
 	groups: readonly GroupChoice[];
 	/** The group under inspection, or null for none. */
@@ -140,6 +142,7 @@ function walkthroughList(props: SemanticBoardPanelProps): ReactNode {
 			walkthroughs={narrative.offered}
 			open={narrative.open?.id ?? null}
 			onChoose={props.onChooseWalkthrough}
+			onNarrate={props.onNarrate}
 		/>
 	);
 }

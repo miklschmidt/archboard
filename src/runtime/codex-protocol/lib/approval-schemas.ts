@@ -154,6 +154,21 @@ const McpElicitationBaseShape = {
 const McpServerElicitationRequestParamsSchema = z.discriminatedUnion("mode", [
 	z.strictObject({
 		...McpElicitationBaseShape,
+		mode: z.literal("openai/userVerification"),
+		title: z.string(),
+		description: z.string(),
+		challenge: z.string(),
+	}),
+	z.strictObject({
+		...McpElicitationBaseShape,
+		mode: z.literal("openaiForm"),
+		/** OpenAI form schemas are forwarded as open JSON by the generated contract. */
+		_meta: JsonValueSchema.nullable(),
+		message: z.string(),
+		requestedSchema: JsonValueSchema,
+	}),
+	z.strictObject({
+		...McpElicitationBaseShape,
 		mode: z.literal("form"),
 		/** MCP metadata is an intentionally open JSON extension point. */
 		_meta: JsonValueSchema.nullable(),

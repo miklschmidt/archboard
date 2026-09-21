@@ -341,7 +341,7 @@ note archboard did not write. About fifteen seconds.
 
 ### Controlled text workbench (TASK-143.03.13)
 
-Starts the production server composition with the exact Codex 0.151.0 protocol
+Starts the production server composition with the exact Codex 0.155.1 protocol
 fake, then drives the real browser transport and rendered shell. One short
 create, send, and decline flow proves the pane workbench is operable, both
 ordinary and dynamic approval effects are visible, and the mounted Excalidraw

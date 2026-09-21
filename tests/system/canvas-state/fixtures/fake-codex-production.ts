@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { appendFileSync, readFileSync } from "node:fs";
-import { configFixture, modelFixture } from "./fake-codex-production-data.ts";
+import { configFixture, modelFixture, unsetThreadFields } from "./fake-codex-production-data.ts";
 const logPath = "__ARCHBOARD_TEST_CODEX_LOG__";
 const controlPath = "__ARCHBOARD_TEST_CODEX_CONTROL__";
 let signedIn =
@@ -34,7 +34,7 @@ const request = (id: string, method: string, params: unknown): void => {
 
 if (process.argv[2] === "--version") {
 	record({ kind: "version_probe", args: process.argv.slice(2) });
-	process.stdout.write("codex-cli 0.151.0\n");
+	process.stdout.write("codex-cli 0.155.1\n");
 	process.exit(0);
 }
 if (
@@ -107,14 +107,11 @@ const buildThread = (
 		status: { type: "idle" },
 		path: null,
 		cwd: String(params["cwd"]),
-		cliVersion: "0.151.0",
+		cliVersion: "0.155.1",
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
-		agentNickname: null,
-		agentRole: null,
-		gitInfo: null,
-		name: null,
+		...unsetThreadFields,
 		turns: [],
 	}) satisfies FixtureThread;
 
@@ -242,7 +239,7 @@ const handle = (frame: WireFrame): void => {
 				return;
 			}
 			respond(frame as never, {
-				userAgent: "Codex Desktop/0.151.0",
+				userAgent: "Codex Desktop/0.155.1",
 				codexHome: process.env["CODEX_HOME"],
 				platformFamily: "unix",
 				platformOs: "linux",
@@ -396,31 +393,29 @@ const handle = (frame: WireFrame): void => {
 					role: "assistant",
 					text: "The controlled voice context is visible.",
 				};
-				notify("thread/realtime/sdp", {
-					threadId: params["threadId"],
-					sdp: "v=0\r\ns=controlled-answer-sdp\r\n",
-				});
-				notify("thread/realtime/started", {
-					threadId: params["threadId"],
-					realtimeSessionId,
-					version: "v3",
-				});
+				const threadId = params["threadId"];
+				notify("thread/realtime/sdp", { threadId, sdp: "v=0\r\ns=controlled-answer-sdp\r\n" });
+				notify("thread/realtime/started", { threadId, realtimeSessionId, version: "v3" });
+				notify("thread/realtime/item/started", { threadId, item: userTranscript });
+				notify("thread/realtime/item/completed", { threadId, item: userTranscript });
+				// The voice model's words arrive one delta at a time, as the real session's do.
 				notify("thread/realtime/item/started", {
-					threadId: params["threadId"],
-					item: userTranscript,
+					threadId,
+					item: { ...assistantTranscript, text: "" },
 				});
-				notify("thread/realtime/item/completed", {
-					threadId: params["threadId"],
-					item: userTranscript,
-				});
-				notify("thread/realtime/item/started", {
-					threadId: params["threadId"],
-					item: assistantTranscript,
-				});
-				notify("thread/realtime/item/completed", {
-					threadId: params["threadId"],
-					item: assistantTranscript,
-				});
+				for (const [index, word] of assistantTranscript.text.split(" ").entries()) {
+					setTimeout(
+						() => {
+							const delta = index === 0 ? word : ` ${word}`;
+							const itemId = assistantTranscript.id;
+							notify("thread/realtime/item/transcript/delta", { threadId, itemId, delta });
+							if (delta.endsWith(".")) {
+								notify("thread/realtime/item/completed", { threadId, item: assistantTranscript });
+							}
+						},
+						300 * (index + 1),
+					);
+				}
 			}, 10);
 			return;
 		}

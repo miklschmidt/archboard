@@ -200,6 +200,7 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 			phase: null,
 			memoryCitation: null,
 			delivery: null,
+			questions: null,
 		}),
 	];
 	Object.defineProperty(sourceItems, 2, {
@@ -419,6 +420,7 @@ test("a budget cut drops the oldest turns and keeps the newest in-progress turn"
 						phase: null,
 						memoryCitation: null,
 						delivery: null,
+						questions: null,
 					}),
 				],
 				"inProgress",

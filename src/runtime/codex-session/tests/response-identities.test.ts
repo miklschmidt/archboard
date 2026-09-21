@@ -51,6 +51,7 @@ const richAgentItem = {
 	phase: null,
 	memoryCitation: { entries: [], threadIds: ["thread-parent"] },
 	delivery: null,
+	questions: null,
 } satisfies Extract<RawThreadItem, { readonly type: "agentMessage" }>;
 const richCollabItem = {
 	type: "collabAgentToolCall",

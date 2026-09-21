@@ -192,6 +192,15 @@ function createBrowserCommandSchemas(
 				command: z.literal("realtimeStart"),
 				threadId: ThreadIdSchema,
 				sdp: boundedText(16_384),
+				/**
+				 * Start voice to present one walkthrough of the board this pane is showing
+				 * (TASK-251). Only the walkthrough is the browser's to name; the server reads
+				 * what it says from the board.
+				 */
+				presentation: z
+					.object({ walkthrough: boundedText(64) })
+					.strict()
+					.optional(),
 			})
 			.strict(),
 		z

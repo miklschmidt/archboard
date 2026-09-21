@@ -26,6 +26,13 @@ interface MediaSessionRecord {
 /** One start in flight, and the lease it was granted. */
 interface StartOperation {
 	lease: BrowserCommandLease | null;
+	/** The walkthrough this start is to present, or null for an ordinary session (TASK-251). */
+	readonly presentation: VoicePresentation | null;
+}
+
+/** A walkthrough voice is started to present, by id. */
+interface VoicePresentation {
+	readonly walkthrough: string;
 }
 
 /** What the host needs from the run that owns it. */
@@ -148,6 +155,7 @@ async function createOffer(
 		command: "realtimeStart",
 		threadId: executableThread(run.transport),
 		sdp: offer.sdp,
+		...(operation.presentation === null ? {} : { presentation: operation.presentation }),
 	});
 	run.requireCurrentStart(operation);
 	const answer = startAnswer(value, offer, lease);
@@ -274,4 +282,4 @@ function createMediaHost(run: MediaRunPort): RealtimeHost {
 	};
 }
 
-export { createMediaHost, type MediaRunPort, type StartOperation };
+export { createMediaHost, type MediaRunPort, type StartOperation, type VoicePresentation };

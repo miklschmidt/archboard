@@ -16,6 +16,7 @@ function fixture() {
 		},
 		appendText: async (value: unknown) => void calls.push({ name: "append", value }),
 		stop: async (value: unknown) => void calls.push({ name: "stop", value }),
+		onSemanticEvent: () => () => undefined,
 	};
 	const components = {
 		realtime,

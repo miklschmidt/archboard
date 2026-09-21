@@ -11,6 +11,7 @@ test("loading a variant does not report its board as the current variant before 
 		view: "v2",
 		selection: null,
 		drawn: null,
+		presentation: null,
 	};
 	// A loading stage knows no resolved drawing identity. Reporting a bare
 	// board here would replace the requested variant before routing can restore
@@ -27,5 +28,6 @@ test("loading a variant does not report its board as the current variant before 
 		view,
 		version: 3,
 		selection: [],
+		presentation: null,
 	});
 });

@@ -15,7 +15,7 @@ function removeRoot(root: string): void {
 	fs.rmSync(root, { recursive: true, force: true });
 }
 
-function fixture(root: string, body: string, version = "codex-cli 0.151.0"): string {
+function fixture(root: string, body: string, version = "codex-cli 0.155.1"): string {
 	const executable = path.join(root, "codex-fixture");
 	writeFileSync(
 		executable,

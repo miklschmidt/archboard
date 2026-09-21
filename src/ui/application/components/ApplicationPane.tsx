@@ -7,8 +7,9 @@
 // whatever the server has pointed it at. Mounting them together is what makes
 // "this pane is showing that board" one fact rather than two that can drift.
 
-import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
+import type { PanePresentRequest } from "@/shared/semantic-pane-context";
 import type { PaneHost } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { readingOf } from "@/ui/application/pane-reading";
@@ -62,6 +63,14 @@ interface ApplicationPaneProps {
 	 * @param variant The variant's id or name, or null for whichever is current.
 	 */
 	onVariantChange: (variant: string | null) => void;
+	/**
+	 * Have a walkthrough of this pane's board narrated aloud, when voice can be
+	 * started for this pane.
+	 * @param walkthrough The walkthrough's id.
+	 */
+	onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
+	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
 }
@@ -143,7 +152,14 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	// What the stage says is on screen, which is the only place it is known.
 	const [onScreen, setOnScreen] = useState<SemanticPaneReading | null>(null);
 	const bound = useBoundCallbacks(props);
-	const options = useMemo(() => optionsFor(props, bound), [props, bound]);
+	// A step somebody narrating a walkthrough asked for (TASK-251). Kept with the
+	// pane because it is about this pane's picture, and handed to the stage, which
+	// owns where the pane is in a walkthrough and answers through its reading.
+	const [asked, onPresentRequest] = useState<PanePresentRequest | null>(null);
+	const options = useMemo(
+		() => ({ ...optionsFor(props, bound), onPresentRequest }),
+		[props, bound],
+	);
 	const session = usePaneSession(options);
 	const { attachPaneElement, openedKey, readingChanged } = session;
 	// Registration and departure are two different events, and they are two
@@ -191,6 +207,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 					address={address}
 					openCode={session.openCode}
 					onReading={setOnScreen}
+					driven={asked}
 					{...props}
 				/>
 			)}
@@ -212,6 +229,8 @@ interface PaneDiagramProps extends ApplicationPaneProps {
 	 * @param reading The board, variant, view and selection on screen.
 	 */
 	readonly onReading: (reading: SemanticPaneReading) => void;
+	/** A walkthrough step somebody narrating it asked for, or null. */
+	readonly driven: PanePresentRequest | null;
 }
 
 /**
@@ -248,6 +267,9 @@ function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 			onSelect={onSelect}
 			onOpenCode={onOpenCode}
 			onReading={props.onReading}
+			driven={props.driven}
+			onNarrate={props.onNarrate}
+			overlay={props.overlay}
 			reducedMotion={props.reducedMotion}
 		/>
 	);

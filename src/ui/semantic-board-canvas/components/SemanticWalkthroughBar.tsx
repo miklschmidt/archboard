@@ -14,6 +14,7 @@
 // already says: the button is the explanation's presence on screen, and pressing
 // it again is how anything pressed is let go.
 
+import { RiMicLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
@@ -30,6 +31,12 @@ interface SemanticWalkthroughBarProps {
 	 * @param walkthrough The walkthrough's id, or null for none.
 	 */
 	onChoose: (walkthrough: string | null) => void;
+	/**
+	 * Have an explanation narrated aloud, when the shell can start voice for this pane. Offered
+	 * here, beside each explanation, so a narration can be started without first opening it.
+	 * @param walkthrough The walkthrough's id.
+	 */
+	onNarrate?: ((walkthrough: string) => void) | undefined;
 }
 
 /** One walkthrough's button. */
@@ -43,6 +50,8 @@ interface WalkthroughButtonProps {
 	 * @param walkthrough The walkthrough's id, or null to close it.
 	 */
 	onChoose: (walkthrough: string | null) => void;
+	/** Have it narrated, when the shell can. */
+	onNarrate: ((walkthrough: string) => void) | undefined;
 }
 
 /**
@@ -55,19 +64,42 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
 	const choose = useCallback((): void => {
 		onChoose(open ? null : walkthrough.id);
 	}, [onChoose, open, walkthrough.id]);
+	const { onNarrate } = props;
+	// Narrating opens the explanation when it is not open yet, and never closes one that is.
+	const narrate = useCallback((): void => {
+		if (!open) {
+			onChoose(walkthrough.id);
+		}
+		onNarrate?.(walkthrough.id);
+	}, [onChoose, onNarrate, open, walkthrough.id]);
 	return (
-		<Button
-			type="button"
-			variant={open ? "secondary" : "ghost"}
-			size="sm"
-			aria-pressed={open}
-			data-slot="semantic-walkthrough-choice"
-			data-semantic-walkthrough={walkthrough.id}
-			className="justify-start"
-			onClick={choose}
-		>
-			{walkthrough.name}
-		</Button>
+		<div className="flex items-center gap-0.5">
+			<Button
+				type="button"
+				variant={open ? "secondary" : "ghost"}
+				size="sm"
+				aria-pressed={open}
+				data-slot="semantic-walkthrough-choice"
+				data-semantic-walkthrough={walkthrough.id}
+				className="min-w-0 flex-1 justify-start"
+				onClick={choose}
+			>
+				<span className="truncate">{walkthrough.name}</span>
+			</Button>
+			{onNarrate !== undefined && (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon-sm"
+					data-slot="semantic-walkthrough-narrate"
+					aria-label={`Narrate ${walkthrough.name}`}
+					title="Narrate aloud"
+					onClick={narrate}
+				>
+					<RiMicLine />
+				</Button>
+			)}
+		</div>
 	);
 }
 
@@ -77,7 +109,7 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
  * @returns The list. The sidebar decides whether there is one.
  */
 function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element {
-	const { walkthroughs, open, onChoose } = props;
+	const { walkthroughs, open, onChoose, onNarrate } = props;
 	return (
 		<fieldset
 			data-slot="semantic-walkthrough-bar"
@@ -91,6 +123,7 @@ function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element
 					walkthrough={walkthrough}
 					open={open === walkthrough.id}
 					onChoose={onChoose}
+					onNarrate={onNarrate}
 				/>
 			))}
 		</fieldset>

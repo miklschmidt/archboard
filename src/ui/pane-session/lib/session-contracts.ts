@@ -4,6 +4,7 @@
 // other's internals.
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import type { PanePresentRequest } from "@/shared/semantic-pane-context";
 import type { PaneReading } from "@/ui/pane-session/lib/pane-reading";
 import type {
 	AgentActivityEntry,
@@ -63,6 +64,13 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param request Which way the layout should move.
 	 */
 	onLayoutRequest?: (request: "open" | "close") => void;
+	/**
+	 * The server asked this pane to go to a step of a walkthrough, or to leave
+	 * the presentation (TASK-251). The position is the pane's, so the request is
+	 * handed to whoever draws the board; the pane's own report answers it.
+	 * @param request Which walkthrough and beat, and the request's name.
+	 */
+	onPresentRequest?: (request: PanePresentRequest) => void;
 	/** The server accepted this pane's report, so the pane inventory has moved. */
 	onPaneStateAccepted?: () => void;
 	/**

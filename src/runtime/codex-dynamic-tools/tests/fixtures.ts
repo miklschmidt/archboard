@@ -65,7 +65,7 @@ export function thread(
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.151.0",
+		cliVersion: "0.155.1",
 		source: "appServer",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -74,6 +74,11 @@ export function thread(
 		gitInfo: null,
 		name: null,
 		turns: [],
+		environments: null,
+		model: null,
+		reasoningEffort: null,
+		originator: null,
+		daybreakEnabled: null,
 		...overrides,
 	} as SessionThread;
 }

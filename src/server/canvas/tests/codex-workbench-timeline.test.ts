@@ -96,6 +96,7 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			phase: null,
 			memoryCitation: null,
 			delivery: null,
+			questions: null,
 		}),
 		mcpToolCallItem(authorities, "timeline-mcp", {
 			type: "mcpToolCall",

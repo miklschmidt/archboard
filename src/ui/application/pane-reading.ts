@@ -35,6 +35,7 @@ function readingOf(reading: SemanticPaneReading | null, picked: PickedSubject | 
 		view,
 		version,
 		selection: picked === null ? [] : [picked],
+		presentation: reading.presentation,
 	};
 }
 

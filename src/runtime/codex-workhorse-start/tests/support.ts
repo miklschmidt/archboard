@@ -208,7 +208,7 @@ function threadFixture(threadId: ThreadId): SessionThread {
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.151.0",
+		cliVersion: "0.155.1",
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -217,6 +217,11 @@ function threadFixture(threadId: ThreadId): SessionThread {
 		gitInfo: null,
 		name: null,
 		turns: [],
+		environments: null,
+		model: null,
+		reasoningEffort: null,
+		originator: null,
+		daybreakEnabled: null,
 	};
 }
 
