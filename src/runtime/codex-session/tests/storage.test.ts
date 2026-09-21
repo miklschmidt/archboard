@@ -39,7 +39,7 @@ describe("Codex session storage proof", () => {
 	test("refuses a redirected initialize home and colliding prepared roots", async () => {
 		const redirected = createSessionFixture();
 		redirected.transport.prependResponse("initialize", {
-			userAgent: "Codex Desktop/0.151.0",
+			userAgent: "Codex Desktop/0.155.1",
 			codexHome: redirected.storage.sqliteHome,
 			platformFamily: "unix",
 			platformOs: "linux",

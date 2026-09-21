@@ -74,7 +74,7 @@ interface PictureMotion {
  * loses once it has landed: the picture at rest is the one a reader reads, and
  * the one anything outside that wants to look at what was drawn should wait for.
  */
-const MOTION_ATTRIBUTE = "data-picture-motion";
+const PICTURE_MOTION_ATTRIBUTE = "data-picture-motion";
 
 /** What has been written to the surface, for React to read back. */
 interface PictureStore {
@@ -346,10 +346,10 @@ function usePictureTransition(
 		};
 		flight.current = showPicture(next, () => {
 			flight.current = null;
-			surface.toggleAttribute(MOTION_ATTRIBUTE, false);
+			surface.toggleAttribute(PICTURE_MOTION_ATTRIBUTE, false);
 			publish(store.current, surface);
 		});
-		surface.toggleAttribute(MOTION_ATTRIBUTE, flight.current !== null);
+		surface.toggleAttribute(PICTURE_MOTION_ATTRIBUTE, flight.current !== null);
 		publish(store.current, surface);
 	}, [surface, drawing, reducedMotion, keepStill, heading, presenting]);
 	// Where the pane is after every commit, so the next picture knows where the
@@ -369,4 +369,4 @@ function usePictureTransition(
 	return picture;
 }
 
-export { usePictureTransition, type PictureMotion, type StagedPicture };
+export { PICTURE_MOTION_ATTRIBUTE, usePictureTransition, type PictureMotion, type StagedPicture };

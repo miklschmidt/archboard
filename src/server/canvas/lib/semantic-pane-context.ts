@@ -19,6 +19,7 @@ import {
 	type SemanticPaneContext,
 } from "@/shared/semantic-pane-context/index";
 import { publishPaneContext } from "@/server/canvas/lib/canvas-codex-host";
+import { panePresentations } from "@/server/canvas/lib/pane-presentation";
 import { panes } from "@/server/canvas/lib/pane-registry";
 import { bodyOf } from "@/server/canvas/lib/request-board";
 
@@ -114,6 +115,9 @@ function reportRoute(req: Request, res: Response): void {
 		// before. Only for a report that was kept — announcing one that lost to its
 		// own successor would hand the coordinator the reading it just replaced.
 		publishPaneContext(parsed.data.clientId, "selection");
+		// The same report says where a presented walkthrough has got to, which is
+		// what settles a step somebody narrating it asked for (TASK-251).
+		panePresentations.note(parsed.data);
 	}
 	// A dropped report is not an error: a pane that raced itself has already been
 	// overtaken by its own later one, and saying so lets a publisher notice it is

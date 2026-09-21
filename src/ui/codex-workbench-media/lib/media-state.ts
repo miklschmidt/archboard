@@ -14,7 +14,7 @@ import type {
 } from "@/ui/codex-realtime";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
-import type { StartOperation } from "@/ui/codex-workbench-media/lib/media-host";
+import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/media-host";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */
 type BrowserWorkbenchMediaState =
@@ -38,7 +38,11 @@ type BrowserWorkbenchMediaSource = BrowserWorkbenchTransport;
 interface BrowserWorkbenchMediaOwner {
 	readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>;
 	readonly detach: (transport: BrowserWorkbenchTransport) => Promise<void>;
-	readonly start: () => Promise<RealtimeMediaSnapshot>;
+	/**
+	 * Starts realtime media, as an ordinary session or one started to present a walkthrough.
+	 * @param presentation The walkthrough to present, when there is one (TASK-251).
+	 */
+	readonly start: (presentation?: VoicePresentation | null) => Promise<RealtimeMediaSnapshot>;
 	readonly appendText: (text: string) => Promise<AppendOutcome>;
 	/**
 	 * Silences and restores the captured microphone. Neither claims a lease nor

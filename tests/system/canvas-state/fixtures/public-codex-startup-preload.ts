@@ -16,7 +16,7 @@ if (executable !== undefined) {
 								code: "verification_timeout",
 								executablePath: executable,
 								message:
-									"Codex codex-cli 0.151.0 did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.",
+									"Codex codex-cli 0.155.1 did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.",
 							});
 						}
 					: actual.verifyCodexExecutable,

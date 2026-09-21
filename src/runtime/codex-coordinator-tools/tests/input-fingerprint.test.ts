@@ -173,6 +173,8 @@ function effectCount(h: CoordinatorToolsFixture, tool: CoordinatorToolName): num
 			return h.operations.calls.steer.length;
 		case "resolve_spoken_approval":
 			return h.spokenApproval.calls.length;
+		case "present_step":
+			return h.presentation.calls.length;
 	}
 }
 

@@ -458,11 +458,25 @@ function projectElicitation(
 	request: Extract<OwnerInteractiveRequest, { readonly family: "elicitation" }>,
 ): BrowserApproval {
 	const { params } = request;
+	if (params.mode === "openai/userVerification") {
+		// Archboard has no verification provider, so the challenge is shown as a form nobody can
+		// fill: the person reads what was asked and can only turn it down.
+		return {
+			...envelope,
+			approvalKind: request.family,
+			serverName: params.serverName,
+			mode: "form",
+			message: `${params.title}\n${params.description}`,
+			url: null,
+			fields: null,
+		};
+	}
 	return {
 		...envelope,
 		approvalKind: request.family,
 		serverName: params.serverName,
-		mode: params.mode,
+		// Codex 0.155.1 spells the OpenAI form two ways; the browser knows one.
+		mode: params.mode === "openaiForm" ? "openai/form" : params.mode,
 		message: params.message,
 		url: params.mode === "url" ? safeUrl(params.url) : null,
 		fields: params.mode === "url" ? null : formFields(params.requestedSchema),

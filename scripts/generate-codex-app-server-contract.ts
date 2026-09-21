@@ -24,7 +24,7 @@ const contractRoot = join(repositoryRoot, "src/shared/codex-app-server-contract"
 const generatedRoot = join(contractRoot, "generated");
 const versionsRoot = join(generatedRoot, "versions");
 const currentRoot = join(generatedRoot, "current");
-const expectedCodexVersion = "0.151.0";
+const expectedCodexVersion = "0.155.1";
 // Bump when this tracked recipe changes the generated layout or Codex arguments.
 const generationRecipeRevision = 2;
 const versionName = `version-${expectedCodexVersion}-recipe-${generationRecipeRevision}`;

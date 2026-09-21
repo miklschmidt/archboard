@@ -2,6 +2,7 @@ import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
+	COORDINATOR_THREAD_CONFIG,
 } from "@/runtime/codex-coordinator-tool-contract";
 import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions";
 import type { CanonicalNamespace } from "@/runtime/codex-coordinator-tool-contract";
@@ -265,7 +266,7 @@ function createCoordinatorThreadStartParams(
 			serviceTier: "priority",
 			cwd: checkoutRoot,
 			runtimeWorkspaceRoots: [checkoutRoot],
-			config: { features: { realtime_conversation: true } },
+			config: COORDINATOR_THREAD_CONFIG,
 			serviceName: "archboard",
 			developerInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
 			ephemeral: false,
@@ -281,7 +282,7 @@ function createCoordinatorThreadStartParams(
 		allowProviderModelFallback: false,
 		cwd: checkoutRoot,
 		runtimeWorkspaceRoots: [checkoutRoot],
-		config: { features: { realtime_conversation: true } },
+		config: COORDINATOR_THREAD_CONFIG,
 		serviceName: "archboard",
 		developerInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
 		ephemeral: false,

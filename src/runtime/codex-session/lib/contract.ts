@@ -17,7 +17,7 @@ import type { SessionResponsePayloads } from "@/runtime/codex-session/lib/result
 export type { BedrockSetupParams } from "@/runtime/codex-protocol";
 
 /**
- * Codex 0.151.0 reports this origin for our fixed app-server initialization.
+ * Codex 0.155.1 reports this origin for our fixed app-server initialization.
  * The child environment excludes ambient originator overrides. Ownership is
  * still proved by the current child epoch and committed operation, not this label.
  */

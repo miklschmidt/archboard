@@ -47,4 +47,17 @@ const modelFixture = {
 	isDefault: true,
 };
 
-export { configFixture, modelFixture };
+/** Thread fields this fixture never gives a value. */
+const unsetThreadFields = {
+	agentNickname: null,
+	agentRole: null,
+	gitInfo: null,
+	name: null,
+	environments: null,
+	model: null,
+	reasoningEffort: null,
+	originator: null,
+	daybreakEnabled: null,
+};
+
+export { configFixture, modelFixture, unsetThreadFields };

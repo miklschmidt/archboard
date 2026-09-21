@@ -8,9 +8,16 @@
 import { createElement, useMemo, type ReactNode } from "react";
 
 import { ApplicationPane } from "@/ui/application/components/ApplicationPane";
+import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
 import type { PaneTheme } from "@/ui/pane-session";
+
+/** Something the shell lays over one pane's picture. */
+interface PaneOverlay {
+	readonly paneId: string;
+	readonly element: ReactNode;
+}
 
 /** What the mounted panes are assembled from. */
 interface PaneViewSources {
@@ -29,6 +36,10 @@ interface PaneViewSources {
 	 * @param variant The variant's id or name, or null for whichever is current.
 	 */
 	readonly onVariantChange: (paneId: string, variant: string | null) => void;
+	/** The focused pane's narration, or null while voice cannot be started for it. */
+	readonly narration: Narration | null;
+	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
+	readonly overlay: PaneOverlay | null;
 }
 
 /**
@@ -74,6 +85,8 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		picked: readings.pickedIn(paneId),
 		onPick: pickHere,
 		onVariantChange: showVariantHere,
+		onNarrate: sources.narration?.paneId === paneId ? sources.narration.start : undefined,
+		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
 	});
 }
@@ -88,7 +101,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
  * @returns The mounted panes by pane id.
  */
 function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNode>> {
-	const { panes, theme, readings, reducedMotion, onVariantChange } = sources;
+	const { panes, theme, readings, reducedMotion, onVariantChange, narration, overlay } = sources;
 	const { list, host, handles } = panes;
 	return useMemo(() => {
 		const mounted: Record<string, ReactNode> = {};
@@ -100,13 +113,26 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					readings,
 					reducedMotion,
 					onVariantChange,
+					narration,
+					overlay,
 				},
 				entry.paneId,
 				index,
 			);
 		});
 		return mounted;
-	}, [panes, list, host, handles, theme, readings, reducedMotion, onVariantChange]);
+	}, [
+		panes,
+		list,
+		host,
+		handles,
+		theme,
+		readings,
+		reducedMotion,
+		onVariantChange,
+		narration,
+		overlay,
+	]);
 }
 
-export { usePaneViews, type PaneViewSources };
+export { usePaneViews, type PaneOverlay, type PaneViewSources };

@@ -9,6 +9,7 @@ import type {
 	VoiceSessionFailure,
 	VoiceSessionPorts,
 	VoiceSessionView,
+	VoiceNarration,
 } from "@/ui/voice-session/contract";
 import { bindingReplaced, captureBinding, observeBinding } from "@/ui/voice-session/lib/binding";
 import { presentedFailure } from "@/ui/voice-session/lib/failure";
@@ -214,10 +215,11 @@ function createVoiceSession(ports: VoiceSessionPorts): VoiceSession {
 
 	/**
 	 * Starts a new session on a fresh binding.
+	 * @param presentation The walkthrough the person chose to have narrated, or null.
 	 */
-	const startNew = async (): Promise<void> => {
+	const startNew = async (presentation: VoiceNarration | null = null): Promise<void> => {
 		bindNewSession();
-		await realtime.start();
+		await realtime.start(presentation);
 	};
 
 	/**
@@ -304,12 +306,13 @@ function createVoiceSession(ports: VoiceSessionPorts): VoiceSession {
 		refresh: () => (state.disposed ? current : publish()),
 		/**
 		 * Starts voice.
+		 * @param presentation The walkthrough the person chose to have narrated, or null.
 		 * @returns The view.
 		 */
-		start: () =>
+		start: (presentation: VoiceNarration | null = null) =>
 			control(
 				(view) => view.controls.canStart,
-				startNew,
+				() => startNew(presentation),
 				"The realtime voice session could not be started.",
 			),
 		/**

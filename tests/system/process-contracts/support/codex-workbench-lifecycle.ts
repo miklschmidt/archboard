@@ -242,6 +242,7 @@ const managedRequirementKeys = [
 	"allowRemoteControl", "computerUse", "browserUse", "inAppBrowser", "featureRequirements", "hooks",
 	"enforceResidency", "network", "autoReview", "models", "logDir", "modelCatalogJson",
 	"checkForUpdateOnStartup", "allowLoginShell", "feedback", "windowsSandboxPrivateDesktop",
+	"application",
 ] as const;
 const managedRequirements = (sqliteHome: string) => ({
 	...Object.fromEntries(managedRequirementKeys.map((key) => [key, null])),

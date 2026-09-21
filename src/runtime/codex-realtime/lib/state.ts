@@ -14,6 +14,7 @@ import type {
 	CodexRealtimeBinding,
 	CodexRealtimeGeneration,
 } from "@/runtime/codex-realtime/lib/contract";
+import type { RealtimePresentation } from "@/runtime/codex-realtime/lib/presentation-mode";
 
 interface RealtimeTranscriptEntry {
 	readonly itemId: ItemId;
@@ -30,6 +31,8 @@ interface ActiveRealtimeSession {
 	readonly wireSessionId: WireRealtimeSessionId;
 	readonly semanticBrief: string;
 	readonly boardCatalogue: string;
+	/** The walkthrough this session was started to present, or null for an ordinary session. */
+	readonly presentation: RealtimePresentation | null;
 	readonly answer: Promise<AnswerSdp>;
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;

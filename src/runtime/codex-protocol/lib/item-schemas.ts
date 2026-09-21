@@ -141,6 +141,9 @@ const ThreadItemSchema = z.discriminatedUnion("type", [
 		phase: z.union([MessagePhaseSchema, z.null()]),
 		memoryCitation: MemoryCitationSchema.nullable(),
 		delivery: z.union([z.literal("async"), z.null()]),
+		questions: z
+			.array(looseObject({ title: z.string(), options: z.array(z.string()).nullable() }))
+			.nullable(),
 	}),
 	FunctionCallOutputItemSchema,
 	looseObject({ type: z.literal("plan"), id: z.string(), text: z.string() }),

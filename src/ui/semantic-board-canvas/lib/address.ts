@@ -118,12 +118,36 @@ interface SemanticPaneReading {
 		readonly view: OfferedView | null;
 		readonly version: number;
 	} | null;
+	/**
+	 * Where a presented walkthrough has got to, or null when none is presented.
+	 *
+	 * Said so something narrating the presentation can follow the picture
+	 * (TASK-251): which step is on screen, whether it has finished arriving, and
+	 * whether a person or a request put it there. The position is still the
+	 * pane's; this is the pane saying where it is.
+	 */
+	readonly presentation: PanePresentation | null;
+}
+
+/** Where a presented walkthrough has got to. */
+interface PanePresentation {
+	/** The walkthrough being presented, by id. */
+	readonly walkthrough: string;
+	/** Which beat is on screen, counted from zero. */
+	readonly beat: number;
+	/** How many beats it has. */
+	readonly of: number;
+	/** Whether that beat has finished arriving. */
+	readonly arrived: boolean;
+	/** The request this position answers, or null when a person chose it. */
+	readonly answering: string | null;
 }
 
 export {
 	boardAddressOf,
 	boardKeyFor,
 	sameBoardName,
+	type PanePresentation,
 	type SemanticPaneReading,
 	type SemanticTarget,
 };

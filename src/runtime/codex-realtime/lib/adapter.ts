@@ -30,6 +30,8 @@ import {
 import { reduceRealtimeNotification } from "@/runtime/codex-realtime/lib/notifications";
 import * as phase from "@/runtime/codex-realtime/lib/phase";
 import { exactNotification, orderedRecords } from "@/runtime/codex-realtime/lib/records";
+import type { RealtimePresentation } from "@/runtime/codex-realtime/lib/presentation-mode";
+import { watchPresentationChanges } from "@/runtime/codex-realtime/lib/presentation-updates";
 import { recoverRealtimeSession } from "@/runtime/codex-realtime/lib/recovery";
 import type { RealtimeSessionOps } from "@/runtime/codex-realtime/lib/session-ops";
 import { realtimeGeneration, type ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
@@ -198,19 +200,38 @@ export function createCodexRealtimeAdapter(
 	};
 
 	/**
-	 * Watch catalogue changes for this session, refusing the offer if the watch cannot start.
+	 * Watch catalogue changes and by-hand presentation changes for this session, refusing the
+	 * offer if the catalogue watch cannot start.
 	 * @param session The newly active session.
-	 * @returns Whether the watch was installed.
+	 * @returns Whether the watches were installed.
 	 */
 	const installCatalogueUpdates = (session: ActiveRealtimeSession): boolean => {
+		/**
+		 * Whether this session still owns its binding.
+		 * @returns True while delivery is allowed.
+		 */
+		const isCurrent = (): boolean => bindingIsCurrent(session);
+		/**
+		 * Report an unconfirmed delivery or a failed watch.
+		 * @param message What went wrong.
+		 */
+		const onError = (message: string): void => {
+			emitDiagnostic(session, "coordinator", message);
+		};
 		try {
-			session.stopCatalogueUpdates = watchCatalogueUpdates(
+			const stopCatalogue = watchCatalogueUpdates(
 				options,
 				session,
 				session.boardCatalogue,
-				() => bindingIsCurrent(session),
-				(message) => emitDiagnostic(session, "coordinator", message),
+				isCurrent,
+				onError,
 			);
+			const stopPresentation = watchPresentationChanges(options, session, isCurrent, onError);
+			/** Stop both watches. */
+			session.stopCatalogueUpdates = (): void => {
+				stopCatalogue();
+				stopPresentation();
+			};
 		} catch (error) {
 			active = null;
 			session.rejectAnswer(error instanceof Error ? error : new Error(String(error)));
@@ -222,9 +243,13 @@ export function createCodexRealtimeAdapter(
 	/**
 	 * Accept the browser's offer, open the one active session and start negotiation with Codex.
 	 * @param offer - The browser's offer SDP and correlation.
+	 * @param presentation - The walkthrough the session is started to present, or null.
 	 * @returns The answer SDP once Codex has started the session.
 	 */
-	const createOffer = (offer: CreateOfferSdp): Promise<AnswerSdp> => {
+	const openSession = (
+		offer: CreateOfferSdp,
+		presentation: RealtimePresentation | null,
+	): Promise<AnswerSdp> => {
 		if (disposed) {
 			return Promise.reject(new Error("The Codex realtime adapter is disposed."));
 		}
@@ -252,6 +277,7 @@ export function createCodexRealtimeAdapter(
 			wireSessionId,
 			semanticBrief: options.freshSemanticBrief(wireSessionId),
 			boardCatalogue: options.boardCatalogue.read(),
+			presentation,
 			answer,
 			resolveAnswer,
 			rejectAnswer,
@@ -273,6 +299,17 @@ export function createCodexRealtimeAdapter(
 		startNegotiation(ops, session, offer.sdp);
 		return answer;
 	};
+
+	/**
+	 * Accept the browser's offer as an ordinary session, or one started to present a walkthrough.
+	 * @param offer - The browser's offer SDP and correlation.
+	 * @param presentation - The walkthrough the session is started to present, when there is one.
+	 * @returns The answer SDP once Codex has started the session.
+	 */
+	const createOffer = (
+		offer: CreateOfferSdp,
+		presentation?: RealtimePresentation | null,
+	): Promise<AnswerSdp> => openSession(offer, presentation ?? null);
 
 	/**
 	 * Reduce a server notification when it belongs exactly to the live session.

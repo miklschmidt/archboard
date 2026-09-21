@@ -6,6 +6,7 @@ import {
 	DelegateToWorkhorseInputSchema,
 	InspectWorkhorseInputSchema,
 	ManageWorkhorseQueueInputSchema,
+	PresentStepInputSchema,
 	ResolveSpokenApprovalInputSchema,
 	SteerWorkhorseInputSchema,
 	parseCoordinatorToolInput,
@@ -14,6 +15,7 @@ import {
 	type InspectWorkhorseInput,
 	type ManageWorkhorseQueueInput,
 	type NamespaceName,
+	type PresentStepInput,
 	type ResolveSpokenApprovalInput,
 	type SteerWorkhorseInput,
 } from "@/runtime/codex-coordinator-tool-contract";
@@ -51,7 +53,8 @@ type CoordinatorToolInput =
 	| DelegateToWorkhorseInput
 	| ManageWorkhorseQueueInput
 	| SteerWorkhorseInput
-	| ResolveSpokenApprovalInput;
+	| ResolveSpokenApprovalInput
+	| PresentStepInput;
 
 /** The reviewed namespace and tool name pair a logical call may carry. */
 const DeclaredToolSchema = z.union([
@@ -73,7 +76,8 @@ type ParsedToolInput =
 	| { readonly tool: "delegate_to_workhorse"; readonly input: DelegateToWorkhorseInput }
 	| { readonly tool: "manage_workhorse_queue"; readonly input: ManageWorkhorseQueueInput }
 	| { readonly tool: "steer_workhorse"; readonly input: SteerWorkhorseInput }
-	| { readonly tool: "resolve_spoken_approval"; readonly input: ResolveSpokenApprovalInput };
+	| { readonly tool: "resolve_spoken_approval"; readonly input: ResolveSpokenApprovalInput }
+	| { readonly tool: "present_step"; readonly input: PresentStepInput };
 
 interface ValidatedCallEvidence {
 	readonly call: WorkhorseCoordinatorCall;
@@ -109,11 +113,12 @@ type ValidatedWorkhorseCall = ValidatedCallEvidence & {
 
 type ValidatedVoiceCall = ValidatedCallEvidence & {
 	readonly namespace: "archboard_voice";
-	readonly tool: "resolve_spoken_approval";
-	readonly input: ResolveSpokenApprovalInput;
 	readonly workhorseBinding: null;
 	readonly expectedTurnId: null;
-};
+} & (
+		| { readonly tool: "resolve_spoken_approval"; readonly input: ResolveSpokenApprovalInput }
+		| { readonly tool: "present_step"; readonly input: PresentStepInput }
+	);
 
 type ValidatedCoordinatorToolCall = ValidatedWorkhorseCall | ValidatedVoiceCall;
 
@@ -157,6 +162,24 @@ function canonicalQueueInput(value: ManageWorkhorseQueueInput): string {
 }
 
 /**
+ * Canonical text for a voice-namespace tool input.
+ * @param parsed - The voice tool and its parsed input.
+ * @returns The JSON text to hash.
+ */
+function canonicalVoiceInput(
+	parsed: Extract<
+		ParsedToolInput,
+		{ readonly tool: "resolve_spoken_approval" } | { readonly tool: "present_step" }
+	>,
+): string {
+	if (parsed.tool === "present_step") {
+		const { step, walkthrough } = parsed.input;
+		return JSON.stringify({ step: step ?? null, walkthrough: walkthrough ?? null });
+	}
+	return JSON.stringify({ verdict: parsed.input.verdict });
+}
+
+/**
  * Canonical text for any tool input, so equal arguments always hash equally.
  * @param parsed - The tool and its parsed input.
  * @returns The JSON text to hash.
@@ -175,7 +198,7 @@ function canonicalInput(parsed: ParsedToolInput): string {
 		case "steer_workhorse":
 			return JSON.stringify({ input: parsed.input.input });
 		default:
-			return JSON.stringify({ verdict: parsed.input.verdict });
+			return canonicalVoiceInput(parsed);
 	}
 }
 
@@ -212,6 +235,8 @@ function taggedInput(tool: CoordinatorToolName, parsed: unknown): ParsedToolInpu
 			return { tool, input: ManageWorkhorseQueueInputSchema.parse(parsed) };
 		case "steer_workhorse":
 			return { tool, input: SteerWorkhorseInputSchema.parse(parsed) };
+		case "present_step":
+			return { tool, input: PresentStepInputSchema.parse(parsed) };
 		default:
 			return { tool, input: ResolveSpokenApprovalInputSchema.parse(parsed) };
 	}
@@ -283,7 +308,10 @@ function steerExpectedTurnId(options: CodexCoordinatorToolsOptions): TurnId {
 function workhorseCall(
 	options: CodexCoordinatorToolsOptions,
 	evidence: ValidatedCallEvidence,
-	parsed: Exclude<ParsedToolInput, { readonly tool: "resolve_spoken_approval" }>,
+	parsed: Exclude<
+		ParsedToolInput,
+		{ readonly tool: "resolve_spoken_approval" } | { readonly tool: "present_step" }
+	>,
 	binding: WorkhorseOperationBinding,
 ): ValidatedWorkhorseCall {
 	const namespace = "archboard_workhorse" as const;
@@ -326,7 +354,7 @@ function validateCoordinatorToolRequest(
 		inputFingerprint: inputFingerprint(declared.namespace, parsed),
 		coordinator,
 	};
-	if (parsed.tool === "resolve_spoken_approval") {
+	if (parsed.tool === "resolve_spoken_approval" || parsed.tool === "present_step") {
 		return Object.freeze({
 			...evidence,
 			namespace: "archboard_voice",

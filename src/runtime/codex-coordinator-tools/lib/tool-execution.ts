@@ -12,6 +12,7 @@ import {
 import type { OperationId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexCoordinatorToolsOptions,
+	CoordinatorToolPresentStepOutcome,
 	DynamicToolResponse,
 } from "@/runtime/codex-coordinator-tools/lib/contract";
 import type {
@@ -31,7 +32,7 @@ interface IssuedOperationIdentity {
 }
 
 /** The tools whose ok value is the result a workhorse port call produced. */
-type WorkhorseToolName = Exclude<CoordinatorToolName, "resolve_spoken_approval">;
+type WorkhorseToolName = Exclude<CoordinatorToolName, "resolve_spoken_approval" | "present_step">;
 
 /**
  * Prove an operation identity is a current host-issued one and pair it with its wire form.
@@ -311,6 +312,22 @@ function spokenResponse(
 	});
 }
 
+/**
+ * Build the response for a walkthrough step the host presented, or could not.
+ * @param outcome - What the presentation port returned.
+ * @param operation - The host operation identity the step was presented under.
+ * @returns The frozen response.
+ */
+function presentStepResponse(
+	outcome: CoordinatorToolPresentStepOutcome,
+	operation: IssuedOperationIdentity,
+): DynamicToolResponse {
+	if (outcome.tag === "refused") {
+		return refusedResponse(outcome.reason, outcome.message);
+	}
+	return okResponse("present_step", operation.wire, outcome.value);
+}
+
 export {
 	type IssuedOperationIdentity,
 	type WorkhorseToolName,
@@ -321,4 +338,5 @@ export {
 	workhorseResponse,
 	responseForWorkhorseError,
 	spokenResponse,
+	presentStepResponse,
 };

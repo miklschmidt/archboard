@@ -3,10 +3,12 @@
 // A semantic pane hears about its board rather than receiving it. The board is
 // a file the server reads and draws; the pane holds no copy, so nothing here
 // applies content, merges anything or decides what the board becomes (ADR
-// 0023). Six kinds of news: which board this pane is on, who is writing it,
+// 0023). Seven kinds of news: which board this pane is on, who is writing it,
 // what they said they were doing, that it has a new version, what an agent is
-// doing elsewhere, and what the shell should do about the layout.
+// doing elsewhere, what the shell should do about the layout, and which step of
+// a walkthrough somebody narrating it asked for.
 
+import { PanePresentRequestSchema, type PanePresentRequest } from "@/shared/semantic-pane-context";
 import { announceSemanticBoardChange, boardAddressOf } from "@/ui/semantic-board-canvas";
 import type {
 	AgentActivityEntry,
@@ -44,6 +46,7 @@ interface MessageContext {
 	 */
 	readonly setDoing: (entries: DoingEntry[]) => void;
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
+	readonly onPresentRequest: ((request: PanePresentRequest) => void) | undefined;
 	readonly onBoardError: ((error: string) => void) | undefined;
 	readonly onAgentActivity: ((activity: readonly AgentActivityEntry[]) => void) | undefined;
 }
@@ -156,6 +159,21 @@ function paneClose(context: MessageContext): void {
 	context.onLayoutRequest?.("close");
 }
 
+/**
+ * The server asks this pane to go to a step of a walkthrough, or to leave the
+ * presentation (TASK-251). Where the pane is in a walkthrough is the pane's own,
+ * so the request goes up to whoever draws the board; a request that does not
+ * read as one is dropped, and the server hears nothing arrived.
+ * @param context The pane.
+ * @param data The message.
+ */
+function panePresent(context: MessageContext, data: WebSocketMessage): void {
+	const request = PanePresentRequestSchema.safeParse(data);
+	if (request.success) {
+		context.onPresentRequest?.(request.data);
+	}
+}
+
 const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_board: paneBoard,
 	board_lock: boardLock,
@@ -165,6 +183,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	agent_activity: agentActivity,
 	pane_open: paneOpen,
 	pane_close: paneClose,
+	pane_present: panePresent,
 };
 
 /**
