@@ -474,6 +474,7 @@ function callbackDocument(callback: CoordinatorCallback) {
 		"focused",
 		"selection",
 		"detail",
+		"news",
 	]);
 	return {
 		schema: CALLBACK_SCHEMA,
@@ -493,6 +494,7 @@ function callbackDocument(callback: CoordinatorCallback) {
 			focused: callback.semantic.focused,
 			selection: requireSubjects(callback.semantic.selection),
 			detail: requireString(callback.semantic.detail),
+			news: requireString(callback.semantic.news),
 		},
 	};
 }

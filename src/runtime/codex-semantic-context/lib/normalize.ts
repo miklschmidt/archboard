@@ -10,6 +10,7 @@ import type {
 	SemanticCursor,
 	SemanticCursorInput,
 	SemanticPane,
+	SemanticUserChange,
 	SemanticThreadLink,
 	SemanticWorkhorse,
 } from "@/runtime/codex-semantic-context/lib/types";
@@ -227,6 +228,33 @@ function normalizePane(pane: SemanticContextInput["pane"]): BoundedValue<Semanti
 	};
 }
 
+const USER_CHANGES: readonly SemanticUserChange[] = [
+	"board",
+	"variant",
+	"view",
+	"selection",
+	"focus",
+];
+
+/**
+ * What the user changed by hand, in one order and once each. Anything that is not a reviewed
+ * change is refused rather than dropped: a caller that invents one is claiming the user did
+ * something, and that claim is what decides whether the voice model is told.
+ * @param stated - What the caller said, or nothing.
+ * @returns The changes; empty when nothing was the user's.
+ * @throws {TypeError} When a value is not one of the reviewed changes.
+ */
+function userChanges(
+	stated: readonly SemanticUserChange[] | undefined,
+): readonly SemanticUserChange[] {
+	const said = stated ?? [];
+	const unknown = said.find((change) => !USER_CHANGES.includes(change));
+	if (unknown !== undefined) {
+		throw new TypeError(`pane.userChanged names "${unknown}", which is not a change a user makes.`);
+	}
+	return USER_CHANGES.filter((change) => said.includes(change));
+}
+
 /**
  * Validates the claim block; an absent claim means nobody holds the board.
  * @param claim - The claim input, if supplied.
@@ -436,6 +464,7 @@ export {
 	feedIdValue,
 	clipUtf8,
 	textValue,
+	userChanges,
 	nullableTextValue,
 	identityValue,
 	numberValue,

@@ -88,7 +88,24 @@ the coordinator knows whether the work came from a voice request. What it
 replies under `[FINAL]` is spoken without the user asking again; a
 `[COMMENTARY]` reply stays silent. The host waits a bounded time for an idle
 coordinator and otherwise falls back to the injected developer message, so an
-outcome is neither lost nor said twice. Other callbacks stay quiet context.
+outcome is neither lost nor said twice. Other operation callbacks stay quiet
+context.
+
+What a pane reports reaches the voice model only as **pane news**: one sentence
+of names saying where the user's reading now stands ("The user is now looking at
+board "payments", with "Ledger" selected (data)."), and only the parts the pane
+marked as changed by the user's own hand (ADR 0034). It describes the state,
+never the gesture, always names the board, names at most three subjects before
+counting the rest, and carries no identifier, pane letter or JSON, because a
+speech model says what is in its context. It is quiet context for the voice
+model alone: a hint for what "this" means, never a substitute for the
+coordinator's live lookup, and the coordinator is not told because it reads the
+pane through its tools. A report nobody's hand caused (a driven walkthrough
+step, a board an agent switched the pane to, a redraw after an agent's write) is
+recorded with the reason `agent` and told to nobody; appending every report was
+the feedback loop of 2026-09-20, in which each step the voice model asked for
+came back to it as news. With no voice session nothing is sent
+(`voice_inactive`).
 
 Realtime voice attaches to a persistent fast coordinator thread linked to the
 pane's workhorse, not to the workhorse itself, so quick questions, lookups and

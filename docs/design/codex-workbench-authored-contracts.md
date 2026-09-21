@@ -706,7 +706,8 @@ This retains the real `manage_workhorse_queue` operation, queue operation, RPC,
 outcome, and submission tuple. Every semantic member contains `correlation`,
 `kind`, `schema`, `semantic`, `threadLinkReason`, `threadLinkState`, and `type`.
 The semantic object contains `brief`, `capturedAtMs`, `detail`, `feedId`,
-`focused`, `origin`, `paneId`, `selection`, `sequence`, and `significance`.
+`focused`, `news`, `origin`, `paneId`, `selection`, `sequence`, and
+`significance`.
 
 The common correlation object contains `childId`, `clientUserMessageId`,
 `coordinatorCall`, `coordinatorThreadId`, `coordinatorTurnId`, `epoch`,
@@ -740,6 +741,15 @@ Inactive operation callbacks send that message to `coordinatorThreadId` through
 `thread/inject_items`. Active callbacks send the same text to that thread
 through `thread/realtime/appendText` with role `developer`. The workhorse thread
 is correlation only and is never the callback mutation target.
+
+A semantic callback is the exception: its bytes are the record, never what is
+sent. Its `semantic.news` field holds the pane news it is, one sentence of names
+built from the parts of the pane's report marked as changed by the user's own
+hand (ADR 0034), or `null`. While voice is live a callback with news appends
+that sentence alone through `thread/realtime/appendText` with role `developer`;
+one without is recorded `not_delivered` with reason `agent`. With no voice
+session every semantic callback is recorded with reason `voice_inactive` and
+nothing is injected into the coordinator thread.
 
 ## Realtime V3 start policy
 

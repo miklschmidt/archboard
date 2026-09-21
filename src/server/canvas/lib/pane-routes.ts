@@ -481,9 +481,26 @@ function noteWhatChanged(
 	if (moved && board !== null) {
 		arrivedOnBoard(registration.clientId, board);
 	}
-	if (moved || previous.focused !== registration.focused) {
-		publishPaneContext(registration.clientId, "focus");
+	const userChanged = focusChange(previous, registration);
+	if (moved || userChanged.length > 0) {
+		publishPaneContext(registration.clientId, "focus", userChanged);
 	}
+}
+
+/**
+ * What of a registration the user changed by hand. Which pane they are in moves only by their
+ * own hand, because nothing the server sends a browser changes it (ADR 0034); a pane that only
+ * moved to another board says so in its reading, which carries its own marks, and a pane that
+ * has just opened has moved nowhere.
+ * @param previous What this pane said last time, or nothing when it is new.
+ * @param registration What it says now.
+ * @returns The focus, or nothing.
+ */
+function focusChange(
+	previous: PaneRegistration | undefined,
+	registration: PaneRegistration,
+): readonly "focus"[] {
+	return previous !== undefined && previous.focused !== registration.focused ? ["focus"] : [];
 }
 
 /**

@@ -5,6 +5,7 @@ import type {
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
 import type { WorkhorseOperationEvent } from "@/runtime/codex-workhorse-operations";
+import { paneNews } from "@/runtime/codex-coordinator-callbacks/lib/pane-news";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
@@ -286,6 +287,7 @@ function semanticBase(
 				),
 			),
 			detail: event.kind === "settled_change" ? event.change.text : null,
+			news: paneNews(event),
 		}),
 	};
 }

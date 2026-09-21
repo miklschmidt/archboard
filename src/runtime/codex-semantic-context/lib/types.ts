@@ -74,9 +74,20 @@ interface SemanticBoardInput {
 	readonly version: number | null;
 }
 
+/**
+ * What of a pane's reading the user changed by hand: a part the pane marked in its report
+ * (ADR 0034), or the pane having become the one they are in.
+ */
+type SemanticUserChange = "board" | "variant" | "view" | "selection" | "focus";
+
 interface SemanticPaneInput {
 	readonly paneId: string;
 	readonly focused: boolean;
+	/**
+	 * What the user changed by hand to bring this about. Absent means nothing, which is what
+	 * a change an agent or the canvas caused says, and what nobody is told about.
+	 */
+	readonly userChanged?: readonly SemanticUserChange[];
 }
 
 interface SemanticThreadLinkInput {
@@ -359,11 +370,19 @@ interface PaneFocusEvent extends SemanticBriefFields {
 		readonly focused: boolean;
 		readonly capturedAtMs: number;
 	};
+	/**
+	 * What the user changed by hand to bring this about; empty when nothing was theirs. On the
+	 * event and never in the brief: the brief is what a workhorse is given as context, and who
+	 * moved a pane is no part of what an architecture is.
+	 */
+	readonly userChanged: readonly SemanticUserChange[];
 }
 
 interface PaneSelectionEvent extends SemanticBriefFields {
 	readonly kind: "pane_selection";
 	readonly selectionCapturedAtMs: number;
+	/** What the user changed by hand to bring this about; empty when nothing was theirs. */
+	readonly userChanged: readonly SemanticUserChange[];
 }
 
 interface FreshSemanticBrief extends SemanticBriefFields {
@@ -445,6 +464,7 @@ export {
 	type FreshBriefSource,
 	type SemanticBoardInput,
 	type SemanticPaneInput,
+	type SemanticUserChange,
 	type SemanticThreadLinkInput,
 	type SemanticWorkhorseInput,
 	type SemanticCoordinatorInput,
