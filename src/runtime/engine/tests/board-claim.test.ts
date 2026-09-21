@@ -77,20 +77,20 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		expect(lock.claimOn(board)).not.toBeNull();
 		const takeoverRequest = lock.holdBoard({
 			board,
-			holder: human("person"),
+			holder: human("user"),
 			waitMs: 0,
 			revokeClaim: true,
 		});
 		await advanceLockTime(LOCK_STEAL_GUARD_MS);
 		const takeover = await takeoverRequest;
-		expect(takeover.holder.id).toBe("person");
+		expect(takeover.holder.id).toBe("user");
 		expect(lock.claimOn(board)).toBeNull();
 		expect(lock.takeClaimRevocation(board)).toMatchObject({
-			by: { id: "person" },
+			by: { id: "user" },
 			claim: { holder: { reason: "now the queues" } },
 		});
 		expect(lock.takeClaimRevocation(board)).toBeNull();
-		lock.releaseHold(board, "person");
+		lock.releaseHold(board, "user");
 
 		for (const mode of ["expired", "deleted"] as const) {
 			const lapsed = `lapsed-${mode}`;
@@ -106,7 +106,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			}
 			const lapsedTakeover = lock.holdBoard({
 				board: lapsed,
-				holder: human("person"),
+				holder: human("user"),
 				waitMs: 0,
 				revokeClaim: true,
 			});
@@ -114,14 +114,14 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				await advanceLockTime(LOCK_STEAL_GUARD_MS);
 			}
 			const taken = await lapsedTakeover;
-			expect(taken.holder.id).toBe("person");
+			expect(taken.holder.id).toBe("user");
 			expect(lock.claimOn(lapsed)).toBeNull();
 			expect(lock.takeClaimRevocation(lapsed)).toMatchObject({
-				by: { id: "person" },
+				by: { id: "user" },
 				claim: { holder: { reason: "lapsed work" } },
 			});
 			expect(lock.takeClaimRevocation(lapsed)).toBeNull();
-			lock.releaseHold(lapsed, "person");
+			lock.releaseHold(lapsed, "user");
 		}
 
 		const idle = "idle";
@@ -146,7 +146,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		const refusal = lock
 			.holdBoard({
 				board: plain,
-				holder: human("person"),
+				holder: human("user"),
 				waitMs: 100,
 				revokeClaim: true,
 			})
@@ -161,7 +161,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		lock.onBoardLockChanged(null);
 		for (const board of boards) {
 			lock.releaseClaim(board);
-			for (const id of ["person", "camera", "one-write"]) {
+			for (const id of ["user", "camera", "one-write"]) {
 				lock.releaseHold(board, id);
 			}
 		}

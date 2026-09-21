@@ -76,7 +76,7 @@ async function settleApproval(
 }
 
 /**
- * Whether a decision is a person actually approving the effect.
+ * Whether a decision is a user actually approving the effect.
  * @param decision The decision.
  * @returns Whether the effect was approved.
  */
@@ -103,7 +103,7 @@ function childDisconnectedDecision(decision: DynamicToolApprovalDecision): boole
 }
 
 /**
- * What a caller is told when its effect was not approved: that a person declined it, or that
+ * What a caller is told when its effect was not approved: that a user declined it, or that
  * nobody answered in time.
  * @param decision The decision.
  * @returns The refusal reason and message.
@@ -113,12 +113,12 @@ function approvalRefusal(decision: DynamicToolApprovalDecision): {
 	readonly message: string;
 } {
 	return decision.outcome === "declined"
-		? { reason: "approval_declined", message: "The person declined this dynamic effect." }
+		? { reason: "approval_declined", message: "The user declined this dynamic effect." }
 		: { reason: "expired", message: "The visual approval expired before the effect could run." };
 }
 
 /**
- * Put the request in front of a person, settling it as unanswered if it cannot even be shown.
+ * Put the request in front of a user, settling it as unanswered if it cannot even be shown.
  * @param prepared The prepared mutation.
  * @param options The dynamic tools options.
  */
@@ -182,7 +182,7 @@ function checkedDecision(
 }
 
 /**
- * Ask a person about one mutation and settle exactly one answer.
+ * Ask a user about one mutation and settle exactly one answer.
  *
  * Whatever comes back is weighed against the request's own deadline before it is believed: an
  * approval that arrived too late becomes the expiry it is, and a decision the request cannot

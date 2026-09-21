@@ -155,9 +155,9 @@ recipe names.
   answer added.
 - **Claims.** For work of several writes, `archboard claim --board <board>
 --reason "<campaign>"` first and `archboard release --board <board>` after; the
-  reason is what the pane shows the person whose board you took, and a claim
+  reason is what the pane shows the user whose board you took, and a claim
   without one is refused. A claim is on a board the vault already holds, so a
-  board you are creating is claimed after the write that makes it. A person can
+  board you are creating is claimed after the write that makes it. A user can
   take the claim back: your next write is then refused once, nothing is rolled
   back, and you stop and say so.
 

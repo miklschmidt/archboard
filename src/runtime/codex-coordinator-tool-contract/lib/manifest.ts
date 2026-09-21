@@ -25,7 +25,7 @@ type ManifestName = "workhorse" | "voice";
 const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
 	"fe8dd9bfaf91b37cbae31136ccdfc4eb1106728b40d2bc3ea01036606d6f748f" as const;
 const ARCHBOARD_VOICE_MANIFEST_SHA256 =
-	"23273d22b3d2f28926ab86f1b0274a297eeb1b79b0083f7a9bb2202510f1987d" as const;
+	"03ce81fddadd9bff10aec0274650644624796bc87e3f1f547b5ae12e44103dba" as const;
 
 const MANIFEST_FILES = Object.freeze({
 	archboard_workhorse: "archboard-workhorse.json",

@@ -7,7 +7,7 @@ import {
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
 /**
- * Tell the coordinator and the voice model when a person moves a presented walkthrough by hand
+ * Tell the coordinator and the voice model when a user moves a presented walkthrough by hand
  * or leaves it, so the narration follows the picture (TASK-251). Changes are serialized behind
  * session startup and sent to the coordinator first, as the board catalogue is; a lost response
  * is never retried, because the next change says where the picture is anyway.
@@ -37,7 +37,7 @@ export function watchPresentationChanges(
 	const { coordinatorThreadId: threadId } = session.binding;
 	/**
 	 * Tell the coordinator, without retrying an unknown outcome.
-	 * @param text What the person did.
+	 * @param text What the user did.
 	 */
 	const injectCoordinator = async (text: string): Promise<void> => {
 		try {
@@ -47,7 +47,7 @@ export function watchPresentationChanges(
 			});
 		} catch {
 			if (current())
-				onError("The coordinator was not confirmed told that the person moved the presentation.");
+				onError("The coordinator was not confirmed told that the user moved the presentation.");
 		}
 	};
 	/**
@@ -62,12 +62,12 @@ export function watchPresentationChanges(
 				: options.session.realtimeAppendText({ threadId, role: "developer", text: voice.text }));
 		} catch {
 			if (current())
-				onError("The voice model was not confirmed told that the person moved the presentation.");
+				onError("The voice model was not confirmed told that the user moved the presentation.");
 		}
 	};
 	/**
 	 * Deliver one change to both histories, once the session has started.
-	 * @param change What the person did.
+	 * @param change What the user did.
 	 */
 	const deliver = async (change: RealtimePresentationChange): Promise<void> => {
 		try {
@@ -82,7 +82,7 @@ export function watchPresentationChanges(
 		await appendVoice(texts.voice);
 	};
 	const unsubscribe = source.subscribe((change) => {
-		// What a person did before the narrator existed is not news to it: it begins by asking
+		// What a user did before the narrator existed is not news to it: it begins by asking
 		// for the first step, which puts the pane there whatever was on screen.
 		if (!session.started) return;
 		tail = tail.then(() => deliver(change)).catch(() => undefined);

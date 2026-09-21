@@ -279,7 +279,7 @@ approximated another way.
 - **version moved (exit 5)**: Somebody wrote since you read; `semantic show`
   again and redo the change on what is there.
 - **held or claim revoked (exit 5)**: Another writer holds the board, or a
-  person released your claim; stop and say so.
+  user released your claim; stop and say so.
 
 A `warnings` list on a successful answer says what the write did that you
 should know: `UNKNOWN_VOCABULARY` means the board references vocabulary the

@@ -218,7 +218,7 @@ const paneCloseContract = defineCommand({
 		},
 	],
 	/**
-	 * Takes one pane off screen, reminding the person that the board it showed
+	 * Takes one pane off screen, reminding the user that the board it showed
 	 * is still open on the canvas.
 	 * @param input - The ingress input holding the staged tokens.
 	 * @param context - The command context.
@@ -256,7 +256,7 @@ const panesContract = defineCommand({
 	summary: "What every pane is showing and reading",
 	description:
 		"Reports where each pane sits, which board and variant it shows, which view it is read " +
-		"through, and what the person has picked out. View state only: never board content.",
+		"through, and what the user has picked out. View state only: never board content.",
 	examples: ["archboard browser panes", "archboard browser panes --text"],
 	parameters: [
 		{
@@ -293,7 +293,7 @@ const panesContract = defineCommand({
 				id: "text",
 				when: { key: "text", present: true },
 				mode: "text",
-				description: "The read-out, as a person reads it",
+				description: "The read-out, as a user reads it",
 				presentation: ["result"],
 			},
 		],

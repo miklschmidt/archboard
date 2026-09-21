@@ -53,7 +53,7 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
 			workhorseSha256: "fe8dd9bfaf91b37cbae31136ccdfc4eb1106728b40d2bc3ea01036606d6f748f",
-			voiceSha256: "23273d22b3d2f28926ab86f1b0274a297eeb1b79b0083f7a9bb2202510f1987d",
+			voiceSha256: "03ce81fddadd9bff10aec0274650644624796bc87e3f1f547b5ae12e44103dba",
 		});
 		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");

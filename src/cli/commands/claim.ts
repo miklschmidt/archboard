@@ -6,12 +6,12 @@ import { claimRefusals, commonRefusals } from "@/cli/command-contract/common";
 const ClaimReasonInputSchema = z
 	.string({
 		error:
-			'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
+			'claim needs --reason: it is what the pane shows the user whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
 	})
 	.trim()
 	.min(
 		1,
-		'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
+		'claim needs --reason: it is what the pane shows the user whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
 	);
 const ClaimDurationInputSchema = z
 	.string()
@@ -68,7 +68,7 @@ const claimContract = defineCommand({
 		"Takes or extends a board lease for work you know in advance is substantial. An ordinary " +
 		"write already takes the board for as long as it takes; a claim keeps it between the writes, " +
 		"so nobody else writes into the gaps. Every write to the board while the claim stands goes " +
-		"under it, and a write does not extend it. A person can release the claim with one control: " +
+		"under it, and a write does not extend it. A user can release the claim with one control: " +
 		"your next act is then refused once, nothing is rolled back, and you stop.",
 	examples: [
 		'archboard claim --board payments --reason "redrawing the payment path"',
@@ -135,7 +135,7 @@ const claimContract = defineCommand({
 		},
 	],
 	/**
-	 * Takes or extends the caller's lease on the requested board and explains, in the person's
+	 * Takes or extends the caller's lease on the requested board and explains, in the user's
 	 * words, what the claim means for the panes showing it.
 	 * @param input - The parsed claim input.
 	 * @param context - The command execution context.
@@ -152,7 +152,7 @@ const claimContract = defineCommand({
 			result.created
 				? `"${result.board}" is yours until ${until}, or until you release it.`
 				: `Your claim on "${result.board}" now runs to ${until}.`
-		} Every write you make to it goes under the claim, and nobody else writes to it meanwhile. Panes showing it are read-only to people until you release it; a person can release your claim with one explicit control, you will be told, and what you have already written stays. Leave the board sensible after each write. Release it with \`archboard release --board ${result.board}\`.`;
+		} Every write you make to it goes under the claim, and nobody else writes to it meanwhile. Panes showing it are read-only to users until you release it; a user can release your claim with one explicit control, you will be told, and what you have already written stays. Leave the board sensible after each write. Release it with \`archboard release --board ${result.board}\`.`;
 		return { result: ClaimResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });

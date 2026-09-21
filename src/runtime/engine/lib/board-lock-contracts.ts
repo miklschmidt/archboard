@@ -5,7 +5,7 @@ type HolderKind = "human" | "agent";
 /**
  * Who has a board, and until when.
  *
- * `id` is a pane id for a person, a per-write id for an ordinary agent write,
+ * `id` is a pane id for a user, a per-write id for an ordinary agent write,
  * and the claim id for every write under a claim. That identity makes the lock
  * reentrant: asking again renews rather than blocks. `since` never moves on
  * renewal because refusals answer when the hold began, not its latest beat.
@@ -60,9 +60,9 @@ interface LockRequest {
 	/** Lease duration, distinct from a claim's campaign deadline. */
 	readonly leaseMs?: number;
 	/**
-	 * Only the person's explicit take-back sets this (ADR 0022). It ends a
+	 * Only the user's explicit take-back sets this (ADR 0022). It ends a
 	 * standing claim and never a per-write hold; a content gesture never sets
-	 * it, because a claimed board is read-only to people until they ask.
+	 * it, because a claimed board is read-only to users until they ask.
 	 */
 	readonly revokeClaim?: boolean;
 	/** Cancels waiting, never a synchronous write already inside the boundary. */
@@ -100,7 +100,7 @@ function processName(): string {
 }
 
 /**
- * A duration as a person reads one.
+ * A duration as a user reads one.
  * @param ms The duration in milliseconds.
  * @returns The duration in seconds, to one decimal.
  */
@@ -119,14 +119,14 @@ function clock(iso: string): string {
 }
 
 /**
- * Who is holding the board, in the words a refusal uses: a person, an agent,
+ * Who is holding the board, in the words a refusal uses: a user, an agent,
  * or an agent that has claimed it, with the reason it gave.
  * @param holder The holder.
  * @returns The description.
  */
 function describeWriter(holder: Readonly<LockHolder>): string {
 	if (holder.kind === "human") {
-		return "the person at the canvas";
+		return "the user at the canvas";
 	}
 	const claimed = Boolean(holder.claimed);
 	if (claimed) {
