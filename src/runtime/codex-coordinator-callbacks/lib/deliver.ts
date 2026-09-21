@@ -381,20 +381,20 @@ function turnDelivery(
  * @param callback - The normalized callback.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @param text - The encoded callback, kept on the record.
+ * @param reason - Why nobody is told.
  * @returns The delivery record.
  */
 function recordOnly(
 	callback: CoordinatorCallback,
 	evidence: CallbackDeliveryEvidence,
 	text: string,
+	reason: CoordinatorCallbackDeliveryReason,
 ): CoordinatorCallbackDelivery {
 	return makeDelivery(callback, evidence, {
 		attemptedAtMs: null,
 		path: "silent",
 		outcome: "not_delivered",
-		// With voice live the only thing that keeps a semantic callback from anybody is that
-		// nothing of it was the user's own doing: an agent or the canvas caused it.
-		reason: callback.correlation.realtimeGeneration === null ? "voice_inactive" : "agent",
+		reason,
 		text,
 	});
 }
@@ -419,16 +419,49 @@ function deliverPaneNews(
 	const generation = callback.correlation.realtimeGeneration;
 	const { news } = callback.semantic;
 	if (generation === null || news === null) {
-		return Promise.resolve(recordOnly(callback, evidence, text));
+		// With voice live the only thing that keeps a semantic callback from anybody is that
+		// nothing of it was the user's own doing: an agent or the canvas caused it.
+		const reason = generation === null ? "voice_inactive" : "agent";
+		return Promise.resolve(recordOnly(callback, evidence, text, reason));
 	}
 	return deliverThroughVoice(callback, options, isDisposed, evidence, generation, news);
 }
 
 /**
+ * What an operation callback does while a voice generation is live. A terminal outcome runs the
+ * coordinator, which decides what the user hears, or is injected into its thread when the host
+ * has no way to run it. The rest (accepted, queued, started, progress) reach nobody: the tool
+ * result already told the coordinator how its delegation went in, progress is what
+ * inspect_workhorse reads, and the correlation envelope they used to be appended as is machine
+ * text a speech model says out loud (TASK-293).
+ * @param callback - The normalized operation callback.
+ * @param options - The host authorities and ports.
+ * @param isDisposed - Whether the callback module has been disposed.
+ * @param evidence - The ordering and freshness evidence for the delivery record.
+ * @param text - The encoded callback.
+ * @returns The delivery record.
+ */
+function deliverOperationWhileVoiceIsLive(
+	callback: CoordinatorCallback,
+	options: CoordinatorCallbackOptions,
+	isDisposed: () => boolean,
+	evidence: CallbackDeliveryEvidence,
+	text: string,
+): Promise<CoordinatorCallbackDelivery> {
+	if (!reportsTerminalOutcome(callback)) {
+		return Promise.resolve(recordOnly(callback, evidence, text, "recorded_only"));
+	}
+	const turnPort = options.coordinatorTurn;
+	return turnPort === undefined
+		? deliverThroughInjection(callback, options, isDisposed, evidence, text)
+		: deliverThroughCoordinatorTurn(callback, options, isDisposed, evidence, turnPort, text);
+}
+
+/**
  * Deliver one callback down exactly one path, at most once. While a voice generation is live a
- * terminal workhorse outcome runs the coordinator, which decides what the person hears, and any
- * other operation callback is quiet context for the voice model; with no voice session an
- * operation callback is an injected developer message.
+ * terminal workhorse outcome runs the coordinator, which decides what the user hears, and any
+ * other operation callback is recorded and told to nobody; with no voice session an operation
+ * callback is an injected developer message.
  *
  * A semantic callback (a change, a focus, a selection) reaches the voice model only as pane news:
  * one sentence of names saying where the user's reading now stands, and only for what the pane
@@ -459,10 +492,7 @@ async function deliverOne(
 		return deliverPaneNews(callback, options, isDisposed, evidence, text);
 	}
 	if (generation !== null) {
-		const turnPort = reportsTerminalOutcome(callback) ? options.coordinatorTurn : undefined;
-		return turnPort === undefined
-			? deliverThroughVoice(callback, options, isDisposed, evidence, generation, text)
-			: deliverThroughCoordinatorTurn(callback, options, isDisposed, evidence, turnPort, text);
+		return deliverOperationWhileVoiceIsLive(callback, options, isDisposed, evidence, text);
 	}
 	return deliverThroughInjection(callback, options, isDisposed, evidence, text);
 }

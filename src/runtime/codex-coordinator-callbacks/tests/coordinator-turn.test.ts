@@ -52,14 +52,22 @@ describe("a terminal workhorse outcome while voice is live", () => {
 		}
 	});
 
-	test("leaves every outcome that is not terminal as quiet context for the voice model", async () => {
+	test("tells nobody of an outcome that is not terminal, and never appends its envelope to the voice session", async () => {
 		const { h, reports, callbacks } = withTurnPort(true, DELIVERED);
 		try {
 			for (const type of ["accepted", "queued", "started", "progress"] as const) {
+				// The tool result already told the coordinator how its delegation went in, and the
+				// envelope is machine text a speech model would say out loud (TASK-293).
 				const delivery = await callbacks.enqueue(operationEvent(h.ids, type));
-				expect(delivery.path).toBe("realtime_appendText");
+				expect(delivery).toMatchObject({
+					path: "silent",
+					outcome: "not_delivered",
+					reason: "recorded_only",
+				});
 			}
 			expect(reports).toHaveLength(0);
+			expect(h.realtimeRequests).toHaveLength(0);
+			expect(h.injections).toHaveLength(0);
 		} finally {
 			callbacks.dispose();
 			close(h);
