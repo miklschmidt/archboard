@@ -3,20 +3,20 @@
 // The failures this guards are the ones that make a narrator talk about a
 // picture nobody can see: answering before the step has arrived, mistaking the
 // pane's previous position for an answer, going on as if nothing happened when
-// a person stepped by hand, and waiting for ever on a pane that has gone.
+// a user stepped by hand, and waiting for ever on a pane that has gone.
 
 import { describe, expect, test } from "bun:test";
-import { createPanePresentations, type PersonPresentationChange } from "@/server/canvas/index";
+import { createPanePresentations, type UserPresentationChange } from "@/server/canvas/index";
 import type {
 	PanePresentRequest,
 	SemanticPaneContext,
 	SemanticPanePresentation,
 } from "@/shared/semantic-pane-context/index";
 
-/** One port over one live pane, keeping what the pane was sent and what a person did. */
+/** One port over one live pane, keeping what the pane was sent and what a user did. */
 function harness(live = true) {
 	const sent: PanePresentRequest[] = [];
-	const changes: PersonPresentationChange[] = [];
+	const changes: UserPresentationChange[] = [];
 	const port = createPanePresentations({
 		paneFor: (paneId) =>
 			live && paneId === "pane-a" ? { clientId: "client-a", board: "pipeline" } : null,
@@ -25,7 +25,7 @@ function harness(live = true) {
 			return true;
 		},
 	});
-	port.onPersonChange((change) => changes.push(change));
+	port.onUserChange((change) => changes.push(change));
 	let sequence = 0;
 	/**
 	 * The pane says where its presentation is.
@@ -53,7 +53,7 @@ function harness(live = true) {
  * A position in the one walkthrough these tests present.
  * @param beat Which beat.
  * @param arrived Whether it has finished arriving.
- * @param answering The request it answers, or null for a person's choice.
+ * @param answering The request it answers, or null for a user's choice.
  * @returns The position.
  */
 function at(beat: number, arrived: boolean, answering: string | null): SemanticPanePresentation {
@@ -66,16 +66,16 @@ describe("a walkthrough step asked of a pane", () => {
 		const asked = port.present({ paneId: "pane-a", walkthrough: "w1", beat: 2 });
 		const request = sent[0]!.request;
 		expect(sent[0]).toMatchObject({ type: "pane_present", walkthrough: "w1", beat: 2 });
-		// Still where a person left it, then on its way: neither is an answer.
+		// Still where a user left it, then on its way: neither is an answer.
 		says(at(1, true, null));
 		says(at(2, false, request));
 		says(at(2, true, request));
 		expect(await asked).toEqual({ kind: "arrived", presentation: at(2, true, request) });
-		// The step the narrator asked for is not a person's change.
+		// The step the narrator asked for is not a user's change.
 		expect(changes.filter((change) => change.presentation?.beat === 2)).toEqual([]);
 	});
 
-	test("is refused when a person steps by hand while it is on its way, and the change is told", async () => {
+	test("is refused when a user steps by hand while it is on its way, and the change is told", async () => {
 		const { port, sent, says, changes } = harness();
 		says(at(0, true, null));
 		const asked = port.present({ paneId: "pane-a", walkthrough: "w1", beat: 1 });
@@ -85,7 +85,7 @@ describe("a walkthrough step asked of a pane", () => {
 		expect(changes.at(-1)).toMatchObject({ paneId: "pane-a", presentation: { beat: 3 } });
 	});
 
-	test("tells a person's step and a person's leaving, once each", () => {
+	test("tells a user's step and a user's leaving, once each", () => {
 		const { says, changes } = harness();
 		says(at(0, true, null));
 		says(at(0, true, null));
@@ -96,7 +96,7 @@ describe("a walkthrough step asked of a pane", () => {
 		expect(changes.map((change) => change.presentation?.beat ?? null)).toEqual([0, 1, null]);
 	});
 
-	test("asked to leave is answered when the pane presents nothing, and that is not a person leaving", async () => {
+	test("asked to leave is answered when the pane presents nothing, and that is not a user leaving", async () => {
 		const { port, sent, says, changes } = harness();
 		says(at(2, true, null));
 		const asked = port.present({ paneId: "pane-a", walkthrough: null, beat: 0 });

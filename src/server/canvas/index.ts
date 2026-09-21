@@ -28,7 +28,7 @@ export {
 export {
 	createPanePresentations,
 	type PanePresentations,
-	type PersonPresentationChange,
+	type UserPresentationChange,
 	type PresentOutcome,
 } from "@/server/canvas/lib/pane-presentation";
 export {

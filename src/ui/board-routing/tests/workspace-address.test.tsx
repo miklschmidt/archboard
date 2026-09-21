@@ -300,11 +300,11 @@ test("an open is not over when the server answers it, but when the pane is seen 
 	expect(shownSearch()).toBe("paneA=billing");
 });
 
-test("a person's gesture during a restore waits for the slot and is never stranded", async () => {
+test("a user's gesture during a restore waits for the slot and is never stranded", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=billing");
 	expect(shell.opens).toHaveLength(1);
-	// The person clicks while the restore's open is still in the air. Abandoning
+	// The user clicks while the restore's open is still in the air. Abandoning
 	// the restore must not stop the address bar watching what it left running.
 	let granted: Permission | null = null;
 	const claimed = shell.addressing
@@ -351,7 +351,7 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	expect(order).toEqual(["first", "second"]);
 });
 
-test("a person's open pushes a history entry only when it moved the pane", async () => {
+test("a user's open pushes a history entry only when it moved the pane", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=payments");
 	await settle();

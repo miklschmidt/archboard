@@ -72,7 +72,7 @@ archboard semantic new "Skill install" --doing "explaining how install-skill wri
 {
   "level": "module",
   "nodes": [
-    { "name": "Person", "kind": "external", "responsibility": "Runs archboard install-skill in a repository" },
+    { "name": "User", "kind": "external", "responsibility": "Runs archboard install-skill in a repository" },
     { "name": "install-skill command", "kind": "module", "responsibility": "Installs the skill files, then writes the setup",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts" } },
     { "name": "Setup block", "kind": "module", "responsibility": "Writes the vault and CLI setup into the agent document",
@@ -80,15 +80,15 @@ archboard semantic new "Skill install" --doing "explaining how install-skill wri
     { "name": "git", "kind": "external", "responsibility": "Answers whether a path is ignored" }
   ],
   "edges": [
-    { "from": "Person", "to": "install-skill command", "kind": "call", "label": "install-skill" },
+    { "from": "User", "to": "install-skill command", "kind": "call", "label": "install-skill" },
     { "from": "install-skill command", "to": "Setup block", "kind": "call", "label": "writeSetup", "emphasis": "hero" },
     { "from": "Setup block", "to": "git", "kind": "call", "label": "check-ignore" }
   ],
   "flows": [{
     "name": "Repository setup",
-    "participants": ["Person", "install-skill command", "Setup block", "git"],
+    "participants": ["User", "install-skill command", "Setup block", "git"],
     "steps": [
-      { "from": "Person", "to": "install-skill command", "label": "install-skill" },
+      { "from": "User", "to": "install-skill command", "label": "install-skill" },
       { "from": "install-skill command", "to": "Setup block", "label": "writeSetup" },
       { "as": "find", "from": "Setup block", "to": "Setup block", "label": "find the agent document", "kind": "self", "repeat": 2, "note": "tries CLAUDE.md then AGENTS.md and keeps the first that exists; when neither does, the skill target names the one to create" },
       { "as": "write", "from": "Setup block", "to": "Setup block", "label": "write the setup block", "kind": "self" },

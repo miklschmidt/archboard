@@ -3,7 +3,7 @@
 // The loop has two readers and each must be told its half: the voice model paces the talk and
 // the coordinator presents each step. What is guarded is that a presentation start tells both,
 // that an ordinary start tells neither, that a long walkthrough cannot crowd out the rest of the
-// start, and that a person's hand on the keys reaches both models, the voice as something to
+// start, and that a user's hand on the keys reaches both models, the voice as something to
 // answer now and a departure as something to stop for.
 
 import { expect, test } from "bun:test";
@@ -39,7 +39,7 @@ test("a presentation start names the walkthrough to both models and hands neithe
 		expect(presented?.prompt).toContain("For the board");
 		expect(presented?.realtimeStartInstructions).toContain("For the board");
 		expect(presented?.realtimeStartInstructions).toContain("present_step");
-		// Pressing Narrate is the person's request, so the session opens with it already made
+		// Pressing Narrate is the user's request, so the session opens with it already made
 		// and the voice model has something to answer without being spoken to.
 		expect(presented?.initialItems?.at(-1)?.role).toBe("user");
 		expect(plain?.initialItems?.every((item) => item.role === "developer")).toBe(true);
@@ -74,7 +74,7 @@ test("a start carries a walkthrough's name cut to a bound, never the whole of a 
 	}
 });
 
-test("a person's step reaches both models, the voice as speech it says; leaving is quiet context; and the watch is released", async () => {
+test("a user's step reaches both models, the voice as speech it says; leaving is quiet context; and the watch is released", async () => {
 	const source = changeSource();
 	const h = harness(undefined, source);
 	const { correlation } = await started(h, "", { walkthrough: "w1", name: "For the board" });

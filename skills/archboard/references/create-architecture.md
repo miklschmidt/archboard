@@ -5,7 +5,7 @@ wired": read the source, do the evidence steps in `SKILL.md`, walk its
 catalogue, write one payload, look at the picture.
 
 A board nobody can follow whole (a dozen or more parts, routes crossing the
-page) is written with board `views` from the start, one per reading a person
+page) is written with board `views` from the start, one per reading a user
 will want: one path, one container's internals, the parts one concern
 touches. Scope each to the reading, not to a group you already have, and keep
 what it selects joined: a part whose only relationship points at a part the

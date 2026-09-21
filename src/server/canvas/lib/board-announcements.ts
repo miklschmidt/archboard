@@ -92,7 +92,7 @@ function announceDoing(board: string, entry: DoingEntry): void {
  * Refuse a write that did not say what it was doing.
  *
  * The refusal teaches, because being made to write the sentence is the point:
- * a person watching a diagram change has no other way to know what is being
+ * a user watching a diagram change has no other way to know what is being
  * attempted, and an intent no diff can recover is one only the writer can state.
  * @param res The response the refusal goes out on.
  * @param board The board the write named.
@@ -111,7 +111,7 @@ function refuseUndescribedWrite(
 		error:
 			`This write to "${board}" says nothing about what it is doing (${problem}). Say it in one short ` +
 			'line, in the present tense — "adding the payment queue", "rerouting orders through it" — and it ' +
-			"goes up on the canvas as the write lands, so the person at the board can see what you are up to. " +
+			"goes up on the canvas as the write lands, so the user at the board can see what you are up to. " +
 			`On the command line that is \`--doing "..."\`, and on the API it is \`?doing=\` (${requestPath}). ` +
 			`A claim's \`reason\` is the overall reason and does not stand in for this: ` +
 			"this is the step. Nothing was written.",

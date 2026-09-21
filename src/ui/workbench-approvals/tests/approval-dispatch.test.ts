@@ -246,7 +246,7 @@ describe("ordinary approval payloads", () => {
 		});
 	});
 
-	test("sends legacy review decisions with the person's decline reason", async () => {
+	test("sends legacy review decisions with the user's decline reason", async () => {
 		const patch = only(applyPatchApproval());
 		const exec = only(execCommandApproval());
 		const approved = await send(patch, "approve", seeded(patch));

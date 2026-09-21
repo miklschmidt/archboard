@@ -76,7 +76,7 @@ const FIRST_CONTROL = '[role="radio"][tabindex="0"], [role="radio"], button, inp
  * Put keyboard focus on the form's first control once it mounts. The dialog
  * opens before the saved settings arrive, so its own initial focus can only
  * find the close control; the form corrects that when it appears, unless
- * the person has already moved.
+ * the user has already moved.
  * @returns The ref for the form's root.
  */
 function useFirstControlFocus(): RefObject<HTMLDivElement | null> {
@@ -84,7 +84,7 @@ function useFirstControlFocus(): RefObject<HTMLDivElement | null> {
 	useEffect(() => {
 		// One frame later: the radio group marks its chosen item after mounting.
 		const frame = requestAnimationFrame(() => {
-			if (!personHasMoved(root.current)) {
+			if (!userHasMoved(root.current)) {
 				root.current?.querySelector<HTMLElement>(FIRST_CONTROL)?.focus();
 			}
 		});
@@ -99,16 +99,16 @@ function useFirstControlFocus(): RefObject<HTMLDivElement | null> {
  * Whether keyboard focus already sits on a control of the dialog other than
  * its close control, which is where the dialog's own initial focus lands.
  * @param form The form's root, or null before it mounts.
- * @returns True when the person has moved and focus must stay put.
+ * @returns True when the user has moved and focus must stay put.
  */
-function personHasMoved(form: HTMLElement | null): boolean {
+function userHasMoved(form: HTMLElement | null): boolean {
 	const active = document.activeElement;
 	if (!(active instanceof HTMLElement) || form === null) {
 		return false;
 	}
 	const inDialog = form.closest('[role="dialog"]')?.contains(active) === true;
 	// The dialog's own initial focus lands on its close control or, when the
-	// form mounted with it, on the first radio; neither is a move by the person.
+	// form mounted with it, on the first radio; neither is a move by the user.
 	const placedByDialog =
 		active.closest('[data-slot="dialog-close"]') !== null ||
 		active.closest('[role="radiogroup"]') !== null;

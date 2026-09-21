@@ -44,11 +44,11 @@ with the reason). These are the rules that will not stop you:
   `src/runtime/semantic-board-store` is the one place one is read or written.
   Every write goes through `atomic-write.ts`, fsync included, and is committed
   before it is answered.
-- **Agents author, people read.** The browser is a viewer: it writes nothing,
+- **Agents author, users read.** The browser is a viewer: it writes nothing,
   holds board content only as a read-only cache of what the server said (read
   again when the server announces a new version, ADR 0023), and owns only
   presentation — the camera, the active view, the walkthrough position and what
-  somebody picked out. A person's one control over a board is taking back
+  somebody picked out. A user's one control over a board is taking back
   somebody else's claim.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
   write-boundary middleware, deny by default. Claim before substantial work.

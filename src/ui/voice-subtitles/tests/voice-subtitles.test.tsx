@@ -1,7 +1,7 @@
-// The subtitles as a person sees them.
+// The subtitles as a user sees them.
 //
 // What is guarded: a word is on screen as soon as it arrives and earlier speech is not replayed;
-// the subtitle goes after a real silence; the words are the voice model's and never the person's;
+// the subtitle goes after a real silence; the words are the voice model's and never the user's;
 // and turning subtitles off takes them away at once and stays off for the next visit.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
@@ -45,7 +45,7 @@ async function pass(ms: number): Promise<void> {
 }
 
 /**
- * A transcript in which the voice model has said some words after the person spoke.
+ * A transcript in which the voice model has said some words after the user spoke.
  * @param said What the voice model has said so far.
  * @returns The transcript.
  */
@@ -59,7 +59,7 @@ function transcriptOf(said: string): readonly SubtitleSource[] {
 /** Before anybody spoke. */
 const NOTHING_SAID_YET: readonly SubtitleSource[] = [];
 
-/** Only what the person said. */
+/** Only what the user said. */
 const SAID_BY_THE_PERSON = transcriptOf("").slice(0, 1);
 
 /**
@@ -98,7 +98,7 @@ test("the subtitle goes once the voice has been silent for the linger", async ()
 	expect(onScreen()).toBeNull();
 });
 
-test("what the person said is never subtitled", () => {
+test("what the user said is never subtitled", () => {
 	const view = render(<VoiceSubtitles transcript={NOTHING_SAID_YET} enabled reducedMotion />);
 	view.rerender(<VoiceSubtitles transcript={SAID_BY_THE_PERSON} enabled reducedMotion />);
 	expect(onScreen()).toBeNull();

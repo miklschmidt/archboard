@@ -4,7 +4,7 @@
 // of choosing it and the pane answers by saying where it got to. What is
 // checked is what a narrator depends on: the step asked for is the one on
 // screen, the pane says which request it answers and when the step has finished
-// arriving, and a person's hand on the keys takes the position back for good.
+// arriving, and a user's hand on the keys takes the position back for good.
 
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -113,7 +113,7 @@ test("a step still gliding is reported as on its way, and as arrived once the gl
 	expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: true, answering: "request-1" });
 });
 
-test("a person stepping by hand takes the position back, and the same request does not return it", async () => {
+test("a user stepping by hand takes the position back, and the same request does not return it", async () => {
 	serving();
 	const reported = driven(1, true);
 	await settle();

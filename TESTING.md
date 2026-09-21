@@ -22,7 +22,7 @@ as proof.
 A board is one `.semantic.json` document in a vault, holding every variant of
 that architecture. There is no default vault: set `ARCHBOARD_VAULT` before
 `./bin/canvas start`, because the server does the vault I/O and refuses to start
-without one (ADR 0015). The browser at <http://127.0.0.1:3000> is where a person
+without one (ADR 0015). The browser at <http://127.0.0.1:3000> is where a user
 reads a board; authoring needs no browser at all.
 
 A vault may hold `.excalidraw.md` notes from before ADR 0023. Nothing here reads
@@ -101,7 +101,7 @@ bun test tests/system/canvas-state/codex-workbench-production.test.ts
 
 Before accepting a release that changes the workbench or realtime path, run
 the [clean-process real-voice smoke](docs/design/codex-workbench-voice-acceptance.md):
-deterministic gates first, then a person proves microphone, speaker, sign-in,
+deterministic gates first, then a user proves microphone, speaker, sign-in,
 reconnect, callback and spoken approval.
 
 The complete local gate is `bun run check`; `docs/agents/test-suite.md`
@@ -114,7 +114,7 @@ real Codex authors on pinned Flask checkouts, one blinded grader run by Codex
 or by Claude Code (chosen when grading runs; the same batch can be graded by
 both and the report says how they agree), deterministic checks and a
 comparison report. It is never part of `bun run check`; every run calls a
-model, so a person starts it:
+model, so a user starts it:
 
 ```bash
 bun run eval:skill check                  # validate the inputs, no model
