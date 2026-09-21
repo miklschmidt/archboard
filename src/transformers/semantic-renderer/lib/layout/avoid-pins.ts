@@ -1,3 +1,7 @@
+import {
+	projectedCardPins,
+	usedCardPins,
+} from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import { CARD_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	ROUTE_NUDGE_DISTANCE,
@@ -18,6 +22,17 @@ import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry
 export type AlignedPin = { face: Face; position: number };
 export type AlignedPins = Map<string, Map<string, AlignedPin[]>>;
 
+/**
+ * Read physical alternatives in a shared endpoint channel.
+ * @param pins Grouped alternatives.
+ * @param id Endpoint identity.
+ * @param channel Connection channel.
+ * @returns Existing alternatives, or an empty list.
+ */
+function pinsAt(pins: AlignedPins, id: string, channel: string): readonly AlignedPin[] {
+	return pins.get(id)?.get(channel) ?? [];
+}
+
 const AXES = [
 	["x", "width", "y", "height", "SOUTH", "NORTH"],
 	["y", "height", "x", "width", "EAST", "WEST"],
@@ -31,7 +46,7 @@ const AXES = [
  * @param distance Minimum separation.
  * @returns Whether the pins are too close.
  */
-function nearby(box: Box, one: AlignedPin, two: AlignedPin, distance: number): boolean {
+export function nearby(box: Box, one: AlignedPin, two: AlignedPin, distance: number): boolean {
 	if (one.face !== two.face) return false;
 	const extent = one.face === "NORTH" || one.face === "SOUTH" ? box.width : box.height;
 	return Math.abs(one.position - two.position) * extent < distance;
@@ -144,6 +159,7 @@ class PinCandidates {
 		private readonly channels: ReadonlyMap<string, readonly string[]>,
 		private readonly edges: readonly ElkExtendedEdge[],
 		private readonly offered: AlignedPins = new Map(),
+		private readonly used: AlignedPins = new Map(),
 	) {
 		for (const edge of edges) {
 			if (edge.sources[0] !== edge.targets[0]) continue;
@@ -171,6 +187,25 @@ class PinCandidates {
 			edge.id,
 			anchorCoordinate(edge),
 		);
+	}
+
+	/**
+	 * Offer clear continuations of existing native rails to each ordinary endpoint.
+	 * @param edge Complete baseline relationship.
+	 */
+	addRails(edge: ElkExtendedEdge): void {
+		if (edge.sources[0] === edge.targets[0]) return;
+		for (const id of [...edge.sources, ...edge.targets].filter((endpoint) =>
+			ordinaryCard(this.nodes.get(endpoint)!),
+		)) {
+			const node = this.nodes.get(id)!;
+			const channel = relationshipChannel(edge, id);
+			for (const { pin, corridor } of projectedCardPins(node, edge)) {
+				if (!this.available(id, channel, pin)) continue;
+				if (!this.clearCorridor(corridor, new Set([id]), edge.id)) continue;
+				this.record(id, channel, pin);
+			}
+		}
 	}
 
 	/**
@@ -259,11 +294,21 @@ class PinCandidates {
 			width: Math.abs(a.x - b.x),
 			height: Math.abs(a.y - b.y),
 		};
+		return this.clearCorridor(segment, new Set([source, target]), edgeId);
+	}
+
+	/**
+	 * Validate projected and paired pins against the same buffered cards and labels.
+	 * @param segment Proposed straight corridor.
+	 * @param endpoints Cards touched by this corridor.
+	 * @param edgeId Relationship whose own label remains traversable.
+	 * @returns Whether every foreign obstacle leaves the corridor clear.
+	 */
+	private clearCorridor(segment: Box, endpoints: ReadonlySet<string>, edgeId: string): boolean {
 		for (const [id, node] of this.nodes) {
-			if (id === source || id === target) continue;
+			if (endpoints.has(id)) continue;
 			if (boxesOverlap(segment, inflate(obstacleOf(node), CARD_ROUTE_CLEARANCE))) return false;
 		}
-
 		return this.clearLabels(segment, edgeId);
 	}
 
@@ -327,18 +372,30 @@ class PinCandidates {
 	}
 
 	/**
-	 * Keep only physical pins that native registration will actually offer.
+	 * Whether this channel has actual attachments from the baseline scene.
 	 * @param id Card identity.
-	 * @param channel Other relationship channel.
-	 * @param fallback Seed used when no matched candidate replaces this face.
-	 * @returns Previously feasible and newly selected pins.
+	 * @param channel Relationship channel.
+	 * @returns Whether baseline pins replace hypothetical reservations.
+	 */
+	private hasUsedChannel(id: string, channel: string): boolean {
+		return this.used.get(id)?.has(channel) ?? false;
+	}
+
+	/**
+	 * Keep actual, offered, and newly selected pins while reserving seeds only before feedback.
+	 * @param id Card identity.
+	 * @param channel Shared channel.
+	 * @param fallback Ordinary seed.
+	 * @returns Physical reservations protecting other channels.
 	 */
 	private sharedPins(id: string, channel: string, fallback: AlignedPin): readonly AlignedPin[] {
-		const offered = this.offered.get(id)?.get(channel) ?? [];
+		const offered = pinsAt(this.offered, id, channel);
+		const selected = pinsAt(this.pins, id, channel);
+		if (this.hasUsedChannel(id, channel)) return [...offered, ...selected];
 		const seeds = offered.some((pin) => pin.face === fallback.face)
 			? []
 			: seedPins(this.nodes.get(id)!, fallback);
-		return [...seeds, ...offered, ...(this.pins.get(id)?.get(channel) ?? [])];
+		return [...seeds, ...offered, ...selected];
 	}
 
 	/**
@@ -378,6 +435,60 @@ export function alignedPins(
 	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two)))
 		refined.add(edge);
 	return refined.pins;
+}
+
+/**
+ * Collect actual attachments before reconsidering unused alternatives.
+ * @param nodes Placed nodes.
+ * @param edges Settled routes.
+ * @returns Pins grouped by endpoint and channel.
+ */
+function collectUsedPins(
+	nodes: ReadonlyMap<string, ElkNode>,
+	edges: readonly ElkExtendedEdge[],
+): AlignedPins {
+	const used: AlignedPins = new Map();
+	for (const edge of edges) {
+		for (const [id, pin] of usedCardPins(nodes, edge)) {
+			const byChannel = used.get(id) ?? new Map<string, AlignedPin[]>();
+			const channel = relationshipChannel(edge, id);
+			const pins = byChannel.get(channel) ?? [];
+			if (!pins.some((prior) => nearby(boxOf(nodes.get(id)!), pin, prior, 0.000001)))
+				pins.push(pin);
+			byChannel.set(channel, pins);
+			used.set(id, byChannel);
+		}
+	}
+	return used;
+}
+
+/**
+ * Refine one settled native scene while retaining all of its actually used card pins.
+ * Unused seeds may yield to clear alternatives; shared channels keep every used attachment.
+ * @param nodes Placed scene nodes.
+ * @param channels Sorted connection channels at every endpoint.
+ * @param edges Complete baseline relationships.
+ * @returns Refined alternatives, or nothing when no new pin could be offered.
+ */
+export function refinedPins(
+	nodes: ReadonlyMap<string, ElkNode>,
+	channels: ReadonlyMap<string, readonly string[]>,
+	edges: readonly ElkExtendedEdge[],
+): AlignedPins | undefined {
+	const used = collectUsedPins(nodes, edges);
+	const selected = new PinCandidates(nodes, channels, edges, used, used);
+	for (const [id, byChannel] of used)
+		selected.pins.set(id, new Map([...byChannel].map(([channel, pins]) => [channel, [...pins]])));
+	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two))) {
+		selected.add(edge);
+		selected.addRails(edge);
+	}
+	const added = [...selected.pins].some(([id, byChannel]) =>
+		[...byChannel].some(
+			([channel, pins]) => pins.length > (used.get(id)?.get(channel)?.length ?? 0),
+		),
+	);
+	return added ? selected.pins : undefined;
 }
 
 /**

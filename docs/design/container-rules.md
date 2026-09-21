@@ -31,7 +31,9 @@ The current rules are:
   Cards and external destination frames with overlapping facing spans offer aligned ports
   at the nearest feasible balanced position. On a face with an unobstructed
   aligned channel, omit the redundant center choice that would introduce a
-  detour. Keep other faces available. This applies across
+  detour. Refine using the ports actually used and clear projections of native
+  runs; unused proportional alternatives must not block those ports. Keep
+  other unconflicted faces available. This applies across
   boards and variants; it uses measured geometry, never board-specific hints.
   The native router chooses among those faces. Relationships
   keep their own identities and labels even when they share a port or trunk.
