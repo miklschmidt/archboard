@@ -15,6 +15,7 @@ import type {
 	CoordinatorCallbackDeliveryReason,
 	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackOptions,
+	CoordinatorSemanticCallback,
 	CoordinatorCallbackRealtimeRequest,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
@@ -391,9 +392,36 @@ function recordOnly(
 		attemptedAtMs: null,
 		path: "silent",
 		outcome: "not_delivered",
-		reason: callback.correlation.realtimeGeneration === null ? "voice_inactive" : "recorded_only",
+		// With voice live the only thing that keeps a semantic callback from anybody is that
+		// nothing of it was the user's own doing: an agent or the canvas caused it.
+		reason: callback.correlation.realtimeGeneration === null ? "voice_inactive" : "agent",
 		text,
 	});
+}
+
+/**
+ * Give the live voice session the pane news a semantic callback is, or record the callback when
+ * there is none to give: no voice session, or nothing of it that was the user's own doing.
+ * @param callback - The normalized semantic callback.
+ * @param options - The host authorities and ports.
+ * @param isDisposed - Whether the callback module has been disposed.
+ * @param evidence - The ordering and freshness evidence for the delivery record.
+ * @param text - The encoded callback, kept on the record of one that is told to nobody.
+ * @returns The delivery record.
+ */
+function deliverPaneNews(
+	callback: CoordinatorSemanticCallback,
+	options: CoordinatorCallbackOptions,
+	isDisposed: () => boolean,
+	evidence: CallbackDeliveryEvidence,
+	text: string,
+): Promise<CoordinatorCallbackDelivery> {
+	const generation = callback.correlation.realtimeGeneration;
+	const { news } = callback.semantic;
+	if (generation === null || news === null) {
+		return Promise.resolve(recordOnly(callback, evidence, text));
+	}
+	return deliverThroughVoice(callback, options, isDisposed, evidence, generation, news);
 }
 
 /**
@@ -402,14 +430,13 @@ function recordOnly(
  * other operation callback is quiet context for the voice model; with no voice session an
  * operation callback is an injected developer message.
  *
- * Semantic telemetry (a change, a focus, a selection) is delivered to nobody and only recorded.
- * It used to be appended to the live voice session, which put a seven-kilobyte machine envelope
- * of identities and a serialized brief into a speech model's context on every selection: one per
- * walkthrough step, arriving as the model began to speak, 33 of them in the sessions of
- * 2026-09-20. The voice model is told never to resolve what the person points at from anything
- * but a fresh coordinator lookup, so the telemetry was at best noise it was instructed to
- * ignore, and in practice something it remarked on unasked. The coordinator reads the live pane
- * through its own tools when it is asked.
+ * A semantic callback (a change, a focus, a selection) reaches the voice model only as pane news:
+ * one sentence of names saying where the user's reading now stands, and only for what the pane
+ * marked as the user's own doing (TASK-293, ADR 0034). Everything else is recorded and told to
+ * nobody. The callback itself used to be appended: a seven-kilobyte envelope of identities and a
+ * serialized brief on every report, one per walkthrough step the voice model had asked for, which
+ * it then answered (33 of them in the sessions of 2026-09-20). The sentence is a hint for what
+ * "this" means; the coordinator still reads the live pane through its own tools when asked.
  * @param callback - The normalized callback.
  * @param options - The host authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -429,7 +456,7 @@ async function deliverOne(
 	const { text } = cleared;
 	const generation = callback.correlation.realtimeGeneration;
 	if (callback.kind === "semantic") {
-		return recordOnly(callback, evidence, text);
+		return deliverPaneNews(callback, options, isDisposed, evidence, text);
 	}
 	if (generation !== null) {
 		const turnPort = reportsTerminalOutcome(callback) ? options.coordinatorTurn : undefined;

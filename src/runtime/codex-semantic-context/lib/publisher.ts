@@ -7,6 +7,7 @@ import {
 	feedIdValue,
 	fail,
 	textValue,
+	userChanges,
 	type BoundedValue,
 } from "@/runtime/codex-semantic-context/lib/normalize";
 import type {
@@ -380,11 +381,8 @@ export function createSemanticContextPublisher(
 			capturedAtMs,
 		});
 		const event = withKind<PaneFocusEvent>(fields, "pane_focus", {
-			focus: {
-				paneId: fields.pane.paneId,
-				focused: fields.pane.focused,
-				capturedAtMs,
-			},
+			focus: { ...fields.pane, capturedAtMs },
+			userChanged: userChanges(input.pane.userChanged),
 		});
 		emit(focusListeners, event, "pane_focus", "pane_focus");
 		return event;
@@ -405,6 +403,7 @@ export function createSemanticContextPublisher(
 		});
 		const event = withKind<PaneSelectionEvent>(fields, "pane_selection", {
 			selectionCapturedAtMs: capturedAtMs,
+			userChanged: userChanges(input.pane.userChanged),
 		});
 		emit(selectionListeners, event, "pane_selection", "pane_selection");
 		return event;

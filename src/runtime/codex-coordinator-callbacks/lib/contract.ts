@@ -118,6 +118,11 @@ interface CoordinatorSemanticCallbackData {
 	/** The selected subjects of the board, never anything that was drawn. */
 	readonly selection: readonly CoordinatorSemanticSubject[];
 	readonly detail: string | null;
+	/**
+	 * The pane news this event is: the one sentence the voice model is given, or null when
+	 * nothing of it was the user's own doing and nobody is told (TASK-293, ADR 0034).
+	 */
+	readonly news: string | null;
 }
 
 interface CoordinatorSemanticCallbackBase {
@@ -217,7 +222,7 @@ type CoordinatorCallbackDeliveryReason =
 	| "stale_link"
 	| "stale_session"
 	| "voice_inactive"
-	| "recorded_only"
+	| "agent"
 	| "session_rejected"
 	| "response_lost"
 	| "transport_failure";

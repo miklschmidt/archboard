@@ -114,7 +114,7 @@ function reportRoute(req: Request, res: Response): void {
 		// out, asks what it does, and is answered about whatever they had picked
 		// before. Only for a report that was kept — announcing one that lost to its
 		// own successor would hand the coordinator the reading it just replaced.
-		publishPaneContext(parsed.data.clientId, "selection");
+		publishPaneContext(parsed.data.clientId, "selection", parsed.data.byUser ?? []);
 		// The same report says where a presented walkthrough has got to, which is
 		// what settles a step somebody narrating it asked for (TASK-251).
 		panePresentations.note(parsed.data);
