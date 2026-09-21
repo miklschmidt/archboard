@@ -17,12 +17,14 @@
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	type SemanticPaneContext,
+	type SemanticPanePart,
 } from "@/shared/semantic-pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@/shared/timing/timing";
+import { createUserMarks } from "@/ui/pane-session/lib/user-marks";
 import { post } from "@/ui/server-requests";
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
-type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence">;
+type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
 
 /** A pane showing nothing: what a pane reports when it leaves a board. */
 const NOTHING_READ: PaneReading = Object.freeze({
@@ -40,6 +42,17 @@ interface ReadingPublisher {
 	 * @param reading What the pane is reading now.
 	 */
 	readonly publish: (reading: PaneReading) => void;
+	/**
+	 * The user asked, by hand, for a part of the reading to change. The report in which it does
+	 * change says so; a part that changes without this is told to nobody.
+	 * @param part The part their gesture was about.
+	 */
+	readonly userChanged: (part: SemanticPanePart) => void;
+	/**
+	 * What the user asked for came to nothing, so that part is not waiting to change.
+	 * @param part The part.
+	 */
+	readonly userChangeFailed: (part: SemanticPanePart) => void;
 	/** Forget what was published and what was read, because the board changed. */
 	readonly reset: () => void;
 	/** Send the last reading again, because whoever had it no longer does. */
@@ -103,6 +116,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	// count it has seen and this is how it tells them apart. It counts up for
 	// the life of this publisher and never goes back.
 	let sequence = 0;
+	const marks = createUserMarks();
 
 	/** Send the pending reading, unless it is what was already published. */
 	function flush(): void {
@@ -118,10 +132,14 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		published = key;
 		const counted = sequence;
 		sequence += 1;
+		// A report that has to be sent again after a failure goes without its marks. Saying
+		// nothing is the safe way to be wrong here.
+		const byUser = marks.take(reading);
 		send({
 			paneId: parts.paneId,
 			clientId: parts.clientId,
 			...reading,
+			...(byUser.length === 0 ? {} : { byUser: [...byUser] }),
 			at: new Date().toISOString(),
 			sequence: counted,
 		})
@@ -199,7 +217,14 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		}
 	}
 
-	return { publish, republish, reset, dispose };
+	return {
+		publish,
+		userChanged: marks.mark,
+		userChangeFailed: marks.unmark,
+		republish,
+		reset,
+		dispose,
+	};
 }
 
 export { NOTHING_READ, createReadingPublisher, type PaneReading, type ReadingPublisher };
