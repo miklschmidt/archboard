@@ -1,6 +1,6 @@
-// The pre-policy repository baseline (TASK-151): it owns tests/**, the module tests
-// under src/*/*/tests/**, frontend/** and src/server/board-rendering/browser.ts.
-// Every other authored source file is owned by the policy in .oxlintrc.jsonc.
+// The rules tests are held to (TASK-151): tests/** and the module tests under
+// src/*/*/tests/**, except src/ui's. They are the repository's rules from before the policy in
+// .oxlintrc.jsonc, which owns every other authored source file.
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
 	"plugins": [
@@ -74,16 +74,7 @@
 	},
 	"overrides": [
 		{
-			"files": [
-				"src/**/*.ts",
-				"src/**/*.tsx",
-				"frontend/**/*.ts",
-				"frontend/**/*.tsx",
-				"tests/system/**/*.ts",
-				"scripts/**/*.ts",
-				"tools/**/*.ts",
-				"tools/**/*.js",
-			],
+			"files": ["src/**/*.ts", "src/**/*.tsx", "tests/system/**/*.ts"],
 			"rules": {
 				"no-await-in-loop": "off",
 				"typescript/no-unsafe-type-assertion": "off",
@@ -92,16 +83,6 @@
 				"typescript/no-unnecessary-condition": "off",
 				"typescript/no-unnecessary-type-conversion": "off",
 				"typescript/consistent-return": "off",
-			},
-		},
-		{
-			"files": [
-				"scripts/generate-cli-contract.ts",
-				"scripts/generate-codex-app-server-contract.ts",
-				"scripts/sync-skills.ts",
-			],
-			"rules": {
-				"no-console": "off",
 			},
 		},
 		{

@@ -1,6 +1,6 @@
 // The approved analysis policy (TASK-150) for every authored source file: src/**,
-// scripts/**, tools/** and vite.config.ts (TASK-151). Tests, frontend entry files
-// and the frontend-project file browser.ts are linted by .oxlintrc.baseline.jsonc.
+// frontend/**, scripts/**, tools/** and vite.config.ts (TASK-151). Tests outside src/ui
+// are linted by .oxlintrc.tests.jsonc.
 // jsdoc-extra supplies only rules absent from Oxlint; these rules check TypeScript too.
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -43,16 +43,12 @@
 		".claude/**",
 		"docs/design/vendor/**",
 		"src/shared/codex-app-server-contract/generated/**",
-		// Tests, frontend entry files and the frontend-project source file stay on
-		// the repository baseline (.oxlintrc.baseline.jsonc); browser.ts is not a
-		// root of the repository tsconfig.json, so type-aware lint cannot own it.
+		// Tests outside src/ui are held to .oxlintrc.tests.jsonc instead.
 		"tests/**",
 		"src/runtime/*/tests/**",
 		"src/server/*/tests/**",
 		"src/shared/*/tests/**",
 		"src/cli/*/tests/**",
-		"frontend/**",
-		"src/server/board-rendering/browser.ts",
 	],
 	"settings": {
 		"react": {

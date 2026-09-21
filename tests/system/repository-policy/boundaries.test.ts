@@ -31,7 +31,7 @@ function run(cwd: string, cmd: string[]): CommandResult {
 }
 
 function repositoryOxlintConfig(): string {
-	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.baseline.jsonc"), "utf8");
+	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.tests.jsonc"), "utf8");
 	const relativePlugin = '"./tools/oxlint-plugin-archboard.ts"';
 	if (!authored.includes(relativePlugin)) {
 		throw new Error("repository Oxlint plugin path is missing");
@@ -283,7 +283,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 
 	// The root compiler now covers every retained TypeScript source extension.
 	// src/ui is owned by the separate UI policy (600 physical lines), so the
-	// repository baseline's 500-line cap is proven on a non-UI area.
+	// tests configuration's 500-line cap is proven on a non-UI area.
 	test("accepts compiler-covered TSX owners and still caps them", async () => {
 		await withProject(
 			{

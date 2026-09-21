@@ -3,14 +3,15 @@
 TASK-150 applied the maintainer-approved lint policy to `src/ui/**` so the UI
 rebuild did not wait on a repository-wide migration. TASK-151 adopted the same
 policy, unchanged, for every other authored source file: `src/**`, `scripts/**`,
-`tools/**` and `vite.config.ts`. Tests stay on the pre-policy repository baseline
-by the maintainer's decision (2026-09-06), generated Codex declarations stay
+`tools/**` and `vite.config.ts`; the browser entry under `frontend/**` joined it on
+2026-09-21. Tests stay on the repository's pre-policy rules by the maintainer's
+decision (2026-09-06), generated Codex declarations stay
 lint-excluded and compiler-checked, and the earlier full-catalogue requirement is
 superseded.
 
 ## Ordinary commands and repository boundary
 
-`bun run lint` runs the repository baseline and the approved policy sequentially.
+`bun run lint` runs the tests configuration and the approved policy sequentially.
 Both commands, and both stages of `bun run fix`, enter through `scripts/lint.ts`.
 This small preflight delegates analysis to ordinary pinned Oxlint; it does not
 implement an analyzer, compiler supervisor, or parallel worker lane.
@@ -29,14 +30,15 @@ UI lint uses the existing repository TypeScript project, with no separate UI
 project. `--tsconfig` alone is not a typed-project boundary, and the tested
 `disableSolutionSearching` option does not block the unmatched-file case.
 
-`lint:baseline` uses the pre-policy repository rules and archive guard in
-`.oxlintrc.baseline.jsonc` with nested lint configuration disabled. It owns
-`tests/**`, the module tests under `src/*/*/tests/**`, `frontend/**` and
-`src/server/board-rendering/browser.ts` (a root of the frontend project, not the
-repository project, so type-aware lint cannot own it). `lint:policy` uses the
-approved policy in `.oxlintrc.jsonc`, type-aware analysis and one worker over
-`src`, `scripts`, `tools` and `vite.config.ts`; its ignore patterns are exactly
-the baseline lane's inventory, so neither lane has a gap or overlaps the other.
+`lint:tests` uses the pre-policy repository rules and archive guard in
+`.oxlintrc.tests.jsonc` with nested lint configuration disabled. It owns
+`tests/**` and the module tests under `src/*/*/tests/**` outside `src/ui`.
+`lint:policy` uses the approved policy in `.oxlintrc.jsonc`, type-aware analysis
+and one worker over `src`, `frontend`, `scripts`, `tools` and `vite.config.ts`; its
+ignore patterns are exactly the tests lane's inventory, so neither lane has a gap
+or overlaps the other. `frontend` is a root of both TypeScript projects: the
+repository project, because type-aware lint refuses a file it does not declare,
+and the frontend project, which builds it.
 Generated Codex declarations keep their lint exclusion and remain compiler checked.
 Root and frontend compiler safety improvements remain, including
 `noPropertyAccessFromIndexSignature`: only index-signature properties require
