@@ -4,29 +4,26 @@ import { CALLBACK_BUFFER_LIMIT, createCodexCoordinatorCallbacks } from "../index
 import { close, harness, operationEvent } from "./support.js";
 
 describe("coordinator callback lifecycle", () => {
-	test("delivers every operation member exactly once through the active route, and records semantic telemetry without delivering it", async () => {
+	test("with voice live and no way to run the coordinator, a terminal outcome is injected once and nothing else reaches anybody", async () => {
 		const h = harness(true);
-		for (const type of [
-			"accepted",
-			"queued",
-			"started",
-			"progress",
-			"attention",
-			"completed",
-			"failed",
-			"outcome_unknown",
-		] satisfies ReadonlyArray<Parameters<typeof operationEvent>[1]>) {
+		for (const type of ["accepted", "queued", "started", "progress"] as const) {
 			const result = await h.callbacks.enqueue(operationEvent(h.ids, type));
-			expect(result.outcome).toBe("delivered");
+			expect(result).toMatchObject({ outcome: "not_delivered", path: "silent" });
+		}
+		for (const type of ["attention", "completed", "failed", "outcome_unknown"] as const) {
+			const result = await h.callbacks.enqueue(operationEvent(h.ids, type));
+			expect(result).toMatchObject({ outcome: "delivered", path: "thread_inject_items" });
 		}
 		for (const source of [h.semantic.change, h.semantic.focus, h.semantic.selection]) {
-			// A change, a focus or a selection is never put into a speech model's context.
+			// A change, a focus or a selection nobody's hand made is never put into a speech
+			// model's context.
 			const result = await h.callbacks.enqueue(source);
 			expect(result.outcome).toBe("not_delivered");
 			expect(result.path).toBe("silent");
 		}
-		expect(h.realtimeRequests).toHaveLength(8);
-		expect(h.injections).toHaveLength(0);
+		// No callback envelope reaches the voice session from any path.
+		expect(h.realtimeRequests).toHaveLength(0);
+		expect(h.injections).toHaveLength(4);
 		close(h);
 	});
 

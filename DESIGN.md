@@ -88,8 +88,12 @@ the coordinator knows whether the work came from a voice request. What it
 replies under `[FINAL]` is spoken without the user asking again; a
 `[COMMENTARY]` reply stays silent. The host waits a bounded time for an idle
 coordinator and otherwise falls back to the injected developer message, so an
-outcome is neither lost nor said twice. Other operation callbacks stay quiet
-context.
+outcome is neither lost nor said twice. The other operation callbacks
+(accepted, queued, started, progress) reach nobody while voice is live: the tool
+result already told the coordinator how its delegation went in, progress is what
+`inspect_workhorse` reads, and they are recorded with the reason
+`recorded_only`. No path appends a callback envelope to the voice session; with
+no voice session an operation callback is still one injected developer message.
 
 What a pane reports reaches the voice model only as **pane news**: one sentence
 of names saying where the user's reading now stands ("The user is now looking at

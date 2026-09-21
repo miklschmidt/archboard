@@ -223,6 +223,7 @@ type CoordinatorCallbackDeliveryReason =
 	| "stale_session"
 	| "voice_inactive"
 	| "agent"
+	| "recorded_only"
 	| "session_rejected"
 	| "response_lost"
 	| "transport_failure";
