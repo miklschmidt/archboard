@@ -152,6 +152,35 @@ const PANE_SETTLE_CAP_MS = 1500;
  */
 const PANE_LAYOUT_TIMEOUT_MS = 10_000;
 
+/**
+ * How long the server waits for a pane to say a walkthrough step it asked for
+ * has finished arriving (TASK-251).
+ *
+ * The acknowledgement is the pane's own report, for the same reason a layout's
+ * is a registration. A step costs the glide (`PRESENTATION_STEP_MS`, 900), or a
+ * picture flight when it changes view (`PICTURE_TRANSITION_MS`, 640) after the
+ * new picture has been fetched and drawn, then the report's debounce
+ * (`SELECTION_DEBOUNCE_MS`, 150) and a round trip: a couple of seconds at worst.
+ * It pulls against a voice that has gone quiet to wait for the step, so it is
+ * far shorter than a layout's bound, and against `CODEX_REQUEST_SETTLEMENT_MS`
+ * (30_000), which the tool call that waits on it must stay inside.
+ */
+const PRESENTATION_ARRIVAL_TIMEOUT_MS = 8000;
+
+// ── Subtitles of the voice over the canvas (TASK-292) ─────────────────────
+//
+
+/**
+ * How long a subtitle stays after the latest word of it arrived.
+ *
+ * The voice model's transcript arrives a word at a time, on the audio clock, so silence on that
+ * stream is the voice being silent. This has to outlast the pauses inside one turn, or the
+ * subtitle would blink off between sentences: the longest measured in a real session was 1.6
+ * seconds. It pulls against reading a finished line, which wants it long, and against a stale
+ * line hanging over the picture after an interruption, which wants it short.
+ */
+const SUBTITLE_LINGER_MS = 2500;
+
 // ── What the browser keeps of the server's answers (TASK-167) ─────────────
 //
 // Three durations, one cache. The listing is small and every event that can
@@ -355,6 +384,19 @@ const CANVAS_STARTUP_READINESS_MS = 8000;
 const CODEX_WAIT_TARGET_POLL_MS = 250;
 
 /**
+ * How long a terminal workhorse outcome waits for the coordinator to finish a turn of its own
+ * before it is told quietly instead (TASK-291).
+ *
+ * The coordinator is run with the outcome so it can decide what the person hears, and a turn can
+ * only be started on an idle thread. It is usually idle: it delegated and answered long before
+ * the work ended. When it is not, its turn is short by design, so this is a few polls
+ * (`CODEX_WAIT_TARGET_POLL_MS`, 250). It pulls against the callbacks queued behind this one, which
+ * wait as long as it does, so it is far below `CODEX_REQUEST_SETTLEMENT_MS` (30_000); past it the
+ * outcome becomes the injected developer message, which loses nothing.
+ */
+const COORDINATOR_IDLE_WAIT_MS = 10_000;
+
+/**
  * Read-amplification floor classification. Pulls against the wait-target poll
  * below and request settlement above.
  *
@@ -403,6 +445,8 @@ export {
 	PANE_DEBOUNCE_MS,
 	PANE_SETTLE_CAP_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
+	SUBTITLE_LINGER_MS,
+	PRESENTATION_ARRIVAL_TIMEOUT_MS,
 	BOARD_LISTING_STALE_MS,
 	BOARD_PREVIEW_STALE_MS,
 	BOARD_CACHE_GC_MS,
@@ -436,6 +480,7 @@ export {
 	CODEX_COMPOSED_SHUTDOWN_MS,
 	CANVAS_STARTUP_READINESS_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
+	COORDINATOR_IDLE_WAIT_MS,
 	CODEX_QUEUE_REREAD_FLOOR_MS,
 };
 

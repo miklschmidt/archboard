@@ -14,8 +14,8 @@
 // The stage decides everything the picture does; this is the caption, its
 // controls and its keys.
 
-import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from "@remixicon/react";
-import { useCallback, type JSX } from "react";
+import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine, RiMicLine } from "@remixicon/react";
+import { useCallback, type JSX, type ReactNode } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
 import { Button } from "@/ui/components/button";
@@ -37,6 +37,13 @@ interface SemanticPresentationProps {
 	readonly onGo: (index: number) => void;
 	/** Leave the presentation. */
 	readonly onLeave: () => void;
+	/**
+	 * Have this walkthrough narrated aloud from its first step, when the shell can.
+	 * @param walkthrough The walkthrough's id.
+	 */
+	readonly onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** What the shell lays over the picture; here it sits just above the caption, never on it. */
+	readonly overlay?: ReactNode;
 	/**
 	 * Keep the bottom of the picture clear of the caption.
 	 * @param bottom How many pixels.
@@ -116,6 +123,13 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	const next = useCallback((): void => {
 		onGo(Math.min(count - 1, index + 1));
 	}, [onGo, index, count]);
+	const { onNarrate } = props;
+	// A narration is a talk from the top, so it starts on the first step whatever
+	// the reader had reached.
+	const narrate = useCallback((): void => {
+		onGo(0);
+		onNarrate?.(walkthrough.id);
+	}, [onGo, onNarrate, walkthrough.id]);
 	return (
 		<section
 			ref={attach}
@@ -125,6 +139,14 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 			data-step={index}
 			className="border-border bg-background/95 absolute inset-x-0 bottom-0 z-10 flex items-end gap-8 border-t px-8 py-6"
 		>
+			{props.overlay !== null && props.overlay !== undefined && (
+				<div
+					data-slot="semantic-stage-overlay"
+					className="pointer-events-none absolute inset-x-0 bottom-full flex justify-center px-8 pb-4"
+				>
+					{props.overlay}
+				</div>
+			)}
 			<div className="flex min-w-0 flex-1 flex-col gap-2" aria-live="polite">
 				<p className="text-kicker text-muted-foreground flex items-center gap-2 uppercase">
 					<span
@@ -150,6 +172,18 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 				)}
 			</div>
 			<div className="flex shrink-0 flex-col items-end gap-3">
+				{props.onNarrate !== undefined && (
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						data-slot="semantic-presentation-narrate"
+						onClick={narrate}
+					>
+						<RiMicLine />
+						Narrate
+					</Button>
+				)}
 				<Button
 					type="button"
 					variant="ghost"

@@ -24,6 +24,10 @@ interface PresentationView {
 	readonly missing: readonly string[];
 	/** Leave the presentation. */
 	readonly onCloseNarrative: () => void;
+	/** Have the open walkthrough narrated, when the shell can. */
+	readonly onNarrate: ((walkthrough: string) => void) | undefined;
+	/** What the shell lays over the picture, such as subtitles of a voice; or nothing. */
+	readonly overlay: ReactNode;
 	/** The pane's camera, which keeps its fits clear of the caption. */
 	readonly camera: { readonly reserve: (bottom: number) => void };
 	/** The group under inspection, or null. */
@@ -41,15 +45,25 @@ const NO_MARKS = { groupId: null, groupMarks: null } as const;
 function presentationOver(view: PresentationView): ReactNode {
 	const { narrative } = view;
 	if (narrative.open === null) {
-		return null;
+		// Low in the frame, over the picture, taking no pointer input from the canvas under it.
+		return view.overlay === null || view.overlay === undefined ? null : (
+			<div
+				data-slot="semantic-stage-overlay"
+				className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex justify-center px-8"
+			>
+				{view.overlay}
+			</div>
+		);
 	}
 	return (
 		<SemanticPresentation
+			overlay={view.overlay}
 			walkthrough={narrative.open}
 			index={narrative.beatIndex}
 			missing={view.missing}
 			onGo={narrative.goTo}
 			onLeave={view.onCloseNarrative}
+			onNarrate={view.onNarrate}
 			reserve={view.camera.reserve}
 		/>
 	);

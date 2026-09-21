@@ -4,6 +4,7 @@ import {
 	FunctionCallOutputBodySchema,
 	ImageDetailSchema,
 	MessagePhaseSchema,
+	ReasoningEffortSchema,
 } from "@/runtime/codex-protocol/lib/core-schemas";
 import {
 	CodexSafeI64Schema,
@@ -203,9 +204,17 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 		internal_chat_message_metadata_passthrough:
 			InternalChatMessageMetadataPassthroughSchema.optional(),
 	}),
+	looseObject({
+		type: z.literal("configuration_update"),
+		reasoning: looseObject({ effort: ReasoningEffortSchema }),
+	}),
 	looseObject({ type: z.literal("other") }),
 ]);
 
-const ResponseUsageMetadataSchema = looseObject({ amount: z.string().nullable() });
+const ResponseUsageMetadataSchema = looseObject({
+	amount: z.string().nullable(),
+	/** Backend usage metadata is intentionally JsonValue in generated code. */
+	metadata: JsonValueSchema.nullable(),
+});
 
 export { ResponseItemSchema, ResponseUsageMetadataSchema };

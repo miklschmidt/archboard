@@ -8,6 +8,8 @@ export type {
 	CodexCoordinatorToolsOptions,
 	CoordinatorDynamicDispatcher,
 	CoordinatorToolAuthorityPort,
+	CoordinatorToolPresentStepOutcome,
+	CoordinatorToolPresentationPort,
 	CoordinatorToolCancellation,
 	CoordinatorToolCall,
 	CoordinatorToolCallId,

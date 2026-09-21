@@ -25,3 +25,21 @@ export {
 	recordSemanticPaneContext,
 	semanticPaneContextFor,
 } from "@/server/canvas/lib/semantic-pane-context";
+export {
+	createPanePresentations,
+	type PanePresentations,
+	type PersonPresentationChange,
+	type PresentOutcome,
+} from "@/server/canvas/lib/pane-presentation";
+export {
+	presentWalkthroughStep,
+	type PresentStepParts,
+} from "@/server/canvas/lib/present-walkthrough-step";
+export { nextCountsFrom } from "@/server/canvas/lib/walkthrough-narration";
+export { createNarrationTiming } from "@/server/canvas/lib/narration-timing";
+export { createVoiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
+export { watchTranscriptChanges } from "@/server/canvas/lib/transcript-changes";
+export {
+	createOutcomeReportPort,
+	type OutcomeReportParts,
+} from "@/server/canvas/lib/codex-workbench-outcome-report";

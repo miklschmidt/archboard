@@ -89,6 +89,57 @@ const SemanticPaneViewSchema = z
 	.strict();
 
 /**
+ * Where a pane presenting a walkthrough has got to (TASK-251).
+ *
+ * The position stays the browser's (ADR 0023): this is the pane saying where it
+ * is, never anybody setting it. It is said because something narrating the
+ * presentation has to follow the picture — it waits for a step it asked for to
+ * finish arriving before it talks about it, and it has to hear when a person
+ * stepped by hand or left, or it goes on describing a picture nobody can see.
+ */
+const SemanticPanePresentationSchema = z
+	.object({
+		/** The walkthrough being presented, by id. */
+		walkthrough: z.string().min(1).max(64),
+		/** Which beat is on screen, counted from zero as the variant orders them. */
+		beat: z.int().min(0),
+		/** How many beats that walkthrough has. */
+		of: z.int().min(1),
+		/**
+		 * Whether that beat has finished arriving: its picture is the one drawn, and
+		 * neither the camera nor the picture is still moving.
+		 */
+		arrived: z.boolean(),
+		/**
+		 * The `pane_present` request this position answers, or null when a person
+		 * chose it. It is how a driver tells its own step from somebody's hand on
+		 * the keys, including a report sent before its request arrived.
+		 */
+		answering: z.string().min(1).max(128).nullable(),
+	})
+	.strict();
+type SemanticPanePresentation = z.infer<typeof SemanticPanePresentationSchema>;
+
+/**
+ * What the canvas asks of a pane presenting a walkthrough, over its socket.
+ *
+ * Addressed to the board the pane is showing, like every board message, so a
+ * pane that has moved on ignores it. A null walkthrough asks the pane to leave
+ * the presentation.
+ */
+const PanePresentRequestSchema = z
+	.object({
+		type: z.literal("pane_present"),
+		/** Names this request, so the pane's report can say which one it answers. */
+		request: z.string().min(1).max(128),
+		walkthrough: z.string().min(1).max(64).nullable(),
+		beat: z.int().min(0),
+	})
+	// Not strict: the socket adds the board key every board message carries.
+	.strip();
+type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
+
+/**
  * What one pane is reading, as the pane last said it.
  *
  * Every part of it but the pane itself is nullable, and deliberately: a pane is
@@ -109,6 +160,8 @@ const SemanticPaneContextSchema = z
 		selection: z.array(SemanticSubjectRefSchema).max(128),
 		/** The board version the pane drew, when it drew one. */
 		version: z.int().min(1).nullable(),
+		/** Where a presented walkthrough has got to; null or absent when none is. */
+		presentation: SemanticPanePresentationSchema.nullable().optional(),
 		/** When the pane observed all of this. */
 		at: z.iso.datetime(),
 		/**
@@ -162,6 +215,10 @@ export {
 	type SemanticSubjectKind,
 	SemanticSubjectRefSchema,
 	type SemanticSubjectRef,
+	SemanticPanePresentationSchema,
+	type SemanticPanePresentation,
+	PanePresentRequestSchema,
+	type PanePresentRequest,
 	SemanticPaneContextSchema,
 	type SemanticPaneContext,
 	sameSemanticBoard,

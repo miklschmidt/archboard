@@ -53,7 +53,7 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
 			workhorseSha256: "fe8dd9bfaf91b37cbae31136ccdfc4eb1106728b40d2bc3ea01036606d6f748f",
-			voiceSha256: "792d6ec96edc2fbffc8400ce0d1304a56662bee5436e95914505cb848356c393",
+			voiceSha256: "23273d22b3d2f28926ab86f1b0274a297eeb1b79b0083f7a9bb2202510f1987d",
 		});
 		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");
@@ -75,6 +75,7 @@ describe("coordinator namespace manifests", () => {
 		]);
 		expect(ARCHBOARD_VOICE_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
 			"resolve_spoken_approval",
+			"present_step",
 		]);
 	});
 
@@ -160,7 +161,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 		});
 	});
 
-	test("mirrors the exact 0.151.0 queue parameter fields", () => {
+	test("mirrors the exact 0.155.1 queue parameter fields", () => {
 		const textInput = { type: "text" as const, text: "queue prompt", text_elements: [] };
 		expect(
 			ThreadQueueAddParamsSchema.parse({
@@ -207,7 +208,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 		]);
 		expect(CODEX_QUEUE_PROTOCOL).toEqual({
 			protocol: "codex-app-server",
-			version: "0.151.0",
+			version: "0.155.1",
 			operations: [...QUEUE_OPERATION_SNAPSHOT],
 		});
 	});
@@ -237,7 +238,23 @@ describe("dynamic tool schemas and queue protocol", () => {
 			"manage_workhorse_queue",
 			"steer_workhorse",
 		]);
-		expect(Object.keys(VOICE_TOOL_INPUT_SCHEMAS)).toEqual(["resolve_spoken_approval"]);
+		expect(Object.keys(VOICE_TOOL_INPUT_SCHEMAS)).toEqual([
+			"resolve_spoken_approval",
+			"present_step",
+		]);
+		// The pane and the board are the host's: a step is all the model may name, beside the
+		// walkthrough the first time.
+		expect(
+			parseCoordinatorToolInput("archboard_voice", "present_step", { step: 2, walkthrough: "w1" }),
+		).toEqual({ step: 2, walkthrough: "w1" });
+		// No step means the next one, which only the host knows.
+		expect(parseCoordinatorToolInput("archboard_voice", "present_step", {})).toEqual({});
+		expect(() =>
+			parseCoordinatorToolInput("archboard_voice", "present_step", { step: 0 }),
+		).toThrow();
+		expect(() =>
+			parseCoordinatorToolInput("archboard_voice", "present_step", { step: 1, pane: "left" }),
+		).toThrow();
 
 		const values = [
 			[

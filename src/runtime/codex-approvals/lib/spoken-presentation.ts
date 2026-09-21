@@ -357,7 +357,7 @@ function elicitationSpokenEligibility(
 	request: Extract<ApprovalRequest, { readonly family: "elicitation" }>,
 ): SpokenEligibility {
 	if (
-		request.params.mode === "openai/form" &&
+		(request.params.mode === "openai/form" || request.params.mode === "openaiForm") &&
 		!supportsSpokenFormSchema(request.params.requestedSchema)
 	) {
 		return { eligible: false, reason: "unsupported_schema" };

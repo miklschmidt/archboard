@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export { CodexSafeI64Schema } from "@/shared/codex-app-server-contract";
 
-/** Use only where Codex's generated 0.151.0 contract deliberately says JsonValue. */
+/** Use only where Codex's generated 0.155.1 contract deliberately says JsonValue. */
 export const JsonValueSchema = z.json();
 /**
  * Text that is nonempty, NUL-free and bounded in UTF-8 bytes as well as characters, because

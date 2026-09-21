@@ -280,8 +280,10 @@ function Cache(children: ReactNode): JSX.Element {
  */
 const serving: typeof fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 
+/** The stage's own props a test may state as they are: a driven step, and what is laid over the picture. */
+type StagePassThrough = Pick<Parameters<typeof SemanticBoardStage>[0], "driven" | "overlay">;
 /** What else a mounted pane may be told, beyond what it is showing. */
-interface MountOptions {
+interface MountOptions extends StagePassThrough {
 	/** Which view the pane reads its board through. */
 	readonly view?: string | undefined;
 	/**
@@ -319,14 +321,13 @@ const READING_PROPS = [
 	"onVariantChange",
 	"reducedMotion",
 	"onReading",
+	"driven",
+	"overlay",
 ] as const satisfies readonly (keyof MountOptions)[];
 
 /**
- * How the pane was told to read its board, as props the stage takes.
- *
- * Assembled once because two mount paths hand the same four optional things to
- * the same component, and a test that set one of them on one path only would
- * pass for the wrong reason.
+ * How the pane was told to read its board, as props the stage takes: assembled
+ * once, so the two mount paths cannot differ in what they hand the stage.
  * @param options What the test asked for.
  * @returns The reading props, leaving out whatever was not asked for.
  */

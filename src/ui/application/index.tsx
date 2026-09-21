@@ -27,7 +27,7 @@ import {
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { usePaneReadings } from "@/ui/application/hooks/use-pane-reading";
-import { usePaneViews } from "@/ui/application/hooks/use-pane-views";
+import { usePaneViews, type PaneOverlay } from "@/ui/application/hooks/use-pane-views";
 import { useReleasedBoards } from "@/ui/application/hooks/use-released-boards";
 import {
 	shellPresentationOf,
@@ -39,6 +39,8 @@ import { usePanes, type Panes } from "@/ui/application/hooks/use-panes";
 import { useAgentActivity, type AgentActivity } from "@/ui/application/hooks/use-agent-activity";
 import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
 import { useStageEvents } from "@/ui/application/hooks/use-stage-events";
+import { useNarration } from "@/ui/application/hooks/use-narration";
+import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
 import { useWorkbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { PresentationVoiceControls } from "@/ui/application/components/PresentationVoiceControls";
@@ -116,6 +118,28 @@ interface WorkbenchSlots {
  */
 function useActivity(doing: readonly DoingEntry[]): ReactNode {
 	return useMemo(() => (doing.length === 0 ? null : <ActivityList entries={doing} />), [doing]);
+}
+
+/**
+ * The subtitles of the voice, laid over the pane its owners belong to.
+ * @param owners The focused pane's owners, or null while it has no transport.
+ * @param reducedMotion The motion preference.
+ * @returns The overlay and the pane it belongs over, or null.
+ */
+function useSubtitleOverlay(
+	owners: WorkbenchOwners | null,
+	reducedMotion: boolean,
+): PaneOverlay | null {
+	return useMemo(
+		() =>
+			owners === null
+				? null
+				: {
+						paneId: owners.paneId,
+						element: <PaneSubtitles owners={owners} reducedMotion={reducedMotion} />,
+					},
+		[owners, reducedMotion],
+	);
 }
 
 /**
@@ -333,7 +357,17 @@ function ApplicationBody(): JSX.Element {
 		},
 		[actions, panes.records],
 	);
-	const mounted = usePaneViews({ panes, theme, readings, reducedMotion, onVariantChange });
+	const narration = useNarration(workbench.owners, panes.list.activePaneId);
+	const overlay = useSubtitleOverlay(workbench.owners, reducedMotion);
+	const mounted = usePaneViews({
+		panes,
+		theme,
+		readings,
+		reducedMotion,
+		onVariantChange,
+		narration,
+		overlay,
+	});
 	const view = useShellView({
 		theme,
 		panes,

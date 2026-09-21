@@ -55,7 +55,12 @@ type WebSocketMessageType =
 	// Layout, addressed to one pane rather than to a board: the shell is asked
 	// for another pane, or for this one to go.
 	| "pane_open"
-	| "pane_close";
+	| "pane_close"
+	// A pane presenting a walkthrough is asked to go to a step, or to leave
+	// (TASK-251). The position stays the pane's: this asks, and the pane's own
+	// report says where it got to. Board-scoped, so a pane that has moved to
+	// another board does not step through a walkthrough it is not showing.
+	| "pane_present";
 
 /** What an agent is doing to one board, as every pane is shown it (ADR 0022). */
 interface AgentActivity {

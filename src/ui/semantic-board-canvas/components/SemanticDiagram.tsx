@@ -32,6 +32,7 @@ import {
 	usePictureTransition,
 	type StagedPicture,
 } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
+import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-presentation-arrival";
 import { PAN_STEP, cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import {
 	leavePicture,
@@ -288,6 +289,13 @@ interface SemanticDiagramProps {
 	 * rather than bringing its picture in afresh.
 	 */
 	presenting?: number | null | undefined;
+	/** What the surface of a presented step has to come to rest on, or null. */
+	arrivalKey?: string | null | undefined;
+	/**
+	 * The surface came to rest on that key, or moved again (TASK-251).
+	 * @param key The key it rests on, or null while it is moving.
+	 */
+	onSettled?: ((key: string | null) => void) | undefined;
 }
 
 /**
@@ -368,6 +376,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		heading: props.heading,
 		presenting: presentationMarks(props.presenting).surface !== "",
 	});
+	usePresentationArrival(surface, props.arrivalKey ?? null, props.onSettled);
 	// After the picture is staged, so a picture that just replaced a leaving one
 	// is never mistaken for it.
 	const departure = useLeaving(picture, props.departure, reducedMotion);

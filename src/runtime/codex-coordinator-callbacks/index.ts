@@ -36,6 +36,8 @@ export type {
 	CoordinatorCallbackReadyCoordinator,
 	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackRealtimePort,
+	CoordinatorCallbackTurnPort,
+	CoordinatorCallbackTurnResult,
 	CoordinatorCallbackRealtimeRequest,
 	CoordinatorCallbacks,
 	CoordinatorCallbacksRetainedState,

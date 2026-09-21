@@ -7,6 +7,7 @@ export { createVoiceSession } from "@/ui/voice-session/lib/session";
 export { projectVoiceSession } from "@/ui/voice-session/lib/projection";
 export { voiceControlsView, voiceWaveView } from "@/ui/voice-session/lib/presentation";
 export type {
+	VoiceNarration,
 	VoiceRealtimePort,
 	VoiceSession,
 	VoiceSessionBinding,

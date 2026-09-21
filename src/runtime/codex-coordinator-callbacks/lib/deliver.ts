@@ -13,6 +13,7 @@ import type {
 	CoordinatorCallbackDeliveryOutcome,
 	CoordinatorCallbackDeliveryPath,
 	CoordinatorCallbackDeliveryReason,
+	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackOptions,
 	CoordinatorCallbackRealtimeRequest,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
@@ -292,10 +293,123 @@ async function deliverThroughInjection(
 	});
 }
 
+/** The operation outcomes after which nothing more will come: what a waiting person wants to hear. */
+const TERMINAL_OPERATION_TYPES: ReadonlySet<string> = new Set([
+	"completed",
+	"failed",
+	"attention",
+	"outcome_unknown",
+]);
+
 /**
- * Deliver one callback down exactly one path, at most once: voice when a generation is live,
- * otherwise an injected developer message for an operation callback. Semantic telemetry with no
- * voice session is dropped rather than injected, because it exists to be heard.
+ * Whether a callback is a terminal workhorse outcome the coordinator should be run with.
+ * @param callback - The normalized callback.
+ * @returns True for an operation callback after which nothing more will come.
+ */
+function reportsTerminalOutcome(callback: CoordinatorCallback): boolean {
+	return callback.kind === "operation" && TERMINAL_OPERATION_TYPES.has(callback.type);
+}
+
+/**
+ * Run the coordinator with one terminal outcome, so it decides what the person hears. A
+ * coordinator still busy at the host's bound gets the injected developer message instead, so the
+ * outcome is neither lost nor said twice.
+ * @param callback - The normalized callback.
+ * @param options - The host authorities and ports.
+ * @param isDisposed - Whether the callback module has been disposed.
+ * @param evidence - The ordering and freshness evidence for the delivery record.
+ * @param port - The host port that starts the turn.
+ * @param text - The encoded callback.
+ * @returns The delivery record.
+ */
+async function deliverThroughCoordinatorTurn(
+	callback: CoordinatorCallback,
+	options: CoordinatorCallbackOptions,
+	isDisposed: () => boolean,
+	evidence: CallbackDeliveryEvidence,
+	port: NonNullable<CoordinatorCallbackOptions["coordinatorTurn"]>,
+	text: string,
+): Promise<CoordinatorCallbackDelivery> {
+	const threadId = callback.correlation.coordinatorThreadId;
+	const attemptedAtMs = (options.now ?? Date.now)();
+	const result = threadId === null ? "busy" : await port.report({ threadId, text });
+	if (result === "busy") {
+		return deliverThroughInjection(callback, options, isDisposed, evidence, text);
+	}
+	return turnDelivery(callback, evidence, {
+		result,
+		attemptedAtMs,
+		lostAuthority: result.attempted ? afterAttemptReason(callback, options, isDisposed()) : null,
+		text,
+	});
+}
+
+/**
+ * The record of one coordinator turn that was, or was not, started.
+ * @param callback - The normalized callback.
+ * @param evidence - The ordering and freshness evidence.
+ * @param attempt - How the start settled, when it was tried, and any authority lost meanwhile.
+ * @param attempt.result - How the start settled.
+ * @param attempt.attemptedAtMs - When it was tried.
+ * @param attempt.lostAuthority - The authority lost while it was in flight, or null.
+ * @param attempt.text - The encoded callback.
+ * @returns The delivery record.
+ */
+function turnDelivery(
+	callback: CoordinatorCallback,
+	evidence: CallbackDeliveryEvidence,
+	attempt: {
+		readonly result: CoordinatorCallbackMutationResult;
+		readonly attemptedAtMs: number;
+		readonly lostAuthority: ReturnType<typeof afterAttemptReason>;
+		readonly text: string;
+	},
+): CoordinatorCallbackDelivery {
+	const { result, lostAuthority } = attempt;
+	return makeDelivery(callback, evidence, {
+		attemptedAtMs: result.attempted ? attempt.attemptedAtMs : null,
+		path: "coordinator_turn",
+		outcome: lostAuthority === null ? result.outcome : "outcome_unknown",
+		reason: lostAuthority ?? result.reason,
+		text: attempt.text,
+	});
+}
+
+/**
+ * The record of a callback that is kept and delivered to nobody.
+ * @param callback - The normalized callback.
+ * @param evidence - The ordering and freshness evidence for the delivery record.
+ * @param text - The encoded callback, kept on the record.
+ * @returns The delivery record.
+ */
+function recordOnly(
+	callback: CoordinatorCallback,
+	evidence: CallbackDeliveryEvidence,
+	text: string,
+): CoordinatorCallbackDelivery {
+	return makeDelivery(callback, evidence, {
+		attemptedAtMs: null,
+		path: "silent",
+		outcome: "not_delivered",
+		reason: callback.correlation.realtimeGeneration === null ? "voice_inactive" : "recorded_only",
+		text,
+	});
+}
+
+/**
+ * Deliver one callback down exactly one path, at most once. While a voice generation is live a
+ * terminal workhorse outcome runs the coordinator, which decides what the person hears, and any
+ * other operation callback is quiet context for the voice model; with no voice session an
+ * operation callback is an injected developer message.
+ *
+ * Semantic telemetry (a change, a focus, a selection) is delivered to nobody and only recorded.
+ * It used to be appended to the live voice session, which put a seven-kilobyte machine envelope
+ * of identities and a serialized brief into a speech model's context on every selection: one per
+ * walkthrough step, arriving as the model began to speak, 33 of them in the sessions of
+ * 2026-09-20. The voice model is told never to resolve what the person points at from anything
+ * but a fresh coordinator lookup, so the telemetry was at best noise it was instructed to
+ * ignore, and in practice something it remarked on unasked. The coordinator reads the live pane
+ * through its own tools when it is asked.
  * @param callback - The normalized callback.
  * @param options - The host authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -314,17 +428,14 @@ async function deliverOne(
 	}
 	const { text } = cleared;
 	const generation = callback.correlation.realtimeGeneration;
-	if (generation !== null) {
-		return deliverThroughVoice(callback, options, isDisposed, evidence, generation, text);
-	}
 	if (callback.kind === "semantic") {
-		return makeDelivery(callback, evidence, {
-			attemptedAtMs: null,
-			path: "silent",
-			outcome: "not_delivered",
-			reason: "voice_inactive",
-			text,
-		});
+		return recordOnly(callback, evidence, text);
+	}
+	if (generation !== null) {
+		const turnPort = reportsTerminalOutcome(callback) ? options.coordinatorTurn : undefined;
+		return turnPort === undefined
+			? deliverThroughVoice(callback, options, isDisposed, evidence, generation, text)
+			: deliverThroughCoordinatorTurn(callback, options, isDisposed, evidence, turnPort, text);
 	}
 	return deliverThroughInjection(callback, options, isDisposed, evidence, text);
 }

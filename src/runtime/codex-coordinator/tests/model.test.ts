@@ -137,7 +137,8 @@ describe("coordinator model and literal profile", () => {
 				allowProviderModelFallback: false,
 				cwd: CHECKOUT_ROOT,
 				runtimeWorkspaceRoots: [CHECKOUT_ROOT],
-				config: { features: { realtime_conversation: true } },
+				// Project docs are off: AGENTS.md is for the workhorse, never the coordinator.
+				config: { features: { realtime_conversation: true }, project_doc_max_bytes: 0 },
 				serviceName: "archboard",
 				developerInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
 				ephemeral: false,

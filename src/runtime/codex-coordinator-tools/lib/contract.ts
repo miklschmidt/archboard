@@ -32,6 +32,8 @@ import type {
 	ManageWorkhorseQueueResult,
 	DelegateToWorkhorseInput,
 	DelegateToWorkhorseResult,
+	PresentStepInput,
+	PresentStepResult,
 	ResolveSpokenApprovalResult,
 	SteerWorkhorseInput,
 	SteerWorkhorseResult,
@@ -81,6 +83,28 @@ interface CoordinatorToolAuthorityPort {
 	readonly expectedTurnId: () => TurnId | null;
 }
 
+/** What presenting one walkthrough step came to. */
+type CoordinatorToolPresentStepOutcome =
+	| { readonly tag: "ok"; readonly value: PresentStepResult }
+	| {
+			readonly tag: "refused";
+			readonly reason: DynamicToolRefusalReason;
+			readonly message: string;
+	  };
+
+/**
+ * Presents one walkthrough step in the pane the host bound to the voice session, and answers
+ * only once that pane says the step has finished arriving. The pane, the board and the variant
+ * are the host's; the coordinator names a step and, until it is known, a walkthrough.
+ */
+interface CoordinatorToolPresentationPort {
+	readonly presentStep: (request: {
+		readonly input: PresentStepInput;
+		/** Aborted when the call is cancelled, so the host stops waiting on the pane. */
+		readonly signal: AbortSignal;
+	}) => Promise<CoordinatorToolPresentStepOutcome>;
+}
+
 /** The only transport capability this module needs. */
 interface CoordinatorToolResponsePort {
 	readonly respond: (
@@ -99,6 +123,7 @@ interface CodexCoordinatorToolsOptions {
 		"inspect" | "delegate" | "manageQueue" | "steer"
 	>;
 	readonly spokenApproval: Pick<CodexSpokenApprovalGate, "snapshot" | "resolve">;
+	readonly presentation: CoordinatorToolPresentationPort;
 	readonly transport: CoordinatorToolResponsePort;
 }
 
@@ -115,7 +140,8 @@ type CoordinatorToolValue =
 	| DelegateToWorkhorseResult
 	| ManageWorkhorseQueueResult
 	| SteerWorkhorseResult
-	| ResolveSpokenApprovalResult;
+	| ResolveSpokenApprovalResult
+	| PresentStepResult;
 
 type CoordinatorToolValueFor<Name extends CoordinatorToolName> = Name extends "inspect_workhorse"
 	? InspectWorkhorseResult
@@ -125,7 +151,9 @@ type CoordinatorToolValueFor<Name extends CoordinatorToolName> = Name extends "i
 			? ManageWorkhorseQueueResult
 			: Name extends "steer_workhorse"
 				? SteerWorkhorseResult
-				: ResolveSpokenApprovalResult;
+				: Name extends "present_step"
+					? PresentStepResult
+					: ResolveSpokenApprovalResult;
 
 interface CoordinatorToolDispatchResult {
 	readonly response: DynamicToolResponse;
@@ -172,6 +200,7 @@ type CoordinatorToolInput =
 	| ManageWorkhorseQueueInput
 	| SteerWorkhorseInput
 	| { readonly verdict: "accept" | "decline" }
+	| PresentStepInput
 	| Record<string, never>;
 
 interface CoordinatorToolDispatcher {
@@ -210,6 +239,8 @@ export {
 	type CoordinatorDynamicDispatcher,
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolAuthorityPort,
+	type CoordinatorToolPresentStepOutcome,
+	type CoordinatorToolPresentationPort,
 	type CoordinatorToolResponsePort,
 	type CodexCoordinatorToolsOptions,
 	type CoordinatorToolsServerRequest,

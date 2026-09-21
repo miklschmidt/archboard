@@ -55,7 +55,7 @@ async function initializeTransportSession(fixture: TransportSessionFixture): Pro
 		fixture,
 		"initialize",
 		{
-			userAgent: "Codex Desktop/0.151.0",
+			userAgent: "Codex Desktop/0.155.1",
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",

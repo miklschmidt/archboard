@@ -27,13 +27,28 @@ const COORDINATOR_NAMESPACE_NAMES = Object.freeze([
 	"archboard_voice",
 ] as const);
 
+/**
+ * The Codex configuration every coordinator thread starts with.
+ *
+ * `project_doc_max_bytes: 0` stops Codex loading the checkout's `AGENTS.md` into the coordinator.
+ * That file is written for an agent doing work in the repository: it tells every request to
+ * begin with project procedure. The coordinator is a voice front desk whose whole brief is the
+ * instructions Archboard gives it, and in its first narrated walkthrough (TASK-251) that
+ * procedure cost eight seconds of silence before it presented a step. The workhorse, which does
+ * work in the repository, still reads the file.
+ */
+const COORDINATOR_THREAD_CONFIG = deepFreeze({
+	features: { realtime_conversation: true },
+	project_doc_max_bytes: 0,
+} as const);
+
 /** The reviewed identity that a coordinator turn must carry. */
 const COORDINATOR_IDENTITY = deepFreeze({
 	role: COORDINATOR_ROLE,
 	model: "gpt-5.6-luna",
 	effort: "medium",
 	allowProviderModelFallback: false,
-	config: { features: { realtime_conversation: true } },
+	config: COORDINATOR_THREAD_CONFIG,
 	serviceName: "archboard",
 	ephemeral: false,
 	historyMode: "paginated",
@@ -50,7 +65,10 @@ const CoordinatorIdentitySchema = z
 		effort: z.literal("medium"),
 		allowProviderModelFallback: z.literal(false),
 		config: z
-			.object({ features: z.object({ realtime_conversation: z.literal(true) }).strict() })
+			.object({
+				features: z.object({ realtime_conversation: z.literal(true) }).strict(),
+				project_doc_max_bytes: z.literal(0),
+			})
 			.strict(),
 		serviceName: z.literal("archboard"),
 		ephemeral: z.literal(false),
@@ -66,12 +84,14 @@ type AuthorityTarget =
 	| "host_bound_workhorse"
 	| "host_created_workhorse_queue"
 	| "host_proven_workhorse_turn"
-	| "host_validated_spoken_approval";
+	| "host_validated_spoken_approval"
+	| "host_bound_voice_pane";
 const AuthorityTargetSchema = z.enum([
 	"host_bound_workhorse",
 	"host_created_workhorse_queue",
 	"host_proven_workhorse_turn",
 	"host_validated_spoken_approval",
+	"host_bound_voice_pane",
 ]);
 
 type RequiredLink =
@@ -91,7 +111,9 @@ type RequiredLink =
 	| "finalUserItemId"
 	| "finalUserSequence"
 	| "effectFingerprint"
-	| "expiry";
+	| "expiry"
+	| "paneId"
+	| "boardKey";
 const RequiredLinkSchema = z.enum([
 	"child",
 	"epoch",
@@ -110,6 +132,8 @@ const RequiredLinkSchema = z.enum([
 	"finalUserSequence",
 	"effectFingerprint",
 	"expiry",
+	"paneId",
+	"boardKey",
 ]);
 
 const CoordinatorToolContractSchema = z
@@ -166,6 +190,14 @@ const VOICE_LINKS = [
 	"expiry",
 ] as const;
 
+/** The pane and board a presented step lands on are the host's; the model names only the step. */
+const PRESENT_STEP_LINKS = [
+	...TOOL_CORRELATION_LINKS,
+	"realtimeSessionId",
+	"paneId",
+	"boardKey",
+] as const;
+
 const INSPECT_REFUSALS = [
 	"invalid_call",
 	"not_ready",
@@ -203,6 +235,23 @@ const VOICE_REFUSALS = [
 	"approval_declined",
 	"expired",
 	"unsupported",
+] as const satisfies readonly DynamicToolRefusalReason[];
+
+/**
+ * How presenting a step is refused: no voice-linked pane or no such walkthrough or step
+ * (`not_ready`, `invalid_call`), a person with a hand on the keys (`busy`), and a step that never
+ * arrived (`expired`). Nobody approves it, so it is never declined.
+ */
+const PRESENT_STEP_REFUSALS = [
+	"invalid_call",
+	"not_ready",
+	"not_loaded",
+	"system_error",
+	"stale_child",
+	"prior_epoch",
+	"unknown_provenance",
+	"busy",
+	"expired",
 ] as const satisfies readonly DynamicToolRefusalReason[];
 
 /**
@@ -265,6 +314,12 @@ const ARCHBOARD_VOICE_TOOL_CONTRACTS = deepFreeze([
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.resolve_spoken_approval },
 		refusalErrors: [...VOICE_REFUSALS],
 	}),
+	contract("archboard_voice", "present_step", {
+		authorityTarget: "host_bound_voice_pane",
+		requiredLinks: [...PRESENT_STEP_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.present_step },
+		refusalErrors: [...PRESENT_STEP_REFUSALS],
+	}),
 ] satisfies readonly CoordinatorToolContract[]);
 
 const COORDINATOR_TOOL_CONTRACTS = deepFreeze([
@@ -290,6 +345,7 @@ export {
 	COORDINATOR_ROLE,
 	type CoordinatorRole,
 	COORDINATOR_NAMESPACE_NAMES,
+	COORDINATOR_THREAD_CONFIG,
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
 	type AuthorityTarget,

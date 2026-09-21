@@ -1,4 +1,6 @@
 import type {
+	AnswerSdp,
+	CreateOfferSdp,
 	RealtimeHost,
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
@@ -13,6 +15,10 @@ import type {
 } from "@/shared/codex-workbench-identity";
 import type { CodexSession, SessionNotificationHandler } from "@/runtime/codex-session";
 import type { FreshSemanticBrief } from "@/runtime/codex-semantic-context";
+import type {
+	RealtimePresentation,
+	RealtimePresentationChange,
+} from "@/runtime/codex-realtime/lib/presentation-mode";
 
 interface CodexRealtimeBinding {
 	readonly child: ChildId;
@@ -46,10 +52,33 @@ interface CodexRealtimeAdapterOptions {
 		readonly subscribe: (onChange: () => void, onError: (error: Error) => void) => () => void;
 	};
 	readonly currentBinding: () => CodexRealtimeBinding | null;
+	/**
+	 * Hears what a start sent and how Codex answered it, for whoever keeps a trace of voice
+	 * starts. Sizes, identities and messages only; never the SDP, a prompt or board content.
+	 */
+	readonly trace?: (
+		stage: string,
+		detail: Readonly<Record<string, string | number | boolean | null>>,
+	) => void;
+	/**
+	 * When a person moves the voice-linked pane's presented walkthrough by hand, or leaves it
+	 * (TASK-251). Absent where nothing presents walkthroughs.
+	 */
+	readonly presentationChanges?: {
+		readonly subscribe: (listener: (change: RealtimePresentationChange) => void) => () => void;
+	};
 }
 
 /** Server-owned protocol half; remote MediaStream attachment remains browser-local. */
-interface CodexRealtimeAdapter extends Omit<RealtimeHost, "attachRemoteMedia"> {
+interface CodexRealtimeAdapter extends Omit<RealtimeHost, "attachRemoteMedia" | "createOffer"> {
+	/**
+	 * Accept the browser's offer and start the session, as an ordinary voice session or, given a
+	 * walkthrough, one started to present it (TASK-251).
+	 */
+	readonly createOffer: (
+		offer: CreateOfferSdp,
+		presentation?: RealtimePresentation | null,
+	) => Promise<AnswerSdp>;
 	readonly onNotification: SessionNotificationHandler;
 	readonly transcript: () => readonly RealtimeTranscriptRecord[];
 	readonly generation: () => CodexRealtimeGeneration | null;

@@ -8,6 +8,7 @@ import {
 import { forgetDoing } from "@/runtime/engine/board-doing";
 import { removePidFile, writePidFile } from "@/runtime/engine/pidfile";
 import { server } from "@/server/canvas/lib/canvas-app";
+import { panePresentations } from "@/server/canvas/lib/pane-presentation";
 import { forgetSemanticPaneContexts } from "@/server/canvas/lib/semantic-pane-context";
 import { forgetSemanticBoardFiles } from "@/server/canvas/lib/semantic-disk-watch";
 import { codexWiring } from "@/server/canvas/lib/canvas-codex-host";
@@ -37,6 +38,7 @@ function forgetEngineState(): void {
 	forgetLockAnnouncements();
 	forgetDoing();
 	forgetSemanticPaneContexts();
+	panePresentations.forget();
 }
 
 /** Collects distinct cleanup failures, flattening aggregates, so one report names them all. */

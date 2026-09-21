@@ -58,7 +58,7 @@ function codexProcessLine(codex: CodexProcessError): string {
 	if (CODEX_INSTALL_FAILURES.has(codex.code)) {
 		return (
 			"Codex app-server exited before the canvas became ready. " +
-			"Run bun install to restore @openai/codex 0.151.0, then retry. " +
+			"Run bun install to restore @openai/codex 0.155.1, then retry. " +
 			codex.message
 		);
 	}

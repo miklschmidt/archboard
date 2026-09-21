@@ -37,7 +37,7 @@ const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.151.0",
+	cliVersion: "0.155.1",
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -46,6 +46,11 @@ const threadFixture = {
 	gitInfo: null,
 	name: null,
 	turns: [turnFixture],
+	environments: null,
+	model: null,
+	reasoningEffort: null,
+	originator: null,
+	daybreakEnabled: null,
 };
 
 const configFixture = {
@@ -122,7 +127,7 @@ const threadStartResponseFixture = {
 
 const responseFixtures: Record<ResponseMethod, unknown> = {
 	initialize: {
-		userAgent: "Codex Desktop/0.151.0",
+		userAgent: "Codex Desktop/0.155.1",
 		codexHome: "/tmp/codex",
 		platformFamily: "unix",
 		platformOs: "linux",

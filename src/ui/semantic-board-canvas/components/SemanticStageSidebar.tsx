@@ -116,6 +116,7 @@ function SemanticStageSidebar(props: {
 					onChooseVariant={view.drill.trail.length === 0 ? undefined : level.onVariant}
 					narrative={view.narrative}
 					onChooseWalkthrough={view.onChooseWalkthrough}
+					onNarrate={view.onNarrate}
 					groups={view.groups}
 					groupFocus={view.groupFocus}
 					onChooseGroup={view.onChooseGroup}

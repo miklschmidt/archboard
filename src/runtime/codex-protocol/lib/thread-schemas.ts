@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+	ReasoningEffortSchema,
 	SessionSourceSchema,
 	ThreadHistoryModeSchema,
 	ThreadSectionSchema,
@@ -26,6 +27,12 @@ const TurnSchema = z.lazy(() =>
 		durationMs: FiniteNumberSchema.nullable(),
 	}),
 );
+
+const ThreadEnvironmentSchema = looseObject({
+	environmentId: z.string(),
+	cwd: z.string(),
+	runtimeWorkspaceRoots: z.array(z.string()),
+});
 
 const ThreadSchema = z.lazy(() =>
 	looseObject({
@@ -60,6 +67,11 @@ const ThreadSchema = z.lazy(() =>
 		}).nullable(),
 		name: z.string().nullable(),
 		turns: z.array(TurnSchema),
+		environments: z.array(ThreadEnvironmentSchema).nullable(),
+		model: z.string().nullable(),
+		reasoningEffort: ReasoningEffortSchema.nullable(),
+		originator: z.string().nullable(),
+		daybreakEnabled: z.boolean().nullable(),
 	}),
 );
 

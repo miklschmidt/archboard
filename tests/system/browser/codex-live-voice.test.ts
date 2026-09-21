@@ -67,6 +67,8 @@ interface VoiceSnapshot {
 	readonly wavePresentation: string | null;
 	readonly transcript: string;
 	readonly context: string;
+	/** What the subtitle over the picture reads, or null when there is none. */
+	readonly subtitle: string | null;
 }
 
 interface LayoutSnapshot {
@@ -104,6 +106,7 @@ function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
 			wavePresentation: wave?.getAttribute('data-voice-wave') ?? null,
 			transcript: panel('Transcript')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 			context: panel('Context')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
+			subtitle: document.querySelector('[data-slot="voice-subtitles"]')?.textContent ?? null,
 		};
 	})()`);
 }
@@ -262,6 +265,20 @@ test(
 		);
 		expect(speaking.wavePresentation).toBe("animated");
 		expect(speaking.controls).toEqual(["Mute", "Stop voice", "Restart voice"]);
+		// What the model says is subtitled over the picture as its words arrive.
+		const subtitled = await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.subtitle !== null,
+			"the model's words to be subtitled over the picture",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect("The controlled voice context is visible.").toStartWith(subtitled.subtitle ?? "?");
+		await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.subtitle === "The controlled voice context is visible.",
+			"the whole sentence to be subtitled",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
 		expect(await clickTab(browser, "Transcript")).toBe(true);
 		const listening = await pollUntil(
 			() => voiceSnapshot(browser),

@@ -286,6 +286,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			return host.options().onLayoutRequest;
 		},
 		/**
+		 * Where a request to present a walkthrough step goes; read live.
+		 * @returns The listener, or undefined when the shell wants none.
+		 */
+		get onPresentRequest() {
+			return host.options().onPresentRequest;
+		},
+		/**
 		 * Where a board refusal goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */

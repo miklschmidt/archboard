@@ -108,7 +108,10 @@ describe("production Codex generation ownership", () => {
 			contextForChange: () => input,
 			now: () => 1_800_000_000_000,
 		};
-		const owned = installation({ semanticPublisher: semanticPublisherOptions });
+		const owned = installation({
+			semanticPublisher: semanticPublisherOptions,
+			narrationChanges: () => () => undefined,
+		});
 		const publisher = createSemanticContextPublisher(semanticPublisherOptions);
 		const starts: SessionParams<"thread/realtime/start">[] = [];
 		try {

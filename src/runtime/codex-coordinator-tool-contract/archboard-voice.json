@@ -1,7 +1,7 @@
 {
 	"type": "namespace",
 	"name": "archboard_voice",
-	"description": "Resolve the sole host-validated spoken binary approval from a later ordinary coordinator turn.",
+	"description": "Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn, and present a walkthrough step in the voice-linked pane.",
 	"tools": [
 		{
 			"type": "function",
@@ -11,6 +11,21 @@
 				"type": "object",
 				"properties": { "verdict": { "type": "string", "enum": ["accept", "decline"] } },
 				"required": ["verdict"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "present_step",
+			"description": "Present a step of the walkthrough in the voice-linked pane and answer only once that step has finished arriving on screen, with the step's heading, body and subjects to hand to the voice model as speakable prose. Call it with no step to present the next step: the host knows which step was presented last, or which one the person moved to by hand, and the first call of a narration presents step 1. Pass step only when the person asked for a particular step. The host supplies the pane, board and variant. Name the walkthrough by id or name on the first call unless voice started in presentation mode; omit it afterwards. A refusal says why no step is on screen, including that the walkthrough is complete.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"step": { "type": "integer", "minimum": 1, "maximum": 1000 },
+					"walkthrough": { "type": "string", "minLength": 1, "maxLength": 120 }
+				},
+				"required": [],
 				"additionalProperties": false
 			},
 			"deferLoading": false

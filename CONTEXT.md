@@ -290,6 +290,23 @@ target views, and focused diagram subjects. It supports presenting architecture
 while highlighting the parts being discussed.
 _Avoid_: variant, flow
 
+**Narration**:
+A voice session started to present one walkthrough as a talk. The voice model
+paces it, asking for one step at a time; the coordinator presents each step in
+the linked pane and hands it back once the pane says it has arrived. The
+position in the walkthrough stays the pane's, and a person stepping by hand or
+leaving is told to the narrator so the words follow the picture.
+_Avoid_: playback, autoplay, slideshow
+
+**Subtitle**:
+What the voice model is saying, laid over the picture of the pane voice runs
+for, one cue of two lines at a time. The transcript arrives a word at a time on
+the audio clock, so each word is shown as it arrives, and the subtitle goes once
+the voice has been silent longer than it pauses mid-thought. It is presentation:
+the browser's own, written nowhere, and the person can turn it off. What the
+person says is never subtitled.
+_Avoid_: caption (the walkthrough's step text), transcript (the dock's record)
+
 **Comparison**:
 The differences between two board variants, identified by the stable identities
 of their architectural content. A proposal's views show its comparison with its baseline

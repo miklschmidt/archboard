@@ -2,6 +2,9 @@ import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/code
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
 import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
+import { narrationTiming } from "@/server/canvas/lib/narration-timing";
+import { traceMessage, voiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
+import { narrationFor, noteNarratedWalkthrough } from "@/server/canvas/lib/walkthrough-narration";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;
 
@@ -132,6 +135,22 @@ export function createCanvasRealtimeActions(
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
 	let realtimeQueue = Promise.resolve();
+	// The narration clock hears when the voice starts and stops speaking (TASK-251), and the
+	// start trace keeps every state the session moves through and every diagnostic it raises.
+	components.realtime.onSemanticEvent((event) => {
+		if (event.kind === "diagnostic") {
+			voiceStartTrace.note("diagnostic", { code: event.code, message: event.message });
+		}
+		if (event.kind !== "state") {
+			return;
+		}
+		voiceStartTrace.note("state", { phase: event.state.phase, reason: event.state.reason });
+		if (event.state.reason === "assistant_started") {
+			narrationTiming.voiceStarted();
+		} else if (event.state.reason === "assistant_finished") {
+			narrationTiming.voiceFinished();
+		}
+	});
 	/**
 	 * Run one realtime operation after the last one has settled: a session is a
 	 * single continuous thing, and two commands must not overlap on it.
@@ -199,11 +218,21 @@ export function createCanvasRealtimeActions(
 		const coordinator = components.coordinator.snapshot();
 		const threadId = context.link.threadId;
 		const coordinatorThreadId = coordinator.threadId;
+		const workhorse = components.workhorse.snapshot();
+		// Which of the conditions a refusal turned on is the first thing anybody asks.
+		voiceStartTrace.note("preconditions", {
+			linkedThread: threadId !== null,
+			coordinatorState: coordinator.state,
+			coordinatorReason: coordinator.reason,
+			coordinatorReady: coordinatorReadyFor(coordinator, context),
+			workhorseState: workhorse.state,
+			workhorseReady: threadId !== null && workhorseReadyFor(workhorse, threadId),
+		});
 		if (
 			threadId === null ||
 			coordinatorThreadId === null ||
 			!coordinatorReadyFor(coordinator, context) ||
-			!workhorseReadyFor(components.workhorse.snapshot(), threadId)
+			!workhorseReadyFor(workhorse, threadId)
 		) {
 			throw new Error("Realtime is unavailable for this exact linked thread.");
 		}
@@ -222,6 +251,24 @@ export function createCanvasRealtimeActions(
 		});
 	};
 
+	/**
+	 * The session one start would own, with a refusal kept in the start trace.
+	 * @param commandId The command starting it.
+	 * @param context The pane and the link it named.
+	 * @returns The session, not yet offered.
+	 */
+	const tracedPending = (
+		commandId: BrowserActionContext["commandId"],
+		context: BrowserActionContext,
+	): ActiveRealtime => {
+		try {
+			return pendingRealtime(commandId, context);
+		} catch (error) {
+			voiceStartTrace.note("refused", { message: traceMessage(error) });
+			throw error;
+		}
+	};
+
 	const actions: BrowserRealtimeActions = {
 		/**
 		 * Start voice for one pane, replacing whatever session was running.
@@ -231,24 +278,47 @@ export function createCanvasRealtimeActions(
 		 */
 		start: (command, context) =>
 			serialize(async () => {
+				voiceStartTrace.begin(context.paneId);
+				voiceStartTrace.note("requested", {
+					narration: command.presentation !== undefined,
+					offerSdpBytes: Buffer.byteLength(command.sdp),
+					replacesSession: activeRealtime !== null,
+				});
 				if (activeRealtime !== null) {
 					await stopActive();
 				}
-				const pending = pendingRealtime(command.commandId, context);
+				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
 				try {
-					const realtimeAnswer = await components.realtime.createOffer({
-						sessionId: pending.sessionId,
-						correlationId: pending.correlationId,
-						sdp: command.sdp,
-					});
+					// A session started to present a walkthrough is told what it says by
+					// the server, from the board the pane is showing (TASK-251).
+					const presentation =
+						command.presentation === undefined
+							? null
+							: narrationFor(pending.paneId, command.presentation.walkthrough);
+					if (presentation === null) {
+						noteNarratedWalkthrough(pending.paneId, null);
+					}
+					narrationTiming.reset();
+					const realtimeAnswer = await components.realtime.createOffer(
+						{
+							sessionId: pending.sessionId,
+							correlationId: pending.correlationId,
+							sdp: command.sdp,
+						},
+						presentation,
+					);
 					requireActive(pending.handle, context);
+					voiceStartTrace.note("answered", {
+						answerSdpBytes: Buffer.byteLength(realtimeAnswer.sdp),
+					});
 					return {
 						outcome: "delivered" as const,
 						realtimeAnswer,
 						realtimeSessionHandle: pending.handle,
 					};
 				} catch (error) {
+					voiceStartTrace.note("failed", { message: traceMessage(error) });
 					if (activeRealtime === pending) {
 						activeRealtime = null;
 					}

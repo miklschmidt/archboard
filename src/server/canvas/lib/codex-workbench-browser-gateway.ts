@@ -24,6 +24,7 @@ import {
 import { createCanvasCanonicalTextActions } from "@/server/canvas/lib/codex-workbench-text-actions";
 import { createCanvasBrowserAccountOwner } from "@/server/canvas/lib/codex-workbench-account";
 import { createCanvasRealtimeActions } from "@/server/canvas/lib/codex-workbench-realtime-actions";
+import { watchTranscriptChanges } from "@/server/canvas/lib/transcript-changes";
 import type { CanvasReadinessProcessFacts } from "@/server/canvas/lib/codex-workbench-readiness";
 import { createCanvasOrdinaryApprovalActions } from "@/server/canvas/lib/codex-workbench-ordinary-approvals";
 import {
@@ -377,7 +378,9 @@ function createCanvasBrowserGatewayOptions(
 		onChange: (listener) => {
 			const unsubscribe = input.onChange(listener);
 			const unsubscribeAccount = account.subscribe(listener);
+			const unsubscribeTranscript = watchTranscriptChanges(components.realtime, listener);
 			return () => {
+				unsubscribeTranscript();
 				unsubscribeAccount();
 				unsubscribe();
 			};

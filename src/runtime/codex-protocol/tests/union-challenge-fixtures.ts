@@ -21,6 +21,7 @@ function threadItemBranch(type: string): JsonRecord | undefined {
 				phase: null,
 				memoryCitation: null,
 				delivery: null,
+				questions: null,
 			};
 		case "functionCallOutput":
 			return {

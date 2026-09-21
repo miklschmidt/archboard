@@ -121,6 +121,7 @@ function harness(
 		read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 		subscribe: () => () => {},
 	},
+	presentationChanges?: CodexRealtimeAdapterOptions["presentationChanges"],
 ): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
@@ -145,6 +146,7 @@ function harness(
 		session: session.port,
 		identity,
 		boardCatalogue,
+		...(presentationChanges === undefined ? {} : { presentationChanges }),
 		freshSemanticBrief: () => semanticBrief(),
 		currentBinding: () => bindingState.binding,
 	});
@@ -196,13 +198,14 @@ function correlation(suffix = "") {
 async function started(
 	h: Harness,
 	suffix = "",
+	presentation: Parameters<Harness["adapter"]["createOffer"]>[1] = null,
 ): Promise<{
 	readonly wireSessionId: string;
 	readonly correlation: ReturnType<typeof correlation>;
 }> {
 	const browser = correlation(suffix);
 	const startIndex = h.session.starts.length;
-	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
+	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, presentation);
 	await Promise.resolve();
 	const start = h.session.starts[startIndex];
 	if (!start?.realtimeSessionId) {

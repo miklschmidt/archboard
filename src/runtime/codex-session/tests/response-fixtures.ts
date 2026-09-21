@@ -13,7 +13,7 @@ import {
 export function responseFor(method: ResponseMethod, fixture: SessionFixture): unknown {
 	if (method === "initialize") {
 		return {
-			userAgent: "Codex Desktop/0.151.0",
+			userAgent: "Codex Desktop/0.155.1",
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",

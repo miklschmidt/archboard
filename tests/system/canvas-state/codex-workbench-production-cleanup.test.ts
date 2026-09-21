@@ -71,7 +71,7 @@ describe.serial("production Codex setup cleanup", () => {
 				if (scenario === "early-exit") {
 					writePublicCodexExecutable(
 						executable,
-						`if (process.argv.includes("--version")) console.log("codex-cli 0.151.0"); else { require("node:fs").writeFileSync(${JSON.stringify(pidLog)}, String(process.pid)); process.exit(19); }`,
+						`if (process.argv.includes("--version")) console.log("codex-cli 0.155.1"); else { require("node:fs").writeFileSync(${JSON.stringify(pidLog)}, String(process.pid)); process.exit(19); }`,
 					);
 				}
 				const environment = publicStartEnvironment(root, base, executable);

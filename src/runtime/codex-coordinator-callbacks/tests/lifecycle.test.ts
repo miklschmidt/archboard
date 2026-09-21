@@ -4,7 +4,7 @@ import { CALLBACK_BUFFER_LIMIT, createCodexCoordinatorCallbacks } from "../index
 import { close, harness, operationEvent } from "./support.js";
 
 describe("coordinator callback lifecycle", () => {
-	test("delivers all eleven members exactly once through one active route", async () => {
+	test("delivers every operation member exactly once through the active route, and records semantic telemetry without delivering it", async () => {
 		const h = harness(true);
 		for (const type of [
 			"accepted",
@@ -20,10 +20,12 @@ describe("coordinator callback lifecycle", () => {
 			expect(result.outcome).toBe("delivered");
 		}
 		for (const source of [h.semantic.change, h.semantic.focus, h.semantic.selection]) {
+			// A change, a focus or a selection is never put into a speech model's context.
 			const result = await h.callbacks.enqueue(source);
-			expect(result.outcome).toBe("delivered");
+			expect(result.outcome).toBe("not_delivered");
+			expect(result.path).toBe("silent");
 		}
-		expect(h.realtimeRequests).toHaveLength(11);
+		expect(h.realtimeRequests).toHaveLength(8);
 		expect(h.injections).toHaveLength(0);
 		close(h);
 	});

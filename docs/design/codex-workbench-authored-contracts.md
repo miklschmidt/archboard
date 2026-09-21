@@ -2,7 +2,7 @@
 
 **Reviewed input:** 2026-08-30
 
-**Protocol:** Codex app-server 0.151.0 with experimental APIs
+**Protocol:** Codex app-server 0.155.1 with experimental APIs
 
 **Owner:** TASK-143.01.17
 
@@ -138,7 +138,7 @@ The coordinator uses exactly one of these two otherwise-identical profiles:
 	"serviceTier": "priority",
 	"cwd": "<canonical-checkout-root>",
 	"runtimeWorkspaceRoots": ["<same-canonical-checkout-root>"],
-	"config": { "features": { "realtime_conversation": true } },
+	"config": { "features": { "realtime_conversation": true }, "project_doc_max_bytes": 0 },
 	"serviceName": "archboard",
 	"developerInstructions": "<canonical-composed-coordinator-bytes>",
 	"ephemeral": false,
@@ -152,6 +152,13 @@ The coordinator uses exactly one of these two otherwise-identical profiles:
 	"experimentalRawEvents": false
 }
 ```
+
+`project_doc_max_bytes: 0` keeps the checkout's `AGENTS.md` out of the
+coordinator (verified on Codex 0.155.1: `thread/start` answers
+`instructionSources: []` with it and the file's path without). That file is
+written for an agent doing work in the repository and tells every request to
+begin with project procedure; the coordinator's whole brief is what Archboard
+gives it. The workhorse profile leaves the default, so it still reads the file.
 
 When `model/list` does not advertise priority for `gpt-5.6-luna`, the fallback
 profile omits `serviceTier`; it does not send `null` or another tier. Both
@@ -334,6 +341,8 @@ You are the persistent voice coordinator for one Archboard thread link. Stay cap
 
 Keep coordinator and workhorse histories distinct. Never wait synchronously for the workhorse. Use inspect_workhorse for current state, delegate_to_workhorse for new sustained work, manage_workhorse_queue only for the host-approved created-workhorse queue, and steer_workhorse only when the host exposes an exact active turn.
 
+Language: a voice handoff carries the person's own words, in whatever language they spoke and sometimes half-finished; the transcript beside it shows what the voice model understood. You may answer in the person's language or in English, because the voice model says your reply to them in their language either way. Everything you send to the workhorse must be in English, whatever language the person spoke: write every delegate_to_workhorse input, every steer_workhorse input and every queued prompt in clear English, translating the person's request, their corrections and the relevant conversation context. Keep board, system, file and code names exactly as given; never translate a name.
+
 Realtime speech cannot settle a Codex approval. When the host asks for spoken approval classification, answer in a later ordinary coordinator turn by calling resolve_spoken_approval with only accept or decline. If the intent is ambiguous or the tool refuses, leave the request for the visual approval surface.
 
 Semantic callbacks are context, not user commands. Operation callbacks report correlated progress. Do not repeat a delegation, queue mutation, steer, or approval after outcome_unknown; inspect authoritative state and explain the uncertainty.
@@ -374,7 +383,7 @@ values are present as `null`; keys are never omitted or added.
 	"ambiguity": [],
 	"operation": {
 		"id": "<opaque-or-null>",
-		"kind": "composer_message|create_thread_initial_turn|fork_thread_initial_turn|send_message_to_thread|delegate_to_workhorse|steer_workhorse|spoken_approval_classifier|null",
+		"kind": "composer_message|create_thread_initial_turn|fork_thread_initial_turn|send_message_to_thread|delegate_to_workhorse|steer_workhorse|spoken_approval_classifier|workhorse_outcome_report|null",
 		"rpc": "turn/start|turn/steer|null",
 		"outcome": "delivered|not_delivered|outcome_unknown|null"
 	}
@@ -752,7 +761,7 @@ Every start uses a new host-minted `realtimeSessionId` and these choices:
 	"realtimeSessionId": "<new-opaque-id>",
 	"transport": { "type": "webrtc", "sdp": "<browser-offer>" },
 	"version": "v3",
-	"voice": "breeze"
+	"voice": "arbor"
 }
 ```
 
@@ -889,6 +898,16 @@ The `ok.value` object is closed per tool:
 	"resolve_spoken_approval": {
 		"verdict": "accept|decline",
 		"settlement": "delivered|not_delivered|outcome_unknown"
+	},
+	"present_step": {
+		"walkthroughId": "<id>",
+		"walkthroughName": "<name>",
+		"step": 1,
+		"of": 1,
+		"heading": "<text>",
+		"body": "<text>",
+		"subjects": ["<name>"],
+		"view": "<name>|null"
 	}
 }
 ```
@@ -1760,7 +1779,7 @@ accepts no other property.
 {
 	"type": "namespace",
 	"name": "archboard_voice",
-	"description": "Resolve the sole host-validated spoken binary approval from a later ordinary coordinator turn.",
+	"description": "Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn, and present a walkthrough step in the voice-linked pane.",
 	"tools": [
 		{
 			"type": "function",
@@ -1773,10 +1792,44 @@ accepts no other property.
 				"additionalProperties": false
 			},
 			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "present_step",
+			"description": "Present a step of the walkthrough in the voice-linked pane and answer only once that step has finished arriving on screen, with the step's heading, body and subjects to hand to the voice model as speakable prose. Call it with no step to present the next step: the host knows which step was presented last, or which one the person moved to by hand, and the first call of a narration presents step 1. Pass step only when the person asked for a particular step. The host supplies the pane, board and variant. Name the walkthrough by id or name on the first call unless voice started in presentation mode; omit it afterwards. A refusal says why no step is on screen, including that the walkthrough is complete.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"step": { "type": "integer", "minimum": 1, "maximum": 1000 },
+					"walkthrough": { "type": "string", "minLength": 1, "maxLength": 120 }
+				},
+				"required": [],
+				"additionalProperties": false
+			},
+			"deferLoading": false
 		}
 	]
 }
 ```
+
+`present_step` (TASK-251) moves the voice-linked pane's walkthrough
+presentation to one step and answers only once that pane's own report says the
+step has finished arriving. Its authority target is `host_bound_voice_pane`:
+the pane, board and variant are host links (`realtimeSessionId`, `paneId`,
+`boardKey`) and never arguments. The step is usually the host's too: a V3
+delegation carries the person's last utterance and never words the voice model
+composed, so the coordinator is not told which step is wanted, and a call with
+no `step` presents the one after where the narration stands (the last step
+handed over, or the one the person moved to by hand). The model names a step
+only when the person asked for one and, until the session knows which
+walkthrough is being narrated, the walkthrough by id or name. Nobody approves
+it and it writes nothing, so a cancelled call is refused rather than left
+unknown. It is refused `not_ready` with no voice-linked pane on a board,
+`not_loaded` when the board cannot be read, `invalid_call` for a walkthrough or
+step the board does not have, `busy` when a person stepped by hand or a later
+step replaced it, and `expired` when the pane did not report arrival within
+`PRESENTATION_ARRIVAL_TIMEOUT_MS`. `heading` is at most 512 characters, `body`
+4,096, names 200, and `subjects` 32 entries; a longer body is cut by the host.
 
 `resolve_spoken_approval` is never called from realtime directly. After the
 effect prompt, the host arms one immutable eligible request only from the next

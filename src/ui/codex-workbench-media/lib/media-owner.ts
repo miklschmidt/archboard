@@ -10,7 +10,7 @@ import type {
 	RealtimeMediaSnapshot,
 } from "@/ui/codex-realtime";
 import { createMediaHost } from "@/ui/codex-workbench-media/lib/media-host";
-import type { StartOperation } from "@/ui/codex-workbench-media/lib/media-host";
+import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/media-host";
 import {
 	browserAudioElements,
 	browserMediaSupported,
@@ -41,6 +41,15 @@ const DETACHED: BrowserWorkbenchMediaState = Object.freeze({
  */
 function noop(): void {
 	// Nothing to release.
+}
+
+/**
+ * The operation one start runs under.
+ * @param presentation The walkthrough the session is started to present, when there is one.
+ * @returns The operation, holding no lease yet.
+ */
+function startOperationFor(presentation: VoicePresentation | null | undefined): StartOperation {
+	return { lease: null, presentation: presentation ?? null };
 }
 
 /**
@@ -433,15 +442,16 @@ function createBrowserWorkbenchMediaOwner(
 
 	/**
 	 * Starts realtime media on the current run.
+	 * @param presentation The walkthrough the session is started to present, when there is one.
 	 * @returns The snapshot the start ended on.
 	 */
-	const start = async (): Promise<RealtimeMediaSnapshot> => {
+	const start = async (presentation?: VoicePresentation | null): Promise<RealtimeMediaSnapshot> => {
 		const open = openRun();
 		const active = run;
 		if (open === null || active === null) {
 			throw new Error("The Codex browser media owner has no active transport.");
 		}
-		const operation: StartOperation = { lease: null };
+		const operation = startOperationFor(presentation);
 		active.startOperation = operation;
 		try {
 			return await startMedia(active, open.media, operation);

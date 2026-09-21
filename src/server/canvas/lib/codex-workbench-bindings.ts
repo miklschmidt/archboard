@@ -19,6 +19,12 @@ import {
 	type DynamicOwnerContext,
 } from "@/server/canvas/lib/codex-workbench-dynamic-owners";
 import { createGatewayBinding } from "@/server/canvas/lib/codex-workbench-gateway-binding";
+import { createOutcomeReportPort } from "@/server/canvas/lib/codex-workbench-outcome-report";
+import {
+	coordinatorTurnId,
+	voiceLinkedPaneId,
+} from "@/server/canvas/lib/codex-workbench-voice-pane";
+import { voiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
 import {
 	readyCoordinatorThread,
 	readyThreadPair,
@@ -176,6 +182,8 @@ function currentBindingReaders(
 		 */
 		realtime: (created) => ({
 			boardCatalogue: { read: readBoardCatalogue, subscribe: watchBoardCatalogue },
+			presentationChanges: { subscribe: host.narrationChanges },
+			trace: voiceStartTrace.note,
 			/**
 			 * The semantic brief one voice session opens with, read fresh and
 			 * stated against that session rather than whatever is current.
@@ -316,6 +324,25 @@ function currentBindingReaders(
 				 * @returns The turn, or null.
 				 */
 				expectedTurnId: () => owners.currentCoordinatorCall?.turnId ?? null,
+			},
+			presentation: {
+				/**
+				 * Present one walkthrough step in the pane the voice session is linked through.
+				 * The pane is proven here, from the ready workhorse link, never named by the model.
+				 * @param request The step, the walkthrough when named, and the call's signal.
+				 * @returns The step once it has arrived, or why it is not on screen.
+				 */
+				presentStep: (request) => {
+					const paneId = voiceLinkedPaneId(created);
+					if (paneId === null) {
+						return Promise.resolve({
+							tag: "refused",
+							reason: "not_ready",
+							message: "No pane is linked to this voice session.",
+						});
+					}
+					return host.presentStep({ ...request, paneId, turnId: coordinatorTurnId(owners) });
+				},
 			},
 		}),
 		coordinatorCall: {
@@ -473,6 +500,27 @@ function deliveryBindings(
 			 * @returns The generation, or null.
 			 */
 			currentRealtimeGeneration: () => currentRealtimeGeneration(created),
+			coordinatorTurn: createOutcomeReportPort({
+				session: requireCreated(created, "session"),
+				/**
+				 * Mint the operation identity an outcome report runs under.
+				 * @returns Its wire spelling.
+				 */
+				issue: () => {
+					const { operation } = requireCreated(created, "identity");
+					return operation.decoder.serializeOperationId(operation.issuer.mintOperationId());
+				},
+				/**
+				 * The canonical context of an outcome report, against the voice-linked pane.
+				 * @param operationId The minted operation identity.
+				 * @returns The context.
+				 */
+				contextFor: (operationId) =>
+					host.contextForOperation(
+						provenWorkhorseTarget(requireCreated(created, "workhorse").snapshot()),
+						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
+					),
+			}),
 			/** Publish what a settled callback changed. */
 			onSettled: () => {
 				publishProjection(owners);

@@ -61,6 +61,7 @@ function failStart(ops: RealtimeSessionOps, session: ActiveRealtimeSession, erro
 		return;
 	}
 	session.answerSettled = true;
+	ops.options.trace?.("start_failed", { message: realtimeErrorMessage(error).slice(0, 2_000) });
 	ops.emitDiagnostic(session, "app_server", realtimeErrorMessage(error));
 	const failure = phase.appServerFailureState(session.state, realtimeErrorMessage(error));
 	if (failure !== null) {
@@ -88,15 +89,51 @@ async function beginStart(
 		ops.finalize(session);
 		return;
 	}
-	await ops.options.session.realtimeStart(
-		createRealtimeStartParams({
-			threadId: session.binding.coordinatorThreadId,
-			realtimeSessionId: session.wireSessionId,
-			sdp,
-			semanticBrief: session.semanticBrief,
-			boardCatalogue: session.boardCatalogue,
-		}),
-	);
+	const params = createRealtimeStartParams({
+		threadId: session.binding.coordinatorThreadId,
+		realtimeSessionId: session.wireSessionId,
+		sdp,
+		semanticBrief: session.semanticBrief,
+		boardCatalogue: session.boardCatalogue,
+		presentation: session.presentation,
+	});
+	ops.options.trace?.("start_sent", startSizes(params));
+	await ops.options.session.realtimeStart(params);
+	ops.options.trace?.("start_returned", {});
+}
+
+/**
+ * The size of one text on the wire.
+ * @param text The text, or nothing.
+ * @returns Its UTF-8 length in bytes.
+ */
+function wireBytes(text: string | null | undefined): number {
+	return Buffer.byteLength(text ?? "");
+}
+
+/**
+ * How large each part of a start is, in UTF-8 bytes: the first thing to look at when a start
+ * that used to connect stops connecting.
+ * @param params The start parameters.
+ * @returns The sizes, the voice and the mode.
+ */
+function startSizes(
+	params: ReturnType<typeof createRealtimeStartParams>,
+): Readonly<Record<string, string | number | boolean | null>> {
+	const items = params.initialItems ?? [];
+	let initialItemsBytes = 0;
+	for (const item of items) {
+		initialItemsBytes += wireBytes(item.text);
+	}
+	return {
+		promptBytes: wireBytes(params.prompt),
+		startInstructionsBytes: wireBytes(params.realtimeStartInstructions),
+		initialItems: items.length,
+		initialItemsBytes,
+		voice: params.voice ?? null,
+		version: params.version ?? null,
+		ackFiller: params.delegationAckFiller ?? null,
+	};
 }
 
 /**

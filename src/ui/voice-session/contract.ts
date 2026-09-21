@@ -135,10 +135,16 @@ interface VoiceSessionView {
 	readonly busy: boolean;
 }
 
+/** A walkthrough the person chose to have narrated, by id. */
+interface VoiceNarration {
+	readonly walkthrough: string;
+}
+
 /**
  * The already-constructed browser media owner, seen only through the values a
- * presentation adapter may read. `start` and `stop` take no arguments because
- * minting a correlation is media work the UI does not do.
+ * presentation adapter may read. `stop` takes no arguments, and `start` takes
+ * only what the person chose to have narrated, because minting a correlation is
+ * media work the UI does not do.
  */
 interface VoiceRealtimePort {
 	readonly snapshot: () => RealtimeMediaSnapshot | null;
@@ -150,7 +156,7 @@ interface VoiceRealtimePort {
 	 * realtime changes that no transport delta announces.
 	 */
 	readonly subscribe: (listener: () => void) => () => void;
-	readonly start: () => Promise<RealtimeMediaSnapshot>;
+	readonly start: (presentation?: VoiceNarration | null) => Promise<RealtimeMediaSnapshot>;
 	/** Silences and restores the captured microphone; no lease, no command. */
 	readonly mute: () => Promise<RealtimeMediaSnapshot>;
 	readonly unmute: () => Promise<RealtimeMediaSnapshot>;
@@ -194,7 +200,11 @@ interface VoiceSession {
 	readonly controlsView: () => VoiceControlsView;
 	/** Re-reads both authoritative sources and republishes if the view changed. */
 	readonly refresh: () => VoiceSessionView;
-	readonly start: () => Promise<VoiceSessionView>;
+	/**
+	 * Starts voice, as an ordinary session or one started to narrate a walkthrough.
+	 * @param presentation The walkthrough the person chose to have narrated (TASK-251).
+	 */
+	readonly start: (presentation?: VoiceNarration | null) => Promise<VoiceSessionView>;
 	/** Refused unless the projected `canMute` says the run is listening. */
 	readonly mute: () => Promise<VoiceSessionView>;
 	/** Refused unless the projected `canUnmute` says the run is muted. */
@@ -229,6 +239,7 @@ interface VoiceSessionProjectionInput {
 export {
 	VOICE_SESSION_FAILURE_CODES,
 	VOICE_SESSION_STATUSES,
+	type VoiceNarration,
 	type VoiceRealtimePort,
 	type VoiceSession,
 	type VoiceSessionBinding,

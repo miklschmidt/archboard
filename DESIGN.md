@@ -8,8 +8,11 @@ for the chrome is the [operator canvas shell reference](docs/design/operator-can
 
 **The GPT-Live voice model never sees tool calls or tool results** (verified:
 `codex-rs/core/src/session/turn.rs`, `realtime_text_for_event`). Only agent
-prose and approval prompts reach it, prefixed `[BACKEND] ` under a 1,000-token
-budget. The realtime session is one long-lived thread on the Codex `Session`,
+prose and approval prompts reach it, under a 1,000-token budget. In the V3
+sessions Archboard starts they arrive as the result of the voice model's own
+handoff, on a speakable or a commentary channel; the `[USER] ` and `[BACKEND] `
+text prefixes belong to the V2 protocol and are never added (rechecked against
+Codex 0.155.1, `realtime_conversation.rs`). The realtime session is one long-lived thread on the Codex `Session`,
 feature-gated off by default, and delegation crosses as one opaque text
 envelope capped at 4 KiB; a second delegation mid-turn steers the running turn.
 
@@ -69,9 +72,29 @@ event settles once as `delivered`, `not_delivered` with a reason, or
 `outcome_unknown` after a lost response; Archboard never retries an unknown
 mutation, falls back to turn or steer, or selects another thread.
 
+What the voice model says is decided by channel, not by role. Read against Codex
+0.155.1: a V3 session is full duplex, `thread/realtime/appendText` is a quiet
+`session.context.append` whatever role it carries, and nothing answers it. A
+coordinator message is spoken when it goes out on the speakable channel, and in
+the `bemTags` handoff mode these sessions run in that is chosen by the message's
+first characters: `[FINAL]` is spoken, `[COMMENTARY]` is quiet context, and a
+headerless message is held back until it is complete and then treated as final.
+So the coordinator's start instructions state the rule, and a preamble is never
+read out as if it were the answer. It is also why work that ends later cannot be
+told to the voice model directly: while voice is live, a terminal workhorse
+outcome (completed, failed, attention, outcome unknown) starts one ordinary
+coordinator turn from the reviewed `workhorse_outcome_report` producer, because
+the coordinator knows whether the work came from a voice request. What it
+replies under `[FINAL]` is spoken without the person asking again; a
+`[COMMENTARY]` reply stays silent. The host waits a bounded time for an idle
+coordinator and otherwise falls back to the injected developer message, so an
+outcome is neither lost nor said twice. Other callbacks stay quiet context.
+
 Realtime voice attaches to a persistent fast coordinator thread linked to the
 pane's workhorse, not to the workhorse itself, so quick questions, lookups and
 immediate board interaction stay responsive while a heavier turn continues. The
+coordinator starts with `project_doc_max_bytes: 0`, so the checkout's `AGENTS.md`,
+which is written for an agent working in the repository, never reaches it. The
 coordinator may perform one explicit unambiguous board operation directly;
 sustained work defaults to delegation. Busy unrelated work uses the app-server
 thread queue only for an Archboard-created workhorse; an attached busy
@@ -84,6 +107,41 @@ the same realtime session may arm the immutable request; its item id and
 sequence are part of the authority. Target, effect,
 child epoch, realtime session and expiry are compare-and-swapped before
 one-time execution. A request that blocks the coordinator stays visual-only.
+
+A walkthrough is narrated as a talk through the same constraint (TASK-251). A
+step cannot reach the voice model as data, so the loop is paced by the voice
+model and carried by the coordinator. Starting voice to narrate a walkthrough
+(the Narrate control on a presented walkthrough) sends the chosen walkthrough
+with `realtimeStart`; the server reads it from the board the pane is showing
+and tells both models only which walkthrough it is, by name: the voice `prompt`
+gains how to pace the talk and `realtimeStartInstructions` the coordinator's
+part. Neither is given the steps, so a step cannot be narrated before the pane
+is on it.
+The session's initial items end with the person's request itself (pressing
+Narrate is asking for the talk), so the full-duplex voice model has something
+to answer at once and paces the whole talk itself: it asks the coordinator for step 1; the
+coordinator calls the typed `archboard_voice.present_step` with no step, because
+a V3 delegation carries the person's last utterance and never words the voice
+model composed, so only the host knows which step comes next (it names the
+walkthrough when voice was not started in this mode, and a step only when the
+person asked for one); the
+host supplies the pane, board and variant, asks the pane for the step, and
+answers only once the pane's own report says the step has finished arriving,
+or with the reason it could not; the coordinator hands the step back as
+speakable prose; the voice model explains it and asks for the next step only
+when it has finished, so an interruption simply delays that request. The
+position stays the browser's: the pane is asked, and its report is the
+acknowledgement. A step the person chooses by hand, or leaving the
+presentation, is injected into the coordinator's history and appended to the
+voice session with the catalogue's discipline (serialized, deduplicated, never
+retried). In a V3 (full-duplex) session appended text is quiet context whatever
+its role, and what the voice model says is what arrives as speakable text, so a
+by-hand step is handed to it through `realtimeAppendSpeech` in the coordinator's
+hand-over words and it explains that step now; leaving is quiet context. A
+narration starts with `delegationAckFiller` off, so a step is not preceded by
+the Realtime API's "one moment". The silence between the end of one
+explanation and the start of the next is measured by the canvas and read from
+`GET /api/voice/narration-timing`.
 
 ### 3. On-demand query — CLI
 

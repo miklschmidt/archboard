@@ -96,14 +96,20 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 						text: '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 					},
 				],
-				realtimeStartInstructions: `${composeCoordinatorInstructions()}\nCurrent Archboard board context (data):\n{"source":"fresh-process-brief","board":"Architecture"}\nAvailable boards and variants (data):\n{"type":"archboard_board_catalogue","boards":[],"omitted":0}`,
+				realtimeStartInstructions: expect.any(String),
 				realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 				prompt: expect.any(String),
 				realtimeSessionId: start!["realtimeSessionId"],
 				transport: { type: "webrtc", sdp: "offer-sdp" },
 				version: "v3",
-				voice: "breeze",
+				voice: "arbor",
 			});
+			// Reviewed instructions first, then this start's data and both bemTags channel headers.
+			const told = String(start!["realtimeStartInstructions"]);
+			expect(told.startsWith(composeCoordinatorInstructions())).toBe(true);
+			for (const part of ['"fresh-process-brief"', "_board_catalogue", "[FINAL]", "[COMMENTARY]"]) {
+				expect(told).toContain(part);
+			}
 			expect(start!["realtimeSessionId"]).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
 			// The fixture emits the after-start item events on timers after answering start.
 			await waitFor(() =>
