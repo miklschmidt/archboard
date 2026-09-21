@@ -39,18 +39,24 @@ export function projectionCoordinates(
 	const center = label.x + label.width / 2;
 	// Keep an exact native spacing boundary on its clear side after floating-point division.
 	const adjacent = ROUTE_NUDGE_DISTANCE + 0.000001;
-	const rails = [center - adjacent, center + adjacent, ...verticalRails(edge)];
+	const native = verticalRails(edge);
+	const rails = [center - adjacent, center + adjacent, ...native];
 	/**
 	 * Count the endpoint spans a proposed channel can align.
 	 * @param x Proposed rail.
 	 * @returns Number of aligned ends.
 	 */
 	const alignment = (x: number): number => Number(onCard(x, from)) + Number(onCard(x, to));
-	return [...new Set(rails)]
-		.filter((x) => Math.abs(x - center) > 0.000001 && alignment(x) > 0)
-		.toSorted(
-			(a, b) => alignment(b) - alignment(a) || Math.abs(a - center) - Math.abs(b - center) || a - b,
-		);
+	return (
+		[...new Set(rails)]
+			// An existing run can carry its label even between disjoint card spans.
+			// Only invented adjacent channels require an aligned endpoint.
+			.filter((x) => Math.abs(x - center) > 0.000001 && (alignment(x) > 0 || native.includes(x)))
+			.toSorted(
+				(a, b) =>
+					alignment(b) - alignment(a) || Math.abs(a - center) - Math.abs(b - center) || a - b,
+			)
+	);
 }
 
 /**

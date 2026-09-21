@@ -3,7 +3,7 @@ import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
 import { z } from "zod";
 import { placeGraph } from "@/transformers/semantic-renderer/lib/layout/graphviz-placement";
-import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/avoid-routing";
+import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
 import { foldColumns } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 
 /** A value owned by the WASM heap. */

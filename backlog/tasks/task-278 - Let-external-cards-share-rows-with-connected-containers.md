@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-21 00:25'
+updated_date: '2026-09-21 00:50'
 labels:
   - renderer
   - layout
@@ -43,6 +43,8 @@ User approved combined vib1439P routing preview. Generalize jointly aligned exte
 Correct unrelated-frame traversal: (1) lock the four-node native failure and platform cluster@MBkKDE49 as regressions; (2) route each connection clear of containers containing neither endpoint while preserving legitimate descendant access and shared channel coordination; (3) verify the renderer corpus and live board, update the routing rule documentation, simplify, and commit.
 
 Investigate endpoint trust sequences: reproduce forced helper-label detours, unnecessary certificate side arrival, and missing bridge; prepare geometry preview before adopting treatment.
+
+User approved Endpoint Trust preview. Generalize the bounded native pin refinement, preserve used channel pins and native geometry validation, add minimal routing regression coverage, verify native corpus and exact browser-measurement reproduction, rebuild/restart and commit.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -141,4 +143,8 @@ Foreign-frame routing correction in isolated worktree: preserve one shared libav
 Integrated the unrelated-frame routing correction from codex/foreign-frame-routing as f9ed89ad on feat/semantic-boards. With authored order and the current live server, Platform Cluster@MBkKDE49 renders all 19 relationships with zero crossings through its three unrelated frame interiors. Focused foreign-frame, order, and compact-packing renderer tests pass. Broader TASK-278 remains in progress under its original acceptance criteria.
 
 Endpoint Trust Sequences eEgD8jXz diagnosis reproduced exact browser defects by replaying one measured label width (qxrNiHv7 172.94 versus Bun 173.2899932861328). Straight label channels were blocked by fallback port seeds on faces unused by the actual routes. Orange nxHvoubO had no top-face alternative projected from its long clear native rail. The lower contact is corner-to-corner: crossing code leaves both curves unchanged and emits reciprocal masks, so no arc exists there. Isolated combined prototype /tmp/endpoint-port-feedback.ts preserves actual used pins, releases only colliding unused alternatives, and offers clear rail projections in one native reroute. Preview /tmp/endpoint-feedback.png has both pink routes straight and orange top entry, removing the lower crossing. Original node boxes and 1665x1061 extent unchanged; 13 routes/labels, 11 ordinary corners, one real bridge, minimum final approach 13px, no curve-clearance or label collision issues. Exact before/after signal: bun /tmp/endpoint-symptoms.ts with /tmp/endpoint-browser-baseline fails all three; /tmp/endpoint-feedback passes. No production or vault changes; preview awaiting user visual approval before adoption.
+
+User approved endpoint preview. Implemented one native port-refinement pass: preserve actual channel attachments, release conflicting unused seeds, and offer clear native-run projections. Expected native refusal retains the entire baseline graph. Added two focused native regressions for unused-face label detours and top-face continuation. Broader module gate exposed an existing label-projection restriction: native runs between disjoint card spans were discarded despite clear side approaches. Allowing those existing runs fixes the observed return loop; the existing channel-projection regression now passes without weakening its assertions. Exact browser-width replay still gives both pink routes straight and orange top entry, 13px minimum final approach, one legitimate bridge, and zero curve or label-clearance issues. Final gate and live verification pending.
+
+Adoption complete: bun run check exits 0 (lint, format, both type checks, frontend build, module/system/repository/serial-browser suites). Final 22-case real-vault corpus completes and card/label collision audit reports no issues. Rebuilt and restarted the real 3100 canvas against the existing vault; live browser DOM confirms YuseIBCM and u2L3eDj4 are single straight vertical paths, and nxHvoubO descends at x517 to Gateway top y697 with only its required source bend and the upper real crossing bridge. Screenshot inspected. The removed lower corner contact requires no additional crossing decoration. No board content or wrapping code changed. Broader TASK-278 stays in progress.
 <!-- SECTION:NOTES:END -->
