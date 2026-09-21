@@ -9,7 +9,7 @@ import {
 	productionLeaseTarget as leaseTarget,
 	productionPane as pane,
 } from "./support/codex-production.ts";
-import { createRequester, sleep } from "./support/http.ts";
+import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 
 /** As much of a board as this test reads back. */
@@ -27,11 +27,12 @@ const PANE_TELEMETRY_SETTLE_MS = 600;
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
 
-// While voice is live a pane still reports what it is reading, and the server still orders those
-// reports, but none of it is appended to the voice session. Appending it was a feedback loop: a
-// presented walkthrough step changes the selection, which fed the voice model a machine envelope
-// as it began each step. TASK-293 brings back the person's own actions, as one spoken sentence.
-test("live voice is appended nothing of what production pane routes report", async () => {
+// While voice is live a pane reports what it is reading and the server orders those reports. What
+// the pane marks as the user's own doing reaches the voice session as pane news, one sentence of
+// names; everything else reaches nobody (TASK-293, ADR 0034). Appending every report was a
+// feedback loop: a presented walkthrough step changes the reading, which fed the voice model a
+// machine envelope as it began each step, and it answered.
+test("live voice is told what the user changed by hand, and nothing of what anybody else did", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
@@ -91,14 +92,14 @@ test("live voice is appended nothing of what production pane routes report", asy
 		expect(records(fixture.logPath).some((entry) => entry.method === "thread/realtime/start")).toBe(
 			true,
 		);
-		const semanticAppends = () =>
+		const appended = (): string[] =>
 			records(fixture.logPath)
 				.filter((entry) => entry.method === "thread/realtime/appendText")
-				.filter((entry) => {
-					const text = entry.params?.["text"];
-					if (typeof text !== "string" || !text.startsWith("{")) return false;
-					return "semantic" in JSON.parse(text);
-				});
+				// The log holds the answer to each request under the same method, with no text.
+				.map((entry) => entry.params?.["text"])
+				.filter((text): text is string => typeof text === "string")
+				// The board catalogue is appended by its own channel when a board is created.
+				.filter((text) => !text.includes("archboard_board_catalogue"));
 		// What the person picked out, in the board's own words: the id an edit
 		// command would take, never anything drawn (ADR 0023).
 		const read = await request<{ board: SemanticBoardReply }>(
@@ -120,12 +121,23 @@ test("live voice is appended nothing of what production pane routes report", asy
 						view: null,
 						selection: ids.map((id) => ({ id })),
 						version: read.body.board.version,
+						// The pane says the pick was the user's own hand.
+						byUser: ["selection"],
 						at: new Date().toISOString(),
 						sequence: 0,
 					},
 				})
 			).status,
 		).toBe(200);
+		// The pick reaches live voice as a sentence that names the board and the subject. An id or
+		// a line of JSON in a speech model's context is something it says out loud.
+		await waitFor(() => appended().length === 1, "the user's pick to reach live voice", {
+			timeoutMs: 2000,
+		});
+		expect(appended()[0]).toContain("Gateway");
+		expect(appended()[0]).toContain("scratch");
+		expect(appended()[0]).not.toContain(ids[0]!);
+		expect(appended()[0]).not.toContain("{");
 		// A pane that has said what it is reading is read out by the variant's
 		// lasting name rather than its id: "scratch (Initial)" is something an
 		// agent can say to somebody, and an id twice over is not.
@@ -204,10 +216,16 @@ test("live voice is appended nothing of what production pane routes report", asy
 				})
 			).status,
 		).toBe(200);
-		// A selection, a board switch, a new reading and a focus change have all been reported by
-		// now; an append used to follow each within a few hundred milliseconds.
+		// Which pane the user is in moves only by their own hand, so that is news too. The board
+		// an agent switched the pane to, and the two readings no hand was marked on, are not: an
+		// append used to follow each of them within a few hundred milliseconds.
+		await waitFor(() => appended().length === 2, "the user's move to reach live voice", {
+			timeoutMs: 2000,
+		});
 		await sleep(PANE_TELEMETRY_SETTLE_MS);
-		expect(semanticAppends()).toEqual([]);
+		expect(appended()).toHaveLength(2);
+		expect(appended()[1]).toContain("payments");
+		expect(appended()[1]).not.toContain("{");
 	} finally {
 		await resources.disposeAsync();
 	}

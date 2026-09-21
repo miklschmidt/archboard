@@ -465,6 +465,7 @@ export {
 	type CallbackSourceType,
 	operationEvent,
 	type SemanticSources,
+	semanticInput,
 	semanticSources,
 	type HarnessState,
 	type Harness,

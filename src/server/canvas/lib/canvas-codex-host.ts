@@ -3,7 +3,10 @@ import { semanticChangeFeed } from "@/server/canvas/lib/semantic-change-feed";
 
 import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
-import type { SettledChangeSourceEvent } from "@/runtime/codex-semantic-context";
+import type {
+	SemanticUserChange,
+	SettledChangeSourceEvent,
+} from "@/runtime/codex-semantic-context";
 import {
 	canvasStartupOwnershipRecord,
 	writeCanvasStartupProtocolRecord,
@@ -38,7 +41,13 @@ import {
 /** The browser-facing hooks the installed Codex workbench gateway provides, null while none is installed. */
 interface CodexWiring {
 	codex: {
-		publishPaneContext: ((clientId: string, kind: "focus" | "selection") => void) | null;
+		publishPaneContext:
+			| ((
+					clientId: string,
+					kind: "focus" | "selection",
+					userChanged: readonly SemanticUserChange[],
+			  ) => void)
+			| null;
 		acceptBrowser: ((instance: BrowserConnectionInstance, browserId: string) => void) | null;
 		closeBrowser:
 			| ((instance: BrowserConnectionInstance, browserId: string) => Promise<void>)
@@ -347,8 +356,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			 * Publish fresh context when the linked pane changes focus or selection.
 			 * @param clientId The pane reporting a change.
 			 * @param kind The semantic change to publish.
+			 * @param userChanged What of it the user changed by hand; empty when nothing was.
 			 */
-			codexWiring.codex.publishPaneContext = (clientId, kind) => {
+			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged) => {
 				const pane = panes.get(clientId);
 				if (
 					pane === undefined ||
@@ -356,7 +366,8 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				)
 					return;
 				try {
-					const input = semanticInputFor(components, shownBoard(pane), null, pane.paneId);
+					const read = semanticInputFor(components, shownBoard(pane), null, pane.paneId);
+					const input = { ...read, pane: { ...read.pane, userChanged } };
 					if (kind === "selection") components.semanticPublisher.publishPaneSelection(input);
 					else components.semanticPublisher.publishPaneFocus(input);
 				} catch (error) {
@@ -465,9 +476,15 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
  * Publish pane context through the currently installed workbench, when present.
  * @param clientId The pane that changed.
  * @param kind Whether focus or selection changed.
+ * @param userChanged What of it the user changed by hand (ADR 0034). Nothing unless the caller
+ * knows otherwise, and what nobody marked is told to nobody.
  */
-function publishPaneContext(clientId: string, kind: "focus" | "selection"): void {
-	codexWiring.codex.publishPaneContext?.(clientId, kind);
+function publishPaneContext(
+	clientId: string,
+	kind: "focus" | "selection",
+	userChanged: readonly SemanticUserChange[] = [],
+): void {
+	codexWiring.codex.publishPaneContext?.(clientId, kind, userChanged);
 }
 
 export { codexWiring, publishPaneContext, prepareCodexWorkbench, stopCodexWorkbench };

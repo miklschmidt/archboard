@@ -45,6 +45,7 @@ export type {
 	SemanticReconciliationInput,
 	SemanticPane,
 	SemanticPaneInput,
+	SemanticUserChange,
 	SemanticPublisherPort,
 	SemanticStaleness,
 	SemanticSubject,
