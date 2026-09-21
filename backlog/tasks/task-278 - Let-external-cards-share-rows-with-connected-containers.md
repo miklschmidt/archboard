@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-20 01:07'
+updated_date: '2026-09-21 00:25'
 labels:
   - renderer
   - layout
@@ -41,6 +41,8 @@ Apply approved Cloud Infrastructure straight-route correction: use placed fallba
 User approved combined vib1439P routing preview. Generalize jointly aligned external frame arrivals and collision-validated pin/label projections, preserving distinct channels, fixed radius 8 and mandatory approach 12. Add minimal native regressions, rerender the real corpus, inspect approved variant, run required checks, simplify and commit. Do not modify column wrapping or user clearance configuration.
 
 Correct unrelated-frame traversal: (1) lock the four-node native failure and platform cluster@MBkKDE49 as regressions; (2) route each connection clear of containers containing neither endpoint while preserving legitimate descendant access and shared channel coordination; (3) verify the renderer corpus and live board, update the routing rule documentation, simplify, and commit.
+
+Investigate endpoint trust sequences: reproduce forced helper-label detours, unnecessary certificate side arrival, and missing bridge; prepare geometry preview before adopting treatment.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -137,4 +139,6 @@ Final counts: 3369 module tests pass; separate repository lane 8/8 pass. Validat
 Foreign-frame routing correction in isolated worktree: preserve one shared libavoid scene, find routes entering frames unrelated to both endpoints, derive scoped clear detours, and constrain the shared connectors with native checkpoints; a final validation replaces any route still crossing. Platform Cluster@MBkKDE49 v18 audit: 19 edges, 3 frames, zero unrelated-frame or card crossings and zero off-run labels. Cloud Infrastructure@Nc8vWLvX v40: 19 edges, 1 frame, same zero violations. Native outside-versus-descendant regression and shared-container-rows tests pass; skill evaluation/install tests 237 pass. Full check passes lint, format, type checks and build, then module suite reports 3371 pass/1 fail: compact-inset container-packing test, independently reproduced on pristine e438c312 before this correction. Source checkout remains under concurrent edits, so implementation is committed only in this task's isolated worktree.
 
 Integrated the unrelated-frame routing correction from codex/foreign-frame-routing as f9ed89ad on feat/semantic-boards. With authored order and the current live server, Platform Cluster@MBkKDE49 renders all 19 relationships with zero crossings through its three unrelated frame interiors. Focused foreign-frame, order, and compact-packing renderer tests pass. Broader TASK-278 remains in progress under its original acceptance criteria.
+
+Endpoint Trust Sequences eEgD8jXz diagnosis reproduced exact browser defects by replaying one measured label width (qxrNiHv7 172.94 versus Bun 173.2899932861328). Straight label channels were blocked by fallback port seeds on faces unused by the actual routes. Orange nxHvoubO had no top-face alternative projected from its long clear native rail. The lower contact is corner-to-corner: crossing code leaves both curves unchanged and emits reciprocal masks, so no arc exists there. Isolated combined prototype /tmp/endpoint-port-feedback.ts preserves actual used pins, releases only colliding unused alternatives, and offers clear rail projections in one native reroute. Preview /tmp/endpoint-feedback.png has both pink routes straight and orange top entry, removing the lower crossing. Original node boxes and 1665x1061 extent unchanged; 13 routes/labels, 11 ordinary corners, one real bridge, minimum final approach 13px, no curve-clearance or label collision issues. Exact before/after signal: bun /tmp/endpoint-symptoms.ts with /tmp/endpoint-browser-baseline fails all three; /tmp/endpoint-feedback passes. No production or vault changes; preview awaiting user visual approval before adoption.
 <!-- SECTION:NOTES:END -->
