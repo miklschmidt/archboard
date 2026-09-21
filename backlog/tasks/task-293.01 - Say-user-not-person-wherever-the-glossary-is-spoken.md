@@ -1,11 +1,11 @@
 ---
 id: TASK-293.01
 title: 'Say "user", not "person", wherever the glossary is spoken'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-21 02:08'
-updated_date: '2026-09-21 02:13'
+updated_date: '2026-09-21 02:21'
 labels:
   - voice
   - coordinator
@@ -23,11 +23,11 @@ The maintainer reads "person" as odd and chose "user" on 2026-09-21; CONTEXT.md 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every model-facing string (voice prompt, presentation and start-policy texts, coordinator instructions, tool manifests and their digests) says user, and the manifests still load
-- [ ] #2 DESIGN.md, CLAUDE.md, AGENTS.md, TESTING.md and skills/archboard say user, with the derived skill copies synced
-- [ ] #3 Identifiers that named the person name the user, with no behaviour change and the gate green
-- [ ] #4 The Pending edits glossary entry is removed if nothing in the product still has that state, or corrected if something does
-- [ ] #5 Committed on its own before the next subtask starts
+- [x] #1 Every model-facing string (voice prompt, presentation and start-policy texts, coordinator instructions, tool manifests and their digests) says user, and the manifests still load
+- [x] #2 DESIGN.md, CLAUDE.md, AGENTS.md, TESTING.md and skills/archboard say user, with the derived skill copies synced
+- [x] #3 Identifiers that named the person name the user, with no behaviour change and the gate green
+- [x] #4 The Pending edits glossary entry is removed if nothing in the product still has that state, or corrected if something does
+- [x] #5 Committed on its own before the next subtask starts
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,3 +39,15 @@ The maintainer reads "person" as odd and chose "user" on 2026-09-21; CONTEXT.md 
 4. Recompute the voice manifest digest; sync skills; remove the Pending edits glossary entry after checking nothing has that state.
 5. Verify: lint, fmt, both type-checks, module lane, system lane, repository lane; browser lane because the voice prompt and UI identifiers moved. Commit.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Not renamed on purpose: the wire and persisted value "human" (claim holder kind, change origin), "React like a person" in the voice prompt (a human being, not the user), licence text, ADRs and design records, comments in untouched files. CONTEXT.md still carries Baseline and Change report entries that describe the browser computing element reports, which look like leftovers of the same kind as Pending edits; left for the maintainer to rule on.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced person/people with user/users in every model-facing and reader-facing surface (voice prompt, presentation, start-policy and outcome texts, archboard-voice.json with its digest, CLI help and claim texts, AGENTS.md, DESIGN.md, TESTING.md, INSTALL.md, README.md, skills/archboard synced) and renamed the identifiers (UserPresentationChange, onUserChange, movedByUser, userDecision, operator kind "user"). Removed the Pending edits glossary entry: nothing in the product has that state. Verified: lint, fmt, both type-checks, modules 3438 pass, system 169 pass, repository 8 pass, serial browser lane 19 pass including live voice; a grep shows no non-comment person wording left outside the one deliberate keep. Committed as e1b4328e.
+<!-- SECTION:FINAL_SUMMARY:END -->
