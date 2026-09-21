@@ -426,11 +426,6 @@ The agent re-reading a board to understand its current architecture and any
 changes to the design.
 _Avoid_: sync, refresh, reload, poll, re-scan
 
-**Pending edits**:
-User edits that differ from the pane's baseline and that the server has not
-accepted. A pane with pending edits has a change report in flight or scheduled.
-_Avoid_: unsaved changes, dirty state, unreported changes
-
 **Baseline**:
 The fingerprint of each element the pane has received from the server or had
 accepted in a change report. A pane reports a deletion only for an element in

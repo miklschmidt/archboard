@@ -15,12 +15,12 @@ import { ARCHBOARD_VOICE_PROMPT } from "@/runtime/codex-realtime/lib/voice-promp
 /**
  * What pressing Narrate asks for, as the session's opening request.
  *
- * It has two readers. The voice model takes it as what the person wants, which is why it begins
- * without being spoken to. And because a handoff carries the person's last words, the coordinator
- * receives this same sentence as the input of every handoff until the person really speaks; so it
+ * It has two readers. The voice model takes it as what the user wants, which is why it begins
+ * without being spoken to. And because a handoff carries the user's last words, the coordinator
+ * receives this same sentence as the input of every handoff until the user really speaks; so it
  * is worded to mean the right thing each time it arrives: move on to the next step. It names no
  * step, because a version that said "starting with step 1" made the coordinator present step 1
- * twice. The person never says it, so it is in nobody's transcript.
+ * twice. The user never says it, so it is in nobody's transcript.
  */
 const NARRATE_REQUEST =
 	"Please present this walkthrough to me as a talk, one step at a time. Each time you finish narrating a step, hand off to move on to the next step, and keep going like that until the walkthrough is finished.";
@@ -35,9 +35,9 @@ const NARRATE_REQUEST =
  * answer itself cannot stream. Telling the coordinator the rule is what makes the mode work.
  */
 const COORDINATOR_CHANNEL_INSTRUCTIONS = [
-	"Voice channel rule. While this voice session is live, begin every message you write with a channel header as its very first characters, because the header decides whether the person hears it.",
-	"[FINAL] marks what the voice model is to say to the person: the answer, result or question, as short speakable prose with no markdown, lists, ids or tool syntax. Write at most one [FINAL] message in a turn, as its last message.",
-	"[COMMENTARY] marks everything else, such as what you are about to do or progress while you work: the voice model receives it as quiet context and does not say it. When nothing should be said to the person at all, end the turn with a one-line [COMMENTARY] message and no [FINAL] message.",
+	"Voice channel rule. While this voice session is live, begin every message you write with a channel header as its very first characters, because the header decides whether the user hears it.",
+	"[FINAL] marks what the voice model is to say to the user: the answer, result or question, as short speakable prose with no markdown, lists, ids or tool syntax. Write at most one [FINAL] message in a turn, as its last message.",
+	"[COMMENTARY] marks everything else, such as what you are about to do or progress while you work: the voice model receives it as quiet context and does not say it. When nothing should be said to the user at all, end the turn with a one-line [COMMENTARY] message and no [FINAL] message.",
 ].join("\n");
 
 const REALTIME_END_INSTRUCTIONS =
@@ -74,7 +74,7 @@ export function createRealtimeStartParams(input: {
 		threadId: input.threadId,
 		clientManagedHandoffs: false,
 		// A talk is not a chat: the Realtime API's "one moment" before every step is noise, and the
-		// person is watching the pane glide to the step meanwhile. An ordinary session keeps it.
+		// user is watching the pane glide to the step meanwhile. An ordinary session keeps it.
 		delegationAckFiller: narrated === null,
 		flushTranscriptTailOnSessionEnd: true,
 		codexResponsesAsItems: false,
@@ -84,7 +84,7 @@ export function createRealtimeStartParams(input: {
 		initialItems: [
 			{ role: "developer", text: input.semanticBrief },
 			{ role: "developer", text: input.boardCatalogue },
-			// Pressing Narrate is the person asking for the talk, so the session opens with
+			// Pressing Narrate is the user asking for the talk, so the session opens with
 			// that request already made: the voice model has something to answer at once.
 			...(narrated === null ? [] : [{ role: "user" as const, text: NARRATE_REQUEST }]),
 		],

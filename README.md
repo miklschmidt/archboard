@@ -1,4 +1,4 @@
-![archboard — a person shaping a room-scale cloud architecture hologram](docs/assets/archboard-banner-enterprise-dark.png)
+![archboard — a user shaping a room-scale cloud architecture hologram](docs/assets/archboard-banner-enterprise-dark.png)
 
 # archboard
 
@@ -26,7 +26,7 @@ and keeping architectural nodes connected to the code they represent.
 - Shows a current architecture and a proposal side by side, then produces a
   semantic comparison between them.
 - Gives agents concise read paths for the whole board, selected elements, and
-  changes made by a person.
+  changes made by a user.
 - Binds nodes to repositories and source paths through durable Excalidraw
   metadata.
 - Provides a curated architecture stencil library, Mermaid import, layout
@@ -41,7 +41,7 @@ but named-board work does not depend on a browser session.
 ## Project status
 
 Archboard is experimental and under active development. The core round trip is
-working and tested: an agent can write a board, a person can edit it in the
+working and tested: an agent can write a board, a user can edit it in the
 browser, and the agent can read the edited structure and metadata back. The
 architecture vocabulary and higher-level workflows are still evolving, so
 expect interfaces to change before a stable release.

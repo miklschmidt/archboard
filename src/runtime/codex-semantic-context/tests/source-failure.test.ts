@@ -37,7 +37,7 @@ describe("semantic context source failures", () => {
 				at: new Date().toISOString(),
 				origin: "human",
 				significance: "layout",
-				text: "The person moved a box.",
+				text: "The user moved a box.",
 			}),
 		).not.toThrow();
 		expect(settled).toEqual([]);

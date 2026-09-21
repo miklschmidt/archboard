@@ -1,7 +1,7 @@
 // The board's mutex from the outside: an agent's claim, its release, and the
-// one control a person has over a claim that is standing (ADR 0016, ADR 0022).
+// one control a user has over a claim that is standing (ADR 0016, ADR 0022).
 //
-// There is no human hold here any more. A person does not author a semantic
+// There is no human hold here any more. A user does not author a semantic
 // board — they read one an agent wrote (ADR 0023) — so the only thing a pane
 // ever asks of the lock is that somebody else's claim be given back.
 
@@ -48,7 +48,7 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
 	if (!lost) {
 		return false;
 	}
-	const who = lost.by?.kind === "human" ? "The person at the canvas" : "Somebody";
+	const who = lost.by?.kind === "human" ? "The user at the canvas" : "Somebody";
 	const reason = lost.claim.holder.reason ? ` (${lost.claim.holder.reason})` : "";
 	res.status(409).json({
 		success: false,
@@ -119,7 +119,7 @@ function requiredClientId(req: Request, res: Response, refusal: string): string 
 }
 
 /**
- * The person wants a claimed board back (ADR 0022).
+ * The user wants a claimed board back (ADR 0022).
  *
  * The one control that ends an agent's claim. The lease is taken with the
  * claim revoked and given straight back, so the board goes to nobody and the
@@ -127,7 +127,7 @@ function requiredClientId(req: Request, res: Response, refusal: string): string 
  * the agent hears once, on its next write or re-claim, that it lost the board.
  *
  * It does not wait: a claim is revoked at once, and an unclaimed writer
- * holding the board at that instant is refused by name so the person can ask
+ * holding the board at that instant is refused by name so the user can ask
  * again (TASK-153).
  * @param req The request.
  * @param res Its response.
@@ -234,7 +234,7 @@ function claimRoute(req: Request, res: Response): void {
 		res.status(400).json({
 			success: false,
 			error:
-				"A claim needs a reason: it is what the pane shows the person whose board you have taken. " +
+				"A claim needs a reason: it is what the pane shows the user whose board you have taken. " +
 				"Without it the pane has said the board is claimed for no reason they can see.",
 		});
 		return;

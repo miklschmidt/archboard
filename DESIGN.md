@@ -61,7 +61,7 @@ an epoch manifest outside Codex storage makes every prior-child thread
 inspect-only: an operational boundary against cold resume of persisted dynamic
 tools, not protection against a process pointed at those paths on purpose.
 
-The change feed settles a person's gesture, discards visual noise and renders
+The change feed settles a user's gesture, discards visual noise and renders
 a compact semantic delta. Immediately before delivery Archboard revalidates the
 child, epoch, pane link, loaded membership, controllability, thread status,
 semantic cursor and origin. A human or mixed-origin layout or structural update
@@ -85,7 +85,7 @@ told to the voice model directly: while voice is live, a terminal workhorse
 outcome (completed, failed, attention, outcome unknown) starts one ordinary
 coordinator turn from the reviewed `workhorse_outcome_report` producer, because
 the coordinator knows whether the work came from a voice request. What it
-replies under `[FINAL]` is spoken without the person asking again; a
+replies under `[FINAL]` is spoken without the user asking again; a
 `[COMMENTARY]` reply stays silent. The host waits a bounded time for an idle
 coordinator and otherwise falls back to the injected developer message, so an
 outcome is neither lost nor said twice. Other callbacks stay quiet context.
@@ -117,21 +117,21 @@ and tells both models only which walkthrough it is, by name: the voice `prompt`
 gains how to pace the talk and `realtimeStartInstructions` the coordinator's
 part. Neither is given the steps, so a step cannot be narrated before the pane
 is on it.
-The session's initial items end with the person's request itself (pressing
+The session's initial items end with the user's request itself (pressing
 Narrate is asking for the talk), so the full-duplex voice model has something
 to answer at once and paces the whole talk itself: it asks the coordinator for step 1; the
 coordinator calls the typed `archboard_voice.present_step` with no step, because
-a V3 delegation carries the person's last utterance and never words the voice
+a V3 delegation carries the user's last utterance and never words the voice
 model composed, so only the host knows which step comes next (it names the
 walkthrough when voice was not started in this mode, and a step only when the
-person asked for one); the
+user asked for one); the
 host supplies the pane, board and variant, asks the pane for the step, and
 answers only once the pane's own report says the step has finished arriving,
 or with the reason it could not; the coordinator hands the step back as
 speakable prose; the voice model explains it and asks for the next step only
 when it has finished, so an interruption simply delays that request. The
 position stays the browser's: the pane is asked, and its report is the
-acknowledgement. A step the person chooses by hand, or leaving the
+acknowledgement. A step the user chooses by hand, or leaving the
 presentation, is injected into the coordinator's history and appended to the
 voice session with the catalogue's discipline (serialized, deduplicated, never
 retried). In a V3 (full-duplex) session appended text is quiet context whatever

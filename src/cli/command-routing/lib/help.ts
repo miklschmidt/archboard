@@ -159,7 +159,7 @@ function commanderTree(routes: CommandRoutes, version: string): HelpTree {
 	const root = new Command(PROGRAM)
 		.description(
 			"Agent-authored architecture boards: an agent states what an architecture is, " +
-				"the canvas draws it, and a person reads, compares and presents it.",
+				"the canvas draws it, and a user reads, compares and presents it.",
 		)
 		.version(version, "-v, --version", "Print the version")
 		.helpOption("-h, --help", "Show this help")

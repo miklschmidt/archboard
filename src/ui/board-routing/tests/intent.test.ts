@@ -20,7 +20,7 @@ test("a change nobody asked for is not deliberate", () => {
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(false);
 });
 
-test("the pane a person asked to move having moved is the deliberate change", () => {
+test("the pane a user asked to move having moved is the deliberate change", () => {
 	const navigation = createDeliberateNavigation();
 	navigation.expect({ kind: "board", paneId: "A", from: "payments" });
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(true);
@@ -32,7 +32,7 @@ test("a pane that has not moved yet is not the change that was asked for", () =>
 	expect(navigation.settle(address([["A", "payments"]]))).toBe(false);
 });
 
-test("asking for a comparison is met by the number of panes the person asked for", () => {
+test("asking for a comparison is met by the number of panes the user asked for", () => {
 	const navigation = createDeliberateNavigation();
 	navigation.expect({ kind: "panes", count: 2 });
 	expect(
@@ -56,7 +56,7 @@ test("an expectation lives no longer than the next change, met or not", () => {
 	const navigation = createDeliberateNavigation();
 	navigation.expect({ kind: "board", paneId: "A", from: "payments" });
 	expect(navigation.settle(address([["A", "payments"]]))).toBe(false);
-	// An agent moving the same pane afterwards is not the person's move.
+	// An agent moving the same pane afterwards is not the user's move.
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(false);
 });
 
@@ -72,7 +72,7 @@ function reading(view: string | null): WorkspaceAddress {
 	});
 }
 
-test("choosing another way of reading a board is a move the person made", () => {
+test("choosing another way of reading a board is a move the user made", () => {
 	const navigation = createDeliberateNavigation();
 	navigation.expect({ kind: "view", paneId: "A", from: null });
 	expect(navigation.settle(reading("k3f9"))).toBe(true);
@@ -80,7 +80,7 @@ test("choosing another way of reading a board is a move the person made", () => 
 	expect(navigation.settle(reading("q1x2"))).toBe(false);
 });
 
-test("a view that changed in another pane is not the move this person asked for", () => {
+test("a view that changed in another pane is not the move this user asked for", () => {
 	const navigation = createDeliberateNavigation();
 	navigation.expect({ kind: "view", paneId: "B", from: null });
 	expect(

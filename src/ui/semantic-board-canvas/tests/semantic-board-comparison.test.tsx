@@ -1,10 +1,10 @@
-// What picking something out of a *proposal* tells a person.
+// What picking something out of a *proposal* tells a user.
 //
 // A proposal is drawn from its own content plus what its change took away, so
 // the things a reader most wants to ask about — the service that is going, the
 // responsibility that moved, the message that is no longer sent — are on the
 // screen and can be clicked. These check that the panel answers for all of
-// them, in the words a person reads rather than in the module's internals.
+// them, in the words a user reads rather than in the module's internals.
 
 import { expect, test } from "bun:test";
 
@@ -120,7 +120,7 @@ function proposalDrawn(): Record<string, unknown> {
 
 /**
  * Put the branched board and a picture of its proposal in front of a pane.
- * @param selection What the person has picked out.
+ * @param selection What the user has picked out.
  */
 function inspecting(selection: string): void {
 	server.reply = { status: 200, body: proposalDrawn() };
@@ -224,7 +224,7 @@ test("a subject the proposal leaves alone is not told it is unchanged", async ()
 	expect(slot("semantic-inspector-moved")).toBeNull();
 });
 
-test("an exchange is a subject a person can inspect", async () => {
+test("an exchange is a subject a user can inspect", async () => {
 	inspecting("f1");
 	await settled();
 
@@ -238,7 +238,7 @@ test("an exchange is a subject a person can inspect", async () => {
 	).not.toBeNull();
 });
 
-test("one message of an exchange is a subject a person can inspect", async () => {
+test("one message of an exchange is a subject a user can inspect", async () => {
 	inspecting("s3");
 	await settled();
 

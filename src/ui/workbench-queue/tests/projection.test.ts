@@ -381,7 +381,7 @@ describe("workbench queue correlation and controls", () => {
 		}
 	});
 
-	test("gives every unavailable control a reason a person can act on", () => {
+	test("gives every unavailable control a reason a user can act on", () => {
 		const unsupported = projectWorkbenchQueue({
 			state: connected(snapshot({ queue: queue("queued", SEEDS) })),
 			capabilities: capabilities({}, ["queueDelete", "queueReorder"]),

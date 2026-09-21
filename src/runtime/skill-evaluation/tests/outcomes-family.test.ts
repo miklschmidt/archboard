@@ -112,7 +112,7 @@ describe("family checks", () => {
 		]);
 	});
 
-	test("a variant, flow, view or walkthrough answers to the name a person would call it", () => {
+	test("a variant, flow, view or walkthrough answers to the name a user would call it", () => {
 		expect(
 			passes([
 				{ check: "variant-exists", board: "Flask", variant: "no_provider", lifecycle: "draft" },

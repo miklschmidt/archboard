@@ -106,7 +106,7 @@ against the pinned 0.15.17 package. One was missing:
 - `autoFocus` removed from `Thread`, `ThreadRoot` and the main `Composer`: the
   dock must not take keyboard focus from the canvas on mount
   (`jsx-a11y/no-autofocus`). The edit composer keeps its `autoFocus` under a
-  documented block-level suppression because the person just chose Edit.
+  documented block-level suppression because the user just chose Edit.
 
 `markdown-text.tsx`
 

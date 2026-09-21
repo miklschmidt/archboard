@@ -104,7 +104,7 @@ function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApproval
 
 /**
  * Freeze one value and everything reachable from it, so nothing can edit a
- * request after the person has been shown it.
+ * request after the user has been shown it.
  * @param value What to freeze.
  * @param seen What has already been frozen, so a cycle terminates.
  */
@@ -121,7 +121,7 @@ function freezeGraph(value: unknown, seen = new WeakSet<object>()): void {
 
 /**
  * This owner's own copy of one request, frozen: the dispatcher may go on using
- * its own, and what the person is shown will not change under them.
+ * its own, and what the user is shown will not change under them.
  * @param request The approval request.
  * @returns The owned copy.
  */
@@ -153,11 +153,11 @@ function bindingIsStale(
 }
 
 /**
- * How one approval ends when a person answers it.
- * @param decision What the person chose.
+ * How one approval ends when a user answers it.
+ * @param decision What the user chose.
  * @returns The outcome and its cause.
  */
-function personDecision(decision: BrowserDynamicApprovalResponse["decision"]): {
+function userDecision(decision: BrowserDynamicApprovalResponse["decision"]): {
 	readonly outcome: DynamicToolApprovalDecision["outcome"];
 	readonly cause: DynamicToolApprovalDecision["cause"];
 } {
@@ -362,7 +362,7 @@ function createCanvasDynamicApprovalOwner(
 	});
 	const browser: BrowserDynamicApprovalActions = Object.freeze({
 		/**
-		 * Settle one approval with the person's answer, refused unless the answer
+		 * Settle one approval with the user's answer, refused unless the answer
 		 * was given under the binding the approval is still presented under.
 		 * @param command The answer.
 		 * @param _context The pane, which the binding check already covers.
@@ -379,7 +379,7 @@ function createCanvasDynamicApprovalOwner(
 			if (bindingIsStale(command, entry.binding)) {
 				throw new Error("The dynamic approval binding is stale.");
 			}
-			const answered = personDecision(command.decision);
+			const answered = userDecision(command.decision);
 			terminal(entry, answered.outcome, answered.cause);
 			return { outcome: "delivered" };
 		},

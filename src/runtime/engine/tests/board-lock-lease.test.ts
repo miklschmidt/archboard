@@ -101,7 +101,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		expect(refused.code).toBe("BOARD_HELD");
 		expect(refused.board).toBe(board);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });
-		expect(refused.message).toMatch(/held by the person at the canvas, since/);
+		expect(refused.message).toMatch(/held by the user at the canvas, since/);
 		expect(refused.waitedMs).toBe(timing.LOCK_WAIT_CAP_MS);
 		jest.advanceTimersByTime(1);
 		const renewed = await lock.holdBoard({ board, holder: human("user"), waitMs: 0 });
@@ -111,16 +111,16 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		await lock.withBoardLock({ board, holder: human("user") }, () => ++writes);
 		expect(writes).toBe(2);
 		expect(lock.boardLockState(board)?.id).toBe("user");
-		// A person behind another person's hold is refused at once, without the
+		// A user behind another user's hold is refused at once, without the
 		// agent's wait (TASK-153): no timer is advanced and no time is waited.
-		const otherPerson = await lock
+		const otherUser = await lock
 			.holdBoard({ board, holder: human("other-pane") })
 			.catch((error: unknown) => error);
-		if (!(otherPerson instanceof lock.BoardHeldError)) {
-			throw new Error("Expected the other person's hold to be refused.");
+		if (!(otherUser instanceof lock.BoardHeldError)) {
+			throw new Error("Expected the other user's hold to be refused.");
 		}
-		expect(otherPerson.holder).toMatchObject({ id: "user" });
-		expect(otherPerson.waitedMs).toBe(0);
+		expect(otherUser.holder).toMatchObject({ id: "user" });
+		expect(otherUser.waitedMs).toBe(0);
 		expect(lock.releaseHold(board, "later")).toBeFalse();
 		expect(lock.releaseHold(board, "user")).toBeTrue();
 

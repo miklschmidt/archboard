@@ -285,7 +285,7 @@ describe("dynamic approval lifecycle", () => {
 		});
 	}
 
-	test("an unknown outcome stays unknown and tells the person not to assume either result", () => {
+	test("an unknown outcome stays unknown and tells the user not to assume either result", () => {
 		const card = dynamicCard({
 			state: "outcome_unknown",
 			decision: approved,

@@ -56,7 +56,7 @@ interface PresentStepRequest {
 	readonly sessionWalkthrough: string | null;
 	/**
 	 * The last step of that walkthrough the narration stood on, counted from one: the one
-	 * handed over last, or the one the person moved to by hand. Zero before the first.
+	 * handed over last, or the one the user moved to by hand. Zero before the first.
 	 */
 	readonly lastStep: number;
 	readonly signal: AbortSignal;
@@ -182,7 +182,7 @@ const REFUSALS: Readonly<
 > = {
 	person_took_over: refused(
 		"busy",
-		"The person stepped the presentation by hand or left it while the step was on its way. Follow where they are before presenting another step.",
+		"The user stepped the presentation by hand or left it while the step was on its way. Follow where they are before presenting another step.",
 	),
 	superseded: refused("busy", "A later step was asked of the same pane before this one arrived."),
 	timeout: refused(
@@ -284,7 +284,7 @@ function settleStep(
 /**
  * The step a request means: the one it names, or the one after where the narration stands.
  *
- * A request usually names none. In a full-duplex voice session a delegation carries the person's
+ * A request usually names none. In a full-duplex voice session a delegation carries the user's
  * last utterance and never words the voice model composed, so the coordinator is not told which
  * step is wanted; the host is the one that knows where the talk has got to. Standing in another
  * walkthrough is standing nowhere in this one.

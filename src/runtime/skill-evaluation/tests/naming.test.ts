@@ -24,7 +24,7 @@ function lookup(names: readonly string[], asked: string) {
 	return matchName(names, itself, asked);
 }
 
-describe("the name a person would call a subject", () => {
+describe("the name a user would call a subject", () => {
 	test("case, separators, spacing and camel case are one name", () => {
 		expect(lookup(["Request Context"], "request context")).toMatchObject({
 			kind: "loose",

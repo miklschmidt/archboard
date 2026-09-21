@@ -1,7 +1,7 @@
 // The address bar over the workspace: it writes down what the panes show, and
 // it restores what a direct load or a Back/Forward asks for.
 //
-// The address follows the note. A person's board open runs the shell's own
+// The address follows the note. A user's board open runs the shell's own
 // command, the server answers it, the pane reports its new board, and only
 // then is the address written. So a refused open changes no address, because
 // it changed no pane. The address leads in exactly two places — the first
@@ -9,15 +9,15 @@
 // shell does.
 //
 // There is one command slot. Every board open takes it, whoever asked: a
-// restore's own step and a person's click are the same operation with a
+// restore's own step and a user's click are the same operation with a
 // different owner. The slot is held through the server's answer AND through
 // the pane being seen to move, and the next command is granted one at a time,
 // so the last thing somebody asked for is the last thing the server is given.
-// Pointing the restore elsewhere, or abandoning it for a person's gesture,
+// Pointing the restore elsewhere, or abandoning it for a user's gesture,
 // changes what is wanted from here on; the slot goes on being watched either
 // way, so nothing is ever left held by a restore nobody is running.
 //
-// Each operation owns what the person asked for, so an expectation exists only
+// Each operation owns what the user asked for, so an expectation exists only
 // between its pane moving and the address being written. A deliberate move
 // pushes a history entry; everything else replaces one.
 //
@@ -57,7 +57,7 @@ import {
 } from "@/ui/board-routing/search";
 import type { WorkspacePort } from "@/ui/board-routing/contracts";
 
-/** What a person's own board open reports back when it is over. */
+/** What a user's own board open reports back when it is over. */
 interface NavigationClaim {
 	/**
 	 * The command finished. The board it opened is the server's own answer, and
@@ -68,18 +68,18 @@ interface NavigationClaim {
 	readonly failed: () => void;
 }
 
-/** A person's move, once the slot is theirs. */
+/** A user's move, once the slot is theirs. */
 type NavigationPermission = { readonly kind: "granted"; readonly move: NavigationClaim };
 
-/** What the shell tells the address bar about the person's own gestures. */
+/** What the shell tells the address bar about the user's own gestures. */
 interface WorkspaceAddressing {
 	/**
-	 * A person changed the workspace themselves, without asking the server: they
+	 * A user changed the workspace themselves, without asking the server: they
 	 * opened or closed a pane. The change pushes a history entry.
 	 */
 	readonly expect: (intent: NavigationIntent) => void;
 	/**
-	 * A person is about to have the shell open a board. Ends any restore, waits
+	 * A user is about to have the shell open a board. Ends any restore, waits
 	 * for the command slot, and answers only when it is theirs, so that theirs
 	 * is the last command the server is given.
 	 * @returns Where to report the outcome, once the command may be sent.
@@ -126,7 +126,7 @@ function isSettled(address: WorkspaceAddress): boolean {
 
 /**
  * Write the workspace down when the address no longer says what is on screen.
- * A move the person asked for pushes a history entry; anything else replaces
+ * A move the user asked for pushes a history entry; anything else replaces
  * the one they are on.
  * @param state The reconciliation.
  */
@@ -164,7 +164,7 @@ function answerOperation(
 
 /**
  * An operation is over. A restore's names a board it could not reach; a
- * person's becomes the move the address pushes, but only if its pane moved:
+ * user's becomes the move the address pushes, but only if its pane moved:
  * opening the board a pane already showed is not a move to record.
  * @param state The reconciliation.
  * @param operation The operation that finished.
@@ -205,7 +205,7 @@ function grantSlot(state: Reconciliation): void {
 	const { intent } = next;
 	const operation =
 		intent.kind === "board"
-			? startOperation({ kind: "person" }, intent.paneId, null, state.displayed, intent)
+			? startOperation({ kind: "user" }, intent.paneId, null, state.displayed, intent)
 			: null;
 	state.operation = operation;
 	next.answer({
@@ -330,7 +330,7 @@ function stillRestoring(state: Reconciliation): boolean {
  * The address bar. The port must be stable across renders that change nothing
  * about the workspace; the application memoises it over its own owners.
  * @param port The workspace it addresses.
- * @returns The seam a person's gestures announce themselves through.
+ * @returns The seam a user's gestures announce themselves through.
  */
 function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 	const router = useRouter();
@@ -389,7 +389,7 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 	return useMemo(
 		() => ({
 			/**
-			 * A person changed the workspace themselves.
+			 * A user changed the workspace themselves.
 			 * @param intent What they asked for.
 			 */
 			expect: (intent: NavigationIntent): void => {
@@ -398,7 +398,7 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 				deliberate.expect(intent);
 			},
 			/**
-			 * A person is about to have the shell open a board.
+			 * A user is about to have the shell open a board.
 			 * @param intent What they asked for.
 			 * @returns Permission and where to report the outcome, or the refusal.
 			 */

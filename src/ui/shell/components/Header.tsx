@@ -1,6 +1,6 @@
 // The 56px header: four sections under full-height one-pixel rules. The
 // wordmark, the board breadcrumb, the live state chips, and the settings. Pane
-// controls live in the pane bar, and nothing here changes a board: a person
+// controls live in the pane bar, and nothing here changes a board: a user
 // reads an architecture an agent wrote (ADR 0023). The text pieces shrink and
 // truncate so a narrower window never clips the row.
 
@@ -107,7 +107,7 @@ function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 						/
 					</span>
 					{/* The variant is the kicker beside the board's name: set in the
-					    technical face, like every other identifier a person reads
+					    technical face, like every other identifier a user reads
 					    rather than says out loud. */}
 					<span className="text-muted-foreground text-technical truncate font-mono font-medium">
 						{identity.variant}

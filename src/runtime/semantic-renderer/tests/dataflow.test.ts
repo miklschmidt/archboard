@@ -354,7 +354,7 @@ describe("renderDataFlow", () => {
 				flow,
 				{
 					id: "stale",
-					name: "A person's edit arrives stale",
+					name: "A user's edit arrives stale",
 					participants: ["cli", "canvas"],
 					steps: [
 						{ id: "t1", from: "cli", to: "canvas", label: "PATCH at v41", kind: "sync" },

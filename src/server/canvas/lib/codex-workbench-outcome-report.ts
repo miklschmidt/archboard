@@ -2,7 +2,7 @@
 //
 // Asked by voice to do something, the coordinator delegates and answers, and the work ends later.
 // In a full-duplex voice session nothing appended as text is ever answered, so telling the voice
-// model that the work ended would leave the person waiting until they asked again. The
+// model that the work ended would leave the user waiting until they asked again. The
 // coordinator knows whether the work came from a voice request, so it is run with the outcome:
 // what it replies under [FINAL] the voice model says, and what it replies under [COMMENTARY]
 // stays quiet. This module owns only the turn's body and the wait for an idle coordinator; which
@@ -40,9 +40,9 @@ interface OutcomeReportParts {
  */
 function outcomeReportPrompt(outcome: string): string {
 	return [
-		"Work on the workhorse reached a terminal outcome while this voice session is live. Nothing has been said to the person about it. The outcome (data):",
+		"Work on the workhorse reached a terminal outcome while this voice session is live. Nothing has been said to the user about it. The outcome (data):",
 		outcome,
-		"Decide whether the person is waiting to hear about this. If you delegated, queued or steered this work because of something they asked by voice, inspect the workhorse to read what was done, then reply with one [FINAL] message: a short spoken summary of the result, or of what went wrong and what they can do next. If it is not theirs to hear about now, reply with a single [COMMENTARY] line and nothing else. Do not start new work in this turn.",
+		"Decide whether the user is waiting to hear about this. If you delegated, queued or steered this work because of something they asked by voice, inspect the workhorse to read what was done, then reply with one [FINAL] message: a short spoken summary of the result, or of what went wrong and what they can do next. If it is not theirs to hear about now, reply with a single [COMMENTARY] line and nothing else. Do not start new work in this turn.",
 	].join("\n");
 }
 

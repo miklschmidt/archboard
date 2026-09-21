@@ -6,9 +6,9 @@
 // own report says which step is on screen and whether it has finished arriving
 // (TASK-251). The acknowledgement is that report and never a promise from the
 // shell, for the reason a layout's is a registration: it is the only evidence
-// in this process of what a person can see.
+// in this process of what a user can see.
 //
-// The same reports say when a person stepped by hand or left. A position a
+// The same reports say when a user stepped by hand or left. A position a
 // request did not put there is somebody's hand on the keys, and whoever is
 // narrating has to be told, or it goes on describing a picture nobody is
 // looking at.
@@ -29,7 +29,7 @@ type PresentRefusal =
 	| "no_pane"
 	/** A later request for the same pane replaced this one. */
 	| "superseded"
-	/** A person stepped by hand or left while the step was on its way. */
+	/** A user stepped by hand or left while the step was on its way. */
 	| "person_took_over"
 	/** The pane never said the step arrived. */
 	| "timeout"
@@ -56,11 +56,11 @@ interface PresentInput {
 	readonly signal?: AbortSignal | undefined;
 }
 
-/** A person moved a presentation, or left it. */
-interface PersonPresentationChange {
+/** A user moved a presentation, or left it. */
+interface UserPresentationChange {
 	readonly paneId: string;
 	readonly clientId: string;
-	/** Where the presentation is now, or null when the person left it. */
+	/** Where the presentation is now, or null when the user left it. */
 	readonly presentation: SemanticPanePresentation | null;
 }
 
@@ -71,8 +71,8 @@ interface Pending {
 	/**
 	 * Whether the pane has been seen answering this request. A report is sent a
 	 * moment after what it describes, so one that lands after the request went
-	 * out may still be about where a person had the pane before it arrived. Only
-	 * once the pane has taken the request up is a position a person chose a person
+	 * out may still be about where a user had the pane before it arrived. Only
+	 * once the pane has taken the request up is a position a user chose a user
 	 * taking over.
 	 */
 	takenUp: boolean;
@@ -118,16 +118,16 @@ interface PanePresentations {
 	 * Called for a report the pane-context store kept, so an overtaken report
 	 * never reaches here. It settles the request the pane was sent when the report
 	 * answers it, and otherwise tells the listeners when the position is one a
-	 * person chose and is not the one the pane last said.
+	 * user chose and is not the one the pane last said.
 	 * @param report The pane's report.
 	 */
 	readonly note: (report: SemanticPaneContext) => void;
 	/**
-	 * Hear when a person steps a presentation by hand, or leaves it.
+	 * Hear when a user steps a presentation by hand, or leaves it.
 	 * @param listener What to tell.
 	 * @returns Stops listening.
 	 */
-	readonly onPersonChange: (listener: (change: PersonPresentationChange) => void) => () => void;
+	readonly onUserChange: (listener: (change: UserPresentationChange) => void) => () => void;
 	/** Refuse every unanswered request and forget every position: the canvas is stopping. */
 	readonly forget: () => void;
 }
@@ -165,11 +165,11 @@ function answerTo(waiting: Pending, said: SemanticPanePresentation | null): Pres
 }
 
 /**
- * Whether a position is one a person chose: a step nobody asked for, or an empty
+ * Whether a position is one a user chose: a step nobody asked for, or an empty
  * pane that was presenting a moment ago.
  * @param before Where the pane last said it was, or null.
  * @param said Where it says it is now, or null.
- * @returns True when a person's hand moved it from where it was.
+ * @returns True when a user's hand moved it from where it was.
  */
 function movedByPerson(
 	before: SemanticPanePresentation | null,
@@ -206,7 +206,7 @@ interface PresentationLedger {
 	readonly pending: Map<string, Pending>;
 	/** Where each pane last said its presentation was, by client id. */
 	readonly lastSaid: Map<string, SemanticPanePresentation | null>;
-	readonly listeners: Set<(change: PersonPresentationChange) => void>;
+	readonly listeners: Set<(change: UserPresentationChange) => void>;
 }
 
 /**
@@ -271,7 +271,7 @@ function awaitAnswer(
 }
 
 /**
- * Refuse a request a person's hand overtook, once the pane had taken it up. Before
+ * Refuse a request a user's hand overtook, once the pane had taken it up. Before
  * that, the position may be where they had the pane before the request arrived.
  * @param waiting The unanswered request, or undefined when the pane was sent none.
  */
@@ -327,11 +327,11 @@ function createPanePresentations(parts: PanePresentationParts): PanePresentation
 	}
 
 	/**
-	 * Hear when a person steps a presentation by hand, or leaves it.
+	 * Hear when a user steps a presentation by hand, or leaves it.
 	 * @param listener What to tell.
 	 * @returns Stops listening.
 	 */
-	function onPersonChange(listener: (change: PersonPresentationChange) => void): () => void {
+	function onUserChange(listener: (change: UserPresentationChange) => void): () => void {
 		ledger.listeners.add(listener);
 		return (): void => {
 			ledger.listeners.delete(listener);
@@ -356,7 +356,7 @@ function createPanePresentations(parts: PanePresentationParts): PanePresentation
 		note: (report) => {
 			noteReport(ledger, report);
 		},
-		onPersonChange,
+		onUserChange,
 		forget,
 	};
 }
@@ -388,7 +388,7 @@ export {
 	createPanePresentations,
 	panePresentations,
 	type PanePresentations,
-	type PersonPresentationChange,
+	type UserPresentationChange,
 	type PresentInput,
 	type PresentOutcome,
 	type PresentRefusal,

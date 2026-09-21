@@ -3,7 +3,7 @@
 // The step presenter beside this is pure: given what a pane shows and where a talk stands, it
 // settles a step and asks the pane for it. This is the half that knows this canvas: which pane
 // is which, what each last said is on screen, which walkthrough a voice session is narrating and
-// which step it stands on, and what a person's hand on the keys means for a talk under way.
+// which step it stands on, and what a user's hand on the keys means for a talk under way.
 
 import type { CoordinatorToolPresentStepOutcome } from "@/runtime/codex-coordinator-tools";
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
@@ -14,7 +14,7 @@ import type { SemanticBoard, SemanticWalkthrough } from "@/shared/semantic-board
 import { narrationTiming } from "@/server/canvas/lib/narration-timing";
 import {
 	panePresentations,
-	type PersonPresentationChange,
+	type UserPresentationChange,
 } from "@/server/canvas/lib/pane-presentation";
 import { paneBoardOf, panes } from "@/server/canvas/lib/pane-registry";
 import {
@@ -188,7 +188,7 @@ async function presentStepInCanvasPane(
  * Read from the board the pane is showing, never taken from the browser: the
  * browser names a walkthrough and the server says what it says.
  * @param paneId The pane voice is starting for.
- * @param walkthroughId The walkthrough the person chose.
+ * @param walkthroughId The walkthrough the user chose.
  * @returns The walkthrough and what to call it.
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
@@ -202,11 +202,11 @@ function narrationFor(paneId: string, walkthroughId: string): RealtimePresentati
 }
 
 /**
- * What a person's by-hand change is, as both models are told it.
+ * What a user's by-hand change is, as both models are told it.
  * @param change What the pane reported.
  * @returns The change, or null when the step it names is not on that pane's board.
  */
-function narrationChangeOf(change: PersonPresentationChange): RealtimePresentationChange | null {
+function narrationChangeOf(change: UserPresentationChange): RealtimePresentationChange | null {
 	const said = change.presentation;
 	if (said === null) {
 		return { kind: "left" };
@@ -226,10 +226,10 @@ function narrationChangeOf(change: PersonPresentationChange): RealtimePresentati
 }
 
 /**
- * Where the person put the picture is where the talk goes on from; leaving ends the narration.
+ * Where the user put the picture is where the talk goes on from; leaving ends the narration.
  * @param change What the pane reported.
  */
-function noteWhereThePersonIs(change: PersonPresentationChange): void {
+function noteWhereTheUserIs(change: UserPresentationChange): void {
 	const said = change.presentation;
 	if (said === null) {
 		noteNarratedWalkthrough(change.paneId, null);
@@ -241,14 +241,14 @@ function noteWhereThePersonIs(change: PersonPresentationChange): void {
 /**
  * Whether a by-hand change is news to a narration.
  *
- * Not before its first step has been handed over, unless the person left. Pressing Narrate
+ * Not before its first step has been handed over, unless the user left. Pressing Narrate
  * opens the walkthrough, which is itself a by-hand choice of step 1, and its report can land just
- * after the narration begins; counted as "the person moved to step 1", it would start the talk
+ * after the narration begins; counted as "the user moved to step 1", it would start the talk
  * on step 2. Until the first step is handed over the talk starts at step 1 whatever is on screen.
  * @param change What the pane reported.
  * @returns True when the narrator should hear of it.
  */
-function narrationUnderWay(change: PersonPresentationChange): boolean {
+function narrationUnderWay(change: UserPresentationChange): boolean {
 	const standing = narrated.get(change.paneId);
 	if (standing === undefined) {
 		return false;
@@ -257,9 +257,9 @@ function narrationUnderWay(change: PersonPresentationChange): boolean {
 }
 
 /**
- * Hear what a person does by hand to a walkthrough that is being narrated.
+ * Hear what a user does by hand to a walkthrough that is being narrated.
  *
- * Only a narrated pane's changes are told: a person reading a walkthrough on
+ * Only a narrated pane's changes are told: a user reading a walkthrough on
  * their own, with nobody narrating, is nobody's news. Leaving ends the narration.
  * @param listener What to tell.
  * @returns Stops listening.
@@ -267,7 +267,7 @@ function narrationUnderWay(change: PersonPresentationChange): boolean {
 function subscribeNarrationChanges(
 	listener: (change: RealtimePresentationChange) => void,
 ): () => void {
-	return panePresentations.onPersonChange((change) => {
+	return panePresentations.onUserChange((change) => {
 		if (!narrationUnderWay(change)) {
 			return;
 		}
@@ -275,7 +275,7 @@ function subscribeNarrationChanges(
 		if (told === null) {
 			return;
 		}
-		noteWhereThePersonIs(change);
+		noteWhereTheUserIs(change);
 		listener(told);
 	});
 }

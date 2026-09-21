@@ -53,7 +53,7 @@ describe("present_step", () => {
 		h.presentation.setOutcome({
 			tag: "refused",
 			reason: "busy",
-			message: "A person stepped the presentation by hand.",
+			message: "A user stepped the presentation by hand.",
 		});
 		const result = await dispatch(h, h.request("present_step"));
 		expect(responseEnvelope(result.response)).toMatchObject({ tag: "refused", reason: "busy" });

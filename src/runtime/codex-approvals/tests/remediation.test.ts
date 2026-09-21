@@ -143,7 +143,7 @@ describe("Codex approval remediation", () => {
 		}
 	});
 
-	test("uses one effective decision set for presentation and person settlement", async () => {
+	test("uses one effective decision set for presentation and user settlement", async () => {
 		const cases: ReadonlyArray<{
 			readonly name: string;
 			readonly offered: readonly unknown[] | null | undefined;

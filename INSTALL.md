@@ -119,7 +119,7 @@ that repo's `CLAUDE.md` is authored rather than generated.
 A board is one `.semantic.json` document in a vault, holding every variant of
 that architecture. The offered answer is a vault inside the repo, at
 `<repo>/.archboard/vault`: boards next to the code they describe, and reviewable
-in the same diff as the change they justify — a board is JSON a person can read
+in the same diff as the change they justify — a board is JSON a user can read
 and a reviewer can diff, which is most of why it is a file rather than a
 database. It is not gitignored for you. Commit it or ignore it, deliberately.
 
@@ -222,7 +222,7 @@ none — a layout somebody repaired by hand cannot be improved for every board a
 once.
 
 Those commands go through the server and need no browser. Open the canvas URL
-and use `archboard browser ...` only when a person wants to read a board, or to
+and use `archboard browser ...` only when a user wants to read a board, or to
 put a proposal beside what it proposes to change:
 
 ```bash
@@ -248,7 +248,7 @@ A node states its binding as part of what it is:
 
 The board stores the repository identity and a repo-relative path — never an
 absolute path or a `file://` URL — so the same board opens the right file on
-anybody's machine. What a person clicks is resolved later, from the binding and
+anybody's machine. What a user clicks is resolved later, from the binding and
 this machine's checkout registry.
 
 A bare relative path is resolved against the CLI's explicit working-directory
@@ -341,7 +341,7 @@ list is needed in the installed setup block.
 
 ### Optional live session
 
-When a person asks to see that persisted board in a connected browser, show it
+When a user asks to see that persisted board in a connected browser, show it
 on an explicit pane:
 
 ```bash

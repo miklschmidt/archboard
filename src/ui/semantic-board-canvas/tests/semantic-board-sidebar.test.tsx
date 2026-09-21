@@ -1,10 +1,10 @@
-// The sidebar beside a semantic pane: which tab it shows as the person picks
+// The sidebar beside a semantic pane: which tab it shows as the user picks
 // things out and lets go of them, and that moving between its tabs leaves the
-// picture where the person was looking.
+// picture where the user was looking.
 //
 // What these catch: a pick that leaves the key open and the details out of
-// sight, a cleared selection that strands the person on an empty panel, a tab
-// the person chose being taken from them, and a tab switch that refits or
+// sight, a cleared selection that strands the user on an empty panel, a tab
+// the user chose being taken from them, and a tab switch that refits or
 // moves the diagram.
 
 import { act, fireEvent } from "@testing-library/react";
@@ -31,7 +31,7 @@ function openTab(): string | null {
 }
 
 /**
- * Pick the card out the way a person does, in a pane that holds its selection.
+ * Pick the card out the way a user does, in a pane that holds its selection.
  */
 function pickCard(): void {
 	act(() => {
@@ -58,7 +58,7 @@ test("picking something out opens the selection, and letting go gives back the t
 	expect(openTab()).toBe("board");
 });
 
-test("a tab the person chooses while something is selected stays theirs until they pick again", async () => {
+test("a tab the user chooses while something is selected stays theirs until they pick again", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, { live: true });
 	await settle();
@@ -81,7 +81,7 @@ test("a tab the person chooses while something is selected stays theirs until th
 	expect(openTab()).toBe("selection");
 });
 
-test("moving between tabs leaves the picture where the person was looking", async () => {
+test("moving between tabs leaves the picture where the user was looking", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, { live: true });
 	await settle();

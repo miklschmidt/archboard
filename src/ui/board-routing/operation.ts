@@ -1,7 +1,7 @@
 // The one thing the address bar is waiting on.
 //
 // Every board open goes through here, whoever asked for it: a restore's own
-// step and a person's click are the same operation with a different owner, so
+// step and a user's click are the same operation with a different owner, so
 // there is one lifecycle to reason about and one thing outstanding at a time.
 // That is what makes the last thing somebody asked for the last thing the
 // server is given.
@@ -16,7 +16,7 @@ import { boardIn, type WorkspaceAddress } from "@/ui/board-routing/address";
 import type { NavigationIntent } from "@/ui/board-routing/intent";
 
 /** Who asked for an operation. */
-type Operator = { readonly kind: "restore"; readonly target: number } | { readonly kind: "person" };
+type Operator = { readonly kind: "restore"; readonly target: number } | { readonly kind: "user" };
 
 /** What the server said, once it has said anything. */
 type OperationAnswer = "opened" | "unreachable";
@@ -38,7 +38,7 @@ interface Operation {
 	 */
 	readonly openedKey: string | null;
 	/**
-	 * What the person asked for, when this is theirs. The operation owns it, so
+	 * What the user asked for, when this is theirs. The operation owns it, so
 	 * an expectation exists only between its pane moving and the address being
 	 * written, and nobody else's change can be taken for their move.
 	 */
@@ -51,7 +51,7 @@ interface Operation {
  * @param paneId The pane to move.
  * @param boardKey The board it is being pointed at.
  * @param displayed What is on screen, for what that pane shows now.
- * @param intent What the person asked for, when this is theirs.
+ * @param intent What the user asked for, when this is theirs.
  * @returns The operation.
  */
 function startOperation(
@@ -110,7 +110,7 @@ function operationSettled(
 	const shown = boardIn(displayed, operation.paneId);
 	// That the pane moved at all is what says the open arrived. A pane already
 	// showing the board the server opened has nothing to wait for: that is a
-	// person opening the board their pane was on, which moves nothing and is
+	// user opening the board their pane was on, which moves nothing and is
 	// still over. Both keys come from the server, so the same board is the same
 	// string however the request spelled the address.
 	return shown !== operation.from || shown === operation.openedKey || !ready(operation.paneId);
@@ -118,7 +118,7 @@ function operationSettled(
 
 /**
  * Whether the pane this operation moved is showing something else now. False
- * for an operation that succeeded without moving anything, which is a person
+ * for an operation that succeeded without moving anything, which is a user
  * opening the board their pane was already on.
  * @param operation The operation.
  * @param displayed What is on screen now.
