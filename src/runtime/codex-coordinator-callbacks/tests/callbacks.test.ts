@@ -1,7 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
 import { encodeCoordinatorCallback, normalizeCoordinatorCallback } from "../index.js";
-import { close, harness, identities, link, operationEvent, semanticSources } from "./support.js";
+import {
+	close,
+	harness,
+	identities,
+	link,
+	operationEvent,
+	semanticInput,
+	semanticSources,
+} from "./support.js";
 
 const operationTypes = [
 	"accepted",
@@ -76,9 +84,16 @@ describe("coordinator callbacks", () => {
 		);
 	});
 
-	test("active callbacks append one developer request with exact generation identities", async () => {
+	test("what is appended to live voice is one developer request with exact generation identities", async () => {
 		const h = harness(true);
-		const delivery = await h.callbacks.enqueue(operationEvent(h.ids, "progress"));
+		// Pane news is the one thing the voice session is appended (TASK-293).
+		const base = semanticInput(h.ids, true);
+		const delivery = await h.callbacks.enqueue(
+			h.semantic.publisher.publishPaneSelection({
+				...base,
+				pane: { ...base.pane, userChanged: ["selection"] },
+			}),
+		);
 		if (delivery.text === null || h.state.generation === null) {
 			throw new Error("active callback fixture failed");
 		}
