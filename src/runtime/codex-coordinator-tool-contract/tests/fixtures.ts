@@ -3,7 +3,7 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_workhorse",
 	description:
-		"Inspect and steer the one workhorse bound by the host to this coordinator; no caller selects a target.",
+		"Inspect and steer the one workhorse bound by the host to this coordinator; no caller selects a target. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
 		{
 			type: "function",
@@ -81,7 +81,7 @@ const VOICE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_voice",
 	description:
-		"Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn, and present a walkthrough step in the voice-linked pane.",
+		"Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn, and present a walkthrough step in the voice-linked pane. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
 		{
 			type: "function",

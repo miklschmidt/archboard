@@ -1,7 +1,7 @@
 {
 	"type": "namespace",
 	"name": "archboard_workhorse",
-	"description": "Inspect and steer the one workhorse bound by the host to this coordinator; no caller selects a target.",
+	"description": "Inspect and steer the one workhorse bound by the host to this coordinator; no caller selects a target. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	"tools": [
 		{
 			"type": "function",
