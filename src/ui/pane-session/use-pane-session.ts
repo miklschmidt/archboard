@@ -176,10 +176,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		(reading: PaneReading): void => core.readingChanged(reading),
 		[core],
 	);
-	const userChanged = useCallback(
-		(part: SemanticPanePart): void => core.userChanged(part),
-		[core],
-	);
+	const userChanged = useCallback((part: SemanticPanePart): void => core.userChanged(part), [core]);
 	const userChangeFailed = useCallback(
 		(part: SemanticPanePart): void => core.userChangeFailed(part),
 		[core],

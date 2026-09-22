@@ -8,6 +8,7 @@
 import type { CoordinatorToolPresentStepOutcome } from "@/runtime/codex-coordinator-tools";
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
 import { parseBoardKey } from "@/runtime/engine/board";
+import type { PaneRegistration } from "@/runtime/engine/panes";
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
 import type { SemanticBoard, SemanticWalkthrough } from "@/shared/semantic-board/index";
@@ -25,32 +26,78 @@ import {
 } from "@/server/canvas/lib/present-walkthrough-step";
 import { semanticPaneContextFor } from "@/server/canvas/lib/semantic-pane-context";
 
+// Which browser's pane each voice session is about, by the pane id the shell and the
+// coordinator name it by.
+//
+// A pane id is not exact. A second browser on the same canvas presents a pane "A" of its own
+// (on 2026-09-22 the ChatGPT desktop app held one for a day beside Chrome's), and whichever
+// registered first would answer for both: Narrate looked for the walkthrough on the other
+// browser's board and refused. A voice session is started from one browser, whose client id the
+// start carries, and everything said in it is about that browser's pane.
+const voicePanes = new Map<string, string>();
+
+/**
+ * A voice session started from one browser's pane; its narration is about that pane.
+ * @param paneId The pane, as the shell and the coordinator name it.
+ * @param clientId The client id of the pane in the browser the session was started from.
+ */
+function bindVoicePane(paneId: string, clientId: string): void {
+	voicePanes.set(paneId, clientId);
+}
+
+/**
+ * The live pane a pane id means: the bound browser's while it is on screen, otherwise the only
+ * pane with that id. Two browsers presenting that id, with neither bound, is nobody's pane.
+ * @param paneId The pane, as the shell and the coordinator name it.
+ * @returns The registration, or undefined.
+ */
+function registrationFor(paneId: string): PaneRegistration | undefined {
+	const bound = voicePanes.get(paneId);
+	const boundPane = bound === undefined ? undefined : panes.get(bound);
+	if (boundPane !== undefined) {
+		return boundPane;
+	}
+	const named = [...panes.values()].filter((one) => one.paneId === paneId);
+	return named.length === 1 ? named[0] : undefined;
+}
+
 /**
  * What one live pane is showing: what the pane itself last said is on screen,
  * which follows a drill-down, and otherwise the board the server pointed it at.
- * @param paneId The pane, as the shell names it.
+ * @param pane The pane's registration, or undefined when it has gone.
  * @returns The board and variant, or null when the pane has gone or shows no board.
  */
-function paneShowing(paneId: string): PresentedPane | null {
-	const pane = [...panes.values()].find((one) => one.paneId === paneId);
+function showingOf(pane: PaneRegistration | undefined): PresentedPane | null {
 	if (pane === undefined) {
 		return null;
 	}
 	return (
-		paneSaid(semanticPaneContextFor(pane.clientId)) ?? paneAddressed(paneBoardOf(pane.clientId))
+		paneSaid(pane.clientId, semanticPaneContextFor(pane.clientId)) ??
+		paneAddressed(pane.clientId, paneBoardOf(pane.clientId))
 	);
 }
 
 /**
+ * What the pane a pane id means is showing.
+ * @param paneId The pane, as the shell and the coordinator name it.
+ * @returns The board and variant, or null when the pane has gone or shows no board.
+ */
+function paneShowing(paneId: string): PresentedPane | null {
+	return showingOf(registrationFor(paneId));
+}
+
+/**
  * What a pane says is on screen, which follows a drill-down.
+ * @param clientId The pane's client id.
  * @param said The pane's last report, or null.
  * @returns The board and variant, or null when the pane has not said.
  */
-function paneSaid(said: SemanticPaneContext | null): PresentedPane | null {
+function paneSaid(clientId: string, said: SemanticPaneContext | null): PresentedPane | null {
 	if (said?.board == null) {
 		return null;
 	}
 	return {
+		clientId,
 		board: said.board.name,
 		variant: said.variant?.id,
 		presenting: said.presentation?.walkthrough ?? null,
@@ -59,15 +106,16 @@ function paneSaid(said: SemanticPaneContext | null): PresentedPane | null {
 
 /**
  * What a pane that has not reported yet is showing, from the board it was pointed at.
+ * @param clientId The pane's client id.
  * @param key The pane's board key, or null when it has none.
  * @returns The board and variant, or null.
  */
-function paneAddressed(key: string | null): PresentedPane | null {
+function paneAddressed(clientId: string, key: string | null): PresentedPane | null {
 	if (key === null) {
 		return null;
 	}
 	const identity = parseBoardKey(key);
-	return { board: identity.board, variant: identity.variant, presenting: null };
+	return { clientId, board: identity.board, variant: identity.variant, presenting: null };
 }
 
 /**
@@ -81,13 +129,16 @@ function readBoard(name: string): SemanticBoard | null {
 }
 
 /**
- * One walkthrough of the board a pane is showing.
- * @param paneId The pane.
+ * One walkthrough of the board one browser's pane is showing.
+ * @param clientId The pane's client id.
  * @param walkthroughId The walkthrough's id.
  * @returns The walkthrough, or undefined when that pane's board does not state it.
  */
-function walkthroughOnPane(paneId: string, walkthroughId: string): SemanticWalkthrough | undefined {
-	const pane = paneShowing(paneId);
+function walkthroughOnPane(
+	clientId: string,
+	walkthroughId: string,
+): SemanticWalkthrough | undefined {
+	const pane = showingOf(panes.get(clientId));
 	const shown = pane === null ? null : contentOn({ readBoard }, pane);
 	return shown?.content.walkthroughs.find((one) => one.id === walkthroughId);
 }
@@ -187,13 +238,18 @@ async function presentStepInCanvasPane(
  *
  * Read from the board the pane is showing, never taken from the browser: the
  * browser names a walkthrough and the server says what it says.
- * @param paneId The pane voice is starting for.
+ * @param paneId The pane voice is starting for, as the shell names it.
+ * @param clientId The client id of that pane in the browser the start came from.
  * @param walkthroughId The walkthrough the user chose.
  * @returns The walkthrough and what to call it.
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
-function narrationFor(paneId: string, walkthroughId: string): RealtimePresentation {
-	const walkthrough = walkthroughOnPane(paneId, walkthroughId);
+function narrationFor(
+	paneId: string,
+	clientId: string,
+	walkthroughId: string,
+): RealtimePresentation {
+	const walkthrough = walkthroughOnPane(clientId, walkthroughId);
 	if (walkthrough === undefined) {
 		throw new Error("The pane is not showing a board that states that walkthrough.");
 	}
@@ -211,7 +267,7 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 	if (said === null) {
 		return { kind: "left" };
 	}
-	const walkthrough = walkthroughOnPane(change.paneId, said.walkthrough);
+	const walkthrough = walkthroughOnPane(change.clientId, said.walkthrough);
 	const beat = walkthrough?.beats[said.beat];
 	if (walkthrough === undefined || beat === undefined) {
 		return null;
@@ -245,12 +301,15 @@ function noteWhereTheUserIs(change: UserPresentationChange): void {
  * opens the walkthrough, which is itself a by-hand choice of step 1, and its report can land just
  * after the narration begins; counted as "the user moved to step 1", it would start the talk
  * on step 2. Until the first step is handed over the talk starts at step 1 whatever is on screen.
+ *
+ * Nor from another browser's pane of the same id: what is done there is not this talk.
  * @param change What the pane reported.
  * @returns True when the narrator should hear of it.
  */
 function narrationUnderWay(change: UserPresentationChange): boolean {
 	const standing = narrated.get(change.paneId);
-	if (standing === undefined) {
+	const bound = voicePanes.get(change.paneId);
+	if (standing === undefined || (bound !== undefined && bound !== change.clientId)) {
 		return false;
 	}
 	return standing.step > 0 || change.presentation === null;
@@ -281,6 +340,7 @@ function subscribeNarrationChanges(
 }
 
 export {
+	bindVoicePane,
 	narrationFor,
 	nextCountsFrom,
 	noteNarratedWalkthrough,

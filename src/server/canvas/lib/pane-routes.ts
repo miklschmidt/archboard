@@ -463,8 +463,31 @@ function registerLivePane(registration: PaneRegistration): void {
 	// — see the pane layout section for why it is that and not a reply.
 	if (previous === undefined) {
 		notePaneOpened(registration);
+		warnOfSharedPaneId(registration);
 	}
 	noteWhatChanged(previous, registration);
+}
+
+/**
+ * Say so when a second browser presents a pane id another live browser already holds.
+ *
+ * The canvas is one operator's, but nothing stops a second browser (the ChatGPT desktop app,
+ * on 2026-09-22) opening it too, and then "pane A" names two panes. Voice and narration address
+ * the browser that started them (TASK-294); anything that still goes by the shell id alone may
+ * land on the other one, and this line is how that is read afterwards.
+ * @param registration The pane that just arrived.
+ */
+function warnOfSharedPaneId(registration: PaneRegistration): void {
+	const others = [...panes.values()].filter(
+		(one) => one.paneId === registration.paneId && one.clientId !== registration.clientId,
+	);
+	if (others.length > 0) {
+		const ids = others.map((one) => one.clientId).join(", ");
+		logger.warn(
+			`Pane ${registration.paneId} is presented by two browsers: ${registration.clientId} ` +
+				`arrived while ${ids} still holds it. Voice addresses the browser it was started from.`,
+		);
+	}
 }
 
 /**

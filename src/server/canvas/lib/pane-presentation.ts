@@ -46,8 +46,11 @@ type PresentOutcome =
 
 /** What to ask of one pane. */
 interface PresentInput {
-	/** The pane, as the shell names it. */
-	readonly paneId: string;
+	/**
+	 * The pane, by its client id: exact, where a shell id ("A") is one a second browser on the
+	 * same canvas presents a pane of too.
+	 */
+	readonly clientId: string;
 	/** The walkthrough to present, or null to leave the presentation. */
 	readonly walkthrough: string | null;
 	/** Which beat of it, counted from zero. */
@@ -89,11 +92,11 @@ interface PresentablePane {
 /** What the port needs of the canvas around it. */
 interface PanePresentationParts {
 	/**
-	 * The live pane with that id, showing a board.
-	 * @param paneId The pane, as the shell names it.
+	 * The live pane with that client id, showing a board.
+	 * @param clientId The pane's client id.
 	 * @returns The pane, or null when it has gone or shows no board.
 	 */
-	readonly paneFor: (paneId: string) => PresentablePane | null;
+	readonly paneFor: (clientId: string) => PresentablePane | null;
 	/**
 	 * Send one request down a pane's socket.
 	 * @param pane The pane.
@@ -318,7 +321,7 @@ function createPanePresentations(parts: PanePresentationParts): PanePresentation
 	 * @returns How it ended.
 	 */
 	function present(input: PresentInput): Promise<PresentOutcome> {
-		const pane = parts.paneFor(input.paneId);
+		const pane = parts.paneFor(input.clientId);
 		if (pane === null) {
 			return Promise.resolve({ kind: "refused", reason: "no_pane" });
 		}
@@ -363,15 +366,16 @@ function createPanePresentations(parts: PanePresentationParts): PanePresentation
 
 /** This canvas's port, over the pane registry. */
 const panePresentations = createPanePresentations({
-	// By the pane's own id and nothing looser: a narrator is linked to one pane,
-	// and "the only pane on screen" is not that pane once it has gone.
+	// By the pane's own client id and nothing looser: a narrator is linked to one pane in one
+	// browser, "the only pane on screen" is not that pane once it has gone, and a second
+	// browser's pane of the same shell id is not it either.
 	/**
-	 * The live pane with that id, showing a board.
-	 * @param paneId The pane, as the shell names it.
+	 * The live pane with that client id, showing a board.
+	 * @param clientId The pane's client id.
 	 * @returns The pane, or null.
 	 */
-	paneFor(paneId) {
-		const pane = [...panes.values()].find((one) => one.paneId === paneId);
+	paneFor(clientId) {
+		const pane = panes.get(clientId);
 		const board = pane === undefined ? null : paneBoardOf(pane.clientId);
 		return pane === undefined || board === null ? null : { clientId: pane.clientId, board };
 	},

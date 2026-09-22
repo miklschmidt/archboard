@@ -1830,7 +1830,10 @@ accepts no other property.
 presentation to one step and answers only once that pane's own report says the
 step has finished arriving. Its authority target is `host_bound_voice_pane`:
 the pane, board and variant are host links (`realtimeSessionId`, `paneId`,
-`boardKey`) and never arguments. The step is usually the host's too: a V3
+`boardKey`) and never arguments. The pane is the one in the browser the voice
+session was started from, by that pane's client id, which the start carries
+as the command's browser id: a shell id such as "A" is not exact when a second
+browser holds the canvas too (TASK-294). The step is usually the host's too: a V3
 delegation carries the person's last utterance and never words the voice model
 composed, so the coordinator is not told which step is wanted, and a call with
 no `step` presents the one after where the narration stands (the last step

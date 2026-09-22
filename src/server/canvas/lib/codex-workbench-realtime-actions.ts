@@ -4,7 +4,11 @@ import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/cod
 import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
 import { narrationTiming } from "@/server/canvas/lib/narration-timing";
 import { traceMessage, voiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
-import { narrationFor, noteNarratedWalkthrough } from "@/server/canvas/lib/walkthrough-narration";
+import {
+	bindVoicePane,
+	narrationFor,
+	noteNarratedWalkthrough,
+} from "@/server/canvas/lib/walkthrough-narration";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;
 
@@ -290,12 +294,15 @@ export function createCanvasRealtimeActions(
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
 				try {
-					// A session started to present a walkthrough is told what it says by
-					// the server, from the board the pane is showing (TASK-251).
+					// The session is about the pane in the browser it was started from: the
+					// browser id is that pane's client id, exact where the shell's "A" is not
+					// (TASK-294). A session started to present a walkthrough is told what it
+					// says by the server, from the board that pane is showing (TASK-251).
+					bindVoicePane(pending.paneId, pending.browserId);
 					const presentation =
 						command.presentation === undefined
 							? null
-							: narrationFor(pending.paneId, command.presentation.walkthrough);
+							: narrationFor(pending.paneId, pending.browserId, command.presentation.walkthrough);
 					if (presentation === null) {
 						noteNarratedWalkthrough(pending.paneId, null);
 					}
