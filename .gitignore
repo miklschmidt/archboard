@@ -43,15 +43,9 @@ skills/archboard/references/generated/
 .cursor/
 .agent/
 
-# Development artifacts
-*.excalidraw
-
 .DS_Store
 
 # --- archboard ---
-# Committed architecture diagrams are a deliverable, not a build artifact.
-!diagrams/*.excalidraw
-
 # Agent skills are derived, not authored, so they stay untracked:
 #   .agents/skills/  third-party skills pinned by skills-lock.json, plus our
 #                    own skills synced from the tracked skills/ directory

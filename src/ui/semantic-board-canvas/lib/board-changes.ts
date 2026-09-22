@@ -12,7 +12,7 @@
 // handler announces the board by name, and whichever panes are showing that
 // board answer by invalidating their own drawing through the cache they are
 // already subscribed to. One announcement, no cache reference outside React,
-// and nothing to unwind when Excalidraw and its socket go.
+// and nothing to unwind when a pane and its socket go.
 
 /** What a listener is told: which board moved, and to which version. */
 type SemanticBoardListener = (board: string, version: number) => void;

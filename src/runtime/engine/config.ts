@@ -8,7 +8,7 @@ const EXPRESS_SERVER_URL = process.env["EXPRESS_SERVER_URL"] || "http://127.0.0.
 const ENABLE_CANVAS_SYNC = process.env["ENABLE_CANVAS_SYNC"] !== "false"; // Default to true
 
 // Opt out of auto-starting the canvas server from the CLI.
-const EXCALIDRAW_NO_AUTOSTART = process.env["EXCALIDRAW_NO_AUTOSTART"] === "1";
+const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 
 // The Obsidian vault every board is persisted into (ADR 0004). Deliberately
 // has no default: the vault spans repositories, so guessing at the current
@@ -53,7 +53,7 @@ function noVaultMessage(): string {
 export {
 	EXPRESS_SERVER_URL,
 	ENABLE_CANVAS_SYNC,
-	EXCALIDRAW_NO_AUTOSTART,
+	ARCHBOARD_NO_AUTOSTART,
 	ARCHBOARD_VAULT,
 	noVaultMessage,
 };

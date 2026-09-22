@@ -116,7 +116,7 @@ check prints only ownership and mode facts. It also proves that `config.toml`
 contains the one canonical `sqlite_home` line for the separate SQLite root.
 
 ```bash
-accept_state_root="${XDG_STATE_HOME:-$HOME/.local/state}/excalidraw-canvas/codex-workbench"
+accept_state_root="${XDG_STATE_HOME:-$HOME/.local/state}/archboard/codex-workbench"
 bun -e '
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";

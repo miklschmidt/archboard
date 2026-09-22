@@ -312,7 +312,7 @@ What the bitmap is:
 ## On macOS
 
 Archboard supports Linux and macOS. On macOS, machine-local state lives under
-`~/Library/Application Support/excalidraw-canvas`, and logs go to
+`~/Library/Application Support/archboard`, and logs go to
 `~/Library/Logs/archboard.log`. Process ownership is verified through the native
 macOS process API; Linux uses `/proc`.
 

@@ -190,10 +190,8 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 		WAIT,
 	);
 
-	// The promise ADR 0023 makes about an existing vault: a semantic board is a
-	// board of its own and nothing installs a legacy note for it.
+	// A board is one document (ADR 0023): drawing it writes nothing beside it.
 	expect(existsSync(join(vault, "pipeline.semantic.json"))).toBe(true);
-	expect(existsSync(join(vault, "pipeline.excalidraw.md"))).toBe(false);
 	expect(readdirSync(vault).filter((name) => name.startsWith("pipeline."))).toEqual([
 		"pipeline.semantic.json",
 	]);

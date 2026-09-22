@@ -11,8 +11,7 @@ import {
 // version, write the aggregate and then tell the panes about it. A command that
 // wrote the file itself would get the first three and lose the fourth, so every
 // pane on screen would sit there showing the board as it was until somebody
-// reloaded. That is the same reason the Excalidraw commands go through the
-// canvas, and it has not changed.
+// reloaded.
 
 import { z } from "zod";
 import {

@@ -90,9 +90,8 @@ add imports or a second state path ahead of that work.
   Route composition stays thin and consumes domain-owned interfaces. The first
   navigation contract is a URL that restores an open board or comparison and
   its active pane, with Back/Forward following deliberate board navigation.
-  The URL represents browser display intent; the note remains board authority.
-  Selection, pending edits, and live voice remain session state. Preserve the
-  one-shot Excalidraw library-install hash flow.
+  The URL represents browser display intent; the board file remains board
+  authority. Selection, pending edits, and live voice remain session state.
 - `src/ui/board-routing` delivers that contract (TASK-166) and owns it. The
   workspace lives in search parameters on the one route at `/` — `paneA`,
   `paneB` and `pane` — because the canvas server serves the page at `/` alone,

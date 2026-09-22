@@ -46,7 +46,7 @@ describe.serial("source staleness", () => {
 				env: {
 					...process.env,
 					EXPRESS_SERVER_URL: canvas.base,
-					EXCALIDRAW_NO_AUTOSTART: "1",
+					ARCHBOARD_NO_AUTOSTART: "1",
 					ARCHBOARD_VAULT: vault,
 					XDG_STATE_HOME: state,
 					LOG_LEVEL: "error",

@@ -1,15 +1,11 @@
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 // The routes that change a semantic board.
 //
-// They are deliberately outside the Excalidraw write boundary in
-// `write-boundary.ts`. That boundary resolves a `.excalidraw.md` note before it
-// takes a lease, and asking it to do that for a board that has no note would
-// create one — which is exactly the thing ADR 0023 promises not to do to an
-// existing vault. Instead a semantic write states its own boundary:
-// `writeSemanticBoard` takes the same board-global lease, honours the same
-// claim, makes the same expected-version check, advances the version once and
-// writes the aggregate atomically. What is left here is everything a request
-// has to prove before it is allowed near that boundary.
+// A semantic write states its own boundary: `writeSemanticBoard` takes the
+// board-global lease, honours the claim, makes the expected-version check,
+// advances the version once and writes the aggregate atomically (ADR 0023).
+// What is left here is everything a request has to prove before it is allowed
+// near that boundary.
 
 import type { NextFunction, Request, Response } from "express";
 import {

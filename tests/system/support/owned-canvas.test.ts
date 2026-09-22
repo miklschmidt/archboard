@@ -311,12 +311,12 @@ describe("owned canvas direct lifecycle", () => {
 								paths.home,
 								"Library",
 								"Application Support",
-								"excalidraw-canvas",
+								"archboard",
 								"codex-workbench",
 							)
 						: process.platform === "win32"
-							? path.join(paths.home, "AppData", "Local", "Excalidraw-Canvas", "codex-workbench")
-							: path.join(paths.xdgState, "excalidraw-canvas", "codex-workbench");
+							? path.join(paths.home, "AppData", "Local", "Archboard", "codex-workbench")
+							: path.join(paths.xdgState, "archboard", "codex-workbench");
 				expect(namespace).toMatchObject({
 					home: paths.home,
 					xdgConfig: paths.xdgConfig,
@@ -374,7 +374,7 @@ describe("owned canvas direct lifecycle", () => {
 				await fetch(`${canvas.base}/health`).then((response) => response.json()),
 			).toMatchObject({
 				status: "healthy",
-				service: "mcp-excalidraw-canvas",
+				service: "archboard-canvas",
 				pid: canvas.pid,
 			});
 			expect(await fetch(`${retiredBase}/health`).then((response) => response.json())).toEqual({

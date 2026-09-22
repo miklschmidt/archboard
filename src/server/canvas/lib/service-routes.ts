@@ -38,7 +38,7 @@ function healthRoute(_req: Request, res: Response): void {
 		// Identity for `stop`: it must only ever signal a process that both
 		// identifies as this service AND self-reports its pid — never a pid
 		// from a stale pidfile or an unrelated app squatting on the port.
-		service: "mcp-excalidraw-canvas",
+		service: "archboard-canvas",
 		pid: process.pid,
 		application: {
 			phase: canvasPhase(),

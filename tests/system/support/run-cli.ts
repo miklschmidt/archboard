@@ -35,7 +35,7 @@ export function runCanvasCli(options: CanvasCliInput): CanvasCliResult {
 			...process.env,
 			ARCHBOARD_VAULT: options.vault,
 			EXPRESS_SERVER_URL: options.base,
-			EXCALIDRAW_NO_AUTOSTART: "1",
+			ARCHBOARD_NO_AUTOSTART: "1",
 			...options.env,
 		},
 	});

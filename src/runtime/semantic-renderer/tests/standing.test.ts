@@ -36,7 +36,7 @@ const PROPOSAL: VariantContent = architecture(
 		{ id: "core", name: "Board Runtime", kind: "service" },
 		{ id: "io", name: "board-io", kind: "module", parent: "core" },
 		{ id: "queue", name: "Edit Queue", kind: "queue", parent: "core" },
-		{ id: "legacy", name: "Excalidraw Bridge", kind: "module", parent: "core" },
+		{ id: "legacy", name: "Legacy Bridge", kind: "module", parent: "core" },
 		{ id: "store", name: "Vault", kind: "datastore" },
 	],
 	[
@@ -65,7 +65,7 @@ const SEQUENCE: VariantContent = orderedFixture({
 		{ id: "web", name: "Operator Console", kind: "ui" },
 		{ id: "gw", name: "API Gateway", kind: "route" },
 		{ id: "io", name: "board-io", kind: "module" },
-		{ id: "legacy", name: "Excalidraw Bridge", kind: "module" },
+		{ id: "legacy", name: "Legacy Bridge", kind: "module" },
 	],
 	edges: [],
 	flows: [

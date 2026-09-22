@@ -493,8 +493,4 @@ describe("authoring and opening a semantic board", () => {
 		});
 		expect(selected.views).toEqual(named.views);
 	}, 30_000);
-
-	test("no Excalidraw note was created for a semantic board", () => {
-		expect(fs.readdirSync(vault).filter((entry) => entry.endsWith(".excalidraw.md"))).toEqual([]);
-	});
 });

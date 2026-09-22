@@ -404,8 +404,8 @@ const semanticContract = defineCommand({
 	shared: ["url"],
 	summary: "Every semantic architecture board in the vault",
 	description:
-		"Lists the semantic boards the vault holds. Semantic boards and Excalidraw notes live side " +
-		"by side and are listed separately, because they are different kinds of file.",
+		"Lists the semantic boards the vault holds: every `.semantic.json` aggregate, and nothing " +
+		"else in the vault.",
 	examples: ["archboard semantic"],
 	parameters: [],
 	input: { ingress: z.object({}) },

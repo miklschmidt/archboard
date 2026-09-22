@@ -96,12 +96,12 @@ function publicLogPath(root: string): string {
 
 function publicStateRoot(root: string): string {
 	if (process.platform === "darwin") {
-		return join(root, "home/Library/Application Support/excalidraw-canvas");
+		return join(root, "home/Library/Application Support/archboard");
 	}
 	if (process.platform === "win32") {
-		return join(root, "home/AppData/Local/Excalidraw-Canvas");
+		return join(root, "home/AppData/Local/Archboard");
 	}
-	return join(root, "state/excalidraw-canvas");
+	return join(root, "state/archboard");
 }
 
 function publicWorkbenchRoot(root: string): string {

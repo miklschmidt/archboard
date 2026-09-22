@@ -157,7 +157,7 @@ Every transitional package check now has one final owner lane:
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent. The
 normal owners named by `BROWSER_TEST_PATHS` drive a real browser through one
-strict adapter for live-session behavior and Excalidraw fidelity. They are not a gate
+strict adapter for live-session behavior and rendered fidelity. They are not a gate
 for named-board runtime operations. The lane:
 
 - refuses to claim a pass without `agent-browser` on PATH, or without `strace`
@@ -225,47 +225,7 @@ loose. Do not replace it with a fixed millisecond gate: browser and runner speed
 are not the contract. The structural response/reconciliation assertions and
 the locally visible edits are the gate; timings remain diagnostic evidence.
 
-### Fixed-point and renderer contracts (TASK-071)
-
-Writes a board, renders it, reads back what the pane is holding, and reports
-every element and field Excalidraw changed. **It reports zero, and zero is
-asserted** (TASK-072): what archboard writes is a document Excalidraw does not
-change. About eleven seconds plus the build.
-
-`@excalidraw/excalidraw` is pinned at 0.18.1 in `package.json` and `bun.lock`.
-TASK-090 keeps the local arrow-binding port while one browser differential
-agrees within 1.0 scene pixel. The real canvas adopts a human arrow end with
-`focus: 0.9` and `gap: 15`, then trusted pointer input moves only its node while
-the browser's change report is held before it reaches the server. That scene
-read is Excalidraw's endpoint. A separate unopened board starts from the same
-node and arrow geometry; an agent moves its node to the browser's exact target,
-and the check compares the server endpoint with the captured browser endpoint.
-The same comparison rejects an in-memory endpoint two pixels away. A failure
-prints both endpoints, the coordinate deltas and total separation, the binding
-numbers, and both node geometries. When the Excalidraw package changes, run
-the focused arrow-geometry module test and then `bun run test:serial-browser`; do not replace the local
-port or copy more Excalidraw internals before that differential shows a visible
-mismatch.
-
-The same fixed-point document includes one bridge created through the product route. Its mask and
-redraw metadata, unbound line geometry, styling, and z-order therefore make the same single
-sequential headless renderer round trip; TASK-120 adds no pixel or two-pane browser suite.
-
-TASK-121's finding-render ownership now lives in
-`tests/system/boards/server-rendering.test.ts`. One persisted snapshot carries
-an embedded image, a valid bridge crossing, and an unmarked crossing. The
-zero-client owner checks the report, fixed focus dimensions, complete PNG
-results, and unchanged note bytes. The same retained renderer owner covers
-PNG/SVG semantics, Mermaid conversion, lease ordering, cancellation, and
-shutdown. Live pane capture and viewport assertions remain in the browser lane.
-
-It also owns the renderer half of malformed-geometry recovery (TASK-117). The
-check starts with malformed auto-resizing Helvetica text in the persisted
-scratch note. It proves the server still listens, the shell shows the board
-error, the note bytes stay unchanged, and none of the malformed elements enter
-Excalidraw. It then checks the same legacy shape through the shipped board
-atlas, restores valid note bytes, and proves the board renders with finite zoom
-and pane telemetry.
+### Pane telemetry recovery
 
 The pane recovery check uses `PANE_DEBOUNCE_MS` and observable publication
 conditions rather than fixed browser sleeps. It forces the measured rectangle
@@ -313,38 +273,12 @@ leave A2 owned, schedule no stale retry, and persist A2's edit. This is the
 browser-level guard that board adoption advances the hold generation and that
 late promise completion cannot clear a newer same-board attempt.
 
-### Human undo and redo (TASK-155)
-
-`human-undo.test.ts` owns the mixed agent/human history contract (TASK-155).
-Two short real-browser cases use trusted pointer drags and keyboard undo/redo
-after agent creation and modification. They compare all content fields with
-the persisted note after each move, undo and redo, and keep ordinary human
-undo/redo before the agent write. Canonical writes refresh Excalidraw's
-`versionNonce`, and the pane keeps the native `version`, so accepted agent
-work becomes the baseline for the next human action. The three stale-write
-refusal scenarios remain in `human-version-refusal.test.ts`, including closing
-an existing text editor while its element is absent before restoring the note.
-
-### Typed-text contracts (TASK-098)
-
-Draws a text element with the text tool and adds a label to a box with a
-double-click, so **Excalidraw mints the ids**, types into both across a write
-each with the editor still open, and asserts every character is on the board
-and in the note. It is the only check in which a rename can happen at all.
-Two halves close the typing-loss gap it guards: the element under a text
-editor is withheld from the change report, so the server is never told a name
-it would want to change; and the moment the editor is gone the pane renames
-it, through the same `derivedId` the server would have called. Reverting the
-withhold fails 9 of its checks and reverting the pane's rename fails 2.
-`settleBlockIds` and the note writer's own rename stay, as the backstop for a
-note archboard did not write. About fifteen seconds.
-
 ### Controlled text workbench (TASK-143.03.13)
 
 Starts the production server composition with the exact Codex 0.155.1 protocol
 fake, then drives the real browser transport and rendered shell. One short
 create, send, and decline flow proves the pane workbench is operable, both
-ordinary and dynamic approval effects are visible, and the mounted Excalidraw
+ordinary and dynamic approval effects are visible, and the mounted board
 pane keeps its seeded element. The owner also checks the fake's exact version
 probes, single app-server spawn, browser console, and page errors.
 
@@ -361,7 +295,7 @@ browser media session. One short rendered lifecycle proves that CanvasPane's
 caller-owned session reaches Shell and WorkbenchFrame with its source, captured
 context, and transcript visible. It then mutes the session, carries the same
 identity into the fullscreen dock, and stops it there before checking text-only
-cleanup and the unchanged mounted Excalidraw pane.
+cleanup and the unchanged mounted board pane.
 
 The owner checks desktop and desktop scaled geometry, target size, focus
 order, live-region semantics, reduced motion, forced colors, browser errors,
@@ -438,6 +372,3 @@ failure matrices.
   which is the one thing an in-process mutex could not do (ADR 0016).
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
-- `src/runtime/engine/tests/obsidian-id-stability.test.ts` pins the four historical id renames measured in
-  `docs/design/server-is-the-truth.md` as golden values, so a board already in
-  the vault keeps the ids it has.

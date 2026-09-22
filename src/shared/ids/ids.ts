@@ -2,34 +2,21 @@
 // consumer can hold: one to eight characters from Obsidian's block-id
 // alphabet.
 //
-// The constraint comes from the note. A text element's block id *is* its
-// element id (the Obsidian Excalidraw plugin's own rule, mirrored in
-// obsidian-md.ts), and a block reference cannot hold more than eight
-// characters, so anything longer has to be renamed on the way into a note.
-// That rename is the most dangerous act in the system. Measured: with a text
-// editor open on a bound label, a document was applied in which that text
-// element had been renamed. The textarea stayed on screen, stayed focused and
-// kept its value, but the scene no longer held the id the editor was bound to.
-// Five characters were typed and Escape pressed, and the five characters were
-// discarded — no error, no warning, nothing on screen to say it had happened.
+// The constraint is that an id has to be writable as an Obsidian block
+// reference, which cannot hold more than eight characters — so anything longer
+// would have to be renamed somewhere downstream. A rename is the most dangerous
+// act in the system: an id is what a proposal is compared by, so renaming one
+// makes a change look like a deletion and an addition, and anything holding the
+// old id is quietly pointing at nothing.
 //
-// No amount of timing fixes that: holding a server update until a text edit
-// ends does not help, because the next keystroke still goes to an element that is gone.
 // The only defence is that ids do not change, and the only way to get that is
 // to mint them in the final shape. So minting lives here, and nothing
-// downstream — least of all the note writer — is left with a reason to rename.
-//
-// Excalidraw is the one minter this file cannot reach: it names what a user
-// draws with a 21-character nanoid, in the browser. So the pane calls
-// `derivedId` below the moment a text editor closes, before the element is
-// reported (TASK-098, `src/ui/canvas/useCanvasSession.ts`). Same
-// function, same answer, and the rename therefore happens where no editor is
-// bound rather than at the far end of a round trip.
+// downstream is left with a reason to rename.
 //
 // Collision handling lives here too, for the same reason it does not belong at
 // the writing site: a collision is a property of the id space, not of a file
-// format. Both mints take the ids already spoken for and will not return one
-// of them.
+// format. The mint takes the ids already spoken for and will not return one of
+// them.
 
 // No dash. It is legal in a block id, and an id like `a-1-b-2` reads as
 // structure that is not there.
@@ -38,9 +25,8 @@ const ID_LENGTH = 8;
 
 // Obsidian block ids are alphanumeric-and-dash only — an id containing "_"
 // would be written as an unresolvable block reference. Dashes are accepted
-// here even though nothing mints them, because ids arriving from elsewhere
-// (Excalidraw's own, a user-edited note) may carry one and are none the worse
-// for it.
+// here even though nothing mints them, because ids authored elsewhere may
+// carry one and are none the worse for it.
 const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/u;
 
 /**
@@ -73,22 +59,6 @@ const NOTHING_IN_USE: IdsInUse = {
 };
 
 /**
- * Spells a hash as an id, taking the alphabet index from the low bits first
- * so every one of the `ID_LENGTH` characters is decided by the hash.
- * @param bits - The hash to spell, as an unsigned big integer.
- * @returns An id of exactly `ID_LENGTH` characters from the block-id alphabet.
- */
-function encode(bits: bigint): string {
-	let remaining = bits;
-	let id = "";
-	for (let i = 0; i < ID_LENGTH; i++) {
-		id += ID_ALPHABET[Number(remaining % BigInt(ID_ALPHABET.length))];
-		remaining /= BigInt(ID_ALPHABET.length);
-	}
-	return id;
-}
-
-/**
  * Creates a fresh id nobody is using.
  * @param inUse - Existing identifiers that the mint must avoid.
  * @returns A unique block-safe identifier.
@@ -105,43 +75,4 @@ function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 	}
 }
 
-/**
- * FNV-1a 32-bit: a stable positive integer from a string, so a derived id
- * is the same on every run and every machine.
- * @param str - The text to hash.
- * @returns The unsigned 32-bit FNV-1a hash of the text.
- */
-function fnv1a(str: string): number {
-	let h = 0x81_1c_9d_c5;
-	for (let i = 0; i < str.length; i++) {
-		h ^= str.charCodeAt(i);
-		h = Math.imul(h, 0x01_00_01_93);
-	}
-	return h >>> 0;
-}
-
-/**
- * The id `sourceKey` always gets, so two places that derive an id for the same
- * thing agree without passing it between them — and so a board that has been
- * through an older archboard, which derived ids the same way at the note
- * boundary, keeps the ids it already has.
- *
- * Deterministic up to collision: the first `sourceKey` to ask gets the plain
- * derivation, and a later one whose derivation is taken gets the next salted
- * attempt.
- * @param sourceKey - Stable source identity to derive from.
- * @param inUse - Existing identifiers that the derivation must avoid.
- * @returns A deterministic block-safe identifier, salted only on collision.
- */
-function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): string {
-	for (let attempt = 0; ; attempt++) {
-		const salted = attempt === 0 ? sourceKey : `${sourceKey}:${attempt}`;
-		const bits = (BigInt(fnv1a(salted)) << 32n) | BigInt(fnv1a(`${salted}#2`));
-		const id = encode(bits);
-		if (!inUse.has(id)) {
-			return id;
-		}
-	}
-}
-
-export { BLOCK_ID_RE, isBlockId, type IdsInUse, mintId, fnv1a, derivedId };
+export { BLOCK_ID_RE, isBlockId, type IdsInUse, mintId };

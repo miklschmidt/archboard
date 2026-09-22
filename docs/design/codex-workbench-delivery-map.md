@@ -253,7 +253,7 @@ parent polling.
 ## Boundary reviews
 
 1. TASK-144: TASK-140 aesthetics, native Oxc enforcement, resolver agreement,
-   Base UI behavior, and unchanged shell/Excalidraw operation.
+   Base UI behavior, and unchanged shell operation.
 2. TASK-143.01/.02: exact process/storage/auth/protocol, session/link, realtime
    public contract, production graph, reload/shutdown, and generated boundary.
 3. TASK-143.05-.07: approval identity, wait graph, literal catalogues, target

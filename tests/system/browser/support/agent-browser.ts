@@ -28,7 +28,7 @@ function runCanvasCli(base: string, vault: string, args: string[]): string {
 			...process.env,
 			ARCHBOARD_VAULT: vault,
 			EXPRESS_SERVER_URL: base,
-			EXCALIDRAW_NO_AUTOSTART: "1",
+			ARCHBOARD_NO_AUTOSTART: "1",
 		},
 	});
 	if (result.error || result.status !== 0) {
@@ -60,7 +60,7 @@ const CLEARED_CANVAS_ENV = [
 	"PORT",
 	"EXPRESS_SERVER_URL",
 	"ENABLE_CANVAS_SYNC",
-	"EXCALIDRAW_NO_AUTOSTART",
+	"ARCHBOARD_NO_AUTOSTART",
 	"CODEX_HOME",
 	"LOCALAPPDATA",
 	"HTTP_PROXY",

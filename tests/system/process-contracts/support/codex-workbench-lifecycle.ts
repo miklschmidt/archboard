@@ -47,10 +47,10 @@ export type StorageMode =
 export function codexWorkbenchRoot(root: string): string {
 	const stateRoot =
 		process.platform === "darwin"
-			? join(root, "home/Library/Application Support/excalidraw-canvas")
+			? join(root, "home/Library/Application Support/archboard")
 			: process.platform === "win32"
-				? join(root, "home/AppData/Local/Excalidraw-Canvas")
-				: join(root, "state/excalidraw-canvas");
+				? join(root, "home/AppData/Local/Archboard")
+				: join(root, "state/archboard");
 	return join(stateRoot, "codex-workbench");
 }
 const sleep = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms));

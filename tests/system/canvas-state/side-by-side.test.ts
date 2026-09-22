@@ -70,7 +70,7 @@ describe.serial("side-by-side proposal workflow", () => {
 						env: {
 							...process.env,
 							EXPRESS_SERVER_URL: canvas.base,
-							EXCALIDRAW_NO_AUTOSTART: "1",
+							ARCHBOARD_NO_AUTOSTART: "1",
 							ARCHBOARD_VAULT: vault,
 							LOG_LEVEL: "error",
 						},

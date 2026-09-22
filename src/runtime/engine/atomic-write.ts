@@ -14,7 +14,7 @@
 // whole old file rather than a truncated one.
 //
 // **The fsync is deliberate and is more than half the cost of a write.**
-// `docs/design/server-is-the-truth.md` measures the whole read-modify-write
+// Measured on the earlier note-based store, the whole read-modify-write
 // cycle at 6.21 ms for 55 elements and 9.75 ms for 300, of which this
 // fsync-and-rename is 5.15 to 5.25 ms and does not vary with size. It buys the
 // half of the guarantee a bare rename does not give: a rename is atomic to
@@ -30,10 +30,10 @@ import path from "node:path";
  * The temp file's name, which matters as much as the mechanism.
  *
  * A vault is a directory a human looks at, so the temp file is a dotfile:
- * Obsidian hides it, and `listBoards` skips every entry starting with a dot
- * before it even reaches the `.excalidraw.md` test. It also keeps a `.tmp`
- * suffix, so nothing that walks a vault by extension can mistake it for a
- * board. The pid keeps two processes writing the same path apart.
+ * Obsidian hides it, and a board listing skips every entry starting with a dot
+ * before it even reaches the suffix test. It also keeps a `.tmp` suffix, so
+ * nothing that walks a vault by extension can mistake it for a board. The pid
+ * keeps two processes writing the same path apart.
  * @param file The destination being written.
  * @returns The temp path to write through.
  */
