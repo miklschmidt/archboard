@@ -453,10 +453,64 @@ function listProcessGroupObservations(pgid: number): readonly ProcessObservation
 	throw new Error(`Process observation is not supported on ${process.platform}.`);
 }
 
+// What a lock or pidfile records about the process that owns it. A pid alone
+// is not an identity: after a crash or a reboot another process inherits it,
+// so the record carries the kernel start time too.
+
+/**
+ * The record for one process: its pid and, where the kernel can say, the time
+ * it was born.
+ * @param pid The process to record; this process by default.
+ * @returns The record, newline-terminated.
+ */
+function ownerRecord(pid: number = process.pid): string {
+	let startTime: string | undefined;
+	try {
+		startTime = readProcessObservation(pid)?.startTime;
+	} catch {
+		/* A host without process observation records the pid alone. */
+	}
+	return startTime === undefined ? `${pid}\n` : `${pid} ${startTime}\n`;
+}
+
+/**
+ * The pid a record names.
+ * @param record The record's text.
+ * @returns The pid, or undefined when the record names none.
+ */
+function recordedOwnerPid(record: string): number | undefined {
+	const pid = Number(record.trim().split(/\s+/u)[0]);
+	return Number.isSafeInteger(pid) && pid > 0 ? pid : undefined;
+}
+
+/**
+ * Whether the process a record names is provably gone: absent, a zombie, or
+ * a process born at another time than the record says. A record naming no pid
+ * or a host that cannot observe processes counts as alive, so doubt keeps
+ * what it would otherwise remove.
+ * @param record The record's text.
+ * @returns True only when the recorded owner no longer runs.
+ */
+function recordedOwnerIsGone(record: string): boolean {
+	const pid = recordedOwnerPid(record);
+	if (pid === undefined) return false;
+	const startTime = record.trim().split(/\s+/u)[1];
+	try {
+		const observed = readProcessObservation(pid);
+		if (observed === undefined || observed.state === "zombie") return true;
+		return startTime !== undefined && observed.startTime !== startTime;
+	} catch {
+		return false;
+	}
+}
+
 export {
 	type ProcessObservation,
 	type ProcessState,
 	readProcessObservation,
 	listProcessObservations,
 	listProcessGroupObservations,
+	ownerRecord,
+	recordedOwnerIsGone,
+	recordedOwnerPid,
 };
