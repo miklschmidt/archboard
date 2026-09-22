@@ -67,7 +67,7 @@ const ResolveSpokenApprovalInputSchema = z
 /**
  * Which step of a walkthrough to present, counted from one as a person says it; omitted for the
  * next step. The next step is the host's to know, not the model's: in a full-duplex voice session
- * a delegation carries the person's last utterance, never words the voice model composed, so the
+ * a delegation carries the latest user-side item replayed, never words the voice model composed, so the
  * coordinator is not told which step is wanted (Codex 0.155.1, `delegation.created`). The
  * walkthrough is named by id or name only until the voice session knows which one is being
  * presented; the pane, board and variant are the host's and never arguments.
