@@ -5,7 +5,7 @@ import {
 	verifyCoordinatorManifestIntegrity,
 } from "@/runtime/codex-coordinator-tool-contract";
 import {
-	COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
+	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 	verifyAuthoredInstructionIntegrity,
 } from "@/runtime/codex-instructions";
 import type {
@@ -33,7 +33,7 @@ function hashCoordinatorSettings(settings: CoordinatorSettings): string {
 }
 
 /**
- * The hashes that say this coordinator is the reviewed one: its composed instructions, its two
+ * The hashes that say this coordinator is the reviewed one: its developer instructions, its two
  * tool manifests, the catalogue they form, and its settings. The instruction and manifest digests
  * are re-derived here and compared against the reviewed constants, so a drifted artifact refuses
  * to start a coordinator rather than quietly changing what it is.
@@ -45,14 +45,14 @@ function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashe
 	const instruction = verifyAuthoredInstructionIntegrity();
 	const manifests = verifyCoordinatorManifestIntegrity();
 	if (
-		instruction.composedCoordinatorSha256 !== COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 ||
+		instruction.coordinatorSha256 !== COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 ||
 		manifests.workhorseSha256 !== COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse ||
 		manifests.voiceSha256 !== COORDINATOR_TOOL_MANIFEST_DIGESTS.voice
 	) {
 		throw new Error("reviewed coordinator instruction or tool-manifest hashes drifted");
 	}
 	return Object.freeze({
-		instructionHash: COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
+		instructionHash: COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 		catalogueHash: COORDINATOR_CATALOGUE_HASH,
 		workhorseCatalogueHash: COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse,
 		voiceCatalogueHash: COORDINATOR_TOOL_MANIFEST_DIGESTS.voice,

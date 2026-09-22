@@ -41,8 +41,8 @@ test("a presentation start names the walkthrough to both models and hands neithe
 		expect(presented?.realtimeStartInstructions).toContain("present_step");
 		// Pressing Narrate is the user's request, so the session opens with it already made
 		// and the voice model has something to answer without being spoken to.
-		expect(presented?.initialItems?.at(-1)?.role).toBe("user");
-		expect(plain?.initialItems?.every((item) => item.role === "developer")).toBe(true);
+		expect(presented?.initialItems?.map((item) => item.role)).toEqual(["user"]);
+		expect(plain?.initialItems).toEqual([]);
 		// A talk is given without the Realtime API's "one moment" before every step.
 		expect(presented?.delegationAckFiller).toBe(false);
 		expect(plain?.delegationAckFiller).toBe(true);
@@ -98,9 +98,14 @@ test("a user's step reaches both models, the voice as speech it says; leaving is
 		expect(h.session.speeches[0]?.text).toContain("It owns writes.");
 		expect(h.session.texts).toHaveLength(1);
 		expect(h.session.texts[0]).toMatchObject({ role: "developer" });
-		expect(h.session.injections).toHaveLength(2);
-		expect(JSON.stringify(h.session.injections[0])).toContain("One writer");
-		expect(h.session.injections[0]?.threadId).toBe(h.coordinatorThreadId);
+		// The coordinator is told the step and the leaving; the catalogue it was handed at start
+		// is its own delivery, not one of these.
+		const told = h.session.injections.filter(
+			(injection) => !JSON.stringify(injection).includes("archboard_board_catalogue"),
+		);
+		expect(told).toHaveLength(2);
+		expect(JSON.stringify(told[0])).toContain("One writer");
+		expect(told[0]?.threadId).toBe(h.coordinatorThreadId);
 		// Telling the models starts no turn and no second session.
 		expect(h.session.starts).toHaveLength(1);
 		const stopped = h.adapter.stop(correlation);

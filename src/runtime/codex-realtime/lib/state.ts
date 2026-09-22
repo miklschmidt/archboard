@@ -30,7 +30,6 @@ interface ActiveRealtimeSession {
 	readonly correlationId: RealtimeCorrelationId;
 	readonly wireSessionId: WireRealtimeSessionId;
 	readonly semanticBrief: string;
-	readonly boardCatalogue: string;
 	/** The walkthrough this session was started to present, or null for an ordinary session. */
 	readonly presentation: RealtimePresentation | null;
 	readonly answer: Promise<AnswerSdp>;

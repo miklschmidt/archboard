@@ -93,8 +93,6 @@ async function beginStart(
 		threadId: session.binding.coordinatorThreadId,
 		realtimeSessionId: session.wireSessionId,
 		sdp,
-		semanticBrief: session.semanticBrief,
-		boardCatalogue: session.boardCatalogue,
 		presentation: session.presentation,
 	});
 	ops.options.trace?.("start_sent", startSizes(params));

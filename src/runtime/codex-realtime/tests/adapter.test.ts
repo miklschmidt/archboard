@@ -34,7 +34,12 @@ describe("Codex realtime adapter", () => {
 		if (!start?.realtimeSessionId) {
 			throw new Error("Start request missing.");
 		}
-		expect(start.realtimeStartInstructions).toContain(semanticBrief());
+		// Each model gets its own prompt and no data blob: the voice model no JSON, no startup
+		// context and no developer items; the coordinator only what a voice session adds.
+		expect(start.realtimeStartInstructions).not.toContain(semanticBrief());
+		expect(start.realtimeStartInstructions).not.toContain("archboard_board_catalogue");
+		expect(start.realtimeStartInstructions).not.toContain("You are the");
+		expect(start.prompt).not.toContain("{");
 		expect(start.prompt).toBeString();
 		expect(start.prompt?.length).toBeGreaterThan(0);
 		expect(start).toEqual({
@@ -45,11 +50,8 @@ describe("Codex realtime adapter", () => {
 			codexResponsesAsItems: false,
 			codexResponseHandoffMode: "bemTags",
 			outputModality: "audio",
-			includeStartupContext: true,
-			initialItems: [
-				{ role: "developer", text: semanticBrief() },
-				{ role: "developer", text: '{"type":"archboard_board_catalogue","boards":[],"omitted":0}' },
-			],
+			includeStartupContext: false,
+			initialItems: [],
 			realtimeStartInstructions: start.realtimeStartInstructions,
 			realtimeEndInstructions:
 				"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.",

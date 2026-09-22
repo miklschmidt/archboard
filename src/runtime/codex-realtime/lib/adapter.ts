@@ -219,13 +219,7 @@ export function createCodexRealtimeAdapter(
 			emitDiagnostic(session, "coordinator", message);
 		};
 		try {
-			const stopCatalogue = watchCatalogueUpdates(
-				options,
-				session,
-				session.boardCatalogue,
-				isCurrent,
-				onError,
-			);
+			const stopCatalogue = watchCatalogueUpdates(options, session, isCurrent, onError);
 			const stopPresentation = watchPresentationChanges(options, session, isCurrent, onError);
 			/** Stop both watches. */
 			session.stopCatalogueUpdates = (): void => {
@@ -276,7 +270,6 @@ export function createCodexRealtimeAdapter(
 			correlationId: offer.correlationId,
 			wireSessionId,
 			semanticBrief: options.freshSemanticBrief(wireSessionId),
-			boardCatalogue: options.boardCatalogue.read(),
 			presentation,
 			answer,
 			resolveAnswer,
