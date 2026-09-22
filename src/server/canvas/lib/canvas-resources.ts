@@ -6,7 +6,7 @@ import {
 	watchBoardLocks,
 } from "@/runtime/engine/board-lock";
 import { forgetDoing } from "@/runtime/engine/board-doing";
-import { removePidFile, writePidFile } from "@/runtime/engine/pidfile";
+import { removePidFile, sweepDeadPidFiles, writePidFile } from "@/runtime/engine/pidfile";
 import { server } from "@/server/canvas/lib/canvas-app";
 import { panePresentations } from "@/server/canvas/lib/pane-presentation";
 import { forgetSemanticPaneContexts } from "@/server/canvas/lib/semantic-pane-context";
@@ -226,6 +226,10 @@ function listen(
 				logger.info(`POC server running on http://${formatHostForUrl(HOST)}:${PORT}`);
 				writePidFile(PORT, process.pid);
 				http.ownsPidFile = true;
+				const swept = sweepDeadPidFiles();
+				if (swept > 0) {
+					logger.debug(`Removed ${swept} pidfiles of canvases that are gone`);
+				}
 				settleStart();
 			});
 		} catch (error) {

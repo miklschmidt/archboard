@@ -6,7 +6,7 @@ import {
 	type CodexStorageError,
 	type CodexStorageFileSystem,
 } from "@/runtime/codex-process/lib/storage-contract";
-import { readProcessObservation } from "@/shared/process-observation";
+import { ownerRecord, recordedOwnerIsGone, recordedOwnerPid } from "@/shared/process-observation";
 
 /**
  * Build the lock-release retry for a lock file that is still held, so a caller can
@@ -30,63 +30,6 @@ function lockRetryCleanup(
 			released = true;
 		};
 	}
-}
-
-/**
- * The lock's contents for this process: its pid and, where the kernel can say,
- * the time it was born, so a later start can tell this owner from an unrelated
- * process that inherited the pid after a crash or a reboot.
- * @returns The lock text.
- */
-function ownerRecord(): string {
-	let startTime: string | undefined;
-	try {
-		startTime = readProcessObservation(process.pid)?.startTime;
-	} catch {
-		/* A host without process observation records the pid alone. */
-	}
-	return startTime === undefined ? `${process.pid}\n` : `${process.pid} ${startTime}\n`;
-}
-
-/**
- * Whether the owner a lock records is provably gone: its pid is absent or a
- * zombie, or now belongs to a process born at another time. A record that
- * cannot be read or a host that cannot observe processes counts as alive, so
- * doubt refuses rather than takes over.
- * @param record - The lock's contents.
- * @returns True only when the recorded owner cannot still hold the roots.
- */
-function ownerIsGone(record: string): boolean {
-	const [pidText, startTime] = record.trim().split(/\s+/);
-	const pid = Number(pidText);
-	if (!Number.isSafeInteger(pid) || pid <= 0) return false;
-	try {
-		return processIsGone(pid, startTime);
-	} catch {
-		return false;
-	}
-}
-
-/**
- * Whether a process is absent, a zombie, or was born at another time than recorded.
- * @param pid - The recorded pid.
- * @param startTime - The recorded kernel start time, absent in a pid-only lock.
- * @returns True when the recorded process no longer runs.
- */
-function processIsGone(pid: number, startTime: string | undefined): boolean {
-	const observed = readProcessObservation(pid);
-	if (observed === undefined || observed.state === "zombie") return true;
-	return startTime !== undefined && observed.startTime !== startTime;
-}
-
-/**
- * The pid a lock records, for the refusal message.
- * @param record - The lock's contents, when they could be read.
- * @returns The pid text, or undefined when there is none.
- */
-function recordedPid(record: string | undefined): string | undefined {
-	const pid = record?.trim().split(/\s+/)[0];
-	return pid === undefined || pid === "" ? undefined : pid;
 }
 
 /**
@@ -181,7 +124,7 @@ function createOrTakeOverLock(lockPath: string, fileSystem: CodexStorageFileSyst
 	const attempt = createLock(lockPath, fileSystem);
 	if (attempt.created || errnoCode(attempt.cause) !== "EEXIST") return attempt;
 	const record = readLock(lockPath, fileSystem);
-	if (record === undefined || !ownerIsGone(record)) return attempt;
+	if (record === undefined || !recordedOwnerIsGone(record)) return attempt;
 	if (!setStaleLockAside(lockPath, record, fileSystem)) return attempt;
 	return createLock(lockPath, fileSystem);
 }
@@ -208,7 +151,8 @@ function lockRefusal(
 			attempt.cause,
 			lockRetryCleanup(lockPath, fileSystem),
 		);
-	const pid = recordedPid(readLock(lockPath, fileSystem));
+	const record = readLock(lockPath, fileSystem);
+	const pid = record === undefined ? undefined : recordedOwnerPid(record);
 	const owner = pid === undefined ? "the other owner" : `the other owner (pid ${pid})`;
 	return failure(
 		"lock",
