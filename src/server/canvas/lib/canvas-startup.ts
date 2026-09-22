@@ -243,6 +243,14 @@ function processHandlers(
  */
 function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): CanvasLifetime {
 	return createCanvasApplicationLifetime({
+		/**
+		 * Log the line the CLI prints from the startup protocol, before rollback
+		 * closes the log, so the reason outlives the terminal that showed it.
+		 * @param error What startup threw.
+		 */
+		onStartupFailure: (error) => {
+			logger.error(canvasStartupFailureMessage(error));
+		},
 		/** Stop admitting work and drain what is running. */
 		quiesce: async () => {
 			checkoutWork.quiesce();
