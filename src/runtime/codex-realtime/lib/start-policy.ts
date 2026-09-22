@@ -15,11 +15,11 @@ import { ARCHBOARD_VOICE_PROMPT } from "@/runtime/codex-realtime/lib/voice-promp
  * What pressing Narrate asks for, as the session's opening request.
  *
  * It has two readers. The voice model takes it as what the user wants, which is why it begins
- * without being spoken to. And because a handoff carries the user's last words, the coordinator
- * receives this same sentence as the input of every handoff until the user really speaks; so it
- * is worded to mean the right thing each time it arrives: move on to the next step. It names no
- * step, because a version that said "starting with step 1" made the coordinator present step 1
- * twice. The user never says it, so it is in nobody's transcript.
+ * without being spoken to. And because a handoff's text is the latest user-side item replayed,
+ * the coordinator receives this same sentence as the input of every handoff until the user
+ * really speaks; so it is worded to mean the right thing each time it arrives: move on to the
+ * next step. It names no step, because a version that said "starting with step 1" made the
+ * coordinator present step 1 twice. The user never says it, so it is in nobody's transcript.
  */
 const NARRATE_REQUEST =
 	"Please present this walkthrough to me as a talk, one step at a time. Each time you finish narrating a step, hand off to move on to the next step, and keep going like that until the walkthrough is finished.";

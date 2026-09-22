@@ -149,8 +149,9 @@ The session's one initial item is the user's request itself (pressing
 Narrate is asking for the talk), so the full-duplex voice model has something
 to answer at once and paces the whole talk itself: it asks the coordinator for step 1; the
 coordinator calls the typed `archboard_voice.present_step` with no step, because
-a V3 delegation carries the user's last utterance and never words the voice
-model composed, so only the host knows which step comes next (it names the
+a V3 delegation carries the latest user-side item replayed (usually the
+user's last utterance, sometimes the opening request the host put in as the
+user) and never words the voice model composed, so only the host knows which step comes next (it names the
 walkthrough when voice was not started in this mode, and a step only when the
 user asked for one); the
 host supplies the pane, board and variant, asks the pane for the step, and
