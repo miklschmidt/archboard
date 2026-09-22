@@ -48,7 +48,7 @@ flowchart into an empty element list. Its malformed-input path did reject, so
 this is a silent reachable-workflow loss rather than a clean unsupported case.
 An isolated Chromium 150.0.7871.186 process produced five Mermaid elements and
 identical PNG and SVG bytes in two zero-client runs. The full record, including
-memory and cleanup measurements, is `docs/design/server-rendering-boundary.md`.
+memory and cleanup measurements, was an Excalidraw-era design investigation removed with the Excalidraw export (TASK-296).
 
 Archboard therefore selects one server-owned, isolated headless Chromium
 renderer for board rendering and Mermaid conversion. Its implementation must

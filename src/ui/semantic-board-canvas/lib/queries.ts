@@ -65,9 +65,8 @@ const semanticBoardKeys = {
 /**
  * The vault's semantic boards.
  *
- * Read again when the tab comes back, for the same reason the Excalidraw
- * listing is: nothing announces that the vault gained a board, and an agent
- * may have created one while somebody was reading code.
+ * Read again when the tab comes back: nothing announces that the vault gained
+ * a board, and an agent may have created one while somebody was reading code.
  * @returns The query options.
  */
 function semanticBoardListQuery() {

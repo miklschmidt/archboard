@@ -132,7 +132,7 @@ function runPublicFixture(
 			[join(import.meta.dir, "public-runner-fixture.ts"), fixturePath],
 			{
 				cwd: process.cwd(),
-				env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: "1" },
+				env: { ...process.env, ARCHBOARD_NO_AUTOSTART: "1" },
 				stdio: merged ? ["ignore", descriptor!, descriptor!] : ["ignore", "pipe", "pipe"],
 			},
 		);

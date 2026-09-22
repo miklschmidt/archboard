@@ -44,7 +44,7 @@ function conventions(): string {
 		),
 		"",
 		"Commands that contact the canvas start it when nothing answers, unless",
-		"EXCALIDRAW_NO_AUTOSTART=1. Results are JSON on stdout unless a command's help says",
+		"ARCHBOARD_NO_AUTOSTART=1. Results are JSON on stdout unless a command's help says",
 		"otherwise; diagnostics go to stderr.",
 		"",
 		"Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser pane required,",

@@ -161,7 +161,7 @@ artifacts, reproducible on demand and ignored unless a documented fixture needs 
 
 ## Viewer and integration
 
-Replace the Excalidraw stage with a read-only architecture viewer in the existing pane
+Replace the drawing stage with a read-only architecture viewer in the existing pane
 shell. Preserve pan/zoom, selection, inspection, code navigation, explicit drill-down,
 and agent requests grounded in selected semantic identities. Support named view switching
 and displaying distinct views in panes. Large diagrams remain navigable without an
@@ -172,14 +172,14 @@ the geometry atlas; the hosted PR Lens viewer is not included in its open-source
 Keyboard-accessible navigation and reduced-motion handling belong in this viewer.
 
 Retain the owned Codex workhorse/coordinator, voice, claims/progress, and context delivery
-contracts. Replace their Excalidraw-specific projections with selected semantic subjects,
+contracts. Replace their element-level projections with selected semantic subjects,
 variant/view identity, derived changes, and reconciliation issues. A view or camera change
 does not write the board. Existing URLs and code-target workflows need deliberate new
-board/variant/view addressing rather than depending on an Excalidraw scene.
+board/variant/view addressing rather than depending on a drawn scene.
 
 ## Replacement and scope
 
-The final product has one semantic board model, not permanent Excalidraw and semantic
+The final product has one semantic board model, not permanent free-drawing and semantic
 editing modes. Delete obsolete free-drawing, promotion, stencil, native-element conversion,
 and geometry-inference paths as their consumers move to semantic contracts. Preserve useful
 atomic write, version, claim, code-binding, browser routing, and Codex integration owners.

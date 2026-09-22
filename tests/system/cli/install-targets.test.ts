@@ -7,7 +7,6 @@ import {
 	readFileSync,
 	readdirSync,
 	symlinkSync,
-	writeFileSync,
 } from "node:fs";
 import path from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -150,15 +149,11 @@ describe("install targets", () => {
 		).toBe(true);
 		expect(setupBytes.includes(Buffer.from("the `archboard` skill")), firstDiagnostic).toBe(true);
 		const firstBytes = readFileSync(doc);
-		const retired = join(fixture.skillRoot, "excalidraw-skill");
-		mkdirSync(retired, { recursive: true });
-		writeFileSync(join(retired, "SKILL.md"), "name: excalidraw-skill\n");
 		const second = fixture.install(repo);
 		const secondDiagnostic = installFailure(second.spawn);
 		expect(second.setup, secondDiagnostic).toMatchObject({ docCreated: false, blockUpdated: true });
 		expect(readFileSync(doc), secondDiagnostic).toEqual(firstBytes);
 		expect(readFileSync(doc, "utf8").split(begin), secondDiagnostic).toHaveLength(2);
-		expect(existsSync(retired), secondDiagnostic).toBe(false);
 	});
 
 	test("preserves surrounding prose and chooses one existing doc", () => {

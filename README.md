@@ -2,18 +2,19 @@
 
 # archboard
 
-Archboard is a live [Excalidraw](https://excalidraw.com) canvas where a coding
-agent and a human explore software architecture together.
+Archboard is a live architecture canvas where a coding agent states what a
+system is and the renderer draws it.
 
-The agent reads the code and draws the system. You move a service, cut an edge,
-or group a set of nodes on the canvas. The agent reads that change back as
-design intent and can update the code or the proposed architecture in response.
-The drawing is shared working state, not a picture revealed at the end.
+The agent reads the code and states the architecture as meaning: parts,
+containment, relationships. The renderer owns every coordinate, colour and
+connector route, so one improvement to it improves every board at once. You
+read the board, compare a proposal with what exists, and follow a node to the
+code it is bound to.
 
 ```text
-agent reads code  ->  draws the architecture  ->  you rearrange it
-      ^                                                    |
-      +-------------- agent reads it back -----------------+
+agent reads code  ->  states the architecture  ->  the renderer draws it
+      ^                                                       |
+      +------------------ you read it back ------------------+
 ```
 
 Archboard is designed for architecture work rather than general-purpose
@@ -22,15 +23,15 @@ and keeping architectural nodes connected to the code they represent.
 
 ## What it does
 
-- Keeps named boards as Excalidraw notes in an Obsidian vault.
+- Keeps named boards as `.semantic.json` documents in an Obsidian vault, one
+  document per board holding every variant of it.
 - Shows a current architecture and a proposal side by side, then produces a
   semantic comparison between them.
-- Gives agents concise read paths for the whole board, selected elements, and
-  changes made by a user.
-- Binds nodes to repositories and source paths through durable Excalidraw
-  metadata.
-- Provides a curated architecture stencil library, Mermaid import, layout
-  operations, snapshots, and PNG, SVG, and Excalidraw export.
+- Gives agents concise read paths for the whole board, its subjects, and what
+  somebody picked out.
+- Binds nodes to repositories and source paths, so a node resolves to the code
+  it stands for.
+- Renders deterministic SVG and PNG, and paces a narrated walkthrough.
 - Exposes the canvas through an agent-facing CLI and a loopback REST API for
   the application and local integrations.
 
@@ -132,23 +133,24 @@ archboard browser open
 archboard browser show "payments@Queued ingest" --pane right
 ```
 
-Moving a box on either side is part of the conversation: ask the agent to read
-the board again and explain what your rearrangement implies.
+There is no way to move a box, and deliberately none: a layout somebody
+repaired by hand cannot be improved for every board at once. Ask the agent what
+the proposal changes instead.
 
 ## How persistence and collaboration work
 
-The note is the board. Archboard does not keep a second authoritative scene in
-memory, and every accepted human or agent change is written atomically to its
-`.excalidraw.md` note. A running browser renders what the note contains.
+The file is the board. Archboard does not keep a second authoritative copy in
+memory, and every accepted agent change is written atomically to the board's
+`.semantic.json` document. A running browser renders what that document
+contains.
 
 Writes are coordinated per board. Agents claim a board for substantial work,
 state what each write is doing, and re-read after a version conflict instead of
 retrying blindly. Human interaction remains responsive and is never blocked by
-an agent's lease. Archboard metadata lives under `customData.archboard`, so code
-bindings survive a browser edit and an Obsidian round trip without storing
-machine-local `file://` URLs. Human-authored Excalidraw links are preserved;
-tappable code targets are derived for presentation from the portable binding
-and this machine's checkout registry.
+an agent's lease. A node's code binding is part of its meaning and travels with
+the board rather than storing a machine-local `file://` URL; tappable code
+targets are derived for presentation from that portable binding and this
+machine's checkout registry.
 
 Each live pane may link explicitly to one Codex workhorse. Voice uses a separate
 coordinator for that link, so conversation and sustained implementation do not
@@ -176,11 +178,10 @@ shared-daemon and control-socket paths are unavailable.
 
 ## Provenance
 
-Archboard began as a fork of
-[yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw) v2.0.0
+Archboard began as a fork of an upstream MCP drawing server at v2.0.0
 (`6ddbe98`). The full upstream history is retained.
 
-The project now diverges deliberately around the agent-human architecture
+The project now diverges deliberately around the agent-authored architecture
 workflow and is not kept mergeable with upstream. The upstream remote remains
 useful for reference and selective fixes. Both copyright notices are retained
 in [LICENSE](LICENSE).

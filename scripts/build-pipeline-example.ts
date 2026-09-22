@@ -10,9 +10,8 @@
 // lease, the coherence checks, one atomic write, one version. There is no
 // special path for an example.
 //
-// Nothing here reads or writes a `.excalidraw.md` note. The vault it builds into
-// is whichever one `ARCHBOARD_VAULT` names, and a vault that already holds these
-// two boards is left exactly as it is.
+// The vault it builds into is whichever one `ARCHBOARD_VAULT` names, and a
+// vault that already holds these two boards is left exactly as it is.
 
 import path from "node:path";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";

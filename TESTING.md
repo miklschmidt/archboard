@@ -25,10 +25,6 @@ that architecture. There is no default vault: set `ARCHBOARD_VAULT` before
 without one (ADR 0015). The browser at <http://127.0.0.1:3000> is where a user
 reads a board; authoring needs no browser at all.
 
-A vault may hold `.excalidraw.md` notes from before ADR 0023. Nothing here reads
-them, writes them or migrates them, and that is deliberate: they are left exactly
-as they are.
-
 ## 3. Make the CLI available to Codex
 
 ```bash
@@ -43,8 +39,8 @@ Canvas-driving commands auto-start the server; they start no other transport.
 Starting the canvas starts one package-local Codex app-server child over
 stdio. Archboard owns its `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
 `config.toml`, epoch manifests and sign-in, below
-`$XDG_STATE_HOME/excalidraw-canvas/codex-workbench` (or
-`~/.local/state/excalidraw-canvas/codex-workbench`). Never edit user-global
+`$XDG_STATE_HOME/archboard/codex-workbench` (or
+`~/.local/state/archboard/codex-workbench`). Never edit user-global
 Codex configuration for this integration. A pane links to one workhorse; voice
 attaches to a separate persistent coordinator for that link, never to the
 workhorse itself.

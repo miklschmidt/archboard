@@ -11,7 +11,7 @@ those documents will tell you.
 
 ## Taking something from upstream
 
-Archboard is not kept mergeable with `yctimlin/mcp_excalidraw`. Never
+Archboard is not kept mergeable with the project it forked from. Never
 `git merge upstream/main`; it drags back conventions this repo replaced. The
 remote exists for reference and for taking one specific fix:
 
@@ -22,8 +22,8 @@ git cherry-pick <sha>                          # only when it clearly applies
 bun run check
 ```
 
-Prefer reimplementing their fix our way over importing their structure. The npm
-package `mcp-excalidraw-server` is releases behind the git tag; never install it.
+Prefer reimplementing their fix our way over importing their structure. The
+upstream npm package is releases behind its git tag; never install it.
 
 ## Syncing skills
 

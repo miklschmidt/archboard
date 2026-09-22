@@ -44,15 +44,6 @@ fs.mkdirSync(claudeSkills, { recursive: true });
 
 const names = discover(source);
 
-const retiredNames = ["excalidraw-skill"];
-for (const name of retiredNames) {
-	if (names.includes(name)) {
-		continue;
-	}
-	fs.rmSync(path.join(agentSkills, name), { recursive: true, force: true });
-	fs.rmSync(path.join(claudeSkills, name), { recursive: true, force: true });
-}
-
 for (const name of names) {
 	const from = path.join(source, name);
 	const to = path.join(agentSkills, name);

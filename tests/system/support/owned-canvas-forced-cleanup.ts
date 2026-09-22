@@ -160,9 +160,9 @@ function captureForcedCanvasCleanup(options: {
 					fs.realpathSync(join(options.xdgState, "..", "home")),
 					"Library",
 					"Application Support",
-					"excalidraw-canvas",
+					"archboard",
 				)
-			: join(fs.realpathSync(options.xdgState), "excalidraw-canvas");
+			: join(fs.realpathSync(options.xdgState), "archboard");
 	const storageLock = join(
 		stateRoot,
 		"codex-workbench",

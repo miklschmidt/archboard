@@ -68,7 +68,7 @@ with the reason). These are the rules that will not stop you:
 - **Never rename a subject id.** Every id comes from `src/shared/ids/ids.ts`
   (one to eight characters); no second minting site. An id is what a proposal is
   compared by, so renaming one makes a change look like a deletion and an
-  addition. Why: `docs/design/server-is-the-truth.md` §4.
+  addition.
 - **Text width is measured, not estimated**, by the canvas of the place that draws the
   picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas` under Bun (TASK-247).
   `tests/system/browser/measured-text.test.ts` holds the Bun canvas to what Chrome draws.

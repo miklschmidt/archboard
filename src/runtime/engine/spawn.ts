@@ -6,7 +6,7 @@ import {
 	ARCHBOARD_VAULT,
 	EXPRESS_SERVER_URL,
 	ENABLE_CANVAS_SYNC,
-	EXCALIDRAW_NO_AUTOSTART,
+	ARCHBOARD_NO_AUTOSTART,
 	noVaultMessage,
 } from "@/runtime/engine/config";
 import {
@@ -107,8 +107,8 @@ interface EnsureOptions {
  * @throws {Error} When auto-start is disabled.
  */
 function refuseDisabledAutoStart(): void {
-	if (EXCALIDRAW_NO_AUTOSTART) {
-		throw unreachableError("auto-start disabled by EXCALIDRAW_NO_AUTOSTART=1");
+	if (ARCHBOARD_NO_AUTOSTART) {
+		throw unreachableError("auto-start disabled by ARCHBOARD_NO_AUTOSTART=1");
 	}
 	if (!ENABLE_CANVAS_SYNC) {
 		throw unreachableError("auto-start disabled because ENABLE_CANVAS_SYNC=false");
