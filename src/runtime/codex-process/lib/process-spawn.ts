@@ -26,7 +26,11 @@ import {
 	exactArguments,
 	executableFailureCode,
 } from "@/runtime/codex-process/lib/process-startup-checks";
-import { CodexStorageError, type PreparedCodexStorage } from "@/runtime/codex-process/lib/storage";
+import {
+	CodexStorageError,
+	type CodexStorageFailureCode,
+	type PreparedCodexStorage,
+} from "@/runtime/codex-process/lib/storage";
 import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/lib/process-group";
 
 /**
@@ -121,6 +125,31 @@ function checkoutStage(state: ProcessOwnerState): string {
 	}
 }
 
+const FRESH_ROOTS =
+	"make CODEX_HOME and CODEX_SQLITE_HOME separate owner-controlled 0700 directories, then retry";
+const HOME_ACCESS = "restore write access to CODEX_HOME, then retry";
+
+/**
+ * What to do about each storage refusal. A lock or a config names a Codex home
+ * that holds the operator's login and sessions, so neither advises starting
+ * from fresh roots.
+ */
+const STORAGE_RECOVERY: Readonly<Record<CodexStorageFailureCode, string>> = {
+	invalid_path: FRESH_ROOTS,
+	symlink: FRESH_ROOTS,
+	not_directory: FRESH_ROOTS,
+	ownership: FRESH_ROOTS,
+	permissions: FRESH_ROOTS,
+	collision: FRESH_ROOTS,
+	lock: "stop the process named above, then retry; a lock whose owner has exited is set aside by the next start",
+	config_conflict:
+		"move that config.toml aside and retry, so the one-line config is written again; the login and sessions beside it are kept",
+	config_read: HOME_ACCESS,
+	config_write: HOME_ACCESS,
+	config_fsync: HOME_ACCESS,
+	config_rename: HOME_ACCESS,
+};
+
 /**
  * Classify a storage preparation failure for the owner.
  * @param state - The owner state.
@@ -132,7 +161,7 @@ function storageFailure(state: ProcessOwnerState, cause: unknown): CodexProcessE
 		? new CodexProcessError({
 				code: "storage_refused",
 				terminal: true,
-				message: `${publicDiagnostic(state, cause.message)} Recovery: use fresh owner-controlled 0700 CODEX_HOME and CODEX_SQLITE_HOME roots, then retry.`,
+				message: `${publicDiagnostic(state, cause.message)} Recovery: ${STORAGE_RECOVERY[cause.code]}.`,
 			})
 		: new CodexProcessError({
 				code: "storage_refused",

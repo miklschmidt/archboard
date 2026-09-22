@@ -110,15 +110,21 @@ describe("dedicated Codex storage", () => {
 			expect(() => prepareCodexStorage({ rootDirectory: root })).toThrow(/locked or colliding/);
 			first.release();
 
-			fs.writeFileSync(first.configPath, 'sqlite_home = "/tmp/other"\n', { mode: 0o600 });
-			let conflict: unknown;
-			try {
-				prepareCodexStorage({ rootDirectory: root });
-			} catch (error) {
-				conflict = error;
+			for (const foreign of [
+				`sqlite_home = ${JSON.stringify(root)}\n`,
+				`sqlite_home = ${JSON.stringify(path.join(root, "gone"))}\nmodel = "o3"\n`,
+			]) {
+				fs.writeFileSync(first.configPath, foreign, { mode: 0o600 });
+				let conflict: unknown;
+				try {
+					prepareCodexStorage({ rootDirectory: root });
+				} catch (error) {
+					conflict = error;
+				}
+				expect(conflict).toBeInstanceOf(CodexStorageError);
+				expect((conflict as CodexStorageError).code).toBe("config_conflict");
+				expect(readFileSync(first.configPath, "utf8")).toBe(foreign);
 			}
-			expect(conflict).toBeInstanceOf(CodexStorageError);
-			expect((conflict as CodexStorageError).code).toBe("config_conflict");
 
 			fs.writeFileSync(first.configPath, first.configText, { mode: 0o600 });
 			fs.chmodSync(first.codexHome, 0o755);
@@ -143,6 +149,74 @@ describe("dedicated Codex storage", () => {
 					sqliteHome: path.join(root, "other-sqlite"),
 				}),
 			).toThrow(/symlink/);
+		} finally {
+			removeRoot(root);
+		}
+	});
+
+	test("takes over a lock whose owner is gone and keeps it beside the new one", () => {
+		const root = temporaryRoot();
+		try {
+			const first = prepareCodexStorage({ rootDirectory: root });
+			const lockPath = path.join(first.codexHome, ".archboard-codex-process.lock");
+			const ownRecord = readFileSync(lockPath, "utf8");
+			first.release();
+			const exitedPid = Bun.spawnSync(["true"]).pid;
+			const reusedPid = `${process.pid} ${Number(ownRecord.split(" ")[1]) + 1}\n`;
+
+			for (const dead of [`${exitedPid}\n`, reusedPid]) {
+				fs.writeFileSync(lockPath, dead, { mode: 0o600 });
+				const prepared = prepareCodexStorage({ rootDirectory: root });
+				expect(readFileSync(lockPath, "utf8")).toBe(ownRecord);
+				const stale = fs
+					.readdirSync(first.codexHome)
+					.filter((name) => name.startsWith(".archboard-codex-process.lock.stale-"))
+					.map((name) => readFileSync(path.join(first.codexHome, name), "utf8"));
+				expect(stale).toContain(dead);
+				prepared.release();
+			}
+		} finally {
+			removeRoot(root);
+		}
+	});
+
+	test("refuses a lock whose owner is alive, naming it, and leaves it in place", () => {
+		const root = temporaryRoot();
+		try {
+			const first = prepareCodexStorage({ rootDirectory: root });
+			first.release();
+			const lockPath = path.join(first.codexHome, ".archboard-codex-process.lock");
+			const live = `${process.pid}\n`;
+			fs.writeFileSync(lockPath, live, { mode: 0o600 });
+			let refusal: unknown;
+			try {
+				prepareCodexStorage({ rootDirectory: root });
+			} catch (error) {
+				refusal = error;
+			}
+			expect(refusal).toBeInstanceOf(CodexStorageError);
+			expect((refusal as CodexStorageError).code).toBe("lock");
+			expect((refusal as CodexStorageError).message).toContain(String(process.pid));
+			expect(readFileSync(lockPath, "utf8")).toBe(live);
+			expect(fs.readdirSync(first.codexHome).filter((name) => name.includes(".stale-"))).toEqual(
+				[],
+			);
+		} finally {
+			removeRoot(root);
+		}
+	});
+
+	test("follows its own config when the sqlite home it named has moved", () => {
+		const root = temporaryRoot();
+		try {
+			const first = prepareCodexStorage({ rootDirectory: root });
+			first.release();
+			const moved = `sqlite_home = ${JSON.stringify(path.join(root, "moved", "sqlite-home"))}\n`;
+			fs.writeFileSync(first.configPath, moved, { mode: 0o600 });
+
+			const prepared = prepareCodexStorage({ rootDirectory: root });
+			expect(readFileSync(prepared.configPath, "utf8")).toBe(prepared.configText);
+			prepared.release();
 		} finally {
 			removeRoot(root);
 		}
@@ -239,7 +313,7 @@ describe("dedicated Codex storage", () => {
 		try {
 			const initial = prepareCodexStorage({ rootDirectory: root });
 			initial.release();
-			writeFileSync(initial.configPath, 'sqlite_home = "/tmp/other"\n', { mode: 0o600 });
+			writeFileSync(initial.configPath, `sqlite_home = ${JSON.stringify(root)}\n`, { mode: 0o600 });
 			let failures = 1;
 			const injected = {
 				...fileSystem(),
