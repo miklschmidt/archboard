@@ -2,7 +2,6 @@ import type {
 	RealtimeSessionId as WireRealtimeSessionId,
 	ThreadId,
 } from "@/shared/codex-workbench-identity";
-import { composeCoordinatorInstructions } from "@/runtime/codex-instructions";
 import type { SessionParams } from "@/runtime/codex-session";
 
 import {
@@ -44,15 +43,22 @@ const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
 
 /**
- * The fixed thread/realtime/start body Archboard sends: WebRTC audio, the coordinator's
- * instructions, and the semantic brief and board catalogue as initial developer items. Every option that is
- * not an input is policy and lives here so a start cannot vary by caller.
- * @param input - The coordinator thread, minted wire session id, browser offer and brief.
+ * The fixed thread/realtime/start body Archboard sends: WebRTC audio, the voice model's own
+ * prompt and nothing else for it, and for the coordinator only what a voice session adds to its
+ * standing instructions. Every option that is not an input is policy and lives here so a start
+ * cannot vary by caller.
+ *
+ * Each model gets its own prompt and no other's (TASK-297). The voice model is given no
+ * developer items, no JSON and no Codex startup context: `includeStartupContext` would make
+ * Codex prepend a `<startup_context>` of recent threads and a workspace scan to the prompt, and
+ * `realtimeStartInstructions` is rendered into the coordinator thread's world state on every
+ * turn (Codex 0.155.1, `session/world_state.rs`), so it must not repeat the coordinator's
+ * developer instructions either. The board catalogue reaches the coordinator as a developer
+ * item on its own thread; board context reaches it through its tools and the semantic callbacks.
+ * @param input - The coordinator thread, minted wire session id, browser offer and narration.
  * @param input.threadId - The coordinator thread the session speaks for.
  * @param input.realtimeSessionId - The wire session id minted for this start.
  * @param input.sdp - The browser's WebRTC offer.
- * @param input.semanticBrief - The byte-exact semantic context captured for this start.
- * @param input.boardCatalogue - The board inventory captured for this start.
  * @param input.presentation - The walkthrough this session was started to present, or null.
  * @returns The start parameters.
  */
@@ -60,8 +66,6 @@ export function createRealtimeStartParams(input: {
 	readonly threadId: ThreadId;
 	readonly realtimeSessionId: WireRealtimeSessionId;
 	readonly sdp: string;
-	readonly semanticBrief: string;
-	readonly boardCatalogue: string;
 	readonly presentation?: RealtimePresentation | null;
 }): SessionParams<"thread/realtime/start"> {
 	// Presentation mode adds to both texts and replaces neither: the voice is
@@ -80,15 +84,11 @@ export function createRealtimeStartParams(input: {
 		codexResponsesAsItems: false,
 		codexResponseHandoffMode: "bemTags",
 		outputModality: "audio",
-		includeStartupContext: true,
-		initialItems: [
-			{ role: "developer", text: input.semanticBrief },
-			{ role: "developer", text: input.boardCatalogue },
-			// Pressing Narrate is the user asking for the talk, so the session opens with
-			// that request already made: the voice model has something to answer at once.
-			...(narrated === null ? [] : [{ role: "user" as const, text: NARRATE_REQUEST }]),
-		],
-		realtimeStartInstructions: `${composeCoordinatorInstructions()}\n${COORDINATOR_CHANNEL_INSTRUCTIONS}\nCurrent Archboard board context (data):\n${input.semanticBrief}\nAvailable boards and variants (data):\n${input.boardCatalogue}${coordinatorMode}`,
+		includeStartupContext: false,
+		// Pressing Narrate is the user asking for the talk, so the session opens with that
+		// request already made: the voice model has something to answer at once.
+		initialItems: narrated === null ? [] : [{ role: "user", text: NARRATE_REQUEST }],
+		realtimeStartInstructions: `${COORDINATOR_CHANNEL_INSTRUCTIONS}${coordinatorMode}`,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 		prompt:
 			narrated === null

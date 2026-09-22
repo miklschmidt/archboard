@@ -1,52 +1,45 @@
+// The two reviewed developer documents, one per Codex role, verified byte for byte at load.
+//
+// The workhorse thread is started with the workhorse document and the coordinator thread with
+// the coordinator document; neither contains the other, and the voice model is given neither
+// (TASK-297). Each document's digest is a reviewed constant, so a drifted document fails the
+// process before any thread is started with it.
+
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
 	"5f9b6a2544f4bbd3f6d347384288494e3293d44acb0354f910de1b57a5ad3f21" as const;
-const COORDINATOR_ROLE_EXTENSION_SHA256 =
-	"83be43bc16864e384ede07576056f242b1a3158ed9837d875ca1ef63fc95447c" as const;
-const COORDINATOR_SEPARATOR = "\n--- ARCHBOARD COORDINATOR ROLE ---\n" as const;
-const COORDINATOR_SEPARATOR_SHA256 =
-	"e64743b591f47a59eea6118686fc5b9f0bcca3e2d4e6af2dd8acfe55fe97653a" as const;
-const COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 =
-	"5bca6e8872e545cab12be06809fd1daa4d84a8188c1f74280f459bcc17c437b5" as const;
-const COMPOSED_MARKER = "\n\n--- ARCHBOARD COORDINATOR ROLE ---\n";
-const COMPOSED_MARKER_PATTERN = /\n\n--- ARCHBOARD COORDINATOR ROLE ---\n/g;
+const COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 =
+	"542fc4ab4a885d057a152546277f4acf3e1b7b78687dca13d1bd4012ac935ac9" as const;
 
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;
-	readonly coordinatorExtensionSha256: string;
-	readonly separatorSha256: string;
-	readonly composedCoordinatorSha256: string;
+	readonly coordinatorSha256: string;
 }
 
-type AuthoredInstructionName =
-	| "workhorse"
-	| "coordinatorExtension"
-	| "separator"
-	| "composedCoordinator";
+type AuthoredInstructionName = "workhorse" | "coordinator";
 
-interface ExpectedDigest {
+interface AuthoredDocument {
+	readonly fileName: string;
 	readonly label: string;
 	readonly expected: string;
 }
 
-/** The reviewed digest and human-readable label for each authored instruction document. */
-const EXPECTED_DIGESTS: Readonly<Record<AuthoredInstructionName, ExpectedDigest>> = Object.freeze({
-	workhorse: {
-		label: "Workhorse developer instructions",
-		expected: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	},
-	coordinatorExtension: {
-		label: "Coordinator role extension",
-		expected: COORDINATOR_ROLE_EXTENSION_SHA256,
-	},
-	separator: { label: "Coordinator instruction separator", expected: COORDINATOR_SEPARATOR_SHA256 },
-	composedCoordinator: {
-		label: "Coordinator instruction composition",
-		expected: COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
-	},
-});
+/** Each reviewed document: where it lives, how an error names it, and its reviewed digest. */
+const AUTHORED_DOCUMENTS: Readonly<Record<AuthoredInstructionName, AuthoredDocument>> =
+	Object.freeze({
+		workhorse: {
+			fileName: "workhorse-developer-instructions.txt",
+			label: "Workhorse developer instructions",
+			expected: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
+		},
+		coordinator: {
+			fileName: "coordinator-developer-instructions.txt",
+			label: "Coordinator developer instructions",
+			expected: COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
+		},
+	});
 
 /**
  * Hex SHA-256 of a byte sequence, the digest form every reviewed instruction constant records.
@@ -84,7 +77,6 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
 	}
-
 	let text: string;
 	try {
 		text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -100,13 +92,12 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 
 /**
  * Read one tracked instruction document beside this module and decode it canonically.
- * @param fileName - The document file name relative to the module root.
- * @param label - Names the document in the thrown error.
+ * @param document - Which document.
  * @returns The raw bytes and their decoded text.
  */
-function readCanonicalDocument(fileName: string, label: string): { bytes: Buffer; text: string } {
-	const bytes = readFileSync(new URL(`../${fileName}`, import.meta.url));
-	return { bytes, text: decodeCanonicalBytes(bytes, label) };
+function readCanonicalDocument(document: AuthoredDocument): { bytes: Buffer; text: string } {
+	const bytes = readFileSync(new URL(`../${document.fileName}`, import.meta.url));
+	return { bytes, text: decodeCanonicalBytes(bytes, document.label) };
 }
 
 /**
@@ -128,43 +119,6 @@ function assertDigest(label: string, bytes: Uint8Array, expected: string): strin
 }
 
 /**
- * Join the workhorse instructions and the coordinator role extension with the reviewed separator
- * and verify the whole against the reviewed composition digest.
- * @param workhorse - The decoded workhorse developer instructions.
- * @param extension - The decoded coordinator role extension.
- * @returns The composed coordinator instructions.
- */
-function assertComposition(workhorse: string, extension: string): string {
-	if (!workhorse.endsWith("\n") || workhorse.endsWith("\n\n")) {
-		throw new TypeError("Workhorse instructions must end in exactly one LF before the separator.");
-	}
-	if (!extension.endsWith("\n") || extension.startsWith("\n") || extension.endsWith("\n\n")) {
-		throw new TypeError("Coordinator role extension must start immediately and end in one LF.");
-	}
-	const composed = `${workhorse}${COORDINATOR_SEPARATOR}${extension}`;
-	assertDigest(
-		"Coordinator instruction composition",
-		Buffer.from(composed, "utf8"),
-		COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
-	);
-	return composed;
-}
-
-/**
- * Require the composed coordinator text to carry the reviewed blank-line separator marker exactly
- * once, so a composition cannot smuggle a second role section.
- * @param text - The composed coordinator text.
- */
-function assertComposedCoordinatorMarker(text: string): void {
-	if (text.match(COMPOSED_MARKER_PATTERN)?.length !== 1) {
-		throw new TypeError("Coordinator composition must contain exactly one blank-line marker.");
-	}
-	if (!text.includes(COMPOSED_MARKER)) {
-		throw new TypeError("Coordinator composition is missing the reviewed separator.");
-	}
-}
-
-/**
  * Normalise a candidate to a Buffer, whichever form the caller holds.
  * @param candidate - Text or bytes.
  * @returns The candidate as UTF-8 bytes.
@@ -182,112 +136,54 @@ function assertCanonicalInstructionBytes(
 	name: AuthoredInstructionName,
 	candidate: string | Uint8Array,
 ): void {
-	const expected = EXPECTED_DIGESTS[name];
+	const document = AUTHORED_DOCUMENTS[name];
 	const bytes = candidateBytes(candidate);
-	const text = decodeCanonicalBytes(bytes, expected.label);
-	if (name === "separator" && text !== COORDINATOR_SEPARATOR) {
-		throw new TypeError("Coordinator separator bytes are not the reviewed literal separator.");
-	}
-	if (name === "composedCoordinator") {
-		assertComposedCoordinatorMarker(text);
-	}
-	assertDigest(expected.label, bytes, expected.expected);
+	decodeCanonicalBytes(bytes, document.label);
+	assertDigest(document.label, bytes, document.expected);
 }
 
 /**
- * Read both tracked documents at module load, verify every reviewed digest and compose the
- * coordinator instructions once, so a drifted document fails the process before any thread uses it.
- * @returns The verified documents and their composition.
+ * Read one document and verify its reviewed digest.
+ * @param name - Which document.
+ * @returns The verified text.
  */
-function loadAuthoredInstructions(): {
-	readonly workhorse: { readonly bytes: Buffer; readonly text: string };
-	readonly coordinatorExtension: { readonly bytes: Buffer; readonly text: string };
-	readonly composed: string;
-} {
-	const workhorse = readCanonicalDocument(
-		"workhorse-developer-instructions.txt",
-		"Workhorse developer instructions",
-	);
-	assertCanonicalInstructionBytes("workhorse", workhorse.bytes);
-	const coordinatorExtension = readCanonicalDocument(
-		"coordinator-role-extension.txt",
-		"Coordinator role extension",
-	);
-	assertCanonicalInstructionBytes("coordinatorExtension", coordinatorExtension.bytes);
-	assertCanonicalInstructionBytes("separator", COORDINATOR_SEPARATOR);
-	const composed = assertComposition(workhorse.text, coordinatorExtension.text);
-	assertCanonicalInstructionBytes("composedCoordinator", composed);
-	return Object.freeze({
-		workhorse: Object.freeze(workhorse),
-		coordinatorExtension: Object.freeze(coordinatorExtension),
-		composed,
-	});
+function loadVerified(name: AuthoredInstructionName): string {
+	const read = readCanonicalDocument(AUTHORED_DOCUMENTS[name]);
+	assertCanonicalInstructionBytes(name, read.bytes);
+	return read.text;
 }
 
-const AUTHORED_INSTRUCTIONS = loadAuthoredInstructions();
-
-const WORKHORSE_DEVELOPER_INSTRUCTIONS = AUTHORED_INSTRUCTIONS.workhorse.text;
-const COORDINATOR_ROLE_EXTENSION = AUTHORED_INSTRUCTIONS.coordinatorExtension.text;
-const COORDINATOR_DEVELOPER_INSTRUCTIONS = AUTHORED_INSTRUCTIONS.composed;
+const WORKHORSE_DEVELOPER_INSTRUCTIONS = loadVerified("workhorse");
+const COORDINATOR_DEVELOPER_INSTRUCTIONS = loadVerified("coordinator");
 
 const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
 	workhorse: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	coordinatorExtension: COORDINATOR_ROLE_EXTENSION_SHA256,
-	separator: COORDINATOR_SEPARATOR_SHA256,
-	composedCoordinator: COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
+	coordinator: COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 });
 
 /**
- * The coordinator's developer instructions, verified once at load.
- * @returns The composed coordinator instructions.
- */
-function composeCoordinatorInstructions(): string {
-	return COORDINATOR_DEVELOPER_INSTRUCTIONS;
-}
-
-/**
- * Re-read the tracked documents and verify every reviewed byte digest.
+ * Re-read both tracked documents and verify every reviewed byte digest.
  * @returns The digests actually observed on disk.
  */
 function verifyAuthoredInstructionIntegrity(): AuthoredInstructionIntegrity {
-	const workhorse = readCanonicalDocument(
-		"workhorse-developer-instructions.txt",
-		"Workhorse developer instructions",
-	);
-	const coordinatorExtension = readCanonicalDocument(
-		"coordinator-role-extension.txt",
-		"Coordinator role extension",
-	);
+	const workhorse = readCanonicalDocument(AUTHORED_DOCUMENTS.workhorse);
+	const coordinator = readCanonicalDocument(AUTHORED_DOCUMENTS.coordinator);
 	assertCanonicalInstructionBytes("workhorse", workhorse.bytes);
-	assertCanonicalInstructionBytes("coordinatorExtension", coordinatorExtension.bytes);
-	assertCanonicalInstructionBytes("separator", COORDINATOR_SEPARATOR);
-	const composed = assertComposition(workhorse.text, coordinatorExtension.text);
-	assertCanonicalInstructionBytes("composedCoordinator", composed);
-	const workhorseSha256 = sha256(workhorse.bytes);
-	const coordinatorExtensionSha256 = sha256(coordinatorExtension.bytes);
-	const separatorSha256 = sha256(Buffer.from(COORDINATOR_SEPARATOR, "utf8"));
-	const composedCoordinatorSha256 = sha256(Buffer.from(composed, "utf8"));
+	assertCanonicalInstructionBytes("coordinator", coordinator.bytes);
 	return Object.freeze({
-		workhorseSha256,
-		coordinatorExtensionSha256,
-		separatorSha256,
-		composedCoordinatorSha256,
+		workhorseSha256: sha256(workhorse.bytes),
+		coordinatorSha256: sha256(coordinator.bytes),
 	});
 }
 
 export {
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	COORDINATOR_ROLE_EXTENSION_SHA256,
-	COORDINATOR_SEPARATOR,
-	COORDINATOR_SEPARATOR_SHA256,
-	COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
+	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 	type AuthoredInstructionIntegrity,
 	type AuthoredInstructionName,
 	assertCanonicalInstructionBytes,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
-	COORDINATOR_ROLE_EXTENSION,
 	COORDINATOR_DEVELOPER_INSTRUCTIONS,
 	AUTHORED_INSTRUCTION_DIGESTS,
-	composeCoordinatorInstructions,
 	verifyAuthoredInstructionIntegrity,
 };

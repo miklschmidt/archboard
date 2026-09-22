@@ -9,7 +9,6 @@ import {
 	waitForState,
 	withHarness,
 } from "./fixtures/codex-realtime-process.ts";
-import { composeCoordinatorInstructions } from "../../../src/runtime/codex-instructions/index.ts";
 import { createIdentityAuthority } from "../../../src/shared/codex-workbench-identity/index.ts";
 import { parseRealtimeItemId } from "../../../src/shared/codex-realtime-host/index.ts";
 import {
@@ -88,14 +87,8 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				codexResponsesAsItems: false,
 				codexResponseHandoffMode: "bemTags",
 				outputModality: "audio",
-				includeStartupContext: true,
-				initialItems: [
-					{ role: "developer", text: '{"source":"fresh-process-brief","board":"Architecture"}' },
-					{
-						role: "developer",
-						text: '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
-					},
-				],
+				includeStartupContext: false,
+				initialItems: [],
 				realtimeStartInstructions: expect.any(String),
 				realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 				prompt: expect.any(String),
@@ -104,11 +97,14 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				version: "v3",
 				voice: "arbor",
 			});
-			// Reviewed instructions first, then this start's data and both bemTags channel headers.
+			// Only what a voice session adds for the coordinator: both bemTags channel headers, and
+			// neither its developer instructions again nor this start's data.
 			const told = String(start!["realtimeStartInstructions"]);
-			expect(told.startsWith(composeCoordinatorInstructions())).toBe(true);
-			for (const part of ['"fresh-process-brief"', "_board_catalogue", "[FINAL]", "[COMMENTARY]"]) {
+			for (const part of ["[FINAL]", "[COMMENTARY]"]) {
 				expect(told).toContain(part);
+			}
+			for (const part of ['"fresh-process-brief"', "_board_catalogue", "You are the"]) {
+				expect(told).not.toContain(part);
 			}
 			expect(start!["realtimeSessionId"]).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
 			// The fixture emits the after-start item events on timers after answering start.

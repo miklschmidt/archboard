@@ -86,8 +86,6 @@ const instructionByteMutations = {
 	missingTerminalLf: (value: string) => value.slice(0, -1),
 	extraTerminalLf: (value: string) => `${value}\n`,
 	trailingSpace: (value: string) => `${value.slice(0, -1)} \n`,
-	wrongSeparator: (value: string) =>
-		value.replace("--- ARCHBOARD COORDINATOR ROLE ---", "--- COORDINATOR ROLE ---"),
 } as const;
 
 export { contextFixture, instructionByteMutations };
