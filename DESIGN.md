@@ -33,21 +33,28 @@ context there rather than through the user's global Codex configuration. New
 workhorses receive the tracked shared developer instructions at `thread/start`;
 a turn Archboard starts carries them once as `additionalContext.archboard`.
 Linking, rejoining or reconnecting changes no thread configuration. A voice
-coordinator receives the same instructions plus its role extension, and each
-realtime start carries a compact role-bearing semantic brief (repository,
-workhorse, coordinator, board, pane, version, selection, claim, doing state,
-change cursor, board description) within the generated item and token limits.
-The coordinator's primary objective is board work and it must read the
-`archboard` skill before handling its first request. Realtime's `prompt` gives
-the voice model its own board-focused role and handoff instructions;
-`realtimeStartInstructions` supplies coordinator mode instructions and the same
-board brief to ordinary coordinator turns. These fields reach different models.
-Both models also receive a bounded catalogue of vault board addresses and
-variants at voice start. A recursive vault watch sends a replacement catalogue
-as quiet developer items to both histories when the inventory changes, including
-unopened boards and external creation or deletion. Content-only writes are
-deduplicated. Catalogue delivery belongs to that exact voice session and ends
-with it; an unconfirmed injection is reported and never retried automatically.
+coordinator receives its own tracked developer document, which neither contains
+nor refers to the workhorse's (TASK-297). The coordinator's primary objective is
+board work and it must read the `archboard` skill before handling its first
+request. Each model is given its own prompt and no other's. Realtime's `prompt`
+gives the voice model its board-focused role and handoff instructions and
+nothing else: no developer items, no JSON, and no Codex startup context
+(`includeStartupContext` is false, because Codex would otherwise prepend a
+`<startup_context>` of recent threads and a workspace scan to the prompt).
+`realtimeStartInstructions` carries only what a voice session adds for the
+coordinator, the channel rule and, when narrating, the presentation
+instructions; Codex renders it into the coordinator's world state on every
+turn, so it never repeats the developer document. A compact role-bearing
+semantic brief (repository, workhorse, coordinator, board, pane, version,
+selection, claim, doing state, change cursor, board description) is captured at
+each start for that session's callbacks, and reaches neither model's start. The
+coordinator alone receives a bounded catalogue of vault board addresses and
+variants, as a developer item on its own thread when the voice session starts
+and again, replacing it, whenever a recursive vault watch sees the inventory
+change, including unopened boards and external creation or deletion.
+Content-only writes are deduplicated. Catalogue delivery belongs to that exact
+voice session and ends with it; an unconfirmed injection is reported and never
+retried automatically.
 There is no hook process, hook trust grant or second context diff.
 
 ### 2. Mid-conversation context — the bound app-server session
@@ -138,7 +145,7 @@ and tells both models only which walkthrough it is, by name: the voice `prompt`
 gains how to pace the talk and `realtimeStartInstructions` the coordinator's
 part. Neither is given the steps, so a step cannot be narrated before the pane
 is on it.
-The session's initial items end with the user's request itself (pressing
+The session's one initial item is the user's request itself (pressing
 Narrate is asking for the talk), so the full-duplex voice model has something
 to answer at once and paces the whole talk itself: it asks the coordinator for step 1; the
 coordinator calls the typed `archboard_voice.present_step` with no step, because

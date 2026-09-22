@@ -165,15 +165,15 @@ describe("production Codex generation ownership", () => {
 			if (start === undefined) {
 				throw new Error("The realtime start was not sent.");
 			}
-			const exactBrief = start.initialItems?.[0]?.text;
+			// The brief is captured for this start's callbacks, and reaches neither model's start.
+			expect(start.initialItems).toEqual([]);
+			expect(start.realtimeStartInstructions).not.toContain("semantic_context");
+			const exactBrief = adapter.generation()?.semanticBrief;
 			if (exactBrief === undefined) {
-				throw new Error("The realtime start has no semantic brief.");
+				throw new Error("The generation has no semantic brief.");
 			}
 			expect(JSON.parse(exactBrief).coordinator.realtimeSessionId).toBe(start.realtimeSessionId);
-			expect(adapter.generation()).toMatchObject({
-				wireSessionId: start.realtimeSessionId,
-				semanticBrief: exactBrief,
-			});
+			expect(adapter.generation()).toMatchObject({ wireSessionId: start.realtimeSessionId });
 			adapter.dispose();
 			await expect(pending).rejects.toThrow("disposed");
 		} finally {
