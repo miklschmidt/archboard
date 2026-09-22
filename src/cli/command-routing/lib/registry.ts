@@ -8,11 +8,10 @@ import type {
 	RouteOwner,
 } from "@/cli/command-routing/lib/route";
 
-// `semantic` joins these because a semantic board is a board: the commands in
-// that namespace read and write one, even though it is a JSON aggregate rather
-// than an Excalidraw note and so does not take the `board` prerequisite, which
-// resolves a note (ADR 0023).
-const boardNamespaces = new Set(["board", "arrange", "snapshot", "compare", "semantic"]);
+// `semantic` is here because a semantic board is a board: the commands in that
+// namespace read and write one, even though they declare no `board`
+// prerequisite of their own (ADR 0023).
+const boardNamespaces = new Set(["semantic"]);
 const sessionRelationships = [
 	"/api/selection",
 	"/api/panes",

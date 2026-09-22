@@ -70,8 +70,8 @@ state:
 - Illustrative or synthetic board miniatures are out of scope. A navigator
   preview must depict real current board content and remain supplemental to
   accessible board identity and state.
-- The drawing toolbar remains Excalidraw's responsibility. The mockup's tool
-  rail communicates density and placement, not a second drawing toolset.
+- The mockup's tool rail communicates density and placement, not a drawing
+  toolset: nobody draws on a board here.
 
 ## The pane sidebar
 

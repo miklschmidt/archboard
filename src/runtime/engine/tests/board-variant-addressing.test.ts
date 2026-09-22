@@ -47,18 +47,19 @@ test("a name a proposal may be given is a name an address may carry", () => {
 	}
 });
 
-test("a legacy note refuses what its own filename cannot hold, and only then", () => {
-	// The note format spells its variant into a path, so for that one format the
-	// old rule still applies — at the moment the name is built, not in the grammar
-	// every address goes through.
+test("a board file refuses what its own filename cannot hold, and only then", () => {
+	// A board file spells its variant into a path, so the old rule still applies
+	// there — at the moment the name is built, not in the grammar every address
+	// goes through.
 	const vault = mkdtempSync(join(tmpdir(), "archboard-variant-names-"));
+	const suffix = ".semantic.json";
 	const named = makeIdentity({ board: "payments", variant: "Proposed: queued ingest" });
-	expect(() => vaultPathFor(named, vault)).toThrow(/filename/u);
-	expect(vaultPathFor(makeIdentity({ board: "payments", variant: "option-a" }), vault)).toContain(
-		"payments@option-a",
-	);
+	expect(() => vaultPathFor(named, vault, suffix)).toThrow(/filename/u);
+	expect(
+		vaultPathFor(makeIdentity({ board: "payments", variant: "option-a" }), vault, suffix),
+	).toContain("payments@option-a");
 	// And the designation is not a variant in a filename at all.
-	expect(vaultPathFor(makeIdentity({ board: "payments" }), vault)).not.toContain("@");
+	expect(vaultPathFor(makeIdentity({ board: "payments" }), vault, suffix)).not.toContain("@");
 	rmSync(vault, { recursive: true, force: true });
 });
 

@@ -45,7 +45,7 @@
 			},
 			{ "from": "Pane sync", "to": "Semantic pane", "kind": "http", "label": "the board moved" }
 		],
-		"removeNodes": ["Input converter", "Presentation", "Excalidraw stage"],
+		"removeNodes": ["Input converter", "Presentation", "Drawing stage"],
 		"walkthroughs": [
 			{
 				"name": "Why this change",

@@ -1,7 +1,7 @@
 // Which semantic boards a vault holds.
 //
 // The walk looks for this module's own suffix and nothing else, so a vault full
-// of Excalidraw notes lists as no semantic boards rather than as a pile of
+// of somebody else's notes lists as no semantic boards rather than as a pile of
 // unreadable ones. Dotfiles are skipped, which is what keeps an in-flight atomic
 // write's temp file from being listed as a board, and what keeps archboard's own
 // `.archboard` state directory out of somebody's board list.

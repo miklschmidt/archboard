@@ -17,7 +17,6 @@ import {
 import { applyBlock, chooseDoc, writeSetup } from "@/cli/commands/lib/repo-setup-block";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 
-const RETIRED_SKILL_NAMES = ["excalidraw-skill"];
 const INSTALL_TARGETS = ["agents", "claude"] as const;
 const INSTALL_AGENTS = ["codex", "claude-code"] as const;
 
@@ -138,39 +137,6 @@ function existingInstall(target: string): fs.Stats | undefined {
 }
 
 /**
- * Whether a path exists at all, symlinks included.
- * @param candidate - The path to check.
- * @returns True when lstat succeeds.
- */
-function pathExists(candidate: string): boolean {
-	try {
-		fs.lstatSync(candidate);
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-/**
- * A rename must not leave two discoverable names for the same skill. Removes retired names
- * only after the new copy is in place, so a failed install never takes away the working
- * legacy copy first.
- * @param root - The skills root.
- * @param target - The freshly installed skill directory, which is never removed.
- * @param context - The command context that receives the diagnostics.
- */
-function removeRetiredInstalls(root: string, target: string, context: CommandContext): void {
-	for (const retiredName of RETIRED_SKILL_NAMES) {
-		const retired = path.join(root, retiredName);
-		if (retired === target || !pathExists(retired)) {
-			continue;
-		}
-		fs.rmSync(retired, { recursive: true, force: true });
-		context.diagnostic(`Removed retired install at ${retired}`);
-	}
-}
-
-/**
  * Copies the skill into the root by staging into a sibling temp dir and swapping it in.
  * Replace, never overlay: stale files from older skill versions (e.g. the pre-1.1
  * scripts/*.cjs helpers) must not survive an upgrade.
@@ -199,7 +165,6 @@ function installSkillFiles(
 			context.diagnostic(`Replaced existing install at ${target}`);
 		}
 		fs.renameSync(staging, target);
-		removeRetiredInstalls(root, target, context);
 	} catch (error) {
 		fs.rmSync(staging, { recursive: true, force: true });
 		throw error;

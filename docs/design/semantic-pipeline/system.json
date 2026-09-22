@@ -101,7 +101,7 @@
 			"as": "vault",
 			"name": "Vault",
 			"kind": "datastore",
-			"responsibility": "Excalidraw notes: the canonical geometry"
+			"responsibility": "Board notes: the canonical geometry"
 		},
 		{
 			"as": "browser",
@@ -111,11 +111,11 @@
 		},
 		{
 			"as": "stage",
-			"name": "Excalidraw stage",
+			"name": "Drawing stage",
 			"kind": "ui",
 			"parent": "Browser",
 			"responsibility": "An editable canvas",
-			"binding": { "repo": "archboard", "path": "src/ui/canvas/components/ExcalidrawStage.tsx" }
+			"binding": { "repo": "archboard", "path": "src/ui/canvas/components/DrawingStage.tsx" }
 		},
 		{
 			"as": "shots",
@@ -136,7 +136,7 @@
 		{ "from": "Atomic writer", "to": "Vault", "kind": "data", "label": "rename" },
 		{ "from": "Board write", "to": "Presentation", "kind": "call" },
 		{ "from": "Board write", "to": "Pane sync", "kind": "event", "label": "after commit" },
-		{ "from": "Pane sync", "to": "Excalidraw stage", "kind": "http", "label": "delta" },
+		{ "from": "Pane sync", "to": "Drawing stage", "kind": "http", "label": "delta" },
 		{ "from": "Headless renderer", "to": "Vault", "kind": "data", "label": "read scene" }
 	],
 	"views": [

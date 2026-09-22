@@ -110,9 +110,8 @@ derived from the other.
 
 ## What this does not cover
 
-- No `.excalidraw.md` note is read, written, created or migrated anywhere in the
-  example. The legacy note in the example vault is untouched, and nothing here
-  converts one.
+- Nothing outside the example's own boards is read, written or migrated. A
+  vault the example builds into keeps everything else it holds untouched.
 - The boards describe archboard's own pipeline, which is a system being changed
   as this is written. The bindings point at files that exist today; the _Board
   write_ responsibility on the proposal is what the semantic write actually does,

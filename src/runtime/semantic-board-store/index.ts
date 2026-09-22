@@ -4,7 +4,6 @@
 // `writeSemanticBoard`, which owns the claim, expected-version check, version
 // advance and atomic fsync write. A read of an older contract runs a registered
 // schema migration under the same board lease and persists it before answering.
-// Nothing here touches an Excalidraw note.
 
 export {
 	SEMANTIC_BOARD_FILE_SUFFIX,

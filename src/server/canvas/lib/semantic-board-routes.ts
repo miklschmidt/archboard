@@ -1,14 +1,9 @@
 // The canvas's semantic-board surface.
 //
-// These routes are deliberately outside the Excalidraw write boundary in
-// `write-boundary.ts`. That boundary resolves a `.excalidraw.md` note before it
-// takes a lease, and asking it to do that for a board that has no note would
-// create one — which is exactly the thing ADR 0023 promises not to do to an
-// existing vault. Instead a semantic write states its own boundary:
-// `writeSemanticBoard` takes the same board-global lease, honours the same
-// claim, makes the same expected-version check, advances the version once and
-// writes the aggregate atomically. One owner, one set of guarantees, a
-// different file.
+// A semantic write states its own boundary: `writeSemanticBoard` takes the
+// board-global lease, honours the claim, makes the expected-version check,
+// advances the version once and writes the aggregate atomically (ADR 0023).
+// One owner, one set of guarantees.
 //
 // The render route draws under the Bun host, for anything that has no renderer
 // of its own. What it answers is assembled by `renderBoard` in the renderer

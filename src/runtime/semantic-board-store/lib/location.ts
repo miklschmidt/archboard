@@ -1,12 +1,9 @@
-// Where a semantic board lives, and how it is told apart from a legacy one.
+// Where a semantic board lives.
 //
-// A vault now holds two kinds of board file. An Excalidraw note keeps its
-// `.excalidraw.md` suffix and is read and written by `board-io.ts` exactly as
-// before; a semantic board is one JSON document under `.semantic.json`. The
-// two never collide, because a suffix is part of a file's name, and that is
-// the whole of how ADR 0023's promise to leave existing files untouched is
-// kept: nothing in this module can open a note, and nothing that opens notes
-// knows this suffix exists.
+// A board is one JSON document under `.semantic.json` (ADR 0023). The suffix is
+// part of a file's name, so a vault may hold anything else beside it without
+// either one being mistaken for the other: nothing in this module opens a file
+// that is not a semantic board.
 //
 // Addressing is shared rather than reinvented. `vaultPathFor` already knows how
 // to find a board case-insensitively, create it case-preservingly, and refuse a

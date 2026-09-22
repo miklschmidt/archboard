@@ -66,7 +66,7 @@
 			"name": "Partner / product traffic",
 			"kind": "external",
 			"responsibility": "Calls public hostnames; exact trunk URL was illegible in the original evidence.",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
 		},
 		{
 			"id": "rlrzJE6S",
@@ -74,7 +74,7 @@
 			"name": "Cloudflare proxy",
 			"kind": "external",
 			"responsibility": "Provides the edge and DNS layer.",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
 		},
 		{
 			"id": "XEYlnlQc",
@@ -82,7 +82,7 @@
 			"name": "Azure Traffic Manager",
 			"kind": "external",
 			"responsibility": "Steers regional entry.",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
 		},
 		{
 			"id": "qwI9rfoO",
@@ -90,7 +90,7 @@
 			"name": "US API Gateway",
 			"kind": "external",
 			"responsibility": "Provides the US regional entry.",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
 		},
 		{
 			"id": "lIeLZtS6",
@@ -98,7 +98,7 @@
 			"name": "NLC Application Gateway",
 			"kind": "external",
 			"responsibility": "Provides the NLC regional entry.",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail."
 		},
 		{
 			"id": "j6TdeSth",
@@ -106,7 +106,7 @@
 			"name": "Windows / IIS VM pool",
 			"kind": "system",
 			"responsibility": "Four production VMs each carry the complete IIS API portfolio.",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
 			"drillDown": {
 				"board": "production-iis-applications",
 				"variant": {
@@ -120,7 +120,7 @@
 			"name": "IIS VM 1",
 			"kind": "service",
 			"responsibility": "Legacy API's",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
 			"parent": "j6TdeSth"
 		},
 		{
@@ -129,7 +129,7 @@
 			"name": "IIS VM 2",
 			"kind": "service",
 			"responsibility": "Legacy API's",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
 			"parent": "j6TdeSth"
 		},
 		{
@@ -138,7 +138,7 @@
 			"name": "IIS VM 3",
 			"kind": "service",
 			"responsibility": "Legacy API's",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
 			"parent": "j6TdeSth"
 		},
 		{
@@ -147,7 +147,7 @@
 			"name": "IIS VM 4",
 			"kind": "service",
 			"responsibility": "Legacy API's",
-			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
+			"description": "Evidence: preserved authored current-state part in docs/architecture-legacy/current-cloud-infrastructure.md. Continued operation remains required during compatibility migration; a focused proposal view may omit its detail.",
 			"parent": "j6TdeSth"
 		}
 	],
@@ -159,7 +159,7 @@
 			"to": "9BTlRpYl",
 			"kind": "other",
 			"label": "Public transport",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-portal-lb",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-portal-lb",
 			"emphasis": "hero",
 			"traffic": {
 				"speed": 40,
@@ -201,7 +201,7 @@
 			"to": "t2QlUi5k",
 			"kind": "other",
 			"label": "L4 forwarding",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.excalidraw.md scene lead-ingress",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.md scene lead-ingress",
 			"emphasis": "hero",
 			"traffic": {
 				"speed": 40,
@@ -215,7 +215,7 @@
 			"to": "9BTlRpYl",
 			"kind": "other",
 			"label": "Secure device access",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.excalidraw.md scene lead-device-entry",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.md scene lead-device-entry",
 			"emphasis": "normal",
 			"traffic": {
 				"speed": 40,
@@ -229,7 +229,7 @@
 			"to": "j6TdeSth",
 			"kind": "http",
 			"label": "Balances directly across healthy VMs",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.excalidraw.md scene platform-direct-iis",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure@mtls-strangler.md scene platform-direct-iis",
 			"emphasis": "hero",
 			"traffic": {
 				"speed": 40,
@@ -243,7 +243,7 @@
 			"to": "rlrzJE6S",
 			"kind": "http",
 			"label": "Public hostnames",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-traffic-cf",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-traffic-cf",
 			"emphasis": "normal",
 			"traffic": {
 				"speed": 40,
@@ -257,7 +257,7 @@
 			"to": "XEYlnlQc",
 			"kind": "other",
 			"label": "Regional DNS / entry path",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-cf-manager",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-cf-manager",
 			"emphasis": "normal"
 		},
 		{
@@ -267,7 +267,7 @@
 			"to": "qwI9rfoO",
 			"kind": "other",
 			"label": "US steering",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-manager-us",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-manager-us",
 			"emphasis": "normal"
 		},
 		{
@@ -277,7 +277,7 @@
 			"to": "lIeLZtS6",
 			"kind": "other",
 			"label": "NLC steering",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-manager-nlc",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-manager-nlc",
 			"emphasis": "normal"
 		},
 		{
@@ -287,7 +287,7 @@
 			"to": "ywwZuKxy",
 			"kind": "http",
 			"label": "Regional entry",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-api-portal",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-api-portal",
 			"emphasis": "normal",
 			"traffic": {
 				"speed": 40,
@@ -301,7 +301,7 @@
 			"to": "ywwZuKxy",
 			"kind": "http",
 			"label": "Regional entry",
-			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-app-portal",
+			"description": "Migration evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-app-portal",
 			"emphasis": "normal",
 			"traffic": {
 				"speed": 40,
@@ -353,7 +353,7 @@
 			"to": "j6TdeSth",
 			"kind": "other",
 			"label": "L4 forwarding",
-			"description": "The same Azure Standard Load Balancer-to-IIS L4 connection is retained during migration; DNS failover changes whether it receives client traffic, not its identity. Connection continuity confirmed by the user on 2026-09-19. Original evidence: docs/architecture-legacy/current-cloud-infrastructure.excalidraw.md scene a-lb-vm1.",
+			"description": "The same Azure Standard Load Balancer-to-IIS L4 connection is retained during migration; DNS failover changes whether it receives client traffic, not its identity. Connection continuity confirmed by the user on 2026-09-19. Original evidence: docs/architecture-legacy/current-cloud-infrastructure.md scene a-lb-vm1.",
 			"emphasis": "hero"
 		}
 	],

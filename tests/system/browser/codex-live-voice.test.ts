@@ -213,7 +213,7 @@ test(
 					return (${BOARD_NAME_EXPRESSION}) === 'workbench';
 				})()`),
 			Boolean,
-			"the seeded Excalidraw board to render",
+			"the seeded board to render",
 		);
 
 		await browser.run(["console", "--clear"]);

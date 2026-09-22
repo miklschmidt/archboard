@@ -111,8 +111,6 @@ exceptions.
 
 Enforce this rule with type checks, lint, or a repository-policy test whenever the relationship is
 machine-observable. An upgrade should fail at type-check time at each incompatible assumption.
-TASK-134 tracks the existing handwritten Excalidraw element types; they are migration debt, not a
-precedent or waiver.
 
 ## Area directions
 

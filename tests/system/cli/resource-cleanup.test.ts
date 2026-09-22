@@ -51,7 +51,7 @@ describe("CLI resource cleanup", () => {
 						observeHealth();
 						await healthReleased;
 					}
-					return Response.json({ service: "mcp-excalidraw-canvas", status: "ok" });
+					return Response.json({ service: "archboard-canvas", status: "ok" });
 				},
 			});
 			heldUrl = held.url.origin;

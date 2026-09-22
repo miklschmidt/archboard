@@ -1,5 +1,5 @@
-// The browser entry: name the tab, start drawing pictures in this page, and
-// mount the root. The stylesheet is linked from index.html.
+// The browser entry: start drawing pictures in this page and mount the root.
+// The stylesheet is linked from index.html.
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,9 +8,6 @@ import { rendererBuild, themeColors } from "virtual:archboard-renderer";
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
 import { createLocalPictureSource, takePicturesFrom } from "@/ui/semantic-board-canvas";
-
-// The Excalidraw library site returns to the tab that opened it by name.
-window.name = "archboard";
 
 const root = document.getElementById("root");
 if (!root) {

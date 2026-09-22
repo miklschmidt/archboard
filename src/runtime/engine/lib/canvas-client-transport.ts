@@ -6,7 +6,7 @@ import { isBoardRefusal } from "@/runtime/engine/lib/canvas-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
 /** Identity marker the canvas server puts in /health (v1.1+). */
-const CANVAS_SERVICE_NAME = "mcp-excalidraw-canvas";
+const CANVAS_SERVICE_NAME = "archboard-canvas";
 
 // Revalidating identity gate in front of every /api request: mutations must
 // not reach a foreign service squatting on the canvas port. The verification

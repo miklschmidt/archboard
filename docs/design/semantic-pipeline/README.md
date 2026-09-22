@@ -8,8 +8,8 @@ boards.
 It is here rather than in a vault because it is source: the statements are
 tracked, the boards are built from them by `bun scripts/build-pipeline-example.ts`,
 and building twice from the same statements produces the same boards. Nothing in
-a person's vault is read or written by that script, and no `.excalidraw.md` note
-is touched, created or migrated anywhere (ADR 0023).
+a person's vault is read or written by that script beyond the two boards it
+builds (ADR 0023).
 
 - `system.json` — the system level: what the parts are, and how a write moves
   through them. Its board drills down into the write path.

@@ -276,7 +276,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			throw new Error('shell matrix probe found no header controls');
 		}
 		const touchTargets = [...shell.querySelectorAll('button')]
-			.filter(node => !node.closest('.excalidraw') && rect(node).width > 0 && rect(node).height > 0)
+			.filter(node => rect(node).width > 0 && rect(node).height > 0)
 			.map(node => ({ label: node.getAttribute('aria-label') || node.textContent.trim().slice(0, 48),
 				width: rect(node).width, height: rect(node).height }));
 		const motion = { controlDuration: focusStyle.transitionDuration,

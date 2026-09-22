@@ -13,7 +13,7 @@ stylesheet rewrite or install the full shadcn dependency set up front.
 
 The first implementation should have one canonical Tailwind CSS entrypoint, one
 semantic token map, and one copied primitive as a proof of the seam. Keep the current
-shell CSS and Excalidraw CSS in place until a primitive is migrated and its rendered
+shell CSS in place until a primitive is migrated and its rendered
 behavior is checked. The operator-canvas reference remains the visual authority:
 canvas-first proportions, a dense aligned grid, one-pixel rules, small radii, little
 or no shadow, and no gradients, glow, or rounded dashboard cards. See
@@ -35,7 +35,7 @@ The inspected baseline is:
 | Runtime      | Bun `>=1.4.0`, React/React DOM `19.2.8`                                                                                | Use `bun add`, `bunx`, and `bun run`; do not copy npm/npx commands literally.                                                                                                                                  |
 | Build        | Vite `8.2.2`, `root: "frontend"`, output `dist/frontend`                                                               | CSS is rooted at `frontend/`; source UI remains under `src/ui`. Vite and TypeScript alias configuration must account for both roots.                                                                           |
 | CSS          | [`src/ui/shell/shell.css`](../../src/ui/shell/shell.css) is about 1,773 lines; opener settings has its own stylesheet  | Existing CSS is a real visual and behavior contract. It has light/dark semantic tokens, plus older gradients and glow that the new reference explicitly rejects. Migrate deliberately, component by component. |
-| HTML entry   | [`frontend/index.html`](../../frontend/index.html) links Excalidraw CSS and shell CSS directly                         | Add exactly one application stylesheet entrypoint. Keep Excalidraw's vendor stylesheet separate and test the effect of any global reset.                                                                       |
+| HTML entry   | [`frontend/index.html`](../../frontend/index.html) links the shell CSS directly                                        | Add exactly one application stylesheet entrypoint, and test the effect of any global reset.                                                                                                                    |
 | TypeScript   | [`tsconfig.frontend.json`](../../tsconfig.frontend.json) is a separate strict browser check                            | Any alias must resolve in the frontend type check and Vite, not only in the root TypeScript config.                                                                                                            |
 | Formatting   | [`oxfmt@0.65.0`](../../package.json) with no Tailwind option                                                           | Tailwind sorting is available in this package but disabled until configured.                                                                                                                                   |
 | Lint         | [`oxlint@1.80.0`](../../package.json) with `jsx-a11y`, strict categories, and an existing local JS plugin              | Preserve the existing lint lane. There is no native Tailwind rule family in the inspected Oxlint release/config schema.                                                                                        |
@@ -70,13 +70,13 @@ The implementation seam is therefore small:
    `components.json` and Oxfmt at that file, and import it once from
    `frontend/main.tsx`. Keep the entrypoint inside the UI boundary and prevent
    duplicate Tailwind imports.
-3. Keep `assets/excalidraw.css` separate. Run a browser regression before deciding
+3. Run a browser regression before deciding
    whether Tailwind Preflight is safe for the existing canvas and shell.
 
 Tailwind's [Preflight documentation](https://tailwindcss.com/docs/preflight) confirms
 that `@import "tailwindcss"` injects theme, base, and utilities. It resets margins,
 border styles, headings, lists, and image defaults. This is a meaningful integration
-risk for an existing Excalidraw surface and a large hand-authored shell stylesheet.
+risk for a large hand-authored shell stylesheet.
 Tailwind officially supports importing theme and utilities without Preflight. For the
 first migration slice, omitting Preflight is the lower-risk choice if the current reset
 is still authoritative. Enabling full Preflight is also valid, but it must be a
@@ -351,7 +351,7 @@ assigns the application responsibility for:
 
 The Base UI quick start also requires an isolation stacking context for application
 roots when portals are used, so dialogs and popovers remain above page content. Add
-that root contract deliberately and test it against Excalidraw's layering. Do not
+that root contract deliberately and test it against the shell's layering. Do not
 keep a hand-rolled dialog and a Base UI dialog active for the same product behavior:
 choose one owner per primitive, then preserve the current Escape, focus, and focus
 return behavior through a browser check.
@@ -418,7 +418,7 @@ owner may be disabled to admit Tailwind or copied source.
    screenshot test.
 7. **Full regression gate.** Run `bun run check`, including the fixed-point,
    human-edit, focus/hold, and other existing owners. A UI styling change must not
-   alter note bytes, server write counts, Excalidraw round-trip behavior, or the
+   alter board bytes, server write counts, or the
    no-stale-source rules.
 
 ## Guidance to add for future UI workers

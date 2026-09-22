@@ -10,12 +10,6 @@ interface DecodingSchema<T> {
 		| { readonly success: false; readonly error: Error };
 }
 
-const rawExportSchema = z.object({
-	type: z.literal("excalidraw"),
-	version: z.number(),
-	source: z.literal("archboard"),
-	elements: z.array(z.unknown()),
-});
 const unavailableStatusSchema = z.looseObject({ running: z.literal(false) });
 
 function decodePackage<T>(
@@ -37,11 +31,5 @@ function decodePackage<T>(
 	return parsed.data;
 }
 
-export {
-	createPackageCliOwner,
-	decodePackage,
-	packageFailure,
-	rawExportSchema,
-	unavailableStatusSchema,
-};
+export { createPackageCliOwner, decodePackage, packageFailure, unavailableStatusSchema };
 export type { PackageRunResult };

@@ -193,9 +193,11 @@ describe("the semantic board aggregate", () => {
 		expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_UNREADABLE");
 	});
 
-	test("no Excalidraw note is created for a semantic board", async () => {
+	test("a semantic board is the one file its name resolves to", async () => {
 		await create("no-note", { nodes: [{ name: "Alone", kind: "module" }] });
-		expect(readdirSync(vault).filter((entry) => entry.endsWith(".excalidraw.md"))).toEqual([]);
+		expect(readdirSync(vault).filter((entry) => entry.startsWith("no-note."))).toEqual([
+			"no-note.semantic.json",
+		]);
 	});
 });
 

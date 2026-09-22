@@ -107,7 +107,7 @@ function createPackageCliOwner(): PackageCliOwner {
 		LOG_FILE_PATH: log,
 		ARCHBOARD_REPOS: registry,
 		ARCHBOARD_VAULT: vault,
-		EXCALIDRAW_NO_AUTOSTART: "1",
+		ARCHBOARD_NO_AUTOSTART: "1",
 		...(url ? { EXPRESS_SERVER_URL: url } : {}),
 	});
 

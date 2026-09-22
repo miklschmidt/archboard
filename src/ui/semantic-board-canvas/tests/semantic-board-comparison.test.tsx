@@ -26,7 +26,7 @@ const BEFORE = {
 			parent: "svc",
 			responsibility: "Reads the note",
 		},
-		{ id: "legacy", name: "Excalidraw Bridge", kind: "module", parent: "svc" },
+		{ id: "legacy", name: "Legacy Bridge", kind: "module", parent: "svc" },
 	],
 	edges: [{ id: "x1", from: "io", to: "legacy", kind: "call", label: "mirrors" }],
 	flows: [
@@ -172,7 +172,7 @@ test("a subject the change takes away can still be asked about", async () => {
 
 	// It is in the picture — the server puts back what the change took away — so
 	// the panel has to answer for it rather than claiming it has gone.
-	expect(inspector()).toContain("Excalidraw Bridge");
+	expect(inspector()).toContain("Legacy Bridge");
 	expect(inspector()).not.toContain("not on the board any more");
 	expect(standing()).toBe("removed");
 	// And it says what that means, naming the state it is being read against, so

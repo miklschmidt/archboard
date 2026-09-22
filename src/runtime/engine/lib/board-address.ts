@@ -1,11 +1,10 @@
-// How a board is addressed: its identity, the key a human says, the frontmatter
-// that carries the identity inside a note, and the vault path derived from it
-// (ADR 0004, ADR 0010). `board.ts` is the entrypoint; this is the address half
-// of it.
+// How a board is addressed: its identity, the key a human says, and the vault
+// path derived from it (ADR 0004, ADR 0010). `board.ts` is the entrypoint; this
+// is the address half of it.
 //
-//     payments                 -> <vault>/payments.excalidraw.md
-//     payments@proposed        -> <vault>/payments@proposed.excalidraw.md
-//     billing/ledger@option-a  -> <vault>/billing/ledger@option-a.excalidraw.md
+//     payments                 -> <vault>/payments.semantic.json
+//     payments@proposed        -> <vault>/payments@proposed.semantic.json
+//     billing/ledger@option-a  -> <vault>/billing/ledger@option-a.semantic.json
 //
 // `current` is privileged (CONTEXT.md): it is the architecture that exists, so
 // it gets the unadorned filename and every other variant hangs off it with an
@@ -51,21 +50,6 @@ const SCRATCH_BOARD = "scratch";
 // per thing, so there is a single convention to learn and a single thing to
 // leave alone.
 const VAULT_STATE_DIR = ".archboard";
-
-// Board identity in the note's frontmatter, under the domain's own words.
-// Flat and unprefixed because these are Obsidian *properties*: a human reads
-// and edits them in the properties panel and queries them from Dataview, and
-// `archboard-variant` would be our jargon leaking into their vault. Unlike
-// customData — which the Excalidraw plugin writes into and where namespacing is
-// forced (ADR 0003) — frontmatter is the note author's space, and these three
-// keys are exactly what the note is about.
-//
-// Flat rather than nested for a second reason: the frontmatter block is
-// round-tripped as raw lines to preserve everything else in it verbatim, and a
-// top-level scalar is the only shape that can be updated in place without
-// reformatting its neighbours.
-
-const BOARD_FILE_SUFFIX = ".excalidraw.md";
 
 // The abstraction tiers in use today. A controlled vocabulary that grows by
 // being edited, so this is advisory rather than enforced — `promote --level`
@@ -213,22 +197,22 @@ function validateVariant(variant: string): string {
 }
 
 /**
- * The variant as a legacy note's filename spells it.
+ * The variant as a board file's name spells it.
  *
- * A `.excalidraw.md` note carries its variant after an `@` in its own name, so
- * for that one format it has to be something a path can hold. A semantic board
- * asks none of it, so the check lives at the one place a variant becomes part of
- * a filename rather than in the grammar every address goes through.
+ * A board file carries its variant after an `@` in its own name, so there it
+ * has to be something a path can hold. Nothing else about an address asks it,
+ * so the check lives at the one place a variant becomes part of a filename
+ * rather than in the grammar every address goes through.
  * @param variant The variant as the identity holds it.
  * @returns The same variant, once it is safe to put in a name.
- * @throws {Error} When it cannot be part of a note's filename.
+ * @throws {Error} When it cannot be part of a board file's name.
  */
 function variantInFileName(variant: string): string {
 	if (NAME_SEGMENT_BAD_RE.test(variant) || variant.includes("/")) {
 		throw new Error(
-			`A board note spells its variant into its filename, so "${variant}" cannot be one: ` +
-				'"@ / \\ : * ? " < > | [ ] # ^" are reserved. A semantic board takes the name as it ' +
-				"is; this is a limit of the note format.",
+			`A board file spells its variant into its filename, so "${variant}" cannot be one: ` +
+				'"@ / \\ : * ? " < > | [ ] # ^" are reserved. Give the proposal a name a path can ' +
+				"hold.",
 		);
 	}
 	return variant;
@@ -489,23 +473,22 @@ function archboardOwnPath(
  * escape the vault; the containment check is kept anyway because a silent
  * escape here writes a file into someone's home directory.
  *
- * A note that already exists wins, whatever casing it was written under: the
- * address is case-insensitive, so `payments` has to find `Payments.excalidraw.md`.
- * A note that does not exist yet is named with the casing the human typed,
- * which is what makes the vault case-preserving as well as case-insensitive.
- * The suffix is a parameter because a vault holds more than one kind of board
- * file: an Excalidraw note and, under ADR 0023, a semantic board's JSON
- * aggregate. Both are addressed the same way and both must be contained by the
- * vault, so finding where one lives is one piece of behaviour rather than two.
+ * A file that already exists wins, whatever casing it was written under: the
+ * address is case-insensitive, so `payments` has to find
+ * `Payments.semantic.json`. A file that does not exist yet is named with the
+ * casing the human typed, which is what makes the vault case-preserving as well
+ * as case-insensitive. The suffix is a parameter rather than a constant here
+ * because which file kind a board is stored in belongs to whoever stores it
+ * (ADR 0023); addressing is what every board shares.
  * @param identity The board to locate.
  * @param root The vault root.
  * @param suffix The file suffix the board kind is stored under.
- * @returns The absolute note path.
+ * @returns The absolute file path.
  */
 function vaultPathFor(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
-	root = requireVaultRoot(),
-	suffix: string = BOARD_FILE_SUFFIX,
+	root: string,
+	suffix: string,
 ): string {
 	const own = archboardOwnPath(identity, root, suffix);
 	if (own !== null) {
@@ -520,30 +503,12 @@ function vaultPathFor(
 			`Refusing to resolve board "${boardKey(identity)}" outside the vault at ${root}`,
 		);
 	}
-	// A note at the byte-equal path is the answer, without a readdir. The only
+	// A file at the byte-equal path is the answer, without a readdir. The only
 	// vault where this and the case-insensitive walk below disagree is one that
 	// already holds two case-variants of the same name, which ADR 0010 calls
 	// broken and `listBoards` already reports as a collision (TASK-153).
 	if (byteEqualPathExists(vault, resolved, relative)) return resolved;
 	return caseInsensitivePath(vault, relative);
-}
-
-/**
- * The identity a vault path implies, before frontmatter is consulted.
- * @param filePath A path inside the vault.
- * @param root The vault root.
- * @returns The identity, or null when the path is outside the vault, not a note, or not a valid address.
- */
-function identityFromVaultPath(filePath: string, root = requireVaultRoot()): BoardIdentity | null {
-	const relative = path.relative(path.resolve(root), path.resolve(filePath));
-	if (relative.startsWith("..") || path.isAbsolute(relative)) return null;
-	if (!relative.endsWith(BOARD_FILE_SUFFIX)) return null;
-	const base = relative.slice(0, -BOARD_FILE_SUFFIX.length).split(path.sep).join("/");
-	try {
-		return parseBoardKey(base);
-	} catch {
-		return null;
-	}
 }
 
 export {
@@ -553,7 +518,6 @@ export {
 	variantKey,
 	SCRATCH_BOARD,
 	VAULT_STATE_DIR,
-	BOARD_FILE_SUFFIX,
 	LEVELS,
 	normalizeBoardKey,
 	normalizeBoardName,
@@ -568,5 +532,4 @@ export {
 	isScratchKey,
 	requireVaultRoot,
 	vaultPathFor,
-	identityFromVaultPath,
 };

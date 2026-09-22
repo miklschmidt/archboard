@@ -204,7 +204,7 @@ function runEnvironment(paths: RunPaths, canvasUrl: string): Record<string, stri
 		ARCHBOARD_VAULT: paths.vault,
 		ARCHBOARD_REPOS: paths.repos,
 		EXPRESS_SERVER_URL: canvasUrl,
-		EXCALIDRAW_NO_AUTOSTART: "1",
+		ARCHBOARD_NO_AUTOSTART: "1",
 		LOG_FILE_PATH: paths.cliLog,
 		LOG_LEVEL: "error",
 		...(process.env["ARCHBOARD_RENDERER_CHROMIUM"] === undefined
