@@ -50,6 +50,8 @@ interface CanvasApplicationLifetimeOptions {
 	/** Restore write admission when quiescing fails and the canvas stays up. */
 	readonly resume?: () => Promise<void> | void;
 	readonly observe?: (event: CanvasApplicationEvent) => void;
+	/** Hear why startup failed while every acquired resource, the log included, still runs. */
+	readonly onStartupFailure?: (error: unknown) => void;
 }
 
 class CanvasApplicationStartupCancelledError extends Error {
@@ -341,6 +343,7 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 			throw startupError;
 		}
 		let combined = failure(startupError);
+		options.onStartupFailure?.(startupError);
 		startup.abort("startup-failed");
 		setPhase("stopping");
 		try {
