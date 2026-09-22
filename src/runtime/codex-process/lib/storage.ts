@@ -20,6 +20,7 @@ import {
 	type CodexStorageInput,
 	type PreparedCodexStorage,
 } from "@/runtime/codex-process/lib/storage-contract";
+import { acquireLock } from "@/runtime/codex-process/lib/storage-lock";
 import {
 	absolutePath,
 	fsyncDirectory,
@@ -31,80 +32,6 @@ import {
 /** The file-system seam storage preparation runs against, injected by tests. */
 interface CodexStoragePreparationOptions {
 	readonly fileSystem?: CodexStorageFileSystem;
-}
-
-/**
- * Build the lock-release retry for a lock file that is still held, so a caller can
- * release it explicitly after a failure.
- * @param lockPath - The lock file.
- * @param fileSystem - The file-system seam.
- * @returns The release retry, or undefined when there is nothing to release.
- */
-function lockRetryCleanup(
-	lockPath: string,
-	fileSystem: CodexStorageFileSystem,
-): (() => void) | undefined {
-	try {
-		fileSystem.unlinkSync(lockPath);
-		return undefined;
-	} catch {
-		let released = false;
-		return () => {
-			if (released) return;
-			fileSystem.unlinkSync(lockPath);
-			released = true;
-		};
-	}
-}
-
-/**
- * Take the exclusive owner lock inside CODEX_HOME.
- * @param codexHome - The canonical CODEX_HOME.
- * @param fileSystem - The file-system seam.
- * @returns The idempotent release.
- */
-function acquireLock(codexHome: string, fileSystem: CodexStorageFileSystem): () => void {
-	const lockPath = path.join(codexHome, ".archboard-codex-process.lock");
-	let descriptor: number | undefined;
-	let created = false;
-	try {
-		descriptor = fileSystem.openSync(lockPath, "wx", 0o600);
-		created = true;
-		fileSystem.writeFileSync(descriptor, `${process.pid}\n`, { encoding: "utf8" });
-		fileSystem.closeSync(descriptor);
-		descriptor = undefined;
-	} catch (cause) {
-		if (descriptor !== undefined) {
-			try {
-				fileSystem.closeSync(descriptor);
-			} catch {
-				/* Preserve the primary lock failure. */
-			}
-		}
-		const retryCleanup = created ? lockRetryCleanup(lockPath, fileSystem) : undefined;
-		throw failure(
-			"lock",
-			lockPath,
-			`Dedicated Codex roots are locked or colliding at ${codexHome}. Stop the other owner before retrying.`,
-			cause,
-			retryCleanup,
-		);
-	}
-	let released = false;
-	return () => {
-		if (released) return;
-		try {
-			fileSystem.unlinkSync(lockPath);
-			released = true;
-		} catch (cause) {
-			throw failure(
-				"lock",
-				lockPath,
-				`Could not release the dedicated Codex root lock ${lockPath}.`,
-				cause,
-			);
-		}
-	};
 }
 
 /**
@@ -307,8 +234,57 @@ function existingConfig(
 }
 
 /**
- * Ensure the canonical config is on disk: keep a matching one, refuse a
- * conflicting one, publish and re-read a missing one.
+ * Whether a config is archboard's own one-line form naming a sqlite home that
+ * no longer exists: what is left when the state directory holding both homes
+ * was moved, since the config records the sqlite home as an absolute path.
+ * Anything else, including our form naming a directory that still exists, is
+ * somebody's config or a second store, and is refused.
+ * @param configText - The config on disk.
+ * @param fileSystem - The file-system seam.
+ * @returns True when the config only points at where the sqlite home used to be.
+ */
+function namesMovedSqliteHome(configText: string, fileSystem: CodexStorageFileSystem): boolean {
+	const previous = ownConfigSqliteHome(configText);
+	if (previous === undefined) return false;
+	try {
+		fileSystem.lstatSync(previous);
+		return false;
+	} catch (cause) {
+		return errnoCode(cause) === "ENOENT";
+	}
+}
+
+/**
+ * The sqlite home a config names, when the config is exactly the one line
+ * `configTextFor` writes for an absolute path.
+ * @param configText - The config on disk.
+ * @returns The absolute sqlite home, or undefined for any other content.
+ */
+function ownConfigSqliteHome(configText: string): string | undefined {
+	const quoted = /^sqlite_home = ("(?:[^"\\]|\\.)*")\n$/.exec(configText)?.[1];
+	const previous = quoted === undefined ? undefined : parsedString(quoted);
+	if (previous === undefined || !path.isAbsolute(previous)) return undefined;
+	return configTextFor(previous) === configText ? previous : undefined;
+}
+
+/**
+ * Decode a JSON string literal.
+ * @param quoted - The literal, quotes included.
+ * @returns The string, or undefined when it is not a valid string literal.
+ */
+function parsedString(quoted: string): string | undefined {
+	try {
+		const value: unknown = JSON.parse(quoted);
+		return typeof value === "string" ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Ensure the canonical config is on disk: keep a matching one, follow one the
+ * state directory's move left naming the old sqlite home, refuse any other,
+ * publish and re-read a missing one.
  * @param configPath - The config path.
  * @param configText - The canonical config bytes.
  * @param codexHome - The directory that receives the config.
@@ -320,16 +296,14 @@ function ensureCanonicalConfig(
 	codexHome: string,
 	fileSystem: CodexStorageFileSystem,
 ): void {
-	const existing = existingConfig(configPath, fileSystem);
-	if (existing !== undefined) {
-		if (existing.toString("utf8") !== configText)
-			throw failure(
-				"config_conflict",
-				configPath,
-				`Pre-existing Codex config ${configPath} conflicts with the canonical sqlite_home. Refusing to overwrite it.`,
-			);
-		return;
-	}
+	const existing = existingConfig(configPath, fileSystem)?.toString("utf8");
+	if (existing === configText) return;
+	if (existing !== undefined && !namesMovedSqliteHome(existing, fileSystem))
+		throw failure(
+			"config_conflict",
+			configPath,
+			`Pre-existing Codex config ${configPath} conflicts with the canonical sqlite_home. Refusing to overwrite it.`,
+		);
 	writeConfigAtomically(configPath, configText, codexHome, fileSystem);
 	verifyOwnedRegularFile(configPath, "Codex config", fileSystem);
 	const published = Buffer.from(fileSystem.readFileSync(configPath)).toString("utf8");
