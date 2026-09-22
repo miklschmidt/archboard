@@ -10,7 +10,8 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 
 import { panePresentations } from "@/server/canvas/lib/pane-presentation";
-import { bodyOf } from "@/server/canvas/lib/request-board";
+import { paneFromRequest } from "@/server/canvas/lib/pane-registry";
+import { bodyOf, messageOf } from "@/server/canvas/lib/request-board";
 
 /** What one request names: the pane, the walkthrough by id, and the beat from zero. */
 const PanePresentBodySchema = z
@@ -38,7 +39,25 @@ async function presentPaneRoute(req: Request, res: Response): Promise<void> {
 		return;
 	}
 	const { pane, walkthrough, beat } = parsed.data;
-	const outcome = await panePresentations.present({ paneId: pane, walkthrough, beat });
+	// The pane is resolved here, as every route resolves one: the port itself takes the
+	// exact client id, because a shell id may name a pane in more than one browser. A pane
+	// the resolver cannot name — none, or two browsers' — is the same refusal, with its words.
+	let named: ReturnType<typeof paneFromRequest>;
+	try {
+		named = paneFromRequest(pane);
+	} catch (error) {
+		res.status(409).json({
+			success: false,
+			code: "NO_PANE",
+			error: messageOf(error),
+			outcome: { kind: "refused", reason: "no_pane" },
+		});
+		return;
+	}
+	const outcome =
+		named === null
+			? { kind: "refused" as const, reason: "no_pane" as const }
+			: await panePresentations.present({ clientId: named.clientId, walkthrough, beat });
 	if (outcome.kind === "refused") {
 		res.status(409).json({ success: false, code: outcome.reason.toUpperCase(), outcome });
 		return;

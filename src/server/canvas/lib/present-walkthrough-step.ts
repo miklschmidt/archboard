@@ -23,6 +23,8 @@ import type { PanePresentations, PresentOutcome } from "@/server/canvas/lib/pane
 
 /** What one pane is showing, as far as presenting a step needs to know. */
 interface PresentedPane {
+	/** The pane's client id, which the step is asked of: exact where a shell id is not. */
+	readonly clientId: string;
 	/** The board on screen, by name. */
 	readonly board: string;
 	/** The variant on screen, by id or name; undefined for whichever is current. */
@@ -209,6 +211,8 @@ function refusalFor(
 
 /** A step the board has, settled from what the pane is showing. */
 interface SettledStep {
+	/** The pane showing it, by client id. */
+	readonly clientId: string;
 	readonly board: SemanticBoard;
 	readonly content: VariantContent;
 	readonly walkthrough: SemanticWalkthrough;
@@ -278,7 +282,7 @@ function settleStep(
 	const beat = walkthrough.beats[step - 1];
 	return beat === undefined
 		? refused("invalid_call", noSuchStep(walkthrough, step, request.input.step === undefined))
-		: { ...shown, walkthrough, beat, step };
+		: { clientId: pane.clientId, ...shown, walkthrough, beat, step };
 }
 
 /**
@@ -350,7 +354,7 @@ async function presentWalkthroughStep(
 		return settled;
 	}
 	const outcome = await parts.presentations.present({
-		paneId: request.paneId,
+		clientId: settled.clientId,
 		walkthrough: settled.walkthrough.id,
 		beat: settled.step - 1,
 		signal: request.signal,
