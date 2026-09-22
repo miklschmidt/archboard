@@ -57,7 +57,7 @@ function showPaneRoute(req: Request, res: Response): void {
 	// to hear it from here: the pane's own registration will say the same thing a
 	// moment later, and until it does an agent would answer about the old board.
 	publishPaneContext(pane.clientId, "focus");
-	logger.info(`Pane ${pane.paneId} shows ${key}`);
+	logger.info(`Pane ${pane.paneId} (${pane.clientId}) shows ${key}`);
 	res.json({ success: true, board: key, identity, paneId: pane.paneId, ...paneResponse(pane) });
 }
 

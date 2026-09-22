@@ -18,8 +18,8 @@ function harness(live = true) {
 	const sent: PanePresentRequest[] = [];
 	const changes: UserPresentationChange[] = [];
 	const port = createPanePresentations({
-		paneFor: (paneId) =>
-			live && paneId === "pane-a" ? { clientId: "client-a", board: "pipeline" } : null,
+		paneFor: (clientId) =>
+			live && clientId === "client-a" ? { clientId: "client-a", board: "pipeline" } : null,
 		send(_pane, message) {
 			sent.push(message);
 			return true;
@@ -63,7 +63,7 @@ function at(beat: number, arrived: boolean, answering: string | null): SemanticP
 describe("a walkthrough step asked of a pane", () => {
 	test("is answered only once the pane says that request's step has arrived", async () => {
 		const { port, sent, says, changes } = harness();
-		const asked = port.present({ paneId: "pane-a", walkthrough: "w1", beat: 2 });
+		const asked = port.present({ clientId: "client-a", walkthrough: "w1", beat: 2 });
 		const request = sent[0]!.request;
 		expect(sent[0]).toMatchObject({ type: "pane_present", walkthrough: "w1", beat: 2 });
 		// Still where a user left it, then on its way: neither is an answer.
@@ -78,7 +78,7 @@ describe("a walkthrough step asked of a pane", () => {
 	test("is refused when a user steps by hand while it is on its way, and the change is told", async () => {
 		const { port, sent, says, changes } = harness();
 		says(at(0, true, null));
-		const asked = port.present({ paneId: "pane-a", walkthrough: "w1", beat: 1 });
+		const asked = port.present({ clientId: "client-a", walkthrough: "w1", beat: 1 });
 		says(at(1, false, sent[0]!.request));
 		says(at(3, true, null));
 		expect(await asked).toEqual({ kind: "refused", reason: "person_took_over" });
@@ -99,7 +99,7 @@ describe("a walkthrough step asked of a pane", () => {
 	test("asked to leave is answered when the pane presents nothing, and that is not a user leaving", async () => {
 		const { port, sent, says, changes } = harness();
 		says(at(2, true, null));
-		const asked = port.present({ paneId: "pane-a", walkthrough: null, beat: 0 });
+		const asked = port.present({ clientId: "client-a", walkthrough: null, beat: 0 });
 		expect(sent[0]).toMatchObject({ walkthrough: null });
 		says(null);
 		expect(await asked).toEqual({ kind: "left" });
@@ -108,13 +108,13 @@ describe("a walkthrough step asked of a pane", () => {
 
 	test("is refused for a pane that has gone, when replaced by a later request, and when the caller stops waiting", async () => {
 		expect(
-			await harness(false).port.present({ paneId: "pane-a", walkthrough: "w1", beat: 0 }),
+			await harness(false).port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 }),
 		).toEqual({ kind: "refused", reason: "no_pane" });
 		const { port } = harness();
-		const first = port.present({ paneId: "pane-a", walkthrough: "w1", beat: 0 });
+		const first = port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 });
 		const stop = new AbortController();
 		const second = port.present({
-			paneId: "pane-a",
+			clientId: "client-a",
 			walkthrough: "w1",
 			beat: 1,
 			signal: stop.signal,
@@ -122,7 +122,7 @@ describe("a walkthrough step asked of a pane", () => {
 		expect(await first).toEqual({ kind: "refused", reason: "superseded" });
 		stop.abort();
 		expect(await second).toEqual({ kind: "refused", reason: "cancelled" });
-		const stopping = port.present({ paneId: "pane-a", walkthrough: "w1", beat: 2 });
+		const stopping = port.present({ clientId: "client-a", walkthrough: "w1", beat: 2 });
 		port.forget();
 		expect(await stopping).toEqual({ kind: "refused", reason: "stopping" });
 	});

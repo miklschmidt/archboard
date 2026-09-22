@@ -81,7 +81,9 @@ function canvas(outcome: Awaited<ReturnType<PresentStepParts["presentations"]["p
 			},
 		},
 		paneShowing: (paneId) =>
-			paneId === "pane-a" ? { board: "pipeline", variant: undefined, presenting: null } : null,
+			paneId === "pane-a"
+				? { clientId: "client-a", board: "pipeline", variant: undefined, presenting: null }
+				: null,
 		readBoard: (name) => (name === "pipeline" ? BOARD : null),
 	};
 	return { parts, asked };
@@ -119,7 +121,7 @@ describe("a walkthrough step presented for a narrator", () => {
 			parts,
 			request({ step: 2, walkthrough: "for the board" }),
 		);
-		expect(asked).toMatchObject([{ paneId: "pane-a", walkthrough: "w1", beat: 1 }]);
+		expect(asked).toMatchObject([{ clientId: "client-a", walkthrough: "w1", beat: 1 }]);
 		expect(outcome).toEqual({
 			tag: "ok",
 			value: {

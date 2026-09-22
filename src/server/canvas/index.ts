@@ -14,7 +14,7 @@ export { canonicalContextFromBrief } from "@/server/canvas/lib/codex-semantic-in
 // arrives by. The agent host reads the feed; every write announces through the
 // broadcast. They are one path with two ends, and the module says so here
 // rather than leaving each end private to whoever found it first.
-export { broadcast } from "@/server/canvas/lib/pane-registry";
+export { broadcast, panes } from "@/server/canvas/lib/pane-registry";
 export { semanticChangeFeed, settledChangeFields } from "@/server/canvas/lib/semantic-change-feed";
 export type {
 	SettledAnnouncement,
@@ -27,6 +27,7 @@ export {
 } from "@/server/canvas/lib/semantic-pane-context";
 export {
 	createPanePresentations,
+	panePresentations,
 	type PanePresentations,
 	type UserPresentationChange,
 	type PresentOutcome,
@@ -35,7 +36,14 @@ export {
 	presentWalkthroughStep,
 	type PresentStepParts,
 } from "@/server/canvas/lib/present-walkthrough-step";
-export { nextCountsFrom } from "@/server/canvas/lib/walkthrough-narration";
+export {
+	bindVoicePane,
+	narrationFor,
+	nextCountsFrom,
+	noteNarratedWalkthrough,
+	presentStepInCanvasPane,
+	subscribeNarrationChanges,
+} from "@/server/canvas/lib/walkthrough-narration";
 export { createNarrationTiming } from "@/server/canvas/lib/narration-timing";
 export { createVoiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
 export { watchTranscriptChanges } from "@/server/canvas/lib/transcript-changes";
