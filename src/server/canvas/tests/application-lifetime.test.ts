@@ -65,12 +65,16 @@ describe("canvas application lifetime", () => {
 					},
 				},
 			],
+			onStartupFailure: (error) => {
+				actions.push(`failed:${(error as Error).message}`);
+			},
 		});
 
 		await expect(failed.start()).rejects.toThrow("codex failed");
 		expect(failed.phase()).toBe("failed");
 		expect(failed.cleanupProven()).toBeTrue();
-		expect(actions).toEqual(["stop:codex", "stop:engine"]);
+		// The failure is heard while the log it is written to is still open.
+		expect(actions).toEqual(["failed:codex failed", "stop:codex", "stop:engine"]);
 
 		const replacement = createCanvasApplicationLifetime({
 			resources: [{ name: "engine", stop: () => undefined }],
