@@ -35,11 +35,15 @@ measured output has stayed below speaking level for `RECORDING_QUIET_MS`.
   voice that stops all fail the recording with what happened. A silent step in
   a video is worse than no video.
 
-A recording start differs from a narration start in three ways. The voice model
-gets its own prompt section: the talk is recorded, nobody answers, it explains
-each step as it lands and stops talking, since silence is what moves the
-screen on. The Realtime API's delegation filler is off. And the server opens no
-step itself, because the page begins capturing before it steps.
+A recording start differs from a narration start in four ways. The voice model
+gets the voice's persona and a recording section, and none of the conversation
+rules: the talk is recorded, nobody answers, it explains each step as it lands
+and stops talking, since silence is what moves the screen on. The coordinator
+gets its own rule for the session: a recording holds the voice, so it writes
+only quiet commentary, and a workhorse outcome that arrives meanwhile is
+injected into its thread instead of spoken into the video. The Realtime API's
+delegation filler is off. And the server opens no step itself, because the page
+begins capturing before it steps.
 
 ## The page records itself
 
@@ -69,15 +73,24 @@ and the recorder drives it through one global (`@/shared/walkthrough-recording`)
 The voice needs a signed-in Codex, and a canvas's Codex home is held by one
 app-server at a time. So a recording runs on the canvas the CLI already talks
 to, in a private headless Chromium the recorder owns (ADR 0020), and not on a
-second canvas of its own. Its pane registers as nobody's primary or focused
-pane, since that canvas may be in use in another browser. A recording start is
+second canvas of its own. That canvas may be in use in another browser, so the
+recording page's pane registers as a recording's and the canvas leaves it out of
+everything that picks a pane for somebody who did not name it: `browser` pane
+addressing and listing, the pane count, a new tab's board and the coordinator's
+notion of the pane the user looks at. The server still reaches it by its client
+id. Other browsers do not subtitle a recording's words. A recording start is
 refused while voice is live on the canvas: the canvas has one voice session, and
-recording must never stop somebody who is talking.
+recording must never stop somebody who is talking. The reverse is allowed:
+starting voice anywhere on the canvas ends a recording, and the recording says
+so when it fails.
 
 ## A board made to be recorded can be discarded
 
 `--discard` deletes the board once its recording is written; a failed recording
 keeps it, so it can be recorded again. Deleting goes through the store under the
-board's lease with a stated doing, like every write, and checks a version the
-caller states. There is no command that deletes a board otherwise: a board is
-discarded because it was made to be recorded, not tidied away.
+board's lease with a stated doing, like every write, and states the version the
+command read before it recorded, so a board somebody changed meanwhile is kept.
+A discard that is refused leaves the recording answered: the file is written,
+and the receipt says the board was not discarded and why. There is no command
+that deletes a board otherwise: a board is discarded because it was made to be
+recorded, not tidied away.
