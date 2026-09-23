@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-23 14:37'
-updated_date: '2026-09-23 14:49'
+updated_date: '2026-09-23 14:50'
 labels:
   - code-target
   - frontend
@@ -44,6 +44,8 @@ A node's binding may name a branch or a commit beside its repository and path (b
 
 <!-- SECTION:NOTES:BEGIN -->
 Commits bb9d5d95 and 90d... (narrowing fix). Owners: resolution.test.ts (no pin, bound branch, abbreviated bound commit open plainly; another branch, a commit over a branch and a detached HEAD name both refs), activation-contract.test.ts (GitHub refusal with the href at release%2F2.1 and no launch; the bound branch opens with no otherRef; a git.example.com repository opens locally with otherRef), activation.test.ts (openedNotice and the info kind). bun run check exit 0 (modules 3376, system 178, repository, browser). The frontend is rebuilt; a canvas restart picks up the server side. Not looked at in a real browser: the notice is the existing code-target notice in the default tone.
+
+Correction: the narrowing fix is commit 73e166e2.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
