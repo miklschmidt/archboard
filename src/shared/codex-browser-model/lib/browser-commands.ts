@@ -195,10 +195,11 @@ function createBrowserCommandSchemas(
 				/**
 				 * Start voice to present one walkthrough of the board this pane is showing
 				 * (TASK-251). Only the walkthrough is the browser's to name; the server reads
-				 * what it says from the board.
+				 * what it says from the board. A recording (TASK-304) is a narration nobody is
+				 * listening to live, which the page paces itself.
 				 */
 				presentation: z
-					.object({ walkthrough: boundedText(64) })
+					.object({ walkthrough: boundedText(64), recording: z.literal(true).optional() })
 					.strict()
 					.optional(),
 			})
