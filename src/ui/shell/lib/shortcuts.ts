@@ -37,4 +37,4 @@ function isPresentShortcut(event: KeyboardEvent): boolean {
 	);
 }
 
-export { isPresentShortcut, presentShortcutLabel };
+export { isPresentShortcut, presentShortcutLabel, usesCommandKey };

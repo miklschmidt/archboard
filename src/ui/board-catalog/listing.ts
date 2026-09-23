@@ -5,57 +5,64 @@
 
 import { asksForDesignation } from "@/shared/semantic-board/index";
 import { boardAddressOf, boardKeyFor, sameBoardName } from "@/ui/semantic-board-canvas";
-import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
-import type { BoardListing, BrowserPaneListing } from "@/ui/types";
+import type { SemanticBoardEntry, SemanticBoardListing } from "@/ui/semantic-board-canvas";
+import type { BoardListing, BrowserPaneListing, CatalogBoard, ListedVariant } from "@/ui/types";
 
 /** The listing before either half has been read. */
-const EMPTY_LISTING: BoardListing = Object.freeze({ boards: [], onScreen: [] });
+const EMPTY_LISTING: BoardListing = Object.freeze({ boards: [], levels: [], onScreen: [] });
 
 /**
- * The vault half, empty until it has been read. An unread vault is not an
- * empty one, which is why the navigator asks the query whether it is pending
- * rather than reading anything into a vault with no boards in it.
- * @param boards The vault's boards, or undefined while unread.
- * @returns The listed boards.
+ * One board as the shell lists it: every variant carries the key a pane opens
+ * it by, bare for the variant the board's name opens.
+ * @param board The board as the vault lists it.
+ * @returns The listed board.
  */
-function vaultHalf(boards: readonly SemanticBoardEntry[] | undefined): BoardListing["boards"] {
-	return (boards ?? []).flatMap((board) =>
-		board.variants.length === 0
-			? [
-					{
-						key: board.key,
-						identity: { board: board.name, variant: "Unavailable" },
-						...(board.level === undefined ? {} : { level: board.level }),
-						...(board.error === undefined ? {} : { error: board.error }),
-					},
-				]
-			: board.variants.map((variant) => ({
-					key: boardKeyFor(board.key, variant.id === board.opens ? undefined : variant.id),
-					identity: { board: board.name, variant: variant.name },
-					...(board.level === undefined ? {} : { level: board.level }),
-					variant,
-				})),
-	);
+function catalogBoard(board: SemanticBoardEntry): CatalogBoard {
+	return {
+		...board,
+		variants: board.variants.map((variant): ListedVariant => ({
+			...variant,
+			key: boardKeyFor(board.key, variant.id === board.opens ? undefined : variant.id),
+		})),
+	};
 }
 
 /**
- * The listing the shell reads, from whichever halves have been read.
- * @param boards The vault's boards, or undefined while unread.
+ * The listing the shell reads, from whichever halves have been read. An unread
+ * vault is not an empty one, which is why the navigator asks the query whether
+ * it is pending rather than reading anything into a vault with no boards.
+ * @param vault The vault's listing, or undefined while unread.
  * @param panes The live panes, or undefined while unread.
  * @returns The listing.
  */
 function composeListing(
-	boards: readonly SemanticBoardEntry[] | undefined,
+	vault: SemanticBoardListing | undefined,
 	panes: BrowserPaneListing | undefined,
 ): BoardListing {
-	if (boards === undefined && panes === undefined) {
+	if (vault === undefined && panes === undefined) {
 		return EMPTY_LISTING;
 	}
-	const live = panes?.panes ?? [];
-	return {
-		boards: vaultHalf(boards),
-		onScreen: live.map(({ paneId, place, board }) => ({ paneId, place, board })),
-	};
+	return { ...vaultHalf(vault), onScreen: paneHalf(panes) };
+}
+
+/**
+ * The vault half: its boards and levels, empty while unread.
+ * @param vault The vault's listing, or undefined while unread.
+ * @returns The boards and levels.
+ */
+function vaultHalf(vault: SemanticBoardListing | undefined): Omit<BoardListing, "onScreen"> {
+	return vault === undefined
+		? { boards: [], levels: [] }
+		: { boards: vault.boards.map(catalogBoard), levels: vault.levels };
+}
+
+/**
+ * The pane half: what each live pane holds, empty while unread.
+ * @param panes The live panes, or undefined while unread.
+ * @returns The panes.
+ */
+function paneHalf(panes: BrowserPaneListing | undefined): BoardListing["onScreen"] {
+	return (panes?.panes ?? []).map(({ paneId, place, board }) => ({ paneId, place, board }));
 }
 
 /**
@@ -90,29 +97,51 @@ function listingError(vault: unknown, panes: unknown, panesRead: boolean): strin
 }
 
 /**
- * The listed row for a pane address: the row the bare name opens, the current variant's for
- * `current`, or the variant named by id or name.
- * @param listing The persisted variant summaries.
+ * The listed board a name or key names.
+ * @param listing The listing.
+ * @param board The board's name or key.
+ * @returns The board, or undefined when it is not listed.
+ */
+function listedBoard(listing: BoardListing, board: string): CatalogBoard | undefined {
+	return listing.boards.find((entry) => sameBoardName(entry.name, board));
+}
+
+/**
+ * The listed variant a pane address shows: the one the bare name opens, the
+ * current one for `current`, or the one named by id or name.
+ * @param board The listed board.
+ * @param wanted The variant the address asks for, or undefined for the bare name.
+ * @returns The variant, or undefined when none matches.
+ */
+function listedVariant(board: CatalogBoard, wanted: string | undefined): ListedVariant | undefined {
+	const { variants } = board;
+	if (wanted === undefined) {
+		return variants.find((variant) => variant.id === board.opens);
+	}
+	if (asksForDesignation(wanted)) {
+		return variants.find((variant) => variant.lifecycle === "current");
+	}
+	return (
+		variants.find((variant) => variant.id === wanted) ??
+		variants.find((variant) => variant.name === wanted)
+	);
+}
+
+/**
+ * The listed row for a pane address: the key of the variant it shows, so two
+ * spellings of one reading are recognised as one.
+ * @param listing The listing.
  * @param key The pane address.
- * @returns The row key, or the original address when it is not listed.
+ * @returns The variant's key, or the original address when it is not listed.
  */
 function listedBoardKey(listing: BoardListing, key: string | null): string | null {
 	const target = boardAddressOf(key);
 	if (target === null) {
 		return key;
 	}
-	const candidates = listing.boards.filter((entry) =>
-		sameBoardName(entry.identity.board, target.board),
-	);
-	const wanted = target.variant;
-	const entry =
-		wanted === undefined
-			? candidates.find((candidate) => boardAddressOf(candidate.key)?.variant === undefined)
-			: asksForDesignation(wanted)
-				? candidates.find((candidate) => candidate.variant?.lifecycle === "current")
-				: (candidates.find((candidate) => candidate.variant?.id === wanted) ??
-					candidates.find((candidate) => candidate.variant?.name === wanted));
-	return entry === undefined ? key : entry.key;
+	const board = listedBoard(listing, target.board);
+	const variant = board === undefined ? undefined : listedVariant(board, target.variant);
+	return variant?.key ?? key;
 }
 
 /**
@@ -123,10 +152,8 @@ function listedBoardKey(listing: BoardListing, key: string | null): string | nul
  * @returns True when the board has variants and no current one.
  */
 function nothingBuiltOn(listing: BoardListing, board: string): boolean {
-	const variants = listing.boards
-		.filter((entry) => sameBoardName(entry.identity.board, board))
-		.flatMap((entry) => (entry.variant === undefined ? [] : [entry.variant]));
+	const variants = listedBoard(listing, board)?.variants ?? [];
 	return variants.length > 0 && variants.every((variant) => variant.lifecycle !== "current");
 }
 
-export { EMPTY_LISTING, composeListing, listingError, listedBoardKey, nothingBuiltOn };
+export { EMPTY_LISTING, composeListing, listedBoard, listingError, listedBoardKey, nothingBuiltOn };

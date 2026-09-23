@@ -6,7 +6,6 @@ import type { CSSProperties, JSX, ReactNode } from "react";
 
 import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
 import { nothingBuiltOn } from "@/ui/board-catalog";
-import { SidebarProvider } from "@/ui/components/sidebar";
 import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
 	LivePresentation,
@@ -36,8 +35,6 @@ import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
  * is derived from the width the shell draws (ADR 0028).
  */
 const SHELL_STYLE: CSSProperties = { "--shell-navigator-width": `${NAVIGATOR_WIDTH}px` };
-/** The navigator shares --shell-navigator-width with the header wordmark section, so the rule between them runs straight. */
-const SIDEBAR_STYLE: CSSProperties = { "--sidebar-width": "var(--shell-navigator-width)" };
 
 /** Inputs for the shell. */
 interface ShellProps {
@@ -84,7 +81,7 @@ function Shell(props: ShellProps): JSX.Element {
 				actions={actions}
 				diagnostics={props.diagnostics}
 			/>
-			<SidebarProvider style={SIDEBAR_STYLE} className="min-h-0 min-w-0 flex-1">
+			<div className="flex min-h-0 min-w-0 flex-1">
 				<Navigator view={view} actions={actions} />
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 					<Notices notices={view.notices} actions={actions} />
@@ -105,7 +102,7 @@ function Shell(props: ShellProps): JSX.Element {
 						activity={props.dockActivity ?? null}
 					/>
 				</div>
-			</SidebarProvider>
+			</div>
 		</div>
 	);
 }

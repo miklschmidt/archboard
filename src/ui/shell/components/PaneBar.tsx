@@ -8,7 +8,7 @@ import { useCallback, useMemo, type JSX } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/ui/components/toggle-group";
 import type { ShellActions, ShellPane } from "@/ui/shell/types/contracts";
 import { IconButton } from "@/ui/shell/components/IconButton";
-import { paneLetter } from "@/ui/shell/lib/navigator-entries";
+import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import { clockTime } from "@/ui/shell/lib/time";

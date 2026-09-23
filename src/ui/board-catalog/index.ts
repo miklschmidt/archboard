@@ -13,7 +13,17 @@ export {
 	type BoardCatalogProviderProps,
 } from "@/ui/board-catalog/components/BoardCatalogProvider";
 export { createBoardQueryClient } from "@/ui/board-catalog/lib/query-client";
-export { listedBoardKey, nothingBuiltOn } from "@/ui/board-catalog/listing";
+export { listedBoard, listedBoardKey, nothingBuiltOn } from "@/ui/board-catalog/listing";
+export {
+	boardAncestors,
+	buildOutline,
+	pathIds,
+	type OutlineBoard,
+	type OutlineBoardNode,
+	type OutlineFolder,
+	type OutlineLink,
+	type OutlineNode,
+} from "@/ui/board-catalog/lib/outline";
 export { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
 export {
 	catalogCommandsFor,
