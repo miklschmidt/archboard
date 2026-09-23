@@ -3,7 +3,10 @@
 // What is guarded: a narration start tells the voice model which walkthrough and the
 // coordinator nothing, a long name cannot crowd out the rest of the start, and every step (the
 // first, which may land while Codex is still starting the session, and each one after) reaches
-// the voice model as speech it says, as does leaving, without a coordinator turn.
+// the voice model as speech it says, as does leaving, without a coordinator turn. A recording
+// start tells the voice model the talk is recorded in place of the narration, sends no
+// delegation filler, and hands its steps over in the words its prompt says they begin with,
+// never telling it the walkthrough was left.
 
 import { expect, test } from "bun:test";
 
@@ -41,24 +44,41 @@ function settle(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-test("a narration start names the walkthrough to the voice model and adds nothing for the coordinator", async () => {
+/** A walkthrough as a start carries it. */
+function walkthrough(recording: boolean) {
+	return { walkthrough: "w1", name: "For the board", recording };
+}
+
+test("a narration or recording start names the walkthrough to the voice model and adds nothing for the coordinator; a recording replaces the narration and sends no filler", async () => {
 	const presenting = harness();
+	const recording = harness();
 	const ordinary = harness();
 	try {
-		await started(presenting, "", { walkthrough: "w1", name: "For the board" });
+		await started(presenting, "", walkthrough(false));
+		await started(recording, "", walkthrough(true));
 		await started(ordinary);
 		const [presented] = presenting.session.starts;
+		const [recorded] = recording.session.starts;
 		const [plain] = ordinary.session.starts;
-		expect(presented?.prompt).toContain("For the board");
-		expect(presented?.prompt?.startsWith(plain?.prompt ?? "\0")).toBe(true);
+		const base = plain?.prompt ?? "\0";
 		expect(plain?.prompt).not.toContain("For the board");
-		// The coordinator gets no presentation instructions and the session opens with nothing
-		// said as the user: the first step is handed over by the host.
-		expect(presented?.realtimeStartInstructions).toBe(plain?.realtimeStartInstructions);
-		expect(presented?.initialItems).toEqual([]);
+		for (const start of [presented, recorded]) {
+			expect(start?.prompt).toContain("For the board");
+			expect(start?.prompt?.startsWith(base)).toBe(true);
+			// The coordinator gets no presentation instructions and the session opens with nothing
+			// said as the user: the first step is handed over by the host.
+			expect(start?.realtimeStartInstructions).toBe(plain?.realtimeStartInstructions);
+			expect(start?.initialItems).toEqual([]);
+		}
+		const narration = presented?.prompt?.slice(base.length).trim() ?? "";
+		expect(narration.length).toBeGreaterThan(0);
+		expect(recorded?.prompt).not.toContain(narration);
 		expect(presented?.delegationAckFiller).toBe(plain?.delegationAckFiller);
+		expect(plain?.delegationAckFiller).toBe(true);
+		expect(recorded?.delegationAckFiller).toBe(false);
 	} finally {
 		presenting.adapter.dispose();
+		recording.adapter.dispose();
 		ordinary.adapter.dispose();
 	}
 });
@@ -66,7 +86,11 @@ test("a narration start names the walkthrough to the voice model and adds nothin
 test("a start carries a walkthrough's name cut to a bound, never the whole of a runaway one", async () => {
 	const h = harness();
 	try {
-		await started(h, "", { walkthrough: "w1", name: "A very long name ".repeat(500) });
+		await started(h, "", {
+			walkthrough: "w1",
+			name: "A very long name ".repeat(500),
+			recording: false,
+		});
 		const plain = harness();
 		try {
 			await started(plain);
@@ -85,10 +109,7 @@ test("each step and leaving reach the voice model as speech, the first once the 
 	const source = changeSource();
 	const h = harness(undefined, source);
 	const browser = correlation();
-	const answer = h.adapter.createOffer(
-		{ ...browser, sdp: "offer-sdp" },
-		{ walkthrough: "w1", name: "For the board" },
-	);
+	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, walkthrough(false));
 	try {
 		// The first step lands on screen while Codex is still starting the session.
 		source.fire({ kind: "stepped", step: 1, of: 2, heading: "All of it", body: "Three parts." });
@@ -115,6 +136,8 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		const said = h.session.speeches.map((speech) => speech.text);
 		expect(said).toHaveLength(3);
 		expect(said[0]).toContain("All of it");
+		// A step begins with the words the narration prompt says it begins with.
+		expect(h.session.starts[0]?.prompt).toContain(`"${leadIn(said[0])}"`);
 		expect(said[1]).toContain("One writer");
 		expect(said[1]).toContain("It owns writes.");
 		expect(h.session.speeches.every((speech) => speech.threadId === h.coordinatorThreadId)).toBe(
@@ -131,6 +154,33 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		const stopped = h.adapter.stop(browser);
 		expect(source.listeners.size).toBe(0);
 		await stopped;
+	} finally {
+		h.adapter.dispose();
+	}
+});
+
+/**
+ * The words a handed-over step begins with, up to its first colon.
+ * @param speech What the voice model was handed.
+ * @returns The lead-in.
+ */
+function leadIn(speech: string | undefined): string {
+	return speech?.slice(0, speech.indexOf(":")) ?? "";
+}
+
+test("a recording's steps reach the voice model in the words its prompt names, and leaving it is never told", async () => {
+	const source = changeSource();
+	const h = harness(undefined, source);
+	try {
+		await started(h, "", walkthrough(true));
+		source.fire({ kind: "stepped", step: 1, of: 2, heading: "All of it", body: "Three parts." });
+		source.fire({ kind: "left" });
+		await settle();
+		const said = h.session.speeches.map((speech) => speech.text);
+		expect(said).toHaveLength(1);
+		expect(said[0]).toContain("All of it");
+		expect(h.session.starts[0]?.prompt).toContain(`"${leadIn(said[0])}"`);
+		expect(h.session.texts).toHaveLength(0);
 	} finally {
 		h.adapter.dispose();
 	}
