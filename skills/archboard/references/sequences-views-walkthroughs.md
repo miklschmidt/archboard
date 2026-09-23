@@ -91,9 +91,10 @@ a `body`, optional `subjects` and an optional `view`.
   beat id from another walkthrough is refused. When a subject a beat names is
   removed, point the beat at its successor in the same batch.
 
-A beat is read beside the picture, and in a recording its heading and body are
-all the voice is given: it never sees the subjects, the view or what a
-comparison marks. Write each beat so:
+A beat is read beside the picture, and the voice explains it from its heading,
+its body and its subjects, told on a proposal whether each subject was added or
+changed. The voice never sees the view, or a change the beat does not name.
+Write each beat so:
 
 - It makes one point, in the order the reader needs the points.
 - Its heading states the point, what happens or what holds ("Only the ledger
@@ -115,8 +116,8 @@ each beat: MP4 or WebM, by the file's extension. Each beat moves on once the
 voice has finished explaining it. The caption shows the beat's heading and
 body, and the voice explains them in its own words rather than reading them
 out, so write a body that can be explained in a few sentences. The voice is
-given only the heading and the body: a part a beat highlights, or a change the
-comparison marks, is spoken about only when the body names it.
+also told the beat's subjects and, on a proposal, how each was added or
+changed; a change that no beat names is not spoken about.
 
 - `--walkthrough <name>` picks one when the variant states several, and
   `--variant` and `--theme dark` choose what is drawn.
@@ -158,8 +159,8 @@ updated through their usual recipe, never through this one.
    - Then the change that matters most, then each other change in its own
      beat. A change's heading says what the pull request did ("The ledger now
      takes the lease"); a heading that was already true on `main` describes
-     the code, not the change. The comparison's marks are not spoken, so the
-     body says what was added, changed or removed.
+     the code, not the change. A removed part cannot be a subject, so the body
+     names what the pull request removed.
    - The last beat says where a reviewer should look closely, such as a seam
      or an invariant the change relies on, and what to check there: a place to
      look, not a verdict on the code.

@@ -493,12 +493,12 @@ function removedFrom<Entity>(changes: ReadonlyMap<string, SubjectChange<Entity>>
 }
 
 /**
- * How one subject stands, by id, whichever kind it is.
+ * How one subject changed, by id, whichever kind it is.
  * @param comparison What the variant changed.
  * @param id The subject's identity.
- * @returns Its standing, or "unchanged" for a subject the comparison never saw.
+ * @returns Its change, or undefined for a subject the comparison never saw.
  */
-function standingOf(comparison: VariantComparison, id: string): ChangeKind {
+function changeOf(comparison: VariantComparison, id: string): SubjectChange<unknown> | undefined {
 	for (const changes of [
 		comparison.nodes,
 		comparison.edges,
@@ -509,10 +509,20 @@ function standingOf(comparison: VariantComparison, id: string): ChangeKind {
 	]) {
 		const change = changes.get(id);
 		if (change !== undefined) {
-			return change.kind;
+			return change;
 		}
 	}
-	return "unchanged";
+	return undefined;
+}
+
+/**
+ * How one subject stands, by id, whichever kind it is.
+ * @param comparison What the variant changed.
+ * @param id The subject's identity.
+ * @returns Its standing, or "unchanged" for a subject the comparison never saw.
+ */
+function standingOf(comparison: VariantComparison, id: string): ChangeKind {
+	return changeOf(comparison, id)?.kind ?? "unchanged";
 }
 
 export {
@@ -522,6 +532,7 @@ export {
 	type FieldChange,
 	type SubjectChange,
 	type VariantComparison,
+	changeOf,
 	compareVariants,
 	withRemoved,
 	standingOf,

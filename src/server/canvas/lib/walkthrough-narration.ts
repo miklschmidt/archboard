@@ -15,13 +15,15 @@ import { addressablePanes, type PaneRegistration } from "@/runtime/engine/panes"
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import {
 	addressedVariant,
+	type SemanticBoard,
+	type SemanticVariant,
 	type SemanticWalkthrough,
-	type VariantContent,
 } from "@/shared/semantic-board/index";
 import {
 	panePresentations,
 	type UserPresentationChange,
 } from "@/server/canvas/lib/pane-presentation";
+import { narratedSubjects } from "@/server/canvas/narrated-subjects";
 import { paneBoardOf, panes } from "@/server/canvas/lib/pane-registry";
 import { semanticPaneContextFor } from "@/server/canvas/lib/semantic-pane-context";
 
@@ -85,35 +87,36 @@ function showingOf(
 	return { board: identity.board, variant: statedVariant(identity) };
 }
 
-/**
- * The variant content one pane is showing, read from the vault.
- * @param clientId The pane's client id.
- * @returns The content, or null when the pane shows nothing that can be read.
- */
-function contentOn(clientId: string): VariantContent | null {
-	const showing = showingOf(clientId);
-	if (showing === null) {
-		return null;
-	}
-	const read = readSemanticBoard(showing.board);
-	if (!read.ok) {
-		return null;
-	}
-	const opened = addressedVariant(read.board, showing.variant);
-	return opened.ok ? opened.variant.content : null;
+/** One walkthrough of the board a pane is showing, with the board and variant it belongs to. */
+interface ShownWalkthrough {
+	readonly board: SemanticBoard;
+	readonly variant: SemanticVariant;
+	readonly walkthrough: SemanticWalkthrough;
 }
 
 /**
- * One walkthrough of the board one browser's pane is showing.
+ * One walkthrough of the board one browser's pane is showing, read from the vault.
  * @param clientId The pane's client id.
  * @param walkthroughId The walkthrough's id.
  * @returns The walkthrough, or undefined when that pane's board does not state it.
  */
-function walkthroughOnPane(
-	clientId: string,
-	walkthroughId: string,
-): SemanticWalkthrough | undefined {
-	return contentOn(clientId)?.walkthroughs.find((one) => one.id === walkthroughId);
+function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkthrough | undefined {
+	const showing = showingOf(clientId);
+	if (showing === null) {
+		return undefined;
+	}
+	const read = readSemanticBoard(showing.board);
+	if (!read.ok) {
+		return undefined;
+	}
+	const opened = addressedVariant(read.board, showing.variant);
+	if (!opened.ok) {
+		return undefined;
+	}
+	const walkthrough = opened.variant.content.walkthroughs.find((one) => one.id === walkthroughId);
+	return walkthrough === undefined
+		? undefined
+		: { board: read.board, variant: opened.variant, walkthrough };
 }
 
 /** The walkthrough each voice-linked pane is narrating, by pane id. */
@@ -140,7 +143,7 @@ function narrationFor(
 	walkthroughId: string,
 	recording: boolean,
 ): RealtimePresentation {
-	const walkthrough = walkthroughOnPane(clientId, walkthroughId);
+	const walkthrough = walkthroughOnPane(clientId, walkthroughId)?.walkthrough;
 	if (walkthrough === undefined) {
 		throw new Error("The pane is not showing a board that states that walkthrough.");
 	}
@@ -166,17 +169,18 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 	if (said === null) {
 		return { kind: "left" };
 	}
-	const walkthrough = walkthroughOnPane(change.clientId, said.walkthrough);
-	const beat = walkthrough?.beats[said.beat];
-	if (walkthrough === undefined || beat === undefined) {
+	const shown = walkthroughOnPane(change.clientId, said.walkthrough);
+	const beat = shown?.walkthrough.beats[said.beat];
+	if (shown === undefined || beat === undefined) {
 		return null;
 	}
 	return {
 		kind: "stepped",
 		step: said.beat + 1,
-		of: walkthrough.beats.length,
+		of: shown.walkthrough.beats.length,
 		heading: beat.heading,
 		body: beat.body,
+		subjects: narratedSubjects(shown.board, shown.variant, beat),
 	};
 }
 
