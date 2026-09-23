@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 03:21'
-updated_date: '2026-09-23 04:59'
+updated_date: '2026-09-23 05:27'
 labels: []
 dependencies:
   - TASK-302.02
@@ -40,3 +40,9 @@ The workbench is a 320px bottom dock of three columns (session plumbing, a 200px
 5. Remove the dock, Agent settings, session column, side panels and their modules; geometry: the bar keeps DOCK_BAR_HEIGHT, the panel is AGENT_PANEL_WIDTH beside the panes.
 6. Verify with unit tests, a scripted fake Codex demo in the browser (running, finished, failed step, approval, signed-out sign-in and delivery, dark theme), and the browser lane owners codex-text-workbench and codex-live-voice.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Shipped: zero-config setup (src/ui/agent-setup; ports in src/ui/application/agent-setup-ports.ts), one canvas conversation (TASK-302.06), agent bar (status line, Talk, composer, panel toggle) and conversation panel (prompts, plan, activity rows with evidence, markdown answers, approvals, voice lines, held/queued work, session details). Review loop findings fixed: approvals identified by approvalId (two approvals on one call blanked the conversation), projection failures shown, live row only while its step runs, newest running turn, progress clock signs every work item, answer links open in a new tab and images are links, bar 40px + rule, panel independent of the socket, Talk Speaking from measured output, End while connecting, visible voice problem, status priority (Not sent / Could not start / Sending; Needs you keeps the turn's facts), unsettled approvals and the spoken approval line, sign-in stated once (bar; card is the API-key alternative), and the setup state machine (sign-in failures/cancel/timeout, coordinator failure, backoff waits, ordered delivery, unknown-outcome reconciliation, voice pin release, narration's gesture tab).
+<!-- SECTION:NOTES:END -->

@@ -5,13 +5,7 @@
 import type { ReactNode } from "react";
 
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
-import type {
-	AgentActivityEntry,
-	BoardIdentity,
-	BoardListing,
-	LockHolder,
-	PaneStatus,
-} from "@/ui/types";
+import type { AgentActivityEntry, BoardListing, LockHolder, PaneStatus } from "@/ui/types";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -78,13 +72,11 @@ interface RecoveryPresentation {
 type ShellPresentation = LivePresentation | RecoveryPresentation;
 
 /** The settings surfaces the header's menu reaches. */
-type SettingsSurface = "opener" | "agent";
+type SettingsSurface = "opener";
 
 /** Everything the shell renders. */
 interface ShellView {
 	theme: ThemeChoice;
-	/** The board named in the header: what the active pane is showing. */
-	current: BoardIdentity;
 	boards: BoardListing;
 	/** Why the listing could not be refreshed, or null while it is current. */
 	boardsError: string | null;

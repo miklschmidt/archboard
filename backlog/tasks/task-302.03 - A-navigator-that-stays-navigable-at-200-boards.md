@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 03:21'
-updated_date: '2026-09-23 04:59'
+updated_date: '2026-09-23 05:27'
 labels: []
 dependencies:
   - TASK-302.01
@@ -41,3 +41,9 @@ The navigator lists every board A-Z with at least two rows each (board, then a r
 5. Header breadcrumb from the outline (ancestors, board, level, shown state, not built); pane tabs only with two panes.
 6. Verify with unit tests (outline, navigator tree) and the browser lane (workspace-address, shell-layout), plus rendered captures on the work and dogfood vaults.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Shipped: outline from folders, drill parents and names (src/ui/board-catalog/lib/outline.ts); rows, filter, keys and ARIA tree (src/ui/shell/lib/{navigator-rows,outline-keys,text-match}.ts, src/ui/shell/components/{Navigator,BoardOutline,OutlineRow,NavigatorFilter,WorkingNow}.tsx); open beside via ShellActions.openBeside (use-beside-opening). Decisions: a board nests under a container it describes, else the closest coarser board that drills down to it (a container link running down the levels counts as down); long names wrap to two lines rather than truncate (the design record's 28/44px rows), so 'one row of fixed height' reads as one row per board whose height never changes with activity; a board's states follow the person's explicit choice, the board being read listing them until closed. Review loop (9 reviewers, 2026-09-23) findings fixed in ddef2525: keyboard states (Right/Left), full accessible names, single selection and one sibling group, filter count by state matches, filter-aware Left/Right, folder case folding, container direction by level, listing refresh on board version, reveal once drawn, '/' in tree, find during presentation, beside pending cleanup, 24px targets.
+<!-- SECTION:NOTES:END -->

@@ -1,6 +1,6 @@
-// The thread link's typed inputs and outputs: the one explicit link from a
-// pane to its workhorse, the host's joined candidate inventory, readiness and
-// its recoveries, the supported sign-in forms, and how one action settles.
+// The thread link's typed inputs and outputs: the canvas's one link to its
+// workhorse, the host's joined candidate inventory, recoveries, and how one
+// action settles.
 
 import type {
 	BrowserThreadCandidate,
@@ -13,8 +13,6 @@ import type {
 	ThreadLinkLoginParams,
 	ThreadLinkTransportPort,
 	WorkbenchCommandTarget,
-	WorkbenchTransportCapabilities,
-	WorkbenchTransportState,
 } from "@/ui/workbench-thread-link/transport-port";
 
 type ListedThreadLink = Exclude<BrowserThreadLink, { readonly state: "unbound" }>;
@@ -35,8 +33,6 @@ const THREAD_LINK_MODULE_COMMANDS = [
 
 /** The four Codex thread statuses a listed record can carry. */
 type ThreadLinkListedStatus = ListedThreadLink["status"];
-
-type ThreadLinkAccountFormId = ThreadLinkLoginParams["type"];
 
 /**
  * The host's own joined inventory, exactly as the workbench snapshot publishes
@@ -81,35 +77,6 @@ interface ThreadLinkRecovery {
 	readonly available: boolean;
 }
 
-type ThreadLinkReadinessArm =
-	| "stopped"
-	| "backoff"
-	| "incompatible_contract"
-	| "storage_mismatch"
-	| "reconnecting"
-	| "stale_snapshot"
-	| "initialized"
-	| "login_capable"
-	| "signed_out"
-	| "login_pending"
-	| "login_failed"
-	| "coordinator_failed"
-	| "account_ready"
-	| "thread_capable";
-
-type ThreadLinkReadinessTone = "ready" | "progress" | "blocked" | "failed";
-
-/** Where the workbench stands, with its recoveries. */
-interface ThreadLinkReadinessDisclosure {
-	readonly arm: ThreadLinkReadinessArm;
-	readonly tone: ThreadLinkReadinessTone;
-	readonly label: string;
-	readonly detail: string;
-	/** Present only on the backoff arm, which is the one arm carrying an instant. */
-	readonly retryAtMs: number | null;
-	readonly recoveries: readonly ThreadLinkRecovery[];
-}
-
 type ThreadLinkRowIntent = "attach" | "relink" | "current";
 
 /** What binding this record would disclose before anybody binds it. */
@@ -138,66 +105,6 @@ interface ThreadLinkSelection {
 	readonly summary: string;
 	readonly rows: readonly ThreadLinkRow[];
 	readonly recovery: ThreadLinkRecovery;
-}
-
-/** The offer to create a fresh workhorse. */
-interface ThreadLinkCreateOffer {
-	readonly command: "threadLinkCreate";
-	readonly label: string;
-	readonly enabled: boolean;
-	readonly blockedReason: string | null;
-}
-
-/** One field of a sign-in form. */
-interface ThreadLinkAccountField {
-	readonly name: string;
-	readonly label: string;
-	readonly description: string;
-	readonly required: boolean;
-	readonly secret: boolean;
-}
-
-/** One supported sign-in form. */
-interface ThreadLinkAccountForm {
-	readonly id: ThreadLinkAccountFormId;
-	readonly label: string;
-	readonly description: string;
-	readonly fields: readonly ThreadLinkAccountField[];
-}
-
-type ThreadLinkUnavailableAccountMethodId =
-	| "chatgptDeviceCode"
-	| "chatgptAuthTokens"
-	| "amazonBedrockProfile"
-	| "amazonBedrockEnvironment";
-
-/** A Codex sign-in method this workbench deliberately does not offer. */
-interface ThreadLinkUnavailableAccountMethod {
-	readonly id: ThreadLinkUnavailableAccountMethodId;
-	readonly label: string;
-	readonly explanation: string;
-}
-
-type ThreadLinkAccountFieldValues = Readonly<Record<string, string>>;
-
-type ThreadLinkLoginBuild =
-	| { readonly ok: true; readonly login: ThreadLinkLoginParams }
-	| { readonly ok: false; readonly reason: string };
-
-/** The account as the pane sees it. */
-interface ThreadLinkAccountDisclosure {
-	readonly state: "unknown" | "signed_out" | "login_pending" | "ready" | "failed";
-	readonly label: string;
-	readonly detail: string;
-	readonly pendingLoginId: LoginId | null;
-	/** Host-validated URL for the current pending ChatGPT sign-in only. */
-	readonly authUrl: string | null;
-	readonly forms: readonly ThreadLinkAccountForm[];
-	readonly unavailable: readonly ThreadLinkUnavailableAccountMethod[];
-	readonly canLogin: boolean;
-	readonly canCancelLogin: boolean;
-	readonly canLogout: boolean;
-	readonly blockedReason: string | null;
 }
 
 type ThreadLinkActionName =
@@ -302,38 +209,8 @@ interface ThreadLinkController {
 	) => Promise<ThreadLinkActionCompletion>;
 }
 
-/** What the panel projection reads. */
-interface ThreadLinkPanelInput {
-	readonly paneId: string;
-	readonly state: WorkbenchTransportState;
-	readonly capabilities: WorkbenchTransportCapabilities;
-	readonly hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[];
-	readonly action: ThreadLinkActionSnapshot;
-}
-
-/** Everything the thread-link panel shows. */
-interface ThreadLinkPanelSnapshot {
-	readonly paneId: string;
-	readonly readiness: ThreadLinkReadinessDisclosure;
-	readonly currentLink: {
-		readonly state: BrowserThreadLink["state"];
-		readonly label: string;
-		readonly detail: string;
-		readonly threadId: ThreadId | null;
-	};
-	readonly create: ThreadLinkCreateOffer;
-	readonly selection: ThreadLinkSelection;
-	readonly account: ThreadLinkAccountDisclosure;
-	readonly action: ThreadLinkActionSnapshot;
-}
-
 export {
 	THREAD_LINK_MODULE_COMMANDS,
-	type ThreadLinkAccountDisclosure,
-	type ThreadLinkAccountField,
-	type ThreadLinkAccountFieldValues,
-	type ThreadLinkAccountForm,
-	type ThreadLinkAccountFormId,
 	type ThreadLinkActionCompletion,
 	type ThreadLinkActionName,
 	type ThreadLinkActionSnapshot,
@@ -341,18 +218,11 @@ export {
 	type ThreadLinkController,
 	type ThreadLinkControllerOptions,
 	type ThreadLinkControllerRecoveryIntent,
-	type ThreadLinkCreateOffer,
 	type ThreadLinkHostRecovery,
 	type ThreadLinkInventory,
 	type ThreadLinkInventoryRecord,
 	type ThreadLinkListedStatus,
-	type ThreadLinkLoginBuild,
 	type ThreadLinkPaneCapture,
-	type ThreadLinkPanelInput,
-	type ThreadLinkPanelSnapshot,
-	type ThreadLinkReadinessArm,
-	type ThreadLinkReadinessDisclosure,
-	type ThreadLinkReadinessTone,
 	type ThreadLinkRecovery,
 	type ThreadLinkRecoveryIntent,
 	type ThreadLinkRecoveryOwner,
@@ -361,6 +231,4 @@ export {
 	type ThreadLinkRowIntent,
 	type ThreadLinkRowOutcome,
 	type ThreadLinkSelection,
-	type ThreadLinkUnavailableAccountMethod,
-	type ThreadLinkUnavailableAccountMethodId,
 };

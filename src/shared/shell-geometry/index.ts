@@ -3,7 +3,7 @@
 //
 // The shell is desktop-only at one viewport, so the pane a reader gets is a
 // fixed rectangle: the viewport less the navigator, the header, the pane bar
-// and the collapsed dock, less the inspector drawn over the diagram's right
+// and the agent bar, less the inspector drawn over the diagram's right
 // edge, less the fit margin on every side. The camera fits a diagram into a
 // pane with the arithmetic below; the layout suite and the measure script fit
 // it into this pane with the same arithmetic, so "fit 0.65" means the same

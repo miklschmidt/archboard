@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 03:21'
-updated_date: '2026-09-23 04:59'
+updated_date: '2026-09-23 05:27'
 labels: []
 dependencies:
   - TASK-302.03
@@ -37,3 +37,9 @@ Once the agent bar and navigator ship, the thread-link chooser, the Agent settin
 3. Record the shipped navigator and agent in docs/design/operator-canvas-shell.md with rendered captures in both themes; rewrite the voice acceptance procedure and TESTING.md.
 4. Move the browser lane owners to the new shell through shared selectors and data-slot hooks: shell-layout, workspace-address, opener-settings, codex-text-workbench, codex-live-voice.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Docs: ADR 0019 amended (one canvas link made by the first message or Talk); DESIGN.md, CONTEXT.md, AGENTS.md say the link is the canvas's; docs/design/operator-canvas-shell.md gains The navigator and The agent with rendered captures in both themes; the voice acceptance procedure and TESTING.md walk the agent bar and panel. Browser owners moved to the new shell: shell-layout (geometry incl. bar and panel), workspace-address, opener-settings, codex-text-workbench (signed-out send through sign-in to approvals), codex-live-voice (Talk through setup to live voice, voice lines, presentation). Removed: dock, Agent settings, session column, side panels, thread-link chooser, unused registry items and components.
+<!-- SECTION:NOTES:END -->

@@ -81,8 +81,6 @@ interface AgentView {
 	readonly approvalErrors: Readonly<Record<string, string>>;
 	/** When the running turn last reported anything new, or null while none runs. */
 	readonly lastProgressAtMs: number | null;
-	/** Whether subtitles are shown over the pane while voice is live. */
-	readonly subtitles: boolean;
 }
 
 /** Everything a person can do from the agent surfaces. */
@@ -99,7 +97,6 @@ interface AgentActions {
 	readonly mute: () => void;
 	readonly unmute: () => void;
 	readonly endVoice: () => void;
-	readonly toggleSubtitles: () => void;
 	/** Interrupt the running turn. */
 	readonly stop: () => void;
 	/**

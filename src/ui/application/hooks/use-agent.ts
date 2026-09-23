@@ -10,7 +10,6 @@ import type { WorkbenchHost } from "@/ui/application/hooks/use-workbench";
 import { agentActions } from "@/ui/application/lib/agent-actions";
 import type { ApprovalDecisions } from "@/ui/application/lib/workbench-owners";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import { useSubtitlesWanted } from "@/ui/voice-subtitles";
 import type { AgentActions, AgentContext, AgentView } from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench";
 import { useConversation, type Conversation } from "@/ui/workbench-runtime";
@@ -92,7 +91,6 @@ function useAgent(inputs: AgentInputs): {
 	const voiceView = useVoiceView(voice, setupSnapshot);
 	const decisions = useStore(stores.approvalDecisions);
 	const lastProgressAtMs = useStore(stores.progress);
-	const subtitles = useSubtitlesWanted();
 	const snapshot = conversation.snapshot;
 
 	const view = useMemo<AgentView>(
@@ -105,18 +103,8 @@ function useAgent(inputs: AgentInputs): {
 			busyApprovals: decisions.busy,
 			approvalErrors: decisions.errors,
 			lastProgressAtMs,
-			subtitles,
 		}),
-		[
-			setupSnapshot,
-			snapshot,
-			conversation,
-			voiceView,
-			context,
-			decisions,
-			lastProgressAtMs,
-			subtitles,
-		],
+		[setupSnapshot, snapshot, conversation, voiceView, context, decisions, lastProgressAtMs],
 	);
 	const runningTurnId = runningTurnOf(conversation);
 	const actions = useMemo(

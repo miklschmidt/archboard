@@ -6,7 +6,6 @@
 import type { AgentSetup } from "@/ui/agent-setup";
 import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
 import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
-import { subtitlePreference } from "@/ui/voice-subtitles";
 import type { AgentActions } from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench";
 import type { ConversationTurn } from "@/ui/workbench-timeline";
@@ -40,11 +39,11 @@ const NO_QUEUE: AgentActions["queue"] = Object.freeze({
 /**
  * The voice actions.
  * @param targets What they act on.
- * @returns Mute, unmute, end and the subtitles toggle.
+ * @returns Mute, unmute and end.
  */
 function voiceActions(
 	targets: AgentActionTargets,
-): Pick<AgentActions, "mute" | "unmute" | "endVoice" | "toggleSubtitles"> {
+): Pick<AgentActions, "mute" | "unmute" | "endVoice"> {
 	const { voice, releaseVoice } = targets;
 	return {
 		/** Mute the microphone. */
@@ -58,10 +57,6 @@ function voiceActions(
 		/** End voice and let it follow focus again. */
 		endVoice: () => {
 			void voice?.session.stop().then(releaseVoice);
-		},
-		/** Show or hide the subtitles. */
-		toggleSubtitles: () => {
-			subtitlePreference.change(!subtitlePreference.wanted());
 		},
 	};
 }

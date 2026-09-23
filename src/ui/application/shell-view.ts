@@ -7,10 +7,7 @@ import type { ReactNode } from "react";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type { ShellNotice, ShellPane, ShellPresentation, ShellView, ThemeChoice } from "@/ui/shell";
-import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
-
-/** What the header names while the active pane holds no board yet. */
-const NO_BOARD: BoardIdentity = Object.freeze({ board: "No board", variant: "current" });
+import type { AgentActivityEntry, BoardListing } from "@/ui/types";
 
 /** Everything the assembly reads. */
 interface ShellViewInputs {
@@ -55,7 +52,6 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	const active = recordFor(inputs.records, inputs.list.activePaneId);
 	return {
 		theme: inputs.theme,
-		current: active.status.board ?? NO_BOARD,
 		boards: inputs.boards,
 		boardsError: inputs.boardsError,
 		boardsLoading: inputs.boardsLoading,
@@ -68,4 +64,4 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	};
 }
 
-export { NO_BOARD, assembleShellView, type ShellViewInputs };
+export { assembleShellView, type ShellViewInputs };
