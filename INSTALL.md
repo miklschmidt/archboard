@@ -1,364 +1,353 @@
-# Using archboard in another repository
+# Installing archboard for other repositories
 
-Archboard is not a dependency of the repositories you diagram. They never build
-it and never import it. You install archboard once on a machine and point it at
-whatever repo you happen to be working in.
+You install archboard once on a machine. The repositories that you diagram do
+not build or import it. Setup puts a block of instructions in the `CLAUDE.md` or
+`AGENTS.md` file of a repository. If you keep the boards with the code, setup
+also puts a vault directory in the repository. The vault is the directory that
+holds the boards. Each board is one `<name>.semantic.json` file in it.
 
-Setting a repo up does put two things in it, and only two: a block in its
-`CLAUDE.md` or `AGENTS.md` saying where everything is, and, if you keep the
-boards with the code, a vault directory.
+This document is also the installation reference for agents: the installed
+skill carries a copy of it. To set up the voice loop for development of
+archboard itself, read [TESTING.md](TESTING.md).
 
-If you are setting up the voice loop rather than the tool, read
-[`TESTING.md`](TESTING.md) instead. This is the shorter, per-machine story.
+## What you need
 
-## What actually has to be true
+You need these things:
 
-Five things. The first two are once per machine. The last three are once per
-repo, and `archboard install-skill` does all three.
+- Linux or macOS, Bash, Git, and Bun 1.4 or newer. Bun must be on the `PATH` of
+  every process that runs archboard.
+- A desktop browser, to read the boards. The browser layout is for desktop
+  screens only.
+- Chromium or Google Chrome, only to draw PNG files and to record videos.
+- `ffmpeg`, only to give recorded MP4 files sound that Safari plays. It is
+  optional.
 
-1. The archboard build exists somewhere on this machine.
-2. An agent can find the CLI.
-3. A vault exists, and `ARCHBOARD_VAULT` points at it before the canvas server
-   starts. Without one the canvas refuses to start, because every board is a
-   note and there would be nowhere to put one.
-4. The agent has the skill that teaches it how to draw.
-5. The repo itself says where 2 and 3 are, because nothing else will.
+## 1. Install archboard on the machine
 
-Number 5 is the one that used to get skipped. An agent arriving in a repo can
-see the skill, so it knows archboard exists and knows the commands. It cannot
-see which vault this machine uses, and it cannot see that `archboard` is not on
-PATH here. Both of those live in the installing human's head unless the install
-writes them down.
-
-## 1. Set it up once
+Run these commands once:
 
 ```bash
-git clone <your fork> ~/Projects/archboard
+git clone https://github.com/miklschmidt/archboard.git ~/Projects/archboard
 cd ~/Projects/archboard
-bun install                 # retry if it fails extracting a tarball
-bun run build               # the UI and the server-owned renderer entry
+bun install
+bun run build
 ```
 
-The package is private and never published, so there is nothing to install from
-npm. bun runs the server and CLI from `src/`. Run `bun run build` after each
-pull because the built frontend also contains the server-owned renderer entry,
-whose source lives under `src/server/board-rendering/` (ADR 0014). **bun has to
-be on PATH**, including the PATH of anything that spawns archboard.
+If `bun install` fails while it extracts a package, run it again. `bun install`
+also installs the Codex version that archboard is pinned to, inside the
+checkout, and generates the contract for it. The canvas does not start unless
+that Codex passes its checks. A Codex on your `PATH` is not used.
 
-## 2. Put the CLI where an agent will find it
+`bun run build` builds the browser application into `dist/frontend`. Without
+it, the page tells you to run the build. The server and the CLI run from the
+TypeScript in `src/`, so nothing else is built. After each `git pull`, run
+`bun install` and `bun run build` again.
 
-Out of the box the only entry point is `./bin/canvas` inside the checkout,
-which is useless from another repo. Give it a name on your PATH:
+## 2. Put the CLI on your PATH
+
+The entry point is `bin/canvas` in the checkout. Give it the name `archboard` on
+your `PATH`, because the skill uses that name:
 
 ```bash
+mkdir -p ~/.local/bin
 ln -s ~/Projects/archboard/bin/canvas ~/.local/bin/archboard
 ```
 
-`bin/canvas` resolves its own location, so the symlink works from any working
-directory and always runs the current source. Every example in the skill says
-`archboard`, so this is the name to use.
+`bin/canvas` finds its own location with `realpath`, so the link works from any
+directory. If you skip this step, the installer in the next step writes the
+absolute path of the CLI into the repository instead.
 
-Skipping this is survivable. `install-skill` checks whether an `archboard` on
-PATH really points at this build, and when it does not it writes the absolute
-path into the repo instead, so the next agent still has something that runs.
-The name is nicer, and the skill's examples match it.
+## 3. Set up a repository
 
-## 3. Set up the repo
-
-From inside the repository you want to diagram:
+Run the installer from the repository that you want to diagram:
 
 ```bash
 cd ~/Projects/payments-api
-archboard install-skill
+archboard install-skill --agent claude-code
 ```
 
-That does four things:
+Use `--agent claude-code` for Claude Code. Without it, the installer sets up
+Codex. The installer does these things:
 
-- copies the skill into `~/.agents/skills`, the user-level skill root shared by
-  Codex across repositories (`--agent claude-code` or its `--target claude`
-  shortcut uses `~/.claude/skills` instead; `--dir <path>` names any other
-  skills root)
-- asks where this repo's boards should live, offering `<repo>/.archboard/vault`
-- creates that directory, so the first board command has somewhere to write
-- writes a block into the repo's `CLAUDE.md`, or its `AGENTS.md` when there is
-  no `CLAUDE.md`, recording the vault path, the exact command that runs the CLI
-  on this machine, and a section for the boards that cover this repo
+1. It copies the archboard skill into a skills directory. The default is
+   `~/.agents/skills/archboard`, which Codex reads. With `--agent claude-code`
+   it is `~/.claude/skills/archboard`. The copy replaces an earlier copy. If
+   the target is a symlink, the installer stops and changes nothing.
+2. It chooses the vault. If `ARCHBOARD_VAULT` is set, it offers that vault.
+   If not, it offers `<repo>/.archboard/vault`. If it runs in a terminal, it
+   asks you. If an agent runs it, it takes the offer.
+3. If the vault directory does not exist, it creates it, with a
+   `.archboard/config.yaml` file that holds the default vocabulary.
+4. It writes a block into the `CLAUDE.md` file of the repository, or into
+   `AGENTS.md` when there is no `CLAUDE.md`. The block gives the location of the
+   skill and the vault of the repository. It also gives the command that runs
+   the CLI on this machine, and the canvas URL.
 
-The block sits between `<!-- archboard:begin -->` and `<!-- archboard:end -->`.
-Re-running replaces it in place, so upgrading the skill later never leaves two
-of them. Prose outside the markers is untouched. Notes written inside them are
-not, so keep your own words outside.
+The repository is the nearest parent directory that holds `.git`. The block
+sits between `<!-- archboard:begin -->` and `<!-- archboard:end -->`. When you
+run the installer again, it replaces the block in place. Text outside the
+markers does not change, but text inside them does. If the repository has
+neither file, the installer creates `CLAUDE.md` for Claude Code and `AGENTS.md`
+otherwise, and never both. The installer writes no block in the archboard
+checkout itself.
 
-If the repo has neither file, one is created: `AGENTS.md` for the default or a
-custom `--dir`, and `CLAUDE.md` for the Claude destination. Never both. A repo
-with two agent docs is a repo where one of them is out of date.
+The installer prints what it did, and a JSON receipt. If the vault is inside the
+repository and Git does not ignore it, the installer warns you. Commit the
+vault or ignore it, as you choose.
 
-Nothing prompts when stdin is not a terminal, which is the case whenever an
-agent runs the command. It takes the offered vault and prints what it chose.
+These options change what the installer does:
 
-| Flag                  | For                                                                                    |
-| --------------------- | -------------------------------------------------------------------------------------- |
-| `--agent codex`       | explicitly select Codex using the skills.sh agent name; installs in the shared default |
-| `--agent claude-code` | select Claude Code using the skills.sh agent name; installs in `~/.claude/skills`      |
-| `--target claude`     | shortcut for `--agent claude-code`                                                     |
-| `--dir <skills-root>` | install into another explicit project or user skills root                              |
-| `--vault <path>`      | name the vault instead of being asked                                                  |
-| `--yes`               | take the offered vault without being asked                                             |
-| `--repo <dir>`        | set up a repo other than the one you are standing in                                   |
-| `--doc <file>`        | write the block somewhere other than the repo root                                     |
-| `--no-doc`            | install the skill and touch nothing in the repo                                        |
+| Option                | Effect                                                               |
+| --------------------- | -------------------------------------------------------------------- |
+| `--agent claude-code` | Install for Claude Code, in `~/.claude/skills`.                      |
+| `--agent codex`       | Install for Codex, in `~/.agents/skills`. This is the default.       |
+| `--target claude`     | The same as `--agent claude-code`. `--target agents` is the default. |
+| `--dir <skills-root>` | Install into `<skills-root>/archboard`.                              |
+| `--vault <path>`      | Use this vault. A relative path starts from the current directory.   |
+| `--yes`               | Take the offered vault without a question.                           |
+| `--repo <dir>`        | Set up this repository instead of the current one.                   |
+| `--doc <file>`        | Write the block into this file.                                      |
+| `--no-doc`            | Install the skill only. Write no block and create no vault.          |
+| `--print-source`      | Show the skill directory to install, and install nothing.            |
 
-On the machine archboard was developed on, `~/.agents/skills/archboard`
-is a symlink into the checkout, so the skill tracks the build and cannot go
-stale. `install-skill` refuses to replace a symlink, which is what you want
-there. Running it inside the archboard checkout writes no block either, because
-that repo's `CLAUDE.md` is authored rather than generated.
+Use one of `--agent`, `--target` and `--dir` at most. Do not use `--doc` and
+`--no-doc` together.
 
-## 4. Where the vault goes
+The installer does not read the block that is already in the repository. If a
+repository uses a shared vault, give `--vault` again when you run the installer
+again. If you use `--yes` without `--vault` and without `ARCHBOARD_VAULT`, the
+repository changes to `<repo>/.archboard/vault`.
 
-A board is one `.semantic.json` document in a vault, holding every variant of
-that architecture. The offered answer is a vault inside the repo, at
-`<repo>/.archboard/vault`: boards next to the code they describe, and reviewable
-in the same diff as the change they justify — a board is JSON a user can read
-and a reviewer can diff, which is most of why it is a file rather than a
-database. It is not gitignored for you. Commit it or ignore it, deliberately.
+## 4. Set the vault before the canvas starts
 
-Take a shared vault instead when the diagrams span repositories, which is what
-an architecture diagram does as soon as there is more than one service in it.
-Point every repo at the same path:
+The installer writes the `export ARCHBOARD_VAULT=...` line into the block, but
+it does not set the variable in your shell. Set it yourself, or put it in a
+`.env` file in the directory where you run the commands. The canvas does not
+start without a vault, and its message points to `archboard install-skill`.
+
+The canvas server reads and writes the vault. A running server keeps the vault
+that it started with. To change the vault, run `archboard stop`, set the new
+vault, and run a command again. `archboard semantic config` shows the
+configuration file of the vault in use, which is inside that vault.
+
+A vault in the repository keeps the boards next to the code. A reviewer can then
+read a board change in the same diff as the code change. When the diagrams
+cover more than one repository, use one shared vault for all of them:
 
 ```bash
-archboard install-skill --vault ~/vaults/architecture
+archboard install-skill --agent claude-code --vault ~/vaults/architecture
 ```
 
-An `ARCHBOARD_VAULT` already exported in your shell counts as having answered:
-it becomes the offer, in place of the local path.
+While an agent works on a board, archboard keeps a lock file for it in
+`<vault>/.archboard/locks/`. If you commit the vault, ignore that directory.
 
-Either way, **the server does the vault I/O, so the variable has to be set
-before the canvas server starts.** With no vault the canvas will not start at
-all, and says so, pointing back at this command. Exporting it afterwards
-changes nothing, because a server that is already running keeps the vault it
-started with. `archboard status` prints the vault in use, and
-`archboard stop` is how you switch. That is the one that bites when you move
-between two repos that each keep their own boards.
+## 5. Start the canvas and sign in to Codex
 
-The consumer defines vocabulary and presentation in
-`<vault>/.archboard/config.yaml`. Keep this file under version control with the
-boards. For example:
+If the canvas is not running, every command that talks to it starts it. If you
+do not want this, set `ARCHBOARD_NO_AUTOSTART=1`. `archboard start` starts the
+canvas in both cases. The canvas uses the environment of the command that
+started it.
+
+The canvas listens on <http://127.0.0.1:3000>. To use another address, set
+`ARCHBOARD_URL`, or give `--url` to one command. A command starts a canvas only
+for a loopback address, that is, an address that only this machine can reach.
+The old variable `EXPRESS_SERVER_URL` is refused with a message.
+
+One state directory holds one canvas at a time. If a second canvas starts with
+the same state directory, it stops with the message "Dedicated Codex roots are
+locked".
+
+Open the canvas URL in your browser. The agent bar, the voice and video
+recording need a Codex sign-in. Sign in from the agent bar, with ChatGPT or with
+an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
+`codex-workbench/codex-home` in the state directory.
+
+## 6. Make sure that it works
+
+Run these commands in the repository:
+
+```bash
+archboard status          # the canvas runs, and at which URL
+archboard check           # the vault configuration and every board are valid
+archboard semantic config # the vocabulary in use, and the configuration file
+```
+
+Then create a test board with `archboard semantic new`, and read it with
+`archboard semantic show`. The [README](README.md) has an example.
+
+## The vault configuration
+
+The file `<vault>/.archboard/config.yaml` defines the vocabulary of the boards
+and how the kinds look. Keep it under version control with the boards. For
+example:
 
 ```yaml
 levels: [system, service, module]
 nodeKinds:
-  azure: { name: Azure, icon: RiCloudLine, color: blue }
+  system: { name: System, icon: RiApps2Line, color: sky }
+  service: { name: Service, icon: RiServerLine, color: blue }
+  module: { name: Module, icon: RiBox3Line, color: teal }
   kubernetes: { name: Kubernetes, icon: RiShip2Line, color: green }
-  api: { name: API, icon: RiServerLine, color: violet }
 relationshipKinds:
   http: { name: HTTP, color: cyan, dash: solid, arrowhead: filled }
   event: { name: Event, color: amber, dash: dashed, arrowhead: open }
 groups:
-  fulfillment: { name: Fulfillment }
   billing: { name: Billing }
 ```
 
-Every board must declare a `level`. Nodes and edges reference the configured
-kind keys. `groups` is optional and empty by default: each key is a stable id a
-node may list in its `groups` array, and the name is what readers see. A node may
-belong to several groups across different containers; nothing is inherited from a
-parent, and renaming a group changes no board. Inspect one group with
-`archboard semantic inspect <board> --group <id>` or from the group control in a
-pane's reading strip. Icons use Remix Icon React export names, such as `RiServerLine`.
-Browse the [Remix Icon catalog](https://remixicon.com/) visually, or search the
-[complete export-name list for the installed version](https://unpkg.com/@remixicon/react@4.9.0/index.d.ts)
-as plain text — agents can search its `declare const Ri...` entries directly.
-Use the React export name in `icon`, not the catalog's kebab-case name
-(`server-line` becomes `RiServerLine`).
+These rules apply:
 
-Colors reference the curated palette:
-red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo,
-violet, purple, fuchsia, pink and rose. Omit `color` for neutral type styling.
-The bundled defaults colour every node kind except `external` and `other`, and
-the `http`, `rpc`, `event`, `queue`, `data` and `render` relationship kinds, so a
-fresh vault is not gray; a consumer's own `config.yaml` replaces them.
-Relationship `dash` is solid, dashed or dotted; `arrowhead` is filled, open or none.
+- `levels` lists the levels from the coarsest to the finest. Every board states
+  one level.
+- Give each level a node kind with the same name. A node that stands for a
+  board at another level uses that level as its kind.
+- A node kind needs a `name` and an `icon`. A relationship kind needs a `name`,
+  a `dash` (`solid`, `dashed` or `dotted`) and an `arrowhead` (`filled`, `open`
+  or `none`).
+- `color` is optional. The colors are red, orange, amber, yellow, lime, green,
+  emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink and
+  rose. Without a color, the kind is neutral.
+- `groups` is optional. A node lists group keys in its `groups` array, and
+  readers see the group names. To examine one group, run
+  `archboard semantic inspect <board> --group <key>`.
 
-Run `archboard semantic config` to discover the interpreted policy and
-`archboard semantic config --schema` to generate its editor validation schema.
-Run `archboard check` to check configuration and every board family in the vault.
-Missing required board metadata is always an error. Valid configuration rejects
-new unknown references; references to removed definitions remain readable with
-warnings. Missing or invalid YAML activates coherent bundled defaults and warns,
-while permitting structurally valid edits. Fix the configuration to restore
-vocabulary validation and configured appearance.
+An icon is the React export name of a [Remix Icon](https://remixicon.com/), for
+example `RiServerLine` for the catalog name `server-line`. The
+[export names of the installed version](https://unpkg.com/@remixicon/react@4.9.0/index.d.ts)
+are in one text file that an agent can search.
 
-Saving configuration restyles every variant and open pane without changing board
-content. A container establishes the body color for its contents; a nearer colored
-container wins, and an uncolored container passes its enclosing color through.
-Each node's icon chip independently shows its type. A collapsed Kubernetes card
-inside Azure therefore has an Azure-blue body and Kubernetes-green chip; expanded
-Kubernetes establishes green for itself and its children.
+`archboard semantic config --schema` prints a JSON Schema for editors. The
+installed skill carries the same schema. `archboard check` examines the
+configuration and every board in the vault. If it finds a problem, it exits with
+status 1.
 
-The browser legend explains these channels and can be hidden. The diagnostics
-bell opens the same checker findings and offers **Fix with Codex** through the
-pane's workhorse. Findings clear only when a subsequent check confirms the repair.
-Exported diagrams have no legend. Explicit edge `traffic: {}` enables illustrative
-motion with defaults of 40 diagram units per second and 0.5 dots per second;
-optional `speed` and `volume` must be positive finite values. Omit `traffic` to
-disable it. Emphasis affects line weight only.
+If `config.yaml` is missing or not valid, archboard uses the bundled defaults
+and warns. A valid configuration refuses new references to kinds that it does
+not define. A board that uses a kind which was removed from the configuration
+stays readable, with a warning.
 
-## Working in a repo
+When the configuration changes, every pane draws the boards again, and the
+boards do not change. A container gives its color to the bodies of the nodes
+inside it, and a nearer colored container wins. The icon chip of each node shows
+its own kind.
 
-Start the canvas from anywhere and state what the architecture is:
+## Code bindings
+
+A node can bind to a file in a repository, as `binding: { repo, path }`, with an
+optional `branch` and `commit`. The board stores the identity of the repository
+and a path in the repository. It never stores an absolute path, so the same
+board opens the correct file on any machine.
+
+To open the code from a board, register each checkout on each machine:
 
 ```bash
-archboard semantic new payments --doing "drawing the payment path" < payments.json
-archboard semantic show payments
-archboard semantic render payments --out payments.svg
+archboard repo add ~/Projects/payments-api
 ```
 
-You state the parts, what contains what, how they are wired and the flows
-between them; the renderer owns every coordinate, colour, font size and
-connector route (ADR 0023). There is no way to move a box and deliberately
-none — a layout somebody repaired by hand cannot be improved for every board at
-once.
+The identity of the repository comes from its `origin` remote. If the repository
+has no remote, the identity is the directory name. `archboard repo list` shows the
+registered checkouts, and `archboard repo forget <identity>` removes one. The
+list is in `repos.json` in the state directory, or in the file that
+`ARCHBOARD_REPOS` names.
 
-Those commands go through the server and need no browser. Open the canvas URL
-and use `archboard browser ...` only when a user wants to read a board, or to
-put a proposal beside what it proposes to change:
-
-```bash
-archboard browser show payments@<variant> --pane right
-```
-
-**Name the repository and use a repo-relative path.** Register each checkout
-once, then the same portable address works wherever the command is run:
-
-```bash
-archboard repo add /path/to/payments-api
-```
-
-A node states its binding as part of what it is:
-
-```json
-{
-	"name": "Orders",
-	"kind": "service",
-	"binding": { "repo": "github.com/acme/payments-api", "path": "src/index.ts" }
-}
-```
-
-The board stores the repository identity and a repo-relative path — never an
-absolute path or a `file://` URL — so the same board opens the right file on
-anybody's machine. What a user clicks is resolved later, from the binding and
-this machine's checkout registry.
-
-A bare relative path is resolved against the CLI's explicit working-directory
-origin, and the result says which repository that produced. Protocol-neutral
-application callers with no working directory must use a registered repository
-identity plus a repo-relative path instead.
-
-`--branch` and `--commit` override the revision metadata when you need to name
-something git cannot tell you.
-
-With a shared vault the boards do not belong to the repo and are not committed
-to it. If you want a picture in the repo as well, render one:
-
-```bash
-archboard semantic render payments --out docs/architecture.svg
-archboard semantic rasterize payments --out docs/architecture.png
-```
-
-`semantic render` writes the SVG with its fonts embedded. `semantic rasterize`
-draws the same picture to a PNG in a private headless Chromium at native scale:
-one bitmap pixel per diagram pixel, the whole diagram, whatever any display or
-open pane is doing; `--scale 2` doubles it, and a bitmap past 16384 pixels on
-a side is refused rather than shrunk. Both take the same `--variant`, `--view`
-and `--theme` selectors. Rasterizing needs a Chromium or Google Chrome
-executable (see [Rendering to a bitmap](#rendering-to-a-bitmap)).
-
-The picture is derived, so commit it only where somebody reads the repo without
-archboard; the board is the thing that is kept.
+If a checkout is registered, the browser opens the file with the opener in the
+browser configuration (`xdg-open` on Linux and `open` on macOS by default). If
+there is no checkout of a GitHub repository, the browser opens the file on
+GitHub. It uses the commit, then the branch, then the default branch.
 
 ## Rendering to a bitmap
 
-`archboard semantic rasterize <board> --out <file.png>` draws in a Chromium or
-Google Chrome it starts itself: headless, on a private temporary profile, in
-its own process group, stopped and removed before the command answers. Nothing
-else in archboard needs a browser installed; `semantic render` writes SVG
-without one. The executable is the first of `chromium`, `chromium-browser`,
-`google-chrome` and `google-chrome-stable` on `PATH` (on macOS also the
-standard `/Applications` bundles); set `ARCHBOARD_RENDERER_CHROMIUM` to use
-another. Without one the command refuses by name (exit 4) and writes nothing.
+`archboard semantic render <board> --out <file.svg>` writes an SVG with its
+fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
+<file.png>` draws the same picture to a PNG in a private headless Chromium.
+Both take `--variant`, `--view` and `--theme`.
 
-What the bitmap is:
+The CLI starts the browser itself, with a private temporary profile, and stops
+it and removes the profile before the command ends. It uses the first of
+`chromium`, `chromium-browser`, `google-chrome` and `google-chrome-stable` on
+`PATH`, and on macOS also the standard applications in `/Applications`. To use
+another browser, set `ARCHBOARD_RENDERER_CHROMIUM` to its executable in the
+environment of the command. If there is no browser, the command stops with exit
+status 4 and writes nothing.
 
-- **Native scale by default.** One bitmap pixel per diagram pixel at `--scale
-1`, independent of the display's pixel ratio, any device scale or any pane's
-  camera. `--scale` takes 0.25 to 4; the bitmap is the diagram's page times the
-  scale, rounded to whole pixels. The renderer states an integer page; a
-  fractional one would round up so no edge is clipped.
-- **The whole diagram.** The page is captured beyond any viewport, never fitted
-  or cropped, with the renderer's own 20 px margin and opaque ground. A bitmap
-  past 16384 px on a side or 80 million pixels is refused (exit 2) rather than
-  tiled, shrunk or left as a wrong file.
-- **Stable and complete.** Every embedded face is loaded before the shot, or
-  the command fails rather than drawing a fallback font. Traffic animation is
-  SMIL in the SVG; the capture pauses it at time zero, so moving marks sit at
-  their first frame, and a still never proves motion.
-- **Verified.** The PNG's header is checked against the size the diagram asks
-  for before the file is written. The receipt states the file, bitmap width
-  and height, scale, the diagram's page, the board, version, variant and
-  view drawn, and the SHA-256 of the SVG document that was rasterized.
+The PNG has these properties:
+
+- One bitmap pixel is one diagram pixel. `--scale` takes 0.25 to 4. The size
+  does not depend on the display or on a pane.
+- The PNG shows the whole diagram, with a margin of 20 px. `--region x,y,w,h`
+  draws one part of it. A bitmap larger than 16384 px on a side or 80 million
+  pixels is refused with exit status 2.
+- All the fonts load before the capture, or the command fails. Moving traffic
+  marks show their first frame.
+- The receipt gives the file, the size, the scale, the board, its version, the
+  variant and view that it drew, and the SHA-256 of the SVG that it drew.
 
 ## Recording a walkthrough
 
 `archboard semantic record <board> --out <file.mp4>` presents one walkthrough
-in the same kind of private Chromium, narrated by the canvas's Codex voice, and
-writes it to an MP4 or WebM file; it is how an agent hands a pull request's
-reviewers a narrated video of the change. It needs the Chromium that
-rasterizing needs and a canvas whose Codex is signed in, with voice not live in
-any browser on it.
+in the same kind of private Chromium, with the Codex voice of the canvas, and
+writes an MP4 or a WebM file. It is how an agent gives the reviewers of a pull
+request a narrated video of the change. `--discard --doing "<why>"` deletes the
+board after the file is written, for a board made only for the video.
 
-On Linux the browser records MP4 sound as Opus, which Safari does not play.
-With `ffmpeg` on `PATH`, or named by `ARCHBOARD_FFMPEG`, the recorder converts
-the sound to AAC so the file plays with sound in every browser; without one it
-keeps the file and says so. Attaching the file to a pull request with
-`gh pr comment --attach` needs gh 2.99 or later.
+A recording needs these things:
 
-## On macOS
+- The Chromium that rasterizing needs.
+- A canvas where Codex is signed in, and where the voice is not live in any
+  browser.
+- A frontend built from the same checkout, with `bun run build`.
 
-Archboard supports Linux and macOS. On macOS, machine-local state lives under
-`~/Library/Application Support/archboard`, and logs go to
-`~/Library/Logs/archboard.log`. Process ownership is verified through the native
-macOS process API; Linux uses `/proc`.
+On Linux the browser records the sound of an MP4 as Opus, which Safari does not
+play. If `ffmpeg` is on `PATH`, or `ARCHBOARD_FFMPEG` names it, the recorder
+converts the sound to AAC, so the file plays with sound in every browser.
+Without it, the recorder keeps the file and tells you. To attach the file to a
+pull request, use `gh pr comment --attach`, which needs gh 2.99 or newer.
 
-The macOS browser child of `semantic rasterize` uses the native account home
-for operating-system services while keeping its profile and temporary files
-private, and a mock keychain so temporary browser launches do not open macOS
-keychain dialogs. A managed Chrome installation can enforce becoming the
-default browser even for temporary profiles. If it opens system prompts, use
-Chrome for Testing and set `ARCHBOARD_RENDERER_CHROMIUM` to its executable.
-This keeps the managed browser's policy and your default browser unchanged.
+## Update and remove
 
-`bin/canvas` calls `realpath`, which modern macOS has but older versions do
-not. If the symlink route above gives you `realpath: command not found`, either
-`brew install coreutils` or run `bun /path/to/archboard/src/bin.ts` directly.
+To update archboard, run `git pull`, `bun install` and `bun run build` in the
+checkout, then run `archboard stop`. `archboard status` reports a canvas that
+runs older source. Run `archboard install-skill` again in each repository to
+update its copy of the skill and its block.
 
-Board addresses are case-insensitive and Unicode-normalized on both platforms,
-while note filenames preserve their original casing (ADR 0010). A legacy vault
-containing names that differ only in case must have those collisions resolved;
-`archboard semantic` on its own reports them.
+There is no uninstall command. To remove archboard, delete these things:
 
-## Finding boards
+- The skill directory, for example `~/.agents/skills/archboard`.
+- The block between the markers in each repository.
+- The `archboard` link on your `PATH`.
+- The state directory. It holds the Codex sign-in, `repos.json`, the opener
+  configuration, the canvas process files and the log.
 
-Use `archboard semantic` to discover boards in the configured vault and
-`archboard semantic show <name>` to read a board. No manual repository-to-board
-list is needed in the installed setup block.
+If you do not want to keep the boards, delete the vault too.
 
-### Optional live session
+## Machine state and logs
 
-When a user asks to see that persisted board in a connected browser, show it
-on an explicit pane:
+Archboard keeps its machine state apart from the vault, because the vault can
+move between machines. The state directory and the log are in these places:
 
-```bash
-archboard browser show payments --pane primary
-```
+| System | State directory                                                    | Log                                    |
+| ------ | ------------------------------------------------------------------ | -------------------------------------- |
+| Linux  | `$XDG_STATE_HOME/archboard`, by default `~/.local/state/archboard` | `archboard.log` in the state directory |
+| macOS  | `~/Library/Application Support/archboard`                          | `~/Library/Logs/archboard.log`         |
+
+`LOG_FILE_PATH` sets another log file.
+
+## Notes for macOS
+
+On macOS, archboard examines processes through the macOS process API. On Linux
+it uses `/proc`.
+
+The browser that `semantic rasterize` and `semantic record` start uses the
+account home for system services, and it keeps its profile private. It uses a
+mock keychain, so it opens no keychain dialogs. A managed Chrome installation
+can ask to become the default browser, even with a temporary profile. If it
+does, install Chrome for Testing and set `ARCHBOARD_RENDERER_CHROMIUM` to its
+executable.
+
+`bin/canvas` uses `realpath`, which older macOS versions do not have. If you see
+`realpath: command not found`, run `brew install coreutils`, or run
+`bun ~/Projects/archboard/src/bin.ts` directly.
+
+Board names do not depend on case, on both Linux and macOS. If a vault has two
+boards whose names differ only in case, `archboard check` reports them as
+`DUPLICATE_BOARD`.
