@@ -4,6 +4,10 @@
 // voice for one walkthrough, and the host opens its first step in the pane. From then on every
 // step the pane says it is on, the first included, reaches the voice model the same way, and so
 // does leaving. Nothing here chooses a step: the pane is where the talk is.
+//
+// A recording (TASK-304) is started the same way, but its page opens step 1 itself and moves on
+// by itself, so the host opens nothing: every step the recording pane reports, the first
+// included, reaches the voice model as a step chosen by hand does.
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
 import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
@@ -125,20 +129,22 @@ const listeners = new Set<(change: RealtimePresentationChange) => void>();
  * @param paneId The pane voice is starting for, as the shell names it.
  * @param clientId The client id of that pane in the browser the start came from.
  * @param walkthroughId The walkthrough the user chose.
- * @returns The walkthrough and what to call it.
+ * @param recording Whether the talk is recorded rather than listened to live.
+ * @returns The walkthrough, what to call it and whether it is recorded.
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
 function narrationFor(
 	paneId: string,
 	clientId: string,
 	walkthroughId: string,
+	recording: boolean,
 ): RealtimePresentation {
 	const walkthrough = walkthroughOnPane(clientId, walkthroughId);
 	if (walkthrough === undefined) {
 		throw new Error("The pane is not showing a board that states that walkthrough.");
 	}
 	narrated.set(paneId, walkthrough.id);
-	return { walkthrough: walkthrough.id, name: walkthrough.name };
+	return { walkthrough: walkthrough.id, name: walkthrough.name, recording };
 }
 
 /**
