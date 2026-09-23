@@ -94,6 +94,7 @@ const RUBRIC_SECTIONS = {
 	inherited: "What the run inherited",
 	visual: "What you can and cannot see",
 	scores: "Scores (0-10 each)",
+	planning: "Planning runs",
 	concerns: "Concerns",
 } as const;
 

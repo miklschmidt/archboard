@@ -25,6 +25,7 @@ import {
 	loadSuite,
 	renderRequests,
 	resolvePlaceholders,
+	ScenarioSchema,
 	stepCommand,
 	suiteProblems,
 	type FixtureStep,
@@ -85,7 +86,7 @@ const BOARD = SemanticBoardSchema.parse(
 /**
  * The variant a step targets, for resolving its placeholders.
  * @param step The step, before its placeholders resolve.
- * @returns The variant selector, or undefined for the current one.
+ * @returns The variant selector, or undefined for the one the board's name opens.
  */
 function variantOf(step: RawFixtureStep): string | undefined {
 	if (step.op === "edit") {
@@ -110,7 +111,7 @@ function transitionOf(step: FixtureStep): SemanticTransition {
 		case "branch":
 			return branchVariantTransition({
 				name: step.as,
-				from: step.from ?? "current",
+				...(step.from === undefined ? {} : { from: step.from }),
 				...(step.summary === undefined ? {} : { summary: step.summary }),
 			});
 		case "resolve":
@@ -158,13 +159,20 @@ describe("the canonical suite", () => {
 		);
 		for (const scenario of loaded.suite.evals) {
 			expect(covered.has(scenario.id), scenario.id).toBe(true);
-			expect(loaded.pins.flask.revisions[scenario.flask]).toMatch(/^[0-9a-f]{40}$/u);
+			if (scenario.flask !== undefined)
+				expect(loaded.pins.flask.revisions[scenario.flask]).toMatch(/^[0-9a-f]{40}$/u);
 		}
 		expect(
 			loaded.suite.evals
 				.filter((scenario) => scenario.report === "broad")
 				.map((scenario) => scenario.id),
 		).toEqual(["S14"]);
+	});
+
+	test("a planning scenario names no Flask revision and no sources, never one without the other", () => {
+		const { flask: _revision, sources, ...planning } = loaded.suite.evals[0]!;
+		expect(ScenarioSchema.safeParse(planning).success).toBe(true);
+		expect(ScenarioSchema.safeParse({ ...planning, sources }).success).toBe(false);
 	});
 
 	test("the grouping and traffic scenarios ask for the TASK-207 contract and the three traffic states", () => {

@@ -7,7 +7,10 @@ deterministic verdicts, and the commands the author ran. You are never told
 which configuration produced a run, and you do not guess.
 
 Read the source the request names in the pinned checkout before you judge a
-run's truth. The same revision recurs across runs; reuse what you read.
+run's truth. The same revision recurs across runs; reuse what you read. A run
+whose bundle has `revision: null` and no `sources` plans an architecture nobody
+has built, and has no source to read: judge it as [Planning runs](#planning-runs)
+says.
 
 ## Per-feature verdicts
 
@@ -107,10 +110,10 @@ impossible; it is reported as a waiver whatever its axis.
 - **Bindings**: `binding.repo` is the registered repository identity and
   `binding.path` is the repo-relative file that implements the node's stated
   responsibility. An import, registration or invocation site is incorrect.
-  A planned part or an implementation unavailable for inspection stays
-  unbound; an inspected implementation in another registered repository may
-  bind there. Optional branch, commit and confirmedAt say only what was
-  actually confirmed.
+  An implementation unavailable for inspection stays unbound; a planned part,
+  which belongs on a draft, binds only to a path the request states for it; an
+  inspected implementation in another registered repository may bind there.
+  Optional branch, commit and confirmedAt say only what was actually confirmed.
 - **Drill-down**: `{kind: "current"}` follows the target board's designation;
   `{kind: "named", name}` opens that variant and never falls back to current.
 - **Flows**: participants in column order; steps in sequence; `sync`, `async`,
@@ -126,9 +129,11 @@ impossible; it is reported as a waiver whatever its axis.
   relationships, flows or steps; an opening beat may name none; a beat keeps
   its id through rewording and reordering.
 - **Lifecycle**: a proposal is a draft derived from its predecessor, which is
-  the current variant unless `--from` names another;
-  adoption moves the designation with a reason and leaves the previous current
-  historical; a draft holding disagreements is settled with `mine`/`theirs`
+  the variant the board's name opens (its current variant, or on a board with
+  none its draft) unless `--from` names another; a part nobody has built is on a
+  draft, never on the current variant; adoption moves the designation with a
+  reason and leaves the previous current historical, and on a board that had no
+  current variant leaves nothing historical; a draft holding disagreements is settled with `mine`/`theirs`
   choices or a third answer through an ordinary edit, and only then adopted.
 - **Reading**: a read-only request writes nothing; the answer comes from the
   saved board through the CLI. Judge an answer by what it identifies, not by
@@ -180,7 +185,7 @@ behaviouralCompleteness is `null`; that is the rule, not a missing result.
 
 | Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `external`     | a caller, library, framework, runtime, shell or hosted service lies outside what this codebase owns (drawn `external`, unbound), or a part nobody has built yet, drawn unbound the same way and taking the configured kind the request names for it when it names one; never a part of this codebase a reader reaches through another board                                              |
+| `external`     | a caller, library, framework, runtime, shell or hosted service lies outside what this codebase owns (drawn `external`, unbound); never a part of this codebase a reader reaches through another board, and never a part nobody has built yet, which is a proposal on a draft                                                                                                             |
 | `binding`      | a file's body implements a part's responsibility                                                                                                                                                                                                                                                                                                                                         |
 | `containment`  | a part is defined inside another                                                                                                                                                                                                                                                                                                                                                         |
 | `relationship` | one body calls, renders, reads from, emits an event or message to, depends on or publishes to another; a return travelling back is a flow step, not a second relationship                                                                                                                                                                                                                |
@@ -279,7 +284,7 @@ traffic marks at their first frame and proves nothing about animation.
   terms (kinds, containment, receivers, identity, lifecycle)?
 - **architecturalTruth**: does it match what the Flask source at that revision
   actually does, at the level the request asked for, with fewer truer parts
-  over many?
+  over many? A planning run is scored as [Planning runs](#planning-runs) says.
 - **readability**: is the captured diagram legible and organised, as you saw
   it: sensible names, clear short responsibilities whose complete text is
   legible, no unexplained parts, views that isolate what they claim to, nothing
@@ -291,6 +296,33 @@ traffic marks at their first frame and proves nothing about animation.
 
 10 is a board an expert would sign; 5 is usable with corrections; 0 is wrong
 or absent. Score the work, not the effort: a longer transcript earns nothing.
+
+## Planning runs
+
+A planning run's request states an architecture nobody has built; its bundle
+has `revision: null` and no `sources`, and the author worked in an empty
+repository. There is no source, so the request, and any document it names, is
+the whole of the evidence, and wherever the sections above judge against the
+source, judge against what the request states and what it necessarily implies.
+
+- **Lifecycle**: a board for something nobody has built has no current
+  variant: it was created with `"lifecycle": "draft"`, and every variant on it
+  is a draft or shelved. A planning board that designates a current variant
+  says the plan is built, and is incorrect in semanticCorrectness.
+- **Bindings**: a binding on a draft may name a path that does not exist yet,
+  and `archboard check` does not report it, so `check-clean` holds for correct
+  planning work. A binding the request gives no path for is invented.
+- **architecturalTruth**, substituted: does every part, containment and
+  relationship trace to something the request states or necessarily implies,
+  at the level it asked for, with fewer truer parts over many, and with no
+  mechanism presented as decided that the request leaves open? A plausible
+  mechanism nobody stated is a guess, and scores as a claim the source
+  contradicts would.
+- **behaviouralCompleteness**, substituted: a catalogue row is justified when
+  the request states what that row describes: a count it fixes is a `repeat`,
+  a condition it names a `note`, a path it calls the spine `emphasis`. A row
+  the request says nothing about is not `missed`, and one the run added
+  without a sentence behind it is not `used`.
 
 ## Concerns
 

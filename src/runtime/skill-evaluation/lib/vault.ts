@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import {
-	resolveVariant,
+	addressedVariant,
 	SemanticBoardSchema,
 	type SemanticBoard,
 } from "@/shared/semantic-board/index";
@@ -215,13 +215,15 @@ interface PlaceholderScope {
 }
 
 /**
- * A node's id on the targeted variant, by name.
+ * A node's id on the targeted variant, by name: the variant the fixture step
+ * names, or the one its write lands on when it names none.
  * @param name The node's name.
  * @param scope What to resolve against.
  * @returns The id.
  */
 function nodeId(name: string, scope: PlaceholderScope): string {
-	const variant = scope.board === null ? undefined : resolveVariant(scope.board, scope.variant);
+	const addressed = scope.board === null ? null : addressedVariant(scope.board, scope.variant);
+	const variant = addressed?.ok === true ? addressed.variant : undefined;
 	const node = variant?.content.nodes.find((candidate) => candidate.name === name);
 	if (node === undefined)
 		throw new Error(`the fixture names $node(${name}) which is not on the board`);

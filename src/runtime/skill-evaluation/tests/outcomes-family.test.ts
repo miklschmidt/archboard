@@ -202,6 +202,30 @@ describe("family checks", () => {
 		);
 		expect(verdicts.map((verdict) => verdict.passed)).toEqual([true, true]);
 	});
+
+	test("on a board nobody has built, nothing is held still and no draft is judged as current", () => {
+		const planned = SemanticBoardSchema.parse(
+			withFixtureOrders({
+				...BEFORE,
+				current: undefined,
+				variants: BEFORE.variants.map((variant) => ({ ...variant, lifecycle: "draft" })),
+			}),
+		);
+		const reading = {
+			...READING,
+			snapshot: new Map([["Flask", planned]]),
+			boards: new Map([["Flask", planned]]),
+		};
+		expect(
+			passes(
+				[
+					{ check: "current-untouched", board: "Flask" },
+					{ check: "nodes-named", board: "Flask", names: ["Flask app"] },
+				],
+				reading,
+			),
+		).toEqual([false, false]);
+	});
 });
 
 describe("vault-level checks", () => {
