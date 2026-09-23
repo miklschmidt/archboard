@@ -89,8 +89,15 @@ function mediaTypeFor(container: RecordingContainer): string {
  * @throws {Error} When the browser captured something other than this tab, or nothing.
  */
 async function tabVideo(): Promise<MediaStreamTrack> {
+	// Without a size the browser picks one of its own (1920x1024 for a 1920x1080 tab on Chromium
+	// 153), so the frame is asked for at exactly the page's own size.
+	const scale = window.devicePixelRatio;
 	const options: TabCaptureOptions = {
-		video: { frameRate: FRAME_RATE },
+		video: {
+			frameRate: FRAME_RATE,
+			width: { ideal: Math.round(window.innerWidth * scale) },
+			height: { ideal: Math.round(window.innerHeight * scale) },
+		},
 		audio: false,
 		preferCurrentTab: true,
 	};
