@@ -41,6 +41,9 @@ const REALTIME_END_INSTRUCTIONS =
  * turn (Codex 0.155.1, `session/world_state.rs`), so it must not repeat the coordinator's
  * developer instructions either. The board catalogue reaches the coordinator as a developer
  * item on its own thread; board context reaches it through its tools and the semantic callbacks.
+ *
+ * A recorded walkthrough (TASK-304) is the one start that varies policy: its voice prompt says the
+ * talk is recorded, and it sends no delegation acknowledgement filler.
  * @param input - The coordinator thread, minted wire session id, browser offer and narration.
  * @param input.threadId - The coordinator thread the session speaks for.
  * @param input.realtimeSessionId - The wire session id minted for this start.
@@ -57,11 +60,13 @@ export function createRealtimeStartParams(input: {
 	// A narration adds to the voice prompt and replaces none of it: the voice is still the board
 	// assistant between steps. The coordinator is told nothing of it, since every step reaches the
 	// voice model from the host and a question asked during a narration is an ordinary request.
-	const narrated = input.presentation?.name ?? null;
+	// A recording hands nothing off, so it has no delegation to fill: the Realtime API's own
+	// "one moment" filler would be the only thing it could say that nobody asked for.
+	const presentation = input.presentation ?? null;
 	return {
 		threadId: input.threadId,
 		clientManagedHandoffs: false,
-		delegationAckFiller: true,
+		delegationAckFiller: presentation?.recording !== true,
 		flushTranscriptTailOnSessionEnd: true,
 		codexResponsesAsItems: false,
 		codexResponseHandoffMode: "bemTags",
@@ -71,9 +76,9 @@ export function createRealtimeStartParams(input: {
 		realtimeStartInstructions: COORDINATOR_CHANNEL_INSTRUCTIONS,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 		prompt:
-			narrated === null
+			presentation === null
 				? ARCHBOARD_VOICE_PROMPT
-				: `${ARCHBOARD_VOICE_PROMPT}\n\n${voicePresentationPrompt(narrated)}`,
+				: `${ARCHBOARD_VOICE_PROMPT}\n\n${voicePresentationPrompt(presentation)}`,
 		realtimeSessionId: input.realtimeSessionId,
 		transport: { type: "webrtc", sdp: input.sdp },
 		version: "v3",

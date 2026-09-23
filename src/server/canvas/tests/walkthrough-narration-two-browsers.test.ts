@@ -141,16 +141,17 @@ test("narration is about the browser that pressed Narrate, not the first pane wi
 	browserPane("client-app", OTHER);
 	browserPane("client-chrome", NARRATED);
 
-	expect(() => canvas.narrationFor("A", "client-app", walkthroughId)).toThrow();
-	expect(canvas.narrationFor("A", "client-chrome", walkthroughId)).toEqual({
+	expect(() => canvas.narrationFor("A", "client-app", walkthroughId, false)).toThrow();
+	expect(canvas.narrationFor("A", "client-chrome", walkthroughId, false)).toEqual({
 		walkthrough: walkthroughId,
 		name: "How a request lands",
+		recording: false,
 	});
 });
 
 test("a hand on the other browser's pane of the same id is not this narration's news", () => {
 	canvas.bindVoicePane("A", "client-chrome");
-	canvas.narrationFor("A", "client-chrome", walkthroughId);
+	canvas.narrationFor("A", "client-chrome", walkthroughId, false);
 	const heard: string[] = [];
 	const stop = canvas.subscribeNarrationChanges((change) => heard.push(change.kind));
 	const stepped: SemanticPanePresentation = {

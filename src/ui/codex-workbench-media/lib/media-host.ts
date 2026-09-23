@@ -1,6 +1,8 @@
 // The neutral realtime host over one workbench transport: the start offer
 // rides the exact start lease, text and stop ride the current session handle,
-// and remote media lands on an audio element the owner mounts.
+// and remote media lands on an audio element the owner mounts. A refused start
+// fails with one sentence, except a recording refused over live voice
+// (TASK-304), which fails with the gateway's reason.
 
 import type { BrowserCommandLease, BrowserVoicePresentation } from "@/shared/codex-browser-model";
 import type {
@@ -119,6 +121,19 @@ function answerMatches(
 }
 
 /**
+ * What a start that did not deliver an answer fails with. A recording refused over live voice
+ * (TASK-304) says why, since the page that asked reports it; every other refusal keeps the one
+ * sentence it always had.
+ * @param value The transport result.
+ * @returns The failure's message.
+ */
+function refusedStartMessage(value: BrowserWorkbenchCommandResult): string {
+	return value.code === "voice_live" && value.message !== null
+		? value.message
+		: "Realtime negotiation was unavailable or failed.";
+}
+
+/**
  * The answer a delivered start carries, verified against the offer and lease.
  * @param value The transport result.
  * @param offer The offer.
@@ -133,7 +148,7 @@ function startAnswer(
 	const answer = value.realtimeAnswer;
 	const handle = value.realtimeSessionHandle;
 	if (value.outcome !== "delivered" || answer === undefined || handle === undefined) {
-		throw new Error("Realtime negotiation was unavailable or failed.");
+		throw new Error(refusedStartMessage(value));
 	}
 	if (!answerMatches(answer, handle, offer, lease)) {
 		throw new Error("The realtime answer did not match the exact start lease.");

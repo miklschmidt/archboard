@@ -1,4 +1,16 @@
-import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
+// The canvas's one voice session: started, spoken into and stopped by the browser that holds it.
+//
+// A start replaces whatever session was running, except a recording's (TASK-304): a recording is
+// started from a headless page nobody is watching, and must never stop somebody who is talking,
+// so it is refused while any session is live, with the reason the page reports. A recording
+// start also opens no step: the recording page opens step 1 itself and moves on by itself, and
+// each step it reports reaches the voice model the way a step chosen by hand does.
+
+import {
+	CodexWorkbenchGatewayError,
+	type BrowserActionContext,
+	type BrowserRealtimeActions,
+} from "@/server/codex-workbench";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
 import type { RealtimePresentation } from "@/runtime/codex-realtime";
@@ -12,6 +24,9 @@ import {
 } from "@/server/canvas/lib/walkthrough-narration";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;
+
+/** A browser's request to start voice. */
+type RealtimeStartCommand = Parameters<BrowserRealtimeActions["start"]>[0];
 
 type ActiveRealtime = Readonly<{
 	handle: string;
@@ -138,19 +153,53 @@ function workhorseReadyFor(workhorse: WorkhorseSnapshot, threadId: ThreadId): bo
  * that presents a walkthrough is told what it says by the server, from the board that pane is
  * showing (TASK-251).
  * @param pending The session being started.
- * @param walkthrough The walkthrough the user pressed Narrate on, or undefined.
+ * @param presentation The walkthrough the start presents and whether it is recorded, or undefined.
  * @returns The walkthrough to present, or null for an ordinary session.
  */
 function narrationOfStart(
 	pending: ActiveRealtime,
-	walkthrough: string | undefined,
+	presentation: RealtimeStartCommand["presentation"],
 ): RealtimePresentation | null {
 	bindVoicePane(pending.paneId, pending.browserId);
-	if (walkthrough === undefined) {
+	if (presentation === undefined) {
 		forgetNarration(pending.paneId);
 		return null;
 	}
-	return narrationFor(pending.paneId, pending.browserId, walkthrough);
+	return narrationFor(
+		pending.paneId,
+		pending.browserId,
+		presentation.walkthrough,
+		presentation.recording === true,
+	);
+}
+
+/**
+ * The refusal of a recording while voice is live on the canvas, kept in the start trace: a
+ * recording needs the voice to itself, and taking it would stop somebody who is talking.
+ * @returns The refusal to throw.
+ */
+function recordingRefusal(): CodexWorkbenchGatewayError {
+	const refusal = new CodexWorkbenchGatewayError(
+		"voice_live",
+		"Voice is live on this canvas, and a recording needs the voice to itself. Stop voice, then record again.",
+	);
+	voiceStartTrace.note("refused", { message: traceMessage(refusal) });
+	return refusal;
+}
+
+/**
+ * Open a narration's first step in its pane. A recording's page opens its own, so a recording
+ * is asked for nothing.
+ * @param presentation The walkthrough the session presents, or null.
+ * @param paneId The pane it presents in.
+ */
+function openFirstStep(presentation: RealtimePresentation | null, paneId: string): void {
+	if (presentation === null || presentation.recording) {
+		return;
+	}
+	openNarration(paneId).catch((error: unknown) => {
+		voiceStartTrace.note("narration_failed", { message: traceMessage(error) });
+	});
 }
 
 /**
@@ -209,6 +258,19 @@ export function createCanvasRealtimeActions(
 				activeRealtime = null;
 			}
 		}
+	};
+	/**
+	 * Make room for a new session: stop the one running, or refuse a recording while one is.
+	 * @param recording Whether the new session is a recording.
+	 */
+	const makeRoom = async (recording: boolean): Promise<void> => {
+		if (activeRealtime === null) {
+			return;
+		}
+		if (recording) {
+			throw recordingRefusal();
+		}
+		await stopActive();
 	};
 	/**
 	 * The realtime session one command may act on, refused when the handle no
@@ -302,29 +364,31 @@ export function createCanvasRealtimeActions(
 
 	const actions: BrowserRealtimeActions = {
 		/**
-		 * Start voice for one pane, replacing whatever session was running.
+		 * Start voice for one pane, replacing whatever session was running; a recording is
+		 * refused instead while one is.
 		 * @param command The offer.
 		 * @param context The pane and the link it named.
 		 * @returns The answer, and the handle the pane holds the session by.
 		 */
 		start: (command, context) =>
 			serialize(async () => {
+				const recording = command.presentation?.recording === true;
 				voiceStartTrace.begin(context.paneId);
 				voiceStartTrace.note("requested", {
 					narration: command.presentation !== undefined,
+					recording,
 					offerSdpBytes: Buffer.byteLength(command.sdp),
 					replacesSession: activeRealtime !== null,
 				});
-				if (activeRealtime !== null) {
-					await stopActive();
-				}
+				await makeRoom(recording);
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
 				try {
-					const presentation = narrationOfStart(pending, command.presentation?.walkthrough);
+					const presentation = narrationOfStart(pending, command.presentation);
 					// Creating the offer subscribes the session to this pane's narration before it
 					// returns, so the first step, asked of the pane now while Codex starts the
-					// session, reaches the voice model the way every later step does.
+					// session, reaches the voice model the way every later step does. A recording's
+					// page opens the first step itself, which reaches it the same way.
 					const answering = components.realtime.createOffer(
 						{
 							sessionId: pending.sessionId,
@@ -333,11 +397,7 @@ export function createCanvasRealtimeActions(
 						},
 						presentation,
 					);
-					if (presentation !== null) {
-						openNarration(pending.paneId).catch((error: unknown) => {
-							voiceStartTrace.note("narration_failed", { message: traceMessage(error) });
-						});
-					}
+					openFirstStep(presentation, pending.paneId);
 					const realtimeAnswer = await answering;
 					requireActive(pending.handle, context);
 					voiceStartTrace.note("answered", {
