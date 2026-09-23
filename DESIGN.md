@@ -58,9 +58,9 @@ There is no hook process, hook trust grant or second context diff.
 
 ### 2. Mid-conversation context — the bound app-server session
 
-The workbench owns one private stdio app-server child and one explicit thread
-link from a pane to its workhorse; that link is the only automatic target for
-semantic board updates. Archboard never inspects recent activity, reads an
+The workbench owns one private stdio app-server child and one thread link from
+the canvas to its workhorse, made by the first message or Talk; that link is
+the only automatic target for semantic board updates. Archboard never inspects recent activity, reads an
 environment-selected thread, or connects a second client. The child runs in an
 Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with its own sign-in, and
 an epoch manifest outside Codex storage makes every prior-child thread
@@ -69,7 +69,7 @@ tools, not protection against a process pointed at those paths on purpose.
 
 The change feed settles a user's gesture, discards visual noise and renders
 a compact semantic delta. Immediately before delivery Archboard revalidates the
-child, epoch, pane link, loaded membership, controllability, thread status,
+child, epoch, canvas link, loaded membership, controllability, thread status,
 semantic cursor and origin. A human or mixed-origin layout or structural update
 gets one `thread/inject_items` attempt on the same owned connection: one
 developer message with one `input_text` part, entering model-visible history
@@ -118,7 +118,7 @@ came back to it as news. With no voice session nothing is sent
 (`voice_inactive`).
 
 Realtime voice attaches to a persistent fast coordinator thread linked to the
-pane's workhorse, not to the workhorse itself, so quick questions, lookups and
+canvas's workhorse, not to the workhorse itself, so quick questions, lookups and
 immediate board interaction stay responsive while a heavier turn continues. The
 coordinator starts with `project_doc_max_bytes: 0`, so the checkout's `AGENTS.md`,
 which is written for an agent working in the repository, never reaches it. The

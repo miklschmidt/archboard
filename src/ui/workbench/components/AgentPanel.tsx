@@ -19,6 +19,7 @@ import { EmptyConversation } from "@/ui/workbench/components/EmptyConversation";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import { PendingWork } from "@/ui/workbench/components/PendingWork";
 import { SignInCard } from "@/ui/workbench/components/SignInCard";
+import { VoiceLines } from "@/ui/workbench/components/VoiceLines";
 import { AgentRuntimeProvider } from "@/ui/workbench-runtime";
 import { Conversation } from "@/ui/workbench-thread";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
@@ -47,6 +48,16 @@ function titleOf(view: AgentView): string {
 }
 
 /**
+ * Whether nothing has been said yet: no turn, no message on its way, nothing aloud.
+ * @param view The agent view.
+ * @returns True for an empty conversation.
+ */
+function nothingSaid(view: AgentView): boolean {
+	const spoken = view.snapshot?.voice.transcript.length ?? 0;
+	return view.conversation.turns.length === 0 && view.setup.held.length === 0 && spoken === 0;
+}
+
+/**
  * The conversation panel.
  * @param props The view, the actions, the transport and the close.
  * @returns The panel.
@@ -56,7 +67,7 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 	const [details, setDetails] = useState(false);
 	const showDetails = useCallback(() => setDetails(true), []);
 	const hideDetails = useCallback(() => setDetails(false), []);
-	const empty = view.conversation.turns.length === 0 && view.setup.held.length === 0;
+	const empty = nothingSaid(view);
 	return (
 		<aside
 			data-slot="agent-panel"
@@ -83,6 +94,7 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 				<AgentRuntimeProvider transport={props.transport}>
 					<Conversation>
 						{empty && <FirstUse view={view} actions={actions} suggest={props.suggest} />}
+						<VoiceLines snapshot={view.snapshot} />
 						<PendingWork view={view} actions={actions} />
 					</Conversation>
 				</AgentRuntimeProvider>
