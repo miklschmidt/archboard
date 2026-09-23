@@ -20,13 +20,33 @@ interface Conversation {
 const EMPTY: Conversation = Object.freeze({ turns: [], failure: null });
 
 /**
+ * Nothing to listen to without a transport.
+ * @returns How to stop listening.
+ */
+function subscribeToNothing(): () => void {
+	return () => undefined;
+}
+
+/**
+ * No state without a transport.
+ * @returns Null.
+ */
+function noState(): null {
+	return null;
+}
+
+/**
  * The conversation a transport publishes.
- * @param transport The transport.
+ * @param transport The transport, or null while the pane has none.
  * @returns The conversation.
  */
-function useConversation(transport: BrowserWorkbenchTransport): Conversation {
-	const state = useSyncExternalStore(transport.subscribe, transport.state, transport.state);
-	const timeline = state.snapshot?.timeline ?? null;
+function useConversation(transport: BrowserWorkbenchTransport | null): Conversation {
+	const state = useSyncExternalStore(
+		transport?.subscribe ?? subscribeToNothing,
+		transport?.state ?? noState,
+		transport?.state ?? noState,
+	);
+	const timeline = state?.snapshot?.timeline ?? null;
 	return useMemo(() => {
 		if (timeline === null) return EMPTY;
 		try {

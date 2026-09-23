@@ -94,6 +94,7 @@ test("a message sent while signed out signs in, waits for Codex, creates the con
 	const transport = movableTransport(STAGES.signedOut);
 	const { ports, calls } = portsOver(transport);
 	const setup = createAgentSetup(ports);
+	setup.connect();
 	const opened: string[] = [];
 	const tab: AuthTab = {
 		/**
@@ -136,6 +137,7 @@ test("with a conversation, a message is delivered at once and Talk starts voice 
 	const transport = movableTransport(STAGES.linked);
 	const { ports, calls } = portsOver(transport);
 	const setup = createAgentSetup(ports);
+	setup.connect();
 	setup.send("Queue this", { queue: true });
 	setup.talk();
 	await settle();
@@ -155,6 +157,7 @@ test("a conversation that cannot be created fails the held message with the reas
 			Promise.resolve(refuse ? { ok: false, reason: "Codex refused the thread." } : { ok: true }),
 	});
 	const setup = createAgentSetup(ports);
+	setup.connect();
 	setup.send("Hello");
 	await settle();
 	const [failed] = setup.snapshot().held;
@@ -178,6 +181,7 @@ test("a message Codex refuses stays with its reason until the person discards it
 		submit: () => Promise.resolve({ outcome: "not_delivered", reason: "Turn is busy." }),
 	});
 	const setup = createAgentSetup(ports);
+	setup.connect();
 	setup.send("Try this");
 	await settle();
 	const [held] = setup.snapshot().held;
@@ -190,6 +194,7 @@ test("while Codex cannot run, held work fails with its reason instead of waiting
 	const transport = movableTransport(STAGES.stopped);
 	const { ports, calls } = portsOver(transport);
 	const setup = createAgentSetup(ports);
+	setup.connect();
 	setup.send("Anything");
 	setup.talk();
 	expect(calls).toEqual([]);
@@ -203,6 +208,7 @@ test("cancelling a sign-in cancels it at Codex and fails what waited on it", () 
 	const transport = movableTransport(STAGES.signingIn);
 	const { ports, calls } = portsOver(transport);
 	const setup = createAgentSetup(ports);
+	setup.connect();
 	setup.send("Later");
 	setup.cancelSignIn();
 	expect(calls).toEqual([`cancel:${ids.loginId}`]);

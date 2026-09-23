@@ -4,9 +4,8 @@
 
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
+import { AGENT_PANEL_WIDTH, NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
 import { buildOutline } from "@/ui/board-catalog";
-import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
 	LivePresentation,
 	RecoveryPresentation,
@@ -28,14 +27,16 @@ import { PaneBar } from "@/ui/shell/components/PaneBar";
 import { PaneStages } from "@/ui/shell/components/PaneStages";
 import { readingOf } from "@/ui/shell/lib/reading";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
-import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
 
 /**
  * The navigator's width is the shell's one fixed column, set here from the
  * shared shell geometry so the reference pane a drawing is measured against
  * is derived from the width the shell draws (ADR 0028).
  */
-const SHELL_STYLE: CSSProperties = { "--shell-navigator-width": `${NAVIGATOR_WIDTH}px` };
+const SHELL_STYLE: CSSProperties = {
+	"--shell-navigator-width": `${NAVIGATOR_WIDTH}px`,
+	"--agent-panel-width": `${AGENT_PANEL_WIDTH}px`,
+};
 
 /** Inputs for the shell. */
 interface ShellProps {
@@ -44,12 +45,10 @@ interface ShellProps {
 	actions: ShellActions;
 	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
 	voiceControls?: ReactNode;
-	/** The workbench's compact controls for the dock header. */
-	dockHeader?: ReactNode;
-	/** The workbench itself, for the dock body. */
-	dockBody?: ReactNode;
-	/** The recent activity, shown in the dock while no workbench rides the pane. */
-	dockActivity?: ReactNode;
+	/** The agent bar under the panes: the agent's state, Talk and the composer. */
+	agentBar?: ReactNode;
+	/** The conversation panel beside the panes, while it is open. */
+	agentPanel?: ReactNode;
 	/** The fullscreen root: the centre stage element. */
 	attachStage?: (element: HTMLDivElement | null) => void;
 }
@@ -87,28 +86,27 @@ function Shell(props: ShellProps): JSX.Element {
 			<div className="flex min-h-0 min-w-0 flex-1">
 				<Navigator view={view} outline={outline} actions={actions} />
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
-					<Notices notices={view.notices} actions={actions} />
-					<PaneBar
-						panes={view.panes}
-						activePaneId={view.activePaneId}
-						listing={view.boards}
-						actions={actions}
-					/>
-					<PaneStages
-						panes={view.panes}
-						activePaneId={view.activePaneId}
-						presentation={view.presentation}
-						voiceControls={props.voiceControls ?? null}
-						attachStage={props.attachStage}
-						actions={actions}
-					/>
-					<WorkbenchDock
-						pane={active}
-						paneCount={view.panes.length}
-						headerControls={props.dockHeader ?? null}
-						body={props.dockBody ?? null}
-						activity={props.dockActivity ?? null}
-					/>
+					<div className="flex min-h-0 min-w-0 flex-1">
+						<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+							<Notices notices={view.notices} actions={actions} />
+							<PaneBar
+								panes={view.panes}
+								activePaneId={view.activePaneId}
+								listing={view.boards}
+								actions={actions}
+							/>
+							<PaneStages
+								panes={view.panes}
+								activePaneId={view.activePaneId}
+								presentation={view.presentation}
+								voiceControls={props.voiceControls ?? null}
+								attachStage={props.attachStage}
+								actions={actions}
+							/>
+						</div>
+						{props.agentPanel}
+					</div>
+					{props.agentBar}
 				</div>
 			</div>
 		</div>
@@ -116,7 +114,6 @@ function Shell(props: ShellProps): JSX.Element {
 }
 
 export {
-	ActivityList,
 	SETTINGS_TRIGGER_ID,
 	Shell,
 	isPresentShortcut,

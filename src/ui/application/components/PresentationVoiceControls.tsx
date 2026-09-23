@@ -1,20 +1,25 @@
-// The presentation bar's voice controls over the focused pane's owners.
+// Voice while a pane is presented fullscreen: the same Talk control the agent
+// bar carries, so voice starts, mutes and ends the same way everywhere.
 
 import type { JSX } from "react";
 
-import { useVoiceView } from "@/ui/application/hooks/use-voice-view";
-import type { WorkbenchFrameProps } from "@/ui/application/types/workbench-frame";
-import { VoiceControlsCompact } from "@/ui/voice-controls";
+import { TalkControl } from "@/ui/workbench";
+import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
+
+/** Inputs for the presentation's voice controls. */
+interface PresentationVoiceControlsProps {
+	readonly voice: AgentVoiceView;
+	readonly actions: AgentActions;
+	readonly reducedMotion: boolean;
+}
 
 /**
  * The presentation bar's voice controls.
- * @param props The owners.
- * @returns The compact controls.
+ * @param props The voice, the actions and the motion preference.
+ * @returns The Talk control.
  */
-function PresentationVoiceControls(props: Pick<WorkbenchFrameProps, "owners">): JSX.Element {
-	const { owners } = props;
-	const voice = useVoiceView(owners);
-	return <VoiceControlsCompact view={voice.controls} actions={owners.host.voice} />;
+function PresentationVoiceControls(props: PresentationVoiceControlsProps): JSX.Element {
+	return <TalkControl voice={props.voice} actions={props.actions} reducedMotion={props.reducedMotion} />;
 }
 
-export { PresentationVoiceControls };
+export { PresentationVoiceControls, type PresentationVoiceControlsProps };

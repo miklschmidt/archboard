@@ -16,34 +16,33 @@ import {
 import { DiagnosticList } from "@/ui/vault-diagnostics/components/DiagnosticList";
 import { useVaultCheck } from "@/ui/vault-diagnostics/hooks/use-vault-check";
 import { useVaultRepair } from "@/ui/vault-diagnostics/hooks/use-vault-repair";
-import type { VaultRepairTarget } from "@/ui/vault-diagnostics/api";
+import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 interface VaultDiagnosticsProps {
-	target: VaultRepairTarget | null;
-	chooseThread: () => void;
+	/** The focused pane's transport, to check again when the agent's turn ends. */
+	transport: BrowserWorkbenchTransport | null;
+	/** Send the agent a message; the agent sets itself up if it needs to. */
+	ask: (text: string) => void;
 }
 
 /**
  * Vault-wide warnings and errors with ordinary agent repair.
- * @param props The active workhorse and chooser.
+ * @param props The focused pane's transport and the way to ask the agent.
  * @returns The header bell and diagnostics dialog.
  */
 function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
-	const { target, chooseThread } = props;
+	const { transport, ask } = props;
 	const check = useVaultCheck();
 	const [open, setOpen] = useState(false);
 	const { refetch } = check;
 	const recheck = useCallback(() => {
 		void refetch();
 	}, [refetch]);
-	const choose = useCallback(() => {
-		setOpen(false);
-		chooseThread();
-	}, [chooseThread]);
-	const { repair, pending, message } = useVaultRepair(target, recheck, choose);
+	const repair = useVaultRepair(transport, ask, recheck);
 	const count = check.data?.diagnostics.length ?? 0;
 	const handleRepair = useCallback(() => {
-		void repair();
+		repair();
+		setOpen(false);
 	}, [repair]);
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -58,12 +57,11 @@ function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 					</DialogDescription>
 				</DialogHeader>
 				<CheckResult check={check} />
-				<output className="text-muted-foreground">{message}</output>
 				<DialogFooter>
 					<Button variant="outline" onClick={recheck} disabled={check.isFetching}>
 						Check again
 					</Button>
-					<Button onClick={handleRepair} disabled={pending || count === 0}>
+					<Button onClick={handleRepair} disabled={count === 0}>
 						Fix with Codex
 					</Button>
 				</DialogFooter>

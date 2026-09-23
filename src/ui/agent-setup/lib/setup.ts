@@ -7,6 +7,7 @@
 // waits and says what it waits on; a failure stays on the message with the
 // reason, and nothing is retried behind the person's back (DESIGN §2).
 
+import type { LoginId } from "@/shared/codex-workbench-identity";
 import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
@@ -44,15 +45,18 @@ interface AgentSetupPorts {
 	 * Cancel a pending sign-in.
 	 * @param loginId The sign-in.
 	 */
-	readonly cancelSignIn: (loginId: string) => Promise<SetupStepResult>;
+	readonly cancelSignIn: (loginId: LoginId) => Promise<SetupStepResult>;
 	/**
 	 * Deliver one message: steered into a running turn, queued when asked, sent otherwise.
 	 * @param text The message.
 	 * @param queue Whether the person asked to queue it behind the running turn.
 	 */
 	readonly submit: (text: string, queue: boolean) => Promise<WorkbenchComposerSubmissionResult>;
-	/** Start voice. */
-	readonly startVoice: () => Promise<void>;
+	/**
+	 * Start voice.
+	 * @param walkthrough The walkthrough to narrate, or null for a conversation.
+	 */
+	readonly startVoice: (walkthrough: string | null) => Promise<void>;
 }
 
 /** Where one held message stands. */
@@ -83,12 +87,21 @@ interface AgentSetupSnapshot {
 	readonly step: SetupStep;
 	/** The last step that failed, in the words of whatever refused it. */
 	readonly failure: string | null;
+	/** Why the last Talk did not start voice, or null. */
+	readonly talkFailure: string | null;
 }
 
 /** How a message is sent. */
 interface SendOptions {
-	readonly queue?: boolean;
-	readonly tab?: AuthTab;
+	readonly queue?: boolean | undefined;
+	readonly tab?: AuthTab | undefined;
+}
+
+/** How voice is started. */
+interface TalkOptions {
+	/** Narrate this walkthrough of the board in view, rather than converse. */
+	readonly walkthrough?: string | undefined;
+	readonly tab?: AuthTab | undefined;
 }
 
 /** The setup's controls. */
@@ -109,9 +122,9 @@ interface AgentSetup {
 	readonly send: (text: string, options?: SendOptions) => void;
 	/**
 	 * Start voice, setting up whatever is missing first.
-	 * @param tab A tab opened by the gesture, for a sign-in.
+	 * @param options A walkthrough to narrate, and a tab opened by the gesture for a sign-in.
 	 */
-	readonly talk: (tab?: AuthTab) => void;
+	readonly talk: (options?: TalkOptions) => void;
 	/**
 	 * Sign in.
 	 * @param login The provider and its credentials.
@@ -133,8 +146,11 @@ interface AgentSetup {
 	 * @returns Its text, for putting it back in the composer.
 	 */
 	readonly discard: (id: string) => string | null;
-	/** Stop listening to the transport. */
-	readonly dispose: () => void;
+	/**
+	 * Listen to the transport, carrying held work forward as it changes.
+	 * @returns Stops listening.
+	 */
+	readonly connect: () => () => void;
 }
 
 /** What held work waits on, by phase. */
@@ -202,6 +218,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	let held: HeldMessage[] = [];
 	let talk: AgentSetupSnapshot["talk"] = "idle";
 	let failure: string | null = null;
+	let talkFailure: string | null = null;
 	let signInAsked = false;
 	let linking = false;
 	// A create Codex accepted whose link has not reached the snapshot yet: a
@@ -209,6 +226,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	let created = false;
 	let delivering = false;
 	let tab: AuthTab | null = null;
+	let narration: string | null = null;
 	let sequence = 0;
 	const listeners = new Set<() => void>();
 
@@ -233,6 +251,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 			talk,
 			step: waiting() ? readyStep : null,
 			failure,
+			talkFailure,
 		});
 	}
 
@@ -268,9 +287,9 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		talk = "starting";
 		publish();
 		try {
-			await ports.startVoice();
+			await ports.startVoice(narration);
 		} catch (error) {
-			failure = words(error);
+			talkFailure = words(error);
 		}
 		talk = "idle";
 		publish();
@@ -284,7 +303,9 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		held = held.map((message) =>
 			message.state === "waiting" ? { ...message, state: "failed", reason } : message,
 		);
-		if (talk === "waiting") talk = "idle";
+		if (talk !== "waiting") return;
+		talk = "idle";
+		talkFailure = reason;
 	}
 
 	/** Create the conversation once, and look again when it settles. */
@@ -406,12 +427,15 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 
 	/**
 	 * Start voice, setting up whatever is missing first.
-	 * @param gestureTab A gesture's tab, for a sign-in.
+	 * @param options A walkthrough to narrate, and a gesture's tab for a sign-in.
 	 */
-	function startVoice(gestureTab?: AuthTab): void {
-		keepTab(gestureTab);
+	function startVoice(options: TalkOptions = {}): void {
+		keepTab(options.tab);
 		failure = null;
-		if (talk === "idle") talk = "waiting";
+		talkFailure = null;
+		if (talk !== "idle") return;
+		narration = options.walkthrough ?? null;
+		talk = "waiting";
 		pump();
 	}
 
@@ -467,12 +491,14 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		void link();
 	}
 
-	const unsubscribe = ports.transport.subscribe(pump);
-
-	/** Stop listening. */
-	function dispose(): void {
-		unsubscribe();
-		listeners.clear();
+	/**
+	 * Listen to the transport.
+	 * @returns Stops listening.
+	 */
+	function connect(): () => void {
+		const unsubscribe = ports.transport.subscribe(pump);
+		pump();
+		return unsubscribe;
 	}
 
 	/**
@@ -493,7 +519,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		newConversation,
 		retry,
 		discard,
-		dispose,
+		connect,
 	};
 }
 
@@ -507,5 +533,6 @@ export {
 	type HeldState,
 	type SendOptions,
 	type SetupStep,
+	type TalkOptions,
 	type SetupStepResult,
 };

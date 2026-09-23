@@ -3,6 +3,7 @@
 // what, if anything, stands between them and talking to the agent. Pure.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { LoginId } from "@/shared/codex-workbench-identity";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
 
 /** Where the agent stands. */
@@ -16,7 +17,7 @@ type AgentPhase =
 	/** Nobody is signed in to Archboard's own Codex. */
 	| { readonly kind: "signed_out"; readonly failure: string | null }
 	/** A sign-in is waiting for the person to finish it on the provider's page. */
-	| { readonly kind: "signing_in"; readonly loginId: string; readonly authUrl: string | null }
+	| { readonly kind: "signing_in"; readonly loginId: LoginId; readonly authUrl: string | null }
 	/** The agent can take work; `linked` says whether a conversation exists yet. */
 	| { readonly kind: "ready"; readonly linked: boolean };
 
@@ -40,7 +41,7 @@ function unavailable(readiness: BrowserSnapshot["readiness"]): AgentPhase {
  * @param loginId The pending sign-in.
  * @returns The phase.
  */
-function signingIn(snapshot: BrowserSnapshot, loginId: string): AgentPhase {
+function signingIn(snapshot: BrowserSnapshot, loginId: LoginId): AgentPhase {
 	const { login } = snapshot;
 	const authUrl = login.state === "pending" && login.loginId === loginId ? login.authUrl : null;
 	return { kind: "signing_in", loginId, authUrl };
