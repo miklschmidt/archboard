@@ -21,6 +21,7 @@ export {
 	boardKey,
 	paneBoardAddress,
 	parseBoardKey,
+	statedVariant,
 	requireVaultRoot,
 	vaultPathFor,
 } from "@/runtime/engine/lib/board-address";

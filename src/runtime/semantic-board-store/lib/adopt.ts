@@ -1,9 +1,11 @@
-// Adopting an architecture: moving the `current` designation.
+// Adopting an architecture: moving the `current` designation, or on a board
+// for something nobody had built, giving it one.
 //
 // Adoption renames nothing, reparents nothing, and rewrites no history: the
 // variant that was current becomes a historical state under its own name, the
 // adopted one becomes current under its own name, and the move itself is
-// written down. A proposal that was derived from either of them still says
+// written down. On a board that had no current variant nothing becomes
+// history: adoption is the moment its architecture starts existing (ADR 0031). A proposal that was derived from either of them still says
 // so, because ancestry is a record of where a state came from and adoption
 // does not change where anything came from. It goes through the one write
 // boundary every other change does (ADR 0016, ADR 0023).
@@ -36,7 +38,7 @@ function adoptVariant(
 	}
 	const entry: Adoption = {
 		variant: adopting.id,
-		from: board.current,
+		...(board.current === undefined ? {} : { from: board.current }),
 		at,
 		...(reason === undefined ? {} : { reason }),
 	};
@@ -124,10 +126,14 @@ function unsettledAbove(board: SemanticBoard, adopting: SemanticVariant): Semant
  * because adoption moves a designation and not a lineage.
  * @param variant The variant.
  * @param becoming Which variant is taking the designation.
- * @param was Which variant was current.
+ * @param was Which variant was current, or undefined when none was.
  * @returns The variant as it should now be.
  */
-function designated(variant: SemanticVariant, becoming: string, was: string): SemanticVariant {
+function designated(
+	variant: SemanticVariant,
+	becoming: string,
+	was: string | undefined,
+): SemanticVariant {
 	if (variant.id === becoming) {
 		return { ...variant, lifecycle: "current" };
 	}

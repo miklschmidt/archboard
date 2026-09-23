@@ -11,7 +11,6 @@ import { z } from "zod";
 import {
 	inspectGroup,
 	groupsUsed,
-	resolveVariant,
 	RenderedVariantSchema,
 	type GroupInspection,
 	type SemanticBoard,
@@ -26,7 +25,7 @@ import {
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
-import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
+import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
 
 const InspectInputSchema = z.object({
 	name: z.string(),
@@ -176,21 +175,6 @@ function described(result: GroupInspectionResult): string[] {
 }
 
 /**
- * The variant the command named, or the board's current one.
- * @param board The board as read.
- * @param asked The variant id or name typed, if any.
- * @returns The variant.
- * @throws {CliUsageError} When the board has no such variant.
- */
-function askedVariant(board: SemanticBoard, asked: string | undefined): SemanticVariant {
-	const variant = resolveVariant(board, asked);
-	if (variant === undefined) {
-		throw new CliUsageError(`"${board.name}" has no variant called "${asked ?? ""}"`);
-	}
-	return variant;
-}
-
-/**
  * Refuse an id that is neither a configured group nor a membership of any
  * node: there is nothing for it to be. A configured group nobody has joined
  * is not refused, and neither is an id the configuration dropped while nodes
@@ -254,7 +238,7 @@ const semanticInspectContract = defineCommand({
 			spellings: ["--variant"],
 			value: "required",
 			placeholder: "variant",
-			description: "Which variant to inspect, by id or name; the current one when absent",
+			description: `Which variant to inspect, by id or name; ${UNNAMED_VARIANT}`,
 		},
 	],
 	input: { ingress: InspectInputSchema },

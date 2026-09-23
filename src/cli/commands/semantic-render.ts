@@ -7,7 +7,7 @@ import { OfferedViewSchema, RenderedVariantSchema } from "@/shared/semantic-boar
 import { renderSemanticBoardOnCanvas } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
-import { SelectorSchema, drawnAgainst } from "@/cli/commands/lib/semantic-input";
+import { SelectorSchema, UNNAMED_VARIANT, drawnAgainst } from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
 const THEMES = ["light", "dark"] as const;
@@ -80,8 +80,7 @@ const semanticRenderContract = defineCommand({
 			spellings: ["--variant"],
 			value: "required",
 			placeholder: "variant",
-			description:
-				"Which variant to draw, by id or name; the current one when absent. A variant with a predecessor is drawn as the comparison with it, and the receipt names that predecessor",
+			description: `Which variant to draw, by id or name; ${UNNAMED_VARIANT}. A variant with a predecessor is drawn as the comparison with it, and the receipt names that predecessor`,
 		},
 		{
 			kind: "option",

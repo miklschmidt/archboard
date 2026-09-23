@@ -2,7 +2,7 @@
 //
 // The rules here are about the family and the frame: which contract version the
 // document was written for, that variant ids and names are unique, that
-// ancestry resolves and terminates, that exactly one variant is designated
+// ancestry resolves and terminates, that at most one variant is designated
 // current and the board agrees with it, and that the board's own id and its
 // variants' ids are nobody else's. Everything about what is *on* a variant is
 // next door in `integrity.ts`.
@@ -132,8 +132,9 @@ function oneStandingIssues(
 }
 
 /**
- * Check the current designation: it names a variant of this board, that
- * variant says it is the current one, and no other variant says so too.
+ * Check the current designation: when there is one, it names a variant of this
+ * board, that variant says it is the current one, and no other variant says so
+ * too; when there is none, no variant says it is current.
  *
  * The last of those is the one worth spelling out. `current` is a designation
  * that moves, and the lifecycle on a variant is what a reader sees on screen.
@@ -148,24 +149,53 @@ function designationIssues(
 	board: SemanticBoard,
 	byId: ReadonlyMap<string, SemanticVariant>,
 ): IntegrityIssue[] {
-	const issues: IntegrityIssue[] = [];
 	const claiming = board.variants.filter((variant) => variant.lifecycle === "current");
-	if (claiming.length !== 1) {
-		issues.push({
-			at: "variants",
-			problem: `${claiming.length} variants are marked current; exactly one is the implemented architecture`,
-		});
-	}
-	const current = byId.get(board.current);
+	const issues: IntegrityIssue[] =
+		claiming.length > 1
+			? [
+					{
+						at: "variants",
+						problem: `${claiming.length} variants are marked current; at most one is the implemented architecture`,
+					},
+				]
+			: [];
+	return [...issues, ...designatedIssues(board.current, byId, claiming)];
+}
+
+/**
+ * Check what the board designates against the variants that claim it.
+ *
+ * A board for something nobody has built designates nothing, and then no
+ * variant may claim to be current either: one that did would be saying
+ * something the board does not (ADR 0031).
+ * @param current The board's designation, when it has one.
+ * @param byId The board's variants, by id.
+ * @param claiming The variants marked current.
+ * @returns The issues found.
+ */
+function designatedIssues(
+	current: string | undefined,
+	byId: ReadonlyMap<string, SemanticVariant>,
+	claiming: readonly SemanticVariant[],
+): IntegrityIssue[] {
 	if (current === undefined) {
-		issues.push({ at: "current", problem: `"${board.current}" is not a variant of this board` });
-	} else if (current.lifecycle !== "current") {
-		issues.push({
+		return claiming.map((variant) => ({
 			at: "current",
-			problem: `variant "${current.name}" is designated current but is marked ${current.lifecycle}`,
-		});
+			problem: `variant "${variant.name}" is marked current and the board designates no current variant`,
+		}));
 	}
-	return issues;
+	const designated = byId.get(current);
+	if (designated === undefined) {
+		return [{ at: "current", problem: `"${current}" is not a variant of this board` }];
+	}
+	return designated.lifecycle === "current"
+		? []
+		: [
+				{
+					at: "current",
+					problem: `variant "${designated.name}" is designated current but is marked ${designated.lifecycle}`,
+				},
+			];
 }
 
 /**
