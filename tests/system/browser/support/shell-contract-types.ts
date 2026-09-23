@@ -1,5 +1,3 @@
-type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
-
 type ShellMetrics = {
 	family: string;
 	size: number;
@@ -7,13 +5,26 @@ type ShellMetrics = {
 	weight: number;
 };
 
+type Rect = {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+	width: number;
+	height: number;
+};
+
+/** The shell's columns and bars as the desktop viewport lays them out. */
 type DesktopShell = {
-	navLeftOfCanvas: boolean;
-	navWidth: number;
-	workbenchBelowPane: boolean;
-	workbenchInsideCanvas: boolean;
-	columnsAlign: boolean;
-	canvasLargest: boolean;
+	viewport: { width: number; height: number };
+	nav: Rect;
+	centre: Rect;
+	stages: Rect;
+	pane: Rect;
+	bar: Rect;
+	composer: Rect;
+	/** The conversation panel, while it is open. */
+	panel: Rect | null;
 };
 
 type ThemeSnapshot = {
@@ -31,47 +42,35 @@ type ThemeSnapshot = {
 	shadowlessSurfaces: boolean;
 	visibleFocus: boolean;
 	boardIdentity: string;
+	/** The name of the variant the header says is shown. */
 	variant: string;
-	connectionState: string;
-	persistenceState: string;
-	paneIdentity: string;
-	legacyVaultLineCount: number;
+	/** The board the navigator marks as the one being read. */
+	selectedBoard: string | null;
+	focusedPaneCount: number;
+	/** Visible connection warnings in the header; none while the socket is up. */
+	connectionTrouble: number;
 	headerSectionsAligned: boolean;
-	tokens: string[];
-	weightTokens: string[];
 	wordmarkTracking: string;
 	fontChecks: boolean[];
 	fontResources: string[];
 	diagramFontResources: string[];
 	humanLabels: Array<{ family: string; transform: string; weight: number }>;
-	/** The navigator's section label: the kicker role, uppercase and tracked. */
+	/** A section label in the pane's sidebar: the kicker role, uppercase and tracked. */
 	sectionKicker: { family: string; transform: string; weight: number; size: number };
 	titleType: ShellMetrics;
 	bodyType: ShellMetrics;
-	kickerType: ShellMetrics;
+	stateType: ShellMetrics;
+	technicalType: ShellMetrics;
 	controlType: ShellMetrics;
-	paneType: ShellMetrics;
 	actionTargets: Array<{ width: number; height: number }>;
-	paneTarget: { width: number; height: number };
 	presentTarget: { width: number; height: number };
 };
 
 type PaneBarLayout = {
-	height: number;
 	tabCount: number;
 	tabHeights: number[];
-	focusedEdgeWidth: number;
-	focusedEdgeColor: string;
-	focusedDotColor: string;
-	labels: string[];
-};
-
-type ActivityLayout = {
-	lineCount: number;
-	linesFit: boolean;
-	panelFits: boolean;
-	canvasClear: boolean;
-	timestampsAlign: boolean;
+	pressedCount: number;
+	tabType: ShellMetrics | null;
 };
 
 type NoticeLayout = {
@@ -85,64 +84,10 @@ type NoticeLayout = {
 	text: string;
 };
 
-type InspectorTypeMetrics = {
-	family: string;
-	size: number;
-	lineHeight: number;
-	weight: number;
-	transform: string;
-};
-
-type InspectorContract = {
-	sections: string[];
-	titleType: InspectorTypeMetrics;
-	statusType: InspectorTypeMetrics;
-	kickerType: InspectorTypeMetrics;
-	sectionType: InspectorTypeMetrics;
-	labelType: InspectorTypeMetrics;
-	humanType: InspectorTypeMetrics;
-	technicalType: InspectorTypeMetrics;
-	copyType: InspectorTypeMetrics;
-	controlType: InspectorTypeMetrics;
-	kickerContrast: number;
-	labelContrast: number;
-	openHeight: number;
-	focusHeight: number;
-};
-
-type NavigatorContract = {
-	boardCount: number;
-	draftMarkers: string[];
-	humanFonts: Array<{ family: string; lineHeight: number; size: number; transform: string }>;
-	initials: number;
-	navWidth: number;
-	primaryVariants: string[];
-	targets: Array<{ height: number; width: number }>;
-	technicalFonts: string[];
-};
-
-interface NavigatorPreviewView {
-	board?: string;
-	cardWidth?: number;
-	flat?: boolean;
-	focusables?: number;
-	frameHeight?: number;
-	rawSvg?: number;
-	source?: string;
-	src?: string;
-	state?: string;
-}
-
 export {
-	type PanesBody,
 	type ShellMetrics,
 	type DesktopShell,
 	type ThemeSnapshot,
 	type PaneBarLayout,
-	type ActivityLayout,
 	type NoticeLayout,
-	type InspectorTypeMetrics,
-	type InspectorContract,
-	type NavigatorContract,
-	type NavigatorPreviewView,
 };
