@@ -6,7 +6,9 @@
 
 import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/snapshot-cache";
 import type { AgentSetupPorts, SetupStepResult } from "@/ui/agent-setup";
-import type { FocusedTransport } from "@/ui/application/lib/focused-transport";
+import type { AgentFocus } from "@/ui/application/lib/agent-focus";
+import { createProgressClock } from "@/ui/application/lib/progress-clock";
+import type { VoiceSession } from "@/ui/voice-session";
 import {
 	createWorkbenchApprovalsController,
 	type WorkbenchApprovalsController,
@@ -15,7 +17,10 @@ import {
 	createWorkbenchComposerController,
 	type WorkbenchComposerController,
 } from "@/ui/workbench-composer";
-import { createWorkbenchQueueController, type WorkbenchQueueController } from "@/ui/workbench-queue";
+import {
+	createWorkbenchQueueController,
+	type WorkbenchQueueController,
+} from "@/ui/workbench-queue";
 import { createThreadLinkController } from "@/ui/workbench-thread-link";
 import type { ThreadLinkController } from "@/ui/workbench-thread-link/contracts";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
@@ -37,6 +42,15 @@ interface WorkbenchOwners {
 	readonly threadLink: ThreadLinkController;
 	/** The approvals controller's decisions, cached per publication. */
 	readonly approvalDecisions: SnapshotStore<ApprovalDecisions>;
+	/** When the running turn last reported anything new. */
+	readonly progress: SnapshotStore<number | null>;
+}
+
+/** The voice session, the pane it runs for, and that pane's transport. */
+interface VoiceOwner {
+	readonly paneId: string;
+	readonly session: VoiceSession;
+	readonly transport: BrowserWorkbenchTransport;
 }
 
 /** What the owners need from the application. */
@@ -110,6 +124,7 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 		approvals,
 		threadLink,
 		approvalDecisions: createSnapshotCache(approvals.subscribe, () => approvalDecisions(approvals)),
+		progress: createProgressClock(transport),
 	});
 }
 
@@ -118,26 +133,40 @@ const NO_PANE_WORDS = "No pane is connected to the canvas.";
 const NO_PANE: SetupStepResult = { ok: false, reason: NO_PANE_WORDS };
 
 /**
+ * Start voice in the pane voice runs for, and keep it there until it ends.
+ * @param focus The agent focus.
+ * @param pinVoice Keep voice on one pane.
+ * @returns The voice port.
+ */
+function voicePort(
+	focus: AgentFocus,
+	pinVoice: (paneId: string) => void,
+): AgentSetupPorts["startVoice"] {
+	return async (walkthrough) => {
+		const voice = focus.voice();
+		if (voice === null) throw new Error(NO_PANE_WORDS);
+		pinVoice(voice.paneId);
+		const view = await voice.session.start(walkthrough === null ? null : { walkthrough });
+		if (view.failure !== null) throw new Error(view.failure.message);
+	};
+}
+
+/**
  * The ports the canvas-wide agent setup speaks through: the focused pane's
  * transport and controllers, whichever pane that is when a step is taken.
- * @param focused The focused pane's transport.
- * @param current The focused pane's owners, or null.
- * @param startVoice Start voice in the pane voice runs for.
+ * @param focus The agent focus.
+ * @param pinVoice Keep voice on the pane it starts in.
  * @returns The ports.
  */
-function agentSetupPorts(
-	focused: FocusedTransport,
-	current: () => WorkbenchOwners | null,
-	startVoice: AgentSetupPorts["startVoice"],
-): AgentSetupPorts {
+function agentSetupPorts(focus: AgentFocus, pinVoice: (paneId: string) => void): AgentSetupPorts {
 	return {
-		transport: focused,
+		transport: focus,
 		/**
 		 * Create the canvas's conversation.
 		 * @returns How it settled.
 		 */
 		createConversation: async () => {
-			const owners = current();
+			const owners = focus.owners();
 			if (owners === null) return NO_PANE;
 			await owners.threadLink.create();
 			return settled(owners.threadLink);
@@ -148,7 +177,7 @@ function agentSetupPorts(
 		 * @returns How it settled.
 		 */
 		signIn: async (login) => {
-			const owners = current();
+			const owners = focus.owners();
 			if (owners === null) return NO_PANE;
 			await owners.threadLink.login(login);
 			return settled(owners.threadLink);
@@ -159,7 +188,7 @@ function agentSetupPorts(
 		 * @returns How it settled.
 		 */
 		cancelSignIn: async (loginId) => {
-			const owners = current();
+			const owners = focus.owners();
 			if (owners === null) return NO_PANE;
 			await owners.threadLink.cancelLogin(loginId);
 			return settled(owners.threadLink);
@@ -171,12 +200,13 @@ function agentSetupPorts(
 		 * @returns The composer's result.
 		 */
 		submit: (text, wantsQueue) => {
-			const owners = current();
-			if (owners === null) return Promise.resolve({ outcome: "not_delivered", reason: NO_PANE_WORDS });
+			const owners = focus.owners();
+			if (owners === null)
+				return Promise.resolve({ outcome: "not_delivered", reason: NO_PANE_WORDS });
 			const delivery = wantsQueue ? "queue" : turnRunning(owners.transport) ? "steer" : "send";
 			return owners.composer.submit({ text, delivery });
 		},
-		startVoice,
+		startVoice: voicePort(focus, pinVoice),
 	};
 }
 
@@ -184,6 +214,7 @@ export {
 	agentSetupPorts,
 	createWorkbenchOwners,
 	type ApprovalDecisions,
+	type VoiceOwner,
 	type WorkbenchOwners,
 	type WorkbenchOwnersOptions,
 };

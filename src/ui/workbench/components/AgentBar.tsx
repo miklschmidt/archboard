@@ -4,7 +4,7 @@
 // shell (ADR 0028): forty pixels and a rule, whatever the agent is doing.
 
 import { RiChat3Line } from "@remixicon/react";
-import { useCallback, type JSX, type RefObject } from "react";
+import type { JSX } from "react";
 
 import { SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
 import { useClock } from "@/ui/components/use-clock";
@@ -21,7 +21,6 @@ interface AgentBarProps {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
 	readonly draft: DraftStore;
-	readonly composer: RefObject<HTMLTextAreaElement | null>;
 	readonly panelOpen: boolean;
 	/** Agent words arrived while the conversation was closed. */
 	readonly unread: boolean;
@@ -39,13 +38,6 @@ function AgentBar(props: AgentBarProps): JSX.Element {
 	const now = useClock(SHELL_AGE_TICK_MS);
 	const status = agentStatus(view, now);
 	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
-	const send = useCallback(
-		(text: string, queue: boolean): void => {
-			actions.send(text, queue);
-			actions.openPanel();
-		},
-		[actions],
-	);
 	return (
 		<section
 			data-slot="agent-bar"
@@ -59,22 +51,26 @@ function AgentBar(props: AgentBarProps): JSX.Element {
 			<div className="border-border flex w-(--agent-panel-width) shrink-0 items-stretch gap-1 border-l pr-1 pl-2">
 				<AgentComposer
 					draft={props.draft}
-					input={props.composer}
 					context={view.context}
 					running={running}
-					onSend={send}
+					onSend={actions.send}
 				/>
 				<div className="flex items-center">
 					<span className="relative">
 						<IconAction
 							label={props.panelOpen ? "Close the conversation" : "Open the conversation"}
 							onClick={props.onTogglePanel}
-							className={props.panelOpen ? "text-foreground bg-sidebar-accent" : "text-muted-foreground"}
+							className={
+								props.panelOpen ? "text-foreground bg-sidebar-accent" : "text-muted-foreground"
+							}
 						>
 							<RiChat3Line />
 						</IconAction>
 						{props.unread && !props.panelOpen && (
-							<span aria-hidden="true" className="bg-primary pointer-events-none absolute top-0.5 right-0.5 size-1.5 rounded-full" />
+							<span
+								aria-hidden="true"
+								className="bg-primary pointer-events-none absolute top-0.5 right-0.5 size-1.5 rounded-full"
+							/>
 						)}
 					</span>
 				</div>

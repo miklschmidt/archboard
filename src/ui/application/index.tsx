@@ -35,7 +35,7 @@ import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
 import { useStageEvents } from "@/ui/application/hooks/use-stage-events";
 import { useNarration } from "@/ui/application/hooks/use-narration";
 import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
-import { useAgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
+import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import { useWorkbench, type WorkbenchHost } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
@@ -50,6 +50,7 @@ import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing"
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
+import { AgentBar, AgentPanel, TalkControl } from "@/ui/workbench";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
 	SETTINGS_TRIGGER_ID,
@@ -114,7 +115,10 @@ function agentContextOf(listing: BoardListing, boardKey: string | null): AgentCo
 	if (board === undefined) return { board: address.board, state: address.variant ?? null };
 	const key = listedBoardKey(listing, boardKey);
 	const variant = board.variants.find((entry) => entry.key === key);
-	return { board: board.name, state: variant === undefined || variant.id === board.opens ? null : variant.name };
+	return {
+		board: board.name,
+		state: variant === undefined || variant.id === board.opens ? null : variant.name,
+	};
 }
 
 /**
@@ -134,6 +138,34 @@ function useSubtitleOverlay(workbench: WorkbenchHost, reducedMotion: boolean): P
 						element: <PaneSubtitles transport={voice.transport} reducedMotion={reducedMotion} />,
 					},
 		[voice, reducedMotion],
+	);
+}
+
+/** The agent's surfaces as the shell places them. */
+interface AgentSlots {
+	readonly bar: ReactNode;
+	readonly panel: ReactNode;
+	readonly voiceControls: ReactNode;
+}
+
+/**
+ * The agent's surfaces drawn: the bar, the panel while it is open, and the
+ * Talk control a presentation carries.
+ * @param agent The inputs of each surface.
+ * @param reducedMotion The motion preference.
+ * @returns The slots.
+ */
+function useAgentSlots(agent: AgentSurfaces, reducedMotion: boolean): AgentSlots {
+	const { bar, panel, view, actions } = agent;
+	return useMemo(
+		() => ({
+			bar: <AgentBar {...bar} />,
+			panel: panel === null ? null : <AgentPanel {...panel} />,
+			voiceControls: (
+				<TalkControl voice={view.voice} actions={actions} reducedMotion={reducedMotion} />
+			),
+		}),
+		[bar, panel, view.voice, actions, reducedMotion],
 	);
 }
 
@@ -262,6 +294,7 @@ function ApplicationBody(): JSX.Element {
 		[catalog.listing, panes.active.status.boardKey],
 	);
 	const agent = useAgentSurfaces({ workbench, context, reducedMotion });
+	const slots = useAgentSlots(agent, reducedMotion);
 	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -314,7 +347,7 @@ function ApplicationBody(): JSX.Element {
 		},
 		[actions, panes.records],
 	);
-	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
+	const narration = useNarration(workbench.setup, agent.view.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion);
 	const mounted = usePaneViews({
 		panes,
@@ -366,9 +399,9 @@ function ApplicationBody(): JSX.Element {
 				view={view}
 				actions={actions}
 				diagnostics={diagnostics}
-				voiceControls={agent.voiceControls}
-				agentBar={agent.bar}
-				agentPanel={agent.panel}
+				voiceControls={slots.voiceControls}
+				agentBar={slots.bar}
+				agentPanel={slots.panel}
 				attachStage={fullscreen.attachStage}
 			/>
 			<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />

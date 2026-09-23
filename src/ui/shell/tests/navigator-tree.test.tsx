@@ -238,11 +238,11 @@ test("each board is one row, nested under the board it drills down from, with th
 test("a board opens by its bare name and a state by its own key, beside with Alt", () => {
 	const asked = mountNavigator();
 	act(() => row("board:audit").click());
-	act(() =>
+	act(() => {
 		row("state:payments@queued").dispatchEvent(
 			new MouseEvent("click", { bubbles: true, altKey: true }),
-		),
-	);
+		);
+	});
 	expect(asked.selected).toEqual(["audit"]);
 	expect(asked.beside).toEqual(["payments@queued"]);
 });

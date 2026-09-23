@@ -20,7 +20,13 @@ import { useCallback, useState, type JSX } from "react";
 
 import type { ActivityItem, ActivityRun as Run } from "@/ui/workbench-runtime";
 import { ActivityEvidence, LineCounts } from "@/ui/workbench-thread/components/ActivityEvidence";
-import { activityLabel, lineTotals, runSummary, shortDuration } from "@/ui/workbench-thread/lib/activity-words";
+import {
+	activityLabel,
+	lineTotals,
+	reasoningParts,
+	runSummary,
+	shortDuration,
+} from "@/ui/workbench-thread/lib/activity-words";
 
 /** A run longer than this folds once its turn has ended. */
 const FOLD_AFTER = 3;
@@ -50,13 +56,24 @@ function failed(item: ActivityItem): boolean {
 }
 
 /**
+ * Whether a run folds to one line: once its turn has ended, when it is long
+ * and nothing in it failed.
+ * @param run The run.
+ * @returns Whether it folds.
+ */
+function folds(run: Run): boolean {
+	return !run.running && run.items.length > FOLD_AFTER && !run.items.some(failed);
+}
+
+/**
  * A run of work.
  * @param props The run.
  * @returns The rows, or the one line they fold to.
  */
 function ActivityRun(props: ActivityRunProps): JSX.Element {
 	const { items, running } = props.run;
-	const foldable = !running && items.length > FOLD_AFTER && !items.some(failed);
+	const foldable = folds(props.run);
+	const liveIndex = running ? items.length - 1 : -1;
 	const [open, setOpen] = useState(false);
 	const toggle = useCallback(() => setOpen((current) => !current), []);
 	return (
@@ -77,12 +94,7 @@ function ActivityRun(props: ActivityRunProps): JSX.Element {
 			)}
 			{(!foldable || open) &&
 				items.map((item, index) => (
-					<ActivityRow
-						key={item.itemId}
-						item={item}
-						live={running && index === items.length - 1}
-						nested={foldable}
-					/>
+					<ActivityRow key={item.itemId} item={item} live={index === liveIndex} nested={foldable} />
 				))}
 		</section>
 	);
@@ -105,16 +117,26 @@ interface ActivityRowProps {
 function hasEvidence(item: ActivityItem): boolean {
 	switch (item.media) {
 		case "command":
-			return item.output !== null || item.cwd !== null || item.exitCode !== null;
+			return [item.output, item.cwd, item.exitCode].some((fact) => fact !== null);
 		case "fileChange":
 			return item.changes.length > 0;
 		case "tool":
-			return item.arguments !== null || item.error !== null;
+			return [item.arguments, item.error].some((fact) => fact !== null);
 		case "reasoning":
-			return item.text.includes("\n");
+			return reasoningOpens(item.text);
 		default:
 			return false;
 	}
+}
+
+/**
+ * Whether a reasoning summary says more than its row's headline.
+ * @param text The summary.
+ * @returns Whether it opens.
+ */
+function reasoningOpens(text: string): boolean {
+	const { headline, body } = reasoningParts(text);
+	return body !== "" && body !== headline;
 }
 
 /**
@@ -129,13 +151,17 @@ function ActivityRow(props: ActivityRowProps): JSX.Element {
 	const [open, setOpen] = useState(failed(item));
 	const toggle = useCallback(() => setOpen((current) => !current), []);
 	return (
-		<div data-slot="activity-row" data-live={live || undefined} className={props.nested ? "pl-5" : ""}>
+		<div
+			data-slot="activity-row"
+			data-live={live || undefined}
+			className={props.nested ? "pl-5" : ""}
+		>
 			<button
 				type="button"
 				disabled={!evidence}
 				aria-expanded={evidence ? open : undefined}
 				onClick={toggle}
-				className="group/row -mx-1.5 flex h-7 w-[calc(100%+12px)] min-w-0 items-center gap-2 rounded-[3px] px-1.5 text-left enabled:hover:bg-muted/60"
+				className="group/row enabled:hover:bg-muted/60 -mx-1.5 flex h-7 w-[calc(100%+12px)] min-w-0 items-center gap-2 rounded-[3px] px-1.5 text-left"
 			>
 				<RowIcon item={item} live={live} />
 				<RowLabel item={item} live={live} />
@@ -153,6 +179,8 @@ function ActivityRow(props: ActivityRowProps): JSX.Element {
 /**
  * The row's icon: the kind of work, a spinner while it is live, a cross when it failed.
  * @param props The step and whether it is live.
+ * @param props.item The step.
+ * @param props.live Whether it is the step the turn is on now.
  * @returns The icon.
  */
 function RowIcon(props: { readonly item: ActivityItem; readonly live: boolean }): JSX.Element {
@@ -174,12 +202,14 @@ function RowIcon(props: { readonly item: ActivityItem; readonly live: boolean })
 /**
  * The row's words: a command in the technical face, anything else as prose.
  * @param props The step and whether it is live.
+ * @param props.item The step.
+ * @param props.live Whether it is the step the turn is on now.
  * @returns The label.
  */
 function RowLabel(props: { readonly item: ActivityItem; readonly live: boolean }): JSX.Element {
 	const { item, live } = props;
 	const technical = item.media === "command" || item.media === "tool";
-	const words = live && item.media === "reasoning" ? "Thinking" : activityLabel(item);
+	const words = activityLabel(item);
 	return (
 		<span
 			title={words}
@@ -202,12 +232,25 @@ function RowTrailer(props: { readonly item: ActivityItem }): JSX.Element | null 
 		const totals = lineTotals(item);
 		return <LineCounts added={totals.added} removed={totals.removed} />;
 	}
-	if (item.media === "command" && item.exitCode !== null && item.exitCode !== 0) {
-		return <span className="text-technical text-destructive shrink-0 font-mono">exit {item.exitCode}</span>;
+	const exit = failedExit(item);
+	if (exit !== null) {
+		return <span className="text-technical text-destructive shrink-0 font-mono">exit {exit}</span>;
 	}
-	const duration = "durationMs" in item ? shortDuration(item.durationMs) : null;
+	const duration = shortDuration("durationMs" in item ? item.durationMs : null);
 	if (duration === null) return null;
-	return <span className="text-technical text-muted-foreground shrink-0 font-mono">{duration}</span>;
+	return (
+		<span className="text-technical text-muted-foreground shrink-0 font-mono">{duration}</span>
+	);
+}
+
+/**
+ * The exit code of a command that failed.
+ * @param item The step.
+ * @returns The code, or null for anything else.
+ */
+function failedExit(item: ActivityItem): number | null {
+	if (item.media !== "command" || item.exitCode === 0) return null;
+	return item.exitCode;
 }
 
 export { ActivityRun, type ActivityRunProps };

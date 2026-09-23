@@ -1,6 +1,6 @@
 // The composer's draft, kept outside the composer so it survives the agent bar
-// re-rendering for another pane, and so a held message can be taken back into
-// it for editing.
+// re-rendering for another pane, and so a suggestion or a held message taken
+// back for editing can be put in it with the field focused.
 
 /** The draft and the ways it changes. */
 interface DraftStore {
@@ -15,6 +15,16 @@ interface DraftStore {
 	 */
 	readonly set: (text: string) => void;
 	/**
+	 * Replace the draft and put the cursor in the field, ready to edit.
+	 * @param text The text.
+	 */
+	readonly fill: (text: string) => void;
+	/**
+	 * The field the draft is typed in, as React attaches and detaches it.
+	 * @param field The field, or null.
+	 */
+	readonly attach: (field: HTMLTextAreaElement | null) => void;
+	/**
 	 * Listen for changes.
 	 * @param listener Called after each change.
 	 * @returns Stops listening.
@@ -28,17 +38,49 @@ interface DraftStore {
  */
 function createDraftStore(): DraftStore {
 	let text = "";
+	let input: HTMLTextAreaElement | null = null;
 	const listeners = new Set<() => void>();
+	/**
+	 * Replace the draft and tell the listeners.
+	 * @param next The text.
+	 */
+	const set = (next: string): void => {
+		if (next === text) return;
+		text = next;
+		for (const listener of listeners) listener();
+	};
 	return {
+		/**
+		 * The draft now.
+		 * @returns The text.
+		 */
 		get: () => text,
-		set: (next) => {
-			if (next === text) return;
-			text = next;
-			for (const listener of listeners) listener();
+		set,
+		/**
+		 * Replace the draft and put the cursor in the field.
+		 * @param next The text.
+		 */
+		fill: (next) => {
+			set(next);
+			input?.focus();
 		},
+		/**
+		 * The field, as the composer mounts and unmounts it.
+		 * @param field The field, or null.
+		 */
+		attach: (field) => {
+			input = field;
+		},
+		/**
+		 * Listen for changes.
+		 * @param listener Called after each change.
+		 * @returns Stops listening.
+		 */
 		subscribe: (listener) => {
 			listeners.add(listener);
-			return () => listeners.delete(listener);
+			return () => {
+				listeners.delete(listener);
+			};
 		},
 	};
 }

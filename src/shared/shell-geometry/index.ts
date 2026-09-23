@@ -34,8 +34,15 @@ const HEADER_HEIGHT = 56;
 /** The pane bar under the header. */
 const PANE_BAR_HEIGHT = 36;
 
-/** The collapsed workbench dock: its bar, and the rule drawn above it. */
+/** The agent bar under the panes: its bar, and the rule drawn above it. */
 const DOCK_BAR_HEIGHT = 41;
+
+/**
+ * The conversation panel beside the panes, while it is open. It is not part of
+ * the stage a drawing is measured against: it opens only when the person asks,
+ * and the camera refits the narrower pane.
+ */
+const AGENT_PANEL_WIDTH = 440;
 
 /** The breathing room a fit leaves around the diagram, in viewport pixels. */
 const FIT_MARGIN = 24;
@@ -77,6 +84,7 @@ function fitIn(size: Size): number {
 }
 
 export {
+	AGENT_PANEL_WIDTH,
 	DOCK_BAR_HEIGHT,
 	FIT_MARGIN,
 	HEADER_HEIGHT,

@@ -30,7 +30,6 @@ function PendingWork(props: PendingWorkProps): JSX.Element | null {
 	const queued = view.snapshot?.queue.entries ?? [];
 	const approvals = waitingApprovals(view);
 	if (held.length === 0 && queued.length === 0 && approvals.length === 0) return null;
-	const spoken = view.voice.stage === "listening" || view.voice.stage === "speaking";
 	return (
 		<div data-slot="pending-work" className="flex flex-col gap-3">
 			{held.map((message) => (
@@ -45,21 +44,40 @@ function PendingWork(props: PendingWorkProps): JSX.Element | null {
 					actions={actions}
 				/>
 			))}
-			{approvals.map((approval) => {
-				const key = approval.kind === "dynamic_approval" ? approval.identity.callId : approval.requestId;
-				return (
-					<ApprovalCard
-						key={key}
-						approval={approval}
-						busy={view.busyApprovals.includes(key)}
-						error={view.approvalErrors[key] ?? null}
-						spoken={spoken}
-						actions={actions}
-					/>
-				);
-			})}
+			<ApprovalCards approvals={approvals} view={view} actions={actions} />
 		</div>
 	);
+}
+
+/**
+ * The decisions the agent is waiting on, each answerable aloud while voice is live.
+ * @param props The approvals, the view and the actions.
+ * @param props.approvals The approvals waiting.
+ * @param props.view The agent view.
+ * @param props.actions The actions.
+ * @returns The cards.
+ */
+function ApprovalCards(props: {
+	readonly approvals: ReturnType<typeof waitingApprovals>;
+	readonly view: AgentView;
+	readonly actions: AgentActions;
+}): JSX.Element[] {
+	const { view } = props;
+	const spoken = view.voice.stage === "listening" || view.voice.stage === "speaking";
+	return props.approvals.map((approval) => {
+		const key =
+			approval.kind === "dynamic_approval" ? approval.identity.callId : approval.requestId;
+		return (
+			<ApprovalCard
+				key={key}
+				approval={approval}
+				busy={view.busyApprovals.includes(key)}
+				error={view.approvalErrors[key] ?? null}
+				spoken={spoken}
+				actions={props.actions}
+			/>
+		);
+	});
 }
 
 /** What a held message waits on, by setup step. */
@@ -69,23 +87,30 @@ const WAITS_ON: Readonly<Record<NonNullable<SetupStep>, string>> = {
 	link: "Starting a conversation",
 };
 
+/** What a held message that went wrong says, and why when Codex gave no reason. */
+const PROBLEM_WORDS = {
+	failed: ["Not sent", "refused"],
+	unknown: ["May not have arrived", "no answer"],
+} as const;
+
 /**
  * Where a held message stands, in words.
  * @param message The message.
  * @param step What held work waits on.
  * @returns The words and whether they report a problem.
  */
-function heldWords(message: HeldMessage, step: SetupStep): { readonly text: string; readonly problem: boolean } {
-	switch (message.state) {
-		case "waiting":
-			return { text: step === null ? "Sending" : WAITS_ON[step], problem: false };
-		case "failed":
-			return { text: `Not sent · ${message.reason ?? "refused"}`, problem: true };
-		case "unknown":
-			return { text: `May not have arrived · ${message.reason ?? "no answer"}`, problem: true };
-		default:
-			return { text: "Sending", problem: false };
+function heldWords(
+	message: HeldMessage,
+	step: SetupStep,
+): { readonly text: string; readonly problem: boolean } {
+	if (message.state === "failed" || message.state === "unknown") {
+		const [what, why] = PROBLEM_WORDS[message.state];
+		return { text: `${what} · ${message.reason ?? why}`, problem: true };
 	}
+	return {
+		text: message.state === "waiting" && step !== null ? WAITS_ON[step] : "Sending",
+		problem: false,
+	};
 }
 
 /**
@@ -110,15 +135,30 @@ function HeldPrompt(props: {
 			<div className="bg-muted border-border rounded-[4px] border px-3 py-2 text-[13.5px] leading-[21px] whitespace-pre-wrap opacity-80">
 				{message.text}
 			</div>
-			<p className={`text-body flex items-center gap-2 ${problem ? "text-destructive" : "text-muted-foreground"}`}>
-				{!problem && <span aria-hidden="true" className="bg-status size-1.5 rounded-full motion-safe:animate-pulse" />}
+			<p
+				className={`text-body flex items-center gap-2 ${problem ? "text-destructive" : "text-muted-foreground"}`}
+			>
+				{!problem && (
+					<span
+						aria-hidden="true"
+						className="bg-status size-1.5 rounded-full motion-safe:animate-pulse"
+					/>
+				)}
 				<span className="min-w-0 flex-1">{text}</span>
 				{problem && (
 					<>
-						<button type="button" onClick={retry} className="text-primary font-medium hover:underline">
+						<button
+							type="button"
+							onClick={retry}
+							className="text-primary font-medium hover:underline"
+						>
 							{message.state === "unknown" ? "Send again" : "Retry"}
 						</button>
-						<button type="button" onClick={edit} className="text-foreground font-medium hover:underline">
+						<button
+							type="button"
+							onClick={edit}
+							className="text-foreground font-medium hover:underline"
+						>
 							Edit
 						</button>
 					</>
@@ -150,7 +190,10 @@ function QueuedPrompt(props: {
 	const down = useCallback(() => actions.queue.moveDown(id), [actions, id]);
 	const remove = useCallback(() => actions.queue.remove(id), [actions, id]);
 	return (
-		<div data-slot="queued-prompt" className="border-border flex flex-col gap-1 rounded-[4px] border border-dashed px-3 py-2">
+		<div
+			data-slot="queued-prompt"
+			className="border-border flex flex-col gap-1 rounded-[4px] border border-dashed px-3 py-2"
+		>
 			<p className="text-[13.5px] leading-[21px] whitespace-pre-wrap">{entry.prompt}</p>
 			<div className="text-body text-muted-foreground flex items-center gap-1">
 				<span className="flex-1">Queued</span>

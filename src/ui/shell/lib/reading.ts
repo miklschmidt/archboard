@@ -2,7 +2,13 @@
 // name the vault lists it under, the boards it sits under in the outline, its
 // level, and the state it shows when that is not the one its name opens. Pure.
 
-import { boardAncestors, listedBoard, listedBoardKey, type OutlineNode } from "@/ui/board-catalog";
+import {
+	boardAncestors,
+	listedBoard,
+	listedBoardKey,
+	nothingBuiltOn,
+	type OutlineNode,
+} from "@/ui/board-catalog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { BoardListing, CatalogBoard } from "@/ui/types";
 
@@ -60,13 +66,12 @@ function readingOf(
 	if (board === undefined) {
 		return { ...NOTHING, name: address.board, state: address.variant ?? null };
 	}
-	const variants = board.variants;
 	return {
 		name: board.name,
 		level: board.level ?? null,
 		ancestors: boardAncestors(outline, board.name),
 		state: shownState(board, listing, key),
-		unbuilt: variants.length > 0 && variants.every((variant) => variant.lifecycle !== "current"),
+		unbuilt: nothingBuiltOn(listing, board.name),
 	};
 }
 

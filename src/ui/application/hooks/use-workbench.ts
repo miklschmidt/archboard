@@ -5,32 +5,26 @@
 // the other pane; and the voice session, which stays with the pane voice was
 // started from until it ends, because its media belongs to that pane's socket.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { createAgentSetup, type AgentSetup } from "@/ui/agent-setup";
-import { createFocusedTransport } from "@/ui/application/lib/focused-transport";
+import { createAgentFocus } from "@/ui/application/lib/agent-focus";
+import { createVoiceHost } from "@/ui/application/lib/voice-host";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
 import {
 	agentSetupPorts,
 	createWorkbenchOwners,
+	type VoiceOwner,
 	type WorkbenchOwners,
 } from "@/ui/application/lib/workbench-owners";
 import {
 	createWorkbenchTransportPublication,
 	type WorkbenchTransportPublication,
 } from "@/ui/pane-session/workbench-publication";
-import { createVoiceSession, type VoiceSession } from "@/ui/voice-session";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** The transports by pane id; null while a pane has none. */
 type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>;
-
-/** The voice session, the pane it runs for, and that pane's transport. */
-interface VoiceOwner {
-	readonly paneId: string;
-	readonly session: VoiceSession;
-	readonly transport: BrowserWorkbenchTransport;
-}
 
 /** The agent's state and the moves the panes drive. */
 interface WorkbenchHost {
@@ -59,7 +53,9 @@ function usePaneTransports(handles: PaneHandles): {
 	readonly paneGone: (paneId: string) => void;
 } {
 	const [transports, setTransports] = useState<PaneTransports>({});
-	const publications = useRef(new Map<string, WorkbenchTransportPublication<BrowserWorkbenchTransport>>());
+	const publications = useRef(
+		new Map<string, WorkbenchTransportPublication<BrowserWorkbenchTransport>>(),
+	);
 	const publicationFor = useCallback(
 		(paneId: string): WorkbenchTransportPublication<BrowserWorkbenchTransport> => {
 			const existing = publications.current.get(paneId);
@@ -85,7 +81,10 @@ function usePaneTransports(handles: PaneHandles): {
 		},
 		[handles],
 	);
-	const paneReported = useCallback((paneId: string): void => publicationFor(paneId).reconcile(), [publicationFor]);
+	const paneReported = useCallback(
+		(paneId: string): void => publicationFor(paneId).reconcile(),
+		[publicationFor],
+	);
 	const paneGone = useCallback((paneId: string): void => {
 		publications.current.get(paneId)?.dispose();
 		publications.current.delete(paneId);
@@ -95,28 +94,6 @@ function usePaneTransports(handles: PaneHandles): {
 		});
 	}, []);
 	return { transports, paneReported, paneGone };
-}
-
-/**
- * The owners over one pane's transport, composed in an effect: the voice and
- * approvals adapters subscribe on creation, so a set that never mounted must
- * never be created.
- * @param paneId The pane.
- * @param transport Its transport, or null.
- * @returns The owners, or null.
- */
-function usePaneOwners(paneId: string, transport: BrowserWorkbenchTransport | null): WorkbenchOwners | null {
-	const [owners, setOwners] = useState<WorkbenchOwners | null>(null);
-	useEffect(() => {
-		if (transport === null) {
-			setOwners(null);
-			return undefined;
-		}
-		const created = createWorkbenchOwners({ paneId, transport });
-		setOwners(created);
-		return () => setOwners((current) => (current === created ? null : current));
-	}, [paneId, transport]);
-	return owners;
 }
 
 /**
@@ -131,21 +108,12 @@ function useVoiceOwner(
 	paneId: string,
 	transport: BrowserWorkbenchTransport | null,
 ): VoiceOwner | null {
-	const [voice, setVoice] = useState<VoiceOwner | null>(null);
+	const [host] = useState(createVoiceHost);
 	useEffect(() => {
-		if (transport === null) {
-			setVoice(null);
-			return undefined;
-		}
-		const session = createVoiceSession({ realtime: handles.media(paneId), transport, paneId });
-		const created = { paneId, session, transport };
-		setVoice(created);
-		return () => {
-			session.dispose();
-			setVoice((current) => (current === created ? null : current));
-		};
-	}, [handles, paneId, transport]);
-	return voice;
+		if (transport === null) return undefined;
+		return host.follow({ paneId, transport, realtime: handles.media(paneId) });
+	}, [host, handles, paneId, transport]);
+	return useSyncExternalStore(host.subscribe, host.getSnapshot, host.getSnapshot);
 }
 
 /**
@@ -157,33 +125,19 @@ function useVoiceOwner(
 function useWorkbench(handles: PaneHandles, activePaneId: string): WorkbenchHost {
 	const { transports, paneReported, paneGone } = usePaneTransports(handles);
 	const transport = transports[activePaneId] ?? null;
-	const owners = usePaneOwners(activePaneId, transport);
+	// The controllers listen only while somebody does, so composing them is pure.
+	const owners = useMemo(
+		() => (transport === null ? null : createWorkbenchOwners({ paneId: activePaneId, transport })),
+		[activePaneId, transport],
+	);
 	const [voicePane, setVoicePane] = useState<string | null>(null);
 	const voicePaneId = voicePane ?? activePaneId;
 	const voice = useVoiceOwner(handles, voicePaneId, transports[voicePaneId] ?? null);
 
-	// The setup outlives focus: its ports read whatever is current when a step is taken.
-	const current = useRef<{ owners: WorkbenchOwners | null; voice: VoiceOwner | null }>({ owners, voice });
-	useEffect(() => {
-		current.current = { owners, voice };
-	}, [owners, voice]);
-	const [focused] = useState(createFocusedTransport);
-	useEffect(() => focused.retarget(transport), [focused, transport]);
-	const [setup] = useState(() =>
-		createAgentSetup(
-			agentSetupPorts(
-				focused,
-				() => current.current.owners,
-				async (walkthrough) => {
-					const running = current.current.voice;
-					if (running === null) throw new Error("No pane can carry voice yet.");
-					setVoicePane(running.paneId);
-					const view = await running.session.start(walkthrough === null ? null : { walkthrough });
-					if (view.failure !== null) throw new Error(view.failure.message);
-				},
-			),
-		),
-	);
+	// The setup outlives focus: its ports read whatever is focused when a step is taken.
+	const [focus] = useState(createAgentFocus);
+	useEffect(() => focus.retarget(owners, voice), [focus, owners, voice]);
+	const [setup] = useState(() => createAgentSetup(agentSetupPorts(focus, setVoicePane)));
 	useEffect(() => setup.connect(), [setup]);
 	const releaseVoice = useCallback(() => setVoicePane(null), []);
 
@@ -193,4 +147,4 @@ function useWorkbench(handles: PaneHandles, activePaneId: string): WorkbenchHost
 	);
 }
 
-export { useWorkbench, type VoiceOwner, type WorkbenchHost };
+export { useWorkbench, type WorkbenchHost };

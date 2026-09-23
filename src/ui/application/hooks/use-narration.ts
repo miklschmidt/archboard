@@ -28,7 +28,11 @@ interface Narration {
  * @param paneId The focused pane, or null.
  * @returns The narration, or null while voice is on or on its way.
  */
-function useNarration(setup: AgentSetup, voice: AgentVoiceView, paneId: string | null): Narration | null {
+function useNarration(
+	setup: AgentSetup,
+	voice: AgentVoiceView,
+	paneId: string | null,
+): Narration | null {
 	const start = useCallback((walkthrough: string): void => setup.talk({ walkthrough }), [setup]);
 	const off = voice.stage === "idle";
 	return useMemo(() => (off && paneId !== null ? { paneId, start } : null), [off, paneId, start]);

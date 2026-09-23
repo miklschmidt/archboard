@@ -5,6 +5,7 @@
 
 import type { JSX } from "react";
 
+import { reasoningParts } from "@/ui/workbench-thread/lib/activity-words";
 import type { ActivityItem } from "@/ui/workbench-runtime";
 
 /** Inputs for the evidence of one row. */
@@ -27,7 +28,11 @@ function ActivityEvidence(props: ActivityEvidenceProps): JSX.Element | null {
 		case "tool":
 			return <ToolEvidence item={item} />;
 		case "reasoning":
-			return <p className="text-body text-muted-foreground whitespace-pre-wrap">{item.text}</p>;
+			return (
+				<p className="text-body text-muted-foreground whitespace-pre-wrap">
+					{reasoningParts(item.text).body}
+				</p>
+			);
 		default:
 			return null;
 	}
@@ -48,11 +53,13 @@ function CommandEvidence(props: {
 			<p className="text-technical text-muted-foreground flex flex-wrap gap-x-3 font-mono">
 				{item.cwd !== null && <span className="break-all">in {item.cwd}</span>}
 				{item.exitCode !== null && (
-					<span className={item.exitCode === 0 ? "" : "text-destructive"}>exit {item.exitCode}</span>
+					<span className={item.exitCode === 0 ? "" : "text-destructive"}>
+						exit {item.exitCode}
+					</span>
 				)}
 			</p>
 			{item.output !== null && (
-				<pre className="bg-muted/70 text-technical max-h-60 overflow-auto rounded-[3px] px-2.5 py-2 font-mono leading-[15px] whitespace-pre-wrap break-all">
+				<pre className="bg-muted/70 text-technical max-h-60 overflow-auto rounded-[3px] px-2.5 py-2 font-mono leading-[15px] break-all whitespace-pre-wrap">
 					{item.outputTruncated && <span className="text-muted-foreground">…{"\n"}</span>}
 					{item.output}
 				</pre>
@@ -77,7 +84,10 @@ function FileEvidence(props: {
 	return (
 		<ul className="flex flex-col gap-0.5">
 			{item.changes.map((change) => (
-				<li key={change.path} className="text-technical flex min-w-0 items-baseline gap-2 font-mono">
+				<li
+					key={change.path}
+					className="text-technical flex min-w-0 items-baseline gap-2 font-mono"
+				>
 					<span className="text-muted-foreground w-12 shrink-0">{CHANGE_WORDS[change.kind]}</span>
 					<span className="min-w-0 flex-1 truncate" title={change.movePath ?? change.path}>
 						{change.path}
@@ -122,7 +132,7 @@ function ToolEvidence(props: {
 	return (
 		<div className="flex flex-col gap-1.5">
 			{item.arguments !== null && (
-				<pre className="bg-muted/70 text-technical max-h-40 overflow-auto rounded-[3px] px-2.5 py-2 font-mono leading-[15px] whitespace-pre-wrap break-all">
+				<pre className="bg-muted/70 text-technical max-h-40 overflow-auto rounded-[3px] px-2.5 py-2 font-mono leading-[15px] break-all whitespace-pre-wrap">
 					{item.arguments}
 				</pre>
 			)}

@@ -7,6 +7,9 @@
 import type { JSX, ReactNode } from "react";
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+
+/** The usage Codex last reported for the conversation. */
+type BrowserTimelineUsage = NonNullable<NonNullable<BrowserSnapshot["timeline"]>["usage"]>;
 import type { AgentActions, AgentView } from "@/ui/workbench/contracts";
 
 /** Inputs for the details. */
@@ -35,17 +38,17 @@ function accountWords(snapshot: BrowserSnapshot | null): string {
 
 /**
  * The share of the context window the conversation has used.
- * @param snapshot The snapshot.
+ * @param usage What Codex reported, or null.
  * @returns The words, or null before Codex reports usage.
  */
-function contextWords(snapshot: BrowserSnapshot | null): string | null {
-	const usage = snapshot?.timeline?.usage ?? null;
+function contextWords(usage: BrowserTimelineUsage | null): string | null {
 	if (usage === null) return null;
 	const used = usage.last.inputTokens + usage.last.outputTokens;
-	const window = usage.modelContextWindow;
+	const window = usage.modelContextWindow ?? 0;
 	const total = `${usage.total.totalTokens.toLocaleString("en")} tokens in total`;
-	if (window === null || window === 0) return total;
-	return `${Math.round((used / window) * 100)}% of the context window · ${total}`;
+	return window === 0
+		? total
+		: `${Math.round((used / window) * 100)}% of the context window · ${total}`;
 }
 
 /**
@@ -54,7 +57,10 @@ function contextWords(snapshot: BrowserSnapshot | null): string | null {
  * @param owner Whose.
  * @returns The words, or null when not reported.
  */
-function modelWords(snapshot: BrowserSnapshot | null, owner: "workhorse" | "coordinator"): string | null {
+function modelWords(
+	snapshot: BrowserSnapshot | null,
+	owner: "workhorse" | "coordinator",
+): string | null {
 	const settings = snapshot?.settings.find((entry) => entry.owner === owner);
 	if (settings === undefined) return null;
 	return settings.effort === null ? settings.model : `${settings.model} · ${settings.effort}`;
@@ -72,20 +78,24 @@ function AgentDetails(props: AgentDetailsProps): JSX.Element {
 		<div data-slot="agent-details" className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
 			<Section title="Account">
 				<Row label="Account" value={accountWords(snapshot)} />
-				<button type="button" onClick={props.actions.signOut} className="text-body text-primary self-start font-medium hover:underline">
+				<button
+					type="button"
+					onClick={props.actions.signOut}
+					className="text-body text-primary self-start font-medium hover:underline"
+				>
 					Sign out
 				</button>
 			</Section>
 			<Section title="Conversation">
 				<Row label="Model" value={modelWords(snapshot, "workhorse")} />
-				<Row label="Context" value={contextWords(snapshot)} />
+				<Row label="Context" value={contextWords(snapshot?.timeline?.usage ?? null)} />
 				<Row label="Thread" value={threadId} technical />
 			</Section>
 			<Section title="Voice">
 				<Row label="Model" value={modelWords(snapshot, "coordinator")} />
 				<p className="text-body text-muted-foreground">
-					The voice agent is a separate conversation. It decides which spoken requests become work for the
-					agent, and which approvals it may answer from what it heard.
+					The voice agent is a separate conversation. It decides which spoken requests become work
+					for the agent, and which approvals it may answer from what it heard.
 				</p>
 			</Section>
 		</div>
@@ -116,12 +126,22 @@ function Section(props: { readonly title: string; readonly children: ReactNode }
  * @param props.technical Whether to set it in the technical face.
  * @returns The row, or nothing without a value.
  */
-function Row(props: { readonly label: string; readonly value: string | null; readonly technical?: boolean }): JSX.Element | null {
+function Row(props: {
+	readonly label: string;
+	readonly value: string | null;
+	readonly technical?: boolean;
+}): JSX.Element | null {
 	if (props.value === null) return null;
 	return (
 		<div className="flex items-baseline gap-3">
 			<span className="text-body text-muted-foreground w-16 shrink-0">{props.label}</span>
-			<span className={props.technical === true ? "text-technical min-w-0 font-mono break-all" : "text-body min-w-0"}>
+			<span
+				className={
+					props.technical === true
+						? "text-technical min-w-0 font-mono break-all"
+						: "text-body min-w-0"
+				}
+			>
 				{props.value}
 			</span>
 		</div>

@@ -9,11 +9,7 @@
 
 import type { MessageStatus, ThreadMessageLike } from "@assistant-ui/react";
 
-import type {
-	ConversationItem,
-	ConversationPlan,
-	ConversationTurn,
-} from "@/ui/workbench-timeline";
+import type { ConversationItem, ConversationPlan, ConversationTurn } from "@/ui/workbench-timeline";
 
 type MessagePart = Exclude<ThreadMessageLike["content"], string>[number];
 

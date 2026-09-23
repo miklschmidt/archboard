@@ -7,11 +7,12 @@
 import { RiArrowUpLine } from "@remixicon/react";
 import {
 	useCallback,
+	useEffect,
+	useRef,
 	useSyncExternalStore,
 	type ChangeEvent,
 	type JSX,
 	type KeyboardEvent,
-	type RefObject,
 } from "react";
 
 import { usesCommandKey } from "@/ui/components/command-key";
@@ -21,7 +22,6 @@ import type { DraftStore } from "@/ui/workbench/lib/draft-store";
 /** Inputs for the composer. */
 interface AgentComposerProps {
 	readonly draft: DraftStore;
-	readonly input: RefObject<HTMLTextAreaElement | null>;
 	readonly context: AgentContext;
 	/** A turn is running: Enter steers it. */
 	readonly running: boolean;
@@ -46,12 +46,17 @@ function placeholderOf(context: AgentContext, running: boolean): string {
 
 /**
  * The composer.
- * @param props The draft, the field, the context and the send.
+ * @param props The draft, the context and the send.
  * @returns The composer.
  */
 function AgentComposer(props: AgentComposerProps): JSX.Element {
 	const { draft, onSend, running } = props;
 	const value = useSyncExternalStore(draft.subscribe, draft.get, draft.get);
+	const field = useRef<HTMLTextAreaElement>(null);
+	useEffect(() => {
+		draft.attach(field.current);
+		return () => draft.attach(null);
+	}, [draft]);
 	const send = useCallback(
 		(queue: boolean): void => {
 			const text = draft.get().trim();
@@ -83,21 +88,21 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 		<div data-slot="agent-composer" className="relative h-full min-w-0 flex-1">
 			<div className="border-border bg-background focus-within:border-ring/60 absolute inset-x-0 bottom-1.5 flex items-end gap-1 rounded-[4px] border py-[3px] pr-[3px] pl-2.5">
 				<textarea
-					ref={props.input}
+					ref={field}
 					rows={1}
 					value={value}
 					onChange={handleChange}
 					onKeyDown={handleKeyDown}
 					aria-label="Message the agent"
 					placeholder={placeholderOf(props.context, running)}
-					className="text-control placeholder:text-muted-foreground max-h-[40vh] min-h-[22px] min-w-0 flex-1 resize-none bg-transparent py-[2px] font-normal outline-none [field-sizing:content]"
+					className="text-control placeholder:text-muted-foreground [field-sizing:content] max-h-[40vh] min-h-[22px] min-w-0 flex-1 resize-none bg-transparent py-[2px] font-normal outline-none"
 				/>
 				<button
 					type="button"
 					aria-label="Send"
 					disabled={empty}
 					onClick={handleSend}
-					className="bg-primary text-primary-foreground flex size-[22px] shrink-0 items-center justify-center rounded-[3px] disabled:bg-transparent disabled:text-muted-foreground/60"
+					className="bg-primary text-primary-foreground disabled:text-muted-foreground/60 flex size-[22px] shrink-0 items-center justify-center rounded-[3px] disabled:bg-transparent"
 				>
 					<RiArrowUpLine aria-hidden="true" className="size-3.5" />
 				</button>

@@ -17,14 +17,22 @@ function shortDuration(milliseconds: number | null): string | null {
 	return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+/** A summary that opens with a bold heading, as Codex writes them. */
+const HEADED = /^\s*(?:\*\*|__)(.+?)(?:\*\*|__)\s*/su;
+
 /**
- * The headline of a reasoning summary: its first line, without markdown emphasis.
+ * A reasoning summary split into the headline its row shows and the body it
+ * opens to: Codex opens each summary with a bold heading; one without is its
+ * own first line, and the whole of it is the body.
  * @param text The summary.
- * @returns The headline.
+ * @returns The headline and the body.
  */
-function reasoningHeadline(text: string): string {
+function reasoningParts(text: string): { readonly headline: string; readonly body: string } {
+	const headed = HEADED.exec(text);
+	if (headed !== null)
+		return { headline: headed[1]?.trim() ?? "", body: text.slice(headed[0].length).trim() };
 	const first = text.split("\n").find((line) => line.trim() !== "") ?? "";
-	return first.replaceAll("**", "").replaceAll("__", "").trim();
+	return { headline: first.trim(), body: text.trim() };
 }
 
 /**
@@ -39,6 +47,35 @@ function filesLabel(item: Extract<ActivityItem, { readonly media: "fileChange" }
 }
 
 /**
+ * A reasoning row's words: its headline, or that the agent is thinking while
+ * the summary has not arrived.
+ * @param text The summary.
+ * @returns The words.
+ */
+function reasoningLabel(text: string): string {
+	const { headline } = reasoningParts(text);
+	return headline === "" ? "Thinking" : headline;
+}
+
+/**
+ * A tool call as a person reads it: the server, and the tool.
+ * @param item The tool call.
+ * @returns "server · tool", or the tool alone.
+ */
+function toolLabel(item: Extract<ActivityItem, { readonly media: "tool" }>): string {
+	return item.server === null ? item.name : `${item.server} · ${item.name}`;
+}
+
+/**
+ * A web search as a person reads it.
+ * @param item The search.
+ * @returns What was searched for.
+ */
+function searchLabel(item: Extract<ActivityItem, { readonly media: "search" }>): string {
+	return item.query === null ? "Searched the web" : `Searched “${item.query}”`;
+}
+
+/**
  * One row's words: what the work was.
  * @param item The item.
  * @returns The label.
@@ -46,15 +83,15 @@ function filesLabel(item: Extract<ActivityItem, { readonly media: "fileChange" }
 function activityLabel(item: ActivityItem): string {
 	switch (item.media) {
 		case "reasoning":
-			return reasoningHeadline(item.text) || "Thought";
+			return reasoningLabel(item.text);
 		case "command":
 			return item.command;
 		case "fileChange":
 			return filesLabel(item);
 		case "tool":
-			return item.server === null ? item.name : `${item.server} · ${item.name}`;
+			return toolLabel(item);
 		case "search":
-			return item.query === null ? "Searched the web" : `Searched “${item.query}”`;
+			return searchLabel(item);
 		default:
 			return "Compacted the conversation";
 	}
@@ -83,7 +120,9 @@ function lineTotals(item: Extract<ActivityItem, { readonly media: "fileChange" }
 function runSummary(items: readonly ActivityItem[]): string {
 	const commands = items.filter((item) => item.media === "command").length;
 	const files = new Set(
-		items.flatMap((item) => (item.media === "fileChange" ? item.changes.map((change) => change.path) : [])),
+		items.flatMap((item) =>
+			item.media === "fileChange" ? item.changes.map((change) => change.path) : [],
+		),
 	).size;
 	const facts = [
 		`${items.length} ${items.length === 1 ? "step" : "steps"}`,
@@ -93,4 +132,4 @@ function runSummary(items: readonly ActivityItem[]): string {
 	return facts.filter((fact) => fact !== null).join(" · ");
 }
 
-export { activityLabel, lineTotals, reasoningHeadline, runSummary, shortDuration };
+export { activityLabel, lineTotals, reasoningParts, runSummary, shortDuration };

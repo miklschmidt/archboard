@@ -194,7 +194,6 @@
 				"src/ui/components/badge.tsx",
 				"src/ui/components/button.tsx",
 				"src/ui/components/checkbox.tsx",
-				"src/ui/components/collapsible.tsx",
 				"src/ui/components/combobox.tsx",
 				"src/ui/components/dialog.tsx",
 				"src/ui/components/dropdown-menu.tsx",
@@ -205,7 +204,6 @@
 				"src/ui/components/radio-group.tsx",
 				"src/ui/components/select.tsx",
 				"src/ui/components/separator.tsx",
-				"src/ui/components/sheet.tsx",
 				"src/ui/components/skeleton.tsx",
 				"src/ui/components/tabs.tsx",
 				"src/ui/components/textarea.tsx",
@@ -214,11 +212,6 @@
 				"src/ui/components/tooltip.tsx",
 				// TASK-150.05: official assistant-ui base-nova registry source (workbench-thread/README.md)
 				"src/ui/workbench-thread/markdown-text.tsx",
-				"src/ui/workbench-thread/reasoning-elements.tsx",
-				"src/ui/workbench-thread/reasoning.tsx",
-				"src/ui/workbench-thread/thread.tsx",
-				"src/ui/workbench-thread/tool-fallback.tsx",
-				"src/ui/workbench-thread/tool-group.tsx",
 				"src/ui/workbench-thread/tooltip-icon-button.tsx",
 				"src/ui/workbench-thread/use-copy-to-clipboard.ts",
 				// TASK-150.05: official LiveKit Agents UI wave renderer and shader host (voice-wave/LICENSE-NOTICE.md)

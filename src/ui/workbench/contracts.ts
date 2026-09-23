@@ -36,7 +36,14 @@ interface WorkbenchQueueActions {
 }
 
 /** Where live voice stands, as the Talk control shows it. */
-type VoiceStage = "idle" | "preparing" | "connecting" | "listening" | "speaking" | "muted" | "stopping";
+type VoiceStage =
+	| "idle"
+	| "preparing"
+	| "connecting"
+	| "listening"
+	| "speaking"
+	| "muted"
+	| "stopping";
 
 /** The voice as the agent bar shows it. */
 interface AgentVoiceView {
@@ -79,7 +86,8 @@ interface AgentView {
 /** Everything a person can do from the agent surfaces. */
 interface AgentActions {
 	/**
-	 * Send a message: steered into a running turn, queued when asked.
+	 * Send a message and show the conversation: steered into a running turn,
+	 * queued when asked.
 	 * @param text The message.
 	 * @param queue Whether to run it after the current turn instead.
 	 */

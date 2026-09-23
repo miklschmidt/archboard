@@ -34,11 +34,21 @@ function PromptBlock(props: { readonly item: ConversationDataParts["prompt"] }):
 
 /** Each step status's mark. */
 const STEP_MARKS = {
-	completed: <RiCheckboxCircleFill aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />,
-	inProgress: (
-		<RiLoader4Line aria-hidden="true" className="text-foreground size-3.5 shrink-0 motion-safe:animate-spin" />
+	completed: (
+		<RiCheckboxCircleFill aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
 	),
-	pending: <RiCheckboxBlankCircleLine aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />,
+	inProgress: (
+		<RiLoader4Line
+			aria-hidden="true"
+			className="text-foreground size-3.5 shrink-0 motion-safe:animate-spin"
+		/>
+	),
+	pending: (
+		<RiCheckboxBlankCircleLine
+			aria-hidden="true"
+			className="text-muted-foreground size-3.5 shrink-0"
+		/>
+	),
 } as const;
 
 /** Each step status in words, for assistive technology. */
@@ -50,7 +60,9 @@ const STEP_WORDS = { completed: "done", inProgress: "in progress", pending: "to 
  * @param props.plan The latest plan Codex published.
  * @returns The plan.
  */
-function PlanProgress(props: { readonly plan: ConversationDataParts["plan-progress"] }): JSX.Element {
+function PlanProgress(props: {
+	readonly plan: ConversationDataParts["plan-progress"];
+}): JSX.Element {
 	const { plan } = props;
 	const done = plan.steps.filter((step) => step.status === "completed").length;
 	return (
@@ -65,8 +77,8 @@ function PlanProgress(props: { readonly plan: ConversationDataParts["plan-progre
 				<p className="text-body text-muted-foreground mb-1.5">{plan.explanation}</p>
 			)}
 			<ol className="flex flex-col gap-1">
-				{plan.steps.map((step, index) => (
-					<li key={`${index}:${step.step}`} className="text-body flex items-start gap-2">
+				{plan.steps.map((step) => (
+					<li key={step.step} className="text-body flex items-start gap-2">
 						<span className="mt-px">{STEP_MARKS[step.status]}</span>
 						<span className={step.status === "completed" ? "text-muted-foreground" : ""}>
 							<span className="sr-only">{STEP_WORDS[step.status]}: </span>
@@ -128,27 +140,61 @@ function ApprovalMark(props: { readonly item: ConversationDataParts["approval"] 
  * @param props.end The turn's end.
  * @returns The line.
  */
-function TurnEndLine(props: { readonly end: ConversationDataParts["turn-end"] }): JSX.Element | null {
+function TurnEndLine(props: {
+	readonly end: ConversationDataParts["turn-end"];
+}): JSX.Element | null {
 	const { end } = props;
 	if (end.outcome === "running") return <RunningLine startedAtMs={end.startedAtMs} />;
-	if (end.outcome === "failed") {
-		return (
-			<div data-slot="turn-failed" role="alert" className="text-body text-destructive flex items-start gap-2">
-				<RiErrorWarningLine aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-				<span className="min-w-0 wrap-break-word">
-					{end.error?.message ?? "The turn failed."}
-					{end.error?.details != null && (
-						<span className="text-muted-foreground block whitespace-pre-wrap">{end.error.details}</span>
-					)}
-				</span>
-			</div>
-		);
-	}
+	if (end.outcome === "failed") return <FailedLine error={end.error} />;
+	return <EndedLine end={end} />;
+}
+
+/**
+ * Why a turn failed, in Codex's own words.
+ * @param props The error.
+ * @param props.error What Codex said, or null.
+ * @returns The alert.
+ */
+function FailedLine(props: {
+	readonly error: ConversationDataParts["turn-end"]["error"];
+}): JSX.Element {
+	const { error } = props;
+	return (
+		<div
+			data-slot="turn-failed"
+			role="alert"
+			className="text-body text-destructive flex items-start gap-2"
+		>
+			<RiErrorWarningLine aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+			<span className="min-w-0 wrap-break-word">
+				{error?.message ?? "The turn failed."}
+				{error?.details != null && (
+					<span className="text-muted-foreground block whitespace-pre-wrap">{error.details}</span>
+				)}
+			</span>
+		</div>
+	);
+}
+
+/**
+ * How long a finished turn took, or that it was stopped.
+ * @param props How it ended.
+ * @param props.end The turn's end.
+ * @returns The line, or nothing when Codex reported no duration.
+ */
+function EndedLine(props: { readonly end: ConversationDataParts["turn-end"] }): JSX.Element | null {
+	const { end } = props;
 	const took = end.durationMs === null ? null : clockDuration(end.durationMs);
 	if (end.outcome === "interrupted") {
-		return <p className="text-technical text-muted-foreground font-mono">stopped{took === null ? "" : ` after ${took}`}</p>;
+		return (
+			<p className="text-technical text-muted-foreground font-mono">
+				stopped{took === null ? "" : ` after ${took}`}
+			</p>
+		);
 	}
-	return took === null ? null : <p className="text-technical text-muted-foreground text-right font-mono">{took}</p>;
+	return took === null ? null : (
+		<p className="text-technical text-muted-foreground text-right font-mono">{took}</p>
+	);
 }
 
 /**
@@ -162,9 +208,14 @@ function RunningLine(props: { readonly startedAtMs: number | null }): JSX.Elemen
 	const { startedAtMs } = props;
 	return (
 		<p data-slot="turn-running" className="text-body text-muted-foreground flex items-center gap-2">
-			<span aria-hidden="true" className="bg-status size-1.5 rounded-full motion-safe:animate-pulse" />
+			<span
+				aria-hidden="true"
+				className="bg-status size-1.5 rounded-full motion-safe:animate-pulse"
+			/>
 			Working
-			{startedAtMs !== null && <span className="font-mono">{clockDuration(now - startedAtMs)}</span>}
+			{startedAtMs !== null && (
+				<span className="font-mono">{clockDuration(now - startedAtMs)}</span>
+			)}
 		</p>
 	);
 }

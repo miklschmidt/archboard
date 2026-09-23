@@ -6,11 +6,7 @@
 // newest line while the reader is at the bottom and offers a way back down
 // when they have scrolled up.
 
-import {
-	type DataMessagePartProps,
-	MessagePrimitive,
-	ThreadPrimitive,
-} from "@assistant-ui/react";
+import { type DataMessagePartProps, MessagePrimitive, ThreadPrimitive } from "@assistant-ui/react";
 import { RiArrowDownLine } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
@@ -33,12 +29,15 @@ import { MarkdownText } from "@/ui/workbench-thread/markdown-text";
  * the part renderer is looked up by that same name, so the payload is the
  * name's shape by construction.
  * @param props The part.
+ * @param name The name it was drawn under.
  * @returns The payload.
  */
 function partData<Name extends keyof ConversationDataParts>(
 	props: DataMessagePartProps,
+	name: Name,
 ): ConversationDataParts[Name] {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/no-unsafe-return -- the seam in `toThreadMessageLike` gives each part name exactly one payload shape.
+	if (props.name !== name) throw new Error(`A ${props.name} part was drawn as ${name}.`);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the seam in `toThreadMessageLike` gives each part name exactly one payload shape.
 	return props.data as ConversationDataParts[Name];
 }
 
@@ -48,7 +47,7 @@ function partData<Name extends keyof ConversationDataParts>(
  * @returns The prompt.
  */
 function PromptPart(props: DataMessagePartProps): JSX.Element {
-	return <PromptBlock item={partData<"prompt">(props)} />;
+	return <PromptBlock item={partData(props, "prompt")} />;
 }
 
 /**
@@ -57,7 +56,7 @@ function PromptPart(props: DataMessagePartProps): JSX.Element {
  * @returns The run.
  */
 function ActivityPart(props: DataMessagePartProps): JSX.Element {
-	return <ActivityRun run={partData<"activity">(props)} />;
+	return <ActivityRun run={partData(props, "activity")} />;
 }
 
 /**
@@ -66,7 +65,7 @@ function ActivityPart(props: DataMessagePartProps): JSX.Element {
  * @returns The plan.
  */
 function PlanProgressPart(props: DataMessagePartProps): JSX.Element {
-	return <PlanProgress plan={partData<"plan-progress">(props)} />;
+	return <PlanProgress plan={partData(props, "plan-progress")} />;
 }
 
 /**
@@ -75,7 +74,7 @@ function PlanProgressPart(props: DataMessagePartProps): JSX.Element {
  * @returns The note.
  */
 function PlanPart(props: DataMessagePartProps): JSX.Element {
-	return <PlanNote item={partData<"plan">(props)} />;
+	return <PlanNote item={partData(props, "plan")} />;
 }
 
 /**
@@ -84,7 +83,7 @@ function PlanPart(props: DataMessagePartProps): JSX.Element {
  * @returns The mark.
  */
 function ApprovalPart(props: DataMessagePartProps): JSX.Element {
-	return <ApprovalMark item={partData<"approval">(props)} />;
+	return <ApprovalMark item={partData(props, "approval")} />;
 }
 
 /**
@@ -93,7 +92,7 @@ function ApprovalPart(props: DataMessagePartProps): JSX.Element {
  * @returns The line.
  */
 function TurnEndPart(props: DataMessagePartProps): JSX.Element | null {
-	return <TurnEndLine end={partData<"turn-end">(props)} />;
+	return <TurnEndLine end={partData(props, "turn-end")} />;
 }
 
 /** Every part the conversation renders, by kind and name. */
@@ -133,25 +132,25 @@ function renderTurn(): JSX.Element {
 
 /** Inputs for the conversation. */
 interface ConversationProps {
-	/** Shown instead of turns while there are none and nothing is on its way. */
-	readonly empty: ReactNode;
-	/** What the conversation does not hold yet, after its last turn. */
-	readonly footer: ReactNode;
+	/** What follows the last turn: what the conversation does not hold yet, or its empty state. */
+	readonly children: ReactNode;
 }
 
 /**
  * The conversation.
- * @param props The empty state and the footer.
+ * @param props What follows the last turn.
  * @returns The scrolling conversation.
  */
 function Conversation(props: ConversationProps): JSX.Element {
 	return (
-		<ThreadPrimitive.Root data-slot="conversation" className="relative flex min-h-0 flex-1 flex-col">
-			<ThreadPrimitive.Viewport className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
+		<ThreadPrimitive.Root
+			data-slot="conversation"
+			className="relative flex min-h-0 flex-1 flex-col"
+		>
+			<ThreadPrimitive.Viewport className="flex min-h-0 flex-1 [scrollbar-gutter:stable] flex-col overflow-y-auto">
 				<div className="flex flex-1 flex-col gap-7 px-5 pt-4 pb-5">
-					{props.empty}
 					<ThreadPrimitive.Messages>{renderTurn}</ThreadPrimitive.Messages>
-					{props.footer}
+					{props.children}
 				</div>
 				<ThreadPrimitive.ScrollToBottom
 					aria-label="Jump to the newest"
