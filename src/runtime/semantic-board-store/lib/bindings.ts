@@ -11,12 +11,20 @@
 // with no write to refuse — refusing one at the write boundary would only
 // refuse the wrong agent at the wrong moment.
 //
-// Two things it deliberately does not say:
+// A binding is judged by the variant it is on, because existence is a fact
+// about a variant (ADR 0031). Only the current variant says its architecture is
+// built, so only there does a path that is not in the checkout mean the
+// binding went stale. Three things it deliberately does not say:
 //
 //   - nothing about a repository this machine has not registered. Where
 //     `github.com/acme/payments` lives here is a machine-local fact
 //     (repo-registry), so a fresh clone would otherwise warn about every bound
 //     node on every board, and none of those warnings would be about the vault;
+//   - nothing about a draft. A proposal describes code nobody has written yet,
+//     so a binding on one names where that code will live: ahead of the code,
+//     not behind it. The check starts applying the moment adoption makes the
+//     variant current, which is when the variant starts claiming the code is
+//     there;
 //   - nothing about a historical variant. A binding that named a file which
 //     existed then is a correct record; flagging it would push somebody toward
 //     rebinding history to today's files, and that would make the record lie.
@@ -26,9 +34,8 @@ import path from "node:path";
 import { isPathWithin } from "@/runtime/code-target/index";
 import { checkoutFor } from "@/runtime/engine/repo-registry";
 import type { CodeBinding } from "@/shared/code-target/index";
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import { currentVariant, type SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
-import { contentCheckedVariants } from "@/runtime/semantic-board-store/lib/content-checks";
 
 /** Where a repository identity lives on this machine, or nothing knowable. */
 type CheckoutLookup = (repo: string) => string | undefined;
@@ -58,8 +65,8 @@ function insideCheckout(root: string, bound: string): boolean {
 }
 
 /**
- * Everything wrong with one board's bindings, over the variants somebody can
- * still edit.
+ * Everything wrong with one board's bindings, over the variant that says what
+ * is built.
  * @param board The board as read.
  * @param file The file it was read from.
  * @param checkoutOf Where each repository lives on this machine.
@@ -70,22 +77,21 @@ function semanticBindingDiagnostics(
 	file: string,
 	checkoutOf: CheckoutLookup,
 ): VaultDiagnostic[] {
-	return contentCheckedVariants(board).flatMap((variant) =>
-		variant.content.nodes.flatMap((node) => {
-			const binding = node.binding;
-			if (binding === undefined) return [];
-			const root = checkoutOf(binding.repo);
-			if (root === undefined || insideCheckout(root, binding.path)) return [];
-			return [
-				missingPath(node.name, binding, root, {
-					file,
-					board: board.name,
-					variant: variant.id,
-					path: `variants.${variant.id}.content.nodes.${node.id}.binding`,
-				}),
-			];
-		}),
-	);
+	const variant = currentVariant(board);
+	return (variant?.content.nodes ?? []).flatMap((node) => {
+		const binding = node.binding;
+		if (variant === undefined || binding === undefined) return [];
+		const root = checkoutOf(binding.repo);
+		if (root === undefined || insideCheckout(root, binding.path)) return [];
+		return [
+			missingPath(node.name, binding, root, {
+				file,
+				board: board.name,
+				variant: variant.id,
+				path: `variants.${variant.id}.content.nodes.${node.id}.binding`,
+			}),
+		];
+	});
 }
 
 /** Where one binding is, in the words every vault diagnostic uses. */
@@ -113,8 +119,10 @@ function missingPath(
 			`Node ${JSON.stringify(name)} is bound to ${JSON.stringify(binding.path)} in ` +
 			`${JSON.stringify(binding.repo)}, and there is no such file or directory in the checkout ` +
 			`at ${JSON.stringify(root)}. A binding is what "open the code" resolves, so this node ` +
-			"opens nothing: bind it to where that code lives now, or remove the binding if this part " +
-			"no longer stands for code in that repository.",
+			"opens nothing. Bind it to where that code lives now; remove the binding if this part no " +
+			"longer stands for code in that repository; or, if the code has not been written yet, " +
+			"this part is a proposal and belongs on a draft rather than on the variant that says " +
+			"what is built.",
 	};
 }
 
