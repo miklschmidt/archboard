@@ -76,8 +76,12 @@ scaled dimensions, full bounds past a display, font readiness, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
 `src/runtime/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
-file, and provable teardown. All three need a Chromium-family executable
-(`ARCHBOARD_RENDERER_CHROMIUM` names one). Real-browser owners cover
+file, and provable teardown. `tests/system/canvas-state/walkthrough-recording.test.ts`
+owns `semantic record` end to end: the real CLI drives the built page in a
+headless Chromium against a canvas whose fake Codex narrates, and the owner
+checks the MP4, the order the steps reached the voice and `--discard`. All four
+need a Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one), and
+the recording owner needs `dist/frontend` as well. Real-browser owners cover
 only live `browser` commands.
 
 Run browser diagnosis only through the adapter:

@@ -103,7 +103,7 @@ deterministic gates first, then a user proves microphone, speaker, sign-in,
 reconnect, callback and spoken approval.
 
 A recording (`archboard semantic record`) runs end to end against the fake
-Codex in `tests/system/semantic-boards/record.test.ts`: a real headless
+Codex in `tests/system/canvas-state/walkthrough-recording.test.ts`: a real headless
 Chromium, the real page, and a fake that speaks a transcript for every step it
 is handed. What only a real voice can show, that it explains each step and falls
 silent so the talk moves on, is the
