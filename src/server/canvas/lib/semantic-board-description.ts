@@ -5,7 +5,12 @@
 // says what sort of board this is at all. The voice coordinator reads it aloud,
 // which is why the punctuation here is not decoration.
 
-import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/index";
+import {
+	nothingBuilt,
+	type SemanticBoard,
+	type SemanticVariant,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 
 /**
  * A count and the word for what it counts, pluralised.
@@ -85,4 +90,25 @@ function describeVariant(
 	);
 }
 
-export { describeVariant };
+/**
+ * The sentence that says a board describes nothing built, or nothing when it
+ * describes something that is (ADR 0031).
+ *
+ * Said about the board rather than the variant, because it is true of every
+ * variant on it: the one being read is a proposal, and so is every other.
+ * @param board The board.
+ * @returns The sentence, with a leading space, or the empty string.
+ */
+function unbuiltSentence(board: SemanticBoard): string {
+	if (!nothingBuilt(board)) {
+		return "";
+	}
+	const drafts = board.variants.filter((variant) => variant.lifecycle === "draft");
+	const proposals =
+		drafts.length === 0
+			? ""
+			: `; its drafts are ${drafts.map((one) => `"${one.name}"`).join(", ")}`;
+	return ` Nothing "${board.name}" describes is built yet: it has no current variant${proposals}.`;
+}
+
+export { describeVariant, unbuiltSentence };

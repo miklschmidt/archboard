@@ -25,7 +25,7 @@ import {
 	type LocalCodeTargetResult,
 } from "@/runtime/code-target";
 import { githubUrlForBinding } from "@/runtime/code-target/presentation";
-import { resolveVariant } from "@/shared/semantic-board/index";
+import { addressedVariant } from "@/shared/semantic-board/index";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { checkBrowserCsrf, type BrowserCsrfKind } from "@/server/code-opener/lib/browser-csrf";
 import {
@@ -130,15 +130,11 @@ function canonicalBinding(boardKey: string, subjectId: string): BindingLookup {
 	if (!read.ok) {
 		return { ok: false, code: "BOARD_NOT_FOUND", error: read.problem };
 	}
-	const variant = resolveVariant(read.board, address.variant);
-	if (variant === undefined) {
-		return {
-			ok: false,
-			code: "BOARD_NOT_FOUND",
-			error: `This board has no variant called "${address.variant ?? ""}".`,
-		};
+	const opened = addressedVariant(read.board, address.variant);
+	if (!opened.ok) {
+		return { ok: false, code: "BOARD_NOT_FOUND", error: `${opened.problem}.` };
 	}
-	const node = variant.content.nodes.find((one) => one.id === subjectId);
+	const node = opened.variant.content.nodes.find((one) => one.id === subjectId);
 	if (node === undefined) {
 		return {
 			ok: false,

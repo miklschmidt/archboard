@@ -10,7 +10,8 @@ import { runCanvasCli } from "../support/run-cli.ts";
 // owned by the unit test beside targetedVariant; what is owned here is what the
 // rule does to a board: the flag decides where the change lands, it says what it
 // overrode even when the write it aimed at is refused, and edit and resolve both
-// behave that way.
+// behave that way. A board nobody has built has no current variant, so what its
+// bare name opens and what adopting it means are owned here too.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));
@@ -219,4 +220,51 @@ describe("saying which variant an edit lands on", () => {
 		expect(draft?.reconciliation).toBeUndefined();
 		expect(partsOf("Queued ingest")).toContain("Ingest");
 	}, 30_000);
+});
+
+describe("a board nobody has built", () => {
+	test("is drawn by its name and adopted into existence", () => {
+		const planned = "unbuilt";
+		const made = cli(
+			["semantic", "new", planned, "--doing", "planning an architecture nobody has built"],
+			JSON.stringify({
+				level: "system",
+				lifecycle: "draft",
+				nodes: [{ name: "API", kind: "service" }],
+			}),
+		);
+		expect(made.status, made.stderr).toBe(0);
+		const held = JSON.parse(cli(["semantic", "show", planned]).stdout).board;
+		expect(held.current).toBeUndefined();
+		const [draft] = held.variants;
+
+		// Its bare name draws the draft, with no current variant pretending to be it.
+		const drawn = cli(["semantic", "render", planned, "--out", path.join(vault, "unbuilt.svg")]);
+		expect(drawn.status, drawn.stderr).toBe(0);
+		expect(JSON.parse(drawn.stdout).variant).toMatchObject({ id: draft.id, lifecycle: "draft" });
+
+		/**
+		 * Adopt one variant of the board as it now stands.
+		 * @param variant The variant to adopt.
+		 * @returns What the command printed and how it exited.
+		 */
+		const adopt = (variant: string) =>
+			cli([
+				"semantic",
+				"adopt",
+				planned,
+				"--variant",
+				variant,
+				"--expect-version",
+				String(JSON.parse(cli(["semantic", "show", planned]).stdout).board.version),
+				"--doing",
+				"adopting what was built",
+			]);
+		expect(adopt("current").status).not.toBe(0);
+		const adopted = adopt(draft.name);
+		expect(adopted.status, adopted.stderr).toBe(0);
+		const after = JSON.parse(cli(["semantic", "show", planned]).stdout).board;
+		expect(after.current).toBe(draft.id);
+		expect(after.adoptions).toEqual([{ variant: draft.id, at: expect.any(String) }]);
+	}, 60_000);
 });

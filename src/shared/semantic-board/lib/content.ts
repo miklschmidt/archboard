@@ -108,8 +108,11 @@ type DrillDown = z.infer<typeof DrillDownSchema>;
  * whatever the picture ends up looking like. It names at most one parent, and
  * the graph it forms is checked acyclic when the board is validated.
  *
- * `binding` is the one optional primary code location. A planned node has
- * none, and two nodes on the same board may name different repositories.
+ * `binding` is the one optional primary code location, and two nodes on the
+ * same board may name different repositories. Optional because a part may be
+ * implemented and simply not bound yet; its absence never says a part is
+ * planned. Whether anything is built is a fact about the variant (ADR 0031),
+ * and a binding on a draft may name where code will live before it does.
  *
  * `groups` is what the node belongs to, and is deliberately none of the other
  * three. Not `parent`: a module inside a service is contained by it, while a

@@ -14,6 +14,7 @@ import {
 	BoardAdoptInputSchema,
 	BoardShelveInputSchema,
 	ResolutionInputSchema,
+	type SemanticBoard,
 } from "@/shared/semantic-board/index";
 import {
 	adoptSemanticBoardOnCanvas,
@@ -36,6 +37,7 @@ import {
 	SelectorSchema,
 	SemanticBoardResultSchema,
 	targetedVariant,
+	UNNAMED_VARIANT,
 	writeResult,
 	statedJson,
 } from "@/cli/commands/lib/semantic-input";
@@ -58,8 +60,8 @@ const semanticResolveContract = defineCommand({
 		"is normal; the rest stays open and says so. A third answer is not a side — write it as an " +
 		"ordinary edit. Settling also catches the proposal up with everything its predecessor decided " +
 		"while it was unsettled, and lets the drafts under it move again, all in the same write. " +
-		"--variant says which proposal is being settled, by id or name, and the current variant takes " +
-		"it when absent; the answer's own `variant` says the same thing, and where the two differ the " +
+		`--variant says which proposal is being settled, by id or name, ${UNNAMED_VARIANT}; ` +
+		"the answer's own `variant` says the same thing, and where the two differ the " +
 		"command line wins and the write says so.",
 	examples: [
 		'archboard semantic resolve pipeline --expect-version 7 --input answer.json --doing "settling the gateway name"',
@@ -78,7 +80,7 @@ const semanticResolveContract = defineCommand({
 			spellings: ["--variant"],
 			value: "required",
 			placeholder: "variant",
-			description: "Which proposal to settle, by id or name; the current variant when absent",
+			description: `Which proposal to settle, by id or name; ${UNNAMED_VARIANT}`,
 		},
 		{
 			kind: "option",
@@ -170,10 +172,12 @@ const semanticAdoptContract = defineCommand({
 	shared: ["url", "doing", "expect-version", "as-session"],
 	summary: "Make one variant the architecture that is implemented",
 	description:
-		"Moves the current designation to a variant of this board. Nothing is renamed and nothing is " +
-		"reparented: the variant that was current becomes the architecture that was implemented until " +
-		"now and stops being editable, the adopted one becomes current and goes on being editable, " +
-		"and every proposal still says which state it was derived from. The move itself is recorded " +
+		"Makes a variant of this board the architecture that is implemented. Nothing is renamed and " +
+		"nothing is reparented: the adopted variant becomes current and goes on being editable, and " +
+		"the variant that was current, when there was one, becomes the architecture that was " +
+		"implemented until now and stops being editable. On a board nobody had built, nothing becomes " +
+		"history: this is the moment its architecture starts existing. Every proposal still says " +
+		"which state it was derived from. The move itself is recorded " +
 		"with its reason, which is the part somebody is looking for a year later. A variant that is " +
 		"still holding a disagreement, or that is derived from one that is, cannot be adopted.",
 	examples: [
@@ -255,17 +259,23 @@ const semanticAdoptContract = defineCommand({
 			...(input.reason === undefined ? {} : { reason: input.reason }),
 		});
 		const written = await adoptSemanticBoardOnCanvas(input.name, adopting);
-		const board = written.board;
-		const now = board.variants.find((one) => one.id === board.current);
-		return {
-			result: writeResult(written),
-			diagnostics: [
-				`"${now?.name ?? board.current}" is the architecture "${board.name}" says is ` +
-					`implemented, as of version ${board.version}.`,
-			],
-		};
+		return { result: writeResult(written), diagnostics: [adoptedLine(written.board)] };
 	},
 });
+
+/**
+ * What an adoption leaves implemented, and whether anything was before it.
+ * @param board The board the adoption wrote.
+ * @returns The sentence.
+ */
+function adoptedLine(board: SemanticBoard): string {
+	const now = board.variants.find((one) => one.id === board.current);
+	const first = board.adoptions?.at(-1)?.from === undefined;
+	return (
+		`"${now?.name ?? ""}" is the architecture "${board.name}" says is implemented, as of ` +
+		`version ${board.version}${first ? "; before it, nothing this board describes was built." : "."}`
+	);
+}
 
 const ShelveInputSchema = z.object({
 	name: z.string(),

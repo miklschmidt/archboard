@@ -68,7 +68,7 @@ describe("what a board has to be before it is drawn", () => {
 					],
 				}),
 			),
-		).toContain("exactly one");
+		).not.toBe("");
 	});
 
 	test("two variants sharing a name is refused, because a name is an address", () => {

@@ -69,7 +69,10 @@ design.
   already-applied parent edit.
   Every state has a lasting name; `current` is a movable designation, not the
   state's identity. Adopting a state moves that designation, preserves the former
-  current under its original name, and records when adoption occurred. Proposal
+  current under its original name, and records when adoption occurred. On a board
+  that has no current variant there is no former current: adoption is the moment
+  its architecture starts existing, and nothing becomes history
+  ([ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md)). Proposal
   ancestry and adoption history are distinct. Adoption is explicit once a variant
   describes implemented architecture; leadership approval alone keeps it a proposal.
   An agent may adopt when instructed, but rendering or merging code does not
@@ -121,7 +124,10 @@ design.
   description. The name and responsibility receive consistent visual hierarchy;
   longer descriptions are available through inspection.
 - A node has at most one optional primary code binding. Nodes on the same board
-  may bind to different repositories, and planned nodes can have no binding.
+  may bind to different repositories. A node is planned because of the variant it
+  is on, never because of what it lacks: a missing binding means nothing has been
+  bound, not that nothing was built
+  ([ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md)).
 - People explore through selection, inspection, code navigation, pan and zoom, and
   agent requests grounded in selected nodes. Content changes are initially made
   through agents; a direct manipulation editor is not a delivery requirement.

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as LockModule from "@/runtime/engine/board-lock";
 import { ownVaultOrRefuse } from "@/runtime/semantic-board-store/tests/own-vault";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-read-migration-"));
@@ -84,7 +85,7 @@ test("read migrates every variant and persists one new board version", async () 
 	const persisted = JSON.parse(readFileSync(file, "utf8"));
 	expect(persisted).toEqual({
 		...original,
-		schemaVersion: "2.3.0",
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		version: 8,
 		updatedAt: persisted.updatedAt,
 		variants: [
@@ -153,7 +154,7 @@ test("a held board remains readable and migration waits for the holder to leave"
 	}
 	const migrated = await store.readSemanticBoard(name);
 	expect(migrated.ok).toBe(true);
-	expect(JSON.parse(readFileSync(file, "utf8")).schemaVersion).toBe("2.3.0");
+	expect(JSON.parse(readFileSync(file, "utf8")).schemaVersion).toBe(SEMANTIC_BOARD_SCHEMA_VERSION);
 });
 
 test("a version without a registered path is refused without rewriting", async () => {
@@ -171,5 +172,5 @@ test("known older contracts advance through compatibility steps", async () => {
 	const file = put(name, { ...legacyBoard(name), schemaVersion: "2.0.0" });
 	const result = await store.readSemanticBoard(name);
 	expect(result.ok).toBe(true);
-	expect(JSON.parse(readFileSync(file, "utf8")).schemaVersion).toBe("2.3.0");
+	expect(JSON.parse(readFileSync(file, "utf8")).schemaVersion).toBe(SEMANTIC_BOARD_SCHEMA_VERSION);
 });

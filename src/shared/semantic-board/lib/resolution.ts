@@ -46,7 +46,7 @@ type Choice = z.infer<typeof ChoiceSchema>;
  */
 const ResolutionInputSchema = z
 	.object({
-		/** The proposal being settled; the current variant when absent. */
+		/** The proposal being settled; the variant the board's bare name opens when absent. */
 		variant: z.string().trim().min(1).optional(),
 		/** What it decides. */
 		choices: z.array(ChoiceSchema).min(1),

@@ -82,8 +82,8 @@ function shelvable(board: SemanticBoard, shelving: SemanticVariant): SemanticRef
 		return refuse(
 			"VARIANT_CURRENT",
 			`"${shelving.name}" is the architecture this board says is implemented, not a proposal ` +
-				"about it. There is nothing to let go, and a board with no current architecture is " +
-				"not a board: adopt a successor if this one is no longer what is built.",
+				"about it. There is nothing to let go, and shelving it would leave a board that said " +
+				"what is built saying nothing: adopt a successor if this one is no longer what is built.",
 		);
 	}
 	if (shelving.lifecycle === "historical") {
