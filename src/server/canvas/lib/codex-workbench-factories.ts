@@ -368,7 +368,6 @@ function createProductionCodexWorkbenchFactories(
 			createCodexCoordinatorCallbacks({
 				...bindings.callbacks(created),
 				operations: requireComponent(created, "operations"),
-				session: requireComponent(created, "session"),
 				threadLink: requireComponent(created, "threadLink"),
 			}),
 		/**

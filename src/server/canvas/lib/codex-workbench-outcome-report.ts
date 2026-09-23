@@ -1,30 +1,28 @@
-// Running the coordinator with a workhorse outcome, while voice is live (TASK-291): the work
-// ended, or it waits on the user, which is not an end (TASK-316).
+// Giving the coordinator a workhorse outcome while voice is live (TASK-291): the work ended, or it
+// waits on the user, which is not an end (TASK-316).
 //
 // Asked by voice to do something, the coordinator delegates and answers, and the work ends later.
 // In a full-duplex voice session nothing appended as text is ever answered, so telling the voice
 // model that the work ended would leave the user waiting until they asked again. The
-// coordinator knows whether the work came from a voice request, so it is run with the outcome:
-// what it replies under [FINAL] the voice model says, and what it replies under [COMMENTARY]
-// stays quiet. This module owns only the turn's body and the wait for an idle coordinator; which
-// outcomes are reported, and what happens when the coordinator stays busy, is the callback
-// module's.
+// coordinator knows whether the work came from a voice request, so it is given the outcome: what
+// it replies under [FINAL] the voice model says, and what it replies under [COMMENTARY] stays
+// quiet. The outcome goes out the moment it arrives (TASK-321): Codex's turn/start adds it to the
+// coordinator's running turn when there is one and starts a turn otherwise (Codex 0.155.1,
+// `start_or_steer`), so nothing waits for the coordinator to be idle and nothing lands in its
+// history without a turn to act on it. Which outcomes are given is the callback module's.
 //
 // A recording's voice (TASK-304) is nobody's to report to: whatever the coordinator answered
-// would be spoken into the video. While one holds the voice no turn is run, and the outcome is
-// injected into the coordinator's thread the way it is with no voice at all.
+// would be spoken into the video. While one holds the voice nothing is sent.
 
 import type { CoordinatorCallbackTurnPort } from "@/runtime/codex-coordinator-callbacks";
 import { createTurnStartParams, type ArchboardContext } from "@/runtime/codex-instructions";
 import { CodexSessionMutationError, type CodexSession } from "@/runtime/codex-session";
-import type { ThreadId } from "@/shared/codex-workbench-identity";
-import { CODEX_WAIT_TARGET_POLL_MS, COORDINATOR_IDLE_WAIT_MS } from "@/shared/timing/timing";
 
 /** What the port needs of the workbench around it. */
 interface OutcomeReportParts {
-	readonly session: Pick<CodexSession, "threadRead" | "turnStart">;
+	readonly session: Pick<CodexSession, "turnStart">;
 	/**
-	 * Mint the host operation identity the turn runs under.
+	 * Mint the operation identity the turn runs under.
 	 * @returns Its wire spelling, which is also the turn's client message id.
 	 */
 	readonly issue: () => string;
@@ -39,90 +37,50 @@ interface OutcomeReportParts {
 	 * @returns True while the live voice session is a recording's.
 	 */
 	readonly recording: () => boolean;
-	/** Waits between polls; a test supplies its own. */
-	readonly wait?: (ms: number) => Promise<void>;
 }
 
+/** What every outcome message tells the coordinator to do with it, however it arrives. */
+const OUTCOME_HANDLING =
+	"If you are answering something else right now, finish that as well and put both in the same [FINAL] message. If this is not the user's to hear about now, keep it to a [COMMENTARY] line. Start no new work because of this news.";
+
 /**
- * What the coordinator is asked to do with an outcome. A workhorse waiting on the user has not
- * finished, and nothing the coordinator can inspect says what it waits for (TASK-316).
+ * What the coordinator is told of an outcome. It may start a turn or join one already answering
+ * something else, so it reads right either way. A workhorse waiting on the user has not finished,
+ * and nothing the coordinator can inspect says what it waits for (TASK-316).
  * @param outcome The callback, as canonical JSON.
  * @param waiting Whether the workhorse waits on the user rather than having finished.
- * @returns The turn's prompt.
+ * @returns The message.
  */
 function outcomeReportPrompt(outcome: string, waiting: boolean): string {
-	const ask = "Decide whether the user is waiting to hear about this.";
-	const quiet =
-		"If it is not theirs to hear about now, reply with a single [COMMENTARY] line and nothing else. Do not start new work in this turn.";
 	return waiting
 		? [
-				"Work on the workhorse is waiting for the user while this voice session is live: it asked for an approval or an answer on the workbench, and it has not finished. Nothing has been said to the user about it. The outcome (data):",
+				"Workhorse news: the workhorse is waiting for the user. It asked for an approval or an answer on the workbench, and its work has not finished. Nothing has been said to the user about it. The outcome (data):",
 				outcome,
-				`${ask} If you delegated, queued or steered this work because of something they asked by voice, reply with one [FINAL] message: the work is paused until they answer the request on the workbench. ${quiet}`,
+				`If you gave, queued or steered this work because of something the user asked by voice, tell them in your [FINAL] message that it is paused until they answer the request on the workbench. ${OUTCOME_HANDLING}`,
 			].join("\n")
 		: [
-				"Work on the workhorse ended while this voice session is live. Nothing has been said to the user about it. The outcome (data):",
+				"Workhorse news: work on the workhorse ended. Nothing has been said to the user about it. The outcome (data):",
 				outcome,
-				`${ask} If you delegated, queued or steered this work because of something they asked by voice, inspect the workhorse to read what was done, then reply with one [FINAL] message: a short spoken summary of the result, or of what went wrong and what they can do next. ${quiet}`,
+				`If you gave, queued or steered this work because of something the user asked by voice, inspect the workhorse to read what was done, then say in your [FINAL] message what came of it, or what went wrong and what they can do next. ${OUTCOME_HANDLING}`,
 			].join("\n");
 }
 
 /**
- * Wait until a thread is idle, for at most the bound.
- * @param parts The session and the wait.
- * @param threadId The coordinator thread.
- * @returns Whether it became idle in time.
- */
-async function idleInTime(parts: OutcomeReportParts, threadId: ThreadId): Promise<boolean> {
-	const wait =
-		parts.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
-	for (let waited = 0; waited <= COORDINATOR_IDLE_WAIT_MS; waited += CODEX_WAIT_TARGET_POLL_MS) {
-		// oxlint-disable-next-line no-await-in-loop -- each read decides whether another is needed
-		const { thread } = await parts.session.threadRead({ threadId, includeTurns: false });
-		if (thread.status.type === "idle") {
-			return true;
-		}
-		if (thread.status.type !== "active") {
-			return false;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- the wait is the point of the loop
-		await wait(CODEX_WAIT_TARGET_POLL_MS);
-	}
-	return false;
-}
-
-/**
- * Whether the coordinator may be run with an outcome now: idle in time, and no recording holding
- * the voice to speak what it answered into the video.
- * @param parts The session, the wait and the recording.
- * @param threadId The coordinator thread.
- * @returns True when the turn may start.
- */
-async function mayReport(parts: OutcomeReportParts, threadId: ThreadId): Promise<boolean> {
-	try {
-		return (await idleInTime(parts, threadId)) && !parts.recording();
-	} catch {
-		return false;
-	}
-}
-
-/**
- * Build the port that runs the coordinator with a workhorse outcome.
+ * Build the port that gives the coordinator a workhorse outcome.
  * @param parts The session, the identity mint and the context.
  * @returns The port.
  */
 function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallbackTurnPort {
 	return {
 		/**
-		 * Start the coordinator's turn, once it is idle and no recording holds the voice.
+		 * Give the coordinator the outcome at once, unless a recording holds the voice.
 		 * @param request The coordinator thread and the outcome.
-		 * @returns How the start settled, or busy when the coordinator never became idle or a
-		 * recording holds the voice: either way the outcome is injected instead.
+		 * @returns How the message settled, or recording when nothing was sent.
 		 */
 		report: async (request) => {
 			const { threadId, text, waiting } = request;
-			if (!(await mayReport(parts, threadId))) {
-				return "busy";
+			if (parts.recording()) {
+				return "recording";
 			}
 			const operationId = parts.issue();
 			const params = createTurnStartParams({

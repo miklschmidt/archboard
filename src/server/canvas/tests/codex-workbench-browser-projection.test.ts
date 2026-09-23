@@ -318,7 +318,6 @@ test("the production browser projection publishes immutable voice start and orde
 				outcome: "delivered",
 				reason: null,
 				text: `exact-${type}`,
-				payload: null,
 				realtimeRequest: null,
 			});
 			return {

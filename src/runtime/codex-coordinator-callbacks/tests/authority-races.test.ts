@@ -2,6 +2,29 @@ import { describe, expect, test } from "bun:test";
 
 import { close, harness, link, operationEvent, semanticInput } from "./support.js";
 
+/**
+ * One callback down one of the two routes that send anything: a workhorse outcome to the
+ * coordinator, or a pick the user made by hand to the voice model as pane news.
+ * @param h - The harness.
+ * @param route - Which route.
+ * @param type - The outcome, for the coordinator route.
+ * @returns The callback source to enqueue.
+ */
+function userPickOrOutcome(
+	h: ReturnType<typeof harness>,
+	route: "coordinator" | "voice",
+	type: "attention" | "failed",
+) {
+	if (route === "coordinator") {
+		return operationEvent(h.ids, type);
+	}
+	const base = semanticInput(h.ids, true);
+	return h.semantic.publisher.publishPaneSelection({
+		...base,
+		pane: { ...base.pane, userChanged: ["selection"] },
+	});
+}
+
 describe("coordinator callback live authority", () => {
 	test("refuses child, coordinator, link, executability, and realtime changes before effect", async () => {
 		await Promise.all(
@@ -51,7 +74,7 @@ describe("coordinator callback live authority", () => {
 					expect(delivery.attempted).toBe(false);
 					expect(delivery.outcome).toBe("not_delivered");
 					expect(h.realtimeRequests).toHaveLength(0);
-					expect(h.injections).toHaveLength(0);
+					expect(h.reports).toHaveLength(0);
 					close(h);
 				},
 			),
@@ -98,17 +121,17 @@ describe("coordinator callback live authority", () => {
 		);
 	});
 
-	test("authority loss after either RPC is outcome_unknown with no cross-route retry", async () => {
+	test("authority loss after either route is outcome_unknown with no cross-route retry", async () => {
 		await Promise.all(
-			[true, false].map(async (active) => {
-				const h = harness(active);
+			(["coordinator", "voice"] as const).map(async (route) => {
+				const h = harness(true);
 				h.setMutationHook(() => {
 					h.state.child = null;
 				});
-				const delivery = await h.callbacks.enqueue(operationEvent(h.ids, "attention"));
+				const delivery = await h.callbacks.enqueue(userPickOrOutcome(h, route, "attention"));
 				expect(delivery.attempted).toBe(true);
 				expect(delivery.outcome).toBe("outcome_unknown");
-				expect(h.realtimeRequests.length + h.injections.length).toBe(1);
+				expect(h.realtimeRequests.length + h.reports.length).toBe(1);
 				close(h);
 			}),
 		);
@@ -120,13 +143,13 @@ describe("coordinator callback live authority", () => {
 			"rejected",
 		];
 		await Promise.all(
-			[true, false].flatMap((active) =>
+			(["coordinator", "voice"] as const).flatMap((route) =>
 				modes.map(async (mode) => {
-					const h = harness(active);
+					const h = harness(true);
 					h.setMutationMode(mode);
-					const delivery = await h.callbacks.enqueue(operationEvent(h.ids, "failed"));
+					const delivery = await h.callbacks.enqueue(userPickOrOutcome(h, route, "failed"));
 					expect(delivery.outcome).toBe(mode === "lost" ? "outcome_unknown" : "not_delivered");
-					expect(h.realtimeRequests.length + h.injections.length).toBe(1);
+					expect(h.realtimeRequests.length + h.reports.length).toBe(1);
 					close(h);
 				}),
 			),

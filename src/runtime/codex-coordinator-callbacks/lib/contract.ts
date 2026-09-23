@@ -1,5 +1,5 @@
 import type { CoordinatorSnapshot } from "@/runtime/codex-coordinator";
-import type { CodexSession, SessionParams } from "@/runtime/codex-session";
+import type { SessionParams } from "@/runtime/codex-session";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
@@ -167,19 +167,20 @@ interface CoordinatorCallbackRealtimePort {
 }
 
 /**
- * What starting the coordinator's turn came to: an ordinary mutation result, or busy when the
- * coordinator was still in a turn of its own at the host's bound and no turn was started.
+ * What giving the coordinator a workhorse outcome came to: an ordinary mutation result, or
+ * recording when a recording holds the voice and nothing was sent, since whatever the
+ * coordinator answered would be spoken into the video (TASK-304).
  */
-type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "busy";
+type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "recording";
 
 /**
- * Starts one ordinary coordinator turn that reports a terminal workhorse outcome (TASK-291).
+ * Gives the coordinator one workhorse outcome while voice is live (TASK-291, TASK-321).
  *
  * In a full-duplex voice session text appended to the voice model is quiet context and nothing
- * answers it, so work that ended would sit unheard until the person asked again. The coordinator
- * is the one that knows whether the work came from a voice request, so it is run with the
- * outcome and its reply decides what the person hears. The host owns the turn's body: its message
- * identity, its canonical context and waiting for an idle coordinator.
+ * answers it, so work that ended would sit unheard until the user asked again. The coordinator
+ * is the one that knows whether the work came from a voice request, so it is given the outcome
+ * at once, in the turn it is running or in a new one, and its reply decides what the user hears.
+ * The Archboard server owns the message: its identity and its canonical context.
  */
 interface CoordinatorCallbackTurnPort {
 	readonly report: (request: {
@@ -207,8 +208,7 @@ type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
-	| "thread_inject_items"
-	/** An ordinary coordinator turn, for a terminal workhorse outcome while voice is live. */
+	/** The coordinator's running turn or a new one, for a workhorse outcome while voice is live. */
 	| "coordinator_turn";
 type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
 type CoordinatorCallbackDeliveryReason =
@@ -242,7 +242,6 @@ interface CoordinatorCallbackDeliveryBase {
 	readonly path: CoordinatorCallbackDeliveryPath;
 	readonly reason: CoordinatorCallbackDeliveryReason | null;
 	readonly text: string | null;
-	readonly payload: SessionParams<"thread/inject_items"> | null;
 	readonly realtimeRequest: CoordinatorCallbackRealtimeRequest | null;
 }
 
@@ -266,9 +265,8 @@ interface CoordinatorCallbackOptions {
 		"subscribeSettledChange" | "subscribePaneFocus" | "subscribePaneSelection"
 	>;
 	readonly operations: Pick<CodexWorkhorseOperations, "subscribe">;
-	readonly session: Pick<CodexSession, "threadInjectItems">;
 	readonly realtime: CoordinatorCallbackRealtimePort;
-	/** Absent where nothing can start a coordinator turn; terminal outcomes then stay quiet. */
+	/** Absent where nothing can reach the coordinator; workhorse outcomes then stay quiet. */
 	readonly coordinatorTurn?: CoordinatorCallbackTurnPort;
 	readonly threadLink: Pick<CodexThreadLinkClassifier, "classify">;
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;

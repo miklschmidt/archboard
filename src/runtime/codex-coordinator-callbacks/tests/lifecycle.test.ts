@@ -4,7 +4,7 @@ import { CALLBACK_BUFFER_LIMIT, createCodexCoordinatorCallbacks } from "../index
 import { close, harness, operationEvent } from "./support.js";
 
 describe("coordinator callback lifecycle", () => {
-	test("with voice live and no way to run the coordinator, a terminal outcome is injected once and nothing else reaches anybody", async () => {
+	test("with voice live, an outcome the user waits for reaches the coordinator once and nothing else reaches anybody", async () => {
 		const h = harness(true);
 		for (const type of ["accepted", "queued", "started", "progress"] as const) {
 			const result = await h.callbacks.enqueue(operationEvent(h.ids, type));
@@ -12,7 +12,7 @@ describe("coordinator callback lifecycle", () => {
 		}
 		for (const type of ["attention", "completed", "failed", "outcome_unknown"] as const) {
 			const result = await h.callbacks.enqueue(operationEvent(h.ids, type));
-			expect(result).toMatchObject({ outcome: "delivered", path: "thread_inject_items" });
+			expect(result).toMatchObject({ outcome: "delivered", path: "coordinator_turn" });
 		}
 		for (const source of [h.semantic.change, h.semantic.focus, h.semantic.selection]) {
 			// A change, a focus or a selection nobody's hand made is never put into a speech
@@ -23,13 +23,13 @@ describe("coordinator callback lifecycle", () => {
 		}
 		// No callback envelope reaches the voice session from any path.
 		expect(h.realtimeRequests).toHaveLength(0);
-		expect(h.injections).toHaveLength(4);
+		expect(h.reports).toHaveLength(4);
 		close(h);
 	});
 
 	test("preserves FIFO when a callback emits another callback", async () => {
-		const h = harness(false);
-		const second = operationEvent(h.ids, "completed");
+		const h = harness(true);
+		const second = operationEvent(h.ids, "failed");
 		let emitted = false;
 		h.setMutationHook(() => {
 			if (emitted) {
@@ -38,12 +38,12 @@ describe("coordinator callback lifecycle", () => {
 			emitted = true;
 			h.operations.emit(second);
 		});
-		await h.callbacks.enqueue(operationEvent(h.ids, "started"));
+		await h.callbacks.enqueue(operationEvent(h.ids, "completed"));
 		await h.callbacks.flush();
-		expect(h.injections).toHaveLength(2);
+		expect(h.reports).toHaveLength(2);
 		expect(h.callbacks.inspect().map((delivery) => delivery.callback?.type)).toEqual([
-			"started",
 			"completed",
+			"failed",
 		]);
 		close(h);
 	});
