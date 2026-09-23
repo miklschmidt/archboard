@@ -13,7 +13,7 @@ export {
 	type BoardCatalogProviderProps,
 } from "@/ui/board-catalog/components/BoardCatalogProvider";
 export { createBoardQueryClient } from "@/ui/board-catalog/lib/query-client";
-export { listedBoardKey } from "@/ui/board-catalog/listing";
+export { listedBoardKey, nothingBuiltOn } from "@/ui/board-catalog/listing";
 export { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
 export {
 	catalogCommandsFor,

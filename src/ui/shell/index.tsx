@@ -5,6 +5,7 @@
 import type { CSSProperties, JSX, ReactNode } from "react";
 
 import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
+import { nothingBuiltOn } from "@/ui/board-catalog";
 import { SidebarProvider } from "@/ui/components/sidebar";
 import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
@@ -77,6 +78,7 @@ function Shell(props: ShellProps): JSX.Element {
 		<div className="bg-background flex h-full min-w-0 flex-col" style={SHELL_STYLE}>
 			<Header
 				current={view.current}
+				unbuilt={nothingBuiltOn(view.boards, view.current.board)}
 				theme={view.theme}
 				pane={active}
 				actions={actions}

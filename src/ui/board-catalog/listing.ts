@@ -115,4 +115,18 @@ function listedBoardKey(listing: BoardListing, key: string | null): string | nul
 	return entry === undefined ? key : entry.key;
 }
 
-export { EMPTY_LISTING, composeListing, listingError, listedBoardKey };
+/**
+ * Whether a listed board says nothing it describes is built: it lists variants and none of
+ * them is current (ADR 0031). A board that is not listed, or could not be read, says nothing.
+ * @param listing The listing.
+ * @param board The board's name.
+ * @returns True when the board has variants and no current one.
+ */
+function nothingBuiltOn(listing: BoardListing, board: string): boolean {
+	const variants = listing.boards
+		.filter((entry) => sameBoardName(entry.identity.board, board))
+		.flatMap((entry) => (entry.variant === undefined ? [] : [entry.variant]));
+	return variants.length > 0 && variants.every((variant) => variant.lifecycle !== "current");
+}
+
+export { EMPTY_LISTING, composeListing, listingError, listedBoardKey, nothingBuiltOn };

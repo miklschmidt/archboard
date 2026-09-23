@@ -46,6 +46,11 @@ import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/arch
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
+	framedAsPlanned,
+	PLANNED_LABEL,
+	type PaintedPage,
+} from "@/transformers/semantic-renderer/lib/svg/planned-frame";
+import {
 	standingsFrom,
 	unsettledFrom,
 	type StatedStandings,
@@ -117,6 +122,12 @@ interface DiagramRenderRequest {
 	 * reached, because nothing in the picture asks about it.
 	 */
 	readonly unsettled?: readonly string[] | undefined;
+	/**
+	 * Whether the board says nothing it describes is built: it has no current variant
+	 * (ADR 0031). The page is then framed as planned. A fact about the board, so every
+	 * variant and view of such a board is framed alike.
+	 */
+	readonly unbuilt?: boolean | undefined;
 }
 
 /** The same, plus which of the two pictures to draw. */
@@ -247,25 +258,52 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 		stepLines.derived,
 	);
+	const page = pageFor(painting, palette, request.unbuilt);
 
 	const svg = svgDocument({
-		width: painting.width,
-		height: painting.height,
+		width: page.width,
+		height: page.height,
 		palette,
-		title: titleFor(request.content),
+		title: plannedTitle(titleFor(request.content), request.unbuilt),
 		description: descriptionFor(drawing.containers.map((held) => held.measured.node.name)),
 		fonts: request.fonts ?? "linked",
-		body: painting.body,
+		body: page.body,
 		reading: drawing.direction,
 	});
 
 	return {
 		svg,
-		width: painting.width,
-		height: painting.height,
-		atlas: painting.atlas,
+		width: page.width,
+		height: page.height,
+		atlas: page.atlas,
 		readingDirection: drawing.direction,
 	};
+}
+
+/**
+ * The page a painting is drawn on: as painted, or framed as planned when the board says
+ * nothing it describes is built.
+ * @param painting The painted body, its size and its atlas.
+ * @param palette The theme's colours.
+ * @param unbuilt Whether the board has no current variant.
+ * @returns The page.
+ */
+function pageFor(
+	painting: PaintedPage,
+	palette: Palette,
+	unbuilt: boolean | undefined,
+): PaintedPage {
+	return unbuilt === true ? framedAsPlanned(painting, palette) : painting;
+}
+
+/**
+ * The accessible name, saying what the frame says when the board is planned.
+ * @param title The picture's own name.
+ * @param unbuilt Whether the board has no current variant.
+ * @returns The name.
+ */
+function plannedTitle(title: string, unbuilt: boolean | undefined): string {
+	return unbuilt === true ? `${title}. ${PLANNED_LABEL}` : title;
 }
 
 /**
@@ -319,18 +357,19 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 	);
+	const page = pageFor(painting, palette, request.unbuilt);
 
 	const svg = svgDocument({
-		width: painting.width,
-		height: painting.height,
+		width: page.width,
+		height: page.height,
 		palette,
-		title: sequenceTitleFor(content),
+		title: plannedTitle(sequenceTitleFor(content), request.unbuilt),
 		description: sequenceDescriptionFor(content),
 		fonts: request.fonts ?? "linked",
-		body: painting.body,
+		body: page.body,
 	});
 
-	return { svg, width: painting.width, height: painting.height, atlas: painting.atlas };
+	return { svg, width: page.width, height: page.height, atlas: page.atlas };
 }
 
 /**

@@ -33,6 +33,8 @@ const SETTINGS_TRIGGER_ID = "shell-settings";
 interface HeaderProps {
 	diagnostics?: ReactNode;
 	current: BoardIdentity;
+	/** Whether the board on screen says nothing it describes is built. */
+	unbuilt: boolean;
 	theme: ThemeChoice;
 	/** The pane the header describes, or null when no pane is open. */
 	pane: ShellPane | null;
@@ -87,6 +89,8 @@ function describeClaim(holder: LockHolder | null): ClaimDescription | null {
 /** Inputs for the breadcrumb. */
 interface BreadcrumbProps {
 	identity: BoardIdentity;
+	/** Whether the board says nothing it describes is built. */
+	unbuilt: boolean;
 }
 
 /**
@@ -97,7 +101,7 @@ interface BreadcrumbProps {
  * @returns The breadcrumb.
  */
 function Breadcrumb(props: BreadcrumbProps): JSX.Element {
-	const { identity } = props;
+	const { identity, unbuilt } = props;
 	return (
 		<nav aria-label="Current board" className="flex min-w-0 flex-1 items-center gap-2">
 			<span className="text-board truncate">{identity.board}</span>
@@ -113,6 +117,14 @@ function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 						{identity.variant}
 					</span>
 				</>
+			)}
+			{unbuilt && (
+				<span
+					data-slot="board-not-built"
+					className="text-technical text-muted-foreground border-muted-foreground/60 inline-flex h-5 shrink-0 items-center rounded-[2px] border border-dashed px-1.5 font-mono font-medium"
+				>
+					Not built
+				</span>
 			)}
 		</nav>
 	);
@@ -282,7 +294,7 @@ function Header(props: HeaderProps): JSX.Element {
 				</h1>
 			</div>
 			<div className="flex min-w-0 flex-1 items-center px-4">
-				<Breadcrumb identity={props.current} />
+				<Breadcrumb identity={props.current} unbuilt={props.unbuilt} />
 			</div>
 			<Separator orientation="vertical" />
 			<div className="flex min-w-0 shrink items-center gap-3 px-4">
