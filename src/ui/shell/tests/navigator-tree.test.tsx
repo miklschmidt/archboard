@@ -3,7 +3,7 @@ import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 import { Shell, type ShellActions, type ShellPane, type ShellView } from "@/ui/shell";
-import type { BoardEntry } from "@/ui/types";
+import type { AgentActivityEntry, CatalogBoard, ListedVariant } from "@/ui/types";
 
 let root: Root;
 beforeAll(() => {
@@ -13,61 +13,119 @@ beforeAll(() => {
 afterEach(() => {
 	act(() => root.unmount());
 	document.body.replaceChildren();
+	window.localStorage.clear();
 });
 afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
 /**
- * A listed variant whose ancestry and lifecycle are separate facts.
- * @param id The variant identity.
- * @param name Its name.
- * @param parentId Its predecessor, or null for a root.
- * @param lifecycle Its current standing.
- * @returns The listing row.
+ * A listed variant.
+ * @param boardKey The board's key.
+ * @param id The variant id.
+ * @param parentId Its predecessor, or null.
+ * @param lifecycle Its standing.
+ * @param opens Whether the board's bare name opens it.
+ * @returns The variant.
  */
 function variant(
+	boardKey: string,
 	id: string,
-	name: string,
 	parentId: string | null,
-	lifecycle: NonNullable<BoardEntry["variant"]>["lifecycle"],
-): BoardEntry {
+	lifecycle: ListedVariant["lifecycle"],
+	opens = false,
+): ListedVariant {
 	return {
-		key: lifecycle === "current" ? "Message delivery" : `Message delivery@${id}`,
-		identity: { board: "Message delivery", variant: name },
-		variant: { id, name, parentId, lifecycle },
+		id,
+		name: `${boardKey} ${id}`,
+		parentId,
+		lifecycle,
+		key: opens ? boardKey : `${boardKey}@${id}`,
 	};
 }
 
-/** A family deliberately listed out of ancestry order, with two roots. */
-const BOARDS = [
-	variant("next", "Batch acknowledgement", "now", "draft"),
-	variant("other", "Independent exploration", null, "draft"),
-	variant("now", "Queued delivery", "old", "current"),
-	variant("sibling", "Direct delivery", "old", "draft"),
-	variant("old", "Initial", null, "historical"),
+/**
+ * A listed board with one current variant unless given more.
+ * @param name Its name.
+ * @param level Its level.
+ * @param links The boards it drills down to.
+ * @param variants Its variants; one current one when omitted.
+ * @returns The board.
+ */
+function board(
+	name: string,
+	level: string,
+	links: readonly string[] = [],
+	variants?: readonly ListedVariant[],
+): CatalogBoard {
+	const key = name.toLowerCase();
+	const listed = variants ?? [variant(key, "now", null, "current", true)];
+	return {
+		name,
+		key,
+		level,
+		opens: listed.find((entry) => entry.key === key)?.id ?? null,
+		variants: [...listed],
+		links: links.map((target) => ({
+			board: target,
+			variant: null,
+			node: target,
+			container: false,
+		})),
+		description: null,
+	};
+}
+
+/** A system that drills into a service, with a module under it, and a loose board. */
+const BOARDS: readonly CatalogBoard[] = [
+	board("Checkout", "system", ["Payments"]),
+	board(
+		"Payments",
+		"service",
+		["Ledger"],
+		[
+			variant("payments", "now", null, "current", true),
+			variant("payments", "queued", "now", "draft"),
+			variant("payments", "old", null, "historical"),
+		],
+	),
+	board("Ledger", "module"),
+	board("Audit", "service"),
 ];
 
-/** No unrelated shell behavior is exercised here. */
+/** No unrelated shell behaviour is exercised here. */
 function ignore(): void {
 	return;
 }
 
+/** What the navigator asked the shell to do. */
+interface Asked {
+	readonly selected: string[];
+	readonly beside: string[];
+}
+
 /**
- * Mount the real navigator over a fixed server listing.
- * @param overrides Workspace state for the behavior under test.
- * @returns The selected board keys.
+ * Mount the real shell over a fixed listing.
+ * @param overrides Workspace state for the behaviour under test.
+ * @returns What the navigator asked for.
  */
-function mountNavigator(overrides: Partial<ShellView> = {}): string[] {
-	const selected: string[] = [];
+function mountNavigator(overrides: Partial<ShellView> = {}): Asked {
+	const asked: Asked = { selected: [], beside: [] };
 	const actions: ShellActions = {
 		setTheme: ignore,
 		/**
-		 * Record the variant chosen through the real shell.
-		 * @param key The selected board address.
+		 * Record a board opened in the active pane.
+		 * @param key The board key.
 		 */
 		selectBoard: (key) => {
-			selected.push(key);
+			asked.selected.push(key);
+		},
+		/**
+		 * Record a board opened beside.
+		 * @param key The board key.
+		 */
+		openBeside: (key) => {
+			asked.beside.push(key);
 		},
 		refreshBoards: ignore,
 		selectPane: ignore,
@@ -81,15 +139,11 @@ function mountNavigator(overrides: Partial<ShellView> = {}): string[] {
 	};
 	const view: ShellView = {
 		theme: "light",
-		current: { board: "Message delivery", variant: "current" },
-		boards: {
-			boards: BOARDS,
-			onScreen: [{ paneId: "A", place: "left", board: "Message delivery@now" }],
-		},
+		boards: { boards: [...BOARDS], levels: ["system", "service", "module"], onScreen: [] },
 		boardsError: null,
 		boardsLoading: false,
-		selectedBoardKey: "Message delivery@Queued delivery",
-		panes: [pane("local-left", "Message delivery@now")],
+		selectedBoardKey: "payments",
+		panes: [pane("A", "payments")],
 		activePaneId: "A",
 		presentation: null,
 		notices: [],
@@ -100,14 +154,14 @@ function mountNavigator(overrides: Partial<ShellView> = {}): string[] {
 	document.body.append(container);
 	root = createRoot(container);
 	act(() => root.render(createElement(Shell, { view, actions })));
-	return selected;
+	return asked;
 }
 
 /**
- * One local pane; its server ID need not be its displayed letter.
- * @param paneId The server-assigned pane identity.
- * @param boardKey The board address this pane is displaying, or null when empty.
- * @returns The shell's local pane state.
+ * One local pane.
+ * @param paneId The pane.
+ * @param boardKey What it shows, or null.
+ * @returns The pane.
  */
 function pane(paneId: string, boardKey: string | null): ShellPane {
 	return {
@@ -130,118 +184,133 @@ function pane(paneId: string, boardKey: string | null): ShellPane {
 	};
 }
 
-test("architecture level appears once on the board heading, shared across its variant tree", () => {
-	mountNavigator({
-		boards: {
-			boards: BOARDS.map((entry) => ({ ...entry, level: "module" })),
-			onScreen: [],
-		},
-	});
-	const rows = [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')];
-	expect(rows.filter((row) => row.textContent.includes("Module"))).toHaveLength(1);
-	expect(treeRow("Message delivery").textContent).toBe("Message deliveryModule");
-	expect(treeRow("Message delivery").getAttribute("aria-level")).toBe("1");
-});
-
-test("pane badges describe this workspace even when other browser tabs hold boards", () => {
-	mountNavigator({
-		boards: {
-			boards: [
-				...BOARDS,
-				{
-					key: "Agent workbench",
-					identity: { board: "Agent workbench", variant: "Current architecture" },
-					variant: {
-						id: "work",
-						name: "Current architecture",
-						parentId: null,
-						lifecycle: "current",
-					},
-				},
-			],
-			onScreen: [
-				{ paneId: "remote", place: "left", board: "Agent workbench" },
-				{ paneId: "local-left", place: "left", board: "Message delivery@old" },
-				{ paneId: "local-right", place: "right", board: "Message delivery" },
-			],
-		},
-		panes: [pane("local-left", "Message delivery@old"), pane("local-right", "Message delivery")],
-	});
-	expect(treeRow("Current architecture").textContent).not.toContain("on screen in pane");
-	expect(treeRow("Initial").textContent).toContain("on screen in pane A");
-	expect(treeRow("Queued delivery").textContent).toContain("on screen in pane B");
-});
-
-test("current ID and name aliases can mark the same variant in both local panes", () => {
-	mountNavigator({
-		panes: [
-			pane("left", "Message delivery@now"),
-			pane("right", "Message delivery@Queued delivery"),
-		],
-	});
-	const row = treeRow("Queued delivery");
-	expect(row.textContent).toContain("on screen in pane A");
-	expect(row.textContent).toContain("on screen in pane B");
-});
-
-test("an empty first pane leaves the second pane labelled B", () => {
-	mountNavigator({ panes: [pane("left", null), pane("right", "Message delivery@old")] });
-	expect(treeRow("Initial").textContent).toContain("on screen in pane B");
-	expect(treeRow("Queued delivery").textContent).not.toContain("on screen in pane");
-});
-
-test("variant ancestry stays rooted across lifecycle changes and keyboard navigation follows it", () => {
-	const selected = mountNavigator();
-	const rows = [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')];
-	expect(rows.map((row) => row.textContent)).toEqual([
-		"Message delivery",
-		"Independent explorationDraft",
-		"InitialHistorical",
-		"Direct deliveryDraft",
-		"Queued deliveryCurrenton screen in pane A",
-		"Batch acknowledgementDraft",
-	]);
-	expect(rows.map((row) => row.getAttribute("aria-level"))).toEqual(["1", "2", "2", "3", "3", "4"]);
-	const current = treeRow("Queued delivery");
-	expect(current.getAttribute("aria-selected")).toBe("true");
-	act(() => current.focus());
-	press("ArrowRight");
-	expect(document.activeElement).toBe(treeRow("Batch acknowledgement"));
-	act(() => treeRow("Batch acknowledgement").click());
-	expect(selected).toEqual(["Message delivery@next"]);
-	press("ArrowLeft");
-	expect(document.activeElement).toBe(current);
-	press("ArrowLeft");
-	expect(current.getAttribute("aria-expanded")).toBe("false");
-	expect(treeRow("Batch acknowledgement").closest("[hidden]")).not.toBeNull();
-	press("ArrowLeft");
-	expect(document.activeElement).toBe(treeRow("Initial"));
-	const expand = document.querySelector<HTMLButtonElement>('[aria-label="Expand Queued delivery"]');
-	act(() => expand?.click());
-	expect(document.activeElement).toBe(current);
-	expect(current.getAttribute("aria-expanded")).toBe("true");
-	expect(selected).toEqual(["Message delivery@next"]);
-});
+/**
+ * The tree's rows as `kind:id@level`, in order.
+ * @returns The rows.
+ */
+function rows(): string[] {
+	return [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')].map(
+		(item) =>
+			`${item.dataset["rowKind"]}:${item.dataset["rowId"]}@${item.getAttribute("aria-level")}`,
+	);
+}
 
 /**
- * A rendered variant row by its visible name.
- * @param name The name to find.
- * @returns The row, refusing a missing fixture row.
+ * A rendered row by its id.
+ * @param id The row id.
+ * @returns The row.
  */
-function treeRow(name: string): HTMLButtonElement {
-	const found = [...document.querySelectorAll<HTMLButtonElement>('[role="treeitem"]')].find((row) =>
-		row.textContent.startsWith(name),
-	);
-	if (found === undefined) throw new Error("Missing tree row: " + name);
+function row(id: string): HTMLElement {
+	const found = document.querySelector<HTMLElement>(`[data-row-id="${id}"]`);
+	if (found === null) throw new Error(`Missing row ${id}`);
 	return found;
 }
 
 /**
- * Dispatch a horizontal tree key on the focused row.
- * @param key The arrow key.
+ * Press a key on the focused element.
+ * @param key The key.
+ * @param altKey Whether Alt is held.
  */
-function press(key: string): void {
+function press(key: string, altKey = false): void {
 	act(() => {
-		document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+		document.activeElement?.dispatchEvent(
+			new KeyboardEvent("keydown", { key, altKey, bubbles: true }),
+		);
 	});
 }
+
+test("each board is one row, nested under the board it drills down from, with the read board's states under it", () => {
+	mountNavigator();
+	expect(rows()).toEqual([
+		"board:board:audit@1",
+		"board:board:checkout@1",
+		"board:board:payments@2",
+		"state:state:payments@3",
+		"state:state:payments@queued@4",
+		"state:state:payments@old@3",
+		"board:board:ledger@3",
+	]);
+	// One selected row: the state being read, not also its board.
+	expect(row("board:payments").getAttribute("aria-selected")).toBe("false");
+	expect(row("state:payments").getAttribute("aria-selected")).toBe("true");
+});
+
+test("a board opens by its bare name and a state by its own key, beside with Alt", () => {
+	const asked = mountNavigator();
+	act(() => row("board:audit").click());
+	act(() => {
+		row("state:payments@queued").dispatchEvent(
+			new MouseEvent("click", { bubbles: true, altKey: true }),
+		);
+	});
+	expect(asked.selected).toEqual(["audit"]);
+	expect(asked.beside).toEqual(["payments@queued"]);
+});
+
+test("the arrows walk the tree: right opens boards, then states, then descends; left undoes it; Enter opens", () => {
+	const asked = mountNavigator({ panes: [pane("A", "audit")], selectedBoardKey: "audit" });
+	expect(rows()).toEqual([
+		"board:board:audit@1",
+		"board:board:checkout@1",
+		"board:board:payments@2",
+	]);
+	act(() => row("board:checkout").focus());
+	press("ArrowDown");
+	expect(document.activeElement).toBe(row("board:payments"));
+	press("ArrowRight");
+	expect(rows()).toContain("board:board:ledger@3");
+	/**
+	 * How many state rows are drawn.
+	 * @returns The count.
+	 */
+	const states = (): number => rows().filter((id) => id.startsWith("state:")).length;
+	expect(states()).toBe(0);
+	press("ArrowRight");
+	expect(states()).toBeGreaterThan(0);
+	press("ArrowRight");
+	expect(document.activeElement?.getAttribute("data-row-kind")).toBe("state");
+	press("ArrowLeft");
+	expect(document.activeElement).toBe(row("board:payments"));
+	press("ArrowLeft");
+	expect(states()).toBe(0);
+	press("ArrowLeft");
+	expect(rows()).not.toContain("board:board:ledger@3");
+	press("Enter", true);
+	expect(asked.beside).toEqual(["payments"]);
+});
+
+test("typing filters the tree in place, keeping the path to each match, and Enter opens the first", () => {
+	const asked = mountNavigator({ panes: [pane("A", "audit")], selectedBoardKey: "audit" });
+	act(() => row("board:audit").focus());
+	press("q");
+	const input = document.querySelector<HTMLInputElement>('input[type="search"]');
+	expect(document.activeElement).toBe(input);
+	expect(input?.value).toBe("q");
+	expect(rows()).toEqual([
+		"board:board:checkout@1",
+		"board:board:payments@2",
+		"state:state:payments@queued@3",
+	]);
+	expect(row("board:payments").getAttribute("aria-selected")).toBe("false");
+	press("Enter");
+	expect(asked.selected).toEqual(["payments@queued"]);
+});
+
+test("agent work is gathered in one block and never reorders or resizes the tree", () => {
+	mountNavigator();
+	const before = rows();
+	expect(document.querySelector('[data-slot="working-now"]')).toBeNull();
+	act(() => root.unmount());
+	const activity: AgentActivityEntry = {
+		board: "ledger",
+		claim: null,
+		doing: { doing: "adding the queue", at: new Date().toISOString(), by: "agent", kind: "agent" },
+	};
+	const asked = mountNavigator({ agentActivity: { ledger: activity } });
+	expect(rows()).toEqual(before);
+	const block = document.querySelector<HTMLElement>('[data-slot="working-now"]');
+	const entry = block?.querySelector("button");
+	act(() => entry?.click());
+	expect(asked.selected).toEqual(["ledger"]);
+	expect(row("board:ledger").querySelector('[data-slot="agent-activity"]')).not.toBeNull();
+});

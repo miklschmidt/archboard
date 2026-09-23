@@ -16,13 +16,19 @@ const BOARD_BREADCRUMB = 'nav[aria-label="Current board"]';
 const paneSection = (label: string): string => `section[aria-label=${JSON.stringify(label)}]`;
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
-/** The pane chooser and its tabs. */
+/** The pane chooser and its tabs, present while two panes are open. */
 const PANE_TABS = '[data-slot="toggle-group"][aria-label="Pane"] [data-slot="toggle-group-item"]';
-/** The navigator sidebar. */
-const NAVIGATOR = '[data-slot="sidebar"]';
-/** The workbench dock: the collapsible that carries the agent workbench. */
-const DOCK_TOGGLE =
-	'button[aria-label="Collapse workbench"], button[aria-label="Expand workbench"]';
+/** The navigator column. */
+const NAVIGATOR = '[data-slot="navigator"]';
+/** The agent bar under the panes: the agent's state, Talk and the composer. */
+const AGENT_BAR = '[data-slot="agent-bar"]';
+/** The conversation panel beside the panes, present while it is open. */
+const AGENT_PANEL = '[data-slot="agent-panel"]';
+/** The composer in the agent bar. */
+const COMPOSER = 'textarea[aria-label="Message the agent"]';
+/** The toggle that opens and closes the conversation panel. */
+const CONVERSATION_TOGGLE =
+	'button[aria-label="Open the conversation"], button[aria-label="Close the conversation"]';
 /** One notice, by its title. */
 const noticeByTitle = (title: string): string => `(() => {
 	const titles = [...document.querySelectorAll('[data-slot="alert"] [data-slot="alert-title"]')];
@@ -37,7 +43,7 @@ const PRESENTATION_BAR = '[data-slot="presentation-bar"]';
 /** The claim banner across one stage. */
 const CLAIM_BANNER = '[data-slot="claim-banner"]';
 
-/** A navigator row by the board key it selects (identity hook). */
+/** A navigator row's name by the board key it selects (identity hook); a click on it opens the row. */
 const navigatorRow = (key: string): string =>
 	`${NAVIGATOR} [data-board-key=${JSON.stringify(key)}]`;
 
@@ -181,10 +187,13 @@ function stageIsFullscreen(browser: PageEvaluator): Promise<boolean> {
 }
 
 export {
+	AGENT_BAR,
+	AGENT_PANEL,
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
 	CLAIM_BANNER,
-	DOCK_TOGGLE,
+	COMPOSER,
+	CONVERSATION_TOGGLE,
 	NAVIGATOR,
 	PANE_SECTIONS,
 	PANE_TABS,
@@ -208,43 +217,24 @@ export {
 };
 
 /**
- * Open one settings surface the way a person does: the header's settings
- * menu, then its item once the menu is open.
+ * Press the header's Settings button, which opens the opener settings.
  * @param browser The page.
- * @param label The menu item's words.
  */
-async function openSettingsItem(browser: AgentBrowserSession, label: string): Promise<void> {
+async function pressSettings(browser: AgentBrowserSession): Promise<void> {
 	await browser.run(["find", "role", "button", "click", "--name", "Settings", "--exact"]);
-	const deadline = Date.now() + 5_000;
-	while (
-		!(await browser.eval<boolean>(
-			`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].some(node => node.textContent.trim() === ${JSON.stringify(label)})`,
-		))
-	) {
-		if (Date.now() > deadline) {
-			throw new Error(`the settings menu did not offer ${label}`);
-		}
-		await Bun.sleep(50);
-	}
-	await browser.run(["find", "role", "menuitem", "click", "--name", label, "--exact"]);
 }
 
-export { openSettingsItem };
-
 /**
- * Select a workbench tab by the start of its name; a tab's name may carry a
- * live count ("Approvals 2") that the test must not have to predict.
+ * Open the conversation panel through its toggle, when it is closed.
  * @param browser The page.
- * @param prefix The start of the tab's words.
- * @returns True when a tab matched and was clicked.
  */
-function clickTab(browser: PageEvaluator, prefix: string): Promise<boolean> {
-	return browser.eval<boolean>(`(() => {
-		const tab = [...document.querySelectorAll('[role="tab"]')].find(node => node.textContent.trim().startsWith(${JSON.stringify(prefix)}));
-		if (!tab) return false;
-		tab.click();
-		return true;
+async function openConversation(browser: AgentBrowserSession): Promise<void> {
+	await browser.eval<boolean>(`(() => {
+		if (document.querySelector('${AGENT_PANEL}')) return true;
+		const toggle = document.querySelector('button[aria-label="Open the conversation"]');
+		toggle?.click();
+		return toggle !== null;
 	})()`);
 }
 
-export { clickTab };
+export { openConversation, pressSettings };

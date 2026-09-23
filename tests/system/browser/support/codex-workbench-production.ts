@@ -9,7 +9,6 @@ interface WorkbenchControlOperability {
 	readonly visibleWidth: number;
 	readonly visibleHeight: number;
 	readonly clipped: boolean;
-	readonly requestOverlap: boolean;
 	readonly centerHit: boolean;
 	readonly operable: boolean;
 }
@@ -29,9 +28,6 @@ function workbenchControlOperability(
 		const control = document.querySelector(${JSON.stringify(selector)});
 		if (!(control instanceof HTMLButtonElement)) throw new Error('Missing rendered workbench control.');
 		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
-		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
-			right.height > 0 && left.left < right.right && left.right > right.left &&
-			left.top < right.bottom && left.bottom > right.top;
 		const bounds = rect(control);
 		const visible = { left: Math.max(0, bounds.left), top: Math.max(0, bounds.top),
 			right: Math.min(innerWidth, bounds.right), bottom: Math.min(innerHeight, bounds.bottom) };
@@ -50,8 +46,6 @@ function workbenchControlOperability(
 		const visibleWidth = Math.max(0, visible.right - visible.left);
 		const visibleHeight = Math.max(0, visible.bottom - visible.top);
 		const clipped = visibleWidth < bounds.width || visibleHeight < bounds.height;
-		const request = rect(document.querySelector('[data-workbench-region="app-global-request"]'));
-		const requestOverlap = overlaps(bounds, request);
 		const center = document.elementFromPoint(
 			bounds.left + bounds.width / 2,
 			bounds.top + bounds.height / 2,
@@ -63,9 +57,8 @@ function workbenchControlOperability(
 			visibleWidth,
 			visibleHeight,
 			clipped,
-			requestOverlap,
 			centerHit,
-			operable: visibleWidth >= 24 && visibleHeight >= 24 && !clipped && !requestOverlap && centerHit,
+			operable: visibleWidth >= 24 && visibleHeight >= 24 && !clipped && centerHit,
 		};
 	})()`);
 }

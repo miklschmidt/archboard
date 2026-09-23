@@ -438,6 +438,9 @@ export function createCanvasBrowserAccountOwner(input: CanvasAccountOwnerInput) 
 			} finally {
 				cancelling = false;
 			}
+			// Codex announces no account change after a cancel, so nothing else
+			// would replace the unknown account the cancel left.
+			void refresh(attempt);
 			return { outcome: "delivered" };
 		},
 		/**

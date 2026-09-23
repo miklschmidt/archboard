@@ -1,30 +1,11 @@
-// The pane's explicit thread link: the one link naming one workhorse, the
-// host's candidate inventory, readiness and recovery, the supported sign-in
-// forms, and the controller that runs each command against the pane it was
-// offered on. Presentation lives in `@/ui/workbench` and
-// `@/ui/agent-settings`; this module owns the logic, the state and the
-// projections.
+// The canvas's thread link: the one explicit link naming one workhorse, the
+// host's candidate inventory and recoveries, and the controller that runs each
+// link and sign-in command against the pane it was asked from. The agent setup
+// (`@/ui/agent-setup`) drives it; nothing here renders.
 
-export {
-	THREAD_LINK_ACCOUNT_FORMS,
-	THREAD_LINK_UNAVAILABLE_ACCOUNT_METHODS,
-	buildThreadLinkLogin,
-	threadLinkAccountForm,
-} from "@/ui/workbench-thread-link/lib/account-forms";
-export { projectThreadLinkAccount } from "@/ui/workbench-thread-link/lib/account";
-export {
-	agentSettingsBusy,
-	agentSettingsCallbacks,
-	agentSettingsErrors,
-	workbenchThreadLinkActions,
-	type AgentSettingsCallbacks,
-	type WorkbenchThreadLinkActionOptions,
-} from "@/ui/workbench-thread-link/lib/agent-settings";
 export {
 	projectThreadLinkSelection,
 	threadLinkReasonLabel,
 } from "@/ui/workbench-thread-link/lib/candidates";
 export { createThreadLinkController } from "@/ui/workbench-thread-link/lib/controller";
-export { projectThreadLinkPanel } from "@/ui/workbench-thread-link/lib/projection";
-export { projectThreadLinkReadiness } from "@/ui/workbench-thread-link/lib/readiness";
 export { threadLinkRecovery } from "@/ui/workbench-thread-link/lib/recovery";

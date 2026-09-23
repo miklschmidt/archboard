@@ -6,46 +6,27 @@ import {
 	clearCanvasThreadContextForLease,
 	createCanvasDynamicOperationIdAdapter,
 	createCanvasThreadLinkActions,
-	requireExactSemanticPane,
+	presentingPane,
 } from "../codex-workbench-adapters.js";
 
-test("semantic capture follows the bound pane, whatever that pane is showing", () => {
+test("host-started work presents through the bound pane while it is open, and another once it is not", () => {
 	const panes = [
-		{ paneId: "pane-focused", clientId: "focused", board: "shared", focused: true },
-		{ paneId: "pane-bound", clientId: "bound", board: "elsewhere", focused: false },
+		{ paneId: "pane-left", focused: false },
+		{ paneId: "pane-focused", focused: true },
+		{ paneId: "pane-bound", focused: false },
 	];
-	const select = (bindingPaneId: string | null, contextBoard = "shared") =>
-		requireExactSemanticPane({
-			bindingPaneId,
-			contextBoard,
-			panes,
-			/**
-			 * The board a pane is showing.
-			 * @param pane The pane.
-			 * @returns Its board key, variant and all.
-			 */
-			boardForPane: (pane) => pane.board,
-			/**
-			 * The board a key names, split at the last `@`.
-			 * @param key The key, or null.
-			 * @returns The board, or null.
-			 */
-			aggregateOf: (key) => (key === null ? null : (key.split("@")[0] ?? null)),
-		});
-
-	// The bound pane, by id. What it is showing is not part of the question:
-	// requiring it to show the board that changed made a person's screen decide
-	// who was told about an architecture, so a pane looking elsewhere silenced
-	// the session bound to it.
-	expect(select("pane-bound")).toBe(panes[1]!);
-	expect(select("pane-bound", "a board nobody is showing")).toBe(panes[1]!);
-	expect(select("pane-focused")).toBe(panes[0]!);
-
-	// Two things still refuse, and both are about identity rather than display:
-	// a delivery with no binding at all, and a binding naming a pane that has
-	// been closed.
-	expect(() => select(null)).toThrow("no current thread-context binding");
-	expect(() => select("pane-gone")).toThrow("not open");
+	expect(presentingPane("pane-bound", panes)).toBe(panes[2]!);
+	// The conversation belongs to the canvas: closing the pane that made it
+	// moves presentation to the pane the person is in, not to a refusal.
+	expect(presentingPane("pane-gone", panes)).toBe(panes[1]!);
+	expect(presentingPane(null, panes)).toBe(panes[1]!);
+	// With nobody focused, the first pane in reading order.
+	const unfocused = [
+		{ paneId: "pane-left", focused: false },
+		{ paneId: "pane-right", focused: false },
+	];
+	expect(presentingPane("pane-gone", unfocused)).toBe(unfocused[0]!);
+	expect(() => presentingPane("pane-bound", [])).toThrow();
 });
 
 test("the production dynamic authority token issuer retires exact opaque capabilities", () => {
@@ -155,6 +136,7 @@ test("create, attach, and relink replace controller authority with the exact ret
 			snapshot: () => workhorseSnapshot(nextBinding),
 		} as never,
 		threadLink: {
+			read: () => link(1),
 			classify: async () => ({}) as never,
 			bindCandidate: async (_paneId: string, _expected: unknown, selectionId: string) => {
 				classifiedTargets.push(selectionId);
@@ -249,4 +231,110 @@ test("a stale browser disconnect token cannot clear a newer controller binding",
 	expect(clears).toBe(0);
 	clearCanvasThreadContextForLease(controller as never, { revision: 8 });
 	expect(clears).toBe(1);
+});
+
+test("two panes creating at once leave one workhorse: the later create is refused before thread/start", async () => {
+	const authorities = createIdentityAuthorities();
+	const { childId, epoch } = authorities.identity.validator;
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-winner");
+	const operationId = authorities.operation.issuer.mintOperationId();
+	const unbound = {
+		kind: "thread_link",
+		state: "unbound",
+		childId: null,
+		epoch: null,
+		threadId: null,
+		source: null,
+		status: "notLoaded",
+		loaded: false,
+		canAcceptDirectInput: false,
+		reason: null,
+	} as const;
+	const created = (paneId: string) =>
+		({
+			paneId,
+			revision: 1,
+			link: {
+				kind: "thread_link",
+				state: "executable",
+				childId,
+				epoch,
+				threadId,
+				source: "appServer",
+				status: "idle",
+				loaded: true,
+				canAcceptDirectInput: true,
+				reason: null,
+			},
+			cas: { revision: 1, paneId, childId, epoch, threadId },
+		}) as const;
+	let canvasRevision = 0;
+	let releaseStart!: () => void;
+	const startGate = new Promise<void>((resolve) => {
+		releaseStart = resolve;
+	});
+	const starts: string[] = [];
+	let binding: unknown = null;
+	const actions = createCanvasThreadLinkActions({
+		candidates: {} as never,
+		workhorse: {
+			start: async ({ paneId }: { readonly paneId: string }) => {
+				starts.push(paneId);
+				await startGate;
+				canvasRevision = 1;
+				return {
+					state: "ready",
+					paneId,
+					childId,
+					epoch,
+					threadId,
+					operationId,
+					binding: created(paneId),
+				};
+			},
+		} as never,
+		threadLink: {
+			read: (paneId: string) =>
+				canvasRevision === 0
+					? {
+							paneId,
+							revision: 0,
+							link: unbound,
+							cas: { revision: 0, paneId, childId: null, epoch: null, threadId: null },
+						}
+					: created(paneId),
+		} as never,
+		semanticDelivery: {
+			snapshot: () => ({ token: { revision: binding === null ? 0 : 1 }, binding }),
+			compareAndSwap: (transition: { readonly next: unknown }) => {
+				binding = transition.next;
+				return { token: { revision: 1 }, binding };
+			},
+		} as never,
+		epoch: {} as never,
+		identity: authorities,
+		checkoutRoot: "/workspace/archboard",
+	});
+	const contextFor = (paneId: string) =>
+		({
+			browserId: `browser-${paneId}`,
+			connection: Object.freeze({}),
+			paneId,
+			commandId: authorities.identity.issuer.mintBrowserCommandId(),
+			childId,
+			epoch,
+			linkRevision: 0,
+			link: unbound,
+		}) as const;
+	const first = actions.create({ command: "threadLinkCreate" } as never, contextFor("A"));
+	const second = actions.create({ command: "threadLinkCreate" } as never, contextFor("B"));
+	releaseStart();
+
+	expect(await first).toEqual({ outcome: "delivered" });
+	expect(second).rejects.toThrow();
+	await second.catch(() => undefined);
+	// One thread/start: the losing create never reached the workhorse, so the
+	// workhorse snapshot stays the winner's ready one.
+	expect(starts).toEqual(["A"]);
+	expect(binding).toMatchObject({ target: { threadId } });
 });

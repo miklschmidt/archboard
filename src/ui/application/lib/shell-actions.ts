@@ -42,6 +42,9 @@ interface ShellActionDeps {
 /** The board actions. */
 type BoardActions = Pick<ShellActions, "selectBoard" | "refreshBoards">;
 
+/** Every shell action but opening beside, which waits on the panes and is composed over these. */
+type ComposedShellActions = Omit<ShellActions, "openBeside">;
+
 /**
  * The board actions: show a listed board, and read the listing again.
  * @param deps The owners.
@@ -206,7 +209,7 @@ function answerNotice(deps: ShellActionDeps, actionId: string): void {
  * @param deps The owners.
  * @returns The actions.
  */
-function createShellActions(deps: ShellActionDeps): ShellActions {
+function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	return {
 		setTheme: deps.setTheme,
 		...boardActions(deps),
@@ -236,4 +239,4 @@ function createShellActions(deps: ShellActionDeps): ShellActions {
 	};
 }
 
-export { createShellActions, type ShellActionDeps };
+export { createShellActions, type ComposedShellActions, type ShellActionDeps };

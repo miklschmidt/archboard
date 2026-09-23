@@ -160,3 +160,60 @@ test("stale handles and replacement sockets cannot append to the active realtime
 	await actions.onBrowserDisconnect?.(value.context, "browser_disconnected");
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });
+
+test("another pane of the canvas can stop voice on the same link but cannot speak into it", async () => {
+	const value = fixture();
+	const actions = createCanvasRealtimeActions(value.components as never);
+	const startId = value.identity.identity.issuer.mintBrowserCommandId();
+	await actions.start(
+		{
+			kind: "browser_command",
+			command: "realtimeStart",
+			commandId: startId,
+			paneId: value.context.paneId,
+			childId: value.context.childId,
+			epoch: value.context.epoch,
+			threadId: value.threadId,
+			sdp: "v=0",
+		},
+		value.context,
+	);
+	const otherPane: BrowserActionContext = {
+		...value.context,
+		browserId: "browser-2",
+		paneId: "pane-2",
+		connection: Object.freeze({ socket: "two" }),
+		commandId: value.identity.identity.issuer.mintBrowserCommandId(),
+	};
+	const base = (context: BrowserActionContext) =>
+		({
+			kind: "browser_command",
+			commandId: value.identity.identity.issuer.mintBrowserCommandId(),
+			paneId: context.paneId,
+			childId: context.childId,
+			epoch: context.epoch,
+			threadId: value.threadId,
+			realtimeSessionHandle: startId,
+		}) as const;
+	await expect(
+		actions.appendText(
+			{ ...base(otherPane), command: "realtimeAppendText", text: "not this socket's media" },
+			otherPane,
+		),
+	).rejects.toThrow();
+	const linked = value.context.link;
+	if (linked.state !== "executable") throw new Error("The fixture link must be executable.");
+	const elsewhere: BrowserActionContext = {
+		...otherPane,
+		link: { ...linked, threadId: value.identity.identity.decoder.adoptThreadId("another-thread") },
+	};
+	await expect(
+		actions.stop({ ...base(elsewhere), command: "realtimeStop" }, elsewhere),
+	).rejects.toThrow();
+	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
+
+	expect(await actions.stop({ ...base(otherPane), command: "realtimeStop" }, otherPane)).toEqual({
+		outcome: "delivered",
+	});
+	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
+});

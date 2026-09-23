@@ -15,21 +15,22 @@ export interface BoardIdentity {
 	variant: string;
 }
 
-/** One board as the vault lists it. */
-export interface BoardEntry {
-	/** The board key a pane is addressed with: `pipeline`, or `pipeline@variant`. */
+/** One persisted variant of a listed board, with the key a pane opens it by. */
+export type ListedVariant = SemanticBoardEntry["variants"][number] & {
+	/** The board key a pane is addressed with: bare for the variant the name opens, `board@id` otherwise. */
 	key: string;
-	identity: BoardIdentity;
-	/** Architecture level shared by every variant of this board. */
-	level?: SemanticBoardEntry["level"];
-	/** The persisted variant, absent for an unreadable board. */
-	variant?: SemanticBoardEntry["variants"][number];
-	error?: string;
-}
+};
+
+/** One board as the vault lists it, each variant carrying the key a pane opens it by. */
+export type CatalogBoard = Omit<SemanticBoardEntry, "variants"> & {
+	variants: ListedVariant[];
+};
 
 /** Persisted board inventory returned by `/api/semantic-boards`. */
 export interface PersistedBoardListing {
-	boards: BoardEntry[];
+	boards: CatalogBoard[];
+	/** The vault's configured levels, coarsest first. */
+	levels: readonly string[];
 }
 
 /** Browser-session inventory returned by `/api/panes`. */

@@ -8,7 +8,6 @@ import type {
 } from "@/server/codex-workbench";
 import {
 	projectTurnData,
-	textEncoder,
 	TIMELINE_CURSOR_LIMIT,
 	TIMELINE_PAGE_LIMIT,
 	TIMELINE_PAGE_LIMIT_MAX,
@@ -22,6 +21,8 @@ import {
 	projectData,
 	timelineBytes,
 } from "@/server/canvas/lib/codex-timeline-budget";
+import { createTimelineLiveHolder } from "@/server/canvas/lib/codex-timeline-live";
+import { textEncoder } from "@/server/canvas/lib/codex-timeline-text";
 
 /** The two session reads one timeline is built from. */
 type TimelineSession = Pick<CodexSession, "threadTurnsListPage" | "timelineListPage">;
@@ -185,7 +186,15 @@ async function readTurnPages(
 ): Promise<{ readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean }> {
 	const newestFirst: TimelineTurnData[] = [];
 	const seenCursors = new Set<string>();
-	let retainedBytes = timelineBytes(threadId, [], "x".repeat(TIMELINE_CURSOR_LIMIT));
+	let retainedBytes = timelineBytes(
+		{
+			kind: "codex_timeline",
+			threadId,
+			cursor: "x".repeat(TIMELINE_CURSOR_LIMIT),
+			usage: null,
+		},
+		[],
+	);
 	let cursor: string | null = null;
 	/**
 	 * The pages read so far, in the order the browser shows them.
@@ -247,7 +256,9 @@ function advanceCursor(
 }
 
 /**
- * Keep as much of one page as the turn and byte budgets allow.
+ * Keep as much of one page as the turn and byte budgets allow. The turn that
+ * crosses the byte bound is kept too, and the projection fits it by cutting
+ * its oldest items: skipping it would hide a long running turn entirely.
  * @param page The page's turns, newest first.
  * @param newestFirst What has been kept so far; appended to.
  * @param retainedBytes How many bytes those take.
@@ -268,10 +279,10 @@ function keepPage(
 		const projected = projectTurnData(turn, budget.maxItemsPerTurn);
 		const projectedBytes = textEncoder.encode(JSON.stringify(projected)).byteLength;
 		const nextBytes = bytes + projectedBytes + (newestFirst.length === 0 ? 0 : 1);
-		if (nextBytes > budget.maxBytes) {
-			return { retainedBytes: bytes, full: true };
-		}
 		newestFirst.push(projected);
+		if (nextBytes > budget.maxBytes) {
+			return { retainedBytes: nextBytes, full: true };
+		}
 		bytes = nextBytes;
 	}
 	return { retainedBytes: bytes, full: false };
@@ -303,6 +314,7 @@ function boundedCursor(cursor: string | null): string | null {
 function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasTimelineOwner {
 	const states = new Map<string, Map<BrowserConnectionInstance, TimelinePaneState>>();
 	const budget = createCanvasBrowserProjectionBudget(options.budget);
+	const live = createTimelineLiveHolder(options.identity);
 	let disposed = false;
 	/**
 	 * Whether one retained timeline is still the pane's own, which a rebind or a
@@ -389,7 +401,12 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 		}
 		return state.data === null || !state.ready
 			? null
-			: projectData(state.data, options.approvals.inspectViews(), budget);
+			: projectData(
+					state.data,
+					options.approvals.inspectViews(),
+					live.forThread(state.data.threadId),
+					budget,
+				);
 	};
 
 	/**
@@ -436,24 +453,40 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 
 	/**
 	 * Re-read every pane whose own thread this notification is about, on this
-	 * child epoch.
+	 * child epoch. A plan or token usage report needs no re-read: it is held,
+	 * and a pane already showing that thread is republished with it.
 	 * @param event The notification.
 	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (disposed || !isTimelineNotification(event.notification.method)) {
 			return;
 		}
-		const threadId = eventThreadId(event);
-		for (const paneStates of states.values()) {
-			for (const state of paneStates.values()) {
-				if (!concernsPane(state, threadId, event)) {
-					continue;
-				}
-				state.dirty = true;
-				refresh(state);
+		const concerned = panesConcerned(eventThreadId(event), event);
+		if (live.hold(event)) {
+			if (concerned.some((state) => state.data !== null)) {
+				options.onChange();
 			}
+			return;
+		}
+		for (const state of concerned) {
+			state.dirty = true;
+			refresh(state);
 		}
 	};
+
+	/**
+	 * Every pane timeline one notification is about.
+	 * @param threadId The thread the notification named.
+	 * @param event The notification.
+	 * @returns The pane timelines.
+	 */
+	const panesConcerned = (
+		threadId: string | null,
+		event: TransportServerNotification,
+	): TimelinePaneState[] =>
+		[...states.values()].flatMap((paneStates) =>
+			[...paneStates.values()].filter((state) => concernsPane(state, threadId, event)),
+		);
 
 	/**
 	 * Whether one notification concerns one pane: its own thread, on the child
@@ -510,6 +543,7 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 		}
 		disposed = true;
 		states.clear();
+		live.clear();
 	};
 
 	return Object.freeze({ read, onNotification, retire, dispose });

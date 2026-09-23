@@ -352,10 +352,13 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				// existing disconnect owner and closes the exact connection.
 			}
 			const presenterContext = presenterContextFor(state);
+			// Approvals stay presented while any other open connection still shows
+			// the same link: somebody is still there to answer them.
+			const presented = hasOtherPresenter(state, presenterContext);
 			const settlement = Promise.allSettled([
 				// Ordinary approvals capture the still-current exact pane binding before
 				// thread-link teardown clears that controller token.
-				hasOtherPresenter(state, presenterContext)
+				presented
 					? Promise.resolve()
 					: invokeDisconnect(
 							options.actions.ordinaryApprovals.onBrowserDisconnect,
@@ -364,11 +367,13 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 						),
 				invokeDisconnect(options.actions.threadLinks.onBrowserDisconnect, state.binding, reason),
 				invokeDisconnect(options.actions.realtime.onBrowserDisconnect, state.binding, reason),
-				invokeDisconnect(
-					options.actions.dynamicApprovals.onBrowserDisconnect,
-					state.binding,
-					reason,
-				),
+				presented
+					? Promise.resolve()
+					: invokeDisconnect(
+							options.actions.dynamicApprovals.onBrowserDisconnect,
+							state.binding,
+							reason,
+						),
 			]).then(() => undefined);
 			connections.trackSettlement(settlement);
 			return settlement;
@@ -475,21 +480,23 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	}
 
 	/**
-	 * Whether another open connection still presents the departing one's pane
-	 * under the same link, in which case that pane's approvals stay presented.
+	 * Whether another open connection, on any pane, still presents the link the
+	 * departing one held, in which case its approvals stay presented: the link
+	 * is what an approval belongs to, and any pane showing it can answer.
 	 * @param state The departing connection.
 	 * @param presenterContext The authority it held, when it held one.
-	 * @returns True when somebody else still presents that pane.
+	 * @returns True when somebody else still presents that link.
 	 */
 	function hasOtherPresenter(
 		state: ConnectionState,
 		presenterContext: BrowserPresenterContext | null,
 	): boolean {
-		if (presenterContext === null) {
+		// A disposing gateway retires every connection, so nobody stays to present.
+		if (presenterContext === null || connections.disposed) {
 			return false;
 		}
 		return Array.from(states.values()).some((candidate) => {
-			if (candidate === state || candidate.closed || candidate.paneId !== state.paneId) {
+			if (candidate === state || candidate.closed) {
 				return false;
 			}
 			try {

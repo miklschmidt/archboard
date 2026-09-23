@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.3.0",
+	"schemaVersion": "2.4.0",
 	"kind": "semantic-board",
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 6,
+	"version": 9,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-20T00:23:11.453Z",
+	"updatedAt": "2026-09-23T05:41:38.968Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -32,7 +32,7 @@
 			"id": "D87Mmg83",
 			"name": "Working with an agent",
 			"grammar": "architecture",
-			"summary": "The dock, the socket it rides, and the voice session beside it.",
+			"summary": "The agent bar, the socket it rides, and the voice session beside it.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -56,6 +56,7 @@
 				"nodes": [
 					{
 						"id": "yAFyqal3",
+						"order": 1000,
 						"name": "Browser client",
 						"kind": "system",
 						"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing",
@@ -69,11 +70,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "HggZR41l",
+						"order": 2000,
 						"name": "Application composition",
 						"kind": "module",
 						"responsibility": "Connects pane and feature owners",
@@ -82,11 +83,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/application"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "dtYjWvlf",
+						"order": 3000,
 						"name": "Semantic viewer",
 						"kind": "module",
 						"responsibility": "Reads and explores rendered boards",
@@ -101,11 +102,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "xsn0RvSi",
+						"order": 4000,
 						"name": "Pane session",
 						"kind": "module",
 						"responsibility": "Keeps each pane in server contact",
@@ -114,11 +115,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/pane-session"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "HCghQa6I",
+						"order": 5000,
 						"name": "Workspace routing",
 						"kind": "module",
 						"responsibility": "Restores pane display intent",
@@ -127,11 +128,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/board-routing"
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "zWQG6LJZ",
+						"order": 6000,
 						"name": "Board catalog",
 						"kind": "module",
 						"responsibility": "Lists boards available to open",
@@ -140,14 +141,14 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/board-catalog"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "0x47EMoO",
+						"order": 7000,
 						"name": "Workbench client",
 						"kind": "service",
-						"responsibility": "The agent workbench in the dock: the thread link, the queue, the approvals, the timeline",
+						"responsibility": "The agent bar under the panes and the conversation beside them: the agent's state and its one action, Talk, the composer, and the conversation with its work, plans and approvals",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -158,11 +159,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "0SRnYXnC",
+						"order": 8000,
 						"name": "Voice session",
 						"kind": "module",
 						"responsibility": "The live voice session this tab holds: availability, the peer connection, mute, recovery",
@@ -176,11 +177,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "4LDuKQvq",
+						"order": 9000,
 						"name": "Code target",
 						"kind": "module",
 						"responsibility": "Activates bound source locations",
@@ -189,11 +190,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/code-target"
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "G4NHQC25",
+						"order": 10000,
 						"name": "Canvas server",
 						"kind": "service",
 						"responsibility": "Owns every board and answers every read",
@@ -206,11 +207,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 10000
+						}
 					},
 					{
 						"id": "c4LPnwh5",
+						"order": 11000,
 						"name": "Shell",
 						"kind": "ui",
 						"responsibility": "The desktop frame: header, navigator, the pane centre and the workbench dock",
@@ -218,11 +219,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/shell/index.tsx"
-						},
-						"order": 11000
+						}
 					},
 					{
 						"id": "hDWpDois",
+						"order": 12000,
 						"name": "Browser renderer",
 						"kind": "module",
 						"responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
@@ -236,11 +237,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 12000
+						}
 					},
 					{
 						"id": "6uWT4mUj",
+						"order": 13000,
 						"name": "Server requests",
 						"kind": "module",
 						"responsibility": "The one way this tab speaks JSON to the canvas",
@@ -248,49 +249,49 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/server-requests/index.ts"
-						},
-						"order": 13000
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "4dl0EE8i",
+						"order": 1000,
 						"from": "HggZR41l",
 						"to": "c4LPnwh5",
 						"kind": "render",
 						"label": "the desktop frame",
-						"emphasis": "normal",
-						"order": 1000
+						"emphasis": "normal"
 					},
 					{
 						"id": "x9gy2EYu",
+						"order": 2000,
 						"from": "HggZR41l",
 						"to": "xsn0RvSi",
 						"kind": "call",
 						"label": "owns pane lifecycle",
-						"emphasis": "normal",
-						"order": 2000
+						"emphasis": "normal"
 					},
 					{
 						"id": "zfz9dQDf",
+						"order": 3000,
 						"from": "HCghQa6I",
 						"to": "xsn0RvSi",
 						"kind": "call",
 						"label": "opens board keys",
-						"emphasis": "normal",
-						"order": 3000
+						"emphasis": "normal"
 					},
 					{
 						"id": "4iVsoxG0",
+						"order": 4000,
 						"from": "zWQG6LJZ",
 						"to": "6uWT4mUj",
 						"kind": "call",
 						"label": "fetch the board list",
-						"emphasis": "normal",
-						"order": 4000
+						"emphasis": "normal"
 					},
 					{
 						"id": "pqG9kqlF",
+						"order": 5000,
 						"from": "dtYjWvlf",
 						"to": "6uWT4mUj",
 						"kind": "call",
@@ -299,65 +300,65 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "PuILGsjg",
+						"order": 6000,
 						"from": "xsn0RvSi",
 						"to": "G4NHQC25",
 						"kind": "event",
 						"label": "report reading and receive news",
-						"emphasis": "hero",
-						"order": 6000
+						"emphasis": "hero"
 					},
 					{
 						"id": "Z6caFkg7",
+						"order": 7000,
 						"from": "0x47EMoO",
 						"to": "xsn0RvSi",
 						"kind": "dependency",
 						"label": "rides current socket",
-						"emphasis": "normal",
-						"order": 7000
+						"emphasis": "normal"
 					},
 					{
 						"id": "YZqZjfIj",
+						"order": 8000,
 						"from": "0SRnYXnC",
 						"to": "0x47EMoO",
 						"kind": "call",
 						"label": "steer session",
-						"emphasis": "normal",
-						"order": 8000
+						"emphasis": "normal"
 					},
 					{
 						"id": "Cw08FQeQ",
+						"order": 9000,
 						"from": "dtYjWvlf",
 						"to": "4LDuKQvq",
 						"kind": "call",
 						"label": "open binding",
-						"emphasis": "normal",
-						"order": 9000
+						"emphasis": "normal"
 					},
 					{
 						"id": "ygbcyDVT",
+						"order": 10000,
 						"from": "4LDuKQvq",
 						"to": "6uWT4mUj",
 						"kind": "call",
 						"label": "request activation",
-						"emphasis": "normal",
-						"order": 10000
+						"emphasis": "normal"
 					},
 					{
 						"id": "VbLQ6rfX",
+						"order": 11000,
 						"from": "c4LPnwh5",
 						"to": "dtYjWvlf",
 						"kind": "render",
 						"label": "one canvas per pane",
-						"emphasis": "hero",
-						"order": 11000
+						"emphasis": "hero"
 					},
 					{
 						"id": "G55H6teG",
+						"order": 12000,
 						"from": "dtYjWvlf",
 						"to": "hDWpDois",
 						"kind": "call",
@@ -366,20 +367,20 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 12000
+						}
 					},
 					{
 						"id": "WchncnH1",
+						"order": 13000,
 						"from": "c4LPnwh5",
 						"to": "0x47EMoO",
 						"kind": "render",
-						"label": "the dock",
-						"emphasis": "normal",
-						"order": 13000
+						"label": "the agent bar",
+						"emphasis": "normal"
 					},
 					{
 						"id": "chjmKQLj",
+						"order": 14000,
 						"from": "6uWT4mUj",
 						"to": "G4NHQC25",
 						"kind": "http",
@@ -388,8 +389,7 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 14000
+						}
 					}
 				],
 				"flows": [],

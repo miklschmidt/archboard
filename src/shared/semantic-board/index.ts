@@ -205,6 +205,16 @@ export {
 	wasDrawn,
 } from "@/shared/semantic-board/lib/rendering";
 export {
+	BoardLinkSchema,
+	type BoardLink,
+	ListedBoardSchema,
+	type ListedBoard,
+	BoardListingSchema,
+	type BoardListing,
+	type ListedRead,
+	listedBoard,
+} from "@/shared/semantic-board/lib/listing";
+export {
 	BoardAdoptInputSchema,
 	type BoardAdoptInput,
 	BoardShelveInputSchema,

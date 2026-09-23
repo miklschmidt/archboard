@@ -1,5 +1,9 @@
 import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
-import type { ThreadLinkBindingSnapshot, ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
+import {
+	sameThreadLinkIdentity,
+	type ThreadLinkBindingSnapshot,
+	type ThreadLinkSnapshot,
+} from "@/runtime/codex-thread-link";
 import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
 import {
 	CodexThreadContextControllerError,
@@ -43,21 +47,6 @@ function sameCas(
 }
 
 /**
- * Whether two link snapshots name the same state, thread and child generation.
- * @param left - One link snapshot.
- * @param right - The other link snapshot.
- * @returns True when the identity fields agree.
- */
-function sameLinkIdentity(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean {
-	return (
-		left.state === right.state &&
-		left.threadId === right.threadId &&
-		left.childId === right.childId &&
-		left.epoch === right.epoch
-	);
-}
-
-/**
  * Whether two pane bindings are the same revision with the same CAS proof and
  * link identity, which is what makes captured CAS evidence still current.
  * @param left - One pane binding.
@@ -69,7 +58,7 @@ function sameLink(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnaps
 		left.paneId === right.paneId &&
 		left.revision === right.revision &&
 		sameCas(left.cas, right.cas) &&
-		sameLinkIdentity(left.link, right.link)
+		sameThreadLinkIdentity(left.link, right.link)
 	);
 }
 

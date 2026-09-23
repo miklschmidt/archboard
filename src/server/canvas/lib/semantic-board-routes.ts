@@ -13,7 +13,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@/shared/thrown-error/index";
-import { addressedVariant, type SemanticBoard } from "@/shared/semantic-board/index";
+import { listedBoard, type BoardListing, type SemanticBoard } from "@/shared/semantic-board/index";
 import {
 	listSemanticBoards,
 	checkSemanticVault,
@@ -74,34 +74,14 @@ function refuseUnnamedBoard(res: Response): void {
 function listRoute(_req: Request, res: Response): void {
 	try {
 		const configured = readSemanticBoardConfiguration();
-		res.json({
+		const listing: BoardListing = {
 			success: true,
 			levels: configured.configuration.levels,
-			boards: listSemanticBoards().map((location) => {
-				const { name, key } = location;
-				const read = readSemanticBoard(name);
-				if (!read.ok) {
-					return { name, key, variants: [], error: read.problem };
-				}
-				const opened = addressedVariant(read.board);
-				return {
-					name,
-					key,
-					// The browser checks its cached pictures against this on load.
-					version: read.board.version,
-					level: read.board.level,
-					// Which variant the board's bare name opens: its current one, or on a
-					// board nobody has built its draft (ADR 0031); null when it opens none.
-					opens: opened.ok ? opened.variant.id : null,
-					variants: read.board.variants.map(({ id, name: variantName, lifecycle, parent }) => ({
-						id,
-						name: variantName,
-						lifecycle,
-						parentId: parent ?? null,
-					})),
-				};
-			}),
-		});
+			boards: listSemanticBoards().map((location) =>
+				listedBoard(location, readSemanticBoard(location.name)),
+			),
+		};
+		res.json(listing);
 	} catch (error) {
 		res.status(500).json({ success: false, error: errorMessage(error) });
 	}

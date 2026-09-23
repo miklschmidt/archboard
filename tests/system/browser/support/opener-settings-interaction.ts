@@ -3,7 +3,7 @@ import { expect } from "bun:test";
 
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 import { dialogSnapshot } from "./opener-settings.ts";
-import { openSettingsItem, switchTheme } from "./shell-dom.ts";
+import { pressSettings, switchTheme } from "./shell-dom.ts";
 
 type ShellTheme = "light" | "dark";
 
@@ -49,12 +49,12 @@ async function fillLabel(
 }
 
 /**
- * Open the opener settings dialog the way a person does: the header settings
- * menu, then its item.
+ * Open the opener settings dialog the way a person does: the header's
+ * Settings button.
  * @param browser The page.
  */
 async function openOpenerSettings(browser: AgentBrowserSession): Promise<void> {
-	await openSettingsItem(browser, "Opener settings");
+	await pressSettings(browser);
 	// Clicks land only once the dialog has finished animating into place.
 	await pollUntil(
 		() =>

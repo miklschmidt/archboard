@@ -41,9 +41,11 @@ stdio. Archboard owns its `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
 `config.toml`, epoch manifests and sign-in, below
 `$XDG_STATE_HOME/archboard/codex-workbench` (or
 `~/.local/state/archboard/codex-workbench`). Never edit user-global
-Codex configuration for this integration. A pane links to one workhorse; voice
-attaches to a separate persistent coordinator for that link, never to the
-workhorse itself.
+Codex configuration for this integration. A canvas has one conversation, one
+workhorse that every pane shares, and nobody sets it up: the first message in
+the agent bar, or the first press of Talk, signs in if needed, starts Codex and
+links the workhorse. Voice attaches to a separate persistent coordinator for
+that link, never to the workhorse itself.
 
 ## 5. A first session
 

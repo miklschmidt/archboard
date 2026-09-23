@@ -297,19 +297,16 @@ function approvalDetails(approval: BrowserApproval): ApprovalDetail[] {
 }
 
 /**
- * The common rows every approval carries: target, effect, reason.
+ * Why Codex asks, when it says. The binding's target and effect digest are
+ * what a decision is checked against, not what a person decides by.
  * @param approval The approval.
  * @returns The rows.
  */
-function bindingDetails(approval: BrowserApproval): ApprovalDetail[] {
-	const rows: ApprovalDetail[] = [
-		{ label: "Target", value: approval.binding.target, mono: true },
-		{ label: "Effect", value: approval.binding.effect, mono: true },
-	];
+function reasonDetails(approval: BrowserApproval): ApprovalDetail[] {
 	if ("reason" in approval && typeof approval.reason === "string") {
-		rows.push({ label: "Reason", value: approval.reason, mono: false });
+		return [{ label: "Reason", value: approval.reason, mono: false }];
 	}
-	return rows;
+	return [];
 }
 
 /** A phase with its words. */
@@ -394,7 +391,7 @@ function projectApproval(approval: BrowserApproval, busy: boolean): ApprovalCard
 		key: approval.requestId,
 		family: FAMILY_TEXT[approval.approvalKind],
 		title: `${FAMILY_TEXT[approval.approvalKind]} approval`,
-		details: [...approvalDetails(approval), ...bindingDetails(approval)],
+		details: [...approvalDetails(approval), ...reasonDetails(approval)],
 		phase,
 		phaseText,
 		decisions: phase === "pending" ? approvalDecisions(approval) : [],
@@ -452,7 +449,6 @@ function dynamicDetails(approval: BrowserDynamicApproval): ApprovalDetail[] {
 	if (effect.target !== null) {
 		rows.push({ label: "Target", value: effect.target, mono: true });
 	}
-	rows.push({ label: "Hash", value: approval.effectHash, mono: true });
 	return rows;
 }
 

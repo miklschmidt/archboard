@@ -3,11 +3,15 @@
 // the application calls when something it heard could have changed a board.
 
 import { useQuery, useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { composeListing, listingError } from "@/ui/board-catalog/listing";
 import { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
-import { semanticBoardKeys, semanticBoardListQuery } from "@/ui/semantic-board-canvas";
+import {
+	onSemanticBoardChange,
+	semanticBoardKeys,
+	semanticBoardListQuery,
+} from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 
 /** The listing, why it may be missing, and the ways it is made stale. */
@@ -128,6 +132,10 @@ function useBoardCatalog(): BoardCatalog {
 	const vault = useQuery(semanticBoardListQuery());
 	const panes = useQuery(paneInventoryQuery());
 	const commands = useMemo(() => catalogCommands(client), [client]);
+	// A board on screen moved to a new version — a state branched or accepted
+	// under a claim that has not ended — so its states and standing in the
+	// navigator are read again with it.
+	useEffect(() => onSemanticBoardChange(() => invalidateListing(client)), [client]);
 	const listing = useMemo(() => composeListing(vault.data, panes.data), [vault.data, panes.data]);
 	const error = listingError(vault.error, panes.error, panes.data !== undefined);
 	return useMemo(

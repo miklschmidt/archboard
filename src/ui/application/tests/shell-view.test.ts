@@ -9,7 +9,7 @@ import {
 	releasedBoardKeys,
 	type PaneRecords,
 } from "@/ui/application/pane-records";
-import { NO_BOARD, assembleShellView } from "@/ui/application/shell-view";
+import { assembleShellView } from "@/ui/application/shell-view";
 import { EMPTY_LISTING } from "@/ui/board-catalog/listing";
 
 const CHECKOUT = { board: "Checkout", variant: "current" };
@@ -48,7 +48,6 @@ test("the shell view names the active pane's board and carries its mounted panes
 	});
 	// Pane B is focused after being added; it shows no board.
 	expect(view.activePaneId).toBe("B");
-	expect(view.current).toEqual(NO_BOARD);
 	expect(view.panes.map((pane) => [pane.status.paneId, pane.stage])).toEqual([
 		["A", "pane-a"],
 		["B", "pane-b"],
@@ -70,7 +69,6 @@ test("the focused pane's board key is the selected navigator entry and held keys
 		notices: [],
 		agentActivity: {},
 	});
-	expect(view.current).toEqual(CHECKOUT);
 	expect(view.selectedBoardKey).toBe("Checkout");
 	expect(view.boardsError).toBe("offline");
 	expect(view.presentation).toEqual({ kind: "live", paneId: "A" });

@@ -71,7 +71,7 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 	});
 }
 
-test("browser disconnect settles and immediately acknowledges its ordinary approvals", async () => {
+test("the last presenter's disconnect, from any pane of the link, settles and acknowledges its ordinary approvals", async () => {
 	const paneId = "pane-ordinary";
 	const identity = createIdentityAuthority();
 	const responses: unknown[] = [];
@@ -80,7 +80,9 @@ test("browser disconnect settles and immediately acknowledges its ordinary appro
 		transport: {
 			respond: async (_request, _owner, response) => void responses.push(response),
 		},
-		getCurrentBinding: () => ({ link: `pane:${paneId}` }),
+		// The approval names the pane that created the link; the browser leaving
+		// is on another pane of the same canvas link.
+		getCurrentBinding: () => ({ link: "pane:pane-that-created-the-link" }),
 	});
 	try {
 		const requestId = identity.decoder.adoptJsonRpcRequestId("request-disconnect-owner");

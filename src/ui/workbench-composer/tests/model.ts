@@ -118,8 +118,14 @@ function timeline(
 			summary: "A Codex turn",
 			outputsIncluded: true,
 			outputsTruncated: false,
+			startedAtMs: null,
+			completedAtMs: null,
+			durationMs: null,
+			error: null,
+			plan: null,
 		})),
 		nextCursor: null,
+		usage: null,
 	});
 }
 

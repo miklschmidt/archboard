@@ -1,0 +1,162 @@
+// Everything a person does from the agent surfaces, over the canvas-wide
+// agent setup, the focused pane's controllers and the voice session. A step
+// that needs a provider's sign-in page opens its tab from the person's own
+// gesture, so the browser lets it through.
+
+import type { AgentSetup } from "@/ui/agent-setup";
+import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
+import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
+import type { AgentActions } from "@/ui/workbench/contracts";
+import type { DraftStore } from "@/ui/workbench";
+import type { ConversationTurn } from "@/ui/workbench-timeline";
+
+/** What the actions act on. */
+interface AgentActionTargets {
+	readonly setup: AgentSetup;
+	readonly owners: WorkbenchOwners | null;
+	readonly voice: VoiceOwner | null;
+	/** Voice ended: let it follow the focused pane again. */
+	readonly releaseVoice: () => void;
+	readonly draft: DraftStore;
+	/** The running turn, or null. */
+	readonly runningTurnId: ConversationTurn["turnId"] | null;
+	readonly openPanel: () => void;
+}
+
+/** Nothing to do: the pane has no owners to act on. */
+function nothing(): void {
+	// There is no queue without a pane.
+}
+
+/** Queue actions while the pane has no owners: there is no queue to act on. */
+const NO_QUEUE: AgentActions["queue"] = Object.freeze({
+	moveUp: nothing,
+	moveDown: nothing,
+	remove: nothing,
+	sendNow: nothing,
+});
+
+/**
+ * The voice actions.
+ * @param targets What they act on.
+ * @returns Mute, unmute and end.
+ */
+function voiceActions(
+	targets: AgentActionTargets,
+): Pick<AgentActions, "mute" | "unmute" | "endVoice"> {
+	const { voice, releaseVoice } = targets;
+	return {
+		/** Mute the microphone. */
+		mute: () => {
+			void voice?.session.mute();
+		},
+		/** Unmute the microphone. */
+		unmute: () => {
+			void voice?.session.unmute();
+		},
+		/** End voice and let it follow focus again. */
+		endVoice: () => {
+			void voice?.session.stop().then(releaseVoice);
+		},
+	};
+}
+
+/**
+ * The actions on the focused pane's controllers.
+ * @param targets What they act on.
+ * @returns Stop, sign out, the approval decisions and the queue.
+ */
+function paneActions(
+	targets: AgentActionTargets,
+): Pick<
+	AgentActions,
+	"stop" | "signOut" | "respondToApproval" | "respondToDynamicApproval" | "queue"
+> {
+	const { owners, runningTurnId } = targets;
+	return {
+		/** Interrupt the running turn. */
+		stop: () => {
+			if (runningTurnId !== null) void owners?.composer.interrupt(runningTurnId);
+		},
+		/** Sign out of Archboard's Codex. */
+		signOut: () => {
+			void owners?.threadLink.logout();
+		},
+		/**
+		 * Decide an approval.
+		 * @param approval The approval.
+		 * @param choice The decision.
+		 */
+		respondToApproval: (approval, choice) => {
+			owners?.approvals.panelActions.respondToApproval(approval, choice);
+		},
+		/**
+		 * Decide a dynamic tool's approval.
+		 * @param approval The approval.
+		 * @param verdict The decision.
+		 */
+		respondToDynamicApproval: (approval, verdict) => {
+			owners?.approvals.panelActions.respondToDynamicApproval(approval, verdict);
+		},
+		queue: owners?.queue.panelActions ?? NO_QUEUE,
+	};
+}
+
+/**
+ * Everything a person can do from the agent surfaces.
+ * @param targets What the actions act on.
+ * @returns The actions.
+ */
+function agentActions(targets: AgentActionTargets): AgentActions {
+	const { setup, draft, openPanel } = targets;
+	return {
+		...voiceActions(targets),
+		...paneActions(targets),
+		/**
+		 * Send a message and show the conversation.
+		 * @param text The message.
+		 * @param queue Whether to run it after the current turn.
+		 */
+		send: (text, queue) => {
+			setup.send(text, { queue, tab: gestureTab(setup) });
+			openPanel();
+		},
+		/** Start voice, setting up whatever is missing. */
+		talk: () => {
+			setup.talk({ tab: gestureTab(setup) });
+		},
+		/**
+		 * Sign in.
+		 * @param login The provider and its credentials.
+		 */
+		signIn: (login) => {
+			setup.signIn(login, login.type === "chatgpt" ? openAuthTab() : undefined);
+		},
+		/** Cancel the sign-in. */
+		cancelSignIn: () => {
+			setup.cancelSignIn();
+		},
+		/** Start a new conversation. */
+		newConversation: () => {
+			setup.newConversation();
+		},
+		/**
+		 * Send a held message again.
+		 * @param id The held message.
+		 */
+		retry: (id) => {
+			setup.retry(id);
+		},
+		/**
+		 * Take a held message back into the composer.
+		 * @param id The held message.
+		 */
+		edit: (id) => {
+			const text = setup.discard(id);
+			if (text !== null) draft.fill(text);
+		},
+		openPanel,
+	};
+}
+
+export { agentActions, type AgentActionTargets };

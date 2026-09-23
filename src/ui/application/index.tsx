@@ -8,13 +8,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
-import { AgentSettingsHost } from "@/ui/application/components/AgentSettingsHost";
-import {
-	codeTargetShellNotice,
-	failureNotice,
-	infoNotice,
-	presentationNotice,
-} from "@/ui/application/notices";
+import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHost";
 import { paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
@@ -41,19 +35,24 @@ import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
 import { useStageEvents } from "@/ui/application/hooks/use-stage-events";
 import { useNarration } from "@/ui/application/hooks/use-narration";
 import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
-import { useWorkbench } from "@/ui/application/hooks/use-workbench";
+import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
+import { useWorkbench, type WorkbenchHost } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
-import { PresentationVoiceControls } from "@/ui/application/components/PresentationVoiceControls";
-import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody";
-import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
-import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
-import type { DoingEntry } from "@/ui/types";
-import { BoardCatalogProvider, useBoardCatalog, type BoardCatalog } from "@/ui/board-catalog";
+import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
+import {
+	BoardCatalogProvider,
+	listedBoard,
+	listedBoardKey,
+	useBoardCatalog,
+	type BoardCatalog,
+} from "@/ui/board-catalog";
 import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
+import type { BoardListing } from "@/ui/types";
+import { AgentBar, AgentPanel, TalkControl } from "@/ui/workbench";
+import type { AgentContext } from "@/ui/workbench/contracts";
 import {
-	ActivityList,
 	SETTINGS_TRIGGER_ID,
 	Shell,
 	type SettingsSurface,
@@ -101,70 +100,73 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
 	}, [list, target, paneRemoved]);
 }
 
-/** The workbench's places in the shell. */
-interface WorkbenchSlots {
-	header: ReactNode;
-	body: ReactNode;
-	voice: ReactNode;
-	/** The active pane's recent `doing` lines, or null when nobody said anything. */
-	activity: ReactNode;
-}
-
 /**
- * The active pane's recent activity, rendered once for the workbench's
- * session column or, without a workbench, the dock's own column.
- * @param doing Every `doing` line the active pane holds.
- * @returns The list, or null when there is nothing to show.
+ * What the agent reads with the next message: the board in the focused pane,
+ * by the name the vault lists it under, and the state shown when it is not
+ * the one the board's name opens.
+ * @param listing The listing.
+ * @param boardKey The focused pane's board key, or null.
+ * @returns The context.
  */
-function useActivity(doing: readonly DoingEntry[]): ReactNode {
-	return useMemo(() => (doing.length === 0 ? null : <ActivityList entries={doing} />), [doing]);
+function agentContextOf(listing: BoardListing, boardKey: string | null): AgentContext {
+	const address = boardAddressOf(boardKey);
+	if (address === null) return { board: null, state: null };
+	const board = listedBoard(listing, address.board);
+	if (board === undefined) return { board: address.board, state: address.variant ?? null };
+	const key = listedBoardKey(listing, boardKey);
+	const variant = board.variants.find((entry) => entry.key === key);
+	return {
+		board: board.name,
+		state: variant === undefined || variant.id === board.opens ? null : variant.name,
+	};
 }
 
 /**
- * The subtitles of the voice, laid over the pane its owners belong to.
- * @param owners The focused pane's owners, or null while it has no transport.
+ * The subtitles of the voice, laid over the pane it runs for.
+ * @param workbench The workbench host.
  * @param reducedMotion The motion preference.
  * @returns The overlay and the pane it belongs over, or null.
  */
-function useSubtitleOverlay(
-	owners: WorkbenchOwners | null,
-	reducedMotion: boolean,
-): PaneOverlay | null {
+function useSubtitleOverlay(workbench: WorkbenchHost, reducedMotion: boolean): PaneOverlay | null {
+	const { voice } = workbench;
 	return useMemo(
 		() =>
-			owners === null
+			voice === null
 				? null
 				: {
-						paneId: owners.paneId,
-						element: <PaneSubtitles owners={owners} reducedMotion={reducedMotion} />,
+						paneId: voice.paneId,
+						element: <PaneSubtitles transport={voice.transport} reducedMotion={reducedMotion} />,
 					},
-		[owners, reducedMotion],
+		[voice, reducedMotion],
 	);
 }
 
+/** The agent's surfaces as the shell places them. */
+interface AgentSlots {
+	readonly bar: ReactNode;
+	readonly panel: ReactNode;
+	readonly voiceControls: ReactNode;
+}
+
 /**
- * The workbench's slots in the shell over the focused pane's owners.
- * @param owners The owners, or null while the focused pane has no transport.
+ * The agent's surfaces drawn: the bar, the panel while it is open, and the
+ * Talk control a presentation carries.
+ * @param agent The inputs of each surface.
  * @param reducedMotion The motion preference.
- * @param activity The active pane's rendered recent activity, or null.
- * @returns The dock header, the dock body, the presentation voice controls and the activity.
+ * @returns The slots.
  */
-function useWorkbenchSlots(
-	owners: WorkbenchOwners | null,
-	reducedMotion: boolean,
-	activity: ReactNode,
-): WorkbenchSlots {
-	return useMemo(() => {
-		if (owners === null) {
-			return { header: null, body: null, voice: null, activity };
-		}
-		return {
-			header: <WorkbenchDockHeader owners={owners} reducedMotion={reducedMotion} />,
-			body: <WorkbenchDockBody owners={owners} reducedMotion={reducedMotion} activity={activity} />,
-			voice: <PresentationVoiceControls owners={owners} />,
-			activity,
-		};
-	}, [owners, reducedMotion, activity]);
+function useAgentSlots(agent: AgentSurfaces, reducedMotion: boolean): AgentSlots {
+	const { bar, panel, view, actions } = agent;
+	return useMemo(
+		() => ({
+			bar: <AgentBar {...bar} />,
+			panel: panel === null ? null : <AgentPanel {...panel} />,
+			voiceControls: (
+				<TalkControl voice={view.voice} actions={actions} reducedMotion={reducedMotion} />
+			),
+		}),
+		[bar, panel, view.voice, actions, reducedMotion],
+	);
 }
 
 /** What the shell view is assembled from, beyond the panes. */
@@ -216,22 +218,20 @@ function useShellView(sources: ShellViewSources): ShellView {
 	);
 }
 
-/** Inputs for the settings dialogs. */
+/** Inputs for the settings dialog. */
 interface SettingsHostsProps {
 	surface: SettingsSurface | null;
-	owners: WorkbenchOwners | null;
 	notices: NoticeStack;
 	onClose: () => void;
 }
 
 /**
- * The settings dialogs: opener settings over its flow, agent settings over
- * the focused pane's workbench.
- * @param props The open surface, the owners, the notices and the close.
+ * The settings dialog: where the canvas opens code.
+ * @param props The open surface, the notices and the close.
  * @returns The open dialog, or nothing.
  */
 function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
-	const { surface, owners, notices, onClose } = props;
+	const { surface, notices, onClose } = props;
 	const onSuccess = useCallback(
 		(message: string): void =>
 			notices.raise(infoNotice("opener-settings", "Opener settings", message)),
@@ -241,20 +241,15 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 		(notice: CodeTargetNotice): void => notices.raise(codeTargetShellNotice(notice)),
 		[notices],
 	);
-	if (surface === "opener") {
-		return (
-			<OpenerSettingsHost
-				onSuccess={onSuccess}
-				onFailure={onFailure}
-				onClose={onClose}
-				finalFocus={settingsTrigger}
-			/>
-		);
-	}
-	if (surface === "agent" && owners !== null) {
-		return <AgentSettingsHost owners={owners} onClose={onClose} finalFocus={settingsTrigger} />;
-	}
-	return null;
+	if (surface !== "opener") return null;
+	return (
+		<OpenerSettingsHost
+			onSuccess={onSuccess}
+			onFailure={onFailure}
+			onClose={onClose}
+			finalFocus={settingsTrigger}
+		/>
+	);
 }
 
 /**
@@ -268,7 +263,6 @@ function ApplicationBody(): JSX.Element {
 	const notices = useNotices();
 	const [settings, setSettings] = useState<SettingsSurface | null>(null);
 	const closeSettings = useCallback((): void => setSettings(null), []);
-	const openAgentSettings = useCallback((): void => setSettings("agent"), []);
 
 	// The address the tab was opened on mounts the panes, so a restored
 	// comparison has both panes in its first render rather than growing one.
@@ -294,7 +288,13 @@ function ApplicationBody(): JSX.Element {
 	const catalog = useBoardCatalog();
 	useReleasedBoards(heldKeys, catalog);
 	const agentActivity = useAgentActivity();
-	const workbench = useWorkbench(panes.handles, panes.list.activePaneId, openAgentSettings);
+	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
+	const context = useMemo(
+		() => agentContextOf(catalog.listing, panes.active.status.boardKey),
+		[catalog.listing, panes.active.status.boardKey],
+	);
+	const agent = useAgentSurfaces({ workbench, context, reducedMotion });
+	const slots = useAgentSlots(agent, reducedMotion);
 	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -314,23 +314,8 @@ function ApplicationBody(): JSX.Element {
 	// Bound each render, after the owners the events reach exist.
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
 
-	const openSettings = useCallback(
-		(surface: SettingsSurface): void => {
-			if (surface === "agent" && workbench.owners === null) {
-				notices.raise(
-					failureNotice(
-						"agent-settings",
-						"Agent settings",
-						"No agent workbench is attached to this pane yet.",
-					),
-				);
-				return;
-			}
-			setSettings(surface);
-		},
-		[notices, workbench.owners],
-	);
-	const actions = useMemo<ShellActions>(
+	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
+	const composed = useMemo(
 		() =>
 			createShellActions({
 				setTheme,
@@ -342,6 +327,11 @@ function ApplicationBody(): JSX.Element {
 				openSettings,
 			}),
 		[setTheme, addressing, panes, catalog, notices, fullscreen, openSettings],
+	);
+	const openBeside = useBesideOpening(panes, composed);
+	const actions = useMemo<ShellActions>(
+		() => ({ ...composed, openBeside }),
+		[composed, openBeside],
 	);
 	// Which variant of its board a pane shows is part of the board key, so
 	// asking for another one is asking the shell to show a different board.
@@ -357,8 +347,8 @@ function ApplicationBody(): JSX.Element {
 		},
 		[actions, panes.records],
 	);
-	const narration = useNarration(workbench.owners, panes.list.activePaneId);
-	const overlay = useSubtitleOverlay(workbench.owners, reducedMotion);
+	const narration = useNarration(workbench.setup, agent.view.voice, panes.list.activePaneId);
+	const overlay = useSubtitleOverlay(workbench, reducedMotion);
 	const mounted = usePaneViews({
 		panes,
 		theme,
@@ -398,11 +388,10 @@ function ApplicationBody(): JSX.Element {
 		[actions, panes, fullscreen.snapshot.paneId],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
-	const activity = useActivity(panes.active.status.doing);
-	const slots = useWorkbenchSlots(workbench.owners, reducedMotion, activity);
+	const transport = workbench.owners?.transport ?? null;
 	const diagnostics = useMemo(
-		() => <VaultDiagnostics target={workbench.owners} chooseThread={openAgentSettings} />,
-		[workbench.owners, openAgentSettings],
+		() => <VaultDiagnostics transport={transport} ask={agent.ask} />,
+		[transport, agent.ask],
 	);
 	return (
 		<TooltipProvider>
@@ -410,18 +399,12 @@ function ApplicationBody(): JSX.Element {
 				view={view}
 				actions={actions}
 				diagnostics={diagnostics}
-				voiceControls={slots.voice}
-				dockHeader={slots.header}
-				dockBody={slots.body}
-				dockActivity={slots.activity}
+				voiceControls={slots.voiceControls}
+				agentBar={slots.bar}
+				agentPanel={slots.panel}
 				attachStage={fullscreen.attachStage}
 			/>
-			<SettingsHosts
-				surface={settings}
-				owners={workbench.owners}
-				notices={notices}
-				onClose={closeSettings}
-			/>
+			<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
 		</TooltipProvider>
 	);
 }

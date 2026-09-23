@@ -4,6 +4,12 @@ status: accepted
 
 # The workbench owns one Codex app-server session
 
+Amended by TASK-302 (2026-09-23): a canvas has one thread link, not one per
+pane, and nobody makes it by hand. The first message or press of Talk signs in
+if needed, starts Codex, creates the workhorse and links it; whichever pane is
+focused speaks for the conversation, with its board as context. The sentences
+below say so; everything else stands.
+
 ## Issue
 
 The workbench must show and control the same agent state that the person is
@@ -25,8 +31,11 @@ not shared with ChatGPT Desktop, another Codex client, or an ambient daemon. A
 browser may temporarily own presentation of interactive requests, but it never
 becomes the process owner or a second app-server client.
 
-A pane talks to Codex only through an explicit **thread link**. The link binds
-that pane to one workhorse controlled by the current child. Replacing the child
+A canvas talks to Codex only through its **thread link**, which binds the
+canvas to one workhorse controlled by the current child. The link is made by
+the first thing the person asks — a message or Talk — and never by a separate
+step; every pane shows and speaks for the same conversation, the focused pane's
+board being the context a message carries. Replacing the child
 invalidates every execution proof: earlier threads may remain inspectable, but
 Archboard does not resume them or deliver input, tools, queued work, or board
 context to them. Dedicated state prevents accidental discovery; it is not a
@@ -92,10 +101,12 @@ recent-thread heuristic, or second board snapshot.
 
 ## Consequences
 
-Archboard must maintain its own Codex sign-in, process status, reconnect story,
-and explicit thread-link UI. A child restart is intentionally conservative:
-prior work remains inspectable but not executable until the person creates a
-new current link. Workhorse and coordinator state remain visibly separate.
+Archboard must maintain its own Codex sign-in, process status and reconnect
+story, and must carry a message or a Talk through each of them without asking
+the person to set anything up. A child restart is intentionally conservative:
+prior work remains inspectable but not executable, and the next message or
+Talk creates a new current link. Workhorse and coordinator state remain
+visibly separate.
 
 ADR-0005's semantic-push intent survives, but its routing and process-ownership
 decision is superseded by the explicit thread link and owned session here.

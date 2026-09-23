@@ -188,22 +188,22 @@ test("same-pane connections load independently and only the live pair recovers",
 test("ingests bounded source items and takes the cursor from timeline/list", async () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("bounded-ingest-thread");
-	const sourceItems = [
-		userMessageItem(authorities, "bounded-user", {
-			type: "userMessage",
-			clientId: null,
-			content: [{ type: "text", text: "hello", text_elements: [] }],
-		}),
-		agentMessageItem(authorities, "bounded-agent", {
-			type: "agentMessage",
-			text: "answer",
-			phase: null,
-			memoryCitation: null,
-			delivery: null,
-			questions: null,
-		}),
-	];
-	Object.defineProperty(sourceItems, 2, {
+	const user = userMessageItem(authorities, "bounded-user", {
+		type: "userMessage",
+		clientId: null,
+		content: [{ type: "text", text: "hello", text_elements: [] }],
+	});
+	const agent = agentMessageItem(authorities, "bounded-agent", {
+		type: "agentMessage",
+		text: "answer",
+		phase: null,
+		memoryCitation: null,
+		delivery: null,
+		questions: null,
+	});
+	// The oldest item is the one beyond the ingestion limit: the newest are kept.
+	const sourceItems = [user, user, agent];
+	Object.defineProperty(sourceItems, 0, {
 		get: () => {
 			throw new Error("the item beyond the ingestion limit was inspected");
 		},
@@ -239,7 +239,10 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 		throw new Error("bounded timeline was not loaded");
 	}
 	expect(projection.cursor).toBe("timeline-cursor");
-	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual(["agent_message"]);
+	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
+		"user_message",
+		"agent_message",
+	]);
 	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
 	owner.dispose();
 });
@@ -319,12 +322,13 @@ test("caps final item chronology after matching and unmatched approvals", async 
 	if (projection === null) {
 		throw new Error("approval timeline was not loaded");
 	}
+	// The cap keeps the newest items in order: the oldest, the command, goes.
 	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
-		"command_execution",
 		"approval_request",
 		"file_change",
+		"approval_request",
 	]);
-	expect(projection.turns[0]?.items).not.toContainEqual(
+	expect(projection.turns[0]?.items.at(-1)).toEqual(
 		expect.objectContaining({ identity: expect.objectContaining({ itemId: unmatchedId }) }),
 	);
 	expect(projection.turns[0]?.presentation.outputs).toEqual({ included: true, truncated: true });
@@ -468,7 +472,7 @@ test("a budget cut drops the oldest turns and keeps the newest in-progress turn"
 	// Newest-first paging is what makes the cut safe.
 	expect(requests.map((request) => request.sortDirection)).toEqual(["desc", "desc"]);
 	// Published chronologically, oldest retained first.
-	expect(projection.turns.map((entry) => entry.turn)).toEqual([
+	expect(projection.turns.map(({ turn }) => ({ id: turn.id, status: turn.status }))).toEqual([
 		{ id: authorities.identity.decoder.adoptTurnId("turn-older"), status: "completed" },
 		{ id: authorities.identity.decoder.adoptTurnId("turn-running"), status: "inProgress" },
 	]);

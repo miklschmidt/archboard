@@ -1,30 +1,15 @@
-// The workbench runtime: the one authoritative Codex runtime over the
-// transport, its view and actions for the presentation, the read-only
-// provider for foreign histories, and the pure projections behind them.
+// The conversation's assistant-ui runtime: the transport's timeline adapted
+// into messages at one named seam, and the provider that places it.
 
-export { WorkbenchRuntimeProvider } from "@/ui/workbench-runtime/components/WorkbenchRuntimeProvider";
-export { useWorkbenchRuntime } from "@/ui/workbench-runtime/hooks/use-workbench-runtime";
-export type {
-	WorkbenchRuntimeHandle,
-	WorkbenchRuntimeOptions,
-	WorkbenchRuntimeProviderProps,
-	WorkbenchRuntimeRenderContext,
-	WorkbenchRuntimeRenderer,
-} from "@/ui/workbench-runtime/types/runtime";
 export {
-	ReadonlyWorkbenchThreadProvider,
-	type ReadonlyWorkbenchThreadProviderProps,
-} from "@/ui/workbench-runtime/components/ReadonlyWorkbenchThreadProvider";
-export type { WorkbenchRuntimeHost } from "@/ui/workbench-runtime/lib/actions";
-export { approvalResponse } from "@/ui/workbench-runtime/lib/approval-responses";
-export { sessionView } from "@/ui/workbench-runtime/lib/session-view";
+	AgentRuntimeProvider,
+	type AgentRuntimeProviderProps,
+} from "@/ui/workbench-runtime/components/AgentRuntimeProvider";
+export { useConversation, type Conversation } from "@/ui/workbench-runtime/hooks/use-agent-runtime";
 export {
-	createReadonlyWorkbenchView,
-	projectWorkbenchRuntime,
-	readonlyRecovery,
-	type ReadonlyWorkbenchSource,
-	type ReadonlyWorkbenchState,
-	type WorkbenchRuntimeView,
-	type WorkbenchVisibleStatus,
-} from "@/ui/workbench-runtime/lib/view";
-export { workbenchRuntimeMessageId } from "@/ui/workbench-timeline";
+	toThreadMessageLike,
+	type ActivityItem,
+	type ActivityRun,
+	type ConversationDataParts,
+	type TurnEnd,
+} from "@/ui/workbench-runtime/lib/messages";
