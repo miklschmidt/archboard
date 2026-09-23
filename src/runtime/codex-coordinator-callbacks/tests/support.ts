@@ -7,10 +7,11 @@ import {
 	type CoordinatorCallbackReadyCoordinator,
 	type CoordinatorCallbackRealtimeGeneration,
 	type CoordinatorCallbackRealtimeRequest,
+	type CoordinatorCallbackTurnPort,
 } from "../index.js";
 import { COORDINATOR_CAPABILITY_POLICY } from "../../codex-coordinator/index.js";
 import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
-import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
+import { CodexSessionMutationError } from "../../codex-session/index.js";
 import {
 	createSemanticContextPublisher,
 	type PaneFocusEvent,
@@ -310,7 +311,8 @@ interface Harness {
 		readonly emit: (event: WorkhorseOperationEvent) => void;
 		readonly listenerCount: () => number;
 	};
-	readonly injections: SessionParams<"thread/inject_items">[];
+	/** What the coordinator was given, in order: every workhorse outcome that reached it. */
+	readonly reports: Parameters<CoordinatorCallbackTurnPort["report"]>[0][];
 	readonly realtimeRequests: CoordinatorCallbackRealtimeRequest[];
 	readonly callbacks: ReturnType<typeof createCodexCoordinatorCallbacks>;
 	readonly options: CoordinatorCallbackOptions;
@@ -366,22 +368,22 @@ function harness(active = true): Harness {
 	};
 	const semantic = semanticSources(ids, active);
 	const listeners = new Set<(event: WorkhorseOperationEvent) => void>();
-	const injections: SessionParams<"thread/inject_items">[] = [];
+	const reports: Parameters<CoordinatorCallbackTurnPort["report"]>[0][] = [];
 	const realtimeRequests: CoordinatorCallbackRealtimeRequest[] = [];
 	let mode: MutationMode = "delivered";
 	let classifyHook: (() => void) | null = null;
 	let mutationHook: (() => void) | null = null;
-	const callbackSession = {
-		threadInjectItems: async (params: SessionParams<"thread/inject_items">) => {
-			injections.push(params);
+	const coordinatorTurn: CoordinatorCallbackTurnPort = {
+		report: async (request) => {
+			reports.push(request);
 			mutationHook?.();
 			if (mode === "rejected") {
-				throw new CodexSessionMutationError("thread/inject_items", "not_delivered", "rejected");
+				return { attempted: true, outcome: "not_delivered", reason: "session_rejected" };
 			}
 			if (mode === "lost") {
-				throw new Error("lost");
+				return { attempted: true, outcome: "outcome_unknown", reason: "response_lost" };
 			}
-			return {};
+			return { attempted: true, outcome: "delivered", reason: null };
 		},
 	};
 	const realtime = createCoordinatorCallbackRealtimePort({
@@ -412,8 +414,8 @@ function harness(active = true): Harness {
 				return () => listeners.delete(listener);
 			},
 		},
-		session: callbackSession,
 		realtime,
+		coordinatorTurn,
 		threadLink: {
 			classify: async () => {
 				classifyHook?.();
@@ -437,7 +439,7 @@ function harness(active = true): Harness {
 			},
 			listenerCount: () => listeners.size,
 		},
-		injections,
+		reports,
 		realtimeRequests,
 		callbacks: createCodexCoordinatorCallbacks(options),
 		options,

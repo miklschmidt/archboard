@@ -87,19 +87,21 @@ first characters: `[FINAL]` is spoken, `[COMMENTARY]` is quiet context, and a
 headerless message is held back until it is complete and then treated as final.
 So the coordinator's start instructions state the rule, and a preamble is never
 read out as if it were the answer. It is also why work that ends later cannot be
-told to the voice model directly: while voice is live, a terminal workhorse
-outcome (completed, failed, attention, outcome unknown) starts one ordinary
-coordinator turn from the reviewed `workhorse_outcome_report` producer, because
-the coordinator knows whether the work came from a voice request. What it
-replies under `[FINAL]` is spoken without the user asking again; a
-`[COMMENTARY]` reply stays silent. The Archboard server waits a bounded time for an idle
-coordinator and otherwise falls back to the injected developer message, so an
-outcome is neither lost nor said twice. The other operation callbacks
+told to the voice model directly: while voice is live, a workhorse outcome the
+user waits for (completed, failed, attention, outcome unknown) goes to the
+coordinator at once from the reviewed `workhorse_outcome_report` producer,
+because the coordinator knows whether the work came from a voice request. It is
+one `turn/start`, which Codex adds to the coordinator's running turn when there
+is one and starts a turn with otherwise, so nothing waits for the coordinator to
+be idle and nothing lands in its history without a turn that acts on it. What
+it replies under `[FINAL]` is spoken without the user asking again; a
+`[COMMENTARY]` reply stays silent. With no voice session, and while a recording
+holds the voice, the coordinator is told nothing: it is the voice model's
+subconscious and never runs without it. The other operation callbacks
 (accepted, queued, started, progress) reach nobody while voice is live: the tool
 result already told the coordinator how its delegation went in, progress is what
 `inspect_workhorse` reads, and they are recorded with the reason
-`recorded_only`. No path appends a callback envelope to the voice session; with
-no voice session an operation callback is still one injected developer message.
+`recorded_only`. No path appends a callback envelope to the voice session.
 
 What a pane reports reaches the voice model only as **pane news**: one sentence
 of names saying where the user's reading now stands ("The user is now looking at

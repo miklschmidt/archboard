@@ -750,13 +750,15 @@ The encoder rejects any callback above 32,768 UTF-8 bytes, any string above
 most 1,024 UTF-8 bytes. A selection ID allows at most 64 UTF-8 bytes. The
 encoder does not truncate. The callback is the exact `text` in the one
 developer message above.
-Inactive operation callbacks send that message to `coordinatorThreadId` through
-`thread/inject_items`. While voice is live an outcome the user waits for
-(`completed`, `failed`, `outcome_unknown`, and `attention`, which the report
-calls waiting on the user rather than ended) runs the coordinator through the
-reviewed outcome report, or is injected the same way when the coordinator stays
-busy or the host cannot run it; `accepted`, `queued`, `started` and `progress`
-are recorded `not_delivered` with reason `recorded_only`. Callback bytes are
+While voice is live an outcome the user waits for (`completed`, `failed`,
+`outcome_unknown`, and `attention`, which the report calls waiting on the user
+rather than ended) goes to `coordinatorThreadId` at once through the reviewed
+outcome report: one `turn/start`, which Codex adds to a running coordinator
+turn or starts a turn with. `accepted`, `queued`, `started` and `progress` are
+recorded `not_delivered` with reason `recorded_only`. With no voice session, or
+while a recording holds the voice, every operation callback is recorded
+`not_delivered` with reason `voice_inactive`, and nothing reaches the
+coordinator thread. Callback bytes are
 never sent through `thread/realtime/appendText`. The workhorse thread is
 correlation only and is never the callback mutation target.
 

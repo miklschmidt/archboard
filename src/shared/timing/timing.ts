@@ -414,19 +414,6 @@ const CANVAS_STARTUP_READINESS_MS = 8000;
 const CODEX_WAIT_TARGET_POLL_MS = 250;
 
 /**
- * How long a terminal workhorse outcome waits for the coordinator to finish a turn of its own
- * before it is told quietly instead (TASK-291).
- *
- * The coordinator is run with the outcome so it can decide what the person hears, and a turn can
- * only be started on an idle thread. It is usually idle: it delegated and answered long before
- * the work ended. When it is not, its turn is short by design, so this is a few polls
- * (`CODEX_WAIT_TARGET_POLL_MS`, 250). It pulls against the callbacks queued behind this one, which
- * wait as long as it does, so it is far below `CODEX_REQUEST_SETTLEMENT_MS` (30_000); past it the
- * outcome becomes the injected developer message, which loses nothing.
- */
-const COORDINATOR_IDLE_WAIT_MS = 10_000;
-
-/**
  * Read-amplification floor classification. Pulls against the wait-target poll
  * below and request settlement above.
  *
@@ -529,7 +516,6 @@ export {
 	CODEX_COMPOSED_SHUTDOWN_MS,
 	CANVAS_STARTUP_READINESS_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
-	COORDINATOR_IDLE_WAIT_MS,
 	CODEX_QUEUE_REREAD_FLOOR_MS,
 };
 

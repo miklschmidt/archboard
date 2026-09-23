@@ -47,7 +47,6 @@ describe("a terminal workhorse outcome while voice is live", () => {
 			// Waiting on the user is reported, but as waiting: the work has not ended (TASK-316).
 			expect(reports.map((report) => report.waiting)).toEqual([false, false, true, false]);
 			expect(h.realtimeRequests).toHaveLength(0);
-			expect(h.injections).toHaveLength(0);
 		} finally {
 			callbacks.dispose();
 			close(h);
@@ -69,20 +68,22 @@ describe("a terminal workhorse outcome while voice is live", () => {
 			}
 			expect(reports).toHaveLength(0);
 			expect(h.realtimeRequests).toHaveLength(0);
-			expect(h.injections).toHaveLength(0);
 		} finally {
 			callbacks.dispose();
 			close(h);
 		}
 	});
 
-	test("reaches a coordinator that stays busy once, as the injected developer message", async () => {
-		const { h, reports, callbacks } = withTurnPort(true, "busy");
+	test("sends nothing while a recording holds the voice, and records the outcome", async () => {
+		const { h, reports, callbacks } = withTurnPort(true, "recording");
 		try {
 			const delivery = await callbacks.enqueue(operationEvent(h.ids, "completed"));
-			expect(delivery).toMatchObject({ path: "thread_inject_items", outcome: "delivered" });
+			expect(delivery).toMatchObject({
+				path: "silent",
+				outcome: "not_delivered",
+				reason: "voice_inactive",
+			});
 			expect(reports).toHaveLength(1);
-			expect(h.injections).toHaveLength(1);
 			expect(h.realtimeRequests).toHaveLength(0);
 		} finally {
 			callbacks.dispose();
@@ -96,7 +97,6 @@ describe("a terminal workhorse outcome while voice is live", () => {
 		try {
 			const delivery = await callbacks.enqueue(operationEvent(h.ids, "completed"));
 			expect(delivery).toMatchObject({ path: "coordinator_turn", outcome: "outcome_unknown" });
-			expect(h.injections).toHaveLength(0);
 			expect(h.realtimeRequests).toHaveLength(0);
 		} finally {
 			callbacks.dispose();
@@ -104,11 +104,11 @@ describe("a terminal workhorse outcome while voice is live", () => {
 		}
 	});
 
-	test("changes nothing with no voice session: the outcome is the injected developer message", async () => {
+	test("reaches nobody with no voice session: the coordinator is never run without voice", async () => {
 		const { h, reports, callbacks } = withTurnPort(false, DELIVERED);
 		try {
 			const delivery = await callbacks.enqueue(operationEvent(h.ids, "completed"));
-			expect(delivery.path).toBe("thread_inject_items");
+			expect(delivery).toMatchObject({ path: "silent", reason: "voice_inactive" });
 			expect(reports).toHaveLength(0);
 		} finally {
 			callbacks.dispose();

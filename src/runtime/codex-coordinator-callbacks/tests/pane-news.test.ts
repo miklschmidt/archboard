@@ -50,7 +50,7 @@ describe("pane news", () => {
 		expect(text).not.toContain("element-");
 		expect(text).not.toContain("{");
 		expect(h.realtimeRequests[0]?.params.role).toBe("developer");
-		expect(h.injections).toHaveLength(0);
+		expect(h.reports).toHaveLength(0);
 		close(h);
 	});
 
@@ -66,7 +66,7 @@ describe("pane news", () => {
 			expect(delivery.reason).toBe("agent");
 		}
 		expect(appended(h)).toEqual([]);
-		expect(h.injections).toHaveLength(0);
+		expect(h.reports).toHaveLength(0);
 		close(h);
 	});
 
@@ -152,7 +152,7 @@ describe("pane news", () => {
 		expect(delivery.path).toBe("silent");
 		expect(delivery.reason).toBe("voice_inactive");
 		expect(h.realtimeRequests).toHaveLength(0);
-		expect(h.injections).toHaveLength(0);
+		expect(h.reports).toHaveLength(0);
 		close(h);
 	});
 });

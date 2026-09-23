@@ -53,7 +53,7 @@ describe("coordinator callbacks", () => {
 		semantic.dispose();
 	});
 
-	test("inactive operation families inject one raw developer item into the coordinator", async () => {
+	test("with no voice session, no operation outcome reaches anybody", async () => {
 		const operations: readonly Parameters<typeof operationEvent>[2][] = [
 			"delegate_to_workhorse",
 			"manage_workhorse_queue",
@@ -68,17 +68,13 @@ describe("coordinator callbacks", () => {
 					operation,
 				);
 				const delivery = await h.callbacks.enqueue(event);
-				expect(delivery.outcome).toBe("delivered");
-				expect(delivery.path).toBe("thread_inject_items");
-				expect(h.injections).toHaveLength(1);
-				expect(h.injections[0]?.threadId).toBe(h.ids.coordinator);
-				expect(h.injections[0]?.items).toEqual([
-					{
-						type: "message",
-						role: "developer",
-						content: [{ type: "input_text", text: delivery.text }],
-					},
-				]);
+				expect(delivery).toMatchObject({
+					path: "silent",
+					outcome: "not_delivered",
+					reason: "voice_inactive",
+				});
+				expect(h.reports).toHaveLength(0);
+				expect(h.realtimeRequests).toHaveLength(0);
 				close(h);
 			}),
 		);
@@ -110,7 +106,7 @@ describe("coordinator callbacks", () => {
 		expect(delivery.freshness.freshUntilMs).toBeGreaterThanOrEqual(delivery.freshness.capturedAtMs);
 		expect(delivery.attempted).toBe(true);
 		expect(delivery.attemptedAtMs).toBeGreaterThanOrEqual(delivery.freshness.capturedAtMs);
-		expect(h.injections).toHaveLength(0);
+		expect(h.reports).toHaveLength(0);
 		close(h);
 	});
 
@@ -126,7 +122,7 @@ describe("coordinator callbacks", () => {
 			expect(delivery.reason).toBe("voice_inactive");
 			expect(delivery.text).toContain('"semantic"');
 		}
-		expect(h.injections).toHaveLength(0);
+		expect(h.reports).toHaveLength(0);
 		expect(h.realtimeRequests).toHaveLength(0);
 		close(h);
 	});

@@ -34,7 +34,7 @@ test("neither half of a session hears what the other wrote", async () => {
 	for (const delivery of own) {
 		expect(delivery).toMatchObject({ outcome: "not_delivered", reason: "own_change" });
 	}
-	expect(h.injections).toHaveLength(0);
+	expect(h.reports).toHaveLength(0);
 	expect(h.realtimeRequests).toHaveLength(0);
 });
 

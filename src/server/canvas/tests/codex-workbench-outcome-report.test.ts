@@ -1,31 +1,23 @@
-// Running the coordinator with a terminal workhorse outcome (TASK-291): the host's half.
+// Giving the coordinator a workhorse outcome while voice is live (TASK-291, TASK-321): the
+// Archboard server's half.
 //
-// A turn can only be started on an idle thread, and the callbacks behind this one wait while it
-// waits. What is guarded: the turn is started once the coordinator is idle, under a minted
-// identity and the reviewed producer; a coordinator that stays busy is reported busy rather than
-// interrupted or waited on for ever; a recording's voice gets no turn to speak into the video;
-// and a start that failed says whether anything was delivered.
+// What is guarded: the outcome goes out at once as one turn/start, under a minted identity and
+// the reviewed producer, whatever the coordinator is doing (Codex adds it to a running turn or
+// starts one, so nothing here reads the thread or waits); a recording's voice gets nothing to
+// speak into the video; and a start that failed says whether anything was delivered.
 
 import { describe, expect, test } from "bun:test";
 import { createOutcomeReportPort } from "@/server/canvas/index";
 import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
-import { COORDINATOR_IDLE_WAIT_MS } from "@/shared/timing/timing";
 import { generationContextFixture } from "./support/codex-workbench-generation-values.js";
 
-/** A port over a coordinator thread whose status a test scripts, recording what was started. */
-function harness(statuses: readonly ("idle" | "active")[], startFails = false, recording = false) {
+/** A port whose turn/start a test scripts, recording what was started. */
+function harness(startFails = false, recording = false) {
 	const threadId = createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator");
 	const starts: { readonly prompt: string; readonly clientUserMessageId: unknown }[] = [];
 	const contexts: string[] = [];
-	let reads = 0;
-	let waited = 0;
 	const port = createOutcomeReportPort({
 		session: {
-			threadRead: async () => {
-				const type = statuses[Math.min(reads, statuses.length - 1)] ?? "active";
-				reads += 1;
-				return { thread: { id: threadId, status: { type } } } as never;
-			},
 			turnStart: async (params) => {
 				if (startFails) {
 					throw new Error("lost");
@@ -52,16 +44,13 @@ function harness(statuses: readonly ("idle" | "active")[], startFails = false, r
 			};
 		},
 		recording: () => recording,
-		wait: async (ms) => {
-			waited += ms;
-		},
 	});
-	return { port, threadId, starts, contexts, waitedMs: () => waited };
+	return { port, threadId, starts, contexts };
 }
 
-describe("a terminal workhorse outcome reported to the coordinator", () => {
-	test("starts one turn once the coordinator is idle, carrying the outcome under a minted identity", async () => {
-		const h = harness(["active", "active", "idle"]);
+describe("a workhorse outcome given to the coordinator", () => {
+	test("goes out at once as one turn/start carrying the outcome under a minted identity", async () => {
+		const h = harness();
 		const result = await h.port.report({
 			threadId: h.threadId,
 			text: '{"type":"completed"}',
@@ -74,22 +63,17 @@ describe("a terminal workhorse outcome reported to the coordinator", () => {
 		expect(h.contexts).toEqual(["operation-1"]);
 	});
 
-	test("is reported busy, and starts nothing, when the coordinator never becomes idle in the bound", async () => {
-		const h = harness(["active"]);
-		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toBe("busy");
-		expect(h.starts).toHaveLength(0);
-		expect(h.waitedMs()).toBeGreaterThanOrEqual(COORDINATOR_IDLE_WAIT_MS);
-	});
-
-	test("is reported busy, and starts nothing, while a recording holds the voice", async () => {
-		// Whatever the coordinator answered would be spoken into the video; busy has it injected.
-		const h = harness(["idle"], false, true);
-		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toBe("busy");
+	test("sends nothing while a recording holds the voice", async () => {
+		// Whatever the coordinator answered would be spoken into the video.
+		const h = harness(false, true);
+		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toBe(
+			"recording",
+		);
 		expect(h.starts).toHaveLength(0);
 	});
 
 	test("says the outcome is unknown when the start may or may not have landed", async () => {
-		const h = harness(["idle"], true);
+		const h = harness(true);
 		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toEqual({
 			attempted: true,
 			outcome: "outcome_unknown",

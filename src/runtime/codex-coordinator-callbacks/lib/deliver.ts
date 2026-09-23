@@ -1,4 +1,3 @@
-import { CodexSessionMutationError, type SessionParams } from "@/runtime/codex-session";
 import { encodeCoordinatorCallback } from "@/runtime/codex-coordinator-callbacks/lib/encoding";
 import {
 	afterAttemptReason,
@@ -28,8 +27,6 @@ interface DeliveryRecordInput {
 	readonly reason: CoordinatorCallbackDeliveryReason | null;
 	/** The encoded callback, once it has been encoded. */
 	readonly text?: string | null;
-	/** The injection parameters, when delivery went through the thread. */
-	readonly payload?: SessionParams<"thread/inject_items"> | null;
 	/** The append request, when delivery went through voice. */
 	readonly realtimeRequest?: CoordinatorCallbackRealtimeRequest | null;
 }
@@ -80,7 +77,6 @@ function makeDelivery(
 		path: input.path,
 		reason: input.reason,
 		text: input.text ?? null,
-		payload: input.payload ?? null,
 		realtimeRequest: input.realtimeRequest ?? null,
 	};
 	return input.attemptedAtMs === null
@@ -91,48 +87,6 @@ function makeDelivery(
 				attemptedAtMs: input.attemptedAtMs,
 				outcome: input.outcome,
 			});
-}
-
-/**
- * The inject_items payload that carries one callback to the coordinator thread as a single developer message.
- * @param callback - The normalized callback.
- * @param text - The encoded callback.
- * @returns The injection parameters.
- * @throws {TypeError} When the callback names no coordinator thread.
- */
-function developerPayload(
-	callback: CoordinatorCallback,
-	text: string,
-): SessionParams<"thread/inject_items"> {
-	const threadId = callback.correlation.coordinatorThreadId;
-	if (threadId === null) {
-		throw new TypeError("Callback has no coordinator thread.");
-	}
-	return {
-		threadId,
-		items: [
-			{
-				type: "message",
-				role: "developer",
-				content: [{ type: "input_text", text }],
-			},
-		],
-	};
-}
-
-/**
- * What a failed session mutation proves: a rejection before delivery is not delivered, and anything else leaves the outcome unknown because the message may have landed.
- * @param error - The thrown value from the session.
- * @returns The outcome and reason to record.
- */
-function sessionFailure(error: unknown): {
-	readonly outcome: CoordinatorCallbackDeliveryOutcome;
-	readonly reason: CoordinatorCallbackDeliveryReason;
-} {
-	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered") {
-		return { outcome: "not_delivered", reason: "session_rejected" };
-	}
-	return { outcome: "outcome_unknown", reason: "response_lost" };
 }
 
 /**
@@ -251,50 +205,6 @@ async function deliverThroughVoice(
 }
 
 /**
- * Inject one callback into the coordinator thread's model-visible history. Authority is
- * re-checked after the injection for the same reason as after a voice append.
- * @param callback - The normalized callback.
- * @param options - The host authorities and ports.
- * @param isDisposed - Whether the callback module has been disposed.
- * @param evidence - The ordering and freshness evidence for the delivery record.
- * @param text - The encoded callback.
- * @returns The delivery record.
- */
-async function deliverThroughInjection(
-	callback: CoordinatorCallback,
-	options: CoordinatorCallbackOptions,
-	isDisposed: () => boolean,
-	evidence: CallbackDeliveryEvidence,
-	text: string,
-): Promise<CoordinatorCallbackDelivery> {
-	const payload = developerPayload(callback, text);
-	const attemptedAtMs = (options.now ?? Date.now)();
-	try {
-		await options.session.threadInjectItems(payload);
-	} catch (error) {
-		const failure = sessionFailure(error);
-		const lostAuthority = afterAttemptReason(callback, options, isDisposed());
-		return makeDelivery(callback, evidence, {
-			attemptedAtMs,
-			path: "thread_inject_items",
-			outcome: lostAuthority === null ? failure.outcome : "outcome_unknown",
-			reason: lostAuthority ?? failure.reason,
-			text,
-			payload,
-		});
-	}
-	const lostAuthority = afterAttemptReason(callback, options, isDisposed());
-	return makeDelivery(callback, evidence, {
-		attemptedAtMs,
-		path: "thread_inject_items",
-		outcome: lostAuthority === null ? "delivered" : "outcome_unknown",
-		reason: lostAuthority,
-		text,
-		payload,
-	});
-}
-
-/**
  * The operation outcomes a waiting user wants to hear: the work ended, or it waits on them
  * (`attention`), which is not an end (TASK-316).
  */
@@ -315,14 +225,13 @@ function reportsOutcome(callback: CoordinatorCallback): boolean {
 }
 
 /**
- * Run the coordinator with one terminal outcome, so it decides what the person hears. A
- * coordinator still busy at the host's bound gets the injected developer message instead, so the
- * outcome is neither lost nor said twice.
+ * Give the coordinator one workhorse outcome at once, in the turn it is running or a new one, so
+ * it decides what the user hears. Nothing is sent while a recording holds the voice.
  * @param callback - The normalized callback.
- * @param options - The host authorities and ports.
+ * @param options - The authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
- * @param port - The host port that starts the turn.
+ * @param port - The port that reaches the coordinator.
  * @param text - The encoded callback.
  * @returns The delivery record.
  */
@@ -335,11 +244,14 @@ async function deliverThroughCoordinatorTurn(
 	text: string,
 ): Promise<CoordinatorCallbackDelivery> {
 	const threadId = callback.correlation.coordinatorThreadId;
+	if (threadId === null) {
+		return recordOnly(callback, evidence, text, "not_ready");
+	}
 	const attemptedAtMs = (options.now ?? Date.now)();
 	const waiting = callback.kind === "operation" && callback.type === "attention";
-	const result = threadId === null ? "busy" : await port.report({ threadId, text, waiting });
-	if (result === "busy") {
-		return deliverThroughInjection(callback, options, isDisposed, evidence, text);
+	const result = await port.report({ threadId, text, waiting });
+	if (result === "recording") {
+		return recordOnly(callback, evidence, text, "voice_inactive");
 	}
 	return turnDelivery(callback, evidence, {
 		result,
@@ -432,12 +344,11 @@ function deliverPaneNews(
 }
 
 /**
- * What an operation callback does while a voice generation is live. A terminal outcome runs the
- * coordinator, which decides what the user hears, or is injected into its thread when the host
- * has no way to run it. The rest (accepted, queued, started, progress) reach nobody: the tool
- * result already told the coordinator how its delegation went in, progress is what
- * inspect_workhorse reads, and the correlation envelope they used to be appended as is machine
- * text a speech model says out loud (TASK-293).
+ * What an operation callback does while a voice generation is live. An outcome the user waits for
+ * goes to the coordinator at once, which decides what the user hears. The rest (accepted, queued,
+ * started, progress) reach nobody: the tool result already told the coordinator how its delegation
+ * went in, progress is what inspect_workhorse reads, and the correlation envelope they used to be
+ * appended as is machine text a speech model says out loud (TASK-293).
  * @param callback - The normalized operation callback.
  * @param options - The host authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -457,15 +368,16 @@ function deliverOperationWhileVoiceIsLive(
 	}
 	const turnPort = options.coordinatorTurn;
 	return turnPort === undefined
-		? deliverThroughInjection(callback, options, isDisposed, evidence, text)
+		? Promise.resolve(recordOnly(callback, evidence, text, "recorded_only"))
 		: deliverThroughCoordinatorTurn(callback, options, isDisposed, evidence, turnPort, text);
 }
 
 /**
  * Deliver one callback down exactly one path, at most once. While a voice generation is live a
- * terminal workhorse outcome runs the coordinator, which decides what the user hears, and any
- * other operation callback is recorded and told to nobody; with no voice session an operation
- * callback is an injected developer message.
+ * workhorse outcome the user waits for goes to the coordinator at once, which decides what the
+ * user hears, and any other operation callback is recorded and told to nobody. With no voice
+ * session the coordinator is never run (it is the voice model's subconscious, TASK-321), so an
+ * operation callback is only recorded.
  *
  * A semantic callback (a change, a focus, a selection) reaches the voice model only as pane news:
  * one sentence of names saying where the user's reading now stands, and only for what the pane
@@ -498,7 +410,7 @@ async function deliverOne(
 	if (generation !== null) {
 		return deliverOperationWhileVoiceIsLive(callback, options, isDisposed, evidence, text);
 	}
-	return deliverThroughInjection(callback, options, isDisposed, evidence, text);
+	return recordOnly(callback, evidence, text, "voice_inactive");
 }
 
 export { type CallbackDeliveryEvidence, makeDelivery, deliverOne };
