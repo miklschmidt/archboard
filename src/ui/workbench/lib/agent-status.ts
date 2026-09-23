@@ -1,0 +1,216 @@
+// The agent's state in one line, for the agent bar: what it is doing or
+// waiting on, since when, how far through its plan, what is queued behind it,
+// and the one thing the person can do about it. Only the first rule that
+// applies speaks, so the line never says two things at once. Pure.
+
+import { AGENT_QUIET_MS } from "@/shared/timing/timing";
+import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type { AgentView } from "@/ui/workbench/contracts";
+import { activityLabel, runSummary } from "@/ui/workbench-thread";
+import type { ConversationTurn } from "@/ui/workbench-timeline";
+
+/** How the line is lit. */
+type StatusTone = "quiet" | "working" | "attention" | "failed";
+
+/** The one control the line offers. */
+type StatusAction = "stop" | "review" | "sign_in" | "cancel_sign_in" | "open_sign_in" | "show" | null;
+
+/** The agent's state in one line. */
+interface AgentStatus {
+	readonly tone: StatusTone;
+	/** The first word or two: Working, Needs you, Done, Failed, Ready. */
+	readonly headline: string;
+	/** What it is on, or what it wants, or why not; null when the headline says it all. */
+	readonly detail: string | null;
+	/** When the running turn started, for the elapsed clock. */
+	readonly sinceMs: number | null;
+	/** When the last turn ended, for "4m ago". */
+	readonly endedAtMs: number | null;
+	/** How far through its plan. */
+	readonly progress: { readonly done: number; readonly total: number } | null;
+	readonly queued: number;
+	/** A running turn has reported nothing new for a while. */
+	readonly quiet: boolean;
+	readonly action: StatusAction;
+	/** The provider's sign-in page, while a sign-in waits on it. */
+	readonly signInUrl: string | null;
+}
+
+const BLANK: Omit<AgentStatus, "tone" | "headline"> = {
+	detail: null,
+	sinceMs: null,
+	endedAtMs: null,
+	progress: null,
+	queued: 0,
+	quiet: false,
+	action: null,
+	signInUrl: null,
+};
+
+/**
+ * The approvals waiting on the person.
+ * @param view The agent view.
+ * @returns The pending ordinary and coordination approvals.
+ */
+function waitingApprovals(view: AgentView): (BrowserApproval | BrowserDynamicApproval)[] {
+	const snapshot = view.snapshot;
+	if (snapshot === null) return [];
+	return [
+		...snapshot.approvals.filter((approval) => approval.lifecycle.state === "pending"),
+		...snapshot.dynamicApprovals.filter((approval) => approval.state === "pending"),
+	];
+}
+
+/** What each kind of approval asks, in a few words. */
+const ASKS: Readonly<Record<BrowserApproval["approvalKind"], string>> = {
+	command_execution: "Run a command",
+	exec_command: "Run a command",
+	file_change: "Change files",
+	apply_patch: "Change files",
+	user_input: "Answer a question",
+	elicitation: "Provide information",
+	permissions: "Grant permissions",
+};
+
+/**
+ * What an approval asks, with its key detail.
+ * @param approval The approval.
+ * @returns The words.
+ */
+function askOf(approval: BrowserApproval | BrowserDynamicApproval): string {
+	if (approval.kind === "dynamic_approval") return approval.effect.visualSummary;
+	if (approval.approvalKind === "command_execution" && approval.command !== null) {
+		return `${ASKS.command_execution}: ${approval.command}`;
+	}
+	return ASKS[approval.approvalKind];
+}
+
+/**
+ * What a running turn is on now: its plan's current step, else its latest item.
+ * @param turn The running turn.
+ * @returns The words.
+ */
+function currentStep(turn: ConversationTurn): string {
+	const planned = turn.plan?.steps.find((step) => step.status === "inProgress");
+	if (planned !== undefined) return planned.step;
+	const last = turn.items.at(-1);
+	if (last === undefined || last.media === "prompt") return "Reading your message";
+	if (last.media === "text") return "Writing a reply";
+	if (last.media === "approval" || last.media === "plan") return "Planning";
+	return last.media === "reasoning" ? "Thinking" : activityLabel(last);
+}
+
+/**
+ * How far through its plan a turn is.
+ * @param turn The turn.
+ * @returns Steps done and planned, or null without a plan.
+ */
+function progressOf(turn: ConversationTurn): AgentStatus["progress"] {
+	const steps = turn.plan?.steps ?? [];
+	if (steps.length === 0) return null;
+	return { done: steps.filter((step) => step.status === "completed").length, total: steps.length };
+}
+
+/**
+ * The line while a turn runs.
+ * @param view The agent view.
+ * @param turn The running turn.
+ * @param now The clock.
+ * @returns The status.
+ */
+function working(view: AgentView, turn: ConversationTurn, now: number): AgentStatus {
+	const quietSince = view.lastProgressAtMs;
+	return {
+		...BLANK,
+		tone: "working",
+		headline: "Working",
+		detail: currentStep(turn),
+		sinceMs: turn.startedAtMs,
+		progress: progressOf(turn),
+		queued: view.snapshot?.queue.entries.length ?? 0,
+		quiet: quietSince !== null && now - quietSince > AGENT_QUIET_MS,
+		action: "stop",
+	};
+}
+
+/**
+ * The line once the last turn has ended.
+ * @param turn The last turn.
+ * @returns The status.
+ */
+function ended(turn: ConversationTurn): AgentStatus {
+	const endedAtMs = turn.completedAtMs;
+	if (turn.outcome === "failed") {
+		return {
+			...BLANK,
+			tone: "failed",
+			headline: "Failed",
+			detail: turn.error?.message ?? null,
+			endedAtMs,
+			action: "show",
+		};
+	}
+	const work = turn.items.filter(
+		(item) => item.media !== "prompt" && item.media !== "text" && item.media !== "approval" && item.media !== "plan",
+	);
+	return {
+		...BLANK,
+		tone: "quiet",
+		headline: turn.outcome === "interrupted" ? "Stopped" : "Done",
+		detail: work.length === 0 ? null : runSummary(work),
+		endedAtMs,
+	};
+}
+
+/**
+ * The line while something stands between the person and the agent.
+ * @param view The agent view.
+ * @returns The status, or null when the agent is ready.
+ */
+function setupStatus(view: AgentView): AgentStatus | null {
+	const { phase, step } = view.setup;
+	switch (phase.kind) {
+		case "connecting":
+			return { ...BLANK, tone: "quiet", headline: "Connecting" };
+		case "unavailable":
+			return { ...BLANK, tone: "failed", headline: "Codex is unavailable", detail: phase.reason };
+		case "starting":
+			return { ...BLANK, tone: "quiet", headline: "Starting Codex" };
+		case "signed_out":
+			return { ...BLANK, tone: "quiet", headline: "Sign in to use the agent", detail: phase.failure, action: "sign_in" };
+		case "signing_in":
+			return {
+				...BLANK,
+				tone: "attention",
+				headline: "Finish signing in",
+				detail: "on the ChatGPT page",
+				action: "cancel_sign_in",
+				signInUrl: phase.authUrl,
+			};
+		default:
+			return step === "link" ? { ...BLANK, tone: "working", headline: "Starting a conversation" } : null;
+	}
+}
+
+/**
+ * The agent's state in one line.
+ * @param view The agent view.
+ * @param now The clock.
+ * @returns The status.
+ */
+function agentStatus(view: AgentView, now: number): AgentStatus {
+	const setup = setupStatus(view);
+	if (setup !== null) return setup;
+	const [asked, ...more] = waitingApprovals(view);
+	if (asked !== undefined) {
+		const others = more.length > 0 ? ` · ${more.length + 1} waiting` : "";
+		return { ...BLANK, tone: "attention", headline: "Needs you", detail: `${askOf(asked)}${others}`, action: "review" };
+	}
+	const turns = view.conversation.turns;
+	const running = turns.find((turn) => turn.outcome === "running");
+	if (running !== undefined) return working(view, running, now);
+	const last = turns.at(-1);
+	return last === undefined ? { ...BLANK, tone: "quiet", headline: "Ready" } : ended(last);
+}
+
+export { agentStatus, waitingApprovals, type AgentStatus, type StatusAction, type StatusTone };

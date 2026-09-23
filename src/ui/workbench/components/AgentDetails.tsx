@@ -1,0 +1,131 @@
+// The session's details, on request: who is signed in, which models the
+// agent and the voice agent run, how much of the context window the
+// conversation has used, and the ids to quote when something needs looking
+// into. The one place this plumbing lives; nothing here is needed to use the
+// agent.
+
+import type { JSX, ReactNode } from "react";
+
+import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { AgentActions, AgentView } from "@/ui/workbench/contracts";
+
+/** Inputs for the details. */
+interface AgentDetailsProps {
+	readonly view: AgentView;
+	readonly actions: AgentActions;
+}
+
+/** The account's words. */
+const ACCOUNT_WORDS: Readonly<Record<string, string>> = {
+	chatgpt: "ChatGPT",
+	apiKey: "OpenAI API key",
+	amazonBedrock: "Amazon Bedrock",
+};
+
+/**
+ * Who is signed in, in words.
+ * @param snapshot The snapshot.
+ * @returns The words.
+ */
+function accountWords(snapshot: BrowserSnapshot | null): string {
+	const account = snapshot?.account;
+	if (account?.state !== "ready") return "Not signed in";
+	return `Signed in with ${ACCOUNT_WORDS[account.accountType] ?? account.accountType}`;
+}
+
+/**
+ * The share of the context window the conversation has used.
+ * @param snapshot The snapshot.
+ * @returns The words, or null before Codex reports usage.
+ */
+function contextWords(snapshot: BrowserSnapshot | null): string | null {
+	const usage = snapshot?.timeline?.usage ?? null;
+	if (usage === null) return null;
+	const used = usage.last.inputTokens + usage.last.outputTokens;
+	const window = usage.modelContextWindow;
+	const total = `${usage.total.totalTokens.toLocaleString("en")} tokens in total`;
+	if (window === null || window === 0) return total;
+	return `${Math.round((used / window) * 100)}% of the context window · ${total}`;
+}
+
+/**
+ * The model and effort one owner runs.
+ * @param snapshot The snapshot.
+ * @param owner Whose.
+ * @returns The words, or null when not reported.
+ */
+function modelWords(snapshot: BrowserSnapshot | null, owner: "workhorse" | "coordinator"): string | null {
+	const settings = snapshot?.settings.find((entry) => entry.owner === owner);
+	if (settings === undefined) return null;
+	return settings.effort === null ? settings.model : `${settings.model} · ${settings.effort}`;
+}
+
+/**
+ * The session's details.
+ * @param props The view and the actions.
+ * @returns The details.
+ */
+function AgentDetails(props: AgentDetailsProps): JSX.Element {
+	const { snapshot } = props.view;
+	const threadId = snapshot?.threadLink.threadId ?? null;
+	return (
+		<div data-slot="agent-details" className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
+			<Section title="Account">
+				<Row label="Account" value={accountWords(snapshot)} />
+				<button type="button" onClick={props.actions.signOut} className="text-body text-primary self-start font-medium hover:underline">
+					Sign out
+				</button>
+			</Section>
+			<Section title="Conversation">
+				<Row label="Model" value={modelWords(snapshot, "workhorse")} />
+				<Row label="Context" value={contextWords(snapshot)} />
+				<Row label="Thread" value={threadId} technical />
+			</Section>
+			<Section title="Voice">
+				<Row label="Model" value={modelWords(snapshot, "coordinator")} />
+				<p className="text-body text-muted-foreground">
+					The voice agent is a separate conversation. It decides which spoken requests become work for the
+					agent, and which approvals it may answer from what it heard.
+				</p>
+			</Section>
+		</div>
+	);
+}
+
+/**
+ * One section, headed in sentence case.
+ * @param props The title and the rows.
+ * @param props.title The heading.
+ * @param props.children The rows.
+ * @returns The section.
+ */
+function Section(props: { readonly title: string; readonly children: ReactNode }): JSX.Element {
+	return (
+		<section className="flex flex-col gap-2">
+			<h3 className="text-control font-semibold">{props.title}</h3>
+			{props.children}
+		</section>
+	);
+}
+
+/**
+ * One fact.
+ * @param props The label, the value and whether it is technical.
+ * @param props.label What it is.
+ * @param props.value The value, or null when not reported.
+ * @param props.technical Whether to set it in the technical face.
+ * @returns The row, or nothing without a value.
+ */
+function Row(props: { readonly label: string; readonly value: string | null; readonly technical?: boolean }): JSX.Element | null {
+	if (props.value === null) return null;
+	return (
+		<div className="flex items-baseline gap-3">
+			<span className="text-body text-muted-foreground w-16 shrink-0">{props.label}</span>
+			<span className={props.technical === true ? "text-technical min-w-0 font-mono break-all" : "text-body min-w-0"}>
+				{props.value}
+			</span>
+		</div>
+	);
+}
+
+export { AgentDetails, type AgentDetailsProps };
