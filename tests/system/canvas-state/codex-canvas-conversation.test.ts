@@ -241,6 +241,25 @@ test("two panes share one conversation that outlives the pane that created it", 
 		});
 		expect(records(fixture.logPath).some((entry) => entry.kind === "realtime_stop")).toBeTrue();
 
+		// And B still sends typed turns into it.
+		const turnsBefore = records(fixture.logPath).filter(
+			(entry) => entry.kind === "frame" && entry.method === "turn/start",
+		).length;
+		const sent = await leased(b, "start", {
+			threadId: created["threadId"],
+			prompt: "Still here after A closed.",
+		});
+		expect(sent.result).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+		expect(
+			records(fixture.logPath).filter(
+				(entry) => entry.kind === "frame" && entry.method === "turn/start",
+			).length,
+		).toBe(turnsBefore + 1);
+		await waitFor(
+			async () => (await linkOf(b))["status"] === "idle",
+			"the second workhorse turn to finish",
+		);
+
 		// A pane reopened under A's old id is shown the canvas's link, and a
 		// create from B replaces it for every pane.
 		const reopened = await openApplicationSocket(canvas.base, "client-a");
