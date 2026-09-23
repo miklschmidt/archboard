@@ -73,8 +73,11 @@ workflow: `semantic rasterize` against a real canvas, the same selectors as
 `semantic render`, and a board file that does not move. The rasterizer's own
 owner, `src/runtime/semantic-rasterizer/tests`, proves real pixels, native and
 scaled dimensions, full bounds past a display, font readiness, bounds refusals,
-cancellation and a Chromium that is provably gone; both need a Chromium-family
-executable (`ARCHBOARD_RENDERER_CHROMIUM` names one). Real-browser owners cover
+cancellation and a Chromium that is provably gone. The Chromium it runs on is
+`src/runtime/headless-chromium`, whose owner proves caller flags, an exact
+window viewport, event delivery without retention, a page Blob streamed to a
+file, and provable teardown. All three need a Chromium-family executable
+(`ARCHBOARD_RENDERER_CHROMIUM` names one). Real-browser owners cover
 only live `browser` commands.
 
 Run browser diagnosis only through the adapter:
