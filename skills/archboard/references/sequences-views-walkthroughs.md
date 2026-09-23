@@ -111,3 +111,41 @@ out, so write a body that can be explained in a few sentences.
   written. A failed recording keeps the board, so record again. A board that
   changed while it was recorded is kept, and the receipt's `discarded` is
   false with the reason.
+- An MP4 plays with sound in every browser when `ffmpeg` is on PATH (or
+  named by `ARCHBOARD_FFMPEG`): the recorder converts its sound to AAC. The
+  command says when it could not, and why a Safari viewer would hear nothing.
+
+### A pull request's recording
+
+The video is how a reviewer who has not read the code learns what the pull
+request changed and why. The board is disposable; the vault's own boards are
+updated through their usual recipe, never through this one.
+
+1. **Make the board with the architecture before the change**, holding the
+   parts the pull request touches and their neighbours, named as the vault's
+   boards name them. Done when it reads as `main` does.
+2. **Branch the pull request from it** and make the change in one edit to the
+   branch. The pane draws a draft's comparison with what it was branched from,
+   so what was added, changed and removed is marked on screen. Done when every
+   change the diff makes to the architecture is on the branch.
+3. **Write the walkthrough on the branch for a reviewer**: three to six beats,
+   each on the subjects it is about. Open with why the change exists, give
+   each change its own beat, and close with what a reviewer should look at
+   closely. A beat of a few sentences is about half a minute of speech, so the
+   video stays within one to three minutes. Done when a reviewer could answer
+   "what changed, and why" from the beats alone.
+4. **Record it outside the repository and discard the board.** Done when the
+   receipt says `discarded: true` and the command said nothing about sound.
+5. **Attach it to the pull request** with gh 2.99 or later (`--attach` also
+   works on `gh pr create` and `gh pr edit`). GitHub takes videos up to 10 MB
+   on free plans and 100 MB on paid ones; the receipt's `bytes` is the size.
+   Done when the video plays in the pull request.
+
+```bash
+archboard semantic new pr-128 --doing "drawing what pull request 128 changes" --input before.json
+archboard semantic branch pr-128 --as "This pull request" --expect-version 1 --doing "branching pull request 128"
+archboard semantic edit pr-128 --variant "This pull request" --expect-version 2 --doing "making pull request 128's change" --input change.json
+archboard semantic edit pr-128 --variant "This pull request" --expect-version 3 --doing "writing the reviewer's walkthrough" --input walkthrough.json
+archboard semantic record pr-128 --variant "This pull request" --out ~/recordings/pr-128.mp4 --discard --doing "recording pull request 128 for its reviewers"
+gh pr comment 128 --attach ~/recordings/pr-128.mp4 --body "A narrated walkthrough of this change."
+```
