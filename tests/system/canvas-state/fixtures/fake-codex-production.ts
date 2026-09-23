@@ -136,11 +136,8 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 	return thread;
 };
 
-/**
- * One persisted thread this workbench did not create. It exists before any
- * thread/start, so attaching it has to record ownership first — the path a
- * workbench-created thread never takes.
- */
+/** One persisted thread this workbench did not create. It exists before any thread/start,
+ * so attaching it has to record ownership first — the path a workbench-created thread never takes. */
 const FOREIGN_FIXTURE_THREAD_ID = "thread-foreign";
 threads.set(
 	FOREIGN_FIXTURE_THREAD_ID,
@@ -362,6 +359,7 @@ const handle = (frame: WireFrame): void => {
 			}
 			respond(frame as never, { turn });
 			if (isWorkhorse) {
+				notify("turn/started", { threadId: thread?.id, turn }); // as Codex announces a turn
 				setTimeout(emitReverseRequests, 10);
 			}
 			return;
