@@ -1,6 +1,6 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source — where the tracked skills live and what is generated from them, maintaining the consumer skill, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, editing its skills, or verifying a canvas change.
+description: Working on archboard's own source — the sweep that keeps every description true when something is removed or renamed, where the tracked skills live and what is generated from them, maintaining the consumer skill, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, removing or renaming anything a reader sees, editing its skills, or verifying a canvas change.
 ---
 
 # Working on archboard
@@ -8,6 +8,59 @@ description: Working on archboard's own source — where the tracked skills live
 Always-on rules are in `AGENTS.md`; procedures for running and verifying the
 canvas are in `TESTING.md`. This skill holds only what neither the code nor
 those documents will tell you.
+
+## Removing or renaming something
+
+Every description of archboard outlives the code it describes unless the change
+that removes the code removes the description too. The drawing workflow went on
+2026-09-12, and weeks later the glossary still defined Element and Stencil,
+every write command's help listed a refusal no route could send, INSTALL.md
+named a directory that did not exist, the environment still used the fork's
+names, and the block `install-skill` writes into other repositories told agents
+that `status` prints the vault (TASK-310). So a change that removes, renames or
+redefines anything a person or an agent can see (a command, option, environment
+variable, route, answer field, refusal, concept, file or directory) ends with a
+sweep, in the same change:
+
+1. **Find every place that states it.** `git grep -n -i` each spelling of the
+   old name and read every hit: the root documents (`README.md`, `INSTALL.md`,
+   `TESTING.md`, `DESIGN.md`, `AGENTS.md`), `CONTEXT.md` entries and their
+   `_Avoid_` lines, both skills, help text, refusal descriptions and the
+   exit-code help under `src/cli`, the setup block in
+   `src/cli/commands/lib/repo-setup-block.ts`, code comments and test names.
+   Done when every hit is still true or is history: Backlog tasks, ADR bodies
+   and `docs/design/skill-evals/baseline` stay as written.
+2. **Delete what only served it.** When the server stops sending something,
+   remove the client code that handled it, the refusal the contracts declare
+   for it and its exit-code line. An export that nothing imports is dead:
+   `git grep -w <symbol>` finds it only in its own file. Done when nothing
+   handles, declares or exports what can no longer happen.
+3. **Retire the decision.** An ADR whose subject is gone gets
+   `status: superseded` and a closing line naming the task. Done when the ADRs
+   that cite it still point at something true.
+4. **Say which copies stay stale.** `bun run generate:skill-artifacts` carries
+   INSTALL.md and the schemas into the skill. The skill in `~/.agents/skills`
+   or `~/.claude/skills` and the block in each repository change only when
+   `archboard install-skill` runs there again, so the report says to run it.
+
+## Stating a fact where it cannot drift
+
+- A condition on an option lives in the command contract (`requiredWhen`,
+  `requiresShared`, `excludesShared`), and help derives it from there. The
+  same condition written into a description drifts from the check:
+  `semantic record` said `--doing` was always required.
+- Every environment variable is named `ARCHBOARD_*`. Renaming one refuses the
+  old name by name, as `renamedUrlMessage` does. A silent fallback to the
+  default URL starts a second canvas over the same vault.
+- An optional field is a promise to every reader of its object. Adding one means
+  finding every path that reads the object and making each honour it: a
+  binding's `branch` and `commit` were accepted and stored while the local
+  opener ignored them (TASK-311).
+- A claim in a document is checked against the code or the command it names,
+  never against another document. A rewrite starts from an audit that pairs
+  each claim with its evidence, a `file:line` or a command's output.
+- A tracked document holds no fact about one machine (what is a symlink there,
+  which directories exist). Such a fact is false on the next machine.
 
 ## The tracked skills
 
@@ -214,6 +267,10 @@ Two facts about the evidence that the first batch had to teach:
   board version, policy fingerprint and renderer build that are checked before
   they are shown. Never a copy the browser edits or answers from unchecked
   (ADR 0023).
+- **Read `bun run type-check` by its exit status.** tsc colours `error` and
+  `TS2345` as separate sequences, so `grep 'error TS'` matches nothing and a
+  failing check looks clean. Lint's type-aware rules are not the compiler
+  either: a refactor that passes `bun run lint` can still fail type-check.
 - **Text width is measured by the canvas of whatever draws the picture**, with
   the diagram fonts loaded: under Bun an `@napi-rs/canvas` canvas the renderer
   host installs as `OffscreenCanvas`, in a browser its own. Never add a font
