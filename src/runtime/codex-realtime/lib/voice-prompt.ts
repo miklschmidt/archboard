@@ -6,11 +6,12 @@
 // a delegation's text is the latest user-side item of the conversation replayed, which is usually
 // what the user last said, in whatever language and however garbled, but can be something the
 // host put to the voice model as the user (once a fragment of a JSON append, and in earlier
-// narrations an opening request), plus the running transcript, which includes what the voice model just said
-// aloud. When the user said nothing since the last handoff, Codex hands over that transcript alone: the voice
-// model's own words, which the coordinator is told are no request (TASK-315). So nothing here asks it to
-// word, translate or annotate a handoff. And what comes back arrives as the
-// result of that handoff on a speakable or a commentary channel, never as prefixed text.
+// narrations an opening request), plus the running transcript, which includes what the voice
+// model just said aloud. When the user said nothing since the last handoff, Codex hands over that
+// transcript alone: the voice model's own words. The coordinator is told those are no request, and
+// neither is the voice model's own voice picked up by the microphone (TASK-315). So nothing here
+// asks it to word, translate or annotate a handoff. And what comes back arrives as the result of
+// that handoff on a speakable or a commentary channel, never as prefixed text.
 //
 // The personality is written as instruction, not decoration: a voice with no stated tone defaults
 // to a polite narrator, and the users talking to this one are developers looking at their own
