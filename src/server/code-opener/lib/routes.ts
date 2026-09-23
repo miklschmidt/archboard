@@ -295,8 +295,9 @@ function openable(
 	if (!target.ok) {
 		return { ok: false, failure: target, status: statusFor(target.code) };
 	}
-	if (target.otherRef !== undefined && githubUrlForBinding(binding) !== undefined) {
-		return { ok: false, failure: otherRefFailure(target), status: 409 };
+	const { otherRef } = target;
+	if (otherRef !== undefined && githubUrlForBinding(binding) !== undefined) {
+		return { ok: false, failure: otherRefFailure(target.repository, otherRef), status: 409 };
 	}
 	return { ok: true, target };
 }
@@ -319,18 +320,14 @@ function openedReply(target: LocalCodeTarget): CodeTargetOpenSuccess {
 
 /**
  * The refusal for a local target whose checkout is on another ref than the binding names.
- * @param target The local target, with the two refs.
- * @param target.repository The repository the checkout is of.
- * @param target.otherRef The ref the binding names and the one the checkout has out.
+ * @param repository The repository the checkout is of.
+ * @param otherRef The ref the binding names and the one the checkout has out.
  * @returns The failure the person is shown, with both refs.
  */
-function otherRefFailure(target: {
-	readonly repository: string;
-	readonly otherRef: OtherRef;
-}): RouteFailure {
+function otherRefFailure(repository: string, otherRef: OtherRef): RouteFailure {
 	return {
 		code: "CHECKOUT_ON_OTHER_REF",
-		error: `The checkout of ${target.repository} is on ${target.otherRef.checkedOut}, and this binding names ${target.otherRef.named}.`,
+		error: `The checkout of ${repository} is on ${otherRef.checkedOut}, and this binding names ${otherRef.named}.`,
 	};
 }
 
