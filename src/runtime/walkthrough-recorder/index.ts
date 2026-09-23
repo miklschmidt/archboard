@@ -268,48 +268,74 @@ async function startBrowser(
 }
 
 /**
- * Record while the browser is up, writing the file beside where it goes and moving it into
- * place only once it is whole.
+ * Record while the browser is up, into a file beside where it goes. Moving it into place is
+ * the caller's, once the browser is stopped.
  * @param chromium The browser.
  * @param request What to record.
+ * @param partial Where to write it.
  * @returns The finished recording.
  * @throws {RecordingPageError} When it did not happen.
  */
 async function recordIn(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
+	partial: string,
 ): Promise<Omit<RecordedWalkthrough, "leftBehind">> {
 	request.signal.throwIfAborted();
 	const window = await openRecordingPage(chromium, request);
-	const partial = join(dirname(request.out), `.${Date.now()}.recording.partial`);
+	const { state, bytes } = await drive(pageHandle(chromium, window), {
+		container: request.container,
+		path: partial,
+		signal: request.signal,
+		onProgress: request.onProgress,
+	});
+	return {
+		file: request.out,
+		bytes,
+		mimeType: state.mimeType ?? "",
+		durationMs: Math.round(state.durationMs ?? 0),
+		steps: state.of ?? 0,
+	};
+}
+
+/**
+ * Move a whole recording to where it goes, synchronously.
+ * @param partial Where it was written.
+ * @param out Where it goes.
+ * @throws {RecordingPageError} When it could not be moved; the talk was recorded.
+ */
+function moveIntoPlace(partial: string, out: string): void {
 	try {
-		const { state, bytes } = await drive(pageHandle(chromium, window), {
-			container: request.container,
-			path: partial,
-			signal: request.signal,
-			onProgress: request.onProgress,
-		});
-		request.signal.throwIfAborted();
-		try {
-			renameSync(partial, request.out);
-		} catch (error) {
-			throw new RecordingPageError(messageOf(error), true);
-		}
-		return {
-			file: request.out,
-			bytes,
-			mimeType: state.mimeType ?? "",
-			durationMs: Math.round(state.durationMs ?? 0),
-			steps: state.of ?? 0,
-		};
-	} finally {
-		rmSync(partial, { force: true });
+		renameSync(partial, out);
+	} catch (error) {
+		throw new RecordingPageError(messageOf(error), true);
 	}
 }
 
 /**
+ * What a recording that did not happen fails with.
+ * @param error What stopped it.
+ * @param leftBehind What stopping its browser could not prove gone.
+ * @returns The recording's failure, or the error itself when it is not the page's.
+ */
+function failure(error: unknown, leftBehind: readonly string[]): unknown {
+	if (!(error instanceof RecordingPageError)) return error;
+	const also =
+		leftBehind.length === 0
+			? ""
+			: `\nStopping the recording's browser also failed: ${leftBehind.join("; ")}`;
+	return new WalkthroughRecordingError(
+		error.began ? "RECORDING_FAILED" : "RECORDING_REFUSED",
+		`${error.message}${also}`,
+		error,
+	);
+}
+
+/**
  * Record in a started browser and stop it, whatever happened: at once when the recording is
- * cancelled, so every call still waiting on it fails rather than running on.
+ * cancelled, so every call still waiting on it fails rather than running on. The file moves
+ * into place only once the browser is stopped, in the same synchronous turn as the last look
+ * at the signal, so an interrupt that lands anywhere leaves nothing where it goes.
  * @param chromium The browser.
  * @param request What to record.
  * @returns The finished recording.
@@ -323,27 +349,28 @@ async function recordedWith(
 	const cancel = (): void => {
 		void chromium.stop();
 	};
-	request.signal.addEventListener("abort", cancel, { once: true });
-	const outcome = await recordIn(chromium, request).then(
-		(made) => ({ made }),
-		(error: unknown) => ({ error }),
-	);
-	request.signal.removeEventListener("abort", cancel);
-	const cleanup = await chromium.stop();
-	const leftBehind = cleanup.clean ? [] : cleanup.errors;
-	request.signal.throwIfAborted();
-	if ("made" in outcome) return { ...outcome.made, leftBehind };
-	const { error } = outcome;
-	if (!(error instanceof RecordingPageError)) throw error;
-	const also =
-		leftBehind.length === 0
-			? ""
-			: `\nStopping the recording's browser also failed: ${leftBehind.join("; ")}`;
-	throw new WalkthroughRecordingError(
-		error.began ? "RECORDING_FAILED" : "RECORDING_REFUSED",
-		`${error.message}${also}`,
-		error,
-	);
+	const partial = join(dirname(request.out), `.${Date.now()}.recording.partial`);
+	try {
+		request.signal.addEventListener("abort", cancel, { once: true });
+		const outcome = await recordIn(chromium, request, partial).then(
+			(made) => ({ made }),
+			(error: unknown) => ({ error }),
+		);
+		request.signal.removeEventListener("abort", cancel);
+		const cleanup = await chromium.stop();
+		const leftBehind = cleanup.clean ? [] : cleanup.errors;
+		// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
+		request.signal.throwIfAborted();
+		try {
+			if ("error" in outcome) throw outcome.error;
+			moveIntoPlace(partial, request.out);
+			return { ...outcome.made, leftBehind };
+		} catch (error) {
+			throw failure(error, leftBehind);
+		}
+	} finally {
+		rmSync(partial, { force: true });
+	}
 }
 
 /**
