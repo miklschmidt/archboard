@@ -90,6 +90,20 @@ function boundedNormalizedText(value: string, maximum: number): string {
 }
 
 /**
+ * Bounded text that keeps its line breaks, so a heading and a list still read
+ * as one: line endings become one kind, and a run of blank lines one.
+ * @param value The text.
+ * @param maximum How many bytes it may take.
+ * @returns The bounded text, trimmed.
+ */
+function boundedLayoutText(value: string, maximum: number): string {
+	return boundedText(value, maximum, "")
+		.value.replaceAll(/\r\n?/gu, "\n")
+		.replaceAll(/\n{3,}/gu, "\n\n")
+		.trim();
+}
+
+/**
  * Bounded text, or null when there is nothing visible to carry.
  * @param value The text, when there is any.
  * @param maximum How many bytes it may take.
@@ -181,6 +195,7 @@ function outputTail(
 }
 
 export {
+	boundedLayoutText,
 	boundedNormalizedText,
 	boundedText,
 	normalizedText,
