@@ -73,6 +73,8 @@ export interface CodexWorkbenchStorage {
 	readonly root: string;
 	readonly codexHome: string;
 	readonly sqliteHome: string;
+	/** What this canvas alone owns: its owner lock and its epoch ledger. */
+	readonly ownerDirectory: string;
 	readonly epochRoot: string;
 	readonly configPath: string;
 }

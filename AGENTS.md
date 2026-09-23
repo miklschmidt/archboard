@@ -76,8 +76,9 @@ The loud rules teach themselves (a call naming no board, an agent write without
   it persists on the node as `binding: { repo, path }` and is what "open the
   code" resolves.
 - **Codex runs as one private package-local app-server session over stdio**
-  with its own `CODEX_HOME`; the canvas's thread link names one workhorse and
-  voice belongs to its separate coordinator. The
+  with an archboard-only `CODEX_HOME` every canvas on the machine shares; the
+  canvas's thread link names one workhorse and voice belongs to its separate
+  coordinator. The
   [bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
   is the delivery and outcome contract.
 - The shell is desktop-only at 1920×1080; do not add phone or narrow layouts.

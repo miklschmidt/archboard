@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -64,6 +64,24 @@ function installation(host: Record<string, unknown> = {}) {
 		}
 	}
 }
+
+describe("production Codex storage", () => {
+	test("the canvases on a machine share one Codex home, and each port owns its own state", () => {
+		const { root, value } = installation();
+		try {
+			const workbench = join(root, "archboard", "codex-workbench");
+			const owner = join(
+				workbench,
+				"canvases",
+				String(Number.parseInt(process.env["PORT"] || "3000", 10)),
+			);
+			expect(value.process.storage).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
+			expect(statSync(owner).mode & 0o777).toBe(0o700);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+});
 
 describe("production Codex generation ownership", () => {
 	test("captures startup semantics under the exact minted wire session", async () => {

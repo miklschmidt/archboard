@@ -41,14 +41,14 @@ import {
 } from "@/runtime/engine/lib/canvas-spawn-target";
 
 /**
- * Whether a server's exit message says another canvas owns the port or the
- * Codex roots, which a concurrent start resolves by waiting rather than failing.
+ * Whether a server's exit message says another server owns the port or its
+ * Codex state, which a concurrent start resolves by waiting rather than failing.
  * @param message The terminal message the exiting server left.
  * @returns True when the refusal names a concurrent owner.
  */
 function isConcurrentOwnerRefusal(message: string): boolean {
 	return (
-		message.includes("Dedicated Codex roots are locked or colliding") ||
+		message.includes("Another server owns this Codex state") ||
 		(message.includes("Refusing to start canvas server") && message.includes("already listening"))
 	);
 }
