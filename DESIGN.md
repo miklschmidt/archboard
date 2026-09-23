@@ -62,9 +62,9 @@ The workbench owns one private stdio app-server child and one thread link from
 the canvas to its workhorse, made by the first message or Talk; that link is
 the only automatic target for semantic board updates. Archboard never inspects recent activity, reads an
 environment-selected thread, or connects a second client. The child runs in an
-Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with its own sign-in, and
-an epoch manifest outside Codex storage makes every prior-child thread
-inspect-only: an operational boundary against cold resume of persisted dynamic
+Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with one sign-in, shared by
+the canvases on the machine, and each canvas's own epoch manifest outside Codex
+storage makes every thread its current child does not own inspect-only: an operational boundary against cold resume of persisted dynamic
 tools, not protection against a process pointed at those paths on purpose.
 
 The change feed settles a user's gesture, discards visual noise and renders

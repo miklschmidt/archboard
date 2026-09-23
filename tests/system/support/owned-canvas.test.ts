@@ -42,14 +42,19 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "namespace") {
 	const xdgState = process.env["XDG_STATE_HOME"]!;
 	const temporary = process.env["TMPDIR"]!;
 	const workbench = path.join(stateDir(), "codex-workbench");
-	const lock = path.join(workbench, "codex-home", ".archboard-codex-process.lock");
+	const lock = path.join(
+		workbench,
+		"canvases",
+		process.env["PORT"]!,
+		".archboard-codex-process.lock",
+	);
 	try {
 		fs.mkdirSync(path.dirname(lock), { recursive: true, mode: 0o700 });
 		fs.writeFileSync(lock, `${process.pid}\n`, { flag: "wx", mode: 0o600 });
 	} catch (error) {
 		// oxlint-disable-next-line no-console -- child stderr is the production collision symptom.
 		console.error(
-			`Dedicated Codex roots are locked or colliding at ${path.dirname(lock)}. ` +
+			`Another server owns this Codex state at ${path.dirname(lock)}. ` +
 				"Stop the other owner before retrying.",
 			error,
 		);
@@ -246,7 +251,7 @@ describe("owned canvas direct lifecycle", () => {
 		}
 	});
 
-	test("keeps two live canvases out of the same Codex workbench lock", async () => {
+	test("keeps two live test canvases in separate state directories", async () => {
 		const callerRoot = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-shared-caller-"));
 		emergencyVaults.add(callerRoot);
 		const callerPaths = {
@@ -304,7 +309,8 @@ describe("owned canvas direct lifecycle", () => {
 			expect(new Set(namespaces.map(({ xdgState }) => xdgState)).size).toBe(2);
 			expect(new Set(namespaces.map(({ lock }) => lock)).size).toBe(2);
 			for (const [index, namespace] of namespaces.entries()) {
-				const paths = [first, second][index]!.paths;
+				const canvas = [first, second][index]!;
+				const { paths } = canvas;
 				const workbench =
 					process.platform === "darwin"
 						? path.join(
@@ -329,7 +335,12 @@ describe("owned canvas direct lifecycle", () => {
 				expect(namespace).not.toContainValue(callerPaths.temporary);
 				expect(namespace.workbench).toBe(workbench);
 				expect(namespace.lock).toBe(
-					path.join(workbench, "codex-home", ".archboard-codex-process.lock"),
+					path.join(
+						workbench,
+						"canvases",
+						new URL(canvas.base).port,
+						".archboard-codex-process.lock",
+					),
 				);
 				expect(namespace.ambientSentinel).toBeUndefined();
 				expect(fs.existsSync(namespace.lock)).toBeTrue();

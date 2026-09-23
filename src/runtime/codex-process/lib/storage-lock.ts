@@ -131,14 +131,14 @@ function createOrTakeOverLock(lockPath: string, fileSystem: CodexStorageFileSyst
 
 /**
  * The refusal for a lock that could not be taken, naming the owner that holds it.
- * @param codexHome - The canonical CODEX_HOME.
+ * @param ownerDirectory - The canonical directory one server owns.
  * @param lockPath - The lock file.
  * @param attempt - The failed attempt.
  * @param fileSystem - The file-system seam.
  * @returns The storage error to throw.
  */
 function lockRefusal(
-	codexHome: string,
+	ownerDirectory: string,
 	lockPath: string,
 	attempt: LockAttempt,
 	fileSystem: CodexStorageFileSystem,
@@ -147,7 +147,7 @@ function lockRefusal(
 		return failure(
 			"lock",
 			lockPath,
-			`Could not write the dedicated Codex root lock at ${codexHome}.`,
+			`Could not write the Codex owner lock at ${ownerDirectory}.`,
 			attempt.cause,
 			lockRetryCleanup(lockPath, fileSystem),
 		);
@@ -157,22 +157,25 @@ function lockRefusal(
 	return failure(
 		"lock",
 		lockPath,
-		`Dedicated Codex roots are locked or colliding at ${codexHome}. Stop ${owner} before retrying.`,
+		`Another server owns this Codex state at ${ownerDirectory}. Stop ${owner} before retrying.`,
 		attempt.cause,
 	);
 }
 
 /**
- * Take the exclusive owner lock inside CODEX_HOME, taking over one whose
+ * Take the exclusive owner lock inside the owner directory, taking over one whose
  * recorded owner is gone.
- * @param codexHome - The canonical CODEX_HOME.
+ * @param ownerDirectory - The canonical directory one server owns.
  * @param fileSystem - The file-system seam.
  * @returns The idempotent release.
  */
-export function acquireLock(codexHome: string, fileSystem: CodexStorageFileSystem): () => void {
-	const lockPath = path.join(codexHome, ".archboard-codex-process.lock");
+export function acquireLock(
+	ownerDirectory: string,
+	fileSystem: CodexStorageFileSystem,
+): () => void {
+	const lockPath = path.join(ownerDirectory, ".archboard-codex-process.lock");
 	const attempt = createOrTakeOverLock(lockPath, fileSystem);
-	if (attempt.cause !== undefined) throw lockRefusal(codexHome, lockPath, attempt, fileSystem);
+	if (attempt.cause !== undefined) throw lockRefusal(ownerDirectory, lockPath, attempt, fileSystem);
 	let released = false;
 	return () => {
 		if (released) return;
@@ -180,12 +183,7 @@ export function acquireLock(codexHome: string, fileSystem: CodexStorageFileSyste
 			fileSystem.unlinkSync(lockPath);
 			released = true;
 		} catch (cause) {
-			throw failure(
-				"lock",
-				lockPath,
-				`Could not release the dedicated Codex root lock ${lockPath}.`,
-				cause,
-			);
+			throw failure("lock", lockPath, `Could not release the Codex owner lock ${lockPath}.`, cause);
 		}
 	};
 }

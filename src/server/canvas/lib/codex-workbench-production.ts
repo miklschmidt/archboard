@@ -7,6 +7,7 @@ import {
 } from "@/runtime/codex-process/executable";
 import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
 import { stateDir } from "@/runtime/engine/state-dir";
+import { PORT } from "@/server/canvas/lib/listener-address";
 import type { InstallProductionCodexWorkbenchOptions } from "@/server/canvas/lib/codex-workbench";
 import { createProductionBindings } from "@/server/canvas/lib/codex-workbench-bindings";
 import { createGenerationOwnerStore } from "@/server/canvas/lib/codex-workbench-generation-owners";
@@ -19,17 +20,26 @@ import type {
 /**
  * Create this installation's Codex storage under the canvas state directory,
  * with a mode nobody else on the machine can read.
+ *
+ * The Codex home and its database are the machine's, shared by every canvas, so
+ * one sign-in serves them all: Codex takes several processes on one home. What
+ * archboard keeps about its own child, the owner lock and the epoch ledger, is
+ * the canvas's, under its port (TASK-313). The ledger is read, changed and
+ * written by one process, and a second canvas's child would make this one's
+ * stale.
  * @returns Where each part of it lives.
  */
 function createWorkbenchStorage(): CodexWorkbenchStorage {
 	const root = path.join(stateDir(), "codex-workbench");
-	mkdirSync(root, { recursive: true, mode: 0o700 });
+	const ownerDirectory = path.join(root, "canvases", String(PORT));
+	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const codexHome = path.join(root, "codex-home");
 	return {
 		root,
 		codexHome,
 		sqliteHome: path.join(root, "sqlite-home"),
-		epochRoot: path.join(root, "epoch"),
+		ownerDirectory,
+		epochRoot: path.join(ownerDirectory, "epoch"),
 		configPath: path.join(codexHome, "config.toml"),
 	};
 }
@@ -56,7 +66,7 @@ export function createCanvasCodexWorkbenchInstallation(
 		process: {
 			executablePath,
 			checkoutRoot: host.checkoutRoot,
-			storage: { rootDirectory: storage.root },
+			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
 			onGroupOwned: host.onCodexProcessGroupOwned,
 		},
 		/**

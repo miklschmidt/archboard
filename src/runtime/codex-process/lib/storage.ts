@@ -361,7 +361,15 @@ export function prepareCodexStorage(
 	const sqliteHome = verifyPrivateDirectory(resolved.sqliteHome, "CODEX_SQLITE_HOME", fileSystem);
 	assertSeparateRoots(codexHome, sqliteHome, resolved.root, fileSystem);
 
-	const releaseLock = acquireLock(codexHome, fileSystem);
+	const owner =
+		input.ownerDirectory === undefined
+			? codexHome
+			: verifyPrivateDirectory(
+					path.resolve(input.ownerDirectory),
+					"Codex owner directory",
+					fileSystem,
+				);
+	const releaseLock = acquireLock(owner, fileSystem);
 	const configPath = path.join(codexHome, "config.toml");
 	const configText = configTextFor(sqliteHome);
 	try {

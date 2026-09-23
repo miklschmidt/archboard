@@ -75,6 +75,20 @@ describe("Codex child environment", () => {
 	});
 });
 
+/**
+ * The code of the storage refusal a preparation throws.
+ * @param prepare The preparation.
+ * @returns The refusal's code, or null when it did not refuse.
+ */
+function refusalCode(prepare: () => unknown): string | null {
+	try {
+		prepare();
+		return null;
+	} catch (refusal) {
+		return (refusal as CodexStorageError).code;
+	}
+}
+
 describe("dedicated Codex storage", () => {
 	test("creates private roots and one exact, quoted config line", () => {
 		const root = temporaryRoot();
@@ -103,11 +117,38 @@ describe("dedicated Codex storage", () => {
 		}
 	});
 
+	test("servers with their own owner directories share one Codex home, and each directory has one server", () => {
+		const root = temporaryRoot();
+		try {
+			/**
+			 * The private owner directory of the canvas on one port.
+			 * @param port The canvas's port.
+			 * @returns The directory.
+			 */
+			const ownerOf = (port: string): string => {
+				const directory = path.join(root, "canvases", port);
+				fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+				return directory;
+			};
+			const [docs, dogfood] = [ownerOf("3100"), ownerOf("3000")];
+			const first = prepareCodexStorage({ rootDirectory: root, ownerDirectory: docs });
+			const second = prepareCodexStorage({ rootDirectory: root, ownerDirectory: dogfood });
+			expect(first.codexHome).toBe(second.codexHome);
+			expect(
+				refusalCode(() => prepareCodexStorage({ rootDirectory: root, ownerDirectory: docs })),
+			).toBe("lock");
+			first.release();
+			second.release();
+		} finally {
+			removeRoot(root);
+		}
+	});
+
 	test("refuses conflicts, symlink escapes, permissions, and a second owner", () => {
 		const root = temporaryRoot();
 		try {
 			const first = prepareCodexStorage({ rootDirectory: root });
-			expect(() => prepareCodexStorage({ rootDirectory: root })).toThrow(/locked or colliding/);
+			expect(refusalCode(() => prepareCodexStorage({ rootDirectory: root }))).toBe("lock");
 			first.release();
 
 			for (const foreign of [
@@ -273,7 +314,7 @@ describe("dedicated Codex storage", () => {
 			expect((thrown as CodexStorageError).code).toBe("lock");
 			expect((thrown as CodexStorageError).retryCleanup).toBeFunction();
 			expect(fs.existsSync(lockPath)).toBe(true);
-			expect(() => prepareCodexStorage({ rootDirectory: root })).toThrow(/locked or colliding/);
+			expect(refusalCode(() => prepareCodexStorage({ rootDirectory: root }))).toBe("lock");
 			(thrown as CodexStorageError).retryCleanup!();
 			expect(fs.existsSync(lockPath)).toBe(false);
 			const recovered = prepareCodexStorage({ rootDirectory: root });
@@ -335,7 +376,7 @@ describe("dedicated Codex storage", () => {
 			expect((thrown as CodexStorageError).code).toBe("config_conflict");
 			expect((thrown as CodexStorageError).retryCleanup).toBeFunction();
 			expect((thrown as CodexStorageError).message).toContain("retryCleanup");
-			expect(() => prepareCodexStorage({ rootDirectory: root })).toThrow(/locked or colliding/);
+			expect(refusalCode(() => prepareCodexStorage({ rootDirectory: root }))).toBe("lock");
 			(thrown as CodexStorageError).retryCleanup!();
 
 			writeFileSync(initial.configPath, initial.configText, { mode: 0o600 });

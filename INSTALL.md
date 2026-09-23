@@ -153,9 +153,10 @@ The canvas listens on <http://127.0.0.1:3000>. To use another address, set
 for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message.
 
-One state directory holds one canvas at a time. If a second canvas starts with
-the same state directory, it stops with the message "Dedicated Codex roots are
-locked".
+Several canvases can run on one machine at the same time, each on its own port.
+They share one Codex sign-in. If you sign out in one canvas, you sign out of all
+of them. A canvas that is already running shows a sign-in or a sign-out from
+another canvas only after you restart it.
 
 Open the canvas URL in your browser. The agent bar, the voice and video
 recording need a Codex sign-in. Sign in from the agent bar, with ChatGPT or with

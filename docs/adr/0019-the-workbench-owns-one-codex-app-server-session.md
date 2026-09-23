@@ -10,6 +10,18 @@ if needed, starts Codex, creates the workhorse and links it; whichever pane is
 focused speaks for the conversation, with its board as context. The sentences
 below say so; everything else stands.
 
+Amended by TASK-313 (2026-09-23): the canvases on one machine share one Codex
+home, one Codex database and so one sign-in; Codex takes several processes on
+one home, reloading the sign-in from disk before it refreshes it. What
+Archboard keeps about its own child, the owner lock and the epoch ledger, is one
+canvas's, under `codex-workbench/canvases/<port>`, because the ledger is written
+by one process and a second canvas's child would make this one's stale. Each
+canvas still owns one child. Three consequences follow: a canvas lists another
+canvas's threads, which its own ledger does not know, as foreign and
+inspect-only; signing out in one canvas signs out every canvas; and a canvas
+that is already running shows a sign-in or sign-out made in another only after
+its child restarts.
+
 ## Issue
 
 The workbench must show and control the same agent state that the person is
@@ -26,8 +38,9 @@ sustained work in one history, and would leave approval authority ambiguous.
 ## Decision
 
 Archboard owns one private Codex app-server child and its complete lifecycle.
-That child has dedicated application state and its own supported sign-in. It is
-not shared with ChatGPT Desktop, another Codex client, or an ambient daemon. A
+That child has dedicated application state and a supported sign-in, shared only
+with the other canvases on the machine. It is not shared with ChatGPT Desktop,
+another Codex client, or an ambient daemon. A
 browser may temporarily own presentation of interactive requests, but it never
 becomes the process owner or a second app-server client.
 

@@ -4,6 +4,12 @@ export interface CodexStorageInput {
 	readonly rootDirectory?: string;
 	readonly codexHome?: string;
 	readonly sqliteHome?: string;
+	/**
+	 * The private directory one server owns exclusively, which holds the owner lock. Several
+	 * servers may share one CODEX_HOME, since Codex takes several processes on one home; each
+	 * names its own owner directory. The Codex home is the owner when none is named.
+	 */
+	readonly ownerDirectory?: string;
 }
 
 export interface CodexStorageFileSystem {
