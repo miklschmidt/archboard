@@ -71,6 +71,7 @@ export type {
 	BrowserApproval,
 	BrowserCommand,
 	BrowserCommandLease,
+	BrowserVoicePresentation,
 	BrowserCoordinator,
 	BrowserDto,
 	BrowserLogin,

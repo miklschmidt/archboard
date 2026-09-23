@@ -12,7 +12,9 @@
 // the camera and the view they had.
 //
 // The stage decides everything the picture does; this is the caption, its
-// controls and its keys.
+// controls and its keys. A page recording the walkthrough (TASK-304) steps it
+// by itself and nobody can press anything in the video, so there the caption
+// keeps where it is in the walkthrough and drops the controls.
 
 import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine, RiMicLine } from "@remixicon/react";
 import { useCallback, type JSX, type ReactNode } from "react";
@@ -190,6 +192,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 					data-slot="semantic-presentation-leave"
 					aria-label="Leave the walkthrough"
 					onClick={onLeave}
+					className="in-data-recording:hidden"
 				>
 					<RiCloseLine />
 					<span className="text-muted-foreground text-technical font-mono">Esc</span>
@@ -205,7 +208,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 						/>
 					))}
 				</nav>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 in-data-recording:hidden">
 					<Button
 						type="button"
 						variant="outline"

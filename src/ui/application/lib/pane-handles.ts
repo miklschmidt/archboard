@@ -4,7 +4,10 @@
 // renders from these; actions read them when a person acts.
 
 import { createBrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
-import type { BrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
+import type {
+	BrowserWorkbenchMediaOwner,
+	BrowserWorkbenchMediaOwnerOptions,
+} from "@/ui/codex-workbench-media";
 import type { PaneSession as SessionOf } from "@/ui/pane-session";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
@@ -15,6 +18,16 @@ type PaneSession = SessionOf<BrowserWorkbenchTransport>;
 class PaneHandles {
 	readonly #sessions = new Map<string, PaneSession>();
 	readonly #media = new Map<string, BrowserWorkbenchMediaOwner>();
+	readonly #mediaOptions: BrowserWorkbenchMediaOwnerOptions;
+
+	/**
+	 * The handles, with how each pane's media is made.
+	 * @param mediaOptions What every pane's media owner is made with: where a recording page
+	 *   (TASK-304) hears the voice, and nothing otherwise.
+	 */
+	constructor(mediaOptions: BrowserWorkbenchMediaOwnerOptions = {}) {
+		this.#mediaOptions = mediaOptions;
+	}
 
 	/**
 	 * The session a pane reported, or null before it did.
@@ -59,7 +72,7 @@ class PaneHandles {
 		if (existing !== undefined) {
 			return existing;
 		}
-		const created = createBrowserWorkbenchMediaOwner();
+		const created = createBrowserWorkbenchMediaOwner(this.#mediaOptions);
 		this.#media.set(paneId, created);
 		return created;
 	}

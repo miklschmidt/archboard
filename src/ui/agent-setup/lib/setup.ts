@@ -7,6 +7,7 @@
 // waits and says what it waits on; a failure stays on the message with the
 // reason, and nothing is retried behind the person's back (DESIGN §2).
 
+import type { BrowserVoicePresentation } from "@/shared/codex-browser-model";
 import type { LoginId } from "@/shared/codex-workbench-identity";
 import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";
@@ -67,9 +68,10 @@ interface AgentSetupPorts {
 	readonly submit: (text: string, queue: boolean) => Promise<WorkbenchComposerSubmissionResult>;
 	/**
 	 * Start voice.
-	 * @param walkthrough The walkthrough to narrate, or null for a conversation.
+	 * @param narration The walkthrough to narrate and whether it is recorded, or null for a
+	 * conversation.
 	 */
-	readonly startVoice: (walkthrough: string | null) => Promise<void>;
+	readonly startVoice: (narration: BrowserVoicePresentation | null) => Promise<void>;
 }
 
 /** What the agent waits on for the person's held work. */
@@ -98,6 +100,8 @@ interface SendOptions {
 interface TalkOptions {
 	/** Narrate this walkthrough of the board in view, rather than converse. */
 	readonly walkthrough?: string | undefined;
+	/** The narration is a recording a page paces itself (TASK-304). */
+	readonly recording?: boolean | undefined;
 	readonly tab?: AuthTab | undefined;
 }
 
@@ -161,6 +165,18 @@ const STEP_BY_PHASE: Readonly<Record<AgentPhase["kind"], SetupStep>> = {
 };
 
 /**
+ * What a Talk narrates, if anything.
+ * @param options How voice was asked for.
+ * @returns The walkthrough and whether it is recorded, or null for a conversation.
+ */
+function narrationOf(options: TalkOptions): BrowserVoicePresentation | null {
+	if (options.walkthrough === undefined) return null;
+	return options.recording === true
+		? { walkthrough: options.walkthrough, recording: true }
+		: { walkthrough: options.walkthrough };
+}
+
+/**
  * Words for anything thrown.
  * @param error What was thrown.
  * @returns Its message.
@@ -189,7 +205,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	let created = false;
 	let delivering = false;
 	let tab: AuthTab | null = null;
-	let narration: string | null = null;
+	let narration: BrowserVoicePresentation | null = null;
 	let sequence = 0;
 	// The prompts the timeline showed when each message was sent, by message id.
 	const promptsBefore = new Map<string, ReadonlySet<string>>();
@@ -458,7 +474,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		gesture(options.tab);
 		talkFailure = null;
 		if (talk === "idle") {
-			narration = options.walkthrough ?? null;
+			narration = narrationOf(options);
 			talk = "waiting";
 		}
 		pump();

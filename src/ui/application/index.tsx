@@ -34,6 +34,12 @@ import { useAgentActivity, type AgentActivity } from "@/ui/application/hooks/use
 import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
 import { useStageEvents } from "@/ui/application/hooks/use-stage-events";
 import { useNarration } from "@/ui/application/hooks/use-narration";
+import {
+	recordedMedia,
+	recordedPaneOf,
+	usePageRecorder,
+	useRecordedViews,
+} from "@/ui/application/hooks/use-page-recording";
 import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import { useWorkbench, type WorkbenchHost } from "@/ui/application/hooks/use-workbench";
@@ -50,6 +56,7 @@ import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing"
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
+import { RecordingStage } from "@/ui/walkthrough-recording";
 import { AgentBar, AgentPanel, TalkControl } from "@/ui/workbench";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
@@ -267,7 +274,11 @@ function ApplicationBody(): JSX.Element {
 	// The address the tab was opened on mounts the panes, so a restored
 	// comparison has both panes in its first render rather than growing one.
 	const opening = useOpeningAddress();
-	const panes = usePanes(useCallback(() => openingPaneList(opening), [opening]));
+	const recorder = usePageRecorder(opening);
+	const panes = usePanes(
+		useCallback(() => openingPaneList(opening), [opening]),
+		recordedMedia(recorder),
+	);
 	const paneReadings = usePaneReadings();
 	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
 	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
@@ -349,14 +360,14 @@ function ApplicationBody(): JSX.Element {
 	);
 	const narration = useNarration(workbench.setup, agent.view.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion);
+	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
 	const mounted = usePaneViews({
 		panes,
 		theme,
 		readings,
 		reducedMotion,
 		onVariantChange,
-		narration,
-		overlay,
+		...recorded,
 	});
 	const view = useShellView({
 		theme,
@@ -393,6 +404,14 @@ function ApplicationBody(): JSX.Element {
 		() => <VaultDiagnostics transport={transport} ask={agent.ask} />,
 		[transport, agent.ask],
 	);
+	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
+	if (recordedPane !== null) {
+		return (
+			<TooltipProvider>
+				<RecordingStage>{recordedPane}</RecordingStage>
+			</TooltipProvider>
+		);
+	}
 	return (
 		<TooltipProvider>
 			<Shell

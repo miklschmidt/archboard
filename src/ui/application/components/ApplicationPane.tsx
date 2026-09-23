@@ -28,6 +28,7 @@ import {
 	boardAddressOf,
 	SemanticBoardStage,
 	type SelectedSubject,
+	type SemanticBoardStageProps,
 	type SemanticPaneReading,
 	type SemanticTarget,
 } from "@/ui/semantic-board-canvas";
@@ -73,6 +74,13 @@ interface ApplicationPaneProps {
 	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
+	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
+	step?: SemanticBoardStageProps["driven"];
+	/**
+	 * Hear what this pane is reading, as well as reporting it (a recording, TASK-304).
+	 * @param reading The board, variant, view, selection and presentation on screen.
+	 */
+	onSemanticReading?: ((reading: SemanticPaneReading) => void) | undefined;
 }
 
 /** The pane-bound callbacks the shared host cannot supply. */
@@ -148,9 +156,16 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
  * @returns The mounted pane.
  */
 function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
-	const { paneId, host, picked } = props;
+	const { paneId, host, picked, onSemanticReading } = props;
 	// What the stage says is on screen, which is the only place it is known.
 	const [onScreen, setOnScreen] = useState<SemanticPaneReading | null>(null);
+	const showReading = useCallback(
+		(shown: SemanticPaneReading): void => {
+			setOnScreen(shown);
+			onSemanticReading?.(shown);
+		},
+		[onSemanticReading],
+	);
 	const bound = useBoundCallbacks(props);
 	// A step somebody narrating a walkthrough asked for (TASK-251). Kept with the
 	// pane because it is about this pane's picture, and handed to the stage, which
@@ -206,9 +221,9 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				<PaneDiagram
 					address={address}
 					openCode={session.openCode}
-					onReading={setOnScreen}
+					onReading={showReading}
 					onUserChanged={session.userChanged}
-					driven={asked}
+					driven={props.step ?? asked}
 					{...props}
 				/>
 			)}
@@ -235,8 +250,8 @@ interface PaneDiagramProps extends ApplicationPaneProps {
 	 * @param part The part their gesture was about.
 	 */
 	readonly onUserChanged: (part: SemanticPanePart) => void;
-	/** A walkthrough step somebody narrating it asked for, or null. */
-	readonly driven: PanePresentRequest | null;
+	/** A walkthrough step somebody narrating it asked for, or the page recording it chose, or null. */
+	readonly driven: SemanticBoardStageProps["driven"];
 }
 
 /**

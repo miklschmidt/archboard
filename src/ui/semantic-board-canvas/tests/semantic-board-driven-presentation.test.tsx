@@ -101,6 +101,27 @@ test("a requested step is presented without anybody choosing the walkthrough, an
 	});
 });
 
+test("a step a recording page chose itself answers no request, so it is reported as the pane's own", async () => {
+	// The server hands a step to the voice when the pane reports one it was not asked for; a
+	// recording (TASK-304) moves on by itself and relies on exactly that.
+	serving();
+	const reported: SemanticPaneReading["presentation"][] = [];
+	mountStage(null, {
+		reducedMotion: true,
+		driven: { request: "record:1", walkthrough: WALKTHROUGH.id, beat: 1, answers: false },
+		/**
+		 * Keep what the pane says about its presentation.
+		 * @param reading What the pane is reading.
+		 */
+		onReading: (reading) => {
+			reported.push(reading.presentation);
+		},
+	});
+	await settle();
+	expect(part("semantic-presentation-heading").textContent).toBe("One writer");
+	expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: true, answering: null });
+});
+
 test("a requested step lights its subjects without raising anything a user's hand raises", async () => {
 	// What the shell marks as the user's own doing hangs on these two callbacks (ADR 0034). A
 	// driven step that raised either would be told to the voice model as the user's pick, and

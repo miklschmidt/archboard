@@ -3,7 +3,7 @@
 // returns. The realtime module owns media and the state machine; this module
 // owns one binding, the guards around it, and the projection.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { BrowserSnapshot, BrowserVoicePresentation } from "@/shared/codex-browser-model";
 import type { RealtimeMediaSnapshot } from "@/ui/codex-realtime";
 import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
 import type { VoiceControlsView } from "@/ui/voice-controls/contracts";
@@ -135,10 +135,11 @@ interface VoiceSessionView {
 	readonly busy: boolean;
 }
 
-/** A walkthrough the person chose to have narrated, by id. */
-interface VoiceNarration {
-	readonly walkthrough: string;
-}
+/**
+ * A walkthrough the person chose to have narrated, by id (TASK-251), or one a page is recording
+ * (TASK-304).
+ */
+type VoiceNarration = BrowserVoicePresentation;
 
 /**
  * The already-constructed browser media owner, seen only through the values a

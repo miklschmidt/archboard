@@ -2,7 +2,7 @@
 // rides the exact start lease, text and stop ride the current session handle,
 // and remote media lands on an audio element the owner mounts.
 
-import type { BrowserCommandLease } from "@/shared/codex-browser-model";
+import type { BrowserCommandLease, BrowserVoicePresentation } from "@/shared/codex-browser-model";
 import type {
 	AppendOutcome,
 	CommandOutcome,
@@ -26,14 +26,15 @@ interface MediaSessionRecord {
 /** One start in flight, and the lease it was granted. */
 interface StartOperation {
 	lease: BrowserCommandLease | null;
-	/** The walkthrough this start is to present, or null for an ordinary session (TASK-251). */
+	/**
+	 * The walkthrough this start is to present (TASK-251), and whether it is a recording
+	 * (TASK-304), or null for an ordinary session.
+	 */
 	readonly presentation: VoicePresentation | null;
 }
 
-/** A walkthrough voice is started to present, by id. */
-interface VoicePresentation {
-	readonly walkthrough: string;
-}
+/** A walkthrough voice is started to present, by id, and whether it is recorded. */
+type VoicePresentation = BrowserVoicePresentation;
 
 /** What the host needs from the run that owns it. */
 interface MediaRunPort {

@@ -70,10 +70,10 @@ function voicePort(
 	},
 	pinVoice: PinVoice,
 ): AgentSetupPorts["startVoice"] {
-	return async (walkthrough) => {
+	return async (narration) => {
 		const voice = focus.voice();
 		if (voice === null) throw new Error(NO_PANE_WORDS);
-		const view = await voice.session.start(walkthrough === null ? null : { walkthrough });
+		const view = await voice.session.start(narration);
 		if (!STARTED.has(view.status)) {
 			pinVoice(null);
 			throw new Error(view.failure?.message ?? view.detail);
