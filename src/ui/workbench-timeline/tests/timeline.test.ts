@@ -48,9 +48,9 @@ test("each Codex turn is one conversation turn, in order, with its items, timing
 		timeline([turn("t1", "completed"), turn("t2", "failed"), turn("t3", "inProgress")]),
 	);
 	expect(turns.map((entry) => [entry.id, entry.outcome])).toEqual([
-		[conversationTurnId(threadId, "t1"), "completed"],
-		[conversationTurnId(threadId, "t2"), "failed"],
-		[conversationTurnId(threadId, "t3"), "running"],
+		[conversationTurnId(threadId, decoder.adoptTurnId("t1")), "completed"],
+		[conversationTurnId(threadId, decoder.adoptTurnId("t2")), "failed"],
+		[conversationTurnId(threadId, decoder.adoptTurnId("t3")), "running"],
 	]);
 	expect(turns[0]?.items.map((item) => item.media)).toEqual(["prompt", "text"]);
 	expect(turns[0]?.durationMs).toBe(3000);
