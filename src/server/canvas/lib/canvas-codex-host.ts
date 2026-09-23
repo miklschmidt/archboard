@@ -18,7 +18,7 @@ import {
 } from "@/server/canvas/codex-workbench-browser";
 import type { createCanvasCodexWorkbenchApplication } from "@/server/canvas/lib/codex-workbench-application";
 import type { CanvasCodexWorkbenchHost } from "@/server/canvas/lib/codex-workbench-production";
-import { requireExactSemanticPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
+import { presentingPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
 import {
 	canonicalContextFromBrief,
 	semanticInputFor,
@@ -27,7 +27,6 @@ import { waitForTargetsWith } from "@/server/canvas/lib/codex-target-wait";
 import { checkoutRoot } from "@/server/canvas/lib/module-paths";
 import { subscribeNarrationChanges } from "@/server/canvas/lib/walkthrough-narration";
 import {
-	aggregateOf,
 	boardForPane,
 	browserLeaseLedger,
 	codexSocketInstances,
@@ -173,6 +172,14 @@ function installBrowserGateway(gateway: CodexWorkbenchComponents["gateway"]): ()
 }
 
 /**
+ * Every pane on screen, in reading order.
+ * @returns The panes.
+ */
+function orderedPanes(): PaneRegistration[] {
+	return panesInOrder(Array.from(panes.values())).map(({ pane }) => pane);
+}
+
+/**
  * The pane a leased operation names, which must be on screen.
  * @param paneId The pane id.
  * @returns The pane.
@@ -213,23 +220,15 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	};
 
 	/**
-	 * The pane the semantic delivery is bound to, exactly.
+	 * The pane a fresh read presents through: the one the delivery is bound to
+	 * while it is open, and another open pane once it is not, since the
+	 * conversation belongs to the canvas rather than to the pane that made it.
 	 *
 	 * For the reads that need a pane to speak for what is on screen. A settled
 	 * change does not need one — `boundPaneId` answers that.
-	 * @param contextBoard The board a context is about, when known.
 	 * @returns The pane.
 	 */
-	const currentSemanticPane = (contextBoard?: string): PaneRegistration => {
-		const binding = active?.semanticDelivery.snapshot().binding ?? null;
-		return requireExactSemanticPane({
-			bindingPaneId: binding?.paneId ?? null,
-			...(contextBoard === undefined ? {} : { contextBoard }),
-			panes: panes.values(),
-			boardForPane,
-			aggregateOf,
-		});
-	};
+	const currentSemanticPane = (): PaneRegistration => presentingPane(boundPaneId(), orderedPanes());
 
 	return {
 		checkoutRoot,
@@ -280,7 +279,13 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		 * Every pane on screen, in reading order.
 		 * @returns The pane ids.
 		 */
-		paneIds: () => panesInOrder(Array.from(panes.values())).map(({ pane }) => pane.paneId),
+		paneIds: () => orderedPanes().map((pane) => pane.paneId),
+		/**
+		 * The open pane host-started work presents through.
+		 * @param preferredPaneId The pane the work names.
+		 * @returns The pane id.
+		 */
+		presentingPaneId: (preferredPaneId) => presentingPane(preferredPaneId, orderedPanes()).paneId,
 		/**
 		 * The canonical context of a settled event for one pane.
 		 * @param event The settled event.
@@ -349,18 +354,16 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			}
 			active = components;
 			/**
-			 * Publish fresh context when the linked pane changes focus or selection.
+			 * Publish fresh context when any pane changes focus or selection, once
+			 * the canvas has a conversation to tell: it is one conversation
+			 * whichever pane the person is reading.
 			 * @param clientId The pane reporting a change.
 			 * @param kind The semantic change to publish.
 			 * @param userChanged What of it the user changed by hand; empty when nothing was.
 			 */
 			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged) => {
 				const pane = panes.get(clientId);
-				if (
-					pane === undefined ||
-					components.semanticDelivery.snapshot().binding?.paneId !== pane.paneId
-				)
-					return;
+				if (pane === undefined || components.semanticDelivery.snapshot().binding === null) return;
 				try {
 					const read = semanticInputFor(components, shownBoard(pane), null, pane.paneId);
 					const input = { ...read, pane: { ...read.pane, userChanged } };

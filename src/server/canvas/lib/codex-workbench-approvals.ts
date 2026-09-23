@@ -33,7 +33,7 @@ interface CanvasDynamicApprovalOwner {
 	readonly port: DynamicToolApprovalPort;
 	readonly browser: BrowserDynamicApprovalActions;
 	readonly pending: () => readonly DynamicApprovalOwnerView[];
-	/** Rebind pending presentation to the exact current lease for its pane. */
+	/** Rebind every pending presentation to the pane holding the current lease. */
 	readonly bindLease: (paneId: string, commandId: BrowserCommandId) => void;
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly onNotification: (event: TransportServerNotification) => void;
@@ -421,17 +421,20 @@ function createCanvasDynamicApprovalOwner(
 				),
 			),
 		/**
-		 * Re-point one pane's presented approvals at its current lease, so an
-		 * answer given under the new lease is not refused as stale.
-		 * @param paneId The pane.
+		 * Re-point every presented approval at the pane holding the lease, so the
+		 * pane that holds it can answer: the canvas has one conversation, and an
+		 * approval belongs to it rather than to whichever pane it was first shown
+		 * in. The captured link is unchanged, so an answer is still refused once
+		 * the link moves.
+		 * @param paneId The pane holding the lease.
 		 * @param commandId Its current lease.
 		 */
 		bindLease: (paneId: string, commandId: BrowserCommandId) => {
 			for (const entry of pending.values()) {
-				if (entry.binding.paneId !== paneId || entry.binding.commandId === commandId) {
+				if (entry.binding.paneId === paneId && entry.binding.commandId === commandId) {
 					continue;
 				}
-				entry.binding = immutableBinding({ ...entry.binding, commandId });
+				entry.binding = immutableBinding({ ...entry.binding, paneId, commandId });
 			}
 		},
 		subscribe: browser.onChange!,

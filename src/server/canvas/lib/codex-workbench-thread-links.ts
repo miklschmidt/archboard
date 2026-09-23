@@ -158,6 +158,24 @@ function expectedBrowserLink(context: BrowserActionContext) {
 }
 
 /**
+ * Refuse a command whose pane no longer sees the link it named: another pane
+ * changed the canvas's one link while this command waited its turn.
+ * @param threadLink What reads the link.
+ * @param context The pane and the link it named.
+ */
+function assertBrowserLinkStands(
+	threadLink: Pick<CodexThreadLinkPort, "read">,
+	context: BrowserActionContext,
+): void {
+	const { cas } = threadLink.read(context.paneId);
+	const expected = expectedBrowserLink(context);
+	const fields = ["revision", "childId", "epoch", "threadId"] as const;
+	if (fields.some((field) => cas[field] !== expected[field])) {
+		throw new Error("The canvas thread link changed while this command waited; read it again.");
+	}
+}
+
+/**
  * The pane-visible thread inventory. Discovery is explicit: nothing here runs
  * until the browser asks for it, so opening a pane never exhausts two Codex
  * lists on its own and no thread is ever adopted from recency.
@@ -311,6 +329,20 @@ function createCanvasThreadLinkActions(
 		BrowserActionContext["connection"],
 		CodexThreadContextBindingToken
 	>();
+	let linkChanges: Promise<unknown> = Promise.resolve();
+	/**
+	 * Run one link change after every earlier one has settled. The canvas has one
+	 * link whichever pane asks, so a create that lost a race must be refused
+	 * before thread/start: past it, the loser's failed compare-and-swap would
+	 * leave the workhorse failed under the link the winner made.
+	 * @param change The change.
+	 * @returns What the change answered.
+	 */
+	const serializeLinkChange = <Value>(change: () => Promise<Value>): Promise<Value> => {
+		const run = linkChanges.then(change);
+		linkChanges = run.catch(() => undefined);
+		return run;
+	};
 	/**
 	 * The committed epoch record that owns one thread in this child epoch.
 	 * @param threadId The thread.
@@ -481,31 +513,33 @@ function createCanvasThreadLinkActions(
 	};
 	return Object.freeze({
 		/**
-		 * Start a new workhorse thread and link this pane to it.
+		 * Start a new workhorse thread and make it the canvas's link.
 		 * @param _command The creation, which names nothing to choose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
 		 */
-		create: async (_command, context) => {
-			const started = await options.workhorse.start({
-				paneId: context.paneId,
-				expected: expectedBrowserLink(context),
-			});
-			if (started.binding === null) {
-				throw new Error("The created workhorse did not return its adopted pane link.");
-			}
-			const ready = namedTarget(started, started.binding);
-			if (ready === null) {
-				throw new Error("The created workhorse did not return exact target authority.");
-			}
-			const token = replaceThreadContextBinding(
-				options.semanticDelivery,
-				ready.target,
-				started.binding,
-			);
-			controllerTokens.set(context.connection, token);
-			return { outcome: "delivered" };
-		},
+		create: (_command, context) =>
+			serializeLinkChange(async () => {
+				assertBrowserLinkStands(options.threadLink, context);
+				const started = await options.workhorse.start({
+					paneId: context.paneId,
+					expected: expectedBrowserLink(context),
+				});
+				if (started.binding === null) {
+					throw new Error("The created workhorse did not return its adopted pane link.");
+				}
+				const ready = namedTarget(started, started.binding);
+				if (ready === null) {
+					throw new Error("The created workhorse did not return exact target authority.");
+				}
+				const token = replaceThreadContextBinding(
+					options.semanticDelivery,
+					ready.target,
+					started.binding,
+				);
+				controllerTokens.set(context.connection, token);
+				return { outcome: "delivered" as const };
+			}),
 		/**
 		 * Re-discover the threads this pane could link to.
 		 * @returns The browser outcome.
@@ -515,19 +549,19 @@ function createCanvasThreadLinkActions(
 			return { outcome: "delivered" };
 		},
 		/**
-		 * Link this pane to a thread that already exists.
+		 * Make a thread that already exists the canvas's link.
 		 * @param command What the browser chose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
 		 */
-		attach: (command, context) => adoptCandidate(command, context),
+		attach: (command, context) => serializeLinkChange(() => adoptCandidate(command, context)),
 		/**
-		 * Move this pane's link to another existing thread.
+		 * Move the canvas's link to another existing thread.
 		 * @param command What the browser chose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
 		 */
-		relink: (command, context) => adoptCandidate(command, context),
+		relink: (command, context) => serializeLinkChange(() => adoptCandidate(command, context)),
 		/**
 		 * Forget which binding this browser connection took, and leave the binding
 		 * itself alone.

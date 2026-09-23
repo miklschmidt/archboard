@@ -196,8 +196,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		return issued;
 	};
 	/**
-	 * The pane whose link can run turns on one thread, which is the pane whose
-	 * context that thread's agent may read.
+	 * The pane whose context one thread's agent may read: the first open pane,
+	 * in reading order, whose link can run turns on that thread. Every pane of a
+	 * canvas shows the one link, so this is the first pane while it is linked.
 	 * @param threadId The thread.
 	 * @returns The pane, or null when no pane is linked to it.
 	 */

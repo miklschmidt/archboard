@@ -137,12 +137,17 @@ function storageBindings(
 }
 
 /**
- * The pane, child epoch and thread a workhorse operation is proven to be
- * running against, refused when any of them is open.
+ * The child epoch and thread a workhorse operation is proven to be running
+ * against, presented through an open pane, refused when any of them is open.
+ *
+ * The pane that created the link is preferred, but the conversation belongs to
+ * the canvas: once that pane closes, the work presents through another.
+ * @param host What picks the presenting pane.
  * @param workhorse The workhorse snapshot.
  * @returns The target.
  */
 function provenWorkhorseTarget(
+	host: Pick<CanvasCodexWorkbenchHost, "presentingPaneId">,
 	workhorse: ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>,
 ): Parameters<CanvasCodexWorkbenchHost["contextForOperation"]>[0] {
 	const { paneId, childId, epoch, threadId } = workhorse;
@@ -152,6 +157,7 @@ function provenWorkhorseTarget(
 	}
 	return {
 		...target,
+		paneId: host.presentingPaneId(target.paneId),
 		...(workhorse.binding ? { linkRevision: workhorse.binding.revision } : {}),
 	};
 }
@@ -254,13 +260,13 @@ function currentBindingReaders(
 			currentCoordinatorCall: () => owners.currentCoordinatorCall,
 			/**
 			 * The canonical context one workhorse operation runs under, captured
-			 * against the pane its thread is proven to be linked to.
+			 * against the thread it is proven to run on, through an open pane.
 			 * @param operation The operation.
 			 * @returns The context.
 			 */
 			contextFor: (operation) => {
 				const workhorse = requireCreated(created, "workhorse").snapshot();
-				const target = provenWorkhorseTarget(workhorse);
+				const target = provenWorkhorseTarget(host, workhorse);
 				return host.contextForOperation(target, {
 					id: operation.operationId,
 					kind: operation.kind,
@@ -488,13 +494,13 @@ function deliveryBindings(
 					return operation.decoder.serializeOperationId(operation.issuer.mintOperationId());
 				},
 				/**
-				 * The canonical context of an outcome report, against the voice-linked pane.
+				 * The canonical context of an outcome report, through an open pane.
 				 * @param operationId The minted operation identity.
 				 * @returns The context.
 				 */
 				contextFor: (operationId) =>
 					host.contextForOperation(
-						provenWorkhorseTarget(requireCreated(created, "workhorse").snapshot()),
+						provenWorkhorseTarget(host, requireCreated(created, "workhorse").snapshot()),
 						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
 					),
 			}),

@@ -107,8 +107,10 @@ function createCanvasOrdinaryApprovalActions(
 			}
 		},
 		/**
-		 * Cancel the approvals only this pane could have answered, so nothing is
-		 * left waiting on a browser that has gone.
+		 * Cancel the approvals on the link the last presenting browser was on, so
+		 * nothing is left waiting on a browser that has gone. The gateway calls
+		 * this only once no other open pane presents that link, and an approval
+		 * belongs to the link rather than to the pane that happened to create it.
 		 * @param context The pane, its child epoch, and the link it was on.
 		 * @param reason Why the browser stopped listening.
 		 */
@@ -117,7 +119,6 @@ function createCanvasOrdinaryApprovalActions(
 				return;
 			}
 			const authoredReason = disconnectWording(reason);
-			const exactPaneLink = `pane:${context.paneId}`;
 			const pending = approvals
 				.inspect()
 				.filter(
@@ -126,7 +127,7 @@ function createCanvasOrdinaryApprovalActions(
 						snapshot.child === context.childId &&
 						snapshot.epoch === context.epoch &&
 						snapshot.threadId === context.link.threadId &&
-						snapshot.binding.link === exactPaneLink,
+						snapshot.binding.link !== null,
 				);
 			await Promise.all(
 				pending.map(async (snapshot) => {
