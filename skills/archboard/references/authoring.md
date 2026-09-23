@@ -178,8 +178,9 @@ one, sending the reader back to every label to find the line that matters.
 
 The commoner mistake is the opposite: a board whose question has an answer
 path, left all `normal`, hands the reader a flat picture and the work you
-already did. If one sentence can say which relationships carry the board's
-answer, those are `hero`, and saying it is the check; a board with no such
+already did. If one sentence can say the board's answer, the relationships it
+rests on (take one away and the sentence is false) are `hero`, and saying it is
+the check; a board with no such
 sentence (a catalogue of parts, a dependency map) has no spine and correctly
 marks nothing.
 

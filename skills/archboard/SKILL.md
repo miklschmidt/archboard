@@ -382,7 +382,9 @@ propose) reads each recipe it needs, in the order the request runs them. A
 request for a narrated video makes or finds the board with its recipe, then
 [records a walkthrough](references/sequences-views-walkthroughs.md#recording-a-walkthrough);
 a video for a pull request's reviewers follows
-[a pull request's recording](references/sequences-views-walkthroughs.md#a-pull-requests-recording).
+[a pull request's recording](references/sequences-views-walkthroughs.md#a-pull-requests-recording),
+and an explanation for somebody new to the code follows
+[a newcomer's walkthrough](references/sequences-views-walkthroughs.md#a-newcomers-walkthrough).
 
 ## Keep it true
 
