@@ -14,6 +14,8 @@ interface PendingBeside {
 	readonly key: string;
 	/** The pane that was active when it was asked for: the new pane is the other one. */
 	readonly from: string;
+	/** The new pane has appeared: should it go again before it is ready, the board is not wanted any more. */
+	seen: boolean;
 }
 
 /**
@@ -25,7 +27,20 @@ interface PendingBeside {
 function readyTarget(panes: Panes, pending: PendingBeside): string | null {
 	const target = panes.list.panes.find((pane) => pane.paneId !== pending.from);
 	if (target === undefined) return null;
+	pending.seen = true;
 	return paneReady(recordFor(panes.records, target.paneId).status) ? target.paneId : null;
+}
+
+/**
+ * Whether a pending board is no longer wanted: the pane added for it went
+ * before it was ready, or the pane it was asked from did.
+ * @param panes The panes.
+ * @param pending The pending board.
+ * @returns True when it should be forgotten.
+ */
+function abandoned(panes: Panes, pending: PendingBeside): boolean {
+	const ids = panes.list.panes.map((pane) => pane.paneId);
+	return !ids.includes(pending.from) || (pending.seen && ids.length < 2);
 }
 
 /**
@@ -36,16 +51,22 @@ function readyTarget(panes: Panes, pending: PendingBeside): string | null {
  */
 function useBesideOpening(
 	panes: Panes,
-	actions: Pick<ShellActions, "selectBoard" | "addPane">,
+	actions: Pick<ShellActions, "selectBoard" | "addPane" | "selectPane">,
 ): (key: string) => void {
 	const pending = useRef<PendingBeside | null>(null);
 	useEffect(() => {
 		const wanted = pending.current;
 		if (wanted === null) return;
+		if (abandoned(panes, wanted)) {
+			pending.current = null;
+			return;
+		}
 		const paneId = readyTarget(panes, wanted);
 		if (paneId === null) return;
 		pending.current = null;
 		actions.selectBoard(wanted.key, paneId);
+		// Beside means the person stays where they were reading, as with two panes.
+		actions.selectPane(wanted.from);
 	}, [panes, actions]);
 	return useCallback(
 		(key: string): void => {
@@ -55,7 +76,7 @@ function useBesideOpening(
 				actions.selectBoard(key, other.paneId);
 				return;
 			}
-			pending.current = { key, from: list.activePaneId };
+			pending.current = { key, from: list.activePaneId, seen: false };
 			actions.addPane();
 		},
 		[panes, actions],

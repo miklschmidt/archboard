@@ -39,7 +39,10 @@ export {
 	type SemanticTarget,
 } from "@/ui/semantic-board-canvas/lib/address";
 export { SemanticStanding } from "@/ui/semantic-board-canvas/components/SemanticStanding";
-export { announceSemanticBoardChange } from "@/ui/semantic-board-canvas/lib/board-changes";
+export {
+	announceSemanticBoardChange,
+	onSemanticBoardChange,
+} from "@/ui/semantic-board-canvas/lib/board-changes";
 export {
 	semanticBoardKeys,
 	semanticBoardListQuery,

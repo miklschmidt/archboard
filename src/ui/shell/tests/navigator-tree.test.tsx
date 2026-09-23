@@ -231,7 +231,8 @@ test("each board is one row, nested under the board it drills down from, with th
 		"state:state:payments@old@3",
 		"board:board:ledger@3",
 	]);
-	expect(row("board:payments").getAttribute("aria-selected")).toBe("true");
+	// One selected row: the state being read, not also its board.
+	expect(row("board:payments").getAttribute("aria-selected")).toBe("false");
 	expect(row("state:payments").getAttribute("aria-selected")).toBe("true");
 });
 
@@ -247,7 +248,7 @@ test("a board opens by its bare name and a state by its own key, beside with Alt
 	expect(asked.beside).toEqual(["payments@queued"]);
 });
 
-test("the arrows walk the tree: left closes and climbs, right opens and descends, Enter opens", () => {
+test("the arrows walk the tree: right opens boards, then states, then descends; left undoes it; Enter opens", () => {
 	const asked = mountNavigator({ panes: [pane("A", "audit")], selectedBoardKey: "audit" });
 	expect(rows()).toEqual([
 		"board:board:audit@1",
@@ -259,10 +260,20 @@ test("the arrows walk the tree: left closes and climbs, right opens and descends
 	expect(document.activeElement).toBe(row("board:payments"));
 	press("ArrowRight");
 	expect(rows()).toContain("board:board:ledger@3");
+	/**
+	 * How many state rows are drawn.
+	 * @returns The count.
+	 */
+	const states = (): number => rows().filter((id) => id.startsWith("state:")).length;
+	expect(states()).toBe(0);
 	press("ArrowRight");
-	expect(document.activeElement).toBe(row("board:ledger"));
+	expect(states()).toBeGreaterThan(0);
+	press("ArrowRight");
+	expect(document.activeElement?.getAttribute("data-row-kind")).toBe("state");
 	press("ArrowLeft");
 	expect(document.activeElement).toBe(row("board:payments"));
+	press("ArrowLeft");
+	expect(states()).toBe(0);
 	press("ArrowLeft");
 	expect(rows()).not.toContain("board:board:ledger@3");
 	press("Enter", true);

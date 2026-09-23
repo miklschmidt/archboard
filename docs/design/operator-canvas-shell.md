@@ -126,7 +126,8 @@ work vault in the dark theme with the board on screen showing its states.
 
 - **Where a board sits is decided by what the boards say**, never by activity,
   focus or recency: `/` folders in a name first, then the board it drills up
-  from (a container's up link, else the coarsest board that drills down to it),
+  from (a container's up link, else the closest coarser board that drills down
+  to it; a container link that runs down the levels counts as a down link),
   then name order that reads numbers as numbers. A vault with no drill links is
   one alphabetical list; the order never moves under the pointer.
 - **One row per board**: its name in full (a long name wraps rather than

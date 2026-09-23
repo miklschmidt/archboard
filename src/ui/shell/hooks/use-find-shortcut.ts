@@ -36,6 +36,8 @@ function useFindShortcut(input: RefObject<HTMLInputElement | null>): void {
 		 * @param event The key event.
 		 */
 		const onKeyDown = (event: KeyboardEvent): void => {
+			// A presented pane keeps its keys: the filter is not on screen.
+			if (document.fullscreenElement !== null) return;
 			if (event.defaultPrevented || !asksForFilter(event)) return;
 			event.preventDefault();
 			input.current?.focus();

@@ -229,7 +229,9 @@ _Avoid_: coordinates, theme, layout settings
 
 **Level**:
 The required abstraction classification of a board, chosen from the vocabulary
-defined by the vault's consumer — commonly system, service, module. A
+defined by the vault's consumer — commonly system, service, module — and
+listed there coarsest first, which is how the navigator knows which of two
+drilled boards sits above the other. A
 system board shows interactions between services; a service board shows interactions
 between its modules, with navigation connecting these separate boards. A node
 is at its board's level unless it says otherwise, and the only nodes that say

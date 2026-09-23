@@ -49,7 +49,7 @@ function PaneTab(props: PaneTabProps): JSX.Element {
 	return (
 		<ToggleGroupItem
 			value={pane.status.paneId}
-			aria-label={`Pane ${letter}${name === null ? "" : ` · ${name}`}`}
+			aria-label={`Pane ${letter}${name === null ? "" : ` · ${name}`}${pane.status.connected ? "" : ", offline"}`}
 			aria-current={active ? "true" : undefined}
 			className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto max-w-96 min-w-0 gap-2 rounded-none! border-r border-b-2 border-b-transparent px-3 focus-visible:ring-inset aria-pressed:bg-transparent"
 		>

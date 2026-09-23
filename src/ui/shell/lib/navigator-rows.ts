@@ -45,7 +45,10 @@ interface BoardRow extends RowBase {
 	readonly label: string;
 	/** Boards are drawn under it. */
 	readonly hasChildren: boolean;
+	/** The boards under it are listed. */
 	readonly expanded: boolean;
+	/** Something is listed under it: its boards, its states, or both. */
+	readonly listed: boolean;
 	/** How many states it has beside the one its name opens. */
 	readonly otherStates: number;
 	/** Its states are listed under it. */
@@ -54,6 +57,8 @@ interface BoardRow extends RowBase {
 	readonly onScreen: readonly string[];
 	/** The active pane shows it. */
 	readonly active: boolean;
+	/** The tree's one selected row: the board being read, when none of its states is listed. */
+	readonly selected: boolean;
 	/** What an agent is doing to it, or null. */
 	readonly activity: AgentActivityEntry | null;
 	/** An agent works on a board under it while it is closed. */
@@ -94,8 +99,8 @@ interface NavigatorRowInputs {
 	readonly outline: readonly OutlineNode<CatalogBoard>[];
 	/** Whether a folder or board is open, when no filter is on. */
 	readonly expanded: (id: string) => boolean;
-	/** Boards whose states the person opened. */
-	readonly statesOpen: ReadonlySet<string>;
+	/** Boards whose states the person opened (true) or closed (false); the board being read lists them unless closed. */
+	readonly statesChoice: ReadonlyMap<string, boolean>;
 	/** The filter, folded; empty when none. */
 	readonly query: string;
 	/** The active pane's board name, or null. */
@@ -286,8 +291,8 @@ function stateRow(
 }
 
 /**
- * Whether a board lists its states under it: the person opened them, or it
- * is the board being read and has more than one.
+ * Whether a board lists its states under it: the person's choice, else only
+ * the board being read — and only when it has more than one.
  * @param inputs The inputs.
  * @param id The board row's id.
  * @param board The board.
@@ -296,7 +301,7 @@ function stateRow(
 function statesShown(inputs: NavigatorRowInputs, id: string, board: CatalogBoard): boolean {
 	return (
 		board.variants.length > 1 &&
-		(inputs.statesOpen.has(id) || sameName(inputs.activeBoard, board.name))
+		(inputs.statesChoice.get(id) ?? sameName(inputs.activeBoard, board.name))
 	);
 }
 
@@ -355,7 +360,7 @@ function boardRow(
 	node: BoardNode,
 	at: Placement,
 	statesOpen: boolean,
-): Unplaced<BoardRow> {
+): Omit<Unplaced<BoardRow>, "listed" | "selected"> {
 	const { board } = node;
 	const open = isOpen(inputs, node);
 	const match = inputs.query.length > 0 ? boardMatch(node, inputs.query) : null;
@@ -393,7 +398,6 @@ function boardRows(
 	at: Placement,
 ): Unplaced<NavigatorRow>[] {
 	const states = listedStates(inputs, node);
-	const row = boardRow(inputs, node, at, states.length > 0);
 	const stateList = stateRows(inputs, node.board, states, {
 		depth: at.depth + 1,
 		parentId: node.id,
@@ -401,6 +405,12 @@ function boardRows(
 	const below = isOpen(inputs, node)
 		? nodeRows(inputs, node.children, { depth: at.depth + 1, parentId: node.id })
 		: [];
+	const base = boardRow(inputs, node, at, states.length > 0);
+	const row: Unplaced<BoardRow> = {
+		...base,
+		listed: stateList.length + below.length > 0,
+		selected: base.active && !stateList.some((state) => state.active),
+	};
 	return [row, ...stateList, ...below];
 }
 
@@ -456,12 +466,13 @@ function nodeRows(
 }
 
 /**
- * The siblings key of one row: its parent and whether it is a state.
+ * The siblings key of one row: the row it sits under. A board's states and
+ * the boards under it are one group of siblings, as the tree draws them.
  * @param row The row.
  * @returns The key.
  */
 function siblingsOf(row: Unplaced<NavigatorRow>): string {
-	return `${row.parentId ?? ""}|${row.kind === "state" ? "state" : "node"}`;
+	return row.parentId ?? "";
 }
 
 /**
@@ -491,7 +502,8 @@ function navigatorRows(inputs: NavigatorRowInputs): NavigatorRow[] {
 }
 
 /**
- * How many boards the filter found, and how many there are.
+ * How many boards the filter found — by their own names, or by a state of
+ * theirs — and how many there are.
  * @param rows The rows drawn.
  * @param total How many boards the vault lists.
  * @returns The found and total counts.
@@ -500,8 +512,13 @@ function filterCount(
 	rows: readonly NavigatorRow[],
 	total: number,
 ): { readonly found: number; readonly total: number } {
-	const found = rows.filter((row) => row.kind === "board" && !row.dimmed).length;
-	return { found, total };
+	const found = new Set(
+		rows.flatMap((row) => {
+			if (row.kind === "state") return [row.board.key];
+			return row.kind === "board" && !row.dimmed ? [row.board.key] : [];
+		}),
+	);
+	return { found: found.size, total };
 }
 
 export {

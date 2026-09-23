@@ -145,3 +145,17 @@ test("ancestors and path ids lead to a board through folders and parents", () =>
 	]);
 	expect(pathIds(outline, "missing")).toEqual([]);
 });
+
+test("a container link that runs down the levels places the linked board under the linker", () => {
+	// Platform draws Payments as a container of its modules: Platform is still Payments' parent.
+	const outline = buildOutline(
+		[board("Platform", "system", "^Payments"), board("Payments", "service")],
+		LEVELS,
+	);
+	expect(shape(outline)).toEqual(["Platform", "  Payments"]);
+});
+
+test("folders spelled in two cases are one folder", () => {
+	const outline = buildOutline([board("Payments/a", null), board("payments/b", null)], LEVELS);
+	expect(shape(outline)).toEqual(["Payments/ 2", "  a", "  b"]);
+});

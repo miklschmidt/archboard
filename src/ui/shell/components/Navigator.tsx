@@ -37,7 +37,7 @@ interface NavigatorProps {
 	actions: ShellActions;
 }
 
-const NO_IDS: ReadonlySet<string> = new Set();
+const NO_CHOICES: ReadonlyMap<string, boolean> = new Map();
 
 /**
  * Every pane as the rows mark it: its letter, its board and its state.
@@ -130,7 +130,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	const column = useRef<HTMLElement>(null);
 	useFindShortcut(input);
 	const [query, setQuery] = useState("");
-	const [statesOpen, setStatesOpen] = useState<ReadonlySet<string>>(NO_IDS);
+	const [statesChoice, setStatesChoice] = useState<ReadonlyMap<string, boolean>>(NO_CHOICES);
 	const active = activeReading(view);
 	const expansion = useNavigatorExpansion(outline, active.board);
 	const panes = useMemo(() => paneMarks(view), [view]);
@@ -140,14 +140,14 @@ function Navigator(props: NavigatorProps): JSX.Element {
 			navigatorRows({
 				outline,
 				expanded: expansion.expanded,
-				statesOpen,
+				statesChoice,
 				query: folded,
 				activeBoard: active.board,
 				activeKey: active.key,
 				panes,
 				activity: view.agentActivity,
 			}),
-		[outline, expansion, statesOpen, folded, active.board, active.key, panes, view.agentActivity],
+		[outline, expansion, statesChoice, folded, active.board, active.key, panes, view.agentActivity],
 	);
 	const open = useCallback(
 		(row: NavigatorRow, beside: boolean): void => {
@@ -160,12 +160,8 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		(board: string, beside: boolean): void => openKey(actions, board, beside),
 		[actions],
 	);
-	const onToggleStates = useCallback((id: string): void => {
-		setStatesOpen((current) => {
-			const next = new Set(current);
-			if (!next.delete(id)) next.add(id);
-			return next;
-		});
+	const onStates = useCallback((id: string, listed: boolean): void => {
+		setStatesChoice((current) => new Map(current).set(id, listed));
 	}, []);
 	const onTypeAhead = useCallback((text: string): void => {
 		setQuery((current) => current + text);
@@ -182,7 +178,11 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		column.current?.querySelector<HTMLElement>('[role="tree"] [tabindex="0"]')?.focus();
 	}, []);
 	const homeId = boardRowId(active.board);
-	useRevealActive(column, homeId);
+	useRevealActive(
+		column,
+		homeId,
+		rows.some((row) => row.id === homeId),
+	);
 
 	return (
 		<nav
@@ -214,8 +214,9 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					homeId={homeId}
 					onOpen={open}
 					onExpand={expansion.setExpanded}
-					onToggleStates={onToggleStates}
+					onStates={onStates}
 					onTypeAhead={onTypeAhead}
+					filtering={folded.length > 0}
 				/>
 			</div>
 			<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
@@ -229,22 +230,29 @@ function Navigator(props: NavigatorProps): JSX.Element {
  * row they did not choose.
  * @param column The navigator.
  * @param rowId The board row being read, or null.
+ * @param drawn Whether its row is drawn yet: the listing may arrive after the pane reports.
  */
-function useRevealActive(column: RefObject<HTMLElement | null>, rowId: string | null): void {
+function useRevealActive(
+	column: RefObject<HTMLElement | null>,
+	rowId: string | null,
+	drawn: boolean,
+): void {
 	useEffect(() => {
 		const root = column.current;
-		if (
-			rowId === null ||
-			root === null ||
-			root.contains(document.activeElement) ||
-			root.matches(":hover")
-		) {
-			return;
-		}
+		if (!drawn || rowId === null || root === null || personIsIn(root)) return;
 		root
 			.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`)
 			?.scrollIntoView({ block: "nearest" });
-	}, [column, rowId]);
+	}, [column, rowId, drawn]);
+}
+
+/**
+ * Whether the person is using the navigator: its focus or their pointer is in it.
+ * @param root The navigator.
+ * @returns True while they are.
+ */
+function personIsIn(root: HTMLElement): boolean {
+	return root.contains(document.activeElement) || root.matches(":hover");
 }
 
 /** Inputs for the line shown when the tree has nothing to show. */
