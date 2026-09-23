@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { CodeBinding } from "@/shared/code-target";
-import { repoIdentityAt, repoRootOf } from "@/runtime/engine/git";
+import { checkoutHead, repoIdentityAt, repoRootOf, type CheckoutHead } from "@/runtime/engine/git";
 import { listRepos, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
 import {
 	isPathWithin,
@@ -15,6 +15,7 @@ import {
 export type {
 	LocalCodeTarget,
 	LocalCodeTargetResult,
+	OtherRef,
 	RegisteredCheckout,
 	RegisteredCheckoutResult,
 	ResolutionFailure,
@@ -25,6 +26,8 @@ interface CheckoutInspection {
 	readonly registeredRoot?: string;
 	readonly root?: string;
 	readonly identity?: string;
+	/** What the checkout has out, so a binding pinned to a ref can be held to it. */
+	readonly head?: Readonly<CheckoutHead>;
 }
 
 interface PathInspection {
@@ -42,6 +45,9 @@ export interface CheckoutSnapshot {
 type SnapshotOptions = { signal?: AbortSignal; bindings?: readonly CodeBinding[] };
 type InspectedCheckout = readonly [string, CheckoutInspection];
 type RememberPath = (candidate: string, realpath: string, kind: PathInspection["kind"]) => void;
+
+/** A checkout nothing was captured about: no branch and no commit. */
+const NOTHING_OUT: Readonly<CheckoutHead> = Object.freeze({});
 
 export const EMPTY_CHECKOUT_SNAPSHOT: CheckoutSnapshot = Object.freeze({
 	entries: Object.freeze([]),
@@ -80,14 +86,11 @@ async function inspectCheckout(
 			return [entry.repo, Object.freeze({})];
 		}
 		const root = fs.realpathSync.native(discoveredRoot);
-		return [
-			entry.repo,
-			Object.freeze({
-				registeredRoot,
-				root,
-				identity: await repoIdentityAt(root, options),
-			}),
-		];
+		const [identity, head] = await Promise.all([
+			repoIdentityAt(root, options),
+			checkoutHead(root, options),
+		]);
+		return [entry.repo, Object.freeze({ registeredRoot, root, identity, head })];
 	} catch {
 		if (options.signal?.aborted) {
 			throw new DOMException("Checkout snapshot cancelled.", "AbortError");
@@ -311,6 +314,15 @@ function dependenciesFor(snapshot: CheckoutSnapshot): ResolverDependencies {
 				(item) => snapshot.inspection(item.repo)?.root === candidate,
 			);
 			return (entry && snapshot.inspection(entry.repo)?.identity) || "";
+		},
+		/**
+		 * Reads what the checkout rooted at the candidate had out when it was captured.
+		 * @param root - A canonical Git root.
+		 * @returns Its branch and commit, or nothing known when none was captured.
+		 */
+		repoHead: (root) => {
+			const entry = snapshot.entries.find((item) => snapshot.inspection(item.repo)?.root === root);
+			return (entry && snapshot.inspection(entry.repo)?.head) || NOTHING_OUT;
 		},
 	};
 }

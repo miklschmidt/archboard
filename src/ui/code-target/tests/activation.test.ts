@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@/shared/code-target";
-import { activateCodeTarget } from "@/ui/code-target";
+import { activateCodeTarget, openedNotice } from "@/ui/code-target";
 
 const originalFetch = globalThis.fetch;
 
@@ -167,5 +167,42 @@ describe("code-target activation", () => {
 			kind: "error",
 			message: expect.stringContaining("RESPONSE_INVALID"),
 		});
+	});
+});
+
+describe("code on another ref than the binding names", () => {
+	test("a checkout's version opened in its place names both refs, and a plain open says nothing", () => {
+		expect(openedNotice(SUCCESS)).toBeNull();
+		const notice = openedNotice({
+			...SUCCESS,
+			otherRef: { named: "release/2.1", checkedOut: "main" },
+		});
+		expect(notice?.kind).toBe("info");
+		expect(notice?.message).toContain("release/2.1");
+		expect(notice?.message).toContain("main");
+	});
+
+	test("a refusal to open another ref is information, with the way to the bound one", async () => {
+		const href = "https://github.com/acme/repo/tree/release%2F2.1/src/index.ts";
+		answering(
+			{
+				success: false,
+				code: "CHECKOUT_ON_OTHER_REF",
+				error: "The checkout is on main, and this binding names release/2.1.",
+				actions: [{ kind: "github", label: "Open on GitHub", href }],
+			},
+			409,
+		);
+		const { onSuccess, onFailure } = outcomes();
+		activateCodeTarget({
+			boardKey: "system/payments",
+			elementId: "7c40IV7N",
+			onSuccess,
+			onFailure,
+		});
+		await settle();
+		expect(onFailure).toHaveBeenCalledWith(
+			expect.objectContaining({ kind: "info", actions: [expect.objectContaining({ href })] }),
+		);
 	});
 });

@@ -52,6 +52,57 @@ describe("registered checkout", () => {
 	});
 });
 
+describe("a binding pinned to a branch or commit", () => {
+	/**
+	 * Run Git in the fixture checkout.
+	 * @param args Its arguments.
+	 * @returns What it printed, trimmed.
+	 */
+	function inCheckout(...args: string[]): string {
+		const run = Bun.spawnSync(
+			["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args],
+			{ cwd: fixture.checkout },
+		);
+		return run.stdout.toString().trim();
+	}
+
+	/**
+	 * Resolve one binding of the fixture's file, pinned as given.
+	 * @param pin The branch or commit it names.
+	 * @returns The local target.
+	 */
+	async function pinned(pin: { branch?: string; commit?: string }) {
+		const binding = { repo: fixture.repository, path: "src/index.ts", ...pin };
+		return resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ bindings: [binding] }));
+	}
+
+	test("opens locally on the bound ref, and names both refs when the checkout is on another", async () => {
+		inCheckout("checkout", "-q", "-b", "work");
+		inCheckout("commit", "-q", "--allow-empty", "-m", "first");
+		const head = inCheckout("rev-parse", "HEAD");
+
+		// No pin, the bound branch, the bound commit abbreviated: the checkout's own version.
+		for (const pin of [{}, { branch: "work" }, { commit: head.slice(0, 7) }]) {
+			const target = await pinned(pin);
+			expect(target.ok && target.otherRef).toBeUndefined();
+		}
+		expect(await pinned({ branch: "release/2.1" })).toMatchObject({
+			ok: true,
+			otherRef: { named: "release/2.1", checkedOut: "work" },
+		});
+		// A named commit decides over a branch, since it is exact.
+		expect(await pinned({ branch: "work", commit: "0123abc" })).toMatchObject({
+			ok: true,
+			otherRef: { named: "0123abc", checkedOut: "work" },
+		});
+		inCheckout("checkout", "-q", "--detach");
+		expect(await pinned({ branch: "work" })).toMatchObject({
+			ok: true,
+			otherRef: { named: "work", checkedOut: head },
+		});
+	});
+});
+
 describe("local code target containment", () => {
 	test("rejects a Windows cross-drive relative result", () => {
 		expect(isPathWithin("C:\\repo", "D:\\escape", win32)).toBeFalse();

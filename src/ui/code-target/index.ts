@@ -27,12 +27,34 @@ interface CodeTargetActivationOptions {
 }
 
 /**
- * The notice for a typed failure.
+ * The notice for a typed failure. A checkout on another ref than the binding names is not an
+ * error: the code is there, at the bound ref, behind the action the notice offers.
  * @param reply The failure.
  * @returns The notice, with the failure's actions.
  */
 function failureNotice(reply: CodeTargetOpenFailure): CodeTargetNotice {
-	return { kind: "error", message: reply.error, actions: reply.actions ?? [] };
+	return {
+		kind: reply.code === "CHECKOUT_ON_OTHER_REF" ? "info" : "error",
+		message: reply.error,
+		actions: reply.actions ?? [],
+	};
+}
+
+/**
+ * What the person is told about a successful open: nothing, unless the checkout's version was
+ * opened although the binding names another branch or commit.
+ * @param reply The success.
+ * @returns The notice, or null when the editor showing the code says it all.
+ */
+function openedNotice(reply: CodeTargetOpenSuccess): CodeTargetNotice | null {
+	if (reply.otherRef === undefined) {
+		return null;
+	}
+	return {
+		kind: "info",
+		message: `Opened ${reply.path} as it is on ${reply.otherRef.checkedOut}. The binding names ${reply.otherRef.named}.`,
+		actions: [],
+	};
 }
 
 /**
@@ -61,6 +83,7 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
 
 export {
 	activateCodeTarget,
+	openedNotice,
 	fetchOpenerSettings,
 	openCodeTarget,
 	resetOpenerSettings,

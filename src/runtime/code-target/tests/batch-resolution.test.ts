@@ -68,7 +68,7 @@ test("one unavailable checkout does not discard another repository's valid evide
 	expect(results[1]).toMatchObject({ ok: false, code: "CHECKOUT_UNAVAILABLE" });
 });
 
-test("one change-report batch validates each repository once and every target independently", async () => {
+test("one batch validates each repository once and every target independently", async () => {
 	const secondCheckout = join(fixture.root, "second-checkout");
 	const secondRepository = "github.com/acme/ledger";
 	fs.mkdirSync(join(secondCheckout, "lib"), { recursive: true });
@@ -125,6 +125,7 @@ test("one change-report batch validates each repository once and every target in
 			counts.identity++;
 			return identities.get(candidate) ?? "";
 		},
+		repoHead: () => ({}),
 	};
 	const bindings = [
 		{ repo: fixture.repository, path: "src/index.ts" },

@@ -100,7 +100,8 @@ function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
 
 /**
  * Chooses the URL a card opens: the internal opener when the target resolved
- * locally, otherwise the GitHub fallback.
+ * locally on the ref the binding names, otherwise the GitHub fallback at that
+ * ref, and the local target on another ref only when there is no fallback.
  * @param binding - The binding to present.
  * @param identity - The open request the internal opener answers.
  * @param local - The local resolution outcome for the binding.
@@ -111,7 +112,12 @@ function presentationTargetForBinding(
 	identity: CodeTargetOpenRequest,
 	local: LocalCodeTargetResult,
 ): string | undefined {
-	return local.ok ? buildInternalCodeTargetUrl(identity) : githubUrlForBinding(binding);
+	if (local.ok && local.otherRef === undefined) {
+		return buildInternalCodeTargetUrl(identity);
+	}
+	return (
+		githubUrlForBinding(binding) ?? (local.ok ? buildInternalCodeTargetUrl(identity) : undefined)
+	);
 }
 
 export { githubUrlForBinding, presentationTargetForBinding };

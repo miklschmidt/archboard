@@ -188,13 +188,15 @@ board needs all of it.
    node's stated responsibility, not a file that imports, registers or calls
    it. An implementation unavailable for inspection stays unbound. A planned
    part, which is only ever on a draft, binds to the path its code is to live
-   at when the request states one, and stays unbound when it does not. An
-   implementation in another checkout may bind after you inspect
-   its owner and register that repository once with `archboard repo add
-<path>`, whose answer is the identity a `binding` names. When a node's
-   responsibility spans
-   files, narrow the responsibility or split the node rather than bind to the
-   wrong one.
+   at when the request states one, and stays unbound when it does not. Add
+   `branch` when the code lives only on a branch that is not the default one,
+   such as the branch of a pull request, and `commit` when the node describes
+   one exact version; leave both out so the binding follows the default
+   branch. An implementation in another checkout may bind after you inspect
+   its owner and register that repository once with `archboard repo add`,
+   whose answer is the identity a `binding` names. When a node's
+   responsibility spans files, narrow the responsibility or split the node
+   rather than bind to the wrong one.
 3. **Prove each relationship and step from source.** For every `edge` and
    every flow step keep a one-line record: `from` → `to`, the semantic kind,
    and the source file and function or symbol that prove the mechanism. For a
