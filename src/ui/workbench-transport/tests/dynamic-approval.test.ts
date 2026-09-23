@@ -120,7 +120,7 @@ function snapshot(options: SnapshotOptions = {}): WireRecord {
 			truncated: false,
 			reason: null,
 		},
-		timeline: { kind: "timeline", threadId, turns: [], nextCursor: null },
+		timeline: { kind: "timeline", threadId, turns: [], nextCursor: null, usage: null },
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
 		approvals: [],

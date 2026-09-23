@@ -165,9 +165,15 @@ function timeline(status: Timeline["turns"][number]["status"] = "inProgress"): T
 				summary: "The linked workhorse turn",
 				outputsIncluded: true,
 				outputsTruncated: false,
+				startedAtMs: null,
+				completedAtMs: null,
+				durationMs: null,
+				error: null,
+				plan: null,
 			},
 		],
 		nextCursor: null,
+		usage: null,
 	};
 }
 

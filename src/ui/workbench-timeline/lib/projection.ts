@@ -17,12 +17,15 @@ type BrowserTurn = BrowserTimeline["turns"][number];
 type BrowserItem = BrowserTurn["items"][number];
 
 const SUPPORTED_MEDIA: ReadonlySet<string> = new Set([
+	"prompt",
 	"text",
 	"reasoning",
 	"plan",
 	"tool",
 	"command",
 	"fileChange",
+	"search",
+	"compaction",
 	"approval",
 ]);
 
@@ -123,17 +126,38 @@ function toolPart(
 }
 
 /**
- * The part one published item becomes.
+ * The part one published item becomes, or null for what the assistant's
+ * message does not show.
  * @param item The item.
- * @returns The part.
+ * @returns The part, or null.
  */
-function itemPart(item: BrowserItem): WorkbenchTurnPart {
+function itemPart(item: BrowserItem): WorkbenchTurnPart | null {
 	switch (item.media) {
 		case "text":
 		case "plan":
 			return { kind: "text", text: item.text };
 		case "reasoning":
 			return { kind: "reasoning", text: item.text };
+		default:
+			return activityPart(item);
+	}
+}
+
+/**
+ * The part an item that is not assistant text becomes: the person's own prompt
+ * and a compaction marker show nothing, and the rest present as tools.
+ * @param item The item.
+ * @returns The part, or null.
+ */
+function activityPart(
+	item: Exclude<BrowserItem, { readonly media: "text" | "plan" | "reasoning" }>,
+): WorkbenchTurnPart | null {
+	switch (item.media) {
+		case "prompt":
+		case "compaction":
+			return null;
+		case "search":
+			return toolPart(item, "webSearch", item.query ?? "", "completed");
 		default:
 			return toolItemPart(item);
 	}
@@ -163,8 +187,9 @@ function toolItemPart(item: Extract<BrowserItem, { readonly status: string }>): 
  * @returns The parts.
  */
 function turnParts(turn: BrowserTurn): readonly WorkbenchTurnPart[] {
-	if (turn.items.length > 0) {
-		return turn.items.map(itemPart);
+	const parts = turn.items.flatMap((item) => itemPart(item) ?? []);
+	if (parts.length > 0) {
+		return parts;
 	}
 	return turn.status === "inProgress" ? [] : [{ kind: "text", text: turn.summary }];
 }

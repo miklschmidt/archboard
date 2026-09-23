@@ -56,10 +56,16 @@ function timeline(overrides: Partial<Turn> = {}): BrowserTimeline {
 				summary: "Completed",
 				outputsIncluded: true,
 				outputsTruncated: false,
+				startedAtMs: null,
+				completedAtMs: null,
+				durationMs: null,
+				error: null,
+				plan: null,
 				...overrides,
 			},
 		],
 		nextCursor: null,
+		usage: null,
 	};
 }
 

@@ -77,20 +77,32 @@ function compileReadonlyTimeline(view: CodexTimelineProjectionInput): void {
 
 void compileReadonlyTimeline;
 
-test("timeline projection maps all seven owner arms and omits private extensions", () => {
+test("timeline projection maps every owner arm with its evidence and omits private extensions", () => {
 	const authorities = createIdentityAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const input = projectionInput(authorities);
-	const threadId = authorities.identity.decoder.adoptThreadId("closure-thread");
-	const turnId = authorities.identity.decoder.adoptTurnId("timeline-turn");
-	const messageItemId = authorities.identity.decoder.adoptItemId("timeline-message");
-	const toolItemId = authorities.identity.decoder.adoptItemId("timeline-tool");
-	const commandItemId = authorities.identity.decoder.adoptItemId("timeline-command");
-	const fileItemId = authorities.identity.decoder.adoptItemId("timeline-file");
-	const reasoningItemId = authorities.identity.decoder.adoptItemId("timeline-reasoning");
-	const planItemId = authorities.identity.decoder.adoptItemId("timeline-plan");
-	const approvalItemId = authorities.identity.decoder.adoptItemId("timeline-approval-item");
-	const approvalId = authorities.identity.decoder.adoptApprovalId("timeline-approval");
+	const decoder = authorities.identity.decoder;
+	const threadId = decoder.adoptThreadId("closure-thread");
+	const turnId = decoder.adoptTurnId("timeline-turn");
+	const promptItemId = decoder.adoptItemId("timeline-prompt");
+	const messageItemId = decoder.adoptItemId("timeline-message");
+	const toolItemId = decoder.adoptItemId("timeline-tool");
+	const commandItemId = decoder.adoptItemId("timeline-command");
+	const fileItemId = decoder.adoptItemId("timeline-file");
+	const reasoningItemId = decoder.adoptItemId("timeline-reasoning");
+	const planItemId = decoder.adoptItemId("timeline-plan");
+	const searchItemId = decoder.adoptItemId("timeline-search");
+	const compactionItemId = decoder.adoptItemId("timeline-compaction");
+	const approvalItemId = decoder.adoptItemId("timeline-approval-item");
+	const approvalId = decoder.adoptApprovalId("timeline-approval");
+	const breakdown = {
+		totalTokens: 120,
+		inputTokens: 100,
+		cachedInputTokens: 40,
+		cacheWriteInputTokens: 0,
+		outputTokens: 20,
+		reasoningOutputTokens: 5,
+	};
 	const timeline = {
 		kind: "codex_timeline",
 		threadId,
@@ -98,10 +110,22 @@ test("timeline projection maps all seven owner arms and omits private extensions
 			{
 				turn: {
 					id: turnId,
-					status: "completed",
+					status: "failed",
+					startedAt: 1_700_000_000,
+					completedAt: 1_700_000_003,
+					durationMs: 3_250,
 					privateTurnPath: "/private/timeline/turn",
 				},
 				items: [
+					{
+						kind: "user_message",
+						item: {
+							type: "userMessage",
+							id: promptItemId,
+							privatePromptPath: "/private/timeline/prompt",
+						},
+						text: "Explain the renderer",
+					},
 					{
 						kind: "agent_message",
 						item: {
@@ -117,9 +141,13 @@ test("timeline projection maps all seven owner arms and omits private extensions
 							type: "mcpToolCall",
 							id: toolItemId,
 							tool: "fetch_architecture",
-							status: "completed",
+							status: "failed",
+							durationMs: 12,
 							privateToolPath: "/private/timeline/tool",
 						},
+						server: "archboard",
+						arguments: '{"board":"payments"}',
+						error: "board not found",
 					},
 					{
 						kind: "command_execution",
@@ -128,8 +156,12 @@ test("timeline projection maps all seven owner arms and omits private extensions
 							id: commandItemId,
 							command: "bun test focused",
 							status: "completed",
+							exitCode: 1,
+							durationMs: 900,
 							privateCommandPath: "/private/timeline/command",
 						},
+						cwd: "/repo",
+						output: { tail: "1 fail", truncated: true },
 					},
 					{
 						kind: "file_change",
@@ -139,6 +171,17 @@ test("timeline projection maps all seven owner arms and omits private extensions
 							status: "declined",
 							privateFilePath: "/private/timeline/file",
 						},
+						changes: [
+							{
+								path: "src/a.ts",
+								kind: "update",
+								movePath: "src/b.ts",
+								added: 2,
+								removed: 1,
+								privateDiff: "/private/timeline/diff",
+							},
+						],
+						changesTruncated: false,
 					},
 					{
 						kind: "reasoning_summary",
@@ -159,6 +202,23 @@ test("timeline projection maps all seven owner arms and omits private extensions
 						},
 					},
 					{
+						kind: "web_search",
+						item: {
+							type: "webSearch",
+							id: searchItemId,
+							privateSearchPath: "/private/timeline/search",
+						},
+						query: "elk layout options",
+					},
+					{
+						kind: "context_compaction",
+						item: {
+							type: "contextCompaction",
+							id: compactionItemId,
+							privateCompactionPath: "/private/timeline/compaction",
+						},
+					},
+					{
 						kind: "approval_request",
 						identity: {
 							kind: "item",
@@ -173,21 +233,33 @@ test("timeline projection maps all seven owner arms and omits private extensions
 					},
 				],
 				presentation: {
-					summary: "completed turn",
+					summary: "failed turn",
 					outputs: { included: true, truncated: false },
 					privatePresentationPath: "/private/timeline/presentation",
+				},
+				error: { message: "stream disconnected", details: "retry later" },
+				plan: {
+					explanation: "two steps",
+					plan: [
+						{ step: "read", status: "completed" },
+						{ step: "write", status: "inProgress" },
+					],
+					privatePlanUpdatePath: "/private/timeline/step",
 				},
 			},
 		],
 		cursor: "timeline-next",
+		usage: {
+			total: breakdown,
+			last: breakdown,
+			modelContextWindow: 258_000,
+			privateUsagePath: "/private/timeline/usage",
+		},
 		activeRealtimeSessionAtPageStart: "private-realtime-session",
 	} as const satisfies CodexTimelineProjectionInput & {
 		readonly activeRealtimeSessionAtPageStart: string;
 	};
-	const result = projectCodexBrowserState(model, authorities.identity.decoder, {
-		...input,
-		timeline,
-	});
+	const result = projectCodexBrowserState(model, decoder, { ...input, timeline });
 	expect(result.tag).toBe("projected");
 	if (result.tag !== "projected") {
 		throw new Error("timeline projection was refused");
@@ -198,19 +270,44 @@ test("timeline projection maps all seven owner arms and omits private extensions
 		turns: [
 			{
 				turnId,
-				status: "completed",
+				status: "failed",
 				items: [
+					{ media: "prompt", itemId: promptItemId, text: "Explain the renderer" },
 					{ media: "text", itemId: messageItemId, text: "assistant text" },
-					{ media: "tool", itemId: toolItemId, name: "fetch_architecture", status: "completed" },
+					{
+						media: "tool",
+						itemId: toolItemId,
+						name: "fetch_architecture",
+						status: "failed",
+						server: "archboard",
+						arguments: '{"board":"payments"}',
+						durationMs: 12,
+						error: "board not found",
+					},
 					{
 						media: "command",
 						itemId: commandItemId,
 						command: "bun test focused",
 						status: "completed",
+						cwd: "/repo",
+						exitCode: 1,
+						durationMs: 900,
+						output: "1 fail",
+						outputTruncated: true,
 					},
-					{ media: "fileChange", itemId: fileItemId, status: "declined" },
+					{
+						media: "fileChange",
+						itemId: fileItemId,
+						status: "declined",
+						changes: [
+							{ path: "src/a.ts", kind: "update", movePath: "src/b.ts", added: 2, removed: 1 },
+						],
+						changesTruncated: false,
+					},
 					{ media: "reasoning", itemId: reasoningItemId, text: "reasoning summary" },
 					{ media: "plan", itemId: planItemId, text: "implementation plan" },
+					{ media: "search", itemId: searchItemId, query: "elk layout options" },
+					{ media: "compaction", itemId: compactionItemId },
 					{
 						media: "approval",
 						itemId: approvalItemId,
@@ -218,25 +315,43 @@ test("timeline projection maps all seven owner arms and omits private extensions
 						status: "resolved",
 					},
 				],
-				summary: "completed turn",
+				summary: "failed turn",
 				outputsIncluded: true,
 				outputsTruncated: false,
+				startedAtMs: 1_700_000_000_000,
+				completedAtMs: 1_700_000_003_000,
+				durationMs: 3_250,
+				error: { message: "stream disconnected", details: "retry later" },
+				plan: {
+					explanation: "two steps",
+					steps: [
+						{ step: "read", status: "completed" },
+						{ step: "write", status: "inProgress" },
+					],
+				},
 			},
 		],
 		nextCursor: "timeline-next",
+		usage: { total: breakdown, last: breakdown, modelContextWindow: 258_000 },
 	});
 	const wire = JSON.stringify(result.snapshot.timeline);
 	for (const privateValue of [
 		"/private/timeline/turn",
+		"/private/timeline/prompt",
 		"/private/timeline/message",
 		"/private/timeline/tool",
 		"/private/timeline/command",
 		"/private/timeline/file",
+		"/private/timeline/diff",
 		"/private/timeline/reasoning",
 		"/private/timeline/plan",
+		"/private/timeline/search",
+		"/private/timeline/compaction",
 		"/private/timeline/approval",
 		"/private/timeline/resolution",
 		"/private/timeline/presentation",
+		"/private/timeline/step",
+		"/private/timeline/usage",
 		"private-realtime-session",
 	]) {
 		expect(wire).not.toContain(privateValue);
