@@ -317,11 +317,9 @@ const handle = (frame: WireFrame): void => {
 			});
 			return;
 		case "thread/turns/list": {
-			const thread = threads.get(String(params["threadId"]));
-			const turns = thread?.turns ?? [];
-			// Codex lists newest first unless asked otherwise.
+			const turns = threads.get(String(params["threadId"]))?.turns ?? [];
 			respond(frame as never, {
-				data: params["sortDirection"] === "asc" ? turns : turns.toReversed(),
+				data: params["sortDirection"] === "asc" ? turns : turns.toReversed(), // Codex's default order
 				nextCursor: null,
 				backwardsCursor: null,
 			});
