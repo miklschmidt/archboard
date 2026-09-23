@@ -1,6 +1,6 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source — restart semantics, taking a fix from upstream without merging, syncing the tracked skills, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, cherry-picking from upstream, or verifying a canvas change.
+description: Working on archboard's own source — restart semantics, where the tracked skills live and what is generated from them, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, editing its skills, or verifying a canvas change.
 ---
 
 # Working on archboard
@@ -9,38 +9,24 @@ Always-on rules are in `AGENTS.md`; procedures for running and verifying the
 canvas are in `TESTING.md`. This skill holds only what neither the code nor
 those documents will tell you.
 
-## Taking something from upstream
+## The tracked skills
 
-Archboard is not kept mergeable with the project it forked from. Never
-`git merge upstream/main`; it drags back conventions this repo replaced. The
-remote exists for reference and for taking one specific fix:
-
-```bash
-git fetch upstream
-git log -p upstream/main -- path/to/file.ts   # read before taking
-git cherry-pick <sha>                          # only when it clearly applies
-bun run check
-```
-
-Prefer reimplementing their fix our way over importing their structure. The
-upstream npm package is releases behind its git tag; never install it.
-
-## Syncing skills
-
-`skills/` is the single tracked source; `bun scripts/sync-skills.ts` replaces
-`.agents/skills/` and `.claude/skills/` from it, leaving third-party skills
-(`skills experimental_install`, pinned in `skills-lock.json`) alone.
-`~/.agents/skills/archboard` symlinks into the synced copy so other repos use
-the same canvas skill. Keep the `archboard` skill free of machine-specific
-paths; it runs outside this repo.
+`skills/` is the single source. `.claude/skills/` and `.agents/skills/` reach
+this repository's skills through tracked symlinks, so an edit is live at once;
+the third-party skills beside them are installed by `skills experimental_install`
+from `skills-lock.json` and stay untracked. Other repositories use the copy
+`archboard install-skill` put in `~/.agents/skills/archboard`; run it again to
+refresh that copy. Keep the `archboard` skill free of machine-specific paths; it
+runs outside this repo.
 
 The consumer skill also ships derived files under
 `skills/archboard/references/generated/` (ignored): JSON Schemas for the
 persisted board document, the vault configuration and the `semantic new` and
 `semantic edit` payloads, rendered from the Zod authorities with
 `z.toJSONSchema`, plus an installation-local copy of `INSTALL.md`. One owner,
-`src/runtime/skill-distribution`, writes them; the sync script, the installer's
-staging step and `bun run generate:skill-artifacts` all call it. Never hand-edit
+`src/runtime/skill-distribution`, writes them; `bun install`, the installer's
+staging step and `bun run generate:skill-artifacts` all call it. After changing a
+schema or `INSTALL.md`, run `bun run generate:skill-artifacts`. Never hand-edit
 a generated file or add a second schema definition; change the Zod schema and
 regenerate. The generated INSTALL copy belongs to the machine-local install: it
 records when its source checkout has working-tree changes and its escaped
@@ -71,7 +57,7 @@ When it fires, in the same change:
    they were being measured against (TASK-212); a fast test refuses an
    `evals/` directory inside the consumer skill, the frozen baseline or a
    prepared copy.
-3. `bun scripts/sync-skills.ts`, then `bun test src/runtime/skill-evaluation
+3. `bun run generate:skill-artifacts`, then `bun test src/runtime/skill-evaluation
 tests/system/cli/install-targets.test.ts` and `bun run check`.
 
 The success contract the skill is held to: the fewest total author tokens per

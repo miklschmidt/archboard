@@ -29,8 +29,9 @@ docs/design/generated/*.png
 src/shared/codex-app-server-contract/generated/
 
 # The consumer skill's generated JSON Schemas and portable INSTALL.md copy.
-# Every skill sync and install regenerates them from the Zod authorities with
-# `bun run generate:skill-artifacts`; the authored skill is skills/archboard.
+# `bun install` and every install of the skill regenerate them from the Zod
+# authorities (`bun run generate:skill-artifacts`); the authored skill is
+# skills/archboard.
 skills/archboard/references/generated/
 
 # Environment files
@@ -46,14 +47,18 @@ skills/archboard/references/generated/
 .DS_Store
 
 # --- archboard ---
-# Agent skills are derived, not authored, so they stay untracked:
-#   .agents/skills/  third-party skills pinned by skills-lock.json, plus our
-#                    own skills synced from the tracked skills/ directory
-#   .claude/skills/  symlinks into .agents/skills/
+# Third-party agent skills are installed, not authored, so they stay untracked:
+# `skills experimental_install` puts the ones pinned by skills-lock.json in
+# .agents/skills/ and links them from .claude/skills/. This repository's own
+# skills are authored in skills/ and reached through the tracked symlinks below.
 # Everything else under .claude/ and .agents/ (settings.json, commands/,
 # agents/) is authored configuration and IS tracked.
-.agents/skills/
-.claude/skills/
+/.agents/skills/*
+!/.agents/skills/archboard
+!/.agents/skills/archboard-dev
+/.claude/skills/*
+!/.claude/skills/archboard
+!/.claude/skills/archboard-dev
 
 # Agent worktrees, created per subagent run and removed after.
 .claude/worktrees/

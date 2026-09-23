@@ -10,7 +10,6 @@ tell you.
 bun install                     # retry if it fails extracting a tarball
 bun run build                   # the frontend, the only thing that is built
 skills experimental_install     # third-party skills, pinned in skills-lock.json
-bun scripts/sync-skills.ts      # ours, from skills/ (derived copies are untracked)
 ```
 
 bun runs the server and the CLI from `src/` (ADR 0014). Edit only `skills/`;
