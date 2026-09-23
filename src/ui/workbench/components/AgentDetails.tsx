@@ -11,6 +11,7 @@ import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 /** The usage Codex last reported for the conversation. */
 type BrowserTimelineUsage = NonNullable<NonNullable<BrowserSnapshot["timeline"]>["usage"]>;
 import { VoiceContextDetails } from "@/ui/workbench/components/VoiceContextDetails";
+import { clockTime, shortId } from "@/ui/workbench/lib/format";
 import type { AgentView } from "@/ui/workbench/contracts";
 
 /** Inputs for the details. */
@@ -34,6 +35,29 @@ function accountWords(snapshot: BrowserSnapshot | null): string {
 	const account = snapshot?.account;
 	if (account?.state !== "ready") return "Not signed in";
 	return `Signed in with ${ACCOUNT_WORDS[account.accountType] ?? account.accountType}`;
+}
+
+/**
+ * Which pane holds the command lease, and until when.
+ * @param snapshot The snapshot, or null.
+ * @returns The words, or null while no lease was taken.
+ */
+function leaseWords(snapshot: BrowserSnapshot | null): string | null {
+	const lease = snapshot?.lease ?? null;
+	if (lease === null) return null;
+	return `${lease.state} · pane ${lease.paneId} · until ${clockTime(lease.expiresAtMs)}`;
+}
+
+/**
+ * How the last command settled.
+ * @param snapshot The snapshot, or null.
+ * @returns The words, or null before any command.
+ */
+function operationWords(snapshot: BrowserSnapshot | null): string | null {
+	const operation = snapshot?.operation ?? null;
+	if (operation === null) return null;
+	const outcome = `${operation.outcome.replaceAll("_", " ")} · ${shortId(operation.operationId)}`;
+	return operation.message === null ? outcome : `${outcome} · ${operation.message}`;
 }
 
 /**
@@ -90,6 +114,8 @@ function AgentDetails(props: AgentDetailsProps): JSX.Element {
 				<Row label="Model" value={modelWords(snapshot, "workhorse")} />
 				<Row label="Context" value={contextWords(usageOf(snapshot))} />
 				<Row label="Thread" value={threadId} technical />
+				<Row label="Lease" value={leaseWords(snapshot)} technical />
+				<Row label="Last command" value={operationWords(snapshot)} technical />
 			</Section>
 			<Section title="Voice">
 				<Row label="Model" value={modelWords(snapshot, "coordinator")} />
@@ -135,7 +161,7 @@ function Row(props: {
 	if (props.value === null) return null;
 	return (
 		<div className="flex items-baseline gap-3">
-			<span className="text-body text-muted-foreground w-16 shrink-0">{props.label}</span>
+			<span className="text-body text-muted-foreground w-24 shrink-0">{props.label}</span>
 			<span
 				className={
 					props.technical === true
