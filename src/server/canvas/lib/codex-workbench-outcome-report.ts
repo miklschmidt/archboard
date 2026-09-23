@@ -8,6 +8,10 @@
 // stays quiet. This module owns only the turn's body and the wait for an idle coordinator; which
 // outcomes are reported, and what happens when the coordinator stays busy, is the callback
 // module's.
+//
+// A recording's voice (TASK-304) is nobody's to report to: whatever the coordinator answered
+// would be spoken into the video. While one holds the voice no turn is run, and the outcome is
+// injected into the coordinator's thread the way it is with no voice at all.
 
 import type { CoordinatorCallbackTurnPort } from "@/runtime/codex-coordinator-callbacks";
 import { createTurnStartParams, type ArchboardContext } from "@/runtime/codex-instructions";
@@ -29,6 +33,11 @@ interface OutcomeReportParts {
 	 * @returns The context.
 	 */
 	readonly contextFor: (operationId: string) => ArchboardContext;
+	/**
+	 * Whether a recording holds the voice now.
+	 * @returns True while the live voice session is a recording's.
+	 */
+	readonly recording: () => boolean;
 	/** Waits between polls; a test supplies its own. */
 	readonly wait?: (ms: number) => Promise<void>;
 }
@@ -71,6 +80,21 @@ async function idleInTime(parts: OutcomeReportParts, threadId: ThreadId): Promis
 }
 
 /**
+ * Whether the coordinator may be run with an outcome now: idle in time, and no recording holding
+ * the voice to speak what it answered into the video.
+ * @param parts The session, the wait and the recording.
+ * @param threadId The coordinator thread.
+ * @returns True when the turn may start.
+ */
+async function mayReport(parts: OutcomeReportParts, threadId: ThreadId): Promise<boolean> {
+	try {
+		return (await idleInTime(parts, threadId)) && !parts.recording();
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Build the port that runs the coordinator with a terminal outcome.
  * @param parts The session, the identity mint and the context.
  * @returns The port.
@@ -78,19 +102,14 @@ async function idleInTime(parts: OutcomeReportParts, threadId: ThreadId): Promis
 function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallbackTurnPort {
 	return {
 		/**
-		 * Start the coordinator's turn, once it is idle.
+		 * Start the coordinator's turn, once it is idle and no recording holds the voice.
 		 * @param request The coordinator thread and the outcome.
-		 * @returns How the start settled, or busy when the coordinator never became idle.
+		 * @returns How the start settled, or busy when the coordinator never became idle or a
+		 * recording holds the voice: either way the outcome is injected instead.
 		 */
 		report: async (request) => {
 			const { threadId, text } = request;
-			let idle: boolean;
-			try {
-				idle = await idleInTime(parts, threadId);
-			} catch {
-				return "busy";
-			}
-			if (!idle) {
+			if (!(await mayReport(parts, threadId))) {
 				return "busy";
 			}
 			const operationId = parts.issue();
