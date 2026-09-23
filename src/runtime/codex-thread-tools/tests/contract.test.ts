@@ -27,9 +27,9 @@ import {
 	okEnvelope,
 } from "./fixtures.js";
 
-const EXPECTED_MANIFEST_SHA256 = "df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e";
+const EXPECTED_MANIFEST_SHA256 = "03ef5a946a19b3f635e5cde3176de15bf9f696ea5c6f639b6680fac7c15b44f5";
 const EXPECTED_WORKHORSE_SHA256 =
-	"5f9b6a2544f4bbd3f6d347384288494e3293d44acb0354f910de1b57a5ad3f21";
+	"0f9fbf590c1546cffa1db8390dbd1b159cae930fd2fef7dda0461bad4ff44d14";
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {
@@ -48,8 +48,8 @@ function expectRejected(action: () => unknown): void {
 describe("archboard_app manifest", () => {
 	test("rejects mutations to reviewed prose, order, schema limits, and eager loading", () => {
 		const proseMutation = ARCHBOARD_APP_MANIFEST_BYTES.replace(
-			"Create one persistent Archboard Codex thread",
-			"Create two persistent Archboard Codex threads",
+			"Create one new Codex thread",
+			"Create two new Codex threads",
 		);
 		const orderMutation = ARCHBOARD_APP_MANIFEST_BYTES.replace(
 			'"name": "create_thread"',

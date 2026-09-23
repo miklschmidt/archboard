@@ -3,13 +3,13 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_workhorse",
 	description:
-		"Inspect and steer the one workhorse bound by the host to this coordinator; no caller selects a target. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
+		"Work with your workhorse, the agent that does sustained work for this canvas. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
 		{
 			type: "function",
 			name: "inspect_workhorse",
 			description:
-				"Read the linked workhorse identity, state, queue, and bounded recent progress without waiting.",
+				"Read what the workhorse is doing now: whether a turn is running, what is waiting for it, and its recent progress. Returns at once.",
 			inputSchema: {
 				type: "object",
 				properties: {},
@@ -22,7 +22,7 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 			type: "function",
 			name: "delegate_to_workhorse",
 			description:
-				"Delegate one sustained request and bounded realtime transcript context to the linked workhorse.",
+				"Give the workhorse one piece of sustained work, written in English with the conversation context it needs.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -38,7 +38,7 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 			type: "function",
 			name: "manage_workhorse_queue",
 			description:
-				"Inspect or mutate the linked created-workhorse queue through the host's serialized queue policy.",
+				"See or change the requests waiting for the workhorse to finish what it is doing.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -65,7 +65,7 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 			type: "function",
 			name: "steer_workhorse",
 			description:
-				"Append one bounded instruction to the host-proven active workhorse turn; the host supplies expectedTurnId.",
+				"Add one short instruction, such as a correction, to the turn the workhorse is running now. Works only while a turn is running.",
 			inputSchema: {
 				type: "object",
 				properties: { input: { type: "string", minLength: 1, maxLength: 4096 } },
@@ -81,13 +81,12 @@ const VOICE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_voice",
 	description:
-		"Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
+		"Settle an approval the user answered by voice. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
 		{
 			type: "function",
 			name: "resolve_spoken_approval",
-			description:
-				"Return accept or decline for the sole still-current spoken approval; the host supplies and validates every request identity.",
+			description: "Accept or decline the one approval the user answered aloud.",
 			inputSchema: {
 				type: "object",
 				properties: { verdict: { type: "string", enum: ["accept", "decline"] } },
