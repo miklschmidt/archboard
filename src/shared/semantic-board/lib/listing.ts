@@ -126,7 +126,8 @@ function descriptionOf(summary: string | undefined): string | null {
 }
 
 /**
- * A line cut at a word when it would run past the listed limit.
+ * A line cut at a word when it would run past the listed limit, and never
+ * through the middle of a character that takes two UTF-16 code units.
  * @param line The line.
  * @returns The line, or as much of it as fits with an ellipsis.
  */
@@ -134,7 +135,9 @@ function bounded(line: string): string {
 	if (line.length <= LISTED_DESCRIPTION_LIMIT) {
 		return line;
 	}
-	const cut = line.slice(0, LISTED_DESCRIPTION_LIMIT - 1);
+	const end = LISTED_DESCRIPTION_LIMIT - 1;
+	const lastUnit = line.charCodeAt(end - 1);
+	const cut = line.slice(0, lastUnit >= 0xd800 && lastUnit <= 0xdbff ? end - 1 : end);
 	const atWord = cut.lastIndexOf(" ");
 	return `${(atWord > 0 ? cut.slice(0, atWord) : cut).trimEnd()}…`;
 }
