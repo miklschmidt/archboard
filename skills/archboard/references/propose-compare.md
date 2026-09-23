@@ -39,8 +39,8 @@ view and a removed subject stays drawn as removed. The current side comes from
 the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
 exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
 (`board-lock-state.ts`), and `watchBoardLocks` polls those files because a file
-cannot notify another canvas. The table is a proposal nobody has built, so it
-stays unbound.
+cannot notify another canvas. The table is a proposal nobody has built, and
+nothing states where its code will live, so it stays unbound.
 
 3. Read `semantic compare`'s answer against your change map. It reports every
    part, relationship, sequence, step, walkthrough and beat either state has,

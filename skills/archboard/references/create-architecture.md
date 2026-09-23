@@ -38,6 +38,10 @@ Keep the real relationship kind when judging routing.
    payload: the configured `groups`, so each part lists the concerns it serves,
    and `archboard semantic`, so a part whose internals already have a board
    links to it with `drillDown`.
+   A board for an architecture nobody has built follows the same steps with
+   the request's stated intent in place of source, and its payload adds
+   `"lifecycle": "draft"`, so the board says nothing on it is built
+   ([planning](../SKILL.md#planning-what-nobody-has-built)).
 2. If parts will be bound to code, register the checkout once:
    `archboard repo add /path/to/checkout` prints the repository identity
    (`github.com/miklschmidt/archboard`); bindings use that identity and a

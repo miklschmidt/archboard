@@ -95,15 +95,18 @@ A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
 command table, a plugin table, a route mount) or calls it. A command's handler
 binds where the handler is written, not to the table registering the command or
-the dispatcher calling it. A planned part or an implementation unavailable for
-inspection stays unbound; one in another checkout and one spread across files
+the dispatcher calling it. An implementation unavailable for inspection stays
+unbound, and a planned part binds only to a path the request states for it; one
+in another checkout and one spread across files
 follow [evidence rule 2](../SKILL.md#evidence-before-a-write): never bind to a
 file that does only part of the responsibility; narrow it to what one file owns,
 or split the node. `archboard check`
-reports `BINDING_PATH_MISSING` for a node whose binding names a path the
-repository does not have, naming the node, the path, the repo and the
-checkout; a repository this machine has not registered draws no warning,
-because that is a local fact rather than a fault in the board.
+reports `BINDING_PATH_MISSING` for a node on the current variant whose binding
+names a path the repository does not have, naming the node, the path, the repo
+and the checkout; a repository this machine has not registered draws no
+warning, because that is a local fact rather than a fault in the board. A
+binding on a draft is not reported: a proposal may name where code will live
+before it does, and the check applies once the draft is adopted.
 
 ### Drill-down
 
@@ -141,10 +144,11 @@ part in a flow), `DRILL_DOWN_UNKNOWN_BOARD` (no such board, so the link opens
 nothing) and `DRILL_DOWN_LEVEL_MISMATCH` (the kind disagrees with the level of
 the board it opens).
 
-Those three and `BINDING_PATH_MISSING` check a variant's content, so they run
-only over the variants a write can still change: no accepted write could clear a
-warning on a frozen variant, and a binding to a file that existed then is a
-correct record, not drift. `UNKNOWN_VOCABULARY` is not one of them: its subject
+Those three check a variant's content, so they run only over the variants a
+write can still change: no accepted write could clear a warning on a frozen
+variant. `BINDING_PATH_MISSING` runs only over the current variant: a binding to
+a file that existed then is a correct record, not drift, and one on a draft is
+ahead of the code rather than behind it. `UNKNOWN_VOCABULARY` is not one of them: its subject
 is the vault configuration, so defining the kind again clears it wherever it
 sits.
 
