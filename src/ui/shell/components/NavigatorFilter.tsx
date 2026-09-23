@@ -6,7 +6,7 @@
 import { RiCloseLine, RiSearchLine } from "@remixicon/react";
 import { useCallback, type ChangeEvent, type JSX, type KeyboardEvent, type RefObject } from "react";
 
-import { usesCommandKey } from "@/ui/shell/lib/shortcuts";
+import { usesCommandKey } from "@/ui/components/command-key";
 
 /** Inputs for the filter. */
 interface NavigatorFilterProps {

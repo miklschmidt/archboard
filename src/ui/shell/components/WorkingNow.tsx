@@ -9,8 +9,8 @@ import { useCallback, useState, type JSX, type MouseEvent } from "react";
 
 import { SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
-import { useClock } from "@/ui/shell/hooks/use-clock";
-import { shortAge } from "@/ui/shell/lib/age";
+import { useClock } from "@/ui/components/use-clock";
+import { shortAge } from "@/ui/components/age";
 import type { AgentActivityEntry } from "@/ui/types";
 
 /** One entry as the block draws it. */
