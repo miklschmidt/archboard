@@ -812,6 +812,14 @@ moves to by hand after that is handed over the same way, and leaving is handed
 over as one line the voice model acknowledges. Nothing is retried: the next
 step says where the picture is. No coordinator turn is started for any of it.
 
+A start that records a walkthrough (TASK-304, `presentation.recording`) differs
+in three ways. `prompt` is the voice's persona with a recording section, and
+none of the conversation rules. `delegationAckFiller` is `false`. And the host
+opens no step: the recording page moves to each step itself, and each report
+it makes with no request behind it is handed over as speech, the way a step
+chosen by hand is. It is refused with `voice_live` while a realtime session the
+adapter still holds is live on the canvas, and never stops it.
+
 WebSocket transport, `appendAudio`, and `outputAudio` are outside this product
 contract.
 

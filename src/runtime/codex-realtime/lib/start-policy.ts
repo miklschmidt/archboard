@@ -8,7 +8,10 @@ import {
 	voicePresentationPrompt,
 	type RealtimePresentation,
 } from "@/runtime/codex-realtime/lib/presentation-mode";
-import { ARCHBOARD_VOICE_PROMPT } from "@/runtime/codex-realtime/lib/voice-prompt";
+import {
+	ARCHBOARD_RECORDING_VOICE_PROMPT,
+	ARCHBOARD_VOICE_PROMPT,
+} from "@/runtime/codex-realtime/lib/voice-prompt";
 
 /**
  * How the coordinator says which of its messages the voice model speaks.
@@ -27,6 +30,18 @@ const COORDINATOR_CHANNEL_INSTRUCTIONS = [
 
 const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
+
+/**
+ * The voice model's prompt: the ordinary one, the ordinary one with a narration added, or for a
+ * recording the persona alone with the recording's section, since nobody is there to talk to.
+ * @param presentation The walkthrough the session presents, or null.
+ * @returns The prompt.
+ */
+function voicePrompt(presentation: RealtimePresentation | null): string {
+	if (presentation === null) return ARCHBOARD_VOICE_PROMPT;
+	const base = presentation.recording ? ARCHBOARD_RECORDING_VOICE_PROMPT : ARCHBOARD_VOICE_PROMPT;
+	return `${base}\n\n${voicePresentationPrompt(presentation)}`;
+}
 
 /**
  * The fixed thread/realtime/start body Archboard sends: WebRTC audio, the voice model's own
@@ -75,10 +90,7 @@ export function createRealtimeStartParams(input: {
 		initialItems: [],
 		realtimeStartInstructions: COORDINATOR_CHANNEL_INSTRUCTIONS,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
-		prompt:
-			presentation === null
-				? ARCHBOARD_VOICE_PROMPT
-				: `${ARCHBOARD_VOICE_PROMPT}\n\n${voicePresentationPrompt(presentation)}`,
+		prompt: voicePrompt(presentation),
 		realtimeSessionId: input.realtimeSessionId,
 		transport: { type: "webrtc", sdp: input.sdp },
 		version: "v3",

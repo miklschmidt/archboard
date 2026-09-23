@@ -217,3 +217,54 @@ test("another pane of the canvas can stop voice on the same link but cannot spea
 	});
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });
+
+test("a recording is refused over a live voice session, and not over one Codex already ended", async () => {
+	const value = fixture();
+	let live = true;
+	const realtime = {
+		...value.components.realtime,
+		generation: () => (live ? { live: true } : null),
+	};
+	const actions = createCanvasRealtimeActions({ ...value.components, realtime } as never);
+	await actions.start(
+		{
+			kind: "browser_command",
+			command: "realtimeStart",
+			commandId: value.identity.identity.issuer.mintBrowserCommandId(),
+			paneId: value.context.paneId,
+			childId: value.context.childId,
+			epoch: value.context.epoch,
+			threadId: value.threadId,
+			sdp: "v=0",
+		},
+		value.context,
+	);
+	const recorder: BrowserActionContext = {
+		...value.context,
+		browserId: "recording-browser",
+		connection: Object.freeze({ socket: "recording" }),
+	};
+	const recording = () =>
+		actions.start(
+			{
+				kind: "browser_command",
+				command: "realtimeStart",
+				commandId: value.identity.identity.issuer.mintBrowserCommandId(),
+				paneId: recorder.paneId,
+				childId: recorder.childId,
+				epoch: recorder.epoch,
+				threadId: value.threadId,
+				sdp: "v=0",
+				presentation: { walkthrough: "w1", recording: true },
+			},
+			recorder,
+		);
+	await expect(recording()).rejects.toMatchObject({ code: "voice_live" });
+	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
+	// Codex ended the session by itself: the canvas's record of it is let go rather than refused
+	// over. This start then fails on its own account, since no pane here shows the walkthrough.
+	live = false;
+	const second = await recording().catch((error: unknown) => error);
+	expect(second).not.toMatchObject({ code: "voice_live" });
+	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
+});
