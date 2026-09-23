@@ -17,15 +17,27 @@ import {
  * How the coordinator says which of its messages the voice model speaks.
  *
  * The session runs in Codex's `bemTags` handoff mode, where a message's first characters choose
- * its channel: `[FINAL]` is speakable and `[COMMENTARY]` is quiet context (Codex 0.155.1,
- * `realtime_conversation/bem.rs`). A message with no header is buffered until it is complete and
- * then treated as final, so an untagged preamble is read out as if it were the answer, and the
- * answer itself cannot stream. Telling the coordinator the rule is what makes the mode work.
+ * its channel: `[FINAL]` is appended to the voice session as speakable, which the voice model
+ * reacts to, and `[COMMENTARY]` as quiet context, which it never reacts to (Codex 0.155.1,
+ * `realtime_conversation/bem.rs`, `v3_output_writer`). A message with no header is buffered until
+ * it is complete and then treated as final, so an untagged preamble is read out as if it were the
+ * answer, and the answer itself cannot stream. Telling the coordinator the rule is what makes the
+ * mode work.
+ */
+const CHANNEL_RULE = [
+	"Voice channel rule. While this voice session is live, begin every message you write with a channel header as its very first characters, because the header decides whether the voice model reacts to it.",
+	"[FINAL] is the only message the voice model reacts to: it says it to the user in its own words. Use it for the answer, result or question, as short speakable prose with no markdown, lists, ids or tool syntax. Write at most one [FINAL] message in a turn, as its last message.",
+	"[COMMENTARY] marks everything else, such as what you are about to do or progress while you work: the voice model receives it as quiet context and never reacts to it.",
+];
+
+/**
+ * The channel rule while somebody is listening. A handoff answered with commentary alone leaves
+ * the voice model silent after its "one moment": in the 2026-09-23 session the user had to ask
+ * "You good" (TASK-315).
  */
 const COORDINATOR_CHANNEL_INSTRUCTIONS = [
-	"Voice channel rule. While this voice session is live, begin every message you write with a channel header as its very first characters, because the header decides whether the user hears it.",
-	"[FINAL] marks what the voice model is to say to the user: the answer, result or question, as short speakable prose with no markdown, lists, ids or tool syntax. Write at most one [FINAL] message in a turn, as its last message.",
-	"[COMMENTARY] marks everything else, such as what you are about to do or progress while you work: the voice model receives it as quiet context and does not say it. When nothing should be said to the user at all, end the turn with a one-line [COMMENTARY] message and no [FINAL] message.",
+	...CHANNEL_RULE,
+	"A turn that answers a handoff always ends with one [FINAL] message, even when you only started work, found nothing, or could not tell what was asked: the voice model is waiting for your answer, and commentary alone leaves it silent and the user waiting. End a turn with only a one-line [COMMENTARY] message when nothing should be said at all, such as news the user is not waiting for.",
 ].join("\n");
 
 /**
@@ -34,7 +46,7 @@ const COORDINATOR_CHANNEL_INSTRUCTIONS = [
  * coordinator is told it has nobody to speak to until the session ends.
  */
 const RECORDING_COORDINATOR_INSTRUCTIONS = [
-	COORDINATOR_CHANNEL_INSTRUCTIONS,
+	...CHANNEL_RULE,
 	"A recording is using this voice session: every word the voice says goes into a video of a walkthrough, and nobody is listening. Until the session ends, begin every message with [COMMENTARY] and never write [FINAL]; nothing you write is to be spoken.",
 ].join("\n");
 
