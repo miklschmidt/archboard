@@ -1,29 +1,24 @@
-// Where each voice-linked pane's narration stands, over this canvas's panes (TASK-251).
+// What the voice model is told of a narrated walkthrough, over this canvas's panes (TASK-251).
 //
-// The step presenter beside this is pure: given what a pane shows and where a talk stands, it
-// settles a step and asks the pane for it. This is the half that knows this canvas: which pane
-// is which, what each last said is on screen, which walkthrough a voice session is narrating and
-// which step it stands on, and what a user's hand on the keys means for a talk under way.
+// The user steps the presentation; the voice explains the step on screen. Pressing Narrate starts
+// voice for one walkthrough, and the host opens its first step in the pane. From then on every
+// step the pane says it is on, the first included, reaches the voice model the same way, and so
+// does leaving. Nothing here chooses a step: the pane is where the talk is.
 
-import type { CoordinatorToolPresentStepOutcome } from "@/runtime/codex-coordinator-tools";
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
 import { parseBoardKey } from "@/runtime/engine/board";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
-import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
-import type { SemanticBoard, SemanticWalkthrough } from "@/shared/semantic-board/index";
-import { narrationTiming } from "@/server/canvas/lib/narration-timing";
+import {
+	resolveVariant,
+	type SemanticWalkthrough,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 import {
 	panePresentations,
 	type UserPresentationChange,
 } from "@/server/canvas/lib/pane-presentation";
 import { paneBoardOf, panes } from "@/server/canvas/lib/pane-registry";
-import {
-	contentOn,
-	presentWalkthroughStep,
-	type PresentedPane,
-	type PresentStepRequest,
-} from "@/server/canvas/lib/present-walkthrough-step";
 import { semanticPaneContextFor } from "@/server/canvas/lib/semantic-pane-context";
 
 // Which browser's pane each voice session is about, by the pane id the shell and the
@@ -64,68 +59,35 @@ function registrationFor(paneId: string): PaneRegistration | undefined {
 /**
  * What one live pane is showing: what the pane itself last said is on screen,
  * which follows a drill-down, and otherwise the board the server pointed it at.
- * @param pane The pane's registration, or undefined when it has gone.
- * @returns The board and variant, or null when the pane has gone or shows no board.
- */
-function showingOf(pane: PaneRegistration | undefined): PresentedPane | null {
-	if (pane === undefined) {
-		return null;
-	}
-	return (
-		paneSaid(pane.clientId, semanticPaneContextFor(pane.clientId)) ??
-		paneAddressed(pane.clientId, paneBoardOf(pane.clientId))
-	);
-}
-
-/**
- * What the pane a pane id means is showing.
- * @param paneId The pane, as the shell and the coordinator name it.
- * @returns The board and variant, or null when the pane has gone or shows no board.
- */
-function paneShowing(paneId: string): PresentedPane | null {
-	return showingOf(registrationFor(paneId));
-}
-
-/**
- * What a pane says is on screen, which follows a drill-down.
  * @param clientId The pane's client id.
- * @param said The pane's last report, or null.
- * @returns The board and variant, or null when the pane has not said.
+ * @returns The board by name and the variant, or null when the pane has gone or shows no board.
  */
-function paneSaid(clientId: string, said: SemanticPaneContext | null): PresentedPane | null {
-	if (said?.board == null) {
+function showingOf(
+	clientId: string,
+): { readonly board: string; readonly variant: string | undefined } | null {
+	if (!panes.has(clientId)) {
 		return null;
 	}
-	return {
-		clientId,
-		board: said.board.name,
-		variant: said.variant?.id,
-		presenting: said.presentation?.walkthrough ?? null,
-	};
+	const said = semanticPaneContextFor(clientId);
+	if (said?.board != null) {
+		return { board: said.board.name, variant: said.variant?.id };
+	}
+	const key = paneBoardOf(clientId);
+	return key === null ? null : parseBoardKey(key);
 }
 
 /**
- * What a pane that has not reported yet is showing, from the board it was pointed at.
+ * The variant content one pane is showing, read from the vault.
  * @param clientId The pane's client id.
- * @param key The pane's board key, or null when it has none.
- * @returns The board and variant, or null.
+ * @returns The content, or null when the pane shows nothing that can be read.
  */
-function paneAddressed(clientId: string, key: string | null): PresentedPane | null {
-	if (key === null) {
+function contentOn(clientId: string): VariantContent | null {
+	const showing = showingOf(clientId);
+	if (showing === null) {
 		return null;
 	}
-	const identity = parseBoardKey(key);
-	return { clientId, board: identity.board, variant: identity.variant, presenting: null };
-}
-
-/**
- * Read one board from the vault.
- * @param name The board's name.
- * @returns The board, or null when it cannot be read.
- */
-function readBoard(name: string): SemanticBoard | null {
-	const read = readSemanticBoard(name);
-	return read.ok ? read.board : null;
+	const read = readSemanticBoard(showing.board);
+	return read.ok ? (resolveVariant(read.board, showing.variant)?.content ?? null) : null;
 }
 
 /**
@@ -138,100 +100,14 @@ function walkthroughOnPane(
 	clientId: string,
 	walkthroughId: string,
 ): SemanticWalkthrough | undefined {
-	const pane = showingOf(panes.get(clientId));
-	const shown = pane === null ? null : contentOn({ readBoard }, pane);
-	return shown?.content.walkthroughs.find((one) => one.id === walkthroughId);
+	return contentOn(clientId)?.walkthroughs.find((one) => one.id === walkthroughId);
 }
 
-/** Where one narration stands. */
-interface NarrationStanding {
-	readonly walkthrough: string;
-	/** The step it stands on, counted from one; zero before the first. */
-	readonly step: number;
-	/**
-	 * The coordinator turn that last asked for "the next step", and where the narration stood
-	 * when that turn began. "Next" means one step for the whole of a turn: a coordinator that
-	 * calls again because it could not read the first answer must get the same step, not the one
-	 * after it. In the first session with a stepless call it called twice and the pane went to
-	 * step 2 while the voice was still introducing step 1.
-	 */
-	readonly turn: { readonly id: string; readonly base: number } | null;
-}
+/** The walkthrough each voice-linked pane is narrating, by pane id. */
+const narrated = new Map<string, string>();
 
-/** Where each voice-linked pane's narration stands, by pane id. */
-const narrated = new Map<string, NarrationStanding>();
-
-/**
- * Remember where a pane's narration stands, or forget it.
- * @param paneId The voice-linked pane.
- * @param walkthrough The walkthrough's id, or null when the narration is over.
- * @param step The step it stands on, counted from one; zero before the first.
- * @param turn The coordinator turn that asked, and where the narration stood when it began.
- */
-function noteNarratedWalkthrough(
-	paneId: string,
-	walkthrough: string | null,
-	step = 0,
-	turn: NarrationStanding["turn"] = null,
-): void {
-	if (walkthrough === null) {
-		narrated.delete(paneId);
-	} else {
-		narrated.set(paneId, { walkthrough, step, turn });
-	}
-}
-
-/**
- * Where "the next step" counts from, for one coordinator turn.
- * @param standing Where the narration stands, or undefined before it began.
- * @param turnId The coordinator turn asking, or null when the host could not name it.
- * @returns The step to count from: where the narration stood when that turn began.
- */
-function nextCountsFrom(standing: NarrationStanding | undefined, turnId: string | null): number {
-	if (standing === undefined) {
-		return 0;
-	}
-	return turnId !== null && standing.turn?.id === turnId ? standing.turn.base : standing.step;
-}
-
-/**
- * Present one step in a pane of this canvas, for the narrator linked to it.
- * @param request The pane, the step, the walkthrough when named, and the call's signal.
- * @returns The step, or why it is not on screen.
- */
-async function presentStepInCanvasPane(
-	request: Omit<PresentStepRequest, "sessionWalkthrough" | "lastStep"> & {
-		/** The coordinator turn the call was made in, or null when the host could not name it. */
-		readonly turnId: string | null;
-	},
-): Promise<CoordinatorToolPresentStepOutcome> {
-	const standing = narrated.get(request.paneId);
-	const base = nextCountsFrom(standing, request.turnId);
-	const outcome = await presentWalkthroughStep(
-		{
-			presentations: panePresentations,
-			paneShowing,
-			readBoard,
-		},
-		{
-			paneId: request.paneId,
-			input: request.input,
-			signal: request.signal,
-			sessionWalkthrough: standing?.walkthrough ?? null,
-			lastStep: base,
-		},
-	);
-	if (outcome.tag === "ok") {
-		noteNarratedWalkthrough(
-			request.paneId,
-			outcome.value.walkthroughId,
-			outcome.value.step,
-			request.turnId === null ? null : { id: request.turnId, base },
-		);
-		narrationTiming.stepArrived(outcome.value.step);
-	}
-	return outcome;
-}
+/** Who hears what the voice model is to be told: the voice session's delivery. */
+const listeners = new Set<(change: RealtimePresentationChange) => void>();
 
 /**
  * The walkthrough a voice session is being started to present, written for the start.
@@ -253,12 +129,20 @@ function narrationFor(
 	if (walkthrough === undefined) {
 		throw new Error("The pane is not showing a board that states that walkthrough.");
 	}
-	noteNarratedWalkthrough(paneId, walkthrough.id);
+	narrated.set(paneId, walkthrough.id);
 	return { walkthrough: walkthrough.id, name: walkthrough.name };
 }
 
 /**
- * What a user's by-hand change is, as both models are told it.
+ * A voice session that narrates nothing is starting for this pane.
+ * @param paneId The pane, as the shell names it.
+ */
+function forgetNarration(paneId: string): void {
+	narrated.delete(paneId);
+}
+
+/**
+ * What the voice model is told of where a narrated pane's presentation now is.
  * @param change What the pane reported.
  * @returns The change, or null when the step it names is not on that pane's board.
  */
@@ -282,69 +166,72 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 }
 
 /**
- * Where the user put the picture is where the talk goes on from; leaving ends the narration.
- * @param change What the pane reported.
+ * Whether a pane's news is a narration's: a user reading a walkthrough on their own, with nobody
+ * narrating, is nobody's news, and neither is another browser's pane of the same id.
+ * @param change Where the pane says its presentation is.
+ * @returns True when the voice session should hear it.
  */
-function noteWhereTheUserIs(change: UserPresentationChange): void {
-	const said = change.presentation;
-	if (said === null) {
-		noteNarratedWalkthrough(change.paneId, null);
-	} else {
-		noteNarratedWalkthrough(change.paneId, said.walkthrough, said.beat + 1);
+function narratedHere(change: UserPresentationChange): boolean {
+	const bound = voicePanes.get(change.paneId) ?? change.clientId;
+	return narrated.has(change.paneId) && bound === change.clientId;
+}
+
+/**
+ * Tell the voice session where a narrated pane's presentation now is. Leaving ends the
+ * narration.
+ * @param change Where the pane says its presentation is.
+ */
+function tell(change: UserPresentationChange): void {
+	const told = narratedHere(change) ? narrationChangeOf(change) : null;
+	if (told === null) {
+		return;
+	}
+	if (told.kind === "left") {
+		narrated.delete(change.paneId);
+	}
+	for (const listener of listeners) {
+		listener(told);
+	}
+}
+
+panePresentations.onUserChange(tell);
+
+/**
+ * Open a narration's first step in its pane, and tell the voice session once it has arrived.
+ *
+ * The step then reaches the voice model the way every step the user moves to does. A step that
+ * never arrives, because the pane closed or the user moved first, is not told: where the user
+ * moved is.
+ * @param paneId The narrated pane, as the shell names it.
+ */
+async function openNarration(paneId: string): Promise<void> {
+	const walkthrough = narrated.get(paneId);
+	const pane = registrationFor(paneId);
+	if (walkthrough === undefined || pane === undefined) {
+		return;
+	}
+	const outcome = await panePresentations.present({
+		clientId: pane.clientId,
+		walkthrough,
+		beat: 0,
+	});
+	if (outcome.kind === "arrived") {
+		tell({ paneId, clientId: pane.clientId, presentation: outcome.presentation });
 	}
 }
 
 /**
- * Whether a by-hand change is news to a narration.
- *
- * Not before its first step has been handed over, unless the user left. Pressing Narrate
- * opens the walkthrough, which is itself a by-hand choice of step 1, and its report can land just
- * after the narration begins; counted as "the user moved to step 1", it would start the talk
- * on step 2. Until the first step is handed over the talk starts at step 1 whatever is on screen.
- *
- * Nor from another browser's pane of the same id: what is done there is not this talk.
- * @param change What the pane reported.
- * @returns True when the narrator should hear of it.
- */
-function narrationUnderWay(change: UserPresentationChange): boolean {
-	const standing = narrated.get(change.paneId);
-	const bound = voicePanes.get(change.paneId);
-	if (standing === undefined || (bound !== undefined && bound !== change.clientId)) {
-		return false;
-	}
-	return standing.step > 0 || change.presentation === null;
-}
-
-/**
- * Hear what a user does by hand to a walkthrough that is being narrated.
- *
- * Only a narrated pane's changes are told: a user reading a walkthrough on
- * their own, with nobody narrating, is nobody's news. Leaving ends the narration.
+ * Hear what the voice model is to be told of a narrated walkthrough.
  * @param listener What to tell.
  * @returns Stops listening.
  */
 function subscribeNarrationChanges(
 	listener: (change: RealtimePresentationChange) => void,
 ): () => void {
-	return panePresentations.onUserChange((change) => {
-		if (!narrationUnderWay(change)) {
-			return;
-		}
-		const told = narrationChangeOf(change);
-		if (told === null) {
-			return;
-		}
-		noteWhereTheUserIs(change);
-		listener(told);
-	});
+	listeners.add(listener);
+	return () => {
+		listeners.delete(listener);
+	};
 }
 
-export {
-	bindVoicePane,
-	narrationFor,
-	nextCountsFrom,
-	noteNarratedWalkthrough,
-	presentStepInCanvasPane,
-	subscribeNarrationChanges,
-	type NarrationStanding,
-};
+export { bindVoicePane, forgetNarration, narrationFor, openNarration, subscribeNarrationChanges };

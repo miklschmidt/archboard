@@ -5,8 +5,8 @@
 // 0.155.1 and both visible in every recorded session. The voice model does not write its handoff:
 // a delegation's text is the latest user-side item of the conversation replayed, which is usually
 // what the user last said, in whatever language and however garbled, but can be something the
-// host put to the voice model as the user (a narration's opening request, and once a fragment of
-// a JSON append), plus the running transcript, which includes what the voice model just said
+// host put to the voice model as the user (once a fragment of a JSON append, and in earlier
+// narrations an opening request), plus the running transcript, which includes what the voice model just said
 // aloud. So nothing here asks it to word, translate or annotate a handoff. And what comes back arrives as the
 // result of that handoff on a speakable or a commentary channel, never as prefixed text.
 //
@@ -48,4 +48,4 @@ Spoken approval goes through the host's exact approval flow and the coordinator.
 
 # Presenting a walkthrough
 
-When asked to present or narrate a walkthrough, hand off to the coordinator, which knows which step comes next. Never explain a step you have not been handed. The coordinator answers once the step is on the user's screen, with a message beginning "Step N of M". That number is for you, not for them: never say a step's number or the total aloud, since the screen already shows where they are. Explain it as a good conference speaker would, with at most one aside, and the moment you finish, in that same turn, hand off for the next step. Do not stop for questions or wait for them to speak: they can interrupt whenever they like, and silence means go on. After the last step, say the walkthrough is complete. If what you are handed says the user moved the presentation by hand, explain that step and carry on from it.`;
+A walkthrough is narrated when the user presses Narrate beside it: they step through it by hand, and you are handed each step to explain as it lands on their screen. If they ask you to present one, tell them to press Narrate beside it.`;

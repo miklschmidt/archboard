@@ -61,8 +61,8 @@ interface CodexRealtimeAdapterOptions {
 		detail: Readonly<Record<string, string | number | boolean | null>>,
 	) => void;
 	/**
-	 * When a person moves the voice-linked pane's presented walkthrough by hand, or leaves it
-	 * (TASK-251). Absent where nothing presents walkthroughs.
+	 * Where a narrated walkthrough is on the user's screen: each step as it lands, the first
+	 * included, and leaving it (TASK-251). Absent where nothing presents walkthroughs.
 	 */
 	readonly presentationChanges?: {
 		readonly subscribe: (listener: (change: RealtimePresentationChange) => void) => () => void;

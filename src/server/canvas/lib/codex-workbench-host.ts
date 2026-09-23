@@ -1,4 +1,3 @@
-import type { CoordinatorToolPresentationPort } from "@/runtime/codex-coordinator-tools";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime";
 import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
@@ -46,17 +45,6 @@ export interface CanvasCodexWorkbenchHost {
 		},
 		operation: PendingOperation,
 	) => ArchboardContext;
-	/**
-	 * Present one walkthrough step in a pane, answering once the pane says it arrived
-	 * (TASK-251). The pane is the voice session's; the caller proves which one that is.
-	 */
-	readonly presentStep: (
-		request: Parameters<CoordinatorToolPresentationPort["presentStep"]>[0] & {
-			readonly paneId: string;
-			/** The coordinator turn the call was made in, so "next" means one step per turn. */
-			readonly turnId: string | null;
-		},
-	) => ReturnType<CoordinatorToolPresentationPort["presentStep"]>;
 	/** What a person does by hand to a walkthrough that is being narrated (TASK-251). */
 	readonly narrationChanges: NonNullable<
 		CodexRealtimeAdapterOptions["presentationChanges"]

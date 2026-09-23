@@ -96,33 +96,14 @@ describe("a walkthrough step asked of a pane", () => {
 		expect(changes.map((change) => change.presentation?.beat ?? null)).toEqual([0, 1, null]);
 	});
 
-	test("asked to leave is answered when the pane presents nothing, and that is not a user leaving", async () => {
-		const { port, sent, says, changes } = harness();
-		says(at(2, true, null));
-		const asked = port.present({ clientId: "client-a", walkthrough: null, beat: 0 });
-		expect(sent[0]).toMatchObject({ walkthrough: null });
-		says(null);
-		expect(await asked).toEqual({ kind: "left" });
-		expect(changes).toHaveLength(1);
-	});
-
-	test("is refused for a pane that has gone, when replaced by a later request, and when the caller stops waiting", async () => {
+	test("is refused for a pane that has gone, when replaced by a later request, and when the canvas stops", async () => {
 		expect(
 			await harness(false).port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 }),
 		).toEqual({ kind: "refused", reason: "no_pane" });
 		const { port } = harness();
 		const first = port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 });
-		const stop = new AbortController();
-		const second = port.present({
-			clientId: "client-a",
-			walkthrough: "w1",
-			beat: 1,
-			signal: stop.signal,
-		});
+		const stopping = port.present({ clientId: "client-a", walkthrough: "w1", beat: 1 });
 		expect(await first).toEqual({ kind: "refused", reason: "superseded" });
-		stop.abort();
-		expect(await second).toEqual({ kind: "refused", reason: "cancelled" });
-		const stopping = port.present({ clientId: "client-a", walkthrough: "w1", beat: 2 });
 		port.forget();
 		expect(await stopping).toEqual({ kind: "refused", reason: "stopping" });
 	});

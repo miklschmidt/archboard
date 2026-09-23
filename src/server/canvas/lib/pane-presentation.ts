@@ -1,16 +1,15 @@
 // Asking a pane for a step of a walkthrough, and hearing where it got to.
 //
 // Where a pane is in a walkthrough is the pane's own (ADR 0023): nothing here
-// holds a position or sets one. Something narrating a presentation asks for a
-// step, the pane goes there the way it would for a key press, and the pane's
-// own report says which step is on screen and whether it has finished arriving
-// (TASK-251). The acknowledgement is that report and never a promise from the
+// holds a position or sets one. Narrate asks for the first step, the pane goes
+// there the way it would for a key press, and the pane's own report says which
+// step is on screen and whether it has finished arriving (TASK-251). The acknowledgement is that report and never a promise from the
 // shell, for the reason a layout's is a registration: it is the only evidence
 // in this process of what a user can see.
 //
 // The same reports say when a user stepped by hand or left. A position a
-// request did not put there is somebody's hand on the keys, and whoever is
-// narrating has to be told, or it goes on describing a picture nobody is
+// request did not put there is somebody's hand on the keys, and the voice
+// narrating it has to be told, or it goes on describing a picture nobody is
 // looking at.
 
 import { randomUUID } from "node:crypto";
@@ -33,15 +32,12 @@ type PresentRefusal =
 	| "person_took_over"
 	/** The pane never said the step arrived. */
 	| "timeout"
-	/** The caller stopped waiting. */
-	| "cancelled"
 	/** The canvas is stopping. */
 	| "stopping";
 
 /** How asking a pane for a step ended. */
 type PresentOutcome =
 	| { readonly kind: "arrived"; readonly presentation: SemanticPanePresentation }
-	| { readonly kind: "left" }
 	| { readonly kind: "refused"; readonly reason: PresentRefusal };
 
 /** What to ask of one pane. */
@@ -51,12 +47,10 @@ interface PresentInput {
 	 * same canvas presents a pane of too.
 	 */
 	readonly clientId: string;
-	/** The walkthrough to present, or null to leave the presentation. */
-	readonly walkthrough: string | null;
+	/** The walkthrough to present. */
+	readonly walkthrough: string;
 	/** Which beat of it, counted from zero. */
 	readonly beat: number;
-	/** Stops the wait when the caller no longer wants the answer. */
-	readonly signal?: AbortSignal | undefined;
 }
 
 /** A user moved a presentation, or left it. */
@@ -70,7 +64,6 @@ interface UserPresentationChange {
 /** One request a pane has not answered yet. */
 interface Pending {
 	readonly request: string;
-	readonly leaving: boolean;
 	/**
 	 * Whether the pane has been seen answering this request. A report is sent a
 	 * moment after what it describes, so one that lands after the request went
@@ -109,10 +102,9 @@ interface PanePresentationParts {
 /** Asking panes for steps, and hearing where they got to. */
 interface PanePresentations {
 	/**
-	 * Ask one pane for a step of a walkthrough, and wait for the pane to say it
-	 * arrived; or ask it to leave the presentation, and wait for it to say it has.
+	 * Ask one pane for a step of a walkthrough, and wait for the pane to say it arrived.
 	 * @param input The pane, the walkthrough and the beat.
-	 * @returns How it ended: arrived, left, or refused with the reason.
+	 * @returns How it ended: arrived, or refused with the reason.
 	 */
 	readonly present: (input: PresentInput) => Promise<PresentOutcome>;
 	/**
@@ -158,13 +150,9 @@ function sameStep(
  * @returns The outcome it settles, or null when the pane is still on its way.
  */
 function answerTo(waiting: Pending, said: SemanticPanePresentation | null): PresentOutcome | null {
-	if (waiting.leaving) {
-		return said === null ? { kind: "left" } : null;
-	}
-	if (said?.answering === waiting.request) {
-		return said.arrived ? { kind: "arrived", presentation: said } : null;
-	}
-	return null;
+	return said?.answering === waiting.request && said.arrived
+		? { kind: "arrived", presentation: said }
+		: null;
 }
 
 /**
@@ -233,10 +221,6 @@ function awaitAnswer(
 		const timer = setTimeout(() => {
 			settle({ kind: "refused", reason: "timeout" });
 		}, PRESENTATION_ARRIVAL_TIMEOUT_MS);
-		/** The caller stopped waiting. */
-		function onAbort(): void {
-			settle({ kind: "refused", reason: "cancelled" });
-		}
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.
@@ -247,20 +231,9 @@ function awaitAnswer(
 			}
 			pending.delete(clientId);
 			clearTimeout(timer);
-			input.signal?.removeEventListener("abort", onAbort);
 			resolve(outcome);
 		}
-		pending.set(clientId, {
-			request,
-			leaving: input.walkthrough === null,
-			takenUp: false,
-			settle,
-		});
-		if (input.signal?.aborted === true) {
-			onAbort();
-			return;
-		}
-		input.signal?.addEventListener("abort", onAbort, { once: true });
+		pending.set(clientId, { request, takenUp: false, settle });
 		const sent = parts.send(pane, {
 			type: "pane_present",
 			request,

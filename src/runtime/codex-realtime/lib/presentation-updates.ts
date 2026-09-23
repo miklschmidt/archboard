@@ -1,16 +1,15 @@
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime/lib/contract";
 import {
-	presentationChangeTexts,
+	presentationSpeech,
 	type RealtimePresentationChange,
-	type VoiceDelivery,
 } from "@/runtime/codex-realtime/lib/presentation-mode";
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
 /**
- * Tell the coordinator and the voice model when a user moves a presented walkthrough by hand
- * or leaves it, so the narration follows the picture (TASK-251). Changes are serialized behind
- * session startup and sent to the coordinator first, as the board catalogue is; a lost response
- * is never retried, because the next change says where the picture is anyway.
+ * Hand the voice model each step of a narrated walkthrough as it lands on the user's screen, and
+ * tell it when they leave (TASK-251). Deliveries are serialized behind session startup, so a step
+ * that arrived while Codex was still starting the session is said once it has; a lost response is
+ * never retried, because the next step says where the picture is anyway.
  * @param options The change source and the session transport.
  * @param session The voice session that owns the watcher.
  * @param isCurrent Whether the session still owns its binding.
@@ -34,40 +33,9 @@ export function watchPresentationChanges(
 	 * @returns True while delivery is allowed.
 	 */
 	const current = () => !stopped && isCurrent();
-	const { coordinatorThreadId: threadId } = session.binding;
 	/**
-	 * Tell the coordinator, without retrying an unknown outcome.
-	 * @param text What the user did.
-	 */
-	const injectCoordinator = async (text: string): Promise<void> => {
-		try {
-			await options.session.threadInjectItems({
-				threadId,
-				items: [{ type: "message", role: "developer", content: [{ type: "input_text", text }] }],
-			});
-		} catch {
-			if (current())
-				onError("The coordinator was not confirmed told that the user moved the presentation.");
-		}
-	};
-	/**
-	 * Tell the voice model after the coordinator attempt settles: as speech it says, or as
-	 * quiet context.
-	 * @param voice What it is given, and how.
-	 */
-	const appendVoice = async (voice: VoiceDelivery): Promise<void> => {
-		try {
-			await (voice.via === "speech"
-				? options.session.realtimeAppendSpeech({ threadId, text: voice.text })
-				: options.session.realtimeAppendText({ threadId, role: "developer", text: voice.text }));
-		} catch {
-			if (current())
-				onError("The voice model was not confirmed told that the user moved the presentation.");
-		}
-	};
-	/**
-	 * Deliver one change to both histories, once the session has started.
-	 * @param change What the user did.
+	 * Hand one change to the voice model as speech, once the session has started.
+	 * @param change Where the walkthrough now is.
 	 */
 	const deliver = async (change: RealtimePresentationChange): Promise<void> => {
 		try {
@@ -76,15 +44,16 @@ export function watchPresentationChanges(
 			return;
 		}
 		if (!current()) return;
-		const texts = presentationChangeTexts(change);
-		await injectCoordinator(texts.coordinator);
-		if (!current()) return;
-		await appendVoice(texts.voice);
+		try {
+			await options.session.realtimeAppendSpeech({
+				threadId: session.binding.coordinatorThreadId,
+				text: presentationSpeech(change),
+			});
+		} catch {
+			if (current()) onError("The voice model was not confirmed told where the walkthrough is.");
+		}
 	};
 	const unsubscribe = source.subscribe((change) => {
-		// What a user did before the narrator existed is not news to it: it begins by asking
-		// for the first step, which puts the pane there whatever was on screen.
-		if (!session.started) return;
 		tail = tail.then(() => deliver(change)).catch(() => undefined);
 	});
 	return () => {

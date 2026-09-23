@@ -38,7 +38,6 @@ import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-host/index.js";
-import { fakePresentation, type FakePresentation } from "./presentation-support.js";
 
 interface ResponseWrite {
 	readonly request: DynamicServerRequest;
@@ -79,7 +78,6 @@ interface CoordinatorToolsFixture {
 		setOperationId: (operationId: string | null) => void;
 		setSnapshot: (snapshot: SpokenApprovalSnapshot) => void;
 	};
-	readonly presentation: FakePresentation;
 	readonly transport: {
 		readonly writes: ResponseWrite[];
 		respond: (
@@ -384,14 +382,12 @@ function fixture(
 		},
 	};
 
-	const presentation = fakePresentation();
 	const dispatcher = createCodexCoordinatorTools({
 		identity,
 		authority,
 		operation,
 		operations,
 		spokenApproval,
-		presentation,
 		transport,
 	});
 
@@ -408,9 +404,7 @@ function fixture(
 	): DynamicServerRequest => {
 		const namespace =
 			options.namespace ??
-			(tool === "resolve_spoken_approval" || tool === "present_step"
-				? "archboard_voice"
-				: "archboard_workhorse");
+			(tool === "resolve_spoken_approval" ? "archboard_voice" : "archboard_workhorse");
 		const manifestHash =
 			options.manifestHash ??
 			(namespace === "archboard_voice"
@@ -430,9 +424,7 @@ function fixture(
 						? { operation: "list" }
 						: tool === "steer_workhorse"
 							? { input: "steer input" }
-							: tool === "present_step"
-								? { step: 2 }
-								: { verdict: "accept" });
+							: { verdict: "accept" });
 		const call = identity.decoder.createLogicalToolCallCorrelation({
 			threadId,
 			turnId,
@@ -476,7 +468,6 @@ function fixture(
 		timeline,
 		operations,
 		spokenApproval,
-		presentation,
 		transport,
 		authority,
 		dispatcher,
@@ -485,7 +476,6 @@ function fixture(
 }
 
 export { type ResponseWrite, type CoordinatorToolsFixture, fixture };
-export { ARRIVED_STEP } from "./presentation-support.js";
 export {
 	copyRequest,
 	responseValue,

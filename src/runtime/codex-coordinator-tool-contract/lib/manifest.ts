@@ -25,7 +25,7 @@ type ManifestName = "workhorse" | "voice";
 const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
 	"6243da412a5902b929f62180b421dee0105e91ec9938a0a6d95e8e296a3634eb" as const;
 const ARCHBOARD_VOICE_MANIFEST_SHA256 =
-	"7649189618d90289e4e2fbd113124db417185244002bf67ddbf632e8755db4f4" as const;
+	"7c14fcdc624241e02de9267be092876ebfb780c7c7869acd82ea89f807264b97" as const;
 
 const MANIFEST_FILES = Object.freeze({
 	archboard_workhorse: "archboard-workhorse.json",
@@ -43,10 +43,7 @@ const ARCHBOARD_WORKHORSE_TOOL_NAMES = Object.freeze([
 	"manage_workhorse_queue",
 	"steer_workhorse",
 ] as const);
-const ARCHBOARD_VOICE_TOOL_NAMES = Object.freeze([
-	"resolve_spoken_approval",
-	"present_step",
-] as const);
+const ARCHBOARD_VOICE_TOOL_NAMES = Object.freeze(["resolve_spoken_approval"] as const);
 
 type WorkhorseToolName = (typeof ARCHBOARD_WORKHORSE_TOOL_NAMES)[number];
 type VoiceToolName = (typeof ARCHBOARD_VOICE_TOOL_NAMES)[number];

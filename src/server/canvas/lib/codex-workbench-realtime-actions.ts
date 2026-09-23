@@ -1,13 +1,14 @@
 import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import type { RealtimePresentation } from "@/runtime/codex-realtime";
 import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
-import { narrationTiming } from "@/server/canvas/lib/narration-timing";
 import { traceMessage, voiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
 import {
 	bindVoicePane,
+	forgetNarration,
 	narrationFor,
-	noteNarratedWalkthrough,
+	openNarration,
 } from "@/server/canvas/lib/walkthrough-narration";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;
@@ -129,6 +130,27 @@ function workhorseReadyFor(workhorse: WorkhorseSnapshot, threadId: ThreadId): bo
 }
 
 /**
+ * What one start narrates, with the session bound to the pane in the browser it came from: the
+ * browser id is that pane's client id, exact where the shell's "A" is not (TASK-294). A start
+ * that presents a walkthrough is told what it says by the server, from the board that pane is
+ * showing (TASK-251).
+ * @param pending The session being started.
+ * @param walkthrough The walkthrough the user pressed Narrate on, or undefined.
+ * @returns The walkthrough to present, or null for an ordinary session.
+ */
+function narrationOfStart(
+	pending: ActiveRealtime,
+	walkthrough: string | undefined,
+): RealtimePresentation | null {
+	bindVoicePane(pending.paneId, pending.browserId);
+	if (walkthrough === undefined) {
+		forgetNarration(pending.paneId);
+		return null;
+	}
+	return narrationFor(pending.paneId, pending.browserId, walkthrough);
+}
+
+/**
  * Own one continuous server realtime session for one exact browser socket
  * binding.
  * @param components The coordinator, the realtime adapter, and the workhorse.
@@ -139,8 +161,7 @@ export function createCanvasRealtimeActions(
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
 	let realtimeQueue = Promise.resolve();
-	// The narration clock hears when the voice starts and stops speaking (TASK-251), and the
-	// start trace keeps every state the session moves through and every diagnostic it raises.
+	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
 		if (event.kind === "diagnostic") {
 			voiceStartTrace.note("diagnostic", { code: event.code, message: event.message });
@@ -149,11 +170,6 @@ export function createCanvasRealtimeActions(
 			return;
 		}
 		voiceStartTrace.note("state", { phase: event.state.phase, reason: event.state.reason });
-		if (event.state.reason === "assistant_started") {
-			narrationTiming.voiceStarted();
-		} else if (event.state.reason === "assistant_finished") {
-			narrationTiming.voiceFinished();
-		}
 	});
 	/**
 	 * Run one realtime operation after the last one has settled: a session is a
@@ -294,20 +310,11 @@ export function createCanvasRealtimeActions(
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
 				try {
-					// The session is about the pane in the browser it was started from: the
-					// browser id is that pane's client id, exact where the shell's "A" is not
-					// (TASK-294). A session started to present a walkthrough is told what it
-					// says by the server, from the board that pane is showing (TASK-251).
-					bindVoicePane(pending.paneId, pending.browserId);
-					const presentation =
-						command.presentation === undefined
-							? null
-							: narrationFor(pending.paneId, pending.browserId, command.presentation.walkthrough);
-					if (presentation === null) {
-						noteNarratedWalkthrough(pending.paneId, null);
-					}
-					narrationTiming.reset();
-					const realtimeAnswer = await components.realtime.createOffer(
+					const presentation = narrationOfStart(pending, command.presentation?.walkthrough);
+					// Creating the offer subscribes the session to this pane's narration before it
+					// returns, so the first step, asked of the pane now while Codex starts the
+					// session, reaches the voice model the way every later step does.
+					const answering = components.realtime.createOffer(
 						{
 							sessionId: pending.sessionId,
 							correlationId: pending.correlationId,
@@ -315,6 +322,12 @@ export function createCanvasRealtimeActions(
 						},
 						presentation,
 					);
+					if (presentation !== null) {
+						openNarration(pending.paneId).catch((error: unknown) => {
+							voiceStartTrace.note("narration_failed", { message: traceMessage(error) });
+						});
+					}
+					const realtimeAnswer = await answering;
 					requireActive(pending.handle, context);
 					voiceStartTrace.note("answered", {
 						answerSdpBytes: Buffer.byteLength(realtimeAnswer.sdp),

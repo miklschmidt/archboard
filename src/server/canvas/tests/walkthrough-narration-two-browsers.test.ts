@@ -136,7 +136,7 @@ function report(
 	};
 }
 
-test("narration is about the browser that pressed Narrate, not the first pane with its id", async () => {
+test("narration is about the browser that pressed Narrate, not the first pane with its id", () => {
 	// The other browser registered first, so a lookup by "A" lands on it.
 	browserPane("client-app", OTHER);
 	browserPane("client-chrome", NARRATED);
@@ -146,21 +146,11 @@ test("narration is about the browser that pressed Narrate, not the first pane wi
 		walkthrough: walkthroughId,
 		name: "How a request lands",
 	});
-
-	// The coordinator names the pane "A"; the step is settled on Chrome's board. Nothing
-	// carries it to a socket here, so the pane is refused as absent, not the walkthrough.
-	const step = await canvas.presentStepInCanvasPane({
-		paneId: "A",
-		input: {},
-		signal: new AbortController().signal,
-		turnId: null,
-	});
-	expect(step).toMatchObject({ tag: "refused", reason: "not_ready" });
 });
 
 test("a hand on the other browser's pane of the same id is not this narration's news", () => {
 	canvas.bindVoicePane("A", "client-chrome");
-	canvas.noteNarratedWalkthrough("A", walkthroughId, 1);
+	canvas.narrationFor("A", "client-chrome", walkthroughId);
 	const heard: string[] = [];
 	const stop = canvas.subscribeNarrationChanges((change) => heard.push(change.kind));
 	const stepped: SemanticPanePresentation = {
