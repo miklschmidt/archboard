@@ -179,9 +179,9 @@ of pane addressing and which other browsers do not subtitle.
 
 ### 3. On-demand query — CLI
 
-The agent pulls persisted board state with `describe`, `query`, `changes` and
-`compare`; conversion, rendering, inspection, snapshots, branches and exports
-need no browser, and only `browser` commands touch live panes. The CLI
+The agent pulls persisted board state with `semantic show`, `semantic compare`
+and `semantic inspect`; writing, branching, rendering and rasterizing need no
+browser, and only `browser` commands touch live panes. The CLI
 auto-starts the canvas server. The former MCP catalogue was retired (ADR 0008);
 the loopback REST interface remains the seam behind the CLI and browser.
 
@@ -210,44 +210,28 @@ without that. Revisit only if Codex exposes a supported registration surface.
 Backlog.md is authoritative (`backlog task list --plain`); completed work is
 in its closed tasks and `docs/adr/`.
 
-**Later**
+## Code bindings
 
-- **Architecture node kinds** as a controlled vocabulary: service, queue,
-  datastore, gateway, external. Boxes and arrows with infra-flavoured types, no
-  resource graph underneath.
-
-## Verified element metadata
-
-`customData` and human-authored `link` values survive the full round-trip,
-including the frontend sync after a human drags an element. Archboard's
-channel is `customData.archboard`; code bindings live there as portable
-metadata, never as stored local links:
+A node's code binding is part of its meaning and is stored on the node, as
+portable metadata and never as a local link:
 
 ```json
 {
-	"type": "rectangle",
-	"label": { "text": "AuthService" },
-	"customData": {
-		"archboard": {
-			"kind": "service",
-			"node": "auth-service",
-			"binding": {
-				"repo": "github.com/acme/api",
-				"path": "src/auth/service.ts",
-				"branch": "main",
-				"commit": "62f0cef",
-				"confirmedAt": "2026-08-24T10:30:00Z"
-			},
-			"variant": "current"
-		}
+	"name": "AuthService",
+	"kind": "service",
+	"binding": {
+		"repo": "github.com/acme/api",
+		"path": "src/auth/service.ts",
+		"branch": "main",
+		"commit": "62f0cef",
+		"confirmedAt": "2026-08-24T10:30:00Z"
 	}
 }
 ```
 
-On the way out, archboard resolves the binding through this machine's checkout
-registry: a local target when the file or directory exists, otherwise a
-validated GitHub HTTPS target for an exact `github.com/owner/repository`
-identity, and no invented target for other hosts. The overlay exists only on
-an outbound copy and is stripped before the note is written; new presentations
-never emit `file://`. Elements synced from the browser are tagged
-`"source": "frontend_sync"`.
+When a user opens the code, archboard resolves the binding through this
+machine's checkout registry: a local target when the file or directory exists,
+otherwise a validated GitHub HTTPS target for an exact
+`github.com/owner/repository` identity, and no invented target for other hosts.
+Nothing resolved is written back to the note, and no presentation emits
+`file://`.

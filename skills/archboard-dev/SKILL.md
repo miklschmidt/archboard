@@ -1,6 +1,6 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source — restart semantics, where the tracked skills live and what is generated from them, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, editing its skills, or verifying a canvas change.
+description: Working on archboard's own source — where the tracked skills live and what is generated from them, maintaining the consumer skill, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, editing its skills, or verifying a canvas change.
 ---
 
 # Working on archboard

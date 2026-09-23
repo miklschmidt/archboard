@@ -1,7 +1,7 @@
 # Archboard
 
-A shared architecture surface. An agent and a user build, explore, and refactor
-a codebase's structure through boards that express architectural meaning.
+A shared architecture surface. Agents author a codebase's architecture on boards
+that express its meaning, and users read them.
 
 ## Language
 
@@ -34,11 +34,6 @@ Whoever is reading the canvas and talking to it. A user reads, picks things out
 and speaks; agents author.
 _Avoid_: person, human, operator, viewer
 
-**Element**:
-A primitive on the canvas — a rectangle, arrow, or piece of text — carrying no
-architectural meaning by itself.
-_Avoid_: shape, object, item, primitive
-
 **Node**:
 An architectural unit described on a board, with an identity and kind independent
 of how it is drawn. It has a name and may carry a short responsibility and a detailed
@@ -63,18 +58,6 @@ _Avoid_: container kind, group, platform tag
 The icon and its surrounding tile identifying a node's kind on a card or container.
 _Avoid_: comparison badge, card body
 
-**Library**:
-The palette of stencils available to drag onto any board. One per canvas
-server, shared by every pane and every tab (ADR 0007). Never a synonym for the
-vault, which is where boards live.
-_Avoid_: palette, assets, collection, shapes panel
-
-**Stencil**:
-One item in the library: a small group of elements kept for reuse. It carries
-no architectural meaning until it is on a board and promoted, and it stops
-being a stencil the moment it is dragged onto one.
-_Avoid_: symbol, icon, template, component, widget
-
 ### Commands
 
 **Board operation**:
@@ -84,21 +67,16 @@ browser.
 _Avoid_: canvas command, pane command, headless command
 
 **Browser operation**:
-An action whose subject is a live Archboard browser session, such as displaying
-a Board, reading selection, moving a camera, or capturing a Pane. It never
-changes a Board's Note.
+An action whose subject is a live Archboard browser session: showing a Board in
+a Pane, opening or closing a Pane, or reading what each Pane shows and what the
+user selected. It never changes a Board's Note.
 _Avoid_: view command, board command, pane command
 
 **Board render**:
-An image produced by the server from one named Board snapshot, independent of
-any live Pane or Canvas camera. It uses a server-owned renderer and never
-attaches to a browser session.
-_Avoid_: screenshot, browser capture, pane export
-
-**Browser capture**:
-An image of what a named live browser target shows, including its Pane and
-camera state.
-_Avoid_: board render, export, unqualified screenshot
+An image of one named Board drawn without a live Pane: an SVG from the renderer,
+or a PNG drawn in a private headless browser. It never attaches to a browser
+session.
+_Avoid_: screenshot, pane export
 
 ### Meaning
 
@@ -185,11 +163,6 @@ The machine-local record of which checkout holds which repository identity
 here. The only place a directory on one machine is written down.
 _Avoid_: index, cache, catalogue, repo config
 
-**Promotion**:
-Declaring a set of elements to be a node, giving it a kind and usually a
-binding in the same act.
-_Avoid_: mapping, tagging, assignment, conversion
-
 ### Structure
 
 **Containment**:
@@ -214,7 +187,7 @@ _Avoid_: board content, variant, style override
 
 **Color palette**:
 The curated set of named colors available to a visual policy.
-_Avoid_: vault vocabulary, group, stencil library
+_Avoid_: vault vocabulary, group
 
 **Color scope**:
 The inherited color context established by a depicted container for itself and
@@ -269,7 +242,7 @@ Explicitly designating a variant as the implemented architecture and recording w
 the designation changed. A formerly current state is retained as named history; on a
 board that had no current variant, adoption is the moment its architecture starts
 existing, and nothing becomes history.
-_Avoid_: promotion (the legacy element-to-node operation), rename, merge
+_Avoid_: promotion, rename, merge
 
 **Historical variant**:
 A formerly current architectural state retained under its name after a successor
@@ -339,19 +312,20 @@ _Avoid_: external edit, foreign write, third-party change
 
 **Comparison**:
 The differences between two board variants, identified by the stable identities
-of their architectural content. A proposal's views show its comparison with its baseline
-as derived change labels, rather than authored content.
-_Avoid_: variant, change report
+of their architectural content. A proposal's views show its comparison with the
+variant it was branched from as derived change marks, rather than authored
+content.
+_Avoid_: variant, diff
 
 **Comparison status**:
-The derived added, changed, removed or unchanged standing of a subject relative
-to a variant's comparison baseline.
+The derived added, changed, removed or unchanged standing of a subject against
+the variant its own variant was branched from.
 _Avoid_: authored flag, selection, current designation
 
 **Note**:
-The file in the vault holding one board and its variants. The note is the
-authoritative persisted content of the board.
-_Avoid_: file, document, markdown, page, record
+The `.semantic.json` document in the vault holding one board and its variants.
+The note is the authoritative persisted content of the board.
+_Avoid_: page, record
 
 **Version**:
 Which persisted edit of a board it is, shared by all its variants. A writer
@@ -359,32 +333,15 @@ names the version it edited so a change based on an older board can be refused.
 _Avoid_: revision, generation, sequence, edition, variant (that is a different
 architectural state, rather than the board's edit counter)
 
-**Hold**:
-The state of a board the canvas has stopped saving, because its note changed
-underneath and writing would delete somebody else's work. Drawing carries on
-into a copy the canvas keeps until a user picks reload, overwrite or save
-elsewhere. It is about another application writing the note, never about
-another archboard writer, which is a lock and has a holder.
-_Avoid_: lock, conflict, freeze, pause, dirty, detached
-
-**Written elsewhere**:
-A board whose note has been changed by something that is not archboard, while a
-pane goes on showing the board archboard last wrote. The step before a hold, and
-distinguished from one by what has not happened: nothing has been refused,
-because nothing has been written since. An editor, a sync client and `git pull`
-are the writers it is about, being the ones no lock excludes.
-_Avoid_: stale, dirty, out of date, drift, external change, conflict
-
 **Vault**:
 The cross-repository collection in which every board is persisted.
-_Avoid_: library (it means the stencil palette here), workspace, store,
-repository, folder
+_Avoid_: library, workspace, store, repository, folder
 
 ### Reading
 
 **Reading direction**:
-The way a view's architecture reads across the page, down or left to right.
-It is a property of the rendered variant, derived from its shape.
+The way a view's architecture reads across the page: always from the top down.
+It is a property of the rendered variant, never of its authored content.
 _Avoid_: orientation, rotation, layout direction, landscape, portrait
 
 **Reference pane**:
@@ -399,16 +356,11 @@ capped at one. One measure on the scorecard, never the only one.
 _Avoid_: density, aspect ratio, zoom (that is the camera's)
 
 **Scorecard**:
-Every measure a reader pays for in one drawing: fit, page area, card share,
-route length, bends, crossings, margin lanes and the flank fan. One drawing is
+Every measure a reader pays for in one drawing, such as fit, page area, card
+share, route length, bends and crossings. One drawing is
 better than another when it is better on more of these than it is worse; no
 single measure decides.
 _Avoid_: score, cost, quality metric
-
-**Flank rule**:
-Which side of the page returns travel and how a skip over a rank attaches to
-its cards. It belongs to the rendered variant, independently of its ancestry.
-_Avoid_: side convention, port rule, lane side
 
 ### Working
 
@@ -435,26 +387,6 @@ sustained work to the workhorse.
 _Avoid_: voice model (that is only one part of the realtime path), voice agent,
 router, facilitator, copilot
 
-**Read-back**:
-The agent re-reading a board to understand its current architecture and any
-changes to the design.
-_Avoid_: sync, refresh, reload, poll, re-scan
-
-**Baseline**:
-The fingerprint of each element the pane has received from the server or had
-accepted in a change report. A pane reports a deletion only for an element in
-its baseline.
-_Avoid_: scene, board copy, snapshot, cache
-
-**Change report**:
-The element upserts and deletions a pane computes by comparing its scene with
-its baseline. The server persists the report before answering. An ordinary
-human report receives compact canonical corrections plus the written board's
-fingerprint and version; an agent report receives its touched elements and
-fingerprint, and receives the resulting board only when it explicitly asks for
-the document.
-_Avoid_: sync, save, scene replacement, patch
-
 **Doing**:
 The one line an agent says about a board as it writes to it, shown on the
 canvas while the write lands. A claim's reason is the campaign an agent has the
@@ -462,6 +394,6 @@ board for; a doing is one step of it, and a write that says none is refused.
 _Avoid_: description, why, message, comment, log, reason (that is the claim's)
 
 **Proposal**:
-A set of boards, one per affected subject, describing a refactor that has not
-been carried out.
-_Avoid_: plan, design, draft, RFC
+A draft variant that states a change nobody has built yet, branched from the
+variant it would change.
+_Avoid_: plan, design, RFC

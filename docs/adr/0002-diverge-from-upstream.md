@@ -1,3 +1,7 @@
+---
+status: superseded
+---
+
 # Diverge from upstream; do not stay mergeable
 
 Archboard is a private internal tool that will never be published and will never
@@ -16,3 +20,6 @@ go.
 conventions we have deliberately replaced. Taking an upstream fix means reading
 it and reimplementing it our way, or cherry-picking a specific commit when it
 clearly applies. See the `archboard-dev` skill for the procedure.
+
+Superseded (TASK-310, 2026-09-23): nothing of the forked project is left to
+take fixes from, so there is no procedure for it.
