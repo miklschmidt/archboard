@@ -93,7 +93,8 @@ test(
 					cwd: repoRoot,
 					encoding: "utf8",
 					timeout: TEST_RECORDING_CLI_MS,
-					killSignal: "SIGKILL",
+					// A hung CLI tears its browser down on SIGTERM, which SIGKILL would leave running.
+					killSignal: "SIGTERM",
 					env: {
 						...process.env,
 						ARCHBOARD_VAULT: fixture.vault,

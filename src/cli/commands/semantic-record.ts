@@ -5,11 +5,11 @@
 // capture of its tab with the voice in it. With --discard, a board made only
 // to be recorded is deleted once its recording is written.
 
-import { extname } from "node:path";
+import { accessSync, constants, statSync } from "node:fs";
+import { dirname, extname } from "node:path";
 import { z } from "zod";
 
 import {
-	addressedVariant,
 	DiagramThemeSchema,
 	type SemanticBoard,
 	type SemanticWalkthrough,
@@ -24,7 +24,7 @@ import {
 import { recordWalkthrough } from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { doingRefusal, serverRefusal } from "@/cli/command-contract/common";
-import { SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
+import { SelectorSchema, UNNAMED_VARIANT, askedVariant } from "@/cli/commands/lib/semantic-input";
 
 const THEMES = DiagramThemeSchema.options;
 
@@ -63,14 +63,14 @@ const recordingRefusedRefusal = {
 	exit: 4,
 	stream: "stderr" as const,
 	description:
-		"The canvas could not start the recording: Codex not signed in, voice unavailable or already live, or the board not drawn. Nothing was written.",
+		"The canvas could not start the recording, or it failed before showing a step: Codex not signed in, voice unavailable or already live, the board not drawn, or a frontend built without recording. Nothing was written.",
 };
 const recordingFailedRefusal = {
 	code: "RECORDING_FAILED",
 	exit: 1,
 	stream: "stderr" as const,
 	description:
-		"The recording started and did not finish, for example the voice said nothing about a step. Nothing was written and the board was kept.",
+		"The recording showed a step and did not finish, for example the voice said nothing about the next one. Nothing was written and the board was kept.",
 };
 
 /**
@@ -138,27 +138,6 @@ function chosenWalkthrough(
 }
 
 /**
- * The variant and walkthrough to record.
- * @param board The board.
- * @param input What the command was given.
- * @returns The variant's id and the walkthrough.
- * @throws {CliUsageError} When the variant or the walkthrough does not exist.
- */
-function recorded(
-	board: SemanticBoard,
-	input: z.infer<typeof RecordInputSchema>,
-): { readonly variant: string; readonly walkthrough: SemanticWalkthrough } {
-	const opened = addressedVariant(board, input.variant);
-	if (!opened.ok) {
-		throw new CliUsageError(`No variant "${input.variant ?? ""}" on board "${board.name}".`);
-	}
-	return {
-		variant: opened.variant.id,
-		walkthrough: chosenWalkthrough(opened.variant.content.walkthroughs, input.walkthrough),
-	};
-}
-
-/**
  * A progress line for one moment of the talk.
  * @param state The page's state.
  * @returns The line, or null when there is nothing new worth saying.
@@ -184,6 +163,62 @@ function requireDoingForDiscard(discard: boolean): void {
 	}
 }
 
+/**
+ * Refuse an --out whose directory is missing or cannot be written before anything starts: the
+ * file is first written there only after the whole talk.
+ * @param out The --out the command was given.
+ * @param file Where it resolves to.
+ * @throws {CliUsageError} When its directory is not one this process can write in.
+ */
+function requireWritableDirectory(out: string, file: string): void {
+	const directory = dirname(file);
+	try {
+		if (!statSync(directory).isDirectory()) throw new Error(`${directory} is not a directory`);
+		accessSync(directory, constants.W_OK);
+	} catch (error) {
+		const why = error instanceof Error ? error.message : String(error);
+		throw new CliUsageError(
+			`--out ${out} must be in a directory that exists and can be written (${why}). Create it, or name another.`,
+		);
+	}
+}
+
+/**
+ * Discard the board that was recorded, at the version it was recorded at: a board somebody
+ * changed meanwhile is kept. A discard that fails only keeps the board, and says so; the
+ * recording is written either way.
+ * @param board The board as it was read before recording.
+ * @param file The recording.
+ * @param say Writes one diagnostic line.
+ * @returns Whether the board went.
+ */
+async function discardRecorded(
+	board: SemanticBoard,
+	file: string,
+	say: (line: string) => void,
+): Promise<boolean> {
+	try {
+		await discardSemanticBoardOnCanvas(board.name, board.version);
+		return true;
+	} catch (error) {
+		say(
+			`The recording is written to ${file}, but the board "${board.name}" was kept: discarding it failed (${failureOf(error)}).`,
+		);
+		return false;
+	}
+}
+
+/**
+ * What a failure says, with its code when it carries one.
+ * @param error What was thrown.
+ * @returns Its code and message.
+ */
+function failureOf(error: unknown): string {
+	const why = error instanceof Error ? error.message : String(error);
+	const code = error instanceof Error && "code" in error ? error.code : undefined;
+	return typeof code === "string" ? `${code}: ${why}` : why;
+}
+
 const semanticRecordContract = defineCommand({
 	path: ["semantic", "record"],
 	shared: ["url", "doing", "as-session"],
@@ -195,7 +230,8 @@ const semanticRecordContract = defineCommand({
 		"the voice has finished explaining it, and the recording ends after the last. It runs on " +
 		"the canvas the CLI talks to, which must have Codex signed in and must not have voice " +
 		"live. --discard deletes the board once the recording is written, for a board made only " +
-		"to be recorded; a failed recording keeps it. Needs a Chromium or Google Chrome executable " +
+		"to be recorded; a failed recording keeps it, and so does a board changed while it was " +
+		"recorded, which the receipt says. Needs a Chromium or Google Chrome executable " +
 		"on PATH or named by ARCHBOARD_RENDERER_CHROMIUM.",
 	examples: [
 		"archboard semantic record pipeline --out pipeline.mp4",
@@ -302,16 +338,17 @@ const semanticRecordContract = defineCommand({
 	 */
 	async handler(input, context) {
 		const container = containerOf(input.out);
+		const file = context.resolvePath(input.out);
+		requireWritableDirectory(input.out, file);
 		const discard = input.discard === true;
 		requireDoingForDiscard(discard);
 		await context.require("server", "semantic record");
 		const board = await readSemanticBoardOnCanvas(input.name);
-		const { variant, walkthrough } = recorded(board, input);
-		const file = context.resolvePath(input.out);
-		let said: string | null = null;
+		const variant = askedVariant(board, input.variant);
+		const walkthrough = chosenWalkthrough(variant.content.walkthroughs, input.walkthrough);
 		const made = await recordWalkthrough({
 			canvasUrl: EXPRESS_SERVER_URL,
-			boardKey: input.variant === undefined ? board.name : `${board.name}@${variant}`,
+			boardKey: input.variant === undefined ? board.name : `${board.name}@${variant.id}`,
 			walkthrough: walkthrough.id,
 			container,
 			theme: input.theme,
@@ -323,16 +360,21 @@ const semanticRecordContract = defineCommand({
 			 */
 			onProgress: (state) => {
 				const line = progressLine(state);
-				if (line !== null && line !== said) context.diagnostic(line);
-				said = line;
+				if (line !== null) context.diagnostic(line);
 			},
 		});
-		if (discard) await discardSemanticBoardOnCanvas(board.name);
+		if (made.leftBehind.length > 0) {
+			context.diagnostic(
+				`The recording's browser could not be proved gone: ${made.leftBehind.join("; ")}`,
+			);
+		}
+		context.signal.throwIfAborted();
+		const discarded = discard && (await discardRecorded(board, made.file, context.diagnostic));
 		return {
 			result: {
 				success: true as const,
 				board: board.name,
-				variant,
+				variant: variant.id,
 				walkthrough: { id: walkthrough.id, name: walkthrough.name },
 				steps: made.steps,
 				file: made.file,
@@ -340,7 +382,7 @@ const semanticRecordContract = defineCommand({
 				mimeType: made.mimeType,
 				durationMs: made.durationMs,
 				theme: input.theme,
-				discarded: discard,
+				discarded,
 			},
 		};
 	},
