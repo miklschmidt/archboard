@@ -9,7 +9,8 @@ interface WorkbenchControlOperability {
 	readonly visibleWidth: number;
 	readonly visibleHeight: number;
 	readonly clipped: boolean;
-	readonly requestOverlap: boolean;
+	/** An undersized control's 24px circle reaches another target (WCAG 2.5.8 spacing). */
+	readonly crowded: boolean;
 	readonly centerHit: boolean;
 	readonly operable: boolean;
 }
@@ -29,9 +30,6 @@ function workbenchControlOperability(
 		const control = document.querySelector(${JSON.stringify(selector)});
 		if (!(control instanceof HTMLButtonElement)) throw new Error('Missing rendered workbench control.');
 		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
-		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
-			right.height > 0 && left.left < right.right && left.right > right.left &&
-			left.top < right.bottom && left.bottom > right.top;
 		const bounds = rect(control);
 		const visible = { left: Math.max(0, bounds.left), top: Math.max(0, bounds.top),
 			right: Math.min(innerWidth, bounds.right), bottom: Math.min(innerHeight, bounds.bottom) };
@@ -50,8 +48,23 @@ function workbenchControlOperability(
 		const visibleWidth = Math.max(0, visible.right - visible.left);
 		const visibleHeight = Math.max(0, visible.bottom - visible.top);
 		const clipped = visibleWidth < bounds.width || visibleHeight < bounds.height;
-		const request = rect(document.querySelector('[data-workbench-region="app-global-request"]'));
-		const requestOverlap = overlaps(bounds, request);
+		// WCAG 2.5.8: a target under 24px passes when a 24px circle on its centre
+		// reaches no other target, nor another undersized target's circle.
+		const undersized = box => box.width < 24 || box.height < 24;
+		const centre = box => [box.left + box.width / 2, box.top + box.height / 2];
+		const [cx, cy] = centre(bounds);
+		const crowded = undersized(bounds) && [...document.querySelectorAll(
+			'a[href], button, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"])',
+		)].some(other => {
+			if (other.contains(control) || control.contains(other)) return false;
+			const box = rect(other);
+			if (box.width === 0 || box.height === 0) return false;
+			const dx = cx - Math.max(box.left, Math.min(cx, box.right));
+			const dy = cy - Math.max(box.top, Math.min(cy, box.bottom));
+			if (Math.hypot(dx, dy) < 12) return true;
+			const [ox, oy] = centre(box);
+			return undersized(box) && Math.hypot(cx - ox, cy - oy) < 24;
+		});
 		const center = document.elementFromPoint(
 			bounds.left + bounds.width / 2,
 			bounds.top + bounds.height / 2,
@@ -63,9 +76,9 @@ function workbenchControlOperability(
 			visibleWidth,
 			visibleHeight,
 			clipped,
-			requestOverlap,
+			crowded,
 			centerHit,
-			operable: visibleWidth >= 24 && visibleHeight >= 24 && !clipped && !requestOverlap && centerHit,
+			operable: !clipped && !crowded && centerHit,
 		};
 	})()`);
 }
