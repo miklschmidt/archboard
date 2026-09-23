@@ -43,15 +43,15 @@ interface CanvasOwnerProjectionInput {
 }
 
 /**
- * Whether the controller's current binding is this pane's exact one: the same
- * pane, the same link revision, and the same target.
+ * Whether the controller's current binding is the link this pane shows: the
+ * same link revision and the same target. Which pane created it does not
+ * matter, since every pane of a canvas shows the one link.
  * @param binding The controller's binding.
  * @param context The pane being read.
  * @returns True when they are the same binding.
  */
 function bindingIsForPane(binding: SemanticBinding, context: ProjectionContext): boolean {
 	return (
-		binding.paneId === context.paneId &&
 		binding.link.revision === context.binding.revision &&
 		binding.target.threadId === context.binding.link.threadId &&
 		binding.target.childId === context.binding.link.childId &&
@@ -64,16 +64,14 @@ function bindingIsForPane(binding: SemanticBinding, context: ProjectionContext):
  * earlier delivery left in the process-wide history.
  * @param delivery The most recent delivery, or undefined when there is none.
  * @param binding The binding.
- * @param paneId The pane.
  * @returns True when the delivery belongs to the binding.
  */
 function deliveryIsForBinding(
 	delivery: SemanticDelivery | undefined,
 	binding: SemanticBinding,
-	paneId: string,
 ): boolean {
 	return (
-		delivery?.paneId === paneId &&
+		delivery?.paneId === binding.paneId &&
 		delivery.targetThreadId === binding.target.threadId &&
 		delivery.targetChildId === binding.target.childId &&
 		delivery.targetEpoch === binding.target.epoch &&
@@ -85,7 +83,8 @@ function deliveryIsForBinding(
  * The semantic delivery this pane may be shown.
  *
  * Delivery history is process-wide; only the exact current binding may publish
- * its result and freshness into this pane's snapshot.
+ * its result and freshness into a pane's snapshot, and every pane showing that
+ * binding's link is shown the same one.
  * @param components The runtime owners.
  * @param context The pane being read.
  * @returns The delivery, or undefined when none of it is this pane's.
@@ -99,7 +98,7 @@ function presentedSemantic(
 		return undefined;
 	}
 	const latest = components.semanticDelivery.inspect().at(-1);
-	return deliveryIsForBinding(latest, binding, context.paneId) ? latest : undefined;
+	return deliveryIsForBinding(latest, binding) ? latest : undefined;
 }
 
 /**

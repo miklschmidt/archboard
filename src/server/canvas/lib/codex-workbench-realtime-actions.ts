@@ -80,11 +80,13 @@ function coordinatorHolds(coordinator: CoordinatorSnapshot, active: ActiveRealti
 
 /**
  * Whether a realtime session is the one this command may act on: the same
- * handle, socket, link, and coordinator it was started under.
+ * handle, link, and coordinator it was started under, and — for a command that
+ * speaks into it — the same socket, whose media is what plays the voice.
  * @param active The realtime session.
  * @param handle The handle the command named.
  * @param context The pane and the link it named.
  * @param coordinator The coordinator snapshot.
+ * @param socketBound Whether the command must come from the session's own socket.
  * @returns True when the command may act on it.
  */
 function isCurrentRealtime(
@@ -92,10 +94,11 @@ function isCurrentRealtime(
 	handle: string,
 	context: BrowserActionContext,
 	coordinator: CoordinatorSnapshot,
+	socketBound: boolean,
 ): boolean {
 	return (
 		active.handle === handle &&
-		sameSocket(active, context) &&
+		(!socketBound || sameSocket(active, context)) &&
 		sameLink(active, context) &&
 		coordinatorHolds(coordinator, active)
 	);
@@ -212,14 +215,22 @@ export function createCanvasRealtimeActions(
 	 * longer names this exact browser binding.
 	 * @param handle The handle the command named.
 	 * @param context The pane and the link it named.
+	 * @param socketBound Whether the command must come from the session's own
+	 * socket; only stopping may come from any pane of the canvas.
 	 * @returns The session.
 	 */
-	const requireActive = (handle: string, context: BrowserActionContext): ActiveRealtime => {
+	const requireActive = (
+		handle: string,
+		context: BrowserActionContext,
+		socketBound = true,
+	): ActiveRealtime => {
 		const active = activeRealtime;
 		if (active === null) {
 			throw new Error("The realtime session handle is stale for this exact browser binding.");
 		}
-		if (!isCurrentRealtime(active, handle, context, components.coordinator.snapshot())) {
+		if (
+			!isCurrentRealtime(active, handle, context, components.coordinator.snapshot(), socketBound)
+		) {
 			throw new Error("The realtime session handle is stale for this exact browser binding.");
 		}
 		return active;
@@ -362,14 +373,15 @@ export function createCanvasRealtimeActions(
 				return { outcome: "delivered" as const };
 			}),
 		/**
-		 * Stop the session this pane started.
+		 * Stop the session, from whichever pane holds the lease: the canvas has
+		 * one conversation, and ending its voice needs no media of its own.
 		 * @param command The handle.
 		 * @param context The pane and the link it named.
 		 * @returns The browser outcome.
 		 */
 		stop: (command, context) =>
 			serialize(async () => {
-				const active = requireActive(command.realtimeSessionHandle, context);
+				const active = requireActive(command.realtimeSessionHandle, context, false);
 				await stopActive(active);
 				return { outcome: "delivered" as const };
 			}),
