@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:35'
-updated_date: '2026-09-23 22:39'
+updated_date: '2026-09-23 22:40'
 labels:
   - voice
   - coordinator
@@ -54,4 +54,6 @@ User decision 2026-09-24: no rule for the microphone echo case (rare); only the 
 User direction 2026-09-24: what went wrong is that the coordinator took the voice model's words as the user's explicit instruction. The rule now says assistant-only input is the voice model's spoken words: the coordinator never treats it as the user's instruction and starts no board change from it, answers a request those words show (such as a lookup the voice announced), and otherwise tells the voice model the handoff request was unclear. Digest re-pinned; tests pass (183).
 
 User point 2026-09-24: coordinator answers must wake the voice model. The channel rule (start-policy.ts, rendered into the coordinator's world state while voice is live, not the developer instructions) now says [FINAL] is the only message the voice model reacts to (Codex 0.155.1 v3_output_writer: FINAL is a speakable append, COMMENTARY a quiet one), and every turn that answers a handoff ends with one. In the 23:15 session the first handoff turn ended with only [COMMENTARY] ("The workhorse has started..."), the voice fell silent after "Give me a second", and the user asked "You good" 18 s later. The recording rule shares the channel lines but keeps its never-[FINAL] line without the handoff line. The unclear own-words handoff is now answered with a short [FINAL]. Tests pass (183), lint exit 0.
+
+User request 2026-09-24: the live channel rule now ends with two example turns (a lookup answered, and work handed to the workhorse), each a [COMMENTARY] line followed by the [FINAL] answer.
 <!-- SECTION:NOTES:END -->
