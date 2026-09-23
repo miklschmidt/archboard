@@ -91,6 +91,22 @@ a `body`, optional `subjects` and an optional `view`.
   beat id from another walkthrough is refused. When a subject a beat names is
   removed, point the beat at its successor in the same batch.
 
+A beat is read beside the picture, and in a recording its heading and body are
+all the voice is given: it never sees the subjects, the view or what a
+comparison marks. Write each beat so:
+
+- It makes one point, in the order the reader needs the points.
+- Its heading states the point, what happens or what holds ("Only the ledger
+  writes"), rather than naming what is drawn ("The ledger").
+- Its body explains what the picture cannot show: what the point means for
+  how the system behaves, with parts named exactly as the board names them and
+  the one number that matters when the source states it (a limit, a count, a
+  timeout).
+- Its `subjects` are the two or three things it is about, so the highlight
+  points somewhere.
+- It reads at the first attempt: short sentences, active voice, and only terms
+  the board itself names.
+
 ## Recording a walkthrough
 
 `semantic record <board> --out talk.mp4` presents one walkthrough of the board
@@ -98,7 +114,9 @@ in a private headless browser and records it with the Codex voice explaining
 each beat: MP4 or WebM, by the file's extension. Each beat moves on once the
 voice has finished explaining it. The caption shows the beat's heading and
 body, and the voice explains them in its own words rather than reading them
-out, so write a body that can be explained in a few sentences.
+out, so write a body that can be explained in a few sentences. The voice is
+given only the heading and the body: a part a beat highlights, or a change the
+comparison marks, is spoken about only when the body names it.
 
 - `--walkthrough <name>` picks one when the variant states several, and
   `--variant` and `--theme dark` choose what is drawn.
@@ -121,27 +139,44 @@ The video is how a reviewer who has not read the code learns what the pull
 request changed and why. The board is disposable; the vault's own boards are
 updated through their usual recipe, never through this one.
 
-1. **Make the board with the architecture before the change**, holding the
-   parts the pull request touches and their neighbours, named as the vault's
-   boards name them. Done when it reads as `main` does.
-2. **Branch the pull request from it** and make the change in one edit to the
+1. **Read the change and say why it exists.** Read the diff against the merge
+   base, not against the tip of `main`, and write one sentence saying why the
+   pull request exists, as its author would tell a reviewer. Done when the
+   sentence names the need or the problem rather than the files touched.
+2. **Make the board with the architecture before the change**: the parts the
+   diff touches and the parts directly connected to them, which show the
+   reviewer what the change can reach, named as the vault's boards name them.
+   Helpers, configuration, types and tests stay out unless the change is about
+   them. Done when it reads as `main` does.
+3. **Branch the pull request from it** and make the change in one edit to the
    branch. The pane draws a draft's comparison with what it was branched from,
    so what was added, changed and removed is marked on screen. Done when every
    change the diff makes to the architecture is on the branch.
-3. **Write the walkthrough on the branch for a reviewer**: three to six beats,
-   each on the subjects it is about. Open with why the change exists, give
-   each change its own beat, and close with what a reviewer should look at
-   closely. A beat of a few sentences is about half a minute of speech, so the
-   video stays within one to three minutes. Done when a reviewer could answer
-   "what changed, and why" from the beats alone.
-4. **Record it outside the repository and discard the board.** Done when the
+4. **Write the walkthrough on the branch for a reviewer**, three to six beats
+   [written for the voice](#walkthroughs):
+   - The first beat is the why sentence, with no subjects.
+   - Then the change that matters most, then each other change in its own
+     beat. A change's heading says what the pull request did ("The ledger now
+     takes the lease"); a heading that was already true on `main` describes
+     the code, not the change. The comparison's marks are not spoken, so the
+     body says what was added, changed or removed.
+   - The last beat says where a reviewer should look closely, such as a seam
+     or an invariant the change relies on, and what to check there: a place to
+     look, not a verdict on the code.
+
+   A beat of a few sentences is about half a minute of speech, so the video
+   stays within one to three minutes. Done when a reviewer could answer "what
+   changed, and why" from the beats alone.
+
+5. **Record it outside the repository and discard the board.** Done when the
    receipt says `discarded: true` and the command said nothing about sound.
-5. **Attach it to the pull request** with gh 2.99 or later (`--attach` also
+6. **Attach it to the pull request** with gh 2.99 or later (`--attach` also
    works on `gh pr create` and `gh pr edit`). GitHub takes videos up to 10 MB
    on free plans and 100 MB on paid ones; the receipt's `bytes` is the size.
    Done when the video plays in the pull request.
 
 ```bash
+git diff --find-renames origin/main...HEAD   # three dots: from the merge base
 archboard semantic new pr-128 --doing "drawing what pull request 128 changes" --input before.json
 archboard semantic branch pr-128 --as "This pull request" --expect-version 1 --doing "branching pull request 128"
 archboard semantic edit pr-128 --variant "This pull request" --expect-version 2 --doing "making pull request 128's change" --input change.json
@@ -149,3 +184,28 @@ archboard semantic edit pr-128 --variant "This pull request" --expect-version 3 
 archboard semantic record pr-128 --variant "This pull request" --out ~/recordings/pr-128.mp4 --discard --doing "recording pull request 128 for its reviewers"
 gh pr comment 128 --attach ~/recordings/pr-128.mp4 --body "A narrated walkthrough of this change."
 ```
+
+### A newcomer's walkthrough
+
+For somebody new to the code who asks how one thing works. The reader cannot
+take in a whole diagram at once, so the picture starts with two parts and grows.
+
+1. **Write the answer first**: one sentence of the form "When you _do this_,
+   _this happens_", short enough to say back. Done when it names what the
+   reader does and what they get.
+2. **Draw the one path between the two**: four to ten parts, each
+   `responsibility` saying in plain words what the part does. Helpers,
+   configuration, types and tests stay out. Done when every part is on the
+   path and every relationship the answer rests on is drawn.
+3. **Grow the picture beat by beat**: views that each add one to three parts to
+   the one before (node-region selections, each holding the last), ending on
+   the whole path, and one beat per view whose subjects are the parts it added
+   and whose body says what they do. Views belong to every variant of a board,
+   so on a board the vault keeps, use one view and let the subjects move along
+   the path instead. Done when no beat brings in more than three new parts.
+4. **Show where it goes wrong**, when the path has a failure the reader will
+   meet: a beat on the step or relationship where it fails, saying what fails
+   and what the reader sees.
+5. **Close with the answer sentence again** and one number the reader now
+   understands, such as a limit, a count or a size. Done when the last beat
+   could stand alone as the summary.
