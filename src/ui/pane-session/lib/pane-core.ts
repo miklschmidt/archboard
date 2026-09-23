@@ -211,6 +211,14 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
+	 * Whether this pane is a recording page's.
+	 * @returns True when it is.
+	 */
+	function isRecording(): boolean {
+		return host.options().recording === true;
+	}
+
+	/**
 	 * Report what this pane shows, after the debounce or now.
 	 * @param immediate Send now rather than after `PANE_DEBOUNCE_MS`.
 	 */
@@ -396,6 +404,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		paneElement: host.paneElement,
 		primary: isPrimary,
 		focused: isFocused,
+		recording: isRecording,
 		connector,
 		setConnected,
 		setRegistered,

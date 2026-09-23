@@ -16,6 +16,8 @@ interface PaneReportInput {
 	paneId: string;
 	primary: boolean;
 	focused: boolean;
+	/** The pane is a recording page's, which the canvas leaves out of addressing. */
+	recording: boolean;
 }
 
 /** A rectangle in CSS pixels. */
@@ -65,6 +67,9 @@ function buildPaneReport(input: PaneReportInput): PaneReport | null {
 	const build = loadedBundle();
 	if (build !== undefined) {
 		report.build = build;
+	}
+	if (input.recording) {
+		report.recording = true;
 	}
 	return report;
 }

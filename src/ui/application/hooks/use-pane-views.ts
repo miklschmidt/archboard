@@ -111,8 +111,9 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 /**
  * How a pane registers, and what a recording gives it.
  *
- * A recording's pane is nobody's primary or focused pane: the canvas it records on may be in use
- * in another browser, whose panes those words mean.
+ * A recording's pane is nobody's primary or focused pane, and says it is a recording's so the
+ * canvas leaves it out of addressing altogether: the canvas it records on may be in use in
+ * another browser, whose panes those words mean.
  * @param recording The page's recording, or null.
  * @param first Whether the pane is first in reading order.
  * @param active Whether it is the active pane.
@@ -122,13 +123,20 @@ function recordedOrNot(
 	recording: PaneRecording | null,
 	first: boolean,
 	active: boolean,
-): Pick<ApplicationPaneProps, "primary" | "focused" | "step" | "onSemanticReading"> {
+): Pick<ApplicationPaneProps, "primary" | "focused" | "recording" | "step" | "onSemanticReading"> {
 	if (recording === null) {
-		return { primary: first, focused: active, step: null, onSemanticReading: undefined };
+		return {
+			primary: first,
+			focused: active,
+			recording: false,
+			step: null,
+			onSemanticReading: undefined,
+		};
 	}
 	return {
 		primary: false,
 		focused: false,
+		recording: true,
 		step: recording.step,
 		onSemanticReading: recording.onReading,
 	};
