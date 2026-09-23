@@ -81,9 +81,9 @@ owns `semantic record` end to end: the real CLI drives the built page in a
 headless Chromium against a canvas whose fake Codex narrates, and the owner
 checks the MP4, the order the steps reached the voice and `--discard`;
 `walkthrough-recording-refusals.test.ts` beside it owns the refusals that start
-no browser and no voice. All four
-need a Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one), and
-the recording owner needs `dist/frontend` as well. Real-browser owners cover
+no browser and no voice. Every owner in this paragraph but the refusals needs a
+Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one), and the
+recording owner needs `dist/frontend` as well. Real-browser owners cover
 only live `browser` commands.
 
 Run browser diagnosis only through the adapter:
