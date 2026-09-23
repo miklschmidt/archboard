@@ -5,9 +5,9 @@ description: >-
   an architecture diagram (parts, containment, relationships) or a sequence
   diagram (an ordered exchange) from source, edit an existing board, propose an
   architectural change as a variant and compare it, bind parts to code, render
-  SVGs and PNGs, record a walkthrough to a narrated video. Use when asked to
-  document, explain or change a system's architecture, a request or data flow,
-  or a board in the vault.
+  SVGs and PNGs, record a walkthrough to a narrated video such as a pull
+  request's for its reviewers. Use when asked to document, explain or change a
+  system's architecture, a request or data flow, or a board in the vault.
 ---
 
 # Archboard
@@ -380,7 +380,9 @@ when the request asks for the exchange itself. A request that combines
 workflows (extend the vocabulary, then create; link a detail board, then
 propose) reads each recipe it needs, in the order the request runs them. A
 request for a narrated video makes or finds the board with its recipe, then
-[records a walkthrough](references/sequences-views-walkthroughs.md#recording-a-walkthrough).
+[records a walkthrough](references/sequences-views-walkthroughs.md#recording-a-walkthrough);
+a video for a pull request's reviewers follows
+[a pull request's recording](references/sequences-views-walkthroughs.md#a-pull-requests-recording).
 
 ## Keep it true
 
