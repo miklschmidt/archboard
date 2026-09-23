@@ -3,7 +3,7 @@
 // hold yet, which pane is showing what, and what an agent is doing where.
 // Pure: no React.
 
-import { listedBoardKey } from "@/ui/board-catalog";
+import { listedBoardKey, nothingBuiltOn } from "@/ui/board-catalog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { ShellView } from "@/ui/shell/types/contracts";
 import type { AgentActivityEntry, BoardEntry, BoardIdentity } from "@/ui/types";
@@ -58,6 +58,8 @@ interface NavigatorBranch {
 interface NavigatorGroup {
 	board: string;
 	level: BoardEntry["level"];
+	/** Whether the board says nothing it describes is built: it has no current variant. */
+	unbuilt: boolean;
 	variants: NavigatorEntry[];
 	roots: NavigatorBranch[];
 }
@@ -135,6 +137,7 @@ function groupBoards(view: ShellView): NavigatorGroup[] {
 		const group = groups.get(source.identity.board) ?? {
 			board: source.identity.board,
 			level: source.level,
+			unbuilt: nothingBuiltOn(view.boards, source.identity.board),
 			variants: [],
 			roots: [],
 		};

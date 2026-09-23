@@ -69,10 +69,19 @@ function BoardTree(props: BoardTreeProps): JSX.Element {
 					<Chevron open={open} />
 				</span>
 				<span className="min-w-0 flex-1 wrap-anywhere whitespace-normal!">{group.board}</span>
-				{group.level !== undefined && (
-					<span className="text-technical text-muted-foreground border-border ml-2 inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-mono font-medium">
-						{levelLabel(group.level)}
+				{group.unbuilt ? (
+					<span
+						data-slot="board-not-built"
+						className="text-technical text-muted-foreground border-muted-foreground/60 ml-2 inline-flex h-4 shrink-0 items-center rounded-[2px] border border-dashed px-1 font-mono font-medium"
+					>
+						Not built
 					</span>
+				) : (
+					group.level !== undefined && (
+						<span className="text-technical text-muted-foreground border-border ml-2 inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-mono font-medium">
+							{levelLabel(group.level)}
+						</span>
+					)
 				)}
 			</SidebarMenuButton>
 			{/* An ARIA tree requires a list group; a fieldset would change the list semantics. */}

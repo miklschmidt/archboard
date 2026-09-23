@@ -12,6 +12,7 @@ import {
 	drawingOf,
 	findView,
 	addressedVariant,
+	nothingBuilt,
 	scopedContent,
 	type DrawnProposal,
 	type DiagramGrammar,
@@ -156,6 +157,7 @@ async function drawnReply(
 			theme: how.theme,
 			fonts: how.fonts,
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
+			unbuilt: nothingBuilt(board),
 		});
 		return { ...identity, ...picture };
 	} catch (error) {

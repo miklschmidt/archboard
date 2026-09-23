@@ -5,6 +5,10 @@
 
 /** Space around the final drawing. */
 export const DIAGRAM_MARGIN = 20;
+/** Extra space a planned board's page adds around the drawing to hold its frame. */
+export const PLANNED_FRAME_MARGIN = 16;
+/** Distance from the page edge to a planned board's dashed frame. */
+export const PLANNED_FRAME_INSET = 8;
 /** Native placement coordinate margin, before final drawing bounds are measured. */
 export const PLACEMENT_MARGIN = 24;
 /** Equal space below a container title and at its sides/bottom. */
