@@ -1,0 +1,30 @@
+---
+id: TASK-319
+title: The workbench shows what the voice coordinator is doing
+status: To Do
+assignee: []
+created_date: '2026-09-23 21:36'
+labels:
+  - voice
+  - coordinator
+  - ui
+dependencies: []
+references:
+  - docs/design/operator-canvas-shell.md
+priority: medium
+type: feature
+ordinal: 551000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+The workbench shows the workhorse thread only. The coordinator's turns (the handoff it answered, the tools it called, what it delegated or queued, its spoken reply) are invisible, so in the 2026-09-23 23:15 session the user saw board work start in the workhorse with no way to see that the coordinator had started it from the voice model's own words. The shell design (docs/design/operator-canvas-shell.md) puts the coordinator one menu away as session details only.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 While voice is live, the user can see each coordinator turn: what it was handed, the tools it called, and what it answered
+- [ ] #2 Work the coordinator delegated shows where it came from
+- [ ] #3 operator-canvas-shell.md describes where the coordinator's work is shown
+<!-- AC:END -->
