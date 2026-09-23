@@ -400,3 +400,74 @@ test("the projection keeps within its byte budget with long outputs, plans and m
 	expect(result.tag).toBe("projected");
 	owner.dispose();
 });
+
+test("one long running turn over the byte budget keeps the item the agent is on now", async () => {
+	const authorities = createIdentityAuthorities();
+	const decoder = authorities.identity.decoder;
+	const threadId = decoder.adoptThreadId("long-turn-thread");
+	const itemCount = 250;
+	const output = "o".repeat(7_000);
+	const newestIndex = itemCount - 1;
+	const items = Array.from({ length: itemCount }, (_, index) =>
+		commandExecutionItem(authorities, `long-command-${index}`, {
+			type: "commandExecution",
+			pluginId: null,
+			scriptPath: null,
+			command: `step ${index}`,
+			cwd: "/repo",
+			processId: null,
+			source: "agent",
+			status: index === newestIndex ? "inProgress" : "completed",
+			commandActions: [],
+			aggregatedOutput: output,
+			exitCode: index === newestIndex ? null : 0,
+			durationMs: null,
+		}),
+	);
+	const turn = turnFixture(authorities, "long-turn", items, "inProgress");
+	const owner = createCanvasTimelineOwner({
+		session: {
+			threadTurnsListPage: async () => ({ data: [turn], nextCursor: null, backwardsCursor: null }),
+			timelineListPage: async () => ({
+				data: [],
+				nextCursor: null,
+				activeRealtimeSessionAtPageStart: null,
+			}),
+		},
+		identity: decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => undefined,
+	});
+	const link = executableLink(authorities, threadId);
+	const connection = {};
+	owner.read("pane-long-turn", 1, link, true, connection);
+	await flush();
+	const projection = owner.read("pane-long-turn", 1, link, true, connection);
+	const projected = projection?.turns.at(-1);
+	if (projection === null || projected === undefined) {
+		throw new Error("the long turn was not projected");
+	}
+	expect(new TextEncoder().encode(JSON.stringify(projection)).byteLength).toBeLessThanOrEqual(
+		createCanvasBrowserProjectionBudget().maxBytes,
+	);
+	const newest = projected.items.at(-1);
+	if (newest?.kind !== "command_execution") {
+		throw new Error("the newest item is not a command");
+	}
+	expect(newest.item.id).toBe(decoder.adoptItemId(`long-command-${newestIndex}`));
+	expect(newest.output.tail).not.toBeNull();
+	expect(projected.presentation.outputs.truncated).toBe(true);
+	// Whatever output an item no longer carries, it says was cut.
+	for (const item of projected.items) {
+		if (item.kind === "command_execution" && item.output.tail === null) {
+			expect(item.output.truncated).toBe(true);
+		}
+	}
+	const result = projectCodexBrowserState(
+		createCodexBrowserModel(authorities),
+		decoder,
+		browserProjectionInput(authorities, projection),
+	);
+	expect(result.tag).toBe("projected");
+	owner.dispose();
+});
