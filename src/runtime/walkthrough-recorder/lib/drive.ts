@@ -6,6 +6,11 @@
 // page says the file is finished it streams the file out. Everything the page
 // says crosses as the shared recording state and is parsed as such, so a page
 // from another build is refused rather than guessed at.
+//
+// A cancelled recording goes no further than the call it is waiting on,
+// whatever that call is: nothing after an interrupt is started or saved.
+
+import { setTimeout as delay } from "node:timers/promises";
 
 import {
 	RECORDING_CALL_MS,
@@ -39,10 +44,10 @@ interface RecordingPageHandle {
 	 * Stream a Blob the expression evaluates to into a file.
 	 * @param expression An expression whose value is a Blob.
 	 * @param path Where to write it.
-	 * @param timeoutMs How long the whole stream may take.
+	 * @param readTimeoutMs How long each read of the stream may take.
 	 * @returns How many bytes were written.
 	 */
-	readonly saveBlob: (expression: string, path: string, timeoutMs: number) => Promise<number>;
+	readonly saveBlob: (expression: string, path: string, readTimeoutMs: number) => Promise<number>;
 	/**
 	 * Keep the page the size it is recorded at: capturing a tab makes the browser draw a bar
 	 * above it that takes room from the page.
@@ -51,15 +56,18 @@ interface RecordingPageHandle {
 	readonly keepSize: () => Promise<void>;
 }
 
-/** Why a recording did not happen, and whether it had begun. */
+/** Why a recording did not happen, and whether anything had been recorded. */
 class RecordingPageError extends Error {
-	/** Whether the page was refused before it started capturing, or failed once it had. */
+	/**
+	 * Whether the talk had shown a step: before one, nothing was recorded and the page was
+	 * refused; after one, the recording failed.
+	 */
 	readonly began: boolean;
 
 	/**
 	 * A recording that did not happen.
 	 * @param message What happened and what to do.
-	 * @param began Whether it had started.
+	 * @param began Whether the talk had shown a step.
 	 */
 	constructor(message: string, began: boolean) {
 		super(message);
@@ -71,23 +79,37 @@ class RecordingPageError extends Error {
 const PAGE = `window[${JSON.stringify(RECORDING_PAGE_GLOBAL)}]`;
 
 /**
- * Wait a while, unless the recording is cancelled.
+ * The message of anything thrown.
+ * @param error What was thrown.
+ * @returns Its message.
+ */
+function messageOf(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Wait a while, unless the recording is cancelled, or already was.
  * @param ms How long.
  * @param signal Cancels the wait.
  * @returns When the time has passed.
  */
-function pause(ms: number, signal: AbortSignal): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const timer = setTimeout(resolve, ms);
-		signal.addEventListener(
-			"abort",
-			() => {
-				clearTimeout(timer);
-				reject(signal.reason);
-			},
-			{ once: true },
-		);
-	});
+async function pause(ms: number, signal: AbortSignal): Promise<void> {
+	await delay(ms, undefined, { signal });
+}
+
+/**
+ * Wait for one call into the page, and go no further when the recording was cancelled
+ * meanwhile, whether the call answered or failed.
+ * @param signal Cancels the recording.
+ * @param call The call.
+ * @returns What the call answered.
+ */
+async function heeded<T>(signal: AbortSignal, call: Promise<T>): Promise<T> {
+	try {
+		return await call;
+	} finally {
+		signal.throwIfAborted();
+	}
 }
 
 /**
@@ -110,29 +132,15 @@ async function stateOf(page: RecordingPageHandle): Promise<RecordingState | null
 }
 
 /**
- * Wait for the page to be able to start.
- * @param page The page.
- * @param signal Cancels the wait.
- * @param deadline When to stop waiting, on the monotonic clock.
- * @returns When the page is ready.
- * @throws {RecordingPageError} When the page failed, or did not become ready in time.
+ * Why a page did not become ready in time.
+ * @param published Whether it ever published a recording.
+ * @returns What happened and what to do.
  */
-async function ready(
-	page: RecordingPageHandle,
-	signal: AbortSignal,
-	deadline: number,
-): Promise<void> {
-	const state = await stateOf(page);
-	if (state?.phase === "ready") return;
-	if (state?.phase === "failed") throw new RecordingPageError(failureIn(state), false);
-	if (performance.now() >= deadline) {
-		throw new RecordingPageError(
-			`The canvas page was not ready to record within ${RECORDING_PAGE_READY_MS / 1000} seconds: the board was not drawn or Codex did not start. Open the board on the canvas to see why, then record again.`,
-			false,
-		);
-	}
-	await pause(RECORDING_POLL_MS, signal);
-	return ready(page, signal, deadline);
+function notReady(published: boolean): string {
+	const within = `within ${RECORDING_PAGE_READY_MS / 1000} seconds`;
+	return published
+		? `The canvas page was not ready to record ${within}: the board was not drawn or Codex did not start. Open the board on the canvas to see why, then record again.`
+		: `The canvas page never offered a recording ${within}: the canvas serves a frontend built without it. Rebuild the frontend (bun run build:frontend), restart the canvas, then record again.`;
 }
 
 /**
@@ -144,30 +152,116 @@ function failureIn(state: RecordingState): string {
 	return state.failure ?? "The canvas page stopped the recording without saying why.";
 }
 
-/** How far the recorder has followed the talk. */
+/**
+ * Whether the page can start.
+ * @param state The page's state, or null.
+ * @returns True when it is ready.
+ * @throws {RecordingPageError} When it failed before starting.
+ */
+function isReady(state: RecordingState | null): boolean {
+	if (state?.phase === "failed") throw new RecordingPageError(failureIn(state), false);
+	return state?.phase === "ready";
+}
+
+/**
+ * Wait for the page to be able to start.
+ * @param page The page.
+ * @param signal Cancels the wait.
+ * @param deadline When to stop waiting, on the monotonic clock.
+ * @param published Whether the page has published a recording yet.
+ * @returns When the page is ready.
+ * @throws {RecordingPageError} When the page failed, or did not become ready in time.
+ */
+async function ready(
+	page: RecordingPageHandle,
+	signal: AbortSignal,
+	deadline: number,
+	published: boolean,
+): Promise<void> {
+	const state = await heeded(signal, stateOf(page));
+	if (isReady(state)) return;
+	const seen = published || state !== null;
+	if (performance.now() >= deadline) throw new RecordingPageError(notReady(seen), false);
+	await pause(RECORDING_POLL_MS, signal);
+	return ready(page, signal, deadline, seen);
+}
+
+/**
+ * Start the page recording, from a user gesture.
+ * @param page The page.
+ * @param signal Cancels the start.
+ * @param container The container to write.
+ * @returns When capture has begun.
+ * @throws {RecordingPageError} When the page would not start: in its own words when it has some.
+ */
+async function begin(
+	page: RecordingPageHandle,
+	signal: AbortSignal,
+	container: RecordingContainer,
+): Promise<void> {
+	try {
+		await heeded(
+			signal,
+			page.evaluate(`${PAGE}.start(${JSON.stringify({ container })})`, {
+				userGesture: true,
+				timeoutMs: RECORDING_CALL_MS,
+			}),
+		);
+	} catch (error) {
+		signal.throwIfAborted();
+		// The page's own sentence, rather than its exception as DevTools reports it, stack and all.
+		const said = await stateOf(page).catch(() => null);
+		signal.throwIfAborted();
+		throw new RecordingPageError(
+			said?.phase === "failed" ? failureIn(said) : messageOf(error),
+			false,
+		);
+	}
+}
+
+/** How far the recorder has followed the talk; it moves on as the talk does. */
 interface Following {
 	/** The phase and step last said, as one key. */
-	readonly said: string;
+	said: string;
 	/** When that last changed, on the monotonic clock. */
-	readonly changedAt: number;
+	changedAt: number;
+	/** Whether the talk has shown a step, so that something was recorded. */
+	shown: boolean;
 }
 
 /**
  * Say a state that is new, and note when it changed.
  * @param state The page's state, or null.
- * @param following How far the talk has been followed.
+ * @param following How far the talk has been followed; moved on here.
  * @param onProgress Told each new phase and step.
- * @returns How far it has been followed now.
  */
-function progressed(
+function follow(
 	state: RecordingState | null,
 	following: Following,
 	onProgress: (state: RecordingState) => void,
-): Following {
-	const said = state === null ? "none" : `${state.phase}:${state.step ?? "-"}`;
-	if (state === null || said === following.said) return following;
+): void {
+	if (state === null) return;
+	const said = `${state.phase}:${state.step ?? "-"}`;
+	if (said === following.said) return;
 	onProgress(state);
-	return { said, changedAt: performance.now() };
+	following.said = said;
+	following.changedAt = performance.now();
+	following.shown ||= state.step !== null;
+}
+
+/**
+ * How the talk ended, if it has.
+ * @param state The page's state, or null.
+ * @param following How far the talk has been followed.
+ * @returns The finished state, or null while the talk goes on.
+ * @throws {RecordingPageError} When the page failed.
+ */
+function outcomeOf(state: RecordingState | null, following: Following): RecordingState | null {
+	if (state?.phase === "finished") return state;
+	if (state?.phase === "failed") {
+		throw new RecordingPageError(failureIn(state), following.shown || state.step !== null);
+	}
+	return null;
 }
 
 /**
@@ -185,19 +279,19 @@ async function finished(
 	onProgress: (state: RecordingState) => void,
 	following: Following,
 ): Promise<RecordingState> {
-	const state = await stateOf(page);
-	if (state?.phase === "finished") return state;
-	if (state?.phase === "failed") throw new RecordingPageError(failureIn(state), true);
-	const now = progressed(state, following, onProgress);
-	await page.keepSize();
-	if (performance.now() - now.changedAt > RECORDING_STALL_MS) {
+	const state = await heeded(signal, stateOf(page));
+	const done = outcomeOf(state, following);
+	if (done !== null) return done;
+	follow(state, following, onProgress);
+	await heeded(signal, page.keepSize());
+	if (performance.now() - following.changedAt > RECORDING_STALL_MS) {
 		throw new RecordingPageError(
 			"The canvas page stopped reporting progress. Record again; if it keeps happening, open the board on the canvas and check voice there.",
-			true,
+			following.shown,
 		);
 	}
 	await pause(RECORDING_POLL_MS, signal);
-	return finished(page, signal, onProgress, now);
+	return finished(page, signal, onProgress, following);
 }
 
 /**
@@ -209,7 +303,8 @@ async function finished(
  * @param options.signal Cancels the recording.
  * @param options.onProgress Told each new phase and step.
  * @returns The finished state and how many bytes the file has.
- * @throws {RecordingPageError} When the recording did not happen.
+ * @throws {RecordingPageError} When the recording did not happen. A cancelled recording throws
+ *   the signal's reason instead, as soon as the call it was waiting on settles.
  */
 async function drive(
 	page: RecordingPageHandle,
@@ -221,22 +316,24 @@ async function drive(
 	},
 ): Promise<{ readonly state: RecordingState; readonly bytes: number }> {
 	const { signal } = options;
-	await ready(page, signal, performance.now() + RECORDING_PAGE_READY_MS);
+	const following: Following = { said: "", changedAt: 0, shown: false };
 	try {
-		await page.evaluate(`${PAGE}.start(${JSON.stringify({ container: options.container })})`, {
-			userGesture: true,
-			timeoutMs: RECORDING_CALL_MS,
-		});
+		signal.throwIfAborted();
+		await ready(page, signal, performance.now() + RECORDING_PAGE_READY_MS, false);
+		await begin(page, signal, options.container);
+		following.changedAt = performance.now();
+		const state = await finished(page, signal, options.onProgress, following);
+		const bytes = await heeded(
+			signal,
+			page.saveBlob(`${PAGE}.file()`, options.path, RECORDING_FILE_READ_MS),
+		);
+		return { state, bytes };
 	} catch (error) {
-		const reason = error instanceof Error ? error.message : String(error);
-		throw new RecordingPageError(reason, false);
+		signal.throwIfAborted();
+		if (error instanceof RecordingPageError) throw error;
+		// The browser failed under the page: a call timed out, or its connection closed.
+		throw new RecordingPageError(messageOf(error), following.shown);
 	}
-	const state = await finished(page, signal, options.onProgress, {
-		said: "",
-		changedAt: performance.now(),
-	});
-	const bytes = await page.saveBlob(`${PAGE}.file()`, options.path, RECORDING_FILE_READ_MS);
-	return { state, bytes };
 }
 
-export { RecordingPageError, drive, type RecordingPageHandle };
+export { RecordingPageError, drive, messageOf, type RecordingPageHandle };

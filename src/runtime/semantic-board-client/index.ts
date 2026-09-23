@@ -104,15 +104,15 @@ interface SemanticWriteAnswer {
  * same reason it does on every other write — a line that travelled inside the
  * body would be one careless spread away from being written into the board.
  * @param path The route.
+ * @param expected The version the writer saw: the one this invocation was told, unless stated.
  * @returns The route with the writer's claims attached.
  */
-function withWriterClaims(path: string): string {
+function withWriterClaims(path: string, expected = currentExpectedVersion()): string {
 	const query = new URLSearchParams();
 	const doing = currentWriteDoing();
 	if (doing !== null) {
 		query.set("doing", doing);
 	}
-	const expected = currentExpectedVersion();
 	if (typeof expected === "number") {
 		query.set("expectVersion", String(expected));
 	}
@@ -310,14 +310,19 @@ const DiscardReplySchema = z.object({
  * Delete a board, every variant of it, under its lease.
  *
  * It states what it is doing and which session asked the way every write does,
- * because it is one: a person watching the board is told why it went.
+ * because it is one: a person watching the board is told why it went. A board
+ * changed since the version stated is refused and kept.
  * @param board The board name.
+ * @param expectedVersion The version the caller read the board at; the one this invocation
+ *   was told when absent.
  * @returns The board that went, and the version it was at when it did.
  */
 async function discardSemanticBoardOnCanvas(
 	board: string,
+	expectedVersion?: number,
 ): Promise<z.infer<typeof DiscardReplySchema>["discarded"]> {
-	const reply = await requestJson<unknown>(withWriterClaims("/api/semantic-boards/discard"), {
+	const path = withWriterClaims("/api/semantic-boards/discard", expectedVersion);
+	const reply = await requestJson<unknown>(path, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ board, ...statedSession() }),
