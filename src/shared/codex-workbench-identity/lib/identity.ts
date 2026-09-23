@@ -49,7 +49,7 @@ import {
 	CANONICAL_ITEM_ID_MAX_LENGTH,
 	IdentityValidationError,
 	mintEpochValue,
-	mintHostValue,
+	mintServerValue,
 	parseEpochValue,
 	parseValue,
 	tokenOf,
@@ -415,7 +415,7 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
  * @returns An empty ledger for a new process.
  */
 function createIdentityLedger(): IdentityLedger {
-	const childId = mintHostValue("child");
+	const childId = mintServerValue("child");
 	return {
 		childId,
 		epoch: mintEpochValue(childId),

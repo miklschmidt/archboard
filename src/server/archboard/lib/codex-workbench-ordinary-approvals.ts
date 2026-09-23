@@ -41,7 +41,7 @@ function disconnectWording(
  * @param approvals The broker every action reads and answers through.
  * @returns The actions.
  */
-function createCanvasOrdinaryApprovalActions(
+function createServerOrdinaryApprovalActions(
 	approvals: CodexApprovalBroker,
 ): BrowserOrdinaryApprovalActions {
 	const actions: BrowserOrdinaryApprovalActions = {
@@ -142,4 +142,4 @@ function createCanvasOrdinaryApprovalActions(
 	return Object.freeze(actions);
 }
 
-export { createCanvasOrdinaryApprovalActions, visibleApprovalViews };
+export { createServerOrdinaryApprovalActions, visibleApprovalViews };

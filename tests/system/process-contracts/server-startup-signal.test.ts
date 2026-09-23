@@ -10,9 +10,9 @@ import {
 	prepareProductionFixture,
 } from "../server-state/support/codex-production.ts";
 import { waitFor } from "../server-state/support/http.ts";
-import { records, startCanvas } from "./support/codex-workbench-lifecycle.ts";
+import { records, startServer } from "./support/codex-workbench-lifecycle.ts";
 import {
-	buildOwnedCanvasEnvironment,
+	buildOwnedServerEnvironment,
 	processExists,
 	waitForProcessExit,
 } from "../support/owned-server.ts";
@@ -76,7 +76,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		const canvas = spawn(process.execPath, [wrapper], {
 			cwd: repoRoot,
 			detached: true,
-			env: buildOwnedCanvasEnvironment({
+			env: buildOwnedServerEnvironment({
 				paths,
 				port,
 				vault: fixture.vault,
@@ -92,23 +92,23 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		if (canvas.pid === undefined) {
 			throw new Error("The startup-signal canvas has no pid.");
 		}
-		const canvasPid = canvas.pid;
+		const serverPid = canvas.pid;
 		let output = "";
 		canvas.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
 		canvas.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
-		const canvasExit = new Promise<void>((resolve) => canvas.once("exit", () => resolve()));
+		const serverExit = new Promise<void>((resolve) => canvas.once("exit", () => resolve()));
 		resources.defer(async () => {
-			if (!processExists(canvasPid)) {
+			if (!processExists(serverPid)) {
 				return;
 			}
 			try {
-				process.kill(-canvasPid, "SIGKILL");
+				process.kill(-serverPid, "SIGKILL");
 			} catch (error) {
 				if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
 					throw error;
 				}
 			}
-			await canvasExit;
+			await serverExit;
 		});
 
 		const childPid = await waitFor(() => {
@@ -123,7 +123,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 
 		canvas.kill("SIGTERM");
 		await Promise.race([
-			canvasExit,
+			serverExit,
 			new Promise<never>((_resolve, reject) =>
 				setTimeout(
 					() => reject(new Error(`Canvas did not stop after pre-readiness signal.\n${output}`)),
@@ -131,13 +131,13 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 				),
 			),
 		]);
-		await waitForProcessExit(canvasPid);
+		await waitForProcessExit(serverPid);
 		await waitForProcessExit(childPid);
-		expect(processExists(canvasPid)).toBeFalse();
+		expect(processExists(serverPid)).toBeFalse();
 		expect(processExists(childPid)).toBeFalse();
 
 		writeFileSync(fixture.controlPath, JSON.stringify({ exit: false }));
-		const replacement = await startCanvas(fixture);
+		const replacement = await startServer(fixture);
 		resources.defer(() => replacement.dispose());
 		expect(processExists(replacement.pid)).toBeTrue();
 		const replacementSocket = await openApplicationSocket(replacement.base, "replacement-socket");

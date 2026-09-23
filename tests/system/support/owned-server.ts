@@ -3,26 +3,26 @@ import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 
 import {
-	TEST_CANVAS_HEALTH_POLL_MS,
-	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
-	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-	TEST_CANVAS_STARTUP_TIMEOUT_MS,
+	TEST_SERVER_HEALTH_POLL_MS,
+	TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS,
+	TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
+	TEST_SERVER_STARTUP_TIMEOUT_MS,
 } from "./timing.ts";
 import {
-	buildOwnedCanvasEnvironment,
-	createOwnedCanvasPaths,
-	isOwnedCanvasNamespaceRoot,
+	buildOwnedServerEnvironment,
+	createOwnedServerPaths,
+	isOwnedServerNamespaceRoot,
 	processExists,
 	waitForProcessExit,
 } from "./owned-server-ownership.ts";
 import type {
-	OwnedCanvasEnvironment,
-	OwnedCanvasEnvironmentPaths,
-	OwnedCanvasPaths,
+	OwnedServerEnvironment,
+	OwnedServerEnvironmentPaths,
+	OwnedServerPaths,
 } from "./owned-server-ownership.ts";
-import { captureForcedCanvasCleanup } from "./owned-server-forced-cleanup.ts";
-import { registerOwnedCanvas, unregisterOwnedCanvas } from "./owned-server-registry.ts";
-import type { OwnedCanvasRegistration } from "./owned-server-registry.ts";
+import { captureForcedServerCleanup } from "./owned-server-forced-cleanup.ts";
+import { registerOwnedServer, unregisterOwnedServer } from "./owned-server-registry.ts";
+import type { OwnedServerRegistration } from "./owned-server-registry.ts";
 import type {
 	AttemptRecord,
 	DeathGeneration,
@@ -33,24 +33,24 @@ import type {
 import { ensureSemanticVaultConfiguration } from "./semantic-vault.ts";
 
 type Environment = Readonly<Record<string, string | undefined>>;
-interface StartOwnedCanvasOptions {
+interface StartOwnedServerOptions {
 	readonly serverPath: string;
 	readonly port?: number;
 	readonly vault: string;
 	readonly env?: Environment;
 }
-interface RestartOwnedCanvasOptions {
+interface RestartOwnedServerOptions {
 	readonly signal?: NodeJS.Signals;
 	readonly whileStopped?: () => void | Promise<void>;
 }
-interface OwnedCanvas {
+interface OwnedServer {
 	readonly base: string;
 	readonly vault: string;
-	readonly paths: OwnedCanvasPaths;
+	readonly paths: OwnedServerPaths;
 	readonly pid: number | null;
 	readonly stderr: string;
 	readonly assertRunning: (cause?: unknown) => Promise<void>;
-	readonly restart: (options?: Readonly<RestartOwnedCanvasOptions>) => Promise<void>;
+	readonly restart: (options?: Readonly<RestartOwnedServerOptions>) => Promise<void>;
 	readonly dispose: () => Promise<void>;
 }
 class AttemptError extends Error {
@@ -115,14 +115,14 @@ const healthPid = (value: unknown): number | undefined =>
 	value !== null && typeof value === "object" && "pid" in value && typeof value.pid === "number"
 		? value.pid
 		: undefined;
-async function startOwnedCanvas({
+async function startOwnedServer({
 	serverPath,
 	port: explicitPort,
 	vault,
 	env = {},
-}: Readonly<StartOwnedCanvasOptions>): Promise<OwnedCanvas> {
+}: Readonly<StartOwnedServerOptions>): Promise<OwnedServer> {
 	ensureSemanticVaultConfiguration(vault);
-	const paths = createOwnedCanvasPaths();
+	const paths = createOwnedServerPaths();
 	const pathsDiagnostic = `\nOwned canvas paths: ${JSON.stringify(paths)}`;
 	let currentGeneration: Generation | null = null;
 	let visibleBase = explicitPort === undefined ? "" : `http://127.0.0.1:${explicitPort}`;
@@ -131,10 +131,10 @@ async function startOwnedCanvas({
 	let disposalPromise: Promise<void> | null = null;
 	let operation: Promise<void> = Promise.resolve();
 	let stderr = "";
-	const registrationState: { current?: OwnedCanvasRegistration } = {};
+	const registrationState: { current?: OwnedServerRegistration } = {};
 	const unregisterRegistration = (): void => {
 		if (registrationState.current !== undefined) {
-			unregisterOwnedCanvas(registrationState.current);
+			unregisterOwnedServer(registrationState.current);
 		}
 	};
 	const enqueue = async <T>(work: () => Promise<T>): Promise<T> => {
@@ -161,13 +161,13 @@ async function startOwnedCanvas({
 				}${pathsDiagnostic}`,
 				{ cause },
 			),
-			{ code: "CANVAS_PROCESS_DIED" as const },
+			{ code: "SERVER_PROCESS_DIED" as const },
 		);
 	};
 	const assertRunning = async (cause?: unknown): Promise<void> => {
 		const generation = currentGeneration;
 		if (Boolean(cause) && generation?.exit === null) {
-			await Promise.race([generation.exitPromise, sleep(TEST_CANVAS_HEALTH_POLL_MS)]);
+			await Promise.race([generation.exitPromise, sleep(TEST_SERVER_HEALTH_POLL_MS)]);
 		}
 		const generationUnavailable = generation === null;
 		if (
@@ -191,15 +191,15 @@ async function startOwnedCanvas({
 		const forcedCleanup =
 			generation.exit !== null
 				? null
-				: captureForcedCanvasCleanup({ canvasPid: generation.pid, xdgState: paths.xdgState });
+				: captureForcedServerCleanup({ serverPid: generation.pid, xdgState: paths.xdgState });
 		let forced = signal === "SIGKILL";
 		if (generation.exit === null) {
 			generation.stop.markExpected();
 			generation.child.kill(signal);
-			if (!(await waitForExit(generation.exitPromise, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS))) {
+			if (!(await waitForExit(generation.exitPromise, TEST_SERVER_SHUTDOWN_TIMEOUT_MS))) {
 				forced = true;
 				generation.child.kill("SIGKILL");
-				await waitForExit(generation.exitPromise, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS);
+				await waitForExit(generation.exitPromise, TEST_SERVER_SHUTDOWN_TIMEOUT_MS);
 			}
 		}
 		if (forced && forcedCleanup !== null) {
@@ -220,7 +220,7 @@ async function startOwnedCanvas({
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
 		const child = spawn(process.execPath, [serverPath], {
-			env: buildOwnedCanvasEnvironment({ paths, port: candidate, vault, env }),
+			env: buildOwnedServerEnvironment({ paths, port: candidate, vault, env }),
 			stdio: ["ignore", "ignore", "pipe"],
 		});
 		if (child.pid === undefined) {
@@ -262,11 +262,11 @@ async function startOwnedCanvas({
 			resolveExit(generation.exit);
 		});
 
-		const deadline = Date.now() + TEST_CANVAS_STARTUP_TIMEOUT_MS;
+		const deadline = Date.now() + TEST_SERVER_STARTUP_TIMEOUT_MS;
 		const pollHealth = async (): Promise<Generation> => {
 			if (Date.now() >= deadline) {
 				throw new AttemptError(
-					`Owned canvas pid ${generation.pid} did not answer /health within ${TEST_CANVAS_STARTUP_TIMEOUT_MS}ms.`,
+					`Owned canvas pid ${generation.pid} did not answer /health within ${TEST_SERVER_STARTUP_TIMEOUT_MS}ms.`,
 					false,
 				);
 			}
@@ -281,7 +281,7 @@ async function startOwnedCanvas({
 			}
 			try {
 				const response = await fetch(`${generation.base}/health`, {
-					signal: AbortSignal.timeout(TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS),
+					signal: AbortSignal.timeout(TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS),
 				});
 				const pid = healthPid(await response.json());
 				if (pid === generation.pid) {
@@ -300,7 +300,7 @@ async function startOwnedCanvas({
 				if (exitedDuringHealthRequest()) {
 					return pollHealth();
 				}
-				await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+				await sleep(TEST_SERVER_HEALTH_POLL_MS);
 				return pollHealth();
 			}
 		};
@@ -393,7 +393,7 @@ async function startOwnedCanvas({
 		}
 	};
 
-	const handle: OwnedCanvas = {
+	const handle: OwnedServer = {
 		get base() {
 			return visibleBase;
 		},
@@ -450,12 +450,12 @@ async function startOwnedCanvas({
 		},
 	};
 
-	const registration: OwnedCanvasRegistration = {
+	const registration: OwnedServerRegistration = {
 		dispose: async (): Promise<void> => handle.dispose(),
 		disposeSync,
 	};
 	registrationState.current = registration;
-	registerOwnedCanvas(registration);
+	registerOwnedServer(registration);
 	try {
 		await enqueue(async (): Promise<void> => startOperation());
 		return handle;
@@ -466,15 +466,15 @@ async function startOwnedCanvas({
 }
 
 export {
-	buildOwnedCanvasEnvironment,
-	isOwnedCanvasNamespaceRoot,
+	buildOwnedServerEnvironment,
+	isOwnedServerNamespaceRoot,
 	processExists,
-	startOwnedCanvas,
+	startOwnedServer,
 	waitForProcessExit,
-	type OwnedCanvas,
-	type OwnedCanvasEnvironment,
-	type OwnedCanvasEnvironmentPaths,
-	type OwnedCanvasPaths,
-	type RestartOwnedCanvasOptions,
-	type StartOwnedCanvasOptions,
+	type OwnedServer,
+	type OwnedServerEnvironment,
+	type OwnedServerEnvironmentPaths,
+	type OwnedServerPaths,
+	type RestartOwnedServerOptions,
+	type StartOwnedServerOptions,
 };

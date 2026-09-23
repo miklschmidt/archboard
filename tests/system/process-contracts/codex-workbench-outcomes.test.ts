@@ -18,7 +18,7 @@ import {
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startCanvas,
+	startServer,
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 import { extendOutcomeFixture } from "./support/codex-workbench-outcomes.ts";
@@ -45,7 +45,7 @@ describe.serial("composed Codex mutation outcomes", () => {
 			mkdirSync(staging, { recursive: true });
 			resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 			const fixture = prepareProductionFixture(resources, extendOutcomeFixture(staging));
-			const canvas = await startCanvas(fixture);
+			const canvas = await startServer(fixture);
 			resources.defer(() => canvas.dispose());
 			const clientId = "mutation-outcomes";
 			const socket = await openApplicationSocket(canvas.base, clientId);

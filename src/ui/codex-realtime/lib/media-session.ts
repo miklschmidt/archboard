@@ -10,7 +10,7 @@ import {
 } from "@/ui/codex-realtime/types/contract";
 import type {
 	RealtimeCorrelation,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
@@ -53,7 +53,7 @@ import type {
  * @returns The session.
  */
 function createRealtimeMediaSession(
-	host: RealtimeHost,
+	host: RealtimeServer,
 	options: RealtimeMediaSessionOptions = {},
 ): RealtimeMediaSession {
 	const environment = options.environment ?? browserRealtimeMediaEnvironment();
@@ -190,11 +190,11 @@ function createRealtimeMediaSession(
 	 * @param run The run.
 	 * @returns True when the host confirmed the exact stop.
 	 */
-	const stopHost = (run: Run): Promise<boolean> => {
+	const stopServer = (run: Run): Promise<boolean> => {
 		if (!run.offerSent) {
 			return Promise.resolve(true);
 		}
-		run.hostStop ??= bounded(
+		run.serverStop ??= bounded(
 			run,
 			environment,
 			() =>
@@ -205,7 +205,7 @@ function createRealtimeMediaSession(
 			CODEX_REALTIME_STOP_MS,
 			false,
 		).then((result) => result === true);
-		return run.hostStop;
+		return run.serverStop;
 	};
 
 	/**
@@ -224,27 +224,27 @@ function createRealtimeMediaSession(
 		run.failed = true;
 		publish(run, state);
 		cancelRun(run);
-		run.failure = cleanupRun(run, settleLevel).then(() => stopHost(run).then(() => undefined));
+		run.failure = cleanupRun(run, settleLevel).then(() => stopServer(run).then(() => undefined));
 		return run.failure;
 	};
 
 	/**
 	 * Publishes the end of a stop: closed, or stop_failed when unconfirmed.
 	 * @param run The run.
-	 * @param hostStopped Whether the host confirmed.
+	 * @param serverStopped Whether the host confirmed.
 	 * @param disposing Whether this is a disposal.
 	 * @param visible Whether the public snapshot follows.
 	 */
 	const publishStopOutcome = (
 		run: Run,
-		hostStopped: boolean,
+		serverStopped: boolean,
 		disposing: boolean,
 		visible: boolean,
 	): void => {
 		if (current !== run || run.state.phase !== "stopping") {
 			return;
 		}
-		const state: RealtimeState = hostStopped
+		const state: RealtimeState = serverStopped
 			? { phase: "closed", reason: disposing ? "disposed" : "stopped" }
 			: stopFailedState(run);
 		publish(run, state, visible);
@@ -270,7 +270,7 @@ function createRealtimeMediaSession(
 			);
 		}
 		await cleanupRun(run, settleLevel);
-		publishStopOutcome(run, await stopHost(run), dispose || disposed, visible);
+		publishStopOutcome(run, await stopServer(run), dispose || disposed, visible);
 	};
 
 	/**

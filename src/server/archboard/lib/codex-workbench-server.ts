@@ -11,7 +11,7 @@ import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
 } from "@/server/archboard/lib/codex-workbench";
-import type { createCanvasDynamicLifecycleOwner } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
+import type { createServerDynamicLifecycleOwner } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 
 /** The operation an effect or command runs under, before its outcome is known. */
 type PendingOperation = Omit<
@@ -25,7 +25,7 @@ type PendingOperation = Omit<
  * context comes from, and how it wires itself into the canvas's sockets and
  * lifetime. The canvas provides one of these; the workbench keeps none of it.
  */
-export interface CanvasCodexWorkbenchHost {
+export interface CodexWorkbenchServer {
 	readonly checkoutRoot: string;
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	readonly semanticPublisher: SemanticContextPublisherOptions;
@@ -56,7 +56,7 @@ export interface CanvasCodexWorkbenchHost {
 		CodexRealtimeAdapterOptions["presentationChanges"]
 	>["subscribe"];
 	readonly waitForTargets: Parameters<
-		typeof createCanvasDynamicLifecycleOwner
+		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];
 	readonly installIdentityDecoders: (identity: CodexWorkbenchComponents["identity"]) => void;
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;

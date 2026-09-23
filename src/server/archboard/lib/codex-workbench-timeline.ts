@@ -11,13 +11,13 @@ import {
 	TIMELINE_CURSOR_LIMIT,
 	TIMELINE_PAGE_LIMIT,
 	TIMELINE_PAGE_LIMIT_MAX,
-	type CanvasBrowserProjectionBudget,
+	type ServerBrowserProjectionBudget,
 	type TimelineApprovalView,
 	type TimelineData,
 	type TimelineTurnData,
 } from "@/server/archboard/lib/codex-timeline-projection";
 import {
-	createCanvasBrowserProjectionBudget,
+	createServerBrowserProjectionBudget,
 	projectData,
 	timelineBytes,
 } from "@/server/archboard/lib/codex-timeline-budget";
@@ -41,7 +41,7 @@ interface TimelinePaneState {
 }
 
 /** Reads each pane's thread history and keeps it current. */
-interface CanvasTimelineOwner {
+interface ServerTimelineOwner {
 	readonly read: (
 		paneId: string,
 		revision: number,
@@ -55,14 +55,14 @@ interface CanvasTimelineOwner {
 }
 
 /** What a timeline owner reads from, and who it tells about changes. */
-interface CanvasTimelineOwnerOptions {
+interface ServerTimelineOwnerOptions {
 	readonly session: TimelineSession;
 	readonly identity: Pick<TrustedIdentityDecoder, "serializeCodexIdentity">;
 	readonly approvals: {
 		readonly inspectViews: () => readonly TimelineApprovalView[];
 	};
 	readonly onChange: () => void;
-	readonly budget?: CanvasBrowserProjectionBudget;
+	readonly budget?: ServerBrowserProjectionBudget;
 }
 
 /**
@@ -144,7 +144,7 @@ function startedThreadId(params: Readonly<Record<string, unknown>>): string | nu
 function eventMatchesThread(
 	eventId: string | null,
 	threadId: ThreadId,
-	identity: CanvasTimelineOwnerOptions["identity"],
+	identity: ServerTimelineOwnerOptions["identity"],
 ): boolean {
 	return (
 		eventId !== null &&
@@ -182,7 +182,7 @@ function isTimelineNotification(method: string): boolean {
 async function readTurnPages(
 	session: TimelineSession,
 	threadId: ThreadId,
-	budget: CanvasBrowserProjectionBudget,
+	budget: ServerBrowserProjectionBudget,
 ): Promise<{ readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean }> {
 	const newestFirst: TimelineTurnData[] = [];
 	const seenCursors = new Set<string>();
@@ -269,7 +269,7 @@ function keepPage(
 	page: readonly Parameters<typeof projectTurnData>[0][],
 	newestFirst: TimelineTurnData[],
 	retainedBytes: number,
-	budget: CanvasBrowserProjectionBudget,
+	budget: ServerBrowserProjectionBudget,
 ): { readonly retainedBytes: number; readonly full: boolean } {
 	let bytes = retainedBytes;
 	for (const turn of page) {
@@ -311,9 +311,9 @@ function boundedCursor(cursor: string | null): string | null {
  * @param options What it reads from, and who it tells.
  * @returns The owner.
  */
-function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasTimelineOwner {
+function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerTimelineOwner {
 	const states = new Map<string, Map<BrowserConnectionInstance, TimelinePaneState>>();
-	const budget = createCanvasBrowserProjectionBudget(options.budget);
+	const budget = createServerBrowserProjectionBudget(options.budget);
 	const live = createTimelineLiveHolder(options.identity);
 	let disposed = false;
 	/**
@@ -387,7 +387,7 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 	 * @param connection Its browser connection.
 	 * @returns The projected timeline, or null while there is none.
 	 */
-	const read: CanvasTimelineOwner["read"] = (
+	const read: ServerTimelineOwner["read"] = (
 		paneId,
 		revision,
 		link,
@@ -550,9 +550,9 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 }
 
 export {
-	type CanvasBrowserProjectionBudget,
-	type CanvasTimelineOwner,
-	type CanvasTimelineOwnerOptions,
-	createCanvasBrowserProjectionBudget,
-	createCanvasTimelineOwner,
+	type ServerBrowserProjectionBudget,
+	type ServerTimelineOwner,
+	type ServerTimelineOwnerOptions,
+	createServerBrowserProjectionBudget,
+	createServerTimelineOwner,
 };

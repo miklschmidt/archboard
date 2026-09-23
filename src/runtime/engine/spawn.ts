@@ -10,7 +10,7 @@ import {
 } from "@/runtime/engine/config";
 import {
 	foreignServiceError,
-	markCanvasIdentityVerified,
+	markServerIdentityVerified,
 	type HealthStatus,
 } from "@/runtime/engine/server-client";
 
@@ -20,20 +20,20 @@ import {
 	verifyCodexExecutable,
 } from "@/runtime/codex-process/executable";
 import { createCodexProcessGroupOperations } from "@/runtime/codex-process/process-group";
-import { CANVAS_STARTUP_READINESS_MS } from "@/shared/timing/timing";
-import { CANVAS_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
+import { SERVER_STARTUP_READINESS_MS } from "@/shared/timing/timing";
+import { SERVER_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
 import { readProcessObservation } from "@/shared/process-observation";
 import {
-	completeFailedCanvasCleanup,
-	createCanvasStartupProtocolReader,
-	failedCanvasCleanupTiming,
-	type CanvasStartupProtocolReader,
+	completeFailedServerCleanup,
+	createServerStartupProtocolReader,
+	failedServerCleanupTiming,
+	type ServerStartupProtocolReader,
 } from "@/runtime/engine/server-startup-cleanup";
 import { codedError, errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
 import {
-	canvasPort,
+	serverPort,
 	healthOrNull,
-	isCanvasHealth,
+	isServerHealth,
 	isLoopbackUrl,
 	spawnBindHost,
 	startupRefusal,
@@ -122,7 +122,7 @@ function refuseDisabledAutoStart(): void {
  * @throws {Error} When the URL is not loopback, there is no vault, or the
  * package-local Codex runtime cannot be verified.
  */
-function refuseUnstartableCanvas(): void {
+function refuseUnstartableServer(): void {
 	if (!isLoopbackUrl()) {
 		throw unreachableError("refusing to auto-start a non-loopback canvas URL");
 	}
@@ -150,7 +150,7 @@ function refuseUnlessAutoStartAllowed(force: boolean): void {
 	if (!force) {
 		refuseDisabledAutoStart();
 	}
-	refuseUnstartableCanvas();
+	refuseUnstartableServer();
 }
 
 interface ChildExit {
@@ -165,19 +165,19 @@ interface ObservedChild {
 }
 
 /** A spawned Archboard server and the launcher's view of it. */
-interface SpawnedCanvas {
+interface SpawnedServer {
 	readonly child: ChildProcess;
 	readonly pid: number;
 	readonly observed: ObservedChild;
 	readonly closed: Promise<void>;
-	readonly protocol: CanvasStartupProtocolReader;
+	readonly protocol: ServerStartupProtocolReader;
 }
 
 /**
  * Spawn the Archboard server detached, with the startup cleanup protocol on fd 3.
  * @returns The child, its pid and the observation handles the readiness wait uses.
  */
-function spawnCanvasServer(): SpawnedCanvas {
+function spawnServer(): SpawnedServer {
 	// This runtime module resolves the thin src/server.ts process entrypoint;
 	// spawn args must be path strings. process.execPath is the bun that is
 	// running us, which is what can read a .ts entry point at all.
@@ -187,16 +187,16 @@ function spawnCanvasServer(): SpawnedCanvas {
 		stdio: ["ignore", "ignore", "ignore", "pipe"],
 		env: {
 			...process.env,
-			PORT: String(canvasPort()),
+			PORT: String(serverPort()),
 			HOST: spawnBindHost(),
-			[CANVAS_STARTUP_TERMINAL_FD_ENV]: "3",
+			[SERVER_STARTUP_TERMINAL_FD_ENV]: "3",
 		},
 	});
 	const observed: ObservedChild = { failure: null, exit: null };
 	let resolveClosed!: () => void;
 	const closed = new Promise<void>((resolve) => void (resolveClosed = resolve));
 	const terminalStream = child.stdio[3];
-	const protocol = createCanvasStartupProtocolReader(
+	const protocol = createServerStartupProtocolReader(
 		terminalStream instanceof Readable ? terminalStream : null,
 	);
 	child.once("error", (error) => {
@@ -221,7 +221,7 @@ function spawnCanvasServer(): SpawnedCanvas {
  * @param spawned The spawned server.
  * @param signal The signal to send.
  */
-function signalSpawnedCanvas(spawned: SpawnedCanvas, signal: NodeJS.Signals): void {
+function signalSpawnedServer(spawned: SpawnedServer, signal: NodeJS.Signals): void {
 	if (spawned.observed.exit !== null) {
 		return;
 	}
@@ -241,13 +241,13 @@ function signalSpawnedCanvas(spawned: SpawnedCanvas, signal: NodeJS.Signals): vo
  * @param failure Why the start failed.
  * @returns Never; every path throws.
  */
-async function cleanupFailedStart(spawned: SpawnedCanvas, failure: Error): Promise<never> {
+async function cleanupFailedStart(spawned: SpawnedServer, failure: Error): Promise<never> {
 	const { observed, pid, protocol } = spawned;
 	const groupOperations = createCodexProcessGroupOperations();
-	const cleanup = await completeFailedCanvasCleanup({
-		canvasPid: pid,
+	const cleanup = await completeFailedServerCleanup({
+		serverPid: pid,
 		protocol,
-		timing: failedCanvasCleanupTiming(),
+		timing: failedServerCleanupTiming(),
 		operations: {
 			now: Date.now,
 			/**
@@ -260,18 +260,18 @@ async function cleanupFailedStart(spawned: SpawnedCanvas, failure: Error): Promi
 			 * Whether the server's close event has fired.
 			 * @returns True once it has exited.
 			 */
-			canvasExited: () => observed.exit !== null,
+			serverExited: () => observed.exit !== null,
 			/**
 			 * Whether the server is gone or frozen.
 			 * @returns True once it has exited or is stopped.
 			 */
-			canvasStopped: () => observed.exit !== null || processIsStopped(pid),
+			serverStopped: () => observed.exit !== null || processIsStopped(pid),
 			/**
 			 * Wait for the close event within a bound.
 			 * @param maxWaitMs How long to wait.
 			 * @returns True when it closed in time.
 			 */
-			waitForCanvasExit: async (maxWaitMs) =>
+			waitForServerExit: async (maxWaitMs) =>
 				(await waitForPromise(
 					spawned.closed.then(() => true),
 					maxWaitMs,
@@ -280,8 +280,8 @@ async function cleanupFailedStart(spawned: SpawnedCanvas, failure: Error): Promi
 			 * Signal the server unless it already exited.
 			 * @param signal The signal to send.
 			 */
-			signalCanvas: (signal) => {
-				signalSpawnedCanvas(spawned, signal);
+			signalServer: (signal) => {
+				signalSpawnedServer(spawned, signal);
 			},
 			inspectGroup: groupOperations.inspect,
 			signalGroup: groupOperations.signal,
@@ -293,8 +293,8 @@ async function cleanupFailedStart(spawned: SpawnedCanvas, failure: Error): Promi
 		);
 	});
 	protocol.destroy();
-	if (readPidFile(canvasPort()) === pid) {
-		removePidFile(canvasPort());
+	if (readPidFile(serverPort()) === pid) {
+		removePidFile(serverPort());
 	}
 	if (cleanup.cleanup !== "proven") {
 		throw startupRefusal(
@@ -319,7 +319,7 @@ interface DeferredFailure {
  * @param deferred Where a concurrent-owner refusal is kept for the deadline.
  * @returns The failure to act on now, or null to keep waiting.
  */
-function exitFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error | null {
+function exitFailureOf(spawned: SpawnedServer, deferred: DeferredFailure): Error | null {
 	const { observed, protocol } = spawned;
 	if (observed.exit === null) {
 		return null;
@@ -342,7 +342,7 @@ function exitFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error
  * @param deferred Where a concurrent-owner refusal is kept for the deadline.
  * @returns The failure to act on now, or null to keep waiting.
  */
-function startFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error | null {
+function startFailureOf(spawned: SpawnedServer, deferred: DeferredFailure): Error | null {
 	const failure = spawned.observed.failure ?? spawned.protocol.failure();
 	if (failure !== null) {
 		return startupRefusal(`Archboard server could not start. ${failure.message}`);
@@ -357,16 +357,16 @@ function startFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Erro
  * @param timeoutMs How long readiness may take.
  * @returns The canvas URL once it answers as itself.
  */
-async function awaitCanvasReadiness(
-	spawned: SpawnedCanvas,
+async function awaitServerReadiness(
+	spawned: SpawnedServer,
 	timeoutMs: number,
 ): Promise<EnsureResult> {
 	const deadline = Date.now() + timeoutMs;
 	const deferred: DeferredFailure = { failure: null };
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- readiness is one probe after another until the deadline
-		if (isCanvasHealth(await healthOrNull())) {
-			markCanvasIdentityVerified();
+		if (isServerHealth(await healthOrNull())) {
+			markServerIdentityVerified();
 			spawned.protocol.destroy();
 			spawned.child.unref();
 			process.stderr.write(
@@ -405,22 +405,22 @@ async function awaitCanvasReadiness(
  * @throws {Error} When another service holds the port, or the canvas may not
  * be started.
  */
-async function ensureCanvasRunning(options: EnsureOptions = {}): Promise<EnsureResult> {
-	const timeoutMs = options.timeoutMs ?? CANVAS_STARTUP_READINESS_MS;
+async function ensureServerRunning(options: EnsureOptions = {}): Promise<EnsureResult> {
+	const timeoutMs = options.timeoutMs ?? SERVER_STARTUP_READINESS_MS;
 
 	const existing = await healthOrNull();
 	if (existing) {
-		if (!isCanvasHealth(existing)) {
+		if (!isServerHealth(existing)) {
 			throw foreignServiceError();
 		}
-		markCanvasIdentityVerified();
+		markServerIdentityVerified();
 		return { url: ARCHBOARD_URL, spawned: false };
 	}
 
 	refuseUnlessAutoStartAllowed(options.force === true);
-	const spawned = spawnCanvasServer();
+	const spawned = spawnServer();
 	logger.info(`Auto-starting Archboard server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
-	return awaitCanvasReadiness(spawned, timeoutMs);
+	return awaitServerReadiness(spawned, timeoutMs);
 }
 
 interface StopResult {
@@ -436,7 +436,7 @@ interface StopResult {
  * @param filePid The pid the pidfile recorded, if any.
  * @returns The stop result for an absent server.
  */
-function absentCanvasResult(port: number, filePid: number | null): StopResult {
+function absentServerResult(port: number, filePid: number | null): StopResult {
 	if (filePid !== null) {
 		removePidFile(port);
 		return {
@@ -455,9 +455,9 @@ function absentCanvasResult(port: number, filePid: number | null): StopResult {
  * @param health The responder's health payload.
  * @returns The pid to signal, or null when the responder is not this canvas.
  */
-function verifiedCanvasPid(health: HealthStatus): number | null {
+function verifiedServerPid(health: HealthStatus): number | null {
 	const pid = health.pid;
-	return isCanvasHealth(health) && pid !== undefined && Number.isSafeInteger(pid) && pid > 0
+	return isServerHealth(health) && pid !== undefined && Number.isSafeInteger(pid) && pid > 0
 		? pid
 		: null;
 }
@@ -468,7 +468,7 @@ function verifiedCanvasPid(health: HealthStatus): number | null {
  * @param pid The pid that was signalled.
  * @returns The stop result once `/health` stops answering.
  */
-async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
+async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 	const deadline = Date.now() + 5000;
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
@@ -490,16 +490,16 @@ async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
  * recycled pids and unrelated apps squatting on the port are safe.
  * @returns Whether a server was stopped, and which.
  */
-async function stopCanvas(): Promise<StopResult> {
-	const port = canvasPort();
+async function stopServer(): Promise<StopResult> {
+	const port = serverPort();
 	const filePid = readPidFile(port);
 	const health = await healthOrNull();
 
 	if (!health) {
-		return absentCanvasResult(port, filePid);
+		return absentServerResult(port, filePid);
 	}
 
-	const pid = verifiedCanvasPid(health);
+	const pid = verifiedServerPid(health);
 	if (pid === null) {
 		throw foreignServiceError();
 	}
@@ -511,15 +511,15 @@ async function stopCanvas(): Promise<StopResult> {
 		});
 	}
 
-	return awaitCanvasStop(port, pid);
+	return awaitServerStop(port, pid);
 }
 
 export {
 	foreignServiceError,
-	canvasPort,
-	isCanvasHealth,
+	serverPort,
+	isServerHealth,
 	type EnsureResult,
-	ensureCanvasRunning,
+	ensureServerRunning,
 	type StopResult,
-	stopCanvas,
+	stopServer,
 };

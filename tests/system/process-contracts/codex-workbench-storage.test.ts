@@ -16,7 +16,7 @@ import {
 	pane,
 	records,
 	snapshot,
-	startCanvas,
+	startServer,
 	type StorageMode,
 } from "./support/codex-workbench-lifecycle.ts";
 
@@ -31,7 +31,7 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 		mkdirSync(staging, { recursive: true });
 		resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 		const fixture = prepareProductionFixture(resources, extendFixture(staging, mode));
-		const startup = await startCanvas({ ...fixture, readinessTimeoutMs: 3_000 }).then(
+		const startup = await startServer({ ...fixture, readinessTimeoutMs: 3_000 }).then(
 			(canvas) => ({ canvas, error: null }),
 			(error: unknown) => ({ canvas: null, error }),
 		);
@@ -127,7 +127,7 @@ describe.serial("composed Codex process lifecycle", () => {
 
 	test("accepts and preserves the exact managed sqlite requirement", async () => {
 		const resources = new AsyncDisposableStack();
-		let canvas: Awaited<ReturnType<typeof startCanvas>> | null = null;
+		let canvas: Awaited<ReturnType<typeof startServer>> | null = null;
 		try {
 			const staging = join(
 				process.env["TMPDIR"] ?? "/tmp",
@@ -140,9 +140,9 @@ describe.serial("composed Codex process lifecycle", () => {
 				resources,
 				extendFixture(staging, "requirements-match"),
 			);
-			canvas = await startCanvas(fixture);
-			const ownedCanvas = canvas;
-			resources.defer(() => ownedCanvas.dispose());
+			canvas = await startServer(fixture);
+			const ownedServer = canvas;
+			resources.defer(() => ownedServer.dispose());
 			const clientId = "managed-requirements";
 			const socket = await openApplicationSocket(canvas.base, clientId);
 			resources.defer(() => socket.close());
@@ -225,7 +225,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				prepareProductionFixture(resources, extendedSource),
 				prepareProductionFixture(resources, extendedSource),
 			] as const;
-			const canvases = await Promise.all(fixtures.map((fixture) => startCanvas(fixture)));
+			const canvases = await Promise.all(fixtures.map((fixture) => startServer(fixture)));
 			for (const canvas of canvases) {
 				resources.defer(() => canvas.dispose());
 			}

@@ -4,7 +4,7 @@ import { logger } from "@/runtime/engine/logger";
 import { listSemanticBoards } from "@/runtime/semantic-board-store/index";
 import { frontendState, sourceState } from "@/runtime/engine/staleness";
 import { mutationAdmission } from "@/server/archboard/lib/server-owners";
-import { canvasPhase } from "@/server/archboard/lib/server-startup";
+import { serverPhase } from "@/server/archboard/lib/server-startup";
 import { moduleDir } from "@/server/archboard/lib/module-paths";
 import { clients } from "@/server/archboard/lib/pane-registry";
 
@@ -38,10 +38,10 @@ function healthRoute(_req: Request, res: Response): void {
 		// Identity for `stop`: it must only ever signal a process that both
 		// identifies as this service AND self-reports its pid — never a pid
 		// from a stale pidfile or an unrelated app squatting on the port.
-		service: "archboard-canvas",
+		service: "archboard-server",
 		pid: process.pid,
 		application: {
-			phase: canvasPhase(),
+			phase: serverPhase(),
 			acceptingWrites: mutationAdmission.accepting(),
 			activeWrites: mutationAdmission.active(),
 			activeMutations: mutationAdmission.activeMutations().map((entry) => ({

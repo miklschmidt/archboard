@@ -205,7 +205,7 @@ type CommandOutcome =
 			readonly outcome: "outcome_unknown";
 			readonly reason: CommandOutcomeUnknownReason;
 	  });
-interface RealtimeHost {
+interface RealtimeServer {
 	readonly createOffer: (offer: CreateOfferSdp) => Promise<AnswerSdp>;
 	readonly attachRemoteMedia: (attachment: RemoteMediaAttachment) => void;
 	readonly onSemanticEvent: (listener: RealtimeSemanticEventListener) => RealtimeUnsubscribe;
@@ -251,5 +251,5 @@ export {
 	type CommandOutcomeReason,
 	type AppendOutcome,
 	type CommandOutcome,
-	type RealtimeHost,
+	type RealtimeServer,
 };

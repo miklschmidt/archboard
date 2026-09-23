@@ -13,7 +13,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { TEST_RECORDING_CASE_MS, TEST_RECORDING_CLI_MS } from "../support/timing.ts";
 import {
 	prepareProductionFixture,
@@ -47,7 +47,7 @@ test(
 		try {
 			const fixture = prepareProductionFixture(resources, executableSource);
 			writeFileSync(fixture.controlPath, JSON.stringify({ narrates: true }));
-			const canvas = await startOwnedCanvas({
+			const canvas = await startOwnedServer({
 				serverPath,
 				vault: fixture.vault,
 				env: {

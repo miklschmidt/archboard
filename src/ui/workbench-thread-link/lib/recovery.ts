@@ -7,7 +7,7 @@ import type {
 } from "@/ui/workbench-thread-link/contracts";
 import type { WorkbenchTransportCapabilities } from "@/ui/workbench-thread-link/transport-port";
 
-const HOST_INTENTS: ReadonlySet<ThreadLinkRecoveryIntent> = new Set([
+const SERVER_INTENTS: ReadonlySet<ThreadLinkRecoveryIntent> = new Set([
 	"start_workbench",
 	"choose_binary",
 	"unlock_home",
@@ -116,27 +116,27 @@ const TRANSPORT_AVAILABILITY: Record<
  * @param intent The intent.
  * @returns True for the four host intents.
  */
-function isHostIntent(
+function isServerIntent(
 	intent: ThreadLinkRecoveryIntent,
 ): intent is "start_workbench" | "choose_binary" | "unlock_home" | "repair_storage" {
-	return HOST_INTENTS.has(intent);
+	return SERVER_INTENTS.has(intent);
 }
 
 /**
  * One recovery, with its owner.
  * @param intent The intent.
  * @param capabilities The transport capabilities.
- * @param hostRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The host intents this pane has an owner for.
  * @returns The recovery.
  */
 function threadLinkRecovery(
 	intent: ThreadLinkRecoveryIntent,
 	capabilities: WorkbenchTransportCapabilities,
-	hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[],
+	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[],
 ): ThreadLinkRecovery {
 	const text = RECOVERY_TEXT[intent];
-	if (isHostIntent(intent)) {
-		const available = hostRecoveryIntents.includes(intent);
+	if (isServerIntent(intent)) {
+		const available = serverRecoveryIntents.includes(intent);
 		return Object.freeze({
 			intent,
 			label: text.label,

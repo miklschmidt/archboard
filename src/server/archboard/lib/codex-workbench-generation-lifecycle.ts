@@ -37,7 +37,7 @@ import {
 } from "@/server/archboard/lib/codex-workbench-routing";
 
 /** The one owner name every Codex workbench snapshot reports itself under. */
-const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
+const CODEX_WORKBENCH_OWNER = "archboard-server-codex-workbench" as const;
 
 /** Where the workbench owner is in its life. */
 type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";

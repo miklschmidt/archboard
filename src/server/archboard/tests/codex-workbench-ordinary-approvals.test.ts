@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import type { BrowserActionContext, BrowserApprovalCommand } from "../../codex-workbench/index.js";
-import { createCanvasOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
+import { createServerOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
 
 for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
 	test(`ordinary approval actions preserve the broker ${outcome} outcome`, async () => {
@@ -50,7 +50,7 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 					availableDecisions: ["accept", "decline"],
 				},
 			});
-			const actions = createCanvasOrdinaryApprovalActions(broker);
+			const actions = createServerOrdinaryApprovalActions(broker);
 			const command = {
 				kind: "browser_command",
 				commandId: identity.issuer.mintBrowserCommandId(),
@@ -112,7 +112,7 @@ test("the last presenter's disconnect, from any pane of the link, settles and ac
 				availableDecisions: ["accept", "decline"],
 			},
 		});
-		const actions = createCanvasOrdinaryApprovalActions(broker);
+		const actions = createServerOrdinaryApprovalActions(broker);
 		const context: BrowserActionContext = {
 			browserId: "browser-ordinary",
 			connection: Object.freeze({ socket: "ordinary" }),

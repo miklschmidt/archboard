@@ -4,14 +4,14 @@ import type {
 	InstallProductionCodexWorkbenchOptions,
 } from "@/server/archboard/lib/codex-workbench";
 
-interface CanvasCodexWorkbenchModule {
+interface ServerCodexWorkbenchModule {
 	readonly installProductionCodexWorkbench: (
 		options: InstallProductionCodexWorkbenchOptions,
 	) => CodexWorkbenchOwner;
 }
 
-interface CanvasCodexWorkbenchApplicationOptions {
-	readonly module: CanvasCodexWorkbenchModule;
+interface ServerCodexWorkbenchApplicationOptions {
+	readonly module: ServerCodexWorkbenchModule;
 	readonly installation: () => InstallProductionCodexWorkbenchOptions;
 }
 
@@ -25,7 +25,7 @@ interface CanvasCodexWorkbenchApplicationOptions {
  * @param options The workbench module and how to build its installation.
  * @returns The application-stage owner.
  */
-function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchApplicationOptions): {
+function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchApplicationOptions): {
 	readonly prepare: () => Promise<CodexWorkbenchSnapshot>;
 	readonly shutdown: () => Promise<void>;
 } {
@@ -148,7 +148,7 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 }
 
 export {
-	type CanvasCodexWorkbenchModule,
-	type CanvasCodexWorkbenchApplicationOptions,
-	createCanvasCodexWorkbenchApplication,
+	type ServerCodexWorkbenchModule,
+	type ServerCodexWorkbenchApplicationOptions,
+	createServerCodexWorkbenchApplication,
 };

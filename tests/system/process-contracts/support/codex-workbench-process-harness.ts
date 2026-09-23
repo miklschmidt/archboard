@@ -12,7 +12,7 @@ import {
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startCanvas,
+	startServer,
 	target,
 } from "./codex-workbench-lifecycle.ts";
 
@@ -22,7 +22,7 @@ async function startLinkedWorkbench(
 	executableSource: string,
 ) {
 	const fixture = prepareProductionFixture(resources, executableSource);
-	const canvas = await startCanvas(fixture);
+	const canvas = await startServer(fixture);
 	resources.defer(() => canvas.dispose());
 	const clientId = `process-${label}`;
 	const socket = await openApplicationSocket(canvas.base, clientId);

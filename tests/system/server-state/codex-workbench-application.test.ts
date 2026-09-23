@@ -15,8 +15,8 @@ import type {
 	BrowserWorkbenchActions,
 } from "../../../src/server/codex-workbench/index.js";
 import { createCodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
-import { createCanvasRealtimeActions } from "../../../src/server/archboard/codex-workbench-adapters.js";
-import { createCanvasCodexBrowserSocketOwner } from "../../../src/server/archboard/codex-workbench-browser.js";
+import { createServerRealtimeActions } from "../../../src/server/archboard/codex-workbench-adapters.js";
+import { createServerCodexBrowserSocketOwner } from "../../../src/server/archboard/codex-workbench-browser.js";
 
 async function delivered() {
 	return { outcome: "delivered" as const };
@@ -49,7 +49,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 	}> = [];
 	let approvals: ReturnType<typeof createCodexApprovalBroker> | null = null;
 	let gateway: ReturnType<typeof createCodexWorkbenchGateway> | null = null;
-	let owner: ReturnType<typeof createCanvasCodexBrowserSocketOwner> | null = null;
+	let owner: ReturnType<typeof createServerCodexBrowserSocketOwner> | null = null;
 	let server: ReturnType<typeof createServer> | null = null;
 	let sockets: WebSocketServer | null = null;
 	let first: PublicSocketClient | null = null;
@@ -126,7 +126,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			reason: null,
 		} as const;
 		const realtimeCalls: Array<{ readonly name: string; readonly input: unknown }> = [];
-		const realtime = createCanvasRealtimeActions({
+		const realtime = createServerRealtimeActions({
 			coordinator: {
 				snapshot: () => ({
 					state: "ready",
@@ -251,7 +251,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			now: () => 1_787_682_840_000,
 		});
 		gateway = activeGateway;
-		const activeOwner = createCanvasCodexBrowserSocketOwner({
+		const activeOwner = createServerCodexBrowserSocketOwner({
 			gateway: activeGateway,
 			paneForBrowser: () => "pane-public",
 		});

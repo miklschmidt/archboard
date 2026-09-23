@@ -6,7 +6,7 @@ import type {
 	CodexWorkbenchGenerationInput,
 	ProductionCodexWorkbenchBindings,
 } from "@/server/archboard/lib/codex-workbench";
-import { createCanvasDynamicOperationIdAdapter } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
+import { createServerDynamicOperationIdAdapter } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import {
 	allNamed,
 	currentOperationBinding,
@@ -27,13 +27,13 @@ import {
 	workhorseLink,
 } from "@/server/archboard/lib/codex-workbench-binding-readers";
 import type {
-	CanvasCodexWorkbenchHost,
+	CodexWorkbenchServer,
 	CodexWorkbenchStorage,
 } from "@/server/archboard/lib/codex-workbench-server";
 
 /** What building one generation's bindings needs from around it. */
 interface BindingContext {
-	readonly host: CanvasCodexWorkbenchHost;
+	readonly host: CodexWorkbenchServer;
 	readonly storage: CodexWorkbenchStorage;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
 	readonly input: CodexWorkbenchGenerationInput;
@@ -147,9 +147,9 @@ function storageBindings(
  * @returns The target.
  */
 function provenWorkhorseTarget(
-	host: Pick<CanvasCodexWorkbenchHost, "presentingPaneId">,
+	host: Pick<CodexWorkbenchServer, "presentingPaneId">,
 	workhorse: ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>,
-): Parameters<CanvasCodexWorkbenchHost["contextForOperation"]>[0] {
+): Parameters<CodexWorkbenchServer["contextForOperation"]>[0] {
 	const { paneId, childId, epoch, threadId } = workhorse;
 	const target = { paneId, childId, epoch, threadId };
 	if (workhorse.state !== "ready" || !allNamed(target)) {
@@ -542,7 +542,7 @@ function deliveryBindings(
 				if (created.identity === undefined) {
 					throw new Error("Operation authority is not ready.");
 				}
-				return createCanvasDynamicOperationIdAdapter(created.identity.operation);
+				return createServerDynamicOperationIdAdapter(created.identity.operation);
 			},
 			/**
 			 * The wait and quarantine port a dynamic effect uses.

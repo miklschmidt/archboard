@@ -7,11 +7,11 @@ import type {
 	BrowserProjectionContext,
 } from "../../../codex-workbench/index.js";
 import {
-	createCanvasBrowserGatewayOptions,
-	createCanvasBrowserProjectionBudget,
-	createCanvasDynamicApprovalOwner,
-	type CanvasBrowserBindingState,
-	type CanvasTimelineOwner,
+	createServerBrowserGatewayOptions,
+	createServerBrowserProjectionBudget,
+	createServerDynamicApprovalOwner,
+	type ServerBrowserBindingState,
+	type ServerTimelineOwner,
 } from "../../codex-workbench-adapters.js";
 import { createCodexWorkbenchGenerationFixture } from "./codex-workbench-generation-fixture.js";
 import { processFacts } from "./codex-workbench-process-fixture.js";
@@ -57,8 +57,8 @@ function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
 }
 
 interface ProjectionHarness {
-	readonly options: ReturnType<typeof createCanvasBrowserGatewayOptions>;
-	readonly state: CanvasBrowserBindingState;
+	readonly options: ReturnType<typeof createServerBrowserGatewayOptions>;
+	readonly state: ServerBrowserBindingState;
 	readonly context: BrowserProjectionContext;
 	readonly actionContext: BrowserActionContext;
 	readonly loginId: ReturnType<IdentityAuthorities["identity"]["decoder"]["adoptLoginId"]>;
@@ -125,21 +125,21 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		realtime: { ...fixture.realtime, ...voiceContext?.realtime },
 		callbacks: { ...fixture.callbacks, ...voiceContext?.callbacks },
 	};
-	const state: CanvasBrowserBindingState = {
+	const state: ServerBrowserBindingState = {
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },
 		queue: { kind: "codex_queue", submissions: null },
 		queueThreadId: null,
 	};
-	const timeline: CanvasTimelineOwner = {
+	const timeline: ServerTimelineOwner = {
 		read: () => null,
 		onNotification: () => undefined,
 		retire: () => undefined,
 		dispose: () => undefined,
 	};
-	const options = createCanvasBrowserGatewayOptions({
+	const options = createServerBrowserGatewayOptions({
 		components,
-		dynamicApprovals: createCanvasDynamicApprovalOwner({
+		dynamicApprovals: createServerDynamicApprovalOwner({
 			identity: authorities,
 			now: () => 1,
 			bindingForCaller: () => {
@@ -148,7 +148,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		}),
 		state,
 		timeline,
-		budget: createCanvasBrowserProjectionBudget(),
+		budget: createServerBrowserProjectionBudget(),
 		leaseLedger: { active: null, retired: new Map() },
 		process: () => facts,
 		checkoutRoot: "/repo",

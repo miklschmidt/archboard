@@ -5,6 +5,6 @@ import { createServer, type RequestListener, type Server } from "node:http";
  * @param listener The application that answers requests.
  * @returns The HTTP server, not yet listening.
  */
-export function createCanvasHttpServer(listener: RequestListener): Server {
+export function createServerHttpServer(listener: RequestListener): Server {
 	return createServer(listener);
 }

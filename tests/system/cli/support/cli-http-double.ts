@@ -7,7 +7,7 @@
 // answers are the smallest true ones rather than a second implementation.
 
 import { z } from "zod";
-import { CANVAS_SERVICE_NAME } from "../../../../src/runtime/engine/server-client.ts";
+import { ARCHBOARD_SERVICE_NAME } from "../../../../src/runtime/engine/server-client.ts";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
@@ -103,7 +103,7 @@ function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 			observed.push(contact);
 			if (url.pathname === "/health") {
 				return Response.json({
-					service: CANVAS_SERVICE_NAME,
+					service: ARCHBOARD_SERVICE_NAME,
 					status: "ok",
 					websocket_clients: browserClients,
 				});

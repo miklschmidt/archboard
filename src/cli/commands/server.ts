@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { canvasPort, ensureCanvasRunning, stopCanvas } from "@/runtime/engine/spawn";
+import { serverPort, ensureServerRunning, stopServer } from "@/runtime/engine/spawn";
 import { readPidFile } from "@/runtime/engine/pidfile";
 import { defineCommand } from "@/cli/command-contract/contract";
 
@@ -75,13 +75,13 @@ const startContract = defineCommand({
 	 * @returns The running state, plus a diagnostic when the canvas was already up.
 	 */
 	async handler() {
-		const result = await ensureCanvasRunning({ force: true });
+		const result = await ensureServerRunning({ force: true });
 		return {
 			result: {
 				running: true as const,
 				url: result.url,
 				spawned: result.spawned,
-				pid: readPidFile(canvasPort()) ?? undefined,
+				pid: readPidFile(serverPort()) ?? undefined,
 			},
 			...(result.spawned
 				? {}
@@ -151,7 +151,7 @@ const stopContract = defineCommand({
 	 * @returns The stop result from the spawn owner.
 	 */
 	async handler() {
-		return { result: await stopCanvas() };
+		return { result: await stopServer() };
 	},
 });
 

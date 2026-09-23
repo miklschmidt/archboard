@@ -162,7 +162,7 @@ async function postSemantic(
  * Every semantic board the canvas's vault holds.
  * @returns The boards, by name.
  */
-async function listSemanticBoardsOnCanvas(): Promise<SemanticBoardListing> {
+async function listSemanticBoardsOnServer(): Promise<SemanticBoardListing> {
 	return ListingReplySchema.parse(await requestJson<unknown>("/api/semantic-boards"));
 }
 
@@ -171,7 +171,7 @@ async function listSemanticBoardsOnCanvas(): Promise<SemanticBoardListing> {
  * @param board The board name.
  * @returns The board.
  */
-async function readSemanticBoardOnCanvas(board: string): Promise<SemanticBoard> {
+async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> {
 	const reply = await requestJson<unknown>(
 		`/api/semantic-boards/board?board=${encodeURIComponent(board)}`,
 	);
@@ -188,7 +188,7 @@ async function readSemanticBoardOnCanvas(board: string): Promise<SemanticBoard> 
  * @param options.fonts Where the drawn faces come from; embedded makes the file self-contained.
  * @returns The picture, or the fact that there is nothing on the board yet.
  */
-async function renderSemanticBoardOnCanvas(
+async function renderSemanticBoardOnServer(
 	board: string,
 	options: {
 		variant?: string;
@@ -225,7 +225,7 @@ async function renderSemanticBoardOnCanvas(
  * @param create The architecture as it was asked for.
  * @returns The board as it now stands.
  */
-async function createSemanticBoardOnCanvas(
+async function createSemanticBoardOnServer(
 	board: string,
 	create: Readonly<Record<string, unknown>>,
 ): Promise<SemanticWriteAnswer> {
@@ -238,7 +238,7 @@ async function createSemanticBoardOnCanvas(
  * @param edit The changes as stated.
  * @returns The board as it now stands.
  */
-async function editSemanticBoardOnCanvas(
+async function editSemanticBoardOnServer(
 	board: string,
 	edit: Readonly<Record<string, unknown>>,
 ): Promise<SemanticWriteAnswer> {
@@ -251,7 +251,7 @@ async function editSemanticBoardOnCanvas(
  * @param resolve Which disagreements this answers, and how.
  * @returns The board as it now stands, and what is left to settle.
  */
-async function resolveSemanticBoardOnCanvas(
+async function resolveSemanticBoardOnServer(
 	board: string,
 	resolve: Readonly<Record<string, unknown>>,
 ): Promise<SemanticWriteAnswer> {
@@ -264,7 +264,7 @@ async function resolveSemanticBoardOnCanvas(
  * @param adopt Which variant, and why.
  * @returns The board as it now stands.
  */
-async function adoptSemanticBoardOnCanvas(
+async function adoptSemanticBoardOnServer(
 	board: string,
 	adopt: Readonly<Record<string, unknown>>,
 ): Promise<SemanticWriteAnswer> {
@@ -277,7 +277,7 @@ async function adoptSemanticBoardOnCanvas(
  * @param shelve Which variant, and why it was let go.
  * @returns The board as it now stands.
  */
-async function shelveSemanticBoardOnCanvas(
+async function shelveSemanticBoardOnServer(
 	board: string,
 	shelve: Readonly<Record<string, unknown>>,
 ): Promise<SemanticWriteAnswer> {
@@ -294,7 +294,7 @@ async function shelveSemanticBoardOnCanvas(
  * @param branch Which variant to derive from, and what to call the proposal.
  * @returns The board as it now stands.
  */
-async function branchSemanticBoardOnCanvas(
+async function branchSemanticBoardOnServer(
 	board: string,
 	branch: Readonly<Record<string, unknown>>,
 ): Promise<SemanticWriteAnswer> {
@@ -317,7 +317,7 @@ const DiscardReplySchema = z.object({
  *   was told when absent.
  * @returns The board that went, and the version it was at when it did.
  */
-async function discardSemanticBoardOnCanvas(
+async function discardSemanticBoardOnServer(
 	board: string,
 	expectedVersion?: number,
 ): Promise<z.infer<typeof DiscardReplySchema>["discarded"]> {
@@ -337,23 +337,23 @@ export {
 	ReconciliationReportSchema,
 	type ReconciliationReport,
 	type SemanticWriteAnswer,
-	adoptSemanticBoardOnCanvas,
-	shelveSemanticBoardOnCanvas,
-	resolveSemanticBoardOnCanvas,
-	listSemanticBoardsOnCanvas,
-	readSemanticBoardOnCanvas,
-	renderSemanticBoardOnCanvas,
-	createSemanticBoardOnCanvas,
-	editSemanticBoardOnCanvas,
-	branchSemanticBoardOnCanvas,
-	discardSemanticBoardOnCanvas,
+	adoptSemanticBoardOnServer,
+	shelveSemanticBoardOnServer,
+	resolveSemanticBoardOnServer,
+	listSemanticBoardsOnServer,
+	readSemanticBoardOnServer,
+	renderSemanticBoardOnServer,
+	createSemanticBoardOnServer,
+	editSemanticBoardOnServer,
+	branchSemanticBoardOnServer,
+	discardSemanticBoardOnServer,
 };
 
 /**
  * Run the exact checker the browser uses.
  * @returns The interpreted policy and vault diagnostics.
  */
-async function checkSemanticVaultOnCanvas(): Promise<VaultCheck> {
+async function checkSemanticVaultOnServer(): Promise<VaultCheck> {
 	return VaultCheckSchema.parse(await requestJson<unknown>("/api/vault/check"));
 }
 /**
@@ -361,9 +361,9 @@ async function checkSemanticVaultOnCanvas(): Promise<VaultCheck> {
  * @param board The board name.
  * @returns The board and its warnings.
  */
-async function readSemanticBoardAnswerOnCanvas(board: string) {
+async function readSemanticBoardAnswerOnServer(board: string) {
 	return BoardReplySchema.parse(
 		await requestJson<unknown>(`/api/semantic-boards/board?board=${encodeURIComponent(board)}`),
 	);
 }
-export { checkSemanticVaultOnCanvas, readSemanticBoardAnswerOnCanvas };
+export { checkSemanticVaultOnServer, readSemanticBoardAnswerOnServer };

@@ -3,13 +3,13 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 } from "./support/agent-browser.ts";
 import {
 	DRILL_OPEN,
@@ -49,9 +49,9 @@ test("the address names the view of the board on screen, down a level and back",
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "drill-address-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 
 	for (const [board, create] of [

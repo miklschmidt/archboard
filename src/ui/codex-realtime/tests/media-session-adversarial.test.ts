@@ -162,17 +162,17 @@ describe("realtime browser media lifecycle boundaries", () => {
 		"a throwing %s listener cannot replace a terminal failure",
 		async (throwing) => {
 			const env = new FakeBrowser();
-			const mediaHost = host(env);
+			const realtimeServer = host(env);
 			const media = createRealtimeMediaSession(
 				{
-					...mediaHost,
+					...realtimeServer,
 					/**
 					 * Answers with a foreign session identity.
 					 * @param offer The offer.
 					 * @returns A mismatched answer.
 					 */
 					createOffer: async (offer) => ({
-						...(await mediaHost.createOffer(offer)),
+						...(await realtimeServer.createOffer(offer)),
 						sessionId: correlation(9).sessionId,
 					}),
 				},

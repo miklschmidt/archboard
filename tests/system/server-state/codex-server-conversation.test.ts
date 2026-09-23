@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -66,7 +66,7 @@ test("two panes share one conversation that outlives the pane that created it", 
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath,
 			vault: fixture.vault,
 			env: {

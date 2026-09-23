@@ -5,16 +5,16 @@ import { join } from "node:path";
 import winston from "winston";
 
 import {
-	CanvasApplicationBusyError,
-	createCanvasApplicationLifetime,
-	createCanvasMutationAdmission,
+	ServerApplicationBusyError,
+	createServerApplicationLifetime,
+	createServerMutationAdmission,
 } from "../index.js";
 import { closeLogger } from "../../../runtime/engine/logger.js";
 
 describe("canvas application lifetime", () => {
 	test("starts in order and stops every owner in reverse order", async () => {
 		const actions: string[] = [];
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: ["engine", "codex", "http", "browser", "signals"].map((name) => ({
 				name,
 				start: () => {
@@ -47,7 +47,7 @@ describe("canvas application lifetime", () => {
 
 	test("unwinds partial startup and a fresh owner can start afterwards", async () => {
 		const actions: string[] = [];
-		const failed = createCanvasApplicationLifetime({
+		const failed = createServerApplicationLifetime({
 			resources: [
 				{
 					name: "engine",
@@ -76,7 +76,7 @@ describe("canvas application lifetime", () => {
 		// The failure is heard while the log it is written to is still open.
 		expect(actions).toEqual(["failed:codex failed", "stop:codex", "stop:engine"]);
 
-		const replacement = createCanvasApplicationLifetime({
+		const replacement = createServerApplicationLifetime({
 			resources: [{ name: "engine", stop: () => undefined }],
 		});
 		await replacement.start();
@@ -86,7 +86,7 @@ describe("canvas application lifetime", () => {
 
 	test("continues reverse teardown after failures and reports them", async () => {
 		const actions: string[] = [];
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: ["engine", "codex", "http"].map((name) => ({
 				name,
 				stop: () => {
@@ -109,7 +109,7 @@ describe("canvas application lifetime", () => {
 		let release!: () => void;
 		const gate = new Promise<void>((resolve) => void (release = resolve));
 		let stops = 0;
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: [
 				{
 					name: "engine",
@@ -138,7 +138,7 @@ describe("canvas application lifetime", () => {
 		const actions: string[] = [];
 		let release!: () => void;
 		const gate = new Promise<void>((resolve) => void (release = resolve));
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			observe: ({ action, resource }) => {
 				if (resource !== null && (action === "force" || action === "forced")) {
 					actions.push(`${action}:${resource}`);
@@ -177,7 +177,7 @@ describe("canvas application lifetime", () => {
 		const actions: string[] = [];
 		let release!: () => void;
 		const gate = new Promise<void>((resolve) => void (release = resolve));
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: [
 				{
 					name: "signals",
@@ -213,7 +213,7 @@ describe("canvas application lifetime", () => {
 		const actions: string[] = [];
 		let quiesces = 0;
 		let resumes = 0;
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: [
 				{
 					name: "engine",
@@ -248,7 +248,7 @@ describe("canvas application lifetime", () => {
 	});
 
 	test("tracks mutation work beyond response settlement", async () => {
-		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
+		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
 		const lease = admission.admit("POST /api/board-write");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
@@ -268,12 +268,12 @@ describe("canvas application lifetime", () => {
 	});
 
 	test("bounded mutation refusal is shared, named, resumed, and retryable", async () => {
-		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 5 });
+		const admission = createServerMutationAdmission({ drainTimeoutMs: 5 });
 		const lease = admission.admit("POST /api/selection");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
 		}
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: [{ name: "engine", stop: () => undefined }],
 			quiesce: admission.quiesce,
 			resume: admission.resume,
@@ -284,8 +284,8 @@ describe("canvas application lifetime", () => {
 		const concurrent = lifetime.stop("SIGINT");
 		expect(concurrent).toBe(first);
 		const refusal = await first.catch((error: unknown) => error);
-		expect(refusal).toBeInstanceOf(CanvasApplicationBusyError);
-		expect((refusal as CanvasApplicationBusyError).code).toBe("CANVAS_BUSY");
+		expect(refusal).toBeInstanceOf(ServerApplicationBusyError);
+		expect((refusal as ServerApplicationBusyError).code).toBe("CANVAS_BUSY");
 		expect((refusal as Error).message).toContain("POST /api/selection");
 		expect(lifetime.phase()).toBe("running");
 		expect(admission.accepting()).toBeTrue();
@@ -296,7 +296,7 @@ describe("canvas application lifetime", () => {
 	});
 
 	test("disconnect aborts waitable work and releases request admission", async () => {
-		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
+		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
 		const lease = admission.admit("POST /api/semantic-boards/edit");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
@@ -322,7 +322,7 @@ describe("canvas application lifetime", () => {
 		const transport = new winston.transports.File({ filename: join(root, "startup.log") });
 		const owner = winston.createLogger({ transports: [transport] });
 		try {
-			const lifetime = createCanvasApplicationLifetime({
+			const lifetime = createServerApplicationLifetime({
 				resources: [
 					{ name: "logger", stop: () => closeLogger(owner) },
 					{

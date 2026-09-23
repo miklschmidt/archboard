@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { CodexProcessError } from "../../../runtime/codex-process/index.js";
-import { canvasStartupFailureMessage } from "../index.js";
+import { serverStartupFailureMessage } from "../index.js";
 
 test("classifies process-group ownership refusal without install recovery", () => {
 	const failure = new CodexProcessError({
@@ -11,7 +11,7 @@ test("classifies process-group ownership refusal without install recovery", () =
 			"Could not prove ownership of the Codex process group after spawn. Recovery: refuse restart until the child-group boundary is available.",
 	});
 
-	const message = canvasStartupFailureMessage(failure);
+	const message = serverStartupFailureMessage(failure);
 	expect(message).toContain("Codex startup refused.");
 	expect(message).toContain("Could not prove ownership of the Codex process group");
 	expect(message).not.toContain("bun install");
@@ -24,7 +24,7 @@ test("retains install recovery for a true child spawn failure", () => {
 		message: "Could not spawn the exact Codex app-server child.",
 	});
 
-	const message = canvasStartupFailureMessage(failure);
+	const message = serverStartupFailureMessage(failure);
 	expect(message).toContain("Run bun install to restore @openai/codex 0.155.1");
 	expect(message).toContain("Could not spawn the exact Codex app-server child");
 });

@@ -10,7 +10,7 @@ import {
 	type BrowserOwnerProjection,
 	type BrowserWorkbenchActions,
 } from "../../codex-workbench/index.js";
-import { createCanvasOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
+import { createServerOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
 import { composeCodexWorkbenchGeneration } from "../codex-workbench-generation.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 
@@ -63,7 +63,7 @@ test("composed child exit publishes one settled approval before closing presente
 			start: delivered,
 		},
 		realtime: { start: delivered, appendText: delivered, stop: delivered },
-		ordinaryApprovals: createCanvasOrdinaryApprovalActions(approvals),
+		ordinaryApprovals: createServerOrdinaryApprovalActions(approvals),
 		dynamicApprovals: { resolve: delivered },
 	};
 	const projection = {

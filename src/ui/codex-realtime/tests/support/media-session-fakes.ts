@@ -8,7 +8,7 @@ import type {
 	AnswerSdp,
 	CommandOutcome,
 	RealtimeCorrelation,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeMediaDevices,
 	RealtimeMediaEnvironment,
 	RealtimeMediaStream,
@@ -468,7 +468,7 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
  * @param env The fake browser.
  * @returns The host.
  */
-function host(env: FakeBrowser): RealtimeHost {
+function host(env: FakeBrowser): RealtimeServer {
 	return {
 		/**
 		 * Answers the offer through the hostOffer stage gate.

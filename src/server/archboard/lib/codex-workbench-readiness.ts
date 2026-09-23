@@ -6,13 +6,13 @@ const READINESS_REASON_MAX_BYTES = 512;
 const textEncoder = new TextEncoder();
 
 /** The exact owned-process facts the browser readiness arm is derived from. */
-export type CanvasReadinessProcessFacts = Pick<
+export type ServerReadinessProcessFacts = Pick<
 	CodexProcessSnapshot,
 	"state" | "ready" | "restartAttempt" | "nextRestartAtMs" | "failure"
 >;
 
-export interface CanvasReadinessInput {
-	readonly process: CanvasReadinessProcessFacts;
+export interface ServerReadinessInput {
+	readonly process: ServerReadinessProcessFacts;
 	readonly account: BrowserAccountProjectionInput;
 	readonly login: BrowserLogin;
 	/** Composed thread capability: the coordinator reached its ready lifecycle state. */
@@ -90,7 +90,7 @@ function signedInReadiness(coordinatorReady: boolean): BrowserReadiness {
  * @param input The live process, account, login and coordinator facts.
  * @returns The readiness.
  */
-function accountReadiness(input: CanvasReadinessInput): BrowserReadiness {
+function accountReadiness(input: ServerReadinessInput): BrowserReadiness {
 	if (input.login.state === "pending")
 		return { kind: "readiness", state: "login_pending", loginId: input.login.loginId };
 	const account = input.account;
@@ -144,7 +144,7 @@ function observedAccountReadiness(
  * @param input The live process, account, login and coordinator facts.
  * @returns The readiness arm.
  */
-export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): BrowserReadiness {
+export function projectServerBrowserReadiness(input: ServerReadinessInput): BrowserReadiness {
 	const process = input.process;
 	const failure = process.failure;
 	const refused = failure === null ? null : refusedInstallationReadiness(failure);
@@ -171,7 +171,7 @@ const INCOMPATIBLE_CODES = new Set([
  * @returns The readiness, or null when the failure is not one of those.
  */
 function refusedInstallationReadiness(
-	failure: NonNullable<CanvasReadinessProcessFacts["failure"]>,
+	failure: NonNullable<ServerReadinessProcessFacts["failure"]>,
 ): BrowserReadiness | null {
 	if (failure.code === "storage_refused") {
 		return {
@@ -198,9 +198,9 @@ function refusedInstallationReadiness(
  * @returns The readiness.
  */
 function processStateReadiness(
-	input: CanvasReadinessInput,
-	process: CanvasReadinessProcessFacts,
-	failure: CanvasReadinessProcessFacts["failure"],
+	input: ServerReadinessInput,
+	process: ServerReadinessProcessFacts,
+	failure: ServerReadinessProcessFacts["failure"],
 ): BrowserReadiness {
 	if (process.state === "running") {
 		return runningReadiness(input, process);
@@ -219,8 +219,8 @@ function processStateReadiness(
  * @returns The readiness.
  */
 function runningReadiness(
-	input: CanvasReadinessInput,
-	process: CanvasReadinessProcessFacts,
+	input: ServerReadinessInput,
+	process: ServerReadinessProcessFacts,
 ): BrowserReadiness {
 	return process.ready
 		? accountReadiness(input)
@@ -239,8 +239,8 @@ function runningReadiness(
  * @returns The readiness.
  */
 function backoffReadiness(
-	process: CanvasReadinessProcessFacts,
-	failure: CanvasReadinessProcessFacts["failure"],
+	process: ServerReadinessProcessFacts,
+	failure: ServerReadinessProcessFacts["failure"],
 ): BrowserReadiness {
 	if (process.nextRestartAtMs === null) {
 		return {
@@ -271,8 +271,8 @@ const NOT_RUNNING_STATES: ReadonlySet<string> = new Set(["stopped", "stopping", 
  * @returns The readiness.
  */
 function haltedReadiness(
-	process: Exclude<CanvasReadinessProcessFacts, { state: "running" | "backoff" }>,
-	failure: CanvasReadinessProcessFacts["failure"],
+	process: Exclude<ServerReadinessProcessFacts, { state: "running" | "backoff" }>,
+	failure: ServerReadinessProcessFacts["failure"],
 ): BrowserReadiness {
 	const failureMessage = failure?.message ?? null;
 	if (process.state === "terminal_failure") {

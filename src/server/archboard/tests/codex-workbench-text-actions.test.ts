@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { ArchboardContextSchema } from "../../../runtime/codex-instructions/index.js";
-import { createCanvasCanonicalTextActions } from "../codex-workbench-adapters.js";
+import { createServerCanonicalTextActions } from "../codex-workbench-adapters.js";
 
 test("browser start and steer emit canonical authored bodies from lease-bound context", async () => {
 	const authorities = createIdentityAuthorities();
@@ -41,7 +41,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		},
 		turnInterrupt: async () => ({}) as never,
 	};
-	const actions = createCanvasCanonicalTextActions({
+	const actions = createServerCanonicalTextActions({
 		identity: authorities,
 		session,
 		contextForOperation: (action, operation) => {
@@ -160,7 +160,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 	let startCalls = 0;
 	let observedThreadId = threadId;
 	let observedStatus = "active";
-	const actions = createCanvasCanonicalTextActions({
+	const actions = createServerCanonicalTextActions({
 		identity: authorities,
 		session: {
 			turnStart: async () => {
@@ -237,7 +237,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-1");
 	const currentTurnId = authorities.identity.decoder.adoptTurnId("turn-current");
 	let steerCalls = 0;
-	const actions = createCanvasCanonicalTextActions({
+	const actions = createServerCanonicalTextActions({
 		identity: authorities,
 		session: {
 			turnStart: async () => ({}) as never,

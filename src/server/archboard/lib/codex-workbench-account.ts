@@ -2,7 +2,7 @@ import type { BrowserWorkbenchActions } from "@/server/codex-workbench";
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type { ControlledCodexSession, SessionLoginParams } from "@/runtime/codex-session";
 import { createCodexBrowserModel } from "@/shared/codex-browser-model";
-import type { CanvasBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
+import type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 
 /** One sign-in as the browser asked for it. */
@@ -93,9 +93,9 @@ function sessionLoginParams(login: BrowserLogin): SessionLoginParams {
 }
 
 /** What one generation's account owner is closed over. */
-interface CanvasAccountOwnerInput {
+interface ServerAccountOwnerInput {
 	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
-	readonly state: CanvasBrowserBindingState;
+	readonly state: ServerBrowserBindingState;
 	readonly clearQueue: () => void;
 	readonly onNotification: (listener: (event: TransportServerNotification) => void) => () => void;
 }
@@ -107,7 +107,7 @@ interface CanvasAccountOwnerInput {
  * is cleared on sign-out, and how account notifications are listened for.
  * @returns The account actions and how to subscribe to them.
  */
-export function createCanvasBrowserAccountOwner(input: CanvasAccountOwnerInput) {
+export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) {
 	const { components, state } = input;
 	const { identity } = components;
 	const model = createCodexBrowserModel(identity);
@@ -144,7 +144,7 @@ export function createCanvasBrowserAccountOwner(input: CanvasAccountOwnerInput) 
 	 */
 	const completePendingLogin = (
 		response: AccountReadResponse,
-		pending: CanvasBrowserBindingState["login"],
+		pending: ServerBrowserBindingState["login"],
 	): void => {
 		if (response.account === null || pending.state !== "pending" || state.login !== pending) {
 			return;
@@ -172,7 +172,7 @@ export function createCanvasBrowserAccountOwner(input: CanvasAccountOwnerInput) 
 	 */
 	const readAccount = async (
 		current: () => boolean,
-		pending: CanvasBrowserBindingState["login"],
+		pending: ServerBrowserBindingState["login"],
 	): Promise<void> => {
 		const response = await components.session.accountRead();
 		if (!current()) return;
@@ -352,7 +352,7 @@ export function createCanvasBrowserAccountOwner(input: CanvasAccountOwnerInput) 
 	 */
 	const applyCancelResult = (
 		attempt: number,
-		pending: CanvasBrowserBindingState["login"],
+		pending: ServerBrowserBindingState["login"],
 		status: string,
 		loginId: BrowserLoginCancel["loginId"],
 	): void => {

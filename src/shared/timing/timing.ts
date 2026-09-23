@@ -310,14 +310,14 @@ const DEFAULT_SETTLE_MAX_MS = 6000;
  * A disconnected board-lock waiter does not spend this budget: its request
  * signal cancels the LOCK_POLL_MS wait immediately.
  */
-const CANVAS_MUTATION_DRAIN_TIMEOUT_MS = 1000;
+const SERVER_MUTATION_DRAIN_TIMEOUT_MS = 1000;
 
 /**
  * Grace for existing HTTP connections after write admission closes. It stays
  * below the CLI health probe so a stuck keep-alive is forced closed before the
  * next stop observation. WebSocket clients close in their own earlier owner.
  */
-const CANVAS_HTTP_STOP_GRACE_MS = 250;
+const SERVER_HTTP_STOP_GRACE_MS = 250;
 
 // ── Git checkout inspection ───────────────────────────────────────────────
 
@@ -336,7 +336,7 @@ const GIT_COMMAND_TIMEOUT_MS = 5000;
  * pipes to disappear. It matches the mutation-drain window so failed cleanup
  * is diagnosed promptly rather than hiding behind the command timeout.
  */
-const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
+const GIT_PROCESS_GROUP_CLEANUP_MS = SERVER_MUTATION_DRAIN_TIMEOUT_MS;
 
 /** Observation cadence while proving a killed process group is absent. */
 const PROCESS_GROUP_OBSERVATION_POLL_MS = 10;
@@ -404,7 +404,7 @@ const CODEX_TERM_GRACE_MS = 5000;
 const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
 
 /** Public canvas readiness classification. Pulls against mandatory Codex startup readiness. */
-const CANVAS_STARTUP_READINESS_MS = 8000;
+const SERVER_STARTUP_READINESS_MS = 8000;
 
 /**
  * Bounds dynamic wait detection latency against app-server thread status
@@ -508,8 +508,8 @@ export {
 	HEADLESS_CHROMIUM_CALL_MS,
 	DEFAULT_SETTLE_MS,
 	DEFAULT_SETTLE_MAX_MS,
-	CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
-	CANVAS_HTTP_STOP_GRACE_MS,
+	SERVER_MUTATION_DRAIN_TIMEOUT_MS,
+	SERVER_HTTP_STOP_GRACE_MS,
 	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 	GIT_PROCESS_GROUP_POLL_MS,
@@ -527,7 +527,7 @@ export {
 	CODEX_REALTIME_RECOVERY_MS,
 	CODEX_TERM_GRACE_MS,
 	CODEX_COMPOSED_SHUTDOWN_MS,
-	CANVAS_STARTUP_READINESS_MS,
+	SERVER_STARTUP_READINESS_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
 	COORDINATOR_IDLE_WAIT_MS,
 	CODEX_QUEUE_REREAD_FLOOR_MS,
@@ -543,13 +543,13 @@ export const VAULT_CHECK_POLL_MS = 5_000;
 // each of those has a point past which waiting longer is a hang, not patience.
 
 /** An owned evaluation canvas answering /health after spawn; a cold bun start on a busy box. */
-export const SKILL_EVAL_CANVAS_STARTUP_MS = 20_000;
+export const SKILL_EVAL_SERVER_STARTUP_MS = 20_000;
 /** Between /health probes while an evaluation canvas starts. */
 export const SKILL_EVAL_HEALTH_POLL_MS = 100;
 /** One /health probe; a listener that cannot answer in this time is treated as not up yet. */
 export const SKILL_EVAL_HEALTH_REQUEST_MS = 1000;
 /** Let the canvas finish its separately owned Codex shutdown before harness escalation, with one composed budget of margin. */
-export const SKILL_EVAL_CANVAS_SHUTDOWN_MS = CODEX_COMPOSED_SHUTDOWN_MS * 2;
+export const SKILL_EVAL_SERVER_SHUTDOWN_MS = CODEX_COMPOSED_SHUTDOWN_MS * 2;
 /** One archboard CLI call laying a fixture or reading an outcome; each is one HTTP round trip. */
 export const SKILL_EVAL_CLI_TIMEOUT_MS = 60_000;
 /** One git command fetching or checking out Flask; a first clone from the network is the slow case. */

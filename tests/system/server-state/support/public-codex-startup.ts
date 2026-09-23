@@ -7,7 +7,7 @@ import { listProcessObservations } from "@/shared/process-observation";
 const repositoryRoot = join(import.meta.dir, "../../../..");
 const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-preload.ts");
 
-function canvasChildPids(pid: number): number[] {
+function serverChildPids(pid: number): number[] {
 	return listProcessObservations()
 		.filter((observation) => observation.state !== "zombie" && observation.parentPid === pid)
 		.map((observation) => observation.pid);
@@ -44,7 +44,7 @@ function writePublicCodexExecutable(path: string, body: string): void {
 	chmodSync(path, 0o700);
 }
 
-function runPublicCanvas(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
+function runPublicServer(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
 	return spawnSync(join(repositoryRoot, "bin/archboard"), [command], {
 		cwd: repositoryRoot,
 		env: environment,
@@ -54,7 +54,7 @@ function runPublicCanvas(command: "start" | "stop", environment: NodeJS.ProcessE
 	});
 }
 
-function runPublicCanvasAsync(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
+function runPublicServerAsync(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
 	return new Promise<{ readonly status: number | null; readonly stderr: string }>(
 		(resolve, reject) => {
 			const child = spawn(join(repositoryRoot, "bin/archboard"), [command], {
@@ -109,11 +109,11 @@ function publicWorkbenchRoot(root: string): string {
 }
 
 export {
-	canvasChildPids,
+	serverChildPids,
 	publicStartEnvironment,
 	writePublicCodexExecutable,
-	runPublicCanvas,
-	runPublicCanvasAsync,
+	runPublicServer,
+	runPublicServerAsync,
 	loggedRequestFailure,
 	publicLogPath,
 	publicStateRoot,

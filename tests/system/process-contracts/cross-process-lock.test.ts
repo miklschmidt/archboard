@@ -12,7 +12,7 @@ import {
 	waitForPaneMessage,
 	waitForPaneMessageWhere,
 } from "../support/pane-websocket.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { RawLockReadySchema } from "./fixtures/process-resource-owner.ts";
 import { startOwnedPeer } from "./support/owned-peer-process.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";
@@ -57,7 +57,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		readySchema: RawLockReadySchema,
 	});
 	resources.defer(() => raw.dispose());
-	const first = await startOwnedCanvas({
+	const first = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env,
@@ -89,7 +89,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			).status,
 		).toBe(200);
 
-		const second = await startOwnedCanvas({
+		const second = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env: { ...env, XDG_STATE_HOME: join(root, "second-state") },

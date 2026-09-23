@@ -1,8 +1,8 @@
 import type { ProductionCodexWorkbenchBindings } from "@/server/archboard/lib/codex-workbench";
-import { createCanvasBrowserGatewayOptions } from "@/server/archboard/lib/codex-workbench-browser-gateway";
+import { createServerBrowserGatewayOptions } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 import {
-	createCanvasBrowserProjectionBudget,
-	createCanvasTimelineOwner,
+	createServerBrowserProjectionBudget,
+	createServerTimelineOwner,
 } from "@/server/archboard/lib/codex-workbench-timeline";
 import { requireCreated } from "@/server/archboard/lib/codex-workbench-generation-owners";
 import {
@@ -33,8 +33,8 @@ function createGatewayBinding(
 	};
 	return (created) => {
 		const dynamic = requireDynamicOwners(dynamicContext, created).approval;
-		const budget = createCanvasBrowserProjectionBudget();
-		owners.timeline ??= createCanvasTimelineOwner({
+		const budget = createServerBrowserProjectionBudget();
+		owners.timeline ??= createServerTimelineOwner({
 			session: requireCreated(created, "session"),
 			identity: requireCreated(created, "identity").identity.decoder,
 			approvals: requireCreated(created, "approvals"),
@@ -44,7 +44,7 @@ function createGatewayBinding(
 			},
 			budget,
 		});
-		const options = createCanvasBrowserGatewayOptions({
+		const options = createServerBrowserGatewayOptions({
 			components: created,
 			dynamicApprovals: dynamic,
 			timeline: owners.timeline,

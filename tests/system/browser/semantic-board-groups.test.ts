@@ -4,13 +4,13 @@ import { join } from "node:path";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { SURFACE, WAIT, drawnId, pick, press, textOf } from "./support/drilling.ts";
@@ -61,9 +61,9 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 			groups: { fulfillment: { name: "Fulfillment" }, billing: { name: "Billing" } },
 		}),
 	);
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 
 	// Fulfillment crosses two services; the worker inside Shipping is also

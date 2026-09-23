@@ -167,11 +167,11 @@ interface ThreadLinkActionCompletion {
 interface ThreadLinkPaneCapture {
 	readonly paneId: string;
 	readonly transport: ThreadLinkTransportPort;
-	readonly hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[];
+	readonly serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[];
 }
 
 /** A host-owned recovery this pane may run. */
-interface ThreadLinkHostRecovery {
+interface ThreadLinkServerRecovery {
 	readonly paneId: string;
 	readonly intent: ThreadLinkRecoveryIntent;
 	readonly recover: () => Promise<void>;
@@ -181,9 +181,9 @@ interface ThreadLinkHostRecovery {
 interface ThreadLinkControllerOptions {
 	/** Read once per action; a later focus change cannot reach a running action. */
 	readonly capturePane: () => ThreadLinkPaneCapture;
-	readonly captureHostRecovery?: (
+	readonly captureServerRecovery?: (
 		target: ThreadLinkRecoveryTarget,
-	) => ThreadLinkHostRecovery | null;
+	) => ThreadLinkServerRecovery | null;
 }
 
 /** The thread-link action controller. */
@@ -218,7 +218,7 @@ export {
 	type ThreadLinkController,
 	type ThreadLinkControllerOptions,
 	type ThreadLinkControllerRecoveryIntent,
-	type ThreadLinkHostRecovery,
+	type ThreadLinkServerRecovery,
 	type ThreadLinkInventory,
 	type ThreadLinkInventoryRecord,
 	type ThreadLinkListedStatus,

@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 // The whole path a person and an agent actually use: a command makes a board,
 // a command changes it, a command reads it back, the canvas is restarted, and
@@ -14,7 +14,7 @@ import { runCanvasCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-lifecycle-"));
-let canvas: OwnedCanvas;
+let canvas: OwnedServer;
 
 /**
  * Run one archboard command against the owned canvas.
@@ -23,7 +23,7 @@ let canvas: OwnedCanvas;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: canvas.base, args, input });
 
 /** The variant ancestry fields exposed by the board listing. */
 function listedVariants(board: Pick<SemanticBoard, "variants">) {
@@ -36,7 +36,7 @@ function listedVariants(board: Pick<SemanticBoard, "variants">) {
 }
 
 beforeAll(async () => {
-	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	canvas = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
@@ -423,7 +423,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// rather than in the environment: one app-server serves every thread, so
 		// an exported value would stamp one session's identity on another's writes.
 		const before = heard.length;
-		const bound = runCanvasCli({
+		const bound = runServerCli({
 			repoRoot,
 			vault,
 			base: canvas.base,

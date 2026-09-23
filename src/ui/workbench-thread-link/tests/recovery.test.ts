@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createThreadLinkController } from "@/ui/workbench-thread-link";
-import { FakeTransport, capturing, hostOwner } from "@/ui/workbench-thread-link/tests/fixtures";
+import { FakeTransport, capturing, serverOwner } from "@/ui/workbench-thread-link/tests/fixtures";
 
 describe("thread-link recovery actions", () => {
 	test("refreshing state and re-reading the account run through the transport", async () => {
@@ -31,7 +31,7 @@ describe("thread-link recovery actions", () => {
 		const calls: string[] = [];
 		const controller = createThreadLinkController({
 			capturePane: capturing(transport, ["unlock_home"]),
-			captureHostRecovery: hostOwner("pane-a", (target) => {
+			captureServerRecovery: serverOwner("pane-a", (target) => {
 				calls.push(`${target.paneId}:${target.intent}`);
 				return Promise.resolve();
 			}),
@@ -45,7 +45,7 @@ describe("thread-link recovery actions", () => {
 		const transport = new FakeTransport();
 		const controller = createThreadLinkController({
 			capturePane: capturing(transport, ["repair_storage"]),
-			captureHostRecovery: hostOwner("pane-b", () =>
+			captureServerRecovery: serverOwner("pane-b", () =>
 				Promise.reject(new Error("This recovery must never run.")),
 			),
 		});
@@ -57,7 +57,7 @@ describe("thread-link recovery actions", () => {
 		const transport = new FakeTransport();
 		const controller = createThreadLinkController({
 			capturePane: capturing(transport, ["start_workbench"]),
-			captureHostRecovery: hostOwner("pane-a", () =>
+			captureServerRecovery: serverOwner("pane-a", () =>
 				Promise.reject(new Error("The Codex process refused to start.")),
 			),
 		});

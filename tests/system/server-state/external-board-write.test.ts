@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
@@ -78,10 +78,10 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	const root = mkdtempSync(join(tmpdir(), "archboard-external-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
-		env: { LOG_FILE_PATH: join(root, "canvas.log") },
+		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
 	resources.defer(() => canvas.dispose());
 	const request = createRequester(canvas);
@@ -155,10 +155,10 @@ test("a second pane arriving does not swallow the news for the pane already ther
 	const file = join(vault, "payments.semantic.json");
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
-		env: { LOG_FILE_PATH: join(root, "canvas.log") },
+		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
 	resources.defer(() => canvas.dispose());
 	const request = createRequester(canvas);
@@ -208,10 +208,10 @@ test("a board that was already in the vault is watched from the moment it is sho
 	const file = join(vault, "payments.semantic.json");
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
-		env: { LOG_FILE_PATH: join(root, "canvas.log") },
+		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
 	resources.defer(() => canvas.dispose());
 	const request = createRequester(canvas);

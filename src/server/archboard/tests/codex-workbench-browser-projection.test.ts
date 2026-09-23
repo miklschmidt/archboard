@@ -19,8 +19,8 @@ import {
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
-	projectCanvasBrowserReadiness,
-	type CanvasReadinessInput,
+	projectServerBrowserReadiness,
+	type ServerReadinessInput,
 } from "../codex-workbench-adapters.js";
 import { processFacts } from "./support/codex-workbench-process-fixture.js";
 import { projectionHarness } from "./support/codex-workbench-projection-harness.js";
@@ -68,15 +68,15 @@ const signedInAccount = {
 		account: { type: "chatgpt", email: "readiness@example.test", planType: "plus" },
 		requiresOpenaiAuth: true,
 	},
-} as const satisfies CanvasReadinessInput["account"];
+} as const satisfies ServerReadinessInput["account"];
 
 test("the browser voice-context byte limits stay pinned to their producer contracts", () => {
 	expect(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES).toBe(CALLBACK_MAX_UTF8_BYTES);
 	expect(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES).toBe(SEMANTIC_CONTEXT_LIMITS.briefBytes);
 });
 
-function readiness(overrides: Partial<CanvasReadinessInput>): BrowserReadiness {
-	const value = projectCanvasBrowserReadiness({
+function readiness(overrides: Partial<ServerReadinessInput>): BrowserReadiness {
+	const value = projectServerBrowserReadiness({
 		process: processFacts(),
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },

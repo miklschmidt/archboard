@@ -92,7 +92,7 @@ function browserEntry(
  * @param callbacks Where the recorded deliveries are read from.
  * @returns The voice context, or null while no session is running.
  */
-export function projectCanvasVoiceContext(
+export function projectServerVoiceContext(
 	generation: CodexRealtimeGeneration | null,
 	callbacks: Pick<CoordinatorCallbacks, "inspectHistory">,
 ): BrowserVoiceContext | null {

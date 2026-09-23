@@ -6,24 +6,24 @@ import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
 } from "@/server/archboard/lib/codex-workbench";
-import type { CanvasBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
-import type { CanvasDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
-import type { CanvasDynamicAuthorityAdapters } from "@/server/archboard/lib/codex-workbench-authority";
-import type { CanvasDynamicLifecycleOwner } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
-import type { CanvasTimelineOwner } from "@/server/archboard/lib/codex-workbench-timeline";
+import type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
+import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
+import type { ServerDynamicAuthorityAdapters } from "@/server/archboard/lib/codex-workbench-authority";
+import type { ServerDynamicLifecycleOwner } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
+import type { ServerTimelineOwner } from "@/server/archboard/lib/codex-workbench-timeline";
 
 /** Everything one generation owns beyond the component graph itself. */
 interface GenerationOwners {
-	approval: CanvasDynamicApprovalOwner | null;
-	authority: CanvasDynamicAuthorityAdapters | null;
-	lifecycle: CanvasDynamicLifecycleOwner | null;
+	approval: ServerDynamicApprovalOwner | null;
+	authority: ServerDynamicAuthorityAdapters | null;
+	lifecycle: ServerDynamicLifecycleOwner | null;
 	currentCoordinatorCall: LogicalToolCallCorrelation | null;
-	browserState: CanvasBrowserBindingState;
+	browserState: ServerBrowserBindingState;
 	approvalProjectionInstalled: boolean;
 	projectionListeners: Set<() => void>;
 	accountListeners: Set<(event: TransportServerNotification) => void>;
 	dynamicProjectionUnsubscribe: (() => void) | null;
-	timeline: CanvasTimelineOwner | null;
+	timeline: ServerTimelineOwner | null;
 	retired: boolean;
 }
 

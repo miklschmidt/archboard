@@ -1,4 +1,4 @@
-import type { OwnedCanvas } from "./owned-server.ts";
+import type { OwnedServer } from "./owned-server.ts";
 
 export interface JsonResponse<T> {
 	status: number;
@@ -13,7 +13,7 @@ export interface JsonRequestOptions {
 }
 
 export async function readOwnedJsonResponse<T>(
-	canvas: OwnedCanvas,
+	canvas: OwnedServer,
 	responsePromise: Promise<Response>,
 ): Promise<JsonResponse<T>> {
 	await canvas.assertRunning();
@@ -29,7 +29,7 @@ export async function readOwnedJsonResponse<T>(
 	}
 }
 
-export function createJsonRequester(canvas: OwnedCanvas) {
+export function createJsonRequester(canvas: OwnedServer) {
 	return async <T>(path: string, options: JsonRequestOptions = {}): Promise<JsonResponse<T>> => {
 		const method = (options.method ?? "GET").toUpperCase();
 		const url = new URL(path, canvas.base);

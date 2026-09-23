@@ -92,7 +92,7 @@ function tracerPids(processGroup: number): number[] {
 	});
 }
 
-function tracedCanvasMain(): void {
+function tracedServerMain(): void {
 	const serverEntry = process.env[SERVER_ENTRY_ENV];
 	const traceFile = process.env[TRACE_FILE_ENV];
 	if (!serverEntry) {
@@ -139,7 +139,7 @@ function tracedCanvasMain(): void {
 }
 
 if (import.meta.main) {
-	tracedCanvasMain();
+	tracedServerMain();
 }
 
 export { type FsyncTraceEvidence, readFsyncTrace, tracerPids };

@@ -70,7 +70,7 @@ function codexProcessLine(codex: CodexProcessError): string {
  * @param error Whatever startup threw.
  * @returns The line.
  */
-export function canvasStartupFailureMessage(error: unknown): string {
+export function serverStartupFailureMessage(error: unknown): string {
 	const codex = codexFailure(error);
 	if (codex instanceof CodexExecutableError) {
 		return `Codex startup refused. ${codex.message}`;

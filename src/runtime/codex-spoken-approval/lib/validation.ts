@@ -34,7 +34,7 @@ interface CoordinatorIdentity {
 	readonly threadId: ThreadId;
 }
 
-interface ValidationHost {
+interface ValidationContext {
 	readonly approvalBroker: Pick<
 		CodexApprovalBroker,
 		"get" | "spokenEligibility" | "spokenEffectPresentation"
@@ -99,7 +99,7 @@ function armInputText(input: SpokenApprovalArmInput): ArmInputText | null {
 }
 
 /** The host state an arm runs against, or the refusal that stops it. */
-type ArmHostState =
+type ArmServerState =
 	| {
 			readonly ok: true;
 			readonly coordinator: CoordinatorIdentity;
@@ -114,7 +114,7 @@ type ArmHostState =
  * @param input - The arm request.
  * @returns The host state, or the refusal.
  */
-function armHostState(host: ValidationHost, input: SpokenApprovalArmInput): ArmHostState {
+function armServerState(host: ValidationContext, input: SpokenApprovalArmInput): ArmServerState {
 	const coordinator = host.currentCoordinator();
 	if (coordinator === null) {
 		return { ok: false, result: invalid("coordinator_unavailable") };
@@ -146,12 +146,12 @@ type ArmApproval =
  * @returns The approval, or the refusal.
  */
 function armApproval(
-	host: ValidationHost,
+	host: ValidationContext,
 	input: SpokenApprovalArmInput,
 	coordinator: CoordinatorIdentity,
 ): ArmApproval {
 	let approval: ApprovalSnapshot | undefined;
-	let eligibility: ReturnType<ValidationHost["approvalBroker"]["spokenEligibility"]>;
+	let eligibility: ReturnType<ValidationContext["approvalBroker"]["spokenEligibility"]>;
 	try {
 		approval = host.approvalBroker.get(input.requestId);
 		eligibility = host.approvalBroker.spokenEligibility(input.requestId);
@@ -189,7 +189,7 @@ function sameCoordinatorEpoch(
  */
 function spokenArmRefusal(
 	approval: ApprovalSnapshot,
-	eligibility: ReturnType<ValidationHost["approvalBroker"]["spokenEligibility"]>,
+	eligibility: ReturnType<ValidationContext["approvalBroker"]["spokenEligibility"]>,
 	coordinator: CoordinatorIdentity,
 ): SpokenApprovalFallbackReason | null {
 	if (!eligibility.eligible || approval.state !== "pending") {
@@ -211,7 +211,7 @@ function spokenArmRefusal(
  * @returns The presentation, or null when it does not match.
  */
 function armPresentation(
-	host: ValidationHost,
+	host: ValidationContext,
 	input: SpokenApprovalArmInput,
 	approval: ApprovalSnapshot,
 	effectSummary: string,
@@ -237,7 +237,7 @@ function armPresentation(
  * @param input - The arm request.
  * @returns The validated arm, or the refusal.
  */
-function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmValidationResult {
+function validateArm(host: ValidationContext, input: SpokenApprovalArmInput): ArmValidationResult {
 	const text = armInputText(input);
 	if (text === null) {
 		return invalid("invalid_context");
@@ -245,7 +245,7 @@ function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmVa
 	if (!validSequence(input.effectPrompt.sequence)) {
 		return invalid("invalid_effect_prompt");
 	}
-	const state = armHostState(host, input);
+	const state = armServerState(host, input);
 	if (!state.ok) {
 		return state.result;
 	}
@@ -398,7 +398,7 @@ function armBaseline(
  * @returns The expiry, or the refusal when time is unknown or already past it.
  */
 function armExpiry(
-	host: ValidationHost,
+	host: ValidationContext,
 	values: ArmContextValues,
 ):
 	| { readonly ok: true; readonly expiresAtMs: number }
@@ -432,7 +432,7 @@ type ArmTranscript =
  * @returns The transcript and prompt, or the refusal.
  */
 function armTranscript(
-	host: ValidationHost,
+	host: ValidationContext,
 	input: SpokenApprovalArmInput,
 	effectSummary: string,
 ): ArmTranscript {
@@ -458,7 +458,7 @@ function armTranscript(
  * @returns The validated arm, or the refusal.
  */
 function validateArmContext(
-	host: ValidationHost,
+	host: ValidationContext,
 	input: SpokenApprovalArmInput,
 	values: ArmContextValues,
 ): ArmValidationResult {
@@ -494,7 +494,7 @@ function validateArmContext(
 
 export {
 	type CoordinatorIdentity,
-	type ValidationHost,
+	type ValidationContext,
 	type ArmValidationResult,
 	sameRealtime,
 	recordKey,

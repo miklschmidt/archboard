@@ -1,9 +1,9 @@
-interface OwnedCanvasRegistration {
+interface OwnedServerRegistration {
 	readonly dispose: () => Promise<void>;
 	readonly disposeSync: () => void;
 }
 
-const activeCanvases = new Set<OwnedCanvasRegistration>();
+const activeServeres = new Set<OwnedServerRegistration>();
 let handlersInstalled = false;
 let interruptionInProgress = false;
 
@@ -12,7 +12,7 @@ async function disposeForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
 		return;
 	}
 	interruptionInProgress = true;
-	await Promise.allSettled([...activeCanvases].map(async (canvas) => canvas.dispose()));
+	await Promise.allSettled([...activeServeres].map(async (canvas) => canvas.dispose()));
 	process.exit(signal === "SIGINT" ? 130 : 143);
 }
 
@@ -25,13 +25,13 @@ function onSigterm(): void {
 }
 
 function onExit(): void {
-	for (const canvas of activeCanvases) {
+	for (const canvas of activeServeres) {
 		canvas.disposeSync();
 	}
 }
 
 function uninstallHandlers(): void {
-	if (!handlersInstalled || activeCanvases.size > 0) {
+	if (!handlersInstalled || activeServeres.size > 0) {
 		return;
 	}
 	process.off("SIGINT", onSigint);
@@ -50,15 +50,15 @@ function installHandlers(): void {
 	handlersInstalled = true;
 }
 
-function registerOwnedCanvas(registration: Readonly<OwnedCanvasRegistration>): void {
-	activeCanvases.add(registration);
+function registerOwnedServer(registration: Readonly<OwnedServerRegistration>): void {
+	activeServeres.add(registration);
 	installHandlers();
 }
 
-function unregisterOwnedCanvas(registration: Readonly<OwnedCanvasRegistration>): void {
-	activeCanvases.delete(registration);
+function unregisterOwnedServer(registration: Readonly<OwnedServerRegistration>): void {
+	activeServeres.delete(registration);
 	uninstallHandlers();
 }
 
-export { registerOwnedCanvas, unregisterOwnedCanvas };
-export type { OwnedCanvasRegistration };
+export { registerOwnedServer, unregisterOwnedServer };
+export type { OwnedServerRegistration };

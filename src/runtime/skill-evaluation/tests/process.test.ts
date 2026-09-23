@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { ownProcess, runProcess, startCanvas } from "@/runtime/skill-evaluation/index";
+import { ownProcess, runProcess, startServer } from "@/runtime/skill-evaluation/index";
 import { readProcessObservation } from "@/shared/process-observation";
 import { SKILL_EVAL_HEALTH_POLL_MS, SKILL_EVAL_HEALTH_REQUEST_MS } from "@/shared/timing/timing";
 
@@ -136,7 +136,7 @@ test("cancelled canvas readiness stops the exact fake server and its inherited c
 			if (existsSync(pids)) controller.abort();
 		}, SKILL_EVAL_HEALTH_POLL_MS);
 		await expect(
-			startCanvas(root, { canvasLog: path.join(root, "canvas.log") }, env, controller.signal),
+			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal),
 		).rejects.toBeInstanceOf(Error);
 		const identities: number[] = JSON.parse(readFileSync(pids, "utf8"));
 		identities.forEach(expectStopped);

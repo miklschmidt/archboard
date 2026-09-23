@@ -2,7 +2,7 @@ import type { DynamicWaitOwner } from "../../../../runtime/codex-dynamic-tools/i
 import type { CodexWaitGraph } from "../../../../runtime/codex-wait-graph/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../../runtime/codex-thread-tools/index.js";
 import { createIdentityAuthorities } from "../../../../shared/codex-workbench-identity/index.js";
-import { createCanvasDynamicLifecycleOwner } from "../../codex-workbench-adapters.js";
+import { createServerDynamicLifecycleOwner } from "../../codex-workbench-adapters.js";
 
 /** One current child plus one foreign child, with their wire spellings. */
 function identities() {
@@ -44,12 +44,12 @@ function waitOwnerFor(h: TerminalIdentities, target: string): DynamicWaitOwner {
 
 /** One lifecycle owner whose host wait never settles, with its observed counters. */
 function waitProbe(h: TerminalIdentities, graph: CodexWaitGraph) {
-	const counters = { hostCalls: 0, aborts: 0 };
-	const owner = createCanvasDynamicLifecycleOwner({
+	const counters = { serverCalls: 0, aborts: 0 };
+	const owner = createServerDynamicLifecycleOwner({
 		identity: h.identity,
 		waitGraph: graph,
 		waitForTargets: ({ signal }) => {
-			counters.hostCalls += 1;
+			counters.serverCalls += 1;
 			signal.addEventListener("abort", () => (counters.aborts += 1), { once: true });
 			return new Promise(() => undefined);
 		},

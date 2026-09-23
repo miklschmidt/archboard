@@ -49,7 +49,7 @@ const TIMELINE_CURSOR_LIMIT = 1024;
 const TIMELINE_MAX_BYTES = 768 * 1024;
 
 /** What a browser projection may carry, in turns, items and bytes. */
-interface CanvasBrowserProjectionBudget {
+interface ServerBrowserProjectionBudget {
 	readonly maxTurns: number;
 	readonly maxItemsPerTurn: number;
 	/** Complete encoded BrowserSnapshot bound; the gateway performs the final fit. */
@@ -589,7 +589,7 @@ export {
 	TIMELINE_ITEM_LIMIT,
 };
 export type {
-	CanvasBrowserProjectionBudget,
+	ServerBrowserProjectionBudget,
 	TimelineApprovalView,
 	TimelineData,
 	TimelineItemData,

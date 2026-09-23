@@ -4,12 +4,12 @@ import os from "node:os";
 import path from "node:path";
 
 import {
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	TEST_CANVAS_HEALTH_POLL_MS,
-	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
-	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_HEALTH_POLL_MS,
+	TEST_SERVER_LISTENER_PROBE_TIMEOUT_MS,
+	TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 } from "./timing.ts";
-import { isOwnedCanvasNamespaceRoot, processExists } from "./owned-server.ts";
+import { isOwnedServerNamespaceRoot, processExists } from "./owned-server.ts";
 
 type JsonRecord = Readonly<Record<string, unknown>>;
 
@@ -92,7 +92,7 @@ const isReplacementRecord = (record: JsonRecord): record is JsonRecord & Replace
 async function listenerAnswers(base: string): Promise<boolean> {
 	try {
 		await fetch(`${base}/health`, {
-			signal: AbortSignal.timeout(TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS),
+			signal: AbortSignal.timeout(TEST_SERVER_LISTENER_PROBE_TIMEOUT_MS),
 		});
 		return true;
 	} catch {
@@ -106,11 +106,11 @@ function createLifecycleChildRunner(
 	return async function runLifecycleChild(
 		mode: string,
 		{
-			timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+			timeoutMs = TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 			releaseFile,
 			onRecord,
 			timeoutAfterRecord,
-			spawnWatchdogMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+			spawnWatchdogMs = TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 		}: Readonly<LifecycleChildOptions> = {},
 	): Promise<ChildResult> {
 		const child = spawn(process.execPath, [entrypoint], {
@@ -202,7 +202,7 @@ function createLifecycleChildRunner(
 							resolve(true);
 						});
 					}),
-					Bun.sleep(TEST_CANVAS_SHUTDOWN_TIMEOUT_MS).then(() => false),
+					Bun.sleep(TEST_SERVER_SHUTDOWN_TIMEOUT_MS).then(() => false),
 				]);
 			};
 			if (!(await exitedWithin())) {
@@ -217,14 +217,14 @@ function createLifecycleChildRunner(
 			}
 			const reaped = await exitedWithin();
 			if (replacement !== undefined && reaped) {
-				const reapedBy = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+				const reapedBy = Date.now() + TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 				const waitForReplacementExit = async (): Promise<void> => {
 					const stillAnswers =
 						processExists(replacement.pid) || (await listenerAnswers(replacement.base));
 					if (!stillAnswers || Date.now() >= reapedBy) {
 						return;
 					}
-					await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
+					await Bun.sleep(TEST_SERVER_HEALTH_POLL_MS);
 					await waitForReplacementExit();
 				};
 				await waitForReplacementExit();
@@ -237,7 +237,7 @@ function createLifecycleChildRunner(
 			) {
 				fs.rmSync(recordedVault, { recursive: true, force: true });
 			}
-			if (reaped && owned !== undefined && isOwnedCanvasNamespaceRoot(owned.namespaceRoot)) {
+			if (reaped && owned !== undefined && isOwnedServerNamespaceRoot(owned.namespaceRoot)) {
 				fs.rmSync(owned.namespaceRoot, { recursive: true, force: true });
 			}
 			const detail = reaped ? "did not exit before timeout" : "did not reap after owned group kill";

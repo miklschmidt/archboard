@@ -17,7 +17,7 @@ import {
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startCanvas,
+	startServer,
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 
@@ -30,7 +30,7 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 	mkdirSync(staging, { recursive: true });
 	resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 	const fixture = prepareProductionFixture(resources, extendFixture(staging));
-	const canvas = await startCanvas(fixture);
+	const canvas = await startServer(fixture);
 	resources.defer(() => canvas.dispose());
 	const clientId = `termination-${label}`;
 	const socket = await openApplicationSocket(canvas.base, clientId);

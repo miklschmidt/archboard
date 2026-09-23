@@ -35,11 +35,11 @@ if (
 		"../../../../src/server/archboard/lib/codex-workbench-application.ts",
 	);
 	const actualApplicationModule = await import(applicationPath);
-	const createApplication = actualApplicationModule.createCanvasCodexWorkbenchApplication;
+	const createApplication = actualApplicationModule.createServerCodexWorkbenchApplication;
 	await Promise.resolve(
 		mock.module(applicationPath, () => ({
 			...actualApplicationModule,
-			createCanvasCodexWorkbenchApplication: (...args: Parameters<typeof createApplication>) => {
+			createServerCodexWorkbenchApplication: (...args: Parameters<typeof createApplication>) => {
 				const application = createApplication(...args);
 				let delay: Promise<void> | null = null;
 				return {
@@ -64,7 +64,7 @@ if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	await Promise.resolve(
 		mock.module(timingPath, () => ({
 			...actualTiming,
-			CANVAS_STARTUP_READINESS_MS: readinessTimeoutMs,
+			SERVER_STARTUP_READINESS_MS: readinessTimeoutMs,
 		})),
 	);
 }
@@ -86,7 +86,7 @@ if (
 	await Promise.resolve(
 		mock.module(cleanupPath, () => ({
 			...actualCleanup,
-			failedCanvasCleanupTiming: () => ({
+			failedServerCleanupTiming: () => ({
 				shutdownDeadlineMs: cleanupDeadlineMs,
 				applicationGraceMs: cleanupGraceMs,
 				pollMs: 5,

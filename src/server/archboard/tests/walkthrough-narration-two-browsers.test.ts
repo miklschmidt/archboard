@@ -9,7 +9,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as CanvasModule from "@/server/archboard/index";
+import type * as ServerModule from "@/server/archboard/index";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
 import type * as ContractModule from "@/shared/semantic-board/index";
 import type { PaneRegistration } from "@/runtime/engine/panes";
@@ -22,7 +22,7 @@ const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-two-browsers-"));
 process.env["ARCHBOARD_VAULT"] = vault;
 
-let canvas: typeof CanvasModule;
+let canvas: typeof ServerModule;
 let store: typeof StoreModule;
 let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };

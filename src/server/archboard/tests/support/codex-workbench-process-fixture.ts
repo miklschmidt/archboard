@@ -1,9 +1,9 @@
-import type { CanvasReadinessProcessFacts } from "../../codex-workbench-adapters.js";
+import type { ServerReadinessProcessFacts } from "../../codex-workbench-adapters.js";
 
 /** One typed owned-process fact set; each owner overrides only what it proves. */
 function processFacts(
-	overrides: Partial<CanvasReadinessProcessFacts> = {},
-): CanvasReadinessProcessFacts {
+	overrides: Partial<ServerReadinessProcessFacts> = {},
+): ServerReadinessProcessFacts {
 	return {
 		state: "running",
 		ready: true,
@@ -15,7 +15,7 @@ function processFacts(
 }
 
 /** The steady state: the child runs and its app-server session is initialized. */
-function runningProcessFacts(): CanvasReadinessProcessFacts {
+function runningProcessFacts(): ServerReadinessProcessFacts {
 	return processFacts();
 }
 

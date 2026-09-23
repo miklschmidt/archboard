@@ -9,14 +9,14 @@ import {
 	retire,
 	type GenerationOwners,
 } from "@/server/archboard/lib/codex-workbench-generation-owners";
-import type { CanvasCodexWorkbenchHost } from "@/server/archboard/lib/codex-workbench-server";
+import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
 
 /** An empty SHA-256, which is what an effect-free epoch step hashes to. */
 const EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 /** What building one generation's hooks needs from around it. */
 interface HookContext {
-	readonly host: CanvasCodexWorkbenchHost;
+	readonly host: CodexWorkbenchServer;
 	readonly input: CodexWorkbenchGenerationInput;
 	readonly owners: GenerationOwners;
 }

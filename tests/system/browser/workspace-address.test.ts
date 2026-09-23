@@ -3,14 +3,14 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
-	runCanvasCli,
+	registerServerBase,
+	runServerCli,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { seedSemanticBoard } from "./support/semantic-page.ts";
@@ -61,11 +61,11 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
-	const cli = (...args: string[]): string => runCanvasCli(canvas.base, vault, args);
+	const cli = (...args: string[]): string => runServerCli(canvas.base, vault, args);
 
 	await Promise.all(
 		["payments", "billing", "ledger"].map((board) => seedSemanticBoard(request, board)),
@@ -133,9 +133,9 @@ test("an address naming a board that is not there says so and settles on what is
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "missing-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 	await seedSemanticBoard(request, "payments");
 
@@ -174,9 +174,9 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "variant-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 	await seedSemanticBoard(request, "payments");
 	const branched = await request<{ board: { variants: Array<{ id: string; name: string }> } }>(

@@ -1,44 +1,44 @@
 export {
-	createCanvasBrowserGatewayOptions,
-	createCanvasOrdinaryApprovalActions,
+	createServerBrowserGatewayOptions,
+	createServerOrdinaryApprovalActions,
 } from "@/server/archboard/lib/codex-workbench-browser-gateway";
-export type { CanvasBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
-export { projectCanvasBrowserReadiness } from "@/server/archboard/lib/codex-workbench-readiness";
+export type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
+export { projectServerBrowserReadiness } from "@/server/archboard/lib/codex-workbench-readiness";
 export type {
-	CanvasReadinessInput,
-	CanvasReadinessProcessFacts,
+	ServerReadinessInput,
+	ServerReadinessProcessFacts,
 } from "@/server/archboard/lib/codex-workbench-readiness";
-export { createCanvasDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
+export { createServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 export type {
-	CanvasDynamicApprovalOwner,
-	CanvasDynamicApprovalOwnerOptions,
+	ServerDynamicApprovalOwner,
+	ServerDynamicApprovalOwnerOptions,
 } from "@/server/archboard/lib/codex-workbench-approvals";
-export { createCanvasDynamicAuthorityAdapters } from "@/server/archboard/lib/codex-workbench-authority";
+export { createServerDynamicAuthorityAdapters } from "@/server/archboard/lib/codex-workbench-authority";
 export type {
-	CanvasDynamicAuthorityAdapters,
-	CanvasDynamicAuthorityOptions,
+	ServerDynamicAuthorityAdapters,
+	ServerDynamicAuthorityOptions,
 } from "@/server/archboard/lib/codex-workbench-authority";
 export {
-	createCanvasDynamicLifecycleOwner,
-	createCanvasDynamicOperationIdAdapter,
+	createServerDynamicLifecycleOwner,
+	createServerDynamicOperationIdAdapter,
 } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 export type {
-	CanvasDynamicLifecycleOwner,
-	CanvasDynamicLifecycleOwnerOptions,
+	ServerDynamicLifecycleOwner,
+	ServerDynamicLifecycleOwnerOptions,
 } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 export {
-	createCanvasBrowserProjectionBudget,
-	createCanvasTimelineOwner,
+	createServerBrowserProjectionBudget,
+	createServerTimelineOwner,
 } from "@/server/archboard/lib/codex-workbench-timeline";
 export type {
-	CanvasBrowserProjectionBudget,
-	CanvasTimelineOwner,
-	CanvasTimelineOwnerOptions,
+	ServerBrowserProjectionBudget,
+	ServerTimelineOwner,
+	ServerTimelineOwnerOptions,
 } from "@/server/archboard/lib/codex-workbench-timeline";
-export { createCanvasCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
-export { createCanvasRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
+export { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
+export { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 export { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
-export { createCanvasThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
+export { createServerThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
 // What one coordinator callback correlates the workhorse against. Exported for
 // the owner that holds it to the bound thread rather than to whichever thread
 // started this child: the two part company on a relink, and the coordinator
@@ -46,7 +46,7 @@ export { createCanvasThreadLink } from "@/server/archboard/lib/codex-workbench-s
 export { workhorseLink } from "@/server/archboard/lib/codex-workbench-binding-readers";
 export {
 	bindThreadContextToReadyWorkhorse,
-	clearCanvasThreadContextForLease,
-	createCanvasThreadCandidateInventory,
-	createCanvasThreadLinkActions,
+	clearServerThreadContextForLease,
+	createServerThreadCandidateInventory,
+	createServerThreadLinkActions,
 } from "@/server/archboard/lib/codex-workbench-thread-links";

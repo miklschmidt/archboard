@@ -7,9 +7,9 @@
 // unproven cleanup is said out loud, with the pids to inspect.
 
 import type {
-	CanvasStartupProcessGroupIdentity,
-	CanvasStartupProtocolEvent,
-	CanvasStartupProtocolRecord,
+	ServerStartupProcessGroupIdentity,
+	ServerStartupProtocolEvent,
+	ServerStartupProtocolRecord,
 } from "@/shared/server-startup-terminal";
 import type {
 	CodexProcessGroupInspection,
@@ -17,50 +17,50 @@ import type {
 } from "@/runtime/codex-process/process-group";
 import { errorMessage } from "@/runtime/engine/lib/thrown-error";
 import type {
-	CanvasStartupProtocolReader,
-	FailedCanvasCleanupProtocol,
-	FailedCanvasCleanupTiming,
+	ServerStartupProtocolReader,
+	FailedServerCleanupProtocol,
+	FailedServerCleanupTiming,
 } from "@/runtime/engine/lib/server-startup-protocol";
 import {
-	createCanvasStartupProtocolReader,
-	failedCanvasCleanupTiming,
+	createServerStartupProtocolReader,
+	failedServerCleanupTiming,
 	validateTiming,
 } from "@/runtime/engine/lib/server-startup-protocol";
 
-interface FailedCanvasCleanupOperations {
+interface FailedServerCleanupOperations {
 	readonly now: () => number;
 	readonly wait: (ms: number) => Promise<void>;
-	readonly canvasExited: () => boolean;
-	readonly canvasStopped: () => boolean;
-	readonly waitForCanvasExit: (maxWaitMs: number) => Promise<boolean>;
-	readonly signalCanvas: (signal: NodeJS.Signals) => void;
+	readonly serverExited: () => boolean;
+	readonly serverStopped: () => boolean;
+	readonly waitForServerExit: (maxWaitMs: number) => Promise<boolean>;
+	readonly signalServer: (signal: NodeJS.Signals) => void;
 	readonly inspectGroup: (
-		identity: CanvasStartupProcessGroupIdentity,
+		identity: ServerStartupProcessGroupIdentity,
 	) => CodexProcessGroupInspection;
 	readonly signalGroup: (
-		identity: CanvasStartupProcessGroupIdentity,
+		identity: ServerStartupProcessGroupIdentity,
 		signal: CodexProcessGroupSignal,
 	) => void;
 }
 
-type FailedCanvasCleanupResult =
+type FailedServerCleanupResult =
 	| {
 			readonly cleanup: "proven";
 			readonly owner: "application" | "launcher";
-			readonly group: CanvasStartupProcessGroupIdentity | null;
+			readonly group: ServerStartupProcessGroupIdentity | null;
 	  }
 	| {
 			readonly cleanup: "unproven";
 			readonly owner: "unknown";
-			readonly group: CanvasStartupProcessGroupIdentity | null;
+			readonly group: ServerStartupProcessGroupIdentity | null;
 			readonly reason: string;
 	  };
 
-interface CompleteFailedCanvasCleanupOptions {
-	readonly canvasPid: number;
-	readonly protocol: FailedCanvasCleanupProtocol;
-	readonly operations: FailedCanvasCleanupOperations;
-	readonly timing: FailedCanvasCleanupTiming;
+interface CompleteFailedServerCleanupOptions {
+	readonly serverPid: number;
+	readonly protocol: FailedServerCleanupProtocol;
+	readonly operations: FailedServerCleanupOperations;
+	readonly timing: FailedServerCleanupTiming;
 }
 
 /**
@@ -70,9 +70,9 @@ interface CompleteFailedCanvasCleanupOptions {
  * @returns The unproven result.
  */
 function unproven(
-	group: CanvasStartupProcessGroupIdentity | null,
+	group: ServerStartupProcessGroupIdentity | null,
 	reason: string,
-): FailedCanvasCleanupResult {
+): FailedServerCleanupResult {
 	return { cleanup: "unproven", owner: "unknown", group, reason };
 }
 
@@ -88,37 +88,37 @@ function remaining(now: () => number, deadlineAtMs: number): number {
 
 /**
  * Words for one Codex group that did not go quiet under a frozen canvas.
- * @param canvasPid The frozen canvas.
+ * @param serverPid The frozen canvas.
  * @param identity The group.
  * @param state What inspection found, or which operation failed.
  * @returns The reason text.
  */
-function stoppedCanvasGroup(
-	canvasPid: number,
-	identity: CanvasStartupProcessGroupIdentity,
+function stoppedServerGroup(
+	serverPid: number,
+	identity: ServerStartupProcessGroupIdentity,
 	state: CodexProcessGroupInspection | "inspection_error" | "signalling_error",
 ): string {
 	return (
-		`Canvas pid ${canvasPid} remains stopped with Codex group leader pid ${identity.leaderPid}, ` +
+		`Canvas pid ${serverPid} remains stopped with Codex group leader pid ${identity.leaderPid}, ` +
 		`pgid ${identity.pgid}, starttime ${identity.leaderStartTime} in state ${state}.`
 	);
 }
 
 /**
  * Words for several Codex groups that did not go quiet under a frozen canvas.
- * @param canvasPid The frozen canvas.
+ * @param serverPid The frozen canvas.
  * @param states The groups and what inspection found for each.
  * @returns The reason text.
  */
-function stoppedCanvasGroups(
-	canvasPid: number,
+function stoppedServerGroups(
+	serverPid: number,
 	states: readonly {
-		readonly identity: CanvasStartupProcessGroupIdentity;
+		readonly identity: ServerStartupProcessGroupIdentity;
 		readonly status: CodexProcessGroupInspection;
 	}[],
 ): string {
 	return (
-		`Canvas pid ${canvasPid} remains stopped with non-quiescent Codex groups: ` +
+		`Canvas pid ${serverPid} remains stopped with non-quiescent Codex groups: ` +
 		states
 			.map(
 				({ identity, status }) =>
@@ -137,17 +137,17 @@ function stoppedCanvasGroups(
  * @returns True when the canvas exited before the deadline.
  */
 async function reapOuter(
-	operations: FailedCanvasCleanupOperations,
+	operations: FailedServerCleanupOperations,
 	deadlineAtMs: number,
 ): Promise<boolean> {
-	if (!operations.canvasExited()) {
-		operations.signalCanvas("SIGKILL");
+	if (!operations.serverExited()) {
+		operations.signalServer("SIGKILL");
 	}
-	if (operations.canvasExited()) {
+	if (operations.serverExited()) {
 		return true;
 	}
 	const waitMs = remaining(operations.now, deadlineAtMs);
-	return waitMs > 0 && (await operations.waitForCanvasExit(waitMs));
+	return waitMs > 0 && (await operations.waitForServerExit(waitMs));
 }
 
 /**
@@ -158,34 +158,34 @@ async function reapOuter(
  * @param deadlineAtMs The absolute cleanup deadline.
  * @returns True once the canvas is exited or stopped.
  */
-async function freezeCanvas(
-	operations: FailedCanvasCleanupOperations,
-	timing: FailedCanvasCleanupTiming,
+async function freezeServer(
+	operations: FailedServerCleanupOperations,
+	timing: FailedServerCleanupTiming,
 	deadlineAtMs: number,
 ): Promise<boolean> {
-	if (operations.canvasExited()) {
+	if (operations.serverExited()) {
 		return true;
 	}
-	operations.signalCanvas("SIGSTOP");
+	operations.signalServer("SIGSTOP");
 	while (
-		!operations.canvasExited() &&
-		!operations.canvasStopped() &&
+		!operations.serverExited() &&
+		!operations.serverStopped() &&
 		operations.now() < deadlineAtMs
 	) {
 		// oxlint-disable-next-line no-await-in-loop -- polling the frozen state one interval at a time
 		await operations.wait(Math.min(timing.pollMs, remaining(operations.now, deadlineAtMs)));
 	}
-	return operations.canvasExited() || operations.canvasStopped();
+	return operations.serverExited() || operations.serverStopped();
 }
 
 interface GroupState {
-	readonly identity: CanvasStartupProcessGroupIdentity;
+	readonly identity: ServerStartupProcessGroupIdentity;
 	status: CodexProcessGroupInspection;
 }
 
 /** Which group and which operation a thrown inspection or signal was about. */
 interface GroupOperationError {
-	readonly identity: CanvasStartupProcessGroupIdentity;
+	readonly identity: ServerStartupProcessGroupIdentity;
 	readonly operation: "inspection" | "signalling";
 	readonly cause: unknown;
 }
@@ -203,8 +203,8 @@ class TransferredGroups {
 	 * @param identities The groups the canvas transferred, in order.
 	 */
 	constructor(
-		private readonly operations: FailedCanvasCleanupOperations,
-		identities: readonly CanvasStartupProcessGroupIdentity[],
+		private readonly operations: FailedServerCleanupOperations,
+		identities: readonly ServerStartupProcessGroupIdentity[],
 	) {
 		for (const identity of identities) {
 			this.states.push({ identity, status: this.inspect(identity) });
@@ -216,7 +216,7 @@ class TransferredGroups {
 	 * @param identity The group.
 	 * @returns What the inspection found.
 	 */
-	private inspect(identity: CanvasStartupProcessGroupIdentity): CodexProcessGroupInspection {
+	private inspect(identity: ServerStartupProcessGroupIdentity): CodexProcessGroupInspection {
 		try {
 			return this.operations.inspectGroup(identity);
 		} catch (cause) {
@@ -298,7 +298,7 @@ class GroupOperationFailure extends Error {
  */
 async function terminateGroups(
 	groups: TransferredGroups,
-	timing: FailedCanvasCleanupTiming,
+	timing: FailedServerCleanupTiming,
 	applicationGraceAtMs: number,
 	deadlineAtMs: number,
 ): Promise<void> {
@@ -311,20 +311,20 @@ async function terminateGroups(
 
 /**
  * The unproven outcome for groups that did not go quiet.
- * @param canvasPid The frozen canvas.
+ * @param serverPid The frozen canvas.
  * @param notQuiescent The groups still live, in transfer order.
  * @returns The unproven result naming the first of them.
  */
 function groupsStillLive(
-	canvasPid: number,
+	serverPid: number,
 	notQuiescent: readonly GroupState[],
-): FailedCanvasCleanupResult {
+): FailedServerCleanupResult {
 	const first = notQuiescent[0]!;
 	return unproven(
 		first.identity,
 		notQuiescent.length === 1
-			? stoppedCanvasGroup(canvasPid, first.identity, first.status)
-			: stoppedCanvasGroups(canvasPid, notQuiescent),
+			? stoppedServerGroup(serverPid, first.identity, first.status)
+			: stoppedServerGroups(serverPid, notQuiescent),
 	);
 }
 
@@ -337,17 +337,17 @@ function groupsStillLive(
  * @returns Proven when every group is quiescent and the canvas reaped.
  */
 async function takeCleanupOwnership(
-	identities: readonly CanvasStartupProcessGroupIdentity[],
-	options: CompleteFailedCanvasCleanupOptions,
+	identities: readonly ServerStartupProcessGroupIdentity[],
+	options: CompleteFailedServerCleanupOptions,
 	applicationGraceAtMs: number,
 	deadlineAtMs: number,
-): Promise<FailedCanvasCleanupResult> {
+): Promise<FailedServerCleanupResult> {
 	const { operations, timing } = options;
 	const latest = identities.at(-1)!;
-	if (!(await freezeCanvas(operations, timing, deadlineAtMs))) {
+	if (!(await freezeServer(operations, timing, deadlineAtMs))) {
 		return unproven(
 			latest,
-			`The launcher could not freeze canvas pid ${options.canvasPid} before taking Codex group ${latest.pgid}.`,
+			`The launcher could not freeze canvas pid ${options.serverPid} before taking Codex group ${latest.pgid}.`,
 		);
 	}
 	let groups: TransferredGroups;
@@ -361,17 +361,17 @@ async function takeCleanupOwnership(
 				: { identity: identities[0]!, operation: "inspection", cause: error };
 		return unproven(
 			failed.identity,
-			`${stoppedCanvasGroup(options.canvasPid, failed.identity, `${failed.operation}_error`)} ${errorMessage(failed.cause)}.`,
+			`${stoppedServerGroup(options.serverPid, failed.identity, `${failed.operation}_error`)} ${errorMessage(failed.cause)}.`,
 		);
 	}
 	const notQuiescent = groups.states.filter((state) => state.status !== "quiescent");
 	if (notQuiescent.length > 0) {
-		return groupsStillLive(options.canvasPid, notQuiescent);
+		return groupsStillLive(options.serverPid, notQuiescent);
 	}
 	if (!(await reapOuter(operations, deadlineAtMs))) {
 		return unproven(
 			latest,
-			`The launcher proved every transferred Codex group quiescent but could not prove canvas pid ${options.canvasPid} reaped before the cleanup deadline.`,
+			`The launcher proved every transferred Codex group quiescent but could not prove canvas pid ${options.serverPid} reaped before the cleanup deadline.`,
 		);
 	}
 	return { cleanup: "proven", owner: "launcher", group: latest };
@@ -384,8 +384,8 @@ async function takeCleanupOwnership(
  * @returns True when leader pid, pgid and start time all match.
  */
 function sameGroup(
-	a: CanvasStartupProcessGroupIdentity,
-	b: CanvasStartupProcessGroupIdentity,
+	a: ServerStartupProcessGroupIdentity,
+	b: ServerStartupProcessGroupIdentity,
 ): boolean {
 	return (
 		a.leaderPid === b.leaderPid && a.pgid === b.pgid && a.leaderStartTime === b.leaderStartTime
@@ -405,12 +405,12 @@ const CONTINUE: ProtocolStep = { kind: "continue" };
  * act on: the grace ran out, the protocol broke or closed, or the record named
  * some other canvas.
  * @param event The event, or null when the grace ran out.
- * @param canvasPid The pid the records must name.
+ * @param serverPid The pid the records must name.
  * @returns The stop, or null when the event is a usable record.
  */
 function eventStop(
-	event: CanvasStartupProtocolEvent | null,
-	canvasPid: number,
+	event: ServerStartupProtocolEvent | null,
+	serverPid: number,
 ): ProtocolStep | null {
 	if (event === null) {
 		return { kind: "stop", reason: "The canvas cleanup proof timed out." };
@@ -421,10 +421,10 @@ function eventStop(
 	if (event.kind === "closed") {
 		return { kind: "stop", reason: "The canvas cleanup protocol closed before terminal proof." };
 	}
-	if (event.record.canvasPid !== canvasPid) {
+	if (event.record.serverPid !== serverPid) {
 		return {
 			kind: "stop",
-			reason: `The canvas cleanup protocol named pid ${event.record.canvasPid} instead of ${canvasPid}.`,
+			reason: `The canvas cleanup protocol named pid ${event.record.serverPid} instead of ${serverPid}.`,
 		};
 	}
 	return null;
@@ -437,8 +437,8 @@ function eventStop(
  * @returns Whether to keep waiting, stop with a reason, or accept the proof.
  */
 function recordStep(
-	record: CanvasStartupProtocolRecord,
-	groups: CanvasStartupProcessGroupIdentity[],
+	record: ServerStartupProtocolRecord,
+	groups: ServerStartupProcessGroupIdentity[],
 ): ProtocolStep {
 	if (record.kind === "ownership") {
 		const ownedGroup = record.codexGroup;
@@ -459,16 +459,16 @@ function recordStep(
 /**
  * Interpret one protocol event, collecting transferred groups on the way.
  * @param event The event, or null when the grace ran out.
- * @param canvasPid The pid the records must name.
+ * @param serverPid The pid the records must name.
  * @param groups The groups reported so far; extended in place.
  * @returns Whether to keep waiting, stop with a reason, or accept the proof.
  */
 function protocolStep(
-	event: CanvasStartupProtocolEvent | null,
-	canvasPid: number,
-	groups: CanvasStartupProcessGroupIdentity[],
+	event: ServerStartupProtocolEvent | null,
+	serverPid: number,
+	groups: ServerStartupProcessGroupIdentity[],
 ): ProtocolStep {
-	const stop = eventStop(event, canvasPid);
+	const stop = eventStop(event, serverPid);
 	if (stop) {
 		return stop;
 	}
@@ -487,15 +487,15 @@ function protocolStep(
  * @returns Proven, or the reason the canvas's proof did not arrive.
  */
 async function awaitApplicationProof(
-	options: CompleteFailedCanvasCleanupOptions,
+	options: CompleteFailedServerCleanupOptions,
 	applicationGraceAtMs: number,
-	groups: CanvasStartupProcessGroupIdentity[],
+	groups: ServerStartupProcessGroupIdentity[],
 ): Promise<Exclude<ProtocolStep, { kind: "continue" }>> {
 	const { operations, protocol } = options;
 	while (operations.now() < applicationGraceAtMs) {
 		// oxlint-disable-next-line no-await-in-loop -- protocol events are consumed in order
 		const event = await protocol.next(remaining(operations.now, applicationGraceAtMs));
-		const step = protocolStep(event, options.canvasPid, groups);
+		const step = protocolStep(event, options.serverPid, groups);
 		if (step.kind !== "continue") {
 			return step;
 		}
@@ -528,14 +528,14 @@ function noGroupTransferred(transferReason: string): string {
  * @returns Proven, or the reason the pid outlived its own proof.
  */
 async function afterApplicationProof(
-	options: CompleteFailedCanvasCleanupOptions,
-	groups: readonly CanvasStartupProcessGroupIdentity[],
+	options: CompleteFailedServerCleanupOptions,
+	groups: readonly ServerStartupProcessGroupIdentity[],
 	deadlineAtMs: number,
-): Promise<FailedCanvasCleanupResult> {
+): Promise<FailedServerCleanupResult> {
 	if (!(await reapOuter(options.operations, deadlineAtMs))) {
 		return unproven(
 			groups.at(-1) ?? null,
-			`The canvas proved application cleanup but pid ${options.canvasPid} did not reap before the cleanup deadline.`,
+			`The canvas proved application cleanup but pid ${options.serverPid} did not reap before the cleanup deadline.`,
 		);
 	}
 	return { cleanup: "proven", owner: "application", group: groups.at(-1) ?? null };
@@ -549,18 +549,18 @@ async function afterApplicationProof(
  * @param options The canvas pid, its protocol reader, the process operations and the timing.
  * @returns Whether cleanup was proven, by whom, and which group it concerned.
  */
-async function completeFailedCanvasCleanup(
-	options: CompleteFailedCanvasCleanupOptions,
-): Promise<FailedCanvasCleanupResult> {
+async function completeFailedServerCleanup(
+	options: CompleteFailedServerCleanupOptions,
+): Promise<FailedServerCleanupResult> {
 	validateTiming(options.timing);
 	const { operations, timing } = options;
 	const startedAtMs = operations.now();
 	const deadlineAtMs = startedAtMs + timing.shutdownDeadlineMs;
 	const applicationGraceAtMs = startedAtMs + timing.applicationGraceMs;
-	const groups: CanvasStartupProcessGroupIdentity[] = [];
+	const groups: ServerStartupProcessGroupIdentity[] = [];
 
-	if (!operations.canvasExited()) {
-		operations.signalCanvas("SIGTERM");
+	if (!operations.serverExited()) {
+		operations.signalServer("SIGTERM");
 	}
 	const outcome = await awaitApplicationProof(options, applicationGraceAtMs, groups);
 	if (outcome.kind === "proven") {
@@ -573,13 +573,13 @@ async function completeFailedCanvasCleanup(
 }
 
 export {
-	type FailedCanvasCleanupTiming,
-	failedCanvasCleanupTiming,
-	type FailedCanvasCleanupProtocol,
-	type CanvasStartupProtocolReader,
-	createCanvasStartupProtocolReader,
-	type FailedCanvasCleanupOperations,
-	type FailedCanvasCleanupResult,
-	type CompleteFailedCanvasCleanupOptions,
-	completeFailedCanvasCleanup,
+	type FailedServerCleanupTiming,
+	failedServerCleanupTiming,
+	type FailedServerCleanupProtocol,
+	type ServerStartupProtocolReader,
+	createServerStartupProtocolReader,
+	type FailedServerCleanupOperations,
+	type FailedServerCleanupResult,
+	type CompleteFailedServerCleanupOptions,
+	completeFailedServerCleanup,
 };

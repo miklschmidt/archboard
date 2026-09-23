@@ -4,7 +4,7 @@ import type { DynamicServerRequest } from "@/runtime/codex-transport";
 import type { SpokenApprovalToolResult } from "@/runtime/codex-spoken-approval/lib/contract";
 import type { ActiveSlot } from "@/runtime/codex-spoken-approval/lib/state";
 import { clearTimer } from "@/runtime/codex-spoken-approval/lib/gate-state";
-import type { ClassifierTurnHost } from "@/runtime/codex-spoken-approval/lib/classifier-turn";
+import type { ClassifierTurnContext } from "@/runtime/codex-spoken-approval/lib/classifier-turn";
 import { refusal, safeMessage, success } from "@/runtime/codex-spoken-approval/lib/classifier-turn";
 import { validateResolverCall } from "@/runtime/codex-spoken-approval/lib/resolver-validation";
 import type { CallValidationFailure } from "@/runtime/codex-spoken-approval/lib/validation-primitives";
@@ -27,7 +27,7 @@ function validationRefusal(failure: CallValidationFailure): SpokenApprovalToolRe
  * @returns The refusal to return, or null when the call may proceed.
  */
 function resolverEntryRefusal(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): SpokenApprovalToolResult | null {
@@ -52,7 +52,7 @@ function resolverEntryRefusal(
  * @returns The refusal to return, or null when the call may settle the approval.
  */
 async function classifierIdentityRefusal(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): Promise<SpokenApprovalToolResult | null> {
@@ -72,7 +72,7 @@ async function classifierIdentityRefusal(
  * @returns The refusal to return, or null once the identity is known.
  */
 async function awaitClassifierIdentity(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): Promise<SpokenApprovalToolResult | null> {
@@ -103,7 +103,7 @@ async function awaitClassifierIdentity(
  * @param host - The classifier host.
  * @param slot - The armed gate.
  */
-function settleSpokenApproval(host: ClassifierTurnHost, slot: ActiveSlot): void {
+function settleSpokenApproval(host: ClassifierTurnContext, slot: ActiveSlot): void {
 	slot.phase = "settled";
 	slot.reason = null;
 	clearTimer(slot);
@@ -120,7 +120,7 @@ function settleSpokenApproval(host: ClassifierTurnHost, slot: ActiveSlot): void 
  * @returns The refusal to return, or null when the call may settle the approval.
  */
 function resolverRefusal(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): SpokenApprovalToolResult | null {
@@ -171,7 +171,7 @@ function settlementRefusal(error: unknown): SpokenApprovalToolResult {
  * @returns The tool result for the resolver call.
  */
 async function handleResolver(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 	verdict: "accept" | "decline",
@@ -215,7 +215,7 @@ async function handleResolver(
  * @returns The tool result for the resolver call.
  */
 function publishSettlement(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	verdict: "accept" | "decline",
 	settlement: ApprovalSettlement,
@@ -245,7 +245,7 @@ function publishSettlement(
  * @returns The tool result for the resolver call.
  */
 async function resolveSpokenApproval(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): Promise<SpokenApprovalToolResult> {

@@ -14,13 +14,13 @@ import {
 	codexWorkbenchRoot,
 	extendFixture,
 	type FixtureRecord,
-	type CanvasProcess,
+	type ServerProcess,
 	pane,
 	records,
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startCanvas,
+	startServer,
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 import {
@@ -31,7 +31,7 @@ import {
 describe.serial("composed Codex process lifecycle", () => {
 	test("owns exact storage, the closed reverse router, disconnect, and terminal cleanup", async () => {
 		const resources = new AsyncDisposableStack();
-		let canvas: CanvasProcess | null = null;
+		let canvas: ServerProcess | null = null;
 		try {
 			const staging = join(
 				process.env["TMPDIR"] ?? "/tmp",
@@ -42,9 +42,9 @@ describe.serial("composed Codex process lifecycle", () => {
 			resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 			const extendedSource = extendFixture(staging);
 			const fixture = prepareProductionFixture(resources, extendedSource);
-			canvas = await startCanvas(fixture);
-			const ownedCanvas = canvas;
-			resources.defer(() => ownedCanvas.dispose());
+			canvas = await startServer(fixture);
+			const ownedServer = canvas;
+			resources.defer(() => ownedServer.dispose());
 			const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
 			let socket = await openApplicationSocket(canvas.base, "lifecycle-client");
 			resources.defer(() => socket.close());

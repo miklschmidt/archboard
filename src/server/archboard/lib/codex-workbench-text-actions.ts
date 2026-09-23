@@ -25,7 +25,7 @@ function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
 }
 
 /** What the typed-message actions of one generation are closed over. */
-interface CanvasTextActionOptions {
+interface ServerTextActionOptions {
 	readonly identity: CodexWorkbenchComponents["identity"];
 	readonly session: Pick<
 		CodexWorkbenchComponents["session"],
@@ -48,8 +48,8 @@ interface CanvasTextActionOptions {
  * is read.
  * @returns The actions.
  */
-export function createCanvasCanonicalTextActions(
-	options: CanvasTextActionOptions,
+export function createServerCanonicalTextActions(
+	options: ServerTextActionOptions,
 ): BrowserTextActions {
 	/**
 	 * A fresh operation identity, and how it is spelled in the wire field Codex

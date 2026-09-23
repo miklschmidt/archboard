@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 
-import { TEST_CANVAS_HEALTH_POLL_MS } from "./timing.ts";
+import { TEST_SERVER_HEALTH_POLL_MS } from "./timing.ts";
 import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
@@ -118,10 +118,10 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 		async () => Response.json({ pid: spawnCount === 1 ? 1_001 : 99_999 }),
 		{ preconnect: globalThis.fetch.preconnect },
 	);
-	const ownedCanvasUrl = new URL("./owned-server.ts", import.meta.url).href;
-	const { startOwnedCanvas: startMockedCanvas } = await import(ownedCanvasUrl);
+	const ownedServerUrl = new URL("./owned-server.ts", import.meta.url).href;
+	const { startOwnedServer: startMockedServer } = await import(ownedServerUrl);
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-failed-reap-"));
-	const canvas = await startMockedCanvas({ serverPath, vault });
+	const canvas = await startMockedServer({ serverPath, vault });
 	let surfaced = "";
 	try {
 		await canvas.restart();
@@ -144,7 +144,7 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 	process.exit(0);
 }
 
-const { isOwnedCanvasNamespaceRoot, processExists, startOwnedCanvas, waitForProcessExit } =
+const { isOwnedServerNamespaceRoot, processExists, startOwnedServer, waitForProcessExit } =
 	await import("./owned-server.ts");
 
 describe("owned canvas direct lifecycle", () => {
@@ -158,7 +158,7 @@ describe("owned canvas direct lifecycle", () => {
 	test("only accepts exact disposable namespace roots for emergency removal", () => {
 		const temporary = fs.realpathSync(path.resolve(os.tmpdir()));
 		expect(
-			isOwnedCanvasNamespaceRoot(path.join(temporary, "archboard-owned-server-Ab3xY9")),
+			isOwnedServerNamespaceRoot(path.join(temporary, "archboard-owned-server-Ab3xY9")),
 		).toBeTrue();
 		for (const unsafe of [
 			path.join(temporary, "archboard-owned-server-"),
@@ -168,13 +168,13 @@ describe("owned canvas direct lifecycle", () => {
 			path.join(temporary, "archboard-owned-server-ab_cde"),
 			path.join(temporary, "nested", "archboard-owned-server-abcdef"),
 		]) {
-			expect(isOwnedCanvasNamespaceRoot(unsafe)).toBeFalse();
+			expect(isOwnedServerNamespaceRoot(unsafe)).toBeFalse();
 		}
 	});
 
 	test("observes a retained short-lived child until delayed disappearance", async () => {
 		const child = Bun.spawn(
-			[process.execPath, "-e", `await Bun.sleep(${TEST_CANVAS_HEALTH_POLL_MS * 10})`],
+			[process.execPath, "-e", `await Bun.sleep(${TEST_SERVER_HEALTH_POLL_MS * 10})`],
 			{ stdout: "ignore", stderr: "ignore" },
 		);
 		try {
@@ -218,7 +218,7 @@ describe("owned canvas direct lifecycle", () => {
 			stdout: "ignore",
 			stderr: "ignore",
 		});
-		const timeoutMs = TEST_CANVAS_HEALTH_POLL_MS * 2;
+		const timeoutMs = TEST_SERVER_HEALTH_POLL_MS * 2;
 		try {
 			let failure: unknown;
 			try {
@@ -239,7 +239,7 @@ describe("owned canvas direct lifecycle", () => {
 	test("allocates and verifies a port when the caller names none", async () => {
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
 		emergencyVaults.add(vault);
-		const canvas = await startOwnedCanvas({ serverPath, vault });
+		const canvas = await startOwnedServer({ serverPath, vault });
 		try {
 			const health = (await fetch(`${canvas.base}/health`).then((response) => response.json())) as {
 				pid: number;
@@ -275,8 +275,8 @@ describe("owned canvas direct lifecycle", () => {
 		const ambientSentinelName = "ARCHBOARD_TEST_AMBIENT_SENTINEL";
 		const priorAmbientSentinel = process.env[ambientSentinelName];
 		process.env[ambientSentinelName] = "ambient-only";
-		let first: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
-		let second: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
+		let first: Awaited<ReturnType<typeof startOwnedServer>> | undefined;
+		let second: Awaited<ReturnType<typeof startOwnedServer>> | undefined;
 		const namespaceRoots: string[] = [];
 		const namespaces: Array<{
 			home: string;
@@ -288,12 +288,12 @@ describe("owned canvas direct lifecycle", () => {
 			ambientSentinel?: string;
 		}> = [];
 		try {
-			first = await startOwnedCanvas({
+			first = await startOwnedServer({
 				serverPath: thisFile,
 				vault: path.join(callerRoot, "vault-first"),
 				env,
 			});
-			second = await startOwnedCanvas({
+			second = await startOwnedServer({
 				serverPath: thisFile,
 				vault: path.join(callerRoot, "vault-second"),
 				env,
@@ -363,7 +363,7 @@ describe("owned canvas direct lifecycle", () => {
 	test("reallocates an automatic port stolen after the retired generation exits", async () => {
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
 		emergencyVaults.add(vault);
-		const canvas = await startOwnedCanvas({ serverPath, vault });
+		const canvas = await startOwnedServer({ serverPath, vault });
 		const retiredBase = canvas.base;
 		const retiredPid = canvas.pid;
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
@@ -385,7 +385,7 @@ describe("owned canvas direct lifecycle", () => {
 				await fetch(`${canvas.base}/health`).then((response) => response.json()),
 			).toMatchObject({
 				status: "healthy",
-				service: "archboard-canvas",
+				service: "archboard-server",
 				pid: canvas.pid,
 			});
 			expect(await fetch(`${retiredBase}/health`).then((response) => response.json())).toEqual({
@@ -402,7 +402,7 @@ describe("owned canvas direct lifecycle", () => {
 		emergencyVaults.add(vault);
 		let failure: Error | undefined;
 		try {
-			await startOwnedCanvas({
+			await startOwnedServer({
 				serverPath: thisFile,
 				vault,
 				env: { ARCHBOARD_LIFECYCLE_SERVER: "collision" },
@@ -428,7 +428,7 @@ describe("owned canvas direct lifecycle", () => {
 		const port = await probeLoopbackPort();
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-foreign-pid-"));
 		emergencyVaults.add(vault);
-		const canvas = await startOwnedCanvas({ serverPath, port, vault });
+		const canvas = await startOwnedServer({ serverPath, port, vault });
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
 		try {
 			let failure: unknown;

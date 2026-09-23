@@ -8,7 +8,7 @@ import { decodeServerNotification } from "../../../runtime/codex-protocol/index.
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
-import { createCanvasDynamicApprovalOwner } from "../codex-workbench-adapters.js";
+import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
 import { identities, waitOwnerFor, waitProbe } from "./support/codex-workbench-terminal-fixture.js";
 
 function terminalItem(threadId: string, turnId: string, callId: string) {
@@ -103,7 +103,7 @@ describe("Codex terminal notification correlation", () => {
 			createdAtMs: 1,
 			expiresAtMs: 90_001,
 		};
-		const owner = createCanvasDynamicApprovalOwner({
+		const owner = createServerDynamicApprovalOwner({
 			identity: h.identity,
 			now: () => 10,
 			bindingForCaller: () => ({
@@ -230,7 +230,7 @@ describe("Codex terminal notification correlation", () => {
 			owner.onNotification(mismatch);
 			await Promise.resolve();
 			expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
-				hostCalls: 1,
+				serverCalls: 1,
 				aborts: 0,
 				settlements: 0,
 				edges: 1,
@@ -249,7 +249,7 @@ describe("Codex terminal notification correlation", () => {
 		);
 		expect(rejection).toMatchObject({ code: "cancellation" });
 		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
-			hostCalls: 1,
+			serverCalls: 1,
 			aborts: 1,
 			settlements: 1,
 			edges: 1,
@@ -257,7 +257,7 @@ describe("Codex terminal notification correlation", () => {
 		owner.onNotification(exact);
 		await Promise.resolve();
 		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
-			hostCalls: 1,
+			serverCalls: 1,
 			aborts: 1,
 			settlements: 1,
 			edges: 1,
@@ -297,7 +297,7 @@ describe("Codex terminal notification correlation", () => {
 			createdAtMs: 1,
 			expiresAtMs: 90_001,
 		};
-		const owner = createCanvasDynamicApprovalOwner({
+		const owner = createServerDynamicApprovalOwner({
 			identity: h.identity,
 			now: () => 10,
 			bindingForCaller: () => ({
@@ -376,7 +376,7 @@ describe("Codex terminal notification correlation", () => {
 			);
 			await Promise.resolve();
 			expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
-				hostCalls: 1,
+				serverCalls: 1,
 				aborts: 0,
 				settlements: 0,
 				edges: 1,
@@ -395,7 +395,7 @@ describe("Codex terminal notification correlation", () => {
 		);
 		expect(rejection).toMatchObject({ code: "interruption" });
 		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
-			hostCalls: 1,
+			serverCalls: 1,
 			aborts: 1,
 			settlements: 1,
 			edges: 1,
@@ -403,7 +403,7 @@ describe("Codex terminal notification correlation", () => {
 		owner.onNotification(exact);
 		await Promise.resolve();
 		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
-			hostCalls: 1,
+			serverCalls: 1,
 			aborts: 1,
 			settlements: 1,
 			edges: 1,

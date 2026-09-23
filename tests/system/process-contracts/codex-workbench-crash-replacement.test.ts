@@ -15,7 +15,7 @@ import {
 	processIdentity,
 } from "../support/process-census.ts";
 import type { ProcessIdentity } from "../support/process-census.ts";
-import { pane, records, startCanvas } from "./support/codex-workbench-lifecycle.ts";
+import { pane, records, startServer } from "./support/codex-workbench-lifecycle.ts";
 import type { FixtureRecord } from "./support/codex-workbench-lifecycle.ts";
 
 const { join } = path;
@@ -62,7 +62,7 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 	let replacement: ProcessIdentity | null = null;
 	try {
 		const fixture = prepareProductionFixture(resources, replacementCensusSource(resources));
-		const canvas = await startCanvas(fixture);
+		const canvas = await startServer(fixture);
 		resources.defer(async () => {
 			await canvas.dispose();
 		});

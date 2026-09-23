@@ -10,7 +10,7 @@ import type {
 	CommandOutcome,
 	CreateOfferSdp,
 	RealtimeCorrelation,
-	RealtimeHost,
+	RealtimeServer,
 } from "@/ui/codex-realtime";
 import { executableThread, sameLeaseTarget } from "@/ui/codex-workbench-media/lib/media-state";
 import type { BrowserAudioElementPort } from "@/ui/codex-workbench-media/lib/media-state";
@@ -246,7 +246,7 @@ async function stop(run: MediaRunPort, request: RealtimeCorrelation): Promise<Co
  * @param run The run.
  * @returns The neutral realtime host.
  */
-function createMediaHost(run: MediaRunPort): RealtimeHost {
+function createRealtimeServer(run: MediaRunPort): RealtimeServer {
 	return {
 		/**
 		 * Sends the start offer.
@@ -298,4 +298,4 @@ function createMediaHost(run: MediaRunPort): RealtimeHost {
 	};
 }
 
-export { createMediaHost, type MediaRunPort, type StartOperation, type VoicePresentation };
+export { createRealtimeServer, type MediaRunPort, type StartOperation, type VoicePresentation };

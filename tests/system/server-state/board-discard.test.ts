@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
@@ -24,10 +24,10 @@ test("a discarded board leaves the vault, the listing and the pane showing it", 
 	const root = mkdtempSync(join(tmpdir(), "archboard-board-discard-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
-		env: { LOG_FILE_PATH: join(root, "canvas.log") },
+		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
 	resources.defer(() => canvas.dispose());
 	const request = createRequester(canvas);

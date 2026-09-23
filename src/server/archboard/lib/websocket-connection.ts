@@ -4,7 +4,7 @@ import type { RawData } from "ws";
 import { logger } from "@/runtime/engine/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { parseBoardKey } from "@/runtime/engine/board";
-import { createCanvasCodexBrowserSocketSend } from "@/server/archboard/codex-workbench-browser";
+import { createServerCodexBrowserSocketSend } from "@/server/archboard/codex-workbench-browser";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
 import { agentActivity, tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { server } from "@/server/archboard/lib/server-app";
@@ -190,7 +190,7 @@ function listenForCodexRequests(
 	clientId: string | null,
 	codexSocketInstance: BrowserConnectionInstance,
 ): void {
-	const codexTransport = createCanvasCodexBrowserSocketSend(ws);
+	const codexTransport = createServerCodexBrowserSocketSend(ws);
 	/**
 	 * Send one response, logging a transport failure rather than throwing into `ws`.
 	 * @param response The response.

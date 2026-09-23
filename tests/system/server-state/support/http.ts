@@ -1,6 +1,6 @@
-import type { OwnedCanvas } from "../../support/owned-server.ts";
+import type { OwnedServer } from "../../support/owned-server.ts";
 
-type RequestCanvas = Pick<OwnedCanvas, "base" | "assertRunning">;
+type RequestServer = Pick<OwnedServer, "base" | "assertRunning">;
 
 export interface CapturedResponse<T = unknown> {
 	status: number;
@@ -19,7 +19,7 @@ export interface RequestOptions {
 export const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => setTimeout(resolve, ms));
 
-export function createRequester(canvas: RequestCanvas) {
+export function createRequester(canvas: RequestServer) {
 	return async <T = unknown>(
 		path: string,
 		options: RequestOptions = {},

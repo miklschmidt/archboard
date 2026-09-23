@@ -18,8 +18,8 @@ import {
 	type CodexTimelineProjectionInput,
 } from "../../codex-workbench/index.js";
 import {
-	createCanvasBrowserProjectionBudget,
-	createCanvasTimelineOwner,
+	createServerBrowserProjectionBudget,
+	createServerTimelineOwner,
 } from "../codex-workbench-adapters.js";
 import {
 	commandExecutionItem,
@@ -123,7 +123,7 @@ test("long outputs, sprawling patches and large arguments are cut to their wire 
 			durationMs: null,
 		}),
 	]);
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session: {
 			threadTurnsListPage: async () => ({ data: [turn], nextCursor: null, backwardsCursor: null }),
 			timelineListPage: async () => ({
@@ -203,7 +203,7 @@ test("plan and token usage reports republish the timeline without re-reading his
 	const wireThreadId = decoder.serializeCodexIdentity(threadId);
 	let reads = 0;
 	let changes = 0;
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session: {
 			threadTurnsListPage: async () => {
 				reads += 1;
@@ -333,7 +333,7 @@ test("the projection keeps within its byte budget with long outputs, plans and m
 			index === turnCount - 1 ? "inProgress" : "completed",
 		),
 	);
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session: {
 			threadTurnsListPage: async (params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => {
 				const offset = params.cursor === null ? 0 : Number(params.cursor);
@@ -385,7 +385,7 @@ test("the projection keeps within its byte budget with long outputs, plans and m
 		throw new Error("the budget timeline was not loaded");
 	}
 	const encoded = new TextEncoder().encode(JSON.stringify(projection)).byteLength;
-	expect(encoded).toBeLessThanOrEqual(createCanvasBrowserProjectionBudget().maxBytes);
+	expect(encoded).toBeLessThanOrEqual(createServerBrowserProjectionBudget().maxBytes);
 	// History is cut at the oldest end: the running turn and its plan survive.
 	const newest = projection.turns.at(-1);
 	expect(newest?.turn.id).toBe(decoder.adoptTurnId(turnIds.at(-1)));
@@ -426,7 +426,7 @@ test("one long running turn over the byte budget keeps the item the agent is on 
 		}),
 	);
 	const turn = turnFixture(authorities, "long-turn", items, "inProgress");
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session: {
 			threadTurnsListPage: async () => ({ data: [turn], nextCursor: null, backwardsCursor: null }),
 			timelineListPage: async () => ({
@@ -449,7 +449,7 @@ test("one long running turn over the byte budget keeps the item the agent is on 
 		throw new Error("the long turn was not projected");
 	}
 	expect(new TextEncoder().encode(JSON.stringify(projection)).byteLength).toBeLessThanOrEqual(
-		createCanvasBrowserProjectionBudget().maxBytes,
+		createServerBrowserProjectionBudget().maxBytes,
 	);
 	const newest = projected.items.at(-1);
 	if (newest?.kind !== "command_execution") {

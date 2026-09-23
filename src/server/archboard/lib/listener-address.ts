@@ -19,7 +19,7 @@ function formatHostForUrl(host: string): string {
  * The URL this canvas is reachable at.
  * @returns The base URL.
  */
-function canvasUrl(): string {
+function serverUrl(): string {
 	return `http://${formatHostForUrl(HOST)}:${PORT}`;
 }
 
@@ -97,7 +97,7 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 }
 
 export {
-	canvasUrl,
+	serverUrl,
 	findExistingLoopbackListener,
 	formatHostForUrl,
 	HOST,

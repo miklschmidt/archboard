@@ -6,15 +6,15 @@
 // record at a time, and lets a caller wait for the next one under a deadline.
 
 import type {
-	CanvasStartupProtocolEvent,
-	CanvasStartupProtocolRecord,
+	ServerStartupProtocolEvent,
+	ServerStartupProtocolRecord,
 } from "@/shared/server-startup-terminal";
-import { parseCanvasStartupProtocolRecord } from "@/shared/server-startup-terminal";
+import { parseServerStartupProtocolRecord } from "@/shared/server-startup-terminal";
 import type { Readable } from "node:stream";
 import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "@/shared/timing/timing";
 import { asError } from "@/runtime/engine/lib/thrown-error";
 
-interface FailedCanvasCleanupTiming {
+interface FailedServerCleanupTiming {
 	readonly shutdownDeadlineMs: number;
 	readonly applicationGraceMs: number;
 	readonly pollMs: number;
@@ -24,7 +24,7 @@ interface FailedCanvasCleanupTiming {
  * Production policy. Tests replace this function through a preload-only partial mock.
  * @returns The deadline, application grace and poll interval for one failed start.
  */
-function failedCanvasCleanupTiming(): FailedCanvasCleanupTiming {
+function failedServerCleanupTiming(): FailedServerCleanupTiming {
 	return Object.freeze({
 		shutdownDeadlineMs: CODEX_COMPOSED_SHUTDOWN_MS,
 		applicationGraceMs: CODEX_TERM_GRACE_MS,
@@ -32,19 +32,19 @@ function failedCanvasCleanupTiming(): FailedCanvasCleanupTiming {
 	});
 }
 
-interface FailedCanvasCleanupProtocol {
+interface FailedServerCleanupProtocol {
 	/** Null means no protocol event arrived within this slice of the one cleanup deadline. */
-	readonly next: (maxWaitMs: number) => Promise<CanvasStartupProtocolEvent | null>;
+	readonly next: (maxWaitMs: number) => Promise<ServerStartupProtocolEvent | null>;
 }
 
-interface CanvasStartupProtocolReader extends FailedCanvasCleanupProtocol {
+interface ServerStartupProtocolReader extends FailedServerCleanupProtocol {
 	readonly failure: () => Error | null;
 	readonly terminalMessage: () => string | null;
 	readonly destroy: () => void;
 }
 
 interface ProtocolWaiter {
-	readonly resolve: (event: CanvasStartupProtocolEvent | null) => void;
+	readonly resolve: (event: ServerStartupProtocolEvent | null) => void;
 	readonly timer: ReturnType<typeof setTimeout>;
 }
 
@@ -54,8 +54,8 @@ interface ProtocolWaiter {
  * @param stream The pipe from the spawned server, or null when there is none.
  * @returns The reader the cleanup consumes, with its failure and terminal message.
  */
-function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStartupProtocolReader {
-	const events: CanvasStartupProtocolEvent[] = [];
+function createServerStartupProtocolReader(stream: Readable | null): ServerStartupProtocolReader {
+	const events: ServerStartupProtocolEvent[] = [];
 	let buffer = "";
 	let closed = stream === null;
 	let protocolFailure: Error | null = null;
@@ -66,7 +66,7 @@ function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStart
 	 * Hand an event to the waiting consumer, or queue it for the next ask.
 	 * @param event The parsed event.
 	 */
-	const push = (event: CanvasStartupProtocolEvent): void => {
+	const push = (event: ServerStartupProtocolEvent): void => {
 		if (waiter !== null) {
 			const current = waiter;
 			waiter = null;
@@ -82,7 +82,7 @@ function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStart
 	 */
 	const consumeLine = (line: string): void => {
 		try {
-			const record: CanvasStartupProtocolRecord = parseCanvasStartupProtocolRecord(line);
+			const record: ServerStartupProtocolRecord = parseServerStartupProtocolRecord(line);
 			if (record.kind === "terminal") {
 				terminalSeen = true;
 				message = record.message;
@@ -127,7 +127,7 @@ function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStart
 	 * @param maxWaitMs How long to wait for one to arrive.
 	 * @returns The event, or null when none arrived in time.
 	 */
-	const next = (maxWaitMs: number): Promise<CanvasStartupProtocolEvent | null> => {
+	const next = (maxWaitMs: number): Promise<ServerStartupProtocolEvent | null> => {
 		const ready = events.shift();
 		if (ready !== undefined) {
 			return Promise.resolve(ready);
@@ -184,7 +184,7 @@ function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStart
  * @throws {Error} When a duration is negative, not finite, or would make the
  * grace outlast the deadline it sits inside.
  */
-function validateTiming(timing: FailedCanvasCleanupTiming): void {
+function validateTiming(timing: FailedServerCleanupTiming): void {
 	for (const [name, value] of Object.entries(timing)) {
 		if (!Number.isFinite(value) || value < 0) {
 			throw new Error(`Failed canvas cleanup ${name} must be a non-negative finite duration.`);
@@ -199,10 +199,10 @@ function validateTiming(timing: FailedCanvasCleanupTiming): void {
 }
 
 export {
-	type FailedCanvasCleanupTiming,
-	failedCanvasCleanupTiming,
-	type FailedCanvasCleanupProtocol,
-	type CanvasStartupProtocolReader,
-	createCanvasStartupProtocolReader,
+	type FailedServerCleanupTiming,
+	failedServerCleanupTiming,
+	type FailedServerCleanupProtocol,
+	type ServerStartupProtocolReader,
+	createServerStartupProtocolReader,
 	validateTiming,
 };

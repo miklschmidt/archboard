@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { WebSocket } from "ws";
 
-import { processExists, startOwnedCanvas, waitForProcessExit } from "../support/owned-server.ts";
+import { processExists, startOwnedServer, waitForProcessExit } from "../support/owned-server.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -21,13 +21,13 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester } from "./support/http.ts";
 import {
-	canvasChildPids,
+	serverChildPids,
 	loggedRequestFailure,
 	publicStartEnvironment,
 	publicStateRoot,
 	publicWorkbenchRoot,
-	runPublicCanvas,
-	runPublicCanvasAsync,
+	runPublicServer,
+	runPublicServerAsync,
 	writePublicCodexExecutable,
 } from "./support/public-codex-startup.ts";
 import {
@@ -78,7 +78,7 @@ describe.serial("production Codex setup cleanup", () => {
 				if (scenario === "verification-timeout") {
 					environment["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] = "verification_timeout";
 				}
-				const result = runPublicCanvas("start", environment);
+				const result = runPublicServer("start", environment);
 				expect(result.status, scenario).not.toBe(0);
 				const lines = result.stderr.split(/\r?\n/u).filter(Boolean);
 				expect(lines, scenario).toHaveLength(1);
@@ -113,8 +113,8 @@ describe.serial("production Codex setup cleanup", () => {
 				fixture.executablePath,
 			);
 			const starts = await Promise.all([
-				runPublicCanvasAsync("start", environment),
-				runPublicCanvasAsync("start", environment),
+				runPublicServerAsync("start", environment),
+				runPublicServerAsync("start", environment),
 			]);
 			for (const start of starts) {
 				expect(start.status, start.stderr).toBe(0);
@@ -123,10 +123,10 @@ describe.serial("production Codex setup cleanup", () => {
 				(record) => record.kind === "app_server_spawn",
 			);
 			expect(spawned).toHaveLength(1);
-			expect(runPublicCanvas("stop", environment).status).toBe(0);
+			expect(runPublicServer("stop", environment).status).toBe(0);
 		} finally {
 			if (environment !== null) {
-				runPublicCanvas("stop", environment);
+				runPublicServer("stop", environment);
 			}
 			await resources.disposeAsync();
 		}
@@ -136,24 +136,24 @@ describe.serial("production Codex setup cleanup", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-public-signed-out-"));
 		let socket: Awaited<ReturnType<typeof openApplicationSocket>> | null = null;
 		let environment: NodeJS.ProcessEnv | null = null;
-		let canvasPid: number | null = null;
+		let serverPid: number | null = null;
 		try {
 			const base = await closedLoopbackEndpoint();
 			environment = publicStartEnvironment(root, base);
-			const started = runPublicCanvas("start", environment);
+			const started = runPublicServer("start", environment);
 			expect(started.status).toBe(0);
 			const pidMatch = started.stdout.match(/"pid":\s*(\d+)/u);
 			if (pidMatch?.[1] === undefined) {
 				throw new Error(`Public start returned no pid: ${started.stdout}`);
 			}
-			canvasPid = Number(pidMatch[1]);
-			expect(processExists(canvasPid)).toBeTrue();
-			const childPids = canvasChildPids(canvasPid);
+			serverPid = Number(pidMatch[1]);
+			expect(processExists(serverPid)).toBeTrue();
+			const childPids = serverChildPids(serverPid);
 			expect(childPids).toHaveLength(1);
 			expect(processExists(childPids[0]!)).toBeTrue();
 			expect(await loggedRequestFailure(base, root)).toMatchObject({
 				status: 500,
-				health: { pid: canvasPid },
+				health: { pid: serverPid },
 				logged: true,
 			});
 			socket = await openApplicationSocket(base, "signed-out-client");
@@ -208,23 +208,23 @@ describe.serial("production Codex setup cleanup", () => {
 					})
 				).status,
 			).toBe(200);
-			expect(canvasChildPids(canvasPid)).toEqual(childPids);
+			expect(serverChildPids(serverPid)).toEqual(childPids);
 
 			await socket.close();
 			socket = null;
-			const stopped = runPublicCanvas("stop", environment);
+			const stopped = runPublicServer("stop", environment);
 			expect(stopped.status).toBe(0);
-			await waitForProcessExit(canvasPid);
+			await waitForProcessExit(serverPid);
 			await waitForProcessExit(childPids[0]!);
-			expect(processExists(canvasPid)).toBeFalse();
+			expect(processExists(serverPid)).toBeFalse();
 			expect(processExists(childPids[0]!)).toBeFalse();
 			expect(
 				existsSync(join(publicWorkbenchRoot(root), "codex-home/.archboard-codex-process.lock")),
 			).toBeFalse();
 		} finally {
 			await socket?.close();
-			if (environment !== null && canvasPid !== null && processExists(canvasPid)) {
-				runPublicCanvas("stop", environment);
+			if (environment !== null && serverPid !== null && processExists(serverPid)) {
+				runPublicServer("stop", environment);
 			}
 			rmSync(root, { recursive: true, force: true });
 		}
@@ -274,7 +274,7 @@ describe.serial("production Codex setup cleanup", () => {
 			if (address === null || typeof address === "string") {
 				throw new Error("missing blocked port");
 			}
-			const failure = await startOwnedCanvas({
+			const failure = await startOwnedServer({
 				serverPath,
 				port: address.port,
 				vault: fixture.vault,
@@ -290,7 +290,7 @@ describe.serial("production Codex setup cleanup", () => {
 			);
 			expect(failure).toBeInstanceOf(Error);
 			records = processRecords(fixture.logPath);
-			expect(records.some((record) => record.kind === "canvas_fixture_spawn")).toBeTrue();
+			expect(records.some((record) => record.kind === "server_fixture_spawn")).toBeTrue();
 		} finally {
 			await resources.disposeAsync();
 		}
@@ -302,7 +302,7 @@ describe.serial("production Codex setup cleanup", () => {
 	test("real first-socket failures close listeners and preserve production recovery", async () => {
 		const resources = new AsyncDisposableStack();
 		let root = "";
-		let canvasPid: number | null = null;
+		let serverPid: number | null = null;
 		let records: ProcessRecord[] = [];
 		const cleanupOrder: string[] = [];
 		try {
@@ -310,7 +310,7 @@ describe.serial("production Codex setup cleanup", () => {
 				onRoot: (value) => void (root = value),
 				onRootCleanup: () => void cleanupOrder.push("root"),
 			});
-			const canvas = await startOwnedCanvas({
+			const canvas = await startOwnedServer({
 				serverPath,
 				vault: fixture.vault,
 				env: {
@@ -320,11 +320,11 @@ describe.serial("production Codex setup cleanup", () => {
 					XDG_STATE_HOME: join(root, "state"),
 				},
 			});
-			canvasPid = canvas.pid;
+			serverPid = canvas.pid;
 			const request = createRequester(canvas);
 			resources.defer(async () => {
 				await canvas.dispose();
-				cleanupOrder.push("canvas");
+				cleanupOrder.push("server");
 			});
 			const focusedSocket = await openApplicationSocket(canvas.base, "focused-client");
 			resources.defer(() => focusedSocket.close());
@@ -393,8 +393,8 @@ describe.serial("production Codex setup cleanup", () => {
 			await resources.disposeAsync();
 		}
 		expect(existsSync(root)).toBeFalse();
-		expect(cleanupOrder).toEqual(["socket", "canvas", "root"]);
-		await assertProcessesStopped([...records, ...(canvasPid === null ? [] : [{ pid: canvasPid }])]);
+		expect(cleanupOrder).toEqual(["socket", "server", "root"]);
+		await assertProcessesStopped([...records, ...(serverPid === null ? [] : [{ pid: serverPid }])]);
 	}, 20_000);
 
 	test("Codex child start failure reaps both child and canvas before removing the root", async () => {
@@ -405,7 +405,7 @@ describe.serial("production Codex setup cleanup", () => {
 			const fixture = prepareProductionFixture(resources, executableSource, {
 				onRoot: (value) => void (root = value),
 			});
-			const failure = await startOwnedCanvas({
+			const failure = await startOwnedServer({
 				serverPath,
 				vault: fixture.vault,
 				env: {
@@ -421,7 +421,7 @@ describe.serial("production Codex setup cleanup", () => {
 			);
 			expect(failure).toBeInstanceOf(Error);
 			records = processRecords(fixture.logPath);
-			expect(records.some((record) => record.kind === "canvas_fixture_spawn")).toBeTrue();
+			expect(records.some((record) => record.kind === "server_fixture_spawn")).toBeTrue();
 			expect(records.some((record) => record.kind === "app_server_spawn")).toBeFalse();
 		} finally {
 			await resources.disposeAsync();

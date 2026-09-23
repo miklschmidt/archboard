@@ -130,7 +130,7 @@ function replaceThreadContextBinding(
  * @param controller The controller.
  * @param expected The token that browser's binding was held under.
  */
-function clearCanvasThreadContextForLease(
+function clearServerThreadContextForLease(
 	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
 	expected: CodexThreadContextBindingToken,
 ): void {
@@ -185,7 +185,7 @@ function assertBrowserLinkStands(
  * them. That is deliberate: the list describes the child epoch, which is also
  * shared, and a per-pane copy would let two panes disagree about what exists.
  */
-interface CanvasThreadCandidateInventory {
+interface ServerThreadCandidateInventory {
 	readonly read: () => CodexThreadCandidatesProjectionInput;
 	readonly refresh: () => Promise<ThreadLinkCandidateDiscovery>;
 	/** The thread a published selection named, or null when the list moved on. */
@@ -219,10 +219,10 @@ function epochGeneration(epoch: EpochGenerationSource): string {
  * @param epoch What the discovery's epoch is read from.
  * @returns The inventory.
  */
-function createCanvasThreadCandidateInventory(
+function createServerThreadCandidateInventory(
 	threadLink: Pick<CodexThreadLinkPort, "discoverCandidates">,
 	epoch: EpochGenerationSource,
-): CanvasThreadCandidateInventory {
+): ServerThreadCandidateInventory {
 	let published: CodexThreadCandidatesProjectionInput = {
 		kind: "codex_thread_candidates",
 		state: "unknown",
@@ -288,13 +288,13 @@ function createCanvasThreadCandidateInventory(
 }
 
 /** The owners one generation's thread-link actions are closed over. */
-interface CanvasThreadLinkActionOptions {
+interface ServerThreadLinkActionOptions {
 	readonly workhorse: CodexWorkbenchComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
 	readonly semanticDelivery: CodexWorkbenchComponents["semanticDelivery"];
 	readonly epoch: CodexWorkbenchComponents["epoch"];
 	readonly identity: CodexWorkbenchComponents["identity"];
-	readonly candidates: CanvasThreadCandidateInventory;
+	readonly candidates: ServerThreadCandidateInventory;
 	readonly checkoutRoot: string;
 }
 
@@ -322,8 +322,8 @@ function assertAttachable(observed: ThreadLinkClassification): void {
  * @param options The owners, the published inventory, and the checkout root.
  * @returns The actions.
  */
-function createCanvasThreadLinkActions(
-	options: CanvasThreadLinkActionOptions,
+function createServerThreadLinkActions(
+	options: ServerThreadLinkActionOptions,
 ): BrowserThreadLinkActions {
 	const controllerTokens = new Map<
 		BrowserActionContext["connection"],
@@ -590,8 +590,8 @@ function createCanvasThreadLinkActions(
 
 export {
 	bindThreadContextToReadyWorkhorse,
-	clearCanvasThreadContextForLease,
-	type CanvasThreadCandidateInventory,
-	createCanvasThreadCandidateInventory,
-	createCanvasThreadLinkActions,
+	clearServerThreadContextForLease,
+	type ServerThreadCandidateInventory,
+	createServerThreadCandidateInventory,
+	createServerThreadLinkActions,
 };

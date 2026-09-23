@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import type { BrowserActionContext } from "../../codex-workbench/index.js";
-import { createCanvasRealtimeActions } from "../codex-workbench-adapters.js";
+import { createServerRealtimeActions } from "../codex-workbench-adapters.js";
 
 function fixture() {
 	const identity = createIdentityAuthorities();
@@ -59,7 +59,7 @@ function fixture() {
 
 test("one stable realtime handle spans start, append, and stop", async () => {
 	const value = fixture();
-	const actions = createCanvasRealtimeActions(value.components as never);
+	const actions = createServerRealtimeActions(value.components as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	const started = await actions.start(
 		{
@@ -119,7 +119,7 @@ test("one stable realtime handle spans start, append, and stop", async () => {
 
 test("stale handles and replacement sockets cannot append to the active realtime session", async () => {
 	const value = fixture();
-	const actions = createCanvasRealtimeActions(value.components as never);
+	const actions = createServerRealtimeActions(value.components as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	await actions.start(
 		{
@@ -163,7 +163,7 @@ test("stale handles and replacement sockets cannot append to the active realtime
 
 test("another pane of the canvas can stop voice on the same link but cannot speak into it", async () => {
 	const value = fixture();
-	const actions = createCanvasRealtimeActions(value.components as never);
+	const actions = createServerRealtimeActions(value.components as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	await actions.start(
 		{
@@ -225,7 +225,7 @@ test("a recording is refused over a live voice session, and not over one Codex a
 		...value.components.realtime,
 		generation: () => (live ? { live: true } : null),
 	};
-	const actions = createCanvasRealtimeActions({ ...value.components, realtime } as never);
+	const actions = createServerRealtimeActions({ ...value.components, realtime } as never);
 	await actions.start(
 		{
 			kind: "browser_command",

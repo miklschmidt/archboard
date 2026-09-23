@@ -4,7 +4,7 @@ import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupOperations,
 } from "../../../src/runtime/codex-process/process-group.ts";
-import { completeCapturedCanvasCleanup } from "./owned-server-forced-cleanup.ts";
+import { completeCapturedServerCleanup } from "./owned-server-forced-cleanup.ts";
 
 const group = (pid: number): CodexProcessGroupIdentity => ({
 	leaderPid: pid,
@@ -21,7 +21,7 @@ describe("owned canvas forced cleanup", () => {
 			"quiescent",
 		];
 		const signals: string[] = [];
-		await completeCapturedCanvasCleanup({
+		await completeCapturedServerCleanup({
 			groups: [descendant],
 			operations: {
 				inspect: () => inspections.shift() ?? "quiescent",
@@ -54,7 +54,7 @@ describe("owned canvas forced cleanup", () => {
 		};
 
 		expect(
-			completeCapturedCanvasCleanup({
+			completeCapturedServerCleanup({
 				groups: [first, second],
 				operations,
 				parent: { exited: true },
@@ -72,7 +72,7 @@ describe("owned canvas forced cleanup", () => {
 		let lockRemovalAttempts = 0;
 		let surfaced: unknown;
 		try {
-			await completeCapturedCanvasCleanup({
+			await completeCapturedServerCleanup({
 				groups: [],
 				operations: {
 					inspect: () => "quiescent",
@@ -101,7 +101,7 @@ describe("owned canvas forced cleanup", () => {
 		let lockRemovalAttempts = 0;
 		let surfaced: unknown;
 		try {
-			await completeCapturedCanvasCleanup({
+			await completeCapturedServerCleanup({
 				groups: [descendant],
 				operations: {
 					inspect() {

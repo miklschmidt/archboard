@@ -8,14 +8,14 @@ import {
 } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
-	runCanvasCli,
+	registerServerBase,
+	runServerCli,
 } from "./support/agent-browser.ts";
 import {
 	productionFixtureRecords,
@@ -142,17 +142,17 @@ test(
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
 
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath,
 			vault,
-			env: canvasTestEnvironment({
+			env: serverTestEnvironment({
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
 				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
 				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
 			}),
 		});
 		resources.defer(() => canvas.dispose());
-		registerCanvasBase(canvas.base);
+		registerServerBase(canvas.base);
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(canvas);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
@@ -161,7 +161,7 @@ test(
 		await browser.run(["open", canvas.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
-		runCanvasCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		runServerCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
 			(value) => value.panes === 1 && value.board === "workbench" && value.drawn,

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester } from "./support/http.ts";
 
 // Every agent write to a board says what it is doing, or it does not happen
@@ -35,10 +35,10 @@ describe.serial("doing write boundary", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-doing-boundary-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
-			env: { LOG_FILE_PATH: join(root, "canvas.log") },
+			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
 		resources.defer(() => canvas.dispose());
 		const request = createRequester(canvas);

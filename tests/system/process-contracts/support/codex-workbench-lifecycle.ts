@@ -8,7 +8,7 @@ import {
 	type WorkbenchResult,
 } from "../../server-state/support/codex-production.ts";
 import { waitFor } from "../../server-state/support/http.ts";
-import { buildOwnedCanvasEnvironment } from "../../support/owned-server.ts";
+import { buildOwnedServerEnvironment } from "../../support/owned-server.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
@@ -27,7 +27,7 @@ export interface FixtureRecord {
 	};
 }
 
-export interface CanvasProcess {
+export interface ServerProcess {
 	readonly base: string;
 	readonly pid: number;
 	output(): string;
@@ -101,14 +101,14 @@ async function freePort(): Promise<number> {
 	);
 	return address.port;
 }
-export async function startCanvas(options: {
+export async function startServer(options: {
 	readonly root: string;
 	readonly vault: string;
 	readonly executablePath: string;
 	readonly logPath: string;
 	readonly controlPath: string;
 	readonly readinessTimeoutMs?: number;
-}): Promise<CanvasProcess> {
+}): Promise<ServerProcess> {
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
 	const wrapper = join(options.root, "production-server.ts");
@@ -132,7 +132,7 @@ export async function startCanvas(options: {
 	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
-		env: buildOwnedCanvasEnvironment({
+		env: buildOwnedServerEnvironment({
 			paths,
 			port,
 			vault: options.vault,
@@ -156,7 +156,7 @@ export async function startCanvas(options: {
 			done();
 		}),
 	);
-	const canvas: CanvasProcess = {
+	const canvas: ServerProcess = {
 		base,
 		pid: child.pid,
 		output: () => output,

@@ -1,18 +1,18 @@
-import { CANVAS_MUTATION_DRAIN_TIMEOUT_MS } from "@/shared/timing/timing";
+import { SERVER_MUTATION_DRAIN_TIMEOUT_MS } from "@/shared/timing/timing";
 import {
-	createCanvasMutationAdmission,
-	type CanvasMutationLease,
+	createServerMutationAdmission,
+	type ServerMutationLease,
 } from "@/server/archboard/lib/application-lifetime";
 import { createCheckoutWorkOwner } from "@/server/archboard/lib/checkout-work";
 import type { Request } from "express";
 
 /** Admits mutation requests while the canvas is running and drains them when it stops. */
-const mutationAdmission = createCanvasMutationAdmission({
-	drainTimeoutMs: CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
+const mutationAdmission = createServerMutationAdmission({
+	drainTimeoutMs: SERVER_MUTATION_DRAIN_TIMEOUT_MS,
 });
 
 /** The lease each admitted mutation request holds, so its later work can be tracked. */
-const admittedMutations = new WeakMap<Request, CanvasMutationLease>();
+const admittedMutations = new WeakMap<Request, ServerMutationLease>();
 
 /** Owns machine-local checkout snapshots so shutdown can quiesce them. */
 const checkoutWork = createCheckoutWorkOwner();

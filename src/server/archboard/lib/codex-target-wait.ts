@@ -1,9 +1,9 @@
 import type { DynamicWaitEvent } from "@/runtime/codex-dynamic-tools";
 import { CODEX_WAIT_TARGET_POLL_MS } from "@/shared/timing/timing";
 import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
-import type { CanvasCodexWorkbenchHost } from "@/server/archboard/lib/codex-workbench-production";
+import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-production";
 
-type WaitInput = Parameters<CanvasCodexWorkbenchHost["waitForTargets"]>[0];
+type WaitInput = Parameters<CodexWorkbenchServer["waitForTargets"]>[0];
 type TargetThreadId = WaitInput["owner"]["sortedTargetThreadIds"][number];
 
 /**

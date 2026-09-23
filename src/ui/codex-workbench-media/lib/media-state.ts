@@ -6,7 +6,7 @@ import { browserRealtimeMediaSupported } from "@/ui/codex-realtime";
 import type {
 	AppendOutcome,
 	RealtimeCorrelation,
-	RealtimeHost,
+	RealtimeServer,
 	createRealtimeMediaSession,
 	RealtimeMediaEnvironment,
 	RealtimeMediaSession,
@@ -17,7 +17,10 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "@/shared/codex-realtime-contract";
-import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/media-host";
+import type {
+	StartOperation,
+	VoicePresentation,
+} from "@/ui/codex-workbench-media/lib/realtime-server";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */
 type BrowserWorkbenchMediaState =
@@ -213,7 +216,7 @@ interface MediaRun {
 	/** Releases this run's subscription to its own realtime media session. */
 	releaseMedia: () => void;
 	media: RealtimeMediaSession | null;
-	host: RealtimeHost | null;
+	host: RealtimeServer | null;
 	handle: BrowserCommandLease["commandId"] | null;
 	startOperation: StartOperation | null;
 	voiceStopRequested: boolean;
@@ -284,7 +287,7 @@ function leaseCorrelation(lease: BrowserCommandLease): RealtimeCorrelation {
  * @param run The run.
  * @returns True when the run should be stopped for the host.
  */
-function hostRevokedVoice(run: MediaRun): boolean {
+function serverRevokedVoice(run: MediaRun): boolean {
 	const phase = run.media?.getSnapshot().state.phase;
 	return (
 		run.transport.snapshot()?.voice.state === "unavailable" &&
@@ -295,7 +298,7 @@ function hostRevokedVoice(run: MediaRun): boolean {
 }
 
 export {
-	hostRevokedVoice,
+	serverRevokedVoice,
 	leaseCorrelation,
 	noSnapshotState,
 	removeAudioElements,
