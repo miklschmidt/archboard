@@ -4,6 +4,7 @@ title: The coordinator answers about what the user has selected now
 status: To Do
 assignee: []
 created_date: '2026-09-23 21:36'
+updated_date: '2026-09-23 21:43'
 labels:
   - voice
   - coordinator
@@ -27,3 +28,9 @@ In the 2026-09-23 23:15 session the user selected Headless Chromium, then Canvas
 - [ ] #1 A voice question about "this" asked after the user selects something is answered about that selection
 - [ ] #2 The coordinator never says it read the live canvas when it did not
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Found while diagnosing: the host already reaches the coordinator thread without a turn through thread/inject_items (the callbacks use it for operation outcomes while voice is not live, DESIGN.md section 2). Pane news while voice is live goes only to the voice model through realtime appendText (pane-news.ts).
+<!-- SECTION:NOTES:END -->
