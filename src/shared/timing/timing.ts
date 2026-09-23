@@ -17,7 +17,8 @@
 // reasons are the point: the next person to halve one of these should not have
 // to discover by accident what else they halved. Two groups are large enough
 // to read on their own and are grouped in `lib/`, re-exported below: holding a
-// board, and the motion a person watches rather than waits out.
+// board, the motion a person watches rather than waits out, and recording a
+// walkthrough.
 //
 // This module is imported by the pane, the server, the CLI and the checks, so
 // it stays free of `process`, `node:` imports and anything a browser does not
@@ -445,6 +446,17 @@ export {
 	PICTURE_TRANSITION_PHASES,
 	PRESENTATION_STEP_MS,
 } from "@/shared/timing/lib/diagram-motion";
+export {
+	RECORDING_LEAD_MS,
+	RECORDING_PACE_TICK_MS,
+	RECORDING_PAGE_READY_MS,
+	RECORDING_POLL_MS,
+	RECORDING_QUIET_MS,
+	RECORDING_SPEECH_START_MS,
+	RECORDING_STEP_MAX_MS,
+	RECORDING_TAIL_MS,
+	RECORDING_VOICE_START_MS,
+} from "@/shared/timing/lib/walkthrough-recording";
 export {
 	ACTIVITY_LINGER_MS,
 	CLAIM_DEFAULT_MS,

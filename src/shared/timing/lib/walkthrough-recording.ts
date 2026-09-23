@@ -1,0 +1,96 @@
+// ── Recording a walkthrough (TASK-304) ────────────────────────────────────
+//
+// A recording presents one walkthrough in a page nobody is watching: the page
+// moves to a step, the voice explains it, and once the voice has finished the
+// page moves on. Every duration here is either a beat the video shows or a
+// bound on waiting for something that may never come. The beats pull against
+// the length of the video; the bounds pull against giving up on a voice that
+// was only slow, which costs the whole recording.
+
+/**
+ * How long the page waits, from the moment it is opened, to be ready to
+ * record: the pane registered and showing the board, the board drawn and at
+ * rest, and the agent at a phase from which voice can start.
+ *
+ * A cold page fetches the bundle, lays the board out in its worker (elk and
+ * libavoid in WebAssembly) and reads the workbench snapshot; a large board
+ * takes a few seconds. It pulls against an agent that waits this long to be
+ * told the canvas cannot record.
+ */
+const RECORDING_PAGE_READY_MS = 30_000;
+
+/**
+ * How long voice may take to go live once a recording starts: creating the
+ * canvas's conversation when it has none, the coordinator and the workhorse
+ * becoming ready, and the realtime negotiation (`CODEX_REALTIME_START_MS`,
+ * 15 s, inside it). Creating a conversation is the slow part and is paid
+ * once per canvas.
+ */
+const RECORDING_VOICE_START_MS = 60_000;
+
+/**
+ * How long the board is shown whole once capture has started, before the
+ * first step. The video opens on the overview and glides into the talk,
+ * rather than beginning mid-flight.
+ */
+const RECORDING_LEAD_MS = 1200;
+
+/**
+ * How long the voice may take to begin explaining a step the page moved to.
+ *
+ * The step reaches the voice as speech once the pane reports it (the report's
+ * debounce, `SELECTION_DEBOUNCE_MS`, then a round trip through Codex), and a
+ * real voice began within about a second in the TASK-251 sessions. A voice
+ * that says nothing for this long has not heard the step, and the recording
+ * fails rather than showing a silent step.
+ */
+const RECORDING_SPEECH_START_MS = 20_000;
+
+/**
+ * How long the voice's output has to stay below speaking level, after its
+ * line is final, before the page moves on.
+ *
+ * A line is final when the voice model ends its turn (`turn.done`), which may
+ * come before the audio has finished playing, so the finished line alone is
+ * not the end of the speech: the quiet is. It is also the pause the viewer
+ * gets between two steps. It pulls against the length of the video.
+ */
+const RECORDING_QUIET_MS = 1200;
+
+/**
+ * The longest one step's explanation may run. A voice still talking about one
+ * step after this has lost the step, and the recording fails with the reason.
+ */
+const RECORDING_STEP_MAX_MS = 180_000;
+
+/**
+ * How long the last step stays on screen after the voice has finished it,
+ * before capture stops, so the video ends on the picture, not on the last
+ * syllable.
+ */
+const RECORDING_TAIL_MS = 1500;
+
+/**
+ * How often the page decides whether to move on. It reads the voice's output
+ * level and transcript, both already in memory; a tenth of a second is below
+ * what a viewer notices in a pause.
+ */
+const RECORDING_PACE_TICK_MS = 100;
+
+/**
+ * How often the recorder reads the page's state. The page's own pacing does
+ * not depend on it; this only decides how promptly progress is reported.
+ */
+const RECORDING_POLL_MS = 250;
+
+export {
+	RECORDING_LEAD_MS,
+	RECORDING_PACE_TICK_MS,
+	RECORDING_PAGE_READY_MS,
+	RECORDING_POLL_MS,
+	RECORDING_QUIET_MS,
+	RECORDING_SPEECH_START_MS,
+	RECORDING_STEP_MAX_MS,
+	RECORDING_TAIL_MS,
+	RECORDING_VOICE_START_MS,
+};
