@@ -233,6 +233,31 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
 	});
 
+	test("a presenter on another pane of the same link keeps approvals presented", async () => {
+		const value = harness();
+		const first = value.gateway.connect(value.browserId, value.paneId);
+		const second = value.gateway.connect("browser-two", "pane-two");
+		first.claimLease();
+		const approval = value.makeOrdinaryApproval();
+		value.setOrdinaryApproval(approval);
+		first.snapshot();
+		second.snapshot();
+		const approvalTeardowns = () =>
+			value.disconnects.filter((owner) => owner === "ordinary" || owner === "dynamic");
+
+		await first.close();
+
+		expect(approvalTeardowns()).toEqual([]);
+		expect(second.snapshot().snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: approval.request.requestId }),
+		]);
+
+		second.claimLease();
+		await second.close();
+
+		expect(approvalTeardowns().toSorted()).toEqual(["dynamic", "ordinary"]);
+	});
+
 	test("uses the fresh pane link for approval teardown after a leased presenter relinks", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

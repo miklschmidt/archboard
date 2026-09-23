@@ -37,7 +37,8 @@ export type {
 } from "@/server/canvas/lib/codex-workbench-timeline";
 export { createCanvasCanonicalTextActions } from "@/server/canvas/lib/codex-workbench-text-actions";
 export { createCanvasRealtimeActions } from "@/server/canvas/lib/codex-workbench-realtime-actions";
-export { requireExactSemanticPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
+export { presentingPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
+export { createCanvasThreadLink } from "@/server/canvas/lib/codex-workbench-canvas-link";
 // What one coordinator callback correlates the workhorse against. Exported for
 // the owner that holds it to the bound thread rather than to whichever thread
 // started this child: the two part company on a relink, and the coordinator
