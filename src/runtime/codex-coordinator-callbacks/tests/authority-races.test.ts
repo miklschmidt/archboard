@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { close, harness, link, operationEvent } from "./support.js";
+import { close, harness, link, operationEvent, semanticInput } from "./support.js";
 
 describe("coordinator callback live authority", () => {
-	test("refuses child, coordinator, link, status, and realtime changes before effect", async () => {
+	test("refuses child, coordinator, link, executability, and realtime changes before effect", async () => {
 		await Promise.all(
-			["child", "coordinator", "link", "status", "direct_input", "provenance", "session"].map(
+			["child", "coordinator", "link", "inspect_only", "provenance", "session"].map(
 				async (scenario) => {
 					const h = harness(true);
 					h.setClassifyHook(() => {
@@ -22,7 +22,8 @@ describe("coordinator callback live authority", () => {
 								binding: { ...changed.binding, revision: changed.binding.revision + 1 },
 							};
 						}
-						if (scenario === "status") {
+						// A thread that stops taking direct input classifies inspect-only.
+						if (scenario === "inspect_only") {
 							h.state.classification = {
 								...h.state.classification,
 								link: {
@@ -39,11 +40,6 @@ describe("coordinator callback live authority", () => {
 								},
 							};
 						}
-						if (scenario === "direct_input") {
-							const changed = structuredClone(h.state.classification);
-							Reflect.set(changed.link, "canAcceptDirectInput", false);
-							h.state.classification = changed;
-						}
 						if (scenario === "provenance") {
 							h.state.classification = { ...h.state.classification, proof: null };
 						}
@@ -59,6 +55,46 @@ describe("coordinator callback live authority", () => {
 					close(h);
 				},
 			),
+		);
+	});
+
+	// TASK-302.07: the live classification observes the thread as it is now, so a running turn
+	// shows it active while its link was bound idle. What the person picks by hand is still news;
+	// a live link naming another thread, child or epoch is still not the link the pick was for.
+	test("a thread's status is not its identity: a pick is delivered while the thread runs, and refused when the link names another thread, child or epoch", async () => {
+		const scenarios = {
+			running: { status: "active" },
+			thread: { threadId: "archboard:thread:s616e6f74686572" },
+			child: { childId: "archboard:child:h33333333333333333333333333333333" },
+			epoch: {
+				epoch:
+					"archboard:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444",
+			},
+		} as const;
+		await Promise.all(
+			Object.entries(scenarios).map(async ([scenario, change]) => {
+				const h = harness(true);
+				const live = structuredClone(h.state.classification);
+				for (const [field, value] of Object.entries(change)) {
+					Reflect.set(live.link, field, value);
+				}
+				h.state.classification = live;
+				const base = semanticInput(h.ids, true);
+				const delivery = await h.callbacks.enqueue(
+					h.semantic.publisher.publishPaneSelection({
+						...base,
+						pane: { ...base.pane, userChanged: ["selection"] },
+					}),
+				);
+				if (scenario === "running") {
+					expect(delivery.outcome).toBe("delivered");
+					expect(h.realtimeRequests).toHaveLength(1);
+				} else {
+					expect(delivery).toMatchObject({ attempted: false, reason: "stale_link" });
+					expect(h.realtimeRequests).toHaveLength(0);
+				}
+				close(h);
+			}),
 		);
 	});
 

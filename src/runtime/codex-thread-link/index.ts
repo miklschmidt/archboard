@@ -10,7 +10,10 @@ import type {
 	ThreadLinkEpochAuthority,
 } from "@/runtime/codex-thread-link/lib/contract";
 
-export { createCodexThreadLinkBinding } from "@/runtime/codex-thread-link/lib/binding";
+export {
+	createCodexThreadLinkBinding,
+	sameThreadLinkIdentity,
+} from "@/runtime/codex-thread-link/lib/binding";
 export {
 	classifyCodexThreadLink,
 	createCodexThreadLinkClassifier,

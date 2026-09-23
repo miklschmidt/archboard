@@ -46,6 +46,19 @@ async function linkOf(socket: ApplicationSocket): Promise<Record<string, unknown
 	return snapshots(await socket.request("snapshot"))["threadLink"] as Record<string, unknown>;
 }
 
+/**
+ * The latest turn a pane's timeline shows as finished.
+ * @param socket The pane's socket.
+ * @returns Its id, or undefined while the latest turn has not finished.
+ */
+async function finishedTurn(socket: ApplicationSocket): Promise<string | undefined> {
+	const timeline = snapshots(await socket.request("snapshot"))["timeline"] as {
+		readonly turns: readonly { readonly turnId: string; readonly status: string }[];
+	} | null;
+	const latest = timeline?.turns.at(-1);
+	return latest?.status === "completed" ? latest.turnId : undefined;
+}
+
 // One conversation per canvas, whichever pane speaks (TASK-302.06): the link
 // lives on the canvas, a turn carries the board of the pane that sent it, and
 // closing the pane that created the link strands nothing.
@@ -175,16 +188,11 @@ test("two panes share one conversation that outlives the pane that created it", 
 			"B's ordinary answer to reach Codex",
 		);
 
-		// Pane news is refused as a stale link while the workhorse thread's status
-		// differs from the status its link was bound with, on one pane as on two;
-		// let the turn finish first.
-		writeFileSync(fixture.controlPath, JSON.stringify({ completeWorkhorseTurn: true }));
-		await waitFor(
-			async () => (await linkOf(b))["status"] === "idle",
-			"the workhorse turn to finish",
-		);
-
-		// B starts and stops voice on the conversation A created.
+		// B starts and stops voice on the conversation A created, while B's turn
+		// still runs: the thread's status is not the one its link was bound with,
+		// and that is no reason to stop telling the voice where the person looks
+		// (TASK-302.07).
+		expect(await finishedTurn(b)).toBeUndefined();
 		expect(await b.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
 		const voice = await leased(b, "realtimeStart", { threadId: created["threadId"], sdp: "v=0" });
 		expect(voice.result).toMatchObject({ ok: true, value: { outcome: "delivered" } });
@@ -240,6 +248,8 @@ test("two panes share one conversation that outlives the pane that created it", 
 			value: { outcome: "delivered" },
 		});
 		expect(records(fixture.logPath).some((entry) => entry.kind === "realtime_stop")).toBeTrue();
+		writeFileSync(fixture.controlPath, JSON.stringify({ completeWorkhorseTurn: true }));
+		const first = await waitFor(() => finishedTurn(b), "the workhorse turn to finish");
 
 		// And B still sends typed turns into it.
 		const turnsBefore = records(fixture.logPath).filter(
@@ -255,10 +265,10 @@ test("two panes share one conversation that outlives the pane that created it", 
 				(entry) => entry.kind === "frame" && entry.method === "turn/start",
 			).length,
 		).toBe(turnsBefore + 1);
-		await waitFor(
-			async () => (await linkOf(b))["status"] === "idle",
-			"the second workhorse turn to finish",
-		);
+		await waitFor(async () => {
+			const finished = await finishedTurn(b);
+			return finished !== first ? finished : undefined;
+		}, "the second workhorse turn to finish");
 
 		// A pane reopened under A's old id is shown the canvas's link, and a
 		// create from B replaces it for every pane.
