@@ -54,11 +54,10 @@ interface RecordedViews {
 
 /**
  * What a recording gives its pane, kept in step with the canvas's agent and voice. A recording is
- * not narrated by hand and carries no subtitles: the caption already says what the step says,
- * and nobody in the video can turn them off.
+ * not narrated by hand; its subtitles are the page's own.
  * @param recorder The page's recorder, or null.
  * @param workbench The workbench host.
- * @param usual The narration and the subtitles a page that is not a recording gives its panes.
+ * @param usual The narration and the subtitles the page gives its panes.
  * @returns What the panes are given.
  */
 function useRecordedViews(
@@ -75,7 +74,7 @@ function useRecordedViews(
 		() =>
 			recorder === null
 				? { narration, overlay, recording: null }
-				: { narration: null, overlay: null, recording: { step, onReading: recorder.reading } },
+				: { narration: null, overlay, recording: { step, onReading: recorder.reading } },
 		[recorder, step, narration, overlay],
 	);
 }

@@ -92,7 +92,9 @@ recording page's pane registers as a recording's and the canvas leaves it out of
 everything that picks a pane for somebody who did not name it: `browser` pane
 addressing and listing, the pane count, a new tab's board and the coordinator's
 notion of the pane the user looks at. The server still reaches it by its client
-id. Other browsers do not subtitle a recording's words. A recording start is
+id. Other browsers do not subtitle a recording's words; the recording page
+always does, above the caption, since the voice says more than the caption
+and nobody watching the video can turn them on (TASK-306). A recording start is
 refused while voice is live on the canvas: the canvas has one voice session, and
 recording must never stop somebody who is talking. The reverse is allowed:
 starting voice anywhere on the canvas ends a recording, and the recording says
