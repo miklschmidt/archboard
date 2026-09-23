@@ -229,7 +229,9 @@ _Avoid_: coordinates, theme, layout settings
 
 **Level**:
 The required abstraction classification of a board, chosen from the vocabulary
-defined by the vault's consumer — commonly system, service, module. A
+defined by the vault's consumer — commonly system, service, module — and
+listed there coarsest first, which is how the navigator knows which of two
+drilled boards sits above the other. A
 system board shows interactions between services; a service board shows interactions
 between its modules, with navigation connecting these separate boards. A node
 is at its board's level unless it says otherwise, and the only nodes that say
@@ -312,7 +314,7 @@ the audio clock, so each word is shown as it arrives, and the subtitle goes once
 the voice has been silent longer than it pauses mid-thought. It is presentation:
 the browser's own, written nowhere, and the user can turn it off. What the
 user says is never subtitled.
-_Avoid_: caption (the walkthrough's step text), transcript (the dock's record)
+_Avoid_: caption (the walkthrough's step text), transcript (the conversation's record)
 
 **Pane news**:
 Where a user's reading of a pane stands after they changed it by hand: the board,
@@ -403,21 +405,23 @@ _Avoid_: side convention, port rule, lane side
 ### Working
 
 **Workhorse**:
-The primary Codex thread linked to a pane for sustained code, repository, and
-multi-step work. It may continue working while a voice coordinator answers and
+The primary Codex thread linked to the canvas for sustained code, repository,
+and multi-step work. It may continue working while a voice coordinator answers and
 investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
 
 **Thread link**:
-The explicit runtime association between a pane and one controllable Codex
-workhorse on Archboard's owned app-server child. It never lives in the board or
-follows another client's active thread, and child exit invalidates it.
+The runtime association between the canvas and one controllable Codex
+workhorse on Archboard's owned app-server child, made by the first message or
+Talk; whichever pane is focused speaks through it. It never lives in the board
+or follows another client's active thread, and child exit invalidates it, so
+the next message or Talk makes a new one.
 _Avoid_: binding (that means node-to-code here), attachment, selected thread,
 active task, task link
 
 **Voice coordinator**:
-The persistent fast Codex thread linked to one pane and workhorse. Realtime voice
+The persistent fast Codex thread linked to the canvas's workhorse. Realtime voice
 attaches to it; it handles conversation and bounded direct work while routing
 sustained work to the workhorse.
 _Avoid_: voice model (that is only one part of the realtime path), voice agent,

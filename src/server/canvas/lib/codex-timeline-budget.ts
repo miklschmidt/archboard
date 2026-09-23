@@ -1,12 +1,12 @@
-import type { ThreadId } from "@/shared/codex-workbench-identity";
+import type { TurnId } from "@/shared/codex-workbench-identity";
 import type {
+	CodexTimelinePlanInput,
 	CodexTimelineProjectionInput,
 	CodexTimelineTurnProjectionInput,
 } from "@/server/codex-workbench";
 import { assertBrowserSnapshotBudget } from "@/server/codex-workbench";
 import {
 	projectTurn,
-	textEncoder,
 	TIMELINE_ITEM_LIMIT,
 	TIMELINE_MAX_BYTES,
 	TIMELINE_PAGE_LIMIT,
@@ -15,6 +15,7 @@ import {
 	type TimelineApprovalView,
 	type TimelineData,
 } from "@/server/canvas/lib/codex-timeline-projection";
+import { textEncoder } from "@/server/canvas/lib/codex-timeline-text";
 
 /** What a browser projection carries when the caller asks for no less. */
 const DEFAULT_BROWSER_PROJECTION_BUDGET: CanvasBrowserProjectionBudget = Object.freeze({
@@ -23,21 +24,27 @@ const DEFAULT_BROWSER_PROJECTION_BUDGET: CanvasBrowserProjectionBudget = Object.
 	maxBytes: TIMELINE_MAX_BYTES,
 });
 
+/** Everything a projected timeline carries beside its turns. */
+type TimelineFrame = Pick<CodexTimelineProjectionInput, "kind" | "threadId" | "cursor" | "usage">;
+
+/** What the owner holds from notifications rather than from history. */
+interface TimelineLiveState {
+	readonly usage: CodexTimelineProjectionInput["usage"];
+	readonly planFor: (turnId: TurnId) => CodexTimelinePlanInput | null;
+}
+
 /**
  * How many bytes one projected timeline takes on the wire, which is what every
  * budget decision is measured against.
- * @param threadId The thread.
+ * @param frame Everything the timeline carries beside its turns.
  * @param turns The turns.
- * @param cursor The paging cursor, when there is one.
  * @returns The byte length.
  */
 function timelineBytes(
-	threadId: ThreadId,
+	frame: TimelineFrame,
 	turns: readonly CodexTimelineTurnProjectionInput[],
-	cursor: string | null,
 ): number {
-	return textEncoder.encode(JSON.stringify({ kind: "codex_timeline", threadId, turns, cursor }))
-		.byteLength;
+	return textEncoder.encode(JSON.stringify({ ...frame, turns })).byteLength;
 }
 
 /**
@@ -58,31 +65,101 @@ function markTruncated(turn: CodexTimelineTurnProjectionInput): CodexTimelineTur
 	};
 }
 
+type TimelineItem = CodexTimelineTurnProjectionInput["items"][number];
+
 /**
- * One more turn, trimmed item by item until it fits what is left of the
- * budget, or nothing when even its bare form does not.
- * @param threadId The thread.
+ * How many bytes one item takes inside a projected timeline.
+ * @param item The item.
+ * @returns The byte length.
+ */
+function itemBytes(item: TimelineItem): number {
+	return textEncoder.encode(JSON.stringify(item)).byteLength;
+}
+
+/**
+ * The same item without its command output, which it says was cut; any other
+ * item is returned as it is.
+ * @param item The item.
+ * @returns The lighter item.
+ */
+function withoutOutput(item: TimelineItem): TimelineItem {
+	if (item.kind !== "command_execution" || item.output.tail === null) {
+		return item;
+	}
+	return { ...item, output: { tail: null, truncated: true } };
+}
+
+/**
+ * One more turn, fitted into what is left of the budget from its oldest end,
+ * or nothing when even its bare form does not fit. Its older items give up
+ * their command output first, so as many items as possible stay; then whole
+ * items go, oldest first, so the item the agent is on now is the last to go.
+ * @param frame Everything the timeline carries beside its turns.
  * @param turns The turns already kept.
  * @param candidate The turn being fitted.
- * @param cursor The paging cursor.
  * @param maxBytes The byte bound.
  * @returns The fitted turn, or null.
  */
 function fitTurn(
-	threadId: ThreadId,
+	frame: TimelineFrame,
 	turns: readonly CodexTimelineTurnProjectionInput[],
 	candidate: CodexTimelineTurnProjectionInput,
-	cursor: string | null,
 	maxBytes: number,
 ): CodexTimelineTurnProjectionInput | null {
-	let fitted = markTruncated(candidate);
-	while (
-		timelineBytes(threadId, turns.concat(fitted), cursor) > maxBytes &&
-		fitted.items.length > 0
-	) {
-		fitted = Object.assign({}, fitted, { items: fitted.items.slice(0, -1) });
+	const marked = markTruncated(candidate);
+	const room = maxBytes - timelineBytes(frame, turns.concat({ ...marked, items: [] }));
+	const items = marked.items.map((item) => ({ item, bytes: itemBytes(item) }));
+	shedOlderOutputs(items, room);
+	const fitted = { ...marked, items: dropOldest(items, room).map(({ item }) => item) };
+	return timelineBytes(frame, turns.concat(fitted)) <= maxBytes ? fitted : null;
+}
+
+/** One item with the bytes it takes. */
+interface SizedItem {
+	readonly item: TimelineItem;
+	readonly bytes: number;
+}
+
+/**
+ * How many bytes items take inside a JSON array, one comma between each two.
+ * @param items The items.
+ * @returns The byte length, brackets excluded.
+ */
+function itemsBytes(items: readonly SizedItem[]): number {
+	return items.reduce((sum, { bytes }) => sum + bytes, Math.max(items.length - 1, 0));
+}
+
+/**
+ * Take the command output off items, oldest first and never the newest, until
+ * they fit.
+ * @param items The items, oldest first; lightened in place.
+ * @param room How many bytes they may take.
+ */
+function shedOlderOutputs(items: SizedItem[], room: number): void {
+	let total = itemsBytes(items);
+	for (const [index, entry] of items.entries()) {
+		if (total <= room || index === items.length - 1) {
+			return;
+		}
+		const item = withoutOutput(entry.item);
+		const bytes = itemBytes(item);
+		total += bytes - entry.bytes;
+		items[index] = { item, bytes };
 	}
-	return timelineBytes(threadId, turns.concat(fitted), cursor) <= maxBytes ? fitted : null;
+}
+
+/**
+ * The newest items that fit, dropping whole items from the oldest end.
+ * @param items The items, oldest first.
+ * @param room How many bytes they may take.
+ * @returns The items kept.
+ */
+function dropOldest(items: readonly SizedItem[], room: number): readonly SizedItem[] {
+	let kept = items;
+	while (kept.length > 0 && itemsBytes(kept) > room) {
+		kept = kept.slice(1);
+	}
+	return kept;
 }
 
 /**
@@ -98,33 +175,45 @@ function fitTurn(
  * truncation mark, because that is where history was cut.
  * @param data The retained history.
  * @param approvals Every approval the owner is presenting.
+ * @param live What the owner holds from notifications: usage, and each turn's plan.
  * @param budget What the browser may be shown.
  * @returns The projected timeline.
  */
 function projectData(
 	data: TimelineData,
 	approvals: readonly TimelineApprovalView[],
+	live: TimelineLiveState,
 	budget: CanvasBrowserProjectionBudget,
 ): CodexTimelineProjectionInput {
-	const kept = keepNewestTurns(data, approvals, budget);
+	const frame: TimelineFrame = {
+		kind: "codex_timeline",
+		threadId: data.threadId,
+		cursor: data.cursor,
+		usage: live.usage,
+	};
+	const kept = keepNewestTurns(data, frame, approvals, live, budget);
 	const turns = kept.turns.toReversed();
 	if (kept.truncated && turns.length > 0) {
-		trimOldest(turns, data, budget);
+		trimOldest(turns, frame, budget);
 	}
-	return { kind: "codex_timeline", threadId: data.threadId, turns, cursor: data.cursor };
+	return { ...frame, turns };
 }
 
 /**
  * Project the retained turns newest-first, keeping as many as the turn and
  * byte budgets allow and fitting the one that crosses the byte bound.
  * @param data The retained history.
+ * @param frame Everything the timeline carries beside its turns.
  * @param approvals Every approval the owner is presenting.
+ * @param live What the owner holds from notifications.
  * @param budget What the browser may be shown.
  * @returns The kept turns, newest first, and whether history was cut.
  */
 function keepNewestTurns(
 	data: TimelineData,
+	frame: TimelineFrame,
 	approvals: readonly TimelineApprovalView[],
+	live: TimelineLiveState,
 	budget: CanvasBrowserProjectionBudget,
 ): { readonly turns: CodexTimelineTurnProjectionInput[]; readonly truncated: boolean } {
 	const newestFirst: CodexTimelineTurnProjectionInput[] = [];
@@ -133,12 +222,18 @@ function keepNewestTurns(
 		if (newestFirst.length >= budget.maxTurns) {
 			return { turns: newestFirst, truncated: true };
 		}
-		const candidate = projectTurn(data.threadId, source, approvals, budget.maxItemsPerTurn);
-		if (timelineBytes(data.threadId, [...newestFirst, candidate], data.cursor) <= budget.maxBytes) {
+		const candidate = projectTurn(
+			data.threadId,
+			source,
+			approvals,
+			budget.maxItemsPerTurn,
+			live.planFor(source.turn.id),
+		);
+		if (timelineBytes(frame, [...newestFirst, candidate]) <= budget.maxBytes) {
 			newestFirst.push(candidate);
 			continue;
 		}
-		const fitted = fitTurn(data.threadId, newestFirst, candidate, data.cursor, budget.maxBytes);
+		const fitted = fitTurn(frame, newestFirst, candidate, budget.maxBytes);
 		if (fitted !== null) {
 			newestFirst.push(fitted);
 		}
@@ -158,7 +253,7 @@ function cutOldestOnce(turns: CodexTimelineTurnProjectionInput[]): void {
 		return;
 	}
 	if (oldest.items.length > 0) {
-		turns[0] = { ...markTruncated(oldest), items: oldest.items.slice(0, -1) };
+		turns[0] = { ...markTruncated(oldest), items: oldest.items.slice(1) };
 		return;
 	}
 	turns.shift();
@@ -173,12 +268,12 @@ function cutOldestOnce(turns: CodexTimelineTurnProjectionInput[]): void {
  * turn is oldest as carrying less than the whole of itself: that is where
  * history was cut.
  * @param turns The turns, oldest first; trimmed in place.
- * @param data The retained history.
+ * @param frame Everything the timeline carries beside its turns.
  * @param budget What the browser may be shown.
  */
 function trimOldest(
 	turns: CodexTimelineTurnProjectionInput[],
-	data: TimelineData,
+	frame: TimelineFrame,
 	budget: CanvasBrowserProjectionBudget,
 ): void {
 	const first = turns[0];
@@ -186,7 +281,7 @@ function trimOldest(
 		return;
 	}
 	turns[0] = markTruncated(first);
-	while (turns.length > 0 && timelineBytes(data.threadId, turns, data.cursor) > budget.maxBytes) {
+	while (turns.length > 0 && timelineBytes(frame, turns) > budget.maxBytes) {
 		cutOldestOnce(turns);
 	}
 }
@@ -232,3 +327,4 @@ function createCanvasBrowserProjectionBudget(
 }
 
 export { createCanvasBrowserProjectionBudget, projectData, timelineBytes };
+export type { TimelineLiveState };

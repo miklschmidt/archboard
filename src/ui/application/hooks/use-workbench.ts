@@ -1,11 +1,33 @@
-// The workbench over the focused pane: each pane's current transport, heard
-// through one publication per pane whenever the pane publishes its status,
-// and the owners composed over the focused pane's transport.
+// The agent over the canvas's panes: each pane's current transport, heard
+// through one publication per pane; the owners over the focused pane's
+// transport, which is the pane a message speaks from; one agent setup for the
+// whole canvas, so a message waiting on sign-in survives the person clicking
+// the other pane; and the voice session, which stays with the pane voice was
+// started from until it ends, because its media belongs to that pane's socket.
+// Voice is kept on a pane only once a start succeeded, and let go when that
+// session ends in any way or its pane goes.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+	type Dispatch,
+	type SetStateAction,
+} from "react";
 
+import { createAgentSetup, type AgentSetup } from "@/ui/agent-setup";
+import { createAgentFocus } from "@/ui/application/lib/agent-focus";
+import { createVoiceHost } from "@/ui/application/lib/voice-host";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
-import { createWorkbenchOwners, type WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
+import { agentSetupPorts, releaseWhenVoiceEnds } from "@/ui/application/agent-setup-ports";
+import {
+	createWorkbenchOwners,
+	type VoiceOwner,
+	type WorkbenchOwners,
+} from "@/ui/application/lib/workbench-owners";
 import {
 	createWorkbenchTransportPublication,
 	type WorkbenchTransportPublication,
@@ -15,10 +37,16 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 /** The transports by pane id; null while a pane has none. */
 type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>;
 
-/** The workbench's state and the moves the panes drive. */
+/** The agent's state and the moves the panes drive. */
 interface WorkbenchHost {
 	/** The owners over the focused pane's transport, or null while it has none. */
 	readonly owners: WorkbenchOwners | null;
+	/** The canvas-wide agent setup. */
+	readonly setup: AgentSetup;
+	/** The voice session, or null while its pane has no transport. */
+	readonly voice: VoiceOwner | null;
+	/** Voice ended: let it follow the focused pane again. */
+	readonly releaseVoice: () => void;
 	/** A pane published its status: re-read its transport. */
 	readonly paneReported: (paneId: string) => void;
 	/** A pane went: forget its transport. */
@@ -26,28 +54,23 @@ interface WorkbenchHost {
 }
 
 /**
- * The workbench host.
+ * Each pane's transport, as the panes publish them.
  * @param handles The pane sessions.
- * @param activePaneId The focused pane.
- * @param openAgentSettings The settings door the runtime opens.
- * @returns The owners and the moves.
+ * @returns The transports and the moves that re-read them.
  */
-function useWorkbench(
-	handles: PaneHandles,
-	activePaneId: string,
-	openAgentSettings: () => void,
-): WorkbenchHost {
+function usePaneTransports(handles: PaneHandles): {
+	readonly transports: PaneTransports;
+	readonly paneReported: (paneId: string) => void;
+	readonly paneGone: (paneId: string) => void;
+} {
 	const [transports, setTransports] = useState<PaneTransports>({});
 	const publications = useRef(
 		new Map<string, WorkbenchTransportPublication<BrowserWorkbenchTransport>>(),
 	);
-
 	const publicationFor = useCallback(
 		(paneId: string): WorkbenchTransportPublication<BrowserWorkbenchTransport> => {
 			const existing = publications.current.get(paneId);
-			if (existing !== undefined) {
-				return existing;
-			}
+			if (existing !== undefined) return existing;
 			const created = createWorkbenchTransportPublication<BrowserWorkbenchTransport>({
 				/**
 				 * The transport the pane's socket owner holds now.
@@ -69,7 +92,6 @@ function useWorkbench(
 		},
 		[handles],
 	);
-
 	const paneReported = useCallback(
 		(paneId: string): void => publicationFor(paneId).reconcile(),
 		[publicationFor],
@@ -82,30 +104,99 @@ function useWorkbench(
 			return gone === undefined ? current : rest;
 		});
 	}, []);
+	return { transports, paneReported, paneGone };
+}
 
-	const transport = transports[activePaneId] ?? null;
-	// Composed in an effect, not a memo: the voice adapter subscribes on
-	// creation, so a set that never mounted must never be created.
-	const [owners, setOwners] = useState<WorkbenchOwners | null>(null);
+/**
+ * The voice session for the pane voice runs for.
+ * @param handles The pane sessions.
+ * @param paneId The pane.
+ * @param transport Its transport, or null.
+ * @returns The voice owner, or null.
+ */
+function useVoiceOwner(
+	handles: PaneHandles,
+	paneId: string,
+	transport: BrowserWorkbenchTransport | null,
+): VoiceOwner | null {
+	const [host] = useState(createVoiceHost);
 	useEffect(() => {
-		if (transport === null) {
-			setOwners(null);
-			return undefined;
-		}
-		const created = createWorkbenchOwners({
-			paneId: activePaneId,
-			transport,
-			media: handles.media(activePaneId),
-			openAgentSettings,
-		});
-		setOwners(created);
-		return () => {
-			created.dispose();
-			setOwners((current) => (current === created ? null : current));
-		};
-	}, [activePaneId, transport, handles, openAgentSettings]);
+		if (transport === null) return undefined;
+		return host.follow({ paneId, transport, realtime: handles.media(paneId) });
+	}, [host, handles, paneId, transport]);
+	return useSyncExternalStore(host.subscribe, host.getSnapshot, host.getSnapshot);
+}
 
-	return useMemo(() => ({ owners, paneReported, paneGone }), [owners, paneReported, paneGone]);
+/** What letting voice's pane go reads and moves. */
+interface VoiceRelease {
+	readonly voice: VoiceOwner | null;
+	/** The pane voice is kept on, or null while it follows focus. */
+	readonly voicePane: string | null;
+	readonly setVoicePane: Dispatch<SetStateAction<string | null>>;
+	/** Forget a pane's transport. */
+	readonly forgetPane: (paneId: string) => void;
+}
+
+/**
+ * Let voice's pane go once its session ends in any way, or once the pane goes.
+ * @param inputs The voice, its pane and the moves.
+ * @returns Release voice now, and forget a pane that went.
+ */
+function useVoiceRelease(inputs: VoiceRelease): {
+	readonly releaseVoice: () => void;
+	readonly paneGone: (paneId: string) => void;
+} {
+	const { voice, voicePane, setVoicePane, forgetPane } = inputs;
+	const releaseVoice = useCallback(() => setVoicePane(null), [setVoicePane]);
+	const pinnedSession = voicePane !== null && voice?.paneId === voicePane ? voice.session : null;
+	useEffect(
+		() => (pinnedSession === null ? undefined : releaseWhenVoiceEnds(pinnedSession, releaseVoice)),
+		[pinnedSession, releaseVoice],
+	);
+	const paneGone = useCallback(
+		(paneId: string): void => {
+			setVoicePane((pinned) => (pinned === paneId ? null : pinned));
+			forgetPane(paneId);
+		},
+		[setVoicePane, forgetPane],
+	);
+	return { releaseVoice, paneGone };
+}
+
+/**
+ * The agent over the canvas's panes.
+ * @param handles The pane sessions.
+ * @param activePaneId The focused pane.
+ * @returns The owners, the setup, the voice and the moves.
+ */
+function useWorkbench(handles: PaneHandles, activePaneId: string): WorkbenchHost {
+	const { transports, paneReported, paneGone: forgetPane } = usePaneTransports(handles);
+	const transport = transports[activePaneId] ?? null;
+	// The controllers listen only while somebody does, so composing them is pure.
+	const owners = useMemo(
+		() => (transport === null ? null : createWorkbenchOwners({ paneId: activePaneId, transport })),
+		[activePaneId, transport],
+	);
+	const [voicePane, setVoicePane] = useState<string | null>(null);
+	const voicePaneId = voicePane ?? activePaneId;
+	const voice = useVoiceOwner(handles, voicePaneId, transports[voicePaneId] ?? null);
+
+	// The setup outlives focus: its ports read whatever is focused when a step is taken.
+	const [focus] = useState(createAgentFocus);
+	useEffect(() => focus.retarget(owners, voice), [focus, owners, voice]);
+	const [setup] = useState(() => createAgentSetup(agentSetupPorts(focus, setVoicePane)));
+	useEffect(() => setup.connect(), [setup]);
+	const { releaseVoice, paneGone } = useVoiceRelease({
+		voice,
+		voicePane,
+		setVoicePane,
+		forgetPane,
+	});
+
+	return useMemo(
+		() => ({ owners, setup, voice, releaseVoice, paneReported, paneGone }),
+		[owners, setup, voice, releaseVoice, paneReported, paneGone],
+	);
 }
 
 export { useWorkbench, type WorkbenchHost };

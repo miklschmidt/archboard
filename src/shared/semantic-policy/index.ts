@@ -65,7 +65,11 @@ function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.s
 				.array(VocabularyNameSchema)
 				.min(1)
 				.refine((values) => new Set(values).size === values.length, "Levels must be unique")
-				.meta({ uniqueItems: true }),
+				.meta({
+					uniqueItems: true,
+					description:
+						"The vault's levels, coarsest first: the order decides which board a drill link places above another.",
+				}),
 			nodeKinds: z
 				.record(VocabularyNameSchema, NodePolicySchema.extend({ icon }))
 				.refine((values) => Object.keys(values).length > 0, "Define at least one node kind")

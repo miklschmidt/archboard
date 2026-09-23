@@ -29,7 +29,13 @@ test("fits timeline history after every competing snapshot field is present", as
 				threadId,
 				turns: [
 					{
-						turn: { id: turnId, status: "completed" },
+						turn: {
+							id: turnId,
+							status: "completed",
+							startedAt: null,
+							completedAt: null,
+							durationMs: null,
+						},
 						items: [
 							{
 								kind: "agent_message",
@@ -60,9 +66,12 @@ test("fits timeline history after every competing snapshot field is present", as
 							summary: "A large turn competes with the rest of the gateway projection.",
 							outputs: { included: true, truncated: false },
 						},
+						error: null,
+						plan: null,
 					},
 				],
 				cursor: "next-page",
+				usage: null,
 			},
 			// A full inventory competes for the same bytes as the timeline. It is
 			// bounded rather than fitted, so it must stay small enough that the
@@ -148,6 +157,10 @@ test("fits timeline history after every competing snapshot field is present", as
 	expect(snapshot.lease).toMatchObject({ commandId: lease.commandId, state: "active" });
 	expect(snapshot.operation).toMatchObject({ operationId: lease.commandId, outcome: "delivered" });
 	expect(snapshot.timeline?.turns[0]?.items.length).toBeLessThan(3);
+	// The turn is cut from its oldest end: the newest item is the one kept.
+	expect(snapshot.timeline?.turns[0]?.items.at(-1)?.itemId).toBe(
+		decoder.adoptItemId("budget-item-3"),
+	);
 	expect(snapshot.timeline?.turns[0]?.outputsTruncated).toBeTrue();
 	// The complete bounded inventory survived the fit; only history was trimmed.
 	expect(snapshot.threadCandidates.state).toBe("listed");
@@ -182,10 +195,16 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 								summary: "A final paginated timeline turn",
 								outputsIncluded: true,
 								outputsTruncated: false,
+								startedAtMs: null,
+								completedAtMs: null,
+								durationMs: null,
+								error: null,
+								plan: null,
 							},
 						]
 					: [],
 				nextCursor: "older-turns",
+				usage: null,
 			},
 			queue: {
 				kind: "queue",
@@ -217,6 +236,53 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 	const fitted = fitBrowserSnapshotBounded(completeTimeline, 32_768);
 	expect(wireBytes(fitted)).toBe(32_659);
 	expect(fitted.timeline).toMatchObject({ nextCursor: "older-turns", turns: [] });
+});
+
+test("gives up the oldest turns and keeps the running one when history crosses the bound", () => {
+	const authorities = createIdentityAuthorities();
+	const decoder = authorities.identity.decoder;
+	const value = createGatewayHarness(authorities);
+	const base = value.gateway.connect(value.browserId, value.paneId).snapshot().snapshot;
+	const turn = (raw: string, status: "completed" | "inProgress") => ({
+		turnId: decoder.adoptTurnId(raw),
+		status,
+		items: [
+			{ media: "text", itemId: decoder.adoptItemId(`${raw}-item`), text: "t".repeat(12_000) },
+		],
+		summary: raw,
+		outputsIncluded: true,
+		outputsTruncated: false,
+		startedAtMs: null,
+		completedAtMs: null,
+		durationMs: null,
+		error: null,
+		plan: null,
+	});
+	const complete = value.model.BrowserSnapshotSchema.parse({
+		...base,
+		timeline: {
+			kind: "timeline",
+			threadId: value.threadId,
+			turns: [
+				turn("oldest", "completed"),
+				turn("older", "completed"),
+				turn("running", "inProgress"),
+			],
+			nextCursor: null,
+			usage: null,
+		},
+	});
+
+	const fitted = fitBrowserSnapshotBounded(complete, 32_768);
+
+	const turns = fitted.timeline?.turns ?? [];
+	expect(turns.map((kept) => kept.turnId)).toEqual([
+		decoder.adoptTurnId("older"),
+		decoder.adoptTurnId("running"),
+	]);
+	expect(turns[0]?.outputsTruncated).toBeTrue();
+	expect(turns.at(-1)?.items).toHaveLength(1);
+	expect(wireBytes(fitted)).toBeLessThanOrEqual(32_768);
 });
 
 test("fits voice delivery history in fixed producer records without altering retained bodies", () => {

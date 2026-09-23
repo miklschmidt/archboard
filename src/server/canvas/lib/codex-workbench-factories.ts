@@ -30,6 +30,7 @@ import {
 	type IdentityLedger,
 } from "@/shared/codex-workbench-identity";
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
+import { createCanvasThreadLink } from "@/server/canvas/lib/codex-workbench-canvas-link";
 import { CodexWorkbenchCompositionError } from "@/server/canvas/lib/codex-workbench-error";
 import type {
 	CodexWorkbenchComponents,
@@ -171,16 +172,19 @@ function createProductionCodexWorkbenchFactories(
 				...(adoptedSession === null ? {} : { adoptedReadiness: adoptedSession }),
 			}),
 		/**
-		 * The link binding a pane to the one workhorse thread it speaks to.
+		 * The link binding the canvas to the one workhorse thread every pane
+		 * speaks to, whichever pane asks.
 		 * @param created What the graph has built so far.
 		 * @returns The link.
 		 */
 		threadLink: (created) =>
-			createCodexThreadLink({
-				...bindings.threadLink(created),
-				session: requireComponent(created, "session"),
-				epoch: requireComponent(created, "epoch"),
-			}),
+			createCanvasThreadLink(
+				createCodexThreadLink({
+					...bindings.threadLink(created),
+					session: requireComponent(created, "session"),
+					epoch: requireComponent(created, "epoch"),
+				}),
+			),
 		/**
 		 * What starts a workhorse thread on demand.
 		 * @param created What the graph has built so far.

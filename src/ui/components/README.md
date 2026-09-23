@@ -46,15 +46,11 @@ SHA-256 (first 16 hex) of each item's file content as served by
 | `input-group`   | `registry/base-nova/ui/input-group.tsx`   | `d6c74e82a2aa0298` |
 | `checkbox`      | `registry/base-nova/ui/checkbox.tsx`      | `0cc30ddee3fa9381` |
 | `radio-group`   | `registry/base-nova/ui/radio-group.tsx`   | `f779542f2370b82f` |
-| `collapsible`   | `registry/base-nova/ui/collapsible.tsx`   | `ead4349ff7b01d69` |
 | `tabs`          | `registry/base-nova/ui/tabs.tsx`          | `958b817b256cffae` |
 | `toggle-group`  | `registry/base-nova/ui/toggle-group.tsx`  | `143ec051e67e2d31` |
 | `dropdown-menu` | `registry/base-nova/ui/dropdown-menu.tsx` | `ba92acc16e141ad7` |
-| `sidebar`       | `registry/base-nova/ui/sidebar.tsx`       | `d08ce0624ed0a9a5` |
-| `sheet`         | `registry/base-nova/ui/sheet.tsx`         | `7db65922fb40d9a1` |
 | `skeleton`      | `registry/base-nova/ui/skeleton.tsx`      | `4c2af7fa9c645358` |
 | `toggle`        | `registry/base-nova/ui/toggle.tsx`        | `48ab6456afc25c4c` |
-| `use-mobile`    | `registry/base-nova/hooks/use-mobile.ts`  | `ad0936f84f1df79d` |
 
 ## Local deviations from the registry bytes
 
@@ -63,8 +59,6 @@ correctness check rather than a style rule.
 
 - `field.tsx`: error list keys by the already-unique message instead of the
   array index; one redundant optional chain removed.
-- `use-mobile.ts`: the media-query hook reads through `useSyncExternalStore`
-  instead of setting state inside an effect. Same boolean, same breakpoint.
 - `toggle-group.tsx`: the context value is memoised.
 - `input-group.tsx`: the addon click narrows `event.target` with
   `instanceof HTMLElement` instead of an assertion; its pointer-only focus
@@ -77,5 +71,5 @@ correctness check rather than a style rule.
   closing or open on focus never swallows a click meant for a neighbour.
 - `badge.tsx`: a `size` axis (`default`, `technical`, `chip`) beside the
   official variants; every official variant is untouched.
-- `sidebar.tsx`, `toggle-group.tsx`: CSS custom properties in `style` are
+- `toggle-group.tsx`: CSS custom properties in `style` are
   typed by `css-custom-properties.d.ts` instead of `as React.CSSProperties`.

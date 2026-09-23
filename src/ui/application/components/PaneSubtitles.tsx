@@ -1,19 +1,17 @@
 // Subtitles of the voice, over the pane the voice was started for (TASK-292).
 //
-// The transcript is server truth the transport publishes, a word at a time as the voice speaks.
-// Subtitles read it only while a session carries audio: a transcript left on screen after voice
-// stopped is history, which the transcript panel shows.
+// The transcript is server truth the transport publishes, a word at a time as
+// the voice speaks. Subtitles read it only while a session carries audio.
 
 import { useSyncExternalStore, type JSX } from "react";
 
-import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import { VoiceSubtitles, useSubtitlesWanted, type SubtitleSource } from "@/ui/voice-subtitles";
-import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
+import type { BrowserWorkbenchState, BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** Inputs for a pane's subtitles. */
 interface PaneSubtitlesProps {
-	/** The owners of the pane voice runs for. */
-	readonly owners: WorkbenchOwners;
+	/** The transport of the pane voice runs for. */
+	readonly transport: BrowserWorkbenchTransport;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion: boolean;
 }
@@ -36,11 +34,11 @@ function liveTranscript(state: BrowserWorkbenchState): readonly SubtitleSource[]
 
 /**
  * The subtitles of the voice running for one pane.
- * @param props The pane's owners and the motion preference.
+ * @param props The pane's transport and the motion preference.
  * @returns The subtitle on screen, or null.
  */
 function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
-	const { transport } = props.owners;
+	const { transport } = props;
 	const state = useSyncExternalStore(transport.subscribe, transport.state, transport.state);
 	const wanted = useSubtitlesWanted();
 	return (

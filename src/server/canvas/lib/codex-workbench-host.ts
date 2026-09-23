@@ -30,6 +30,12 @@ export interface CanvasCodexWorkbenchHost {
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	readonly semanticPublisher: SemanticContextPublisherOptions;
 	readonly paneIds: () => readonly string[];
+	/**
+	 * The open pane work nobody's command started presents through: the named
+	 * pane while it is open, else the focused one, else the first in reading
+	 * order. Throws only when no pane is open.
+	 */
+	readonly presentingPaneId: (preferredPaneId: string | null) => string;
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,
 		paneId: string,

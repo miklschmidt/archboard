@@ -54,6 +54,16 @@ const threadLink = {
 	canAcceptDirectInput: true as const,
 	reason: null,
 };
+const promptItemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("prompt-fixture"));
+const commandItemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("command-fixture"));
+const usage = {
+	totalTokens: 1200,
+	inputTokens: 1000,
+	cachedInputTokens: 600,
+	cacheWriteInputTokens: 0,
+	outputTokens: 200,
+	reasoningOutputTokens: 50,
+};
 const timeline = {
 	kind: "timeline" as const,
 	threadId,
@@ -61,13 +71,36 @@ const timeline = {
 		{
 			turnId,
 			status: "completed" as const,
-			items: [{ media: "text" as const, itemId, text: "Hello" }],
+			items: [
+				{ media: "prompt" as const, itemId: promptItemId, text: "Hello" },
+				{
+					media: "command" as const,
+					itemId: commandItemId,
+					command: "bun test",
+					status: "completed" as const,
+					cwd: "/repo",
+					exitCode: 0,
+					durationMs: 950,
+					output: "1 pass",
+					outputTruncated: false,
+				},
+				{ media: "text" as const, itemId, text: "Hi" },
+			],
 			summary: "completed · user: Hello · assistant: Hi",
 			outputsIncluded: true,
 			outputsTruncated: false,
+			startedAtMs: 1_700_000_000_000,
+			completedAtMs: 1_700_000_001_000,
+			durationMs: 1_000,
+			error: null,
+			plan: {
+				explanation: null,
+				steps: [{ step: "Run the tests", status: "completed" as const }],
+			},
 		},
 	],
 	nextCursor: null,
+	usage: { total: usage, last: usage, modelContextWindow: 258_000 },
 };
 const queue = {
 	kind: "queue" as const,

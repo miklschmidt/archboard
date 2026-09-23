@@ -218,3 +218,67 @@ async function setControlledOutputSilent(browser: BrowserOperator, silent: boole
 }
 
 export { setControlledOutputSilent };
+
+/** The coordinator thread the fixture creates first; voice runs on it. */
+const RAW_COORDINATOR_THREAD_ID = "thread-1";
+
+/** One line of the fixture's log. */
+interface FixtureRecord {
+	readonly kind?: string;
+	readonly method?: string;
+	readonly args?: readonly string[];
+	readonly params?: Record<string, unknown>;
+	readonly result?: Record<string, unknown>;
+}
+
+/** Where Talk's steps fall in the records written after it was pressed; -1 for a missing step. */
+interface TalkWire {
+	readonly threadStarts: number;
+	readonly realtimeStarts: number;
+	/** The thread Talk created: the workhorse. */
+	readonly workhorse: string | null;
+	readonly createdAt: number;
+	/** The conversation reading the created thread's turns: it is the canvas's linked thread. */
+	readonly readAt: number;
+	readonly voiceAt: number;
+	/** The board catalogue, naming the given board, injected into the coordinator. */
+	readonly catalogueAt: number;
+}
+
+const isFrame = (record: FixtureRecord, method: string): boolean =>
+	record.kind === "frame" && record.method === method;
+
+/**
+ * Where Talk's steps fall in the fixture's log.
+ * @param talked The records written after Talk was pressed.
+ * @param board The board in view, which the coordinator's catalogue must name.
+ * @returns The step positions.
+ */
+function talkWire(talked: readonly FixtureRecord[], board: string): TalkWire {
+	const created = talked.find(
+		(record) => record.kind === "response" && record.method === "thread/start",
+	);
+	const workhorse = (created?.result?.["thread"] as { id?: string } | undefined)?.id ?? null;
+	const named = JSON.stringify(JSON.stringify(board)).slice(1, -1);
+	return {
+		threadStarts: talked.filter((record) => isFrame(record, "thread/start")).length,
+		realtimeStarts: talked.filter((record) => isFrame(record, "thread/realtime/start")).length,
+		workhorse,
+		createdAt: talked.findIndex((record) => isFrame(record, "thread/start")),
+		readAt: talked.findIndex(
+			(record) =>
+				isFrame(record, "thread/turns/list") &&
+				workhorse !== null &&
+				record.params?.["threadId"] === workhorse,
+		),
+		voiceAt: talked.findIndex((record) => isFrame(record, "thread/realtime/start")),
+		catalogueAt: talked.findIndex(
+			(record) =>
+				isFrame(record, "thread/inject_items") &&
+				record.params?.["threadId"] === RAW_COORDINATOR_THREAD_ID &&
+				JSON.stringify(record.params["items"]).includes(named),
+		),
+	};
+}
+
+export { RAW_COORDINATOR_THREAD_ID, talkWire, type FixtureRecord, type TalkWire };

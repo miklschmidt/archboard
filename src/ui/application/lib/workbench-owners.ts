@@ -1,30 +1,24 @@
 // The owners the application composes over one pane's workbench transport:
-// the voice session adapter, the queue, approvals and thread-link
-// controllers, and the host doors the runtime opens. One set per transport
-// generation; the runtime itself is the one authoritative Codex runtime.
+// the composer, queue, approvals and thread-link controllers. The
+// conversation is the canvas's (TASK-302.06), so whichever pane the person is
+// reading speaks for it, with that pane's board as context.
 
 import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import type { BrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
-import type { VoiceControlsActions } from "@/ui/voice-controls/contracts";
-import { createVoiceSession, type VoiceSession } from "@/ui/voice-session";
-import type {
-	WorkbenchQueueCommandView,
-	WorkbenchThreadLinkActions,
-} from "@/ui/workbench/contracts";
+import { createProgressClock } from "@/ui/application/lib/progress-clock";
+import type { VoiceSession } from "@/ui/voice-session";
 import {
 	createWorkbenchApprovalsController,
 	type WorkbenchApprovalsController,
 } from "@/ui/workbench-approvals";
 import {
-	createWorkbenchQueueController,
-	type WorkbenchQueueController,
-} from "@/ui/workbench-queue";
-import {
 	createWorkbenchComposerController,
 	type WorkbenchComposerController,
 } from "@/ui/workbench-composer";
-import type { WorkbenchRuntimeHost } from "@/ui/workbench-runtime";
-import { createThreadLinkController, workbenchThreadLinkActions } from "@/ui/workbench-thread-link";
+import {
+	createWorkbenchQueueController,
+	type WorkbenchQueueController,
+} from "@/ui/workbench-queue";
+import { createThreadLinkController } from "@/ui/workbench-thread-link";
 import type { ThreadLinkController } from "@/ui/workbench-thread-link/contracts";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
@@ -39,90 +33,27 @@ interface ApprovalDecisions {
 interface WorkbenchOwners {
 	readonly paneId: string;
 	readonly transport: BrowserWorkbenchTransport;
-	readonly voice: VoiceSession;
 	readonly queue: WorkbenchQueueController;
 	readonly composer: WorkbenchComposerController;
 	readonly approvals: WorkbenchApprovalsController;
 	readonly threadLink: ThreadLinkController;
-	readonly threadLinkActions: WorkbenchThreadLinkActions;
-	/** The queue controller's command state, cached per publication. */
-	readonly queueCommand: SnapshotStore<WorkbenchQueueCommandView>;
 	/** The approvals controller's decisions, cached per publication. */
 	readonly approvalDecisions: SnapshotStore<ApprovalDecisions>;
-	readonly host: WorkbenchRuntimeHost;
-	/** Release the adapters' subscriptions; the transport and media outlive them. */
-	readonly dispose: () => void;
+	/** When the running turn last reported anything new. */
+	readonly progress: SnapshotStore<number | null>;
+}
+
+/** The voice session, the pane it runs for, and that pane's transport. */
+interface VoiceOwner {
+	readonly paneId: string;
+	readonly session: VoiceSession;
+	readonly transport: BrowserWorkbenchTransport;
 }
 
 /** What the owners need from the application. */
 interface WorkbenchOwnersOptions {
 	readonly paneId: string;
 	readonly transport: BrowserWorkbenchTransport;
-	readonly media: BrowserWorkbenchMediaOwner;
-	readonly openAgentSettings: () => void;
-}
-
-/**
- * The voice controls' actions over the session adapter. Each control is fire
- * and forget: the adapter publishes the outcome through its own view.
- * @param voice The adapter.
- * @returns The actions.
- */
-function voiceActions(voice: VoiceSession): VoiceControlsActions {
-	return Object.freeze({
-		/** Start voice. */
-		start: (): void => {
-			void voice.start();
-		},
-		/** Mute the microphone. */
-		mute: (): void => {
-			void voice.mute();
-		},
-		/** Unmute the microphone. */
-		unmute: (): void => {
-			void voice.unmute();
-		},
-		/** Stop voice. */
-		stop: (): void => {
-			void voice.stop();
-		},
-		/** Restart voice. */
-		restart: (): void => {
-			void voice.restart();
-		},
-	});
-}
-
-/**
- * Copy text to the clipboard, when the browser allows it: an insecure
- * context has no clipboard, and a denied permission rejects.
- * @param text The exact text.
- */
-function copyText(text: string): void {
-	try {
-		globalThis.navigator.clipboard.writeText(text).catch(() => undefined);
-	} catch {
-		// No clipboard in this context; the text stays where it is shown.
-	}
-}
-
-/**
- * The queue command view from the controller's state.
- * @param queue The queue controller.
- * @returns The view.
- */
-function queueCommandView(queue: WorkbenchQueueController): WorkbenchQueueCommandView {
-	const { pending, settlement } = queue.commandState();
-	const ownership: Record<string, string> = {};
-	for (const entry of queue.view().entries) {
-		ownership[entry.submissionId] = entry.ownershipLabel;
-	}
-	return {
-		pending: pending === null ? null : `Queue ${pending.control} is on the wire…`,
-		settlement:
-			settlement === null ? null : { tone: settlement.state, message: settlement.message },
-		ownership,
-	};
 }
 
 /**
@@ -145,52 +76,37 @@ function approvalDecisions(approvals: WorkbenchApprovalsController): ApprovalDec
 
 /**
  * Compose the owners over one transport.
- * @param options The pane, the transport, its media owner and the settings door.
+ * @param options The pane, the transport and how voice starts.
  * @returns The owners.
  */
 function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners {
-	const { paneId, transport, media, openAgentSettings } = options;
-	const voice = createVoiceSession({ realtime: media, transport, paneId });
+	const { paneId, transport } = options;
 	const queue = createWorkbenchQueueController(transport);
 	const composer = createWorkbenchComposerController({ transport });
 	const approvals = createWorkbenchApprovalsController(transport);
 	const threadLink = createThreadLinkController({
 		/**
-		 * The pane an action is captured against. The application offers no host
-		 * recovery of its own, so every recovery is the transport's or none.
+		 * The pane an action is captured against.
 		 * @returns The capture.
 		 */
 		capturePane: () => ({ paneId, transport, hostRecoveryIntents: [] }),
 	});
-	const host: WorkbenchRuntimeHost = {
-		openAgentSettings,
-		// The candidate chooser lives in the agent settings dialog.
-		chooseThread: openAgentSettings,
-		voice: voiceActions(voice),
-		copyText,
-	};
 	return Object.freeze({
 		paneId,
 		transport,
-		voice,
 		queue,
 		composer,
 		approvals,
 		threadLink,
-		threadLinkActions: workbenchThreadLinkActions(threadLink, { openChooser: openAgentSettings }),
-		queueCommand: createSnapshotCache(queue.subscribe, () => queueCommandView(queue)),
 		approvalDecisions: createSnapshotCache(approvals.subscribe, () => approvalDecisions(approvals)),
-		host,
-		/** Release the voice adapter; the controllers hold no subscriptions of their own. */
-		dispose: (): void => {
-			voice.dispose();
-		},
+		progress: createProgressClock(transport),
 	});
 }
 
 export {
 	createWorkbenchOwners,
 	type ApprovalDecisions,
+	type VoiceOwner,
 	type WorkbenchOwners,
 	type WorkbenchOwnersOptions,
 };

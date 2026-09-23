@@ -30,6 +30,7 @@ import {
 	projectTimeline,
 } from "@/server/codex-workbench/lib/thread-projection";
 import { deepFreeze } from "@/server/codex-workbench/lib/snapshot-bounds";
+import { containsSecretKey } from "@/server/codex-workbench/lib/secret-keys";
 
 export {
 	BROWSER_DELTA_MAX_BYTES,
@@ -55,30 +56,6 @@ const BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE = {
 	chatgpt: "chatgpt",
 	amazonBedrock: "amazonBedrock",
 } as const satisfies Record<CodexAccountType, string>;
-
-const SECRET_KEYS = new Set([
-	"apiKey",
-	"accessToken",
-	"secretAccessKey",
-	"sessionToken",
-	"password",
-	"refreshToken",
-]);
-
-/**
- * Whether any object reachable from the value carries a key that names a secret.
- * @param value The value to search.
- * @param seen Objects already visited, so a cycle terminates.
- * @returns True when a secret-bearing key is present anywhere.
- */
-function containsSecretKey(value: unknown, seen = new Set<object>()): boolean {
-	if (value === null || typeof value !== "object" || seen.has(value)) return false;
-	seen.add(value);
-	if (Array.isArray(value)) return value.some((entry) => containsSecretKey(entry, seen));
-	return Object.entries(value).some(
-		([key, entry]) => SECRET_KEYS.has(key) || containsSecretKey(entry, seen),
-	);
-}
 
 /**
  * Project the account as the browser presents it, from a Codex read or a host-known state.

@@ -58,6 +58,24 @@ function casFor(paneId: string, revision: number, link: ThreadLinkSnapshot): Thr
 }
 
 /**
+ * Whether two links name the same thread in the same child epoch: the link
+ * fields a CAS token carries, and so the state they imply. What was observed
+ * of the thread — its status, whether it is loaded — is not its identity: a
+ * running turn makes an idle thread active without making it another link.
+ * @param left One link.
+ * @param right The other.
+ * @returns True when state, thread, child and epoch all agree.
+ */
+function sameThreadLinkIdentity(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean {
+	return (
+		left.state === right.state &&
+		left.threadId === right.threadId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch
+	);
+}
+
+/**
  * The binding a pane starts with: unbound at revision zero.
  * @param paneId The pane.
  * @returns The initial snapshot.
@@ -425,4 +443,8 @@ function createCodexThreadLinkBinding(): ThreadLinkBindingStore {
 	});
 }
 
-export { createCodexThreadLinkBindingController, createCodexThreadLinkBinding };
+export {
+	createCodexThreadLinkBindingController,
+	createCodexThreadLinkBinding,
+	sameThreadLinkIdentity,
+};

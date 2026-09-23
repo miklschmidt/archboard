@@ -342,7 +342,7 @@ test("the production browser projection publishes immutable voice start and orde
 	expect(evidence?.entries.map((entry) => entry.body)).toEqual(["exact-focus", "exact-selection"]);
 });
 
-test("cancelling a pending sign-in clears the login-pending account arm", async () => {
+test("cancelling a pending sign-in reads the account again and offers sign-in", async () => {
 	const harness = projectionHarness();
 	const { options, context } = harness;
 	harness.setFacts(processFacts());
@@ -366,6 +366,8 @@ test("cancelling a pending sign-in clears the login-pending account arm", async 
 		{ ...command, command: "accountLoginCancel", loginId: harness.loginId },
 		harness.actionContext,
 	);
-	// Without clearing the account arm the browser would stay login_pending forever.
-	expect(readinessNow()).toBe("initialized");
+	// Codex announces no account change after a cancel, so without reading the
+	// account again the browser would stay on starting Codex with no sign-in.
+	for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
+	expect(readinessNow()).toBe("login_capable");
 });

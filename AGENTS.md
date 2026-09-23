@@ -78,7 +78,7 @@ with the reason). These are the rules that will not stop you:
   it persists on the node as `binding: { repo, path }` and is what "open the
   code" resolves.
 - **Codex runs as one private package-local app-server session over stdio**
-  with its own `CODEX_HOME`; a pane's thread link names one workhorse and
+  with its own `CODEX_HOME`; the canvas's thread link names one workhorse and
   voice belongs to its separate coordinator. The
   [bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
   is the delivery and outcome contract.

@@ -1,17 +1,17 @@
-// Whether the focused pane's walkthrough can be narrated aloud, and how (TASK-251).
-//
-// A pane knows nothing about voice, and voice knows nothing about walkthroughs:
-// the shell is where they meet. Narration is offered only while voice could be
-// started for the focused pane, because a session already running was started
-// for something else and a narration is a session started to present one
-// walkthrough. The session adapter owns whether a start is possible; this reads
-// that one fact and turns it into the pane's control.
+// Narrating the focused pane's walkthrough aloud (TASK-251). A pane knows
+// nothing about voice and voice knows nothing about walkthroughs: the shell is
+// where they meet. Narration is offered whenever voice is off — Talk sets up
+// whatever is missing, so a narration needs no voice to be ready first — and
+// not while a session runs, because that session was started for something
+// else.
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo } from "react";
 
-import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
+import type { AgentSetup } from "@/ui/agent-setup";
+import { narrate } from "@/ui/application/agent-setup-ports";
+import type { AgentVoiceView } from "@/ui/workbench/contracts";
 
-/** The focused pane's narration, when voice could be started for it. */
+/** The focused pane's narration, when voice is off. */
 interface Narration {
 	/** The pane voice would be started for. */
 	readonly paneId: string;
@@ -23,35 +23,20 @@ interface Narration {
 }
 
 /**
- * Nothing to listen to while no pane has voice owners.
- * @returns How to stop listening.
- */
-function subscribeToNothing(): () => void {
-	return (): void => undefined;
-}
-
-/**
  * The focused pane's narration.
- * @param owners The focused pane's workbench owners, or null while it has none.
+ * @param setup The agent setup.
+ * @param voice The voice as the agent bar shows it.
  * @param paneId The focused pane, or null.
- * @returns The narration, or null while voice cannot be started for that pane.
+ * @returns The narration, or null while voice is on or on its way.
  */
-function useNarration(owners: WorkbenchOwners | null, paneId: string | null): Narration | null {
-	const voice = owners?.voice ?? null;
-	const canStart = useSyncExternalStore(
-		voice === null ? subscribeToNothing : voice.subscribe,
-		() => voice?.view().controls.canStart ?? false,
-	);
-	const start = useCallback(
-		(walkthrough: string): void => {
-			void voice?.start({ walkthrough });
-		},
-		[voice],
-	);
-	return useMemo(
-		() => (canStart && paneId !== null ? { paneId, start } : null),
-		[canStart, paneId, start],
-	);
+function useNarration(
+	setup: AgentSetup,
+	voice: AgentVoiceView,
+	paneId: string | null,
+): Narration | null {
+	const start = useCallback((walkthrough: string): void => narrate(setup, walkthrough), [setup]);
+	const off = voice.stage === "idle";
+	return useMemo(() => (off && paneId !== null ? { paneId, start } : null), [off, paneId, start]);
 }
 
 export { useNarration, type Narration };

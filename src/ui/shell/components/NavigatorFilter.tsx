@@ -1,0 +1,124 @@
+// The navigator's filter: one field at the top of the column, level with the
+// pane bar, that narrows the tree in place as a person types. While it holds
+// text it says how many boards it found; Enter opens the first, Alt+Enter
+// opens it beside, the down arrow walks into the tree, Escape clears.
+
+import { RiCloseLine, RiSearchLine } from "@remixicon/react";
+import { useCallback, type ChangeEvent, type JSX, type KeyboardEvent, type RefObject } from "react";
+
+import { usesCommandKey } from "@/ui/components/command-key";
+
+/** Inputs for the filter. */
+interface NavigatorFilterProps {
+	readonly input: RefObject<HTMLInputElement | null>;
+	readonly query: string;
+	readonly onQuery: (query: string) => void;
+	/** How many boards the filter found, and how many the vault lists. */
+	readonly count: { readonly found: number; readonly total: number };
+	/** Open the first thing the filter found, in the active pane or beside it. */
+	readonly onOpenFirst: (beside: boolean) => void;
+	/** Move into the tree. */
+	readonly onEnterTree: () => void;
+}
+
+/** What a key in the filter asks for. */
+type FilterIntent = "open" | "openBeside" | "enterTree" | "clear" | "leave";
+
+/**
+ * What a key in the filter asks for.
+ * @param key The key.
+ * @param altKey Whether Alt was held.
+ * @param query What the filter holds.
+ * @returns The intent, or null for a key the field keeps.
+ */
+function filterIntent(key: string, altKey: boolean, query: string): FilterIntent | null {
+	const intents: Readonly<Record<string, FilterIntent | null>> = {
+		ArrowDown: "enterTree",
+		Escape: query === "" ? "leave" : "clear",
+		Enter: query.trim() === "" ? null : altKey ? "openBeside" : "open",
+	};
+	return intents[key] ?? null;
+}
+
+/**
+ * Do what a key in the filter asked for.
+ * @param intent The intent.
+ * @param moves What the filter can do.
+ */
+function carryOut(
+	intent: FilterIntent,
+	moves: Pick<NavigatorFilterProps, "onOpenFirst" | "onEnterTree" | "onQuery" | "input">,
+): void {
+	if (intent === "open" || intent === "openBeside") moves.onOpenFirst(intent === "openBeside");
+	else if (intent === "enterTree") moves.onEnterTree();
+	else if (intent === "clear") moves.onQuery("");
+	else moves.input.current?.blur();
+}
+
+/**
+ * The navigator's filter.
+ * @param props The field, the query, the count and the handlers.
+ * @returns The filter row.
+ */
+function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
+	const { input, query, onQuery, onOpenFirst, onEnterTree } = props;
+	const handleChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) => onQuery(event.target.value),
+		[onQuery],
+	);
+	const handleClear = useCallback(() => {
+		onQuery("");
+		input.current?.focus();
+	}, [onQuery, input]);
+	const handleKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLInputElement>) => {
+			const intent = filterIntent(event.key, event.altKey, query);
+			if (intent === null) return;
+			event.preventDefault();
+			carryOut(intent, { onOpenFirst, onEnterTree, onQuery, input });
+		},
+		[query, onQuery, onOpenFirst, onEnterTree, input],
+	);
+	const filtering = query.trim() !== "";
+	return (
+		<div className="border-border flex h-9 shrink-0 items-center gap-2 border-b pr-2 pl-4">
+			<RiSearchLine className="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
+			<input
+				ref={input}
+				type="search"
+				value={query}
+				onChange={handleChange}
+				onKeyDown={handleKeyDown}
+				placeholder="Find a board"
+				aria-label="Find a board"
+				spellCheck={false}
+				autoComplete="off"
+				className="text-control placeholder:text-muted-foreground h-full min-w-0 flex-1 bg-transparent outline-none [&::-webkit-search-cancel-button]:hidden"
+			/>
+			{filtering ? (
+				<>
+					<output
+						aria-live="polite"
+						className="text-technical text-muted-foreground shrink-0 font-mono"
+					>
+						{props.count.found}/{props.count.total}
+					</output>
+					<button
+						type="button"
+						aria-label="Clear the filter"
+						onClick={handleClear}
+						className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent flex size-6 shrink-0 items-center justify-center rounded-[3px]"
+					>
+						<RiCloseLine className="size-3.5" aria-hidden="true" />
+					</button>
+				</>
+			) : (
+				<kbd className="text-technical text-muted-foreground border-border shrink-0 rounded-[3px] border px-1 font-mono leading-4">
+					{usesCommandKey() ? "⌘K" : "Ctrl K"}
+				</kbd>
+			)}
+		</div>
+	);
+}
+
+export { NavigatorFilter, type NavigatorFilterProps };

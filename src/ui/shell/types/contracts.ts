@@ -5,13 +5,7 @@
 import type { ReactNode } from "react";
 
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
-import type {
-	AgentActivityEntry,
-	BoardIdentity,
-	BoardListing,
-	LockHolder,
-	PaneStatus,
-} from "@/ui/types";
+import type { AgentActivityEntry, BoardListing, LockHolder, PaneStatus } from "@/ui/types";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -78,13 +72,11 @@ interface RecoveryPresentation {
 type ShellPresentation = LivePresentation | RecoveryPresentation;
 
 /** The settings surfaces the header's menu reaches. */
-type SettingsSurface = "opener" | "agent";
+type SettingsSurface = "opener";
 
 /** Everything the shell renders. */
 interface ShellView {
 	theme: ThemeChoice;
-	/** The board named in the header: what the active pane is showing. */
-	current: BoardIdentity;
 	boards: BoardListing;
 	/** Why the listing could not be refreshed, or null while it is current. */
 	boardsError: string | null;
@@ -117,6 +109,12 @@ interface ShellActions {
 	 * @param paneId Which pane shows it; the active one when none is named.
 	 */
 	selectBoard(key: string, paneId?: string): void;
+	/**
+	 * Show a board beside the one being read: in the pane that is not active,
+	 * adding the second pane when there is only one.
+	 * @param key The board key.
+	 */
+	openBeside(key: string): void;
 	refreshBoards(): void;
 	selectPane(paneId: string): void;
 	addPane(): void;
