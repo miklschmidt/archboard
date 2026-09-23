@@ -3,8 +3,9 @@
 // The voice model's transcript arrives a word at a time as it is spoken, so a word is shown when
 // it arrives. What is guarded is what a person would notice: what was said before the subtitles
 // began watching is not replayed; a subtitle goes when the linger runs out on the latest word,
-// which is also what an interruption looks like, and returns with the next; and a cue on screen is never cut
-// differently because more words arrived, so the text a person is reading does not re-flow.
+// which is also what an interruption looks like, and returns with the next; a cue fills the box's
+// two lines and ends early only where a sentence ends on the second; and a cue on screen is never
+// cut differently because more words arrived, so the text a person is reading does not re-flow.
 
 import { describe, expect, test } from "bun:test";
 
@@ -34,21 +35,56 @@ describe("subtitle recency", () => {
 	});
 });
 
+/**
+ * How many lines a text takes in a box some characters wide that breaks lines at spaces, as a
+ * browser does: the line measure the cues are cut against, stated in characters.
+ * @param width How many characters a line holds.
+ * @returns The line count.
+ */
+function wrappedAt(width: number): (text: string) => number {
+	return (text) => {
+		let lines = 1;
+		let used = 0;
+		for (const word of text.split(" ")) {
+			const needed = used === 0 ? word.length : used + 1 + word.length;
+			if (needed > width && used > 0) {
+				lines += 1;
+				used = word.length;
+			} else {
+				used = needed;
+			}
+		}
+		return lines;
+	};
+}
+
 describe("subtitle cues", () => {
 	const text =
 		"An agent states meaning through the command line. The canvas checks the write, takes the lease of the board, commits the whole family to disk and only then answers. Nothing else writes a board, which is refreshingly strict.";
 	const words = wordsOf(text);
-	const cues = cuesOf(words);
+	const lines = wrappedAt(40);
+	const cues = cuesOf(words, lines);
 
-	test("hold every word once, in order, within two lines' worth of characters", () => {
+	test("hold every word once, in order, on two lines at most", () => {
 		expect(cues.flatMap((cue) => cue.words)).toEqual(words);
 		expect(
 			cues.every(
 				(cue, index) => cue.start === cues.slice(0, index).reduce((n, c) => n + c.words.length, 0),
 			),
 		).toBe(true);
-		expect(cues.every((cue) => cue.words.join(" ").length <= 84)).toBe(true);
-		expect(cues.length).toBeGreaterThan(1);
+		expect(cues.every((cue) => lines(cue.words.join(" ")) <= 2)).toBe(true);
+	});
+
+	test("end at a sentence's end on the second line, and otherwise where a third would begin", () => {
+		expect(cues.map((cue) => cue.words.join(" "))).toEqual([
+			// The sentence ends on the second line.
+			"An agent states meaning through the command line.",
+			// Both lines are full: "family" would begin a third.
+			"The canvas checks the write, takes the lease of the board, commits the whole",
+			// A sentence that ends on the first line does not end the cue.
+			"family to disk and only then answers. Nothing else writes a board, which is",
+			"refreshingly strict.",
+		]);
 	});
 
 	/**
@@ -57,7 +93,7 @@ describe("subtitle cues", () => {
 	 * @returns Each cue's words, in order.
 	 */
 	function cutAfter(received: number): string[][] {
-		return cuesOf(words.slice(0, received)).map((cue) => [...cue.words]);
+		return cuesOf(words.slice(0, received), lines).map((cue) => [...cue.words]);
 	}
 
 	test("a cue already on screen is never cut differently because more words arrived", () => {
