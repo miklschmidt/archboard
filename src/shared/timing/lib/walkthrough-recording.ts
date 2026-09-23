@@ -115,11 +115,14 @@ const RECORDING_CALL_MS = 10_000;
 const RECORDING_STALL_MS = RECORDING_STEP_MAX_MS + RECORDING_VOICE_START_MS;
 
 /**
- * How long streaming the finished file out of the page may take. It moves
- * over a local DevTools socket in base64 chunks; a ten-minute recording at
- * the capture's bit rate is a few hundred megabytes.
+ * How long each call that streams the finished file out of the page may
+ * take: resolving the file, then every one-megabyte read of it. The stream as
+ * a whole has no bound of its own; a ten-minute recording at the capture's
+ * bit rate is a few hundred reads, and a 200 MB file streamed in 1.5 s when
+ * measured for TASK-304, so a read that takes seconds has stuck. It pulls
+ * against a page still busy finishing the file when the first read arrives.
  */
-const RECORDING_FILE_READ_MS = 5 * 60_000;
+const RECORDING_FILE_READ_MS = 30_000;
 
 /**
  * How long the recorder waits for its Chromium's process group to be gone

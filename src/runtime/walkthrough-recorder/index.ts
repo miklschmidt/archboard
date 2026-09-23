@@ -8,13 +8,15 @@
 // tab capture accepted without a prompt, audio allowed to play, a silent
 // microphone granted), drives the page through the shared recording contract,
 // streams the finished file out and tears the browser down, whatever happened.
-// It runs against the canvas the CLI talks to, because that canvas owns the
-// Codex sign-in the voice needs.
+// An interrupt tears it down at once, so every call still waiting on it fails
+// and nothing is written. It runs against the canvas the CLI talks to, because
+// that canvas owns the Codex sign-in the voice needs.
 
 import { mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
+import type { DiagramTheme } from "@/shared/semantic-board/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import {
 	RECORDING_BROWSER_START_MS,
@@ -39,6 +41,7 @@ import {
 import {
 	RecordingPageError,
 	drive,
+	messageOf,
 	type RecordingPageHandle,
 } from "@/runtime/walkthrough-recorder/lib/drive";
 import { writeSilence } from "@/runtime/walkthrough-recorder/lib/silence";
@@ -47,9 +50,9 @@ import { writeSilence } from "@/runtime/walkthrough-recorder/lib/silence";
 type WalkthroughRecordingErrorCode =
 	/** No Chromium-family browser was found, or it would not start. */
 	| "RECORDER_UNAVAILABLE"
-	/** The page could not start recording: nothing was captured. */
+	/** The page could not start recording, or failed before it showed a step: nothing was recorded. */
 	| "RECORDING_REFUSED"
-	/** The recording started and did not finish. */
+	/** The recording showed a step and did not finish. */
 	| "RECORDING_FAILED";
 
 /** A recording that did not happen, with the stable half of why. */
@@ -79,7 +82,7 @@ interface WalkthroughRecordingRequest {
 	readonly walkthrough: string;
 	readonly container: RecordingContainer;
 	/** Which palette the page draws in. */
-	readonly theme: "light" | "dark";
+	readonly theme: DiagramTheme;
 	/** The file to write, absolute. */
 	readonly out: string;
 	readonly signal: AbortSignal;
@@ -100,6 +103,8 @@ interface RecordedWalkthrough {
 	readonly durationMs: number;
 	/** How many steps the talk went through. */
 	readonly steps: number;
+	/** What stopping the recording's browser could not prove gone; empty when it was clean. */
+	readonly leftBehind: readonly string[];
 }
 
 /**
@@ -173,10 +178,10 @@ function pageHandle(chromium: HeadlessChromium, window: HeadlessWindow): Recordi
 		 * Stream a Blob the expression evaluates to into a file.
 		 * @param expression An expression whose value is a Blob.
 		 * @param path Where to write it.
-		 * @param timeoutMs How long the whole stream may take.
+		 * @param readTimeoutMs How long resolving the Blob, and each read of it, may take.
 		 * @returns How many bytes were written.
 		 */
-		saveBlob: async (expression, path, timeoutMs) => {
+		saveBlob: async (expression, path, readTimeoutMs) => {
 			const remote = await page.evaluate(expression, {
 				returnByValue: false,
 				timeoutMs: RECORDING_CALL_MS,
@@ -185,7 +190,7 @@ function pageHandle(chromium: HeadlessChromium, window: HeadlessWindow): Recordi
 			if (typeof objectId !== "string") {
 				throw new RecordingPageError("The canvas page finished without a file to hand over.", true);
 			}
-			return (await page.readBlobTo(objectId, path, timeoutMs)).bytes;
+			return (await page.readBlobTo(objectId, path, readTimeoutMs)).bytes;
 		},
 		/**
 		 * Size the window again whenever the browser took room from the page.
@@ -204,26 +209,35 @@ function pageHandle(chromium: HeadlessChromium, window: HeadlessWindow): Recordi
  * @param chromium The browser.
  * @param request What to record.
  * @returns The page.
+ * @throws {RecordingPageError} When the page could not be opened; nothing was recorded.
  */
 async function openRecordingPage(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
 ): Promise<HeadlessWindow> {
 	const url = pageUrl(request);
-	await chromium.browser.call(
-		"Browser.grantPermissions",
-		{ origin: new URL(url).origin, permissions: ["audioCapture"] },
-		RECORDING_CALL_MS,
-	);
-	const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDING_CALL_MS);
-	const { page } = window;
-	await page.call(
-		"Emulation.setEmulatedMedia",
-		{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
-		RECORDING_CALL_MS,
-	);
-	await page.call("Page.navigate", { url }, RECORDING_CALL_MS);
-	return window;
+	try {
+		await chromium.browser.call(
+			"Browser.grantPermissions",
+			{ origin: new URL(url).origin, permissions: ["audioCapture"] },
+			RECORDING_CALL_MS,
+		);
+		const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDING_CALL_MS);
+		const { page } = window;
+		await page.call(
+			"Emulation.setEmulatedMedia",
+			{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
+			RECORDING_CALL_MS,
+		);
+		const navigation = await page.call("Page.navigate", { url }, RECORDING_CALL_MS);
+		const refused = navigation["errorText"];
+		if (typeof refused === "string" && refused !== "") {
+			throw new Error(`Chromium could not open ${url}: ${refused}. Check the canvas is running.`);
+		}
+		return window;
+	} catch (error) {
+		throw new RecordingPageError(messageOf(error), false);
+	}
 }
 
 /**
@@ -254,33 +268,106 @@ async function startBrowser(
 }
 
 /**
- * Record while the browser is up, writing the file beside where it goes and moving it into
- * place only once it is whole.
+ * Record while the browser is up, into a file beside where it goes. Moving it into place is
+ * the caller's, once the browser is stopped.
  * @param chromium The browser.
  * @param request What to record.
+ * @param partial Where to write it.
  * @returns The finished recording.
+ * @throws {RecordingPageError} When it did not happen.
  */
 async function recordIn(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
-): Promise<RecordedWalkthrough> {
+	partial: string,
+): Promise<Omit<RecordedWalkthrough, "leftBehind">> {
+	request.signal.throwIfAborted();
 	const window = await openRecordingPage(chromium, request);
+	const { state, bytes } = await drive(pageHandle(chromium, window), {
+		container: request.container,
+		path: partial,
+		signal: request.signal,
+		onProgress: request.onProgress,
+	});
+	return {
+		file: request.out,
+		bytes,
+		mimeType: state.mimeType ?? "",
+		durationMs: Math.round(state.durationMs ?? 0),
+		steps: state.of ?? 0,
+	};
+}
+
+/**
+ * Move a whole recording to where it goes, synchronously.
+ * @param partial Where it was written.
+ * @param out Where it goes.
+ * @throws {RecordingPageError} When it could not be moved; the talk was recorded.
+ */
+function moveIntoPlace(partial: string, out: string): void {
+	try {
+		renameSync(partial, out);
+	} catch (error) {
+		throw new RecordingPageError(messageOf(error), true);
+	}
+}
+
+/**
+ * What a recording that did not happen fails with.
+ * @param error What stopped it.
+ * @param leftBehind What stopping its browser could not prove gone.
+ * @returns The recording's failure, or the error itself when it is not the page's.
+ */
+function failure(error: unknown, leftBehind: readonly string[]): unknown {
+	if (!(error instanceof RecordingPageError)) return error;
+	const also =
+		leftBehind.length === 0
+			? ""
+			: `\nStopping the recording's browser also failed: ${leftBehind.join("; ")}`;
+	return new WalkthroughRecordingError(
+		error.began ? "RECORDING_FAILED" : "RECORDING_REFUSED",
+		`${error.message}${also}`,
+		error,
+	);
+}
+
+/**
+ * Record in a started browser and stop it, whatever happened: at once when the recording is
+ * cancelled, so every call still waiting on it fails rather than running on. The file moves
+ * into place only once the browser is stopped, in the same synchronous turn as the last look
+ * at the signal, so an interrupt that lands anywhere leaves nothing where it goes.
+ * @param chromium The browser.
+ * @param request What to record.
+ * @returns The finished recording.
+ * @throws {WalkthroughRecordingError} When it did not happen; the signal's reason when cancelled.
+ */
+async function recordedWith(
+	chromium: HeadlessChromium,
+	request: WalkthroughRecordingRequest,
+): Promise<RecordedWalkthrough> {
+	/** Stop the browser the moment the recording is cancelled. */
+	const cancel = (): void => {
+		void chromium.stop();
+	};
 	const partial = join(dirname(request.out), `.${Date.now()}.recording.partial`);
 	try {
-		const { state, bytes } = await drive(pageHandle(chromium, window), {
-			container: request.container,
-			path: partial,
-			signal: request.signal,
-			onProgress: request.onProgress,
-		});
-		renameSync(partial, request.out);
-		return {
-			file: request.out,
-			bytes,
-			mimeType: state.mimeType ?? "",
-			durationMs: Math.round(state.durationMs ?? 0),
-			steps: state.of ?? 0,
-		};
+		request.signal.addEventListener("abort", cancel, { once: true });
+		const outcome = await recordIn(chromium, request, partial).then(
+			(made) => ({ made }),
+			(error: unknown) => ({ error }),
+		);
+		request.signal.removeEventListener("abort", cancel);
+		const cleanup = await chromium.stop();
+		const leftBehind = cleanup.clean ? [] : cleanup.errors;
+		// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
+		request.signal.throwIfAborted();
+		try {
+			if ("error" in outcome) throw outcome.error;
+			moveIntoPlace(partial, request.out);
+			return { ...outcome.made, leftBehind };
+		} catch (error) {
+			throw failure(error, leftBehind);
+		}
 	} finally {
 		rmSync(partial, { force: true });
 	}
@@ -290,28 +377,17 @@ async function recordIn(
  * Record one walkthrough to a video file.
  * @param request What to record, and where.
  * @returns The finished recording.
- * @throws {WalkthroughRecordingError} When it did not happen; nothing is written then.
+ * @throws {WalkthroughRecordingError} When it did not happen; nothing is written then. A cancelled
+ *   recording throws the signal's reason, and writes nothing either.
  */
 async function recordWalkthrough(
 	request: WalkthroughRecordingRequest,
 ): Promise<RecordedWalkthrough> {
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-recording-"));
-	const microphone = join(scratch, "silence.wav");
-	writeSilence(microphone);
 	try {
-		const chromium = await startBrowser(request, microphone);
-		try {
-			return await recordIn(chromium, request);
-		} finally {
-			await chromium.stop();
-		}
-	} catch (error) {
-		if (!(error instanceof RecordingPageError)) throw error;
-		throw new WalkthroughRecordingError(
-			error.began ? "RECORDING_FAILED" : "RECORDING_REFUSED",
-			error.message,
-			error,
-		);
+		const microphone = join(scratch, "silence.wav");
+		writeSilence(microphone);
+		return await recordedWith(await startBrowser(request, microphone), request);
 	} finally {
 		rmSync(scratch, { recursive: true, force: true });
 	}
@@ -319,8 +395,10 @@ async function recordWalkthrough(
 
 export {
 	WalkthroughRecordingError,
+	drive,
 	recordWalkthrough,
 	type RecordedWalkthrough,
+	type RecordingPageHandle,
 	type WalkthroughRecordingErrorCode,
 	type WalkthroughRecordingRequest,
 };
