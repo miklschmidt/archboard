@@ -59,7 +59,7 @@ const LEVELS = ["system", "service", "module"] as const;
 
 const SLUG_RE = /^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/i;
 // `@` separates name from variant, so it can never appear in a name. The rest
-// are characters that are hostile in a path or in an Obsidian wiki-link.
+// are characters that are hostile in a path or in a link to a note.
 const NAME_SEGMENT_BAD_RE = /[@\\:*?"<>|[\]#^]/;
 
 /**
@@ -126,8 +126,8 @@ function refuseUnusableSegment(name: string, segment: string): void {
 }
 
 /**
- * Refuse a path segment holding a character that breaks a path, an Obsidian
- * link, or the address grammar itself.
+ * Refuse a path segment holding a character that breaks a path, a link, or the
+ * address grammar itself.
  * @param name The whole name, for the error message.
  * @param segment One `/`-separated segment of it.
  * @throws {Error} When the segment holds one.
@@ -136,7 +136,7 @@ function refuseReservedCharacters(name: string, segment: string): void {
 	if (NAME_SEGMENT_BAD_RE.test(segment)) {
 		throw new Error(
 			`Invalid board name "${name}": "@ \\ : * ? " < > | [ ] # ^" are reserved ` +
-				'("@" separates the variant; the rest break paths or Obsidian links)',
+				'("@" separates the variant; the rest are kept out of file names and links)',
 		);
 	}
 	if (hasControlCharacter(segment)) {

@@ -10,7 +10,7 @@ const ENABLE_CANVAS_SYNC = process.env["ENABLE_CANVAS_SYNC"] !== "false"; // Def
 // Opt out of auto-starting the canvas server from the CLI.
 const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 
-// The Obsidian vault every board is persisted into (ADR 0004). Deliberately
+// The vault directory every board is persisted into (ADR 0004). Deliberately
 // has no default: the vault spans repositories, so guessing at the current
 // working directory would scatter boards across checkouts and quietly create a
 // different "vault" per cwd.
@@ -37,7 +37,7 @@ function noVaultMessage(): string {
 	return [
 		"archboard has no vault, so there is nowhere to put a board and the canvas will not start.",
 		"",
-		"Boards are notes in an Obsidian vault, and choosing one is part of installing",
+		"Boards are files in a vault directory, and choosing one is part of installing",
 		"archboard into a repository:",
 		"",
 		"  archboard install-skill",
