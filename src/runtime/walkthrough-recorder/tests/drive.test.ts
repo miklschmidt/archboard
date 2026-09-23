@@ -11,7 +11,7 @@ import { drive, type RecordingPageHandle } from "@/runtime/walkthrough-recorder/
 
 const LOADING: RecordingState = {
 	phase: "loading",
-	walkthrough: null,
+	walkthrough: "w1",
 	step: null,
 	of: null,
 	failure: null,
