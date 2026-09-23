@@ -59,6 +59,17 @@ test(
 			});
 			resources.defer(() => canvas.dispose());
 			const request = createRequester(canvas);
+			// Another board first, so a new pane's first board is not the one recorded: the
+			// recording page has to ask for its board by its own client id.
+			const other = await request("/api/semantic-boards/create", {
+				method: "POST",
+				doing: "making a board that is not recorded",
+				body: {
+					board: "Alpha",
+					create: { level: "system", nodes: [{ name: "Elsewhere", kind: "service" }] },
+				},
+			});
+			expect(other.status).toBe(200);
 			const created = await request("/api/semantic-boards/create", {
 				method: "POST",
 				doing: "making a board to record",
