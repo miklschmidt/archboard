@@ -285,8 +285,9 @@ const semanticRecordContract = defineCommand({
 			key: "discard",
 			spellings: ["--discard"],
 			value: "none",
+			requiresShared: ["doing"],
 			description:
-				"Delete the board once its recording is written, for a board made only to be recorded; needs --doing",
+				"Delete the board once its recording is written, for a board made only to be recorded",
 		},
 	],
 	input: { ingress: RecordInputSchema },

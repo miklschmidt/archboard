@@ -40,6 +40,8 @@ interface OptionParameter {
 	hidden?: boolean;
 	/** Shared options that do not apply when this local option is present. */
 	excludesShared?: readonly SharedOptionKey[];
+	/** Shared options this local option needs: help says they are required with it, and only then. */
+	requiresShared?: readonly SharedOptionKey[];
 }
 
 interface PositionalParameter {
@@ -246,19 +248,24 @@ function assertOptionFacts(
 }
 
 /**
- * Refuses an option that excludes a shared option the command never declared.
+ * Refuses an option that excludes or needs a shared option the command never declared.
  * @param contract - The contract being defined.
- * @param parameter - The local option with conditional exclusions.
+ * @param parameter - The local option with conditional exclusions or needs.
  */
 function assertExcludedShared(
 	contract: CommandContract<z.ZodRawShape, unknown>,
 	parameter: OptionParameter,
 ): void {
-	for (const excluded of parameter.excludesShared ?? []) {
-		if (!contract.shared.includes(excluded)) {
-			throw new Error(
-				`${contract.path.join(" ")}: option ${parameter.spellings[0]} excludes undeclared shared option ${excluded}`,
-			);
+	for (const [relation, keys] of [
+		["excludes", parameter.excludesShared ?? []],
+		["needs", parameter.requiresShared ?? []],
+	] as const) {
+		for (const key of keys) {
+			if (!contract.shared.includes(key)) {
+				throw new Error(
+					`${contract.path.join(" ")}: option ${parameter.spellings[0]} ${relation} undeclared shared option ${key}`,
+				);
+			}
 		}
 	}
 }
