@@ -81,9 +81,10 @@ function Timing(props: { readonly status: AgentStatus; readonly now: number }): 
 		);
 	}
 	if (status.endedAtMs === null) return null;
+	const age = shortAge(new Date(status.endedAtMs).toISOString(), now);
 	return (
 		<span className="text-technical text-muted-foreground shrink-0 font-mono">
-			{shortAge(new Date(status.endedAtMs).toISOString(), now)}
+			{age === "now" ? "just now" : `${age} ago`}
 		</span>
 	);
 }

@@ -113,7 +113,29 @@ function lineTotals(item: Extract<ActivityItem, { readonly media: "fileChange" }
 }
 
 /**
- * A run of work summed up in one line: how many steps, commands and files.
+ * Whether a step failed or was declined.
+ * @param item The step.
+ * @returns True when it did not do what it set out to.
+ */
+function stepFailed(item: ActivityItem): boolean {
+	return "status" in item && (item.status === "failed" || item.status === "declined");
+}
+
+/**
+ * A count in words, or nothing for none.
+ * @param count How many.
+ * @param one What one is called.
+ * @param many What several are called.
+ * @returns "3 commands", or null.
+ */
+function counted(count: number, one: string, many: string): string | null {
+	if (count === 0) return null;
+	return `${count} ${count === 1 ? one : many}`;
+}
+
+/**
+ * A run of work summed up in one line: how many steps, commands and files,
+ * and how many steps failed.
  * @param items The run.
  * @returns The words.
  */
@@ -125,11 +147,12 @@ function runSummary(items: readonly ActivityItem[]): string {
 		),
 	).size;
 	const facts = [
-		`${items.length} ${items.length === 1 ? "step" : "steps"}`,
-		commands > 0 ? `${commands} ${commands === 1 ? "command" : "commands"}` : null,
-		files > 0 ? `${files} ${files === 1 ? "file" : "files"} changed` : null,
+		counted(items.length, "step", "steps"),
+		counted(commands, "command", "commands"),
+		counted(files, "file changed", "files changed"),
+		counted(items.filter(stepFailed).length, "failed", "failed"),
 	];
 	return facts.filter((fact) => fact !== null).join(" · ");
 }
 
-export { activityLabel, lineTotals, reasoningParts, runSummary, shortDuration };
+export { activityLabel, lineTotals, reasoningParts, runSummary, shortDuration, stepFailed };

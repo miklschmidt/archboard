@@ -26,6 +26,7 @@ import {
 	reasoningParts,
 	runSummary,
 	shortDuration,
+	stepFailed,
 } from "@/ui/workbench-thread/lib/activity-words";
 
 /** A run longer than this folds once its turn has ended. */
@@ -47,22 +48,13 @@ interface ActivityRunProps {
 }
 
 /**
- * Whether a step failed or was declined.
- * @param item The step.
- * @returns True when it did not do what it set out to.
- */
-function failed(item: ActivityItem): boolean {
-	return "status" in item && (item.status === "failed" || item.status === "declined");
-}
-
-/**
  * Whether a run folds to one line: once its turn has ended, when it is long
  * and nothing in it failed.
  * @param run The run.
  * @returns Whether it folds.
  */
 function folds(run: Run): boolean {
-	return !run.running && run.items.length > FOLD_AFTER && !run.items.some(failed);
+	return run.ended && run.items.length > FOLD_AFTER && !run.items.some(stepFailed);
 }
 
 /**
@@ -71,9 +63,9 @@ function folds(run: Run): boolean {
  * @returns The rows, or the one line they fold to.
  */
 function ActivityRun(props: ActivityRunProps): JSX.Element {
-	const { items, running } = props.run;
+	const { items, live } = props.run;
 	const foldable = folds(props.run);
-	const liveIndex = running ? items.length - 1 : -1;
+	const liveIndex = live ? items.length - 1 : -1;
 	const [open, setOpen] = useState(false);
 	const toggle = useCallback(() => setOpen((current) => !current), []);
 	return (
@@ -141,15 +133,17 @@ function reasoningOpens(text: string): boolean {
 
 /**
  * One step of work: its kind, what it was, and how long it took, opening to
- * its evidence. A failed step starts open.
+ * its evidence. A step that fails opens itself.
  * @param props The step and whether it is live.
  * @returns The row.
  */
 function ActivityRow(props: ActivityRowProps): JSX.Element {
 	const { item, live } = props;
 	const evidence = hasEvidence(item);
-	const [open, setOpen] = useState(failed(item));
-	const toggle = useCallback(() => setOpen((current) => !current), []);
+	// A step that fails opens itself, until the person opens or closes it.
+	const [chosen, setChosen] = useState<boolean | null>(null);
+	const open = chosen ?? stepFailed(item);
+	const toggle = useCallback(() => setChosen(!open), [open]);
 	return (
 		<div
 			data-slot="activity-row"
@@ -192,7 +186,7 @@ function RowIcon(props: { readonly item: ActivityItem; readonly live: boolean })
 			/>
 		);
 	}
-	if (failed(props.item)) {
+	if (stepFailed(props.item)) {
 		return <RiCloseCircleLine aria-label="Failed" className="text-destructive size-3.5 shrink-0" />;
 	}
 	const Icon = KIND_ICONS[props.item.media];

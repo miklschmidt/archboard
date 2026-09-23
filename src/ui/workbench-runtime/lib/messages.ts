@@ -22,8 +22,10 @@ type ActivityItem = Extract<
 /** A run of work between two things said. */
 interface ActivityRun {
 	readonly items: readonly ActivityItem[];
-	/** The turn is still running, so the run may grow and its last row is live. */
-	readonly running: boolean;
+	/** The turn has ended, so nothing in the run will change. */
+	readonly ended: boolean;
+	/** The run is the running turn's latest, so it may grow and its last row is live. */
+	readonly live: boolean;
 }
 
 /** How a turn ended, as the data part at its foot carries it. */
@@ -121,21 +123,23 @@ function wordsPart(item: Exclude<ConversationItem, ActivityItem>): MessagePart {
 function itemParts(turn: ConversationTurn): MessagePart[] {
 	const parts: MessagePart[] = [];
 	let run: ActivityItem[] = [];
-	/** Close the current run of work, if there is one. */
-	const flush = (): void => {
-		if (run.length > 0) parts.push(dataPart("activity", { items: run, running: false }));
+	const ended = turn.outcome !== "running";
+	/**
+	 * Close the current run of work, if there is one.
+	 * @param live Whether it is the running turn's latest.
+	 */
+	const flush = (live: boolean): void => {
+		if (run.length > 0) parts.push(dataPart("activity", { items: run, ended, live }));
 		run = [];
 	};
 	for (const item of turn.items) {
 		if (isActivity(item)) run.push(item);
 		else {
-			flush();
+			flush(false);
 			parts.push(wordsPart(item));
 		}
 	}
-	if (run.length > 0) {
-		parts.push(dataPart("activity", { items: run, running: turn.outcome === "running" }));
-	}
+	flush(!ended);
 	return parts;
 }
 

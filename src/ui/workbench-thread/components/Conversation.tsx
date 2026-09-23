@@ -116,7 +116,10 @@ const PART_COMPONENTS = {
  */
 function AgentTurn(): JSX.Element {
 	return (
-		<MessagePrimitive.Root data-slot="turn" className="flex flex-col gap-2.5">
+		<MessagePrimitive.Root
+			data-slot="turn"
+			className="flex flex-col gap-2.5 text-[13.5px] leading-[21px]"
+		>
 			<MessagePrimitive.Parts components={PART_COMPONENTS} />
 		</MessagePrimitive.Root>
 	);
