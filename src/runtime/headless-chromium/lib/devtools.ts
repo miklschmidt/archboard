@@ -5,6 +5,7 @@
 // failure can say what the page said. A connection that stays open for a
 // whole recording must not grow with it, so nothing else is kept.
 
+import { writeFileSync } from "node:fs";
 import { HEADLESS_CHROMIUM_CALL_MS } from "@/shared/timing/timing";
 
 import { HeadlessChromiumError } from "@/runtime/headless-chromium/lib/errors";
@@ -273,6 +274,8 @@ class DevTools {
 			throw failed("Chromium did not resolve the object to a Blob.");
 		}
 		const handle = `blob:${resolved["uuid"]}`;
+		// A writer does not truncate: a file already longer than the Blob would keep its tail.
+		writeFileSync(path, "");
 		const sink = Bun.file(path).writer();
 		try {
 			return { bytes: await this.pump(handle, sink, timeoutMs) };
