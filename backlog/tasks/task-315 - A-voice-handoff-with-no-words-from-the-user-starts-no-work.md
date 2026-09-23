@@ -1,11 +1,13 @@
 ---
 id: TASK-315
-title: A voice handoff with no words from the user starts no work
+title: >-
+  A voice handoff with no words from the user is never taken as the user's
+  instruction
 status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:35'
-updated_date: '2026-09-23 22:29'
+updated_date: '2026-09-23 22:35'
 labels:
   - voice
   - coordinator
@@ -26,7 +28,7 @@ In the 2026-09-23 23:15 narration the voice model handed off while explaining st
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 The coordinator is told that a handoff holding only the voice model's own words (assistant lines with no user line) is not a request: it delegates, queues and steers nothing and ends with one [COMMENTARY] line telling the voice model the handoff was dropped and nothing will come back
+- [x] #1 The coordinator is told that a handoff holding only the voice model's own words (assistant lines with no user line) is the voice model's, never the user's: it starts no board change from it, answers a request the words show, such as an announced lookup, and otherwise tells the voice model in one [COMMENTARY] line that the handoff request was unclear
 - [x] #2 The narration prompt tells the voice model that the step it was handed is all it needs, and that it hands off only for a question the user asks
 - [ ] #3 A real-voice narration with fast stepping starts no workhorse work, as the user reports
 <!-- AC:END -->
@@ -47,4 +49,6 @@ Coordinator instructions (Language paragraph) now say a handoff with no user lin
 User correction: the voice was picked up by their microphone. The coordinator rule now also covers user input that repeats or closely matches what the voice model just said, and its [COMMENTARY] line tells the voice model that the handoff was its own voice, so it was dropped and nothing will come back. Digest updated; instruction and coordinator tests pass (152).
 
 User decision 2026-09-24: no rule for the microphone echo case (rare); only the assistant-only handoff is handled. The echo clause is removed from the coordinator instructions; digest re-pinned, tests pass (183).
+
+User direction 2026-09-24: what went wrong is that the coordinator took the voice model's words as the user's explicit instruction. The rule now says assistant-only input is the voice model's spoken words: the coordinator never treats it as the user's instruction and starts no board change from it, answers a request those words show (such as a lookup the voice announced), and otherwise tells the voice model the handoff request was unclear. Digest re-pinned; tests pass (183).
 <!-- SECTION:NOTES:END -->
