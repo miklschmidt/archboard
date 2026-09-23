@@ -257,6 +257,65 @@ describe("public code-target activation contract", () => {
 		expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeMtime);
 	});
 
+	test("a binding pinned to another ref than the checkout's never opens the checkout as that ref", async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = await createOpenerFixture();
+		resources.defer(() => fixture.dispose());
+		const invocation = fixture.invocation("immediate");
+		resources.defer(() => invocation.releaseAndWait());
+		await saveSelection(fixture, invocation);
+		for (const args of [
+			["checkout", "-q", "-b", "work"],
+			["commit", "-q", "--allow-empty", "-m", "first"],
+		]) {
+			Bun.spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+				cwd: fixture.checkout,
+			});
+		}
+
+		// On GitHub: the bound branch is offered there, and nothing opens locally.
+		fixture.writeBinding({ repo: fixture.repository, path: "src/index.ts", branch: "release/2.1" });
+		const elsewhere = await activate(fixture);
+		expect(elsewhere.status).toBe(409);
+		expect(CodeTargetOpenReplySchema.parse(elsewhere.body)).toMatchObject({
+			success: false,
+			code: "CHECKOUT_ON_OTHER_REF",
+			actions: [
+				{
+					kind: "github",
+					href: "https://github.com/acme/payments/tree/release%2F2.1/src/index.ts",
+				},
+			],
+		});
+		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
+
+		// On the bound branch: the checkout's own version, as before.
+		fixture.writeBinding({ repo: fixture.repository, path: "src/index.ts", branch: "work" });
+		const here = await activate(fixture);
+		expect(here.status).toBe(200);
+		expect(CodeTargetOpenReplySchema.parse(here.body)).not.toHaveProperty("otherRef");
+
+		// Not on GitHub: there is nowhere else, so the checkout's version opens and says so.
+		const hosted = "git.example.com/acme/payments";
+		Bun.spawnSync(["git", "remote", "set-url", "origin", `https://${hosted}.git`], {
+			cwd: fixture.checkout,
+		});
+		writeFileSync(
+			join(fixture.root, "state", "repos.json"),
+			JSON.stringify([
+				{ repo: hosted, root: fixture.checkout, source: "declared", addedAt: "2026-01-01" },
+			]),
+		);
+		fixture.writeBinding({ repo: hosted, path: "src/index.ts", branch: "release/2.1" });
+		const local = await activate(fixture);
+		expect(local.status).toBe(200);
+		expect(CodeTargetOpenReplySchema.parse(local.body)).toMatchObject({
+			success: true,
+			otherRef: { named: "release/2.1", checkedOut: "work" },
+		});
+		expect(await invocation.waitForCaptures(2)).toHaveLength(2);
+	});
+
 	test("refuses changed checkout identity before spawn", async () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = await createOpenerFixture();

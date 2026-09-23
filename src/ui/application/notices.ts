@@ -43,8 +43,8 @@ function staleFrontendNotice(message: string): ShellNotice {
 }
 
 /**
- * A code target could not be opened, or an opener setting failed.
- * @param notice The typed failure with its actions.
+ * What happened when a code target was opened, or an opener setting failed.
+ * @param notice The typed notice with its actions.
  * @returns The notice.
  */
 function codeTargetShellNotice(notice: CodeTargetNotice): ShellNotice {
@@ -52,7 +52,7 @@ function codeTargetShellNotice(notice: CodeTargetNotice): ShellNotice {
 		id: "code-target",
 		title: "Code target",
 		description: notice.message,
-		tone: "destructive",
+		tone: notice.kind === "error" ? "destructive" : "default",
 		actions: notice.actions,
 	};
 }

@@ -6,6 +6,7 @@ import {
 	type CodeBinding,
 	type CodeTargetFailureCode,
 } from "@/shared/code-target";
+import type { CheckoutHead } from "@/runtime/engine/git";
 import type { RegisteredRepo } from "@/runtime/engine/repo-registry";
 
 type ResolutionFailureCode = Extract<
@@ -26,10 +27,19 @@ interface RegisteredCheckout {
 	repository: string;
 	root: string;
 }
+/** A binding pinned to a ref its checkout does not have out, in words for the person. */
+interface OtherRef {
+	/** The branch or commit the binding names. */
+	named: string;
+	/** What the checkout has out: its branch, else its commit, else that it has none. */
+	checkedOut: string;
+}
 interface LocalCodeTarget extends RegisteredCheckout {
 	target: string;
 	path: string;
 	kind: "file" | "directory";
+	/** Present when the binding names a branch or commit the checkout is not on. */
+	otherRef?: OtherRef;
 }
 type RegisteredCheckoutResult = RegisteredCheckout | ResolutionFailure;
 type LocalCodeTargetResult = LocalCodeTarget | ResolutionFailure;
@@ -39,6 +49,7 @@ interface ResolverDependencies {
 	stat(candidate: string): Pick<Stats, "isDirectory" | "isFile">;
 	repoRoot(candidate: string): string | undefined;
 	repoIdentity(candidate: string): string;
+	repoHead(root: string): Readonly<CheckoutHead>;
 }
 type PathContainment = Pick<typeof path, "relative" | "isAbsolute" | "sep">;
 
@@ -221,26 +232,71 @@ function resolveTarget(
 	if (!isPathWithin(checkout.root, located.target)) {
 		return failure("TARGET_OUTSIDE_CHECKOUT", "The bound target resolves outside its checkout.");
 	}
-	return localTargetOf(binding, checkout, located.target, located.stats);
+	return localTargetOf(binding, checkout, located, dependencies.repoHead(checkout.root));
+}
+/**
+ * Whether a checkout has out the ref a binding is pinned to: its commit when it names one, since
+ * a commit is exact, else its branch. An abbreviated commit matches the commit it abbreviates.
+ * @param binding - The validated binding.
+ * @param head - What the checkout has out.
+ * @returns The two refs when the checkout is on another one, or undefined when it is on the
+ * pinned ref or the binding pins none.
+ */
+function otherRefOf(binding: CodeBinding, head: Readonly<CheckoutHead>): OtherRef | undefined {
+	const named = binding.commit ?? binding.branch;
+	if (named === undefined || isOnPinnedRef(binding, head)) {
+		return undefined;
+	}
+	return { named, checkedOut: checkedOutOf(head) };
+}
+/**
+ * Whether a checkout has out the ref a pinned binding names.
+ * @param binding - A binding that names a branch or a commit.
+ * @param head - What the checkout has out.
+ * @returns True on the bound commit, or on the bound branch when no commit is named.
+ */
+function isOnPinnedRef(binding: CodeBinding, head: Readonly<CheckoutHead>): boolean {
+	if (binding.commit !== undefined) {
+		return head.commit?.toLowerCase().startsWith(binding.commit.toLowerCase()) === true;
+	}
+	return head.branch === binding.branch;
+}
+/**
+ * What a checkout has out, in words.
+ * @param head - What the checkout has out.
+ * @returns Its branch, else its commit, else that it has none.
+ */
+function checkedOutOf(head: Readonly<CheckoutHead>): string {
+	return head.branch ?? head.commit ?? "no commit";
 }
 /**
  * Builds the local target once its location is known, classifying it by kind.
  * @param binding - The validated binding.
  * @param checkout - The resolved checkout.
- * @param target - The canonical target path.
- * @param stats - The target's stat result.
+ * @param located - The canonical target path and its stat result.
+ * @param located.target - The canonical target path.
+ * @param located.stats - The target's stat result.
+ * @param head - What the checkout has out.
  * @returns The local target, or a failure for a target of another kind.
  */
 function localTargetOf(
 	binding: CodeBinding,
 	checkout: RegisteredCheckout,
-	target: string,
-	stats: ReturnType<ResolverDependencies["stat"]>,
+	located: { readonly target: string; readonly stats: ReturnType<ResolverDependencies["stat"]> },
+	head: Readonly<CheckoutHead>,
 ): LocalCodeTargetResult {
+	const { target, stats } = located;
 	if (!stats.isFile() && !stats.isDirectory()) {
 		return failure("TARGET_UNAVAILABLE", "The bound target is neither a file nor a directory.");
 	}
-	return { ...checkout, target, path: binding.path, kind: stats.isFile() ? "file" : "directory" };
+	const otherRef = otherRefOf(binding, head);
+	return {
+		...checkout,
+		target,
+		path: binding.path,
+		kind: stats.isFile() ? "file" : "directory",
+		...(otherRef === undefined ? {} : { otherRef }),
+	};
 }
 /**
  * Resolves one registered checkout through the supplied dependencies.
@@ -285,6 +341,7 @@ export {
 	type ResolutionFailure,
 	type RegisteredCheckout,
 	type LocalCodeTarget,
+	type OtherRef,
 	type RegisteredCheckoutResult,
 	type LocalCodeTargetResult,
 	type ResolverDependencies,

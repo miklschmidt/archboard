@@ -14,6 +14,7 @@ import {
 	OpenerSelectionSchema,
 	OpenerSettingsTestRequestSchema,
 	type CodeBinding,
+	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
 	type CodeTargetOpenRequest,
 	type OpenerSelection,
@@ -22,7 +23,9 @@ import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
+	type LocalCodeTarget,
 	type LocalCodeTargetResult,
+	type OtherRef,
 } from "@/runtime/code-target";
 import { githubUrlForBinding } from "@/runtime/code-target/presentation";
 import { addressedVariant } from "@/shared/semantic-board/index";
@@ -79,6 +82,7 @@ const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>>
 	BOARD_NOT_FOUND: 404,
 	ELEMENT_NOT_FOUND: 404,
 	CHECKOUT_IDENTITY_CHANGED: 409,
+	CHECKOUT_ON_OTHER_REF: 409,
 	OPENER_SPAWN_FAILED: 500,
 	OPENER_CONFIG_INVALID: 500,
 };
@@ -272,6 +276,62 @@ function sendFailure(
 		error: failure.error,
 		...(actions.length > 0 ? { actions } : {}),
 	});
+}
+
+/**
+ * The local target to open, or why none is. A checkout on another ref would open another
+ * version of the code, and the checkout is never switched: when GitHub has the bound ref the
+ * person is sent there, and a repository with no such fallback opens locally and says so.
+ * @param target How the binding resolved on this machine.
+ * @param binding The binding.
+ * @returns The target, or the failure and its status.
+ */
+function openable(
+	target: LocalCodeTargetResult,
+	binding: CodeBinding,
+):
+	| { readonly ok: true; readonly target: LocalCodeTarget }
+	| { readonly ok: false; readonly failure: RouteFailure; readonly status: number } {
+	if (!target.ok) {
+		return { ok: false, failure: target, status: statusFor(target.code) };
+	}
+	if (target.otherRef !== undefined && githubUrlForBinding(binding) !== undefined) {
+		return { ok: false, failure: otherRefFailure(target), status: 409 };
+	}
+	return { ok: true, target };
+}
+
+/**
+ * What the browser is told about code that was opened.
+ * @param target The local target that was opened.
+ * @returns The success reply, with the two refs when the checkout was on another one.
+ */
+function openedReply(target: LocalCodeTarget): CodeTargetOpenSuccess {
+	return {
+		success: true,
+		code: "CODE_TARGET_OPENED",
+		repository: target.repository,
+		path: target.path,
+		kind: target.kind,
+		...(target.otherRef === undefined ? {} : { otherRef: target.otherRef }),
+	};
+}
+
+/**
+ * The refusal for a local target whose checkout is on another ref than the binding names.
+ * @param target The local target, with the two refs.
+ * @param target.repository The repository the checkout is of.
+ * @param target.otherRef The ref the binding names and the one the checkout has out.
+ * @returns The failure the person is shown, with both refs.
+ */
+function otherRefFailure(target: {
+	readonly repository: string;
+	readonly otherRef: OtherRef;
+}): RouteFailure {
+	return {
+		code: "CHECKOUT_ON_OTHER_REF",
+		error: `The checkout of ${target.repository} is on ${target.otherRef.checkedOut}, and this binding names ${target.otherRef.named}.`,
+	};
 }
 
 /**
@@ -490,21 +550,20 @@ export function createCodeOpenerRouter(
 					activation.request.element,
 				);
 				if (!found.ok) return sendFailure(response, found);
-				const target = await dependencies.resolveTarget(found.binding, signal);
-				if (!target.ok) return sendFailure(response, target, statusFor(target.code), found.binding);
+				const opening = openable(
+					await dependencies.resolveTarget(found.binding, signal),
+					found.binding,
+				);
+				if (!opening.ok)
+					return sendFailure(response, opening.failure, opening.status, found.binding);
+				const { target } = opening;
 				const current = readOpenerSelection();
 				if (!current.ok)
 					return sendFailure(response, current, statusFor(current.code), found.binding);
 				const launched = await planAndLaunch(current.selection, target.target, dependencies.launch);
 				if (!launched.ok)
 					return sendFailure(response, launched, statusFor(launched.code), found.binding);
-				response.json({
-					success: true,
-					code: "CODE_TARGET_OPENED",
-					repository: target.repository,
-					path: target.path,
-					kind: target.kind,
-				});
+				response.json(openedReply(target));
 			}),
 		),
 	);

@@ -130,6 +130,7 @@ const CodeTargetFailureCodeSchema = z.enum([
 	"BINDING_UNAVAILABLE",
 	"CHECKOUT_UNAVAILABLE",
 	"CHECKOUT_IDENTITY_CHANGED",
+	"CHECKOUT_ON_OTHER_REF",
 	"TARGET_UNAVAILABLE",
 	"TARGET_OUTSIDE_CHECKOUT",
 	"OPENER_CONFIG_INVALID",
@@ -164,6 +165,11 @@ const CodeTargetOpenSuccessSchema = z
 		repository: NonemptyString,
 		path: z.string(),
 		kind: z.enum(["file", "directory"]),
+		/**
+		 * The binding names a branch or commit the checkout is not on, and there was nowhere else
+		 * to open it, so the checkout's version was opened.
+		 */
+		otherRef: z.object({ named: NonemptyString, checkedOut: NonemptyString }).strict().optional(),
 	})
 	.strict();
 type CodeTargetOpenSuccess = z.infer<typeof CodeTargetOpenSuccessSchema>;
@@ -184,7 +190,8 @@ const CodeTargetOpenReplySchema = z.discriminatedUnion("success", [
 type CodeTargetOpenReply = z.infer<typeof CodeTargetOpenReplySchema>;
 
 interface CodeTargetNotice {
-	kind: "error";
+	/** An error, or information the person needs about what was or was not opened. */
+	kind: "error" | "info";
 	message: string;
 	actions: readonly CodeTargetNoticeAction[];
 }

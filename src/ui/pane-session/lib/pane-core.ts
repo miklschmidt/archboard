@@ -30,8 +30,8 @@ import {
 } from "@/ui/pane-session/lib/session-contracts";
 import type { PaneWorkbenchSocketOwner } from "@/ui/pane-session/workbench-socket";
 import type { WorkbenchTransportPort } from "@/ui/pane-session/workbench-port";
-import type { CodeTargetNotice } from "@/shared/code-target";
-import { activateCodeTarget } from "@/ui/code-target";
+import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@/shared/code-target";
+import { activateCodeTarget, openedNotice } from "@/ui/code-target";
 import type { BoardIdentity, DoingEntry, LockHolder, PaneStatus } from "@/ui/types";
 
 /** What the core reads out of React and writes back into it. */
@@ -92,11 +92,6 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 */
 	readonly workbenchTransport: () => Transport | null;
 	readonly dispose: () => void;
-}
-
-/** A success nobody needs to hear about: the opener has already opened. */
-function nothingToSay(): void {
-	// Nothing to say: the person's editor is in front of them.
 }
 
 /**
@@ -434,11 +429,23 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * Say what went wrong, where the person is.
+	 * Say what happened, where the person is.
 	 * @param notice The notice and whatever it offers.
 	 */
-	function openerFailed(notice: CodeTargetNotice): void {
+	function tell(notice: CodeTargetNotice): void {
 		host.options().onCodeTargetNotice?.(notice);
+	}
+
+	/**
+	 * Say what was opened, when it is not the version the binding names; otherwise the person's
+	 * editor is in front of them and says it all.
+	 * @param reply What the server opened.
+	 */
+	function opened(reply: CodeTargetOpenSuccess): void {
+		const notice = openedNotice(reply);
+		if (notice !== null) {
+			tell(notice);
+		}
 	}
 
 	/**
@@ -449,8 +456,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		activateCodeTarget({
 			boardKey: status.boardKey,
 			elementId: subjectId,
-			onSuccess: nothingToSay,
-			onFailure: openerFailed,
+			onSuccess: opened,
+			onFailure: tell,
 		});
 	}
 

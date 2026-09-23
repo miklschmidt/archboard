@@ -1,10 +1,7 @@
 // The little bit of git archboard needs: what repository a directory belongs
-// to, and what that repository is called in a way that is the same on every
-// machine.
-//
-// Split out of promote.ts because two things need it now: resolving a binding,
-// and keeping the checkout registry (ADR 0011). The registry cannot import
-// promotion without a cycle.
+// to, what that repository is called in a way that is the same on every
+// machine, and what a checkout has out. Resolving a binding and keeping the
+// checkout registry (ADR 0011) both read it.
 
 import fs from "fs";
 import path from "path";
@@ -160,7 +157,35 @@ async function inspectCheckout(
 	});
 }
 
+/** What a checkout has out: the branch it is on and the commit at HEAD, each absent when none. */
+interface CheckoutHead {
+	readonly branch?: string;
+	readonly commit?: string;
+}
+
+/**
+ * The branch a checkout is on and the commit it has out. A detached HEAD has no branch, and a
+ * branch with no commits yet has no commit.
+ * @param root The checkout's root.
+ * @param options Cancellation.
+ * @returns The branch and the full commit id, each when there is one.
+ */
+async function checkoutHead(
+	root: string,
+	options: InspectOptions = {},
+): Promise<Readonly<CheckoutHead>> {
+	const [branchResult, commitResult] = await Promise.allSettled([
+		optionalGit(root, ["symbolic-ref", "--quiet", "--short", "HEAD"], options),
+		optionalGit(root, ["rev-parse", "--quiet", "--verify", "HEAD"], options),
+	]);
+	const branch = fulfilled(branchResult);
+	const commit = fulfilled(commitResult);
+	return Object.freeze({ ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) });
+}
+
 export {
+	type CheckoutHead,
+	checkoutHead,
 	type GitFailure,
 	GitCommandError,
 	git,

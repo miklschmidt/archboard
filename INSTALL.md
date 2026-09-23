@@ -238,6 +238,13 @@ optional `branch` and `commit`. The board stores the identity of the repository
 and a path in the repository. It never stores an absolute path, so the same
 board opens the correct file on any machine.
 
+If a binding names a branch or a commit, the checkout must have that ref out for
+the local file to open. A named commit decides over a named branch. If the
+checkout is on another ref and the repository is on GitHub, the browser tells
+you both refs. It also offers the file on GitHub at the named ref. Archboard never changes the
+branch of your checkout. If the repository is not on GitHub, the browser opens
+the local file and tells you which ref the binding names.
+
 To open the code from a board, register each checkout on each machine:
 
 ```bash
