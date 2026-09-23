@@ -179,9 +179,10 @@ function narrationOfStart(
  * @returns The refusal to throw.
  */
 function recordingRefusal(): CodexWorkbenchGatewayError {
+	// The browser is told the gateway's own sentence for this code; this one is for the trace.
 	const refusal = new CodexWorkbenchGatewayError(
 		"voice_live",
-		"Voice is live on this canvas, and a recording needs the voice to itself. Stop voice, then record again.",
+		"A recording was refused because voice is live on the canvas.",
 	);
 	voiceStartTrace.note("refused", { message: traceMessage(refusal) });
 	return refusal;
@@ -261,13 +262,17 @@ export function createCanvasRealtimeActions(
 	};
 	/**
 	 * Make room for a new session: stop the one running, or refuse a recording while one is.
+	 *
+	 * Live means the adapter still holds the session. One Codex ended by itself leaves the canvas's
+	 * record of it behind until something stops it, and refusing a recording over that would say
+	 * voice is live when nobody is talking.
 	 * @param recording Whether the new session is a recording.
 	 */
 	const makeRoom = async (recording: boolean): Promise<void> => {
 		if (activeRealtime === null) {
 			return;
 		}
-		if (recording) {
+		if (recording && components.realtime.generation() !== null) {
 			throw recordingRefusal();
 		}
 		await stopActive();
