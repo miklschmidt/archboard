@@ -35,8 +35,7 @@ Where things are written down:
 ## Invariants nothing refuses
 
 The loud rules teach themselves (a call naming no board, an agent write without
-`--doing`, a stale version, a note changed under another editor are all refused
-with the reason). These are the rules that will not stop you:
+`--doing` and a stale version are all refused with the reason). These are the rules that will not stop you:
 
 - **The file is the board; nothing holds a copy of it** (ADR 0015, ADR 0023).
   One `.semantic.json` document per board holds every variant of it, and
