@@ -30,7 +30,7 @@ function vaultHalf(boards: readonly SemanticBoardEntry[] | undefined): BoardList
 					},
 				]
 			: board.variants.map((variant) => ({
-					key: boardKeyFor(board.key, variant.lifecycle === "current" ? undefined : variant.id),
+					key: boardKeyFor(board.key, variant.id === board.opens ? undefined : variant.id),
 					identity: { board: board.name, variant: variant.name },
 					...(board.level === undefined ? {} : { level: board.level }),
 					variant,
@@ -90,7 +90,8 @@ function listingError(vault: unknown, panes: unknown, panesRead: boolean): strin
 }
 
 /**
- * The listed row for a pane address, including the current designation and names.
+ * The listed row for a pane address: the row the bare name opens, the current variant's for
+ * `current`, or the variant named by id or name.
  * @param listing The persisted variant summaries.
  * @param key The pane address.
  * @returns The row key, or the original address when it is not listed.
@@ -104,10 +105,13 @@ function listedBoardKey(listing: BoardListing, key: string | null): string | nul
 		sameBoardName(entry.identity.board, target.board),
 	);
 	const wanted = target.variant;
-	const entry = asksForDesignation(wanted ?? "current")
-		? candidates.find((candidate) => candidate.variant?.lifecycle === "current")
-		: (candidates.find((candidate) => candidate.variant?.id === wanted) ??
-			candidates.find((candidate) => candidate.variant?.name === wanted));
+	const entry =
+		wanted === undefined
+			? candidates.find((candidate) => boardAddressOf(candidate.key)?.variant === undefined)
+			: asksForDesignation(wanted)
+				? candidates.find((candidate) => candidate.variant?.lifecycle === "current")
+				: (candidates.find((candidate) => candidate.variant?.id === wanted) ??
+					candidates.find((candidate) => candidate.variant?.name === wanted));
 	return entry === undefined ? key : entry.key;
 }
 

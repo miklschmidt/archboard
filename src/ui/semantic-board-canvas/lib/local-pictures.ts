@@ -22,6 +22,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
+	addressedVariant,
 	parseSemanticBoard,
 	wasDrawn,
 	type SemanticBoard,
@@ -254,10 +255,14 @@ async function picturesToDrawAhead(
 		await client.invalidateQueries({ queryKey, refetchType: "none" });
 	}
 	const document = await boardFor(client, reading.name);
-	// The variant bar asks for the current variant by no name, and any other by id.
+	// The variant bar asks for the variant the board's name opens by no name, and any other by
+	// id. A board whose name opens nothing, because it has several drafts and no current variant,
+	// is asked for by id throughout.
+	const opened = addressedVariant(document);
+	const bare = opened.ok ? opened.variant.id : undefined;
 	const variants = [
-		"",
-		...document.variants.filter((one) => one.id !== document.current).map((one) => one.id),
+		...(bare === undefined ? [] : [""]),
+		...document.variants.filter((one) => one.id !== bare).map((one) => one.id),
 	];
 	return variants.flatMap((variant) =>
 		[...reading.views].flatMap((view) =>

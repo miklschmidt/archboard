@@ -13,11 +13,13 @@ const VAULT: readonly SemanticBoardEntry[] = [
 	{
 		name: "Checkout",
 		key: "checkout",
+		opens: "v1",
 		variants: [{ id: "v1", name: "Initial", lifecycle: "current", parentId: null }],
 	},
 	{
 		name: "Payments",
 		key: "payments",
+		opens: "v2",
 		variants: [{ id: "v2", name: "Initial", lifecycle: "current", parentId: null }],
 	},
 ];
@@ -46,7 +48,7 @@ test("named variants retain their addresses and every current spelling selects t
 		{ id: "next", name: "Queue @ edge", lifecycle: "draft", parentId: "now" },
 	];
 	const listing = composeListing(
-		[{ name: "Checkout", key: "checkout", level: "service", variants }],
+		[{ name: "Checkout", key: "checkout", level: "service", opens: "now", variants }],
 		undefined,
 	);
 	expect(listing.boards.map((board) => board.level)).toEqual(["service", "service", "service"]);
@@ -71,9 +73,27 @@ test("named variants retain their addresses and every current spelling selects t
 	expect(listedBoardKey(listing, null)).toBeNull();
 });
 
+test("on a board nothing is built, the bare name lists the draft it opens and current finds no row", () => {
+	const variants: SemanticBoardEntry["variants"] = [
+		{ id: "plan", name: "Queued ingest", lifecycle: "draft", parentId: null },
+		{ id: "alt", name: "Batch ingest", lifecycle: "draft", parentId: "plan" },
+	];
+	const listing = composeListing(
+		[{ name: "Ingest", key: "ingest", opens: "plan", variants }],
+		undefined,
+	);
+	expect(listing.boards.map((board) => board.key)).toEqual(["ingest", "ingest@alt"]);
+	expect(listedBoardKey(listing, "ingest")).toBe("ingest");
+	expect(listedBoardKey(listing, "ingest@alt")).toBe("ingest@alt");
+	expect(listedBoardKey(listing, "ingest@current")).toBe("ingest@current");
+});
+
 test("an unreadable board remains openable without hiding healthy variants", () => {
 	const listing = composeListing(
-		[...VAULT, { name: "Broken", key: "broken", variants: [], error: "invalid board" }],
+		[
+			...VAULT,
+			{ name: "Broken", key: "broken", opens: null, variants: [], error: "invalid board" },
+		],
 		undefined,
 	);
 	expect(listing.boards).toHaveLength(3);

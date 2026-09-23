@@ -86,7 +86,7 @@ function vaultCheck(): Record<string, unknown> {
  */
 function listing(): Record<string, unknown> {
 	const boards = server.listed
-		? [{ name: "pipeline", key: "pipeline", version: server.version, variants: [] }]
+		? [{ name: "pipeline", key: "pipeline", version: server.version, opens: "v1", variants: [] }]
 		: [];
 	return { success: true, boards };
 }

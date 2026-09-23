@@ -59,6 +59,8 @@ const BoardEntrySchema = z.object({
 	version: z.int().optional(),
 	level: SemanticBoardLevelSchema.optional(),
 	variants: z.array(RenderedVariantSchema.extend({ parentId: z.string().nullable() })),
+	/** The id of the variant the board's bare name opens, or null when it opens none. */
+	opens: z.string().nullable(),
 	error: z.string().optional(),
 });
 type SemanticBoardEntry = z.infer<typeof BoardEntrySchema>;
