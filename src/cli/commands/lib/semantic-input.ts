@@ -15,10 +15,36 @@ import {
 	type SemanticWriteAnswer,
 } from "@/runtime/semantic-board-client/index";
 import {
+	addressedVariant,
 	SemanticBoardSchema,
 	type RenderedChanges,
 	type RenderedVariant,
+	type SemanticBoard,
+	type SemanticVariant,
 } from "@/shared/semantic-board/index";
+
+/**
+ * What a variant option means when it is left out, said the same way by every
+ * command that takes one.
+ */
+const UNNAMED_VARIANT =
+	"when absent, the one the board's name opens: its current variant, or its draft on a board " +
+	"nobody has built";
+
+/**
+ * The variant a command named, or the one the board's name opens.
+ * @param board The board as read.
+ * @param asked The variant id or name typed, if any.
+ * @returns The variant.
+ * @throws {CliUsageError} When the address opens nothing, saying why.
+ */
+function askedVariant(board: SemanticBoard, asked: string | undefined): SemanticVariant {
+	const found = addressedVariant(board, asked);
+	if (!found.ok) {
+		throw new CliUsageError(`"${board.name}": ${found.problem}`);
+	}
+	return found.variant;
+}
 
 /**
  * The variant a picture was drawn against, for the receipt that answers a draw.
@@ -118,8 +144,8 @@ function describeJson(value: unknown): string {
 }
 
 /**
- * A selector somebody typed. Leaving one out asks for the default — the current
- * variant, the whole of it — but typing one that says nothing (`--view ''`) is a
+ * A selector somebody typed. Leaving one out asks for the default — the variant
+ * the board's name opens, the whole of it — but typing one that says nothing (`--view ''`) is a
  * command that went wrong before it got here, and drawing the whole variant for
  * it would quietly answer a question nobody asked.
  */
@@ -366,6 +392,8 @@ function valueText(value: unknown): string {
 }
 
 export {
+	UNNAMED_VARIANT,
+	askedVariant,
 	SemanticBoardReadSchema,
 	drawnAgainst,
 	SemanticBoardResultSchema,

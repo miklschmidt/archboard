@@ -285,6 +285,22 @@ function isCurrentVariant(variant: string): boolean {
 }
 
 /**
+ * The variant a semantic board address states, or undefined when it names none.
+ *
+ * `makeIdentity` materialises a bare key as `current`, and `board@current` is
+ * spelled as the same key by `boardKey` and `paneBoardAddress`, so at the pane
+ * layer neither states a variant: both open whatever the board's bare name
+ * opens, which is its current variant, or its draft on a board nobody has built
+ * (`addressedVariant`, ADR 0031). A reader asking which variant is implemented
+ * reads the board's designation instead, never this.
+ * @param identity The address, as parsed.
+ * @returns The variant it names, or undefined for the board's bare name.
+ */
+function statedVariant(identity: Pick<BoardIdentity, "variant">): string | undefined {
+	return isCurrentVariant(identity.variant) ? undefined : identity.variant;
+}
+
+/**
  * The key form of a variant: what two spellings of one address agree on.
  *
  * The identity keeps the typed casing, because that is what a minted id and a
@@ -515,6 +531,7 @@ export {
 	type BoardIdentity,
 	CURRENT_VARIANT,
 	isCurrentVariant,
+	statedVariant,
 	variantKey,
 	SCRATCH_BOARD,
 	VAULT_STATE_DIR,

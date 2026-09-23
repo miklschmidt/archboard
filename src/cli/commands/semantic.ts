@@ -40,6 +40,7 @@ import {
 	SelectorSchema,
 	statedJson,
 	targetedVariant,
+	UNNAMED_VARIANT,
 } from "@/cli/commands/lib/semantic-input";
 import {
 	boardHeldRefusal,
@@ -65,6 +66,8 @@ const semanticNewContract = defineCommand({
 			.join(
 				", ",
 			)}; \`level\` is required, all other fields are optional, and omitted collections default empty. ` +
+		'`"lifecycle": "draft"` makes a board for architecture nobody has built yet: its first variant ' +
+		"is a draft and the board has no current variant until one is adopted. " +
 		"It is read from --input or standard input.",
 	examples: [
 		'archboard semantic new pipeline --doing "starting the pipeline board"',
@@ -163,7 +166,7 @@ const semanticEditContract = defineCommand({
 		"`remove...` lists, read from --input or " +
 		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
 		"variant; views are shared by the whole board. --variant says which variant the change lands " +
-		"on, by id or name, and the current one takes it when absent; the batch's own `variant` says " +
+		`on, by id or name, ${UNNAMED_VARIANT}; the batch's own \`variant\` says ` +
 		"the same thing, and where the two differ the command line wins and the write says so. " +
 		"--expect-version is required: state the " +
 		"version the board reported when you read it, and the write is refused if somebody has changed " +
@@ -189,7 +192,7 @@ const semanticEditContract = defineCommand({
 			spellings: ["--variant"],
 			value: "required",
 			placeholder: "variant",
-			description: "Which variant the change lands on, by id or name; the current one when absent",
+			description: `Which variant the change lands on, by id or name; ${UNNAMED_VARIANT}`,
 		},
 		{
 			kind: "option",
@@ -289,7 +292,7 @@ const semanticBranchContract = defineCommand({
 		"node written again under a fresh id would be a deletion standing beside an addition. The " +
 		"proposal starts as a draft and designates nothing — what is current stays where it is until " +
 		"somebody says otherwise — and what it actually proposes is said afterwards, as ordinary edits " +
-		"to it. --from names the variant to derive from and defaults to the current one.",
+		`to it. --from names the variant to derive from, ${UNNAMED_VARIANT}.`,
 	examples: [
 		'archboard semantic branch pipeline --as "Queued ingest" --expect-version 4 --doing "proposing a queue"',
 	],
@@ -316,7 +319,7 @@ const semanticBranchContract = defineCommand({
 			spellings: ["--from"],
 			value: "required",
 			placeholder: "variant",
-			description: "The variant to derive from, by id or name; the current one when absent",
+			description: `The variant to derive from, by id or name; ${UNNAMED_VARIANT}`,
 		},
 		{
 			kind: "option",
@@ -373,9 +376,9 @@ const semanticBranchContract = defineCommand({
 		await context.require("server", "semantic branch");
 		editedVersion(input.name);
 		const branch = context.parse(BoardBranchInputSchema, {
-			// "current" is a designation rather than a name, and the store resolves
-			// it the same way every other read of this board does.
-			from: input.from ?? "current",
+			// Left out rather than defaulted here: the store opens the variant the
+			// board's name opens, which is the current one only when there is one.
+			...(input.from === undefined ? {} : { from: input.from }),
 			name: input.as,
 			...(input.summary === undefined ? {} : { summary: input.summary }),
 		});

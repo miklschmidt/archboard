@@ -4,9 +4,9 @@ import type { WebSocketMessage } from "@/runtime/engine/types";
 import { panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
-import { parseBoardKey } from "@/runtime/engine/board";
+import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
 import type { BoardIdentity } from "@/runtime/engine/board";
-import { resolveVariant } from "@/shared/semantic-board/index";
+import { addressedVariant } from "@/shared/semantic-board/index";
 import { sleep, watchBoardLocks } from "@/runtime/engine/board-lock";
 import { PANE_SETTLE_CAP_MS } from "@/shared/timing/timing";
 import type { BrowserConnectionInstance } from "@/server/canvas/codex-workbench-browser";
@@ -275,7 +275,7 @@ function boardForNewPane(clientId: string): string | null {
  * the current variant of the first board in the vault: not what it was looking
  * at, and quietly so.
  * @param key The pane's board key.
- * @returns True when that board still has that variant.
+ * @returns True when that board is still there and has the variant the key states.
  */
 function stillThere(key: string): boolean {
 	const identity = paneAddress(key);
@@ -283,7 +283,11 @@ function stillThere(key: string): boolean {
 		return false;
 	}
 	const read = readSemanticBoard(identity.board);
-	return read.ok && resolveVariant(read.board, identity.variant) !== undefined;
+	// A bare key names the board, whatever it opens: on a board nobody has built
+	// that is its draft, or a refusal the pane draws naming the drafts to choose
+	// from. Either is the board it was on, said on screen, never another board.
+	const stated = statedVariant(identity);
+	return read.ok && (stated === undefined || addressedVariant(read.board, stated).ok);
 }
 
 /**

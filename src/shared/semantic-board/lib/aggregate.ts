@@ -8,7 +8,8 @@
 // `current` is a designation, not an identity. A variant keeps its name for
 // life; the designation moves to whichever variant describes the architecture
 // that is actually implemented. That is why the board names the current
-// variant by id rather than storing a variant called "current".
+// variant by id rather than storing a variant called "current". A board for
+// something nobody has built has no current variant at all (ADR 0031).
 //
 // The version is archboard's own edit counter for the aggregate, in the same
 // spirit as the note's frontmatter counter (board-version.ts) and for the same
@@ -38,16 +39,21 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * the one-time conversion it needs, never rewritten in silence.
  * `2.3.0` records authored node and relationship order. Older documents are
  * migrated by the store on read, preserving their array positions.
+ * `2.4.0` makes the current designation optional: a board for something
+ * nobody has built has none (ADR 0031).
  */
-const SEMANTIC_BOARD_SCHEMA_VERSION = "2.3.0";
+const SEMANTIC_BOARD_SCHEMA_VERSION = "2.4.0";
 
 /**
  * The major version this build implements. A document whose major differs is
  * refused rather than read: a major change is one that moves or reinterprets a
  * field, and a reader that guesses at one of those does not fail, it draws
- * something wrong. A later minor is accepted because the schema is strict —
- * anything genuinely new in it arrives as a field this build does not know,
- * and that is already refused.
+ * something wrong. A later minor is accepted because the schema is strict: a
+ * document using anything this build does not know — a field it has never
+ * heard of, a lifecycle it has no word for, a field it still requires left
+ * out — fails its parse and is refused, never misread. That refusal names the
+ * field rather than the version, because the parse runs before the version is
+ * looked at and a later minor passes that check anyway.
  */
 const SUPPORTED_SCHEMA_MAJOR = Number(SEMANTIC_BOARD_SCHEMA_VERSION.split(".")[0]);
 
@@ -123,7 +129,7 @@ const AdoptionSchema = z
 	.object({
 		/** The variant that became current. */
 		variant: SemanticIdSchema,
-		/** The variant it took the designation from, absent for the first one. */
+		/** The variant it took the designation from, absent when the board had none. */
 		from: SemanticIdSchema.optional(),
 		/** When it happened. */
 		at: TimestampSchema,
@@ -179,7 +185,12 @@ const SemanticBoardSchema = z
 		updatedAt: TimestampSchema,
 		views: z.array(SemanticViewSchema).default([]),
 		variants: z.array(SemanticVariantSchema).min(1),
-		current: SemanticIdSchema,
+		/**
+		 * The variant that describes the architecture that exists. Absent on a
+		 * board for something nobody has built: every variant on it is a draft or
+		 * shelved, and the absence is how the board says so (ADR 0031).
+		 */
+		current: SemanticIdSchema.optional(),
 		/**
 		 * Every time the designation moved, oldest first. Absent on a board where
 		 * it never has: the first variant of a board was never adopted over
@@ -214,10 +225,20 @@ function nextVersion(board: SemanticBoard | null): number {
 /**
  * The variant a board's `current` designation names.
  * @param board The board.
- * @returns The current variant, or undefined when the designation dangles.
+ * @returns The current variant, or undefined when the board has none.
  */
 function currentVariant(board: SemanticBoard): SemanticVariant | undefined {
 	return board.variants.find((variant) => variant.id === board.current);
+}
+
+/**
+ * Whether nothing a board describes is built: it has no current variant, so
+ * every variant on it is a proposal (ADR 0031).
+ * @param board The board, or as much of it as says what is current.
+ * @returns True when the board has no current variant.
+ */
+function nothingBuilt(board: Pick<SemanticBoard, "current">): boolean {
+	return board.current === undefined;
 }
 
 /**
@@ -275,6 +296,109 @@ function resolveVariant(board: SemanticBoard, asked?: string): SemanticVariant |
 	return findVariant(board, asked);
 }
 
+/** What an address opens, or why it opens nothing. */
+type VariantAddress =
+	| { readonly ok: true; readonly variant: SemanticVariant }
+	| { readonly ok: false; readonly problem: string };
+
+/**
+ * The variant an address opens: what a picture draws, a pane shows, or a
+ * command that names no variant acts on.
+ *
+ * A stated address resolves exactly as `resolveVariant` does, and refuses in
+ * words that say why. An address that names no variant opens the current one.
+ * On a board with no current variant it opens the sole draft, else the one
+ * draft no other draft came before, and otherwise refuses naming the
+ * candidates.
+ *
+ * Kept apart from `resolveVariant` and `currentVariant` on purpose. Those
+ * answer which variant is implemented, and on a board nobody has built the
+ * truthful answer is none; this answers which variant to open when nobody
+ * said, which needs something. A reader asking the first question must never
+ * come here: it would be told a proposal is the architecture that exists.
+ * @param board The board.
+ * @param asked The variant's id or name, `current`, or undefined when the address names none.
+ * @returns The variant, or why the address opens nothing.
+ */
+function addressedVariant(board: SemanticBoard, asked?: string): VariantAddress {
+	const stated = asked?.trim() ?? "";
+	return stated === "" ? bareAddress(board) : statedAddress(board, stated);
+}
+
+/**
+ * What an address naming a variant, or asking for the current one, opens.
+ * @param board The board.
+ * @param stated The variant's id or name, or `current`.
+ * @returns The variant, or why there is none.
+ */
+function statedAddress(board: SemanticBoard, stated: string): VariantAddress {
+	const variant = resolveVariant(board, stated);
+	if (variant !== undefined) {
+		return { ok: true, variant };
+	}
+	return {
+		ok: false,
+		problem: asksForDesignation(stated)
+			? `this board has no current variant: nothing it describes is built. Name one of ${quoted(board.variants)}`
+			: `this board has no variant called "${stated}"`,
+	};
+}
+
+/**
+ * What a board's bare name opens: its current variant, else its sole draft,
+ * else the only draft no other draft came before. The first draft case is the
+ * second's commonest instance — a sole draft has no draft before it — so one
+ * lookup answers both.
+ * @param board The board.
+ * @returns The variant, or why there is no single one.
+ */
+function bareAddress(board: SemanticBoard): VariantAddress {
+	const roots = board.variants.filter(
+		(variant) => variant.lifecycle === "draft" && !hasDraftAbove(variant, board.variants),
+	);
+	const variant = currentVariant(board) ?? (roots.length === 1 ? roots[0] : undefined);
+	if (variant !== undefined) {
+		return { ok: true, variant };
+	}
+	return {
+		ok: false,
+		problem:
+			roots.length === 0
+				? `this board has no current variant and no draft. Name one of ${quoted(board.variants)}`
+				: `this board has no current variant and ${roots.length} drafts that do not come ` +
+					`from one another. Name one of ${quoted(roots)}`,
+	};
+}
+
+/**
+ * Whether another draft came before this one. A board whose root was shelved
+ * and then branched from again has several drafts for which none did.
+ * @param variant The variant.
+ * @param variants The board's variants.
+ * @returns True when a draft is among its ancestors.
+ */
+function hasDraftAbove(variant: SemanticVariant, variants: readonly SemanticVariant[]): boolean {
+	const byId = new Map(variants.map((one) => [one.id, one]));
+	let above = byId.get(variant.parent ?? "");
+	// Bounded by the family's size, so a closed ancestry cannot hold it here.
+	for (let step = 0; above !== undefined && step < variants.length; step += 1) {
+		if (above.lifecycle === "draft") {
+			return true;
+		}
+		above = byId.get(above.parent ?? "");
+	}
+	return false;
+}
+
+/**
+ * Variants as a reader would type them.
+ * @param variants The variants.
+ * @returns Their names, quoted and comma-separated.
+ */
+function quoted(variants: readonly SemanticVariant[]): string {
+	return variants.map((variant) => `"${variant.name}"`).join(", ");
+}
+
 export {
 	AdoptionSchema,
 	ShelvingSchema,
@@ -290,6 +414,9 @@ export {
 	SemanticBoardSchema,
 	type SemanticBoard,
 	currentVariant,
+	nothingBuilt,
+	type VariantAddress,
+	addressedVariant,
 	nextVersion,
 	findVariant,
 	resolveVariant,

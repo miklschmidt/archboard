@@ -34,6 +34,7 @@ import {
 	EdgeKindSchema,
 	MessageKindSchema,
 	NodeKindSchema,
+	VariantLifecycleSchema,
 } from "@/shared/semantic-board/lib/vocabulary";
 import { CodeBindingSchema } from "@/shared/code-target/index";
 import { SemanticBoardLevelSchema } from "@/shared/semantic-board/lib/aggregate";
@@ -234,7 +235,7 @@ type VariantEditInput = z.infer<typeof VariantEditInputSchema>;
 
 /**
  * A proposal as it is asked for: a name of its own, and the variant it is
- * derived from.
+ * derived from — the one the board's bare name opens when `from` is absent.
  *
  * There is nothing about content here. A branch carries its predecessor's
  * architecture over whole, identities and all, because that is what makes the
@@ -243,7 +244,7 @@ type VariantEditInput = z.infer<typeof VariantEditInputSchema>;
  */
 const BoardBranchInputSchema = z
 	.object({
-		from: NodeReferenceSchema,
+		from: NodeReferenceSchema.optional(),
 		name: DisplayNameSchema,
 		summary: DescriptionSchema.optional(),
 	})
@@ -254,12 +255,18 @@ type BoardBranchInput = z.infer<typeof BoardBranchInputSchema>;
  * A board as it is asked for. A board with nothing on it is a valid thing to
  * ask for: architecture is built up, and refusing an empty board would mean
  * the first request had to invent something to say.
+ *
+ * `lifecycle` says whether the architecture exists. `current`, the default, is
+ * a board describing code that is there. `draft` is a board for something
+ * nobody has built: its first variant is a proposal and the board has no
+ * current variant until one is adopted (ADR 0031).
  */
 const BoardCreateInputSchema = z
 	.object({
 		name: DisplayNameSchema,
 		level: SemanticBoardLevelSchema,
 		variant: DisplayNameSchema.optional(),
+		lifecycle: VariantLifecycleSchema.extract(["current", "draft"]).optional(),
 		summary: DescriptionSchema.optional(),
 		nodes: z.array(SemanticNodeInputSchema).default([]),
 		edges: z.array(SemanticEdgeInputSchema).default([]),

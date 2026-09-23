@@ -36,7 +36,7 @@ import type {
 } from "@/runtime/codex-semantic-context";
 import { parseBoardKey } from "@/runtime/engine/board";
 import { semanticBoardAddress } from "@/runtime/semantic-board-store";
-import { describeVariant } from "@/server/canvas/lib/semantic-board-description";
+import { describeVariant, unbuiltSentence } from "@/server/canvas/lib/semantic-board-description";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
 
 /** What the board says, and anything about the reading that was not right. */
@@ -245,22 +245,39 @@ function readingVariant(
  * architecture is X" and "this pane is showing X", which is the whole of what
  * this function exists to keep apart.
  * @param board The board.
- * @param reported Whether the pane reported at all.
  * @returns The context.
  */
-function notYetDrawn(board: SemanticBoard, reported: boolean): BoardContext {
+function notYetDrawn(board: SemanticBoard): BoardContext {
 	const current = currentVariant(board);
-	const currently = current === undefined ? "" : ` Its current architecture is "${current.name}".`;
-	const said = reported
-		? "the pane has not said which variant it is showing"
-		: "the pane has not reported what it is showing";
+	const currently =
+		current === undefined
+			? unbuiltSentence(board)
+			: ` Its current architecture is "${current.name}".`;
 	return {
 		architecture: NOTHING_READ,
 		description: `"${board.name}" is open in a pane that has not drawn yet.${currently}`,
 		ambiguity: [
-			`${said}, so nothing has been resolved against one; do not answer as though it were ` +
-				"showing any particular variant until it says",
+			"the pane has not said which variant it is showing, so nothing has been resolved " +
+				"against one; do not answer as though it were showing any particular variant until it says",
 		],
+	};
+}
+
+/**
+ * The context for a board nothing on screen is reading and nobody has built.
+ *
+ * Nothing on screen names a variant and there is no current one to describe,
+ * so what is true of it is that nothing it describes is built. Which proposal
+ * to talk about is for the agent to ask, not for this to pick (ADR 0031).
+ * @param board The board.
+ * @param mismatch Why a pane's report was set aside, or null.
+ * @returns The context.
+ */
+function unreadAndUnbuilt(board: SemanticBoard, mismatch: string | null): BoardContext {
+	return {
+		architecture: NOTHING_READ,
+		description: `Nothing on screen is reading "${board.name}".${unbuiltSentence(board)}`,
+		ambiguity: mismatch === null ? [] : [mismatch],
 	};
 }
 
@@ -524,10 +541,9 @@ function unresolved(board: SemanticBoard, about: ReportAbout): BoardContext {
 	if (asked !== null) {
 		return noSuchVariant(board, asked);
 	}
-	const unknown = notYetDrawn(board, about.report !== null);
-	return about.mismatch === null
-		? unknown
-		: { ...unknown, ambiguity: [...unknown.ambiguity, about.mismatch] };
+	// A report set aside leaves no report, and with none only a board that has
+	// no current variant is unresolved.
+	return about.report === null ? unreadAndUnbuilt(board, about.mismatch) : notYetDrawn(board);
 }
 
 /**
@@ -568,7 +584,7 @@ function semanticBoardContext(
 		description:
 			about.report === null
 				? `Nothing on screen is reading "${board.name}". ${describeVariant(variant, shown, view !== null)}`
-				: describeVariant(variant, shown, view !== null),
+				: `${describeVariant(variant, shown, view !== null)}${unbuiltSentence(board)}`,
 		ambiguity: about.mismatch === null ? picked.ambiguity : [...picked.ambiguity, about.mismatch],
 	};
 }

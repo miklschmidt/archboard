@@ -99,7 +99,7 @@ Two statements in the record put existence on a node, three define the current
 designation or adoption as though every board had one, and one denies that a
 board can lack a current architecture. All are superseded here. The glossary is
 edited in the same change as this decision, because CONTEXT.md is what a reader
-consults first; the ADR, code comment and refusal wording are edited by the
+consults first; the ADR, code comment and refusal wording were edited by the
 implementation of TASK-270.
 
 - **ADR 0023:120-121** — "A node has at most one optional primary code binding.
@@ -164,21 +164,52 @@ implementation of TASK-270.
   why TASK-270 requires that to be visible in the pane and in the drawing rather
   than only in a variant summary.
 
-- **A binding on such a board is ahead of the code, not behind it.** The vault
-  checker's `BINDING_PATH_MISSING` and its two repairs are framed entirely around
-  a binding that went stale
-  (`src/runtime/semantic-board-store/lib/bindings.ts`:112-117). Giving an
-  ahead-of-the-code binding its own standing, or deciding it is always wrong, is
-  now a question this decision makes askable; TASK-270 owns the answer.
+- **A binding on a draft is ahead of the code, not behind it, and the checker
+  judges a binding by the variant it is on** (decided in TASK-270). Only the
+  current variant says its architecture is built, so only there does a path that
+  is not in the checkout mean the binding went stale, and only there does
+  `BINDING_PATH_MISSING` report it. On a draft, a path that does not exist yet
+  is where the proposal says the code will live; the checker says nothing about
+  it, as it says nothing about a historical variant's binding, and the check
+  applies from the moment adoption makes the variant current, which is exactly
+  when the variant starts claiming the code is there. Deciding it is always
+  wrong was rejected: a planning author could then bind nothing, and would have
+  to learn every intended path again at adoption. A warning of its own was
+  rejected too: every bound part of every correct planning board would warn on
+  every check, so a clean check would be unreachable for right work and a
+  warning would stop meaning anything. The cost is that a mistyped path on a
+  draft is not reported until adoption. `BINDING_PATH_MISSING` gains the repair
+  that does not assume staleness: a part whose code has not been written is a
+  proposal, and belongs on a draft rather than on the current variant.
+
+- **A board's bare name still opens something, and asking which variant is
+  implemented still answers nothing** (decided by the user on 2026-09-23). An
+  address that names no variant opens the current variant; on a board with none,
+  the draft no other draft came before when there is exactly one such draft
+  (which covers the sole draft); otherwise it refuses, naming the candidates. That
+  default is an addressing rule and lives in its own resolution
+  (`addressedVariant`), used where the question is what to draw, open or act on
+  when nobody said. `currentVariant` and `resolveVariant` keep answering which
+  variant is implemented, so a drill-down asking for the current variant, an
+  adoption, a shelving and the agent brief's account of the implemented
+  architecture all still find none. Naming `current` explicitly asks the second
+  question, and on such a board is refused as having no current variant.
+
+- **Creation says whether the architecture exists.** A board is created with a
+  current variant unless its creation input says `"lifecycle": "draft"`, in which
+  case its first variant is a draft and the board designates nothing.
 
 - **Older builds refuse a board with no current variant rather than misread it**,
   for the reason ADR 0030 gave for the fourth lifecycle: the contract is strict,
   so a document missing a field an older build requires fails its parse. The
   refusal is honest but says only that `current` is required, not that the
   document is newer than the build — the schema parse runs before the version
-  check, and a later minor passes that check anyway. Whether the contract
-  version moves, and to what, is recorded in TASK-270's plan.
+  check, and a later minor passes that check anyway. The contract version moves
+  to `2.4.0` as a record of the change rather than a guard: a major is for
+  moving or reinterpreting a field, and making `current` optional changes nothing
+  for a document that carries one. The store's registered migration from
+  `2.3.0` keeps content as it is, so each board is written once more, on its next
+  read, as one new board version whose only change is the contract version.
 
-- **Every reader of `current` must handle its absence or be shown unreachable
-  for such a board.** The audit of those readers is recorded in TASK-270 as the
-  plan of record for that work.
+- **Every reader of `current` handles its absence or is shown unreachable for
+  such a board.** The audit of those readers is recorded in TASK-270.

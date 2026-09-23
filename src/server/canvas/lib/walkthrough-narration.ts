@@ -6,11 +6,11 @@
 // does leaving. Nothing here chooses a step: the pane is where the talk is.
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
-import { parseBoardKey } from "@/runtime/engine/board";
+import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import {
-	resolveVariant,
+	addressedVariant,
 	type SemanticWalkthrough,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
@@ -73,7 +73,11 @@ function showingOf(
 		return { board: said.board.name, variant: said.variant?.id };
 	}
 	const key = paneBoardOf(clientId);
-	return key === null ? null : parseBoardKey(key);
+	if (key === null) {
+		return null;
+	}
+	const identity = parseBoardKey(key);
+	return { board: identity.board, variant: statedVariant(identity) };
 }
 
 /**
@@ -87,7 +91,11 @@ function contentOn(clientId: string): VariantContent | null {
 		return null;
 	}
 	const read = readSemanticBoard(showing.board);
-	return read.ok ? (resolveVariant(read.board, showing.variant)?.content ?? null) : null;
+	if (!read.ok) {
+		return null;
+	}
+	const opened = addressedVariant(read.board, showing.variant);
+	return opened.ok ? opened.variant.content : null;
 }
 
 /**

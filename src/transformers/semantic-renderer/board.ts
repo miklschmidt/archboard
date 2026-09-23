@@ -11,7 +11,7 @@
 import {
 	drawingOf,
 	findView,
-	resolveVariant,
+	addressedVariant,
 	scopedContent,
 	type DrawnProposal,
 	type DiagramGrammar,
@@ -178,14 +178,11 @@ async function renderBoard(
 	choices: BoardRenderChoices,
 	policy: SemanticPolicy,
 ): Promise<BoardRenderOutcome> {
-	const variant = resolveVariant(board, choices.variant);
-	if (variant === undefined) {
-		return {
-			ok: false,
-			code: "UNKNOWN_VARIANT",
-			error: `this board has no variant called "${choices.variant ?? ""}"`,
-		};
+	const addressed = addressedVariant(board, choices.variant);
+	if (!addressed.ok) {
+		return { ok: false, code: "UNKNOWN_VARIANT", error: addressed.problem };
 	}
+	const { variant } = addressed;
 	const view = choices.view === undefined ? undefined : findView(board, choices.view);
 	if (choices.view !== undefined && view === undefined) {
 		return {

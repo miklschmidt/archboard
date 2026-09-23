@@ -60,6 +60,8 @@ const migrations: readonly Migration[] = [
 	{ from: "2.0.0", to: "2.1.0", apply: keepContent },
 	{ from: "2.1.0", to: "2.2.0", apply: keepContent },
 	{ from: "2.2.0", to: "2.3.0", apply: addSubjectOrder },
+	// Only loosens: `current` became optional, so a 2.3.0 document already parses.
+	{ from: "2.3.0", to: "2.4.0", apply: keepContent },
 ];
 const byVersion = new Map(migrations.map((migration) => [migration.from, migration]));
 

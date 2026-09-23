@@ -59,8 +59,12 @@ name, its content and its ancestry are exactly as they were left. As with
 history, the refusal is narrow — it fires only when a batch changes variant
 content, because views and level belong to the board rather than to any variant.
 
-**Shelving itself refuses four variants.** The current one, because a board with
-no current architecture is not a board and there is no proposal there to let go.
+**Shelving itself refuses four variants.** The current one, because there is no
+proposal there to let go, and shelving it would leave a board that said what is
+built saying nothing. (The first reason given here, that a board with no current
+architecture is not a board, is superseded by
+[ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md): a board
+for something nobody has built has none.)
 A historical one and one already shelved, because neither is a live proposal. And
 a draft that other drafts are still standing on, naming them: shelving it would
 leave those proposals derived from a state that has stopped moving, with nothing

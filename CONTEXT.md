@@ -257,7 +257,9 @@ The designation of the variant that describes the architecture that exists. A
 board has at most one. A board for something nobody has built yet has none: every
 variant on it is a draft or shelved, and that absence is how the board says nothing it
 describes exists. Moving this designation preserves the names and identities of
-both states.
+both states. A board's bare name opens its current variant; on a board with none
+it opens the one draft no other draft came before, and asking which variant is
+current still answers none.
 _Avoid_: latest, default proposal
 
 **Adoption**:

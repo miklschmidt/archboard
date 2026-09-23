@@ -7,12 +7,12 @@
 
 import type { Request, Response } from "express";
 
-import { paneBoardAddress, parseBoardKey } from "@/runtime/engine/board";
+import { paneBoardAddress, parseBoardKey, statedVariant } from "@/runtime/engine/board";
 import type { BoardIdentity } from "@/runtime/engine/board";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { logger } from "@/runtime/engine/logger";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
-import { resolveVariant } from "@/shared/semantic-board/index";
+import { addressedVariant } from "@/shared/semantic-board/index";
 import { publishPaneContext } from "@/server/canvas/lib/canvas-codex-host";
 import { paneFromRequest, paneResponse, sendToPane } from "@/server/canvas/lib/pane-registry";
 import { bodyOf, messageOf } from "@/server/canvas/lib/request-board";
@@ -81,11 +81,12 @@ function showableBoard(identity: BoardIdentity, res: Response): boolean {
 		});
 		return false;
 	}
-	if (resolveVariant(read.board, identity.variant) === undefined) {
+	const opened = addressedVariant(read.board, statedVariant(identity));
+	if (!opened.ok) {
 		res.status(404).json({
 			success: false,
 			code: "VARIANT_MISSING",
-			error: `"${identity.board}" has no variant called "${identity.variant}". Read it with \`archboard semantic show ${identity.board}\` to see what it has.`,
+			error: `"${identity.board}": ${opened.problem}. Read it with \`archboard semantic show ${identity.board}\` to see what it has.`,
 		});
 		return false;
 	}

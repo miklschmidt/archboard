@@ -11,7 +11,7 @@
 import {
 	emptyContent,
 	type BoardBranchInput,
-	resolveVariant,
+	addressedVariant,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	FIRST_BOARD_VERSION,
 	type BoardAdoptInput,
@@ -160,6 +160,7 @@ function newBoard(
 	const batch = openBatch([...subjectIds(content), ...views.map((view) => view.id)]);
 	const id = mintInto(batch);
 	const variantId = mintInto(batch);
+	const lifecycle = input.lifecycle ?? "current";
 	return {
 		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
@@ -169,13 +170,15 @@ function newBoard(
 		version: FIRST_BOARD_VERSION,
 		createdAt: at,
 		updatedAt: at,
-		current: variantId,
+		// A board for something nobody has built designates nothing: its first
+		// variant is a proposal, and the absence is how the board says so (ADR 0031).
+		...(lifecycle === "current" ? { current: variantId } : {}),
 		views,
 		variants: [
 			{
 				id: variantId,
 				name: input.variant ?? FIRST_VARIANT_NAME,
-				lifecycle: "current",
+				lifecycle,
 				content,
 				...(input.summary === undefined ? {} : { summary: input.summary }),
 			},
@@ -202,7 +205,7 @@ function newBoard(
  */
 function branchVariantTransition(input: BoardBranchInput): SemanticTransition {
 	return {
-		summary: `branch "${input.name}" from "${input.from}"`,
+		summary: `branch "${input.name}" from "${input.from ?? "the variant the board's name opens"}"`,
 		changesExistingBoard: true,
 		/**
 		 * Build the board with the proposal on it.
@@ -214,13 +217,11 @@ function branchVariantTransition(input: BoardBranchInput): SemanticTransition {
 			if (before === null) {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
-			const parent = resolveVariant(before, input.from);
-			if (parent === undefined) {
-				return refuse(
-					"UNKNOWN_VARIANT",
-					`this board has no variant called "${input.from}" to branch from`,
-				);
+			const from = addressed(before, input.from);
+			if (!from.ok) {
+				return from;
 			}
+			const parent = from.variant;
 			const batch = openBatch(idsInUse(before));
 			return {
 				ok: true,
@@ -259,7 +260,6 @@ function branchVariantTransition(input: BoardBranchInput): SemanticTransition {
  * @returns The transition.
  */
 function editVariantTransition(input: VariantEditInput): SemanticTransition {
-	const wanted = input.variant ?? "current";
 	return {
 		summary: "edit the board",
 		changesExistingBoard: true,
@@ -274,7 +274,7 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
 			const changesContent = editsContent(input);
-			const editable = editableVariant(before, wanted, changesContent);
+			const editable = editableVariant(before, input.variant, changesContent);
 			if (!editable.ok) {
 				return editable;
 			}
@@ -327,14 +327,11 @@ function settleVariantTransition(input: ResolutionInput): SemanticTransition {
 			if (before === null) {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
-			const draft = resolveVariant(before, input.variant);
-			if (draft === undefined) {
-				return refuse(
-					"UNKNOWN_VARIANT",
-					`this board has no variant called "${input.variant ?? before.current}"`,
-				);
+			const draft = addressed(before, input.variant);
+			if (!draft.ok) {
+				return draft;
 			}
-			const settled = settleVariant(before, draft, input, nextVersion(before));
+			const settled = settleVariant(before, draft.variant, input, nextVersion(before));
 			if (!settled.ok) {
 				return settled;
 			}
@@ -366,11 +363,11 @@ function adoptVariantTransition(input: BoardAdoptInput): SemanticTransition {
 			if (before === null) {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
-			const adopting = resolveVariant(before, input.variant);
-			if (adopting === undefined) {
-				return refuse("UNKNOWN_VARIANT", `this board has no variant called "${input.variant}"`);
+			const adopting = addressed(before, input.variant);
+			if (!adopting.ok) {
+				return adopting;
 			}
-			const adopted = adoptVariant(before, adopting, at, input.reason);
+			const adopted = adoptVariant(before, adopting.variant, at, input.reason);
 			if (!adopted.ok) {
 				return adopted;
 			}
@@ -398,17 +395,32 @@ function shelveVariantTransition(input: BoardShelveInput): SemanticTransition {
 			if (before === null) {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
-			const shelving = resolveVariant(before, input.variant);
-			if (shelving === undefined) {
-				return refuse("UNKNOWN_VARIANT", `this board has no variant called "${input.variant}"`);
+			const shelving = addressed(before, input.variant);
+			if (!shelving.ok) {
+				return shelving;
 			}
-			const shelved = shelveVariant(before, shelving, at, input.reason);
+			const shelved = shelveVariant(before, shelving.variant, at, input.reason);
 			if (!shelved.ok) {
 				return shelved;
 			}
 			return { ok: true, board: { ...shelved.board, updatedAt: at } };
 		},
 	};
+}
+
+/**
+ * The variant a command acts on: the one it names, or, when it names none, the
+ * one the board's bare name opens (`addressedVariant`).
+ * @param board The board as it stands.
+ * @param asked The variant's id or name, or undefined when the command names none.
+ * @returns The variant, or the refusal naming why there is none.
+ */
+function addressed(
+	board: SemanticBoard,
+	asked: string | undefined,
+): { readonly ok: true; readonly variant: SemanticVariant } | SemanticRefusal {
+	const found = addressedVariant(board, asked);
+	return found.ok ? found : refuse("UNKNOWN_VARIANT", found.problem);
 }
 
 /**
@@ -483,19 +495,20 @@ function editsContent(input: VariantEditInput): boolean {
  * content. Views and level belong to the board rather than to any one variant,
  * so a command that only changes those is not editing a frozen state at all.
  * @param board The board as it stands.
- * @param wanted The variant's id or name.
+ * @param wanted The variant's id or name, or undefined for the one the board's name opens.
  * @param changesContent Whether variant content is being edited.
  * @returns The variant, or why it cannot be edited.
  */
 function editableVariant(
 	board: SemanticBoard,
-	wanted: string,
+	wanted: string | undefined,
 	changesContent: boolean,
 ): { readonly ok: true; readonly variant: SemanticVariant } | SemanticRefusal {
-	const variant = resolveVariant(board, wanted);
-	if (variant === undefined) {
-		return refuse("UNKNOWN_VARIANT", `this board has no variant called "${wanted}"`);
+	const found = addressed(board, wanted);
+	if (!found.ok) {
+		return found;
 	}
+	const { variant } = found;
 	if (variant.lifecycle === "historical" && changesContent) {
 		return refuse(
 			"VARIANT_HISTORICAL",
