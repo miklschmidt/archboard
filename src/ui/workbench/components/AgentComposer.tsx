@@ -95,14 +95,14 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 					onKeyDown={handleKeyDown}
 					aria-label="Message the agent"
 					placeholder={placeholderOf(props.context, running)}
-					className="text-control placeholder:text-muted-foreground [field-sizing:content] max-h-[40vh] min-h-[22px] min-w-0 flex-1 resize-none bg-transparent py-[2px] font-normal outline-none"
+					className="text-control placeholder:text-muted-foreground [field-sizing:content] max-h-[40vh] min-h-6 min-w-0 flex-1 resize-none bg-transparent py-[3px] font-normal outline-none"
 				/>
 				<button
 					type="button"
 					aria-label="Send"
 					disabled={empty}
 					onClick={handleSend}
-					className="bg-primary text-primary-foreground disabled:text-muted-foreground/60 flex size-[22px] shrink-0 items-center justify-center rounded-[3px] disabled:bg-transparent"
+					className="bg-primary text-primary-foreground disabled:text-muted-foreground/60 flex size-6 shrink-0 items-center justify-center rounded-[3px] disabled:bg-transparent"
 				>
 					<RiArrowUpLine aria-hidden="true" className="size-3.5" />
 				</button>

@@ -9,8 +9,6 @@ interface WorkbenchControlOperability {
 	readonly visibleWidth: number;
 	readonly visibleHeight: number;
 	readonly clipped: boolean;
-	/** An undersized control's 24px circle reaches another target (WCAG 2.5.8 spacing). */
-	readonly crowded: boolean;
 	readonly centerHit: boolean;
 	readonly operable: boolean;
 }
@@ -48,23 +46,6 @@ function workbenchControlOperability(
 		const visibleWidth = Math.max(0, visible.right - visible.left);
 		const visibleHeight = Math.max(0, visible.bottom - visible.top);
 		const clipped = visibleWidth < bounds.width || visibleHeight < bounds.height;
-		// WCAG 2.5.8: a target under 24px passes when a 24px circle on its centre
-		// reaches no other target, nor another undersized target's circle.
-		const undersized = box => box.width < 24 || box.height < 24;
-		const centre = box => [box.left + box.width / 2, box.top + box.height / 2];
-		const [cx, cy] = centre(bounds);
-		const crowded = undersized(bounds) && [...document.querySelectorAll(
-			'a[href], button, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"])',
-		)].some(other => {
-			if (other.contains(control) || control.contains(other)) return false;
-			const box = rect(other);
-			if (box.width === 0 || box.height === 0) return false;
-			const dx = cx - Math.max(box.left, Math.min(cx, box.right));
-			const dy = cy - Math.max(box.top, Math.min(cy, box.bottom));
-			if (Math.hypot(dx, dy) < 12) return true;
-			const [ox, oy] = centre(box);
-			return undersized(box) && Math.hypot(cx - ox, cy - oy) < 24;
-		});
 		const center = document.elementFromPoint(
 			bounds.left + bounds.width / 2,
 			bounds.top + bounds.height / 2,
@@ -76,9 +57,8 @@ function workbenchControlOperability(
 			visibleWidth,
 			visibleHeight,
 			clipped,
-			crowded,
 			centerHit,
-			operable: !clipped && !crowded && centerHit,
+			operable: visibleWidth >= 24 && visibleHeight >= 24 && !clipped && centerHit,
 		};
 	})()`);
 }

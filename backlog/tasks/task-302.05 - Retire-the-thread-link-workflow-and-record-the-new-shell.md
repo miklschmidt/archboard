@@ -1,10 +1,11 @@
 ---
 id: TASK-302.05
 title: Retire the thread-link workflow and record the new shell
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 03:21'
+updated_date: '2026-09-23 04:59'
 labels: []
 dependencies:
   - TASK-302.03
@@ -27,3 +28,12 @@ Once the agent bar and navigator ship, the thread-link chooser, the Agent settin
 - [ ] #3 docs/design/operator-canvas-shell.md, CONTEXT.md, TESTING.md and the voice acceptance procedure describe the shipped shell
 - [ ] #4 The browser lane owners assert the new behaviour through roles, geometry and wire commands, not copy
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Delete the thread-link chooser, Agent settings, session column, side panels, dock and the modules and registry files they leave unused, with their lint exemptions.
+2. Amend ADR 0019 (one canvas link made by the first message or Talk) and update DESIGN.md, CONTEXT.md and AGENTS.md sentences about a pane's link.
+3. Record the shipped navigator and agent in docs/design/operator-canvas-shell.md with rendered captures in both themes; rewrite the voice acceptance procedure and TESTING.md.
+4. Move the browser lane owners to the new shell through shared selectors and data-slot hooks: shell-layout, workspace-address, opener-settings, codex-text-workbench, codex-live-voice.
+<!-- SECTION:PLAN:END -->
