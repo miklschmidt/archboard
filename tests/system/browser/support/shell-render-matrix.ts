@@ -217,11 +217,15 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const status = bar?.querySelector('[data-slot="agent-status"]');
 		const panes = [...document.querySelectorAll('${PANE_SECTIONS}')];
 		const pane = panes.find(node => node.getAttribute('aria-current') === 'true');
-		// The navigator marks the board the focused pane reads; its name is a
-		// human label beside the header's.
-		const selectedBoard = nav?.querySelector('[role="treeitem"][data-row-kind="board"][aria-selected="true"] [data-board-key]');
-		// Body type: a row label that is not the one being read.
-		const rowLabel = nav?.querySelector('[role="treeitem"][aria-selected="false"] [data-board-key]');
+		// The navigator selects what the focused pane reads — the board, or its
+		// state when the board's states are listed; the board's name is a human
+		// label beside the header's.
+		const selectedKey = nav?.querySelector('[role="treeitem"][aria-selected="true"] [data-board-key]')?.getAttribute('data-board-key') ?? null;
+		const readRow = selectedKey === null ? null : \`[role="treeitem"][data-row-id="board:\${CSS.escape(selectedKey.split('@')[0].toLowerCase())}"]\`;
+		const selectedBoard = readRow === null ? null : nav?.querySelector(\`\${readRow} [data-board-key]\`);
+		// Body type: a row label that is neither selected nor the board being read.
+		const rowLabel = [...(nav?.querySelectorAll('[role="treeitem"][aria-selected="false"]') ?? [])]
+			.find(node => readRow === null || !node.matches(readRow))?.querySelector('[data-board-key]');
 		// The kicker role: a section label in the pane's sidebar.
 		const kicker = pane?.querySelector('[data-slot] > h2');
 		if (!shell || !header || !wordmark || !control || !board || !variant || !level || !present ||
