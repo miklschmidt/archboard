@@ -65,9 +65,35 @@ function markTruncated(turn: CodexTimelineTurnProjectionInput): CodexTimelineTur
 	};
 }
 
+type TimelineItem = CodexTimelineTurnProjectionInput["items"][number];
+
 /**
- * One more turn, trimmed item by item until it fits what is left of the
- * budget, or nothing when even its bare form does not.
+ * How many bytes one item takes inside a projected timeline.
+ * @param item The item.
+ * @returns The byte length.
+ */
+function itemBytes(item: TimelineItem): number {
+	return textEncoder.encode(JSON.stringify(item)).byteLength;
+}
+
+/**
+ * The same item without its command output, which it says was cut; any other
+ * item is returned as it is.
+ * @param item The item.
+ * @returns The lighter item.
+ */
+function withoutOutput(item: TimelineItem): TimelineItem {
+	if (item.kind !== "command_execution" || item.output.tail === null) {
+		return item;
+	}
+	return { ...item, output: { tail: null, truncated: true } };
+}
+
+/**
+ * One more turn, fitted into what is left of the budget from its oldest end,
+ * or nothing when even its bare form does not fit. Its older items give up
+ * their command output first, so as many items as possible stay; then whole
+ * items go, oldest first, so the item the agent is on now is the last to go.
  * @param frame Everything the timeline carries beside its turns.
  * @param turns The turns already kept.
  * @param candidate The turn being fitted.
@@ -80,11 +106,60 @@ function fitTurn(
 	candidate: CodexTimelineTurnProjectionInput,
 	maxBytes: number,
 ): CodexTimelineTurnProjectionInput | null {
-	let fitted = markTruncated(candidate);
-	while (timelineBytes(frame, turns.concat(fitted)) > maxBytes && fitted.items.length > 0) {
-		fitted = Object.assign({}, fitted, { items: fitted.items.slice(0, -1) });
-	}
+	const marked = markTruncated(candidate);
+	const room = maxBytes - timelineBytes(frame, turns.concat({ ...marked, items: [] }));
+	const items = marked.items.map((item) => ({ item, bytes: itemBytes(item) }));
+	shedOlderOutputs(items, room);
+	const fitted = { ...marked, items: dropOldest(items, room).map(({ item }) => item) };
 	return timelineBytes(frame, turns.concat(fitted)) <= maxBytes ? fitted : null;
+}
+
+/** One item with the bytes it takes. */
+interface SizedItem {
+	readonly item: TimelineItem;
+	readonly bytes: number;
+}
+
+/**
+ * How many bytes items take inside a JSON array, one comma between each two.
+ * @param items The items.
+ * @returns The byte length, brackets excluded.
+ */
+function itemsBytes(items: readonly SizedItem[]): number {
+	return items.reduce((sum, { bytes }) => sum + bytes, Math.max(items.length - 1, 0));
+}
+
+/**
+ * Take the command output off items, oldest first and never the newest, until
+ * they fit.
+ * @param items The items, oldest first; lightened in place.
+ * @param room How many bytes they may take.
+ */
+function shedOlderOutputs(items: SizedItem[], room: number): void {
+	let total = itemsBytes(items);
+	for (const [index, entry] of items.entries()) {
+		if (total <= room || index === items.length - 1) {
+			return;
+		}
+		const item = withoutOutput(entry.item);
+		const bytes = itemBytes(item);
+		total += bytes - entry.bytes;
+		items[index] = { item, bytes };
+	}
+}
+
+/**
+ * The newest items that fit, dropping whole items from the oldest end.
+ * @param items The items, oldest first.
+ * @param room How many bytes they may take.
+ * @returns The items kept.
+ */
+function dropOldest(items: readonly SizedItem[], room: number): readonly SizedItem[] {
+	let kept = items;
+	while (kept.length > 0 && itemsBytes(kept) > room) {
+		kept = kept.slice(1);
+	}
+	return kept;
 }
 
 /**
@@ -178,7 +253,7 @@ function cutOldestOnce(turns: CodexTimelineTurnProjectionInput[]): void {
 		return;
 	}
 	if (oldest.items.length > 0) {
-		turns[0] = { ...markTruncated(oldest), items: oldest.items.slice(0, -1) };
+		turns[0] = { ...markTruncated(oldest), items: oldest.items.slice(1) };
 		return;
 	}
 	turns.shift();

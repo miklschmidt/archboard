@@ -150,6 +150,16 @@ describe("a listed board's description", () => {
 		expect(long.length).toBeLessThanOrEqual(160);
 		expect(long.endsWith("word…")).toBe(true);
 	});
+
+	test("is cut between whole characters when nothing breaks it into words", () => {
+		const emoji = described("🚀".repeat(200)) ?? "";
+		expect(emoji.length).toBeLessThanOrEqual(160);
+		// Iterating by code point yields half a rocket as a character of its own.
+		const [ellipsis, ...rockets] = [...emoji].toReversed();
+		expect(ellipsis).toBe("…");
+		expect(rockets.length).toBeGreaterThan(0);
+		expect(rockets.every((character) => character === "🚀")).toBe(true);
+	});
 });
 
 test("an unreadable board lists with its error and nothing it would have said", () => {

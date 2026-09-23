@@ -15,6 +15,7 @@ import {
 	turnError,
 } from "@/server/canvas/lib/codex-timeline-evidence";
 import {
+	boundedLayoutText,
 	boundedNormalizedText,
 	boundedText,
 	normalizedText,
@@ -146,7 +147,9 @@ function assistantText(item: SessionThreadItem): string | null {
 
 /**
  * What one reasoning item says: its summary where it has one, and otherwise
- * its content, bounded in both length and number of parts.
+ * its content, bounded in both length and number of parts. Each part keeps its
+ * line breaks, because the browser reads a leading bold line as the heading.
+ * An item that says nothing reads as a fixed word: the wire refuses empty text.
  * @param item The reasoning item.
  * @returns The text, and whether anything was left out.
  */
@@ -162,7 +165,7 @@ function reasoningText(item: Extract<SessionThreadItem, { readonly type: "reason
 		if (value === undefined) {
 			continue;
 		}
-		const part = boundedNormalizedText(value, TIMELINE_TEXT_LIMIT);
+		const part = boundedLayoutText(value, TIMELINE_TEXT_LIMIT);
 		if (part.length > 0) {
 			parts.push(part);
 		}
@@ -415,15 +418,16 @@ function approvalFor(
 }
 
 /**
- * One turn as the timeline retains it: its items within the per-turn bound,
- * and a summary line naming what each side said.
+ * One turn as the timeline retains it: its newest items within the per-turn
+ * bound, since the item the agent is on now is the one a person watches, and
+ * a summary line naming what each side said.
  * @param turn The turn.
  * @param maxItems How many items it may keep.
  * @returns The retained turn.
  */
 function projectTurnData(turn: SessionTurn, maxItems: number): TimelineTurnData {
 	const itemCount = Math.min(turn.items.length, maxItems);
-	const sources = turn.items.slice(0, itemCount);
+	const sources = turn.items.slice(turn.items.length - itemCount);
 	const said = turnSaid(sources);
 	const items = sources.map((source) => {
 		const projected = projectItem(source);
@@ -516,7 +520,7 @@ function projectTurn(
 			return;
 		}
 		matchedApprovals.add(index);
-		append(projected);
+		items.push(projected);
 	};
 	/**
 	 * Add every approval this turn carries against one of its items.
@@ -532,21 +536,9 @@ function projectTurn(
 	};
 	const items: CodexTimelineItemProjectionInput[] = [];
 	const matchedApprovals = new Set<number>();
-	let truncated = turn.presentation.outputs.truncated;
-	/**
-	 * Add one item, or mark the turn truncated once the bound is reached.
-	 * @param item The item.
-	 */
-	const append = (item: CodexTimelineItemProjectionInput): void => {
-		if (items.length >= maxItems) {
-			truncated = true;
-			return;
-		}
-		items.push(item);
-	};
 	for (const source of turn.items) {
 		if (source.item !== null) {
-			append(source.item);
+			items.push(source.item);
 		}
 		appendApprovalsFor(source.itemId);
 	}
@@ -559,13 +551,31 @@ function projectTurn(
 	}
 	return {
 		turn: turn.turn,
-		items,
-		presentation: {
-			summary: turn.presentation.summary,
-			outputs: { ...turn.presentation.outputs, truncated },
-		},
+		...newestItems(items, maxItems, turn.presentation),
 		error: turn.error,
 		plan,
+	};
+}
+
+/**
+ * A turn's newest items within the bound, as retention keeps them, marked
+ * truncated when any were cut.
+ * @param items The turn's items, approvals placed, oldest first.
+ * @param maxItems How many items the browser is shown.
+ * @param presentation The turn's presentation as retained.
+ * @returns The kept items and the presentation that says whether any were cut.
+ */
+function newestItems(
+	items: readonly CodexTimelineItemProjectionInput[],
+	maxItems: number,
+	presentation: TimelineTurnData["presentation"],
+): Pick<CodexTimelineTurnProjectionInput, "items" | "presentation"> {
+	if (items.length <= maxItems) {
+		return { items, presentation };
+	}
+	return {
+		items: items.slice(items.length - maxItems),
+		presentation: { ...presentation, outputs: { ...presentation.outputs, truncated: true } },
 	};
 }
 
