@@ -43,6 +43,12 @@ interface RecordingPageHandle {
 	 * @returns How many bytes were written.
 	 */
 	readonly saveBlob: (expression: string, path: string, timeoutMs: number) => Promise<number>;
+	/**
+	 * Keep the page the size it is recorded at: capturing a tab makes the browser draw a bar
+	 * above it that takes room from the page.
+	 * @returns When the page is that size again.
+	 */
+	readonly keepSize: () => Promise<void>;
 }
 
 /** Why a recording did not happen, and whether it had begun. */
@@ -183,6 +189,7 @@ async function finished(
 	if (state?.phase === "finished") return state;
 	if (state?.phase === "failed") throw new RecordingPageError(failureIn(state), true);
 	const now = progressed(state, following, onProgress);
+	await page.keepSize();
 	if (performance.now() - now.changedAt > RECORDING_STALL_MS) {
 		throw new RecordingPageError(
 			"The canvas page stopped reporting progress. Record again; if it keeps happening, open the board on the canvas and check voice there.",

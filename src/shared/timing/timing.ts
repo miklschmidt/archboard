@@ -455,6 +455,7 @@ export {
 	PRESENTATION_STEP_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export {
+	RECORDING_CAPTURE_BAR_MS,
 	RECORDING_BROWSER_START_MS,
 	RECORDING_BROWSER_STOP_MS,
 	RECORDING_CALL_MS,

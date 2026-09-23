@@ -12,6 +12,7 @@
 // The browser writes the container itself (MP4 with H.264 or WebM with VP9),
 // so no encoder runs outside it.
 
+import { RECORDING_CAPTURE_BAR_MS } from "@/shared/timing/timing";
 import type { RecordingContainer } from "@/shared/walkthrough-recording";
 
 /** The media types each container is written with, best first. */
@@ -28,8 +29,11 @@ const MEDIA_TYPES: Readonly<Record<RecordingContainer, readonly string[]>> = {
 /** Frames per second the tab is captured at: smooth camera glides, at a cost a CPU can pay. */
 const FRAME_RATE = 30;
 
-/** Bits per second of picture: a 1080p diagram with thin lines and small text stays sharp. */
-const VIDEO_BITS_PER_SECOND = 8_000_000;
+/**
+ * Bits per second of picture, at most: a 1080p diagram of thin lines, small text and faint veils
+ * stays free of blocking. The picture is still most of the time, so a file is far below this.
+ */
+const VIDEO_BITS_PER_SECOND = 16_000_000;
 
 /** How much the recorder hands over at a time, in milliseconds of recording. */
 const CHUNK_MS = 1000;
@@ -116,6 +120,31 @@ async function tabVideo(): Promise<MediaStreamTrack> {
 }
 
 /**
+ * Wait for the bar the browser draws above a captured tab, which takes room from the page: the
+ * page resizes once it is drawn. Bounded, since a browser may draw none.
+ * @param width The page's width before capture.
+ * @param height The page's height before capture.
+ * @returns When the page has changed size, or the bound has passed.
+ */
+function sharingBarDrawn(width: number, height: number): Promise<void> {
+	return new Promise((resolve) => {
+		/** The bar is drawn, or will not be: stop waiting. */
+		const done = (): void => {
+			window.removeEventListener("resize", changed);
+			clearTimeout(timer);
+			resolve();
+		};
+		/** The page resized: done once it is no longer the size it was. */
+		const changed = (): void => {
+			if (window.innerWidth !== width || window.innerHeight !== height) done();
+		};
+		const timer = setTimeout(done, RECORDING_CAPTURE_BAR_MS);
+		window.addEventListener("resize", changed);
+		changed();
+	});
+}
+
+/**
  * Wait for a recorder to stop.
  * @param recorder The recorder.
  * @returns When it has stopped and handed over its last chunk.
@@ -128,13 +157,17 @@ function stopped(recorder: MediaRecorder): Promise<void> {
 }
 
 /**
- * Capture this tab into a file. Called from a user gesture: capturing a tab needs one.
+ * Capture this tab into a file. Called from a user gesture: capturing a tab needs one. Resolves
+ * once the browser has drawn the bar that says the tab is shared, so whoever keeps the page its
+ * size can give the room back before anything is written.
  * @param container The container to write.
  * @returns The capture, not yet writing.
  */
 async function captureTab(container: RecordingContainer): Promise<TabCapture> {
 	const mimeType = mediaTypeFor(container);
+	const { innerWidth: width, innerHeight: height } = window;
 	const video = await tabVideo();
+	await sharingBarDrawn(width, height);
 	const audio = new AudioContext();
 	const mix = audio.createMediaStreamDestination();
 	const heard = new Map<string, MediaStreamAudioSourceNode>();
