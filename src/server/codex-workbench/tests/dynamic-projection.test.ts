@@ -247,6 +247,7 @@ function projectionInput(owners: readonly DynamicApprovalOwnerView[]): BrowserPr
 		},
 		voice: {
 			kind: "codex_voice",
+			recording: false,
 			mediaReady: false,
 			generation: null,
 			coordinatorState: "unbound",

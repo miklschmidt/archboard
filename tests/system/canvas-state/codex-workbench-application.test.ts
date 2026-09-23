@@ -222,6 +222,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 				},
 				voice: {
 					kind: "codex_voice",
+					recording: false,
 					mediaReady: true,
 					generation: null,
 					coordinatorState: "ready",

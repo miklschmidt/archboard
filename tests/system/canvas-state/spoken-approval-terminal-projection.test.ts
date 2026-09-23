@@ -140,6 +140,7 @@ test("a real unknown owner settlement remains unknown through the browser projec
 			},
 			voice: {
 				kind: "codex_voice",
+				recording: false,
 				mediaReady: false,
 				generation: { browserSessionId: realtimeSessionId },
 				coordinatorState: "ready",

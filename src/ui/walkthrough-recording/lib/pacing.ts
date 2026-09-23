@@ -320,7 +320,9 @@ function pace(state: PaceState, observed: PaceObservation): PaceTurn {
 	}
 	return observed.voice.kind === "live"
 		? paceLive(state, observed)
-		: failed("Voice stopped before the recording finished. Record again.");
+		: failed(
+				"Voice stopped before the recording finished. Starting voice anywhere on this canvas ends a recording; record again once voice is free.",
+			);
 }
 
 export {

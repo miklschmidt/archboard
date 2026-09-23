@@ -1,7 +1,7 @@
 import { logger } from "@/runtime/engine/logger";
 import { semanticChangeFeed } from "@/server/canvas/lib/semantic-change-feed";
 
-import { addressablePanes, panesInOrder } from "@/runtime/engine/panes";
+import { panesAddressableFirst, panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type {
 	SemanticUserChange,
@@ -186,8 +186,9 @@ function orderedPanes(): PaneRegistration[] {
  * @returns The pane.
  */
 function operationPane(paneId: string): PaneRegistration {
-	const all = [...panes.values()];
-	const pane = [...addressablePanes(all), ...all].find((candidate) => candidate.paneId === paneId);
+	const pane = panesAddressableFirst([...panes.values()]).find(
+		(candidate) => candidate.paneId === paneId,
+	);
 	if (pane === undefined) {
 		throw new Error(`The Codex context pane is not open: ${paneId}.`);
 	}
