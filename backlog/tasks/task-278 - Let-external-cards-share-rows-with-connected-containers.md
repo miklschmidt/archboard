@@ -1,11 +1,11 @@
 ---
 id: TASK-278
 title: Let external cards share rows with connected containers
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-19 11:53'
-updated_date: '2026-09-21 00:50'
+updated_date: '2026-09-23 00:57'
 labels:
   - renderer
   - layout
@@ -23,9 +23,9 @@ The Phone API view places incoming cards above an entire Common-WebLib container
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Public API demonstrates outside cards alongside container rows; Phone retains the user-selected one-column reading with improved fit and shorter routes than the original experiment baseline
-- [ ] #2 Top-to-bottom layouts preserve containment, endpoint identity, label clearance, clean arrow approaches and stable horizontal sibling ordering between variants
-- [ ] #3 Existing layout corpus and full check pass with measured evidence and inspected live pictures
+- [x] #1 Public API demonstrates outside cards alongside container rows; Phone retains the user-selected one-column reading with improved fit and shorter routes than the original experiment baseline
+- [x] #2 Top-to-bottom layouts preserve containment, endpoint identity, label clearance, clean arrow approaches and stable horizontal sibling ordering between variants
+- [x] #3 Existing layout corpus and full check pass with measured evidence and inspected live pictures
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -147,4 +147,12 @@ Endpoint Trust Sequences eEgD8jXz diagnosis reproduced exact browser defects by 
 User approved endpoint preview. Implemented one native port-refinement pass: preserve actual channel attachments, release conflicting unused seeds, and offer clear native-run projections. Expected native refusal retains the entire baseline graph. Added two focused native regressions for unused-face label detours and top-face continuation. Broader module gate exposed an existing label-projection restriction: native runs between disjoint card spans were discarded despite clear side approaches. Allowing those existing runs fixes the observed return loop; the existing channel-projection regression now passes without weakening its assertions. Exact browser-width replay still gives both pink routes straight and orange top entry, 13px minimum final approach, one legitimate bridge, and zero curve or label-clearance issues. Final gate and live verification pending.
 
 Adoption complete: bun run check exits 0 (lint, format, both type checks, frontend build, module/system/repository/serial-browser suites). Final 22-case real-vault corpus completes and card/label collision audit reports no issues. Rebuilt and restarted the real 3100 canvas against the existing vault; live browser DOM confirms YuseIBCM and u2L3eDj4 are single straight vertical paths, and nxHvoubO descends at x517 to Gateway top y697 with only its required source bend and the upper real crossing bridge. Screenshot inspected. The removed lower corner contact requires no additional crossing decoration. No board content or wrapping code changed. Broader TASK-278 stays in progress.
+
+Closed 2026-09-23 by the user's decision. Evidence: live-vault renders of common-weblib architecture@RcmUgnfr through the Public ownership view (1016x1037: the Public-API host sits beside the container's rows, not above the whole frame) and the Phone ownership view (1362x826, one column inside the container, Phone API host beside it); containment, label runs and arrow approaches are clean in both, and the three Cloud Infrastructure readings are clean too (see TASK-282). shared-container-rows.test.ts passes 2/2 (308 assertions); the 22-variant corpus passed at the last renderer commit; full gate: bun run check exit 0 on 2026-09-23 at 67ef9b45 (3461 module, 168 system, 8 repository, 19 serial-browser tests). Label-rank spacing and the unrelated-container scoped-routing alternative were investigated but never approved; they are not part of this task.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Graphviz placement with libavoid routing replaced ELK: outside cards share rows with connected containers, labels sit on natural runs, bends have a fixed 8px radius with a mandatory 12px approach, ports are balanced and aligned, relationship kinds get separate channels, sibling order is stable across variants, and routes avoid containers unrelated to either endpoint. Verified by the renderer corpus, the shared-rows owner, inspected live renders of Public, Phone and Cloud Infrastructure, and the full gate.
+<!-- SECTION:FINAL_SUMMARY:END -->

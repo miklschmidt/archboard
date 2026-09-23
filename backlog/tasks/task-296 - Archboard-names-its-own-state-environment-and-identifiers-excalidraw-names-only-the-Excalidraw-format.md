@@ -3,11 +3,11 @@ id: TASK-296
 title: >-
   Archboard names its own state, environment and identifiers; excalidraw names
   only the Excalidraw format
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-09-22 16:48'
-updated_date: '2026-09-22 18:27'
+updated_date: '2026-09-23 00:56'
 labels:
   - refactor
 dependencies: []
@@ -26,7 +26,7 @@ Excalidraw was dropped from the product in favour of the deterministic renderer,
 - [x] #2 The autostart switch and every other environment variable, identifier, package script, document and skill the product owns are named archboard; the old environment variable name is no longer read.
 - [x] #3 The word excalidraw appears nowhere in the repository except the fork history sentences in CLAUDE.md and DESIGN.md.
 - [x] #4 Every Excalidraw dependency, module, type, format path, asset, test and fixture is deleted rather than renamed, and nothing the deterministic renderer or the semantic board path depends on was deleted with them.
-- [ ] #5 bun run check passes, and the running canvas restarted from the new build serves the same Codex session state as before.
+- [x] #5 bun run check passes, and the running canvas restarted from the new build serves the same Codex session state as before.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,6 +63,8 @@ BLOCKED: the permission system refuses every file deletion in this session (git 
 2026-09-22: the user ruled on the deletions the agent could not make: groups 1 and 2 deleted (libraries/, the vendored Obsidian plugin source, the server-rendering-boundary fixtures, the emulation probe, the Excalidraw JSON schema note, and seven Excalidraw-era design investigations); the ADRs stay as history (0001, 0003, 0007, 0017 whole, and the one sentence each in 0004, 0006, 0010, 0011, 0015, 0016, 0018, 0020, 0022, 0023). Links to the deleted files were reworded in AGENTS.md, atomic-write.ts, docs/agents/test-suite.md, ADR 0020 and the vendor README (which keeps its shadcn section). Remaining mentions of the word: the kept ADRs, the MIT notice in LICENSE, the legacy literal in state-dir.ts and its test, and the fork sentence in AGENTS.md.
 
 Combined tree verified after the deletions: fmt, lint and both type-checks clean; module lane 3457 pass, system 168, repository 8, browser 19 (16 files, 0 fail). AC5's second half (the restarted canvas serving the same Codex state) awaits the user's restart; the Codex home moved intact (auth.json, sessions, sqlite-home, 226 MB) and the dead server's lock was set aside (TASK-298).
+
+AC #5 second half: the 3100 canvas was restarted from a post-rename build and answers /health as service archboard-canvas. ~/.local/state/excalidraw-canvas no longer exists; ~/.local/state/archboard/codex-workbench/codex-home holds auth.json and 24 session rollouts from before the rename, and the restarted canvas has written a new rollout there. The user's voice sessions (which need the signed-in Codex) work. Gate: bun run check exit 0 on 2026-09-23 at 67ef9b45: lint, fmt, both type-checks, frontend build, 3461 module tests, 168 system, 8 repository, 19 serial-browser tests across 16 files (codex-live-voice and semantic-walkthrough-narration included).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -74,3 +76,9 @@ created: 2026-09-22 17:26
 Acceptance criteria 3, 4 and 5 are unchecked and the task stays In Progress: this session's permission system refuses every file deletion (both git rm and rm are denied as irreversible local destruction), so the Excalidraw-only files listed in the implementation notes are still on disk. Everything that can be changed in place is done and the whole gate is green. The remaining step is deleting those files.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every runtime path, environment variable, identifier and document is named archboard; the state directory moved to ~/.local/state/archboard with a one-time, non-overwriting migration; every Excalidraw module, format path, file and dependency is deleted except the history the user chose to keep (ADRs, LICENSE notice, fork sentence). Verified by state-dir tests, the live canvas serving the migrated Codex home, and the full gate: bun run check exit 0 on 2026-09-23 at 67ef9b45: lint, fmt, both type-checks, frontend build, 3461 module tests, 168 system, 8 repository, 19 serial-browser tests across 16 files (codex-live-voice and semantic-walkthrough-narration included).
+<!-- SECTION:FINAL_SUMMARY:END -->

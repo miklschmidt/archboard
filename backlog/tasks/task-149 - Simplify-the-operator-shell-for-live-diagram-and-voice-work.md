@@ -1,11 +1,11 @@
 ---
 id: TASK-149
 title: Simplify the operator shell for live diagram and voice work
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 22:09'
-updated_date: '2026-09-05 01:58'
+updated_date: '2026-09-23 00:56'
 labels: []
 dependencies: []
 references:
@@ -112,12 +112,12 @@ Resolved real signed-in startup and empty-history failures. Pinned session origi
 Actual first send failed before turn/start because includeTurns hydration returned JSON-RPC -32601 list_turns is not supported yet. Text actions now use exact metadata state and Codex expectedTurnId preconditions; accepted turn identity travels through the command result so fast completed replies do not become falsely unknown. Real Hey message now gets a reply and accepted settlement. Voice negotiation returned valid answer but browser rejected its CRLF suffix; SDP-specific validation preserves bytes and keeps size/NUL/identity checks. Real negotiation now reaches microphone acquisition, which fails because configured default PreSonus AudioBox is absent. User asked which microphone to use. 2565 module tests, 13 production tests, controlled text/voice browser owners, lint/format/both TypeScript projects and 124 repository checks pass; independent review clear. Investigating restart-control visibility after clean failed-session stop while waiting for microphone choice.
 
 Final text/voice follow-up verification: actual Hey request produces the assistant reply and accepted composer settlement. Real SDP negotiation passes; microphone acquisition is the remaining failure, and wpctl cannot resolve a default audio source. Stop now cleanly closes the realtime session and retains an enabled Start control on the same real pane. Fixed both frame filtering and CanvasPane stopped-vs-replaced publication; ended evidence stays hidden. Final 2565 module tests, 13 production/system tests, shell/text/voice browser owners (including post-stop Start), lint/format/both TypeScript projects and 124 repository checks pass. Independent review clear. Source probes removed. Keeping task open pending real microphone selection/reconnection; no system audio settings changed.
+
+Closed 2026-09-23 as superseded, by the user's decision. TASK-150 (Done) rebuilt the whole application UI and TASK-150.08 polished it to the operator reference, so AC #2 and #4 describe a shell that no longer exists; the drawer, settings and rendered verification they asked for were delivered under TASK-150. The microphone item left open here is settled: the user reports voice works as intended.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Polished stable 280px navigation, separated header status and ownership, replaced shell controls with shared Button and application icons with Remix, and simplified Agent settings and the conversation drawer. Fixed missing Tailwind zero utilities, semantic class merging, command authority preparation and false inspect-only empty history. Verified all normal check components and rendered desktop text/voice, focus, claims and camera behavior. Full legacy CSS replacement remains the separate user-requested UI rework.
-
-Real smoke connection follow-up fixes two incorrect Codex assumptions: session origin is vscode, and history starts only after the first message. Verified real agent creation before any message, and automated post-message attachment with correctly scoped semantic context. All focused integration, browser, module and policy checks pass.
+Superseded by TASK-150. This task delivered stable 280px navigation, header status and ownership, Remix icons, shared Button primitives, command authority and real Codex connection fixes. TASK-150 then replaced the shell itself, taking over the remaining drawer/settings (AC #2) and rendered verification (AC #4).
 <!-- SECTION:FINAL_SUMMARY:END -->

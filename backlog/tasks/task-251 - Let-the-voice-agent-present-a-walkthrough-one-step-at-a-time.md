@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-17 08:24'
-updated_date: '2026-09-22 23:17'
+updated_date: '2026-09-23 00:54'
 labels:
   - voice
   - frontend
@@ -25,13 +25,12 @@ The user wants the voice agent to give a walkthrough as a talk: explain each ste
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A person can ask the voice agent to present a walkthrough, and the linked pane enters the presentation at its first step
-- [ ] #2 The coordinator moves the pane to a step through a typed tool that answers only once the step has finished arriving, or with the reason it could not
-- [ ] #3 After each step has arrived the voice model receives that step to explain, and the next step is requested only after it has finished speaking
-- [ ] #4 A person interrupting mid-explanation gets an answer, and the presentation does not advance until the voice agent asks for the next step
-- [ ] #5 A step the person changes by hand, or leaving the presentation, is told to the coordinator and voice model so the narration follows the picture
-- [ ] #6 Time from the end of one explanation to the start of the next is measured and recorded in the task
-- [ ] #7 Covered by coordinator and tool contract tests, and verified end to end with a real voice session
+- [ ] #1 Pressing Narrate opens the walkthrough at step 1 and the voice model explains that step, delivered by the host without a coordinator turn
+- [ ] #2 Every step the user moves to by hand reaches the voice model as speech, and the voice explains that step
+- [ ] #3 After an explanation the voice waits for the user; nothing in the prompts or the host asks for or presents a next step by itself
+- [ ] #4 Leaving the presentation is told to the voice model as a short acknowledgement and nothing more is narrated
+- [ ] #5 present_step, its coordinator presentation instructions, the stepless next-step memory and the narration timing endpoint are deleted, with their tests, digests and design text
+- [ ] #6 Covered by host delivery and browser owners, and verified by the user in a real voice session
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,4 +77,8 @@ Third real session (2026-09-20 15:34, 5-step walkthrough). Read from the thread:
 2026-09-21 narration stalled after the opening line (user report). Evidence from the coordinator rollout and the Codex log, canvas restarted 11:56 on the TASK-293 commits: nothing was appended to either voice session, the handoff reached the coordinator, present_step answered ok with step 1 of 30 every time, and the coordinator did reply [FINAL] Step 1 of 30, but 17 s after the handoff instead of the usual 3 s, and the voice session had been closed by a client stop 3 s before. The delay: the coordinator calls tools from a Codex code-mode script, the tool is declared to it as Promise<unknown> (DynamicToolFunctionSpec has no output schema), and its first script looped over r.content and printed nothing, so it called present_step again, three more times, while the same handoff was re-delivered twice mid-turn. The same empty first script happened on 2026-09-20 15:34 under the old prompts, where it made the talk skip step 1. Fix: both tool namespace descriptions and the presentation instructions now say a tool resolves to one string of JSON to be printed with text(result), and to call present_step once. NOT explained: in the second session (11:58:15) the voice model spoke its opening line 19 s after start and no handoff reached the coordinator in the 23 s before the session was stopped.
 
 Correction 2026-09-23 (see TASK-295 notes): the earlier statement that a handoff <input> is always the user's own words verbatim is wrong. It is the latest user-side item replayed, which was often our injected Narrate request and once a fragment of a JSON telemetry append. Comments, DESIGN.md, the authored-contracts design and the coordinator document now say so.
+
+Decided by the user, 2026-09-23: manual stepping. The user moves the presentation step by step; the voice explains the step it is on. A model-paced talk is dropped: a V3 handoff carries too little for the voice model to steer the presentation. By-hand step delivery (host appendSpeech, AC #5) is the working path; the self-pacing loop (hand off after each step, stepless present_step meaning next, end-to-next timing) is to be removed and the criteria rewritten.
+
+User decided 2026-09-23: delete present_step. The host delivers step 1 at Narrate the same way it delivers every by-hand step; Narrate is the only entry into a talk.
 <!-- SECTION:NOTES:END -->
