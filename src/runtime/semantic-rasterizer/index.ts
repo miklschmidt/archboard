@@ -114,16 +114,13 @@ const NOTHING_TO_CLEAN: SessionCleanup = {
 
 /**
  * Everything the session needs settled: what the caller gave, else the
- * environment, else this machine's own executables and the shared timings.
+ * executable the environment names or this machine has, and the shared timings.
  * @param options What the caller settled.
  * @returns The session options.
  */
 function resolveOptions(options: SemanticRasterizerOptions): SessionOptions {
 	return {
-		chromiumPath:
-			options.chromiumPath ??
-			process.env["ARCHBOARD_RENDERER_CHROMIUM"] ??
-			discoveredChromiumPath(),
+		chromiumPath: options.chromiumPath ?? discoveredChromiumPath(),
 		jobTimeoutMs: options.jobTimeoutMs ?? SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 		startupTimeoutMs: options.startupTimeoutMs ?? SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
 		cleanupTimeoutMs: options.cleanupTimeoutMs ?? SEMANTIC_RASTER_CLEANUP_MS,

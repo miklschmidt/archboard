@@ -159,7 +159,7 @@ async function drain(owned: Owned, stream: ReadableStream<Uint8Array>): Promise<
 function spawnInto(owned: Owned, options: HeadlessChromiumOptions): Spawned {
 	if (options.chromiumPath === "") {
 		throw new Error(
-			"no Chromium or Google Chrome executable was found; install one or name its path.",
+			"no Chromium or Google Chrome executable was found; install one, or name it with ARCHBOARD_RENDERER_CHROMIUM.",
 		);
 	}
 	const tempRoot = mkdtempSync(join(tempParent(), options.tempRootPrefix ?? "archboard-chromium-"));

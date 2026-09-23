@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -21,7 +21,7 @@ import {
 // a stopped Chromium is provably gone. Like the rasterizer's owner, it needs
 // a Chromium-family executable (ARCHBOARD_RENDERER_CHROMIUM names one).
 
-const CHROMIUM_PATH = process.env["ARCHBOARD_RENDERER_CHROMIUM"] ?? discoveredChromiumPath();
+const CHROMIUM_PATH = discoveredChromiumPath();
 
 /**
  * Start a private Chromium for one test file.
@@ -109,7 +109,7 @@ describe("events", () => {
 });
 
 describe("a page Blob", () => {
-	test("streams to a file byte for byte, however many reads it takes", async () => {
+	test("streams to a file byte for byte, however many reads it takes, over a longer file", async () => {
 		// Larger than one read, and not a multiple of it.
 		const size = 3 * 1024 * 1024 + 17;
 		const blob = await page.evaluate(
@@ -121,6 +121,8 @@ describe("a page Blob", () => {
 		const directory = mkdtempSync(join(tmpdir(), "archboard-blob-"));
 		try {
 			const file = join(directory, "blob.bin");
+			// A file left longer than the Blob, as a crashed earlier run could leave, keeps no tail.
+			writeFileSync(file, new Uint8Array(size + 4096));
 			const read = await page.readBlobTo(objectId as string, file, HEADLESS_CHROMIUM_CALL_MS);
 			expect(read.bytes).toBe(size);
 			const expected = Uint8Array.from({ length: size }, (_, i) => (i * 31) % 251);

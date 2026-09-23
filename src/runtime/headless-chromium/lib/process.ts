@@ -20,12 +20,15 @@ type ChromiumProcess = Bun.Subprocess<"ignore", "pipe", "pipe">;
 const processGroups = createCodexProcessGroupOperations();
 
 /**
- * The first Chromium-family executable installed in a supported conventional
- * location. macOS application bundles do not normally put their executable on
- * PATH, so their native locations count too.
- * @returns The discovered executable, or an empty string when none exists.
+ * The Chromium-family executable to start: the one `ARCHBOARD_RENDERER_CHROMIUM`
+ * names, else the first installed in a supported conventional location. macOS
+ * application bundles do not normally put their executable on PATH, so their
+ * native locations count too.
+ * @returns The executable, or an empty string when none is named or exists.
  */
 function discoveredChromiumPath(): string {
+	const named = process.env["ARCHBOARD_RENDERER_CHROMIUM"];
+	if (named !== undefined && named !== "") return named;
 	const candidates = [
 		Bun.which("chromium"),
 		Bun.which("chromium-browser"),
