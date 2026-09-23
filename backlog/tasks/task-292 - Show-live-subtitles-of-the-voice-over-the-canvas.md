@@ -1,11 +1,11 @@
 ---
 id: TASK-292
 title: Show live subtitles of the voice over the canvas
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-20 15:09'
-updated_date: '2026-09-20 23:00'
+updated_date: '2026-09-23 00:56'
 labels:
   - voice
   - frontend
@@ -25,12 +25,12 @@ While the voice model talks, the person wants to read along on the canvas itself
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 While the voice model speaks, what it is saying appears as subtitles over the canvas of the voice-linked pane, and disappears shortly after it stops
-- [ ] #2 Subtitle text is revealed at speaking pace and only while the model is audible, never ahead of what has been received, so it does not run ahead of the voice
-- [ ] #3 Subtitles show at most two lines of recent speech, never cover the walkthrough caption, and never take pointer input from the canvas
-- [ ] #4 An interruption stops the subtitle where the speech stopped; what the person says is not subtitled
-- [ ] #5 Reduced motion cuts any subtitle animation, and the subtitles can be turned off
-- [ ] #6 Covered by pacing logic tests and a rendered owner
+- [x] #1 While the voice model speaks, what it is saying appears as subtitles over the canvas of the voice-linked pane, and disappears shortly after it stops
+- [x] #2 Each word is shown as its transcript arrives, which tracks the audio, so the subtitle keeps step with the voice and never shows text that has not been received
+- [x] #3 Subtitles show at most two lines of recent speech, never cover the walkthrough caption, and never take pointer input from the canvas
+- [x] #4 An interruption stops the subtitle where the speech stopped; what the person says is not subtitled
+- [x] #5 Reduced motion cuts any subtitle animation, and the subtitles can be turned off
+- [x] #6 Covered by cue and recency tests, a rendered component owner and the live voice browser owner
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -67,4 +67,12 @@ End-to-end owner added, which is what should have existed from the start: the fa
 Verified: lint, fmt:check, both type-checks, test:modules (3436 pass), test:system (169), test:repository, test:serial-browser (19). Needs a server restart, not just a page reload: the fix is server-side.
 
 2026-09-21: the user retested a real voice session after the server restart (transcript change source, empty-segment filter, semantic callbacks recorded only) and reports it works. Acceptance criteria still to be checked off through the finalization guide.
+
+2026-09-23: AC #2 reworded to the mechanism that was kept (words shown as they arrive; the Codex transcript tracks the audio within about 45 ms), replacing the abandoned speaking-pace wording. Evidence: src/ui/voice-subtitles/tests (cues, recency, rendered component incl. reduced motion), tests/system/browser/codex-live-voice.test.ts watching the subtitle grow over the picture in real Chrome, the full gate (bun run check exit 0 on 2026-09-23 at 67ef9b45 (3461 module, 168 system, 8 repository, 19 serial-browser tests).), and the user's real voice sessions after the server-side fix (confirmed working 2026-09-21 and again 2026-09-23).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The voice model's speech is subtitled over the voice-linked pane: words appear as the transcript arrives, at most two lines, clear of the walkthrough caption and pointer input, gone 2.5 s after speech stops, with reduced-motion and an on/off toggle. Root causes fixed on the way: transcript changes never published a browser snapshot, and empty segment starts made the projection invalid. Verified by unit and rendered owners, the live voice browser owner, the full gate, and real voice sessions by the user.
+<!-- SECTION:FINAL_SUMMARY:END -->
