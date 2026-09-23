@@ -176,3 +176,24 @@ test("a binding a frozen variant carries is not reported once it is history", as
 	expect(was?.content.nodes.find((node) => node.name === "Moved")?.binding?.path).toBe(GONE);
 	expect(bindingFindings("rebound-system")).toEqual([]);
 }, 30_000);
+
+test("a binding on a draft is ahead of the code until adoption says the code is there", async () => {
+	await create({
+		name: "planned-system",
+		level: "system",
+		lifecycle: "draft",
+		nodes: [{ name: "Planned", kind: "module", binding: { repo: REPO, path: GONE } }],
+	});
+	// A proposal names where code will live; nothing claims it is there yet.
+	expect(bindingFindings("planned-system")).toEqual([]);
+	const adopted = await store.writeSemanticBoard({
+		board: "planned-system",
+		writer,
+		expectedVersion: read("planned-system").version,
+		transition: store.adoptVariantTransition(
+			contract.BoardAdoptInputSchema.parse({ variant: read("planned-system").variants[0]!.name }),
+		),
+	});
+	expect(adopted.outcome).toBe("applied");
+	expect(bindingFindings("planned-system")).toHaveLength(1);
+}, 30_000);
