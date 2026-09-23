@@ -42,8 +42,8 @@ type RecordingPhase = z.infer<typeof RecordingPhaseSchema>;
 const RecordingStateSchema = z
 	.object({
 		phase: RecordingPhaseSchema,
-		/** The walkthrough being recorded, by name, once the page has found it. */
-		walkthrough: z.string().nullable(),
+		/** The walkthrough being recorded, by the id the page was opened with. */
+		walkthrough: z.string(),
 		/** The step on screen, counted from one, or null before the first. */
 		step: z.number().int().min(1).nullable(),
 		/** How many steps the walkthrough has, once the page has found it. */

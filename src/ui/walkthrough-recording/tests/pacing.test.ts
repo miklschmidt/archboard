@@ -115,13 +115,39 @@ describe("recording pace", () => {
 	test("the talk ends after the last step's pause", () => {
 		const place = { beat: 0, of: 1, arrived: true };
 		const said = [line("only", true)];
-		let state: PaceState = { kind: "step", beat: 0, since: 0, heard: new Set(), quietSince: 0 };
+		let state: PaceState = {
+			kind: "step",
+			beat: 0,
+			since: 0,
+			heard: new Set(),
+			landed: true,
+			quietSince: 0,
+		};
 		let turn = tick(state, seen(RECORDING_QUIET_MS, { place, transcript: said }));
 		expect(turn.state.kind).toBe("tail");
 		state = turn.state;
 		expect(tick(state, seen(RECORDING_QUIET_MS + RECORDING_TAIL_MS - 1)).action.kind).toBe("none");
 		turn = tick(state, seen(RECORDING_QUIET_MS + RECORDING_TAIL_MS));
 		expect(turn.action).toEqual({ kind: "finish" });
+	});
+
+	test("only a step's first arrival is bounded: a redraw mid-explanation holds it, and fails nothing", () => {
+		const at = RECORDING_SPEECH_START_MS + 5000;
+		const landed: PaceState = {
+			kind: "step",
+			beat: 0,
+			since: 0,
+			heard: new Set(),
+			landed: true,
+			quietSince: null,
+		};
+		const redrawing = { beat: 0, of: 2, arrived: false };
+		const turn = tick(landed, seen(at, { place: redrawing, transcript: [line("a", true)] }));
+		expect(turn.action.kind).toBe("none");
+		const never: PaceState = { ...landed, landed: false };
+		expect(
+			tick(never, seen(at, { place: redrawing, transcript: [line("a", true)] })).action.kind,
+		).toBe("fail");
 	});
 
 	test("a voice that fails, or stops mid-talk, fails the recording with a reason", () => {

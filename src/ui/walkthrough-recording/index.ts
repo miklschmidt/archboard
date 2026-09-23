@@ -7,15 +7,9 @@ import { recordedWalkthroughOf } from "@/shared/walkthrough-recording";
 import { WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 
 export { RecordingStage } from "@/ui/walkthrough-recording/components/RecordingStage";
-export {
-	pace,
-	type PaceAction,
-	type PaceObservation,
-	type PaceState,
-} from "@/ui/walkthrough-recording/lib/pacing";
+export { pace, type PaceObservation, type PaceState } from "@/ui/walkthrough-recording/lib/pacing";
 export { useWalkthroughRecording } from "@/ui/walkthrough-recording/hooks/use-walkthrough-recording";
 export type { RecordedStep, WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
-export type { RecordingSources } from "@/ui/walkthrough-recording/lib/voice-sources";
 
 /**
  * The recorder a page's address asks for.

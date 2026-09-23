@@ -20,24 +20,19 @@ import {
 	RECORDING_TAIL_MS,
 	RECORDING_VOICE_START_MS,
 } from "@/shared/timing/timing";
+import type { BrowserSnapshot } from "@/shared/codex-browser-model";
+import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
 
-/** One line of the voice session's transcript, as far as pacing reads it. */
-interface SpokenLine {
+/**
+ * One line of the voice session's transcript, as far as pacing reads it: who said it, whether
+ * the speaker ended the turn it belongs to, and an identity to tell it from the lines before.
+ */
+type SpokenLine = Pick<BrowserSnapshot["voice"]["transcript"][number], "speaker" | "final"> & {
 	readonly itemId: string;
-	readonly speaker: "user" | "assistant";
-	/** The speaker ended the turn this line belongs to. */
-	readonly final: boolean;
-}
+};
 
 /** Where the pane's presentation is, as the pane reports it. */
-interface PanePlace {
-	/** The step on screen, counted from zero. */
-	readonly beat: number;
-	/** How many steps the walkthrough has. */
-	readonly of: number;
-	/** The step has finished arriving: the camera and the picture are at rest on it. */
-	readonly arrived: boolean;
-}
+type PanePlace = Pick<NonNullable<SemanticPaneReading["presentation"]>, "beat" | "of" | "arrived">;
 
 /** How the voice stands. */
 type VoiceStanding =
@@ -75,6 +70,11 @@ type PaceState =
 			readonly since: number;
 			/** The lines the transcript held when the step was asked for: none of them is about it. */
 			readonly heard: ReadonlySet<string>;
+			/**
+			 * Whether the step has ever finished arriving. Only its first arrival is bounded: a new
+			 * version of the board redraws the picture and the step arrives again, which is no failure.
+			 */
+			readonly landed: boolean;
 			/** Since when the step has counted as explained, or null while it does not. */
 			readonly quietSince: number | null;
 	  }
@@ -121,7 +121,7 @@ function failed(reason: string): PaceTurn {
 function showing(beat: number, observed: PaceObservation): PaceTurn {
 	const heard = new Set(observed.transcript.map((line) => line.itemId));
 	return {
-		state: { kind: "step", beat, since: observed.now, heard, quietSince: null },
+		state: { kind: "step", beat, since: observed.now, heard, landed: false, quietSince: null },
 		action: { kind: "show", beat },
 	};
 }
@@ -139,12 +139,14 @@ function paceStart(
 	if (observed.voice.kind === "live" && observed.framed) {
 		return { state: { kind: "lead", since: observed.now }, action: { kind: "capture" } };
 	}
-	if (observed.now - state.since > RECORDING_VOICE_START_MS) {
-		return failed(
-			`Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this canvas, then record again.`,
-		);
+	if (observed.now - state.since <= RECORDING_VOICE_START_MS) {
+		return { state, action: NOTHING };
 	}
-	return { state, action: NOTHING };
+	return failed(
+		observed.voice.kind === "live"
+			? "The page did not get back to the size it was captured at after the browser's sharing bar took room. Record again; if it keeps happening, the browser may draw a bar the recorder cannot give back."
+			: `Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this canvas, then record again.`,
+	);
 }
 
 /**
@@ -173,7 +175,10 @@ function spokenSince(
 /** What one tick knows about the step on screen. */
 interface StepReading {
 	readonly waited: number;
+	/** At rest on the step now. */
 	readonly arrived: boolean;
+	/** At rest on the step now, or at some tick since it was asked for. */
+	readonly landed: boolean;
 	readonly spoken: readonly SpokenLine[];
 }
 
@@ -186,7 +191,7 @@ interface StepReading {
 function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	const step = beat + 1;
 	const { waited } = reading;
-	if (!reading.arrived && waited > RECORDING_SPEECH_START_MS) {
+	if (!reading.landed && waited > RECORDING_SPEECH_START_MS) {
 		return failed(
 			`Step ${step} never finished arriving on screen. Check that the board still states the walkthrough and that step, then record again.`,
 		);
@@ -245,16 +250,18 @@ function paceStep(
 	observed: PaceObservation,
 ): PaceTurn {
 	const { place } = observed;
+	const arrived = arrivedAt(place, state.beat);
 	const reading: StepReading = {
 		waited: observed.now - state.since,
-		arrived: arrivedAt(place, state.beat),
+		arrived,
+		landed: state.landed || arrived,
 		spoken: spokenSince(observed.transcript, state.heard),
 	};
 	const late = overdue(state.beat, reading);
 	if (late !== null) return late;
 	const quiet = quietSince(state, reading, observed);
 	if (place === null || quiet === null || observed.now - quiet < RECORDING_QUIET_MS) {
-		return { state: { ...state, quietSince: quiet }, action: NOTHING };
+		return { state: { ...state, landed: reading.landed, quietSince: quiet }, action: NOTHING };
 	}
 	return after(state.beat, place.of, observed);
 }
