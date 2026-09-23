@@ -368,6 +368,7 @@ const semanticRecordContract = defineCommand({
 				`The recording's browser could not be proved gone: ${made.leftBehind.join("; ")}`,
 			);
 		}
+		for (const note of made.notes) context.diagnostic(note);
 		context.signal.throwIfAborted();
 		const discarded = discard && (await discardRecorded(board, made.file, context.diagnostic));
 		return {

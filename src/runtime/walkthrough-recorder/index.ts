@@ -44,6 +44,7 @@ import {
 	messageOf,
 	type RecordingPageHandle,
 } from "@/runtime/walkthrough-recorder/lib/drive";
+import { discoveredFfmpeg, playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
 import { writeSilence } from "@/runtime/walkthrough-recorder/lib/silence";
 
 /** Why a recording did not happen. */
@@ -105,6 +106,8 @@ interface RecordedWalkthrough {
 	readonly steps: number;
 	/** What stopping the recording's browser could not prove gone; empty when it was clean. */
 	readonly leftBehind: readonly string[];
+	/** What the caller should be told about how the file plays; empty when nothing. */
+	readonly notes: readonly string[];
 }
 
 /**
@@ -280,7 +283,7 @@ async function recordIn(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
 	partial: string,
-): Promise<Omit<RecordedWalkthrough, "leftBehind">> {
+): Promise<Omit<RecordedWalkthrough, "leftBehind" | "notes">> {
 	request.signal.throwIfAborted();
 	const window = await openRecordingPage(chromium, request);
 	const { state, bytes } = await drive(pageHandle(chromium, window), {
@@ -296,6 +299,29 @@ async function recordIn(
 		durationMs: Math.round(state.durationMs ?? 0),
 		steps: state.of ?? 0,
 	};
+}
+
+/**
+ * The recorded file made to play with sound everywhere it can, or what stopped the recording.
+ * @param outcome What recording in the browser came to.
+ * @param partial Where the file was written.
+ * @param signal Cancels making it playable.
+ * @returns The finished recording, before it moves into place.
+ * @throws {unknown} What stopped the recording.
+ */
+async function playableRecording(
+	outcome:
+		| { readonly made: Omit<RecordedWalkthrough, "leftBehind" | "notes"> }
+		| { readonly error: unknown },
+	partial: string,
+	signal: AbortSignal,
+): Promise<Omit<RecordedWalkthrough, "leftBehind">> {
+	if ("error" in outcome) throw outcome.error;
+	const played = await playableEverywhere(partial, outcome.made.mimeType, {
+		ffmpeg: discoveredFfmpeg(),
+		signal,
+	});
+	return { ...outcome.made, mimeType: played.mimeType, bytes: played.bytes, notes: played.notes };
 }
 
 /**
@@ -359,12 +385,12 @@ async function recordedWith(
 		request.signal.removeEventListener("abort", cancel);
 		const cleanup = await chromium.stop();
 		const leftBehind = cleanup.clean ? [] : cleanup.errors;
-		// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
-		request.signal.throwIfAborted();
 		try {
-			if ("error" in outcome) throw outcome.error;
+			const made = await playableRecording(outcome, partial, request.signal);
+			// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
+			request.signal.throwIfAborted();
 			moveIntoPlace(partial, request.out);
-			return { ...outcome.made, leftBehind };
+			return { ...made, leftBehind };
 		} catch (error) {
 			throw failure(error, leftBehind);
 		}
@@ -393,6 +419,7 @@ async function recordWalkthrough(
 	}
 }
 
+export { playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
 export {
 	WalkthroughRecordingError,
 	drive,
