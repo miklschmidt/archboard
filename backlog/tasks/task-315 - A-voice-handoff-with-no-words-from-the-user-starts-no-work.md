@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:35'
-updated_date: '2026-09-23 21:41'
+updated_date: '2026-09-23 21:54'
 labels:
   - voice
   - coordinator
@@ -21,12 +21,12 @@ ordinal: 547000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-In the 2026-09-23 23:15 narration the voice model handed off while explaining steps, saying "Give me a second, checking the rest", though the user had asked nothing. A V3 delegation carries the latest user-side item replayed; with nothing from the user, Codex falls back to the running transcript, so the coordinator received `<input>assistant: On your screen, we are starting with the ground rules...</input>`: the voice model's own narration. The coordinator read it as "this spoken request" and delegated "Create or update the appropriate Archboard architecture board" to the workhorse. To the user it sounded like the voice had heard itself; every user line in the transcript was real speech, so it was not echo. The coordinator's instructions say a handoff carries what the user said, which is not always true. A deterministic guard (client-managed handoffs, or the host refusing delegation from a turn whose handoff carried no user line) is a possible follow-up if the instructions do not hold.
+In the 2026-09-23 23:15 narration the voice model handed off while explaining steps, saying "Give me a second, checking the rest", though the user had asked nothing. The coordinator received `<input>assistant: On your screen, we are starting with the ground rules...</input>`: the voice model's own narration. It read that as "this spoken request" and delegated "Create or update the appropriate Archboard architecture board" to the workhorse. The user heard the voice picked up by their microphone. The log cannot confirm or rule that out: the input audio for that minute was already pruned, and an echo the voice model heard but nobody transcribed leaves the same trace as no user speech, because a V3 delegation with no user-side text falls back to the running transcript. Either way the handoff carried the voice model's own words. A deterministic guard (client-managed handoffs, or the host refusing delegation from a turn whose handoff carried no user line) is a possible follow-up if the instructions do not hold.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 The coordinator is told that a handoff whose input holds only the voice model's own words is not a request: it delegates, queues and steers nothing and ends with one [COMMENTARY] line
+- [x] #1 The coordinator is told that a handoff carrying the voice model's own words (assistant lines with no user line, or user input that repeats what the voice model just said) is not a request: it delegates, queues and steers nothing and ends with one [COMMENTARY] line telling the voice model it was its own voice, so the handoff was dropped and nothing will come back
 - [x] #2 The narration prompt tells the voice model that the step it was handed is all it needs, and that it hands off only for a question the user asks
 - [ ] #3 A real-voice narration with fast stepping starts no workhorse work, as the user reports
 <!-- AC:END -->
@@ -43,4 +43,6 @@ In the 2026-09-23 23:15 narration the voice model handed off while explaining st
 
 <!-- SECTION:NOTES:BEGIN -->
 Coordinator instructions (Language paragraph) now say a handoff with no user line carries the voice model's own words and is never a request; reviewed digest updated in authored.ts, and the instruction and realtime tests pass (183). The narration prompt now says the step handed over is all the voice needs and it hands off only for a question the user asks. A deterministic guard stays out until the real-voice run shows the instructions do not hold.
+
+User correction: the voice was picked up by their microphone. The coordinator rule now also covers user input that repeats or closely matches what the voice model just said, and its [COMMENTARY] line tells the voice model that the handoff was its own voice, so it was dropped and nothing will come back. Digest updated; instruction and coordinator tests pass (152).
 <!-- SECTION:NOTES:END -->
