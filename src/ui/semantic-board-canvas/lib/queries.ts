@@ -79,9 +79,9 @@ function semanticBoardListQuery() {
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
-			const boards = await fetchSemanticBoards(context.signal);
-			pictureSource().listed?.(boards);
-			return boards;
+			const listing = await fetchSemanticBoards(context.signal);
+			pictureSource().listed?.(listing.boards);
+			return listing;
 		},
 		refetchOnWindowFocus: true,
 	});

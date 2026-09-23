@@ -9,6 +9,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
+import type { BoardListing } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 import {
@@ -84,11 +85,21 @@ function vaultCheck(): Record<string, unknown> {
  * The server's listing of its boards, at their versions.
  * @returns The listing.
  */
-function listing(): Record<string, unknown> {
+function listing(): BoardListing {
 	const boards = server.listed
-		? [{ name: "pipeline", key: "pipeline", version: server.version, opens: "v1", variants: [] }]
+		? [
+				{
+					name: "pipeline",
+					key: "pipeline",
+					version: server.version,
+					opens: "v1",
+					variants: [],
+					links: [],
+					description: null,
+				},
+			]
 		: [];
-	return { success: true, boards };
+	return { success: true, levels: ["system", "service", "module"], boards };
 }
 
 /**
