@@ -469,45 +469,62 @@ function versionRefusal(
 	return { code, problem };
 }
 
+/** Who is asking for a board's lease, and for which board. */
+type BoardLeaseAsk = Pick<SemanticWriteCommand, "board" | "writer" | "signal">;
+
 /**
  * How the lease is asked for: the board's key, the identity the write runs
  * under, and the writer's own words about what it is doing.
  * @param key The board's canonical key.
- * @param command The stated command.
+ * @param ask Who is asking.
  * @param admission The identity admitted for this write.
  * @returns The lock request.
  */
-function leaseRequest(
-	key: string,
-	command: SemanticWriteCommand,
-	admission: Admission,
-): LockRequest {
+function leaseRequest(key: string, ask: BoardLeaseAsk, admission: Admission): LockRequest {
 	return {
 		board: key,
 		holder: {
 			id: admission.id,
-			kind: command.writer.kind,
-			...(command.writer.reason === undefined ? {} : { reason: command.writer.reason }),
+			kind: ask.writer.kind,
+			...(ask.writer.reason === undefined ? {} : { reason: ask.writer.reason }),
 			...(admission.claimed ? { claimed: true } : {}),
 		},
-		...(command.signal === undefined ? {} : { signal: command.signal }),
+		...(ask.signal === undefined ? {} : { signal: ask.signal }),
 	};
 }
 
 /**
- * Change one board.
- * @param command The stated command.
- * @returns What the write did, or why it did nothing.
+ * Whether what a pass answered is a refusal.
+ * @param result What the pass answered.
+ * @param result.outcome What the pass did, or that it refused.
+ * @returns True for a refusal.
+ */
+function isRejection(result: { readonly outcome: string }): result is SemanticWriteRejection {
+	return result.outcome === "rejected";
+}
+
+/**
+ * Run one synchronous pass over a board under its lease, and say which
+ * identity held it.
+ *
+ * Every change to a board comes through here, a write or a discard alike, so
+ * admission, the lease and the refusal a held board gets are made once.
+ * @param ask Who is asking, and for which board.
+ * @param pass What to do once the board is held.
+ * @returns What the pass did and the identity it held the board under, or why it did nothing.
  * @throws {Error} When the board name is not usable or would escape the vault.
  */
-async function writeSemanticBoard(command: SemanticWriteCommand): Promise<SemanticWriteResult> {
+async function underBoardLease<Done extends { readonly outcome: "applied" | "discarded" }>(
+	ask: BoardLeaseAsk,
+	pass: (location: SemanticBoardLocation) => Done | SemanticWriteRejection,
+): Promise<(Done & { readonly heldAs: string }) | SemanticWriteRejection> {
 	// The key comes from the name alone, without reading a directory, so the
 	// lease is taken before anything looks at the filesystem. Two processes
 	// creating "Payments" and "payments" on a case-sensitive filesystem would
 	// otherwise each resolve an absent path of their own, take the lease in turn
 	// and leave two files where the vault has one board (ADR 0010).
-	const address = semanticBoardAddress(command.board);
-	const admission = admit(address.key, command.writer);
+	const address = semanticBoardAddress(ask.board);
+	const admission = admit(address.key, ask.writer);
 	if (!admission.ok) {
 		return {
 			outcome: "rejected",
@@ -517,16 +534,15 @@ async function writeSemanticBoard(command: SemanticWriteCommand): Promise<Semant
 			version: null,
 		};
 	}
-	const at = new Date().toISOString();
 	try {
-		const result = await withBoardLock(leaseRequest(address.key, command, admission), () =>
-			applyUnderLease(locateSemanticBoard(command.board), command, at),
+		const result = await withBoardLock(leaseRequest(address.key, ask, admission), () =>
+			pass(locateSemanticBoard(ask.board)),
 		);
 		// Said here rather than carried through the pass inside the lease: the pass
 		// reads, checks, applies and writes, and an identity it takes but never uses
 		// is one more thing a reader of it has to account for. This is a fact about
 		// the lease, so it is reported where the lease was taken.
-		return result.outcome === "applied" ? { ...result, heldAs: admission.id } : result;
+		return isRejection(result) ? result : { ...result, heldAs: admission.id };
 	} catch (error) {
 		if (error instanceof BoardHeldError) {
 			return {
@@ -541,9 +557,25 @@ async function writeSemanticBoard(command: SemanticWriteCommand): Promise<Semant
 	}
 }
 
+/**
+ * Change one board.
+ * @param command The stated command.
+ * @returns What the write did, or why it did nothing.
+ * @throws {Error} When the board name is not usable or would escape the vault.
+ */
+async function writeSemanticBoard(command: SemanticWriteCommand): Promise<SemanticWriteResult> {
+	const at = new Date().toISOString();
+	return underBoardLease(command, (location) => applyUnderLease(location, command, at));
+}
+
 export {
+	type BoardLeaseAsk,
 	type SemanticWriter,
 	type SemanticWriteCommand,
+	type SemanticWriteRejection,
 	type SemanticWriteResult,
+	boardBefore,
+	rejected,
+	underBoardLease,
 	writeSemanticBoard,
 };
