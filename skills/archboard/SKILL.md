@@ -5,8 +5,9 @@ description: >-
   an architecture diagram (parts, containment, relationships) or a sequence
   diagram (an ordered exchange) from source, edit an existing board, propose an
   architectural change as a variant and compare it, bind parts to code, render
-  SVGs and PNGs. Use when asked to document, explain or change a system's
-  architecture, a request or data flow, or a board in the vault.
+  SVGs and PNGs, record a walkthrough to a narrated video. Use when asked to
+  document, explain or change a system's architecture, a request or data flow,
+  or a board in the vault.
 ---
 
 # Archboard
@@ -377,7 +378,9 @@ subject: a board that describes how a request travels is parts, containment
 and the calls between them, and the sequence recipe is read on top of it only
 when the request asks for the exchange itself. A request that combines
 workflows (extend the vocabulary, then create; link a detail board, then
-propose) reads each recipe it needs, in the order the request runs them.
+propose) reads each recipe it needs, in the order the request runs them. A
+request for a narrated video makes or finds the board with its recipe, then
+[records a walkthrough](references/sequences-views-walkthroughs.md#recording-a-walkthrough).
 
 ## Keep it true
 
@@ -397,7 +400,7 @@ are what a branch of one needs on top of it.
   drill-down, traffic, emphasis, removals and handles, refusals.
 - [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
   view scopes and grammars, message kinds, repeat/note, walkthrough beats and
-  their identity.
+  their identity, and recording a walkthrough to a narrated video.
 - [variants](references/variants.md): what a comparison counts, edge identity,
   flow/step identity, reconciliation and `resolve`, adoption, claims.
 - [schemas](references/schemas.md): the exact JSON Schemas of the payloads, the

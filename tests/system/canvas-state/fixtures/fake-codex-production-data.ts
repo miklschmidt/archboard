@@ -114,3 +114,7 @@ export {
 	workhorsePlan,
 	workhorseTokenUsage,
 };
+
+// The fixture is copied elsewhere before it runs, and this module is imported by its absolute
+// path, so what the fixture needs from its other modules reaches it through here.
+export { explainStep, startRealtime } from "./fake-codex-realtime.ts";

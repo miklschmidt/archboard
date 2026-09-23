@@ -102,6 +102,13 @@ the [clean-process real-voice smoke](docs/design/codex-workbench-voice-acceptanc
 deterministic gates first, then a user proves microphone, speaker, sign-in,
 reconnect, callback and spoken approval.
 
+A recording (`archboard semantic record`) runs end to end against the fake
+Codex in `tests/system/semantic-boards/record.test.ts`: a real headless
+Chromium, the real page, and a fake that speaks a transcript for every step it
+is handed. What only a real voice can show, that it explains each step and falls
+silent so the talk moves on, is the
+[recording acceptance](docs/design/walkthrough-recording-acceptance.md).
+
 The complete local gate is `bun run check`; `docs/agents/test-suite.md`
 explains the lanes and the browser prerequisites.
 
