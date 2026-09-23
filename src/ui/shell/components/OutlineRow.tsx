@@ -1,8 +1,9 @@
 // One row of the navigator's tree: a folder, a board, or one state of a board.
 // Every row is one fixed line so activity never moves the rows below it; a
 // name that does not fit wraps to a second line and no further. The row itself
-// is the tree item and opens what it names; its disclosure and its states
-// count are pointer targets outside the tab order, reached by the arrow keys.
+// is the tree item and opens what it names, and its name says everything the
+// row shows; its disclosure and its states count are pointer targets outside
+// the tab order, whose work the arrow keys do.
 
 import {
 	RiArrowRightSLine,
@@ -51,8 +52,12 @@ interface RowHandlers {
 	readonly onOpen: (row: NavigatorRow, beside: boolean) => void;
 	/** Open or close a folder or board. */
 	readonly onExpand: (id: string, open: boolean) => void;
-	/** Show or hide a board's states. */
-	readonly onToggleStates: (id: string) => void;
+	/**
+	 * Show or hide a board's states.
+	 * @param id The board's row.
+	 * @param open Whether to list them.
+	 */
+	readonly onStates: (id: string, open: boolean) => void;
 	/** A key pressed on a row: the tree decides what it does. */
 	readonly onRowKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
 }
@@ -205,9 +210,7 @@ function Lamp(props: {
 							? "ring-status size-1.5 rounded-full ring-[1.5px]"
 							: "bg-status size-1.5 rounded-full motion-safe:animate-pulse"
 					}
-				>
-					<span className="sr-only">{activityWords(activity)}</span>
-				</span>
+				/>
 			)}
 			{activity === null && inner && (
 				<span
@@ -287,9 +290,9 @@ function BoardLine(props: RowHandlers & { readonly row: BoardRow }): JSX.Element
 	return (
 		<RowShell
 			{...props}
-			label={row.label}
-			selected={row.active}
-			expanded={row.hasChildren ? row.expanded : undefined}
+			label={boardRowName(row)}
+			selected={row.selected}
+			expanded={row.hasChildren || row.otherStates > 0 ? row.listed : undefined}
 			left={indent(row.depth)}
 			className={`min-h-8 flex-wrap py-[7px] ${rowTone(row.active)}`}
 		>
@@ -314,6 +317,38 @@ function BoardLine(props: RowHandlers & { readonly row: BoardRow }): JSX.Element
 			<BoardError error={row.board.error} />
 		</RowShell>
 	);
+}
+
+/**
+ * What a board row says about the board's own standing: its level, whether
+ * anything is built, how many other states it has, whether it can be read.
+ * @param row The row.
+ * @returns The facts that apply.
+ */
+function standingFacts(row: BoardRow): string[] {
+	const states = row.otherStates === 1 ? "1 other state" : `${row.otherStates} other states`;
+	return [
+		row.board.level ?? "",
+		row.unbuilt ? "nothing built" : "",
+		row.otherStates > 0 ? states : "",
+		row.board.error === undefined ? "" : "cannot be read",
+	];
+}
+
+/**
+ * A board row's accessible name: every fact the row shows, in the order it
+ * shows them, so a screen reader hears what a glance sees.
+ * @param row The row.
+ * @returns The name.
+ */
+function boardRowName(row: BoardRow): string {
+	const facts = [
+		row.label,
+		...standingFacts(row),
+		row.onScreen.length > 0 ? `shown in pane ${row.onScreen.join(" and ")}` : "",
+		row.activity === null ? "" : activityWords(row.activity),
+	];
+	return facts.filter((fact) => fact !== "").join(", ");
 }
 
 /**
@@ -342,13 +377,13 @@ function boardNameClass(row: BoardRow): string {
  * @returns The trailing cluster.
  */
 function BoardTrailing(props: RowHandlers & { readonly row: BoardRow }): JSX.Element {
-	const { row, onToggleStates } = props;
+	const { row, onStates } = props;
 	const handleStates = useCallback(
 		(event: MouseEvent<HTMLButtonElement>) => {
 			event.stopPropagation();
-			onToggleStates(row.id);
+			onStates(row.id, !row.statesOpen);
 		},
-		[onToggleStates, row.id],
+		[onStates, row.id, row.statesOpen],
 	);
 	return (
 		<span className="flex h-[18px] shrink-0 items-center gap-1.5">

@@ -136,6 +136,44 @@ function downLink(
 }
 
 /**
+ * Whether a container link points up: a board describing a container of
+ * another board sits under it, unless the levels say the link runs down —
+ * a system board drawing a service as a container of its modules is still
+ * the service's parent (ADR 0029 is guidance, and nothing enforces it).
+ * @param from The linking board.
+ * @param to The linked board.
+ * @param levels The configured levels.
+ * @returns True unless the target is at a finer level than the linking board.
+ */
+function pointsUp(from: OutlineBoard, to: OutlineBoard, levels: readonly string[]): boolean {
+	const fromRank = rankOf(levels, from.level);
+	const toRank = rankOf(levels, to.level);
+	return fromRank === null || toRank === null || toRank <= fromRank;
+}
+
+/**
+ * Which board one link places under which: the linker under the container it
+ * describes, or the linked board under a coarser linker.
+ * @param board The linking board.
+ * @param target The linked board.
+ * @param container Whether the link names the container the board describes.
+ * @param levels The configured levels.
+ * @returns The child and its candidate parent, or null for a sideways link.
+ */
+function linkPlacement(
+	board: OutlineBoard,
+	target: OutlineBoard,
+	container: boolean,
+	levels: readonly string[],
+): { readonly child: OutlineBoard; readonly candidate: ParentCandidate } | null {
+	if (container && pointsUp(board, target, levels)) {
+		return { child: board, candidate: { name: target.name, container: true, rank: -1 } };
+	}
+	const candidate = downLink(board, target, levels);
+	return candidate === null ? null : { child: target, candidate };
+}
+
+/**
  * Every board that stands above each board, within its folder: the container
  * a board says it describes, and every coarser board that links down to it.
  * @param boards The boards.
@@ -158,7 +196,7 @@ function parentCandidates(
 		if (
 			parent === undefined ||
 			parent === child ||
-			folderOf(parent.name) !== folderOf(child.name)
+			foldName(folderOf(parent.name)) !== foldName(folderOf(child.name))
 		) {
 			return;
 		}
@@ -168,13 +206,9 @@ function parentCandidates(
 	for (const board of boards) {
 		for (const link of board.links) {
 			const target = byName.get(foldName(link.board));
-			if (target === undefined) continue;
-			if (link.container) {
-				add(board, { name: target.name, container: true, rank: -1 });
-				continue;
-			}
-			const candidate = downLink(board, target, levels);
-			if (candidate !== null) add(target, candidate);
+			const placed =
+				target === undefined ? null : linkPlacement(board, target, link.container, levels);
+			if (placed !== null) add(placed.child, placed.candidate);
 		}
 	}
 	return candidates;
@@ -245,7 +279,8 @@ function folderChildren<Board extends OutlineBoard>(
 	path: string,
 ): DraftNode<Board>[] {
 	if (path === "") return roots;
-	const existing = folders.get(path);
+	// Folders meet case-insensitively, as board names do; the first spelling names it.
+	const existing = folders.get(foldName(path));
 	if (existing !== undefined) return existing.children;
 	const node: DraftNode<Board> = {
 		kind: "folder",
@@ -256,7 +291,7 @@ function folderChildren<Board extends OutlineBoard>(
 		children: [],
 		otherParents: [],
 	};
-	folders.set(path, node);
+	folders.set(foldName(path), node);
 	folderChildren(folders, roots, folderOf(path)).push(node);
 	return node.children;
 }

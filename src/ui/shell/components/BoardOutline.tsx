@@ -15,7 +15,12 @@ interface BoardOutlineProps extends Omit<RowHandlers, "focusable" | "onFocusRow"
 	readonly homeId: string | null;
 	/** A printable key typed in the tree, handed to the filter. */
 	readonly onTypeAhead: (text: string) => void;
+	/** A filter is on: the tree lists what it found, and nothing opens or closes. */
+	readonly filtering: boolean;
 }
+
+/** Keys that command rather than type: Space opens, and "/" is the find shortcut. */
+const NOT_TYPED: ReadonlySet<string> = new Set([" ", "/"]);
 
 /**
  * Whether a key event types a character rather than commanding something.
@@ -24,7 +29,11 @@ interface BoardOutlineProps extends Omit<RowHandlers, "focusable" | "onFocusRow"
  */
 function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
 	return (
-		event.key.length === 1 && event.key !== " " && !event.ctrlKey && !event.metaKey && !event.altKey
+		event.key.length === 1 &&
+		!NOT_TYPED.has(event.key) &&
+		!event.ctrlKey &&
+		!event.metaKey &&
+		!event.altKey
 	);
 }
 
@@ -34,7 +43,7 @@ function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
  * @returns The tree.
  */
 function BoardOutline(props: BoardOutlineProps): JSX.Element {
-	const { rows, homeId, onOpen, onExpand, onTypeAhead } = props;
+	const { rows, homeId, onOpen, onExpand, onStates, onTypeAhead, filtering } = props;
 	const tree = useRef<HTMLDivElement>(null);
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const stop = [focusedId, homeId, rows[0]?.id].find(
@@ -50,9 +59,10 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 		(action: OutlineKeyAction): void => {
 			if (action.kind === "focus") focusRow(action.id);
 			else if (action.kind === "expand") onExpand(action.id, action.open);
+			else if (action.kind === "states") onStates(action.id, action.open);
 			else onOpen(action.row, action.beside);
 		},
-		[focusRow, onExpand, onOpen],
+		[focusRow, onExpand, onStates, onOpen],
 	);
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLDivElement>): void => {
@@ -62,12 +72,16 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 				onTypeAhead(event.key);
 				return;
 			}
-			const action = outlineKey(rows, stop, event);
+			const action = outlineKey(rows, stop, {
+				key: event.key,
+				altKey: event.altKey,
+				filtering,
+			});
 			if (action === null) return;
 			event.preventDefault();
 			perform(action);
 		},
-		[rows, stop, onTypeAhead, perform],
+		[rows, stop, onTypeAhead, perform, filtering],
 	);
 	return (
 		<div
@@ -85,7 +99,7 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 					onFocusRow={setFocusedId}
 					onOpen={onOpen}
 					onExpand={onExpand}
-					onToggleStates={props.onToggleStates}
+					onStates={onStates}
 					onRowKeyDown={handleKeyDown}
 				/>
 			))}

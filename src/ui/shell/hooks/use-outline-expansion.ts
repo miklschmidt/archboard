@@ -3,7 +3,7 @@
 // content: it lives in local storage, and a browser without storage still
 // opens and closes rows for the session.
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 const STORAGE_KEY = "archboard.navigator.open";
 
@@ -74,7 +74,7 @@ function useOutlineExpansion(openByDefault: (id: string) => boolean): OutlineExp
 			return next;
 		});
 	}, []);
-	return { expanded, setExpanded };
+	return useMemo(() => ({ expanded, setExpanded }), [expanded, setExpanded]);
 }
 
 export { useOutlineExpansion, type OutlineExpansion };
