@@ -90,3 +90,22 @@ a `body`, optional `subjects` and an optional `view`.
   walkthrough with the ids you read. A beat without an id is a new beat, and a
   beat id from another walkthrough is refused. When a subject a beat names is
   removed, point the beat at its successor in the same batch.
+
+## Recording a walkthrough
+
+`semantic record <board> --out talk.mp4` presents one walkthrough of the board
+in a private headless browser and records it with the Codex voice explaining
+each beat: MP4 or WebM, by the file's extension. Each beat moves on once the
+voice has finished explaining it. The caption shows the beat's heading and
+body, and the voice explains them in its own words rather than reading them
+out, so write a body that can be explained in a few sentences.
+
+- `--walkthrough <name>` picks one when the variant states several, and
+  `--variant` and `--theme dark` choose what is drawn.
+- It needs the canvas's Codex signed in and voice not live on that canvas. A
+  refusal says which. It takes about as long as the talk and prints each beat
+  as it is reached.
+- For a board made only for the video, create it with `semantic new`, look at
+  it with `semantic rasterize`, then record with
+  `--discard --doing "<why>"`, which deletes the board once the file is
+  written. A failed recording keeps the board, so record again.

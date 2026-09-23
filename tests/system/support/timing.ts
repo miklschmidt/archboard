@@ -119,6 +119,15 @@ const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
 const TEST_VAULT_CLI_TIMEOUT_MS = 20_000;
 
 /**
+ * Bound one `semantic record` of a two-step walkthrough against the narrating fixture: a
+ * headless Chromium's start, the page's load and layout, a conversation created and voice
+ * started, then two steps each glided to, spoken and followed by the recording's pause, and
+ * the file streamed out. A recording is as long as its talk, so this is well above a vault
+ * command's bound.
+ */
+const TEST_RECORDING_CLI_MS = 90_000;
+
+/**
  * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
  * case receive rejection, assert it, and dispose a retained generation.
  */
@@ -230,6 +239,7 @@ const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2000;
 
 export {
 	TEST_HUMAN_UNDO_CASE_TIMEOUT_MS,
+	TEST_RECORDING_CLI_MS,
 	TEST_VAULT_CLI_TIMEOUT_MS,
 	TEST_GIT_FIXTURE_START_MS,
 	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,

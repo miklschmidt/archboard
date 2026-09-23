@@ -3,6 +3,8 @@ import { appendFileSync, readFileSync } from "node:fs";
 import {
 	configFixture,
 	dynamicItem,
+	explainStep,
+	startRealtime,
 	modelFixture,
 	promptItem,
 	unixSeconds,
@@ -76,6 +78,13 @@ let coordinatorThreadId: string | null = null;
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
 let realtimeSessionId: string | null = null;
+let speechSequence = 0;
+/**
+ * Whether the fixture is a recording's voice, which speaks only about steps it is handed.
+ * @returns True when the control file says it narrates.
+ */
+const narrating = (): boolean =>
+	(JSON.parse(readFileSync(controlPath, "utf8")) as { narrates?: boolean }).narrates === true;
 
 const configResponse = () => ({
 	config: { ...configFixture, sqlite_home: process.env["CODEX_SQLITE_HOME"] },
@@ -375,47 +384,13 @@ const handle = (frame: WireFrame): void => {
 			}
 			realtimeSessionId = String(params["realtimeSessionId"]);
 			respond(frame as never, {});
-			setTimeout(() => {
-				const userTranscript = {
-					id: "controlled-user-transcript",
-					realtimeSessionId,
-					type: "transcriptSegment",
-					role: "user",
-					text: "Show the controlled voice context.",
-				};
-				const assistantTranscript = {
-					id: "controlled-assistant-transcript",
-					realtimeSessionId,
-					type: "transcriptSegment",
-					role: "assistant",
-					text: "The controlled voice context is visible.",
-				};
-				const threadId = params["threadId"];
-				notify("thread/realtime/sdp", { threadId, sdp: "v=0\r\ns=controlled-answer-sdp\r\n" });
-				notify("thread/realtime/started", { threadId, realtimeSessionId, version: "v3" });
-				notify("thread/realtime/item/started", { threadId, item: userTranscript });
-				notify("thread/realtime/item/completed", { threadId, item: userTranscript });
-				// The voice model's words arrive one delta at a time, as the real session's do.
-				notify("thread/realtime/item/started", {
-					threadId,
-					item: { ...assistantTranscript, text: "" },
-				});
-				for (const [index, word] of assistantTranscript.text.split(" ").entries()) {
-					setTimeout(
-						() => {
-							const delta = index === 0 ? word : ` ${word}`;
-							const itemId = assistantTranscript.id;
-							notify("thread/realtime/item/transcript/delta", { threadId, itemId, delta });
-							if (delta.endsWith(".")) {
-								notify("thread/realtime/item/completed", { threadId, item: assistantTranscript });
-							}
-						},
-						300 * (index + 1),
-					);
-				}
-			}, 10);
+			setTimeout(() => startRealtime(notify, params, narrating()), 10);
 			return;
 		}
+		case "thread/realtime/appendSpeech":
+			respond(frame as never, {});
+			if (narrating()) explainStep(notify, params, realtimeSessionId, ++speechSequence);
+			return;
 		case "thread/realtime/stop":
 			if (coordinatorThreadId === null || params["threadId"] !== coordinatorThreadId) {
 				reject(frame as never, "Realtime stop must target the retained coordinator thread.");
