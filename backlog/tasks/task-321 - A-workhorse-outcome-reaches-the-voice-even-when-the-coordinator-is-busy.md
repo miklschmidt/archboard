@@ -4,7 +4,7 @@ title: The coordinator hears what happens in the workhorse as it happens
 status: To Do
 assignee: []
 created_date: '2026-09-23 22:43'
-updated_date: '2026-09-23 22:57'
+updated_date: '2026-09-23 22:58'
 labels:
   - voice
   - coordinator
@@ -30,5 +30,5 @@ The coordinator decides what the voice model says ([FINAL]) and what it only kno
 - [ ] #3 Every workhorse turn that ends, or waits on the user, while voice is live reaches the coordinator, whether the coordinator or the agent bar started it
 - [ ] #4 The workhorse can send the coordinator a message through a dynamic tool, its prompt says when to use it, and the message arrives as the first criterion says
 - [ ] #5 System owners prove delivery to a busy coordinator by steering, to an idle one by a new turn, and of an agent-bar turn's end
-- [ ] #6 DESIGN.md, ADR 0019 and the authored-contracts doc describe the delivery
+- [ ] #6 DESIGN.md and the authored-contracts doc describe the delivery; ADR 0019 stands, because steering adds to the running turn and starts no second one
 <!-- AC:END -->
