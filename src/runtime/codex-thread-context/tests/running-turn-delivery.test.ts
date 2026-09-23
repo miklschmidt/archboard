@@ -41,7 +41,6 @@ test("a link to another thread or another epoch is still refused before writing"
 	);
 
 	for (const harness of [otherThread, otherEpoch]) {
-		// oxlint-disable-next-line no-await-in-loop -- each harness is its own delivery
 		const result = await harness.delivery.deliver(harness.events());
 		expect(result).toMatchObject({ outcome: "not_delivered", attempted: false });
 		expect(harness.received).toHaveLength(0);
