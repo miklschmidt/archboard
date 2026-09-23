@@ -35,9 +35,6 @@ const FRAME_RATE = 30;
  */
 const VIDEO_BITS_PER_SECOND = 16_000_000;
 
-/** How much the recorder hands over at a time, in milliseconds of recording. */
-const CHUNK_MS = 1000;
-
 /**
  * What capturing this tab is asked with. Chrome's `preferCurrentTab` (Chrome 94) is not in the
  * DOM library this builds against, so it is added here and nowhere else.
@@ -204,7 +201,8 @@ async function captureTab(container: RecordingContainer): Promise<TabCapture> {
 	function begin(): void {
 		if (recorder.state !== "inactive") return;
 		void audio.resume();
-		recorder.start(CHUNK_MS);
+		// No timeslice: the whole file is handed over once, when it stops, and nothing reads it before.
+		recorder.start();
 		startedAt = performance.now();
 	}
 
