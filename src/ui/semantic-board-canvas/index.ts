@@ -15,6 +15,7 @@ export {
 	fetchSemanticRender,
 	type SemanticAtlas,
 	type SemanticBoardEntry,
+	type SemanticBoardListing,
 	type SemanticBox,
 	type SemanticDrawing,
 	type SemanticFailureCode,

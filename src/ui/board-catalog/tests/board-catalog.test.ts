@@ -15,12 +15,16 @@ const VAULT: readonly SemanticBoardEntry[] = [
 		name: "Checkout",
 		key: "checkout",
 		opens: "v1",
+		links: [],
+		description: null,
 		variants: [{ id: "v1", name: "Initial", lifecycle: "current", parentId: null }],
 	},
 	{
 		name: "Payments",
 		key: "payments",
 		opens: "v2",
+		links: [],
+		description: null,
 		variants: [{ id: "v2", name: "Initial", lifecycle: "current", parentId: null }],
 	},
 ];
@@ -49,7 +53,17 @@ test("named variants retain their addresses and every current spelling selects t
 		{ id: "next", name: "Queue @ edge", lifecycle: "draft", parentId: "now" },
 	];
 	const listing = composeListing(
-		[{ name: "Checkout", key: "checkout", level: "service", opens: "now", variants }],
+		[
+			{
+				name: "Checkout",
+				key: "checkout",
+				level: "service",
+				opens: "now",
+				variants,
+				links: [],
+				description: null,
+			},
+		],
 		undefined,
 	);
 	expect(listing.boards.map((board) => board.level)).toEqual(["service", "service", "service"]);
@@ -80,7 +94,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 		{ id: "alt", name: "Batch ingest", lifecycle: "draft", parentId: "plan" },
 	];
 	const listing = composeListing(
-		[{ name: "Ingest", key: "ingest", opens: "plan", variants }],
+		[{ name: "Ingest", key: "ingest", opens: "plan", variants, links: [], description: null }],
 		undefined,
 	);
 	expect(listing.boards.map((board) => board.key)).toEqual(["ingest", "ingest@alt"]);
@@ -91,7 +105,18 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 	// one nobody listed say nothing of the kind.
 	expect(nothingBuiltOn(listing, "Ingest")).toBe(true);
 	const others = composeListing(
-		[...VAULT, { name: "Broken", key: "broken", opens: null, variants: [], error: "invalid" }],
+		[
+			...VAULT,
+			{
+				name: "Broken",
+				key: "broken",
+				opens: null,
+				variants: [],
+				links: [],
+				description: null,
+				error: "invalid",
+			},
+		],
 		undefined,
 	);
 	expect(["Checkout", "Broken", "Unlisted"].map((board) => nothingBuiltOn(others, board))).toEqual([
@@ -105,7 +130,15 @@ test("an unreadable board remains openable without hiding healthy variants", () 
 	const listing = composeListing(
 		[
 			...VAULT,
-			{ name: "Broken", key: "broken", opens: null, variants: [], error: "invalid board" },
+			{
+				name: "Broken",
+				key: "broken",
+				opens: null,
+				variants: [],
+				links: [],
+				description: null,
+				error: "invalid board",
+			},
 		],
 		undefined,
 	);

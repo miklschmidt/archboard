@@ -14,13 +14,14 @@
 import { z } from "zod";
 import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
 import {
+	BoardListingSchema,
 	SemanticRenderReplySchema,
-	RenderedVariantSchema,
-	SemanticBoardLevelSchema,
+	type BoardListing,
 	type DiagramAtlas,
 	type DiagramBox,
 	type DiagramTheme,
 	type DrawnBoard,
+	type ListedBoard,
 	type NothingDrawn,
 	type OfferedView,
 	type RenderedVariant,
@@ -51,22 +52,11 @@ type SemanticWaiting = NonNullable<DrawnBoard["waiting"]>;
 /** One view the board offers, as a switcher needs to know it. */
 type SemanticOfferedView = OfferedView;
 
-/** One board the vault holds. */
-const BoardEntrySchema = z.object({
-	name: z.string(),
-	key: z.string(),
-	/** The board's version, absent for a board that could not be read. */
-	version: z.int().optional(),
-	level: SemanticBoardLevelSchema.optional(),
-	variants: z.array(RenderedVariantSchema.extend({ parentId: z.string().nullable() })),
-	/** The id of the variant the board's bare name opens, or null when it opens none. */
-	opens: z.string().nullable(),
-	error: z.string().optional(),
-});
-type SemanticBoardEntry = z.infer<typeof BoardEntrySchema>;
+/** One board the vault holds, as the listing reports it. */
+type SemanticBoardEntry = ListedBoard;
 
-/** The listing route's answer. */
-const BoardListSchema = z.object({ success: z.literal(true), boards: z.array(BoardEntrySchema) });
+/** What the listing says: the configured levels, coarsest first, and every board. */
+type SemanticBoardListing = Pick<BoardListing, "levels" | "boards">;
 
 /** A variant with something on it, drawn, as the viewer carries it. */
 type SemanticDrawing = DrawnBoard & { readonly kind: "drawn" };
@@ -208,16 +198,16 @@ async function readRoute(url: string, signal?: AbortSignal): Promise<unknown> {
 }
 
 /**
- * Every semantic board the vault holds.
+ * Every semantic board the vault holds, and the levels the vault orders them by.
  * @param signal Cancels the read.
- * @returns The boards, in the order the server listed them.
+ * @returns The listing, its boards in the order the server listed them.
  */
-async function fetchSemanticBoards(signal?: AbortSignal): Promise<readonly SemanticBoardEntry[]> {
-	const parsed = BoardListSchema.safeParse(await readRoute(LIST_URL, signal));
+async function fetchSemanticBoards(signal?: AbortSignal): Promise<SemanticBoardListing> {
+	const parsed = BoardListingSchema.safeParse(await readRoute(LIST_URL, signal));
 	if (!parsed.success) {
 		throw new SemanticBoardError("REPLY_INVALID", "The canvas server listed no boards.");
 	}
-	return parsed.data.boards;
+	return { levels: parsed.data.levels, boards: parsed.data.boards };
 }
 
 /**
@@ -307,6 +297,7 @@ export {
 	fetchVaultCheck,
 	type SemanticAtlas,
 	type SemanticBoardEntry,
+	type SemanticBoardListing,
 	type SemanticBox,
 	type SemanticDrawing,
 	type SemanticFailureCode,

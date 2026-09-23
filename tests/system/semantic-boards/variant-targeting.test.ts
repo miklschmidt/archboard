@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { BoardListingSchema } from "@/shared/semantic-board/index";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
@@ -230,16 +231,28 @@ describe("a board nobody has built", () => {
 			JSON.stringify({
 				level: "system",
 				lifecycle: "draft",
-				nodes: [{ name: "API", kind: "service" }],
+				nodes: [
+					{
+						name: "API",
+						kind: "system",
+						drillDown: { board: "queues", variant: { kind: "current" } },
+					},
+				],
 			}),
 		);
 		expect(made.status, made.stderr).toBe(0);
 		const held = JSON.parse(cli(["semantic", "show", planned]).stdout).board;
 		expect(held.current).toBeUndefined();
 		const [draft] = held.variants;
-		const listing = await (await fetch(`${canvas.base}/api/semantic-boards`)).json();
-		const listed = listing.boards.find((entry: { name: string }) => entry.name === planned);
-		expect(listed.opens).toBe(draft.id);
+		// What the route answers is what the browser's parse of it keeps.
+		const listing = BoardListingSchema.parse(
+			await (await fetch(`${canvas.base}/api/semantic-boards`)).json(),
+		);
+		const listed = listing.boards.find((entry) => entry.name === planned);
+		expect(listed?.opens).toBe(draft.id);
+		expect(listed?.links).toEqual([
+			{ board: "queues", variant: null, node: "API", container: false },
+		]);
 
 		// Its bare name draws the draft, with no current variant pretending to be it.
 		const drawn = cli(["semantic", "render", planned, "--out", path.join(vault, "unbuilt.svg")]);
