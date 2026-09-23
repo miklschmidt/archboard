@@ -3,7 +3,8 @@
 // that needs a provider's sign-in page opens its tab from the person's own
 // gesture, so the browser lets it through.
 
-import type { AgentSetup, AuthTab } from "@/ui/agent-setup";
+import type { AgentSetup } from "@/ui/agent-setup";
+import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
 import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import { subtitlePreference } from "@/ui/voice-subtitles";
 import type { AgentActions } from "@/ui/workbench/contracts";
@@ -35,30 +36,6 @@ const NO_QUEUE: AgentActions["queue"] = Object.freeze({
 	remove: nothing,
 	sendNow: nothing,
 });
-
-/**
- * Open a blank tab from the person's gesture, so a popup blocker lets it
- * through, to point at the provider's sign-in page once Codex names it.
- * @returns The tab, or undefined when the browser refused one.
- */
-function openAuthTab(): AuthTab | undefined {
-	const opened = window.open("about:blank", "_blank");
-	if (opened === null) return undefined;
-	opened.opener = null;
-	return {
-		/**
-		 * Point the tab at the sign-in page.
-		 * @param url The page.
-		 */
-		navigate: (url) => {
-			opened.location.href = url;
-		},
-		/** Close the tab. */
-		close: () => {
-			opened.close();
-		},
-	};
-}
 
 /**
  * The voice actions.
@@ -137,12 +114,6 @@ function paneActions(
  */
 function agentActions(targets: AgentActionTargets): AgentActions {
 	const { setup, draft, openPanel } = targets;
-	/**
-	 * A tab for the provider's page, when the gesture is about to need one.
-	 * @returns The tab, or undefined.
-	 */
-	const gestureTab = (): AuthTab | undefined =>
-		setup.snapshot().phase.kind === "signed_out" ? openAuthTab() : undefined;
 	return {
 		...voiceActions(targets),
 		...paneActions(targets),
@@ -152,12 +123,12 @@ function agentActions(targets: AgentActionTargets): AgentActions {
 		 * @param queue Whether to run it after the current turn.
 		 */
 		send: (text, queue) => {
-			setup.send(text, { queue, tab: gestureTab() });
+			setup.send(text, { queue, tab: gestureTab(setup) });
 			openPanel();
 		},
 		/** Start voice, setting up whatever is missing. */
 		talk: () => {
-			setup.talk({ tab: gestureTab() });
+			setup.talk({ tab: gestureTab(setup) });
 		},
 		/**
 		 * Sign in.

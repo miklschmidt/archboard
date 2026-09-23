@@ -1,12 +1,9 @@
-// The owners the application composes over one pane's workbench transport —
-// the composer, queue, approvals and thread-link controllers — and the ports
-// the canvas-wide agent setup speaks through. The conversation is the
-// canvas's (TASK-302.06), so whichever pane the person is reading speaks for
-// it, with that pane's board as context.
+// The owners the application composes over one pane's workbench transport:
+// the composer, queue, approvals and thread-link controllers. The
+// conversation is the canvas's (TASK-302.06), so whichever pane the person is
+// reading speaks for it, with that pane's board as context.
 
 import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import type { AgentSetupPorts, SetupStepResult } from "@/ui/agent-setup";
-import type { AgentFocus } from "@/ui/application/lib/agent-focus";
 import { createProgressClock } from "@/ui/application/lib/progress-clock";
 import type { VoiceSession } from "@/ui/voice-session";
 import {
@@ -78,28 +75,6 @@ function approvalDecisions(approvals: WorkbenchApprovalsController): ApprovalDec
 }
 
 /**
- * How the thread-link controller settled its last action, as a setup step.
- * @param threadLink The controller.
- * @returns The step result.
- */
-function settled(threadLink: ThreadLinkController): SetupStepResult {
-	const snapshot = threadLink.snapshot();
-	if (snapshot.state === "failed" || snapshot.state === "inspect_only") {
-		return { ok: false, reason: snapshot.announcement };
-	}
-	return { ok: true };
-}
-
-/**
- * Whether a turn is running on the transport's conversation.
- * @param transport The transport.
- * @returns True while the last turn is in progress.
- */
-function turnRunning(transport: BrowserWorkbenchTransport): boolean {
-	return transport.snapshot()?.timeline?.turns.at(-1)?.status === "inProgress";
-}
-
-/**
  * Compose the owners over one transport.
  * @param options The pane, the transport and how voice starts.
  * @returns The owners.
@@ -128,90 +103,7 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 	});
 }
 
-/** Why a step cannot be taken while no pane is connected. */
-const NO_PANE_WORDS = "No pane is connected to the canvas.";
-const NO_PANE: SetupStepResult = { ok: false, reason: NO_PANE_WORDS };
-
-/**
- * Start voice in the pane voice runs for, and keep it there until it ends.
- * @param focus The agent focus.
- * @param pinVoice Keep voice on one pane.
- * @returns The voice port.
- */
-function voicePort(
-	focus: AgentFocus,
-	pinVoice: (paneId: string) => void,
-): AgentSetupPorts["startVoice"] {
-	return async (walkthrough) => {
-		const voice = focus.voice();
-		if (voice === null) throw new Error(NO_PANE_WORDS);
-		pinVoice(voice.paneId);
-		const view = await voice.session.start(walkthrough === null ? null : { walkthrough });
-		if (view.failure !== null) throw new Error(view.failure.message);
-	};
-}
-
-/**
- * The ports the canvas-wide agent setup speaks through: the focused pane's
- * transport and controllers, whichever pane that is when a step is taken.
- * @param focus The agent focus.
- * @param pinVoice Keep voice on the pane it starts in.
- * @returns The ports.
- */
-function agentSetupPorts(focus: AgentFocus, pinVoice: (paneId: string) => void): AgentSetupPorts {
-	return {
-		transport: focus,
-		/**
-		 * Create the canvas's conversation.
-		 * @returns How it settled.
-		 */
-		createConversation: async () => {
-			const owners = focus.owners();
-			if (owners === null) return NO_PANE;
-			await owners.threadLink.create();
-			return settled(owners.threadLink);
-		},
-		/**
-		 * Start a sign-in.
-		 * @param login The provider.
-		 * @returns How it settled.
-		 */
-		signIn: async (login) => {
-			const owners = focus.owners();
-			if (owners === null) return NO_PANE;
-			await owners.threadLink.login(login);
-			return settled(owners.threadLink);
-		},
-		/**
-		 * Cancel a sign-in.
-		 * @param loginId The sign-in.
-		 * @returns How it settled.
-		 */
-		cancelSignIn: async (loginId) => {
-			const owners = focus.owners();
-			if (owners === null) return NO_PANE;
-			await owners.threadLink.cancelLogin(loginId);
-			return settled(owners.threadLink);
-		},
-		/**
-		 * Deliver one message: steered into a running turn, queued when asked.
-		 * @param text The message.
-		 * @param wantsQueue Whether to queue it.
-		 * @returns The composer's result.
-		 */
-		submit: (text, wantsQueue) => {
-			const owners = focus.owners();
-			if (owners === null)
-				return Promise.resolve({ outcome: "not_delivered", reason: NO_PANE_WORDS });
-			const delivery = wantsQueue ? "queue" : turnRunning(owners.transport) ? "steer" : "send";
-			return owners.composer.submit({ text, delivery });
-		},
-		startVoice: voicePort(focus, pinVoice),
-	};
-}
-
 export {
-	agentSetupPorts,
 	createWorkbenchOwners,
 	type ApprovalDecisions,
 	type VoiceOwner,
