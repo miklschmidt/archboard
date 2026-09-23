@@ -10,6 +10,7 @@ import {
 	dynamicToolCallItem,
 	executableLink,
 	flush,
+	reasoningItem,
 	turnFixture,
 } from "./support/codex-workbench-timeline-fixture.js";
 
@@ -78,4 +79,24 @@ test("a tool call's arguments reach the browser with every secret-named value re
 			tokens: [{ refreshToken: "[redacted]", scope: "all" }],
 		},
 	});
+});
+
+test("a reasoning summary keeps its line breaks, each part on its own line", async () => {
+	const authorities = createIdentityAuthorities();
+	const [reasoning] = await projectedItems(authorities, [
+		reasoningItem(authorities, "layout-reasoning", {
+			type: "reasoning",
+			summary: [
+				"**Reading the renderer**\n\nIt lays out:\n- nodes\n- edges",
+				"**Next**\n\n\n\nEdges.",
+			],
+			content: [],
+		}),
+	]);
+	if (reasoning?.kind !== "reasoning_summary") {
+		throw new Error("the reasoning item was not projected");
+	}
+	expect(reasoning.text).toBe(
+		"**Reading the renderer**\n\nIt lays out:\n- nodes\n- edges\n**Next**\n\nEdges.",
+	);
 });

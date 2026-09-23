@@ -15,6 +15,7 @@ import {
 	turnError,
 } from "@/server/canvas/lib/codex-timeline-evidence";
 import {
+	boundedLayoutText,
 	boundedNormalizedText,
 	boundedText,
 	normalizedText,
@@ -146,7 +147,9 @@ function assistantText(item: SessionThreadItem): string | null {
 
 /**
  * What one reasoning item says: its summary where it has one, and otherwise
- * its content, bounded in both length and number of parts.
+ * its content, bounded in both length and number of parts. Each part keeps its
+ * line breaks, because the browser reads a leading bold line as the heading.
+ * An item that says nothing reads as a fixed word: the wire refuses empty text.
  * @param item The reasoning item.
  * @returns The text, and whether anything was left out.
  */
@@ -162,7 +165,7 @@ function reasoningText(item: Extract<SessionThreadItem, { readonly type: "reason
 		if (value === undefined) {
 			continue;
 		}
-		const part = boundedNormalizedText(value, TIMELINE_TEXT_LIMIT);
+		const part = boundedLayoutText(value, TIMELINE_TEXT_LIMIT);
 		if (part.length > 0) {
 			parts.push(part);
 		}
