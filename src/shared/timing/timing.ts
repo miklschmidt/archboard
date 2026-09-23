@@ -257,6 +257,14 @@ const SEMANTIC_RASTER_STARTUP_TIMEOUT_MS = 10_000;
  */
 const SEMANTIC_RASTER_CLEANUP_MS = 1000;
 
+/**
+ * Bound for one DevTools command whose caller names none. A command to a
+ * private local Chromium answers in milliseconds, so this only decides how
+ * long a wedged browser is waited on before the caller hears so. It matches
+ * the renderer's job bound, which a cold page's commands fit inside.
+ */
+const HEADLESS_CHROMIUM_CALL_MS = SEMANTIC_RASTER_JOB_TIMEOUT_MS;
+
 // ── When a board is considered still ──────────────────────────────────────
 
 /**
@@ -491,6 +499,7 @@ export {
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
 	SEMANTIC_RASTER_CLEANUP_MS,
+	HEADLESS_CHROMIUM_CALL_MS,
 	DEFAULT_SETTLE_MS,
 	DEFAULT_SETTLE_MAX_MS,
 	CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
