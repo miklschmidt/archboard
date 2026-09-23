@@ -274,10 +274,10 @@ _Avoid_: variant, flow
 
 **Narration**:
 A voice session started to explain one walkthrough while the user steps
-through it by hand. The host opens its first step in the pane and hands the
-voice model each step once the pane says it is on screen; the voice explains it
-and waits. The position in the walkthrough stays the pane's, and the words
-follow the picture.
+through it by hand. Archboard opens its first step in the pane. It hands the
+voice model each step once the pane says the step is on screen, and the voice
+explains the step and waits. The position in the walkthrough stays the pane's,
+and the words follow the picture.
 _Avoid_: playback, autoplay, slideshow
 
 **Recording**:
@@ -386,6 +386,37 @@ attaches to it; it handles conversation and bounded direct work while routing
 sustained work to the workhorse.
 _Avoid_: voice model (that is only one part of the realtime path), voice agent,
 router, facilitator, copilot
+
+**Voice model**:
+The realtime speech model the user talks to. It listens and speaks, and it hands
+off to the voice coordinator for anything that needs a board or work.
+_Avoid_: voice coordinator, voice agent, assistant
+
+**Handoff**:
+The voice model passing the conversation to the voice coordinator and waiting for
+its answer. It carries what the user last said. When the user said nothing, it
+carries the voice model's own words, which are never a request from the user.
+_Avoid_: delegation (that is the coordinator giving work to the workhorse),
+request, callback
+
+**Spoken answer**:
+What the voice coordinator gives the voice model to say to the user. It is the
+only thing the voice model reacts to. Everything else the coordinator writes
+reaches the voice model as quiet context, which it knows but never says.
+_Avoid_: final, reply, response
+
+**Steer**:
+To add input to a turn that is still running, so that the turn takes it into
+account as it continues. Steering never stops the turn. Stopping it is an
+interruption.
+_Avoid_: interrupt, inject, cancel
+
+**Workhorse news**:
+What the voice coordinator is told about the workhorse while voice is live: a
+turn that ended or waits on the user, and a message the workhorse sent it. The
+coordinator gets it as it happens, in the turn it is running or in a new one.
+It decides what the voice model says and what it only knows.
+_Avoid_: callback, notification, outcome report
 
 **Doing**:
 The one line an agent says about a board as it writes to it, shown on the
