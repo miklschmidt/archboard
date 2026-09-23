@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:10'
-updated_date: '2026-09-23 00:54'
+updated_date: '2026-09-23 01:39'
 labels: []
 dependencies: []
 references:
@@ -42,13 +42,13 @@ The boundary was unstated before this task: README.md:19-21, CONTEXT.md:3-4 and 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 An ADR records that existence is a fact about a variant and never about a node: a board for something nobody has built carries a draft variant and no current one, and the ADR says why a per-node marker was rejected
-- [ ] #2 A board document can represent having no current variant. `current` is a required top-level field today (skills/archboard/references/generated/semantic-board.schema.json:1265), and every reader of it either handles its absence or is shown not to be reachable for such a board
-- [ ] #3 Creating a board can leave it without a current variant; `createBoardTransition` hard-codes the first variant as `lifecycle: "current"` today (src/runtime/semantic-board-store/lib/transitions.ts:171-177)
-- [ ] #4 Adoption is the moment a planned board becomes the architecture that exists, and what adoption means for a board that had no current variant is defined and works
+- [x] #2 A board document can represent having no current variant. `current` is a required top-level field today (skills/archboard/references/generated/semantic-board.schema.json:1265), and every reader of it either handles its absence or is shown not to be reachable for such a board
+- [x] #3 Creating a board can leave it without a current variant; `createBoardTransition` hard-codes the first variant as `lifecycle: "current"` today (src/runtime/semantic-board-store/lib/transitions.ts:171-177)
+- [x] #4 Adoption is the moment a planned board becomes the architecture that exists, and what adoption means for a board that had no current variant is defined and works
 - [ ] #5 A person opening a board nobody has built sees that from the board itself — in the pane and in the drawing — not only from a variant summary nothing reads
-- [ ] #6 A binding that is ahead of the code is either given its own standing by the checker or explicitly decided to be always wrong; BINDING_PATH_MISSING no longer offers only the two repairs that assume a binding went stale (src/runtime/semantic-board-store/lib/bindings.ts:112-117)
-- [ ] #7 The runbook steps that read source — gather context, decide the parts, map relationships, the second source pass, walk the catalogue, compare — tell a planning author what stands in for a source line when the mechanism is intended rather than observed
-- [ ] #8 The eval suite can express a planning scenario: `flask` and `sources` are not required of every scenario, check-clean is reconsidered where a planned part is bound, and architecturalTruth and behaviouralCompleteness have a planning substitute
+- [x] #6 A binding that is ahead of the code is either given its own standing by the checker or explicitly decided to be always wrong; BINDING_PATH_MISSING no longer offers only the two repairs that assume a binding went stale (src/runtime/semantic-board-store/lib/bindings.ts:112-117)
+- [x] #7 The runbook steps that read source — gather context, decide the parts, map relationships, the second source pass, walk the catalogue, compare — tell a planning author what stands in for a source line when the mechanism is intended rather than observed
+- [x] #8 The eval suite can express a planning scenario: `flask` and `sources` are not required of every scenario, check-clean is reconsidered where a planned part is bound, and architecturalTruth and behaviouralCompleteness have a planning substitute
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -596,4 +596,15 @@ Every refusal on these paths must also say why, instead of `no variant called ""
   on a draft-only board.
 
 User decided 2026-09-23: the bare address takes the reviewer's policy 3, the cascade. On a board with a current variant it opens that variant, exactly as today. Otherwise it opens the sole draft; otherwise the unique root draft (a draft with no draft ancestor); otherwise it refuses and names the candidates. The default lives in its own address resolution, never inside resolveVariant or currentVariant, which keep answering which variant is implemented.
+
+Implementation 2026-09-23, commits 525c9f19..923e60f1 on main.
+- Bare address (cascade, the user's decision): addressedVariant(board, asked?) in src/shared/semantic-board opens the current variant, else the only draft with no draft ancestor (which covers a sole draft), else refuses and names the candidates. Used by the renderer, pane show and reconnect (stillThere, via the new statedVariant in engine/board), the code opener, walkthrough narration, store transitions that name no variant, and CLI inspect, compare, edit, branch and resolve. resolveVariant and currentVariant still answer only which variant is implemented (drill-down, adopt, shelve, the brief's account, eval outcome checks).
+- #2: current is optional; designationIssues allows zero or one current variant, and a dangling designation is still refused. Schema is 2.4.0 with a content-keeping migration step (2.3.0 was already taken by authored order in 60bbb648). Artifacts regenerated. Positive owners: addressing.test.ts and planned-board.test.ts.
+- #3: create takes "lifecycle": "draft" (default current).
+- #4: adopting on a board with no current variant records no from and makes nothing historical, and the diagnostic says nothing was built before. --variant current on such a board is refused as having no current variant. Owned by the store test and tests/system/semantic-boards/variant-targeting.test.ts.
+- #6: BINDING_PATH_MISSING judges a binding by the variant it is on and runs only over the current variant. A draft's binding is ahead of the code; the check applies once adoption makes the variant current. A third repair was added. Reasons are in ADR 0031; owned by bindings.test.ts.
+- #7: SKILL.md 'Planning what nobody has built', plus variants/edit/authoring/create-architecture/propose-compare. The stated intent stands in for a source line. eval:skill check passes.
+- #8: flask/sources are optional together (planning runs use an empty checkout, revision null). The rubric has a 'Planning runs' section. current-untouched and reading.ts no longer pass vacuously or retarget silently. reading-fixture builds coherent boards.
+- #5 so far: the agent brief says nothing is built. The listing returns opens per board. The UI keys the bare row from opens, prefetches the opened variant by bare name, and the inspector reports the resolver's own reason. The visible 'nothing here is built' treatment in the pane and the drawing is pending the user's choice from rendered options.
+Full gate on the branch: bun run check exit 0 (3459 module, 169 system, 8 repository, all serial-browser owners).
 <!-- SECTION:NOTES:END -->
