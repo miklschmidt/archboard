@@ -140,6 +140,8 @@ describe("failed runs keep grader capture evidence", () => {
 			`,
 			);
 			const base = jobAt(root);
+			const revision = base.scenario.flask;
+			if (revision === undefined) throw new Error("S02 is a scenario about Flask source");
 			const job = {
 				...base,
 				cache,
@@ -148,7 +150,7 @@ describe("failed runs keep grader capture evidence", () => {
 					...base.pins,
 					flask: {
 						...base.pins.flask,
-						revisions: { ...base.pins.flask.revisions, [base.scenario.flask]: commit },
+						revisions: { ...base.pins.flask.revisions, [revision]: commit },
 					},
 				},
 			};

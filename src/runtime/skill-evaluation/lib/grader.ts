@@ -344,6 +344,7 @@ const ANSWER_LINES: readonly string[] = [
 	`- \`unprompted\` and \`behaviouralCompleteness\`: by "${RUBRIC_SECTIONS.unprompted}" and "${RUBRIC_SECTIONS.inherited}"; each entry's \`feature\` is one row key of that catalogue, exactly as written there.`,
 	`- \`visual\`: by "${RUBRIC_SECTIONS.visual}". The harness downgrades a pass lacking successful image delivery or a per-capture observation.`,
 	`- \`semanticCorrectness\`, \`architecturalTruth\` and \`readability\`: by "${RUBRIC_SECTIONS.scores}"; \`summary\` in a few sentences; \`concerns\` by "${RUBRIC_SECTIONS.concerns}".`,
+	`- A run whose bundle has \`revision: null\` plans an architecture nobody has built: judge what the other sections judge against source by "${RUBRIC_SECTIONS.planning}".`,
 ];
 
 /**

@@ -75,7 +75,10 @@ interface CheckVerdict {
 type Finding = Omit<CheckVerdict, "check">;
 
 /**
- * The variant a check names, or the current one.
+ * The variant a check names, or the current one. Never a draft in the current
+ * one's place: on a board nobody has built there is no current variant, and a
+ * check naming none fails there rather than judging a proposal as the
+ * implemented architecture.
  * @param board The board.
  * @param asked The variant's id or name, when the check names one.
  * @returns The variant, or undefined when the board has no such variant.
@@ -170,7 +173,12 @@ function located(
 	if (found === undefined) return finding(false, `board "${board ?? "?"}" is not in the vault`);
 	const chosen = variantOf(found, variant);
 	if (chosen === undefined)
-		return finding(false, `variant "${variant ?? "current"}" is not on "${board}"`);
+		return finding(
+			false,
+			variant === undefined
+				? `"${board}" has no current variant; a check on it names the variant it means`
+				: `variant "${variant}" is not on "${board}"`,
+		);
 	return { board: found, variant: chosen };
 }
 

@@ -76,13 +76,16 @@ interface GradingOptions {
 	readonly executable: string;
 }
 
-const BundleHeadSchema = z.object({ run: z.string(), revision: z.string() }).passthrough();
+const BundleHeadSchema = z
+	.object({ run: z.string(), revision: z.string().nullable() })
+	.passthrough();
 
 /** One bundled run, found under the batch. */
 interface BundledRun {
 	readonly id: string;
 	readonly directory: string;
-	readonly revision: string;
+	/** Null for a planning run, which has no Flask checkout to stage. */
+	readonly revision: string | null;
 }
 
 /**
@@ -494,7 +497,11 @@ async function gradeBatch(
 	runner.prepare(layout.root, layout.workspace);
 	const runs = bundledRuns(options.batchRoot);
 	stageSkill(options, layout.workspace);
-	await stageFlask(options, [...new Set(runs.map((run) => run.revision))], layout.workspace);
+	await stageFlask(
+		options,
+		[...new Set(runs.flatMap((run) => (run.revision === null ? [] : [run.revision])))],
+		layout.workspace,
+	);
 	for (const run of runs) stageRun(run, layout.workspace);
 	const session = readSession(layout.session);
 	if (session.runner !== undefined && session.runner !== runner.name)

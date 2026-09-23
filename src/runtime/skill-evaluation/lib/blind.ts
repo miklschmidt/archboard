@@ -74,8 +74,10 @@ interface BundledCapture {
 interface RunBundle {
 	readonly run: string;
 	readonly scenario: string;
-	readonly revision: string;
+	/** The Flask revision the request is about, or null for a planning run, which has no source. */
+	readonly revision: string | null;
 	readonly prompt: string;
+	/** The sources the request is about; none for a planning run. */
 	readonly sources: readonly string[];
 	readonly expectedFeatures: Scenario["expectedFeatures"];
 	readonly status: RunStatus;
@@ -160,9 +162,9 @@ function bundleForGrader(run: CompletedRun, id: string): RunBundle {
 	return {
 		run: id,
 		scenario: run.scenario.id,
-		revision: run.scenario.flask,
+		revision: run.scenario.flask ?? null,
 		prompt: run.scenario.prompt,
-		sources: run.scenario.sources,
+		sources: run.scenario.sources ?? [],
 		expectedFeatures: run.scenario.expectedFeatures,
 		status: run.status,
 		finalMessage: run.finalMessage === null ? null : hide(run.finalMessage),

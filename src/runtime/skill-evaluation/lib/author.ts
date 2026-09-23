@@ -33,7 +33,7 @@ import {
 	type ClassifiedCommand,
 	type GuidanceStanding,
 } from "@/runtime/skill-evaluation/lib/events";
-import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
+import { checkoutFlask, emptyCheckout } from "@/runtime/skill-evaluation/lib/flask";
 import {
 	countDirectBoardWrites,
 	evaluateGuardrails,
@@ -110,24 +110,30 @@ interface RunWorld {
 	readonly paths: RunPaths;
 	readonly cli: CliContext;
 	readonly canvas: OwnedCanvas;
-	readonly commit: string;
+	/** The Flask commit checked out, or null for a planning scenario's empty repository. */
+	readonly commit: string | null;
 }
 
 /**
- * Brings one run's world up: directory, Flask, canvas, configuration.
+ * Brings one run's world up: directory, Flask (or, for a planning scenario, an
+ * empty repository), canvas, configuration.
  * @param job The job.
  * @returns The world.
  */
 async function bringUp(job: RunJob): Promise<RunWorld> {
 	const paths = prepareRunDirectory(job.root);
 	writeCliWrapper(paths, job.checkout);
-	const commit = await checkoutFlask(
-		job.cache,
-		job.pins.flask.repository,
-		job.pins.flask.revisions[job.scenario.flask],
-		paths.flask,
-		job.signal,
-	);
+	const revision = job.scenario.flask;
+	const commit =
+		revision === undefined
+			? await emptyCheckout(paths.flask, job.signal)
+			: await checkoutFlask(
+					job.cache,
+					job.pins.flask.repository,
+					job.pins.flask.revisions[revision],
+					paths.flask,
+					job.signal,
+				);
 	writeVaultConfiguration(paths.vault, job.fixture.policy);
 	fillCodexHome(
 		paths.codexHome,
@@ -433,7 +439,10 @@ function assemble(
 		error: null,
 		startedAt: gathered.startedAt,
 		finishedAt: new Date().toISOString(),
-		flask: { revision: job.scenario.flask, commit: world.commit },
+		flask:
+			job.scenario.flask === undefined
+				? null
+				: { revision: job.scenario.flask, commit: world.commit },
 		canvas: { url: world.canvas.url, pid: world.canvas.pid },
 		codex: {
 			executable: job.pins.codex.executable,

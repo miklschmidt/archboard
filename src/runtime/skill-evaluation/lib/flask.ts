@@ -118,4 +118,17 @@ async function checkoutFlask(
 	return head;
 }
 
-export { checkoutFlask, ensureFlaskCache };
+/**
+ * Where a planning scenario's author works: an empty repository, because what
+ * it plans has not been built and the request is the whole of the evidence.
+ * @param destination Where the repository goes.
+ * @param signal Cancellation.
+ * @returns Nothing to pin: no commit holds what nobody has written.
+ */
+async function emptyCheckout(destination: string, signal?: AbortSignal): Promise<null> {
+	fs.mkdirSync(destination, { recursive: true });
+	await git(["init", "--quiet"], destination, signal);
+	return null;
+}
+
+export { checkoutFlask, emptyCheckout, ensureFlaskCache };

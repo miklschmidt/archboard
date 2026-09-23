@@ -273,6 +273,12 @@ function currentJson(board: SemanticBoard | undefined): string {
  */
 const currentUntouched: Check = (check, reading) =>
 	onBoard(check, reading, (board) => {
+		// Two absences are not two equal architectures: a board with no current
+		// variant has nothing for this check to hold still, and passing it would
+		// say the author left alone something that was never there.
+		if (currentVariant(board) === undefined) {
+			return finding(false, `"${board.name}" has no current variant to leave untouched`);
+		}
 		const same = currentJson(board) === currentJson(namedValue(reading.snapshot, check.board));
 		return finding(
 			same,

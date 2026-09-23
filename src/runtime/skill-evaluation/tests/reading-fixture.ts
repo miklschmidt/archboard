@@ -3,7 +3,11 @@
 // removed, traffic changed, a flow and a walkthrough added, one draft with an
 // open disagreement, and one adoption recorded.
 
-import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import {
+	parseSemanticBoard,
+	SEMANTIC_BOARD_SCHEMA_VERSION,
+	type SemanticBoard,
+} from "@/shared/semantic-board/index";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import {
@@ -23,15 +27,18 @@ interface VariantSpec {
 }
 
 /**
- * A board with the given variants, the first current.
+ * A coherent board with the given variants: a variant is a draft unless it
+ * says otherwise, and the one marked current, if any, is designated.
  * @param variants The variants.
  * @param extra Board-level fields.
  * @returns The board.
+ * @throws {Error} When the fixture is not a board the store would read.
  */
 function board(variants: readonly VariantSpec[], extra: object = {}): SemanticBoard {
-	return SemanticBoardSchema.parse(
+	const current = variants.find((variant) => variant.lifecycle === "current")?.id;
+	const parsed = parseSemanticBoard(
 		withFixtureOrders({
-			schemaVersion: "2.2.0",
+			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "Flask",
@@ -40,11 +47,13 @@ function board(variants: readonly VariantSpec[], extra: object = {}): SemanticBo
 			createdAt: "2026-09-14T00:00:00.000Z",
 			updatedAt: "2026-09-14T00:00:00.000Z",
 			views: [],
-			current: variants[0]?.id,
+			...(current === undefined ? {} : { current }),
 			variants: variants.map((variant) => ({ lifecycle: "draft", ...variant })),
 			...extra,
 		}),
 	);
+	if (!parsed.ok) throw new Error(`fixture board is incoherent: ${parsed.problem}`);
+	return parsed.board;
 }
 
 const APP = {
