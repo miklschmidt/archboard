@@ -131,7 +131,7 @@ function runCli(
 ): CliProcessResult {
 	const env: ChildEnvironment = {
 		...sanitizedEnvironment(options.root, options.vault),
-		EXPRESS_SERVER_URL: options.base,
+		ARCHBOARD_URL: options.base,
 		ARCHBOARD_NO_AUTOSTART: "1",
 	};
 	const executable = process.execPath;

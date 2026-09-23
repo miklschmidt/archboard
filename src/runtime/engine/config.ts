@@ -3,9 +3,8 @@ import dotenv from "dotenv";
 // Load environment variables once for every entry point (CLI and canvas server)
 dotenv.config({ quiet: true });
 
-// Express server configuration
-const EXPRESS_SERVER_URL = process.env["EXPRESS_SERVER_URL"] || "http://127.0.0.1:3000";
-const ENABLE_CANVAS_SYNC = process.env["ENABLE_CANVAS_SYNC"] !== "false"; // Default to true
+// The canvas the CLI talks to, and where an auto-started canvas listens.
+const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || "http://127.0.0.1:3000";
 
 // Opt out of auto-starting the canvas server from the CLI.
 const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
@@ -50,9 +49,21 @@ function noVaultMessage(): string {
 	].join("\n");
 }
 
+/**
+ * The refusal for the canvas URL's old name, before archboard named its own environment
+ * (TASK-310). A shell or `.envrc` that still sets it would otherwise have its canvas ignored and
+ * another started on the default port, over the same vault.
+ * @returns The refusal text, or null when the old name is not set.
+ */
+function renamedUrlMessage(): string | null {
+	return process.env["EXPRESS_SERVER_URL"] === undefined
+		? null
+		: "EXPRESS_SERVER_URL is now ARCHBOARD_URL. Rename it where it is set (a shell profile, an .envrc or a .env file), then run the command again.";
+}
+
 export {
-	EXPRESS_SERVER_URL,
-	ENABLE_CANVAS_SYNC,
+	ARCHBOARD_URL,
+	renamedUrlMessage,
 	ARCHBOARD_NO_AUTOSTART,
 	ARCHBOARD_VAULT,
 	noVaultMessage,

@@ -106,7 +106,7 @@ function renderBlock(options: {
 	const cli = onPath ? "archboard" : command;
 	const env = [`export ARCHBOARD_VAULT=${vault}`];
 	if (canvasUrl) {
-		env.push(`export EXPRESS_SERVER_URL=${canvasUrl}`);
+		env.push(`export ARCHBOARD_URL=${canvasUrl}`);
 	}
 
 	return [
@@ -243,7 +243,7 @@ function chooseSetupDoc(options: SetupOptions, repo: string): { file: string; ex
  * @returns The configured canvas URL when it differs from the default, else undefined.
  */
 function canvasUrlOverride(): string | undefined {
-	const configured = process.env["EXPRESS_SERVER_URL"];
+	const configured = process.env["ARCHBOARD_URL"];
 	return configured && configured !== DEFAULT_CANVAS_URL ? configured : undefined;
 }
 

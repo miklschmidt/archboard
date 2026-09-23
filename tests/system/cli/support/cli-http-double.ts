@@ -1,6 +1,6 @@
 // A canvas that is only a canvas as far as the CLI can tell.
 //
-// The CLI's own owners need something on the other end of `EXPRESS_SERVER_URL`
+// The CLI's own owners need something on the other end of `ARCHBOARD_URL`
 // that identifies itself and answers the handful of routes a command touches,
 // without a real canvas, a real vault or a real browser. What it is for is
 // process behaviour — what the CLI leaves behind, what it exits with — so the

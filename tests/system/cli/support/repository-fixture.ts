@@ -57,8 +57,7 @@ function createRepositoryFixture(): RepositoryFixture {
 		...process.env,
 		CODEX_HOME: undefined,
 		LOCALAPPDATA: undefined,
-		EXPRESS_SERVER_URL: undefined,
-		ENABLE_CANVAS_SYNC: undefined,
+		ARCHBOARD_URL: undefined,
 		ARCHBOARD_SETTLE_MS: undefined,
 		ARCHBOARD_SETTLE_MAX_MS: undefined,
 		HOME: home,
@@ -112,7 +111,7 @@ function createRepositoryFixture(): RepositoryFixture {
 				encoding: "utf8",
 				env: {
 					...serverEnvironment,
-					...(options.url ? { EXPRESS_SERVER_URL: options.url } : {}),
+					...(options.url ? { ARCHBOARD_URL: options.url } : {}),
 				},
 			});
 			return spawnSchema.parse({

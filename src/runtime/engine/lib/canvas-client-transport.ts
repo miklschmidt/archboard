@@ -1,6 +1,6 @@
 // One request to the canvas server, and the identity gate in front of it.
 
-import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
+import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { withBoard, withWriteClaims } from "@/runtime/engine/lib/canvas-client-session";
 import { isBoardRefusal } from "@/runtime/engine/lib/canvas-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
@@ -27,9 +27,9 @@ let identityProbe: Promise<void> | null = null;
  */
 function foreignServiceError(): Error {
 	return unreachableError(
-		`Something is answering at ${EXPRESS_SERVER_URL} but does not identify as this canvas server ` +
+		`Something is answering at ${ARCHBOARD_URL} but does not identify as this canvas server ` +
 			`(a pre-1.1 canvas build or an unrelated service on the port). ` +
-			`Upgrade/stop that service, or point EXPRESS_SERVER_URL elsewhere.`,
+			`Upgrade/stop that service, or point ARCHBOARD_URL elsewhere.`,
 	);
 }
 
@@ -62,12 +62,12 @@ function markCanvasIdentityVerified(): void {
  */
 async function probeHealth(): Promise<Response | null> {
 	try {
-		return await fetch(`${EXPRESS_SERVER_URL}/health`, { signal: AbortSignal.timeout(1500) });
+		return await fetch(`${ARCHBOARD_URL}/health`, { signal: AbortSignal.timeout(1500) });
 	} catch (error) {
 		const name = isRecord(error) ? stringAt(error, "name") : undefined;
 		if (name === "TimeoutError" || name === "AbortError") {
 			throw unreachableError(
-				`The service at ${EXPRESS_SERVER_URL} did not answer the /health identity probe within 1500ms — ` +
+				`The service at ${ARCHBOARD_URL} did not answer the /health identity probe within 1500ms — ` +
 					`refusing to send it requests.`,
 			);
 		}
@@ -193,7 +193,7 @@ function describeFailure(error: CanvasError, body: Record<string, unknown>): voi
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	await assertCanvasIdentity();
 	const response = await fetch(
-		`${EXPRESS_SERVER_URL}${withWriteClaims(withBoard(path), init?.method)}`,
+		`${ARCHBOARD_URL}${withWriteClaims(withBoard(path), init?.method)}`,
 		init,
 	);
 	const data: unknown = await response.json().catch(() => null);

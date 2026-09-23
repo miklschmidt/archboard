@@ -27,7 +27,7 @@ function runCanvasCli(base: string, vault: string, args: string[]): string {
 		env: {
 			...process.env,
 			ARCHBOARD_VAULT: vault,
-			EXPRESS_SERVER_URL: base,
+			ARCHBOARD_URL: base,
 			ARCHBOARD_NO_AUTOSTART: "1",
 		},
 	});
@@ -58,8 +58,7 @@ const CLEARED_CANVAS_ENV = [
 	"CYCLES",
 	"HOST",
 	"PORT",
-	"EXPRESS_SERVER_URL",
-	"ENABLE_CANVAS_SYNC",
+	"ARCHBOARD_URL",
 	"ARCHBOARD_NO_AUTOSTART",
 	"CODEX_HOME",
 	"LOCALAPPDATA",

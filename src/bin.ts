@@ -18,5 +18,14 @@ const argv = process.argv.slice(2);
 const { applyCliBootstrap } = await import("@/cli/command-contract/bootstrap");
 const bootstrap = applyCliBootstrap(argv);
 
+if (!bootstrap.help) {
+	const { renamedUrlMessage } = await import("@/runtime/engine/config");
+	const renamed = renamedUrlMessage();
+	if (renamed !== null) {
+		process.stderr.write(`${renamed}\n`);
+		process.exit(2);
+	}
+}
+
 const { runCli } = await import("@/cli/commands/run");
 await runCli(argv, bootstrap);

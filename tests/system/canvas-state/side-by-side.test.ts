@@ -69,7 +69,7 @@ describe.serial("side-by-side proposal workflow", () => {
 						cwd: repoRoot,
 						env: {
 							...process.env,
-							EXPRESS_SERVER_URL: canvas.base,
+							ARCHBOARD_URL: canvas.base,
 							ARCHBOARD_NO_AUTOSTART: "1",
 							ARCHBOARD_VAULT: vault,
 							LOG_LEVEL: "error",
