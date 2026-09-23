@@ -76,12 +76,17 @@ const HOW_TO_OPEN_A_PANE =
  * than one thing — putting a board on the wrong half of the screen is cheap to
  * notice, but so is saying which half, and a canvas that quietly ignores the
  * half you asked for teaches you to stop trusting the flag.
- * @param registrations The panes on screen, of which only the addressable ones answer.
+ * @param registrations The panes on screen, of which only the addressable ones answer to
+ *   anything but their exact client id.
  * @param spec What the caller typed.
  * @returns The pane it names.
  * @throws {Error} When it names none, or more than one.
  */
 function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneRegistration {
+	// A client id names one pane exactly, a recording page's included: that is how the page asks
+	// for the board it records, and how nobody who did not know the id can point at it.
+	const exact = registrations.find((pane) => pane.clientId === spec.trim());
+	if (exact !== undefined) return exact;
 	const ordered = panesInOrder(addressablePanes(registrations));
 	if (ordered.length === 0) {
 		throw new Error(

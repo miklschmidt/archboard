@@ -10,8 +10,10 @@ import { parseBoardKey } from "@/runtime/engine/board";
 // Which pane a caller means, beside a recording page's pane (TASK-304).
 //
 // A recording page is a headless browser nobody sees, and it presents a pane id like anybody's.
-// What is guarded: no spec, no call that names no pane and no report finds or counts it, and
-// somebody's pane of the same id is found as if the recording were not there.
+// What is guarded: no spec but its exact client id, no call that names no pane and no report finds
+// or counts it, and somebody's pane of the same id is found as if the recording were not there.
+// Its client id still names it, because that is how the recording page asks for the board it
+// records.
 
 /**
  * One registered pane.
@@ -32,18 +34,19 @@ function pane(clientId: string, extra: Partial<PaneRegistration> = {}): PaneRegi
 	};
 }
 
-test("a recording page's pane is nobody's to address, count or report, beside somebody's of the same id", () => {
+test("a recording page's pane is nobody's to address but by its client id, count or report, beside somebody's of the same id", () => {
 	// Claiming every role a pane can have, so nothing but the recording mark keeps it out.
 	const recording = pane("record", { recording: true, primary: true, focused: true });
 	const user = pane("user");
 
 	expect(soloPane([recording])).toBeNull();
 	expect(soloPane([recording, user])).toBe(user);
-	for (const spec of ["A", "1", "primary", "focused", "record"]) {
+	for (const spec of ["A", "1", "primary", "focused"]) {
 		expect(() => resolvePaneSpec([recording], spec)).toThrow();
 	}
 	expect(resolvePaneSpec([recording, user], "A")).toBe(user);
 	expect(resolvePaneSpec([recording, user], "1")).toBe(user);
+	expect(resolvePaneSpec([recording, user], "record")).toBe(recording);
 
 	const report = buildPanesReport([recording, user], {
 		identity: (key) => parseBoardKey(key),
