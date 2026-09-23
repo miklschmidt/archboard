@@ -8,6 +8,7 @@
 import { useCallback, useMemo } from "react";
 
 import type { AgentSetup } from "@/ui/agent-setup";
+import { narrate } from "@/ui/application/agent-setup-ports";
 import type { AgentVoiceView } from "@/ui/workbench/contracts";
 
 /** The focused pane's narration, when voice is off. */
@@ -33,7 +34,7 @@ function useNarration(
 	voice: AgentVoiceView,
 	paneId: string | null,
 ): Narration | null {
-	const start = useCallback((walkthrough: string): void => setup.talk({ walkthrough }), [setup]);
+	const start = useCallback((walkthrough: string): void => narrate(setup, walkthrough), [setup]);
 	const off = voice.stage === "idle";
 	return useMemo(() => (off && paneId !== null ? { paneId, start } : null), [off, paneId, start]);
 }
