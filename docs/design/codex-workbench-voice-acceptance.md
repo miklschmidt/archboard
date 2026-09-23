@@ -6,10 +6,10 @@ Run it after the deterministic owners pass. It is not a stress, performance,
 multi-server, or concurrency exercise.
 
 The person running the smoke owns every process and browser tab it starts. Do
-not stop an existing server unless you started it and have confirmed that it
-has no held board. Do not record credentials, sign-in URLs, tokens, account
-identities, process environments, or audio. The real-audio section cannot be
-replaced with a fake microphone, prerecorded media, or a controlled-media test.
+not stop an existing server unless you started it. Do not record credentials,
+sign-in URLs, tokens, account identities, process environments, or audio. The
+real-audio section cannot be replaced with a fake microphone, prerecorded
+media, or a controlled-media test.
 
 ## What is automated and what a person observes
 
@@ -17,7 +17,7 @@ replaced with a fake microphone, prerecorded media, or a controlled-media test.
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | Exact binary, private roots, effective SQLite config, protocol behavior, reconnect sequencing, semantic delivery, callback correlation, spoken-approval gating, and rendered controlled-media lifecycle | Deterministic commands below              |
 | Microphone input is intelligible, speaker output is audible, the response is useful, one user message survives reconnect once, board intent is understood, and one spoken approval settles              | The person at the real browser            |
-| Board version changes once for the requested write, queue or steer state is visible, Stop releases the session, a new voice session starts, and shutdown is clean                                       | Product interfaces plus human observation |
+| Board version changes once for the requested write, queue or steer state is visible, End releases the voice session, a new voice session starts, and shutdown is clean                                  | Product interfaces plus human observation |
 
 A controlled-media browser owner proves lifecycle wiring. It does not prove
 that this machine's microphone, speaker, browser permission, WebRTC path, or
@@ -61,7 +61,7 @@ timeout -k 5s 25s bun test \
   src/server/codex-workbench/tests/sequenced-delivery.test.ts \
   src/server/canvas/tests/codex-workbench-text-actions.test.ts \
   src/ui/workbench-transport/tests/stream-reduction.test.ts \
-  src/ui/workbench-composer/tests/mounted-composer.test.tsx
+  src/ui/workbench-composer/tests
 
 timeout -k 5s 25s bun test \
   src/runtime/codex-semantic-context/tests \
@@ -93,21 +93,21 @@ First inspect the shared lifecycle.
 
 If it reports a running server that this acceptance run did not start, stop and
 report the existing owner as the blocker. Do not signal it. If it is a process
-from an earlier attempt that you own, run `./bin/canvas board list`, resolve any
-reported held board through the named recovery choices, then use the guarded
-`./bin/canvas stop`.
+from an earlier attempt that you own, stop it with `./bin/canvas stop`. Stop
+never refuses: every accepted write is on disk before it is answered.
 
 Start the server and create the empty acceptance board.
 
 ```bash
 ./bin/canvas start
 ./bin/canvas status
-./bin/canvas board new "$accept_board" --level module
-./bin/canvas board info --board "$accept_board"
+echo '{"level":"module"}' |
+  ./bin/canvas semantic new "$accept_board" --doing "starting the voice acceptance board"
+./bin/canvas semantic show "$accept_board"
 ```
 
 The status must name a running server with zero browser clients before the
-browser opens. Keep the initial board version from `board info`.
+browser opens. Keep the initial board version from `semantic show`.
 
 ### Prove the dedicated roots without exposing them
 
@@ -151,40 +151,44 @@ originating `config.toml`, and `configRequirements/read` all agree with these
 private roots. Do not start a second app-server client to inspect the private
 session.
 
-## 4. Sign in and link one workhorse
+## 4. Sign in and start the conversation
 
-Use a 1920×1080 desktop viewport. Open the real desktop browser through the public interface.
+Use a 1920×1080 desktop viewport. Open the address `./bin/canvas status`
+reports (by default <http://127.0.0.1:3000>) in the real desktop browser, then
+point its pane at the acceptance board.
 
 ```bash
-./bin/canvas browser open
 ./bin/canvas browser show "$accept_board" --pane primary
 ```
 
-In the browser:
+There is nothing to set up first. The first message starts the conversation:
+it signs in if needed, starts Codex, creates the workhorse and links it
+(ADR 0019). In the browser:
 
-1. Expand the Agent drawer. Confirm the board name matches `$accept_board`, then open `Settings`.
-2. Confirm the `Account` section says `Signed in`. If signed out, leave the
-   default `ChatGPT` option selected, press `Sign in`, then use `Continue to
-ChatGPT` to finish signing in. Wait for `Signed in` in Archboard; a login
-   command notification alone is not proof of completion. Do not copy the URL
-   or account details into evidence.
-3. Confirm `Start agent` is enabled. If it is unavailable, resolve the reason
-   shown in settings before continuing.
-4. Press `Start agent`. Settings closes and the message composer receives focus.
-   Reopen `Settings` and expand `Conversation details` and `Coordinator details`
-   to inspect the linked identities. Record them only as `present`; do not copy
-   their opaque values. Close settings to return to the conversation.
+1. Confirm the header names `$accept_board`.
+2. Type `Reply with the word ready.` into the composer in the agent bar
+   (`Message the agent`) and press Enter. The conversation panel opens.
+3. If Archboard is signed out, the message is held in the panel, the status
+   line asks you to sign in, and the ChatGPT sign-in page opens in a new tab.
+   If the browser blocked the tab, use `Open the page` in the agent bar.
+   Finish signing in there. Do not copy the URL or account details into
+   evidence.
+4. Without sending again, confirm the held message delivers by itself: the
+   status line passes through starting Codex and starting a conversation, and
+   the prompt appears once in the conversation followed by the answer. A login
+   notification alone is not proof of completion; the delivered prompt is.
+   If Archboard was already signed in, the message delivers directly.
+5. Open the conversation panel's menu and choose `Session details`. Confirm
+   Account says signed in, Conversation shows a model, context use and a
+   thread, and Voice shows a model. Record them only as `present`; do not copy
+   their values. Choose `Back to the conversation`.
 
-A newly created conversation may have no history until its first message.
-An empty history alone is not a failed link.
-
-There must be one browser, one pane, one linked workhorse, and one coordinator.
-Do not open a second pane or server.
+There must be one browser tab, one pane and one conversation. Do not open a
+second pane or server.
 
 ## 5. Prove text, interrupt, and reconnect
 
-Build this message with the current marker. Paste it into `Message the Codex
-workhorse`:
+Build this message with the current marker:
 
 ```text
 User marker <accept_run>. Do not repeat the marker. Run `bun -e 'await Bun.sleep(15000); console.log("ready")'` in this checkout, then report the one-line output.
@@ -192,14 +196,17 @@ User marker <accept_run>. Do not repeat the marker. Run `bun -e 'await Bun.sleep
 
 Replace `<accept_run>` with the shell value. Then:
 
-1. Press `Send`. Confirm the authoritative workhorse timeline shows the user
-   message and the composer changes to `Steer the current Codex turn`.
-2. Press `Interrupt` while the 15-second command is active. Confirm the timeline
-   settles the turn as interrupted. Do not send another message yet.
-3. Reload the browser tab once. Expand the workbench after it reconnects.
-4. Confirm the same link and authoritative timeline return, the composer is
-   empty, and the exact user-marker message appears once. A retained
-   `Unsent message, outcome unknown` copy or a second user item is a failure.
+1. Paste it into `Message the agent` and press Enter. Confirm the conversation
+   shows the message once, the status line says Working with the current step,
+   and the composer now offers to steer the running turn.
+2. Press `Stop` in the agent bar while the 15-second command is active. Confirm
+   the turn settles as stopped. Do not send another message yet.
+3. Reload the browser tab once. If the conversation panel is closed after the
+   reload, open it with the conversation toggle at the right end of the agent
+   bar.
+4. Confirm the same conversation returns, the composer is empty, and the exact
+   user-marker message appears once. A held copy of the message, a copy marked
+   as possibly not arrived, or a second user item is a failure.
 
 This observation proves reconnect did not resubmit input. If the marker appears
 twice, stop without trying the prompt again and retain only the marker, stages,
@@ -214,74 +221,77 @@ microphone can remain the configured default. On a PipeWire desktop,
 problem; inspect locally without retaining device details. Select the intended
 physical input in system audio settings or reconnect it.
 
-Press `Start voice` in the Agent drawer and grant microphone permission if
-asked. If the browser reports `Requested device not found`, stop the failed
-session, repair the default input, and start again. Successful SDP negotiation
-does not prove microphone capture. Do not use virtual devices. Say:
+Press `Talk` in the agent bar and grant microphone permission if asked. Talk
+sets up whatever voice still needs, then turns into the live control: the
+wave, the word Listening or Speaking, `Mute` and `End`. If Talk comes back
+with a warning instead, hover it for the reason. For `Requested device not
+found`, repair the default input and press Talk again. Successful SDP
+negotiation does not prove microphone capture. Do not use virtual devices. Say:
 
 ```text
 What is the first heading in TESTING.md, and which board are we viewing? Answer in one short sentence.
 ```
 
-Open the `Voice` disclosure for transcript and context. Confirm all of these by direct observation:
+Voice never opens the conversation panel; open it with the conversation toggle
+if it is closed. What was said aloud is the Voice lines at the foot of the
+conversation: your words as `You`, the answer as `Voice`. Confirm all of these
+by direct observation:
 
-- the live meter reacts to your real voice when reduced motion is off (the
-  supplemental meter is intentionally hidden with reduced motion);
-- your final words appear once in the voice transcript;
-- a relevant answer is audible through the real speaker;
-- the same answer appears once in the coordinator transcript;
-- the voice controls still target the same pane; the linked workhorse and
-  coordinator in Agent settings remain unchanged.
+- the live word changes from Listening to Speaking while the answer plays, and
+  the wave moves with the spoken answer when reduced motion is off (with
+  reduced motion it stays still);
+- your final words appear once as a `You` line;
+- a relevant answer, naming `$accept_board`, is audible through the real
+  speaker;
+- the same answer appears once as a `Voice` line, and with subtitles on it is
+  shown over the pane while it plays;
+- the pane still shows `$accept_board`, and the thread in `Session details` is
+  the one it showed in section 4 (compare on screen; do not record it).
 
-A transcript without audible output, or audible output without the matching
-transcript, fails the smoke.
+A Voice line without audible output, or audible output without the matching
+Voice line, fails the smoke.
 
 ## 7. Prove one bounded board write and live semantics
 
-Read the current version with `./bin/canvas board info --board "$accept_board"`.
+Read the current version with `./bin/canvas semantic show "$accept_board"`.
 Then say this exact bounded request:
 
 ```text
-Make one direct board change. Add one rectangle labelled Voice smoke <accept_run> to the open acceptance board. Use one Archboard add command and make no other board change.
+Make one direct board change. Add one node named Voice smoke <accept_run> to the open acceptance board. Use one archboard semantic edit and make no other board change.
 ```
 
-After the coordinator reports completion, run:
+After the voice reports completion, run:
 
 ```bash
-./bin/canvas board info --board "$accept_board"
-./bin/canvas query --board "$accept_board" --type rectangle
+./bin/canvas semantic show "$accept_board"
 ```
 
-The version must advance by exactly one and the query must return exactly the
-requested rectangle. A labelled rectangle may persist as a shape plus bound
-text; that is still one input conversion and one write.
-
-Now drag the rectangle far enough that the move is visibly meaningful. Wait
-for the canvas to settle, then ask by voice, `What board change did I just
-make?` The coordinator must describe the move from the new semantic context.
-This proves that live human board intent reaches the coordinator. Do not count
-the coordinator's own write as new human intent.
+The version must advance by exactly one and the board must hold exactly the
+requested node. The pane must draw the new node without a reload: that is the
+live semantics, the browser reading the board again when the server announces
+the new version.
 
 ## 8. Prove queue ownership and a semantic callback
 
-Start a second workhorse turn from the text composer:
+Send a second message from the composer:
 
 ```text
 Run `bun -e 'await Bun.sleep(15000); console.log("busy turn finished")'`, then report the one-line output.
 ```
 
-While its `Interrupt` control is visible, say:
+While the agent bar shows `Stop`, say:
 
 ```text
 Queue exactly one follow-up for the linked workhorse. Its prompt is: read TESTING.md and reply with only its first heading. Do not steer the active turn and do not add another queue item.
 ```
 
-Open the `Queue` disclosure and confirm it shows one queued submission and the coordinator says
-it queued rather than steered the workhorse. After the active turn settles,
-say `Start that one queued follow-up now.` Confirm the queue item starts once.
-When it finishes, the coordinator timeline must show the correlated operation
-callback and the first heading result without a spoken polling loop. That
-callback is the semantic completion evidence.
+Confirm the foot of the conversation shows one queued prompt, the status line
+counts one queued, and the voice says it queued rather than steered the
+workhorse. After the active turn settles, say `Start that one queued follow-up
+now.` Confirm the queued prompt starts once, as one new turn in the
+conversation. When it finishes, the voice must report the first heading by
+itself, once, with no spoken polling loop in the Voice lines. That callback is
+the semantic completion evidence.
 
 If the workhorse is no longer active when the queue request arrives, start the
 15-second turn again with a new marker before asking for a queue operation. Do
@@ -295,10 +305,12 @@ Keep voice running. Say:
 Use the shell to run `git status --short`, but explicitly request approval for this one command before running it. Do not request a session grant.
 ```
 
-Wait for the effect prompt. In the workbench, confirm one ordinary command
-approval card is pending, it says `Spoken approval available`, and the visible
-`Approve` and `Decline` buttons remain available as fallback. Only after the
-effect prompt finishes, say:
+Wait for the effect prompt. The status line says the agent needs you; an
+approval never opens the panel by itself, so open it with `Review` if it is
+closed. Confirm one ordinary command approval card is pending at the foot of
+the conversation, it says the approval can be answered aloud, and its decision
+buttons remain available as fallback. Only after the effect prompt finishes,
+say:
 
 ```text
 Approve that exact command.
@@ -310,22 +322,22 @@ proof. If spoken classification is ambiguous or refused, leave the card for
 the visual surface, record the visible reason, and fail this run. A fresh run
 must raise a new approval; never repeat an approval whose outcome is unknown.
 
-## 10. Stop, start a new voice session, and shut down
+## 10. End voice, start a new voice session, and shut down
 
-1. Press the visible `Stop voice` control. Confirm the meter disappears if shown, the active
-   audio transport disappears, and the text workbench remains usable.
-2. Press `Start voice` again. Say `Reply with the word restarted.` Confirm one
-   new final user item and one audible `restarted` response.
-3. Press `Stop voice` again. Close the browser tab that this run opened.
-4. Confirm no held board, then stop only this run's server.
+1. Press `End` in the agent bar. Confirm the live control returns to `Talk`,
+   the wave and the active audio transport disappear, and the composer remains
+   usable.
+2. Press `Talk` again. Say `Reply with the word restarted.` Confirm one new
+   `You` line and one audible `restarted` response.
+3. Press `End` again. Close the browser tab that this run opened.
+4. Stop only this run's server.
 
 ```bash
-./bin/canvas board list
 ./bin/canvas stop
 ./bin/canvas status
 ```
 
-The final status must be stopped. The guarded stop must complete without held work. Confirm the owned app-server
+The final status must be stopped. Confirm the owned app-server
 child exits and the browser microphone indicator is gone; CLI status alone
 does not prove browser media cleanup. Keep the dedicated
 Codex roots because they contain the supported sign-in. Remove only the exact
@@ -347,13 +359,13 @@ Record one row per run. Use `pass`, `fail`, or `not reached`.
 | Exact 0.155.1 and deterministic owners |        | Commands, exits, elapsed seconds                               |
 | Clean server and one app-server        |        | Status facts, no pid or argv dump                              |
 | Private config and effective SQLite    |        | `0700`, `0700`, `0600`, exact match, readiness label           |
-| Signed-in text workbench               |        | Signed in, one link, identities present                        |
+| Signed-in conversation                 |        | Signed in, one conversation, session details present           |
 | Text, interrupt, reconnect             |        | Marker, interrupted, one user item after reload                |
 | Real microphone and speaker            |        | Human heard and spoke; no media retained                       |
-| One bounded board write                |        | Board version before and after, matching label                 |
+| One bounded board write                |        | Board version before and after, matching node name             |
 | Queue and callback                     |        | One queued item, one start, one correlated completion          |
 | Spoken approval and fallback           |        | Eligible card visible, utterance settled once, buttons visible |
-| Stop, new voice session, shutdown      |        | Two stops, one fresh start, final stopped status               |
+| End, new voice session, shutdown       |        | Two ends, one fresh start, final stopped status                |
 
 For a failure, keep the run marker, checkpoint, exact visible recovery text,
 command exit, and elapsed time. Redact checkout, state, and vault paths. Do not
