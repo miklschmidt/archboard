@@ -130,7 +130,15 @@ const RECORDING_FILE_READ_MS = 30_000;
  */
 const RECORDING_BROWSER_STOP_MS = 5000;
 
+/**
+ * How long converting a finished MP4's sound to AAC may take (TASK-305). The
+ * picture is copied, not encoded again, so only the sound is work: seconds for
+ * a ten-minute talk. Past this, the file keeps the sound it was recorded with.
+ */
+const RECORDING_SOUND_CONVERT_MS = 120_000;
+
 export {
+	RECORDING_SOUND_CONVERT_MS,
 	RECORDING_CAPTURE_BAR_MS,
 	RECORDING_BROWSER_START_MS,
 	RECORDING_BROWSER_STOP_MS,
