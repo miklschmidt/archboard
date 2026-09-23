@@ -223,7 +223,7 @@ describe("saying which variant an edit lands on", () => {
 });
 
 describe("a board nobody has built", () => {
-	test("is drawn by its name and adopted into existence", () => {
+	test("is drawn by its name and adopted into existence", async () => {
 		const planned = "unbuilt";
 		const made = cli(
 			["semantic", "new", planned, "--doing", "planning an architecture nobody has built"],
@@ -237,6 +237,9 @@ describe("a board nobody has built", () => {
 		const held = JSON.parse(cli(["semantic", "show", planned]).stdout).board;
 		expect(held.current).toBeUndefined();
 		const [draft] = held.variants;
+		const listing = await (await fetch(`${canvas.base}/api/semantic-boards`)).json();
+		const listed = listing.boards.find((entry: { name: string }) => entry.name === planned);
+		expect(listed.opens).toBe(draft.id);
 
 		// Its bare name draws the draft, with no current variant pretending to be it.
 		const drawn = cli(["semantic", "render", planned, "--out", path.join(vault, "unbuilt.svg")]);
