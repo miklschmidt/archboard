@@ -371,7 +371,7 @@ _Avoid_: lock, conflict, freeze, pause, dirty, detached
 A board whose note has been changed by something that is not archboard, while a
 pane goes on showing the board archboard last wrote. The step before a hold, and
 distinguished from one by what has not happened: nothing has been refused,
-because nothing has been written since. Obsidian, a sync client and `git pull`
+because nothing has been written since. An editor, a sync client and `git pull`
 are the writers it is about, being the ones no lock excludes.
 _Avoid_: stale, dirty, out of date, drift, external change, conflict
 
