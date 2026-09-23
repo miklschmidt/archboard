@@ -280,6 +280,7 @@ export function createGatewayHarness(
 				},
 				voice: {
 					kind: "codex_voice",
+					recording: false,
 					mediaReady,
 					generation: null,
 					coordinatorState: "ready",

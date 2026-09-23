@@ -1,12 +1,12 @@
 // Subtitles of the voice, over the pane the voice was started for (TASK-292).
 //
-// The transcript is server truth the transport publishes, a word at a time as
-// the voice speaks. Subtitles read it only while a session carries audio.
+// What the subtitles show is decided in `subtitled-transcript`.
 
 import { useSyncExternalStore, type JSX } from "react";
 
-import { VoiceSubtitles, useSubtitlesWanted, type SubtitleSource } from "@/ui/voice-subtitles";
-import type { BrowserWorkbenchState, BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import { subtitledTranscript } from "@/ui/application/subtitled-transcript";
+import { VoiceSubtitles, useSubtitlesWanted } from "@/ui/voice-subtitles";
+import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** Inputs for a pane's subtitles. */
 interface PaneSubtitlesProps {
@@ -14,22 +14,6 @@ interface PaneSubtitlesProps {
 	readonly transport: BrowserWorkbenchTransport;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion: boolean;
-}
-
-/** No transcript: the transport has no snapshot, or voice carries no audio. */
-const NOTHING_SAID: readonly SubtitleSource[] = Object.freeze([]);
-
-/**
- * The transcript of a session that is carrying audio right now.
- * @param state What the transport last published.
- * @returns The transcript, or an empty one while nothing can be heard.
- */
-function liveTranscript(state: BrowserWorkbenchState): readonly SubtitleSource[] {
-	if (state.snapshot === null) {
-		return NOTHING_SAID;
-	}
-	const { voice } = state.snapshot;
-	return voice.state === "active" || voice.state === "recovering" ? voice.transcript : NOTHING_SAID;
 }
 
 /**
@@ -43,7 +27,7 @@ function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
 	const wanted = useSubtitlesWanted();
 	return (
 		<VoiceSubtitles
-			transcript={liveTranscript(state)}
+			transcript={subtitledTranscript(state.snapshot?.voice ?? null)}
 			enabled={wanted}
 			reducedMotion={props.reducedMotion}
 		/>

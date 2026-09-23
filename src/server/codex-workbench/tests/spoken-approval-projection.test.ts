@@ -118,6 +118,7 @@ function projectionInput(
 		},
 		voice: {
 			kind: "codex_voice",
+			recording: false,
 			mediaReady: false,
 			generation:
 				spokenApproval.realtimeSessionId === null
