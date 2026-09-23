@@ -192,16 +192,28 @@ function sharedFor(contract: AnyCommandContract, projection: Projection): Option
 		return [];
 	}
 	return sharedOptionsFor(contract.shared).map((option) => {
-		const exclusions = contract.parameters.flatMap((parameter) =>
-			parameter.kind === "option" && parameter.excludesShared?.some((key) => key === option.key)
-				? [parameter.spellings[0]]
-				: [],
-		);
+		/**
+		 * The local options that exclude or need this shared option.
+		 * @param relation - Which relation.
+		 * @returns Their first spellings.
+		 */
+		const naming = (relation: "excludesShared" | "requiresShared"): string[] =>
+			contract.parameters.flatMap((parameter) =>
+				parameter.kind === "option" && parameter[relation]?.some((key) => key === option.key)
+					? [parameter.spellings[0]]
+					: [],
+			);
+		const exclusions = naming("excludesShared");
+		const needs = naming("requiresShared");
+		const needed =
+			needs.length === 0
+				? option
+				: { ...option, required: false, requiredWhen: `with ${needs.join(", ")}` };
 		return exclusions.length === 0
-			? option
+			? needed
 			: {
-					...option,
-					description: `${option.description}; does not apply with ${exclusions.join(", ")}`,
+					...needed,
+					description: `${needed.description}; does not apply with ${exclusions.join(", ")}`,
 				};
 	});
 }
