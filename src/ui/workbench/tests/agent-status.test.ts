@@ -80,7 +80,7 @@ function held(state: HeldMessage["state"]): HeldMessage {
 test("setup outranks the conversation: an unavailable Codex says so over a running turn", () => {
 	const status = agentStatus(
 		view({
-			setup: { phase: { kind: "unavailable", reason: "down", retryAtMs: null } },
+			setup: { phase: { kind: "unavailable", reason: "down" } },
 			turns: [turn("t1", "running")],
 		}),
 		5_000,
