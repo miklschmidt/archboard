@@ -11,8 +11,11 @@ type AgentPhase =
 	/** No snapshot yet, or the socket is coming back: nothing to do but wait. */
 	| { readonly kind: "connecting" }
 	/** Codex cannot run here until something outside the browser changes. */
-	| { readonly kind: "unavailable"; readonly reason: string; readonly retryAtMs: number | null }
-	/** Codex is starting: the account or the voice coordinator is not ready yet. */
+	| { readonly kind: "unavailable"; readonly reason: string }
+	/**
+	 * Codex is starting: the account or the voice coordinator is not ready yet,
+	 * or the server waits before its next start of the app server.
+	 */
 	| { readonly kind: "starting" }
 	/** Nobody is signed in to Archboard's own Codex. */
 	| { readonly kind: "signed_out"; readonly failure: string | null }
@@ -21,8 +24,15 @@ type AgentPhase =
 	/** The agent can take work; `linked` says whether a conversation exists yet. */
 	| { readonly kind: "ready"; readonly linked: boolean };
 
-/** Readiness states that mean Codex cannot run until something outside changes. */
-const UNAVAILABLE = new Set(["stopped", "incompatible_contract", "storage_mismatch", "backoff"]);
+/**
+ * Readiness states that mean Codex cannot run until something outside changes.
+ * `backoff` is not one: the server publishes it only while it knows when it
+ * starts the app server again, so work waits through it.
+ */
+const UNAVAILABLE = new Set(["stopped", "incompatible_contract", "storage_mismatch"]);
+
+/** Why the agent cannot start when a failed coordinator gave no reason. */
+const COORDINATOR_FAILED = "Codex could not start the agent's coordinator.";
 
 /**
  * Why Codex cannot run, from a readiness that says it cannot.
@@ -31,8 +41,7 @@ const UNAVAILABLE = new Set(["stopped", "incompatible_contract", "storage_mismat
  */
 function unavailable(readiness: BrowserSnapshot["readiness"]): AgentPhase {
 	const reason = "reason" in readiness ? readiness.reason : "Codex is not running.";
-	const retryAtMs = readiness.state === "backoff" ? readiness.retryAtMs : null;
-	return { kind: "unavailable", reason, retryAtMs };
+	return { kind: "unavailable", reason };
 }
 
 /**
@@ -53,8 +62,10 @@ function signingIn(snapshot: BrowserSnapshot, loginId: LoginId): AgentPhase {
  * @returns The phase.
  */
 function accountPhase(snapshot: BrowserSnapshot): AgentPhase {
-	const { account } = snapshot;
-	if (account.state === "signed_out") return { kind: "signed_out", failure: null };
+	const { account, login } = snapshot;
+	if (account.state === "signed_out") {
+		return { kind: "signed_out", failure: login.state === "failed" ? login.reason : null };
+	}
 	if (account.state === "failed") return { kind: "signed_out", failure: account.reason };
 	if (account.state === "login_pending") return signingIn(snapshot, account.loginId);
 	return { kind: "starting" };
@@ -67,7 +78,7 @@ function accountPhase(snapshot: BrowserSnapshot): AgentPhase {
  */
 function agentPhase(state: BrowserWorkbenchState): AgentPhase {
 	if (state.kind === "connection" && state.state === "incompatible_contract") {
-		return { kind: "unavailable", reason: state.reason, retryAtMs: null };
+		return { kind: "unavailable", reason: state.reason };
 	}
 	return state.kind === "readiness" ? snapshotPhase(state.snapshot) : { kind: "connecting" };
 }
@@ -82,8 +93,25 @@ function snapshotPhase(snapshot: BrowserSnapshot): AgentPhase {
 	if (UNAVAILABLE.has(readiness.state)) return unavailable(readiness);
 	if (readiness.state === "reconnecting") return { kind: "connecting" };
 	if (readiness.state === "login_pending") return signingIn(snapshot, readiness.loginId);
-	if (readiness.state !== "thread_capable") return accountPhase(snapshot);
-	return { kind: "ready", linked: snapshot.threadLink.state === "executable" };
+	if (readiness.state === "backoff") return { kind: "starting" };
+	return runningPhase(snapshot);
+}
+
+/**
+ * The phase of a running Codex: ready for thread work, stopped by a
+ * coordinator it could not start, or whatever the account decides.
+ * @param snapshot The snapshot.
+ * @returns The phase.
+ */
+function runningPhase(snapshot: BrowserSnapshot): AgentPhase {
+	const { readiness, coordinator } = snapshot;
+	if (readiness.state === "thread_capable") {
+		return { kind: "ready", linked: snapshot.threadLink.state === "executable" };
+	}
+	if (readiness.state === "account_ready" && coordinator.state === "failed") {
+		return { kind: "unavailable", reason: coordinator.reason ?? COORDINATOR_FAILED };
+	}
+	return accountPhase(snapshot);
 }
 
 export { agentPhase, type AgentPhase };
