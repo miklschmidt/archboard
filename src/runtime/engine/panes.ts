@@ -32,6 +32,7 @@ import {
 import {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
+	addressablePanes,
 	paneWords,
 	resolvePaneSpec,
 	soloPane,
@@ -328,12 +329,12 @@ function paneLine(pane: PaneReport): string {
 /**
  * Build the read-out. Cost is one pass over the registry: what each pane is
  * reading is what that pane itself reported, so nothing here reads a board.
- * @param registrations The panes on screen.
+ * @param registrations The panes on screen, of which only the addressable ones are reported.
  * @param context Where to read board identities, readings and the canvas URL from.
  * @returns The report, and the text an agent reads out.
  */
 function buildPanesReport(registrations: PaneRegistration[], context: PaneContext): PanesReport {
-	const inOrder = panesInOrder(registrations);
+	const inOrder = panesInOrder(addressablePanes(registrations));
 	const ordered = inOrder.map((entry) => entry.pane);
 	const arrangement = arrangementOf(ordered);
 	if (ordered.length === 0) {
@@ -377,6 +378,7 @@ export type {
 export {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
+	addressablePanes,
 	buildPanesReport,
 	paneWords,
 	panesInOrder,

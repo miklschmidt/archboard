@@ -491,6 +491,11 @@ export function createCodexRealtimeAdapter(
 		 */
 		generation: () => (active === null ? null : realtimeGeneration(active)),
 		/**
+		 * The walkthrough the live session presents, and whether it is recorded.
+		 * @returns The presentation, or null with no live session or an ordinary one.
+		 */
+		presentation: () => active?.presentation ?? null,
+		/**
 		 * Drop listeners, retain the live transcript and reject a still-pending start.
 		 */
 		dispose: () => {

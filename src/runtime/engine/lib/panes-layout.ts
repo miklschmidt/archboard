@@ -47,6 +47,12 @@ interface PaneRegistration {
 	 * a browser (TASK-056).
 	 */
 	build?: string;
+	/**
+	 * Present only on the pane of a recording page (TASK-304): a headless page nobody sees, so
+	 * nobody may address it. It is reached by its client id alone, and left out of everything
+	 * that picks, counts or lists panes for somebody who did not name it that way.
+	 */
+	recording?: true;
 	at: string;
 }
 

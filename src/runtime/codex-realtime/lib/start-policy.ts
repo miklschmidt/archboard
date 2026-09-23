@@ -28,6 +28,16 @@ const COORDINATOR_CHANNEL_INSTRUCTIONS = [
 	"[COMMENTARY] marks everything else, such as what you are about to do or progress while you work: the voice model receives it as quiet context and does not say it. When nothing should be said to the user at all, end the turn with a one-line [COMMENTARY] message and no [FINAL] message.",
 ].join("\n");
 
+/**
+ * The channel rule while a recording holds the voice (TASK-304). Nobody is there to hear an answer,
+ * and whatever the voice says lands in the video as narration of the step on screen, so the
+ * coordinator is told it has nobody to speak to until the session ends.
+ */
+const RECORDING_COORDINATOR_INSTRUCTIONS = [
+	COORDINATOR_CHANNEL_INSTRUCTIONS,
+	"A recording is using this voice session: every word the voice says goes into a video of a walkthrough, and nobody is listening. Until the session ends, begin every message with [COMMENTARY] and never write [FINAL]; nothing you write is to be spoken.",
+].join("\n");
+
 const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
 
@@ -58,7 +68,8 @@ function voicePrompt(presentation: RealtimePresentation | null): string {
  * item on its own thread; board context reaches it through its tools and the semantic callbacks.
  *
  * A recorded walkthrough (TASK-304) is the one start that varies policy: its voice prompt says the
- * talk is recorded, and it sends no delegation acknowledgement filler.
+ * talk is recorded, it sends no delegation acknowledgement filler, and the coordinator is told to
+ * write nothing speakable, since anything it answered would be spoken into the video.
  * @param input - The coordinator thread, minted wire session id, browser offer and narration.
  * @param input.threadId - The coordinator thread the session speaks for.
  * @param input.realtimeSessionId - The wire session id minted for this start.
@@ -76,7 +87,8 @@ export function createRealtimeStartParams(input: {
 	// assistant between steps. The coordinator is told nothing of it, since every step reaches the
 	// voice model from the host and a question asked during a narration is an ordinary request.
 	// A recording hands nothing off, so it has no delegation to fill: the Realtime API's own
-	// "one moment" filler would be the only thing it could say that nobody asked for.
+	// "one moment" filler would be the only thing it could say that nobody asked for. Its
+	// coordinator is told to say nothing, because a turn it ran anyway would be heard in the video.
 	const presentation = input.presentation ?? null;
 	return {
 		threadId: input.threadId,
@@ -88,7 +100,10 @@ export function createRealtimeStartParams(input: {
 		outputModality: "audio",
 		includeStartupContext: false,
 		initialItems: [],
-		realtimeStartInstructions: COORDINATOR_CHANNEL_INSTRUCTIONS,
+		realtimeStartInstructions:
+			presentation?.recording === true
+				? RECORDING_COORDINATOR_INSTRUCTIONS
+				: COORDINATOR_CHANNEL_INSTRUCTIONS,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 		prompt: voicePrompt(presentation),
 		realtimeSessionId: input.realtimeSessionId,

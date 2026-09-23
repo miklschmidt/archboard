@@ -9,7 +9,7 @@ import {
 	presentingPane,
 } from "../codex-workbench-adapters.js";
 
-test("host-started work presents through the bound pane while it is open, and another once it is not", () => {
+test("host-started work presents through the bound pane while it is open, another once it is not, and a recording page's only when nothing else is open", () => {
 	const panes = [
 		{ paneId: "pane-left", focused: false },
 		{ paneId: "pane-focused", focused: true },
@@ -27,6 +27,15 @@ test("host-started work presents through the bound pane while it is open, and an
 	];
 	expect(presentingPane("pane-gone", unfocused)).toBe(unfocused[0]!);
 	expect(() => presentingPane("pane-bound", [])).toThrow();
+	// A recording page presents the same id as the person's pane and comes first in reading
+	// order; the person's pane is what the work presents through while it is open.
+	const recorded = [
+		{ paneId: "A", focused: false, recording: true as const },
+		{ paneId: "A", focused: false },
+	];
+	expect(presentingPane("A", recorded)).toBe(recorded[1]!);
+	expect(presentingPane(null, recorded)).toBe(recorded[1]!);
+	expect(presentingPane("A", [recorded[0]!])).toBe(recorded[0]!);
 });
 
 test("the production dynamic authority token issuer retires exact opaque capabilities", () => {

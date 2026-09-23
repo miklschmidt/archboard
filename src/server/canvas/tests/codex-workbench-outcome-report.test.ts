@@ -3,7 +3,8 @@
 // A turn can only be started on an idle thread, and the callbacks behind this one wait while it
 // waits. What is guarded: the turn is started once the coordinator is idle, under a minted
 // identity and the reviewed producer; a coordinator that stays busy is reported busy rather than
-// interrupted or waited on for ever; and a start that failed says whether anything was delivered.
+// interrupted or waited on for ever; a recording's voice gets no turn to speak into the video;
+// and a start that failed says whether anything was delivered.
 
 import { describe, expect, test } from "bun:test";
 import { createOutcomeReportPort } from "@/server/canvas/index";
@@ -12,7 +13,7 @@ import { COORDINATOR_IDLE_WAIT_MS } from "@/shared/timing/timing";
 import { generationContextFixture } from "./support/codex-workbench-generation-values.js";
 
 /** A port over a coordinator thread whose status a test scripts, recording what was started. */
-function harness(statuses: readonly ("idle" | "active")[], startFails = false) {
+function harness(statuses: readonly ("idle" | "active")[], startFails = false, recording = false) {
 	const threadId = createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator");
 	const starts: { readonly prompt: string; readonly clientUserMessageId: unknown }[] = [];
 	const contexts: string[] = [];
@@ -50,6 +51,7 @@ function harness(statuses: readonly ("idle" | "active")[], startFails = false) {
 				},
 			};
 		},
+		recording: () => recording,
 		wait: async (ms) => {
 			waited += ms;
 		},
@@ -73,6 +75,13 @@ describe("a terminal workhorse outcome reported to the coordinator", () => {
 		expect(await h.port.report({ threadId: h.threadId, text: "{}" })).toBe("busy");
 		expect(h.starts).toHaveLength(0);
 		expect(h.waitedMs()).toBeGreaterThanOrEqual(COORDINATOR_IDLE_WAIT_MS);
+	});
+
+	test("is reported busy, and starts nothing, while a recording holds the voice", async () => {
+		// Whatever the coordinator answered would be spoken into the video; busy has it injected.
+		const h = harness(["idle"], false, true);
+		expect(await h.port.report({ threadId: h.threadId, text: "{}" })).toBe("busy");
+		expect(h.starts).toHaveLength(0);
 	});
 
 	test("says the outcome is unknown when the start may or may not have landed", async () => {

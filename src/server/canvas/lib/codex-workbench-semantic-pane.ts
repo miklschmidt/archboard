@@ -1,9 +1,7 @@
+import type { PaneRegistration } from "@/runtime/engine/panes";
+
 /** What choosing a presenting pane needs to know about a pane on screen. */
-export interface PresentablePane {
-	readonly paneId: string;
-	/** Whether it is the pane the person last interacted with. */
-	readonly focused: boolean;
-}
+export type PresentablePane = Readonly<Pick<PaneRegistration, "paneId" | "focused" | "recording">>;
 
 /**
  * The pane that work nobody's command started presents through: the semantic
@@ -15,6 +13,10 @@ export interface PresentablePane {
  * pane when it is still open, else the pane the person is in, else the first
  * pane in reading order. A browser command never comes here: it runs against
  * the exact pane that sent it.
+ *
+ * A recording page's pane (TASK-304) presents the same id as somebody's and
+ * is nobody's to read, so it is chosen only when it is all that is open: a
+ * recording on a canvas with no browser still opens its session through it.
  * @param preferredPaneId The pane the work names, or null when it names none.
  * @param panesInReadingOrder Every pane on screen, in reading order.
  * @returns The pane.
@@ -24,9 +26,11 @@ export function presentingPane<Pane extends PresentablePane>(
 	preferredPaneId: string | null,
 	panesInReadingOrder: readonly Pane[],
 ): Pane {
+	const readable = panesInReadingOrder.filter((candidate) => candidate.recording !== true);
 	const pane =
-		panesInReadingOrder.find((candidate) => candidate.paneId === preferredPaneId) ??
-		panesInReadingOrder.find((candidate) => candidate.focused) ??
+		readable.find((candidate) => candidate.paneId === preferredPaneId) ??
+		readable.find((candidate) => candidate.focused) ??
+		readable[0] ??
 		panesInReadingOrder[0];
 	if (pane === undefined) {
 		throw new Error("No canvas pane is open to present the Codex conversation through.");
