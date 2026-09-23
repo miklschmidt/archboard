@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-17 08:24'
-updated_date: '2026-09-23 00:54'
+updated_date: '2026-09-23 01:22'
 labels:
   - voice
   - frontend
@@ -25,11 +25,11 @@ The user wants the voice agent to give a walkthrough as a talk: explain each ste
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Pressing Narrate opens the walkthrough at step 1 and the voice model explains that step, delivered by the host without a coordinator turn
-- [ ] #2 Every step the user moves to by hand reaches the voice model as speech, and the voice explains that step
-- [ ] #3 After an explanation the voice waits for the user; nothing in the prompts or the host asks for or presents a next step by itself
-- [ ] #4 Leaving the presentation is told to the voice model as a short acknowledgement and nothing more is narrated
-- [ ] #5 present_step, its coordinator presentation instructions, the stepless next-step memory and the narration timing endpoint are deleted, with their tests, digests and design text
+- [x] #1 Pressing Narrate opens the walkthrough at step 1 and the voice model explains that step, delivered by the host without a coordinator turn
+- [x] #2 Every step the user moves to by hand reaches the voice model as speech, and the voice explains that step
+- [x] #3 After an explanation the voice waits for the user; nothing in the prompts or the host asks for or presents a next step by itself
+- [x] #4 Leaving the presentation is told to the voice model as a short acknowledgement and nothing more is narrated
+- [x] #5 present_step, its coordinator presentation instructions, the stepless next-step memory and the narration timing endpoint are deleted, with their tests, digests and design text
 - [ ] #6 Covered by host delivery and browser owners, and verified by the user in a real voice session
 <!-- AC:END -->
 
@@ -81,4 +81,6 @@ Correction 2026-09-23 (see TASK-295 notes): the earlier statement that a handoff
 Decided by the user, 2026-09-23: manual stepping. The user moves the presentation step by step; the voice explains the step it is on. A model-paced talk is dropped: a V3 handoff carries too little for the voice model to steer the presentation. By-hand step delivery (host appendSpeech, AC #5) is the working path; the self-pacing loop (hand off after each step, stepless present_step meaning next, end-to-next timing) is to be removed and the criteria rewritten.
 
 User decided 2026-09-23: delete present_step. The host delivers step 1 at Narrate the same way it delivers every by-hand step; Narrate is the only entry into a talk.
+
+2026-09-23 manual stepping, commit 52e0ef64. Deleted: archboard_voice.present_step (manifest, contract, schemas, dispatch, validation; the voice manifest digest is now 7c14fcdc, so the first start replaces a retained coordinator), present-walkthrough-step.ts, the per-turn next-step memory, narration-timing.ts with GET /api/voice/narration-timing, POST /api/panes/present, the coordinator presentation instructions, NARRATE_REQUEST, the leave/cancel paths of the pane presentation port, and the semantic-walkthrough-narration browser owner (its coverage moved into codex-live-voice). How it works now: Narrate starts voice with only the walkthrough's name in the voice prompt, initialItems [] and nothing for the coordinator. The host sends pane_present for step 1 to the browser that pressed Narrate. On arrival, the step goes to the voice model through realtimeAppendSpeech ('On the user's screen now: step N of M, "heading". body'), the same words every by-hand step gets. Leaving is a one-line spoken acknowledgement. No coordinator turn; nothing asks for a next step. The browser's Narrate controls no longer move the pane themselves. Owners: the codex-live-voice browser owner (Narrate, step-1 speech, by-hand step speech, leave speech, no turn/start, no initial item; it fails with the Narrate entry disabled) and the realtime presentation-mode module owner. Full gate on main: bun run check exit 0 (3447 module, 168 system, 8 repository, all serial-browser owners). AC #6 is open: a real voice session, following docs/design/voice-walkthrough-narration-acceptance.md, must confirm the model starts speaking from the step-1 speech with no opening user item, waits after each step, and acknowledges leaving. The canvas on port 3100 needs a restart to serve this build.
 <!-- SECTION:NOTES:END -->
