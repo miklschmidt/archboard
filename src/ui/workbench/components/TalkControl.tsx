@@ -46,18 +46,30 @@ const WAVE_STATES: Readonly<Record<VoiceStage, VoiceWaveState>> = {
 };
 
 /**
+ * What the live voice is doing, in a word: muted says so first; otherwise the
+ * model's measured output decides whether it is speaking.
+ * @param voice The voice.
+ * @returns The word, or undefined while voice is not live.
+ */
+function liveWord(voice: AgentVoiceView): string | undefined {
+	const word = LIVE_WORDS[voice.stage];
+	if (word === undefined || voice.stage === "muted") return word;
+	return voice.audible ? "Speaking" : word;
+}
+
+/**
  * Voice, in one place.
  * @param props The voice, the actions and the motion preference.
  * @returns The control.
  */
 function TalkControl(props: TalkControlProps): JSX.Element {
 	const { voice, actions } = props;
-	const word = LIVE_WORDS[voice.stage];
+	const word = liveWord(voice);
 	if (word !== undefined) {
 		return (
 			<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
 				<VoiceOutputWave
-					state={WAVE_STATES[voice.stage]}
+					state={voice.audible ? "speaking" : WAVE_STATES[voice.stage]}
 					level={voice.level}
 					active
 					size="icon"

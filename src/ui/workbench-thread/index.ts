@@ -2,6 +2,7 @@
 // the host published, over the assistant-ui runtime `src/ui/workbench-runtime`
 // provides. This module and the runtime are the only owners of assistant-ui.
 
+export { ActivityRun, type ActivityRunProps } from "@/ui/workbench-thread/components/ActivityRun";
 export {
 	Conversation,
 	type ConversationProps,

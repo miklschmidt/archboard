@@ -67,12 +67,12 @@ function useStore<T>(store: SnapshotStore<T>): T {
 }
 
 /**
- * The turn running now.
+ * The turn running now: the newest, should Codex still hold an older one open.
  * @param conversation The conversation.
  * @returns Its id, or null.
  */
 function runningTurnOf(conversation: Conversation): ConversationTurn["turnId"] | null {
-	return conversation.turns.find((turn) => turn.outcome === "running")?.turnId ?? null;
+	return conversation.turns.findLast((turn) => turn.outcome === "running")?.turnId ?? null;
 }
 
 /**

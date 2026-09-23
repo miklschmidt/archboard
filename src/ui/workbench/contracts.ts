@@ -54,6 +54,8 @@ interface AgentVoiceView {
 	readonly busy: boolean;
 	/** The model's output level, 0..1, for the meter. */
 	readonly level: number;
+	/** The model is audible now, by its measured output: the session never learns its turn phases. */
+	readonly audible: boolean;
 }
 
 /** The board the agent sees with the next message. */

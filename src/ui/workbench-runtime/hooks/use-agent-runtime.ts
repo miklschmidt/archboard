@@ -8,6 +8,7 @@ import { useMemo, useSyncExternalStore } from "react";
 
 import { toThreadMessageLike } from "@/ui/workbench-runtime/lib/messages";
 import { projectTimelineTurns, type ConversationTurn } from "@/ui/workbench-timeline";
+import type { BrowserTimeline } from "@/shared/codex-browser-model";
 import type { BrowserWorkbenchState, BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** The conversation, or why it could not be read. */
@@ -38,18 +39,22 @@ const NO_TRANSPORT: ConversationSource = Object.freeze({
 	state: () => null,
 });
 
+/** The turns of a timeline, or why they could not be read. */
+type Projection = Pick<Conversation, "turns" | "failure">;
+
+const NO_TURNS: Projection = Object.freeze({ turns: [], failure: null });
+
 /**
- * The turns of a snapshot's timeline, or why they could not be read.
- * @param snapshot The snapshot, or null.
- * @returns The conversation.
+ * The turns of a timeline, or why they could not be read.
+ * @param timeline The timeline, or null before there is one.
+ * @returns The turns and the failure.
  */
-function conversationOf(snapshot: BrowserWorkbenchState["snapshot"]): Conversation {
-	const timeline = snapshot?.timeline ?? null;
-	if (timeline === null) return { snapshot, turns: [], failure: null };
+function projectionOf(timeline: BrowserTimeline | null): Projection {
+	if (timeline === null) return NO_TURNS;
 	try {
-		return { snapshot, turns: projectTimelineTurns(timeline), failure: null };
+		return { turns: projectTimelineTurns(timeline), failure: null };
 	} catch (error) {
-		return { snapshot, turns: [], failure: error instanceof Error ? error.message : String(error) };
+		return { turns: [], failure: error instanceof Error ? error.message : String(error) };
 	}
 }
 
@@ -62,7 +67,12 @@ function useConversation(transport: BrowserWorkbenchTransport | null): Conversat
 	const source: ConversationSource = transport ?? NO_TRANSPORT;
 	const state = useSyncExternalStore(source.subscribe, source.state, source.state);
 	const snapshot = state?.snapshot ?? null;
-	return useMemo(() => conversationOf(snapshot), [snapshot]);
+	// Projected again only when the timeline changes: a voice or queue delta
+	// publishes a new snapshot around the same timeline, and must not redraw
+	// every turn.
+	const timeline = snapshot?.timeline ?? null;
+	const projection = useMemo(() => projectionOf(timeline), [timeline]);
+	return useMemo(() => ({ snapshot, ...projection }), [snapshot, projection]);
 }
 
 /**
@@ -85,7 +95,6 @@ function useAgentRuntime(transport: BrowserWorkbenchTransport): {
 		 * @returns Nothing sent.
 		 */
 		onNew: () => Promise.resolve(),
-		unstable_capabilities: { copy: true },
 	});
 	return { runtime, conversation };
 }

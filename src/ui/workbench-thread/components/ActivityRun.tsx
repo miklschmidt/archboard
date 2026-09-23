@@ -122,6 +122,18 @@ function hasEvidence(item: ActivityItem): boolean {
 }
 
 /**
+ * Whether a row is open: undefined when it has nothing to open to, else what
+ * the person chose, else open exactly when the step failed.
+ * @param item The step.
+ * @param chosen What the person chose, or null.
+ * @returns Whether it is open.
+ */
+function openState(item: ActivityItem, chosen: boolean | null): boolean | undefined {
+	if (!hasEvidence(item)) return undefined;
+	return chosen ?? stepFailed(item);
+}
+
+/**
  * Whether a reasoning summary says more than its row's headline.
  * @param text The summary.
  * @returns Whether it opens.
@@ -139,11 +151,10 @@ function reasoningOpens(text: string): boolean {
  */
 function ActivityRow(props: ActivityRowProps): JSX.Element {
 	const { item, live } = props;
-	const evidence = hasEvidence(item);
 	// A step that fails opens itself, until the person opens or closes it.
 	const [chosen, setChosen] = useState<boolean | null>(null);
-	const open = chosen ?? stepFailed(item);
-	const toggle = useCallback(() => setChosen(!open), [open]);
+	const open = openState(item, chosen);
+	const toggle = useCallback(() => setChosen(open !== true), [open]);
 	return (
 		<div
 			data-slot="activity-row"
@@ -152,8 +163,8 @@ function ActivityRow(props: ActivityRowProps): JSX.Element {
 		>
 			<button
 				type="button"
-				disabled={!evidence}
-				aria-expanded={evidence ? open : undefined}
+				disabled={open === undefined}
+				aria-expanded={open}
 				onClick={toggle}
 				className="group/row enabled:hover:bg-muted/60 -mx-1.5 flex h-7 w-[calc(100%+12px)] min-w-0 items-center gap-2 rounded-[3px] px-1.5 text-left"
 			>
@@ -161,7 +172,7 @@ function ActivityRow(props: ActivityRowProps): JSX.Element {
 				<RowLabel item={item} live={live} />
 				<RowTrailer item={item} />
 			</button>
-			{open && evidence && (
+			{open === true && (
 				<div className="border-border mb-2 ml-[7px] border-l pt-1 pb-1 pl-[15px]">
 					<ActivityEvidence item={item} />
 				</div>

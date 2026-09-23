@@ -269,8 +269,29 @@ function agentStatus(view: AgentView, now: number): AgentStatus {
 			action: "review",
 		};
 	}
-	const turns = view.conversation.turns;
-	const running = turns.find((turn) => turn.outcome === "running");
+	return conversationStatus(view, now);
+}
+
+/**
+ * The line the conversation itself gives: why it cannot be read, the turn
+ * running now — the newest, should Codex still hold an older one open — or
+ * how the last one ended.
+ * @param view The agent view.
+ * @param now The clock.
+ * @returns The status.
+ */
+function conversationStatus(view: AgentView, now: number): AgentStatus {
+	const { turns, failure } = view.conversation;
+	if (failure !== null) {
+		return {
+			...BLANK,
+			tone: "failed",
+			headline: "Can't read the conversation",
+			detail: failure,
+			action: "show",
+		};
+	}
+	const running = turns.findLast((turn) => turn.outcome === "running");
 	if (running !== undefined) return working(view, running, now);
 	const last = turns.at(-1);
 	return last === undefined ? { ...BLANK, tone: "quiet", headline: "Ready" } : ended(last);

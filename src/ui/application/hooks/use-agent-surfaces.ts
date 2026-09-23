@@ -62,10 +62,11 @@ function useAgentSurfaces(inputs: AgentSurfaceInputs): AgentSurfaces {
 		}),
 		[view, actions, draft, panel.open, unread, panel.togglePanel, reducedMotion],
 	);
+	// The panel is the person's choice alone: it stays while the socket is down.
 	const transport = workbench.owners?.transport ?? null;
 	const panelProps = useMemo<AgentPanelProps | null>(
 		() =>
-			panel.open && transport !== null
+			panel.open
 				? { view, actions, transport, suggest: draft.fill, onClose: panel.closePanel }
 				: null,
 		[panel.open, view, actions, transport, draft, panel.closePanel],
