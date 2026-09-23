@@ -157,13 +157,26 @@ function answerWrite(
 		});
 		return;
 	}
+	answerRefusal(res, result);
+}
+
+/**
+ * Answer a change the store refused: somebody else has the board or it moved
+ * on (409), or the change cannot be made to the board as it stands (422).
+ * @param res The response.
+ * @param refused Why the store did nothing.
+ */
+function answerRefusal(
+	res: Response,
+	refused: Extract<SemanticWriteResult, { outcome: "rejected" }>,
+): void {
 	res
-		.status(result.code === "BOARD_HELD" || result.code === "BOARD_VERSION_CONFLICT" ? 409 : 422)
+		.status(refused.code === "BOARD_HELD" || refused.code === "BOARD_VERSION_CONFLICT" ? 409 : 422)
 		.json({
 			success: false,
-			code: result.code,
-			error: result.problem,
-			version: result.version,
+			code: refused.code,
+			error: refused.problem,
+			version: refused.version,
 		});
 }
 
@@ -487,4 +500,14 @@ function writerOf(envelope: z.infer<typeof WriteEnvelopeSchema>): {
 	};
 }
 
-export { adoptRoute, branchRoute, createRoute, editRoute, resolveRoute, shelveRoute };
+export {
+	adoptRoute,
+	answerRefusal,
+	branchRoute,
+	createRoute,
+	describedWrite,
+	editRoute,
+	resolveRoute,
+	shelveRoute,
+	writerOf,
+};

@@ -206,9 +206,20 @@ function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 	}
 }
 
-// The rename itself is a directory change, and it is durable only once the
-// directory has been synced. Best effort: opening a directory for reading is
-// not portable, and a platform that refuses gives up durability of the rename
+/**
+ * Remove a file so that its removal survives a crash as a write does.
+ *
+ * An unlink is a directory change like the rename above, so it is durable only
+ * once the directory has been synced. A file that is already gone is an error
+ * the caller hears: it asked to remove something that was there.
+ * @param file The file to remove.
+ * @throws {unknown} Whatever the unlink threw.
+ */
+function unlinkDurably(file: string): void {
+	fs.unlinkSync(file);
+	fsyncDir(path.dirname(file));
+}
+
 /**
  * Make a directory's own change durable.
  *
@@ -236,4 +247,4 @@ function fsyncDir(dir: string): void {
 	}
 }
 
-export { tempPathFor, writeFileAtomic, writeFileAtomicExclusive };
+export { tempPathFor, unlinkDurably, writeFileAtomic, writeFileAtomicExclusive };
