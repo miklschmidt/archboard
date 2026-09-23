@@ -5,6 +5,7 @@ import {
 	composeListing,
 	listingError,
 	listedBoardKey,
+	nothingBuiltOn,
 } from "@/ui/board-catalog/listing";
 import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
 import type { BrowserPaneListing } from "@/ui/types";
@@ -86,6 +87,18 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 	expect(listedBoardKey(listing, "ingest")).toBe("ingest");
 	expect(listedBoardKey(listing, "ingest@alt")).toBe("ingest@alt");
 	expect(listedBoardKey(listing, "ingest@current")).toBe("ingest@current");
+	// The board says nothing is built; a board with a current variant, an unreadable one and
+	// one nobody listed say nothing of the kind.
+	expect(nothingBuiltOn(listing, "Ingest")).toBe(true);
+	const others = composeListing(
+		[...VAULT, { name: "Broken", key: "broken", opens: null, variants: [], error: "invalid" }],
+		undefined,
+	);
+	expect(["Checkout", "Broken", "Unlisted"].map((board) => nothingBuiltOn(others, board))).toEqual([
+		false,
+		false,
+		false,
+	]);
 });
 
 test("an unreadable board remains openable without hiding healthy variants", () => {
