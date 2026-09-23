@@ -108,4 +108,6 @@ out, so write a body that can be explained in a few sentences.
 - For a board made only for the video, create it with `semantic new`, look at
   it with `semantic rasterize`, then record with
   `--discard --doing "<why>"`, which deletes the board once the file is
-  written. A failed recording keeps the board, so record again.
+  written. A failed recording keeps the board, so record again. A board that
+  changed while it was recorded is kept, and the receipt's `discarded` is
+  false with the reason.

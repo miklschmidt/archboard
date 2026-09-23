@@ -160,16 +160,19 @@ A recording (TASK-304, ADR 0035) is a narration nobody is at the controls of.
 `archboard semantic record` opens the canvas page with `?record=<walkthrough>`
 in a private headless Chromium: the page shows the one pane at 1920x1080,
 captures its own tab and mixes the voice's WebRTC stream into the same file.
-It starts voice with `presentation.recording`, which gives the voice model a
-recording section instead of the narration one (explain each step as it lands,
-then stop, because silence moves the screen on), turns the delegation filler
-off, and opens no step from the server. Then the page steps the walkthrough
+It starts voice with `presentation.recording`, which gives the voice model its
+persona and a recording section and none of the conversation rules (explain
+each step as it lands, then stop, because silence moves the screen on), gives
+the coordinator a rule to write only quiet commentary while the recording holds
+the voice, turns the delegation filler off, and opens no step from the server. Then the page steps the walkthrough
 itself. A step the page moves to answers no request, so its report reaches the
 voice model as speech by the same path as a step chosen by hand. The page moves
 on once every line the voice said about the step is final and its measured
 output has been quiet for a moment, because a final line can come before its
 audio has finished playing. A recording start is refused while voice is live on
-the canvas, and every wait in it is bounded and fails with the reason.
+the canvas, and every wait in it is bounded and fails with the reason. The
+recording page's pane registers as a recording's, which the canvas leaves out
+of pane addressing and which other browsers do not subtitle.
 
 ### 3. On-demand query — CLI
 
