@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.3.0",
+	"schemaVersion": "2.4.0",
 	"kind": "semantic-board",
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 5,
+	"version": 7,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-20T00:22:58.428Z",
+	"updatedAt": "2026-09-23T11:29:52.532Z",
 	"views": [],
 	"variants": [
 		{
@@ -18,6 +18,7 @@
 				"nodes": [
 					{
 						"id": "TBnOCNx2",
+						"order": 1000,
 						"name": "Agent CLI",
 						"kind": "service",
 						"responsibility": "Authors named boards: one short-lived process per command, writing nothing itself",
@@ -31,11 +32,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "cPOdAA3f",
+						"order": 2000,
 						"name": "Canvas server",
 						"kind": "service",
 						"responsibility": "Owns every board, draws every view, and answers both applications",
@@ -49,11 +50,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "6nZjwK9W",
+						"order": 3000,
 						"name": "Browser",
 						"kind": "service",
 						"responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
@@ -66,27 +67,27 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "8XKRkSHl",
+						"order": 4000,
 						"name": "Board vault",
 						"kind": "datastore",
 						"responsibility": "One document per board, holding every variant of it",
-						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023).",
-						"order": 4000
+						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023)."
 					},
 					{
 						"id": "xr1MHYE7",
+						"order": 5000,
 						"name": "Codex app-server",
 						"kind": "external",
 						"responsibility": "Runs the linked agent threads, as one private child of the canvas",
-						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the canvas server.",
-						"order": 5000
+						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the canvas server."
 					},
 					{
 						"id": "19855Ply",
+						"order": 6000,
 						"name": "Repository checkout",
 						"kind": "datastore",
 						"responsibility": "The source a node's binding resolves to on this machine",
@@ -94,11 +95,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/repo-registry.ts"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "PxnjFfV3",
+						"order": 7000,
 						"name": "Skill evaluation",
 						"kind": "service",
 						"responsibility": "Measures one version of the agent skill against another, on real authors and real checkouts",
@@ -112,20 +113,20 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "t7W7wJHv",
+						"order": 8000,
 						"name": "Headless Chromium",
 						"kind": "external",
-						"responsibility": "Paints an SVG and answers with the bitmap, when a command asks for a picture",
-						"order": 8000
+						"responsibility": "Paints an SVG and answers with the bitmap, or plays a walkthrough on the canvas page and records it, when a command asks"
 					}
 				],
 				"edges": [
 					{
 						"id": "9m47dJzG",
+						"order": 1000,
 						"from": "TBnOCNx2",
 						"to": "cPOdAA3f",
 						"kind": "http",
@@ -134,11 +135,11 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "iF6W48DS",
+						"order": 2000,
 						"from": "6nZjwK9W",
 						"to": "cPOdAA3f",
 						"kind": "http",
@@ -147,11 +148,11 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "mjjIPV4U",
+						"order": 3000,
 						"from": "cPOdAA3f",
 						"to": "8XKRkSHl",
 						"kind": "data",
@@ -160,62 +161,61 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "4p2LMrOt",
+						"order": 4000,
 						"from": "cPOdAA3f",
 						"to": "6nZjwK9W",
 						"kind": "event",
 						"label": "board and agent news",
-						"emphasis": "hero",
-						"order": 4000
+						"emphasis": "hero"
 					},
 					{
 						"id": "2OeapIzk",
+						"order": 5000,
 						"from": "cPOdAA3f",
 						"to": "xr1MHYE7",
 						"kind": "rpc",
 						"label": "private stdio session",
-						"emphasis": "normal",
-						"order": 5000
+						"emphasis": "normal"
 					},
 					{
 						"id": "oK9fPKdv",
+						"order": 6000,
 						"from": "cPOdAA3f",
 						"to": "19855Ply",
 						"kind": "data",
 						"label": "resolve code targets",
-						"emphasis": "normal",
-						"order": 6000
+						"emphasis": "normal"
 					},
 					{
 						"id": "chzSzpL4",
+						"order": 7000,
 						"from": "TBnOCNx2",
 						"to": "t7W7wJHv",
 						"kind": "call",
-						"label": "photograph a board",
-						"emphasis": "muted",
-						"order": 7000
+						"label": "photograph or record a board",
+						"emphasis": "muted"
 					},
 					{
 						"id": "xKVVomRU",
+						"order": 8000,
 						"from": "PxnjFfV3",
 						"to": "TBnOCNx2",
 						"kind": "call",
 						"label": "the CLI under test",
-						"emphasis": "normal",
-						"order": 8000
+						"emphasis": "normal"
 					},
 					{
 						"id": "SoK3eMhj",
+						"order": 9000,
 						"from": "PxnjFfV3",
 						"to": "cPOdAA3f",
 						"kind": "call",
 						"label": "one per run, on its own port",
-						"emphasis": "muted",
-						"order": 9000
+						"emphasis": "muted"
 					}
 				],
 				"flows": [],

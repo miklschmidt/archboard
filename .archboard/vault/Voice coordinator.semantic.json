@@ -1,12 +1,12 @@
 {
-	"schemaVersion": "2.3.0",
+	"schemaVersion": "2.4.0",
 	"kind": "semantic-board",
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 2,
+	"version": 3,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-20T00:23:11.344Z",
+	"updatedAt": "2026-09-23T11:29:16.388Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
