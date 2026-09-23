@@ -4,7 +4,7 @@ title: The coordinator hears what happens in the workhorse as it happens
 status: To Do
 assignee: []
 created_date: '2026-09-23 22:43'
-updated_date: '2026-09-23 22:58'
+updated_date: '2026-09-23 23:01'
 labels:
   - voice
   - coordinator
@@ -31,4 +31,11 @@ The coordinator decides what the voice model says ([FINAL]) and what it only kno
 - [ ] #4 The workhorse can send the coordinator a message through a dynamic tool, its prompt says when to use it, and the message arrives as the first criterion says
 - [ ] #5 System owners prove delivery to a busy coordinator by steering, to an idle one by a new turn, and of an agent-bar turn's end
 - [ ] #6 DESIGN.md and the authored-contracts doc describe the delivery; ADR 0019 stands, because steering adds to the running turn and starts no second one
+- [ ] #7 With no voice session live, no workhorse news goes to the coordinator at all; a later voice session reads the workhorse through inspect_workhorse when it needs to
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User decision 2026-09-24: nothing goes to the coordinator outside a voice session. The coordinator and the voice model are one entity, the coordinator acting as the voice model's subconscious; with no voice there is no point in running it.
+<!-- SECTION:NOTES:END -->
