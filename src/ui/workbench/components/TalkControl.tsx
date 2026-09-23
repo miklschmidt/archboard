@@ -10,11 +10,9 @@ import {
 	RiMicOffLine,
 	RiPhoneLine,
 } from "@remixicon/react";
-import { cn } from "cn";
 import type { JSX } from "react";
 
-import { Button, buttonVariants } from "@/ui/components/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
+import { Button } from "@/ui/components/button";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
 import { VoiceOutputWave, type VoiceWaveState } from "@/ui/voice-wave";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
@@ -27,8 +25,12 @@ interface TalkControlProps {
 	readonly reducedMotion: boolean;
 }
 
-/** What the voice is doing, in a word, while it is on. */
+/** Where the element saying why voice cannot start is, for the button it describes. */
+const TALK_PROBLEM_ID = "talk-problem";
+
+/** What the voice is doing, in a word, while it is on or connecting. */
 const LIVE_WORDS: Partial<Readonly<Record<VoiceStage, string>>> = {
+	connecting: "Connecting",
 	listening: "Listening",
 	speaking: "Speaking",
 	muted: "Muted",
@@ -63,42 +65,55 @@ function liveWord(voice: AgentVoiceView): string | undefined {
  * @returns The control.
  */
 function TalkControl(props: TalkControlProps): JSX.Element {
+	const word = liveWord(props.voice);
+	if (word === undefined) return <TalkButton voice={props.voice} actions={props.actions} />;
+	return <LiveVoice {...props} word={word} />;
+}
+
+/**
+ * Voice while it is on, or getting there: the output wave, what it is doing,
+ * mute, subtitles and End — which is there from the moment voice connects, so
+ * a session stuck connecting or recovering can always be ended.
+ * @param props The voice, the actions, the motion preference and the word.
+ * @param props.word What the voice is doing, in a word.
+ * @returns The live controls.
+ */
+function LiveVoice(props: TalkControlProps & { readonly word: string }): JSX.Element {
 	const { voice, actions } = props;
-	const word = liveWord(voice);
-	if (word !== undefined) {
-		return (
-			<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
-				<VoiceOutputWave
-					state={voice.audible ? "speaking" : WAVE_STATES[voice.stage]}
-					level={voice.level}
-					active
-					size="icon"
-					reducedMotion={props.reducedMotion}
-					className="w-16 overflow-hidden"
-				/>
-				<output aria-live="polite" className="text-control w-[70px] font-medium">
-					{word}
-				</output>
-				<IconAction
-					label={voice.stage === "muted" ? "Unmute" : "Mute"}
-					onClick={voice.stage === "muted" ? actions.unmute : actions.mute}
-				>
-					{voice.stage === "muted" ? <RiMicOffLine /> : <RiMicLine />}
-				</IconAction>
-				<SubtitlesToggle />
-				<Button
-					variant="outline"
-					size="sm"
-					className="h-7 gap-1.5 rounded-[3px] px-2.5"
-					onClick={actions.endVoice}
-				>
-					<RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />
-					End
-				</Button>
-			</div>
-		);
-	}
-	return <TalkButton voice={voice} actions={actions} />;
+	const muted = voice.stage === "muted";
+	return (
+		<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
+			<VoiceOutputWave
+				state={voice.audible ? "speaking" : WAVE_STATES[voice.stage]}
+				level={voice.level}
+				active
+				size="icon"
+				reducedMotion={props.reducedMotion}
+				className="w-16 overflow-hidden"
+			/>
+			<output aria-live="polite" className="text-control w-[76px] font-medium">
+				{props.word}
+			</output>
+			<IconAction
+				label={muted ? "Unmute" : "Mute"}
+				onClick={muted ? actions.unmute : actions.mute}
+				disabled={voice.busy}
+			>
+				{muted ? <RiMicOffLine /> : <RiMicLine />}
+			</IconAction>
+			<SubtitlesToggle />
+			<Button
+				variant="outline"
+				size="sm"
+				className="h-7 gap-1.5 rounded-[3px] px-2.5"
+				onClick={actions.endVoice}
+				disabled={voice.busy}
+			>
+				<RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />
+				End
+			</Button>
+		</div>
+	);
 }
 
 /**
@@ -115,25 +130,29 @@ function TalkButton(props: {
 	const { voice, actions } = props;
 	const waiting = voice.stage !== "idle";
 	return (
-		<Tooltip disabled={voice.problem === null}>
-			<TooltipTrigger
+		<span className="flex min-w-0 shrink items-center gap-2">
+			{voice.problem !== null && (
+				<span
+					id={TALK_PROBLEM_ID}
+					title={voice.problem}
+					className="text-body text-destructive max-w-72 min-w-0 truncate"
+				>
+					{voice.problem}
+				</span>
+			)}
+			<Button
+				variant="outline"
+				size="sm"
 				data-voice-controls="talk"
 				disabled={waiting}
 				onClick={actions.talk}
-				className={cn(
-					buttonVariants({ variant: "outline", size: "sm" }),
-					"h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5",
-				)}
+				aria-describedby={voice.problem === null ? undefined : TALK_PROBLEM_ID}
+				className="h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5"
 			>
 				<TalkIcon stage={voice.stage} problem={voice.problem !== null} />
 				{waiting ? STAGE_WORDS[voice.stage] : "Talk"}
-			</TooltipTrigger>
-			{voice.problem !== null && (
-				<TooltipContent side="top" className="max-w-72">
-					{voice.problem}
-				</TooltipContent>
-			)}
-		</Tooltip>
+			</Button>
+		</span>
 	);
 }
 

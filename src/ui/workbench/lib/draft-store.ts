@@ -15,7 +15,8 @@ interface DraftStore {
 	 */
 	readonly set: (text: string) => void;
 	/**
-	 * Replace the draft and put the cursor in the field, ready to edit.
+	 * Put text in the draft — after what is already there, so nothing typed is
+	 * lost — and the cursor in the field, ready to edit.
 	 * @param text The text.
 	 */
 	readonly fill: (text: string) => void;
@@ -57,11 +58,11 @@ function createDraftStore(): DraftStore {
 		get: () => text,
 		set,
 		/**
-		 * Replace the draft and put the cursor in the field.
+		 * Add text after the draft and put the cursor in the field.
 		 * @param next The text.
 		 */
 		fill: (next) => {
-			set(next);
+			set(text.trim() === "" ? next : `${text}\n\n${next}`);
 			input?.focus();
 		},
 		/**

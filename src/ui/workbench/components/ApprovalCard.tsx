@@ -45,6 +45,7 @@ function cardOf(approval: BrowserApproval | BrowserDynamicApproval, busy: boolea
 function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 	const { approval, busy, actions } = props;
 	const card = cardOf(approval, busy);
+	const eligible = approval.kind === "approval" && approval.spoken.eligible;
 	const choose = useCallback(
 		(choice: ApprovalChoice): void => {
 			if (approval.kind === "dynamic_approval") {
@@ -61,17 +62,22 @@ function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 	return (
 		<article
 			data-slot="approval"
+			data-phase={card.phase}
 			aria-busy={busy}
-			className="border-primary/70 bg-background flex flex-col gap-2 rounded-[4px] border px-3 py-2.5"
+			className={`bg-background flex flex-col gap-2 rounded-[4px] border px-3 py-2.5 ${PHASE_BORDERS[card.phase]}`}
 		>
 			<header className="flex items-baseline justify-between gap-3">
-				<h3 className="text-control font-semibold">{card.title}</h3>
-				<span className="text-technical text-muted-foreground shrink-0 font-mono">
+				<h3 className="text-control shrink-0 font-semibold">{card.title}</h3>
+				<span className="text-technical text-muted-foreground min-w-0 text-right font-mono wrap-break-word">
 					{card.phaseText}
 				</span>
 			</header>
 			<Details card={card} />
-			{props.error !== null && <p className="text-body text-destructive">{props.error}</p>}
+			{props.error !== null && (
+				<p role="alert" className="text-body text-destructive">
+					{props.error}
+				</p>
+			)}
 			{card.decisions.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
 					{card.decisions.map((option) => (
@@ -79,12 +85,38 @@ function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 					))}
 				</div>
 			)}
-			{props.spoken && approval.kind === "approval" && approval.spoken.eligible && (
-				<p className="text-body text-muted-foreground">
-					You can answer aloud; the voice agent decides what it heard.
-				</p>
-			)}
+			{props.spoken && <SpokenNote eligible={eligible} spokenText={card.spokenText} />}
 		</article>
+	);
+}
+
+/** The card's edge per phase: cobalt while a decision is wanted, destructive once its effect is in doubt. */
+const PHASE_BORDERS: Readonly<Record<Card["phase"], string>> = {
+	pending: "border-primary/70",
+	busy: "border-primary/70",
+	settled: "border-destructive/70",
+	outcome_unknown: "border-destructive/70",
+	closed: "border-border",
+};
+
+/**
+ * Whether voice may answer this approval, while voice is live: the voice
+ * agent decides what it heard (ADR 0019), or why it cannot answer.
+ * @param props Whether voice may answer, and the card's words for why not.
+ * @param props.eligible Whether the spoken gate may resolve it.
+ * @param props.spokenText Why it can or cannot be answered by voice.
+ * @returns The line.
+ */
+function SpokenNote(props: {
+	readonly eligible: boolean;
+	readonly spokenText: string;
+}): JSX.Element {
+	return (
+		<p className="text-body text-muted-foreground">
+			{props.eligible
+				? "You can answer aloud; the voice agent decides what it heard."
+				: props.spokenText}
+		</p>
 	);
 }
 

@@ -11,7 +11,8 @@ import type { HeldMessage, SetupStep } from "@/ui/agent-setup";
 import { ApprovalCard } from "@/ui/workbench/components/ApprovalCard";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import type { AgentActions, AgentView } from "@/ui/workbench/contracts";
-import { waitingApprovals } from "@/ui/workbench/lib/agent-status";
+import { spokenApprovalLine } from "@/ui/workbench/approval-projection";
+import { unsettledApprovals } from "@/ui/workbench/lib/agent-status";
 
 /** Inputs for the pending work. */
 interface PendingWorkProps {
@@ -28,7 +29,7 @@ function PendingWork(props: PendingWorkProps): JSX.Element | null {
 	const { view, actions } = props;
 	const held = view.setup.held;
 	const queued = view.snapshot?.queue.entries ?? [];
-	const approvals = waitingApprovals(view);
+	const approvals = unsettledApprovals(view);
 	if (held.length === 0 && queued.length === 0 && approvals.length === 0) return null;
 	return (
 		<div data-slot="pending-work" className="flex flex-col gap-3">
@@ -58,26 +59,71 @@ function PendingWork(props: PendingWorkProps): JSX.Element | null {
  * @returns The cards.
  */
 function ApprovalCards(props: {
-	readonly approvals: ReturnType<typeof waitingApprovals>;
+	readonly approvals: ReturnType<typeof unsettledApprovals>;
 	readonly view: AgentView;
 	readonly actions: AgentActions;
-}): JSX.Element[] {
+}): JSX.Element {
 	const { view } = props;
-	const spoken = view.voice.stage === "listening" || view.voice.stage === "speaking";
-	return props.approvals.map((approval) => {
-		const key =
-			approval.kind === "dynamic_approval" ? approval.identity.callId : approval.requestId;
-		return (
-			<ApprovalCard
-				key={key}
-				approval={approval}
-				busy={view.busyApprovals.includes(key)}
-				error={view.approvalErrors[key] ?? null}
-				spoken={spoken}
-				actions={props.actions}
-			/>
-		);
-	});
+	const spoken = ["listening", "speaking", "muted"].includes(view.voice.stage);
+	const line = view.snapshot === null ? null : spokenApprovalLine(view.snapshot.spokenApproval);
+	return (
+		<>
+			{line !== null && (
+				<p
+					data-slot="spoken-approval"
+					className={`text-body ${line.warning ? "text-destructive" : "text-muted-foreground"}`}
+				>
+					{line.text}
+				</p>
+			)}
+			{props.approvals.map((approval) => (
+				<ApprovalCardFor
+					key={approvalKey(approval)}
+					approval={approval}
+					view={view}
+					spoken={spoken}
+					actions={props.actions}
+				/>
+			))}
+		</>
+	);
+}
+
+/**
+ * The key an approval's decision and errors are kept under.
+ * @param approval The approval.
+ * @returns The key.
+ */
+function approvalKey(approval: ReturnType<typeof unsettledApprovals>[number]): string {
+	return approval.kind === "dynamic_approval" ? approval.identity.callId : approval.requestId;
+}
+
+/**
+ * One approval's card, with its decision's state.
+ * @param props The approval, the view, whether voice may answer, and the actions.
+ * @param props.approval The approval.
+ * @param props.view The agent view.
+ * @param props.spoken Whether voice is live.
+ * @param props.actions The actions.
+ * @returns The card.
+ */
+function ApprovalCardFor(props: {
+	readonly approval: ReturnType<typeof unsettledApprovals>[number];
+	readonly view: AgentView;
+	readonly spoken: boolean;
+	readonly actions: AgentActions;
+}): JSX.Element {
+	const { approval, view } = props;
+	const key = approvalKey(approval);
+	return (
+		<ApprovalCard
+			approval={approval}
+			busy={view.busyApprovals.includes(key)}
+			error={view.approvalErrors[key] ?? null}
+			spoken={props.spoken}
+			actions={props.actions}
+		/>
+	);
 }
 
 /** What a held message waits on, by setup step. */
@@ -150,14 +196,14 @@ function HeldPrompt(props: {
 						<button
 							type="button"
 							onClick={retry}
-							className="text-primary font-medium hover:underline"
+							className="text-primary -mx-1 min-h-6 px-1 font-medium hover:underline"
 						>
 							{message.state === "unknown" ? "Send again" : "Retry"}
 						</button>
 						<button
 							type="button"
 							onClick={edit}
-							className="text-foreground font-medium hover:underline"
+							className="text-foreground -mx-1 min-h-6 px-1 font-medium hover:underline"
 						>
 							Edit
 						</button>

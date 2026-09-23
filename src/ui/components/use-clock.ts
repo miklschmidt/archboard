@@ -21,7 +21,8 @@ function useClock(tickMs: number, running = true): number {
 			setNow(Date.now());
 			timer = window.setTimeout(tick, tickMs - (Date.now() % tickMs));
 		};
-		timer = window.setTimeout(tick, tickMs - (Date.now() % tickMs));
+		// Read at once: a clock that was stopped must not show its old reading.
+		timer = window.setTimeout(tick, 0);
 		return () => window.clearTimeout(timer);
 	}, [tickMs, running]);
 	return now;

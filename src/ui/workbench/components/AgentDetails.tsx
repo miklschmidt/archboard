@@ -10,12 +10,11 @@ import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 
 /** The usage Codex last reported for the conversation. */
 type BrowserTimelineUsage = NonNullable<NonNullable<BrowserSnapshot["timeline"]>["usage"]>;
-import type { AgentActions, AgentView } from "@/ui/workbench/contracts";
+import type { AgentView } from "@/ui/workbench/contracts";
 
 /** Inputs for the details. */
 interface AgentDetailsProps {
 	readonly view: AgentView;
-	readonly actions: AgentActions;
 }
 
 /** The account's words. */
@@ -66,7 +65,7 @@ function modelWords(
 
 /**
  * The session's details.
- * @param props The view and the actions.
+ * @param props The view.
  * @returns The details.
  */
 function AgentDetails(props: AgentDetailsProps): JSX.Element {
@@ -76,13 +75,6 @@ function AgentDetails(props: AgentDetailsProps): JSX.Element {
 		<div data-slot="agent-details" className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
 			<Section title="Account">
 				<Row label="Account" value={accountWords(snapshot)} />
-				<button
-					type="button"
-					onClick={props.actions.signOut}
-					className="text-body text-primary self-start font-medium hover:underline"
-				>
-					Sign out
-				</button>
 			</Section>
 			<Section title="Conversation">
 				<Row label="Model" value={modelWords(snapshot, "workhorse")} />

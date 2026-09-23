@@ -67,9 +67,18 @@ function useAgentSurfaces(inputs: AgentSurfaceInputs): AgentSurfaces {
 	const panelProps = useMemo<AgentPanelProps | null>(
 		() =>
 			panel.open
-				? { view, actions, transport, suggest: draft.fill, onClose: panel.closePanel }
+				? {
+						view,
+						actions,
+						transport,
+						suggest: draft.fill,
+						details: panel.details,
+						onDetails: panel.showDetails,
+						onConversation: panel.showConversation,
+						onClose: panel.closePanel,
+					}
 				: null,
-		[panel.open, view, actions, transport, draft, panel.closePanel],
+		[panel, view, actions, transport, draft],
 	);
 	return { view, actions, bar, panel: panelProps, ask };
 }
