@@ -1,15 +1,17 @@
-// Cutting what the voice model says into cues: the two lines or so on screen at one time.
+// Cutting what the voice model says into cues: the two lines on screen at one time.
 //
 // A subtitle that showed the tail of a growing text would re-wrap with every word. So the text is
-// cut into cues of a fixed most length, at word boundaries and, where one falls conveniently, at
-// the end of a sentence. Where a cue is cut depends only on the words before the cut, so a cue
-// already on screen never changes as the utterance grows; the last cue is the one being spoken.
+// cut into cues that fill the subtitle box's two lines, at word boundaries, and end early where a
+// sentence ends on the second line (TASK-307). Where the lines break is measured, not estimated
+// from characters, so a cue fills the box as it is drawn and never wraps to a third line. Where a
+// cue is cut depends only on the words before the cut, so a cue already on screen never changes as
+// the utterance grows; the last cue is the one being spoken.
 
-/** The most characters a cue holds: two comfortable lines of a subtitle. */
-const CUE_MAX_CHARS = 84;
+/** How many lines a run of words, joined by single spaces, takes in the subtitle box. */
+type LineCount = (text: string) => number;
 
-/** A cue is ended early at the end of a sentence once it is at least this long. */
-const CUE_SENTENCE_MIN_CHARS = 36;
+/** The lines the subtitle box holds. */
+const CUE_LINES = 2;
 
 /** One cue: consecutive words of the utterance. */
 interface SubtitleCue {
@@ -36,70 +38,35 @@ function endsSentence(word: string): boolean {
 	return /[.!?…]["')\]]?$/u.test(word);
 }
 
-/** The cue being filled, while an utterance is cut. */
-interface OpenCue {
-	readonly start: number;
-	readonly words: readonly string[];
-	/** Its length as drawn: the words and the single spaces between them. */
-	readonly chars: number;
-}
-
-/**
- * A cue with nothing in it yet.
- * @param start The utterance's word it will begin at.
- * @returns The empty cue.
- */
-function emptyCue(start: number): OpenCue {
-	return { start, words: [], chars: 0 };
-}
-
-/**
- * A cue with one more word.
- * @param cue The cue.
- * @param word The word.
- * @returns The longer cue.
- */
-function withWord(cue: OpenCue, word: string): OpenCue {
-	const space = cue.words.length === 0 ? 0 : 1;
-	return { start: cue.start, words: [...cue.words, word], chars: cue.chars + space + word.length };
-}
-
-/**
- * Whether a cue is closed once it holds a word: at a sentence's end, when it is long enough to be
- * worth a cue of its own.
- * @param cue The cue, holding the word.
- * @param word The word.
- * @returns True when the next word starts another cue.
- */
-function closesCue(cue: OpenCue, word: string): boolean {
-	return endsSentence(word) && cue.chars >= CUE_SENTENCE_MIN_CHARS;
-}
-
 /**
  * Cut an utterance into cues.
  * @param words Its words.
+ * @param lines How many lines a run of words takes in the subtitle box.
  * @returns The cues, in order, together holding every word once.
  */
-function cuesOf(words: readonly string[]): SubtitleCue[] {
+function cuesOf(words: readonly string[], lines: LineCount): SubtitleCue[] {
 	const cues: SubtitleCue[] = [];
-	let open = emptyCue(0);
+	let open: SubtitleCue = { start: 0, words: [] };
 	/**
 	 * Close the cue being filled, when it holds anything, and begin the next.
 	 * @param next The utterance's word the next cue begins at.
 	 */
 	const close = (next: number): void => {
 		if (open.words.length > 0) {
-			cues.push({ start: open.start, words: open.words });
+			cues.push(open);
 		}
-		open = emptyCue(next);
+		open = { start: next, words: [] };
 	};
 	for (const [index, word] of words.entries()) {
-		// A word that would overflow the cue begins the next one instead.
-		if (withWord(open, word).chars > CUE_MAX_CHARS) {
+		let taken = lines([...open.words, word].join(" "));
+		// A word that would wrap the cue to a third line begins the next one instead.
+		if (taken > CUE_LINES && open.words.length > 0) {
 			close(index);
+			taken = lines(word);
 		}
-		open = withWord(open, word);
-		if (closesCue(open, word)) {
+		open = { start: open.start, words: [...open.words, word] };
+		// A sentence that ends on the second line ends the cue.
+		if (endsSentence(word) && taken >= CUE_LINES) {
 			close(index + 1);
 		}
 	}
@@ -107,4 +74,4 @@ function cuesOf(words: readonly string[]): SubtitleCue[] {
 	return cues;
 }
 
-export { cuesOf, wordsOf, type SubtitleCue };
+export { cuesOf, wordsOf, type LineCount, type SubtitleCue };

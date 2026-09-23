@@ -3,7 +3,11 @@
 // What is guarded: a word is on screen as soon as it arrives and earlier speech is not replayed;
 // the subtitle goes after a real silence; the words are the voice model's and never the user's;
 // and turning subtitles off takes them away at once and stays off for the next visit.
+//
+// The box is measured for where it breaks its lines. This DOM lays nothing out and has no canvas,
+// so the box is given a width by a stylesheet and every character is measured 10 px wide.
 
+import { setMeasureFunction } from "@chenglou/pretext";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
@@ -22,9 +26,14 @@ import {
 beforeAll(() => {
 	GlobalRegistrator.register();
 	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
+	const box = document.createElement("style");
+	box.textContent = "[data-slot='voice-subtitles'] { width: 400px; }";
+	document.head.append(box);
+	setMeasureFunction((text) => text.length * 10);
 });
 
 afterAll(async () => {
+	setMeasureFunction(null);
 	await GlobalRegistrator.unregister();
 });
 
@@ -67,7 +76,7 @@ const SAID_BY_THE_PERSON = transcriptOf("").slice(0, 1);
  * @returns What the subtitle reads, or null when there is none.
  */
 function onScreen(): string | null {
-	return document.querySelector("[data-slot='voice-subtitles']")?.textContent ?? null;
+	return document.querySelector("[data-slot='voice-subtitles']")?.textContent || null;
 }
 
 test("a word is on screen as soon as it arrives, and what was said earlier is not replayed", () => {
@@ -88,6 +97,24 @@ test("a word is on screen as soon as it arrives, and what was said earlier is no
 		/>,
 	);
 	expect(onScreen()).toBe("The vault holds one document");
+});
+
+test("the subtitle begins again where its box would wrap to a third line", () => {
+	const said =
+		"The canvas checks the write, takes the lease of the board, commits the whole family";
+	const words = said.split(" ");
+	const view = render(<VoiceSubtitles transcript={transcriptOf("")} enabled reducedMotion />);
+	view.rerender(
+		<VoiceSubtitles
+			transcript={transcriptOf(words.slice(0, -1).join(" "))}
+			enabled
+			reducedMotion
+		/>,
+	);
+	// Two full lines of the box's 40 characters.
+	expect(onScreen()).toBe(words.slice(0, -1).join(" "));
+	view.rerender(<VoiceSubtitles transcript={transcriptOf(said)} enabled reducedMotion />);
+	expect(onScreen()).toBe("family");
 });
 
 test("the subtitle goes once the voice has been silent for the linger", async () => {

@@ -98,7 +98,7 @@ function subtitleSnapshot(browser: AgentBrowserSession): Promise<SubtitleSnapsho
 		const inner = subtitle?.getBoundingClientRect();
 		const outer = pane?.getBoundingClientRect();
 		return {
-			text: subtitle?.textContent ?? null,
+			text: subtitle?.textContent || null,
 			pane: pane?.getAttribute('aria-label') ?? null,
 			withinPane: !!inner && !!outer && inner.width > 0 && inner.left >= outer.left &&
 				inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom,

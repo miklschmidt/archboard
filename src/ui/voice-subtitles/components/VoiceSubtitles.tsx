@@ -4,16 +4,20 @@
 // at most, low in the frame, on a scrim that keeps it legible over any picture. Words arrive one
 // at a time as they are spoken, so the cue is set the way live captions are: a box of fixed
 // width and height with the text running from its left edge, where a word arriving never moves
-// the ones before it. It takes no pointer input, because the canvas under it is what the person
+// the ones before it. The box stays in place, empty and invisible, while nothing is said, because
+// where it breaks its lines is measured from it (TASK-307). It takes no pointer input, because the canvas under it is what the person
 // is working with, and it is hidden from assistive technology, because the same words are
 // already being spoken and the transcript panel is the accessible record of them.
 
-import type { JSX } from "react";
+import { useCallback, useState, type JSX } from "react";
 
+import { cn } from "@/ui/components/class-names";
 import {
 	useVoiceSubtitles,
 	type SubtitleSource,
 } from "@/ui/voice-subtitles/hooks/use-voice-subtitles";
+import type { LineCount } from "@/ui/voice-subtitles/lib/cues";
+import { faceLoading, lineCountOf } from "@/ui/voice-subtitles/lib/measured-lines";
 
 /** Inputs for the subtitles. */
 interface VoiceSubtitlesProps {
@@ -26,23 +30,40 @@ interface VoiceSubtitlesProps {
 }
 
 /**
- * The subtitle on screen while subtitles are wanted, or nothing.
+ * The subtitle box while subtitles are wanted: the cue on screen, or nothing visible.
  * @param props The transcript and motion.
- * @returns The subtitle, or null while the voice is saying nothing.
+ * @returns The box.
  */
-function LiveSubtitles(props: Omit<VoiceSubtitlesProps, "enabled">): JSX.Element | null {
-	const cue = useVoiceSubtitles(props.transcript);
-	if (cue === null) {
-		return null;
-	}
+function LiveSubtitles(props: Omit<VoiceSubtitlesProps, "enabled">): JSX.Element {
+	const [lines, setLines] = useState<LineCount | null>(null);
+	const measure = useCallback((box: HTMLParagraphElement | null): void => {
+		if (box === null) {
+			return;
+		}
+		/** Measure the box in the face it is drawn in. */
+		const measured = (): void => {
+			setLines(() => lineCountOf(box));
+		};
+		const loading = faceLoading(box);
+		if (loading === null) {
+			measured();
+		} else {
+			void loading.then(measured, measured);
+		}
+	}, []);
+	const cue = useVoiceSubtitles(props.transcript, lines);
 	const arriving = props.reducedMotion ? undefined : "animate-in fade-in duration-150";
 	return (
 		<p
+			ref={measure}
 			data-slot="voice-subtitles"
 			aria-hidden="true"
-			className="bg-background/85 text-foreground text-subtitle border-border pointer-events-none box-content h-[56px] w-[46ch] overflow-hidden rounded-md border px-5 py-2.5 text-left shadow-sm backdrop-blur-sm"
+			className={cn(
+				"bg-background/85 text-foreground text-subtitle border-border pointer-events-none box-content h-[56px] w-[46ch] overflow-hidden rounded-md border px-5 py-2.5 text-left shadow-sm backdrop-blur-sm",
+				cue === null && "invisible",
+			)}
 		>
-			{cue.words.map((word, index) => (
+			{cue?.words.map((word, index) => (
 				<span
 					// A cue's words never reorder, and a cue is replaced whole.
 					// oxlint-disable-next-line react/no-array-index-key
