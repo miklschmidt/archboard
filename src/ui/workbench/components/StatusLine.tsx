@@ -34,7 +34,8 @@ interface StatusLineProps {
  */
 function StatusLine(props: StatusLineProps): JSX.Element {
 	const { status, actions } = props;
-	const now = useClock(status.sinceMs === null ? SHELL_AGE_TICK_MS : AGENT_ELAPSED_TICK_MS);
+	const timed = status.sinceMs !== null || status.endedAtMs !== null;
+	const now = useClock(status.sinceMs === null ? SHELL_AGE_TICK_MS : AGENT_ELAPSED_TICK_MS, timed);
 	return (
 		<div
 			data-slot="agent-status"
@@ -176,6 +177,17 @@ function StatusAction(props: {
 			);
 		case "cancel_sign_in":
 			return <SignInPending url={status.signInUrl} onCancel={actions.cancelSignIn} />;
+		case "show":
+			return (
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-7 shrink-0 rounded-[3px] px-3"
+					onClick={actions.openPanel}
+				>
+					Show
+				</Button>
+			);
 		default:
 			return null;
 	}

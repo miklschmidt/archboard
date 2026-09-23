@@ -4,7 +4,7 @@
 // person asks: the toggle, a message sent, Review, or the status line.
 
 import { RiCloseLine, RiMoreLine } from "@remixicon/react";
-import { useCallback, useState, type JSX } from "react";
+import type { JSX } from "react";
 
 import {
 	DropdownMenu,
@@ -32,20 +32,11 @@ interface AgentPanelProps {
 	readonly transport: BrowserWorkbenchTransport | null;
 	/** Put a suggestion in the composer. */
 	readonly suggest: (text: string) => void;
+	/** The session's details show in place of the conversation. */
+	readonly details: boolean;
+	readonly onDetails: () => void;
+	readonly onConversation: () => void;
 	readonly onClose: () => void;
-}
-
-/**
- * What the conversation is called: its first prompt, once there is one.
- * @param view The agent view.
- * @returns The title.
- */
-function titleOf(view: AgentView): string {
-	for (const turn of view.conversation.turns) {
-		const prompt = turn.items.find((item) => item.media === "prompt");
-		if (prompt !== undefined) return prompt.text.split("\n")[0] ?? prompt.text;
-	}
-	return view.setup.held[0]?.text ?? "Agent";
 }
 
 /**
@@ -71,30 +62,28 @@ function nothingSaid(view: AgentView): boolean {
  */
 function AgentPanel(props: AgentPanelProps): JSX.Element {
 	const { view, actions } = props;
-	const [details, setDetails] = useState(false);
-	const showDetails = useCallback(() => setDetails(true), []);
-	const hideDetails = useCallback(() => setDetails(false), []);
+	const { details } = props;
 	return (
 		<aside
 			data-slot="agent-panel"
-			aria-label="Agent"
+			aria-label="Conversation"
 			className="border-border bg-background flex w-(--agent-panel-width) shrink-0 flex-col border-l"
 		>
 			<header className="border-border bg-sidebar flex h-9 shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
 				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">
-					{details ? "Session" : titleOf(view)}
+					{details ? "Session" : "Conversation"}
 				</h2>
 				<PanelMenu
 					actions={actions}
 					details={details}
-					onDetails={showDetails}
-					onConversation={hideDetails}
+					onDetails={props.onDetails}
+					onConversation={props.onConversation}
 				/>
 				<IconAction label="Close the conversation" onClick={props.onClose}>
 					<RiCloseLine />
 				</IconAction>
 			</header>
-			{details ? <AgentDetails view={view} actions={actions} /> : <PanelBody {...props} />}
+			{details ? <AgentDetails view={view} /> : <PanelBody {...props} />}
 		</aside>
 	);
 }
@@ -158,7 +147,7 @@ function FirstUse(props: {
 	const { view } = props;
 	const signedOut =
 		view.setup.phase.kind === "signed_out" || view.setup.phase.kind === "signing_in";
-	if (signedOut) return <SignInCard view={view} actions={props.actions} />;
+	if (signedOut) return <SignInCard actions={props.actions} />;
 	return <EmptyConversation view={view} suggest={props.suggest} />;
 }
 

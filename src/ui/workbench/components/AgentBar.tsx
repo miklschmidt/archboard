@@ -35,13 +35,14 @@ interface AgentBarProps {
  */
 function AgentBar(props: AgentBarProps): JSX.Element {
 	const { view, actions } = props;
-	const now = useClock(SHELL_AGE_TICK_MS);
-	const status = agentStatus(view, now);
+	// Only a running turn needs the clock here: to notice it has gone quiet.
 	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
+	const now = useClock(SHELL_AGE_TICK_MS, running);
+	const status = agentStatus(view, now);
 	return (
 		<section
 			data-slot="agent-bar"
-			aria-label="Agent"
+			aria-label="Agent bar"
 			className="border-border bg-sidebar flex h-[41px] shrink-0 items-stretch border-t"
 		>
 			<div className="flex min-w-0 flex-1 items-center gap-2 pr-3 pl-2">

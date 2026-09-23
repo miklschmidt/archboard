@@ -3,7 +3,7 @@
 // on the person's gesture — the toggle, a message sent, Review, the status
 // line — never because the agent did something.
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { Conversation } from "@/ui/workbench-runtime";
 
@@ -48,9 +48,14 @@ function saidMark(conversation: Conversation): string {
 /** The panel's state and its moves. */
 interface AgentPanelState {
 	readonly open: boolean;
+	/** The session's details show in place of the conversation. */
+	readonly details: boolean;
+	/** Show the conversation: whoever asks for the panel asks for what it is about. */
 	readonly openPanel: () => void;
 	readonly closePanel: () => void;
 	readonly togglePanel: () => void;
+	readonly showDetails: () => void;
+	readonly showConversation: () => void;
 }
 
 /**
@@ -59,14 +64,21 @@ interface AgentPanelState {
  */
 function useAgentPanel(): AgentPanelState {
 	const [open, setOpen] = useState(storedOpen);
+	const [details, setDetails] = useState(false);
 	const change = useCallback((next: boolean): void => {
 		setOpen(next);
 		storeOpen(next);
+		setDetails(false);
 	}, []);
 	const openPanel = useCallback(() => change(true), [change]);
 	const closePanel = useCallback(() => change(false), [change]);
 	const togglePanel = useCallback(() => change(!open), [change, open]);
-	return { open, openPanel, closePanel, togglePanel };
+	const showDetails = useCallback(() => setDetails(true), []);
+	const showConversation = useCallback(() => setDetails(false), []);
+	return useMemo(
+		() => ({ open, details, openPanel, closePanel, togglePanel, showDetails, showConversation }),
+		[open, details, openPanel, closePanel, togglePanel, showDetails, showConversation],
+	);
 }
 
 /**

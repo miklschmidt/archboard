@@ -15,14 +15,7 @@ import type { ConversationItem, ConversationTurn } from "@/ui/workbench-timeline
 type StatusTone = "quiet" | "working" | "attention" | "failed";
 
 /** The one control the line offers. */
-type StatusAction =
-	| "stop"
-	| "review"
-	| "sign_in"
-	| "cancel_sign_in"
-	| "open_sign_in"
-	| "show"
-	| null;
+type StatusAction = "stop" | "review" | "sign_in" | "cancel_sign_in" | "show" | null;
 
 /** The agent's state in one line. */
 interface AgentStatus {
@@ -68,6 +61,39 @@ function waitingApprovals(view: AgentView): (BrowserApproval | BrowserDynamicApp
 		...snapshot.approvals.filter((approval) => approval.lifecycle.state === "pending"),
 		...snapshot.dynamicApprovals.filter((approval) => approval.state === "pending"),
 	];
+}
+
+/**
+ * The approvals the person still has to know about: those waiting on a
+ * decision, and those whose decision may not have taken effect — an unknown
+ * outcome or a decision that was not delivered.
+ * @param view The agent view.
+ * @returns The approvals, ordinary first.
+ */
+function unsettledApprovals(view: AgentView): (BrowserApproval | BrowserDynamicApproval)[] {
+	const snapshot = view.snapshot;
+	if (snapshot === null) return [];
+	return [
+		...snapshot.approvals.filter(unsettled),
+		...snapshot.dynamicApprovals.filter((approval) =>
+			["pending", "outcome_unknown"].includes(approval.state),
+		),
+	];
+}
+
+/**
+ * Whether an ordinary approval is still the person's concern.
+ * @param approval The approval.
+ * @returns True while it waits or its effect is in doubt.
+ */
+function unsettled(approval: BrowserApproval): boolean {
+	const { lifecycle } = approval;
+	if (lifecycle.state === "settled") return lifecycle.outcome === "not_delivered";
+	return (
+		lifecycle.state === "staged" ||
+		lifecycle.state === "pending" ||
+		lifecycle.state === "outcome_unknown"
+	);
 }
 
 /** What each kind of approval asks, in a few words. */
@@ -258,29 +284,67 @@ function setupStatus(view: AgentView): AgentStatus | null {
 function agentStatus(view: AgentView, now: number): AgentStatus {
 	const setup = setupStatus(view);
 	if (setup !== null) return setup;
+	const running = view.conversation.turns.findLast((turn) => turn.outcome === "running");
+	const asked = askedStatus(view, running === undefined ? null : working(view, running, now));
+	return asked ?? heldStatus(view) ?? conversationStatus(view, running, now);
+}
+
+/**
+ * The line while the agent waits on a decision: what it asks, keeping the
+ * running turn's clock, plan and queue, since the turn goes on around it.
+ * @param view The agent view.
+ * @param turn The running turn's line, or null.
+ * @returns The status, or null when nothing waits on the person.
+ */
+function askedStatus(view: AgentView, turn: AgentStatus | null): AgentStatus | null {
 	const [asked, ...more] = waitingApprovals(view);
-	if (asked !== undefined) {
-		const others = more.length > 0 ? ` · ${more.length + 1} waiting` : "";
+	if (asked === undefined) return null;
+	const others = more.length > 0 ? ` · ${more.length + 1} waiting` : "";
+	return {
+		...(turn ?? BLANK),
+		tone: "attention",
+		headline: "Needs you",
+		detail: `${askOf(asked)}${others}`,
+		action: "review",
+	};
+}
+
+/**
+ * The line while something the person sent did not arrive, or the last thing
+ * they asked for could not be done: that outranks the conversation, which
+ * does not hold it.
+ * @param view The agent view.
+ * @returns The status, or null when nothing went wrong.
+ */
+function heldStatus(view: AgentView): AgentStatus | null {
+	const { held, failure } = view.setup;
+	const stuck = held.find((message) => message.state === "failed" || message.state === "unknown");
+	if (stuck !== undefined) {
 		return {
 			...BLANK,
-			tone: "attention",
-			headline: "Needs you",
-			detail: `${askOf(asked)}${others}`,
-			action: "review",
+			tone: "failed",
+			headline: "Not sent",
+			detail: stuck.reason ?? stuck.text,
+			action: "show",
 		};
 	}
-	return conversationStatus(view, now);
+	if (failure === null) return null;
+	return { ...BLANK, tone: "failed", headline: "Could not start", detail: failure, action: "show" };
 }
 
 /**
  * The line the conversation itself gives: why it cannot be read, the turn
- * running now — the newest, should Codex still hold an older one open — or
- * how the last one ended.
+ * running now, a message on its way, or how the last turn ended.
  * @param view The agent view.
+ * @param running The turn running now — the newest, should Codex still hold an older one open.
  * @param now The clock.
  * @returns The status.
  */
-function conversationStatus(view: AgentView, now: number): AgentStatus {
+function conversationStatus(
+	view: AgentView,
+	running: ConversationTurn | undefined,
+	now: number,
+): AgentStatus {
 	const { turns, failure } = view.conversation;
 	if (failure !== null) {
 		return {
@@ -291,10 +355,19 @@ function conversationStatus(view: AgentView, now: number): AgentStatus {
 			action: "show",
 		};
 	}
-	const running = turns.findLast((turn) => turn.outcome === "running");
 	if (running !== undefined) return working(view, running, now);
+	if (view.setup.held.some((message) => message.state === "sending")) {
+		return { ...BLANK, tone: "working", headline: "Sending" };
+	}
 	const last = turns.at(-1);
 	return last === undefined ? { ...BLANK, tone: "quiet", headline: "Ready" } : ended(last);
 }
 
-export { agentStatus, waitingApprovals, type AgentStatus, type StatusAction, type StatusTone };
+export {
+	agentStatus,
+	unsettledApprovals,
+	waitingApprovals,
+	type AgentStatus,
+	type StatusAction,
+	type StatusTone,
+};
