@@ -118,7 +118,7 @@ recipe names.
   what was asked, leave the board valid as it is and report the requirement
   you could not meet.
 - **Environment.** The repository's `AGENTS.md`/`CLAUDE.md` setup block names
-  `ARCHBOARD_VAULT` (and `EXPRESS_SERVER_URL` when the canvas is not on the
+  `ARCHBOARD_VAULT` (and `ARCHBOARD_URL` when the canvas is not on the
   default port). Every `archboard` command reads them; the canvas starts itself
   when nothing answers. Inside the archboard checkout, `./bin/canvas` stands in
   for `archboard`.

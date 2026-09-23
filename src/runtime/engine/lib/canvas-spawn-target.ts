@@ -1,7 +1,7 @@
 // Where the canvas is expected to answer, and how the launcher tells that
 // answer apart from a foreign service or a canvas holding unsaved work.
 
-import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
+import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { getHealth, CANVAS_SERVICE_NAME, type HealthStatus } from "@/runtime/engine/canvas-client";
 import { codedError } from "@/runtime/engine/lib/thrown-error";
 
@@ -13,7 +13,7 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
  */
 function canvasPort(): number {
 	try {
-		const url = new URL(EXPRESS_SERVER_URL);
+		const url = new URL(ARCHBOARD_URL);
 		return parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80);
 	} catch {
 		return 3000;
@@ -26,7 +26,7 @@ function canvasPort(): number {
  */
 function canvasHostname(): string {
 	try {
-		return new URL(EXPRESS_SERVER_URL).hostname;
+		return new URL(ARCHBOARD_URL).hostname;
 	} catch {
 		return "127.0.0.1";
 	}
@@ -34,7 +34,7 @@ function canvasHostname(): string {
 
 /**
  * The HOST the spawned server must bind so that health probes against
- * EXPRESS_SERVER_URL actually reach it: a `[::1]` URL needs an IPv6 bind.
+ * ARCHBOARD_URL actually reach it: a `[::1]` URL needs an IPv6 bind.
  * @returns The bind address without URL brackets.
  */
 function spawnBindHost(): string {
@@ -61,7 +61,7 @@ function isLoopbackUrl(): boolean {
  */
 function unreachableError(reason: string): Error {
 	return codedError(
-		`Canvas server is not reachable at ${EXPRESS_SERVER_URL} (${reason}). ` +
+		`Canvas server is not reachable at ${ARCHBOARD_URL} (${reason}). ` +
 			`Start it with \`archboard start\` (\`./bin/canvas start\` in the repo) or \`bun src/server.ts\`.`,
 		"CANVAS_UNREACHABLE",
 	);

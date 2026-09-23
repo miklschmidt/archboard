@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getHealth, getSyncStatus } from "@/runtime/engine/canvas-client";
-import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
+import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { readPidFile } from "@/runtime/engine/pidfile";
 import { canvasPort, isCanvasHealth } from "@/runtime/engine/spawn";
 import { defineCommand } from "@/cli/command-contract/contract";
@@ -111,7 +111,7 @@ function runningStatus(
 			// see, and `boards` here is how many there are.
 			...sync,
 			running: true as const,
-			url: EXPRESS_SERVER_URL,
+			url: ARCHBOARD_URL,
 			pid: health.pid ?? readPidFile(canvasPort()) ?? undefined,
 			boards: health.boards,
 			browserClients: health.websocket_clients,
@@ -197,7 +197,7 @@ const statusContract = defineCommand({
 			health = await getHealth();
 		} catch {
 			return {
-				result: { running: false as const, url: EXPRESS_SERVER_URL },
+				result: { running: false as const, url: ARCHBOARD_URL },
 				outcome: "unavailable",
 			};
 		}
@@ -205,7 +205,7 @@ const statusContract = defineCommand({
 			return {
 				result: {
 					running: false as const,
-					url: EXPRESS_SERVER_URL,
+					url: ARCHBOARD_URL,
 					conflict: "another service (or a pre-1.1 canvas build) is answering at this URL",
 				},
 				outcome: "foreign-service",

@@ -36,7 +36,7 @@ const server = Bun.serve({
 });
 
 try {
-	process.env["EXPRESS_SERVER_URL"] = `http://127.0.0.1:${server.port}`;
+	process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 	process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 	const [{ getSyncStatus }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([

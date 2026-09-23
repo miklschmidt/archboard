@@ -33,7 +33,7 @@ function publicStartEnvironment(
 		XDG_STATE_HOME: state,
 		TMPDIR: join(root, "tmp"),
 		ARCHBOARD_VAULT: join(root, "vault"),
-		EXPRESS_SERVER_URL: base,
+		ARCHBOARD_URL: base,
 		BUN_OPTIONS: `--preload=${publicPreload}`,
 		...(executable === undefined ? {} : { ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE: executable }),
 	};

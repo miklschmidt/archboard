@@ -78,7 +78,7 @@ function applyCliBootstrap(
 	const help = isHelpInvocation(argv);
 	const url = takeUrl(argv);
 	if (url !== null && !help) {
-		environment["EXPRESS_SERVER_URL"] = url;
+		environment["ARCHBOARD_URL"] = url;
 	}
 	return { url, help };
 }

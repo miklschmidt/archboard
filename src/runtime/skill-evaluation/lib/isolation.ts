@@ -203,7 +203,7 @@ function runEnvironment(paths: RunPaths, canvasUrl: string): Record<string, stri
 		TMPDIR: paths.temporary,
 		ARCHBOARD_VAULT: paths.vault,
 		ARCHBOARD_REPOS: paths.repos,
-		EXPRESS_SERVER_URL: canvasUrl,
+		ARCHBOARD_URL: canvasUrl,
 		ARCHBOARD_NO_AUTOSTART: "1",
 		LOG_FILE_PATH: paths.cliLog,
 		LOG_LEVEL: "error",

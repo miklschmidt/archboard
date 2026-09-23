@@ -4,8 +4,7 @@ import { fileURLToPath } from "url";
 import { logger } from "@/runtime/engine/logger";
 import {
 	ARCHBOARD_VAULT,
-	EXPRESS_SERVER_URL,
-	ENABLE_CANVAS_SYNC,
+	ARCHBOARD_URL,
 	ARCHBOARD_NO_AUTOSTART,
 	noVaultMessage,
 } from "@/runtime/engine/config";
@@ -103,15 +102,12 @@ interface EnsureOptions {
 
 /**
  * Refuse an auto-start the operator has switched off. An explicit `start` is
- * user intent and overrides both opt-outs.
+ * user intent and overrides the opt-out.
  * @throws {Error} When auto-start is disabled.
  */
 function refuseDisabledAutoStart(): void {
 	if (ARCHBOARD_NO_AUTOSTART) {
 		throw unreachableError("auto-start disabled by ARCHBOARD_NO_AUTOSTART=1");
-	}
-	if (!ENABLE_CANVAS_SYNC) {
-		throw unreachableError("auto-start disabled because ENABLE_CANVAS_SYNC=false");
 	}
 }
 
@@ -373,9 +369,9 @@ async function awaitCanvasReadiness(
 			spawned.protocol.destroy();
 			spawned.child.unref();
 			process.stderr.write(
-				`Canvas server running at ${EXPRESS_SERVER_URL}. Open it in a browser only for live canvas work and capture.\n`,
+				`Canvas server running at ${ARCHBOARD_URL}. Open it in a browser only for live canvas work and capture.\n`,
 			);
-			return { url: EXPRESS_SERVER_URL, spawned: true };
+			return { url: ARCHBOARD_URL, spawned: true };
 		}
 		const failure = startFailureOf(spawned, deferred);
 		if (failure !== null) {
@@ -392,7 +388,7 @@ async function awaitCanvasReadiness(
 }
 
 /**
- * Make sure OUR canvas server is answering at EXPRESS_SERVER_URL,
+ * Make sure OUR canvas server is answering at ARCHBOARD_URL,
  * auto-spawning a detached one on a loopback URL when needed. A healthy
  * responder without the service identity marker is a foreign service —
  * proceeding against it would only produce confusing downstream errors.
@@ -417,12 +413,12 @@ async function ensureCanvasRunning(options: EnsureOptions = {}): Promise<EnsureR
 			throw foreignServiceError();
 		}
 		markCanvasIdentityVerified();
-		return { url: EXPRESS_SERVER_URL, spawned: false };
+		return { url: ARCHBOARD_URL, spawned: false };
 	}
 
 	refuseUnlessAutoStartAllowed(options.force === true);
 	const spawned = spawnCanvasServer();
-	logger.info(`Auto-starting canvas server (pid ${spawned.pid}) at ${EXPRESS_SERVER_URL}`);
+	logger.info(`Auto-starting canvas server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
 	return awaitCanvasReadiness(spawned, timeoutMs);
 }
 

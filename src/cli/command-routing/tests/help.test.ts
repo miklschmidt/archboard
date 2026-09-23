@@ -208,7 +208,7 @@ test("a missing --url value cannot consume the help flag during bootstrap", asyn
 		const environment: Record<string, string | undefined> = {};
 		const bootstrap = applyCliBootstrap(argv, environment);
 		expect(bootstrap.help).toBe(true);
-		expect(environment["EXPRESS_SERVER_URL"]).toBeUndefined();
+		expect(environment["ARCHBOARD_URL"]).toBeUndefined();
 		await runCli(argv, bootstrap);
 		expect(printed().split("\n")[0]).toContain("semantic");
 	}

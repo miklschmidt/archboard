@@ -16,7 +16,7 @@ import {
 } from "@/shared/semantic-board/index";
 import { RecordingContainerSchema, type RecordingState } from "@/shared/walkthrough-recording";
 import { currentWriteDoing } from "@/runtime/engine/canvas-client";
-import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
+import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
 	discardSemanticBoardOnCanvas,
 	readSemanticBoardOnCanvas,
@@ -348,7 +348,7 @@ const semanticRecordContract = defineCommand({
 		const variant = askedVariant(board, input.variant);
 		const walkthrough = chosenWalkthrough(variant.content.walkthroughs, input.walkthrough);
 		const made = await recordWalkthrough({
-			canvasUrl: EXPRESS_SERVER_URL,
+			canvasUrl: ARCHBOARD_URL,
 			boardKey: input.variant === undefined ? board.name : `${board.name}@${variant.id}`,
 			walkthrough: walkthrough.id,
 			container,

@@ -109,7 +109,7 @@ test(
 					env: {
 						...process.env,
 						ARCHBOARD_VAULT: fixture.vault,
-						EXPRESS_SERVER_URL: canvas.base,
+						ARCHBOARD_URL: canvas.base,
 						ARCHBOARD_NO_AUTOSTART: "1",
 					},
 				},

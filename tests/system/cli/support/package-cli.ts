@@ -81,8 +81,7 @@ interface PackageCliOwner {
 const clearedEnvironment = {
 	CODEX_HOME: undefined,
 	LOCALAPPDATA: undefined,
-	EXPRESS_SERVER_URL: undefined,
-	ENABLE_CANVAS_SYNC: undefined,
+	ARCHBOARD_URL: undefined,
 	ARCHBOARD_SETTLE_MS: undefined,
 	ARCHBOARD_SETTLE_MAX_MS: undefined,
 } as const;
@@ -108,7 +107,7 @@ function createPackageCliOwner(): PackageCliOwner {
 		ARCHBOARD_REPOS: registry,
 		ARCHBOARD_VAULT: vault,
 		ARCHBOARD_NO_AUTOSTART: "1",
-		...(url ? { EXPRESS_SERVER_URL: url } : {}),
+		...(url ? { ARCHBOARD_URL: url } : {}),
 	});
 
 	const baseSpawn = (

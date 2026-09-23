@@ -128,7 +128,7 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		const cliEnv = sanitizedEnvironment(root, vault);
 		delete cliEnv["ARCHBOARD_VAULT"];
 		delete cliEnv["ARCHBOARD_NO_AUTOSTART"];
-		cliEnv["EXPRESS_SERVER_URL"] = `http://127.0.0.1:${await availablePort()}`;
+		cliEnv["ARCHBOARD_URL"] = `http://127.0.0.1:${await availablePort()}`;
 		const cli = spawnSync(
 			process.execPath,
 			[join(repoRoot, "src/bin.ts"), "semantic", "show", "any"],

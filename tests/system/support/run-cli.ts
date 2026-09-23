@@ -34,7 +34,7 @@ export function runCanvasCli(options: CanvasCliInput): CanvasCliResult {
 		env: {
 			...process.env,
 			ARCHBOARD_VAULT: options.vault,
-			EXPRESS_SERVER_URL: options.base,
+			ARCHBOARD_URL: options.base,
 			ARCHBOARD_NO_AUTOSTART: "1",
 			...options.env,
 		},
