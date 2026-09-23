@@ -7,11 +7,16 @@
 
 import { createElement, useMemo, type ReactNode } from "react";
 
-import { ApplicationPane } from "@/ui/application/components/ApplicationPane";
+import {
+	ApplicationPane,
+	type ApplicationPaneProps,
+} from "@/ui/application/components/ApplicationPane";
 import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
 import type { PaneTheme } from "@/ui/pane-session";
+import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import type { RecordedStep } from "@/ui/walkthrough-recording";
 
 /** Something the shell lays over one pane's picture. */
 interface PaneOverlay {
@@ -40,6 +45,19 @@ interface PaneViewSources {
 	readonly narration: Narration | null;
 	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
 	readonly overlay: PaneOverlay | null;
+	/** The page records its one pane (TASK-304), or null. */
+	readonly recording: PaneRecording | null;
+}
+
+/** What a recording page gives its pane. */
+interface PaneRecording {
+	/** The step the page moves the pane to, or null before the first. */
+	readonly step: RecordedStep | null;
+	/**
+	 * The recorder hears what the pane is reading.
+	 * @param reading The reading.
+	 */
+	readonly onReading: (reading: SemanticPaneReading) => void;
 }
 
 /**
@@ -75,8 +93,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	return createElement(ApplicationPane, {
 		key: paneId,
 		paneId,
-		primary: index === 0,
-		focused: paneId === panes.list.activePaneId,
+		...recordedOrNot(sources.recording, index === 0, paneId === panes.list.activePaneId),
 		theme: sources.theme,
 		host: panes.host,
 		handles: panes.handles,
@@ -92,6 +109,32 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 }
 
 /**
+ * How a pane registers, and what a recording gives it.
+ *
+ * A recording's pane is nobody's primary or focused pane: the canvas it records on may be in use
+ * in another browser, whose panes those words mean.
+ * @param recording The page's recording, or null.
+ * @param first Whether the pane is first in reading order.
+ * @param active Whether it is the active pane.
+ * @returns The pane's registration and its recorded step and reading listener.
+ */
+function recordedOrNot(
+	recording: PaneRecording | null,
+	first: boolean,
+	active: boolean,
+): Pick<ApplicationPaneProps, "primary" | "focused" | "step" | "onSemanticReading"> {
+	if (recording === null) {
+		return { primary: first, focused: active, step: null, onSemanticReading: undefined };
+	}
+	return {
+		primary: false,
+		focused: false,
+		step: recording.step,
+		onSemanticReading: recording.onReading,
+	};
+}
+
+/**
  * The mounted panes, one per pane id.
  *
  * The pane list, the host and the handles are what a pane is made from; the
@@ -101,7 +144,8 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
  * @returns The mounted panes by pane id.
  */
 function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNode>> {
-	const { panes, theme, readings, reducedMotion, onVariantChange, narration, overlay } = sources;
+	const { panes, theme, readings, reducedMotion, onVariantChange, narration, overlay, recording } =
+		sources;
 	const { list, host, handles } = panes;
 	return useMemo(() => {
 		const mounted: Record<string, ReactNode> = {};
@@ -115,6 +159,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					onVariantChange,
 					narration,
 					overlay,
+					recording,
 				},
 				entry.paneId,
 				index,
@@ -132,7 +177,8 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		onVariantChange,
 		narration,
 		overlay,
+		recording,
 	]);
 }
 
-export { usePaneViews, type PaneOverlay, type PaneViewSources };
+export { usePaneViews, type PaneOverlay, type PaneRecording, type PaneViewSources };

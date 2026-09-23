@@ -6,6 +6,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import type { BrowserWorkbenchMediaOwnerOptions } from "@/ui/codex-workbench-media";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { initialPaneList, type PaneList } from "@/ui/application/pane-list";
 import { createPaneMoves } from "@/ui/application/pane-moves";
@@ -216,16 +217,20 @@ function createPaneHost(setters: HostSetters): PaneHost {
  * The panes.
  * @param initial The list to start with, which the address bar seeds from the
  *   URL so a restored comparison mounts both panes in its first render.
+ * @param media What each pane's media owner is made with, read once.
  * @returns The panes, their records and the moves.
  */
-function usePanes(initial: () => PaneList = initialPaneList): Panes {
+function usePanes(
+	initial: () => PaneList = initialPaneList,
+	media?: BrowserWorkbenchMediaOwnerOptions,
+): Panes {
 	const [list, setList] = useState<PaneList>(initial);
 	// The moves read the list as it is when somebody acts, rather than as it was
 	// when their callback was made: the pane host keeps these for the
 	// application's life, and the server asks it to close panes opened since.
 	const [moves] = useState(() => createPaneMoves(list, setList));
 	const [records, setRecords] = useState<PaneRecords>({});
-	const [handles] = useState(() => new PaneHandles());
+	const [handles] = useState(() => new PaneHandles(media));
 	const [events] = useState(() => new LiveBinding<PaneEvents>());
 
 	const patch = useCallback((paneId: string, next: Partial<PaneRecord>): void => {

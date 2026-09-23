@@ -47,6 +47,10 @@ interface NarrativePlace {
  * beside the keys and the controls, and the next thing a person does replaces
  * it. It names itself so the pane can say which request the place on screen
  * answers, and each one is acted on once however often it is handed in.
+ *
+ * A recording (TASK-304) drives the pane from the page itself, and a step it
+ * moves to answers nobody's request: it is reported as the pane's own choice,
+ * the way a step chosen by hand is, which is what hands it to the voice.
  */
 interface DrivenPlace {
 	/** Names the request. */
@@ -55,6 +59,8 @@ interface DrivenPlace {
 	readonly walkthrough: string;
 	/** Which beat of it, counted from zero. */
 	readonly beat: number;
+	/** False when the page chose the place itself and it answers no request; true when absent. */
+	readonly answers?: boolean | undefined;
 }
 
 /** Where the reader is, and who put them there. */
@@ -178,7 +184,8 @@ function unspent(driven: DrivenPlace | null | undefined, standing: Standing): Dr
  */
 function standingAsked(asked: DrivenPlace, board: string): Standing {
 	const place = { board, walkthrough: asked.walkthrough, beat: asked.beat };
-	return { place, answering: asked.request, handled: asked.request };
+	const answering = asked.answers === false ? null : asked.request;
+	return { place, answering, handled: asked.request };
 }
 
 /**
