@@ -3,14 +3,17 @@
 ## Branching
 
 `archboard semantic branch <board> --as "<name>" [--from <variant>] [--summary "<one line>"] --expect-version <n> --doing "..."`
-derives a draft from the current variant, or from the variant `--from` names.
+derives a draft from the variant `--from` names, or without it from the one the
+board's name opens: the current variant, or on a board nobody has built the
+draft no other draft came before.
 The draft carries every subject with its id, designates nothing, and is changed
 afterwards by ordinary `semantic edit <board> --variant "<name>"` batches.
 Competing proposals are two drafts off the same predecessor; a proposal on a
 proposal names its draft in `--from`.
 
 An edit that names no variant — neither `--variant` nor a `variant` in the batch
-— edits the current architecture; where the two differ, the command line wins
+— edits the variant the board's name opens: the current architecture, or on a
+board with no current variant its draft; where the two differ, the command line wins
 ([edit](edit.md) step 3), on `semantic resolve` too. A change meant as a
 proposal that landed on the current architecture is not repaired by editing the
 file, but by reading the family again and moving the meaning with ordinary
@@ -134,9 +137,11 @@ the values: a long one is cut to fit the line.
 moves the current designation: the adopted variant becomes current and stays
 editable, the previous current becomes historical and stops being editable,
 every proposal still says what it was derived from, and nothing is renamed. The
-move is recorded with its reason. A draft holding a disagreement, or derived
+move is recorded with its reason. On a board that had no current variant there
+is no previous current: adoption is the moment its architecture starts existing,
+and nothing becomes historical. A draft holding a disagreement, or derived
 from one that is, is refused until it is settled. Adopt when asked, and report
-which variant is current and which became historical.
+which variant is current and which, if any, became historical.
 
 A proposal nobody will carry out is shelved rather than left standing:
 `archboard semantic shelve <board> --variant <name> --reason "<why>" --expect-version <n> --doing "..."`.

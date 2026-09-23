@@ -12,8 +12,8 @@ description: >-
 # Archboard
 
 An agent states what an architecture IS; archboard draws it. A **board** is one
-document in the vault holding a family of **variants** (the current architecture
-and proposals derived from it). There is no layout to author: every picture is
+document in the vault holding a family of **variants** (the current architecture,
+when anything it describes is built, and proposals). There is no layout to author: every picture is
 rendered from meaning. Fix a semantic error in that meaning; when the saved
 meaning matches the source and the picture does not, report a renderer defect.
 
@@ -54,11 +54,14 @@ recipe names.
    ([Vocabulary](#essentials), [Reads](#essentials), the [`drillDown` row](#everything-the-code-shows)).
 4. **Gather the source context**: read the code the request names and follow
    it out to the boundaries [evidence rule 1](#evidence-before-a-write) lists.
+   For architecture nobody has built, the request and the documents it names
+   are that context ([planning](#planning-what-nobody-has-built)).
 5. **Decide the parts**: the level, the subject, which parts are defined
-   inside which as children, which belong to another codebase or nobody has
-   built yet, and each one's `binding`
-   ([evidence rule 2](#evidence-before-a-write)).
-6. **Map the relationships**, one line of evidence per `edge`
+   inside which as children, which belong to another codebase, whether any of
+   it is built (a part nobody has built is a proposal, drawn on a draft), and
+   each one's `binding` ([evidence rule 2](#evidence-before-a-write)).
+6. **Map the relationships**, one line of evidence per `edge`: a source line,
+   or for an intended mechanism the sentence that states it
    ([evidence rule 3](#evidence-before-a-write)).
 7. **For a sequence, choose the columns before the messages**
    ([create a sequence diagram](references/create-sequence.md)).
@@ -68,8 +71,10 @@ recipe names.
    call a participant makes on itself (one step with it at both ends, never a
    call between two parts that each have a column) and a
    count the source fixes (that step's `repeat`)
-   ([create a sequence diagram](references/create-sequence.md)).
-10. **Walk the catalogue** row by row against the source you read
+   ([create a sequence diagram](references/create-sequence.md)). For a plan,
+   read the request again the same way: a count it states is a `repeat`.
+10. **Walk the catalogue** row by row against the source you read, or for a
+    plan against what the request states
     ([everything the code shows](#everything-the-code-shows)).
 11. **Model the subject a second way** — cut at another level, another set of
     participants, a container drawn whole instead of opened, one flow where
@@ -84,7 +89,9 @@ recipe names.
 14. **Read the answer against those checks and look at the picture it draws**
     ([Verification](#essentials)).
 15. **Compare a proposal against the variant it came from**
-    ([variants](references/variants.md)).
+    ([variants](references/variants.md)). The first draft of a board nobody
+    has built came from nothing, so there is nothing to compare it against:
+    say so instead.
 16. **Run `archboard check`** after a vocabulary edit or an answer that
     carried `warnings` ([Vocabulary](#essentials)).
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
@@ -178,8 +185,10 @@ board needs all of it.
    omission, one you chose to omit is scope.
 2. **Bind to the owner.** A `binding` names the file that implements the
    node's stated responsibility, not a file that imports, registers or calls
-   it. A planned part or an implementation unavailable for inspection stays
-   unbound. An implementation in another checkout may bind after you inspect
+   it. An implementation unavailable for inspection stays unbound. A planned
+   part, which is only ever on a draft, binds to the path its code is to live
+   at when the request states one, and stays unbound when it does not. An
+   implementation in another checkout may bind after you inspect
    its owner and register that repository once with `archboard repo add
 <path>`, whose answer is the identity a `binding` names. When a node's
    responsibility spans
@@ -209,8 +218,9 @@ board needs all of it.
    [create a sequence diagram](references/create-sequence.md)).
 4. **Turn the request into checks.** Before the payload, write down what a
    correct answer must show: the board and the `version` you read; the target
-   variant (a write naming none edits the current architecture, so a
-   proposal-only request lands nothing there;
+   variant (a write naming none edits the variant the board's name opens: the
+   current architecture, or the draft of a board nobody has built; so on a
+   board with a current variant a proposal-only request lands nothing there;
    [propose and compare](references/propose-compare.md) and
    [edit](references/edit.md) say how a write names a proposal); the ids and
    fields that must survive; and for a view, its exact `grammar` and `scope`
@@ -248,11 +258,11 @@ you used and which you judged not to apply.
 What the source shows for each row, and what you author for it:
 
 - `external`. _Shows:_ a caller, library, framework, runtime, shell or hosted
-  service this codebase does not own, or a part nobody has built yet. _Author:_
-  a node of kind `external`, unbound; a part that does not exist yet is drawn
-  and unbound the same way, taking the configured kind the request names for it
-  when it names one. Never for a part of this codebase a reader reaches through
-  another board.
+  service this codebase does not own. _Author:_ a node of kind `external`,
+  unbound. Never for a part of this codebase a reader reaches through another
+  board, and never for a part nobody has built yet: that is a proposal, drawn
+  with the configured kind it will have on a draft
+  ([planning](#planning-what-nobody-has-built)).
 - `binding`. _Shows:_ the file whose body implements a part's responsibility.
   _Author:_ `binding: { repo, path }` to that file
   ([evidence rule 2](#evidence-before-a-write)).
@@ -312,6 +322,33 @@ and a step takes nothing else but `note` and `repeat`: `emphasis` or `traffic`
 on one is refused by key name over the step it sits on
 (`→ at flows[0].steps[0]`), so move it onto the relationship between the same
 parts rather than dropping it from the payload.
+
+## Planning what nobody has built
+
+Whether an architecture exists is a fact about a variant, never about a node.
+The current variant says what is built; a draft is a proposal. So a part nobody
+has built never goes on the current variant, however the request words it:
+
+- **A change to something that exists** is a proposal on the existing board:
+  branch a draft and draw the new parts there
+  ([propose and compare](references/propose-compare.md)).
+- **An architecture nobody has built** is a board with no current variant:
+  create it with `"lifecycle": "draft"` in the `semantic new` payload. Its first
+  variant is a draft, the board designates no current variant, and its bare
+  name opens that draft, so `render`, `edit` and `branch` naming no variant act
+  on it. Asking for `--variant current` there is refused: nothing is built.
+
+What stands in for a source line is the sentence that states the intent: in
+the request, or in a design document it names. Keep the same one-line record
+per relationship and step ([evidence rule 3](#evidence-before-a-write)), citing
+that sentence where you would cite a symbol, and leave out a mechanism nothing
+states: a plan that invents how a part works is as wrong as a board that
+invents a call. Bind a planned part only to a path the request states; a
+binding on a draft may name a file that does not exist yet, and `archboard
+check` does not report it until the variant is adopted. When the code is built
+and the request asks, adopt the draft: that is the moment the architecture
+starts existing, and nothing becomes history
+([variants](references/variants.md#adoption)).
 
 ## Which recipe
 
