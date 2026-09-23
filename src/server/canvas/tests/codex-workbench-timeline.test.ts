@@ -7,39 +7,26 @@ import type {
 	SessionThreadTurnPageResult,
 } from "../../../runtime/codex-session/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
-import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
-	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import { createCanvasTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	agentMessageItem,
 	commandExecutionItem,
+	contextCompactionItem,
 	dynamicToolCallItem,
+	executableLink,
 	fileChangeItem,
+	flush,
 	mcpToolCallItem,
 	planItem,
 	reasoningItem,
 	turnFixture,
 	userMessageItem,
+	webSearchItem,
 } from "./support/codex-workbench-timeline-fixture.js";
-
-function executableLink(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
-	return {
-		kind: "thread_link",
-		state: "executable",
-		childId: authorities.identity.validator.childId,
-		epoch: authorities.identity.validator.epoch,
-		threadId,
-		source: "appServer",
-		status: "idle",
-		loaded: true,
-		canAcceptDirectInput: true,
-		reason: null,
-	};
-}
 
 function notification(threadId: string): TransportServerNotification["notification"] {
 	return decodeServerNotification({
@@ -72,23 +59,21 @@ function event(
 	};
 }
 
-async function flush(): Promise<void> {
-	for (let index = 0; index < 8; index += 1) {
-		await Promise.resolve();
-	}
-}
-
-test("timeline owner loads typed pages, maps seven arms, and bounds the projection", async () => {
+test("timeline owner loads typed pages and projects every arm with its evidence", async () => {
 	const authorities = createIdentityAuthorities();
-	const threadId = authorities.identity.decoder.adoptThreadId("timeline-thread");
-	const turnId = authorities.identity.decoder.adoptTurnId("timeline-turn");
-	const commandItemId = authorities.identity.decoder.adoptItemId("timeline-command");
-	const approvalId = authorities.identity.decoder.adoptApprovalId("timeline-approval");
+	const decoder = authorities.identity.decoder;
+	const threadId = decoder.adoptThreadId("timeline-thread");
+	const turnId = decoder.adoptTurnId("timeline-turn");
+	const commandItemId = decoder.adoptItemId("timeline-command");
+	const approvalId = decoder.adoptApprovalId("timeline-approval");
 	const items: readonly SessionThreadItem[] = [
 		userMessageItem(authorities, "timeline-user", {
 			type: "userMessage",
 			clientId: null,
-			content: [{ type: "text", text: "hello", text_elements: [] }],
+			content: [
+				{ type: "text", text: "hello", text_elements: [] },
+				{ type: "image", url: "https://example.invalid/diagram.png" },
+			],
 		}),
 		agentMessageItem(authorities, "timeline-agent", {
 			type: "agentMessage",
@@ -100,16 +85,16 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 		}),
 		mcpToolCallItem(authorities, "timeline-mcp", {
 			type: "mcpToolCall",
-			server: "private-server",
+			server: "archboard",
 			tool: "inspect",
-			status: "completed",
-			arguments: { secret: "not projected" },
+			status: "failed",
+			arguments: { board: "payments" },
 			appContext: null,
 			pluginId: null,
 			readOnlyHint: null,
 			result: null,
-			error: null,
-			durationMs: 1,
+			error: { message: "board not found" },
+			durationMs: 12,
 		}),
 		dynamicToolCallItem(authorities, "timeline-dynamic", {
 			type: "dynamicToolCall",
@@ -119,7 +104,12 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			status: "failed",
 			contentItems: null,
 			success: false,
-			durationMs: 1,
+			durationMs: 3,
+		}),
+		userMessageItem(authorities, "timeline-steer", {
+			type: "userMessage",
+			clientId: null,
+			content: [{ type: "text", text: "also check the renderer", text_elements: [] }],
 		}),
 		commandExecutionItem(authorities, "timeline-command", {
 			type: "commandExecution",
@@ -131,14 +121,22 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			source: "agent",
 			status: "completed",
 			commandActions: [],
-			aggregatedOutput: "private output",
+			aggregatedOutput: "1 pass\n",
 			exitCode: 0,
-			durationMs: 1,
+			durationMs: 950,
 		}),
 		fileChangeItem(authorities, "timeline-file", {
 			type: "fileChange",
-			changes: [],
-			status: "declined",
+			changes: [
+				{
+					path: "/repo/src/old.ts",
+					kind: { type: "update", move_path: "/repo/src/new.ts" },
+					diff: "--- a/src/old.ts\n+++ b/src/old.ts\n@@ -1,3 +1,4 @@\n keep\n-gone\n+added one\n+added two\n--- a removed line that looks like a header\n",
+				},
+				{ path: "/repo/src/created.ts", kind: { type: "add" }, diff: "one\ntwo\nthree" },
+				{ path: "/repo/src/deleted.ts", kind: { type: "delete" }, diff: "one\ntwo\n" },
+			],
+			status: "completed",
 		}),
 		reasoningItem(authorities, "timeline-reasoning", {
 			type: "reasoning",
@@ -149,8 +147,25 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			type: "plan",
 			text: `${"p".repeat(16_500)}\0`,
 		}),
+		webSearchItem(authorities, "timeline-search", {
+			type: "webSearch",
+			query: "elk layered options",
+			action: null,
+			results: null,
+		}),
+		contextCompactionItem(authorities, "timeline-compaction"),
 	];
-	const turn = turnFixture(authorities, "timeline-turn", items);
+	const turn = turnFixture(authorities, "timeline-turn", items, "failed", {
+		startedAt: 1_700_000_000,
+		completedAt: 1_700_000_004,
+		durationMs: 4_200,
+		error: {
+			message: "stream disconnected",
+			codexErrorInfo: null,
+			additionalDetails: "retry the turn",
+			misalignment: null,
+		},
+	});
 	const turnRequests: Parameters<CodexSession["threadTurnsListPage"]>[0][] = [];
 	const timelineRequests: Parameters<CodexSession["timelineListPage"]>[0][] = [];
 	const session = {
@@ -170,7 +185,7 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 	let changes = 0;
 	const owner = createCanvasTimelineOwner({
 		session,
-		identity: authorities.identity.decoder,
+		identity: decoder,
 		approvals: {
 			inspectViews: () => [
 				{
@@ -216,45 +231,96 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 	]);
 	expect(timelineRequests).toEqual([{ threadId, cursor: null, limit: 100 }]);
 	expect(changes).toBe(1);
-	expect(projection).toMatchObject({ kind: "codex_timeline", threadId, cursor: "timeline-next" });
+	expect(projection).toMatchObject({
+		kind: "codex_timeline",
+		threadId,
+		cursor: "timeline-next",
+		usage: null,
+	});
 	expect(projection.turns).toHaveLength(1);
-	expect(projection.turns[0]?.turn).toEqual({ id: turnId, status: "completed" });
-	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
+	const projected = projection.turns[0];
+	if (projected === undefined) {
+		throw new Error("the turn was not projected");
+	}
+	expect(projected.turn).toEqual({
+		id: turnId,
+		status: "failed",
+		startedAt: 1_700_000_000,
+		completedAt: 1_700_000_004,
+		durationMs: 4_200,
+	});
+	expect(projected.error).toEqual({ message: "stream disconnected", details: "retry the turn" });
+	expect(projected.plan).toBeNull();
+	// The person's prompt and their mid-turn steer keep their place in the turn.
+	expect(projected.items.map((entry) => entry.kind)).toEqual([
+		"user_message",
 		"agent_message",
 		"tool_call",
 		"tool_call",
+		"user_message",
 		"command_execution",
 		"approval_request",
 		"file_change",
 		"reasoning_summary",
 		"plan",
+		"web_search",
+		"context_compaction",
 	]);
-	expect(projection.turns[0]?.items[0]).toEqual({
-		kind: "agent_message",
-		item: {
-			type: "agentMessage",
-			id: authorities.identity.decoder.adoptItemId("timeline-agent"),
-			text: "assistant answer",
-		},
+	const [prompt, , mcp, dynamic, steer, command, approval, fileChange, , plan, search] =
+		projected.items;
+	expect(prompt).toMatchObject({ kind: "user_message", text: "hello\n[image]" });
+	expect(steer).toMatchObject({ kind: "user_message", text: "also check the renderer" });
+	expect(mcp).toMatchObject({
+		kind: "tool_call",
+		item: { tool: "inspect", status: "failed", durationMs: 12 },
+		server: "archboard",
+		arguments: '{"board":"payments"}',
+		error: "board not found",
 	});
-	expect(projection.turns[0]?.items[4]).toEqual({
+	if (dynamic?.kind !== "tool_call") {
+		throw new Error("the dynamic tool call was not projected");
+	}
+	expect(dynamic.server).toBe("archboard_app");
+	expect(dynamic.item.durationMs).toBe(3);
+	expect(dynamic.error).not.toBeNull();
+	expect(command).toMatchObject({
+		kind: "command_execution",
+		item: { command: "bun test", status: "completed", exitCode: 0, durationMs: 950 },
+		cwd: "/repo",
+		output: { tail: "1 pass\n", truncated: false },
+	});
+	expect(approval).toEqual({
 		kind: "approval_request",
 		identity: { kind: "item", threadId, turnId, itemId: commandItemId, approvalId },
 		state: "pending",
 	});
-	const projectedPlan = projection.turns[0]?.items[7];
-	if (projectedPlan?.kind !== "plan") {
+	expect(fileChange).toMatchObject({
+		kind: "file_change",
+		changes: [
+			{
+				path: "/repo/src/old.ts",
+				kind: "update",
+				movePath: "/repo/src/new.ts",
+				added: 2,
+				removed: 2,
+			},
+			{ path: "/repo/src/created.ts", kind: "add", movePath: null, added: 3, removed: 0 },
+			{ path: "/repo/src/deleted.ts", kind: "delete", movePath: null, added: 0, removed: 2 },
+		],
+		changesTruncated: false,
+	});
+	expect(JSON.stringify(fileChange)).not.toContain("added one");
+	if (plan?.kind !== "plan") {
 		throw new Error("plan item was not projected");
 	}
-	expect(projectedPlan.item.text.endsWith("…")).toBe(true);
-	expect(projectedPlan.item.text.includes("\0")).toBe(false);
-	expect(new TextEncoder().encode(projectedPlan.item.text).byteLength).toBeLessThanOrEqual(16_384);
-	expect(projection.turns[0]?.presentation).toEqual({
-		summary: "completed · user: hello · assistant: assistant answer",
+	expect(plan.item.text.endsWith("…")).toBe(true);
+	expect(plan.item.text.includes("\0")).toBe(false);
+	expect(new TextEncoder().encode(plan.item.text).byteLength).toBeLessThanOrEqual(16_384);
+	expect(search).toMatchObject({ kind: "web_search", query: "elk layered options" });
+	expect(projected.presentation).toEqual({
+		summary: "failed · user: hello · assistant: assistant answer",
 		outputs: { included: true, truncated: true },
 	});
-	expect(JSON.stringify(projection)).not.toContain("private-server");
-	expect(JSON.stringify(projection)).not.toContain("private output");
 	owner.dispose();
 });
 

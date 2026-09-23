@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 
-import { BROWSER_THREAD_CANDIDATE_LIMIT } from "../index.js";
+import { BROWSER_THREAD_CANDIDATE_LIMIT, BROWSER_TIMELINE_LIMITS } from "../index.js";
 import { createFixtureIds } from "./support.js";
 
 test("browser DTOs cover reachable progress, partial, failure, and recovery states", () => {
@@ -106,6 +106,56 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			model.BrowserDtoSchema.safeParse({ ...inspectState, sourcePresentation }).success,
 		).toBeFalse();
 	}
+});
+
+const planStep = (status: string) => ({
+	plan: { explanation: null, steps: [{ step: "Build", status }] },
+});
+
+test("the timeline carries its evidence only within its wire bounds and Codex's vocabulary", () => {
+	const { model, snapshot, identity } = createFixtureIds();
+	const timeline = snapshot.timeline;
+	const turn = timeline?.turns[0];
+	const command = turn?.items.find((item) => item.media === "command");
+	if (timeline === null || turn === undefined || command === undefined) {
+		throw new Error("fixture is missing its timeline evidence");
+	}
+	const parses = (next: unknown) => model.BrowserTimelineSchema.safeParse(next).success;
+	const withTurn = (changes: Record<string, unknown>) => ({
+		...timeline,
+		turns: [{ ...turn, ...changes }],
+	});
+	const withItem = (item: unknown) => withTurn({ items: [item] });
+	const itemId = identity.decoder.adoptItemId("bounds-item");
+	const change = { path: "src/a.ts", kind: "add", movePath: null, added: 1, removed: 0 };
+	const fileChange = (count: number) => ({
+		media: "fileChange",
+		itemId,
+		status: "completed",
+		changes: Array.from({ length: count }, () => change),
+		changesTruncated: count === BROWSER_TIMELINE_LIMITS.fileChanges,
+	});
+
+	expect(parses(timeline)).toBeTrue();
+	expect(parses(withItem({ media: "search", itemId, query: null }))).toBeTrue();
+	expect(parses(withItem({ media: "compaction", itemId }))).toBeTrue();
+	expect(parses(withItem(fileChange(BROWSER_TIMELINE_LIMITS.fileChanges)))).toBeTrue();
+	expect(parses(withItem(fileChange(BROWSER_TIMELINE_LIMITS.fileChanges + 1)))).toBeFalse();
+	const tail = "x".repeat(BROWSER_TIMELINE_LIMITS.outputTail);
+	expect(parses(withItem({ ...command, output: tail }))).toBeTrue();
+	expect(parses(withItem({ ...command, output: `${tail}x` }))).toBeFalse();
+	expect(parses(withItem({ ...command, output: "" }))).toBeFalse();
+	expect(parses(withTurn(planStep("inProgress")))).toBeTrue();
+	expect(parses(withTurn(planStep("blocked")))).toBeFalse();
+	expect(parses(withTurn({ error: { message: "stream disconnected", details: null } }))).toBeTrue();
+	const usage = timeline.usage;
+	if (usage === null) {
+		throw new Error("fixture is missing its token usage");
+	}
+	expect(parses({ ...timeline, usage: null })).toBeTrue();
+	expect(
+		parses({ ...timeline, usage: { ...usage, total: { ...usage.total, extra: 1 } } }),
+	).toBeFalse();
 });
 
 test("the thread-candidate inventory is a bounded, deduplicated, browser-safe list", () => {

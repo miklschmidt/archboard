@@ -301,7 +301,9 @@ function snapshot(options: SnapshotOptions = {}): SnapshotFixture {
 		threadLink: threadLinkFor(linkState, threadId),
 		threadCandidates: filled.threadCandidates,
 		timeline:
-			linkState === "unbound" ? null : { kind: "timeline", threadId, turns: [], nextCursor: null },
+			linkState === "unbound"
+				? null
+				: { kind: "timeline", threadId, turns: [], nextCursor: null, usage: null },
 		queue: filled.queue,
 		settings: [],
 		approvals: filled.approvals,

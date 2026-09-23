@@ -181,16 +181,32 @@ function runtimeTimeline(status: BrowserTurn["status"]): BrowserTimeline {
 				turnId,
 				status,
 				items: [
-					{ media: "command", itemId: approvalItemId, command: "bun test", status: "completed" },
+					{
+						media: "command",
+						itemId: approvalItemId,
+						command: "bun test",
+						status: "completed",
+						cwd: null,
+						exitCode: null,
+						durationMs: null,
+						output: null,
+						outputTruncated: false,
+					},
 					{ media: "approval", itemId: approvalItemId, approvalId, status: "pending" },
 					{ media: "text", itemId: laterItemId, text: "Later activity" },
 				],
 				summary: "Timeline fixture",
 				outputsIncluded: true,
 				outputsTruncated: false,
+				startedAtMs: null,
+				completedAtMs: null,
+				durationMs: null,
+				error: null,
+				plan: null,
 			},
 		],
 		nextCursor: null,
+		usage: null,
 	};
 }
 
@@ -443,6 +459,11 @@ describe("workbench timeline projection", () => {
 			itemId: approvalItemId,
 			command: "bun test",
 			status: "completed",
+			cwd: null,
+			exitCode: null,
+			durationMs: null,
+			output: null,
+			outputTruncated: false,
 		};
 		const duplicateItems: BrowserTimeline = {
 			...base,

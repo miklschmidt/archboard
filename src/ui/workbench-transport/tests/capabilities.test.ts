@@ -56,7 +56,14 @@ function invalidDeltas(): readonly (readonly [string, unknown])[] {
 		["threadLink", { ...snapshot().threadLink, unexpected: true }],
 		[
 			"timeline",
-			{ kind: "timeline", threadId: wire.threadA, turns: [], nextCursor: null, unexpected: true },
+			{
+				kind: "timeline",
+				threadId: wire.threadA,
+				turns: [],
+				nextCursor: null,
+				usage: null,
+				unexpected: true,
+			},
 		],
 		["queue", { ...queue(), unexpected: true }],
 		["settings", [{ kind: "settings" }]],

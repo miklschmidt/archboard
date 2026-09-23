@@ -24,6 +24,7 @@ import type {
 	LogoutAccountResponse,
 	McpServerElicitationRequestResponse,
 	ModelListResponse,
+	PatchChangeKind,
 	PermissionsRequestApprovalResponse,
 	ThreadDeleteResponse,
 	ThreadForkResponse,
@@ -47,7 +48,9 @@ import type {
 	ThreadTimelineListResponse,
 	ThreadTurnsListResponse,
 	ThreadStatus,
+	TokenUsageBreakdown,
 	TurnInterruptResponse,
+	TurnPlanStepStatus,
 	TurnStartResponse,
 	TurnSteerResponse,
 	TurnStatus,
@@ -133,6 +136,9 @@ type CodexInitializeCapabilities = NonNullable<
 type CodexLoginAccountParams = CodexClientRequestParamsByMethod["account/login/start"];
 type CodexThreadStatus = CodexJsonWire<ThreadStatus>;
 type CodexTurnStatus = CodexJsonWire<TurnStatus>;
+type CodexTurnPlanStepStatus = CodexJsonWire<TurnPlanStepStatus>;
+type CodexPatchChangeKindType = CodexJsonWire<PatchChangeKind>["type"];
+type CodexTokenUsageBreakdown = CodexJsonWire<TokenUsageBreakdown>;
 type CodexCommandExecutionApprovalDecision = CodexJsonWire<CommandExecutionApprovalDecision>;
 type CodexFileChangeApprovalDecision = CodexJsonWire<FileChangeApprovalDecision>;
 
@@ -222,6 +228,38 @@ const CodexTurnStatusSchema = z.enum([
 	"failed",
 	"inProgress",
 ] satisfies readonly CodexTurnStatus[]);
+
+/**
+ * Every status a turn plan step can be in. The object names each member once,
+ * so a status Codex adds or drops fails type-check here.
+ */
+const CODEX_TURN_PLAN_STEP_STATUSES = {
+	pending: "pending",
+	inProgress: "inProgress",
+	completed: "completed",
+} as const satisfies { readonly [Status in CodexTurnPlanStepStatus]: Status };
+const CodexTurnPlanStepStatusSchema = z.enum(CODEX_TURN_PLAN_STEP_STATUSES);
+
+/**
+ * Every kind of change one file in a patch can undergo, named once each so a
+ * kind Codex adds or drops fails type-check here.
+ */
+const CODEX_PATCH_CHANGE_KIND_TYPES = {
+	add: "add",
+	delete: "delete",
+	update: "update",
+} as const satisfies { readonly [Kind in CodexPatchChangeKindType]: Kind };
+const CodexPatchChangeKindTypeSchema = z.enum(CODEX_PATCH_CHANGE_KIND_TYPES);
+
+/** One token usage breakdown, closed to exactly the fields Codex reports. */
+const CodexTokenUsageBreakdownSchema = z.strictObject({
+	totalTokens: z.number(),
+	inputTokens: z.number(),
+	cachedInputTokens: z.number(),
+	cacheWriteInputTokens: z.number(),
+	outputTokens: z.number(),
+	reasoningOutputTokens: z.number(),
+}) satisfies z.ZodType<CodexTokenUsageBreakdown>;
 
 /**
  * Builds the schema for a command-execution approval decision. It is a
@@ -427,6 +465,9 @@ export {
 	type CodexLoginAccountParams,
 	type CodexThreadStatus,
 	type CodexTurnStatus,
+	type CodexTurnPlanStepStatus,
+	type CodexPatchChangeKindType,
+	type CodexTokenUsageBreakdown,
 	type CodexCommandExecutionApprovalDecision,
 	type CodexFileChangeApprovalDecision,
 	CODEX_CLIENT_REQUEST_METHODS,
@@ -437,6 +478,9 @@ export {
 	CodexThreadStatusTypeSchema,
 	isCodexThreadStatusType,
 	CodexTurnStatusSchema,
+	CodexTurnPlanStepStatusSchema,
+	CodexPatchChangeKindTypeSchema,
+	CodexTokenUsageBreakdownSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,

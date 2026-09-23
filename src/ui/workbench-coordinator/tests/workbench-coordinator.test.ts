@@ -60,7 +60,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			truncated: false,
 			reason: null,
 		},
-		timeline: { kind: "timeline", threadId: WORKHORSE, turns: [], nextCursor: null },
+		timeline: { kind: "timeline", threadId: WORKHORSE, turns: [], nextCursor: null, usage: null },
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [SETTINGS, WORKHORSE_SETTINGS],
 		approvals: [],

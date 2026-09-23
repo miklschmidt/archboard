@@ -4,11 +4,15 @@
 import { z } from "zod";
 
 import {
+	CodexPatchChangeKindTypeSchema,
 	CodexThreadStatusTypeSchema,
+	CodexTokenUsageBreakdownSchema,
+	CodexTurnPlanStepStatusSchema,
 	CodexTurnStatusSchema,
 } from "@/shared/codex-app-server-contract/index";
 import {
 	BROWSER_THREAD_CANDIDATE_LIMIT,
+	BROWSER_TIMELINE_LIMITS as LIMITS,
 	refineCurrentTarget,
 } from "@/shared/codex-browser-model/lib/browser-vocabulary";
 import { boundedText, optionalNullableText } from "@/shared/codex-browser-model/lib/scalars";
@@ -157,24 +161,48 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 			.strict(),
 	]);
 
+	/** A duration or a point in time, in milliseconds, when Codex reported one. */
+	const MillisecondsSchema = z.number().nonnegative().nullable();
+	const LineCountSchema = z.number().int().nonnegative();
+	const BrowserTimelineFileChangeSchema = z
+		.object({
+			path: boundedText(LIMITS.path),
+			kind: CodexPatchChangeKindTypeSchema,
+			movePath: boundedText(LIMITS.path).nullable(),
+			added: LineCountSchema,
+			removed: LineCountSchema,
+		})
+		.strict();
 	const BrowserTimelineItemSchema = z.discriminatedUnion("media", [
 		z
-			.object({ media: z.literal("text"), itemId: ItemIdSchema, text: boundedText(16_384) })
+			.object({ media: z.literal("prompt"), itemId: ItemIdSchema, text: boundedText(LIMITS.text) })
+			.strict(),
+		z
+			.object({ media: z.literal("text"), itemId: ItemIdSchema, text: boundedText(LIMITS.text) })
 			.strict(),
 		z
 			.object({
 				media: z.literal("tool"),
 				itemId: ItemIdSchema,
-				name: boundedText(256),
+				name: boundedText(LIMITS.toolName),
 				status: z.enum(["inProgress", "completed", "failed"]),
+				server: boundedText(LIMITS.toolName).nullable(),
+				arguments: boundedText(LIMITS.toolArguments).nullable(),
+				durationMs: MillisecondsSchema,
+				error: boundedText(LIMITS.errorMessage).nullable(),
 			})
 			.strict(),
 		z
 			.object({
 				media: z.literal("command"),
 				itemId: ItemIdSchema,
-				command: boundedText(16_384),
+				command: boundedText(LIMITS.text),
 				status: z.enum(["inProgress", "completed", "failed", "declined"]),
+				cwd: boundedText(LIMITS.path).nullable(),
+				exitCode: z.number().int().nullable(),
+				durationMs: MillisecondsSchema,
+				output: boundedText(LIMITS.outputTail).nullable(),
+				outputTruncated: z.boolean(),
 			})
 			.strict(),
 		z
@@ -182,14 +210,28 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 				media: z.literal("fileChange"),
 				itemId: ItemIdSchema,
 				status: z.enum(["inProgress", "completed", "failed", "declined"]),
+				changes: z.array(BrowserTimelineFileChangeSchema).max(LIMITS.fileChanges),
+				changesTruncated: z.boolean(),
 			})
 			.strict(),
 		z
-			.object({ media: z.literal("reasoning"), itemId: ItemIdSchema, text: boundedText(16_384) })
+			.object({
+				media: z.literal("reasoning"),
+				itemId: ItemIdSchema,
+				text: boundedText(LIMITS.text),
+			})
 			.strict(),
 		z
-			.object({ media: z.literal("plan"), itemId: ItemIdSchema, text: boundedText(16_384) })
+			.object({ media: z.literal("plan"), itemId: ItemIdSchema, text: boundedText(LIMITS.text) })
 			.strict(),
+		z
+			.object({
+				media: z.literal("search"),
+				itemId: ItemIdSchema,
+				query: boundedText(LIMITS.query).nullable(),
+			})
+			.strict(),
+		z.object({ media: z.literal("compaction"), itemId: ItemIdSchema }).strict(),
 		z
 			.object({
 				media: z.literal("approval"),
@@ -199,6 +241,22 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 			})
 			.strict(),
 	]);
+	/** The latest plan Codex published for a turn, while the server holds it. */
+	const BrowserTimelinePlanSchema = z
+		.object({
+			explanation: boundedText(LIMITS.planExplanation).nullable(),
+			steps: z
+				.array(
+					z
+						.object({
+							step: boundedText(LIMITS.planStep),
+							status: CodexTurnPlanStepStatusSchema,
+						})
+						.strict(),
+				)
+				.max(LIMITS.planSteps),
+		})
+		.strict();
 	const BrowserTimelineTurnSchema = z
 		.object({
 			turnId: TurnIdSchema,
@@ -207,6 +265,25 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 			summary: boundedText(512),
 			outputsIncluded: z.boolean(),
 			outputsTruncated: z.boolean(),
+			startedAtMs: MillisecondsSchema,
+			completedAtMs: MillisecondsSchema,
+			durationMs: MillisecondsSchema,
+			error: z
+				.object({
+					message: boundedText(LIMITS.errorMessage),
+					details: boundedText(LIMITS.errorDetails).nullable(),
+				})
+				.strict()
+				.nullable(),
+			plan: BrowserTimelinePlanSchema.nullable(),
+		})
+		.strict();
+	/** The thread's latest token usage, and the context window it counts against. */
+	const BrowserTimelineUsageSchema = z
+		.object({
+			total: CodexTokenUsageBreakdownSchema,
+			last: CodexTokenUsageBreakdownSchema,
+			modelContextWindow: z.number().nonnegative().nullable(),
 		})
 		.strict();
 	const BrowserTimelineSchema = z
@@ -215,6 +292,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 			threadId: ThreadIdSchema,
 			turns: z.array(BrowserTimelineTurnSchema),
 			nextCursor: boundedText(1024).nullable(),
+			usage: BrowserTimelineUsageSchema.nullable(),
 		})
 		.strict();
 
