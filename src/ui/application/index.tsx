@@ -48,6 +48,7 @@ import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody
 import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { DoingEntry } from "@/ui/types";
+import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import { BoardCatalogProvider, useBoardCatalog, type BoardCatalog } from "@/ui/board-catalog";
 import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
 import { TooltipProvider } from "@/ui/components/tooltip";
@@ -330,7 +331,7 @@ function ApplicationBody(): JSX.Element {
 		},
 		[notices, workbench.owners],
 	);
-	const actions = useMemo<ShellActions>(
+	const composed = useMemo(
 		() =>
 			createShellActions({
 				setTheme,
@@ -342,6 +343,11 @@ function ApplicationBody(): JSX.Element {
 				openSettings,
 			}),
 		[setTheme, addressing, panes, catalog, notices, fullscreen, openSettings],
+	);
+	const openBeside = useBesideOpening(panes, composed);
+	const actions = useMemo<ShellActions>(
+		() => ({ ...composed, openBeside }),
+		[composed, openBeside],
 	);
 	// Which variant of its board a pane shows is part of the board key, so
 	// asking for another one is asking the shell to show a different board.

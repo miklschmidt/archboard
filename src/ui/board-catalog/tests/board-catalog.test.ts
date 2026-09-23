@@ -7,8 +7,17 @@ import {
 	listedBoardKey,
 	nothingBuiltOn,
 } from "@/ui/board-catalog/listing";
-import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
+import type { SemanticBoardEntry, SemanticBoardListing } from "@/ui/semantic-board-canvas";
 import type { BrowserPaneListing } from "@/ui/types";
+
+/**
+ * A vault listing of these boards, with the dogfood levels.
+ * @param boards The boards.
+ * @returns The listing.
+ */
+function vault(boards: readonly SemanticBoardEntry[]): SemanticBoardListing {
+	return { levels: ["system", "service", "module"], boards: [...boards] };
+}
 
 const VAULT: readonly SemanticBoardEntry[] = [
 	{
@@ -53,7 +62,7 @@ test("named variants retain their addresses and every current spelling selects t
 		{ id: "next", name: "Queue @ edge", lifecycle: "draft", parentId: "now" },
 	];
 	const listing = composeListing(
-		[
+		vault([
 			{
 				name: "Checkout",
 				key: "checkout",
@@ -63,16 +72,14 @@ test("named variants retain their addresses and every current spelling selects t
 				links: [],
 				description: null,
 			},
-		],
+		]),
 		undefined,
 	);
-	expect(listing.boards.map((board) => board.level)).toEqual(["service", "service", "service"]);
-	expect(
-		listing.boards.map(({ key, identity, variant }) => [key, identity.variant, variant?.lifecycle]),
-	).toEqual([
-		["checkout@old", "Initial", "historical"],
-		["checkout", "Queued ingest", "current"],
-		["checkout@next", "Queue @ edge", "draft"],
+	expect(listing.levels).toEqual(["system", "service", "module"]);
+	expect(listing.boards.flatMap((board) => board.variants.map((variant) => variant.key))).toEqual([
+		"checkout@old",
+		"checkout",
+		"checkout@next",
 	]);
 	for (const address of [
 		"checkout",
@@ -94,10 +101,15 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 		{ id: "alt", name: "Batch ingest", lifecycle: "draft", parentId: "plan" },
 	];
 	const listing = composeListing(
-		[{ name: "Ingest", key: "ingest", opens: "plan", variants, links: [], description: null }],
+		vault([
+			{ name: "Ingest", key: "ingest", opens: "plan", variants, links: [], description: null },
+		]),
 		undefined,
 	);
-	expect(listing.boards.map((board) => board.key)).toEqual(["ingest", "ingest@alt"]);
+	expect(listing.boards.flatMap((board) => board.variants.map((variant) => variant.key))).toEqual([
+		"ingest",
+		"ingest@alt",
+	]);
 	expect(listedBoardKey(listing, "ingest")).toBe("ingest");
 	expect(listedBoardKey(listing, "ingest@alt")).toBe("ingest@alt");
 	expect(listedBoardKey(listing, "ingest@current")).toBe("ingest@current");
@@ -105,7 +117,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 	// one nobody listed say nothing of the kind.
 	expect(nothingBuiltOn(listing, "Ingest")).toBe(true);
 	const others = composeListing(
-		[
+		vault([
 			...VAULT,
 			{
 				name: "Broken",
@@ -116,7 +128,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 				description: null,
 				error: "invalid",
 			},
-		],
+		]),
 		undefined,
 	);
 	expect(["Checkout", "Broken", "Unlisted"].map((board) => nothingBuiltOn(others, board))).toEqual([
@@ -126,9 +138,9 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 	]);
 });
 
-test("an unreadable board remains openable without hiding healthy variants", () => {
+test("an unreadable board stays listed with its error beside the healthy ones", () => {
 	const listing = composeListing(
-		[
+		vault([
 			...VAULT,
 			{
 				name: "Broken",
@@ -139,24 +151,23 @@ test("an unreadable board remains openable without hiding healthy variants", () 
 				description: null,
 				error: "invalid board",
 			},
-		],
+		]),
 		undefined,
 	);
-	expect(listing.boards).toHaveLength(3);
-	expect(listing.boards.at(-1)).toEqual({
-		key: "broken",
-		identity: { board: "Broken", variant: "Unavailable" },
-		error: "invalid board",
-	});
+	expect(listing.boards.map((board) => [board.key, board.error ?? null])).toEqual([
+		["checkout", null],
+		["payments", null],
+		["broken", "invalid board"],
+	]);
 });
 
 test("the vault and the live panes are listed independently of each other", () => {
-	const both = composeListing(VAULT, PANES);
+	const both = composeListing(vault(VAULT), PANES);
 	expect(both.boards.map((board) => board.key)).toEqual(["checkout", "payments"]);
 	// Every pane still on screen, whether or not two of them share a board.
 	expect(both.onScreen.map((pane) => pane.paneId)).toEqual(["A", "B"]);
 
-	const vaultOnly = composeListing(VAULT, undefined);
+	const vaultOnly = composeListing(vault(VAULT), undefined);
 	expect(vaultOnly.boards).toHaveLength(2);
 	expect(vaultOnly.onScreen).toEqual([]);
 

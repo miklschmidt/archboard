@@ -128,10 +128,7 @@ function useBoardCatalog(): BoardCatalog {
 	const vault = useQuery(semanticBoardListQuery());
 	const panes = useQuery(paneInventoryQuery());
 	const commands = useMemo(() => catalogCommands(client), [client]);
-	const listing = useMemo(
-		() => composeListing(vault.data?.boards, panes.data),
-		[vault.data, panes.data],
-	);
+	const listing = useMemo(() => composeListing(vault.data, panes.data), [vault.data, panes.data]);
 	const error = listingError(vault.error, panes.error, panes.data !== undefined);
 	return useMemo(
 		() => ({ listing, error, loading: vault.isPending, ...commands }),

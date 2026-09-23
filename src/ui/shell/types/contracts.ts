@@ -117,6 +117,12 @@ interface ShellActions {
 	 * @param paneId Which pane shows it; the active one when none is named.
 	 */
 	selectBoard(key: string, paneId?: string): void;
+	/**
+	 * Show a board beside the one being read: in the pane that is not active,
+	 * adding the second pane when there is only one.
+	 * @param key The board key.
+	 */
+	openBeside(key: string): void;
 	refreshBoards(): void;
 	selectPane(paneId: string): void;
 	addPane(): void;
