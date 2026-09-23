@@ -62,7 +62,11 @@ function harness(statuses: readonly ("idle" | "active")[], startFails = false, r
 describe("a terminal workhorse outcome reported to the coordinator", () => {
 	test("starts one turn once the coordinator is idle, carrying the outcome under a minted identity", async () => {
 		const h = harness(["active", "active", "idle"]);
-		const result = await h.port.report({ threadId: h.threadId, text: '{"type":"completed"}' });
+		const result = await h.port.report({
+			threadId: h.threadId,
+			text: '{"type":"completed"}',
+			waiting: false,
+		});
 		expect(result).toEqual({ attempted: true, outcome: "delivered", reason: null });
 		expect(h.starts).toHaveLength(1);
 		expect(h.starts[0]?.prompt).toContain('{"type":"completed"}');
@@ -72,7 +76,7 @@ describe("a terminal workhorse outcome reported to the coordinator", () => {
 
 	test("is reported busy, and starts nothing, when the coordinator never becomes idle in the bound", async () => {
 		const h = harness(["active"]);
-		expect(await h.port.report({ threadId: h.threadId, text: "{}" })).toBe("busy");
+		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toBe("busy");
 		expect(h.starts).toHaveLength(0);
 		expect(h.waitedMs()).toBeGreaterThanOrEqual(COORDINATOR_IDLE_WAIT_MS);
 	});
@@ -80,13 +84,13 @@ describe("a terminal workhorse outcome reported to the coordinator", () => {
 	test("is reported busy, and starts nothing, while a recording holds the voice", async () => {
 		// Whatever the coordinator answered would be spoken into the video; busy has it injected.
 		const h = harness(["idle"], false, true);
-		expect(await h.port.report({ threadId: h.threadId, text: "{}" })).toBe("busy");
+		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toBe("busy");
 		expect(h.starts).toHaveLength(0);
 	});
 
 	test("says the outcome is unknown when the start may or may not have landed", async () => {
 		const h = harness(["idle"], true);
-		expect(await h.port.report({ threadId: h.threadId, text: "{}" })).toEqual({
+		expect(await h.port.report({ threadId: h.threadId, text: "{}", waiting: false })).toEqual({
 			attempted: true,
 			outcome: "outcome_unknown",
 			reason: "response_lost",

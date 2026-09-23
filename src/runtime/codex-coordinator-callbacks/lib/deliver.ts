@@ -294,8 +294,11 @@ async function deliverThroughInjection(
 	});
 }
 
-/** The operation outcomes after which nothing more will come: what a waiting person wants to hear. */
-const TERMINAL_OPERATION_TYPES: ReadonlySet<string> = new Set([
+/**
+ * The operation outcomes a waiting user wants to hear: the work ended, or it waits on them
+ * (`attention`), which is not an end (TASK-316).
+ */
+const REPORTED_OPERATION_TYPES: ReadonlySet<string> = new Set([
 	"completed",
 	"failed",
 	"attention",
@@ -303,12 +306,12 @@ const TERMINAL_OPERATION_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Whether a callback is a terminal workhorse outcome the coordinator should be run with.
+ * Whether a callback is a workhorse outcome the coordinator should be run with.
  * @param callback - The normalized callback.
- * @returns True for an operation callback after which nothing more will come.
+ * @returns True for an operation callback that ended the work or waits on the user.
  */
-function reportsTerminalOutcome(callback: CoordinatorCallback): boolean {
-	return callback.kind === "operation" && TERMINAL_OPERATION_TYPES.has(callback.type);
+function reportsOutcome(callback: CoordinatorCallback): boolean {
+	return callback.kind === "operation" && REPORTED_OPERATION_TYPES.has(callback.type);
 }
 
 /**
@@ -333,7 +336,8 @@ async function deliverThroughCoordinatorTurn(
 ): Promise<CoordinatorCallbackDelivery> {
 	const threadId = callback.correlation.coordinatorThreadId;
 	const attemptedAtMs = (options.now ?? Date.now)();
-	const result = threadId === null ? "busy" : await port.report({ threadId, text });
+	const waiting = callback.kind === "operation" && callback.type === "attention";
+	const result = threadId === null ? "busy" : await port.report({ threadId, text, waiting });
 	if (result === "busy") {
 		return deliverThroughInjection(callback, options, isDisposed, evidence, text);
 	}
@@ -448,7 +452,7 @@ function deliverOperationWhileVoiceIsLive(
 	evidence: CallbackDeliveryEvidence,
 	text: string,
 ): Promise<CoordinatorCallbackDelivery> {
-	if (!reportsTerminalOutcome(callback)) {
+	if (!reportsOutcome(callback)) {
 		return Promise.resolve(recordOnly(callback, evidence, text, "recorded_only"));
 	}
 	const turnPort = options.coordinatorTurn;
