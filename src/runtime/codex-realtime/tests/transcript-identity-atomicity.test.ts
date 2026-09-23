@@ -5,7 +5,7 @@ import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,

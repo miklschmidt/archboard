@@ -2,7 +2,7 @@ import type { ApprovalSettlement } from "@/runtime/codex-approvals";
 import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
 import { createTurnStartParams, type TurnStartParams } from "@/runtime/codex-instructions";
 import type { SessionParams, SessionResponse } from "@/runtime/codex-session";
-import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
 import { type IdentityAuthority, type TurnId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexSpokenApprovalGateOptions,

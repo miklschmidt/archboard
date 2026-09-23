@@ -1,9 +1,11 @@
 ---
 id: TASK-324
 title: 'Code names say Archboard server, and host only where it means something else'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-23 23:24'
+updated_date: '2026-09-23 23:39'
 labels:
   - naming
 dependencies:
@@ -25,3 +27,12 @@ After TASK-323 renamed the canvas server to the Archboard server in prose, code 
 - [ ] #2 Host remains only where it means the renderer environment, the HTTP Host header or a repository host
 - [ ] #3 Comments follow the same names
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move modules and files named after the canvas or host that mean the Archboard server (src/server/canvas -> src/server/archboard, engine canvas-* -> server-*, shared/canvas-startup-terminal, shared/codex-realtime-host, tests/system/canvas-state and owned-canvas support), rewriting imports, package.json lanes, lint config and doc paths. Commit.
+2. Rename exported and local identifiers that mean the server (canvas -> server, host -> server or what the thing is); CANVAS_SERVICE_NAME -> ARCHBOARD_SERVICE_NAME with value archboard-server. Commit.
+3. Sweep comments, test names, log and error text and model-facing text for canvas and host meaning the server. Commit.
+4. Gate lanes one at a time; list stale vault code bindings for the parent.
+<!-- SECTION:PLAN:END -->

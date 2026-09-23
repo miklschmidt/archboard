@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
 // The public path a person and an agent use: commands create, change, read and

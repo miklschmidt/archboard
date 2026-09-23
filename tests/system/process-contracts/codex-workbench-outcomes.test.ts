@@ -9,8 +9,8 @@ import {
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
-} from "../canvas-state/support/codex-production.ts";
-import { createRequester, waitFor } from "../canvas-state/support/http.ts";
+} from "../server-state/support/codex-production.ts";
+import { createRequester, waitFor } from "../server-state/support/http.ts";
 import {
 	approveOrdinary,
 	pane,

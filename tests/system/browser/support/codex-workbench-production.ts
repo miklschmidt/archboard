@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import type { ProductionFixture } from "../../canvas-state/support/codex-production.ts";
+import type { ProductionFixture } from "../../server-state/support/codex-production.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
 interface WorkbenchControlOperability {

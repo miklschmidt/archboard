@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getHealth, getSyncStatus } from "@/runtime/engine/canvas-client";
+import { getHealth, getSyncStatus } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { readPidFile } from "@/runtime/engine/pidfile";
 import { canvasPort, isCanvasHealth } from "@/runtime/engine/spawn";

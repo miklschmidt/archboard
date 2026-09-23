@@ -20,7 +20,7 @@ import {
 	setRequestedBoard,
 	setWriteDoing,
 	setWriteSession,
-} from "@/runtime/engine/canvas-client";
+} from "@/runtime/engine/server-client";
 import { packageVersion } from "@/runtime/engine/package-version";
 import { CLI_INTERRUPT_CLEANUP_MS } from "@/shared/timing/timing";
 import type { CommandRoutes, RouteOwner } from "@/cli/command-routing/lib/route";

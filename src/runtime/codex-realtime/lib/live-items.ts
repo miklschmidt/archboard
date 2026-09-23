@@ -2,7 +2,7 @@ import {
 	parseRealtimeItemId,
 	type RealtimeState,
 	type RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type { ItemId, TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
 import * as phase from "@/runtime/codex-realtime/lib/phase";
 import type { RealtimeSessionOps } from "@/runtime/codex-realtime/lib/session-ops";

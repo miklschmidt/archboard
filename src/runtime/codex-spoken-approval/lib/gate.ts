@@ -2,7 +2,7 @@ import type {
 	RealtimeCorrelation,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import { IdentityValidationError, type TurnId } from "@/shared/codex-workbench-identity";
 import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
 import type {

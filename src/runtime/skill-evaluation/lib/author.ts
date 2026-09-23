@@ -16,7 +16,7 @@ import {
 	type CompletedRun,
 	type RunStatus,
 } from "@/runtime/skill-evaluation/lib/blind";
-import { startCanvas, type OwnedCanvas } from "@/runtime/skill-evaluation/lib/canvas";
+import { startCanvas, type OwnedCanvas } from "@/runtime/skill-evaluation/lib/server";
 import {
 	captureDeclared,
 	expandCaptures,

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import {
 	openTestPane,

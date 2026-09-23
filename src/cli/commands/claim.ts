@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { claimBoard, releaseBoardClaim } from "@/runtime/engine/canvas-client";
+import { claimBoard, releaseBoardClaim } from "@/runtime/engine/server-client";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { claimRefusals, commonRefusals } from "@/cli/command-contract/common";
 

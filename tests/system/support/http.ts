@@ -1,4 +1,4 @@
-import type { OwnedCanvas } from "./owned-canvas.ts";
+import type { OwnedCanvas } from "./owned-server.ts";
 
 export interface JsonResponse<T> {
 	status: number;

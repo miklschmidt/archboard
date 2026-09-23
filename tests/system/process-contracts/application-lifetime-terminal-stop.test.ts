@@ -4,9 +4,9 @@ import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createCanvasApplicationLifetime } from "../../../src/server/canvas/index.ts";
+import { createCanvasApplicationLifetime } from "../../../src/server/archboard/index.ts";
 import { TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS } from "../support/timing.ts";
-import { processExists, waitForProcessExit } from "../support/owned-canvas.ts";
+import { processExists, waitForProcessExit } from "../support/owned-server.ts";
 
 test("application timeout force-reaps a real process group before stop resolves", async () => {
 	const resources = new AsyncDisposableStack();

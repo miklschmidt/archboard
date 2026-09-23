@@ -8,7 +8,7 @@ import { VaultDiagnosticSchema, type VaultDiagnostic } from "@/shared/semantic-p
 
 import { z } from "zod";
 import { CliUsageError, type CommandContext } from "@/cli/command-contract/contract";
-import { currentExpectedVersion } from "@/runtime/engine/canvas-client";
+import { currentExpectedVersion } from "@/runtime/engine/server-client";
 import {
 	ReconciliationReportSchema,
 	type ReconciliationReport,

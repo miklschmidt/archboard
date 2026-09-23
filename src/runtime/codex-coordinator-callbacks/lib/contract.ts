@@ -22,7 +22,7 @@ import type {
 import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type {
 	ChildEpoch,
 	ChildId,

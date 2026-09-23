@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { BoardListingSchema } from "@/shared/semantic-board/index";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
 // Which variant a write lands on can be said on the command line, as it is for

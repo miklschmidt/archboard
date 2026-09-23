@@ -7,7 +7,7 @@
 // answers are the smallest true ones rather than a second implementation.
 
 import { z } from "zod";
-import { CANVAS_SERVICE_NAME } from "../../../../src/runtime/engine/canvas-client.ts";
+import { CANVAS_SERVICE_NAME } from "../../../../src/runtime/engine/server-client.ts";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 

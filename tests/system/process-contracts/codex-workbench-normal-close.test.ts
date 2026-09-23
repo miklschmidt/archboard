@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { parseDynamicToolCallResponse } from "../../../src/runtime/codex-thread-tools/index.ts";
-import { waitFor } from "../canvas-state/support/http.ts";
-import { processExists } from "../support/owned-canvas.ts";
+import { waitFor } from "../server-state/support/http.ts";
+import { processExists } from "../support/owned-server.ts";
 import { records, reverseResponses, snapshot } from "./support/codex-workbench-lifecycle.ts";
 import { mutationCount, startLinkedWorkbench } from "./support/codex-workbench-process-harness.ts";
 import { extendTerminalFixture } from "./support/codex-workbench-terminal-controls.ts";

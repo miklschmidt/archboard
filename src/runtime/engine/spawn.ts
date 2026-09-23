@@ -12,7 +12,7 @@ import {
 	foreignServiceError,
 	markCanvasIdentityVerified,
 	type HealthStatus,
-} from "@/runtime/engine/canvas-client";
+} from "@/runtime/engine/server-client";
 
 import { readPidFile, removePidFile } from "@/runtime/engine/pidfile";
 import {
@@ -21,14 +21,14 @@ import {
 } from "@/runtime/codex-process/executable";
 import { createCodexProcessGroupOperations } from "@/runtime/codex-process/process-group";
 import { CANVAS_STARTUP_READINESS_MS } from "@/shared/timing/timing";
-import { CANVAS_STARTUP_TERMINAL_FD_ENV } from "@/shared/canvas-startup-terminal";
+import { CANVAS_STARTUP_TERMINAL_FD_ENV } from "@/shared/server-startup-terminal";
 import { readProcessObservation } from "@/shared/process-observation";
 import {
 	completeFailedCanvasCleanup,
 	createCanvasStartupProtocolReader,
 	failedCanvasCleanupTiming,
 	type CanvasStartupProtocolReader,
-} from "@/runtime/engine/canvas-startup-cleanup";
+} from "@/runtime/engine/server-startup-cleanup";
 import { codedError, errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
 import {
 	canvasPort,
@@ -38,7 +38,7 @@ import {
 	spawnBindHost,
 	startupRefusal,
 	unreachableError,
-} from "@/runtime/engine/lib/canvas-spawn-target";
+} from "@/runtime/engine/lib/server-spawn-target";
 
 /**
  * Whether a server's exit message says another server owns the port or its

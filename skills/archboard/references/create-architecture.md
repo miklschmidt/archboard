@@ -48,7 +48,7 @@ Keep the real relationship kind when judging routing.
    repo-relative path.
 3. State the architecture in one payload and create the board. The evidence
    behind this one, from archboard's own source: the Archboard server's `editRoute`
-   (`src/server/canvas/lib/semantic-board-writes.ts`) calls
+   (`src/server/archboard/lib/semantic-board-writes.ts`) calls
    `writeSemanticBoard` (`src/runtime/semantic-board-store/lib/write.ts`), which
    takes the board's lease through `withBoardLock`
    (`src/runtime/engine/lib/board-lock-acquisition.ts`) and runs
@@ -64,7 +64,7 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
   "nodes": [
     { "name": "Agent", "kind": "external", "responsibility": "Runs archboard semantic edit" },
     { "name": "Edit route", "kind": "function", "responsibility": "Accepts one edit and hands it to the store",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/canvas/lib/semantic-board-writes.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts" } },
     { "name": "Board store", "kind": "module", "responsibility": "The one place a board is read or written",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
     { "name": "writeSemanticBoard", "kind": "function", "parent": "Board store",

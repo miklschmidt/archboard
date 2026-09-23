@@ -17,7 +17,7 @@ import { cliContractRegistry, runCli } from "@/cli/commands/run";
 import { commanderTree, type CommandRoute } from "@/cli/command-routing/index";
 import { applyCliBootstrap, isHelpInvocation } from "@/cli/command-contract/bootstrap";
 import { SHARED_OPTION_KEYS, sharedOptionsFor } from "@/cli/command-contract/shared-options";
-import { currentRequestedBoard, currentWriteDoing } from "@/runtime/engine/canvas-client";
+import { currentRequestedBoard, currentWriteDoing } from "@/runtime/engine/server-client";
 
 const registry = cliContractRegistry();
 const routes = Object.fromEntries(

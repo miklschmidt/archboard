@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
 	canvasTestEnvironment,

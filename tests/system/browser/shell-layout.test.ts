@@ -15,7 +15,7 @@ import { readThemeColors, themeColor } from "@/shared/theme/server";
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
 	canvasTestEnvironment,

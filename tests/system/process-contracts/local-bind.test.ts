@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 
 import { z } from "zod";
 
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
 import {
 	availablePort,
@@ -17,7 +17,7 @@ import {
 import { plantStaticProbes } from "./support/static-probes.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const fixture = join(import.meta.dir, "fixtures/canvas-start-environment.ts");
+const fixture = join(import.meta.dir, "fixtures/server-start-environment.ts");
 const healthFixture = join(import.meta.dir, "fixtures/health-responder.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
 const HealthResponderReadySchema = ReadySchema.extend({ port: z.number().int().positive() });

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/canvas-client";
+import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/server-client";
 import { paneWords } from "@/runtime/engine/panes";
 import { CliUsageError, defineCommand, type TokenParameter } from "@/cli/command-contract/contract";
 import { PaneRefSchema } from "@/cli/command-contract/schemas";

@@ -27,7 +27,7 @@ import {
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "../../../../src/shared/codex-workbench-identity/index.ts";
-import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-host/index.ts";
+import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-contract/index.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const CODEX_VERSION = "codex-cli 0.155.1";

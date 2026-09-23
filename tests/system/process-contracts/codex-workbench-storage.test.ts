@@ -6,9 +6,9 @@ import {
 	openApplicationSocket,
 	prepareProductionFixture,
 	type WorkbenchResult,
-} from "../canvas-state/support/codex-production.ts";
-import { createRequester, waitFor } from "../canvas-state/support/http.ts";
-import { processExists } from "../support/owned-canvas.ts";
+} from "../server-state/support/codex-production.ts";
+import { createRequester, waitFor } from "../server-state/support/http.ts";
+import { processExists } from "../support/owned-server.ts";
 import {
 	extendFixture,
 	codexWorkbenchRoot,
