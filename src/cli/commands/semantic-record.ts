@@ -18,8 +18,8 @@ import { RecordingContainerSchema, type RecordingState } from "@/shared/walkthro
 import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
-	discardSemanticBoardOnCanvas,
-	readSemanticBoardOnCanvas,
+	discardSemanticBoardOnServer,
+	readSemanticBoardOnServer,
 } from "@/runtime/semantic-board-client/index";
 import { recordWalkthrough } from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
@@ -198,7 +198,7 @@ async function discardRecorded(
 	say: (line: string) => void,
 ): Promise<boolean> {
 	try {
-		await discardSemanticBoardOnCanvas(board.name, board.version);
+		await discardSemanticBoardOnServer(board.name, board.version);
 		return true;
 	} catch (error) {
 		say(
@@ -344,11 +344,11 @@ const semanticRecordContract = defineCommand({
 		const discard = input.discard === true;
 		requireDoingForDiscard(discard);
 		await context.require("server", "semantic record");
-		const board = await readSemanticBoardOnCanvas(input.name);
+		const board = await readSemanticBoardOnServer(input.name);
 		const variant = askedVariant(board, input.variant);
 		const walkthrough = chosenWalkthrough(variant.content.walkthroughs, input.walkthrough);
 		const made = await recordWalkthrough({
-			canvasUrl: ARCHBOARD_URL,
+			serverUrl: ARCHBOARD_URL,
 			boardKey: input.variant === undefined ? board.name : `${board.name}@${variant.id}`,
 			walkthrough: walkthrough.id,
 			container,

@@ -3,7 +3,7 @@
 // state, the mute toggle target, and stoppability.
 
 import type {
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeState,
 	RealtimeUnsubscribe,
 	RealtimeCorrelation,
@@ -67,7 +67,7 @@ function restartRefusal(run: Run, previous: Run): Error {
  * @param outcome What the host answered.
  * @returns True on an exact delivered confirmation.
  */
-function stopConfirmed(run: Run, outcome: Awaited<ReturnType<RealtimeHost["stop"]>>): boolean {
+function stopConfirmed(run: Run, outcome: Awaited<ReturnType<RealtimeServer["stop"]>>): boolean {
 	return (
 		outcome.outcome === "delivered" &&
 		outcome.sessionId === run.correlation.sessionId &&

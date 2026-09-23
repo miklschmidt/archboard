@@ -47,11 +47,11 @@ type BrowserRequestActionsAreExhaustive = AssertNoUnhandledAction<
 	Exclude<BrowserGatewayAction, BrowserRequest["action"]>
 >;
 
-interface CanvasCodexBrowserSocketSend {
+interface ServerCodexBrowserSocketSend {
 	readonly send: (message: unknown) => Promise<void>;
 }
 
-interface CanvasCodexBrowserWebSocket {
+interface ServerCodexBrowserWebSocket {
 	readonly readyState: number;
 	readonly send: (data: string, callback: (error?: Error) => void) => void;
 }
@@ -62,9 +62,9 @@ interface CanvasCodexBrowserWebSocket {
  * @param socket The socket.
  * @returns The send boundary.
  */
-function createCanvasCodexBrowserSocketSend(
-	socket: CanvasCodexBrowserWebSocket,
-): CanvasCodexBrowserSocketSend {
+function createServerCodexBrowserSocketSend(
+	socket: ServerCodexBrowserWebSocket,
+): ServerCodexBrowserSocketSend {
 	return Object.freeze({
 		/**
 		 * Send one message and wait for the socket to have taken it, so a failed
@@ -88,13 +88,13 @@ function createCanvasCodexBrowserSocketSend(
 	});
 }
 
-interface CanvasCodexBrowserSocketOwnerOptions {
+interface ServerCodexBrowserSocketOwnerOptions {
 	readonly gateway: CodexWorkbenchGateway;
 	/** Resolve the pane from server-owned socket registration, never request bytes. */
 	readonly paneForBrowser: (browserId: string) => string | null;
 }
 
-interface CanvasCodexBrowserSocketOwner {
+interface ServerCodexBrowserSocketOwner {
 	/**
 	 * Establish replacement ownership at socket acceptance, before the retired
 	 * instance can deliver its close event. A first-time pane may still defer
@@ -105,7 +105,7 @@ interface CanvasCodexBrowserSocketOwner {
 		instance: BrowserConnectionInstance,
 		browserId: string,
 		input: unknown,
-		transport: CanvasCodexBrowserSocketSend,
+		transport: ServerCodexBrowserSocketSend,
 	) => Promise<void>;
 	readonly close: (instance: BrowserConnectionInstance, browserId: string) => Promise<void>;
 	/** Wait for every event publication and close already owned by this generation. */
@@ -117,7 +117,7 @@ interface CanvasCodexBrowserSocketOwner {
 interface BrowserRequestCall {
 	readonly request: BrowserRequest;
 	readonly connection: BrowserWorkbenchConnection;
-	readonly transport: CanvasCodexBrowserSocketSend;
+	readonly transport: ServerCodexBrowserSocketSend;
 	readonly instance: BrowserConnectionInstance;
 	readonly browserId: string;
 }
@@ -139,7 +139,7 @@ function errorMessage(error: unknown): string {
  * @param value The answer.
  */
 async function sendResult(
-	transport: CanvasCodexBrowserSocketSend,
+	transport: ServerCodexBrowserSocketSend,
 	request: BrowserRequest,
 	value: unknown,
 ): Promise<void> {
@@ -162,7 +162,7 @@ async function sendResult(
  * @param value.snapshot The snapshot the browser now has.
  */
 async function sendPublishedResult(
-	transport: CanvasCodexBrowserSocketSend,
+	transport: ServerCodexBrowserSocketSend,
 	request: BrowserRequest,
 	connection: BrowserWorkbenchConnection,
 	value: { readonly snapshot: BrowserSnapshot },
@@ -176,9 +176,9 @@ async function sendPublishedResult(
  * @param options The gateway, and how a browser's pane is resolved.
  * @returns The owner.
  */
-function createCanvasCodexBrowserSocketOwner(
-	options: CanvasCodexBrowserSocketOwnerOptions,
-): CanvasCodexBrowserSocketOwner {
+function createServerCodexBrowserSocketOwner(
+	options: ServerCodexBrowserSocketOwnerOptions,
+): ServerCodexBrowserSocketOwner {
 	const subscriptions = new Map<BrowserConnectionInstance, () => void>();
 	const connections = new Map<BrowserConnectionInstance, BrowserWorkbenchConnection>();
 	const closePromises = new WeakMap<BrowserConnectionInstance, Promise<void>>();
@@ -269,7 +269,7 @@ function createCanvasCodexBrowserSocketOwner(
 	 * @returns When the socket has taken the refusal.
 	 */
 	const failure = async (
-		transport: CanvasCodexBrowserSocketSend,
+		transport: ServerCodexBrowserSocketSend,
 		requestId: string | null,
 		action: string | null,
 		error: unknown,
@@ -448,7 +448,7 @@ function createCanvasCodexBrowserSocketOwner(
 		instance: BrowserConnectionInstance,
 		browserId: string,
 		input: unknown,
-		transport: CanvasCodexBrowserSocketSend,
+		transport: ServerCodexBrowserSocketSend,
 	): Promise<void> => {
 		const parsed = BrowserRequestSchema.safeParse(input);
 		if (!parsed.success) {
@@ -505,10 +505,10 @@ function createCanvasCodexBrowserSocketOwner(
 
 export {
 	type BrowserRequestActionsAreExhaustive,
-	type CanvasCodexBrowserSocketSend,
-	type CanvasCodexBrowserWebSocket,
-	createCanvasCodexBrowserSocketSend,
-	type CanvasCodexBrowserSocketOwnerOptions,
-	type CanvasCodexBrowserSocketOwner,
-	createCanvasCodexBrowserSocketOwner,
+	type ServerCodexBrowserSocketSend,
+	type ServerCodexBrowserWebSocket,
+	createServerCodexBrowserSocketSend,
+	type ServerCodexBrowserSocketOwnerOptions,
+	type ServerCodexBrowserSocketOwner,
+	createServerCodexBrowserSocketOwner,
 };

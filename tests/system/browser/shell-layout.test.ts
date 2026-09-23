@@ -15,13 +15,13 @@ import { readThemeColors, themeColor } from "@/shared/theme/server";
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 } from "./support/agent-browser.ts";
 import { PERSISTENT_NOTICE_TEXT, publishActionableNotice } from "./support/shell-notices.ts";
 import type { DesktopShell, NoticeLayout, PaneBarLayout } from "./support/shell-contract-types.ts";
@@ -98,13 +98,13 @@ test(
 		const { ownerRoot } = browserTestRoots();
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath,
 			vault,
-			env: canvasTestEnvironment({ LOG_FILE_PATH: join(ownerRoot, "canvas.log") }),
+			env: serverTestEnvironment({ LOG_FILE_PATH: join(ownerRoot, "server.log") }),
 		});
 		resources.defer(() => canvas.dispose());
-		registerCanvasBase(canvas.base);
+		registerServerBase(canvas.base);
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(canvas);
 		await seedSemanticBoard(api, "fixedpoint");

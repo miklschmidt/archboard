@@ -109,8 +109,8 @@ function boardAdvice(panes: readonly PaneReport[], sameBoard: boolean): string[]
  * @returns The report.
  */
 function emptyReport(arrangement: Arrangement, context: PaneContext): PanesReport {
-	const where = context.canvasUrl
-		? ` Open ${context.canvasUrl} to put it in front of somebody.`
+	const where = context.serverUrl
+		? ` Open ${context.serverUrl} to put it in front of somebody.`
 		: "";
 	const summary = `No pane is open, so nothing is on screen.${where}`;
 	return {

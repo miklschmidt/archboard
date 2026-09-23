@@ -12,25 +12,25 @@ import type { OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@/shared/timing/timing";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
-import type { CanvasDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
+import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type {
-	CanvasBrowserProjectionBudget,
-	CanvasTimelineOwner,
+	ServerBrowserProjectionBudget,
+	ServerTimelineOwner,
 } from "@/server/archboard/lib/codex-workbench-timeline";
 import {
-	createCanvasThreadCandidateInventory,
-	createCanvasThreadLinkActions,
+	createServerThreadCandidateInventory,
+	createServerThreadLinkActions,
 } from "@/server/archboard/lib/codex-workbench-thread-links";
-import { createCanvasCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
-import { createCanvasBrowserAccountOwner } from "@/server/archboard/lib/codex-workbench-account";
-import { createCanvasRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
+import { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
+import { createServerBrowserAccountOwner } from "@/server/archboard/lib/codex-workbench-account";
+import { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 import { watchTranscriptChanges } from "@/server/archboard/lib/transcript-changes";
-import type { CanvasReadinessProcessFacts } from "@/server/archboard/lib/codex-workbench-readiness";
-import { createCanvasOrdinaryApprovalActions } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
+import type { ServerReadinessProcessFacts } from "@/server/archboard/lib/codex-workbench-readiness";
+import { createServerOrdinaryApprovalActions } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 import {
 	queueOwnerView,
 	UNAVAILABLE_QUEUE,
-	type CanvasBrowserBindingState,
+	type ServerBrowserBindingState,
 } from "@/server/archboard/lib/codex-workbench-browser-state";
 import { readBrowserOwnerProjection } from "@/server/archboard/lib/codex-workbench-owner-projection";
 
@@ -46,19 +46,19 @@ async function runMutation(operation: () => Promise<unknown>): Promise<BrowserAc
 }
 
 /** Everything the browser half of one generation's gateway is closed over. */
-interface CanvasBrowserGatewayInput {
+interface ServerBrowserGatewayInput {
 	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
-	readonly dynamicApprovals: CanvasDynamicApprovalOwner;
-	readonly state: CanvasBrowserBindingState;
+	readonly dynamicApprovals: ServerDynamicApprovalOwner;
+	readonly state: ServerBrowserBindingState;
 	readonly leaseLedger: BrowserLeaseLedger;
-	readonly timeline: CanvasTimelineOwner;
-	readonly budget: CanvasBrowserProjectionBudget;
+	readonly timeline: ServerTimelineOwner;
+	readonly budget: ServerBrowserProjectionBudget;
 	readonly onChange: (listener: () => void) => () => void;
 	readonly onAccountNotification: (
 		listener: (event: TransportServerNotification) => void,
 	) => () => void;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
-	readonly process: () => CanvasReadinessProcessFacts;
+	readonly process: () => ServerReadinessProcessFacts;
 	readonly checkoutRoot: string;
 	/** Injectable clock for the authoritative re-read floor. */
 	readonly now?: () => number;
@@ -78,8 +78,8 @@ interface CanvasBrowserGatewayInput {
  * owners, and the clock the re-read floor is measured on.
  * @returns The projection and actions half of the gateway's options.
  */
-function createCanvasBrowserGatewayOptions(
-	input: CanvasBrowserGatewayInput,
+function createServerBrowserGatewayOptions(
+	input: ServerBrowserGatewayInput,
 ): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
 	/**
@@ -178,8 +178,8 @@ function createCanvasBrowserGatewayOptions(
 		inFlightReread = { threadId, read };
 		return read;
 	};
-	const candidates = createCanvasThreadCandidateInventory(components.threadLink, components.epoch);
-	const threadLinks = createCanvasThreadLinkActions({
+	const candidates = createServerThreadCandidateInventory(components.threadLink, components.epoch);
+	const threadLinks = createServerThreadLinkActions({
 		candidates,
 		workhorse: components.workhorse,
 		threadLink: components.threadLink,
@@ -188,7 +188,7 @@ function createCanvasBrowserGatewayOptions(
 		identity: components.identity,
 		checkoutRoot: input.checkoutRoot,
 	});
-	const account = createCanvasBrowserAccountOwner({
+	const account = createServerBrowserAccountOwner({
 		components,
 		state,
 		clearQueue,
@@ -256,7 +256,7 @@ function createCanvasBrowserGatewayOptions(
 				? {}
 				: { onBrowserDisconnect: threadLinks.onBrowserDisconnect }),
 		},
-		text: createCanvasCanonicalTextActions({
+		text: createServerCanonicalTextActions({
 			identity: components.identity,
 			session: components.session,
 			contextForOperation: input.contextForOperation,
@@ -336,8 +336,8 @@ function createCanvasBrowserGatewayOptions(
 						),
 				),
 		},
-		realtime: createCanvasRealtimeActions(components),
-		ordinaryApprovals: createCanvasOrdinaryApprovalActions(components.approvals),
+		realtime: createServerRealtimeActions(components),
+		ordinaryApprovals: createServerOrdinaryApprovalActions(components.approvals),
 		dynamicApprovals: dynamicApprovals.browser,
 	};
 	const projection: BrowserProjectionPort = {
@@ -403,7 +403,7 @@ function createCanvasBrowserGatewayOptions(
 }
 
 export {
-	createCanvasBrowserGatewayOptions,
-	createCanvasOrdinaryApprovalActions,
-	type CanvasBrowserBindingState,
+	createServerBrowserGatewayOptions,
+	createServerOrdinaryApprovalActions,
+	type ServerBrowserBindingState,
 };

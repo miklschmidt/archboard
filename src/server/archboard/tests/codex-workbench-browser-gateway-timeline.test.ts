@@ -11,11 +11,11 @@ import type {
 	CodexTimelineProjectionInput,
 } from "../../codex-workbench/index.js";
 import {
-	createCanvasBrowserProjectionBudget,
-	createCanvasBrowserGatewayOptions,
-	createCanvasDynamicApprovalOwner,
-	type CanvasBrowserBindingState,
-	type CanvasTimelineOwner,
+	createServerBrowserProjectionBudget,
+	createServerBrowserGatewayOptions,
+	createServerDynamicApprovalOwner,
+	type ServerBrowserBindingState,
+	type ServerTimelineOwner,
 } from "../codex-workbench-adapters.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import { runningProcessFacts } from "./support/codex-workbench-process-fixture.js";
@@ -84,7 +84,7 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		} | null;
 		retire: { paneId: string; connection: object } | null;
 	} = { read: null, retire: null };
-	const timeline: CanvasTimelineOwner = {
+	const timeline: ServerTimelineOwner = {
 		read: (paneId, revision, receivedLink, capable, receivedConnection) => {
 			received.read = {
 				paneId,
@@ -120,8 +120,8 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		login: { kind: "login", state: "idle" },
 		queue: { kind: "codex_queue", submissions: null },
 		queueThreadId: null,
-	} satisfies CanvasBrowserBindingState;
-	const dynamicApprovals = createCanvasDynamicApprovalOwner({
+	} satisfies ServerBrowserBindingState;
+	const dynamicApprovals = createServerDynamicApprovalOwner({
 		identity: authorities,
 		now: () => 1,
 		bindingForCaller: () => ({
@@ -134,8 +134,8 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 			},
 		}),
 	});
-	const budget = createCanvasBrowserProjectionBudget();
-	const options = createCanvasBrowserGatewayOptions({
+	const budget = createServerBrowserProjectionBudget();
+	const options = createServerBrowserGatewayOptions({
 		components,
 		dynamicApprovals,
 		state,

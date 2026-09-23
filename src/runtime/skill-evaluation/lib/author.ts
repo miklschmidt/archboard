@@ -16,7 +16,7 @@ import {
 	type CompletedRun,
 	type RunStatus,
 } from "@/runtime/skill-evaluation/lib/blind";
-import { startCanvas, type OwnedCanvas } from "@/runtime/skill-evaluation/lib/server";
+import { startServer, type OwnedServer } from "@/runtime/skill-evaluation/lib/server";
 import {
 	captureDeclared,
 	expandCaptures,
@@ -109,7 +109,7 @@ interface AuthorRecord {
 interface RunWorld {
 	readonly paths: RunPaths;
 	readonly cli: CliContext;
-	readonly canvas: OwnedCanvas;
+	readonly canvas: OwnedServer;
 	/** The Flask commit checked out, or null for a planning scenario's empty repository. */
 	readonly commit: string | null;
 }
@@ -140,7 +140,7 @@ async function bringUp(job: RunJob): Promise<RunWorld> {
 		operatorAuthFile(),
 		authorConfigToml(job.pins.codex.author, paths),
 	);
-	const canvas = await startCanvas(
+	const canvas = await startServer(
 		job.checkout,
 		paths,
 		runEnvironment(paths, "http://127.0.0.1:0"),

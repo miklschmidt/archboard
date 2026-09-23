@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { join } from "node:path";
 
-import { TEST_CANVAS_HEALTH_POLL_MS, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS } from "./timing.ts";
+import { TEST_SERVER_HEALTH_POLL_MS, TEST_SERVER_SHUTDOWN_TIMEOUT_MS } from "./timing.ts";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
@@ -42,7 +42,7 @@ async function inspectUntilProven(
 ): Promise<ReturnType<GroupOperations["inspect"]>> {
 	let status = operations.inspect(group);
 	while (status === "unproven" && Date.now() < deadline) {
-		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+		await sleep(TEST_SERVER_HEALTH_POLL_MS);
 		status = operations.inspect(group);
 	}
 	return status;
@@ -55,7 +55,7 @@ async function waitForQuiescence(
 ): Promise<ReturnType<GroupOperations["inspect"]>> {
 	let status = operations.inspect(group);
 	while ((status === "owned" || status === "unproven") && Date.now() < deadline) {
-		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+		await sleep(TEST_SERVER_HEALTH_POLL_MS);
 		status = operations.inspect(group);
 	}
 	return status;
@@ -65,7 +65,7 @@ async function stopChildGroup(
 	group: CodexProcessGroupIdentity,
 	operations: GroupOperations,
 ): Promise<void> {
-	let deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	let deadline = Date.now() + TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 	let status = await inspectUntilProven(group, operations, deadline);
 	if (status === "quiescent") return;
 	if (status !== "owned") {
@@ -74,12 +74,12 @@ async function stopChildGroup(
 		);
 	}
 	operations.signal(group, "SIGTERM");
-	deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	deadline = Date.now() + TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 	status = await waitForQuiescence(group, operations, deadline);
 	if (status === "owned") {
 		operations.signal(group, "SIGKILL");
 	}
-	deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	deadline = Date.now() + TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 	const final = status === "owned" ? await waitForQuiescence(group, operations, deadline) : status;
 	if (final !== "quiescent") {
 		throw new Error(
@@ -88,12 +88,12 @@ async function stopChildGroup(
 	}
 }
 
-function removeExactStorageLock(storageLock: string, canvasPid: number): void {
+function removeExactStorageLock(storageLock: string, serverPid: number): void {
 	try {
 		const owner = fs.readFileSync(storageLock, "utf8");
-		if (owner !== `${canvasPid}\n`) {
+		if (owner !== `${serverPid}\n`) {
 			throw new Error(
-				`Refusing to remove Codex storage lock ${storageLock}: expected owner ${canvasPid}, received ${JSON.stringify(owner)}.`,
+				`Refusing to remove Codex storage lock ${storageLock}: expected owner ${serverPid}, received ${JSON.stringify(owner)}.`,
 			);
 		}
 		fs.unlinkSync(storageLock);
@@ -104,19 +104,19 @@ function removeExactStorageLock(storageLock: string, canvasPid: number): void {
 	}
 }
 
-type ForcedCanvasParentOutcome =
+type ForcedServerParentOutcome =
 	| { readonly exited: true }
 	| { readonly exited: false; readonly failure: Error };
 
-interface CompleteCapturedCanvasCleanupOptions {
+interface CompleteCapturedServerCleanupOptions {
 	readonly groups: readonly CodexProcessGroupIdentity[];
 	readonly operations: Pick<CodexProcessGroupOperations, "inspect" | "signal">;
-	readonly parent: ForcedCanvasParentOutcome;
+	readonly parent: ForcedServerParentOutcome;
 	readonly removeStorageLock: () => void;
 }
 
-async function completeCapturedCanvasCleanup(
-	options: CompleteCapturedCanvasCleanupOptions,
+async function completeCapturedServerCleanup(
+	options: CompleteCapturedServerCleanupOptions,
 ): Promise<void> {
 	const failures: unknown[] = options.parent.exited ? [] : [options.parent.failure];
 	for (const group of options.groups) {
@@ -144,16 +144,16 @@ async function completeCapturedCanvasCleanup(
 	}
 }
 
-interface ForcedCanvasCleanup {
-	complete(parent: ForcedCanvasParentOutcome): Promise<void>;
+interface ForcedServerCleanup {
+	complete(parent: ForcedServerParentOutcome): Promise<void>;
 }
 
 /** Capture exact child ownership before SIGKILL makes the parent process tree unavailable. */
-function captureForcedCanvasCleanup(options: {
-	canvasPid: number;
+function captureForcedServerCleanup(options: {
+	serverPid: number;
 	xdgState: string;
-}): ForcedCanvasCleanup {
-	const groups = directChildGroups(options.canvasPid);
+}): ForcedServerCleanup {
+	const groups = directChildGroups(options.serverPid);
 	const stateRoot =
 		process.platform === "darwin"
 			? join(
@@ -172,20 +172,20 @@ function captureForcedCanvasCleanup(options: {
 	const operations = createCodexProcessGroupOperations();
 	return {
 		complete(parent) {
-			return completeCapturedCanvasCleanup({
+			return completeCapturedServerCleanup({
 				groups,
 				operations,
 				parent,
-				removeStorageLock: () => removeExactStorageLock(storageLock, options.canvasPid),
+				removeStorageLock: () => removeExactStorageLock(storageLock, options.serverPid),
 			});
 		},
 	};
 }
 
 export {
-	type ForcedCanvasParentOutcome,
-	type CompleteCapturedCanvasCleanupOptions,
-	completeCapturedCanvasCleanup,
-	type ForcedCanvasCleanup,
-	captureForcedCanvasCleanup,
+	type ForcedServerParentOutcome,
+	type CompleteCapturedServerCleanupOptions,
+	completeCapturedServerCleanup,
+	type ForcedServerCleanup,
+	captureForcedServerCleanup,
 };

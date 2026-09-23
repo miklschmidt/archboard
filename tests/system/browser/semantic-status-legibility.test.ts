@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
@@ -180,9 +180,9 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	policy.nodeKinds["datastore"]!.color = "amber";
 	policy.groups = { "write-path": { name: "the write path" }, payments: { name: "payments" } };
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(policy));
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 
 	// The architecture as it stands: two parts of one effort, one of another,

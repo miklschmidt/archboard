@@ -9,7 +9,7 @@ import {
  * The one key a canvas keeps its thread link under. A canvas holds one
  * conversation whichever pane speaks, so every pane addresses this entry.
  */
-const CANVAS_LINK_KEY = "canvas";
+const SERVER_LINK_KEY = "server";
 
 /**
  * Refuse a missing or empty pane identity, as the store behind this would.
@@ -47,11 +47,11 @@ function forPane(binding: ThreadLinkBindingSnapshot, paneId: string): ThreadLink
  * @param expected The token the caller read, or null.
  * @returns The token the store compares.
  */
-function toCanvas(expected: ThreadLinkCasToken | null): ThreadLinkCasToken | null {
+function toServerLink(expected: ThreadLinkCasToken | null): ThreadLinkCasToken | null {
 	if (expected === null || typeof expected !== "object") {
 		return expected;
 	}
-	return { ...expected, paneId: CANVAS_LINK_KEY };
+	return { ...expected, paneId: SERVER_LINK_KEY };
 }
 
 /**
@@ -69,7 +69,7 @@ function toCanvas(expected: ThreadLinkCasToken | null): ThreadLinkCasToken | nul
  * @param port The per-key thread-link port.
  * @returns The canvas-scoped port.
  */
-function createCanvasThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort {
+function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort {
 	/**
 	 * The canvas link, labelled for one pane.
 	 * @param paneId The pane that asked.
@@ -77,7 +77,7 @@ function createCanvasThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 	 */
 	const read = (paneId: string): ThreadLinkBindingSnapshot => {
 		requirePaneId(paneId);
-		return forPane(port.read(CANVAS_LINK_KEY), paneId);
+		return forPane(port.read(SERVER_LINK_KEY), paneId);
 	};
 	return Object.freeze({
 		classify: port.classify,
@@ -94,8 +94,8 @@ function createCanvasThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 			return forPane(
 				port.compareAndSwap({
 					...input,
-					paneId: CANVAS_LINK_KEY,
-					expected: toCanvas(input.expected),
+					paneId: SERVER_LINK_KEY,
+					expected: toServerLink(input.expected),
 				}),
 				input.paneId,
 			);
@@ -108,7 +108,7 @@ function createCanvasThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 		 */
 		clear: (paneId, expected) => {
 			requirePaneId(paneId);
-			return forPane(port.clear(CANVAS_LINK_KEY, toCanvas(expected)), paneId);
+			return forPane(port.clear(SERVER_LINK_KEY, toServerLink(expected)), paneId);
 		},
 		/**
 		 * Classify a target and adopt it as the canvas link.
@@ -120,7 +120,7 @@ function createCanvasThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 		classifyAndBind: async (paneId, expected, target) => {
 			requirePaneId(paneId);
 			return forPane(
-				await port.classifyAndBind(CANVAS_LINK_KEY, toCanvas(expected), target),
+				await port.classifyAndBind(SERVER_LINK_KEY, toServerLink(expected), target),
 				paneId,
 			);
 		},
@@ -134,11 +134,11 @@ function createCanvasThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 		bindCandidate: async (paneId, expected, selectionId) => {
 			requirePaneId(paneId);
 			return forPane(
-				await port.bindCandidate(CANVAS_LINK_KEY, toCanvas(expected), selectionId),
+				await port.bindCandidate(SERVER_LINK_KEY, toServerLink(expected), selectionId),
 				paneId,
 			);
 		},
 	} satisfies CodexThreadLinkPort);
 }
 
-export { createCanvasThreadLink };
+export { createServerThreadLink };

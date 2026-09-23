@@ -32,7 +32,7 @@ describe("realtime media mute", () => {
 		await media.start(correlation());
 		expect(media.getSnapshot().state.phase).toBe("listening");
 		expect(env.localTrack.enabled).toBe(true);
-		const hostCallsBeforeMute = env.order.length;
+		const serverCallsBeforeMute = env.order.length;
 
 		const muted = await media.mute();
 
@@ -41,7 +41,7 @@ describe("realtime media mute", () => {
 		expect(env.localTrack.enabled).toBe(false);
 		// Nothing reached the wire: no stop, no further negotiation step.
 		expect(env.stopCount).toBe(0);
-		expect(env.order.length).toBe(hostCallsBeforeMute);
+		expect(env.order.length).toBe(serverCallsBeforeMute);
 		expect(published.at(-1)).toBe("muted");
 
 		const unmuted = await media.unmute();

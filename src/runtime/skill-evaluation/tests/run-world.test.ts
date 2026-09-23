@@ -67,7 +67,7 @@ test("what the author is given is in its world; what the harness keeps of the ru
 			paths.captures,
 			paths.manifest,
 			paths.codexHome,
-			paths.canvasLog,
+			paths.serverLog,
 		]) {
 			expect(inside(paths.world, kept), kept).toBe(false);
 			expect(inside(paths.root, kept), kept).toBe(true);

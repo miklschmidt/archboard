@@ -31,14 +31,14 @@ import {
 /**
  * A controller over one double.
  * @param transport The double.
- * @param hostRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The host intents this pane has an owner for.
  * @returns The controller.
  */
 function controllerFor(
 	transport: FakeTransport,
-	hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
+	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
 ): ThreadLinkController {
-	return createThreadLinkController({ capturePane: capturing(transport, hostRecoveryIntents) });
+	return createThreadLinkController({ capturePane: capturing(transport, serverRecoveryIntents) });
 }
 
 /**

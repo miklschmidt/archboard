@@ -75,17 +75,17 @@ const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1000;
 /** Bounds both retained parent-SIGTERM owners while they join cleanup before replaying the signal. */
 const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
 
-/** Canvas identity startup stays below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
-const TEST_CANVAS_STARTUP_TIMEOUT_MS = 15_000;
+/** Canvas identity startup stays below TEST_SERVER_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
+const TEST_SERVER_STARTUP_TIMEOUT_MS = 15_000;
 
 /**
  * How long one health request may wait inside the startup cap.
  *
- * It is ten TEST_CANVAS_HEALTH_POLL_MS intervals. A dead listener therefore
+ * It is ten TEST_SERVER_HEALTH_POLL_MS intervals. A dead listener therefore
  * costs at most half a second per attempt, while a connection refusal returns
  * immediately and follows the shorter poll cadence.
  */
-const TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS = 500;
+const TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS = 500;
 
 /**
  * How long startup waits between refused health connections.
@@ -94,17 +94,17 @@ const TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS = 500;
  * spin on a closed port; longer would make identity verification noticeably
  * lag behind a child that is already listening.
  */
-const TEST_CANVAS_HEALTH_POLL_MS = 50;
+const TEST_SERVER_HEALTH_POLL_MS = 50;
 
 /**
  * How long graceful shutdown gets before the owner escalates its exact child
  * to SIGKILL, and how long that forced exit gets to be observed.
  *
- * Two of these intervals plus TEST_CANVAS_STARTUP_TIMEOUT_MS must fit inside
- * TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS so the parent proof outlives the complete
+ * Two of these intervals plus TEST_SERVER_STARTUP_TIMEOUT_MS must fit inside
+ * TEST_SERVER_CHILD_EXIT_TIMEOUT_MS so the parent proof outlives the complete
  * child-owned cleanup path.
  */
-const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1000;
+const TEST_SERVER_SHUTDOWN_TIMEOUT_MS = 1000;
 
 /**
  * Outer threshold for one lifecycle proof subprocess, from spawn through cleanup.
@@ -113,7 +113,7 @@ const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1000;
  * beyond the server's 2,000 ms forced-exit fallback. A stuck proof therefore
  * fails with its PID and mode instead of hanging the whole board suite.
  */
-const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
+const TEST_SERVER_CHILD_EXIT_TIMEOUT_MS = 20_000;
 
 /** Bound the shipped CLI below the surrounding vault workflow case deadline. */
 const TEST_VAULT_CLI_TIMEOUT_MS = 20_000;
@@ -131,10 +131,10 @@ const TEST_RECORDING_CLI_MS = 90_000;
 const TEST_RECORDING_CASE_MS = TEST_RECORDING_CLI_MS + 30_000;
 
 /**
- * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
+ * Two shutdown intervals beyond TEST_SERVER_CHILD_EXIT_TIMEOUT_MS let the Bun
  * case receive rejection, assert it, and dispose a retained generation.
  */
-const TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+const TEST_SERVER_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 
 /**
  * Cap for the post-cleanup health probe.
@@ -143,16 +143,16 @@ const TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
  * answers from a refused connection without making four cleanup cases cost a
  * second each when a platform delays refusal.
  */
-const TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS = 250;
+const TEST_SERVER_LISTENER_PROBE_TIMEOUT_MS = 250;
 
 /**
  * Delay between the early-death fixture sending response headers and exiting.
  *
  * Half one health-poll interval lets `fetch` expose the response before the
  * body is cut off, while the public liveness check still observes the exit
- * inside the same TEST_CANVAS_HEALTH_POLL_MS window.
+ * inside the same TEST_SERVER_HEALTH_POLL_MS window.
  */
-const TEST_CANVAS_EARLY_DEATH_DELAY_MS = 25;
+const TEST_SERVER_EARLY_DEATH_DELAY_MS = 25;
 
 /**
  * How often synthetic pane mechanics inspect their captured socket frames.
@@ -260,14 +260,14 @@ export {
 	TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS,
-	TEST_CANVAS_STARTUP_TIMEOUT_MS,
-	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
-	TEST_CANVAS_HEALTH_POLL_MS,
-	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS,
-	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
-	TEST_CANVAS_EARLY_DEATH_DELAY_MS,
+	TEST_SERVER_STARTUP_TIMEOUT_MS,
+	TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS,
+	TEST_SERVER_HEALTH_POLL_MS,
+	TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_CASE_TIMEOUT_MARGIN_MS,
+	TEST_SERVER_LISTENER_PROBE_TIMEOUT_MS,
+	TEST_SERVER_EARLY_DEATH_DELAY_MS,
 	TEST_PANE_MESSAGE_POLL_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,

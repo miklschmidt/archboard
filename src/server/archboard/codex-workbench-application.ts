@@ -1,5 +1,5 @@
-export { createCanvasCodexWorkbenchApplication } from "@/server/archboard/lib/codex-workbench-application";
+export { createServerCodexWorkbenchApplication } from "@/server/archboard/lib/codex-workbench-application";
 export type {
-	CanvasCodexWorkbenchApplicationOptions,
-	CanvasCodexWorkbenchModule,
+	ServerCodexWorkbenchApplicationOptions,
+	ServerCodexWorkbenchModule,
 } from "@/server/archboard/lib/codex-workbench-application";

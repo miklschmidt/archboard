@@ -2,9 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS, TEST_CANVAS_HEALTH_POLL_MS } from "./timing.ts";
+import { TEST_SERVER_CHILD_EXIT_TIMEOUT_MS, TEST_SERVER_HEALTH_POLL_MS } from "./timing.ts";
 
-interface OwnedCanvasPaths {
+interface OwnedServerPaths {
 	readonly root: string;
 	readonly home: string;
 	readonly xdgConfig: string;
@@ -12,19 +12,19 @@ interface OwnedCanvasPaths {
 	readonly temporary: string;
 }
 
-type OwnedCanvasEnvironment = Readonly<Record<string, string | undefined>>;
-type OwnedCanvasEnvironmentPaths = Pick<
-	OwnedCanvasPaths,
+type OwnedServerEnvironment = Readonly<Record<string, string | undefined>>;
+type OwnedServerEnvironmentPaths = Pick<
+	OwnedServerPaths,
 	"home" | "xdgConfig" | "xdgState" | "temporary"
 >;
 
-function buildOwnedCanvasEnvironment(options: {
-	paths: OwnedCanvasEnvironmentPaths;
+function buildOwnedServerEnvironment(options: {
+	paths: OwnedServerEnvironmentPaths;
 	port: number;
 	vault: string;
-	env?: OwnedCanvasEnvironment;
-}): OwnedCanvasEnvironment {
-	const toolEnvironment: OwnedCanvasEnvironment = {
+	env?: OwnedServerEnvironment;
+}): OwnedServerEnvironment {
+	const toolEnvironment: OwnedServerEnvironment = {
 		PATH: process.env["PATH"],
 		ARCHBOARD_RENDERER_CHROMIUM: process.env["ARCHBOARD_RENDERER_CHROMIUM"],
 	};
@@ -45,14 +45,14 @@ function buildOwnedCanvasEnvironment(options: {
 // macOS exposes the temporary directory through a /var symlink. Keep the
 // owner namespace canonical so storage-root containment sees the same path
 // spelling as the filesystem.
-const ownedCanvasNamespaceParent = fs.realpathSync(os.tmpdir());
-const ownedCanvasNamespacePrefix = "archboard-owned-server-";
-const ownedCanvasNamespacePattern = /^archboard-owned-server-[A-Za-z0-9]{6}$/;
+const ownedServerNamespaceParent = fs.realpathSync(os.tmpdir());
+const ownedServerNamespacePrefix = "archboard-owned-server-";
+const ownedServerNamespacePattern = /^archboard-owned-server-[A-Za-z0-9]{6}$/;
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-function createOwnedCanvasPaths(): OwnedCanvasPaths {
+function createOwnedServerPaths(): OwnedServerPaths {
 	const root = fs.realpathSync(
-		fs.mkdtempSync(path.join(ownedCanvasNamespaceParent, ownedCanvasNamespacePrefix)),
+		fs.mkdtempSync(path.join(ownedServerNamespaceParent, ownedServerNamespacePrefix)),
 	);
 	const paths = {
 		root,
@@ -72,11 +72,11 @@ function createOwnedCanvasPaths(): OwnedCanvasPaths {
 	}
 }
 
-function isOwnedCanvasNamespaceRoot(candidate: string): boolean {
+function isOwnedServerNamespaceRoot(candidate: string): boolean {
 	const resolved = path.resolve(candidate);
 	return (
-		path.dirname(resolved) === path.resolve(ownedCanvasNamespaceParent) &&
-		ownedCanvasNamespacePattern.test(path.basename(resolved))
+		path.dirname(resolved) === path.resolve(ownedServerNamespaceParent) &&
+		ownedServerNamespacePattern.test(path.basename(resolved))
 	);
 }
 
@@ -98,7 +98,7 @@ function processExists(pid: number): boolean {
 
 async function waitForProcessExit(
 	pid: number,
-	timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+	timeoutMs = TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 ): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	// Signal zero only observes; PID reuse may prolong this audit but never authorizes cleanup.
@@ -108,17 +108,17 @@ async function waitForProcessExit(
 				`Process ${pid} remained observable after ${timeoutMs.toLocaleString("en-US")}ms; it may be live, zombie, or recycled.`,
 			);
 		}
-		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+		await sleep(TEST_SERVER_HEALTH_POLL_MS);
 	}
 }
 
 export {
-	type OwnedCanvasPaths,
-	type OwnedCanvasEnvironment,
-	type OwnedCanvasEnvironmentPaths,
-	buildOwnedCanvasEnvironment,
-	createOwnedCanvasPaths,
-	isOwnedCanvasNamespaceRoot,
+	type OwnedServerPaths,
+	type OwnedServerEnvironment,
+	type OwnedServerEnvironmentPaths,
+	buildOwnedServerEnvironment,
+	createOwnedServerPaths,
+	isOwnedServerNamespaceRoot,
 	processExists,
 	waitForProcessExit,
 };

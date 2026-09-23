@@ -10,7 +10,7 @@ const logPath = process.env["ARCHBOARD_TEST_CODEX_LOG"];
 if (logPath !== undefined) {
 	appendFileSync(
 		logPath,
-		`${JSON.stringify({ kind: "canvas_fixture_spawn", pid: process.pid })}\n`,
+		`${JSON.stringify({ kind: "server_fixture_spawn", pid: process.pid })}\n`,
 	);
 }
 

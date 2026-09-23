@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { processExists, startOwnedCanvas } from "../support/owned-server.ts";
+import { processExists, startOwnedServer } from "../support/owned-server.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -30,9 +30,9 @@ describe.serial("actual production Codex composition", () => {
 		try {
 			const fixture = prepareProductionFixture(resources, executableSource);
 			const { controlPath, executablePath, logPath, root, vault } = fixture;
-			let canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
+			let canvas: Awaited<ReturnType<typeof startOwnedServer>>;
 			try {
-				canvas = await startOwnedCanvas({
+				canvas = await startOwnedServer({
 					serverPath,
 					vault,
 					env: {

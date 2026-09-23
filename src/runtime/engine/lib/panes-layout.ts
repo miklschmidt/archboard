@@ -129,7 +129,7 @@ interface PaneContext {
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
 	/** Where to open the canvas, for the no-pane case. */
-	canvasUrl?: string;
+	serverUrl?: string;
 }
 
 /** One pane, with where it sits and what that place is called. */

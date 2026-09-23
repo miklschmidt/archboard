@@ -7,7 +7,7 @@ import {
 	sameBinding,
 	sameRealtime,
 	type CallValidationFailure,
-	type ValidationHost,
+	type ValidationContext,
 } from "@/runtime/codex-spoken-approval/lib/validation";
 import type { DynamicServerRequest } from "@/runtime/codex-transport";
 
@@ -19,7 +19,7 @@ import type { DynamicServerRequest } from "@/runtime/codex-transport";
  * @returns The failure, or null.
  */
 function resolverOwnershipFailure(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	request: DynamicServerRequest,
 ): CallValidationFailure | null {
 	if (request.owner !== "codex-coordinator-tools") {
@@ -58,7 +58,7 @@ function resolverOwnershipFailure(
  * @returns The failure, or null.
  */
 function resolverEpochFailure(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): CallValidationFailure | null {
@@ -125,7 +125,7 @@ function resolverContractFailure(
  * @returns The failure, or null.
  */
 function resolverConversationFailure(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
 	const coordinator = host.currentCoordinator();
@@ -167,7 +167,7 @@ function resolverConversationFailure(
  * @returns The failure, or null.
  */
 function resolverSessionFailure(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
 	const realtime = host.currentRealtime();
@@ -197,7 +197,7 @@ function resolverSessionFailure(
  * @returns The failure, or null.
  */
 function resolverApprovalFailure(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
 	const approval = host.approvalBroker.get(slot.requestId);
@@ -252,7 +252,7 @@ function sameArmedApproval(approval: ApprovalSnapshot, slot: ActiveSlot): boolea
  * @returns The failure, or null.
  */
 function resolverEligibilityFailure(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
 	let eligibility;
@@ -314,7 +314,7 @@ function resolverTurnFailure(
  * @returns The failure, or null when the call may resolve the approval.
  */
 function validateResolverCall(
-	host: Omit<ValidationHost, "transcript">,
+	host: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 	requireTurn: boolean,

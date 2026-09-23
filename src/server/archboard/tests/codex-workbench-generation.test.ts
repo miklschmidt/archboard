@@ -8,7 +8,7 @@ import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-too
 import { CODEX_SERVER_REQUEST_METHODS } from "../../../shared/codex-app-server-contract/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
-import { createCanvasDynamicApprovalOwner } from "../codex-workbench-adapters.js";
+import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
 import { composeCodexWorkbenchGeneration } from "../codex-workbench-generation.js";
 import {
 	CODEX_WORKBENCH_COMPONENT_ORDER,
@@ -138,7 +138,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			expiresAtMs: now + CODEX_APPROVAL_EXPIRY_MS,
 		};
 		const sourceArguments = request.effect.arguments as { prompt: string };
-		const owner = createCanvasDynamicApprovalOwner({
+		const owner = createServerDynamicApprovalOwner({
 			identity,
 			now: () => now,
 			bindingForCaller: () => ({

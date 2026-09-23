@@ -6,7 +6,7 @@ import { isBoardRefusal } from "@/runtime/engine/lib/server-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
 /** Identity marker the Archboard server puts in /health (v1.1+). */
-const CANVAS_SERVICE_NAME = "archboard-canvas";
+const ARCHBOARD_SERVICE_NAME = "archboard-server";
 
 // Revalidating identity gate in front of every /api request: mutations must
 // not reach a foreign service squatting on the canvas port. The verification
@@ -48,7 +48,7 @@ function unreachableError(message: string): Error {
  * Record that the canvas has just identified itself, so a caller that
  * verified it another way does not make this probe it again.
  */
-function markCanvasIdentityVerified(): void {
+function markServerIdentityVerified(): void {
 	identityVerifiedAt = Date.now();
 }
 
@@ -82,12 +82,12 @@ async function probeHealth(): Promise<Response | null> {
  * @param response The answer.
  * @returns True when the canvas identified itself.
  */
-async function identifiesAsCanvas(response: Response): Promise<boolean> {
+async function identifiesAsServer(response: Response): Promise<boolean> {
 	if (!response.ok) {
 		return false;
 	}
 	const health: unknown = await response.json().catch(() => null);
-	return isRecord(health) && stringAt(health, "service") === CANVAS_SERVICE_NAME;
+	return isRecord(health) && stringAt(health, "service") === ARCHBOARD_SERVICE_NAME;
 }
 
 /**
@@ -101,7 +101,7 @@ async function verifyIdentity(): Promise<void> {
 			// Deliberately not marked verified, so the next call re-probes.
 			return;
 		}
-		if (!(await identifiesAsCanvas(response))) {
+		if (!(await identifiesAsServer(response))) {
 			throw foreignServiceError();
 		}
 		identityVerifiedAt = Date.now();
@@ -116,7 +116,7 @@ async function verifyIdentity(): Promise<void> {
  * @returns When the canvas has identified itself, or was already verified.
  * @throws {Error} When something other than this canvas answers.
  */
-async function assertCanvasIdentity(): Promise<void> {
+async function assertServerIdentity(): Promise<void> {
 	if (Date.now() - identityVerifiedAt < IDENTITY_TTL_MS) {
 		return;
 	}
@@ -125,7 +125,7 @@ async function assertCanvasIdentity(): Promise<void> {
 }
 
 /** An error carrying what the canvas said about the request it turned away. */
-type CanvasError = Error & {
+type ServerError = Error & {
 	code?: unknown;
 	available?: unknown;
 	refusal?: unknown;
@@ -144,7 +144,7 @@ type CanvasError = Error & {
  */
 function responseError(data: unknown, response: Response): Error {
 	const body = isRecord(data) ? data : {};
-	const error: CanvasError = new Error(
+	const error: ServerError = new Error(
 		stringAt(body, "error") ?? `HTTP server error: ${response.status} ${response.statusText}`,
 	);
 	describeFailure(error, body);
@@ -159,7 +159,7 @@ function responseError(data: unknown, response: Response): Error {
  * @param error The error being built.
  * @param body The answer body.
  */
-function describeFailure(error: CanvasError, body: Record<string, unknown>): void {
+function describeFailure(error: ServerError, body: Record<string, unknown>): void {
 	const code = stringAt(body, "code");
 	if (code === undefined) {
 		return;
@@ -184,7 +184,7 @@ function describeFailure(error: CanvasError, body: Record<string, unknown>): voi
  * @throws {Error} When the canvas is not there, is not itself, or answers with a failure.
  */
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-	await assertCanvasIdentity();
+	await assertServerIdentity();
 	const response = await fetch(
 		`${ARCHBOARD_URL}${withWriteClaims(withBoard(path), init?.method)}`,
 		init,
@@ -235,11 +235,11 @@ function failureCode(error: Record<string, unknown>): string | undefined {
 }
 
 export {
-	CANVAS_SERVICE_NAME,
-	assertCanvasIdentity,
+	ARCHBOARD_SERVICE_NAME,
+	assertServerIdentity,
 	foreignServiceError,
 	isConnectionFailure,
-	markCanvasIdentityVerified,
+	markServerIdentityVerified,
 	requestJson,
 	responseError,
 };

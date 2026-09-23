@@ -291,7 +291,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 				recovery: threadLinkRecovery(
 					"refresh_inventory",
 					pane.transport.capabilities(),
-					pane.hostRecoveryIntents,
+					pane.serverRecoveryIntents,
 				),
 			}),
 		);
@@ -347,11 +347,11 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	 * @param target The recovery target.
 	 * @returns Null when it ran, else the failed snapshot.
 	 */
-	async function hostRecovery(
+	async function serverRecovery(
 		pane: ThreadLinkPaneCapture,
 		target: ThreadLinkRecoveryTarget,
 	): Promise<Settled | null> {
-		const authority = options.captureHostRecovery?.(target) ?? null;
+		const authority = options.captureServerRecovery?.(target) ?? null;
 		const owned =
 			authority !== null &&
 			authority.paneId === target.paneId &&
@@ -366,7 +366,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 				recovery: threadLinkRecovery(
 					target.intent,
 					pane.transport.capabilities(),
-					pane.hostRecoveryIntents,
+					pane.serverRecoveryIntents,
 				),
 			};
 		}
@@ -392,7 +392,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 			await pane.transport.accountRead();
 			return null;
 		}
-		return hostRecovery(pane, target);
+		return serverRecovery(pane, target);
 	}
 
 	/**

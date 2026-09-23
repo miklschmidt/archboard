@@ -50,7 +50,7 @@ interface Run {
 	remoteElement?: HTMLMediaElement | undefined;
 	meter?: VoiceOutputMeter | undefined;
 	cleanup?: Promise<void>;
-	hostStop?: Promise<boolean>;
+	serverStop?: Promise<boolean>;
 	failure?: Promise<void>;
 }
 

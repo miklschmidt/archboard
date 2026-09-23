@@ -9,8 +9,8 @@ import {
 } from "../../../runtime/codex-epoch/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import {
-	createCanvasThreadCandidateInventory,
-	createCanvasThreadLinkActions,
+	createServerThreadCandidateInventory,
+	createServerThreadLinkActions,
 } from "../codex-workbench-adapters.js";
 
 test("attach records genuine current-child provenance before making the link executable", async () => {
@@ -110,8 +110,8 @@ test("attach records genuine current-child provenance before making the link exe
 					thread: { id: threadId },
 				}) as never,
 		} as never;
-		const candidates = createCanvasThreadCandidateInventory(threadLink, epoch);
-		const actions = createCanvasThreadLinkActions({
+		const candidates = createServerThreadCandidateInventory(threadLink, epoch);
+		const actions = createServerThreadLinkActions({
 			workhorse: {} as never,
 			threadLink,
 			candidates,
@@ -217,8 +217,8 @@ test("a selection the pane never published, or one naming another thread, is ref
 	} as never;
 	// A still epoch, so a refused selection is refused for its own reason.
 	const stillEpoch = { snapshot: () => ({ cas: { revision: 4, bytesHash: "still" } }) } as never;
-	const candidates = createCanvasThreadCandidateInventory(threadLink, stillEpoch);
-	const actions = createCanvasThreadLinkActions({
+	const candidates = createServerThreadCandidateInventory(threadLink, stillEpoch);
+	const actions = createServerThreadLinkActions({
 		candidates,
 		threadLink,
 		workhorse: {} as never,
@@ -266,7 +266,7 @@ test("a selection the pane never published, or one naming another thread, is ref
 });
 
 test("a discovery that fails publishes the unavailable arm with its reason", async () => {
-	const candidates = createCanvasThreadCandidateInventory(
+	const candidates = createServerThreadCandidateInventory(
 		{
 			discoverCandidates: async () => {
 				throw new Error("the persisted list could not be exhausted");
@@ -318,8 +318,8 @@ test("a list discovered under an earlier epoch is refused and retired, never re-
 			throw new Error("a moved list must never reach the bind boundary");
 		},
 	} as never;
-	const candidates = createCanvasThreadCandidateInventory(threadLink, epoch);
-	const actions = createCanvasThreadLinkActions({
+	const candidates = createServerThreadCandidateInventory(threadLink, epoch);
+	const actions = createServerThreadLinkActions({
 		candidates,
 		threadLink,
 		workhorse: {} as never,

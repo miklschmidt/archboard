@@ -1,9 +1,9 @@
 export { app, startServer } from "@/server/archboard/lib/application";
-export { canvasStartupFailureMessage } from "@/server/archboard/lib/startup-error";
+export { serverStartupFailureMessage } from "@/server/archboard/lib/startup-error";
 export {
-	CanvasApplicationBusyError,
-	createCanvasApplicationLifetime,
-	createCanvasMutationAdmission,
+	ServerApplicationBusyError,
+	createServerApplicationLifetime,
+	createServerMutationAdmission,
 } from "@/server/archboard/lib/application-lifetime";
 export { createCheckoutWorkOwner } from "@/server/archboard/lib/checkout-work";
 export type { CheckoutTask, CheckoutWorkOwner } from "@/server/archboard/lib/checkout-work";

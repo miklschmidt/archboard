@@ -11,7 +11,7 @@ import type {
  * results. Readiness is never stored: it is derived from the live owned
  * process, session, account, and coordinator facts on every projection read.
  */
-interface CanvasBrowserBindingState {
+interface ServerBrowserBindingState {
 	account: BrowserAccountProjectionInput;
 	login: BrowserOwnerProjection["login"];
 	queue: CodexQueueProjectionInput;
@@ -67,4 +67,4 @@ function queueOwnerView(
 	};
 }
 
-export { archboardOperation, queueOwnerView, UNAVAILABLE_QUEUE, type CanvasBrowserBindingState };
+export { archboardOperation, queueOwnerView, UNAVAILABLE_QUEUE, type ServerBrowserBindingState };

@@ -14,7 +14,7 @@ import type { ActiveSlot, TurnReadyControls } from "@/runtime/codex-spoken-appro
 import { sameBinding } from "@/runtime/codex-spoken-approval/lib/validation";
 import { createSpokenApprovalClassifierPrompt } from "@/runtime/codex-spoken-approval/lib/classifier";
 
-interface ClassifierTurnHost {
+interface ClassifierTurnContext {
 	readonly approvalBroker: CodexSpokenApprovalGateOptions["approvalBroker"];
 	readonly session: CodexSpokenApprovalGateOptions["session"];
 	readonly identity: IdentityAuthority;
@@ -91,7 +91,7 @@ function safeMessage(error: unknown): string {
  * @param error - What went wrong.
  */
 function failReady(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	ready: TurnReadyControls,
 	error: unknown,
@@ -115,7 +115,7 @@ function failReady(
  * @returns True when the gate may adopt the turn.
  */
 function isUsableClassifierTurn(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	turnId: TurnId,
 ): boolean {
@@ -135,7 +135,7 @@ function isUsableClassifierTurn(
  * @returns True when it is the same coordinator on the same child and epoch.
  */
 function isSameCoordinator(
-	coordinator: ReturnType<ClassifierTurnHost["currentCoordinator"]>,
+	coordinator: ReturnType<ClassifierTurnContext["currentCoordinator"]>,
 	slot: ActiveSlot,
 ): boolean {
 	return (
@@ -153,7 +153,7 @@ function isSameCoordinator(
  * @returns True when it is the same session and connection.
  */
 function isSameRealtimeSession(
-	realtime: ReturnType<ClassifierTurnHost["currentRealtime"]>,
+	realtime: ReturnType<ClassifierTurnContext["currentRealtime"]>,
 	slot: ActiveSlot,
 ): boolean {
 	return (
@@ -172,7 +172,7 @@ function isSameRealtimeSession(
  * @returns The fallback reason, or null when the classifier may start.
  */
 function classifierStartRefusal(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 ): SpokenApprovalFallbackReason | null {
 	if (!isSameCoordinator(host.currentCoordinator(), slot)) {
@@ -195,7 +195,7 @@ function classifierStartRefusal(
  * @param slot - The armed gate.
  * @returns True when nothing about the approval has changed.
  */
-function isUnchangedApproval(host: ClassifierTurnHost, slot: ActiveSlot): boolean {
+function isUnchangedApproval(host: ClassifierTurnContext, slot: ActiveSlot): boolean {
 	let approval;
 	let eligibility;
 	try {
@@ -225,7 +225,7 @@ function isUnchangedApproval(host: ClassifierTurnHost, slot: ActiveSlot): boolea
  * @param response - The turn/start response.
  */
 function finishTurn(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	ready: TurnReadyControls,
 	response: SessionResponse<"turn/start">,
@@ -295,7 +295,7 @@ function classifierTurnParams(
  * @param record - The person's final utterance.
  */
 function startClassifier(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	record: RealtimeTranscriptRecord,
 ): void {
@@ -329,7 +329,7 @@ function startClassifier(
  * @param turnParams - The turn/start body.
  */
 function dispatchClassifierTurn(
-	host: ClassifierTurnHost,
+	host: ClassifierTurnContext,
 	slot: ActiveSlot,
 	turnParams: SessionParams<"turn/start">,
 ): void {
@@ -349,5 +349,5 @@ function dispatchClassifierTurn(
 	);
 }
 
-export { type ClassifierTurnHost, refusal, safeMessage, startClassifier, success };
+export { type ClassifierTurnContext, refusal, safeMessage, startClassifier, success };
 export { resolveSpokenApproval } from "@/runtime/codex-spoken-approval/lib/resolver-turn";

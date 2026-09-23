@@ -3,9 +3,9 @@ import { expect, test } from "bun:test";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createDynamicAuthorityTokenIssuer } from "../../../runtime/codex-dynamic-tools/index.js";
 import {
-	clearCanvasThreadContextForLease,
-	createCanvasDynamicOperationIdAdapter,
-	createCanvasThreadLinkActions,
+	clearServerThreadContextForLease,
+	createServerDynamicOperationIdAdapter,
+	createServerThreadLinkActions,
 	presentingPane,
 } from "../codex-workbench-adapters.js";
 
@@ -53,7 +53,7 @@ test("the production dynamic authority token issuer retires exact opaque capabil
 
 test("the production operation adapter shares authority and terminalizes exactly once", () => {
 	const authorities = createIdentityAuthorities();
-	const adapter = createCanvasDynamicOperationIdAdapter(authorities.operation);
+	const adapter = createServerDynamicOperationIdAdapter(authorities.operation);
 	const operationId = adapter.issueCanonicalOperationId();
 
 	adapter.validateCurrentUnconsumedOperationId(operationId);
@@ -129,7 +129,7 @@ test("create, attach, and relink replace controller authority with the exact ret
 	};
 	let nextBinding = link(2);
 	const classifiedTargets: unknown[] = [];
-	const actions = createCanvasThreadLinkActions({
+	const actions = createServerThreadLinkActions({
 		candidates: {
 			read: () => ({ kind: "codex_thread_candidates", state: "unknown" }),
 			refresh: async () =>
@@ -236,9 +236,9 @@ test("a stale browser disconnect token cannot clear a newer controller binding",
 			return { token: { revision: 9 }, binding: null };
 		},
 	};
-	clearCanvasThreadContextForLease(controller as never, { revision: 7 });
+	clearServerThreadContextForLease(controller as never, { revision: 7 });
 	expect(clears).toBe(0);
-	clearCanvasThreadContextForLease(controller as never, { revision: 8 });
+	clearServerThreadContextForLease(controller as never, { revision: 8 });
 	expect(clears).toBe(1);
 });
 
@@ -284,7 +284,7 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 	});
 	const starts: string[] = [];
 	let binding: unknown = null;
-	const actions = createCanvasThreadLinkActions({
+	const actions = createServerThreadLinkActions({
 		candidates: {} as never,
 		workhorse: {
 			start: async ({ paneId }: { readonly paneId: string }) => {

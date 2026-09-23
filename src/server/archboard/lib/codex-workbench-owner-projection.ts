@@ -4,17 +4,17 @@ import type {
 	CodexWorkbenchGatewayOptions,
 } from "@/server/codex-workbench";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
-import type { CanvasDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
-import type { CanvasTimelineOwner } from "@/server/archboard/lib/codex-workbench-timeline";
-import { projectCanvasVoiceContext } from "@/server/archboard/lib/codex-workbench-voice-context";
+import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
+import type { ServerTimelineOwner } from "@/server/archboard/lib/codex-workbench-timeline";
+import { projectServerVoiceContext } from "@/server/archboard/lib/codex-workbench-voice-context";
 import {
-	projectCanvasBrowserReadiness,
-	type CanvasReadinessProcessFacts,
+	projectServerBrowserReadiness,
+	type ServerReadinessProcessFacts,
 } from "@/server/archboard/lib/codex-workbench-readiness";
 import { visibleApprovalViews } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 import {
 	UNAVAILABLE_QUEUE,
-	type CanvasBrowserBindingState,
+	type ServerBrowserBindingState,
 } from "@/server/archboard/lib/codex-workbench-browser-state";
 
 /** The runtime owners one projection read is taken from. */
@@ -32,14 +32,14 @@ type SemanticBinding = NonNullable<
 >;
 
 /** Everything a projection read needs beyond the components themselves. */
-interface CanvasOwnerProjectionInput {
+interface ServerOwnerProjectionInput {
 	readonly components: ProjectionComponents;
-	readonly dynamicApprovals: CanvasDynamicApprovalOwner;
-	readonly state: CanvasBrowserBindingState;
+	readonly dynamicApprovals: ServerDynamicApprovalOwner;
+	readonly state: ServerBrowserBindingState;
 	readonly candidates: { readonly read: () => BrowserOwnerProjection["threadCandidates"] };
-	readonly timeline: CanvasTimelineOwner;
+	readonly timeline: ServerTimelineOwner;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
-	readonly process: () => CanvasReadinessProcessFacts;
+	readonly process: () => ServerReadinessProcessFacts;
 }
 
 /**
@@ -200,7 +200,7 @@ function coordinatorSettings(
  * @returns The queue, or the unavailable queue.
  */
 function presentedQueue(
-	state: CanvasBrowserBindingState,
+	state: ServerBrowserBindingState,
 	context: ProjectionContext,
 ): CodexQueueProjectionInput {
 	if (state.queueThreadId === null || state.queueThreadId !== context.binding.link.threadId) {
@@ -217,7 +217,7 @@ function presentedQueue(
  * @returns The projection.
  */
 function readBrowserOwnerProjection(
-	input: CanvasOwnerProjectionInput,
+	input: ServerOwnerProjectionInput,
 	context: ProjectionContext,
 ): BrowserOwnerProjection {
 	const { components, dynamicApprovals, state } = input;
@@ -227,7 +227,7 @@ function readBrowserOwnerProjection(
 	const coordinator = components.coordinator.snapshot();
 	const workhorse = components.workhorse.snapshot();
 	const realtimeGeneration = components.realtime.generation();
-	const readiness = projectCanvasBrowserReadiness({
+	const readiness = projectServerBrowserReadiness({
 		process: input.process(),
 		account: state.account,
 		login: state.login,
@@ -267,8 +267,8 @@ function readBrowserOwnerProjection(
 			transcript: components.realtime.transcript(),
 		},
 		spokenApproval: components.spokenApproval.snapshot(),
-		voiceContext: projectCanvasVoiceContext(realtimeGeneration, components.callbacks),
+		voiceContext: projectServerVoiceContext(realtimeGeneration, components.callbacks),
 	};
 }
 
-export { readBrowserOwnerProjection, type CanvasOwnerProjectionInput };
+export { readBrowserOwnerProjection, type ServerOwnerProjectionInput };

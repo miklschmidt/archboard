@@ -30,7 +30,7 @@ interface RunPaths {
 	readonly xdgState: string;
 	readonly xdgConfig: string;
 	readonly temporary: string;
-	readonly canvasLog: string;
+	readonly serverLog: string;
 	readonly cliLog: string;
 	readonly authorEvents: string;
 	readonly authorStdout: string;
@@ -72,7 +72,7 @@ function prepareRunDirectory(root: string): RunPaths {
 		xdgState: path.join(world, "state"),
 		xdgConfig: path.join(world, "config"),
 		temporary: path.join(world, "tmp"),
-		canvasLog: path.join(root, "canvas.log"),
+		serverLog: path.join(root, "server.log"),
 		// The CLI refuses to start when the log path it is given cannot be
 		// written, so the author's own tool logs inside the author's world.
 		cliLog: path.join(world, "archboard.log"),
@@ -190,10 +190,10 @@ function fillCodexHome(
  * The environment every process of a run gets: the archboard variables the
  * setup block names, the private homes, and PATH with the run's bin first.
  * @param paths The run.
- * @param canvasUrl The run's own canvas.
+ * @param serverUrl The run's own canvas.
  * @returns The environment.
  */
-function runEnvironment(paths: RunPaths, canvasUrl: string): Record<string, string> {
+function runEnvironment(paths: RunPaths, serverUrl: string): Record<string, string> {
 	return {
 		PATH: `${paths.bin}:${process.env["PATH"] ?? ""}`,
 		HOME: paths.home,
@@ -203,7 +203,7 @@ function runEnvironment(paths: RunPaths, canvasUrl: string): Record<string, stri
 		TMPDIR: paths.temporary,
 		ARCHBOARD_VAULT: paths.vault,
 		ARCHBOARD_REPOS: paths.repos,
-		ARCHBOARD_URL: canvasUrl,
+		ARCHBOARD_URL: serverUrl,
 		ARCHBOARD_NO_AUTOSTART: "1",
 		LOG_FILE_PATH: paths.cliLog,
 		LOG_LEVEL: "error",

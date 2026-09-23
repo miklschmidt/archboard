@@ -8,7 +8,7 @@ import type {
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
-import { createCanvasCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
+import { createServerCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
 
 test("socket acceptance transfers gateway ownership before the retired socket closes", async () => {
 	let current: BrowserConnectionInstance | null = null;
@@ -52,7 +52,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 			}
 		},
 	} as unknown as CodexWorkbenchGateway;
-	const owner = createCanvasCodexBrowserSocketOwner({
+	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: () => "pane-reconnect",
 	});
@@ -112,7 +112,7 @@ test("normal browser close and teardown share one delayed close owner", async ()
 			await gate;
 		},
 	} as unknown as CodexWorkbenchGateway;
-	const owner = createCanvasCodexBrowserSocketOwner({
+	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: () => "pane-delayed",
 	});
@@ -159,7 +159,7 @@ test("teardown drains every normal close and preserves a delayed close failure",
 			}) as unknown as BrowserWorkbenchConnection,
 		closeConnection: async () => undefined,
 	} as unknown as CodexWorkbenchGateway;
-	const owner = createCanvasCodexBrowserSocketOwner({
+	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: (browserId) => `pane-${browserId}`,
 	});
@@ -250,7 +250,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		childExit: async () => undefined,
 		dispose: async () => undefined,
 	};
-	const owner = createCanvasCodexBrowserSocketOwner({
+	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: (browserId) => (browserId === "browser-1" ? "pane-authoritative" : null),
 	});
@@ -282,7 +282,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		send,
 	);
 	owner.dispose();
-	const replacementOwner = createCanvasCodexBrowserSocketOwner({
+	const replacementOwner = createServerCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: () => "pane-authoritative",
 	});
@@ -355,7 +355,7 @@ test("the socket owner refuses missing pane authority and disposal only removes 
 		childExit: async () => undefined,
 		dispose: async () => undefined,
 	};
-	const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => null });
+	const owner = createServerCodexBrowserSocketOwner({ gateway, paneForBrowser: () => null });
 	const messages: unknown[] = [];
 	await owner.handle(
 		Object.freeze({}),
@@ -406,7 +406,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		childExit: async () => undefined,
 		dispose: async () => undefined,
 	};
-	const owner = createCanvasCodexBrowserSocketOwner({
+	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: () => "pane-live",
 	});

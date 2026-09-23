@@ -1,4 +1,4 @@
-type CanvasApplicationPhase =
+type ServerApplicationPhase =
 	| "idle"
 	| "starting"
 	| "running"
@@ -7,30 +7,30 @@ type CanvasApplicationPhase =
 	| "stopped"
 	| "failed";
 
-type CanvasApplicationStopReason = NodeJS.Signals | "server-error" | "startup-failed" | "test";
+type ServerApplicationStopReason = NodeJS.Signals | "server-error" | "startup-failed" | "test";
 
 import {
-	CanvasApplicationBusyError,
-	createCanvasMutationAdmission,
-	type CanvasActiveMutation,
-	type CanvasMutationAdmissionOptions,
-	type CanvasMutationLease,
+	ServerApplicationBusyError,
+	createServerMutationAdmission,
+	type ServerActiveMutation,
+	type ServerMutationAdmissionOptions,
+	type ServerMutationLease,
 } from "@/server/archboard/lib/mutation-admission";
 
-interface CanvasApplicationResource {
+interface ServerApplicationResource {
 	readonly name: string;
 	/** A resource that starts asynchronously must settle when this signal aborts. */
 	readonly start?: (signal: AbortSignal) => Promise<void> | void;
 	/** Resolve only after the resource has reached its terminal state. */
-	readonly stop: (reason: CanvasApplicationStopReason) => Promise<void> | void;
+	readonly stop: (reason: ServerApplicationStopReason) => Promise<void> | void;
 	/** Grace before forceStop runs. A timed resource must provide forceStop. */
 	readonly stopGraceMs?: number;
 	/** Force terminal state, then allow the original stop promise to settle. */
-	readonly forceStop?: (reason: CanvasApplicationStopReason) => Promise<void> | void;
+	readonly forceStop?: (reason: ServerApplicationStopReason) => Promise<void> | void;
 }
 
-interface CanvasApplicationEvent {
-	readonly phase: CanvasApplicationPhase;
+interface ServerApplicationEvent {
+	readonly phase: ServerApplicationPhase;
 	readonly resource: string | null;
 	readonly action:
 		| "phase"
@@ -43,25 +43,25 @@ interface CanvasApplicationEvent {
 		| "failed";
 }
 
-interface CanvasApplicationLifetimeOptions {
-	readonly resources: readonly CanvasApplicationResource[];
+interface ServerApplicationLifetimeOptions {
+	readonly resources: readonly ServerApplicationResource[];
 	/** Stop admitting writes and settle every admitted write. */
 	readonly quiesce?: () => Promise<void> | void;
 	/** Restore write admission when quiescing fails and the canvas stays up. */
 	readonly resume?: () => Promise<void> | void;
-	readonly observe?: (event: CanvasApplicationEvent) => void;
+	readonly observe?: (event: ServerApplicationEvent) => void;
 	/** Hear why startup failed while every acquired resource, the log included, still runs. */
 	readonly onStartupFailure?: (error: unknown) => void;
 }
 
-class CanvasApplicationStartupCancelledError extends Error {
+class ServerApplicationStartupCancelledError extends Error {
 	/**
 	 * Say that startup stopped part way because something asked it to.
 	 * @param reason What asked.
 	 */
-	constructor(readonly reason: CanvasApplicationStopReason) {
+	constructor(readonly reason: ServerApplicationStopReason) {
 		super(`Canvas application startup was canceled by ${reason}.`);
-		this.name = "CanvasApplicationStartupCancelledError";
+		this.name = "ServerApplicationStartupCancelledError";
 	}
 }
 
@@ -87,8 +87,8 @@ interface GracefulStopState {
  * @returns The observable state and the promise that settles with it.
  */
 const beginGracefulStop = (
-	resource: CanvasApplicationResource,
-	reason: CanvasApplicationStopReason,
+	resource: ServerApplicationResource,
+	reason: ServerApplicationStopReason,
 ): { state: GracefulStopState; settled: Promise<void> } => {
 	const state: GracefulStopState = { settled: false, failure: null };
 	const settled = Promise.resolve()
@@ -113,7 +113,7 @@ const beginGracefulStop = (
  * @param settled Its graceful stop.
  */
 const waitOutStopGrace = async (
-	resource: CanvasApplicationResource,
+	resource: ServerApplicationResource,
 	settled: Promise<void>,
 ): Promise<void> => {
 	if (resource.stopGraceMs === undefined) {
@@ -137,7 +137,7 @@ const waitOutStopGrace = async (
 };
 
 /** Every reason a canvas stop can carry, for narrowing an abort signal's own. */
-const STOP_REASONS: ReadonlySet<string> = new Set<CanvasApplicationStopReason>([
+const STOP_REASONS: ReadonlySet<string> = new Set<ServerApplicationStopReason>([
 	"server-error",
 	"startup-failed",
 	"test",
@@ -149,7 +149,7 @@ const STOP_REASONS: ReadonlySet<string> = new Set<CanvasApplicationStopReason>([
  * @param value The string the abort carried.
  * @returns True when it is a stop reason.
  */
-function isStopReason(value: string): value is CanvasApplicationStopReason {
+function isStopReason(value: string): value is ServerApplicationStopReason {
 	return STOP_REASONS.has(value) || value.startsWith("SIG");
 }
 
@@ -160,7 +160,7 @@ function isStopReason(value: string): value is CanvasApplicationStopReason {
  * @param reason What the signal was aborted with.
  * @returns The stop reason.
  */
-function stopReasonOf(reason: unknown): CanvasApplicationStopReason {
+function stopReasonOf(reason: unknown): ServerApplicationStopReason {
 	if (typeof reason !== "string" || !isStopReason(reason)) {
 		return "test";
 	}
@@ -175,7 +175,7 @@ function requireStartupNotCancelled(signal: AbortSignal): void {
 	if (!signal.aborted) {
 		return;
 	}
-	throw new CanvasApplicationStartupCancelledError(stopReasonOf(signal.reason));
+	throw new ServerApplicationStartupCancelledError(stopReasonOf(signal.reason));
 }
 
 /**
@@ -189,7 +189,7 @@ function requireStartupNotCancelled(signal: AbortSignal): void {
  * @param options The resources, the hold check, and the write-admission hooks.
  * @returns The lifetime.
  */
-function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptions) {
+function createServerApplicationLifetime(options: ServerApplicationLifetimeOptions) {
 	for (const resource of options.resources) {
 		if (resource.stopGraceMs === undefined) {
 			continue;
@@ -202,26 +202,26 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 		}
 	}
 
-	let phase: CanvasApplicationPhase = "idle";
+	let phase: ServerApplicationPhase = "idle";
 	let startPromise: Promise<void> | null = null;
 	let stopPromise: Promise<void> | null = null;
 	let unwindPromise: Promise<void> | null = null;
 	let cleanupProven = false;
 	const startup = new AbortController();
-	const entered: CanvasApplicationResource[] = [];
+	const entered: ServerApplicationResource[] = [];
 	/**
 	 * Tell the observer what just happened.
 	 * @param action What happened.
 	 * @param resource Which resource it happened to, or null for a phase change.
 	 * @returns Whatever the observer returns; nothing rides on it.
 	 */
-	const emit = (action: CanvasApplicationEvent["action"], resource: string | null = null): void =>
+	const emit = (action: ServerApplicationEvent["action"], resource: string | null = null): void =>
 		options.observe?.({ phase, action, resource });
 	/**
 	 * Move to the next phase and announce it.
 	 * @param next The phase.
 	 */
-	const setPhase = (next: CanvasApplicationPhase): void => {
+	const setPhase = (next: ServerApplicationPhase): void => {
 		phase = next;
 		emit("phase");
 	};
@@ -233,8 +233,8 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 	 * @param reason Why the canvas is stopping.
 	 */
 	const stopResource = async (
-		resource: CanvasApplicationResource,
-		reason: CanvasApplicationStopReason,
+		resource: ServerApplicationResource,
+		reason: ServerApplicationStopReason,
 	): Promise<void> => {
 		const graceful = beginGracefulStop(resource, reason);
 		await waitOutStopGrace(resource, graceful.settled);
@@ -266,7 +266,7 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 	 * @param reason Why the canvas is stopping.
 	 * @returns Resolves once every resource has reached its terminal state.
 	 */
-	const unwind = (reason: CanvasApplicationStopReason): Promise<void> => {
+	const unwind = (reason: ServerApplicationStopReason): Promise<void> => {
 		if (unwindPromise !== null) {
 			return unwindPromise;
 		}
@@ -301,7 +301,7 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 	 * @param reason Why the canvas is stopping.
 	 * @returns Resolves once it has stopped.
 	 */
-	const stopStarting = (reason: CanvasApplicationStopReason): Promise<void> => {
+	const stopStarting = (reason: ServerApplicationStopReason): Promise<void> => {
 		startup.abort(reason);
 		setPhase("stopping");
 		stopPromise = unwind(reason).then(
@@ -363,7 +363,7 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 		 * Which phase the canvas is in.
 		 * @returns The phase.
 		 */
-		phase: (): CanvasApplicationPhase => phase,
+		phase: (): ServerApplicationPhase => phase,
 		/**
 		 * Whether every resource this generation acquired has been proven to have
 		 * stopped, which is what the startup protocol's terminal record reports.
@@ -400,7 +400,7 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 		 * @param reason Why the canvas is stopping.
 		 * @returns Resolves once it has stopped.
 		 */
-		stop: (reason: CanvasApplicationStopReason): Promise<void> => {
+		stop: (reason: ServerApplicationStopReason): Promise<void> => {
 			if (stopPromise !== null) {
 				return stopPromise;
 			}
@@ -445,16 +445,16 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 }
 
 export {
-	type CanvasApplicationPhase,
-	type CanvasApplicationStopReason,
-	type CanvasMutationLease,
-	type CanvasMutationAdmissionOptions,
-	type CanvasActiveMutation,
-	CanvasApplicationBusyError,
-	createCanvasMutationAdmission,
-	type CanvasApplicationResource,
-	type CanvasApplicationEvent,
-	type CanvasApplicationLifetimeOptions,
-	CanvasApplicationStartupCancelledError,
-	createCanvasApplicationLifetime,
+	type ServerApplicationPhase,
+	type ServerApplicationStopReason,
+	type ServerMutationLease,
+	type ServerMutationAdmissionOptions,
+	type ServerActiveMutation,
+	ServerApplicationBusyError,
+	createServerMutationAdmission,
+	type ServerApplicationResource,
+	type ServerApplicationEvent,
+	type ServerApplicationLifetimeOptions,
+	ServerApplicationStartupCancelledError,
+	createServerApplicationLifetime,
 };

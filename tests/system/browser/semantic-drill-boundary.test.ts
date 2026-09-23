@@ -3,13 +3,13 @@ import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "n
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 } from "./support/agent-browser.ts";
 import {
 	BANNER,
@@ -126,16 +126,16 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	mkdirSync(vault, { recursive: true });
 	const { registry } = aCheckout(root);
 	const opener = aRecordingOpener(root);
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath,
 		vault,
-		env: canvasTestEnvironment({
+		env: serverTestEnvironment({
 			ARCHBOARD_REPOS: registry,
 			ARCHBOARD_OPENER_CONFIG: opener.config,
 		}),
 	});
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 
 	// The board one level down, and the one a reader starts on. Each binds a

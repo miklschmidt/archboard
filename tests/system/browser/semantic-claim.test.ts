@@ -3,13 +3,13 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
@@ -53,9 +53,9 @@ test("a claimed board says who has it, keeps drawing, and gives the person one w
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "claim-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 	await seedSemanticBoard(request, "pipeline");
 

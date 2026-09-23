@@ -2,15 +2,15 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 // The public path a person and an agent use: commands create, change, read and
 // draw a board across a canvas restart. Store tests own the guarantees inside.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-workflow-"));
-let canvas: OwnedCanvas;
+let canvas: OwnedServer;
 
 /**
  * Run one archboard command against the owned canvas.
@@ -19,7 +19,7 @@ let canvas: OwnedCanvas;
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: canvas.base, args, input });
 
 /** The architecture this feature's own pipeline has today. */
 const currentPipeline = {
@@ -53,7 +53,7 @@ const currentPipeline = {
 };
 
 beforeAll(async () => {
-	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	canvas = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {

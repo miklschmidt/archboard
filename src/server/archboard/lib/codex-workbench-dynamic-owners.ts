@@ -5,18 +5,18 @@ import type {
 	CodexWorkbenchGenerationInput,
 } from "@/server/archboard/lib/codex-workbench";
 import {
-	createCanvasDynamicApprovalOwner,
-	type CanvasDynamicApprovalOwner,
+	createServerDynamicApprovalOwner,
+	type ServerDynamicApprovalOwner,
 } from "@/server/archboard/lib/codex-workbench-approvals";
 import {
-	createCanvasDynamicAuthorityAdapters,
-	type CanvasDynamicAuthorityAdapters,
+	createServerDynamicAuthorityAdapters,
+	type ServerDynamicAuthorityAdapters,
 } from "@/server/archboard/lib/codex-workbench-authority";
 import {
-	createCanvasDynamicLifecycleOwner,
-	type CanvasDynamicLifecycleOwner,
+	createServerDynamicLifecycleOwner,
+	type ServerDynamicLifecycleOwner,
 } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
-import type { CanvasCodexWorkbenchHost } from "@/server/archboard/lib/codex-workbench-server";
+import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
 import {
 	closedTransport,
 	requireCreated,
@@ -25,7 +25,7 @@ import {
 
 /** What building one generation's dynamic owners needs from around it. */
 interface DynamicOwnerContext {
-	readonly host: CanvasCodexWorkbenchHost;
+	readonly host: CodexWorkbenchServer;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
 	readonly input: CodexWorkbenchGenerationInput;
 	readonly owners: GenerationOwners;
@@ -33,9 +33,9 @@ interface DynamicOwnerContext {
 
 /** The three dynamic owners every dynamic adapter is served from. */
 interface DynamicOwners {
-	readonly authority: CanvasDynamicAuthorityAdapters;
-	readonly approval: CanvasDynamicApprovalOwner;
-	readonly lifecycle: CanvasDynamicLifecycleOwner;
+	readonly authority: ServerDynamicAuthorityAdapters;
+	readonly approval: ServerDynamicApprovalOwner;
+	readonly lifecycle: ServerDynamicLifecycleOwner;
 }
 
 /**
@@ -48,7 +48,7 @@ interface DynamicOwners {
 function createAuthority(
 	context: DynamicOwnerContext,
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
-): CanvasDynamicAuthorityAdapters {
+): ServerDynamicAuthorityAdapters {
 	if (
 		created.identity === undefined ||
 		created.epoch === undefined ||
@@ -56,7 +56,7 @@ function createAuthority(
 	) {
 		throw new Error("Dynamic authority dependencies are not ready.");
 	}
-	return createCanvasDynamicAuthorityAdapters({
+	return createServerDynamicAuthorityAdapters({
 		identity: created.identity,
 		epoch: created.epoch,
 		threadLink: created.threadLink,
@@ -98,10 +98,10 @@ function createAuthority(
 function createApproval(
 	context: DynamicOwnerContext,
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
-): CanvasDynamicApprovalOwner {
+): ServerDynamicApprovalOwner {
 	const identity = requireCreated(created, "identity");
 	const owners = context.owners;
-	const approval = createCanvasDynamicApprovalOwner({
+	const approval = createServerDynamicApprovalOwner({
 		identity,
 		/**
 		 * The clock every approval expiry is measured against.
@@ -145,9 +145,9 @@ function createApproval(
 function createLifecycle(
 	context: DynamicOwnerContext,
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
-): CanvasDynamicLifecycleOwner {
+): ServerDynamicLifecycleOwner {
 	const transport = requireCreated(created, "transport");
-	return createCanvasDynamicLifecycleOwner({
+	return createServerDynamicLifecycleOwner({
 		identity: requireCreated(created, "identity"),
 		waitGraph: context.waitGraph,
 		waitForTargets: context.host.waitForTargets,

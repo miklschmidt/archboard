@@ -84,7 +84,10 @@ function mediaBlocker(mediaState: BrowserWorkbenchMediaState): string | null {
  * @param snapshot The published snapshot.
  * @returns The blocker sentence, or null.
  */
-function hostBlocker(input: VoiceSessionProjectionInput, snapshot: BrowserSnapshot): string | null {
+function serverBlocker(
+	input: VoiceSessionProjectionInput,
+	snapshot: BrowserSnapshot,
+): string | null {
 	const { capabilities } = input;
 	if (!capabilities.connected) {
 		return "The Codex workbench is not connected.";
@@ -133,7 +136,7 @@ function startBlocker(input: VoiceSessionProjectionInput): string | null {
 	if (snapshot === null) {
 		return "The host has not published a workbench snapshot yet.";
 	}
-	return hostBlocker(input, snapshot);
+	return serverBlocker(input, snapshot);
 }
 
 /**
@@ -152,7 +155,7 @@ function externalFailure(
 			return presentedFailure(code, mediaState.message);
 		}
 	}
-	return snapshot === null ? null : hostFailure(snapshot);
+	return snapshot === null ? null : serverFailure(snapshot);
 }
 
 /**
@@ -160,7 +163,7 @@ function externalFailure(
  * @param snapshot The published snapshot.
  * @returns The failure, or null.
  */
-function hostFailure(snapshot: BrowserSnapshot): VoiceSessionFailure | null {
+function serverFailure(snapshot: BrowserSnapshot): VoiceSessionFailure | null {
 	if (snapshot.coordinator.state === "failed") {
 		return presentedFailure(
 			"coordinator",

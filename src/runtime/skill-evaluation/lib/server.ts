@@ -8,8 +8,8 @@ import { createServer } from "node:net";
 import path from "node:path";
 import { z } from "zod";
 import {
-	SKILL_EVAL_CANVAS_SHUTDOWN_MS,
-	SKILL_EVAL_CANVAS_STARTUP_MS,
+	SKILL_EVAL_SERVER_SHUTDOWN_MS,
+	SKILL_EVAL_SERVER_STARTUP_MS,
 	SKILL_EVAL_HEALTH_POLL_MS,
 	SKILL_EVAL_HEALTH_REQUEST_MS,
 } from "@/shared/timing/timing";
@@ -17,7 +17,7 @@ import type { RunPaths } from "@/runtime/skill-evaluation/lib/isolation";
 import { ownProcess, pause, settlesWithin } from "@/runtime/skill-evaluation/lib/process";
 
 /** A running canvas. */
-interface OwnedCanvas {
+interface OwnedServer {
 	readonly url: string;
 	readonly port: number;
 	readonly pid: number;
@@ -75,7 +75,7 @@ async function awaitHealthy(
 	log: string,
 	signal = new AbortController().signal,
 ): Promise<void> {
-	const deadline = Date.now() + SKILL_EVAL_CANVAS_STARTUP_MS;
+	const deadline = Date.now() + SKILL_EVAL_SERVER_STARTUP_MS;
 	while (Date.now() < deadline) {
 		signal.throwIfAborted();
 		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
@@ -92,7 +92,7 @@ async function awaitHealthy(
 		await pause(SKILL_EVAL_HEALTH_POLL_MS);
 	}
 	throw new Error(
-		`the evaluation canvas did not answer /health within ${SKILL_EVAL_CANVAS_STARTUP_MS}ms; see ${log}`,
+		`the evaluation canvas did not answer /health within ${SKILL_EVAL_SERVER_STARTUP_MS}ms; see ${log}`,
 	);
 }
 
@@ -104,17 +104,17 @@ async function awaitHealthy(
  * @param signal Cancels startup before the canvas is healthy.
  * @returns The running canvas.
  */
-async function startCanvas(
+async function startServer(
 	checkout: string,
-	paths: Pick<RunPaths, "canvasLog">,
+	paths: Pick<RunPaths, "serverLog">,
 	env: Readonly<Record<string, string>>,
 	signal?: AbortSignal,
-): Promise<OwnedCanvas> {
+): Promise<OwnedServer> {
 	signal?.throwIfAborted();
 	const port = await freePort();
 	signal?.throwIfAborted();
 	const url = `http://127.0.0.1:${port}`;
-	const log = fs.openSync(paths.canvasLog, "a");
+	const log = fs.openSync(paths.serverLog, "a");
 	let child: Bun.Subprocess;
 	try {
 		child = Bun.spawn([process.execPath, path.join(checkout, "src", "server.ts")], {
@@ -129,9 +129,9 @@ async function startCanvas(
 		// Spawn duplicates the descriptor; the parent never owns the child's copy.
 		fs.closeSync(log);
 	}
-	const owner = await ownProcess(child, SKILL_EVAL_CANVAS_SHUTDOWN_MS);
+	const owner = await ownProcess(child, SKILL_EVAL_SERVER_SHUTDOWN_MS);
 	try {
-		await awaitHealthy(child, url, paths.canvasLog, signal);
+		await awaitHealthy(child, url, paths.serverLog, signal);
 		return { url, port, pid: child.pid, stop: owner.stop };
 	} catch (error) {
 		await owner.stop();
@@ -139,4 +139,4 @@ async function startCanvas(
 	}
 }
 
-export { startCanvas, type OwnedCanvas };
+export { startServer, type OwnedServer };

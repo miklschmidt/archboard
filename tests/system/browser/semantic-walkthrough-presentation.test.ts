@@ -3,13 +3,13 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { WAIT, press } from "./support/drilling.ts";
@@ -95,9 +95,9 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-presentation-vault");
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	registerServerBase(canvas.base);
 	const request = createJsonRequester(canvas);
 
 	const created = await request<{ success: boolean }>("/api/semantic-boards/create", {

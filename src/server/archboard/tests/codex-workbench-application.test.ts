@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 
-import { createCanvasCodexWorkbenchApplication } from "../codex-workbench-application.js";
+import { createServerCodexWorkbenchApplication } from "../codex-workbench-application.js";
 
 test("Codex application owns one install and one terminal shutdown", async () => {
 	const events: string[] = [];
 	let installs = 0;
-	const application = createCanvasCodexWorkbenchApplication({
+	const application = createServerCodexWorkbenchApplication({
 		installation: () => ({}) as never,
 		module: {
 			installProductionCodexWorkbench: () => {
@@ -36,7 +36,7 @@ test("Codex shutdown cancels startup before readiness instead of waiting for it"
 	const events: string[] = [];
 	let releaseStart!: () => void;
 	const startGate = new Promise<void>((resolve) => void (releaseStart = resolve));
-	const application = createCanvasCodexWorkbenchApplication({
+	const application = createServerCodexWorkbenchApplication({
 		installation: () => ({}) as never,
 		module: {
 			installProductionCodexWorkbench: () =>
@@ -64,7 +64,7 @@ test("Codex shutdown cancels startup before readiness instead of waiting for it"
 
 test("Codex application retains a failed stop owner for a force retry", async () => {
 	let shutdowns = 0;
-	const application = createCanvasCodexWorkbenchApplication({
+	const application = createServerCodexWorkbenchApplication({
 		installation: () => ({}) as never,
 		module: {
 			installProductionCodexWorkbench: () =>
@@ -90,7 +90,7 @@ test("Codex application retains a failed stop owner for a force retry", async ()
 test("Codex application retains a startup owner whose terminal cleanup failed", async () => {
 	let shutdowns = 0;
 	let installs = 0;
-	const application = createCanvasCodexWorkbenchApplication({
+	const application = createServerCodexWorkbenchApplication({
 		installation: () => ({}) as never,
 		module: {
 			installProductionCodexWorkbench: () => {
@@ -122,7 +122,7 @@ test("Codex application retains a startup owner whose terminal cleanup failed", 
 test("a clean startup failure releases the stage for one later retry", async () => {
 	const events: string[] = [];
 	let installs = 0;
-	const application = createCanvasCodexWorkbenchApplication({
+	const application = createServerCodexWorkbenchApplication({
 		installation: () => ({}) as never,
 		module: {
 			installProductionCodexWorkbench: () => {

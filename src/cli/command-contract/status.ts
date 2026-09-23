@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getHealth, getSyncStatus } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { readPidFile } from "@/runtime/engine/pidfile";
-import { canvasPort, isCanvasHealth } from "@/runtime/engine/spawn";
+import { serverPort, isServerHealth } from "@/runtime/engine/spawn";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { ServerStateSchema } from "@/cli/command-contract/schemas";
 
@@ -112,7 +112,7 @@ function runningStatus(
 			...sync,
 			running: true as const,
 			url: ARCHBOARD_URL,
-			pid: health.pid ?? readPidFile(canvasPort()) ?? undefined,
+			pid: health.pid ?? readPidFile(serverPort()) ?? undefined,
 			boards: health.boards,
 			browserClients: health.websocket_clients,
 			...(stale ? { stale } : {}),
@@ -201,7 +201,7 @@ const statusContract = defineCommand({
 				outcome: "unavailable",
 			};
 		}
-		if (!isCanvasHealth(health)) {
+		if (!isServerHealth(health)) {
 			return {
 				result: {
 					running: false as const,

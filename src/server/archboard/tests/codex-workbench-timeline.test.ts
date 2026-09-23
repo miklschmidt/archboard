@@ -11,7 +11,7 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "../../../shared/codex-workbench-identity/index.js";
-import { createCanvasTimelineOwner } from "../codex-workbench-adapters.js";
+import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	agentMessageItem,
 	commandExecutionItem,
@@ -183,7 +183,7 @@ test("timeline owner loads typed pages and projects every arm with its evidence"
 		},
 	};
 	let changes = 0;
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: decoder,
 		approvals: {
@@ -351,7 +351,7 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 		}),
 	};
 	let changes = 0;
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
@@ -418,7 +418,7 @@ test("timeline owner waits for thread capability and refreshes only the current 
 		}),
 	};
 	let changes = 0;
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },

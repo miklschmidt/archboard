@@ -203,8 +203,8 @@ function ordinaryDetail(approval: BrowserApproval, phase: WorkbenchApprovalPhase
 		return CLOCK_EXPIRED_ORDINARY;
 	}
 	const open = lifecycle.state === "pending" || lifecycle.state === "staged";
-	const hostDetail = open ? null : lifecycle.reason;
-	return hostDetail ?? DEFAULT_DETAILS[phase];
+	const serverDetail = open ? null : lifecycle.reason;
+	return serverDetail ?? DEFAULT_DETAILS[phase];
 }
 
 /**

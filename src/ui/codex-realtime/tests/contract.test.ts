@@ -16,7 +16,7 @@ import {
 import type {
 	AppendOutcome,
 	CommandOutcome,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeItemId,
 	RealtimePhase,
 	RealtimeSemanticEvent,
@@ -133,7 +133,7 @@ function ignoreElement(element: HTMLMediaElement): void {
  * A host that echoes offers and answers every request with a fixed outcome.
  * @returns The host.
  */
-function echoHost(): RealtimeHost {
+function echoServer(): RealtimeServer {
 	return {
 		/**
 		 * Echoes the offer.
@@ -209,7 +209,7 @@ function echoHost(): RealtimeHost {
 
 describe("codex realtime public contract", () => {
 	test("exports one host port and no implementation handles", async () => {
-		const host = echoHost();
+		const host = echoServer();
 		const offer = await host.createOffer({ sessionId, correlationId, sdp: "offer" });
 		expect(offer).toEqual({ sessionId, correlationId, sdp: "offer" });
 		expect(host.attachRemoteMedia).toBeTypeOf("function");

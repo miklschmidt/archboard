@@ -11,7 +11,7 @@
 
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -39,7 +39,7 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath,
 			vault: fixture.vault,
 			env: {

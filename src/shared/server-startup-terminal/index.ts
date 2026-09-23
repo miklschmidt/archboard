@@ -1,34 +1,34 @@
 import fs from "node:fs";
 import { z } from "zod";
 
-const CANVAS_STARTUP_TERMINAL_FD_ENV = "ARCHBOARD_STARTUP_TERMINAL_FD";
-const PROTOCOL = "archboard-canvas-startup-terminal/v2";
+const SERVER_STARTUP_TERMINAL_FD_ENV = "ARCHBOARD_STARTUP_TERMINAL_FD";
+const PROTOCOL = "archboard-server-startup-terminal/v2";
 
-interface CanvasStartupProcessGroupIdentity {
+interface ServerStartupProcessGroupIdentity {
 	readonly leaderPid: number;
 	readonly pgid: number;
 	readonly leaderStartTime: string;
 }
 
-interface CanvasStartupOwnershipRecord {
+interface ServerStartupOwnershipRecord {
 	readonly protocol: typeof PROTOCOL;
 	readonly kind: "ownership";
-	readonly canvasPid: number;
-	readonly codexGroup: CanvasStartupProcessGroupIdentity;
+	readonly serverPid: number;
+	readonly codexGroup: ServerStartupProcessGroupIdentity;
 }
 
-interface CanvasStartupTerminalRecord {
+interface ServerStartupTerminalRecord {
 	readonly protocol: typeof PROTOCOL;
 	readonly kind: "terminal";
-	readonly canvasPid: number;
+	readonly serverPid: number;
 	readonly cleanup: "proven" | "unproven";
 	readonly message: string | null;
 }
 
-type CanvasStartupProtocolRecord = CanvasStartupOwnershipRecord | CanvasStartupTerminalRecord;
+type ServerStartupProtocolRecord = ServerStartupOwnershipRecord | ServerStartupTerminalRecord;
 
-type CanvasStartupProtocolEvent =
-	| { readonly kind: "record"; readonly record: CanvasStartupProtocolRecord }
+type ServerStartupProtocolEvent =
+	| { readonly kind: "record"; readonly record: ServerStartupProtocolRecord }
 	| { readonly kind: "invalid"; readonly message: string }
 	| { readonly kind: "closed" };
 
@@ -45,18 +45,18 @@ function positiveInteger(value: unknown): value is number {
  * Builds the ownership record the canvas child writes once it owns the Codex
  * process group, so the launcher can clean that group up if the child dies.
  * @param input - The facts the launcher needs to clean up after the child.
- * @param input.canvasPid - The canvas child's pid.
+ * @param input.serverPid - The canvas child's pid.
  * @param input.codexGroup - The process-group identity it now owns.
  * @returns A frozen ownership record carrying the protocol tag.
  */
-function canvasStartupOwnershipRecord(input: {
-	readonly canvasPid: number;
-	readonly codexGroup: CanvasStartupProcessGroupIdentity;
-}): CanvasStartupOwnershipRecord {
+function serverStartupOwnershipRecord(input: {
+	readonly serverPid: number;
+	readonly codexGroup: ServerStartupProcessGroupIdentity;
+}): ServerStartupOwnershipRecord {
 	return Object.freeze({
 		protocol: PROTOCOL,
 		kind: "ownership",
-		canvasPid: input.canvasPid,
+		serverPid: input.serverPid,
 		codexGroup: Object.freeze({ ...input.codexGroup }),
 	});
 }
@@ -65,20 +65,20 @@ function canvasStartupOwnershipRecord(input: {
  * Builds the terminal record the canvas child writes on the way out, stating
  * whether it proved its own cleanup so the launcher knows what is left to do.
  * @param input - What the child can say about its own exit.
- * @param input.canvasPid - The canvas child's pid.
+ * @param input.serverPid - The canvas child's pid.
  * @param input.cleanupProven - Whether the child proved its cleanup completed.
  * @param input.message - An optional explanation for the launcher's log.
  * @returns A frozen terminal record carrying the protocol tag.
  */
-function canvasStartupTerminalRecord(input: {
-	readonly canvasPid: number;
+function serverStartupTerminalRecord(input: {
+	readonly serverPid: number;
 	readonly cleanupProven: boolean;
 	readonly message?: string | null;
-}): CanvasStartupTerminalRecord {
+}): ServerStartupTerminalRecord {
 	return Object.freeze({
 		protocol: PROTOCOL,
 		kind: "terminal",
-		canvasPid: input.canvasPid,
+		serverPid: input.serverPid,
 		cleanup: input.cleanupProven ? "proven" : "unproven",
 		message: input.message ?? null,
 	});
@@ -89,7 +89,7 @@ const positiveIntegerSchema = z.number().refine(positiveInteger);
 // The envelope every record shares; the kind decides which body follows.
 const envelopeSchema = z.looseObject({
 	protocol: z.literal(PROTOCOL),
-	canvasPid: positiveIntegerSchema,
+	serverPid: positiveIntegerSchema,
 	kind: z.unknown(),
 });
 
@@ -118,7 +118,7 @@ const terminalBodySchema = z.looseObject({
  * @returns The frozen ownership or terminal record the line spells.
  * @throws {Error} when the line is not a valid record of either kind.
  */
-function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRecord {
+function parseServerStartupProtocolRecord(line: string): ServerStartupProtocolRecord {
 	const envelope = envelopeSchema.safeParse(JSON.parse(line));
 	if (!envelope.success) {
 		throw new Error("The canvas child returned an invalid startup cleanup record.");
@@ -128,8 +128,8 @@ function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRe
 		if (!body.success) {
 			throw new Error("The canvas child returned an invalid startup cleanup ownership record.");
 		}
-		return canvasStartupOwnershipRecord({
-			canvasPid: envelope.data.canvasPid,
+		return serverStartupOwnershipRecord({
+			serverPid: envelope.data.serverPid,
 			codexGroup: body.data.codexGroup,
 		});
 	}
@@ -140,7 +140,7 @@ function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRe
 	return Object.freeze({
 		protocol: PROTOCOL,
 		kind: "terminal",
-		canvasPid: envelope.data.canvasPid,
+		serverPid: envelope.data.serverPid,
 		cleanup: body.data.cleanup,
 		message: body.data.message,
 	});
@@ -163,13 +163,13 @@ function isDepartedReader(error: unknown): boolean {
  * @throws {Error} when the environment names a descriptor that cannot be a pipe.
  */
 function launcherDescriptor(): number | null {
-	const descriptor = process.env[CANVAS_STARTUP_TERMINAL_FD_ENV];
+	const descriptor = process.env[SERVER_STARTUP_TERMINAL_FD_ENV];
 	if (descriptor === undefined) {
 		return null;
 	}
 	const fd = Number(descriptor);
 	if (!Number.isSafeInteger(fd) || fd < 3) {
-		throw new Error(`Invalid ${CANVAS_STARTUP_TERMINAL_FD_ENV} descriptor.`);
+		throw new Error(`Invalid ${SERVER_STARTUP_TERMINAL_FD_ENV} descriptor.`);
 	}
 	return fd;
 }
@@ -178,7 +178,7 @@ function launcherDescriptor(): number | null {
  * Report to the exact launcher pipe. A departed launcher is an expected closed reader.
  * @param record - The ownership or terminal record to write as one JSON line.
  */
-function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRecord): void {
+function writeServerStartupProtocolRecord(record: ServerStartupProtocolRecord): void {
 	const fd = launcherDescriptor();
 	if (fd === null) {
 		return;
@@ -194,14 +194,14 @@ function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRecord): 
 }
 
 export {
-	CANVAS_STARTUP_TERMINAL_FD_ENV,
-	type CanvasStartupProcessGroupIdentity,
-	type CanvasStartupOwnershipRecord,
-	type CanvasStartupTerminalRecord,
-	type CanvasStartupProtocolRecord,
-	type CanvasStartupProtocolEvent,
-	canvasStartupOwnershipRecord,
-	canvasStartupTerminalRecord,
-	parseCanvasStartupProtocolRecord,
-	writeCanvasStartupProtocolRecord,
+	SERVER_STARTUP_TERMINAL_FD_ENV,
+	type ServerStartupProcessGroupIdentity,
+	type ServerStartupOwnershipRecord,
+	type ServerStartupTerminalRecord,
+	type ServerStartupProtocolRecord,
+	type ServerStartupProtocolEvent,
+	serverStartupOwnershipRecord,
+	serverStartupTerminalRecord,
+	parseServerStartupProtocolRecord,
+	writeServerStartupProtocolRecord,
 };

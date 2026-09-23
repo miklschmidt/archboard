@@ -13,7 +13,7 @@ import { createProductionBindings } from "@/server/archboard/lib/codex-workbench
 import { createGenerationOwnerStore } from "@/server/archboard/lib/codex-workbench-generation-owners";
 import { createProductionHooks } from "@/server/archboard/lib/codex-workbench-hooks";
 import type {
-	CanvasCodexWorkbenchHost,
+	CodexWorkbenchServer,
 	CodexWorkbenchStorage,
 } from "@/server/archboard/lib/codex-workbench-server";
 
@@ -51,8 +51,8 @@ function createWorkbenchStorage(): CodexWorkbenchStorage {
  * @param host What the canvas provides the workbench.
  * @returns The installation options.
  */
-export function createCanvasCodexWorkbenchInstallation(
-	host: CanvasCodexWorkbenchHost,
+export function createServerCodexWorkbenchInstallation(
+	host: CodexWorkbenchServer,
 ): InstallProductionCodexWorkbenchOptions {
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
@@ -91,4 +91,4 @@ export function createCanvasCodexWorkbenchInstallation(
 	};
 }
 
-export type { CanvasCodexWorkbenchHost } from "@/server/archboard/lib/codex-workbench-server";
+export type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";

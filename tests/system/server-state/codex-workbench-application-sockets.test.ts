@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 
@@ -87,7 +87,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 describe.serial("production canvas Codex WebSocket ownership", () => {
 	test("a successful replacement retires the prior transport without erasing current authority", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-application-sockets-"));
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault: join(root, "vault"),
 		});
@@ -204,7 +204,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 	test("a failed replacement initial send leaves the live original authoritative", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-initial-send-failure-"));
 		const sendLog = join(root, "initial-send.log");
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath: join(
 				repoRoot,
 				"tests/system/server-state/fixtures/initial-send-failure-server.ts",

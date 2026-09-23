@@ -5,7 +5,7 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "../../../shared/codex-workbench-identity/index.js";
-import { createCanvasTimelineOwner } from "../codex-workbench-adapters.js";
+import { createServerTimelineOwner } from "../codex-workbench-adapters.js";
 import {
 	dynamicToolCallItem,
 	executableLink,
@@ -26,7 +26,7 @@ async function projectedItems(
 ) {
 	const decoder = authorities.identity.decoder;
 	const turn = turnFixture(authorities, "items-turn", items);
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session: {
 			threadTurnsListPage: async () => ({ data: [turn], nextCursor: null, backwardsCursor: null }),
 			timelineListPage: async () => ({

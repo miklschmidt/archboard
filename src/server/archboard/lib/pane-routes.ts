@@ -13,7 +13,7 @@ import {
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { frontendState } from "@/runtime/engine/staleness";
 import { PANE_LAYOUT_TIMEOUT_MS } from "@/shared/timing/timing";
-import { canvasUrl } from "@/server/archboard/lib/listener-address";
+import { serverUrl } from "@/server/archboard/lib/listener-address";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import {
 	aggregateOf,
@@ -50,7 +50,7 @@ function noBrowserBody(what: string): Record<string, unknown> {
 		code: "BROWSER_REQUIRED",
 		error:
 			`${what} needs a canvas open in a browser. A pane exists only while a tab is rendering it, ` +
-			`so there is nothing on screen to split or close. Open ${canvasUrl()} and retry.`,
+			`so there is nothing on screen to split or close. Open ${serverUrl()} and retry.`,
 	};
 }
 
@@ -215,7 +215,7 @@ function getPanesRoute(_req: Request, res: Response): void {
 				at: context.at,
 			};
 		},
-		canvasUrl: canvasUrl(),
+		serverUrl: serverUrl(),
 	});
 	res.json({ success: true, ...report });
 }

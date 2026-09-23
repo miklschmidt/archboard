@@ -28,7 +28,7 @@ export type {
 	RealtimeCorrelation,
 	RealtimeCorrelationId,
 	RealtimeDiagnosticCode,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeItemId,
 	RealtimePhase,
 	RealtimeRecoverableErrorReason,

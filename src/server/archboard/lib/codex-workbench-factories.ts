@@ -30,7 +30,7 @@ import {
 	type IdentityLedger,
 } from "@/shared/codex-workbench-identity";
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
-import { createCanvasThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
+import { createServerThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import type {
 	CodexWorkbenchComponents,
@@ -178,7 +178,7 @@ function createProductionCodexWorkbenchFactories(
 		 * @returns The link.
 		 */
 		threadLink: (created) =>
-			createCanvasThreadLink(
+			createServerThreadLink(
 				createCodexThreadLink({
 					...bindings.threadLink(created),
 					session: requireComponent(created, "session"),

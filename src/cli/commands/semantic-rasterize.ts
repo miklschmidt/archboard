@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { DiagramThemeSchema } from "@/shared/semantic-board/index";
-import { renderSemanticBoardOnCanvas } from "@/runtime/semantic-board-client/index";
+import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import {
 	RASTER_MAX_SCALE,
 	RASTER_MIN_SCALE,
@@ -201,7 +201,7 @@ const semanticRasterizeContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic rasterize");
-		const drawn = await renderSemanticBoardOnCanvas(input.name, {
+		const drawn = await renderSemanticBoardOnServer(input.name, {
 			...(input.variant === undefined ? {} : { variant: input.variant }),
 			...(input.view === undefined ? {} : { view: input.view }),
 			theme: input.theme,

@@ -250,26 +250,27 @@ function runControls(
 function runStatus(
 	state: RealtimeState,
 	input: VoiceSessionProjectionInput,
-): { readonly status: VoiceSessionStatus; readonly hostRecovering: boolean } {
+): { readonly status: VoiceSessionStatus; readonly serverRecovering: boolean } {
 	const narrated = narratedStatus(state);
-	const hostVoice = input.transportState.snapshot?.voice ?? null;
-	const hostRecovering = hostVoice?.state === "recovering" && RECOVERABLE_STATUSES.has(narrated);
-	return { status: hostRecovering ? "recovering" : narrated, hostRecovering };
+	const serverVoice = input.transportState.snapshot?.voice ?? null;
+	const serverRecovering =
+		serverVoice?.state === "recovering" && RECOVERABLE_STATUSES.has(narrated);
+	return { status: serverRecovering ? "recovering" : narrated, serverRecovering };
 }
 
 /**
  * The narrated detail, extended with the host's recovery reason while recovering.
  * @param detail The narrated detail.
- * @param hostRecovering Whether the host renamed the run to recovering.
+ * @param serverRecovering Whether the host renamed the run to recovering.
  * @param input The projection input.
  * @returns The detail sentence.
  */
 function recoveringDetail(
 	detail: string,
-	hostRecovering: boolean,
+	serverRecovering: boolean,
 	input: VoiceSessionProjectionInput,
 ): string {
-	if (!hostRecovering) {
+	if (!serverRecovering) {
 		return detail;
 	}
 	const reason = input.transportState.snapshot?.voice.reason ?? null;
@@ -292,9 +293,9 @@ function healthyRunView(
 	external: VoiceSessionFailure | null,
 	input: VoiceSessionProjectionInput,
 ): VoiceSessionView {
-	const { status, hostRecovering } = runStatus(state, input);
+	const { status, serverRecovering } = runStatus(state, input);
 	const controls = runControls(state, blocker === null, input.busy);
-	const narrated = recoveringDetail(detail, hostRecovering, input);
+	const narrated = recoveringDetail(detail, serverRecovering, input);
 	// A coordinator or voice failure the host publishes mid-run, or a control
 	// this adapter drove and had refused, is the only news on the screen.
 	const attached = external ?? input.controlFailure;

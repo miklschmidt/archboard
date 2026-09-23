@@ -27,7 +27,7 @@ import type { TransportServerNotification } from "@/runtime/codex-transport";
  * @param authority What mints and validates this epoch's operations.
  * @returns The port.
  */
-function createCanvasDynamicOperationIdAdapter(
+function createServerDynamicOperationIdAdapter(
 	authority: IdentityAuthorities["operation"],
 ): DynamicOperationIdPort {
 	const terminal = new Map<OperationId, DynamicOperationTerminalResult>();
@@ -220,7 +220,7 @@ function waitCancellation(
 	return null;
 }
 
-interface CanvasDynamicLifecycleOwnerOptions {
+interface ServerDynamicLifecycleOwnerOptions {
 	readonly identity: IdentityAuthorities;
 	readonly waitGraph: CodexWaitGraph;
 	readonly waitForTargets: (input: {
@@ -234,7 +234,7 @@ interface CanvasDynamicLifecycleOwnerOptions {
 	readonly onFatal: (fault: DynamicFatalLifecycleFault) => void;
 }
 
-interface CanvasDynamicLifecycleOwner {
+interface ServerDynamicLifecycleOwner {
 	readonly port: DynamicToolLifecyclePort;
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
@@ -247,9 +247,9 @@ interface CanvasDynamicLifecycleOwner {
  * waited on, torn down, and reported fatal.
  * @returns The owner.
  */
-function createCanvasDynamicLifecycleOwner(
-	options: CanvasDynamicLifecycleOwnerOptions,
-): CanvasDynamicLifecycleOwner {
+function createServerDynamicLifecycleOwner(
+	options: ServerDynamicLifecycleOwnerOptions,
+): ServerDynamicLifecycleOwner {
 	const activeWaits = new Map<
 		string,
 		{
@@ -518,8 +518,8 @@ function createCanvasDynamicLifecycleOwner(
 }
 
 export {
-	createCanvasDynamicOperationIdAdapter,
-	type CanvasDynamicLifecycleOwnerOptions,
-	type CanvasDynamicLifecycleOwner,
-	createCanvasDynamicLifecycleOwner,
+	createServerDynamicOperationIdAdapter,
+	type ServerDynamicLifecycleOwnerOptions,
+	type ServerDynamicLifecycleOwner,
+	createServerDynamicLifecycleOwner,
 };

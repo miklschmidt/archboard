@@ -12,7 +12,7 @@
 
 import { expect, test } from "bun:test";
 
-import { createCanvasThreadLinkActions } from "../codex-workbench-adapters.js";
+import { createServerThreadLinkActions } from "../codex-workbench-adapters.js";
 
 /**
  * A controller that remembers what it was asked to do.
@@ -39,7 +39,7 @@ function watchingController() {
  * @returns The actions.
  */
 function actionsWith(controller: unknown) {
-	return createCanvasThreadLinkActions({
+	return createServerThreadLinkActions({
 		semanticDelivery: controller,
 		workhorse: undefined,
 		threadLink: undefined,

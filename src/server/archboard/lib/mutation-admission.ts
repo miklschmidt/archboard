@@ -1,21 +1,21 @@
-interface CanvasMutationLease {
+interface ServerMutationLease {
 	readonly signal: AbortSignal;
 	abort(reason?: unknown): void;
 	finish(): void;
 	track<T>(name: string, work: (signal: AbortSignal) => Promise<T> | T): Promise<T>;
 }
 
-interface CanvasMutationAdmissionOptions {
+interface ServerMutationAdmissionOptions {
 	readonly drainTimeoutMs: number;
 }
 
-interface CanvasActiveMutation {
+interface ServerActiveMutation {
 	readonly name: string;
 	readonly kind: "request" | "work";
 	readonly startedAt: number;
 }
 
-class CanvasApplicationBusyError extends Error {
+class ServerApplicationBusyError extends Error {
 	readonly code = "CANVAS_BUSY";
 
 	/**
@@ -26,7 +26,7 @@ class CanvasApplicationBusyError extends Error {
 	 */
 	constructor(
 		readonly timeoutMs: number,
-		readonly active: readonly CanvasActiveMutation[],
+		readonly active: readonly ServerActiveMutation[],
 	) {
 		const now = Date.now();
 		const details = active
@@ -38,7 +38,7 @@ class CanvasApplicationBusyError extends Error {
 			`Canvas shutdown refused because mutation work did not settle within ${timeoutMs} ms: ${details}. ` +
 				"No resource was torn down; the canvas resumed write admission. Finish or cancel the named work, then retry stop.",
 		);
-		this.name = "CanvasApplicationBusyError";
+		this.name = "ServerApplicationBusyError";
 	}
 }
 
@@ -49,14 +49,14 @@ class CanvasApplicationBusyError extends Error {
  * @param options How long a stop's drain waits.
  * @returns The admission owner.
  */
-function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) {
+function createServerMutationAdmission(options: ServerMutationAdmissionOptions) {
 	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0) {
 		throw new Error("Canvas mutation drain timeout must be a non-negative finite duration.");
 	}
 
 	let accepting = true;
 	let nextId = 0;
-	const active = new Map<number, CanvasActiveMutation>();
+	const active = new Map<number, ServerActiveMutation>();
 	const drained = new Set<() => void>();
 	/** Release every waiter once nothing is in flight. */
 	const settle = (): void => {
@@ -73,7 +73,7 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 	 * @param entry What the work is.
 	 * @returns Stops counting it, the first time it is called.
 	 */
-	const enter = (entry: CanvasActiveMutation): (() => void) => {
+	const enter = (entry: ServerActiveMutation): (() => void) => {
 		const id = nextId++;
 		active.set(id, entry);
 		let finished = false;
@@ -93,7 +93,7 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 		 * @param name What the request is.
 		 * @returns Its lease, or null when the canvas is stopping.
 		 */
-		admit: (name: string): CanvasMutationLease | null => {
+		admit: (name: string): ServerMutationLease | null => {
 			if (!accepting) {
 				return null;
 			}
@@ -164,7 +164,7 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 			if (settled || active.size === 0) {
 				return;
 			}
-			throw new CanvasApplicationBusyError(
+			throw new ServerApplicationBusyError(
 				options.drainTimeoutMs,
 				[...active.values()].toSorted((left, right) =>
 					left.startedAt === right.startedAt
@@ -191,13 +191,13 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 		 * What is in flight, for the health report.
 		 * @returns One entry per piece of work.
 		 */
-		activeMutations: (): readonly CanvasActiveMutation[] => [...active.values()],
+		activeMutations: (): readonly ServerActiveMutation[] => [...active.values()],
 	});
 }
 export {
-	CanvasApplicationBusyError,
-	createCanvasMutationAdmission,
-	type CanvasActiveMutation,
-	type CanvasMutationAdmissionOptions,
-	type CanvasMutationLease,
+	ServerApplicationBusyError,
+	createServerMutationAdmission,
+	type ServerActiveMutation,
+	type ServerMutationAdmissionOptions,
+	type ServerMutationLease,
 };

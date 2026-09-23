@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import {
 	openTestPane,
@@ -28,7 +28,7 @@ test("the public lock API preserves claims, refusals and told-once recovery", as
 	const root = mkdtempSync(join(tmpdir(), "archboard-lock-api-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),

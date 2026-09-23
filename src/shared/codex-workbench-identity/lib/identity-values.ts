@@ -252,7 +252,7 @@ function tokenOf(value: BrandedIdentity<IdentityDomain>): string {
  * @param domain - The identity domain to mint in.
  * @returns A fresh branded identity.
  */
-function mintHostValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
+function mintServerValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
 	return wireValue(domain, `h${mintToken()}`);
 }
 
@@ -459,7 +459,7 @@ export {
 	wireValue,
 	mintToken,
 	tokenOf,
-	mintHostValue,
+	mintServerValue,
 	parseValue,
 	parseEpochValue,
 	mintEpochValue,

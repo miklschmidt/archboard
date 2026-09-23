@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -36,7 +36,7 @@ test("live voice is told what the user changed by hand, and nothing of what anyb
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath,
 			vault: fixture.vault,
 			env: {

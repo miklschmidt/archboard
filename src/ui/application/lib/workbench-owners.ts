@@ -89,7 +89,7 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 		 * The pane an action is captured against.
 		 * @returns The capture.
 		 */
-		capturePane: () => ({ paneId, transport, hostRecoveryIntents: [] }),
+		capturePane: () => ({ paneId, transport, serverRecoveryIntents: [] }),
 	});
 	return Object.freeze({
 		paneId,

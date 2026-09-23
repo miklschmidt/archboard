@@ -21,7 +21,7 @@ const LOCAL_VAULT_DIR = path.join(".archboard", "vault");
 
 // Matches the default in core/config.ts. Only a URL that differs from it is
 // worth writing down, because only then is it something an agent cannot guess.
-const DEFAULT_CANVAS_URL = "http://127.0.0.1:3000";
+const DEFAULT_SERVER_URL = "http://127.0.0.1:3000";
 
 interface SetupResult {
 	repo: string;
@@ -92,7 +92,7 @@ function chooseDoc(repo: string, targetSpec: string): { file: string; existed: b
  * @param options.command - How the CLI is invoked when it is not on PATH.
  * @param options.onPath - Whether `archboard` resolves on PATH.
  * @param options.skill - Where the installed skill lives.
- * @param options.canvasUrl - The canvas URL when it is not the default.
+ * @param options.serverUrl - The canvas URL when it is not the default.
  * @returns The block text, markers included, ending in a newline.
  */
 function renderBlock(options: {
@@ -100,13 +100,13 @@ function renderBlock(options: {
 	command: string;
 	onPath: boolean;
 	skill: string;
-	canvasUrl?: string;
+	serverUrl?: string;
 }): string {
-	const { vault, command, onPath, skill, canvasUrl } = options;
+	const { vault, command, onPath, skill, serverUrl } = options;
 	const cli = onPath ? "archboard" : command;
 	const env = [`export ARCHBOARD_VAULT=${vault}`];
-	if (canvasUrl) {
-		env.push(`export ARCHBOARD_URL=${canvasUrl}`);
+	if (serverUrl) {
+		env.push(`export ARCHBOARD_URL=${serverUrl}`);
 	}
 
 	return [
@@ -153,7 +153,7 @@ function renderBlock(options: {
 		"archboard runs its TypeScript directly, so bun has to be on PATH for any of",
 		"this to work.",
 		"",
-		`The Archboard server starts on the first command and serves ${canvasUrl ?? "http://127.0.0.1:3000"}.`,
+		`The Archboard server starts on the first command and serves ${serverUrl ?? "http://127.0.0.1:3000"}.`,
 		"Open that in a browser to read a board. Authoring and reading a board from the",
 		`command line work without one, and \`${cli} semantic render <name> --out f.svg\``,
 		"draws a picture with no browser involved.",
@@ -242,9 +242,9 @@ function chooseSetupDoc(options: SetupOptions, repo: string): { file: string; ex
  * agent has no way of guessing.
  * @returns The configured canvas URL when it differs from the default, else undefined.
  */
-function canvasUrlOverride(): string | undefined {
+function serverUrlOverride(): string | undefined {
 	const configured = process.env["ARCHBOARD_URL"];
-	return configured && configured !== DEFAULT_CANVAS_URL ? configured : undefined;
+	return configured && configured !== DEFAULT_SERVER_URL ? configured : undefined;
 }
 
 /**
@@ -302,13 +302,13 @@ async function writeSetup(options: SetupOptions): Promise<SetupResult | undefine
 	const existing = chosen.existed ? fs.readFileSync(chosen.file, "utf-8") : "";
 	const blockUpdated = existing.includes(BLOCK_BEGIN);
 	const { command, onPath } = resolveInvocation();
-	const canvasUrl = canvasUrlOverride();
+	const serverUrl = serverUrlOverride();
 	const block = renderBlock({
 		vault,
 		command,
 		onPath,
 		skill: options.skill,
-		...(canvasUrl === undefined ? {} : { canvasUrl }),
+		...(serverUrl === undefined ? {} : { serverUrl }),
 	});
 
 	fs.mkdirSync(path.dirname(chosen.file), { recursive: true });

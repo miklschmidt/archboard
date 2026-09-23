@@ -15,7 +15,7 @@ import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
 	type ThreadLinkInventory,
-	type ThreadLinkHostRecovery,
+	type ThreadLinkServerRecovery,
 	type ThreadLinkInventoryRecord,
 	type ThreadLinkPaneCapture,
 	type ThreadLinkRecoveryIntent,
@@ -491,27 +491,27 @@ class FakeTransport implements ThreadLinkTransportPort {
 /**
  * The pane one action is captured against.
  * @param transport The double.
- * @param hostRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The host intents this pane has an owner for.
  * @returns The capture.
  */
 function pane(
 	transport: FakeTransport,
-	hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
+	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
 ): ThreadLinkPaneCapture {
-	return { paneId: transport.paneId, transport, hostRecoveryIntents };
+	return { paneId: transport.paneId, transport, serverRecoveryIntents };
 }
 
 /**
  * A pane capture over one double, read once per action.
  * @param transport The double.
- * @param hostRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The host intents this pane has an owner for.
  * @returns The capture function.
  */
 function capturing(
 	transport: FakeTransport,
-	hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
+	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
 ): () => ThreadLinkPaneCapture {
-	return () => pane(transport, hostRecoveryIntents);
+	return () => pane(transport, serverRecoveryIntents);
 }
 
 /**
@@ -520,10 +520,10 @@ function capturing(
  * @param recover What the owner runs.
  * @returns The capture function.
  */
-function hostOwner(
+function serverOwner(
 	paneId: string,
 	recover: (target: ThreadLinkRecoveryTarget) => Promise<void>,
-): (target: ThreadLinkRecoveryTarget) => ThreadLinkHostRecovery {
+): (target: ThreadLinkRecoveryTarget) => ThreadLinkServerRecovery {
 	return (target) => ({
 		paneId,
 		intent: target.intent,
@@ -540,7 +540,7 @@ export {
 	FakeTransportError,
 	capabilities,
 	capturing,
-	hostOwner,
+	serverOwner,
 	childA,
 	commandA,
 	connected,

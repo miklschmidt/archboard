@@ -5,13 +5,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS,
-	TEST_CANVAS_EARLY_DEATH_DELAY_MS,
-	TEST_CANVAS_HEALTH_POLL_MS,
-	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_CASE_TIMEOUT_MARGIN_MS,
+	TEST_SERVER_EARLY_DEATH_DELAY_MS,
+	TEST_SERVER_HEALTH_POLL_MS,
+	TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 } from "./timing.ts";
-import { processExists, startOwnedCanvas, type OwnedCanvas } from "./owned-server.ts";
+import { processExists, startOwnedServer, type OwnedServer } from "./owned-server.ts";
 import {
 	createLifecycleChildRunner,
 	listenerAnswers,
@@ -24,7 +24,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const serverPath = path.join(repoRoot, "src/server.ts");
 const thisFile = fileURLToPath(import.meta.url);
 
-async function readJson(canvas: OwnedCanvas, responsePromise: Promise<Response>): Promise<unknown> {
+async function readJson(canvas: OwnedServer, responsePromise: Promise<Response>): Promise<unknown> {
 	await canvas.assertRunning();
 	try {
 		const response = await responsePromise;
@@ -53,7 +53,7 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "early-death") {
 						controller.enqueue(new TextEncoder().encode('{"unfinished":'));
 						// oxlint-disable-next-line no-console -- child stderr is the contract under test.
 						console.error("intentional early canvas death after response headers");
-						setTimeout(() => process.exit(23), TEST_CANVAS_EARLY_DEATH_DELAY_MS);
+						setTimeout(() => process.exit(23), TEST_SERVER_EARLY_DEATH_DELAY_MS);
 					},
 				});
 				return new Response(body, {
@@ -69,9 +69,9 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "early-death") {
 const childMode = process.env["ARCHBOARD_LIFECYCLE_CHILD"];
 if (childMode) {
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
-	let owned: OwnedCanvas | undefined;
+	let owned: OwnedServer | undefined;
 	try {
-		owned = await startOwnedCanvas({
+		owned = await startOwnedServer({
 			serverPath: childMode === "early-death" ? thisFile : serverPath,
 			vault,
 			...(childMode === "early-death"
@@ -99,7 +99,7 @@ if (childMode) {
 				throw new Error("Concurrent lifecycle child has no release file.");
 			}
 			while (!fs.existsSync(releaseFile)) {
-				await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
+				await Bun.sleep(TEST_SERVER_HEALTH_POLL_MS);
 			}
 			if (childMode === "concurrent-failure") {
 				throw new Error("intentional concurrent failure");
@@ -110,9 +110,9 @@ if (childMode) {
 				async whileStopped() {
 					// oxlint-disable-next-line no-console -- JSON lines coordinate the external listener.
 					console.log(JSON.stringify({ marker: "retired-canvas", base: owned!.base }));
-					const deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+					const deadline = Date.now() + TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 					while (!(await listenerAnswers(owned!.base)) && Date.now() < deadline) {
-						await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
+						await Bun.sleep(TEST_SERVER_HEALTH_POLL_MS);
 					}
 				},
 			});
@@ -287,7 +287,7 @@ describe("owned canvas lifecycle", () => {
 					});
 				}
 			},
-			TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS + TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS,
+			TEST_SERVER_CHILD_EXIT_TIMEOUT_MS + TEST_SERVER_CASE_TIMEOUT_MARGIN_MS,
 		);
 	}
 
@@ -296,7 +296,7 @@ describe("owned canvas lifecycle", () => {
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
 		try {
 			await runLifecycleChild("timeout", {
-				timeoutMs: TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+				timeoutMs: TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 				onRecord(record) {
 					if (record["marker"] !== "retired-canvas") {
 						return;
@@ -337,7 +337,7 @@ describe("owned canvas lifecycle", () => {
 		try {
 			await runLifecycleChild("timeout-before-replacement", {
 				timeoutAfterRecord: "replacement-canvas",
-				spawnWatchdogMs: TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+				spawnWatchdogMs: TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 			});
 		} catch (error) {
 			failure = error as LifecycleTimeoutError;

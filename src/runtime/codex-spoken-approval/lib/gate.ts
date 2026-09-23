@@ -33,7 +33,7 @@ import {
 import {
 	resolveSpokenApproval,
 	startClassifier,
-	type ClassifierTurnHost,
+	type ClassifierTurnContext,
 } from "@/runtime/codex-spoken-approval/lib/classifier-turn";
 import {
 	answerRefusal,
@@ -224,7 +224,7 @@ export function createCodexSpokenApprovalGate(
 		slot.phase !== "visual_fallback" &&
 		!disposed;
 
-	const validationHost = {
+	const validationContext = {
 		approvalBroker: options.approvalBroker,
 		identity: options.identity,
 		currentCoordinator,
@@ -238,7 +238,7 @@ export function createCodexSpokenApprovalGate(
 		transcript: () => options.realtime.transcript(),
 	};
 
-	const classifierHost: ClassifierTurnHost = {
+	const classifierContext: ClassifierTurnContext = {
 		approvalBroker: options.approvalBroker,
 		session: options.session,
 		identity: options.identity,
@@ -282,7 +282,7 @@ export function createCodexSpokenApprovalGate(
 		assertArmable();
 		active = null;
 		currentSnapshot = EMPTY_SPOKEN_APPROVAL_SNAPSHOT;
-		const result = validateArm(validationHost, input);
+		const result = validateArm(validationContext, input);
 		if (!result.ok) {
 			return fallbackWithoutSlot(result.reason, input.requestId);
 		}
@@ -362,7 +362,7 @@ export function createCodexSpokenApprovalGate(
 			return;
 		}
 		if (record.status === "final") {
-			startClassifier(classifierHost, slot, record);
+			startClassifier(classifierContext, slot, record);
 		}
 	};
 
@@ -482,7 +482,7 @@ export function createCodexSpokenApprovalGate(
 				refusal("not_ready", "There is no pending spoken approval to resolve."),
 			);
 		}
-		return resolveSpokenApproval(classifierHost, slot, request);
+		return resolveSpokenApproval(classifierContext, slot, request);
 	};
 
 	/**

@@ -29,7 +29,7 @@ interface PendingDynamicApproval {
 	settled: boolean;
 }
 
-interface CanvasDynamicApprovalOwner {
+interface ServerDynamicApprovalOwner {
 	readonly port: DynamicToolApprovalPort;
 	readonly browser: BrowserDynamicApprovalActions;
 	readonly pending: () => readonly DynamicApprovalOwnerView[];
@@ -46,7 +46,7 @@ interface CanvasDynamicApprovalOwner {
 	readonly dispose: () => void;
 }
 
-interface CanvasDynamicApprovalOwnerOptions {
+interface ServerDynamicApprovalOwnerOptions {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
 	readonly bindingForCaller: (threadId: ThreadId) => DynamicApprovalOwnerBinding;
@@ -247,9 +247,9 @@ function approvalCancellation(
  * one caller's pane binding is read.
  * @returns The owner.
  */
-function createCanvasDynamicApprovalOwner(
-	options: CanvasDynamicApprovalOwnerOptions,
-): CanvasDynamicApprovalOwner {
+function createServerDynamicApprovalOwner(
+	options: ServerDynamicApprovalOwnerOptions,
+): ServerDynamicApprovalOwner {
 	const pending = new Map<string, PendingDynamicApproval>();
 	const decisions = new Map<string, DynamicToolApprovalDecision>();
 	const listeners = new Set<() => void>();
@@ -484,7 +484,7 @@ function createCanvasDynamicApprovalOwner(
 }
 
 export {
-	type CanvasDynamicApprovalOwner,
-	type CanvasDynamicApprovalOwnerOptions,
-	createCanvasDynamicApprovalOwner,
+	type ServerDynamicApprovalOwner,
+	type ServerDynamicApprovalOwnerOptions,
+	createServerDynamicApprovalOwner,
 };

@@ -23,7 +23,7 @@ const server = Bun.serve({
 		const url = new URL(request.url);
 		if (url.pathname === "/health") {
 			return Response.json({
-				service: "archboard-canvas",
+				service: "archboard-server",
 				status: "ok",
 				websocket_clients: 1,
 			});

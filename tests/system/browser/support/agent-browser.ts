@@ -17,7 +17,7 @@ interface PollOptions {
 }
 type TestEnvironment = Readonly<Record<string, string | undefined>>;
 
-function runCanvasCli(base: string, vault: string, args: string[]): string {
+function runServerCli(base: string, vault: string, args: string[]): string {
 	const repoRoot = resolve(import.meta.dir, "../../../..");
 	const result = spawnSync(join(repoRoot, "bin/archboard"), args, {
 		cwd: repoRoot,
@@ -49,7 +49,7 @@ const REQUIRED_BROWSER_ENV = [
 	"AGENT_BROWSER_NAMESPACE",
 	"AGENT_BROWSER_IDLE_TIMEOUT_MS",
 ] as const;
-const CLEARED_CANVAS_ENV = [
+const CLEARED_SERVER_ENV = [
 	"ARCHBOARD_VAULT",
 	"ARCHBOARD_REPOS",
 	"ARCHBOARD_SETTLE_MS",
@@ -117,15 +117,15 @@ function browserTestEnvironment(): Record<string, string> {
 	return env;
 }
 
-function canvasTestEnvironment(values: TestEnvironment = {}): Record<string, string | undefined> {
+function serverTestEnvironment(values: TestEnvironment = {}): Record<string, string | undefined> {
 	const env: Record<string, string | undefined> = browserTestEnvironment();
 	// The test page and its server renderer are separate browser launches.
 	// Preserve the renderer override instead of falling back to managed Chrome.
 	if (process.env["ARCHBOARD_RENDERER_CHROMIUM"]) {
 		env["ARCHBOARD_RENDERER_CHROMIUM"] = process.env["ARCHBOARD_RENDERER_CHROMIUM"];
 	}
-	env["LOG_FILE_PATH"] = join(browserTestRoots().ownerRoot, "canvas.log");
-	for (const name of CLEARED_CANVAS_ENV) {
+	env["LOG_FILE_PATH"] = join(browserTestRoots().ownerRoot, "server.log");
+	for (const name of CLEARED_SERVER_ENV) {
 		env[name] = undefined;
 	}
 	for (const name of Object.keys(process.env)) {
@@ -179,13 +179,13 @@ function browserCleanupObservationMs(idleTimeout: string): number {
 	return idleTimeoutMs + TEST_BROWSER_POLL_MS;
 }
 
-function registerCanvasBase(base: string): void {
+function registerServerBase(base: string): void {
 	const url = new URL(base);
 	if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) {
 		throw new Error(`Owned canvas base is not an explicit loopback listener: ${base}`);
 	}
 	const { ownerRoot } = browserTestRoots();
-	appendFileSync(join(ownerRoot, ".canvas-bases"), `${url.origin}\n`, { encoding: "utf8" });
+	appendFileSync(join(ownerRoot, ".server-bases"), `${url.origin}\n`, { encoding: "utf8" });
 }
 
 function ownedProcessIds(namespace: string, session: string): number[] {
@@ -401,13 +401,13 @@ export {
 	type BrowserTestRoots,
 	type PollOptions,
 	type TestEnvironment,
-	runCanvasCli,
+	runServerCli,
 	browserTestRoots,
 	browserTestEnvironment,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	pollUntil,
 	browserCleanupObservationMs,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 	type BrowserCommandOptions,
 	createAgentBrowser,

@@ -212,7 +212,7 @@ function openFirstStep(presentation: RealtimePresentation | null, paneId: string
  * @param components The coordinator, the realtime adapter, and the workhorse.
  * @returns The actions.
  */
-export function createCanvasRealtimeActions(
+export function createServerRealtimeActions(
 	components: RealtimeComponents,
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;

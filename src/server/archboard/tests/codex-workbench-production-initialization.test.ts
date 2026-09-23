@@ -21,7 +21,7 @@ import {
 	createBrowserLeaseLedger,
 	createCodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
-import { createCanvasCodexWorkbenchInstallation } from "../codex-workbench-production.js";
+import { createServerCodexWorkbenchInstallation } from "../codex-workbench-production.js";
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
@@ -51,7 +51,7 @@ function installation(host: Record<string, unknown> = {}) {
 	try {
 		return {
 			root,
-			value: createCanvasCodexWorkbenchInstallation({
+			value: createServerCodexWorkbenchInstallation({
 				checkoutRoot: "/repo",
 				...host,
 			} as never),

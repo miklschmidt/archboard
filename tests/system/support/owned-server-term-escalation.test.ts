@@ -6,7 +6,7 @@ import path from "node:path";
 import { z } from "zod";
 
 import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
-import { processExists, startOwnedCanvas } from "./owned-server.ts";
+import { processExists, startOwnedServer } from "./owned-server.ts";
 
 const thisFile = import.meta.path;
 
@@ -46,7 +46,7 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "term-escalation") {
 
 test("ordinary TERM escalation completes forced canvas cleanup", async () => {
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: thisFile,
 		vault,
 		env: { ARCHBOARD_LIFECYCLE_SERVER: "term-escalation" },

@@ -17,8 +17,8 @@ import {
 	BROWSER_SNAPSHOT_MIN_BYTES,
 } from "../../codex-workbench/index.js";
 import {
-	createCanvasBrowserProjectionBudget,
-	createCanvasTimelineOwner,
+	createServerBrowserProjectionBudget,
+	createServerTimelineOwner,
 } from "../codex-workbench-adapters.js";
 import {
 	agentMessageItem,
@@ -96,7 +96,7 @@ test("retiring a closed pane drops its refresh and notification eligibility", as
 			activeRealtimeSessionAtPageStart: null,
 		}),
 	};
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
@@ -143,7 +143,7 @@ test("same-pane connections load independently and only the live pair recovers",
 			activeRealtimeSessionAtPageStart: null,
 		}),
 	};
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
@@ -223,12 +223,12 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 			activeRealtimeSessionAtPageStart: null,
 		}),
 	};
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
 		onChange: () => undefined,
-		budget: createCanvasBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 2 }),
+		budget: createServerBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 2 }),
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
@@ -307,12 +307,12 @@ test("caps final item chronology after matching and unmatched approvals", async 
 			activeRealtimeSessionAtPageStart: null,
 		}),
 	};
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => approvals },
 		onChange: () => undefined,
-		budget: createCanvasBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 3 }),
+		budget: createServerBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 3 }),
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
@@ -365,7 +365,7 @@ test("marks a user summary truncated when text appears beyond its bounded scan",
 			activeRealtimeSessionAtPageStart: null,
 		}),
 	};
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
@@ -385,12 +385,12 @@ test("marks a user summary truncated when text appears beyond its bounded scan",
 });
 
 test("accepts exact snapshot budget boundaries and rejects every supplied invalid value", () => {
-	expect(createCanvasBrowserProjectionBudget().maxBytes).toBe(768 * 1024);
+	expect(createServerBrowserProjectionBudget().maxBytes).toBe(768 * 1024);
 	expect(
-		createCanvasBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MIN_BYTES }).maxBytes,
+		createServerBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MIN_BYTES }).maxBytes,
 	).toBe(BROWSER_SNAPSHOT_MIN_BYTES);
 	expect(
-		createCanvasBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MAX_BYTES }).maxBytes,
+		createServerBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MAX_BYTES }).maxBytes,
 	).toBe(BROWSER_SNAPSHOT_MAX_BYTES);
 	for (const maxBytes of [
 		0,
@@ -401,7 +401,7 @@ test("accepts exact snapshot budget boundaries and rejects every supplied invali
 		Number.NaN,
 		Number.POSITIVE_INFINITY,
 	]) {
-		expect(() => createCanvasBrowserProjectionBudget({ maxBytes })).toThrow(
+		expect(() => createServerBrowserProjectionBudget({ maxBytes })).toThrow(
 			"browser snapshot budget must be between",
 		);
 	}
@@ -452,13 +452,13 @@ test("a budget cut drops the oldest turns and keeps the newest in-progress turn"
 			activeRealtimeSessionAtPageStart: null,
 		}),
 	};
-	const owner = createCanvasTimelineOwner({
+	const owner = createServerTimelineOwner({
 		session,
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
 		onChange: () => undefined,
 		// Two turns fit; the third is history the browser never needed.
-		budget: createCanvasBrowserProjectionBudget({ maxTurns: 2 }),
+		budget: createServerBrowserProjectionBudget({ maxTurns: 2 }),
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);

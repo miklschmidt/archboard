@@ -2,7 +2,11 @@
 // answer apart from a foreign service or a canvas holding unsaved work.
 
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
-import { getHealth, CANVAS_SERVICE_NAME, type HealthStatus } from "@/runtime/engine/server-client";
+import {
+	getHealth,
+	ARCHBOARD_SERVICE_NAME,
+	type HealthStatus,
+} from "@/runtime/engine/server-client";
 import { codedError } from "@/runtime/engine/lib/thrown-error";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
@@ -11,7 +15,7 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
  * The port the canvas URL names, with the scheme's default when it names none.
  * @returns The port number; 3000 when the URL cannot be parsed.
  */
-function canvasPort(): number {
+function serverPort(): number {
 	try {
 		const url = new URL(ARCHBOARD_URL);
 		return parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80);
@@ -24,7 +28,7 @@ function canvasPort(): number {
  * The host the canvas URL names.
  * @returns The hostname; the IPv4 loopback when the URL cannot be parsed.
  */
-function canvasHostname(): string {
+function serverHostname(): string {
 	try {
 		return new URL(ARCHBOARD_URL).hostname;
 	} catch {
@@ -38,7 +42,7 @@ function canvasHostname(): string {
  * @returns The bind address without URL brackets.
  */
 function spawnBindHost(): string {
-	const hostname = canvasHostname();
+	const hostname = serverHostname();
 	if (hostname === "localhost") {
 		return "127.0.0.1";
 	}
@@ -51,7 +55,7 @@ function spawnBindHost(): string {
  * @returns True for a loopback host.
  */
 function isLoopbackUrl(): boolean {
-	return LOOPBACK_HOSTS.has(canvasHostname());
+	return LOOPBACK_HOSTS.has(serverHostname());
 }
 
 /**
@@ -94,16 +98,16 @@ async function healthOrNull(): Promise<HealthStatus | null> {
  * @param health The payload, or null when nothing answered.
  * @returns True only for this canvas service.
  */
-function isCanvasHealth(health: { service?: string } | null): boolean {
-	return health?.service === CANVAS_SERVICE_NAME;
+function isServerHealth(health: { service?: string } | null): boolean {
+	return health?.service === ARCHBOARD_SERVICE_NAME;
 }
 
 export {
-	canvasPort,
+	serverPort,
 	spawnBindHost,
 	isLoopbackUrl,
 	unreachableError,
 	startupRefusal,
 	healthOrNull,
-	isCanvasHealth,
+	isServerHealth,
 };

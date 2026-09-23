@@ -1,14 +1,14 @@
 import { closeLogger, forceCloseLogger, logger } from "@/runtime/engine/logger";
 import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
 import { removePidFile } from "@/runtime/engine/pidfile";
-import { CANVAS_HTTP_STOP_GRACE_MS } from "@/shared/timing/timing";
+import { SERVER_HTTP_STOP_GRACE_MS } from "@/shared/timing/timing";
 import {
-	canvasStartupTerminalRecord,
-	writeCanvasStartupProtocolRecord,
+	serverStartupTerminalRecord,
+	writeServerStartupProtocolRecord,
 } from "@/shared/server-startup-terminal";
 import {
-	CanvasApplicationBusyError,
-	createCanvasApplicationLifetime,
+	ServerApplicationBusyError,
+	createServerApplicationLifetime,
 } from "@/server/archboard/lib/application-lifetime";
 import { server } from "@/server/archboard/lib/server-app";
 import { prepareCodexWorkbench, stopCodexWorkbench } from "@/server/archboard/lib/codex-wiring";
@@ -30,22 +30,22 @@ import {
 	PORT,
 } from "@/server/archboard/lib/listener-address";
 import { messageOf } from "@/server/archboard/lib/request-board";
-import { canvasStartupFailureMessage } from "@/server/archboard/lib/startup-error";
+import { serverStartupFailureMessage } from "@/server/archboard/lib/startup-error";
 import {
 	closeWebSocketServer,
 	startWebSocketServer,
 } from "@/server/archboard/lib/websocket-connection";
 
-type CanvasLifetime = ReturnType<typeof createCanvasApplicationLifetime>;
+type ServerLifetime = ReturnType<typeof createServerApplicationLifetime>;
 
-let canvasLifetime: CanvasLifetime | null = null;
+let serverLifetime: ServerLifetime | null = null;
 
 /**
  * Which phase the canvas lifetime is in, for the health report.
  * @returns The phase, or "idle" before the lifetime exists.
  */
-function canvasPhase(): ReturnType<CanvasLifetime["phase"]> | "idle" {
-	return canvasLifetime?.phase() ?? "idle";
+function serverPhase(): ReturnType<ServerLifetime["phase"]> | "idle" {
+	return serverLifetime?.phase() ?? "idle";
 }
 
 /**
@@ -53,8 +53,8 @@ function canvasPhase(): ReturnType<CanvasLifetime["phase"]> | "idle" {
  * @param error The failure.
  * @returns True for a busy refusal.
  */
-function isRecoverableCanvasStopError(error: unknown): boolean {
-	return error instanceof CanvasApplicationBusyError;
+function isRecoverableServerStopError(error: unknown): boolean {
+	return error instanceof ServerApplicationBusyError;
 }
 
 /**
@@ -62,9 +62,9 @@ function isRecoverableCanvasStopError(error: unknown): boolean {
  * anything else reaches stderr and fails the process.
  * @param error The failure.
  */
-function reportCanvasStopError(error: unknown): void {
+function reportServerStopError(error: unknown): void {
 	const message = `Canvas shutdown refused or failed: ${messageOf(error)}`;
-	if (isRecoverableCanvasStopError(error)) {
+	if (isRecoverableServerStopError(error)) {
 		logger.error(message);
 	} else {
 		process.stderr.write(message + "\n");
@@ -136,9 +136,9 @@ function startupTerminal(cleanupProven: () => boolean): StartupTerminal {
 				return;
 			}
 			reported = true;
-			writeCanvasStartupProtocolRecord(
-				canvasStartupTerminalRecord({
-					canvasPid: process.pid,
+			writeServerStartupProtocolRecord(
+				serverStartupTerminalRecord({
+					serverPid: process.pid,
 					cleanupProven: cleanupProven(),
 					message,
 				}),
@@ -164,19 +164,19 @@ interface ProcessHandlers {
  * @returns The handlers.
  */
 function processHandlers(
-	lifetimeOf: () => CanvasLifetime,
+	lifetimeOf: () => ServerLifetime,
 	http: HttpOwnership,
 	terminal: StartupTerminal,
 ): ProcessHandlers {
 	let runtimeServerStop: Promise<void> | null = null;
 	/** Stop the canvas after an HTTP runtime error, failing the process. */
-	const stopCanvasAfterHttpError = async (): Promise<void> => {
+	const stopServerAfterHttpError = async (): Promise<void> => {
 		const lifetime = lifetimeOf();
 		try {
 			await lifetime.stop("server-error");
 			process.exitCode = 1;
 		} catch (error) {
-			reportCanvasStopError(error);
+			reportServerStopError(error);
 		} finally {
 			if (lifetime.phase() === "running") {
 				runtimeServerStop = null;
@@ -187,12 +187,12 @@ function processHandlers(
 	 * Stop the canvas on a signal, exiting cleanly unless a stop failed.
 	 * @param signal The signal.
 	 */
-	const stopCanvasAfterSignal = async (signal: NodeJS.Signals): Promise<void> => {
+	const stopServerAfterSignal = async (signal: NodeJS.Signals): Promise<void> => {
 		try {
 			await lifetimeOf().stop(signal);
 			process.exitCode ??= 0;
 		} catch (error) {
-			reportCanvasStopError(error);
+			reportServerStopError(error);
 		} finally {
 			terminal.report();
 		}
@@ -203,7 +203,7 @@ function processHandlers(
 	 */
 	const shutdown = (signal: NodeJS.Signals): void => {
 		logger.info(`Received ${signal}, shutting down Archboard server`);
-		void stopCanvasAfterSignal(signal);
+		void stopServerAfterSignal(signal);
 	};
 	return {
 		/** Stop on SIGTERM. */
@@ -229,7 +229,7 @@ function processHandlers(
 			if (runtimeServerStop !== null) {
 				return;
 			}
-			runtimeServerStop = stopCanvasAfterHttpError();
+			runtimeServerStop = stopServerAfterHttpError();
 		},
 	};
 }
@@ -241,15 +241,15 @@ function processHandlers(
  * @param handlers The process handlers.
  * @returns The lifetime.
  */
-function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): CanvasLifetime {
-	return createCanvasApplicationLifetime({
+function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLifetime {
+	return createServerApplicationLifetime({
 		/**
 		 * Log the line the CLI prints from the startup protocol, before rollback
 		 * closes the log, so the reason outlives the terminal that showed it.
 		 * @param error What startup threw.
 		 */
 		onStartupFailure: (error) => {
-			logger.error(canvasStartupFailureMessage(error));
+			logger.error(serverStartupFailureMessage(error));
 		},
 		/** Stop admitting work and drain what is running. */
 		quiesce: async () => {
@@ -339,7 +339,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): CanvasLi
 				 * @returns Resolves once the port is released.
 				 */
 				stop: () => stopListening(http),
-				stopGraceMs: CANVAS_HTTP_STOP_GRACE_MS,
+				stopGraceMs: SERVER_HTTP_STOP_GRACE_MS,
 				/** Drop every connection and close. */
 				forceStop: async () => {
 					server.closeAllConnections();
@@ -399,26 +399,26 @@ async function startServer(): Promise<void> {
 		ownsPidFile: false,
 		closePromise: null,
 	};
-	let lifetime: CanvasLifetime | null = null;
+	let lifetime: ServerLifetime | null = null;
 	/**
 	 * The lifetime, which the handlers only ever reach once it exists.
 	 * @returns The lifetime.
 	 */
-	const lifetimeOf = (): CanvasLifetime => {
+	const lifetimeOf = (): ServerLifetime => {
 		if (lifetime === null) {
 			throw new Error("The canvas lifetime is not built yet.");
 		}
 		return lifetime;
 	};
 	lifetime = buildLifetime(http, processHandlers(lifetimeOf, http, terminal));
-	canvasLifetime = lifetime;
+	serverLifetime = lifetime;
 	cleanupProven = lifetime.cleanupProven;
 	try {
 		await lifetime.start();
 	} catch (error) {
-		terminal.report(canvasStartupFailureMessage(error));
+		terminal.report(serverStartupFailureMessage(error));
 		throw error;
 	}
 }
 
-export { canvasPhase, startServer };
+export { serverPhase, startServer };

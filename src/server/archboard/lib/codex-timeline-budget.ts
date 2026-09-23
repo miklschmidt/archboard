@@ -11,14 +11,14 @@ import {
 	TIMELINE_MAX_BYTES,
 	TIMELINE_PAGE_LIMIT,
 	TIMELINE_PAGE_LIMIT_MAX,
-	type CanvasBrowserProjectionBudget,
+	type ServerBrowserProjectionBudget,
 	type TimelineApprovalView,
 	type TimelineData,
 } from "@/server/archboard/lib/codex-timeline-projection";
 import { textEncoder } from "@/server/archboard/lib/codex-timeline-text";
 
 /** What a browser projection carries when the caller asks for no less. */
-const DEFAULT_BROWSER_PROJECTION_BUDGET: CanvasBrowserProjectionBudget = Object.freeze({
+const DEFAULT_BROWSER_PROJECTION_BUDGET: ServerBrowserProjectionBudget = Object.freeze({
 	maxTurns: TIMELINE_PAGE_LIMIT * TIMELINE_PAGE_LIMIT_MAX,
 	maxItemsPerTurn: TIMELINE_ITEM_LIMIT,
 	maxBytes: TIMELINE_MAX_BYTES,
@@ -183,7 +183,7 @@ function projectData(
 	data: TimelineData,
 	approvals: readonly TimelineApprovalView[],
 	live: TimelineLiveState,
-	budget: CanvasBrowserProjectionBudget,
+	budget: ServerBrowserProjectionBudget,
 ): CodexTimelineProjectionInput {
 	const frame: TimelineFrame = {
 		kind: "codex_timeline",
@@ -214,7 +214,7 @@ function keepNewestTurns(
 	frame: TimelineFrame,
 	approvals: readonly TimelineApprovalView[],
 	live: TimelineLiveState,
-	budget: CanvasBrowserProjectionBudget,
+	budget: ServerBrowserProjectionBudget,
 ): { readonly turns: CodexTimelineTurnProjectionInput[]; readonly truncated: boolean } {
 	const newestFirst: CodexTimelineTurnProjectionInput[] = [];
 	let truncated = data.truncated || data.turns.length > budget.maxTurns;
@@ -274,7 +274,7 @@ function cutOldestOnce(turns: CodexTimelineTurnProjectionInput[]): void {
 function trimOldest(
 	turns: CodexTimelineTurnProjectionInput[],
 	frame: TimelineFrame,
-	budget: CanvasBrowserProjectionBudget,
+	budget: ServerBrowserProjectionBudget,
 ): void {
 	const first = turns[0];
 	if (first === undefined) {
@@ -305,9 +305,9 @@ function boundedBudgetValue(value: number | undefined, fallback: number, maximum
  * @param input What the caller asked for.
  * @returns The budget.
  */
-function createCanvasBrowserProjectionBudget(
-	input: Partial<CanvasBrowserProjectionBudget> = {},
-): CanvasBrowserProjectionBudget {
+function createServerBrowserProjectionBudget(
+	input: Partial<ServerBrowserProjectionBudget> = {},
+): ServerBrowserProjectionBudget {
 	const maxBytes = input.maxBytes ?? DEFAULT_BROWSER_PROJECTION_BUDGET.maxBytes;
 	assertBrowserSnapshotBudget(maxBytes);
 	const budget = Object.freeze({
@@ -326,5 +326,5 @@ function createCanvasBrowserProjectionBudget(
 	return budget;
 }
 
-export { createCanvasBrowserProjectionBudget, projectData, timelineBytes };
+export { createServerBrowserProjectionBudget, projectData, timelineBytes };
 export type { TimelineLiveState };

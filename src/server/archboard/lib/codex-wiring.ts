@@ -8,16 +8,16 @@ import type {
 	SettledChangeSourceEvent,
 } from "@/runtime/codex-semantic-context";
 import {
-	canvasStartupOwnershipRecord,
-	writeCanvasStartupProtocolRecord,
+	serverStartupOwnershipRecord,
+	writeServerStartupProtocolRecord,
 } from "@/shared/server-startup-terminal";
 import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
 import {
-	createCanvasCodexBrowserSocketOwner,
+	createServerCodexBrowserSocketOwner,
 	type BrowserConnectionInstance,
 } from "@/server/archboard/codex-workbench-browser";
-import type { createCanvasCodexWorkbenchApplication } from "@/server/archboard/lib/codex-workbench-application";
-import type { CanvasCodexWorkbenchHost } from "@/server/archboard/lib/codex-workbench-production";
+import type { createServerCodexWorkbenchApplication } from "@/server/archboard/lib/codex-workbench-application";
+import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-production";
 import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-pane";
 import {
 	canonicalContextFromBrief,
@@ -98,7 +98,7 @@ function resetCodexWorkbenchWiring(): void {
 	codexWiring.codex.handleBrowserMessage = null;
 }
 
-type OperationAuthority = Parameters<CanvasCodexWorkbenchHost["contextForOperation"]>[0];
+type OperationAuthority = Parameters<CodexWorkbenchServer["contextForOperation"]>[0];
 
 /**
  * Whether a pane's thread link still names exactly the authority an
@@ -130,7 +130,7 @@ function bindingMatchesAuthority(
  * @returns Removes the hooks and disposes the socket owner.
  */
 function installBrowserGateway(gateway: CodexWorkbenchComponents["gateway"]): () => void {
-	const socketOwner = createCanvasCodexBrowserSocketOwner({
+	const socketOwner = createServerCodexBrowserSocketOwner({
 		gateway,
 		/**
 		 * The pane a browser id presents.
@@ -201,7 +201,7 @@ function operationPane(paneId: string): PaneRegistration {
  * canvas's sockets.
  * @returns The host.
  */
-function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
+function createCodexWorkbenchServer(): CodexWorkbenchServer {
 	let active: CodexWorkbenchComponents | null = null;
 	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
 
@@ -240,8 +240,8 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		 * @param codexGroup The process group identity.
 		 */
 		onCodexProcessGroupOwned: (codexGroup) => {
-			writeCanvasStartupProtocolRecord(
-				canvasStartupOwnershipRecord({ canvasPid: process.pid, codexGroup }),
+			writeServerStartupProtocolRecord(
+				serverStartupOwnershipRecord({ serverPid: process.pid, codexGroup }),
 			);
 		},
 		semanticPublisher: {
@@ -421,7 +421,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	};
 }
 
-let codexApplication: ReturnType<typeof createCanvasCodexWorkbenchApplication> | null = null;
+let codexApplication: ReturnType<typeof createServerCodexWorkbenchApplication> | null = null;
 
 /**
  * Shut the Codex workbench application down and forget its wiring.
@@ -452,14 +452,14 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	if (signal.aborted) {
 		throw new Error("Codex startup was canceled before installation.");
 	}
-	const application = applicationModule.createCanvasCodexWorkbenchApplication({
+	const application = applicationModule.createServerCodexWorkbenchApplication({
 		module: productionModule,
 		/**
 		 * Build the installation against this canvas's host.
 		 * @returns The installation.
 		 */
 		installation: () =>
-			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),
+			productionModule.createServerCodexWorkbenchInstallation(createCodexWorkbenchServer()),
 	});
 	codexApplication = application;
 	/** Shut the application down on cancellation, swallowing the shutdown's own failure. */

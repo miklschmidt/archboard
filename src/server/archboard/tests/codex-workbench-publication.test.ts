@@ -9,8 +9,8 @@ import type {
 	CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
 import {
-	createCanvasCodexBrowserSocketOwner,
-	createCanvasCodexBrowserSocketSend,
+	createServerCodexBrowserSocketOwner,
+	createServerCodexBrowserSocketSend,
 } from "../codex-workbench-browser.js";
 
 async function rejectedSend(error: Error): Promise<void> {
@@ -20,7 +20,7 @@ async function rejectedSend(error: Error): Promise<void> {
 describe("canvas Codex publication boundary", () => {
 	test("the production socket adapter rejects closing and callback-failed sends", async () => {
 		let attempts = 0;
-		const closing = createCanvasCodexBrowserSocketSend({
+		const closing = createServerCodexBrowserSocketSend({
 			readyState: WebSocket.CLOSING,
 			send: () => {
 				attempts += 1;
@@ -32,7 +32,7 @@ describe("canvas Codex publication boundary", () => {
 		let failWrite!: (error: Error) => void;
 		const callbackReady = Promise.withResolvers<void>();
 		let settled = false;
-		const callbackFailure = createCanvasCodexBrowserSocketSend({
+		const callbackFailure = createServerCodexBrowserSocketSend({
 			readyState: WebSocket.OPEN,
 			send: (_data, callback) => {
 				attempts += 1;
@@ -66,7 +66,7 @@ describe("canvas Codex publication boundary", () => {
 			},
 		} as unknown as BrowserWorkbenchConnection;
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
-		const owner = createCanvasCodexBrowserSocketOwner({
+		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
 			paneForBrowser: () => "pane-publication",
 		});
@@ -126,7 +126,7 @@ describe("canvas Codex publication boundary", () => {
 			},
 		} as unknown as BrowserWorkbenchConnection;
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
-		const owner = createCanvasCodexBrowserSocketOwner({
+		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
 			paneForBrowser: () => connection.paneId,
 		});
@@ -215,9 +215,9 @@ describe("canvas Codex publication boundary", () => {
 			},
 		} as unknown as BrowserWorkbenchConnection;
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
-		const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
+		const owner = createServerCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
 		const eventSendFailure = new Error("event write callback failed");
-		const transport = createCanvasCodexBrowserSocketSend({
+		const transport = createServerCodexBrowserSocketSend({
 			readyState: WebSocket.OPEN,
 			send: (raw, callback) => {
 				const message = JSON.parse(raw) as { type?: unknown };
@@ -306,7 +306,7 @@ describe("canvas Codex publication boundary", () => {
 			},
 		} as unknown as BrowserWorkbenchConnection;
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
-		const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
+		const owner = createServerCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
 		const eventFailures = [firstEventFailure, laterEventFailure];
 		let eventSend = 0;
 		const transport = {

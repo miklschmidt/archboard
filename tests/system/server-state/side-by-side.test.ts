@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent, type PaneSession } from "./support/pane-session.ts";
 
@@ -42,10 +42,10 @@ describe.serial("side-by-side proposal workflow", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-side-by-side-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
-			env: { LOG_FILE_PATH: join(root, "canvas.log") },
+			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
 		resources.defer(() => canvas.dispose());
 		const request = createRequester(canvas);

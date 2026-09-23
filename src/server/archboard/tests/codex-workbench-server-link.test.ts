@@ -9,7 +9,7 @@ import {
 	type CodexThreadLinkPort,
 	type InspectOnlyThreadLink,
 } from "../../../runtime/codex-thread-link/index.js";
-import { createCanvasThreadLink } from "../codex-workbench-adapters.js";
+import { createServerThreadLink } from "../codex-workbench-adapters.js";
 
 const authority = createIdentityAuthority();
 
@@ -38,7 +38,7 @@ function inspectOnly(threadId: ThreadId): InspectOnlyThreadLink {
  * they were addressed to.
  * @returns The canvas port and the keys the store was asked about.
  */
-function canvasLink(): { readonly link: CodexThreadLinkPort; readonly keys: string[] } {
+function serverLink(): { readonly link: CodexThreadLinkPort; readonly keys: string[] } {
 	const store = createCodexThreadLinkBinding();
 	const keys: string[] = [];
 	const bind: CodexThreadLinkPort["classifyAndBind"] = async (paneId, expected, target) => {
@@ -57,12 +57,12 @@ function canvasLink(): { readonly link: CodexThreadLinkPort; readonly keys: stri
 		bindCandidate: (paneId, expected, selectionId) =>
 			bind(paneId, expected, { threadId: authority.decoder.adoptThreadId(selectionId) } as never),
 	};
-	return { link: createCanvasThreadLink(port), keys };
+	return { link: createServerThreadLink(port), keys };
 }
 
 describe("one thread link per canvas", () => {
 	test("every pane reads the one link, labelled for the pane that asked", async () => {
-		const { link, keys } = canvasLink();
+		const { link, keys } = serverLink();
 		const target = { threadId: authority.decoder.adoptThreadId("thread-a") } as never;
 		const bound = await link.classifyAndBind("A", null, target);
 		const seenFromB = link.read("B");
@@ -79,7 +79,7 @@ describe("one thread link per canvas", () => {
 	});
 
 	test("a swap takes any pane's current token and refuses one older than another pane's swap", async () => {
-		const { link } = canvasLink();
+		const { link } = serverLink();
 		link.compareAndSwap({
 			paneId: "A",
 			expected: null,
@@ -106,7 +106,7 @@ describe("one thread link per canvas", () => {
 	});
 
 	test("a first binding from one pane refuses another pane's first binding", async () => {
-		const { link } = canvasLink();
+		const { link } = serverLink();
 		await link.classifyAndBind("A", null, {
 			threadId: authority.decoder.adoptThreadId("thread-a"),
 		} as never);

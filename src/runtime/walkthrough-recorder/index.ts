@@ -76,7 +76,7 @@ class WalkthroughRecordingError extends Error {
 /** What to record, and where. */
 interface WalkthroughRecordingRequest {
 	/** The canvas the page is served by. */
-	readonly canvasUrl: string;
+	readonly serverUrl: string;
 	/** The board, as a pane addresses it: its name, or name@variant. */
 	readonly boardKey: string;
 	/** The walkthrough, by id. */
@@ -116,7 +116,7 @@ interface RecordedWalkthrough {
  * @returns The page's URL.
  */
 function pageUrl(request: WalkthroughRecordingRequest): string {
-	const url = new URL("/", request.canvasUrl);
+	const url = new URL("/", request.serverUrl);
 	url.searchParams.set("paneA", request.boardKey);
 	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough);
 	return url.toString();

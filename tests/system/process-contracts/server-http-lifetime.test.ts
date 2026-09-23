@@ -11,11 +11,11 @@ import {
 } from "../server-state/support/codex-production.ts";
 import { waitFor } from "../server-state/support/http.ts";
 import {
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	TEST_CANVAS_STARTUP_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_STARTUP_TIMEOUT_MS,
 } from "../support/timing.ts";
 import {
-	buildOwnedCanvasEnvironment,
+	buildOwnedServerEnvironment,
 	processExists,
 	waitForProcessExit,
 } from "../support/owned-server.ts";
@@ -51,7 +51,7 @@ function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-
 		`const { createServer: createRealServer } = process.getBuiltinModule("http");\n` +
 		`let ownedServer;\n` +
 		`let rivalServer;\n` +
-		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createCanvasHttpServer: (handler) => {\n` +
+		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createServerHttpServer: (handler) => {\n` +
 		`  ownedServer = createRealServer(handler);\n` +
 		(bindRace
 			? `  const realListen = ownedServer.listen.bind(ownedServer);\n` +
@@ -94,7 +94,7 @@ function delayedListenWrapperSource(
 		`let ownedServer;\n` +
 		`let pending = false;\n` +
 		`let lateListen = () => {};\n` +
-		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createCanvasHttpServer: (handler) => {\n` +
+		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createServerHttpServer: (handler) => {\n` +
 		`  ownedServer = createRealServer(handler);\n` +
 		`  const realListen = ownedServer.listen.bind(ownedServer);\n` +
 		`  ownedServer.listen = (...args) => {\n` +
@@ -142,7 +142,7 @@ function delayedListenWrapperSource(
 	);
 }
 
-async function spawnCanvas(
+async function spawnServer(
 	resources: AsyncDisposableStack,
 	fixture: ProductionFixture,
 	mode: HttpFailureMode,
@@ -169,7 +169,7 @@ async function spawnCanvas(
 	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
-		env: buildOwnedCanvasEnvironment({
+		env: buildOwnedServerEnvironment({
 			paths,
 			port,
 			vault: fixture.vault,
@@ -221,11 +221,11 @@ test(
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, fixtureSource);
-			const canvas = await spawnCanvas(resources, fixture, "delayed-listen-cancel");
+			const canvas = await spawnServer(resources, fixture, "delayed-listen-cancel");
 			await waitFor(
 				async () => (existsSync(canvas.pendingPath) ? true : undefined),
 				"delayed HTTP listen",
-				{ timeoutMs: TEST_CANVAS_STARTUP_TIMEOUT_MS },
+				{ timeoutMs: TEST_SERVER_STARTUP_TIMEOUT_MS },
 			);
 			canvas.child.kill("SIGTERM");
 			const result = await Promise.race([
@@ -233,7 +233,7 @@ test(
 				new Promise<never>((_resolve, reject) =>
 					setTimeout(
 						() => reject(new Error(`Delayed-listen canvas did not exit.\n${canvas.output()}`)),
-						TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+						TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 					),
 				),
 			]);
@@ -266,7 +266,7 @@ test(
 			await resources.disposeAsync();
 		}
 	},
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 );
 
 test(
@@ -275,13 +275,13 @@ test(
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, fixtureSource);
-			const canvas = await spawnCanvas(resources, fixture, "bind-race");
+			const canvas = await spawnServer(resources, fixture, "bind-race");
 			const result = await Promise.race([
 				canvas.exit,
 				new Promise<never>((_resolve, reject) =>
 					setTimeout(
 						() => reject(new Error(`Bind-race canvas did not exit.\n${canvas.output()}`)),
-						TEST_CANVAS_STARTUP_TIMEOUT_MS,
+						TEST_SERVER_STARTUP_TIMEOUT_MS,
 					),
 				),
 			]);
@@ -300,7 +300,7 @@ test(
 			await resources.disposeAsync();
 		}
 	},
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 );
 
 test(
@@ -309,7 +309,7 @@ test(
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, fixtureSource);
-			const canvas = await spawnCanvas(resources, fixture, "runtime-error");
+			const canvas = await spawnServer(resources, fixture, "runtime-error");
 			await waitFor(
 				async () => {
 					try {
@@ -324,7 +324,7 @@ test(
 					}
 				},
 				"runtime-error canvas readiness",
-				{ timeoutMs: TEST_CANVAS_STARTUP_TIMEOUT_MS },
+				{ timeoutMs: TEST_SERVER_STARTUP_TIMEOUT_MS },
 			);
 			const socket = new WebSocket(canvas.base.replace("http:", "ws:"));
 			resources.defer(() => socket.terminate());
@@ -339,7 +339,7 @@ test(
 				new Promise<never>((_resolve, reject) =>
 					setTimeout(
 						() => reject(new Error(`Runtime-error canvas did not exit.\n${canvas.output()}`)),
-						TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+						TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 					),
 				),
 			]);
@@ -358,5 +358,5 @@ test(
 			await resources.disposeAsync();
 		}
 	},
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+	TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 );

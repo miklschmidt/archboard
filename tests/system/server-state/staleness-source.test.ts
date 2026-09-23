@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { waitFor } from "./support/http.ts";
 import { reversibleCheckoutEdit } from "./support/reversible-checkout-edit.ts";
 
@@ -28,10 +28,10 @@ describe.serial("source staleness", () => {
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
 		const state = join(root, "state");
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
-			env: { XDG_STATE_HOME: state, LOG_FILE_PATH: join(root, "canvas.log") },
+			env: { XDG_STATE_HOME: state, LOG_FILE_PATH: join(root, "server.log") },
 		});
 		resources.defer(() => canvas.dispose());
 		const health = async () => {

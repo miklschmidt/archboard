@@ -5,17 +5,20 @@
 
 import { createRealtimeMediaSession } from "@/ui/codex-realtime";
 import type {
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeMediaSession,
 	RealtimeMediaSnapshot,
 } from "@/ui/codex-realtime";
-import { createMediaHost } from "@/ui/codex-workbench-media/lib/media-host";
-import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/media-host";
+import { createRealtimeServer } from "@/ui/codex-workbench-media/lib/realtime-server";
+import type {
+	StartOperation,
+	VoicePresentation,
+} from "@/ui/codex-workbench-media/lib/realtime-server";
 import {
 	browserAudioElements,
 	browserMediaSupported,
 	capabilityFailure,
-	hostRevokedVoice,
+	serverRevokedVoice,
 	leaseCorrelation,
 	noSnapshotState,
 	removeAudioElements,
@@ -126,7 +129,7 @@ function createBrowserWorkbenchMediaOwner(
 	 * The current run when it is open, with its session and host.
 	 * @returns The run, or null.
 	 */
-	const openRun = (): (MediaRun & { media: RealtimeMediaSession; host: RealtimeHost }) | null => {
+	const openRun = (): (MediaRun & { media: RealtimeMediaSession; host: RealtimeServer }) | null => {
 		const active = run;
 		if (active === null || active.closed || active.media === null || active.host === null) {
 			return null;
@@ -217,7 +220,7 @@ function createBrowserWorkbenchMediaOwner(
 			return;
 		}
 		const media = active.media;
-		if (media !== null && hostRevokedVoice(active)) {
+		if (media !== null && serverRevokedVoice(active)) {
 			active.voiceStopRequested = true;
 			void media
 				.stop()
@@ -257,7 +260,7 @@ function createBrowserWorkbenchMediaOwner(
 	 * @param active The run.
 	 */
 	const installMedia = (active: MediaRun): void => {
-		const host = createMediaHost({
+		const host = createRealtimeServer({
 			transport: active.transport,
 			audioElements,
 			mountedElements: active.mountedElements,

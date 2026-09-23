@@ -9,15 +9,15 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const vault = mkdtempSync(join(tmpdir(), "archboard-recording-refusals-"));
 const BOARD = "tour";
 const boardFile = join(vault, `${BOARD}.semantic.json`);
 const out = join(vault, "tour.mp4");
-let canvas: OwnedCanvas;
+let canvas: OwnedServer;
 
 /**
  * Record the board, with a browser that can never start.
@@ -25,7 +25,7 @@ let canvas: OwnedCanvas;
  * @returns How the command exited and what it printed.
  */
 const record = (args: readonly string[]) =>
-	runCanvasCli({
+	runServerCli({
 		repoRoot,
 		vault,
 		base: canvas.base,
@@ -42,8 +42,8 @@ const nothingWritten = () =>
 	!readdirSync(vault).some((name) => name.endsWith(".mp4") || name.endsWith(".partial"));
 
 beforeAll(async () => {
-	canvas = await startOwnedCanvas({ serverPath: join(repoRoot, "src/server.ts"), vault });
-	const created = runCanvasCli({
+	canvas = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
+	const created = runServerCli({
 		repoRoot,
 		vault,
 		base: canvas.base,

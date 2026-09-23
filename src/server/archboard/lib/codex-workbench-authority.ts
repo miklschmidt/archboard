@@ -18,7 +18,7 @@ import type { CodexThreadLinkPort, ThreadLinkClassification } from "@/runtime/co
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 
-export interface CanvasDynamicAuthorityOptions {
+export interface ServerDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: Pick<CodexEpochStore, "snapshot">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "classify" | "read">;
@@ -35,7 +35,7 @@ export interface CanvasDynamicAuthorityOptions {
 	}) => Promise<ArchboardContext> | ArchboardContext;
 }
 
-export interface CanvasDynamicAuthorityAdapters {
+export interface ServerDynamicAuthorityAdapters {
 	readonly thread: DynamicThreadAuthorityPort;
 	readonly context: DynamicContextPort;
 	readonly paneForThread: (threadId: ThreadId) => string | null;
@@ -173,9 +173,9 @@ function callIsExecuting(
  * exist, and how one pane's context is read.
  * @returns The adapters.
  */
-export function createCanvasDynamicAuthorityAdapters(
-	options: CanvasDynamicAuthorityOptions,
-): CanvasDynamicAuthorityAdapters {
+export function createServerDynamicAuthorityAdapters(
+	options: ServerDynamicAuthorityOptions,
+): ServerDynamicAuthorityAdapters {
 	const issuer = createDynamicAuthorityTokenIssuer();
 	const tokens = new Map<string, ReturnType<typeof issuer.issue>>();
 	const callerCalls = new Map<

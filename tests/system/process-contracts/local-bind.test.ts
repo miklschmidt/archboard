@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 
 import { z } from "zod";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
 import {
 	availablePort,
@@ -38,7 +38,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	mkdirSync(hiddenParent);
 	symlinkSync(repoRoot, hiddenRepo, "dir");
 	const vault = join(root, "vault");
-	const canvas = await startOwnedCanvas({
+	const canvas = await startOwnedServer({
 		serverPath: fixture,
 		vault,
 		env: {
@@ -96,7 +96,7 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 	});
 	resources.defer(() => foreign.dispose());
 	try {
-		const collision = await startOwnedCanvas({
+		const collision = await startOwnedServer({
 			serverPath: fixture,
 			port,
 			vault,
@@ -105,7 +105,7 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		expect(collision).toBeInstanceOf(Error);
 		expect((collision as Error).message).toMatch(/not owned pid|answered for pid/i);
 		await foreign.dispose();
-		const recovered = await startOwnedCanvas({
+		const recovered = await startOwnedServer({
 			serverPath: fixture,
 			port,
 			vault,

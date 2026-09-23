@@ -55,15 +55,15 @@ function recoveryFor(
 ): ThreadLinkRecovery {
 	const capabilities = pane.transport.capabilities();
 	if (code !== null && RETARGET_CODES.has(code)) {
-		return threadLinkRecovery("refresh_inventory", capabilities, pane.hostRecoveryIntents);
+		return threadLinkRecovery("refresh_inventory", capabilities, pane.serverRecoveryIntents);
 	}
 	if (code === "socket_unavailable" || code === "child_disconnected") {
-		return threadLinkRecovery("start_workbench", capabilities, pane.hostRecoveryIntents);
+		return threadLinkRecovery("start_workbench", capabilities, pane.serverRecoveryIntents);
 	}
 	if (code === "incompatible_contract") {
-		return threadLinkRecovery("choose_binary", capabilities, pane.hostRecoveryIntents);
+		return threadLinkRecovery("choose_binary", capabilities, pane.serverRecoveryIntents);
 	}
-	return threadLinkRecovery("refresh_snapshot", capabilities, pane.hostRecoveryIntents);
+	return threadLinkRecovery("refresh_snapshot", capabilities, pane.serverRecoveryIntents);
 }
 
 /**

@@ -31,9 +31,9 @@ import {
 	withDoing,
 } from "@/runtime/engine/lib/server-client-session";
 import {
-	CANVAS_SERVICE_NAME,
+	ARCHBOARD_SERVICE_NAME,
 	foreignServiceError,
-	markCanvasIdentityVerified,
+	markServerIdentityVerified,
 	requestJson,
 } from "@/runtime/engine/lib/server-client-transport";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
@@ -234,7 +234,7 @@ export {
 	type PaneRef,
 	type ShowBoardResponse,
 	BOARD_REFUSAL_CODES,
-	CANVAS_SERVICE_NAME,
+	ARCHBOARD_SERVICE_NAME,
 	addQuery,
 	boardRefusalOf,
 	claimBoard,
@@ -248,7 +248,7 @@ export {
 	getHealth,
 	getPanes,
 	getSyncStatus,
-	markCanvasIdentityVerified,
+	markServerIdentityVerified,
 	openPane,
 	releaseBoardClaim,
 	requestJson,

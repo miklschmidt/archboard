@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
 import { createInstallFixture } from "./support/install-fixture.ts";
 import {
@@ -51,7 +51,7 @@ describe("CLI resource cleanup", () => {
 						observeHealth();
 						await healthReleased;
 					}
-					return Response.json({ service: "archboard-canvas", status: "ok" });
+					return Response.json({ service: "archboard-server", status: "ok" });
 				},
 			});
 			heldUrl = held.url.origin;
@@ -164,7 +164,7 @@ describe("CLI resource cleanup", () => {
 			root = fixture.root;
 			missingServer = join(root, "missing-server.ts");
 			fixtureRegistered = true;
-			await startOwnedCanvas({
+			await startOwnedServer({
 				serverPath: missingServer,
 				vault: fixture.vault,
 				env: fixture.serverEnvironment,
@@ -192,9 +192,9 @@ describe("CLI resource cleanup", () => {
 		let registry = "";
 		let base = "";
 		let fixture: ReturnType<typeof createRepositoryFixture> | undefined;
-		let canvas: OwnedCanvas | undefined;
+		let canvas: OwnedServer | undefined;
 		let fixtureRegistered = false;
-		let canvasDisposerRegistered = false;
+		let serverDisposerRegistered = false;
 		let verifiedRunning = false;
 		let intended: unknown;
 		try {
@@ -205,13 +205,13 @@ describe("CLI resource cleanup", () => {
 			vault = acquiredFixture.vault;
 			registry = acquiredFixture.registry;
 			fixtureRegistered = true;
-			canvas = await startOwnedCanvas({
+			canvas = await startOwnedServer({
 				serverPath: join(checkoutRoot, "src/server.ts"),
 				vault: acquiredFixture.vault,
 				env: acquiredFixture.serverEnvironment,
 			});
 			resources.defer(() => canvas!.dispose());
-			canvasDisposerRegistered = true;
+			serverDisposerRegistered = true;
 			base = canvas.base;
 			await canvas.assertRunning();
 			verifiedRunning = true;
@@ -226,7 +226,7 @@ describe("CLI resource cleanup", () => {
 		);
 		expect(verifiedRunning).toBeTrue();
 		expect(fixtureRegistered).toBeTrue();
-		expect(canvasDisposerRegistered).toBeTrue();
+		expect(serverDisposerRegistered).toBeTrue();
 		if (!fixture) {
 			throw new Error("Verified canvas fixture was not retained.");
 		}
@@ -265,7 +265,7 @@ describe("CLI resource cleanup", () => {
 		}
 		expect(childError).toBeInstanceOf(Error);
 		const death = childError as Error & { code?: string };
-		expect(death.code).toBe("CANVAS_PROCESS_DIED");
+		expect(death.code).toBe("SERVER_PROCESS_DIED");
 		expect(death.message).toBe(
 			`Owned canvas pid unknown died (has no live generation).\nOwned canvas paths: ${JSON.stringify(canvas.paths)}`,
 		);

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-server.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester } from "./support/http.ts";
 import { openPaneSession } from "./support/pane-session.ts";
 
@@ -52,10 +52,10 @@ describe.serial("frontend staleness", () => {
 
 		const root = mkdtempSync(join(tmpdir(), "archboard-staleness-frontend-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
-		const canvas = await startOwnedCanvas({
+		const canvas = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault: join(root, "vault"),
-			env: { XDG_STATE_HOME: join(root, "state"), LOG_FILE_PATH: join(root, "canvas.log") },
+			env: { XDG_STATE_HOME: join(root, "state"), LOG_FILE_PATH: join(root, "server.log") },
 		});
 		resources.defer(() => canvas.dispose());
 		const request = createRequester(canvas);

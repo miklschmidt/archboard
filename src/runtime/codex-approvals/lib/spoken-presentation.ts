@@ -233,7 +233,7 @@ function spokenFactsRefusal(
 		return { eligible: false, reason: "secret" };
 	}
 	const factRefusal =
-		hostFactRefusal(facts) ?? missingPresentationRefusal(request, effectPresentation);
+		serverFactRefusal(facts) ?? missingPresentationRefusal(request, effectPresentation);
 	if (factRefusal !== null) {
 		return factRefusal;
 	}
@@ -274,7 +274,7 @@ function holdsSecretQuestion(request: ApprovalRequest): boolean {
  * @param facts - What the host knows about the approval.
  * @returns The refusal, or null when the host's facts allow voice.
  */
-function hostFactRefusal(facts: SpokenEligibilityFacts): SpokenEligibility | null {
+function serverFactRefusal(facts: SpokenEligibilityFacts): SpokenEligibility | null {
 	if (facts.coordinatorBlocking === true) {
 		return { eligible: false, reason: "coordinator_blocking" };
 	}

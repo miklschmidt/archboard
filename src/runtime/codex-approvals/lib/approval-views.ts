@@ -60,7 +60,7 @@ export function createApprovalViews(context: ApprovalViewContext): ApprovalViews
 		return assessSpokenEligibility(
 			record.request,
 			live !== null && sameBinding(live, record.request.binding),
-			hostFacts(context, record),
+			serverFacts(context, record),
 			record.spokenEffectPresentation,
 		);
 	};
@@ -171,7 +171,7 @@ export function createApprovalViews(context: ApprovalViewContext): ApprovalViews
  * @param record - The record.
  * @returns The facts.
  */
-function hostFacts(context: ApprovalViewContext, record: ApprovalRecord): SpokenEligibilityFacts {
+function serverFacts(context: ApprovalViewContext, record: ApprovalRecord): SpokenEligibilityFacts {
 	try {
 		return context.getSpokenEligibilityFacts?.(record.request) ?? {};
 	} catch {
