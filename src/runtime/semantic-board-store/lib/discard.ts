@@ -29,11 +29,15 @@ import {
 	rejected,
 	underBoardLease,
 	type BoardLeaseAsk,
+	type SemanticWriteCommand,
 	type SemanticWriteRejection,
 } from "@/runtime/semantic-board-store/lib/write";
 
-/** One board to let go, and who is letting it go. */
-type SemanticDiscardCommand = BoardLeaseAsk;
+/**
+ * One board to let go, who is letting it go, and the version they read when
+ * they state one: a board somebody changed since is refused, not deleted.
+ */
+type SemanticDiscardCommand = BoardLeaseAsk & Pick<SemanticWriteCommand, "expectedVersion">;
 
 /** What a discard removed, or why it removed nothing. */
 type SemanticDiscardResult =
@@ -51,18 +55,20 @@ type SemanticDiscardResult =
  * Remove the board on disk, inside the lease.
  *
  * Only a board that really is this one goes: a file at this address holding
- * another board's name, or one that is not a board at all, is refused exactly
- * as a write to it would be, and a board that is not there is refused as
- * missing.
+ * another board's name, one that is not a board at all, or one at another
+ * version than the discarder stated, is refused exactly as a write to it would
+ * be, and a board that is not there is refused as missing.
  * @param location Where the board lives.
+ * @param expected The version the discarder read, when it stated one.
  * @returns What was removed, or why nothing was.
  */
 function discardUnderLease(
 	location: SemanticBoardLocation,
+	expected: number | undefined,
 ):
 	| Omit<Extract<SemanticDiscardResult, { outcome: "discarded" }>, "heldAs">
 	| SemanticWriteRejection {
-	const before = boardBefore(location, undefined);
+	const before = boardBefore(location, expected);
 	if (!("ok" in before)) {
 		return before;
 	}
@@ -87,7 +93,9 @@ function discardUnderLease(
 async function discardSemanticBoard(
 	command: SemanticDiscardCommand,
 ): Promise<SemanticDiscardResult> {
-	const result = await underBoardLease(command, discardUnderLease);
+	const result = await underBoardLease(command, (location) =>
+		discardUnderLease(location, command.expectedVersion),
+	);
 	if (result.outcome === "discarded" && claimWriterId(result.location.key) === result.heldAs) {
 		releaseClaim(result.location.key);
 	}
