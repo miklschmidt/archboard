@@ -200,6 +200,7 @@ export function createCodexWorkbenchGenerationFixture(
 		onNotification: () => undefined,
 		transcript: () => [],
 		generation: () => null,
+		presentation: () => null,
 		dispose: () => void events.push("realtime:dispose"),
 	} satisfies CodexWorkbenchComponents["realtime"];
 	const approvalSnapshot = {

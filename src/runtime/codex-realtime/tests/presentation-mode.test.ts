@@ -5,7 +5,7 @@
 // first, which may land while Codex is still starting the session, and each one after) reaches
 // the voice model as speech it says, as does leaving, without a coordinator turn. A recording
 // start tells the voice model the talk is recorded in place of the narration, sends no
-// delegation filler, and hands its steps over in the words its prompt says they begin with,
+// delegation filler, gives the coordinator a rule of its own, and hands its steps over in the words its prompt says they begin with,
 // never telling it the walkthrough was left.
 
 import { expect, test } from "bun:test";
@@ -49,7 +49,7 @@ function walkthrough(recording: boolean) {
 	return { walkthrough: "w1", name: "For the board", recording };
 }
 
-test("a narration or recording start names the walkthrough to the voice model and adds nothing for the coordinator; a recording replaces the narration and sends no filler", async () => {
+test("a narration or recording start names the walkthrough to the voice model and adds nothing for a narration's coordinator; a recording replaces the narration, sends no filler and gives its coordinator its own rule", async () => {
 	const presenting = harness();
 	const recording = harness();
 	const ordinary = harness();
@@ -69,11 +69,15 @@ test("a narration or recording start names the walkthrough to the voice model an
 		expect(recorded?.prompt?.split("\n")[0]).toBe(base.split("\n")[0]);
 		for (const start of [presented, recorded]) {
 			expect(start?.prompt).toContain("For the board");
-			// The coordinator gets no presentation instructions and the session opens with nothing
-			// said as the user: the first step is handed over by the host.
-			expect(start?.realtimeStartInstructions).toBe(plain?.realtimeStartInstructions);
+			// The session opens with nothing said as the user: the first step is handed over by
+			// the host.
 			expect(start?.initialItems).toEqual([]);
 		}
+		// A narration's coordinator gets no presentation instructions. A recording's is told
+		// something else, since whatever it answered would be spoken into the video.
+		expect(presented?.realtimeStartInstructions).toBe(plain?.realtimeStartInstructions);
+		expect(recorded?.realtimeStartInstructions).toBeString();
+		expect(recorded?.realtimeStartInstructions).not.toBe(plain?.realtimeStartInstructions);
 		const narration = presented?.prompt?.slice(base.length).trim() ?? "";
 		expect(narration.length).toBeGreaterThan(0);
 		expect(recorded?.prompt).not.toContain(narration);

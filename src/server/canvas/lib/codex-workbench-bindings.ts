@@ -503,6 +503,11 @@ function deliveryBindings(
 						provenWorkhorseTarget(host, requireCreated(created, "workhorse").snapshot()),
 						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
 					),
+				/**
+				 * Whether a recording holds the voice, which nobody hears an outcome through.
+				 * @returns True while the live session is a recording's.
+				 */
+				recording: () => created.realtime?.presentation()?.recording === true,
 			}),
 			/** Publish what a settled callback changed. */
 			onSettled: () => {
