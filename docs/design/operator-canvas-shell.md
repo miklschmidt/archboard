@@ -33,10 +33,11 @@ responsive layouts unless the user explicitly reverses this decision.
   introduce gradients, glow, or rounded dashboard cards.
 - Pair a neutral sans serif with monospaced secondary text for identifiers,
   paths, versions, and timing.
-- Use a compact board strip on the left, one sidebar beside each pane's picture
-  for the board and the selection (see [The pane sidebar](#the-pane-sidebar)),
-  and a collapsible agent workbench below the canvas. Each region must earn the
-  space it takes.
+- Use a board navigator on the left (see [The navigator](#the-navigator)), one
+  sidebar beside each pane's picture for the board and the selection (see
+  [The pane sidebar](#the-pane-sidebar)), and one agent bar below the panes with
+  the conversation beside them only when asked (see [The agent](#the-agent)).
+  Each region must earn the space it takes.
 
 ## Product mapping
 
@@ -48,7 +49,8 @@ composition rather than replace them.
 The reference introduces three product additions worth building:
 
 - A shell inspector for the selected element and its persisted code binding.
-- A bottom workbench that presents real connection, claim, and `doing` data.
+- A bottom agent surface that presents real agent state and `doing` data —
+  shipped as the agent bar (TASK-302).
 - A non-persistent focus mode for the architecture path connected to the
   selected element.
 - A lazy navigator preview that depicts the real current board scene without
@@ -65,8 +67,9 @@ state:
   telemetry source for them.
 - The proposed dependency diff is out of scope. Agent edits stay visible on the
   live board rather than accumulating behind a preview.
-- `Pause`, `Send`, and a prompt input are out of scope until Archboard owns a
-  safe thread-control contract. The existing action is `Take back control`.
+- `Send`, `Stop` and a prompt input shipped once Archboard owned its Codex
+  session (ADR 0019); they drive the agent, never the board. A person's one
+  control over a board is still `Take back control`.
 - Illustrative or synthetic board miniatures are out of scope. A navigator
   preview must depict real current board content and remain supplemental to
   accessible board identity and state.
@@ -109,6 +112,68 @@ leaves.
 The image is a rendered capture of the dogfood vault at 1920×1080, not a
 generated mockup: the board tab in the light theme on the left, the selection
 tab in the dark theme on the right.
+
+## The navigator
+
+Revised 2026-09-23 (TASK-302). The board strip became a navigator that stays
+navigable at a few hundred boards without anybody filing them by hand:
+
+![The navigator: a drilled vault, a filter, and a board's states](assets/operator-shell-navigator.png)
+
+Rendered captures at 1920×1080, not mockups: the dogfood vault's drill
+hierarchy (light), a filter finding boards and states by name (light), and the
+work vault in the dark theme with the board on screen showing its states.
+
+- **Where a board sits is decided by what the boards say**, never by activity,
+  focus or recency: `/` folders in a name first, then the board it drills up
+  from (a container's up link, else the coarsest board that drills down to it),
+  then name order that reads numbers as numbers. A vault with no drill links is
+  one alphabetical list; the order never moves under the pointer.
+- **One row per board**: its name in full (a long name wraps rather than
+  truncates), its other states as a count, its level in the technical face, and
+  the pane letters while two panes are open. A board's states open under it on
+  request; the board on screen always shows its own, drafts nested under what
+  they derive from. A board nothing is built of says so on its row.
+- **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
+  order, dims the boards a match sits under, marks the matched letters, and
+  counts what it found. Enter opens, Alt opens beside, Escape clears.
+- **The tree is one tab stop** with the arrow keys of a tree; the row on screen
+  is revealed when a pane moves to it unless the person is in the navigator.
+- **Working now** at the navigator's foot lists the boards agents are writing
+  or claiming, in the order they started, with what each said it is doing.
+
+## The agent
+
+Revised 2026-09-23 (TASK-302). The collapsible workbench, its tabs, its session
+column and the Agent settings dialog are gone. The agent is one bar under the
+panes and, only when the person asks, one conversation beside them:
+
+![The agent bar and the conversation, finished and working](assets/operator-shell-agent.png)
+
+Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
+work in the dark theme.
+
+- **The agent bar** is the collapsed geometry ADR 0028 measures against: forty
+  pixels and a rule, whatever the agent is doing. Its line says what the agent
+  is doing in one phrase — the plan's current step, else the latest step — for
+  how long, how far through its plan, what is queued, and whether it has gone
+  quiet, with the one control that state needs: Stop, Review, or signing in.
+  Talk sits beside it. The composer sits at its right, under where the
+  conversation opens, and says which board the agent will read.
+- **Nothing to set up.** The first message or press of Talk signs in if needed,
+  starts Codex and creates the conversation; a message waiting on any of that
+  is shown with what it waits on. There is one conversation per canvas, and the
+  focused pane's board is what a message is about.
+- **The conversation** is 440 pixels beside the panes, which refit to the room
+  left. Each turn shows the person's prompt, the plan's progress, the work as
+  rows that open to their evidence (a command's output and exit code, the files
+  a change touched with lines added and removed, a tool's arguments), the
+  agent's answer, and how the turn ended. A step that fails opens itself and a
+  finished run of work folds to one line. What was said aloud stays at the
+  foot as voice lines; decisions the agent waits on sit last, where the person
+  is reading. Sending opens it; approvals and voice never do.
+- Session details (account, model, context used, thread, the voice
+  coordinator) are one menu away, not on screen.
 
 ## Typography and wordmark contract
 
