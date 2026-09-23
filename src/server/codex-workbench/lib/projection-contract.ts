@@ -303,6 +303,8 @@ interface CodexVoiceProjectionInput {
 	readonly kind: "codex_voice";
 	readonly mediaReady: boolean;
 	readonly generation: { readonly browserSessionId: string } | null;
+	/** Whether the live session is a recording's (TASK-304). */
+	readonly recording?: boolean;
 	readonly coordinatorState: CodexCoordinatorProjectionInput["state"];
 	readonly transcript: readonly Pick<
 		RealtimeTranscriptRecord,

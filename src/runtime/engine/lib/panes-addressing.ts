@@ -39,6 +39,21 @@ function paneWords(place: string): string {
 	return place.startsWith("the ") ? place : `the ${place} pane`;
 }
 
+/**
+ * The panes somebody can point at: all but a recording page's (TASK-304).
+ *
+ * A recording page is a headless browser nobody sees, presenting a pane id like anybody's.
+ * Counted, listed or picked, it would be a pane the person cannot find, standing in for the one
+ * they can, and a board sent to it would move the recording mid-take. So whatever picks, counts or
+ * lists panes for somebody picks from these. The page's own socket, narration and voice reach
+ * its pane by client id, which none of this is asked.
+ * @param registrations Every pane registered.
+ * @returns The addressable ones, in the order given.
+ */
+function addressablePanes(registrations: readonly PaneRegistration[]): PaneRegistration[] {
+	return registrations.filter((pane) => pane.recording !== true);
+}
+
 /** The command that makes a pane, said the same way everywhere it is offered. */
 const HOW_TO_OPEN_A_PANE =
 	"Open one with `archboard browser open`, which splits the live canvas and answers with the pane it made.";
@@ -50,13 +65,13 @@ const HOW_TO_OPEN_A_PANE =
  * than one thing — putting a board on the wrong half of the screen is cheap to
  * notice, but so is saying which half, and a canvas that quietly ignores the
  * half you asked for teaches you to stop trusting the flag.
- * @param registrations The panes on screen.
+ * @param registrations The panes on screen, of which only the addressable ones answer.
  * @param spec What the caller typed.
  * @returns The pane it names.
  * @throws {Error} When it names none, or more than one.
  */
 function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneRegistration {
-	const ordered = panesInOrder(registrations);
+	const ordered = panesInOrder(addressablePanes(registrations));
 	if (ordered.length === 0) {
 		throw new Error(
 			"The canvas server has no connected panes. " +
@@ -136,12 +151,12 @@ function matchesRole(pane: PaneRegistration, wanted: string): boolean {
  *
  * No pane at all is not a refusal: nothing is on screen, so a board can be
  * loaded without being shown.
- * @param registrations The panes on screen.
+ * @param registrations The panes on screen, of which only the addressable ones count.
  * @returns The one pane, or null when nothing is on screen.
  * @throws {Error} When more than one pane is open.
  */
 function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
-	const ordered = panesInOrder(registrations);
+	const ordered = panesInOrder(addressablePanes(registrations));
 	if (ordered.length === 0) {
 		return null;
 	}
@@ -155,4 +170,4 @@ function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 	);
 }
 
-export { HOW_TO_OPEN_A_PANE, MAX_PANES, paneWords, resolvePaneSpec, soloPane };
+export { HOW_TO_OPEN_A_PANE, MAX_PANES, addressablePanes, paneWords, resolvePaneSpec, soloPane };
