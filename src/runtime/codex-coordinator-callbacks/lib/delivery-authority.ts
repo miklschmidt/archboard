@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import type { ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
+import { sameThreadLinkIdentity, type ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
 import { sameRealtimeGeneration } from "@/runtime/codex-coordinator-callbacks/lib/realtime";
 import type {
 	CoordinatorCallback,
@@ -20,7 +20,9 @@ function sameJson(left: unknown, right: unknown): boolean {
 }
 
 /**
- * Whether the host's current link is the same binding, at the same revision, on the same link and target as the one captured with the callback.
+ * Whether the host's current link is the same binding, at the same revision, naming the same
+ * thread, child and epoch, with the same target as the one captured with the callback. The
+ * thread's observed status is not compared: it is not what the link is.
  * @param left - The host's current link, or null when there is none.
  * @param right - The link captured with the callback.
  * @returns True when the two describe the same binding.
@@ -33,7 +35,7 @@ function sameLink(
 		left !== null &&
 		left.binding.paneId === right.binding.paneId &&
 		left.binding.revision === right.binding.revision &&
-		sameJson(left.binding.link, right.binding.link) &&
+		sameThreadLinkIdentity(left.binding.link, right.binding.link) &&
 		sameJson(left.target, right.target)
 	);
 }
@@ -54,8 +56,9 @@ function proofRecord(value: ThreadLinkEpochProof | null | undefined): unknown {
 type LiveClassification = Awaited<ReturnType<CoordinatorCallbackOptions["threadLink"]["classify"]>>;
 
 /**
- * Whether the live link is the same executable link the callback captured, on the same thread,
- * child and epoch.
+ * Whether the live link is still executable and names the thread, child and epoch the callback
+ * captured. The live link is a fresh observation of the thread, so its status is whatever the
+ * thread is doing now — active while a turn runs — and says nothing about which link it is.
  * @param correlation - The callback's correlation.
  * @param live - The fresh classification.
  * @returns True when the live link still matches the capture.
@@ -66,7 +69,7 @@ function liveLinkMatchesCallback(
 ): boolean {
 	return (
 		live.link.state === "executable" &&
-		sameJson(live.link, correlation.workhorseLink.binding.link) &&
+		sameThreadLinkIdentity(live.link, correlation.workhorseLink.binding.link) &&
 		live.link.threadId === correlation.workhorseThreadId &&
 		live.link.childId === correlation.childId &&
 		live.link.epoch === correlation.epoch
