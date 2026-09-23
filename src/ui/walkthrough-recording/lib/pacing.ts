@@ -53,6 +53,11 @@ interface PaceObservation {
 	readonly voice: VoiceStanding;
 	/** Whether the voice is audible right now, by its measured output. */
 	readonly audible: boolean;
+	/**
+	 * Whether the page is the size it is captured at. Capturing a tab makes the browser draw a
+	 * bar above it, which takes room until the recorder gives it back; nothing is written before.
+	 */
+	readonly framed: boolean;
 	readonly transcript: readonly SpokenLine[];
 	readonly place: PanePlace | null;
 }
@@ -122,7 +127,7 @@ function showing(beat: number, observed: PaceObservation): PaceTurn {
 }
 
 /**
- * The voice has not gone live yet.
+ * The voice has not gone live yet, or the page is not yet the size it is captured at.
  * @param state The starting state.
  * @param observed What the page sees now.
  * @returns The next state and action.
@@ -131,7 +136,7 @@ function paceStart(
 	state: Extract<PaceState, { kind: "starting" }>,
 	observed: PaceObservation,
 ): PaceTurn {
-	if (observed.voice.kind === "live") {
+	if (observed.voice.kind === "live" && observed.framed) {
 		return { state: { kind: "lead", since: observed.now }, action: { kind: "capture" } };
 	}
 	if (observed.now - state.since > RECORDING_VOICE_START_MS) {

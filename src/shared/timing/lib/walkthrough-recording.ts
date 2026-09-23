@@ -71,6 +71,14 @@ const RECORDING_STEP_MAX_MS = 180_000;
 const RECORDING_TAIL_MS = 1500;
 
 /**
+ * How long a page that has just captured its tab waits for the browser to draw the bar that says
+ * the tab is being shared. The bar takes room from the page (56 px on Chromium 153), and the
+ * recorder gives it back before anything is written; the bar appeared 121 ms after the capture
+ * began in every measurement on 2026-09-23. A browser that draws no bar costs this wait once.
+ */
+const RECORDING_CAPTURE_BAR_MS = 2000;
+
+/**
  * How often the page decides whether to move on. It reads the voice's output
  * level and transcript, both already in memory; a tenth of a second is below
  * what a viewer notices in a pause.
@@ -120,6 +128,7 @@ const RECORDING_FILE_READ_MS = 5 * 60_000;
 const RECORDING_BROWSER_STOP_MS = 5000;
 
 export {
+	RECORDING_CAPTURE_BAR_MS,
 	RECORDING_BROWSER_START_MS,
 	RECORDING_BROWSER_STOP_MS,
 	RECORDING_CALL_MS,

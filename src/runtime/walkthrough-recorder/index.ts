@@ -33,6 +33,7 @@ import {
 	launchHeadlessChromium,
 	type DevTools,
 	type HeadlessChromium,
+	type HeadlessWindow,
 } from "@/runtime/headless-chromium";
 
 import {
@@ -133,11 +134,27 @@ function recordingFlags(microphone: string): readonly string[] {
 }
 
 /**
+ * Whether a page's viewport is the reference size.
+ * @param page The page.
+ * @returns True when it is.
+ */
+async function atReferenceSize(page: DevTools): Promise<boolean> {
+	const size = await page.evaluate("[window.innerWidth, window.innerHeight]", {
+		timeoutMs: RECORDING_CALL_MS,
+	});
+	return (
+		Array.isArray(size) && size[0] === SHELL_VIEWPORT.width && size[1] === SHELL_VIEWPORT.height
+	);
+}
+
+/**
  * One page as the page driver speaks to it.
- * @param page The page's DevTools connection.
+ * @param chromium The browser the page is in.
+ * @param window The page's window.
  * @returns The handle.
  */
-function pageHandle(page: DevTools): RecordingPageHandle {
+function pageHandle(chromium: HeadlessChromium, window: HeadlessWindow): RecordingPageHandle {
+	const { page } = window;
 	return {
 		/**
 		 * Evaluate an expression in the page and hand back its value.
@@ -170,6 +187,14 @@ function pageHandle(page: DevTools): RecordingPageHandle {
 			}
 			return (await page.readBlobTo(objectId, path, timeoutMs)).bytes;
 		},
+		/**
+		 * Size the window again whenever the browser took room from the page.
+		 * @returns When the page is the reference size.
+		 */
+		keepSize: async () => {
+			if (await atReferenceSize(page)) return;
+			await chromium.fitWindow(window, SHELL_VIEWPORT, RECORDING_CALL_MS);
+		},
 	};
 }
 
@@ -183,21 +208,22 @@ function pageHandle(page: DevTools): RecordingPageHandle {
 async function openRecordingPage(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
-): Promise<DevTools> {
+): Promise<HeadlessWindow> {
 	const url = pageUrl(request);
 	await chromium.browser.call(
 		"Browser.grantPermissions",
 		{ origin: new URL(url).origin, permissions: ["audioCapture"] },
 		RECORDING_CALL_MS,
 	);
-	const { page } = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDING_CALL_MS);
+	const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDING_CALL_MS);
+	const { page } = window;
 	await page.call(
 		"Emulation.setEmulatedMedia",
 		{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
 		RECORDING_CALL_MS,
 	);
 	await page.call("Page.navigate", { url }, RECORDING_CALL_MS);
-	return page;
+	return window;
 }
 
 /**
@@ -238,10 +264,10 @@ async function recordIn(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
 ): Promise<RecordedWalkthrough> {
-	const page = await openRecordingPage(chromium, request);
+	const window = await openRecordingPage(chromium, request);
 	const partial = join(dirname(request.out), `.${Date.now()}.recording.partial`);
 	try {
-		const { state, bytes } = await drive(pageHandle(page), {
+		const { state, bytes } = await drive(pageHandle(chromium, window), {
 			container: request.container,
 			path: partial,
 			signal: request.signal,

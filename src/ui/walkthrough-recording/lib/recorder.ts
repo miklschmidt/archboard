@@ -122,6 +122,8 @@ class WalkthroughRecorder {
 	#failure: string | null = null;
 	#step: RecordedStep | null = null;
 	#timer: ReturnType<typeof setInterval> | null = null;
+	/** The page's size when the tab was captured, which the file is written at. */
+	#frame: { readonly width: number; readonly height: number } | null = null;
 
 	/**
 	 * A recorder for one page, idle until started.
@@ -200,6 +202,7 @@ class WalkthroughRecorder {
 	async start(options: RecordingStart): Promise<void> {
 		const { container } = RecordingStartSchema.parse(options);
 		const sources = this.#startable();
+		this.#frame = { width: window.innerWidth, height: window.innerHeight };
 		try {
 			this.#capture = await captureTab(container);
 		} catch (error) {
@@ -287,10 +290,20 @@ class WalkthroughRecorder {
 		const turn = pace(talk, {
 			now: performance.now(),
 			...readVoice(sources),
+			framed: this.#framed(),
 			place: placeIn(this.#reading, this.#request.walkthrough),
 		});
 		this.#talk = turn.state;
 		this.#act(turn.action);
+	}
+
+	/**
+	 * Whether the page is the size its tab was captured at.
+	 * @returns True when it is.
+	 */
+	#framed(): boolean {
+		const frame = this.#frame;
+		return frame?.width === window.innerWidth && frame.height === window.innerHeight;
 	}
 
 	/**
