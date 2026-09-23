@@ -1,6 +1,9 @@
 // The evidence a timeline item carries beside its text: what a person said,
 // the files a patch touched and by how much, what a tool was given and why it
 // failed, and the plan a turn is working to. Each is bounded to its wire limit.
+// A tool's arguments have the values of secret-named keys redacted; command
+// output is carried as the operator's own terminal would show it, because the
+// browser on the loopback-bound canvas shares the operator's trust boundary.
 
 import type { SessionThreadItem, SessionTurn } from "@/runtime/codex-session";
 import type { CodexServerNotificationParamsByMethod } from "@/shared/codex-app-server-contract";
@@ -10,6 +13,7 @@ import type {
 	CodexTimelinePlanInput,
 	CodexTimelineTurnProjectionInput,
 } from "@/server/codex-workbench";
+import { redactSecrets } from "@/server/codex-workbench";
 import {
 	boundedText,
 	optionalBoundedText,
@@ -140,14 +144,15 @@ function promptText(item: SessionItem<"userMessage">): {
 }
 
 /**
- * What a tool call was given, as bounded compact JSON.
+ * What a tool call was given, as bounded compact JSON with every secret-named
+ * key's value redacted.
  * @param item The tool call.
  * @returns The arguments, or null when it was given none.
  */
 function toolCallArguments(item: SessionItem<"mcpToolCall" | "dynamicToolCall">): string | null {
 	// JSON.stringify answers undefined for a value JSON cannot carry, which its
 	// lib typing hides; reading it through unknown keeps that case visible.
-	const encoded: unknown = JSON.stringify(item.arguments);
+	const encoded: unknown = JSON.stringify(redactSecrets(item.arguments));
 	return typeof encoded === "string" ? optionalBoundedText(encoded, LIMITS.toolArguments) : null;
 }
 
