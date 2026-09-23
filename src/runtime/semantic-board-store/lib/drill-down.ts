@@ -2,7 +2,7 @@
 //
 // A drill-down is the one thing on a board that names something outside it, so
 // it is the one thing no single board can check. The board knows it opens
-// "Canvas server"; whether the vault holds that board, and what level it is
+// "Archboard server"; whether the vault holds that board, and what level it is
 // at, is a fact about the vault. That is why these three diagnostics live in
 // the vault checker and nowhere near the write boundary: refusing a write
 // would mean reading another board inside the lease of this one, and the

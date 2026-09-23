@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
 
-// Load environment variables once for every entry point (CLI and canvas server)
+// Load environment variables once for every entry point (CLI and Archboard server)
 dotenv.config({ quiet: true });
 
 // The canvas the CLI talks to, and where an auto-started canvas listens.
 const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || "http://127.0.0.1:3000";
 
-// Opt out of auto-starting the canvas server from the CLI.
+// Opt out of auto-starting the Archboard server from the CLI.
 const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 
 // The vault directory every board is persisted into (ADR 0004). Deliberately

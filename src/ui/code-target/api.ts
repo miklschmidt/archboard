@@ -31,7 +31,7 @@ function invalidReply(error?: unknown): CodeTargetOpenFailure {
 	return {
 		success: false,
 		code: "RESPONSE_INVALID",
-		error: `RESPONSE_INVALID: The canvas server returned an invalid reply.${detail}`,
+		error: `RESPONSE_INVALID: The Archboard server returned an invalid reply.${detail}`,
 	};
 }
 

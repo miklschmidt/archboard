@@ -120,7 +120,7 @@ recipe names.
 - **Environment.** The repository's `AGENTS.md`/`CLAUDE.md` setup block names
   `ARCHBOARD_VAULT` (and `ARCHBOARD_URL` when the canvas is not on the
   default port). Every `archboard` command reads them; the canvas starts itself
-  when nothing answers. Inside the archboard checkout, `./bin/canvas` stands in
+  when nothing answers. Inside the archboard checkout, `./bin/archboard` stands in
   for `archboard`.
 - **Vocabulary.** Read `$ARCHBOARD_VAULT/.archboard/config.yaml` once: it
   defines the board `levels`, the `nodeKinds`, the `relationshipKinds` and the

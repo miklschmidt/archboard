@@ -45,7 +45,7 @@ function writePublicCodexExecutable(path: string, body: string): void {
 }
 
 function runPublicCanvas(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
-	return spawnSync(join(repositoryRoot, "bin/canvas"), [command], {
+	return spawnSync(join(repositoryRoot, "bin/archboard"), [command], {
 		cwd: repositoryRoot,
 		env: environment,
 		encoding: "utf8",
@@ -57,7 +57,7 @@ function runPublicCanvas(command: "start" | "stop", environment: NodeJS.ProcessE
 function runPublicCanvasAsync(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
 	return new Promise<{ readonly status: number | null; readonly stderr: string }>(
 		(resolve, reject) => {
-			const child = spawn(join(repositoryRoot, "bin/canvas"), [command], {
+			const child = spawn(join(repositoryRoot, "bin/archboard"), [command], {
 				cwd: repositoryRoot,
 				env: environment,
 				stdio: ["ignore", "ignore", "pipe"],

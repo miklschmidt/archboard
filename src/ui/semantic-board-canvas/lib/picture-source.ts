@@ -37,7 +37,7 @@ interface PictureSource {
 
 const fromServer: PictureSource = {
 	/**
-	 * Ask the canvas server's render route.
+	 * Ask the Archboard server's render route.
 	 * @param request The board, variant, view and theme.
 	 * @param _client Unused: the server reads the board itself.
 	 * @param signal Cancels the request.

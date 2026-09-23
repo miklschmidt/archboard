@@ -88,7 +88,7 @@ function vaultRefusal(): string | null {
 		return null;
 	}
 	process.stderr.write(noVaultMessage() + "\n");
-	logger.error("Refusing to start canvas server: no vault (ARCHBOARD_VAULT is unset).");
+	logger.error("Refusing to start Archboard server: no vault (ARCHBOARD_VAULT is unset).");
 	return noVaultMessage();
 }
 
@@ -106,9 +106,9 @@ async function loopbackRefusal(): Promise<string | null> {
 		return null;
 	}
 	const message =
-		`Refusing to start canvas server on ${formatHostForUrl(HOST)}:${PORT}: ` +
+		`Refusing to start Archboard server on ${formatHostForUrl(HOST)}:${PORT}: ` +
 		`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
-		"This prevents duplicate IPv4/IPv6 canvas servers from splitting state.";
+		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
 	logger.error(message);
 	return message;
 }
@@ -202,7 +202,7 @@ function processHandlers(
 	 * @param signal The signal.
 	 */
 	const shutdown = (signal: NodeJS.Signals): void => {
-		logger.info(`Received ${signal}, shutting down canvas server`);
+		logger.info(`Received ${signal}, shutting down Archboard server`);
 		void stopCanvasAfterSignal(signal);
 	};
 	return {

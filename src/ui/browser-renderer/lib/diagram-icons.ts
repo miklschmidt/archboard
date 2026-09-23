@@ -1,4 +1,4 @@
-// The icons a picture drawn in this page names, fetched from the canvas server
+// The icons a picture drawn in this page names, fetched from the Archboard server
 // by name before drawing (TASK-247).
 //
 // A vault policy gives each node kind one Remix Icon, out of a set of three
@@ -51,7 +51,7 @@ function loadIcon(name: string): Promise<void> {
 }
 
 /**
- * One icon's path data from the canvas server.
+ * One icon's path data from the Archboard server.
  * @param name The icon's export name.
  * @returns Its paths, or nothing when the server has no such icon or did not answer.
  */

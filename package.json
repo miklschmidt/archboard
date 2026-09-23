@@ -17,7 +17,7 @@
 		"url": "https://github.com/miklschmidt/archboard.git"
 	},
 	"bin": {
-		"archboard": "bin/canvas"
+		"archboard": "bin/archboard"
 	},
 	"type": "module",
 	"scripts": {

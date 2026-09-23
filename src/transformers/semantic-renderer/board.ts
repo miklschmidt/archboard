@@ -1,6 +1,6 @@
 // One board's answer to "draw this variant, in this view, on this ground".
 //
-// The canvas server's render route and a browser drawing from the board it has
+// The Archboard server's render route and a browser drawing from the board it has
 // read both answer that question, and they have to answer it identically: the
 // same variant chosen for a name, the same view, the same changes read against
 // the same predecessor, the same subjects marked unsettled. So the answer is

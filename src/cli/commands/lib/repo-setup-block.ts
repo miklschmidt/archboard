@@ -153,7 +153,7 @@ function renderBlock(options: {
 		"archboard runs its TypeScript directly, so bun has to be on PATH for any of",
 		"this to work.",
 		"",
-		`The canvas server starts on the first command and serves ${canvasUrl ?? "http://127.0.0.1:3000"}.`,
+		`The Archboard server starts on the first command and serves ${canvasUrl ?? "http://127.0.0.1:3000"}.`,
 		"Open that in a browser to read a board. Authoring and reading a board from the",
 		`command line work without one, and \`${cli} semantic render <name> --out f.svg\``,
 		"draws a picture with no browser involved.",

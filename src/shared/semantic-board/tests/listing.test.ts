@@ -33,7 +33,7 @@ function board(variants: Variant[], current?: string): SemanticBoard {
 			schemaVersion: "2.4.0",
 			kind: "semantic-board",
 			id: "bd1",
-			name: "Canvas server",
+			name: "Archboard server",
 			level: "service",
 			version: 3,
 			createdAt: "2026-09-20T00:00:00.000Z",
@@ -78,7 +78,7 @@ function drilling(
 	};
 }
 
-const LOCATION = { name: "Canvas server", key: "canvas server" };
+const LOCATION = { name: "Archboard server", key: "archboard server" };
 
 describe("a listed board's links", () => {
 	test("are the opened variant's drill-downs, each once, marked when on a container, never to itself", () => {
@@ -94,7 +94,7 @@ describe("a listed board's links", () => {
 							{ id: "n2", name: "Routes", kind: "module", parent: "n1" },
 							drilling("n3", "Store", ["semantic-board-store", "Queued"], "n1"),
 							drilling("n4", "Store", ["semantic-board-store", "Queued"]),
-							drilling("n5", "Itself", ["canvas SERVER"]),
+							drilling("n5", "Itself", ["archboard SERVER"]),
 						],
 					},
 					{ id: "v2", lifecycle: "draft", parent: "v1", nodes: [drilling("n6", "Other", ["x"])] },

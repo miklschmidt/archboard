@@ -98,7 +98,7 @@ test(
 
 			const out = join(fixture.root, "tour.mp4");
 			const recorded = spawnSync(
-				join(repoRoot, "bin/canvas"),
+				join(repoRoot, "bin/archboard"),
 				["semantic", "record", BOARD, "--out", out, "--discard", "--doing", "recording the tour"],
 				{
 					cwd: repoRoot,

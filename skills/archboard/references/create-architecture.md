@@ -47,7 +47,7 @@ Keep the real relationship kind when judging routing.
    (`github.com/miklschmidt/archboard`); bindings use that identity and a
    repo-relative path.
 3. State the architecture in one payload and create the board. The evidence
-   behind this one, from archboard's own source: the canvas server's `editRoute`
+   behind this one, from archboard's own source: the Archboard server's `editRoute`
    (`src/server/canvas/lib/semantic-board-writes.ts`) calls
    `writeSemanticBoard` (`src/runtime/semantic-board-store/lib/write.ts`), which
    takes the board's lease through `withBoardLock`

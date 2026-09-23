@@ -16,7 +16,7 @@
 //     /?paneA=payments&paneB=payments@proposed&pane=B
 //     /?paneA=semantic:pipeline&viewA=k3f9
 //
-// Search parameters rather than path segments because the canvas server serves
+// Search parameters rather than path segments because the Archboard server serves
 // the page at `/` alone, so a path would answer 404 on every direct load.
 
 import {

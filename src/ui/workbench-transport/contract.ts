@@ -27,7 +27,7 @@ import type {
 } from "@/shared/codex-browser-model";
 
 /**
- * The pane's socket to the canvas server, as the transport sees it. It is
+ * The pane's socket to the Archboard server, as the transport sees it. It is
  * shaped exactly like the canvas module's `PaneSocket` so the canvas can hand
  * its socket over without an adapter; the canvas remains the only owner that
  * opens or closes it.

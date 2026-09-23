@@ -45,15 +45,15 @@ TypeScript in `src/`, so nothing else is built. After each `git pull`, run
 
 ## 2. Put the CLI on your PATH
 
-The entry point is `bin/canvas` in the checkout. Give it the name `archboard` on
+The entry point is `bin/archboard` in the checkout. Give it the name `archboard` on
 your `PATH`, because the skill uses that name:
 
 ```bash
 mkdir -p ~/.local/bin
-ln -s ~/Projects/archboard/bin/canvas ~/.local/bin/archboard
+ln -s ~/Projects/archboard/bin/archboard ~/.local/bin/archboard
 ```
 
-`bin/canvas` finds its own location with `realpath`, so the link works from any
+`bin/archboard` finds its own location with `realpath`, so the link works from any
 directory. If you skip this step, the installer in the next step writes the
 absolute path of the CLI into the repository instead.
 
@@ -125,7 +125,7 @@ it does not set the variable in your shell. Set it yourself, or put it in a
 `.env` file in the directory where you run the commands. The canvas does not
 start without a vault, and its message points to `archboard install-skill`.
 
-The canvas server reads and writes the vault. A running server keeps the vault
+The Archboard server reads and writes the vault. A running server keeps the vault
 that it started with. To change the vault, run `archboard stop`, set the new
 vault, and run a command again. `archboard semantic config` shows the
 configuration file of the vault in use, which is inside that vault.
@@ -352,7 +352,7 @@ can ask to become the default browser, even with a temporary profile. If it
 does, install Chrome for Testing and set `ARCHBOARD_RENDERER_CHROMIUM` to its
 executable.
 
-`bin/canvas` uses `realpath`, which older macOS versions do not have. If you see
+`bin/archboard` uses `realpath`, which older macOS versions do not have. If you see
 `realpath: command not found`, run `brew install coreutils`, or run
 `bun ~/Projects/archboard/src/bin.ts` directly.
 

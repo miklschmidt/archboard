@@ -9,7 +9,7 @@ import { BOARD_CACHE_GC_MS } from "@/shared/timing/timing";
  * A cache with this product's read defaults.
  *
  * Two of them are deliberately not the library's. Reads never retry: the
- * canvas server is on this machine, so a refusal is a fact rather than a
+ * Archboard server is on this machine, so a refusal is a fact rather than a
  * flutter, and the navigator already shows the reason with its own Refresh
  * beside it — three silent attempts with backoff would only delay that line.
  * Nothing refetches on focus by default either; the one resource that should

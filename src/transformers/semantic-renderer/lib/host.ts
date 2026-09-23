@@ -1,7 +1,7 @@
 // What the renderer asks of the place it runs in.
 //
 // The renderer is the same code under Bun (the CLI, the rasterizer, the
-// canvas server's render route) and in a browser tab (TASK-247). Four things
+// Archboard server's render route) and in a browser tab (TASK-247). Four things
 // differ between those places, and only four, so they arrive as a host
 // installed once before the first picture:
 //

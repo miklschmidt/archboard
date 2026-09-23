@@ -114,8 +114,8 @@ const FAILURE_TITLES: Readonly<Record<string, string>> = {
 	UNKNOWN_VARIANT: "There is no such variant",
 	UNKNOWN_VIEW: "There is no such view",
 	BOARD_UNREADABLE: "This board could not be read",
-	UNREACHABLE: "The canvas server did not answer",
-	REPLY_INVALID: "The canvas server sent something unexpected",
+	UNREACHABLE: "The Archboard server did not answer",
+	REPLY_INVALID: "The Archboard server sent something unexpected",
 };
 
 /**

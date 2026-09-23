@@ -1,4 +1,4 @@
-// Every call the browser makes to the canvas server's semantic-board routes.
+// Every call the browser makes to the Archboard server's semantic-board routes.
 //
 // Plain `fetch` on purpose: the browser never imports the board store or the
 // vault (ADR 0023). The reads are the whole of what a viewer is allowed to
@@ -158,7 +158,7 @@ function refusalFrom(body: unknown, status: number): SemanticBoardError {
 	const message =
 		typeof said === "string" && said !== ""
 			? said
-			: `The canvas server refused the request (${status}).`;
+			: `The Archboard server refused the request (${status}).`;
 	return new SemanticBoardError(codeOf(body) ?? "REPLY_INVALID", message);
 }
 
@@ -178,7 +178,7 @@ async function requestRoute(url: string, signal?: AbortSignal): Promise<Response
 		if (signal?.aborted === true) {
 			throw error;
 		}
-		throw new SemanticBoardError("UNREACHABLE", "The canvas server did not answer.");
+		throw new SemanticBoardError("UNREACHABLE", "The Archboard server did not answer.");
 	}
 }
 
@@ -205,7 +205,7 @@ async function readRoute(url: string, signal?: AbortSignal): Promise<unknown> {
 async function fetchSemanticBoards(signal?: AbortSignal): Promise<SemanticBoardListing> {
 	const parsed = BoardListingSchema.safeParse(await readRoute(LIST_URL, signal));
 	if (!parsed.success) {
-		throw new SemanticBoardError("REPLY_INVALID", "The canvas server listed no boards.");
+		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server listed no boards.");
 	}
 	return { levels: parsed.data.levels, boards: parsed.data.boards };
 }
@@ -249,7 +249,7 @@ async function fetchSemanticRender(
 	if (!parsed.success) {
 		throw new SemanticBoardError(
 			"REPLY_INVALID",
-			"The canvas server sent a reply that was neither a picture nor an empty board.",
+			"The Archboard server sent a reply that was neither a picture nor an empty board.",
 		);
 	}
 	return "empty" in parsed.data
@@ -268,7 +268,7 @@ async function fetchSemanticBoardDocument(board: string, signal?: AbortSignal): 
 	const body = await readRoute(`${BOARD_URL}?board=${encodeURIComponent(board)}`, signal);
 	const parsed = z.object({ board: z.unknown() }).safeParse(body);
 	if (!parsed.success) {
-		throw new SemanticBoardError("REPLY_INVALID", "The canvas server sent no board.");
+		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server sent no board.");
 	}
 	return parsed.data.board;
 }

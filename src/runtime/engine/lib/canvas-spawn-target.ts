@@ -61,8 +61,8 @@ function isLoopbackUrl(): boolean {
  */
 function unreachableError(reason: string): Error {
 	return codedError(
-		`Canvas server is not reachable at ${ARCHBOARD_URL} (${reason}). ` +
-			`Start it with \`archboard start\` (\`./bin/canvas start\` in the repo) or \`bun src/server.ts\`.`,
+		`Archboard server is not reachable at ${ARCHBOARD_URL} (${reason}). ` +
+			`Start it with \`archboard start\` (\`./bin/archboard start\` in the repo) or \`bun src/server.ts\`.`,
 		"CANVAS_UNREACHABLE",
 	);
 }
@@ -89,7 +89,7 @@ async function healthOrNull(): Promise<HealthStatus | null> {
 }
 
 /**
- * Whether a `/health` payload came from OUR canvas server (the v1.1+ identity
+ * Whether a `/health` payload came from OUR Archboard server (the v1.1+ identity
  * marker). Anything else answering the port is a foreign service.
  * @param health The payload, or null when nothing answered.
  * @returns True only for this canvas service.

@@ -1,4 +1,4 @@
-// One pane's session with the canvas server: its socket, its registration, who
+// One pane's session with the Archboard server: its socket, its registration, who
 // is writing the board it shows, and what the person is reading in it.
 //
 // Nothing here draws. The picture of a semantic board is the viewer's, read

@@ -1,4 +1,4 @@
-// The typed surface the CLI talks to the canvas server through.
+// The typed surface the CLI talks to the Archboard server through.
 //
 // Small on purpose. The CLI writes boards through one owner
 // (`src/runtime/semantic-board-client`), which states its own routes; what is

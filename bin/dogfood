@@ -3,4 +3,4 @@
 set -euo pipefail
 archboard_checkout="$(dirname "$(dirname "$(realpath "$0")")")"
 export ARCHBOARD_VAULT="$archboard_checkout/.archboard/vault"
-exec "$archboard_checkout/bin/canvas" "$@"
+exec "$archboard_checkout/bin/archboard" "$@"

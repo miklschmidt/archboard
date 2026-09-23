@@ -49,8 +49,8 @@ function shape(nodes: readonly OutlineNode<OutlineBoard>[], depth = 0): string[]
 test("a vault with drill links draws its hierarchy under the closest coarser parent", () => {
 	const outline = buildOutline(
 		[
-			board("Archboard", "system", "Canvas server", "Browser application", "Board persistence"),
-			board("Canvas server", "service", "Board persistence", "Semantic renderer", "Archboard"),
+			board("Archboard", "system", "Archboard server", "Browser application", "Board persistence"),
+			board("Archboard server", "service", "Board persistence", "Semantic renderer", "Archboard"),
 			board("Browser application", "service", "^Archboard", "Semantic renderer"),
 			board("Board persistence", "module"),
 			board("Semantic renderer", "module", "Renderer layout"),
@@ -60,10 +60,10 @@ test("a vault with drill links draws its hierarchy under the closest coarser par
 	);
 	expect(shape(outline)).toEqual([
 		"Archboard",
-		"  Browser application",
-		"    Semantic renderer +Canvas server",
-		"  Canvas server",
+		"  Archboard server",
 		"    Board persistence +Archboard",
+		"    Semantic renderer +Browser application",
+		"  Browser application",
 		"Renderer layout",
 	]);
 });

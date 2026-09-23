@@ -170,7 +170,7 @@ require("node:fs").writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ lea
 process.stdin.resume(); setInterval(() => {}, 1000);`,
 	);
 	const startedAt = performance.now();
-	const launcher = spawn(join(repoRoot, "bin/canvas"), ["start"], {
+	const launcher = spawn(join(repoRoot, "bin/archboard"), ["start"], {
 		cwd: repoRoot,
 		env: environment,
 		stdio: ["ignore", "ignore", "pipe"],

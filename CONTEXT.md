@@ -18,6 +18,12 @@ The live, pannable and zoomable surface on which exactly one board is open at a
 time for exploration and inspection.
 _Avoid_: scene, workspace, session, drawing area
 
+**Archboard server**:
+The process on one port that keeps the boards, serves the panes in the browser
+and runs Codex for the agents. `archboard start` starts it, and every other
+command talks to it.
+_Avoid_: canvas server, canvas (that is the surface), host, backend
+
 **View**:
 A named way of reading a board, with a shared diagram grammar and scope across
 every variant. The view stays the same while the selected variant supplies the

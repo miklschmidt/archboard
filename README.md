@@ -68,7 +68,7 @@ bun install
 bun run build
 
 export ARCHBOARD_VAULT=/path/to/a/vault
-./bin/canvas start
+./bin/archboard start
 ```
 
 Archboard has no default vault, by design. The server does not start until
@@ -82,7 +82,7 @@ do not want this, set `ARCHBOARD_NO_AUTOSTART=1`.
 Open <http://127.0.0.1:3000>. Then create a first board and read it back:
 
 ```bash
-./bin/canvas semantic new payments --doing "describing payment processing" <<'JSON'
+./bin/archboard semantic new payments --doing "describing payment processing" <<'JSON'
 {
   "level": "system",
   "nodes": [
@@ -93,8 +93,8 @@ Open <http://127.0.0.1:3000>. Then create a first board and read it back:
 }
 JSON
 
-./bin/canvas semantic show payments
-./bin/canvas semantic render payments --out payments.svg
+./bin/archboard semantic show payments
+./bin/archboard semantic render payments --out payments.svg
 ```
 
 Two rules make each write visible and safe:
@@ -105,8 +105,8 @@ Two rules make each write visible and safe:
    version that the agent read. If the board changed after that version, the
    server refuses the change, and the agent must read the board again.
 
-Run `./bin/canvas --help` to see all the commands. Run
-`./bin/canvas help <command>` to see the arguments and options of one command.
+Run `./bin/archboard --help` to see all the commands. Run
+`./bin/archboard help <command>` to see the arguments and options of one command.
 
 ## Common tasks
 
@@ -133,12 +133,12 @@ Safari included.
 ## Use it from another repository
 
 You install archboard once on each machine. It is not a dependency of the
-codebase that you diagram. Put `bin/canvas` on your `PATH`. Then run the
+codebase that you diagram. Put `bin/archboard` on your `PATH`. Then run the
 installer from the repository that you want an agent to understand:
 
 ```bash
 mkdir -p ~/.local/bin
-ln -s /path/to/archboard/bin/canvas ~/.local/bin/archboard
+ln -s /path/to/archboard/bin/archboard ~/.local/bin/archboard
 
 cd /path/to/your-project
 archboard install-skill

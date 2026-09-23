@@ -396,7 +396,7 @@ The baseline, first renders on the tree at this section's commit:
 | Board persistence   | 1705x850  | 0.75 |       0% |             1.5 |               0 |
 | Board viewer        | 1376x1443 | 0.62 |       0% |             1.5 |               0 |
 | Browser application | 1632x1297 | 0.69 |       0% |             1.5 |               0 |
-| Canvas server       | 1338x1265 | 0.71 |      10% |             1.9 |               0 |
+| Archboard server    | 1338x1265 | 0.71 |      10% |             1.9 |               0 |
 | Codex session       | 1111x986  | 0.91 |       0% |             0.2 |               0 |
 | Command dispatch    | 1441x685  | 0.88 |       0% |             1.3 |               0 |
 | Command interface   | 683x1027  | 0.88 |       0% |             0.3 |               0 |
@@ -459,7 +459,7 @@ Measured on every fixture and vault board, first renders, both readings:
 | Board persistence   | 1705x850, 0.75  | 3470x675, 0.37  | down |
 | Board viewer        | 1376x1443, 0.62 | 4778x603, 0.27  | down |
 | Browser application | 1632x1297, 0.69 | 4353x796, 0.29  | down |
-| Canvas server       | 1338x1265, 0.71 | 3262x716, 0.39  | down |
+| Archboard server    | 1338x1265, 0.71 | 3262x716, 0.39  | down |
 | Codex session       | 1111x986, 0.91  | 3031x571, 0.42  | down |
 | Command dispatch    | 1441x685, 0.88  | 2025x562, 0.63  | down |
 | Command interface   | 683x1027, 0.88  | 3229x376, 0.39  | down |
@@ -502,7 +502,7 @@ render and one extra settle, only for a proposal that adds relationships.
 Neither reading alone holds: with the first render's faces the added skip in
 `skipped-connections` runs through a card the predecessor pinned in its way;
 with no face the added route in `predecessor-routing` snakes round a pinned
-card (six turns). The vault's three proposals (Canvas server, Renderer layout
+card (six turns). The vault's three proposals (Archboard server, Renderer layout
 and Semantic renderer, each Readable layout) draw identically before and
 after. A one-skip edit of each fixture, first card to last:
 
@@ -560,16 +560,16 @@ Measured against the predecessor's own first render: card move is the mean
 distance a surviving card moved, ink the total route length, through the
 routes crossing a card.
 
-| proposal                          | seeding: fit, card move, bends, ink, through | model order: fit, card move, bends, ink, through |
-| --------------------------------- | -------------------------------------------- | ------------------------------------------------ |
-| Canvas server @ Readable layout   | 0.71, 0, 1.9, 11317, 0                       | 0.71, 0, 1.9, 11317, 0                           |
-| Renderer layout @ Readable layout | 1.00, 349, 1.6, 1712, 0                      | 1.00, 269, 0.8, 1391, 0                          |
-| Semantic renderer @ Readable      | 0.66, 59, 1.5, 7010, 0                       | 0.66, 239, 1.2, 6165, 0                          |
-| flask-map-1 + one skip            | 0.42, 141, 2.1, 31433, 0                     | 0.41, 584, 2.1, 37929, 1                         |
-| flask-map-2 + one skip            | 0.33, 88, 2.8, 35845, 0                      | 0.36, 397, 2.1, 38370, 1                         |
-| flask-map-3 + one skip            | 0.42, 66, 2.9, 42685, 2                      | 0.33, 615, 2.9, 52074, 0                         |
+| proposal                           | seeding: fit, card move, bends, ink, through | model order: fit, card move, bends, ink, through |
+| ---------------------------------- | -------------------------------------------- | ------------------------------------------------ |
+| Archboard server @ Readable layout | 0.71, 0, 1.9, 11317, 0                       | 0.71, 0, 1.9, 11317, 0                           |
+| Renderer layout @ Readable layout  | 1.00, 349, 1.6, 1712, 0                      | 1.00, 269, 0.8, 1391, 0                          |
+| Semantic renderer @ Readable       | 0.66, 59, 1.5, 7010, 0                       | 0.66, 239, 1.2, 6165, 0                          |
+| flask-map-1 + one skip             | 0.42, 141, 2.1, 31433, 0                     | 0.41, 584, 2.1, 37929, 1                         |
+| flask-map-2 + one skip             | 0.33, 88, 2.8, 35845, 0                      | 0.36, 397, 2.1, 38370, 1                         |
+| flask-map-3 + one skip             | 0.42, 66, 2.9, 42685, 2                      | 0.33, 615, 2.9, 52074, 0                         |
 
-Canvas server's proposal changes nothing the layout reads, so both reuse the
+Archboard server's proposal changes nothing the layout reads, so both reuse the
 predecessor's geometry without solving. Model order keeps the order of cards
 within a layer, not the layers or the lanes: on the fixture edits cards move
 four to nine times as far, a route runs through a card on two of them, and
@@ -628,7 +628,7 @@ left for them is the room between layers (TASK-239, TASK-242).
 Sections 13 to 17 judged layouts by fit in the pane, and fit alone misleads:
 flask-map-2 fits the pane a little better with its skips on the flank while
 its page grows from 4.70 to 6.65 megapixels, most of it empty; a side-entry
-experiment spread Canvas server wider and emptier while cutting its crossings
+experiment spread Archboard server wider and emptier while cutting its crossings
 from 9 to 5. No single number decides whether a drawing is better.
 
 `src/runtime/semantic-renderer/tests/drawn-scorecard.ts` measures every
@@ -653,7 +653,7 @@ keeps a run and `AGAINST=run.json` compares a later run measure by measure,
 naming each one that moved and whether it moved the way a reader wants. A
 layout change is reported that way, with the pictures, and every comparison
 from here on uses it. The label check now allows a unit of snapping: a
-Canvas server label reported off its line sat 0.88 units from it, which no
+Archboard server label reported off its line sat 0.88 units from it, which no
 reader can see.
 
 Side ends and labels on horizontal runs were measured for a day and taken
@@ -672,7 +672,7 @@ a first solve. Neither is on the branch.
 
 Solved again from scratch, the side choices moved the cards they were read
 from. Measured against today: Semantic renderer fit 0.61 to 0.67 but 1.46 to
-1.72 megapixels and crossings 8 to 4; Canvas server 1.69 to 2.34 megapixels,
+1.72 megapixels and crossings 8 to 4; Archboard server 1.69 to 2.34 megapixels,
 fit 0.71 to 0.54, route length +17 percent, crossings 9 to 5; Board viewer
 1.99 to 2.13 megapixels, bends per route 1.5 to 1.8. Page area grew on nine
 of fourteen boards and bends on nine; crossings fell on six and rose on three.
@@ -699,7 +699,7 @@ label's width does not enter it). Two changes take the empty room back.
 
 A reserved label was usually not drawn where it was reserved. The run pass
 places every label again after the solve and prefers the run nearest a route
-end, so on Canvas server `owns listener` and `runs backend` were reserved at
+end, so on Archboard server `owns listener` and `runs backend` were reserved at
 y 231 and drawn at 120 and 148, and the band above HTTP application held
 nothing for about 150 units. Reservations only ever grew. Now, once every
 label has a box, the reservations whose labels sit elsewhere are released,
@@ -728,14 +728,14 @@ board and the three fixtures (scorecard, section 18):
 | Board persistence   | 1705x850    | 1705x802  | 0.75         | 1.45 to 1.37 | nothing                    |
 | Board viewer        | 1376x1443   | 1376x1315 | 0.62 to 0.68 | 1.99 to 1.81 | nothing                    |
 | Browser application | 1632x1297   | 1632x1185 | 0.69 to 0.76 | 2.12 to 1.93 | nothing                    |
-| Canvas server       | 1338x1265   | 1254x1169 | 0.71 to 0.77 | 1.69 to 1.47 | nothing                    |
+| Archboard server    | 1338x1265   | 1254x1169 | 0.71 to 0.77 | 1.69 to 1.47 | nothing                    |
 | Codex session       | 1111x986    | 1111x906  | 0.91 to 0.99 | 1.10 to 1.01 | nothing                    |
 | Command dispatch    | 1441x685    | 1441x637  | 0.88         | 0.99 to 0.92 | nothing                    |
 | Command interface   | 1012x805    | 1012x725  | 1.00         | 0.81 to 0.73 | nothing                    |
 | Renderer layout     | 910x780     | 910x716   | 1.00         | 0.71 to 0.65 | nothing                    |
 | Semantic renderer   | 997x1468    | 819x1291  | 0.61 to 0.70 | 1.46 to 1.06 | bends per route 1.3 to 1.6 |
 
-Release alone moved only Agent workbench, Canvas server and Semantic
+Release alone moved only Agent workbench, Archboard server and Semantic
 renderer; the clearance moved every board. The scorecard's route reader now
 drops the points a removed bridge leaves a fraction of a unit off its run,
 which a proposal test had been counting as turns.
@@ -780,7 +780,7 @@ three fixtures; the rest keep the default rule and their drawing:
 | flask-map-3                        | returns-left | 2566x1901   | 2229x1790 | fit, area, card share, length, bends, crossings              | nothing                               |
 | Agent workbench                    | flanked      | 1372x1390   | 1349x1202 | fit 0.65 to 0.75, area, card share, length, crossings        | bends 1.5 to 1.6, fan 0 to 1          |
 | Board persistence                  | mirrored     | 1705x802    | 1522x828  | fit 0.75 to 0.84, area, card share, length, crossings 9 to 7 | bends, lane ink 0 to 0.08, fan 0 to 3 |
-| Canvas server                      | flanked      | 1254x1169   | 1316x924  | fit 0.77 to 0.97, area, card share, length, lane ink         | bends 1.9 to 2.1, fan 1 to 2          |
+| Archboard server                   | flanked      | 1254x1169   | 1316x924  | fit 0.77 to 0.97, area, card share, length, lane ink         | bends 1.9 to 2.1, fan 1 to 2          |
 | Semantic renderer                  | flanked      | 819x1291    | 1062x987  | fit 0.70 to 0.91, area, length, bends, crossings 8 to 4      | lane ink 0.16 to 0.38, fan 1 to 2     |
 | Semantic renderer, Readable layout | flanked      | 1454x1083   | 1591x933  | area, card share, length                                     | fit 0.83 to 0.80, lane ink            |
 
@@ -838,7 +838,7 @@ another board, then the median repeat:
 | Board persistence   | 671    | 120 to 280                                    | 1      |
 | Board viewer        | 373    | 100 to 130                                    | 1      |
 | Browser application | 172    | 115 to 140                                    | 1      |
-| Canvas server       | 729    | 330 to 375                                    | 1      |
+| Archboard server    | 729    | 330 to 375                                    | 1      |
 | Codex session       | 173    | 50 to 80                                      | 1      |
 | Command dispatch    | 123    | 50 to 210                                     | 0      |
 | Command interface   | 26     | 20 to 25                                      | 0      |
@@ -847,7 +847,7 @@ another board, then the median repeat:
 
 A worker started for a render compiles the engine as it goes: the same
 flask-map-1 render took 1552 ms on fresh workers and 400 ms on warm ones.
-Under 150 ms on a first render is met by nine of the fourteen; Canvas server,
+Under 150 ms on a first render is met by nine of the fourteen; Archboard server,
 Semantic renderer, Board persistence and the three fixtures are not, and
 what remains is the number of solves a first render's candidates need, which
 only a change to what is chosen (fewer flank rules, lighter label settling,
@@ -883,7 +883,7 @@ fixture, as it did in elkjs, so section 17's single-edge choice stands.
 | Board persistence   | 120 to 280        | 95 to 115    | 1      |
 | Board viewer        | 100 to 130        | 70 to 80     | 1      |
 | Browser application | 115 to 140        | 65 to 70     | 1      |
-| Canvas server       | 330 to 375        | 215 to 220   | 1      |
+| Archboard server    | 330 to 375        | 215 to 220   | 1      |
 | Codex session       | 50 to 80          | 50 to 60     | 0      |
 | Command dispatch    | 50 to 210         | 50 to 65     | 0      |
 | Command interface   | 20 to 25          | 22 to 25     | 0      |
@@ -897,7 +897,7 @@ this branch it makes 126 solves on either engine. elk-rs spends 2073 ms solving
 and draws in 1174 ms; the patched elkjs spends 7781 ms solving and draws in
 3303 ms. What grew is how many solves label settling needs with the new widths,
 so that is where to look next. Ten of the fourteen are under 150 ms. The four
-that are not are the three fixtures and Canvas server.
+that are not are the three fixtures and Archboard server.
 
 ## 24. Where a first render's time goes (2026-09-17, TASK-247)
 
@@ -946,7 +946,7 @@ fixture byte-identical:
 | Board persistence   | 97                 | 46     | 33                        |
 | Board viewer        | 73                 | 39     | 32                        |
 | Browser application | 70                 | 38     | 24                        |
-| Canvas server       | 218                | 125    | 77                        |
+| Archboard server    | 218                | 125    | 77                        |
 | Codex session       | 47                 | 25     | 16                        |
 | Command dispatch    | 55                 | 29     | 28                        |
 | Command interface   | 24                 | 12     | 12                        |
@@ -1015,7 +1015,7 @@ First renders on the tree at this section's commit, the new columns beside fit:
 | Board persistence   | 1522x828  | 0.84 |         392 |   0.50 |             362 |               1 |       0.14 |
 | Board viewer        | 1376x1315 | 0.68 |         244 |   0.64 |               0 |               1 |       0.00 |
 | Browser application | 1633x1185 | 0.76 |         149 |   0.50 |               0 |               1 |       0.00 |
-| Canvas server       | 1317x924  | 0.97 |         319 |   0.54 |             382 |               1 |       0.18 |
+| Archboard server    | 1317x924  | 0.97 |         319 |   0.54 |             382 |               1 |       0.18 |
 | Codex session       | 1111x906  | 0.99 |          93 |   0.50 |               0 |               0 |       0.00 |
 | Command dispatch    | 1441x637  | 0.88 |          78 |   0.21 |               0 |               1 |       0.00 |
 | Command interface   | 1012x725  | 1.00 |         194 |   0.50 |               0 |               1 |       0.00 |
@@ -1080,7 +1080,7 @@ What is not held, and why no figure was invented for it:
   15 parts and have drawn that way since section 13. The vault's boards are
   small, not better drawn; holding a twenty-part board to a twelve-part board's
   distances is a rule against large boards.
-- **The share of ink does not separate at all**: Canvas server, which reads
+- **The share of ink does not separate at all**: Archboard server, which reads
   well, shares 0.18 of its ink, more than four of the six graded boards.
 - **The tight bounds the population does support are the ones the fixtures
   fail**: a strand of 0.75 (13 of 15 boards are inside 0.64, the system map is
@@ -1104,7 +1104,7 @@ shared corridor, those become the thresholds and the fixture is held to them.
 `elk.spacing.edgeEdge` and `edgeEdgeBetweenLayers` from 20 to 36, so that
 parallel routes are drawn apart and a badge has room between them. On the
 fixtures it reads like a triumph — flask-map-2's label reach 1181 to 239, its
-shared corridor 829 to 0, flask-map-1's 225 to 0, Canvas server's 382 to 12 —
+shared corridor 829 to 0, flask-map-1's 225 to 0, Archboard server's 382 to 12 —
 and it is mostly the measure being fooled: 36 apart is beyond the 24 the
 corridor measure calls side by side, so a corridor of the same routes stops
 counting. The board that matters got worse: the system map's reading flips,
