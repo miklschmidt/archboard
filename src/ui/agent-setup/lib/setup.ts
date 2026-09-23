@@ -12,7 +12,20 @@ import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer"
 import type { ThreadLinkLoginParams } from "@/ui/workbench-thread-link/transport-port";
 import type { BrowserWorkbenchState } from "@/ui/workbench-transport";
 
+import {
+	arrivedAfterAll,
+	promptsIn,
+	settleDelivery,
+	shownInTimeline,
+	type HeldMessage,
+} from "@/ui/agent-setup/lib/held";
 import { agentPhase, type AgentPhase } from "@/ui/agent-setup/lib/phase";
+import {
+	signInAfter,
+	signInEnded,
+	tabFate,
+	type SignInProgress,
+} from "@/ui/agent-setup/lib/sign-in";
 
 /** How one step the setup asked for settled. */
 type SetupStepResult = { readonly ok: true } | { readonly ok: false; readonly reason: string };
@@ -57,22 +70,6 @@ interface AgentSetupPorts {
 	 * @param walkthrough The walkthrough to narrate, or null for a conversation.
 	 */
 	readonly startVoice: (walkthrough: string | null) => Promise<void>;
-}
-
-/** Where one held message stands. */
-type HeldState = "waiting" | "sending" | "delivered" | "failed" | "unknown";
-
-/** A message the person sent that the conversation does not show yet. */
-interface HeldMessage {
-	readonly id: string;
-	readonly text: string;
-	/** The person asked for it to run after the current turn. */
-	readonly queue: boolean;
-	readonly state: HeldState;
-	/** Why it was not delivered, or why its outcome is unknown. */
-	readonly reason: string | null;
-	/** The turn it went into, once delivered. */
-	readonly turnId: string | null;
 }
 
 /** What the agent waits on for the person's held work. */
@@ -173,43 +170,6 @@ function words(error: unknown): string {
 }
 
 /**
- * Whether the timeline shows a delivered message: its turn is there and holds
- * a prompt with its words, or the turn has already ended.
- * @param state The transport state.
- * @param message The held message.
- * @returns True once the conversation shows it.
- */
-function shownInTimeline(state: BrowserWorkbenchState, message: HeldMessage): boolean {
-	const turn = state.snapshot?.timeline?.turns.find((entry) => entry.turnId === message.turnId);
-	if (turn === undefined) return false;
-	const said = message.text.trim();
-	return (
-		turn.status !== "inProgress" ||
-		turn.items.some((item) => item.media === "prompt" && item.text.trim() === said)
-	);
-}
-
-/**
- * The held messages once one settled delivery is recorded.
- * @param held The held messages.
- * @param id The message.
- * @param result What the composer said.
- * @returns The held messages.
- */
-function settleDelivery(
-	held: readonly HeldMessage[],
-	id: string,
-	result: WorkbenchComposerSubmissionResult,
-): HeldMessage[] {
-	if (result.outcome === "queued") return held.filter((message) => message.id !== id);
-	const change: Partial<HeldMessage> =
-		result.outcome === "delivered"
-			? { state: "delivered", turnId: result.turnId }
-			: { state: result.outcome === "not_delivered" ? "failed" : "unknown", reason: result.reason };
-	return held.map((message) => (message.id === id ? { ...message, ...change } : message));
-}
-
-/**
  * Create the setup over its ports.
  * @param ports What it reaches for.
  * @returns The setup.
@@ -219,7 +179,10 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	let talk: AgentSetupSnapshot["talk"] = "idle";
 	let failure: string | null = null;
 	let talkFailure: string | null = null;
-	let signInAsked = false;
+	let signIn: SignInProgress = "none";
+	// Moves on with every change of `signIn`, so an ask whose sign-in has
+	// moved on cannot end it with a late refusal.
+	let signInRevision = 0;
 	let linking = false;
 	// A create Codex accepted whose link has not reached the snapshot yet: a
 	// second create now would make a second workhorse.
@@ -228,6 +191,8 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	let tab: AuthTab | null = null;
 	let narration: string | null = null;
 	let sequence = 0;
+	// The prompts the timeline showed when each message was sent, by message id.
+	const promptsBefore = new Map<string, ReadonlySet<string>>();
 	const listeners = new Set<() => void>();
 
 	/**
@@ -263,20 +228,31 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		for (const listener of listeners) listener();
 	}
 
-	/** Deliver the oldest waiting message, one at a time, then look again. */
+	/**
+	 * Deliver the oldest waiting message, one at a time, then look again. A
+	 * message that was refused or went unanswered holds back every later one
+	 * until the person retries, edits or discards it, so nothing overtakes it.
+	 */
 	async function deliverNext(): Promise<void> {
-		const next = held.find((message) => message.state === "waiting");
-		if (next === undefined || delivering) return;
+		if (delivering) return;
+		const next = held.find((message) => message.state !== "delivered");
+		if (next?.state !== "waiting") return;
 		delivering = true;
+		const before = promptsIn(ports.transport.state()).map((prompt) => prompt.itemId);
+		promptsBefore.set(next.id, new Set(before));
 		held = held.map((message) =>
 			message.id === next.id ? { ...message, state: "sending" } : message,
 		);
 		publish();
+		let result: WorkbenchComposerSubmissionResult;
 		try {
-			held = settleDelivery(held, next.id, await ports.submit(next.text, next.queue));
+			result = await ports.submit(next.text, next.queue);
 		} catch (error) {
-			held = settleDelivery(held, next.id, { outcome: "outcome_unknown", reason: words(error) });
+			result = { outcome: "outcome_unknown", reason: words(error) };
 		}
+		// Read the held list only now: more may have been sent while this one was on its way.
+		held = settleDelivery(held, next.id, result);
+		if (result.outcome !== "outcome_unknown") promptsBefore.delete(next.id);
 		delivering = false;
 		pump();
 	}
@@ -322,28 +298,53 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	}
 
 	/**
-	 * Start a sign-in, once, for held work.
+	 * Start a sign-in. One that cannot start fails what waited on it, and
+	 * nothing asks again until the person's next gesture.
 	 * @param login The provider.
 	 */
 	async function askSignIn(login: ThreadLinkLoginParams): Promise<void> {
-		if (signInAsked) return;
-		signInAsked = true;
+		moveSignIn("asked");
+		const asked = signInRevision;
 		const result = await ports.signIn(login);
-		if (result.ok) return;
+		if (result.ok || asked !== signInRevision) return;
+		moveSignIn("ended");
 		failure = result.reason;
-		tab?.close();
-		tab = null;
-		signInAsked = false;
-		publish();
+		failWaiting(result.reason);
+		pump();
 	}
 
 	/**
-	 * Point the gesture's tab at the provider's page once Codex names it.
-	 * @param authUrl The page, or null while Codex has not named it.
+	 * Follow a sign-in through the phases: one that goes back to signed out
+	 * fails what waited on it with Codex's reason, instead of asking again.
+	 * @param phase The phase.
 	 */
-	function showProvider(authUrl: string | null): void {
-		if (authUrl === null || tab === null) return;
-		tab.navigate(authUrl);
+	function followSignIn(phase: AgentPhase): void {
+		const next = signInAfter(phase, signIn);
+		if (next === "ended" && signIn === "pending") failWaiting(signInEnded(phase));
+		moveSignIn(next);
+	}
+
+	/**
+	 * Move the sign-in on.
+	 * @param next Where it stands now.
+	 */
+	function moveSignIn(next: SignInProgress): void {
+		if (next === signIn && next !== "asked") return;
+		signIn = next;
+		signInRevision += 1;
+	}
+
+	/**
+	 * Point the gesture's tab at the provider's page once Codex names it, and
+	 * close it once no sign-in is on its way to naming one.
+	 * @param phase The phase.
+	 */
+	function pointTab(phase: AgentPhase): void {
+		if (tab === null) return;
+		const fate = tabFate(phase, signIn);
+		if (fate.kind === "keep") return;
+		if (fate.kind === "show") tab.navigate(fate.url);
+		else tab.close();
 		tab = null;
 	}
 
@@ -352,8 +353,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	 * @param phase The phase.
 	 */
 	function advance(phase: AgentPhase): void {
-		if (phase.kind === "signed_out") void askSignIn({ type: "chatgpt" });
-		else if (phase.kind === "signing_in") showProvider(phase.authUrl);
+		if (phase.kind === "signed_out" && signIn === "none") void askSignIn({ type: "chatgpt" });
 		else if (phase.kind === "unavailable") failWaiting(phase.reason);
 		else if (phase.kind === "ready") proceed(phase.linked);
 	}
@@ -371,24 +371,50 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		void startTalk();
 	}
 
+	/**
+	 * Whether the conversation shows a held message already.
+	 * @param state The transport state.
+	 * @param message The message.
+	 * @returns True when it no longer needs holding.
+	 */
+	function shown(state: BrowserWorkbenchState, message: HeldMessage): boolean {
+		if (message.state === "delivered") return shownInTimeline(state, message);
+		if (message.state !== "unknown") return false;
+		return arrivedAfterAll(state, message, promptsBefore.get(message.id));
+	}
+
+	/**
+	 * Stop holding the messages the conversation shows.
+	 * @param state The transport state.
+	 */
+	function prune(state: BrowserWorkbenchState): void {
+		held = held.filter((message) => {
+			if (!shown(state, message)) return true;
+			promptsBefore.delete(message.id);
+			return false;
+		});
+	}
+
 	/** Carry held work one step further, as far as the phase allows. */
 	function pump(): void {
 		const state = ports.transport.state();
-		held = held.filter(
-			(message) => message.state !== "delivered" || !shownInTimeline(state, message),
-		);
+		prune(state);
 		const phase = agentPhase(state);
 		if (phase.kind === "ready" && phase.linked) created = false;
+		followSignIn(phase);
 		if (waiting()) advance(phase);
-		if (phase.kind !== "signed_out" && phase.kind !== "signing_in") signInAsked = false;
+		pointTab(phase);
 		publish();
 	}
 
 	/**
-	 * Keep the gesture's tab for a sign-in the held work is about to need.
+	 * A gesture by the person: keep the tab it opened for a sign-in the held
+	 * work is about to need, and let a sign-in that ended be asked for again.
 	 * @param gestureTab The tab, if the gesture opened one.
 	 */
-	function keepTab(gestureTab: AuthTab | undefined): void {
+	function gesture(gestureTab: AuthTab | undefined): void {
+		failure = null;
+		if (signIn === "ended") moveSignIn("none");
 		if (gestureTab === undefined) return;
 		tab?.close();
 		tab = gestureTab;
@@ -411,8 +437,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	 */
 	function send(text: string, options: SendOptions = {}): void {
 		sequence += 1;
-		keepTab(options.tab);
-		failure = null;
+		gesture(options.tab);
 		const message: HeldMessage = {
 			id: `held-${sequence}`,
 			text,
@@ -430,12 +455,12 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	 * @param options A walkthrough to narrate, and a gesture's tab for a sign-in.
 	 */
 	function startVoice(options: TalkOptions = {}): void {
-		keepTab(options.tab);
-		failure = null;
+		gesture(options.tab);
 		talkFailure = null;
-		if (talk !== "idle") return;
-		narration = options.walkthrough ?? null;
-		talk = "waiting";
+		if (talk === "idle") {
+			narration = options.walkthrough ?? null;
+			talk = "waiting";
+		}
 		pump();
 	}
 
@@ -444,12 +469,10 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	 * @param login The provider.
 	 * @param gestureTab A gesture's tab, for the provider's page.
 	 */
-	function signIn(login: ThreadLinkLoginParams, gestureTab?: AuthTab): void {
-		keepTab(gestureTab);
-		failure = null;
-		signInAsked = false;
+	function startSignIn(login: ThreadLinkLoginParams, gestureTab?: AuthTab): void {
+		gesture(gestureTab);
 		void askSignIn(login);
-		publish();
+		pump();
 	}
 
 	/** Cancel the pending sign-in, and whatever waited on it. */
@@ -480,7 +503,8 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 	function discard(id: string): string | null {
 		const message = held.find((entry) => entry.id === id);
 		held = held.filter((entry) => entry.id !== id);
-		publish();
+		promptsBefore.delete(id);
+		pump();
 		return message?.text ?? null;
 	}
 
@@ -514,7 +538,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		snapshot,
 		send,
 		talk: startVoice,
-		signIn,
+		signIn: startSignIn,
 		cancelSignIn,
 		newConversation,
 		retry,
@@ -529,8 +553,6 @@ export {
 	type AgentSetupPorts,
 	type AgentSetupSnapshot,
 	type AuthTab,
-	type HeldMessage,
-	type HeldState,
 	type SendOptions,
 	type SetupStep,
 	type TalkOptions,

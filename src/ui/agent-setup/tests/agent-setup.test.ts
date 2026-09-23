@@ -4,6 +4,7 @@ import { createAgentSetup, type AgentSetupPorts, type AuthTab } from "@/ui/agent
 import type { WorkbenchComposerSubmissionResult } from "@/ui/workbench-composer";
 import {
 	STAGES,
+	conversation,
 	ids,
 	movableTransport,
 	type MovableTransport,
@@ -17,6 +18,7 @@ type Call = "signIn" | "create" | "voice" | `submit:${string}` | `cancel:${strin
  * @param transport The transport.
  * @param answers How the ports answer.
  * @param answers.create How a create settles.
+ * @param answers.signIn How a sign-in settles.
  * @param answers.submit How a delivery settles.
  * @returns The ports and the calls.
  */
@@ -24,6 +26,7 @@ function portsOver(
 	transport: MovableTransport,
 	answers: {
 		create?: () => ReturnType<AgentSetupPorts["createConversation"]>;
+		signIn?: () => ReturnType<AgentSetupPorts["signIn"]>;
 		submit?: () => Promise<WorkbenchComposerSubmissionResult>;
 	} = {},
 ): { ports: AgentSetupPorts; calls: Call[] } {
@@ -47,7 +50,7 @@ function portsOver(
 			 */
 			signIn: () => {
 				calls.push("signIn");
-				return ok;
+				return answers.signIn?.() ?? ok;
 			},
 			/**
 			 * Record a cancelled sign-in.
@@ -78,6 +81,39 @@ function portsOver(
 			},
 		},
 	};
+}
+
+/**
+ * A tab double that records where it was sent and whether it closed.
+ * @returns The tab and what happened to it.
+ */
+function recordingTab(): { tab: AuthTab; log: string[] } {
+	const log: string[] = [];
+	return {
+		log,
+		tab: {
+			/**
+			 * Record the page the tab was sent to.
+			 * @param url The page.
+			 */
+			navigate: (url) => {
+				log.push(url);
+			},
+			/** Record that the tab closed. */
+			close: () => {
+				log.push("closed");
+			},
+		},
+	};
+}
+
+/**
+ * The held messages' states and reasons.
+ * @param setup The setup.
+ * @returns Each message's text, state and reason.
+ */
+function heldStates(setup: ReturnType<typeof createAgentSetup>): [string, string, string | null][] {
+	return setup.snapshot().held.map((message) => [message.text, message.state, message.reason]);
 }
 
 /**
@@ -213,4 +249,149 @@ test("cancelling a sign-in cancels it at Codex and fails what waited on it", () 
 	setup.cancelSignIn();
 	expect(calls).toEqual([`cancel:${ids.loginId}`]);
 	expect(setup.snapshot().held.map((message) => message.state)).toEqual(["failed"]);
+
+	transport.move(STAGES.signedOut);
+	expect(calls).toEqual([`cancel:${ids.loginId}`]);
+	setup.send("Now");
+	expect(calls).toEqual([`cancel:${ids.loginId}`, "signIn"]);
+});
+
+test("an explicit sign-in with nothing held points its tab at the provider's page", () => {
+	const transport = movableTransport(STAGES.signedOut);
+	const { ports, calls } = portsOver(transport);
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	const { tab, log } = recordingTab();
+	setup.signIn({ type: "chatgpt" }, tab);
+	transport.move(STAGES.signingInUnnamed);
+	expect(log).toEqual([]);
+	transport.move(STAGES.signingIn);
+	expect(calls).toEqual(["signIn"]);
+	expect(log).toEqual(["https://auth.example.test/login"]);
+});
+
+test("a gesture's tab closes when the account is ready before the provider's page was shown", () => {
+	const transport = movableTransport(STAGES.signedOut);
+	const { ports } = portsOver(transport);
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	const { tab, log } = recordingTab();
+	setup.signIn({ type: "chatgpt" }, tab);
+	transport.move(STAGES.signingInUnnamed);
+	transport.move(STAGES.starting);
+	expect(log).toEqual(["closed"]);
+});
+
+test("a sign-in that cannot start fails the held message and is asked again only by the next gesture", async () => {
+	const transport = movableTransport(STAGES.signedOut);
+	const { ports, calls } = portsOver(transport, {
+		/**
+		 * Refuse the sign-in.
+		 * @returns How it settles.
+		 */
+		signIn: () => Promise.resolve({ ok: false, reason: "Codex refused the sign-in." }),
+	});
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	const first = recordingTab();
+	setup.send("Hello", { tab: first.tab });
+	await settle();
+	expect(heldStates(setup)).toEqual([["Hello", "failed", "Codex refused the sign-in."]]);
+	expect(first.log).toEqual(["closed"]);
+
+	transport.move(STAGES.signedOut);
+	await settle();
+	expect(calls).toEqual(["signIn"]);
+
+	setup.talk();
+	expect(calls).toEqual(["signIn", "signIn"]);
+});
+
+test("a sign-in Codex gives up on fails what waited with its reason, and the next gesture signs in again with its own tab", () => {
+	const transport = movableTransport(STAGES.signedOut);
+	const { ports, calls } = portsOver(transport);
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	setup.send("Hello");
+	transport.move(STAGES.signingIn);
+	transport.move(STAGES.signInFailed("The sign-in timed out."));
+	expect(heldStates(setup)).toEqual([["Hello", "failed", "The sign-in timed out."]]);
+	expect(setup.snapshot().phase).toEqual({ kind: "signed_out", failure: "The sign-in timed out." });
+	expect(calls).toEqual(["signIn"]);
+
+	const again = recordingTab();
+	setup.send("Hello again", { tab: again.tab });
+	expect(calls).toEqual(["signIn", "signIn"]);
+	transport.move(STAGES.signingIn);
+	expect(again.log).toEqual(["https://auth.example.test/login"]);
+});
+
+test("a coordinator Codex could not start fails held work with its reason", () => {
+	const transport = movableTransport(STAGES.coordinatorFailed("The coordinator model is unknown."));
+	const { ports, calls } = portsOver(transport);
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	setup.send("Anything");
+	expect(calls).toEqual([]);
+	expect(heldStates(setup)).toEqual([["Anything", "failed", "The coordinator model is unknown."]]);
+});
+
+test("a message sent while Codex waits to start again waits for it, and is delivered once it is back", async () => {
+	const transport = movableTransport(STAGES.restarting);
+	const { ports, calls } = portsOver(transport);
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	setup.send("Hold on");
+	expect(heldStates(setup)).toEqual([["Hold on", "waiting", null]]);
+	expect(setup.snapshot().step).toBe("start");
+	transport.move(STAGES.linked);
+	await settle();
+	expect(calls).toEqual(["submit:Hold on"]);
+});
+
+test("a refused message holds back the ones sent after it until the person retries it", async () => {
+	const transport = movableTransport(STAGES.linked);
+	const answers: WorkbenchComposerSubmissionResult[] = [
+		{ outcome: "not_delivered", reason: "Turn is busy." },
+	];
+	const { ports, calls } = portsOver(transport, {
+		/**
+		 * Refuse the first delivery, deliver the rest.
+		 * @returns How it settles.
+		 */
+		submit: () => Promise.resolve(answers.shift() ?? { outcome: "delivered", turnId: ids.turnId }),
+	});
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	setup.send("First");
+	setup.send("Second");
+	await settle();
+	expect(calls).toEqual(["submit:First"]);
+	expect(heldStates(setup)).toEqual([
+		["First", "failed", "Turn is busy."],
+		["Second", "waiting", null],
+	]);
+
+	setup.retry(setup.snapshot().held[0]?.id ?? "");
+	await settle();
+	expect(calls).toEqual(["submit:First", "submit:First", "submit:Second"]);
+});
+
+test("a message whose delivery went unanswered is dropped once the conversation shows it arrived", async () => {
+	const transport = movableTransport(conversation(["yes"]));
+	const { ports } = portsOver(transport, {
+		/**
+		 * Lose the answer.
+		 * @returns How it settles.
+		 */
+		submit: () => Promise.resolve({ outcome: "outcome_unknown", reason: "No answer." }),
+	});
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	setup.send("yes");
+	await settle();
+	expect(heldStates(setup)).toEqual([["yes", "unknown", "No answer."]]);
+
+	transport.move(conversation(["yes", "yes"]));
+	expect(setup.snapshot().held).toEqual([]);
 });
