@@ -1,10 +1,11 @@
 ---
 id: TASK-302.03
 title: A navigator that stays navigable at 200 boards
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 03:21'
+updated_date: '2026-09-23 04:59'
 labels: []
 dependencies:
   - TASK-302.01
@@ -29,3 +30,14 @@ The navigator lists every board A-Z with at least two rows each (board, then a r
 - [ ] #6 Boards an agent is claiming or recently wrote are gathered in a working-now block with the latest doing line and its age, absent when nothing is live
 - [ ] #7 Loading, empty, unreadable-listing and offline states are drawn; there are no eyebrows
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Derive an outline from the listing (TASK-302.01): folders from '/' in names, then the primary drill parent (a container's up link, else the coarsest board linking down, same folder only), cycles broken, siblings folders-first then numeric-aware name order (src/ui/board-catalog/lib/outline.ts).
+2. Flatten the outline into rows with expansion, states of a board (drafts nested by ancestry), filter mode and ARIA positions (src/ui/shell/lib/navigator-rows.ts); fold diacritics and case for matching.
+3. Render the navigator as an ARIA tree with roving focus, type-ahead into the filter, arrow/Enter/Alt keys, Alt-click beside; the filter row with Ctrl K and '/', count and clear; Working now at the foot; loading, empty, error and no-match states.
+4. Open beside through a shell action that adds pane B and selects once it registers.
+5. Header breadcrumb from the outline (ancestors, board, level, shown state, not built); pane tabs only with two panes.
+6. Verify with unit tests (outline, navigator tree) and the browser lane (workspace-address, shell-layout), plus rendered captures on the work and dogfood vaults.
+<!-- SECTION:PLAN:END -->
