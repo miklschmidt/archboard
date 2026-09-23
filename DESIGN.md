@@ -197,6 +197,13 @@ turn, target state and a canonical effect fingerprint, revalidated before
 dispatch; general waits join a session-owned wait-for graph that rejects
 cycles. Remote access must tunnel over SSH or run without the workbench.
 
+Every Codex thread runs in the auto-review mode of Codex, which the
+`config.toml` that Archboard writes sets. Its sandbox can write the workspace
+and reach the network, because every archboard command that an agent runs
+reaches the canvas over loopback. When the sandbox refuses a command, Codex
+gives it to its reviewer subagent, which approves or denies it. Codex does not
+ask the user.
+
 ## What we are not doing
 
 Patching Codex. Its in-tree `world_state` engine is the right abstraction for

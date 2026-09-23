@@ -90,11 +90,13 @@ function refusalCode(prepare: () => unknown): string | null {
 }
 
 describe("dedicated Codex storage", () => {
-	test("creates private roots and one exact, quoted config line", () => {
+	test("creates private roots and a config naming the sqlite home exactly", () => {
 		const root = temporaryRoot();
 		try {
 			const prepared = prepareCodexStorage({ rootDirectory: root });
-			expect(prepared.configText).toBe(`sqlite_home = ${JSON.stringify(prepared.sqliteHome)}\n`);
+			expect(prepared.configText).toStartWith(
+				`sqlite_home = ${JSON.stringify(prepared.sqliteHome)}\n`,
+			);
 			expect(readFileSync(prepared.configPath, "utf8")).toBe(prepared.configText);
 			expect(fs.statSync(prepared.codexHome).mode & 0o777).toBe(0o700);
 			expect(fs.statSync(prepared.sqliteHome).mode & 0o777).toBe(0o700);
@@ -247,17 +249,20 @@ describe("dedicated Codex storage", () => {
 		}
 	});
 
-	test("follows its own config when the sqlite home it named has moved", () => {
+	test("replaces its own earlier config, and its config naming a sqlite home that moved", () => {
 		const root = temporaryRoot();
 		try {
 			const first = prepareCodexStorage({ rootDirectory: root });
 			first.release();
-			const moved = `sqlite_home = ${JSON.stringify(path.join(root, "moved", "sqlite-home"))}\n`;
-			fs.writeFileSync(first.configPath, moved, { mode: 0o600 });
-
-			const prepared = prepareCodexStorage({ rootDirectory: root });
-			expect(readFileSync(prepared.configPath, "utf8")).toBe(prepared.configText);
-			prepared.release();
+			for (const own of [
+				`sqlite_home = ${JSON.stringify(first.sqliteHome)}\n`,
+				`sqlite_home = ${JSON.stringify(path.join(root, "moved", "sqlite-home"))}\n`,
+			]) {
+				fs.writeFileSync(first.configPath, own, { mode: 0o600 });
+				const prepared = prepareCodexStorage({ rootDirectory: root });
+				expect(readFileSync(prepared.configPath, "utf8")).toBe(prepared.configText);
+				prepared.release();
+			}
 		} finally {
 			removeRoot(root);
 		}

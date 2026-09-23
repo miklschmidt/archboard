@@ -166,8 +166,8 @@ describe.serial("composed Codex process lifecycle", () => {
 			const codexHome = join(root, "codex-home");
 			const sqliteHome = join(root, "sqlite-home");
 			const configPath = join(codexHome, "config.toml");
-			const configBytes = `sqlite_home = ${JSON.stringify(sqliteHome)}\n`;
-			expect(readFileSync(configPath, "utf8")).toBe(configBytes);
+			const configBytes = readFileSync(configPath, "utf8");
+			expect(configBytes).toStartWith(`sqlite_home = ${JSON.stringify(sqliteHome)}\n`);
 			const publishedAt = statSync(configPath).mtimeMs;
 			const initialize = records(fixture.logPath).find(
 				(entry) => entry.kind === "response" && entry.method === "initialize",

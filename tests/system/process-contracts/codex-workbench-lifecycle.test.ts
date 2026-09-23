@@ -71,7 +71,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				() => (existsSync(configPath) ? true : undefined),
 				"Codex config materialization",
 			);
-			expect(readFileSync(configPath, "utf8")).toBe(
+			expect(readFileSync(configPath, "utf8")).toStartWith(
 				`sqlite_home = ${JSON.stringify(sqliteHome)}\n`,
 			);
 			expect(statSync(configPath).mode & 0o777).toBe(0o600);
