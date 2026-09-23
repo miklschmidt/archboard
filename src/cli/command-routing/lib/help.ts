@@ -51,7 +51,7 @@ function conventions(): string {
 		"5 board write refused (held, claim revoked, or version moved).",
 		"`check` exits 1 while the vault still has diagnostics.",
 		"",
-		`Inside the archboard checkout, \`./bin/canvas <command>\` runs the CLI from source.`,
+		`Inside the archboard checkout, \`./bin/archboard <command>\` runs the CLI from source.`,
 		`Run \`${PROGRAM} help <command>\` or \`${PROGRAM} <command> --help\` for one command.`,
 		"",
 	].join("\n");

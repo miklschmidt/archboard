@@ -25,7 +25,7 @@ interface CanvasCliResult {
 }
 
 export function runCanvasCli(options: CanvasCliInput): CanvasCliResult {
-	const result = spawnSync(join(options.repoRoot, "bin/canvas"), options.args, {
+	const result = spawnSync(join(options.repoRoot, "bin/archboard"), options.args, {
 		cwd: options.repoRoot,
 		encoding: "utf8",
 		input: options.input,

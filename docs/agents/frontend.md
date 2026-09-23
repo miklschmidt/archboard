@@ -94,7 +94,7 @@ add imports or a second state path ahead of that work.
   authority. Selection, pending edits, and live voice remain session state.
 - `src/ui/board-routing` delivers that contract (TASK-166) and owns it. The
   workspace lives in search parameters on the one route at `/` — `paneA`,
-  `paneB` and `pane` — because the canvas server serves the page at `/` alone,
+  `paneB` and `pane` — because the Archboard server serves the page at `/` alone,
   so a path scheme would answer 404 on every direct load. Each parameter
   carries the board key exactly as the pane reports it. The address follows the
   note: a person's open runs the shell's command, the pane reports its new

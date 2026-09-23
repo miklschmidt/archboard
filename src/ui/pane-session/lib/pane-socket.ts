@@ -1,4 +1,4 @@
-// One pane's socket to the canvas server: opened with the pane's client id,
+// One pane's socket to the Archboard server: opened with the pane's client id,
 // reconnected after an abnormal close, and identified by generation so a
 // listener on a superseded socket can tell it is stale.
 
@@ -27,7 +27,7 @@ interface PaneSocketListener {
 	readonly errored: (current: PaneSocketGeneration) => void;
 }
 
-/** One pane's connection to the canvas server. */
+/** One pane's connection to the Archboard server. */
 interface PaneSocketConnector {
 	/** Open a socket unless one is open or connecting. */
 	readonly connect: () => void;

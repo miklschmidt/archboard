@@ -88,22 +88,22 @@ named contract that passed, not the number of assertions.
 First inspect the shared lifecycle.
 
 ```bash
-./bin/canvas status
+./bin/archboard status
 ```
 
 If it reports a running server that this acceptance run did not start, stop and
 report the existing owner as the blocker. Do not signal it. If it is a process
-from an earlier attempt that you own, stop it with `./bin/canvas stop`. Stop
+from an earlier attempt that you own, stop it with `./bin/archboard stop`. Stop
 never refuses: every accepted write is on disk before it is answered.
 
 Start the server and create the empty acceptance board.
 
 ```bash
-./bin/canvas start
-./bin/canvas status
+./bin/archboard start
+./bin/archboard status
 echo '{"level":"module"}' |
-  ./bin/canvas semantic new "$accept_board" --doing "starting the voice acceptance board"
-./bin/canvas semantic show "$accept_board"
+  ./bin/archboard semantic new "$accept_board" --doing "starting the voice acceptance board"
+./bin/archboard semantic show "$accept_board"
 ```
 
 The status must name a running server with zero browser clients before the
@@ -153,12 +153,12 @@ session.
 
 ## 4. Sign in and start the conversation
 
-Use a 1920×1080 desktop viewport. Open the address `./bin/canvas status`
+Use a 1920×1080 desktop viewport. Open the address `./bin/archboard status`
 reports (by default <http://127.0.0.1:3000>) in the real desktop browser, then
 point its pane at the acceptance board.
 
 ```bash
-./bin/canvas browser show "$accept_board" --pane primary
+./bin/archboard browser show "$accept_board" --pane primary
 ```
 
 There is nothing to set up first. The first message starts the conversation:
@@ -253,7 +253,7 @@ Voice line, fails the smoke.
 
 ## 7. Prove one bounded board write and live semantics
 
-Read the current version with `./bin/canvas semantic show "$accept_board"`.
+Read the current version with `./bin/archboard semantic show "$accept_board"`.
 Then say this exact bounded request:
 
 ```text
@@ -263,7 +263,7 @@ Make one direct board change. Add one node named Voice smoke <accept_run> to the
 After the voice reports completion, run:
 
 ```bash
-./bin/canvas semantic show "$accept_board"
+./bin/archboard semantic show "$accept_board"
 ```
 
 The version must advance by exactly one and the board must hold exactly the
@@ -333,8 +333,8 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
 4. Stop only this run's server.
 
 ```bash
-./bin/canvas stop
-./bin/canvas status
+./bin/archboard stop
+./bin/archboard status
 ```
 
 The final status must be stopped. Confirm the owned app-server

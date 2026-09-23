@@ -2,11 +2,11 @@
 status: accepted
 ---
 
-# Library items live on the canvas server, not in browser storage
+# Library items live on the Archboard server, not in browser storage
 
 The library is the palette of reusable stencils a human drags onto a board.
 Excalidraw's own host apps keep it in `localStorage`. archboard keeps it on the
-canvas server, in `<vault>/.archboard/library.excalidrawlib`, and pushes it to
+Archboard server, in `<vault>/.archboard/library.excalidrawlib`, and pushes it to
 every connected pane over the existing socket.
 
 `localStorage` is per browser profile and per origin, which is wrong on every
@@ -16,7 +16,7 @@ axis this app is used along:
   human at the same wall. Two Excalidraw instances would otherwise keep two
   copies, and whichever wrote last would silently delete the other's stencils.
 - **A second tab is a second machine's problem in miniature.** A desktop browser and a
-  laptop reach the same canvas server; a stencil added on one has to be there on
+  laptop reach the same Archboard server; a stencil added on one has to be there on
   the other, because it is the same canvas.
 - **Browser profiles are disposable.** A browser profile may be reset, cleared and
   re-provisioned as a matter of routine. A library that dies with the profile is
@@ -35,7 +35,7 @@ already exists.
 ## Consequences
 
 The library is only as durable as the vault. With no `ARCHBOARD_VAULT` set there
-is nowhere to write it, and it lives for as long as the canvas server does —
+is nowhere to write it, and it lives for as long as the Archboard server does —
 boards refuse to operate without a vault, but a library has no wrong file to
 overwrite, so it degrades instead of refusing.
 

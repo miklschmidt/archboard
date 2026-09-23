@@ -53,7 +53,7 @@ by having no upward link, which is why the breadcrumb exists.
 | ------- | --------------------- | --------------------------------------------------- |
 | System  | `Archboard`           | The processes that run, and what they keep          |
 | Service | `Command interface`   | CLI application modules and its command groups      |
-| Service | `Canvas server`       | Canvas server modules and the one write boundary    |
+| Service | `Archboard server`    | Archboard server modules and the one write boundary |
 | Service | `Browser application` | Browser application modules                         |
 | Service | `Agent workbench`     | Codex integration inside the server                 |
 | Service | `Skill evaluation`    | The harness that measures the consumer skill        |

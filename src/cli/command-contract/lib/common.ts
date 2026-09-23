@@ -10,7 +10,7 @@ const serverRefusal = {
 	code: "CANVAS_UNREACHABLE",
 	exit: 3,
 	stream: "stderr" as const,
-	description: "The canvas server could not be reached or started.",
+	description: "The Archboard server could not be reached or started.",
 };
 const browserRefusal = {
 	code: "BROWSER_REQUIRED",

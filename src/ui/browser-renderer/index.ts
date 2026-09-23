@@ -1,6 +1,6 @@
 // The semantic renderer, running in this browser tab (TASK-247).
 //
-// The same renderer core the CLI and the canvas server's render route run
+// The same renderer core the CLI and the Archboard server's render route run
 // (`@/transformers/semantic-renderer`), with this page as its host: the
 // browser's own canvas measures text, in the diagram faces loaded into the
 // page; a pool of Web Workers runs the layout engine; the theme colours are the
@@ -57,7 +57,7 @@ const WARM_UP_GRAPH: Parameters<RendererHost["solve"]>[0] = {
  */
 function noEmbeddedFaces(): never {
 	throw new Error(
-		"A picture drawn in the browser links its faces; ask the canvas server for an embedded one.",
+		"A picture drawn in the browser links its faces; ask the Archboard server for an embedded one.",
 	);
 }
 

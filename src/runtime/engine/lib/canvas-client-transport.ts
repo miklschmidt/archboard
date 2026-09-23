@@ -1,11 +1,11 @@
-// One request to the canvas server, and the identity gate in front of it.
+// One request to the Archboard server, and the identity gate in front of it.
 
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { withBoard, withWriteClaims } from "@/runtime/engine/lib/canvas-client-session";
 import { isBoardRefusal } from "@/runtime/engine/lib/canvas-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
-/** Identity marker the canvas server puts in /health (v1.1+). */
+/** Identity marker the Archboard server puts in /health (v1.1+). */
 const CANVAS_SERVICE_NAME = "archboard-canvas";
 
 // Revalidating identity gate in front of every /api request: mutations must
@@ -27,7 +27,7 @@ let identityProbe: Promise<void> | null = null;
  */
 function foreignServiceError(): Error {
 	return unreachableError(
-		`Something is answering at ${ARCHBOARD_URL} but does not identify as this canvas server ` +
+		`Something is answering at ${ARCHBOARD_URL} but does not identify as this Archboard server ` +
 			`(a pre-1.1 canvas build or an unrelated service on the port). ` +
 			`Upgrade/stop that service, or point ARCHBOARD_URL elsewhere.`,
 	);
@@ -76,7 +76,7 @@ async function probeHealth(): Promise<Response | null> {
 }
 
 /**
- * Whether a /health answer is this canvas server's. Something answered, so
+ * Whether a /health answer is this Archboard server's. Something answered, so
  * only a 200 carrying our identity may pass: a 404 or an HTML page here is a
  * foreign service, not a down canvas.
  * @param response The answer.

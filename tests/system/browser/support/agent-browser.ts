@@ -19,7 +19,7 @@ type TestEnvironment = Readonly<Record<string, string | undefined>>;
 
 function runCanvasCli(base: string, vault: string, args: string[]): string {
 	const repoRoot = resolve(import.meta.dir, "../../../..");
-	const result = spawnSync(join(repoRoot, "bin/canvas"), args, {
+	const result = spawnSync(join(repoRoot, "bin/archboard"), args, {
 		cwd: repoRoot,
 		encoding: "utf8",
 		timeout: TEST_BROWSER_COMMAND_TIMEOUT_MS,

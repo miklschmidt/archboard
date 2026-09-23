@@ -9,7 +9,7 @@ import { waitFor } from "./support/http.ts";
 import { reversibleCheckoutEdit } from "./support/reversible-checkout-edit.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const executable = join(repoRoot, "bin/canvas");
+const executable = join(repoRoot, "bin/archboard");
 
 interface Health {
 	pid: number;

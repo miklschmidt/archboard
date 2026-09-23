@@ -4,7 +4,7 @@ import { ensureCanvasRunning } from "@/runtime/engine/spawn";
 import type { RuntimePrerequisite } from "@/cli/command-contract/contract";
 
 /**
- * Makes sure what a command needs is actually there: the canvas server, which
+ * Makes sure what a command needs is actually there: the Archboard server, which
  * is started when it is not running, and an open browser pane, which only a
  * person can provide and is therefore refused rather than arranged.
  * @param prerequisite - What the command needs.

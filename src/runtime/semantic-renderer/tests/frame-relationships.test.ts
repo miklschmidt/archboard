@@ -5,7 +5,7 @@ import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink"
 
 const BASE = {
 	nodes: [
-		{ id: "server", name: "Canvas server", kind: "service" },
+		{ id: "server", name: "Archboard server", kind: "service" },
 		{ id: "store", name: "Board store", kind: "module", parent: "server" },
 		{ id: "render", name: "Renderer", kind: "module", parent: "server" },
 		{ id: "vault", name: "Vault", kind: "datastore" },

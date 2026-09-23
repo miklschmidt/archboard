@@ -1,6 +1,6 @@
 // The semantic renderer under Bun: the renderer core (src/transformers/
 // semantic-renderer), with the Bun host installed before anything is drawn or
-// measured. The CLI, the rasterizer and the canvas server's render route import
+// measured. The CLI, the rasterizer and the Archboard server's render route import
 // this; a browser installs its own host and imports the core.
 import {
 	renderArchitecture as renderArchitectureIn,

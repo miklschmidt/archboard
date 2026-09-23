@@ -38,7 +38,7 @@ const SAMPLE: VariantContent = variant({
 	nodes: [
 		{ id: "agent", name: "Agent", kind: "external", responsibility: "Claude, through the CLI" },
 		{ id: "cli", name: "archboard CLI", kind: "app", responsibility: "One command, one write" },
-		{ id: "canvas", name: "Canvas Server", kind: "service", responsibility: "Holds the leases" },
+		{ id: "canvas", name: "Archboard server", kind: "service", responsibility: "Holds the leases" },
 		{ id: "io", name: "board-io", kind: "module", responsibility: "Reads and writes the note" },
 		{ id: "vault", name: "Obsidian Vault", kind: "datastore", responsibility: "The note on disk" },
 	],

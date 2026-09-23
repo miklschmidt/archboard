@@ -26,7 +26,7 @@ Where things are written down:
 - This box has node and bun but no npm or npx: `bun run <script>`, never
   `npm run`. `bun install` intermittently fails extracting a tarball; run it again.
 - A running server read its source at start. Editing source changes the next
-  CLI command, not the running server: `./bin/canvas stop && ./bin/canvas start`.
+  CLI command, not the running server: `./bin/archboard stop && ./bin/archboard start`.
   Stop never refuses: every accepted write is on disk before it is answered.
 - `bun run check` is the complete gate. `skills/` is the tracked source of the
   skills, reached from `.claude/skills/` and `.agents/skills/` through tracked

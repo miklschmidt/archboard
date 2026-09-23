@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-// The package's single bin entry (`archboard`; `bin/canvas` in the repo):
+// The package's single bin entry (`archboard`; `bin/archboard` in the repo):
 //
 //   no arguments  -> CLI help
 //   <subcommand>  -> CLI command

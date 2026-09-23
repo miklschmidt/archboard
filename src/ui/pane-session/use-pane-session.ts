@@ -1,5 +1,5 @@
 // One pane's session, as a React hook keyed by pane. Everything that makes a
-// pane be a client of the canvas server lives in the pane core; this hook owns
+// pane be a client of the Archboard server lives in the pane core; this hook owns
 // the React state the shell renders from and the lifecycle around it. Hosting a
 // second pane is mounting a second session, not copying any of this.
 

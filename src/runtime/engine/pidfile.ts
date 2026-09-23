@@ -16,14 +16,14 @@ function pidFilePath(port: number): string {
 	return path.join(stateDir(), `server-${port}.pid`);
 }
 
-// Written by the canvas server once it is actually listening, so `stop` and
+// Written by the Archboard server once it is actually listening, so `stop` and
 // stale-process checks work for both auto-spawned and manually started servers.
 /**
  * Record the canvas pid for a port, with its kernel start time so a later
  * sweep can tell it from a process that inherited the pid. Failure is logged
  * rather than thrown: a canvas that cannot write its pidfile still serves.
  * @param port The port the canvas binds.
- * @param pid The canvas server's pid.
+ * @param pid The Archboard server's pid.
  */
 function writePidFile(port: number, pid: number): void {
 	try {

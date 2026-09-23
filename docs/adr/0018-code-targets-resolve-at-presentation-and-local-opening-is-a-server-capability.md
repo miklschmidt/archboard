@@ -23,7 +23,7 @@ their ordinary browser behavior.
 
 An internal code target identifies the board and element, not a path. The
 frontend intercepts its activation and sends a same-origin POST to the loopback
-canvas server. The server re-reads the element's canonical binding, revalidates
+Archboard server. The server re-reads the element's canonical binding, revalidates
 the checkout and repository identity, resolves the real path, and refuses a
 symlink that escapes the checkout. A cross-origin request, a GET with the same
 parameters, an arbitrary absolute path from the browser, or an element without

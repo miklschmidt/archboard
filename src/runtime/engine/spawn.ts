@@ -49,7 +49,8 @@ import {
 function isConcurrentOwnerRefusal(message: string): boolean {
 	return (
 		message.includes("Another server owns this Codex state") ||
-		(message.includes("Refusing to start canvas server") && message.includes("already listening"))
+		(message.includes("Refusing to start Archboard server") &&
+			message.includes("already listening"))
 	);
 }
 
@@ -163,7 +164,7 @@ interface ObservedChild {
 	exit: ChildExit | null;
 }
 
-/** A spawned canvas server and the launcher's view of it. */
+/** A spawned Archboard server and the launcher's view of it. */
 interface SpawnedCanvas {
 	readonly child: ChildProcess;
 	readonly pid: number;
@@ -173,7 +174,7 @@ interface SpawnedCanvas {
 }
 
 /**
- * Spawn the canvas server detached, with the startup cleanup protocol on fd 3.
+ * Spawn the Archboard server detached, with the startup cleanup protocol on fd 3.
  * @returns The child, its pid and the observation handles the readiness wait uses.
  */
 function spawnCanvasServer(): SpawnedCanvas {
@@ -208,7 +209,7 @@ function spawnCanvasServer(): SpawnedCanvas {
 	if (child.pid === undefined) {
 		protocol.destroy();
 		throw startupRefusal(
-			`Canvas server could not start. ${observed.failure?.message ?? "The process was not created."}`,
+			`Archboard server could not start. ${observed.failure?.message ?? "The process was not created."}`,
 		);
 	}
 	return { child, pid: child.pid, observed, closed, protocol };
@@ -330,7 +331,7 @@ function exitFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error
 	}
 	return startupRefusal(
 		detail ||
-			`Canvas server exited before readiness with code ${String(observed.exit.code)} and signal ${String(observed.exit.signal)}.`,
+			`Archboard server exited before readiness with code ${String(observed.exit.code)} and signal ${String(observed.exit.signal)}.`,
 	);
 }
 
@@ -344,7 +345,7 @@ function exitFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error
 function startFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error | null {
 	const failure = spawned.observed.failure ?? spawned.protocol.failure();
 	if (failure !== null) {
-		return startupRefusal(`Canvas server could not start. ${failure.message}`);
+		return startupRefusal(`Archboard server could not start. ${failure.message}`);
 	}
 	return exitFailureOf(spawned, deferred);
 }
@@ -369,7 +370,7 @@ async function awaitCanvasReadiness(
 			spawned.protocol.destroy();
 			spawned.child.unref();
 			process.stderr.write(
-				`Canvas server running at ${ARCHBOARD_URL}. Open it in a browser only for live canvas work and capture.\n`,
+				`Archboard server running at ${ARCHBOARD_URL}. Open it in a browser only for live canvas work and capture.\n`,
 			);
 			return { url: ARCHBOARD_URL, spawned: true };
 		}
@@ -388,7 +389,7 @@ async function awaitCanvasReadiness(
 }
 
 /**
- * Make sure OUR canvas server is answering at ARCHBOARD_URL,
+ * Make sure OUR Archboard server is answering at ARCHBOARD_URL,
  * auto-spawning a detached one on a loopback URL when needed. A healthy
  * responder without the service identity marker is a foreign service —
  * proceeding against it would only produce confusing downstream errors.
@@ -396,7 +397,7 @@ async function awaitCanvasReadiness(
  * `force: true` (the explicit `start` command) overrides the auto-start
  * opt-outs — an explicit start is user intent, not auto-start.
  *
- * A concurrent-spawn race is safe: the canvas server's loopback guard makes
+ * A concurrent-spawn race is safe: the Archboard server's loopback guard makes
  * the losing process exit, and every caller here only proceeds once /health
  * answers.
  * @param options How long readiness may take, and whether this is an explicit start.
@@ -418,7 +419,7 @@ async function ensureCanvasRunning(options: EnsureOptions = {}): Promise<EnsureR
 
 	refuseUnlessAutoStartAllowed(options.force === true);
 	const spawned = spawnCanvasServer();
-	logger.info(`Auto-starting canvas server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
+	logger.info(`Auto-starting Archboard server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
 	return awaitCanvasReadiness(spawned, timeoutMs);
 }
 
@@ -441,10 +442,10 @@ function absentCanvasResult(port: number, filePid: number | null): StopResult {
 		return {
 			stopped: false,
 			pid: filePid,
-			message: `Canvas server is not running; stale pidfile removed (pid ${filePid}).`,
+			message: `Archboard server is not running; stale pidfile removed (pid ${filePid}).`,
 		};
 	}
-	return { stopped: false, message: "Canvas server is not running." };
+	return { stopped: false, message: "Archboard server is not running." };
 }
 
 /**
@@ -474,16 +475,16 @@ async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
 		const postSignalHealth = await healthOrNull();
 		if (!postSignalHealth) {
 			removePidFile(port);
-			return { stopped: true, pid, message: `Canvas server (pid ${pid}) stopped.` };
+			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
 		await new Promise((resolve) => setTimeout(resolve, 200));
 	}
-	throw new Error(`Canvas server (pid ${pid}) did not stop within 5s.`);
+	throw new Error(`Archboard server (pid ${pid}) did not stop within 5s.`);
 }
 
 /**
- * Stop the canvas server. Identity-safe: we only ever signal the pid that a
+ * Stop the Archboard server. Identity-safe: we only ever signal the pid that a
  * live /health responder reports about ITSELF, and only when it identifies
  * as this canvas service. A stale pidfile is cleaned up, never killed —
  * recycled pids and unrelated apps squatting on the port are safe.
@@ -505,7 +506,7 @@ async function stopCanvas(): Promise<StopResult> {
 	try {
 		process.kill(pid, "SIGTERM");
 	} catch (error) {
-		throw new Error(`Failed to signal canvas server (pid ${pid}): ${errorMessage(error)}`, {
+		throw new Error(`Failed to signal Archboard server (pid ${pid}): ${errorMessage(error)}`, {
 			cause: error,
 		});
 	}

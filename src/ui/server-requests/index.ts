@@ -1,4 +1,4 @@
-// The browser's one way of speaking JSON to the canvas server.
+// The browser's one way of speaking JSON to the Archboard server.
 //
 // Every endpoint the shell calls goes through here, so a refusal is read the
 // same way everywhere and no module invents a second reading of `success:

@@ -9,7 +9,7 @@ the checkout — a library, a shell, a caller — while archboard's own vault us
 it to join one board to another: 14 of the 18 `external` nodes in
 `.archboard/vault` carried a `drillDown` and named a part of this codebase.
 The vault was inconsistent with itself as well, because links pointing down
-already used the target's own nature (`Canvas server` is `service`, `Semantic
+already used the target's own nature (`Archboard server` is `service`, `Semantic
 board store` is `module`). Authors read the ambiguity the other way round: in
 the 2026-09-17 evaluation batch, 3 of 6 runs on the same scenario modelled
 third-party packages as `package` rather than `external`. This decision,

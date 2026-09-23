@@ -38,8 +38,8 @@ const CHANNEL_RULE = [
 const COORDINATOR_CHANNEL_INSTRUCTIONS = [
 	...CHANNEL_RULE,
 	"A turn that answers a handoff always ends with one [FINAL] message, even when you only started work, found nothing, or could not tell what was asked: the voice model is waiting for your answer, and commentary alone leaves it silent and the user waiting. End a turn with only a one-line [COMMENTARY] message when nothing should be said at all, such as news the user is not waiting for.",
-	'For example, a turn that answers "what does the canvas server do?" writes two messages:',
-	"[COMMENTARY] Reading the Canvas server on the Archboard board.",
+	'For example, a turn that answers "what does the Archboard server do?" writes two messages:',
+	"[COMMENTARY] Reading the Archboard server on the Archboard board.",
 	"[FINAL] It is the only part that writes a board: it checks each write, takes the board's lease and commits it to disk before it answers.",
 	"A turn that hands work to the workhorse ends the same way:",
 	"[COMMENTARY] Delegating the new proposal to the workhorse.",

@@ -1,4 +1,4 @@
-// What a pane says to the canvas server over HTTP: what it is showing, which
+// What a pane says to the Archboard server over HTTP: what it is showing, which
 // board it should show, and the one control a person has over an agent's claim.
 //
 // Everything else a pane needs arrives over its socket or through the semantic

@@ -9,7 +9,7 @@ which gave a variant three lifecycles: current, draft and historical. Tracked as
 TASK-261.
 
 A draft can outlive its proposal. Two drafts in this repository's own vault got
-there: `Canvas server` / `Readable layout` proposes nothing architectural — every
+there: `Archboard server` / `Readable layout` proposes nothing architectural — every
 node shared, every relationship byte-identical, one drill-down retargeted and one
 beat added — and `Semantic renderer` / `Readable layout` has converged on its
 parent outright. Neither can be adopted: adoption freezes the accurate current

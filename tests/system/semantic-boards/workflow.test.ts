@@ -26,20 +26,20 @@ const currentPipeline = {
 	level: "system",
 	nodes: [
 		{
-			name: "Canvas server",
+			name: "Archboard server",
 			kind: "service",
 			responsibility: "Serves boards to panes and owns every write",
 		},
 		{
 			name: "Board store",
 			kind: "module",
-			parent: "Canvas server",
+			parent: "Archboard server",
 			responsibility: "Takes the lease, checks the version, writes the aggregate",
 		},
 		{
 			name: "Renderer",
 			kind: "module",
-			parent: "Canvas server",
+			parent: "Archboard server",
 			responsibility: "Turns meaning into one picture",
 		},
 		{ name: "Vault", kind: "datastore", responsibility: "Holds every board as a file" },
@@ -47,7 +47,7 @@ const currentPipeline = {
 	],
 	edges: [
 		{ from: "Board store", to: "Vault", kind: "data", label: "atomic write" },
-		{ from: "Pane", to: "Canvas server", kind: "http", label: "render", emphasis: "hero" },
+		{ from: "Pane", to: "Archboard server", kind: "http", label: "render", emphasis: "hero" },
 		{ from: "Renderer", to: "Board store", kind: "call" },
 	],
 };
@@ -91,7 +91,7 @@ describe("authoring and opening a semantic board", () => {
 					{
 						name: "Atlas",
 						kind: "module",
-						parent: "Canvas server",
+						parent: "Archboard server",
 						responsibility: "Says where every subject landed",
 					},
 				],
@@ -232,12 +232,12 @@ describe("authoring and opening a semantic board", () => {
 				flows: [
 					{
 						name: "Drawing a board",
-						participants: ["Pane", "Canvas server", "Vault"],
+						participants: ["Pane", "Archboard server", "Vault"],
 						steps: [
-							{ from: "Pane", to: "Canvas server", label: "asks for a picture", kind: "sync" },
-							{ from: "Canvas server", to: "Vault", label: "reads the board", kind: "sync" },
-							{ from: "Vault", to: "Canvas server", label: "the board", kind: "return" },
-							{ from: "Canvas server", to: "Pane", label: "one picture", kind: "return" },
+							{ from: "Pane", to: "Archboard server", label: "asks for a picture", kind: "sync" },
+							{ from: "Archboard server", to: "Vault", label: "reads the board", kind: "sync" },
+							{ from: "Vault", to: "Archboard server", label: "the board", kind: "return" },
+							{ from: "Archboard server", to: "Pane", label: "one picture", kind: "return" },
 						],
 					},
 				],

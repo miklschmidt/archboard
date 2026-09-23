@@ -19,7 +19,7 @@ type StartResult = z.infer<typeof StartResultSchema>;
 const startContract = defineCommand({
 	path: ["start"],
 	shared: ["url"],
-	summary: "Start the canvas server (detached)",
+	summary: "Start the Archboard server (detached)",
 	description: "Explicitly starts the local canvas, overriding automatic-start opt-outs.",
 	examples: ["archboard start"],
 	parameters: [
@@ -85,7 +85,7 @@ const startContract = defineCommand({
 			},
 			...(result.spawned
 				? {}
-				: { diagnostics: [`Canvas server already running at ${result.url}`] }),
+				: { diagnostics: [`Archboard server already running at ${result.url}`] }),
 		};
 	},
 });
@@ -103,7 +103,7 @@ type StopResult = z.infer<typeof StopResultSchema>;
 const stopContract = defineCommand({
 	path: ["stop"],
 	shared: ["url"],
-	summary: "Stop the canvas server",
+	summary: "Stop the Archboard server",
 	description: "Stops only a live process that identifies itself as this canvas service.",
 	examples: ["archboard stop"],
 	parameters: [

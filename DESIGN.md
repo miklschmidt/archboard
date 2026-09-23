@@ -92,7 +92,7 @@ outcome (completed, failed, attention, outcome unknown) starts one ordinary
 coordinator turn from the reviewed `workhorse_outcome_report` producer, because
 the coordinator knows whether the work came from a voice request. What it
 replies under `[FINAL]` is spoken without the user asking again; a
-`[COMMENTARY]` reply stays silent. The host waits a bounded time for an idle
+`[COMMENTARY]` reply stays silent. The Archboard server waits a bounded time for an idle
 coordinator and otherwise falls back to the injected developer message, so an
 outcome is neither lost nor said twice. The other operation callbacks
 (accepted, queued, started, progress) reach nobody while voice is live: the tool
@@ -128,7 +128,7 @@ thread queue only for an Archboard-created workhorse; an attached busy
 workhorse can be steered with exact context or is refused until idle.
 
 Spoken approval is state-gated. Realtime cannot emit a typed tool verdict, so a
-later ordinary coordinator turn classifies one host-bound final user reply and
+later ordinary coordinator turn classifies one final user reply that the Archboard server bound to the request and
 calls a dedicated typed resolver. Only the next matching final user item from
 the same realtime session may arm the immutable request; its item id and
 sequence are part of the authority. Target, effect,
@@ -143,7 +143,7 @@ the voice model to steer a talk, so it never asks for a step. Pressing Narrate
 beside a walkthrough sends it with `realtimeStart`; the server reads it from
 the board the pane is showing, and the voice `prompt` gains only its name and
 how to explain a step it is handed. The coordinator is told nothing of it, and
-the session opens with no initial item. While Codex starts the session the host
+the session opens with no initial item. While Codex starts the session the Archboard server
 asks the pane for step 1 (`pane_present`), and once the pane's own report says
 the step has arrived it hands the step to the voice model through
 `realtimeAppendSpeech`, serialized behind the start, so the voice begins on
@@ -182,13 +182,13 @@ of pane addressing and which other browsers do not subtitle.
 The agent pulls persisted board state with `semantic show`, `semantic compare`
 and `semantic inspect`; writing, branching, rendering and rasterizing need no
 browser, and only `browser` commands touch live panes. The CLI
-auto-starts the canvas server. The former MCP catalogue was retired (ADR 0008);
+auto-starts the Archboard server. The former MCP catalogue was retired (ADR 0008);
 the loopback REST interface remains the seam behind the CLI and browser.
 
 ## Security
 
 A workbench that can answer approvals, send turns and expose coordination
-tools carries real authority, so the canvas server stays loopback-only while
+tools carries real authority, so the Archboard server stays loopback-only while
 the workbench is enabled: loopback peer, loopback Host, same-origin HTTP and
 WebSocket. A browser lease owns interactive reverse requests and is explicitly
 transferred; a child exit invalidates every thread-ownership proof.

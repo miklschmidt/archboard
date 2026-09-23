@@ -84,9 +84,13 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 	if (error.code === "EADDRINUSE") {
 		const bound: unknown = Reflect.get(error, "address");
 		const address = typeof bound === "string" ? bound : HOST;
-		logger.error(`Canvas server port ${PORT} is already in use on ${formatHostForUrl(address)}.`);
+		logger.error(
+			`Archboard server port ${PORT} is already in use on ${formatHostForUrl(address)}.`,
+		);
 	} else if (error.code === "EACCES") {
-		logger.error(`Canvas server cannot bind ${formatHostForUrl(HOST)}:${PORT}: permission denied.`);
+		logger.error(
+			`Archboard server cannot bind ${formatHostForUrl(HOST)}:${PORT}: permission denied.`,
+		);
 	} else {
 		logger.error("Canvas HTTP server failed:", error);
 	}

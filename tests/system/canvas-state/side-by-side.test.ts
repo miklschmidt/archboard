@@ -18,7 +18,7 @@ import { openPaneSession, type PaneEvent, type PaneSession } from "./support/pan
 // would notice and the one thing nobody asked for (ADR 0009, ADR 0023).
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const executable = join(repoRoot, "bin/canvas");
+const executable = join(repoRoot, "bin/archboard");
 
 interface CliResult<T = unknown> {
 	code: number | null;

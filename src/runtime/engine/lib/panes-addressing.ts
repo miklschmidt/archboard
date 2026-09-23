@@ -90,7 +90,7 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 	const ordered = panesInOrder(addressablePanes(registrations));
 	if (ordered.length === 0) {
 		throw new Error(
-			"The canvas server has no connected panes. " +
+			"The Archboard server has no connected panes. " +
 				"If the canvas is already open, wait for it to reconnect or reload the tab, then try again. " +
 				"Otherwise, open the canvas in a browser first.",
 		);

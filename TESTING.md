@@ -20,14 +20,14 @@ as proof.
 
 A board is one `.semantic.json` document in a vault, holding every variant of
 that architecture. There is no default vault: set `ARCHBOARD_VAULT` before
-`./bin/canvas start`, because the server does the vault I/O and refuses to start
+`./bin/archboard start`, because the server does the vault I/O and refuses to start
 without one (ADR 0015). The browser at <http://127.0.0.1:3000> is where a user
 reads a board; authoring needs no browser at all.
 
 ## 3. Make the CLI available to Codex
 
 ```bash
-ln -s /path/to/archboard/bin/canvas ~/.local/bin/archboard
+ln -s /path/to/archboard/bin/archboard ~/.local/bin/archboard
 cd /path/to/project && archboard install-skill --vault /path/to/vault
 ```
 
@@ -57,17 +57,17 @@ which version it was written against:
 echo '{"level":"system","nodes":[{"name":"API Gateway","kind":"service"},
                {"name":"Orders","kind":"service"}],
       "edges":[{"from":"API Gateway","to":"Orders","kind":"http"}]}' |
-  ./bin/canvas semantic new payments --doing "drawing the payment path"
+  ./bin/archboard semantic new payments --doing "drawing the payment path"
 
-./bin/canvas semantic show payments
+./bin/archboard semantic show payments
 echo '{"nodes":[{"name":"Orders Queue","kind":"queue"}]}' |
-  ./bin/canvas semantic edit payments --expect-version 1 --doing "adding the queue"
+  ./bin/archboard semantic edit payments --expect-version 1 --doing "adding the queue"
 
-./bin/canvas semantic branch payments --as "Queued ingest" --expect-version 2 \
+./bin/archboard semantic branch payments --as "Queued ingest" --expect-version 2 \
   --doing "proposing a queue"
-./bin/canvas semantic render payments --out payments.svg
-./bin/canvas semantic rasterize payments --out payments.png
-./bin/canvas check
+./bin/archboard semantic render payments --out payments.svg
+./bin/archboard semantic rasterize payments --out payments.png
+./bin/archboard check
 ```
 
 `semantic rasterize` needs a Chromium or Google Chrome executable on `PATH`,

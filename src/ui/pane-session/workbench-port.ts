@@ -1,6 +1,6 @@
 // What the canvas needs from a workbench transport, and nothing more.
 //
-// A pane owns the one socket to the canvas server. The text and voice
+// A pane owns the one socket to the Archboard server. The text and voice
 // workbench ride that socket through a transport the canvas does not implement:
 // `src/ui/workbench-transport` implements `WorkbenchTransportPort`, and
 // `src/ui/codex-workbench-media` implements `WorkbenchMediaPort`. The canvas
@@ -8,7 +8,7 @@
 // registered the pane, retires it when the socket goes, and hands the current
 // transport to whoever asks. It never reads a workbench message itself.
 
-/** The socket a pane opens to the canvas server, as a transport sees it. */
+/** The socket a pane opens to the Archboard server, as a transport sees it. */
 interface PaneSocket extends EventTarget {
 	readonly readyState: number;
 	readonly send: (data: string) => void;

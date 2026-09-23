@@ -307,8 +307,8 @@ fit is the scale at which the complete drawing fits the reference pane.
 | Board rasterizer *Initial                 | 1826x1202   | 1623x883   | 0.697 → 0.784      | 5258 → 2383                 | 1.27 → 1.82                | 1 → 0                    |
 | Board viewer *Current architecture        | 1374x2175   | 1602x1529  | 0.413 → 0.588      | 10781 → 7676                | 1.89 → 2.56                | 7 → 7                    |
 | Browser application *Current architecture | 1964x1118   | 1486x1133  | 0.648 → 0.793      | 7282 → 5300                 | 1.71 → 1.50                | 4 → 1                    |
-| Canvas server *Current architecture       | 2406x1734   | 1749x1234  | 0.518 → 0.727      | 25511 → 12625               | 2.00 → 3.09                | 26 → 14                  |
-| Canvas server Readable layout             | 2406x1734   | 1749x1234  | 0.518 → 0.727      | 25511 → 12625               | 2.00 → 3.09                | 26 → 14                  |
+| Archboard server *Current architecture    | 2406x1734   | 1749x1234  | 0.518 → 0.727      | 25511 → 12625               | 2.00 → 3.09                | 26 → 14                  |
+| Archboard server Readable layout          | 2406x1734   | 1749x1234  | 0.518 → 0.727      | 25511 → 12625               | 2.00 → 3.09                | 26 → 14                  |
 | Codex session *Current architecture       | 1459x1370   | 1671x1015  | 0.656 → 0.761      | 6683 → 5660                 | 1.67 → 2.92                | 3 → 3                    |
 | Codex workhorse *Initial                  | 2191x798    | 2428x623   | 0.581 → 0.524      | 8424 → 5463                 | 1.23 → 3.15                | 3 → 3                    |
 | Command dispatch *Current architecture    | 1521x836    | 1464x767   | 0.836 → 0.869      | 2953 → 1932                 | 1.00 → 1.12                | 0 → 1                    |
