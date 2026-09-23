@@ -3,7 +3,7 @@
 // answered is exactly the size the diagram asks for.
 
 import { bitmapSizeOf, type RasterBounds } from "@/runtime/semantic-rasterizer/lib/bounds";
-import { isJsonRecord } from "@/runtime/semantic-rasterizer/lib/devtools";
+import { isJsonRecord } from "@/runtime/headless-chromium/index";
 import { readPngDimensions } from "@/runtime/semantic-rasterizer/lib/png";
 
 /** How the page sat before the shot was taken. */

@@ -9,6 +9,7 @@
 // frame, and takes the shot of the whole page. A bitmap that is not the size
 // the diagram asks for is refused, never cropped, scaled or padded to fit.
 
+import { HeadlessChromiumError, discoveredChromiumPath } from "@/runtime/headless-chromium/index";
 import {
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
@@ -25,11 +26,9 @@ import {
 	type PageRegion,
 	type RasterBounds,
 } from "@/runtime/semantic-rasterizer/lib/bounds";
-import { discoveredChromiumPath } from "@/runtime/semantic-rasterizer/lib/chromium";
 import { readPngDimensions, type PngDimensions } from "@/runtime/semantic-rasterizer/lib/png";
 import {
 	RasterSession,
-	SessionStartupError,
 	abortReason,
 	type Capture,
 	type CaptureJob,
@@ -200,6 +199,23 @@ function rememberCleanup(state: OwnerState, cleanup: SessionCleanup): void {
 }
 
 /**
+ * What a start that failed is reported as, keeping the proof of its teardown.
+ * @param state The rasterizer's state.
+ * @param error What the start threw.
+ * @returns The failure to throw.
+ */
+function startupFailure(state: OwnerState, error: unknown): SemanticRasterError {
+	if (error instanceof HeadlessChromiumError && error.cleanup !== undefined) {
+		rememberCleanup(state, error.cleanup);
+	}
+	return new SemanticRasterError(
+		"RASTERIZER_UNAVAILABLE",
+		error instanceof Error ? error.message : String(error),
+		error,
+	);
+}
+
+/**
  * Start the session, once, refusing when the rasterizer stopped meanwhile.
  * @param state The rasterizer's state.
  * @param options The session options.
@@ -221,14 +237,7 @@ async function startSession(
 				: AbortSignal.any([signal, state.shutdown.signal]),
 		);
 	} catch (error) {
-		if (error instanceof SessionStartupError) {
-			rememberCleanup(state, error.cleanup);
-		}
-		throw new SemanticRasterError(
-			"RASTERIZER_UNAVAILABLE",
-			error instanceof Error ? error.message : String(error),
-			error,
-		);
+		throw startupFailure(state, error);
 	}
 	if (state.stopping) {
 		rememberCleanup(state, await acquired.close());
@@ -465,7 +474,6 @@ export {
 	bitmapSizeOf,
 	boundsRefusal,
 	createSemanticRasterizer,
-	discoveredChromiumPath,
 	readPngDimensions,
 	type BitmapSize,
 	type Capture,
