@@ -751,8 +751,9 @@ most 1,024 UTF-8 bytes. A selection ID allows at most 64 UTF-8 bytes. The
 encoder does not truncate. The callback is the exact `text` in the one
 developer message above.
 Inactive operation callbacks send that message to `coordinatorThreadId` through
-`thread/inject_items`. While voice is live a terminal outcome (`attention`,
-`completed`, `failed`, `outcome_unknown`) runs the coordinator through the
+`thread/inject_items`. While voice is live an outcome the user waits for
+(`completed`, `failed`, `outcome_unknown`, and `attention`, which the report
+calls waiting on the user rather than ended) runs the coordinator through the
 reviewed outcome report, or is injected the same way when the coordinator stays
 busy or the host cannot run it; `accepted`, `queued`, `started` and `progress`
 are recorded `not_delivered` with reason `recorded_only`. Callback bytes are

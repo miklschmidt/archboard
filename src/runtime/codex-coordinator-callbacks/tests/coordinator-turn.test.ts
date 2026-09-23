@@ -44,6 +44,8 @@ describe("a terminal workhorse outcome while voice is live", () => {
 			expect(reports).toHaveLength(4);
 			expect(reports.every((report) => report.threadId === h.ids.coordinator)).toBe(true);
 			expect(reports[0]?.text).toContain('"type":"completed"');
+			// Waiting on the user is reported, but as waiting: the work has not ended (TASK-316).
+			expect(reports.map((report) => report.waiting)).toEqual([false, false, true, false]);
 			expect(h.realtimeRequests).toHaveLength(0);
 			expect(h.injections).toHaveLength(0);
 		} finally {

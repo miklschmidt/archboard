@@ -186,6 +186,8 @@ interface CoordinatorCallbackTurnPort {
 		readonly threadId: ThreadId;
 		/** The callback as the coordinator already receives it: canonical JSON. */
 		readonly text: string;
+		/** Whether the workhorse waits on the user, for an approval or an answer, rather than having finished. */
+		readonly waiting: boolean;
 	}) => Promise<CoordinatorCallbackTurnResult>;
 }
 

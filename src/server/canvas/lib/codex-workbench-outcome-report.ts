@@ -1,4 +1,5 @@
-// Running the coordinator with a terminal workhorse outcome, while voice is live (TASK-291).
+// Running the coordinator with a workhorse outcome, while voice is live (TASK-291): the work
+// ended, or it waits on the user, which is not an end (TASK-316).
 //
 // Asked by voice to do something, the coordinator delegates and answers, and the work ends later.
 // In a full-duplex voice session nothing appended as text is ever answered, so telling the voice
@@ -43,16 +44,27 @@ interface OutcomeReportParts {
 }
 
 /**
- * What the coordinator is asked to do with an outcome.
+ * What the coordinator is asked to do with an outcome. A workhorse waiting on the user has not
+ * finished, and nothing the coordinator can inspect says what it waits for (TASK-316).
  * @param outcome The callback, as canonical JSON.
+ * @param waiting Whether the workhorse waits on the user rather than having finished.
  * @returns The turn's prompt.
  */
-function outcomeReportPrompt(outcome: string): string {
-	return [
-		"Work on the workhorse reached a terminal outcome while this voice session is live. Nothing has been said to the user about it. The outcome (data):",
-		outcome,
-		"Decide whether the user is waiting to hear about this. If you delegated, queued or steered this work because of something they asked by voice, inspect the workhorse to read what was done, then reply with one [FINAL] message: a short spoken summary of the result, or of what went wrong and what they can do next. If it is not theirs to hear about now, reply with a single [COMMENTARY] line and nothing else. Do not start new work in this turn.",
-	].join("\n");
+function outcomeReportPrompt(outcome: string, waiting: boolean): string {
+	const ask = "Decide whether the user is waiting to hear about this.";
+	const quiet =
+		"If it is not theirs to hear about now, reply with a single [COMMENTARY] line and nothing else. Do not start new work in this turn.";
+	return waiting
+		? [
+				"Work on the workhorse is waiting for the user while this voice session is live: it asked for an approval or an answer on the workbench, and it has not finished. Nothing has been said to the user about it. The outcome (data):",
+				outcome,
+				`${ask} If you delegated, queued or steered this work because of something they asked by voice, reply with one [FINAL] message: the work is paused until they answer the request on the workbench. ${quiet}`,
+			].join("\n")
+		: [
+				"Work on the workhorse ended while this voice session is live. Nothing has been said to the user about it. The outcome (data):",
+				outcome,
+				`${ask} If you delegated, queued or steered this work because of something they asked by voice, inspect the workhorse to read what was done, then reply with one [FINAL] message: a short spoken summary of the result, or of what went wrong and what they can do next. ${quiet}`,
+			].join("\n");
 }
 
 /**
@@ -95,7 +107,7 @@ async function mayReport(parts: OutcomeReportParts, threadId: ThreadId): Promise
 }
 
 /**
- * Build the port that runs the coordinator with a terminal outcome.
+ * Build the port that runs the coordinator with a workhorse outcome.
  * @param parts The session, the identity mint and the context.
  * @returns The port.
  */
@@ -108,7 +120,7 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 		 * recording holds the voice: either way the outcome is injected instead.
 		 */
 		report: async (request) => {
-			const { threadId, text } = request;
+			const { threadId, text, waiting } = request;
 			if (!(await mayReport(parts, threadId))) {
 				return "busy";
 			}
@@ -116,7 +128,7 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 			const params = createTurnStartParams({
 				threadId,
 				clientUserMessageId: operationId,
-				prompt: outcomeReportPrompt(text),
+				prompt: outcomeReportPrompt(text, waiting),
 				context: parts.contextFor(operationId),
 			});
 			try {
