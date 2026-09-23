@@ -1,6 +1,6 @@
 import { boardLockState } from "@/runtime/engine/board-lock";
 import { recentDoing } from "@/runtime/engine/board-doing";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import { addressablePanes, type PaneRegistration } from "@/runtime/engine/panes";
 import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
 	SemanticArchitectureInput,
@@ -278,7 +278,9 @@ function contextPane(contextBoard: string, exactPaneId: string): PaneRegistratio
 	// its board key, and comparing the whole string would say that pane is on a
 	// different board and leave an agent with no context at all.
 	const wanted = aggregateKey(contextBoard);
-	const pane = Array.from(panes.values()).find((candidate) => {
+	// Somebody's pane of that id before a recording page's, which presents the same id.
+	const all = [...panes.values()];
+	const pane = [...addressablePanes(all), ...all].find((candidate) => {
 		// A pane may be holding no board at all: a fresh vault has none, and a pane
 		// that could not register until one existed could never be shown the first
 		// board somebody makes.

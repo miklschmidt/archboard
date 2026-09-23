@@ -3,7 +3,13 @@ import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "@/runtime/engine/logger";
 import { parseBoardKey } from "@/runtime/engine/board";
-import { buildPanesReport, MAX_PANES, panesInOrder, resolvePaneSpec } from "@/runtime/engine/panes";
+import {
+	addressablePanes,
+	buildPanesReport,
+	MAX_PANES,
+	panesInOrder,
+	resolvePaneSpec,
+} from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { frontendState } from "@/runtime/engine/staleness";
 import { PANE_LAYOUT_TIMEOUT_MS } from "@/shared/timing/timing";
@@ -78,6 +84,8 @@ const PaneSchema = z.object({
 	// Which bundle this tab is running. Optional: a tab from before this existed,
 	// and anything that is not a browser, simply says nothing and hears nothing.
 	build: z.string().optional(),
+	// A recording page's pane (TASK-304), which nobody may address. Absent means an ordinary pane.
+	recording: z.boolean().optional(),
 });
 
 /**
@@ -111,10 +119,11 @@ function postPaneRoute(req: Request, res: Response): void {
 	}
 	const frontend = frontendState(parsed.data.build);
 	const staleFrontend = frontend.stale ? frontend : undefined;
-	const { build, ...requiredRegistration } = parsed.data;
+	const { build, recording, ...requiredRegistration } = parsed.data;
 	const registration: PaneRegistration = {
 		...requiredRegistration,
 		...(build === undefined ? {} : { build }),
+		...(recording === true ? { recording } : {}),
 		at: new Date().toISOString(),
 	};
 	// A pane exists exactly as long as the socket that owns it. A report arriving
@@ -127,11 +136,21 @@ function postPaneRoute(req: Request, res: Response): void {
 	// floor. The tab reports again, and the next one lands.
 	const live = currentSocketsByClient.has(registration.clientId);
 	if (!live) {
-		res.json({ success: true, registered: false, paneCount: panes.size, staleFrontend });
+		res.json({
+			success: true,
+			registered: false,
+			paneCount: addressablePanes([...panes.values()]).length,
+			staleFrontend,
+		});
 		return;
 	}
 	registerLivePane(registration);
-	res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
+	res.json({
+		success: true,
+		registered: true,
+		paneCount: addressablePanes([...panes.values()]).length,
+		staleFrontend,
+	});
 }
 
 /**
@@ -219,13 +238,14 @@ function getPanesRoute(_req: Request, res: Response): void {
  * @returns The refusal body.
  */
 function tooManyPanesBody(): Record<string, unknown> {
-	const showing = panesInOrder(Array.from(panes.values()))
+	const onScreen = addressablePanes([...panes.values()]);
+	const showing = panesInOrder(onScreen)
 		.map((entry) => `${entry.place} (${boardForPane(entry.pane)})`)
 		.join(", ");
 	return {
 		success: false,
 		error:
-			`The canvas is already showing ${panes.size} panes: ${showing}. ` +
+			`The canvas is already showing ${onScreen.length} panes: ${showing}. ` +
 			"Point one of them at another board with `browser show <name> --pane <spec>`, " +
 			"or close one first with `browser close <spec>`.",
 	};
@@ -272,7 +292,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 		res.status(503).json(noBrowserBody("Opening a pane"));
 		return;
 	}
-	if (panes.size >= MAX_PANES) {
+	if (addressablePanes([...panes.values()]).length >= MAX_PANES) {
 		res.status(409).json(tooManyPanesBody());
 		return;
 	}
@@ -289,11 +309,12 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 		// The new pane and every pane already on screen when the split was
 		// asked for: the shell re-lays all of them side by side.
 		await settleAfterLayout(askedAt, [...pending.known, pane.clientId]);
-		logger.info(`Pane opened on request: ${pane.paneId} (${panes.size} on screen)`);
+		const onScreen = addressablePanes([...panes.values()]).length;
+		logger.info(`Pane opened on request: ${pane.paneId} (${onScreen} on screen)`);
 		res.json({
 			success: true,
 			...paneResponse(panes.get(pane.clientId) ?? pane),
-			paneCount: panes.size,
+			paneCount: onScreen,
 			onScreen: boardsOnScreen(),
 		});
 	} catch (error) {
@@ -395,7 +416,7 @@ function refuseUnclosable(res: Response, count: number): boolean {
 async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	const paneSpec = bodyOf(req)["pane"];
 	const spec = typeof paneSpec === "string" ? paneSpec.trim() : "";
-	const registrations = Array.from(panes.values());
+	const registrations = addressablePanes([...panes.values()]);
 	if (refuseUnclosable(res, registrations.length)) {
 		return;
 	}
@@ -424,11 +445,12 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 				.map((entry) => entry.clientId)
 				.filter((clientId) => clientId !== target.clientId),
 		);
-		logger.info(`Pane closed on request: ${target.paneId} (${panes.size} left on screen)`);
+		const onScreen = addressablePanes([...panes.values()]).length;
+		logger.info(`Pane closed on request: ${target.paneId} (${onScreen} left on screen)`);
 		res.json({
 			success: true,
 			closed: { paneId: target.paneId, clientId: target.clientId, place, board: target.board },
-			paneCount: panes.size,
+			paneCount: onScreen,
 			onScreen: boardsOnScreen(),
 		});
 	} catch (error) {
@@ -472,11 +494,15 @@ function registerLivePane(registration: PaneRegistration): void {
  * The canvas is one operator's, but nothing stops a second browser (the ChatGPT desktop app,
  * on 2026-09-22) opening it too, and then "pane A" names two panes. Voice and narration address
  * the browser that started them (TASK-294); anything that still goes by the shell id alone may
- * land on the other one, and this line is how that is read afterwards.
+ * land on the other one, and this line is how that is read afterwards. A recording page shares
+ * the id with nobody: nothing goes by the shell id to it.
  * @param registration The pane that just arrived.
  */
 function warnOfSharedPaneId(registration: PaneRegistration): void {
-	const others = [...panes.values()].filter(
+	if (registration.recording === true) {
+		return;
+	}
+	const others = addressablePanes([...panes.values()]).filter(
 		(one) => one.paneId === registration.paneId && one.clientId !== registration.clientId,
 	);
 	if (others.length > 0) {

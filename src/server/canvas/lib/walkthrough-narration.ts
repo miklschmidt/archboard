@@ -11,7 +11,7 @@
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
 import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
-import type { PaneRegistration } from "@/runtime/engine/panes";
+import { addressablePanes, type PaneRegistration } from "@/runtime/engine/panes";
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import {
 	addressedVariant,
@@ -46,7 +46,8 @@ function bindVoicePane(paneId: string, clientId: string): void {
 
 /**
  * The live pane a pane id means: the bound browser's while it is on screen, otherwise the only
- * pane with that id. Two browsers presenting that id, with neither bound, is nobody's pane.
+ * addressable pane with that id. Two browsers presenting that id, with neither bound, is nobody's
+ * pane; a recording page, which binds its own at its start, is never found by the id alone.
  * @param paneId The pane, as the shell and the coordinator name it.
  * @returns The registration, or undefined.
  */
@@ -56,7 +57,7 @@ function registrationFor(paneId: string): PaneRegistration | undefined {
 	if (boundPane !== undefined) {
 		return boundPane;
 	}
-	const named = [...panes.values()].filter((one) => one.paneId === paneId);
+	const named = addressablePanes([...panes.values()]).filter((one) => one.paneId === paneId);
 	return named.length === 1 ? named[0] : undefined;
 }
 
