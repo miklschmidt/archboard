@@ -10,7 +10,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type RefObject } from "react";
 
-import { buildOutline, listedBoard, listedBoardKey } from "@/ui/board-catalog";
+import { listedBoard, listedBoardKey, type OutlineNode } from "@/ui/board-catalog";
 import { Skeleton } from "@/ui/components/skeleton";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import { BoardOutline } from "@/ui/shell/components/BoardOutline";
@@ -27,10 +27,13 @@ import {
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { foldQuery } from "@/ui/shell/lib/text-match";
 import type { ShellActions, ShellView } from "@/ui/shell/types/contracts";
+import type { CatalogBoard } from "@/ui/types";
 
 /** Inputs for the navigator. */
 interface NavigatorProps {
 	view: ShellView;
+	/** The vault's outline, derived once for the shell. */
+	outline: readonly OutlineNode<CatalogBoard>[];
 	actions: ShellActions;
 }
 
@@ -121,17 +124,13 @@ function openKey(actions: ShellActions, key: string, beside: boolean): void {
  * @returns The navigator column.
  */
 function Navigator(props: NavigatorProps): JSX.Element {
-	const { view, actions } = props;
+	const { view, actions, outline } = props;
 	const listing = view.boards;
 	const input = useRef<HTMLInputElement>(null);
 	const column = useRef<HTMLElement>(null);
 	useFindShortcut(input);
 	const [query, setQuery] = useState("");
 	const [statesOpen, setStatesOpen] = useState<ReadonlySet<string>>(NO_IDS);
-	const outline = useMemo(
-		() => buildOutline(listing.boards, listing.levels),
-		[listing.boards, listing.levels],
-	);
 	const active = activeReading(view);
 	const expansion = useNavigatorExpansion(outline, active.board);
 	const panes = useMemo(() => paneMarks(view), [view]);

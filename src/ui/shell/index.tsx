@@ -2,10 +2,10 @@
 // dock, composed from typed inputs and typed actions. The centre is also the
 // fullscreen root, so presenting a pane never remounts it.
 
-import type { CSSProperties, JSX, ReactNode } from "react";
+import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
-import { nothingBuiltOn } from "@/ui/board-catalog";
+import { buildOutline } from "@/ui/board-catalog";
 import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
 	LivePresentation,
@@ -26,6 +26,7 @@ import { Navigator } from "@/ui/shell/components/Navigator";
 import { Notices } from "@/ui/shell/components/Notices";
 import { PaneBar } from "@/ui/shell/components/PaneBar";
 import { PaneStages } from "@/ui/shell/components/PaneStages";
+import { readingOf } from "@/ui/shell/lib/reading";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
 
@@ -71,21 +72,28 @@ function paneById(view: ShellView, paneId: string): ShellPane | null {
 function Shell(props: ShellProps): JSX.Element {
 	const { view, actions } = props;
 	const active = paneById(view, view.activePaneId);
+	const { boards, levels } = view.boards;
+	const outline = useMemo(() => buildOutline(boards, levels), [boards, levels]);
+	const reading = readingOf(view.boards, outline, active?.status.boardKey ?? null);
 	return (
 		<div className="bg-background flex h-full min-w-0 flex-col" style={SHELL_STYLE}>
 			<Header
-				current={view.current}
-				unbuilt={nothingBuiltOn(view.boards, view.current.board)}
+				reading={reading}
 				theme={view.theme}
-				pane={active}
+				connected={active?.status.connected !== false}
 				actions={actions}
 				diagnostics={props.diagnostics}
 			/>
 			<div className="flex min-h-0 min-w-0 flex-1">
-				<Navigator view={view} actions={actions} />
+				<Navigator view={view} outline={outline} actions={actions} />
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 					<Notices notices={view.notices} actions={actions} />
-					<PaneBar panes={view.panes} activePaneId={view.activePaneId} actions={actions} />
+					<PaneBar
+						panes={view.panes}
+						activePaneId={view.activePaneId}
+						listing={view.boards}
+						actions={actions}
+					/>
 					<PaneStages
 						panes={view.panes}
 						activePaneId={view.activePaneId}

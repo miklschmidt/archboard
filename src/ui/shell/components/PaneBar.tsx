@@ -1,63 +1,72 @@
-// The pane bar: one flat tab per pane, its status inline after its name, and
-// the controls that add, close and present panes. The focused tab carries a
-// two-pixel cobalt rule along its bottom edge; nothing else is drawn.
+// The pane bar: the panes' tabs when there are two, and the controls that add,
+// close and present them. A tab names its pane by letter and the board it
+// shows; the focused tab carries a two-pixel cobalt rule along its bottom
+// edge. With one pane there is nothing to choose between, so there are no
+// tabs, and the header already names what it shows.
 
 import { RiAddLine, RiCloseLine, RiFullscreenLine } from "@remixicon/react";
 import { useCallback, useMemo, type JSX } from "react";
 
+import { listedBoard } from "@/ui/board-catalog";
 import { ToggleGroup, ToggleGroupItem } from "@/ui/components/toggle-group";
+import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { ShellActions, ShellPane } from "@/ui/shell/types/contracts";
 import { IconButton } from "@/ui/shell/components/IconButton";
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
-import { clockTime } from "@/ui/shell/lib/time";
+import type { BoardListing } from "@/ui/types";
 
 /**
- * "Pane A · board": the pane's place in reading order and what it holds.
+ * The name of the board a pane shows, as the vault lists it.
  * @param pane The pane.
- * @param index Its position in reading order.
- * @returns The label.
+ * @param listing The listing.
+ * @returns The name, or null while the pane shows none.
  */
-function paneLabel(pane: ShellPane, index: number): string {
-	const board = pane.status.board?.board ?? "no board";
-	return `Pane ${paneLetter(index)} · ${board}`;
+function paneBoardName(pane: ShellPane, listing: BoardListing): string | null {
+	const board = boardAddressOf(pane.status.boardKey)?.board ?? null;
+	if (board === null) return null;
+	return listedBoard(listing, board)?.name ?? board;
 }
 
-/** Inputs for one pane's status line. */
-interface PaneStatusLineProps {
+/** Inputs for one tab. */
+interface PaneTabProps {
 	pane: ShellPane;
+	index: number;
+	active: boolean;
+	listing: BoardListing;
 }
 
 /**
- * What a pane reports: its connection, the board version it is showing, and
- * when it last heard that board change.
- * @param props The pane.
- * @returns The status line.
+ * One pane's tab: its letter, the board it shows, and trouble when its socket is down.
+ * @param props The pane, its place, whether it is focused and the listing.
+ * @returns The tab.
  */
-function PaneStatusLine(props: PaneStatusLineProps): JSX.Element {
-	const { status } = props.pane;
+function PaneTab(props: PaneTabProps): JSX.Element {
+	const { pane, index, active } = props;
+	const letter = paneLetter(index);
+	const name = paneBoardName(pane, props.listing);
 	return (
-		<span className="text-technical text-muted-foreground flex items-center gap-1.5 font-normal">
-			<StatusDot tone={status.connected ? "live" : "idle"} />
-			{status.connected ? "Connected" : "Offline"}
-			{status.version !== null && (
-				<>
-					<span aria-hidden="true">·</span>
-					<span>
-						v<span className="font-mono">{status.version}</span>
-					</span>
-				</>
+		<ToggleGroupItem
+			value={pane.status.paneId}
+			aria-label={`Pane ${letter}${name === null ? "" : ` · ${name}`}`}
+			aria-current={active ? "true" : undefined}
+			className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto max-w-96 min-w-0 gap-2 rounded-none! border-r border-b-2 border-b-transparent px-3 focus-visible:ring-inset aria-pressed:bg-transparent"
+		>
+			<span
+				aria-hidden="true"
+				className="bg-foreground text-background inline-flex size-4 shrink-0 items-center justify-center rounded-[2px] font-mono text-[10px] font-medium"
+			>
+				{letter}
+			</span>
+			<span className="truncate">{name ?? "No board"}</span>
+			{!pane.status.connected && (
+				<span className="text-technical flex shrink-0 items-center gap-1 font-normal">
+					<StatusDot tone="warning" />
+					offline
+				</span>
 			)}
-			{status.lastChangeAt !== null && (
-				<>
-					<span aria-hidden="true">·</span>
-					<time dateTime={status.lastChangeAt} className="font-mono">
-						{clockTime(status.lastChangeAt)}
-					</time>
-				</>
-			)}
-		</span>
+		</ToggleGroupItem>
 	);
 }
 
@@ -86,13 +95,11 @@ function PaneControls(props: PaneControlsProps): JSX.Element {
 			<IconButton label="Add pane" onClick={handleAdd} disabled={paneCount >= 2}>
 				<RiAddLine />
 			</IconButton>
-			<IconButton
-				label={`Close pane ${activePaneId}`}
-				onClick={handleClose}
-				disabled={paneCount <= 1}
-			>
-				<RiCloseLine />
-			</IconButton>
+			{paneCount > 1 && (
+				<IconButton label={`Close pane ${activePaneId}`} onClick={handleClose}>
+					<RiCloseLine />
+				</IconButton>
+			)}
 			<IconButton
 				label={`Present pane ${activePaneId} fullscreen`}
 				shortcut={presentShortcutLabel()}
@@ -109,13 +116,13 @@ function PaneControls(props: PaneControlsProps): JSX.Element {
 interface PaneBarProps {
 	panes: readonly ShellPane[];
 	activePaneId: string;
+	listing: BoardListing;
 	actions: ShellActions;
 }
 
 /**
- * The pane chooser: a single-choice toggle group naming each pane, with the
- * focused pane underlined and each pane's status inline after its name.
- * @param props The panes, the active pane and the actions.
+ * The pane bar.
+ * @param props The panes, the active pane, the listing and the actions.
  * @returns The 36px pane bar with its one-pixel bottom rule.
  */
 function PaneBar(props: PaneBarProps): JSX.Element {
@@ -132,29 +139,29 @@ function PaneBar(props: PaneBarProps): JSX.Element {
 	);
 	return (
 		<div className="border-border bg-sidebar flex h-9 shrink-0 items-stretch border-b">
-			<ToggleGroup
-				value={value}
-				onValueChange={handleChange}
-				spacing={0}
-				aria-label="Pane"
-				className="min-w-0 items-stretch rounded-none"
-			>
-				{panes.map((pane, index) => (
-					<ToggleGroupItem
-						key={pane.status.paneId}
-						value={pane.status.paneId}
-						aria-current={pane.status.paneId === activePaneId ? "true" : undefined}
-						className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto min-w-0 gap-3 rounded-none! border-r border-b-2 border-b-transparent px-4 focus-visible:ring-inset aria-pressed:bg-transparent"
-					>
-						<span className="truncate">{paneLabel(pane, index)}</span>
-						<PaneStatusLine pane={pane} />
-					</ToggleGroupItem>
-				))}
-			</ToggleGroup>
+			{panes.length > 1 && (
+				<ToggleGroup
+					value={value}
+					onValueChange={handleChange}
+					spacing={0}
+					aria-label="Pane"
+					className="min-w-0 items-stretch rounded-none"
+				>
+					{panes.map((pane, index) => (
+						<PaneTab
+							key={pane.status.paneId}
+							pane={pane}
+							index={index}
+							active={pane.status.paneId === activePaneId}
+							listing={props.listing}
+						/>
+					))}
+				</ToggleGroup>
+			)}
 			<span className="flex-1" />
 			<PaneControls activePaneId={activePaneId} paneCount={panes.length} actions={actions} />
 		</div>
 	);
 }
 
-export { PaneBar, paneLabel, type PaneBarProps };
+export { PaneBar, type PaneBarProps };
