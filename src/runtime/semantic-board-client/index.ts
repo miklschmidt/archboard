@@ -301,6 +301,30 @@ async function branchSemanticBoardOnCanvas(
 	return postSemantic("/api/semantic-boards/branch", { board, branch });
 }
 
+const DiscardReplySchema = z.object({
+	success: z.literal(true),
+	discarded: z.object({ board: z.string(), version: z.int() }),
+});
+
+/**
+ * Delete a board, every variant of it, under its lease.
+ *
+ * It states what it is doing and which session asked the way every write does,
+ * because it is one: a person watching the board is told why it went.
+ * @param board The board name.
+ * @returns The board that went, and the version it was at when it did.
+ */
+async function discardSemanticBoardOnCanvas(
+	board: string,
+): Promise<z.infer<typeof DiscardReplySchema>["discarded"]> {
+	const reply = await requestJson<unknown>(withWriterClaims("/api/semantic-boards/discard"), {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ board, ...statedSession() }),
+	});
+	return DiscardReplySchema.parse(reply).discarded;
+}
+
 export {
 	SemanticBoardEntrySchema,
 	type SemanticBoardEntry,
@@ -317,6 +341,7 @@ export {
 	createSemanticBoardOnCanvas,
 	editSemanticBoardOnCanvas,
 	branchSemanticBoardOnCanvas,
+	discardSemanticBoardOnCanvas,
 };
 
 /**

@@ -22,6 +22,7 @@ import {
 } from "@/runtime/semantic-board-store/index";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
+import { discardRoute } from "@/server/canvas/lib/semantic-board-discard";
 import {
 	adoptRoute,
 	shelveRoute,
@@ -303,6 +304,7 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.post("/api/semantic-boards/resolve", asyncEndpoint(resolveRoute));
 	app.post("/api/semantic-boards/adopt", asyncEndpoint(adoptRoute));
 	app.post("/api/semantic-boards/shelve", asyncEndpoint(shelveRoute));
+	app.post("/api/semantic-boards/discard", asyncEndpoint(discardRoute));
 }
 
 export { mountSemanticBoardRoutes };

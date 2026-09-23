@@ -59,9 +59,7 @@ function isBoardChange(message: WebSocketMessage): boolean {
 }
 
 /** What a settled write announces about itself, beyond the board it changed. */
-interface SettledAnnouncement {
-	/** The version the board landed at. */
-	readonly version: number;
+type SettledAnnouncement = {
 	/**
 	 * The agent session that made the write, or null when nobody said.
 	 *
@@ -78,7 +76,16 @@ interface SettledAnnouncement {
 	readonly by: string | null;
 	/** The identity the board was held under: custody, not authorship. */
 	readonly heldAs: string;
-}
+} & (
+	| {
+			/** The version the board landed at. */
+			readonly version: number;
+	  }
+	| {
+			/** The board is gone: it was discarded, and has no version to land at. */
+			readonly discarded: true;
+	  }
+);
 
 /**
  * The announcement a settled write broadcasts, as this feed reads it.
@@ -87,21 +94,36 @@ interface SettledAnnouncement {
  * agreed on nothing but the spelling of a field: `by` drifted to `paneId` on one
  * side once, and every change arrived unattributable while each half stayed
  * right on its own. A shape with one author cannot drift from itself.
+ *
+ * A discarded board carries no version, as a board removed by somebody else
+ * carries none: a pane told either reads the board again and finds it gone.
  * @param announcement What the write says about itself.
  * @returns The fields the `board_note` message carries.
  */
 function settledChangeFields(announcement: SettledAnnouncement): {
 	semantic: true;
-	version: number;
 	by: string | null;
 	heldAs: string;
-} {
-	return {
-		semantic: true,
-		version: announcement.version,
-		by: announcement.by,
-		heldAs: announcement.heldAs,
-	};
+} & ({ version: number } | { discarded: true }) {
+	const settled = { semantic: true as const, by: announcement.by, heldAs: announcement.heldAs };
+	return "version" in announcement
+		? { ...settled, version: announcement.version }
+		: { ...settled, discarded: true };
+}
+
+/**
+ * What the feed says a change was.
+ * @param message The announcement, as it arrived.
+ * @param board The board it is about.
+ * @returns The line a context reader is given.
+ */
+function changeText(message: WebSocketMessage, board: string): string {
+	if (message["discarded"] === true) {
+		return `${board} was discarded`;
+	}
+	return typeof message["version"] === "number"
+		? `${board} is at version ${message["version"]}`
+		: `${board} changed`;
 }
 
 /**
@@ -118,7 +140,6 @@ onBoardBroadcast((message, board) => {
 		return;
 	}
 	cursor += 1;
-	const version = typeof message["version"] === "number" ? message["version"] : null;
 	const event: SettledBoardChange = {
 		cursor,
 		board,
@@ -126,7 +147,7 @@ onBoardBroadcast((message, board) => {
 		// Only an agent writes a board: a person reads one (ADR 0023).
 		origin: "agent",
 		significance: "structural",
-		text: version === null ? `${board} changed` : `${board} is at version ${version}`,
+		text: changeText(message, board),
 		// Absent is a real answer: a change nobody can attribute is delivered to
 		// everybody, its own author included, which is redundancy not silence.
 		by: authorOf(message),

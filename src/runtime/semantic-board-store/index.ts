@@ -2,7 +2,8 @@
 //
 // Reads go through `readSemanticBoard`. Authored changes go through
 // `writeSemanticBoard`, which owns the claim, expected-version check, version
-// advance and atomic fsync write. A read of an older contract runs a registered
+// advance and atomic fsync write. `discardSemanticBoard` removes a whole board
+// under the same lease and admission. A read of an older contract runs a registered
 // schema migration under the same board lease and persists it before answering.
 
 export {
@@ -48,6 +49,11 @@ export {
 	type SemanticWriteResult,
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/lib/write";
+export {
+	type SemanticDiscardCommand,
+	type SemanticDiscardResult,
+	discardSemanticBoard,
+} from "@/runtime/semantic-board-store/lib/discard";
 export {
 	unsettledAncestor,
 	type DescendantOutcome,
