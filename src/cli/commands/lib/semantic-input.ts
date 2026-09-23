@@ -145,9 +145,9 @@ function describeJson(value: unknown): string {
 
 /**
  * A selector somebody typed. Leaving one out asks for the default — the variant
- * the board's name opens, the whole of it — but typing one that says nothing (`--view ''`) is a
- * command that went wrong before it got here, and drawing the whole variant for
- * it would quietly answer a question nobody asked.
+ * the board's name opens, the whole of it — but typing one that says nothing
+ * (`--view ''`) is a command that went wrong before it got here, and drawing the
+ * whole variant for it would quietly answer a question nobody asked.
  */
 const SelectorSchema = z.string().trim().min(1);
 
