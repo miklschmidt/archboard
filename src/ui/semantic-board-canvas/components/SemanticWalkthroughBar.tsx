@@ -65,13 +65,11 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
 		onChoose(open ? null : walkthrough.id);
 	}, [onChoose, open, walkthrough.id]);
 	const { onNarrate } = props;
-	// Narrating opens the explanation when it is not open yet, and never closes one that is.
+	// The server opens the explanation on its first step once voice is starting, so the voice is
+	// handed the step it arrived on.
 	const narrate = useCallback((): void => {
-		if (!open) {
-			onChoose(walkthrough.id);
-		}
 		onNarrate?.(walkthrough.id);
-	}, [onChoose, onNarrate, open, walkthrough.id]);
+	}, [onNarrate, walkthrough.id]);
 	return (
 		<div className="flex items-center gap-0.5">
 			<Button

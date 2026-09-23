@@ -154,16 +154,15 @@ const PANE_LAYOUT_TIMEOUT_MS = 10_000;
 
 /**
  * How long the server waits for a pane to say a walkthrough step it asked for
- * has finished arriving (TASK-251).
+ * has finished arriving: the first step of a narration (TASK-251).
  *
  * The acknowledgement is the pane's own report, for the same reason a layout's
  * is a registration. A step costs the glide (`PRESENTATION_STEP_MS`, 900), or a
  * picture flight when it changes view (`PICTURE_TRANSITION_MS`, 640) after the
  * new picture has been fetched and drawn, then the report's debounce
  * (`SELECTION_DEBOUNCE_MS`, 150) and a round trip: a couple of seconds at worst.
- * It pulls against a voice that has gone quiet to wait for the step, so it is
- * far shorter than a layout's bound, and against `CODEX_REQUEST_SETTLEMENT_MS`
- * (30_000), which the tool call that waits on it must stay inside.
+ * It pulls against a voice that stays silent until that step reaches it, so it
+ * is far shorter than a layout's bound.
  */
 const PRESENTATION_ARRIVAL_TIMEOUT_MS = 8000;
 

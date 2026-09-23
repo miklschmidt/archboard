@@ -5,7 +5,6 @@ import {
 	DynamicToolResponseSchema,
 	InspectWorkhorseResultSchema,
 	ManageWorkhorseQueueResultSchema,
-	PresentStepResultSchema,
 	ResolveSpokenApprovalResultSchema,
 	SteerWorkhorseResultSchema,
 	UnknownDynamicToolResponseSchema,
@@ -36,7 +35,6 @@ const CANONICAL_RESULT_SCHEMAS = Object.freeze({
 	manage_workhorse_queue: z.object(ManageWorkhorseQueueResultSchema.shape),
 	steer_workhorse: z.object(SteerWorkhorseResultSchema.shape),
 	resolve_spoken_approval: z.object(ResolveSpokenApprovalResultSchema.shape),
-	present_step: z.object(PresentStepResultSchema.shape),
 } satisfies Readonly<Record<CoordinatorToolName, z.ZodObject>>);
 
 /**

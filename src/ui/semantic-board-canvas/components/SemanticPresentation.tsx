@@ -124,12 +124,11 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 		onGo(Math.min(count - 1, index + 1));
 	}, [onGo, index, count]);
 	const { onNarrate } = props;
-	// A narration is a talk from the top, so it starts on the first step whatever
-	// the reader had reached.
+	// A narration starts on the first step whatever the reader had reached; the server opens it
+	// once voice is starting, so the voice is handed the step it arrived on.
 	const narrate = useCallback((): void => {
-		onGo(0);
 		onNarrate?.(walkthrough.id);
-	}, [onGo, onNarrate, walkthrough.id]);
+	}, [onNarrate, walkthrough.id]);
 	return (
 		<section
 			ref={attach}

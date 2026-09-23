@@ -29,7 +29,6 @@ import {
 import { tellPaneAboutLock } from "@/server/canvas/lib/board-announcements";
 import { noteBoardShown } from "@/server/canvas/lib/semantic-disk-watch";
 import { showPaneRoute } from "@/server/canvas/lib/pane-show-route";
-import { presentPaneRoute } from "@/server/canvas/lib/pane-present-route";
 import { semanticPaneContextFor } from "@/server/canvas/lib/semantic-pane-context";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
 import { bodyOf, messageOf } from "@/server/canvas/lib/request-board";
@@ -447,7 +446,6 @@ function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes/show", showPaneRoute);
 	app.post("/api/panes/open", asyncEndpoint(openPaneRoute));
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
-	app.post("/api/panes/present", asyncEndpoint(presentPaneRoute));
 }
 
 export { arrivedOnBoard, mountPaneRoutes, noBrowserBody };
