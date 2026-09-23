@@ -96,6 +96,36 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 	};
 }
 
+/**
+ * A conversation of finished turns, one per prompt, in order.
+ * @param prompts The person's prompts.
+ * @returns The snapshot.
+ */
+function conversation(prompts: readonly string[]): BrowserSnapshot {
+	return snapshot({
+		threadLink: LINKED,
+		timeline: {
+			kind: "timeline",
+			threadId: ids.threadId,
+			turns: prompts.map((text, index) => ({
+				turnId: decoder.adoptTurnId(`turn-${index}`),
+				status: "completed" as const,
+				items: [{ media: "prompt" as const, itemId: decoder.adoptItemId(`item-${index}`), text }],
+				summary: "done",
+				outputsIncluded: true,
+				outputsTruncated: false,
+				startedAtMs: null,
+				completedAtMs: null,
+				durationMs: null,
+				error: null,
+				plan: null,
+			})),
+			nextCursor: null,
+			usage: null,
+		},
+	});
+}
+
 /** The snapshots a canvas passes through on the way to a conversation. */
 const STAGES = {
 	signedOut: snapshot({
@@ -113,7 +143,49 @@ const STAGES = {
 			authUrl: "https://auth.example.test/login",
 		},
 	}),
+	/**
+	 * Signed out again after a sign-in Codex gave up on.
+	 * @param reason Codex's reason.
+	 * @returns The snapshot.
+	 */
+	signInFailed: (reason: string): BrowserSnapshot =>
+		snapshot({
+			readiness: { kind: "readiness", state: "signed_out" },
+			account: { kind: "account", state: "signed_out" },
+			login: { kind: "login", state: "failed", loginId: ids.loginId, reason },
+		}),
+	/** Signing in, before Codex has named the provider's page. */
+	signingInUnnamed: snapshot({
+		readiness: { kind: "readiness", state: "login_pending", loginId: ids.loginId },
+		account: { kind: "account", state: "login_pending", loginId: ids.loginId, variant: "chatgpt" },
+		login: {
+			kind: "login",
+			state: "pending",
+			loginId: ids.loginId,
+			variant: "chatgpt",
+			authUrl: null,
+		},
+	}),
 	starting: snapshot({ readiness: { kind: "readiness", state: "account_ready" } }),
+	/**
+	 * Signed in, with a coordinator Codex could not start.
+	 * @param reason The coordinator's reason.
+	 * @returns The snapshot.
+	 */
+	coordinatorFailed: (reason: string): BrowserSnapshot =>
+		snapshot({
+			readiness: { kind: "readiness", state: "account_ready" },
+			coordinator: { ...snapshot().coordinator, state: "failed", reason },
+		}),
+	/** The server waits a known time before it starts Codex again. */
+	restarting: snapshot({
+		readiness: {
+			kind: "readiness",
+			state: "backoff",
+			retryAtMs: 1_000,
+			reason: "Codex exited; starting it again.",
+		},
+	}),
 	ready: snapshot(),
 	linked: snapshot({ threadLink: LINKED }),
 	/**
@@ -211,4 +283,4 @@ function stateOf(value: BrowserSnapshot): BrowserWorkbenchState {
 	};
 }
 
-export { STAGES, ids, movableTransport, type MovableTransport };
+export { STAGES, conversation, ids, movableTransport, type MovableTransport };
