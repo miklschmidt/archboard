@@ -34,7 +34,12 @@ function PendingWork(props: PendingWorkProps): JSX.Element | null {
 	return (
 		<div data-slot="pending-work" className="flex flex-col gap-3">
 			{held.map((message) => (
-				<HeldPrompt key={message.id} message={message} step={view.setup.step} actions={actions} />
+				<HeldPrompt
+					key={message.id}
+					message={message}
+					step={waitsOn(held, message, view.setup.step)}
+					actions={actions}
+				/>
 			))}
 			{queued.map((entry, index) => (
 				<QueuedPrompt
@@ -126,12 +131,29 @@ function ApprovalCardFor(props: {
 	);
 }
 
-/** What a held message waits on, by setup step. */
-const WAITS_ON: Readonly<Record<NonNullable<SetupStep>, string>> = {
+/** What a held message waits on: a setup step, or an earlier message that did not arrive. */
+type WaitsOn = SetupStep | "earlier";
+
+/** What a held message waits on, in words. */
+const WAITS_ON: Readonly<Record<NonNullable<WaitsOn>, string>> = {
 	sign_in: "Waiting for you to sign in",
 	start: "Waiting for Codex to start",
 	link: "Starting a conversation",
+	earlier: "Waits for the message above",
 };
+
+/**
+ * What one held message waits on: messages go in order, so one sent after a
+ * message that did not arrive waits for that one; otherwise the setup step.
+ * @param held The held messages, oldest first.
+ * @param message This one.
+ * @param step What the setup waits on.
+ * @returns What it waits on.
+ */
+function waitsOn(held: readonly HeldMessage[], message: HeldMessage, step: SetupStep): WaitsOn {
+	const stuck = held.findIndex((other) => other.state === "failed" || other.state === "unknown");
+	return stuck >= 0 && held.indexOf(message) > stuck ? "earlier" : step;
+}
 
 /** What a held message that went wrong says, and why when Codex gave no reason. */
 const PROBLEM_WORDS = {
@@ -147,7 +169,7 @@ const PROBLEM_WORDS = {
  */
 function heldWords(
 	message: HeldMessage,
-	step: SetupStep,
+	step: WaitsOn,
 ): { readonly text: string; readonly problem: boolean } {
 	if (message.state === "failed" || message.state === "unknown") {
 		const [what, why] = PROBLEM_WORDS[message.state];
@@ -169,7 +191,7 @@ function heldWords(
  */
 function HeldPrompt(props: {
 	readonly message: HeldMessage;
-	readonly step: SetupStep;
+	readonly step: WaitsOn;
 	readonly actions: AgentActions;
 }): JSX.Element {
 	const { message, actions } = props;
