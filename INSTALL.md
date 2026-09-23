@@ -309,6 +309,21 @@ What the bitmap is:
   and height, scale, the diagram's page, the board, version, variant and
   view drawn, and the SHA-256 of the SVG document that was rasterized.
 
+## Recording a walkthrough
+
+`archboard semantic record <board> --out <file.mp4>` presents one walkthrough
+in the same kind of private Chromium, narrated by the canvas's Codex voice, and
+writes it to an MP4 or WebM file; it is how an agent hands a pull request's
+reviewers a narrated video of the change. It needs the Chromium that
+rasterizing needs and a canvas whose Codex is signed in, with voice not live in
+any browser on it.
+
+On Linux the browser records MP4 sound as Opus, which Safari does not play.
+With `ffmpeg` on `PATH`, or named by `ARCHBOARD_FFMPEG`, the recorder converts
+the sound to AAC so the file plays with sound in every browser; without one it
+keeps the file and says so. Attaching the file to a pull request with
+`gh pr comment --attach` needs gh 2.99 or later.
+
 ## On macOS
 
 Archboard supports Linux and macOS. On macOS, machine-local state lives under
