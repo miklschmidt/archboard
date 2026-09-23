@@ -1,5 +1,7 @@
 // A clock that re-renders its reader at a fixed tick while it is running, for
 // text that says how long ago something happened or how long it has gone on.
+// Ticks land on whole multiples of the tick, so two clocks with one tick agree:
+// the agent bar and the conversation never show a turn's time a second apart.
 
 import { useEffect, useState } from "react";
 
@@ -13,8 +15,14 @@ function useClock(tickMs: number, running = true): number {
 	const [now, setNow] = useState(Date.now);
 	useEffect(() => {
 		if (!running) return undefined;
-		const timer = window.setInterval(() => setNow(Date.now()), tickMs);
-		return () => window.clearInterval(timer);
+		let timer = 0;
+		/** Read the time, and wait for the next whole tick. */
+		const tick = (): void => {
+			setNow(Date.now());
+			timer = window.setTimeout(tick, tickMs - (Date.now() % tickMs));
+		};
+		timer = window.setTimeout(tick, tickMs - (Date.now() % tickMs));
+		return () => window.clearTimeout(timer);
 	}, [tickMs, running]);
 	return now;
 }
