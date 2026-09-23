@@ -1,11 +1,11 @@
 ---
 id: TASK-211
 title: Overhaul the archboard skill around efficient board workflows
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-13 23:15'
-updated_date: '2026-09-18 11:01'
+updated_date: '2026-09-23 00:56'
 labels: []
 dependencies:
   - TASK-207
@@ -118,12 +118,12 @@ Batch 2026-09-15T03-21-37-188Z: all three candidate S07 runs drew ScriptInfo's t
 AC 4: docs/design/skill-evals/preservation-assessment.md maps every guardrail to its home and evidence owner (updated for the TASK-235.09 recipe split); the 2026-09-15 batch shows zero guardrail violations and zero direct writes in either arm, and the harness guardrails plus scenario checks own the evidence. AC 6 waits for the human-run rerun of both arms on the TASK-235 inputs.
 
 2026-09-16 batch (.skill-evals/2026-09-16T00-32-53-542Z, Claude grader): candidate 40/45 fully ok vs baseline 31/45, no guardrail violations, mean correctness 8.7 vs 8.2, truth 8.5 vs 8.1, readability level; median tokens rose 15% overall (S00 routing and S05 drove it; S04, S06, S07, S08, S13 fell). AC #6's quality half holds; its token half did not. The user promoted the candidate to the frozen baseline (TASK-243.01) and the follow-ups are under TASK-243.
+
+Closed 2026-09-23 by the user's decision. AC #14 stays unchecked on purpose: the only batch recorded here (2026-09-16) is void under TASK-254, because both arms read scenario answers. The overhauled skill was promoted to the frozen baseline (TASK-243.01), and measured comparisons since then belong to the batch tasks: TASK-253, TASK-256, TASK-273 and TASK-274 (latest batch .skill-evals/2026-09-18T23-44-56-390Z).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-The archboard skill now teaches four complete workflows (architecture from code, sequence diagram, one-batch edit, propose and compare) with the syntax inline and conditional material behind routed references, drops discovery the context already answers, and keeps every recorded guardrail with a documented evidence owner; archboard-dev tells maintainers when and how to update the skill, its eval fixtures and inventory, and how to measure a change with the human-run harness. The measured baseline/candidate comparison (AC #6) awaits a human run.
-
-Implementation review and the full normal gate are complete; source-grounded workflow corrections are included. Human-run behavioral evaluation and the measured baseline/candidate comparison remain pending.
+The archboard skill teaches four complete workflows (architecture from code, sequence, one-batch edit, propose and compare), with conditional references routed from SKILL.md, redundant discovery removed, and every guardrail given an evidence owner. archboard-dev covers maintenance and the human-run evaluation. The measured comparison in AC #14 is superseded by the ongoing per-batch evaluation tasks (253, 256, 273, 274); the one batch recorded here is void under TASK-254.
 <!-- SECTION:FINAL_SUMMARY:END -->

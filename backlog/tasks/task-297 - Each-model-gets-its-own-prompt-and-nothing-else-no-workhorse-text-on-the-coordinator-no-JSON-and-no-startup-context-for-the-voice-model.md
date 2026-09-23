@@ -3,11 +3,11 @@ id: TASK-297
 title: >-
   Each model gets its own prompt and nothing else: no workhorse text on the
   coordinator, no JSON and no startup context for the voice model
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-22 16:56'
-updated_date: '2026-09-22 17:04'
+updated_date: '2026-09-23 00:56'
 labels:
   - voice
   - bug
@@ -26,7 +26,7 @@ Read from the 2026-09-22 02:38 voice session: the coordinator thread's developer
 - [x] #1 The coordinator thread's developer instructions are one standalone coordinator document that does not contain or refer to the workhorse document; the workhorse thread's are the workhorse document alone.
 - [x] #2 The realtime start instructions carry only what the coordinator needs for a voice session (the channel rule and, when narrating, the presentation instructions): no copy of its developer instructions, no brief, no catalogue.
 - [x] #3 The voice session starts without Codex's startup context and with no developer items; in presentation mode its only initial item is the user's narrate request, and no catalogue or context JSON is ever appended to it afterwards.
-- [ ] #4 The voice prompt no longer refers to a brief it is not given; every digest, fixture, golden body and design document that pinned the old composition is updated, and bun run check passes.
+- [x] #4 The voice prompt no longer refers to a brief it is not given; every digest, fixture, golden body and design document that pinned the old composition is updated, and bun run check passes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,4 +39,12 @@ Read from the 2026-09-22 02:38 voice session: the coordinator thread's developer
 
 <!-- SECTION:NOTES:BEGIN -->
 Verified: codex-instructions, codex-coordinator, codex-realtime, codex-thread-tools, codex-workhorse-start owners plus production-initialization, browser-projection, realtime-transcript-projection, codex-pane-context, codex-workbench-production and the process-contract codex-realtime test (233 + 8 pass); browser owners codex-live-voice and semantic-walkthrough-narration pass; lint and both type-checks clean for every file of this change. The full gate could not be read cleanly because TASK-296 (the Excalidraw removal) is being worked in the same tree at the same time; AC4's bun run check is re-run once that lands.
+
+AC #4: TASK-296 has landed and the full gate is green on the combined tree. bun run check exit 0 on 2026-09-23 at 67ef9b45: lint, fmt, both type-checks, frontend build, 3461 module tests, 168 system, 8 repository, 19 serial-browser tests across 16 files (codex-live-voice and semantic-walkthrough-narration included). The user confirmed on 2026-09-23 that voice works as intended.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Workhorse, coordinator and voice model each get only their own prompt: a standalone coordinator document, realtime start instructions limited to the channel rule, a voice session with no startup context and no developer items, and no catalogue or context JSON appended to the voice. Digests, fixtures and design docs updated. Verified by the focused owners, the browser voice owners and the full gate: bun run check exit 0 on 2026-09-23 at 67ef9b45: lint, fmt, both type-checks, frontend build, 3461 module tests, 168 system, 8 repository, 19 serial-browser tests across 16 files (codex-live-voice and semantic-walkthrough-narration included)., plus the user's real voice use.
+<!-- SECTION:FINAL_SUMMARY:END -->

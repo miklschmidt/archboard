@@ -3,11 +3,11 @@ id: TASK-291
 title: >-
   Tell the coordinator when delegated work ends, so it decides what the voice
   says
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-20 12:41'
-updated_date: '2026-09-20 13:15'
+updated_date: '2026-09-23 00:56'
 labels:
   - voice
   - codex
@@ -26,12 +26,12 @@ Asked by voice to do something, the voice model waits on the coordinator and the
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 When delegated or queued workhorse work reaches a terminal outcome during a live voice session, the coordinator runs with that outcome and can read what was done
-- [ ] #2 The coordinator decides whether the voice speaks: an answer it marks for speech is spoken without the person asking again, and one it marks as context is not
-- [ ] #3 A coordinator preamble or progress message is never spoken as if it were the answer
-- [ ] #4 A terminal outcome that arrives while the coordinator is mid-turn is neither lost nor spoken twice
-- [ ] #5 Semantic board callbacks stay quiet context and start no turn
-- [ ] #6 Covered by callback delivery and start-envelope contract tests, and verified with a real voice session
+- [x] #1 When delegated or queued workhorse work reaches a terminal outcome during a live voice session, the coordinator runs with that outcome and can read what was done
+- [x] #2 The coordinator decides whether the voice speaks: an answer it marks for speech is spoken without the person asking again, and one it marks as context is not
+- [x] #3 A coordinator preamble or progress message is never spoken as if it were the answer
+- [x] #4 A terminal outcome that arrives while the coordinator is mid-turn is neither lost nor spoken twice
+- [x] #5 Semantic board callbacks stay quiet context and start no turn
+- [x] #6 Covered by callback delivery and start-envelope contract tests, and verified with a real voice session
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,12 @@ Asked by voice to do something, the voice model waits on the coordinator and the
 Built (uncommitted), following the user direction to notify the coordinator and let it decide. 1. start-policy: COORDINATOR_CHANNEL_INSTRUCTIONS in realtimeStartInstructions for every voice session ([FINAL] is spoken, [COMMENTARY] is quiet, one [FINAL] last, a lone [COMMENTARY] when nothing should be said); the narration instructions ask for the step as one [FINAL] message. 2. Reviewed producer workhorse_outcome_report (turn/start, host-minted id) in the additional-context policy. 3. codex-coordinator-callbacks: delivery path coordinator_turn through an optional host port; terminal operation callbacks (completed, failed, attention, outcome_unknown) take it while a voice generation is live, busy falls back to thread/inject_items, an unknown start outcome is recorded as it is with no second path. 4. server/canvas codex-workbench-outcome-report: bounded idle wait (COORDINATOR_IDLE_WAIT_MS 10 s, polling CODEX_WAIT_TARGET_POLL_MS), canonical turn body, a prompt asking the coordinator to inspect the workhorse and answer [FINAL] only when the work came from a voice request. Verified: callbacks 27+5 tests, host port 3, modules lane 3418 pass, realtime process contract and production/application system tests, lint, fmt, both type-checks. Evidence that this, not the coordinator reply, was the silence: across 15 recorded coordinator threads every coordinator final message was followed by the voice speaking; what was never spoken is a workhorse callback, which while voice is live went only to the voice model as JSON through appendText.
 
 Coordinator language rule, at the user direction (human review of the pinned instructions): coordinator-role-extension.txt gains a Language paragraph - a voice handoff carries the person own words in any language; the coordinator may answer in that language or English; everything it sends to the workhorse (delegate_to_workhorse, steer_workhorse, queued prompts) must be clear English, names never translated. COORDINATOR_ROLE_EXTENSION_SHA256 83be43bc..., COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 5bca6e88...; the contracts document copy updated. Verified: instructions, coordinator, workhorse-start, thread-tools and the production workbench test (187 pass), lint, type-check.
+
+2026-09-23: the user confirmed voice works exactly as intended in real sessions, which covers the spoken-outcome criteria (#1-#4) and the real-session half of #6. Contract owners: codex-coordinator-callbacks delivery path and at-most-once tests, the outcome-report host port's idle wait and fallback, the start-envelope contract; #5 is also held by commit 7c12df5f (operation callbacks never reach the voice session as an envelope). Full gate: bun run check exit 0 on 2026-09-23 at 67ef9b45 (3461 module, 168 system, 8 repository, 19 serial-browser tests).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+While voice is live, a terminal workhorse outcome starts one coordinator turn (with a bounded idle wait, falling back to injected context so nothing is lost or said twice); the coordinator decides what is spoken through the [FINAL]/[COMMENTARY] channel headers it now always writes, so preambles are never read out. Semantic callbacks stay quiet. Verified by the callback, host-port and start-envelope owners, the full gate, and the user's real voice sessions.
+<!-- SECTION:FINAL_SUMMARY:END -->

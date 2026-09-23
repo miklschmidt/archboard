@@ -1,11 +1,11 @@
 ---
 id: TASK-283
 title: Keep opposing or differently standing relationship channels distinct
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-19 18:06'
-updated_date: '2026-09-19 22:28'
+updated_date: '2026-09-23 00:56'
 labels:
   - renderer
   - layout
@@ -29,7 +29,7 @@ The semantic renderer currently separates shared connector channels by relations
 <!-- AC:BEGIN -->
 - [x] #1 Relationships with opposite directions between the same endpoints render on distinct physical channels while same-direction relationships retain their existing sharing behavior.
 - [x] #2 Relationships with different comparison standings render on distinct physical channels, including added, changed, removed, and unchanged where those combinations can occur.
-- [ ] #3 Existing relationship-kind separation, containment, labels, arrowheads, deterministic layout, and the full renderer/check suite remain green.
+- [x] #3 Existing relationship-kind separation, containment, labels, arrowheads, deterministic layout, and the full renderer/check suite remain green.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,10 +48,12 @@ Implemented the renderer-owned connection channel as relationship kind + compari
 Integrated source from 9edc7b91 onto e01d64e1 without replacing the newer fixed-radius, balanced-pin refinement, label or native-scene publication mechanisms. EndpointOptions now rejects faces per endpoint-specific channel, matching native port allocation. Kept column wrapping logic unchanged. Combined renderer suite: 213 pass, 0 fail, 6442 assertions; focused skill/install coverage: 237 pass. Consumer skill and evaluation coverage now describe channel sharing accurately.
 
 Final integration validation: bun run check passes lint, formatting, types, build and all 3363 module tests; system suite is 168 pass / 1 failure in the already-baselined codex-pane-context.test.ts voice-delivery test. Repository tests: 8 pass. All 22 real variants / 290 relationships render; Common-WebLib GwWurFMu has zero conflicting standing/direction shared runs (four existed before integration). Frontend rebuilt and server 3100 restarted; live Cloud Infrastructure redraw verified. Source simplification retained one channel function used by pin allocation and endpoint retries. Acceptance criterion 3 remains unchecked because the unrelated voice gate is still red.
+
+Gate now green: bun run check exit 0 on 2026-09-23 at 67ef9b45: lint, fmt, both type-checks, frontend build, 3461 module tests, 168 system, 8 repository, 19 serial-browser tests across 16 files (codex-live-voice and semantic-walkthrough-narration included). The voice-context failure that blocked AC #3 no longer reproduces.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Integrated opposing/differently-standing channel separation with fixed 8px bends and mandatory 12px arrow approaches, preserving balanced pins and column wrapping. Verified 213 renderer tests and 22 real variants, plus 3363 module tests. Build passes and live renderer refreshed; complete gate remains blocked by the known voice-context test.
+Relationships of opposing direction or different comparison standing no longer share a physical channel; same-kind, same-direction sharing is kept. Integrated with fixed 8px bends and mandatory 12px approaches. Verified by 213 renderer tests, 22 real variants (290 relationships) and the full gate: bun run check exit 0 on 2026-09-23 at 67ef9b45: lint, fmt, both type-checks, frontend build, 3461 module tests, 168 system, 8 repository, 19 serial-browser tests across 16 files (codex-live-voice and semantic-walkthrough-narration included).
 <!-- SECTION:FINAL_SUMMARY:END -->

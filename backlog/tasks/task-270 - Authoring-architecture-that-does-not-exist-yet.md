@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:10'
-updated_date: '2026-09-18 13:07'
+updated_date: '2026-09-23 00:54'
 labels: []
 dependencies: []
 references:
@@ -594,4 +594,6 @@ Every refusal on these paths must also say why, instead of `no variant called ""
   no current variant.
 - `reading.ts`:84 means every eval check that names no variant silently retargets
   on a draft-only board.
+
+User decided 2026-09-23: the bare address takes the reviewer's policy 3, the cascade. On a board with a current variant it opens that variant, exactly as today. Otherwise it opens the sole draft; otherwise the unique root draft (a draft with no draft ancestor); otherwise it refuses and names the candidates. The default lives in its own address resolution, never inside resolveVariant or currentVariant, which keep answering which variant is implemented.
 <!-- SECTION:NOTES:END -->
