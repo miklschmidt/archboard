@@ -1,11 +1,11 @@
 ---
 id: TASK-270
 title: Authoring architecture that does not exist yet
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-18 12:10'
-updated_date: '2026-09-23 01:39'
+updated_date: '2026-09-23 02:35'
 labels: []
 dependencies: []
 references:
@@ -41,11 +41,11 @@ The boundary was unstated before this task: README.md:19-21, CONTEXT.md:3-4 and 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An ADR records that existence is a fact about a variant and never about a node: a board for something nobody has built carries a draft variant and no current one, and the ADR says why a per-node marker was rejected
+- [x] #1 An ADR records that existence is a fact about a variant and never about a node: a board for something nobody has built carries a draft variant and no current one, and the ADR says why a per-node marker was rejected
 - [x] #2 A board document can represent having no current variant. `current` is a required top-level field today (skills/archboard/references/generated/semantic-board.schema.json:1265), and every reader of it either handles its absence or is shown not to be reachable for such a board
 - [x] #3 Creating a board can leave it without a current variant; `createBoardTransition` hard-codes the first variant as `lifecycle: "current"` today (src/runtime/semantic-board-store/lib/transitions.ts:171-177)
 - [x] #4 Adoption is the moment a planned board becomes the architecture that exists, and what adoption means for a board that had no current variant is defined and works
-- [ ] #5 A person opening a board nobody has built sees that from the board itself — in the pane and in the drawing — not only from a variant summary nothing reads
+- [x] #5 A person opening a board nobody has built sees that from the board itself — in the pane and in the drawing — not only from a variant summary nothing reads
 - [x] #6 A binding that is ahead of the code is either given its own standing by the checker or explicitly decided to be always wrong; BINDING_PATH_MISSING no longer offers only the two repairs that assume a binding went stale (src/runtime/semantic-board-store/lib/bindings.ts:112-117)
 - [x] #7 The runbook steps that read source — gather context, decide the parts, map relationships, the second source pass, walk the catalogue, compare — tell a planning author what stands in for a source line when the mechanism is intended rather than observed
 - [x] #8 The eval suite can express a planning scenario: `flask` and `sources` are not required of every scenario, check-clean is reconsidered where a planned part is bound, and architecturalTruth and behaviouralCompleteness have a planning substitute
@@ -607,4 +607,17 @@ Implementation 2026-09-23, commits 525c9f19..923e60f1 on main.
 - #8: flask/sources are optional together (planning runs use an empty checkout, revision null). The rubric has a 'Planning runs' section. current-untouched and reading.ts no longer pass vacuously or retarget silently. reading-fixture builds coherent boards.
 - #5 so far: the agent brief says nothing is built. The listing returns opens per board. The UI keys the bare row from opens, prefetches the opened variant by bare name, and the inspector reports the resolver's own reason. The visible 'nothing here is built' treatment in the pane and the drawing is pending the user's choice from rendered options.
 Full gate on the branch: bun run check exit 0 (3459 module, 169 system, 8 repository, all serial-browser owners).
+
+#5 visual, the user's choice 2026-09-23 (A + C, picked from rendered mockups):
+- C: the renderer frames every picture of a board with no current variant in a dashed frame labelled 'Planned — nothing on this board is built' (lib/svg/planned-frame.ts). The page grows by PLANNED_FRAME_MARGIN and the atlas moves with the drawing, so exports carry it and hit-testing still lands; the accessible name says it too. It uses neutral muted tokens, because the orange in the mock already means 'changed' and 'warning' in the drawing.
+- A: the header breadcrumb and the board's navigator row say 'Not built' (nothingBuiltOn in board-catalog, from the listing: variants listed and none current).
+- Verified in a scratch canvas at 1920x1080 over CDP: the planned board shows all three, and a board with a current variant shows none. semantic rasterize output checked in light and dark.
+- Owners: src/runtime/semantic-renderer/tests/planned-frame.test.ts (frame present only when nothing is built; every atlas box moves by one offset and keeps its size) and board-catalog.test.ts (nothingBuiltOn, bare-row keying on opens).
+- Full gate on main at c933afd8: bun run check exit 0 (3460 module, 169 system, 8 repository, all serial-browser owners).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A board can now describe architecture nobody has built. Such a board has no current variant: it is created with lifecycle draft, and adopting it records no predecessor and makes nothing historical. A board's bare name opens its current variant, else its only root draft, else refuses and names the candidates; that rule lives in addressedVariant, apart from 'which variant is implemented'. A draft's bindings are ahead of the code and are checked from adoption on. The skill teaches planning, and the eval suite can express planning scenarios without Flask. Such a board says so in the header, in the navigator, and in a dashed 'Planned' frame the renderer draws into every picture. ADR 0031 records the decisions. Verified by store, shared, renderer, UI and system owners, rendered checks in both themes, and the full gate.
+<!-- SECTION:FINAL_SUMMARY:END -->
