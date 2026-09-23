@@ -311,8 +311,8 @@ _Avoid_: playback, autoplay, slideshow
 One walkthrough presented from its first step to its last with nobody at the
 controls, captured to a video file with the voice explaining it. The page moves
 to the next step once the voice has finished the one on screen, and captures
-its own tab. A board made only to be recorded is discarded once its recording
-is written, and nothing else deletes a board.
+its own tab. A board made only to be recorded can be discarded once its
+recording is written (`--discard`); nothing else deletes a board.
 _Avoid_: playback, autoplay, screencast, export
 
 **Subtitle**:
