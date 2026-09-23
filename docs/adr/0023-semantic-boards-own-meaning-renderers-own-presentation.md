@@ -214,6 +214,10 @@ the pane said so, never because the canvas asked for it. A position no request
 put there is a person's hand, and the narrator is told so that the narration
 follows the picture. Nothing about a walkthrough is written by narrating it.
 
+Since 2026-09-23 no narrator asks for steps: the user steps by hand. The canvas
+sends `pane_present` once, to open the first step when Narrate is pressed, and
+every position the pane then reports is what the voice model is told.
+
 ## Delivery
 
 The later TASK-203 decisions refine consumer vocabulary and appearance in

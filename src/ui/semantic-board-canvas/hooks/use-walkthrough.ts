@@ -51,8 +51,8 @@ interface NarrativePlace {
 interface DrivenPlace {
 	/** Names the request. */
 	readonly request: string;
-	/** The walkthrough to present, or null to leave the presentation. */
-	readonly walkthrough: string | null;
+	/** The walkthrough to present. */
+	readonly walkthrough: string;
 	/** Which beat of it, counted from zero. */
 	readonly beat: number;
 }
@@ -177,8 +177,7 @@ function unspent(driven: DrivenPlace | null | undefined, standing: Standing): Dr
  * @returns The standing that answers it.
  */
 function standingAsked(asked: DrivenPlace, board: string): Standing {
-	const place =
-		asked.walkthrough === null ? null : { board, walkthrough: asked.walkthrough, beat: asked.beat };
+	const place = { board, walkthrough: asked.walkthrough, beat: asked.beat };
 	return { place, answering: asked.request, handled: asked.request };
 }
 

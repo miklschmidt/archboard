@@ -124,15 +124,14 @@ type SemanticPanePresentation = z.infer<typeof SemanticPanePresentationSchema>;
  * What the canvas asks of a pane presenting a walkthrough, over its socket.
  *
  * Addressed to the board the pane is showing, like every board message, so a
- * pane that has moved on ignores it. A null walkthrough asks the pane to leave
- * the presentation.
+ * pane that has moved on ignores it.
  */
 const PanePresentRequestSchema = z
 	.object({
 		type: z.literal("pane_present"),
 		/** Names this request, so the pane's report can say which one it answers. */
 		request: z.string().min(1).max(128),
-		walkthrough: z.string().min(1).max(64).nullable(),
+		walkthrough: z.string().min(1).max(64),
 		beat: z.int().min(0),
 	})
 	// Not strict: the socket adds the board key every board message carries.

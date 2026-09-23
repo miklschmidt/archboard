@@ -24,10 +24,17 @@ interface SeedEdge {
 	readonly label?: string;
 }
 
+/** One walkthrough of it, told in steps. */
+interface SeedWalkthrough {
+	readonly name: string;
+	readonly beats: readonly { readonly heading: string; readonly body: string }[];
+}
+
 /** What a seeded board says. */
 interface SeedBoard {
 	readonly nodes: readonly SeedNode[];
 	readonly edges?: readonly SeedEdge[];
+	readonly walkthroughs?: readonly SeedWalkthrough[];
 }
 
 /** How a test reaches the canvas's JSON routes. */
@@ -66,7 +73,12 @@ async function seedSemanticBoard(
 			body: {
 				board,
 				origin: "agent",
-				create: { level: "system", nodes: content.nodes, edges: content.edges ?? [] },
+				create: {
+					level: "system",
+					nodes: content.nodes,
+					edges: content.edges ?? [],
+					...(content.walkthroughs === undefined ? {} : { walkthroughs: content.walkthroughs }),
+				},
 			},
 		},
 	);

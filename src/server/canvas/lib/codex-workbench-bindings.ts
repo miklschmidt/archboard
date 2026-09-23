@@ -20,10 +20,6 @@ import {
 } from "@/server/canvas/lib/codex-workbench-dynamic-owners";
 import { createGatewayBinding } from "@/server/canvas/lib/codex-workbench-gateway-binding";
 import { createOutcomeReportPort } from "@/server/canvas/lib/codex-workbench-outcome-report";
-import {
-	coordinatorTurnId,
-	voiceLinkedPaneId,
-} from "@/server/canvas/lib/codex-workbench-voice-pane";
 import { voiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
 import {
 	readyCoordinatorThread,
@@ -324,25 +320,6 @@ function currentBindingReaders(
 				 * @returns The turn, or null.
 				 */
 				expectedTurnId: () => owners.currentCoordinatorCall?.turnId ?? null,
-			},
-			presentation: {
-				/**
-				 * Present one walkthrough step in the pane the voice session is linked through.
-				 * The pane is proven here, from the ready workhorse link, never named by the model.
-				 * @param request The step, the walkthrough when named, and the call's signal.
-				 * @returns The step once it has arrived, or why it is not on screen.
-				 */
-				presentStep: (request) => {
-					const paneId = voiceLinkedPaneId(created);
-					if (paneId === null) {
-						return Promise.resolve({
-							tag: "refused",
-							reason: "not_ready",
-							message: "No pane is linked to this voice session.",
-						});
-					}
-					return host.presentStep({ ...request, paneId, turnId: coordinatorTurnId(owners) });
-				},
 			},
 		}),
 		coordinatorCall: {

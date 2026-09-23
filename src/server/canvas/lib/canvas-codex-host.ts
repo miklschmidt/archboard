@@ -25,10 +25,7 @@ import {
 } from "@/server/canvas/lib/codex-semantic-input";
 import { waitForTargetsWith } from "@/server/canvas/lib/codex-target-wait";
 import { checkoutRoot } from "@/server/canvas/lib/module-paths";
-import {
-	presentStepInCanvasPane,
-	subscribeNarrationChanges,
-} from "@/server/canvas/lib/walkthrough-narration";
+import { subscribeNarrationChanges } from "@/server/canvas/lib/walkthrough-narration";
 import {
 	aggregateOf,
 	boardForPane,
@@ -278,7 +275,6 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				);
 			},
 		},
-		presentStep: presentStepInCanvasPane,
 		narrationChanges: subscribeNarrationChanges,
 		/**
 		 * Every pane on screen, in reading order.

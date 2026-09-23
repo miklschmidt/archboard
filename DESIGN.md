@@ -42,8 +42,7 @@ nothing else: no developer items, no JSON, and no Codex startup context
 (`includeStartupContext` is false, because Codex would otherwise prepend a
 `<startup_context>` of recent threads and a workspace scan to the prompt).
 `realtimeStartInstructions` carries only what a voice session adds for the
-coordinator, the channel rule and, when narrating, the presentation
-instructions; Codex renders it into the coordinator's world state on every
+coordinator, the channel rule; Codex renders it into the coordinator's world state on every
 turn, so it never repeats the developer document. A compact role-bearing
 semantic brief (repository, workhorse, coordinator, board, pane, version,
 selection, claim, doing state, change cursor, board description) is captured at
@@ -136,41 +135,26 @@ sequence are part of the authority. Target, effect,
 child epoch, realtime session and expiry are compare-and-swapped before
 one-time execution. A request that blocks the coordinator stays visual-only.
 
-A walkthrough is narrated as a talk through the same constraint (TASK-251). A
-step cannot reach the voice model as data, so the loop is paced by the voice
-model and carried by the coordinator. Starting voice to narrate a walkthrough
-(the Narrate control on a presented walkthrough) sends the chosen walkthrough
-with `realtimeStart`; the server reads it from the board the pane is showing
-and tells both models only which walkthrough it is, by name: the voice `prompt`
-gains how to pace the talk and `realtimeStartInstructions` the coordinator's
-part. Neither is given the steps, so a step cannot be narrated before the pane
-is on it.
-The session's one initial item is the user's request itself (pressing
-Narrate is asking for the talk), so the full-duplex voice model has something
-to answer at once and paces the whole talk itself: it asks the coordinator for step 1; the
-coordinator calls the typed `archboard_voice.present_step` with no step, because
-a V3 delegation carries the latest user-side item replayed (usually the
-user's last utterance, sometimes the opening request the host put in as the
-user) and never words the voice model composed, so only the host knows which step comes next (it names the
-walkthrough when voice was not started in this mode, and a step only when the
-user asked for one); the
-host supplies the pane, board and variant, asks the pane for the step, and
-answers only once the pane's own report says the step has finished arriving,
-or with the reason it could not; the coordinator hands the step back as
-speakable prose; the voice model explains it and asks for the next step only
-when it has finished, so an interruption simply delays that request. The
-position stays the browser's: the pane is asked, and its report is the
-acknowledgement. A step the user chooses by hand, or leaving the
-presentation, is injected into the coordinator's history and appended to the
-voice session with the catalogue's discipline (serialized, deduplicated, never
-retried). In a V3 (full-duplex) session appended text is quiet context whatever
-its role, and what the voice model says is what arrives as speakable text, so a
-by-hand step is handed to it through `realtimeAppendSpeech` in the coordinator's
-hand-over words and it explains that step now; leaving is quiet context. A
-narration starts with `delegationAckFiller` off, so a step is not preceded by
-the Realtime API's "one moment". The silence between the end of one
-explanation and the start of the next is measured by the canvas and read from
-`GET /api/voice/narration-timing`.
+A walkthrough is narrated through the same constraint (TASK-251): the user
+steps the presentation by hand and the voice explains the step on screen. A V3
+delegation carries the latest user-side item replayed (usually the user's last
+utterance) and never words the voice model composed, which is too little for
+the voice model to steer a talk, so it never asks for a step. Pressing Narrate
+beside a walkthrough sends it with `realtimeStart`; the server reads it from
+the board the pane is showing, and the voice `prompt` gains only its name and
+how to explain a step it is handed. The coordinator is told nothing of it, and
+the session opens with no initial item. While Codex starts the session the host
+asks the pane for step 1 (`pane_present`), and once the pane's own report says
+the step has arrived it hands the step to the voice model through
+`realtimeAppendSpeech`, serialized behind the start, so the voice begins on
+step 1 without being spoken to and without a coordinator turn. Every step the
+user moves to by hand after that is handed over the same way, in the same
+words, and leaving is handed over as a line the voice model acknowledges before
+it stops. In a V3 session appended text is quiet context whatever its role, and
+what the voice model says is what arrives as speakable text, which is why both
+travel as speech. Nothing is retried: the next step says where the picture is.
+After explaining a step the voice waits for the user. The position stays the
+browser's: the pane is asked once, and its report is the acknowledgement.
 
 ### 3. On-demand query — CLI
 

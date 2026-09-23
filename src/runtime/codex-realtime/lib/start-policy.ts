@@ -5,24 +5,10 @@ import type {
 import type { SessionParams } from "@/runtime/codex-session";
 
 import {
-	coordinatorPresentationInstructions,
 	voicePresentationPrompt,
 	type RealtimePresentation,
 } from "@/runtime/codex-realtime/lib/presentation-mode";
 import { ARCHBOARD_VOICE_PROMPT } from "@/runtime/codex-realtime/lib/voice-prompt";
-
-/**
- * What pressing Narrate asks for, as the session's opening request.
- *
- * It has two readers. The voice model takes it as what the user wants, which is why it begins
- * without being spoken to. And because a handoff's text is the latest user-side item replayed,
- * the coordinator receives this same sentence as the input of every handoff until the user
- * really speaks; so it is worded to mean the right thing each time it arrives: move on to the
- * next step. It names no step, because a version that said "starting with step 1" made the
- * coordinator present step 1 twice. The user never says it, so it is in nobody's transcript.
- */
-const NARRATE_REQUEST =
-	"Please present this walkthrough to me as a talk, one step at a time. Each time you finish narrating a step, hand off to move on to the next step, and keep going like that until the walkthrough is finished.";
 
 /**
  * How the coordinator says which of its messages the voice model speaks.
@@ -68,27 +54,21 @@ export function createRealtimeStartParams(input: {
 	readonly sdp: string;
 	readonly presentation?: RealtimePresentation | null;
 }): SessionParams<"thread/realtime/start"> {
-	// Presentation mode adds to both texts and replaces neither: the voice is
-	// still the board assistant between steps, and the coordinator still does
-	// board work when asked.
+	// A narration adds to the voice prompt and replaces none of it: the voice is still the board
+	// assistant between steps. The coordinator is told nothing of it, since every step reaches the
+	// voice model from the host and a question asked during a narration is an ordinary request.
 	const narrated = input.presentation?.name ?? null;
-	const coordinatorMode =
-		narrated === null ? "" : `\n${coordinatorPresentationInstructions(narrated)}`;
 	return {
 		threadId: input.threadId,
 		clientManagedHandoffs: false,
-		// A talk is not a chat: the Realtime API's "one moment" before every step is noise, and the
-		// user is watching the pane glide to the step meanwhile. An ordinary session keeps it.
-		delegationAckFiller: narrated === null,
+		delegationAckFiller: true,
 		flushTranscriptTailOnSessionEnd: true,
 		codexResponsesAsItems: false,
 		codexResponseHandoffMode: "bemTags",
 		outputModality: "audio",
 		includeStartupContext: false,
-		// Pressing Narrate is the user asking for the talk, so the session opens with that
-		// request already made: the voice model has something to answer at once.
-		initialItems: narrated === null ? [] : [{ role: "user", text: NARRATE_REQUEST }],
-		realtimeStartInstructions: `${COORDINATOR_CHANNEL_INSTRUCTIONS}${coordinatorMode}`,
+		initialItems: [],
+		realtimeStartInstructions: COORDINATOR_CHANNEL_INSTRUCTIONS,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 		prompt:
 			narrated === null

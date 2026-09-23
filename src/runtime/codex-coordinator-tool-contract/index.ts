@@ -74,7 +74,6 @@ export {
 	QueueReorderInputSchema,
 	QueueStartInputSchema,
 	QueueUpdateInputSchema,
-	PresentStepInputSchema,
 	ResolveSpokenApprovalInputSchema,
 	SteerWorkhorseInputSchema,
 	parseCoordinatorToolInput,
@@ -87,7 +86,6 @@ export type {
 	DelegateToWorkhorseInput,
 	InspectWorkhorseInput,
 	ManageWorkhorseQueueInput,
-	PresentStepInput,
 	QueueOperation,
 	ResolveSpokenApprovalInput,
 	SteerWorkhorseInput,
@@ -121,8 +119,6 @@ export {
 	InspectWorkhorseResultSchema,
 	ManageWorkhorseQueueResultSchema,
 	parseCoordinatorToolResult,
-	PRESENT_STEP_RESULT_LIMITS,
-	PresentStepResultSchema,
 	ResolveSpokenApprovalResultSchema,
 	SteerWorkhorseResultSchema,
 } from "@/runtime/codex-coordinator-tool-contract/lib/tool-results";
@@ -130,7 +126,6 @@ export type {
 	DelegateToWorkhorseResult,
 	InspectWorkhorseResult,
 	ManageWorkhorseQueueResult,
-	PresentStepResult,
 	ResolveSpokenApprovalResult,
 	SteerWorkhorseResult,
 } from "@/runtime/codex-coordinator-tool-contract/lib/tool-results";

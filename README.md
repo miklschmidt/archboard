@@ -31,7 +31,8 @@ and keeping architectural nodes connected to the code they represent.
   somebody picked out.
 - Binds nodes to repositories and source paths, so a node resolves to the code
   it stands for.
-- Renders deterministic SVG and PNG, and paces a narrated walkthrough.
+- Renders deterministic SVG and PNG, and narrates a walkthrough aloud as the
+  user steps through it.
 - Exposes the canvas through an agent-facing CLI and a loopback REST API for
   the application and local integrations.
 

@@ -53,7 +53,7 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
 			workhorseSha256: "6243da412a5902b929f62180b421dee0105e91ec9938a0a6d95e8e296a3634eb",
-			voiceSha256: "7649189618d90289e4e2fbd113124db417185244002bf67ddbf632e8755db4f4",
+			voiceSha256: "7c14fcdc624241e02de9267be092876ebfb780c7c7869acd82ea89f807264b97",
 		});
 		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");
@@ -75,7 +75,6 @@ describe("coordinator namespace manifests", () => {
 		]);
 		expect(ARCHBOARD_VOICE_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
 			"resolve_spoken_approval",
-			"present_step",
 		]);
 	});
 
@@ -238,23 +237,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 			"manage_workhorse_queue",
 			"steer_workhorse",
 		]);
-		expect(Object.keys(VOICE_TOOL_INPUT_SCHEMAS)).toEqual([
-			"resolve_spoken_approval",
-			"present_step",
-		]);
-		// The pane and the board are the host's: a step is all the model may name, beside the
-		// walkthrough the first time.
-		expect(
-			parseCoordinatorToolInput("archboard_voice", "present_step", { step: 2, walkthrough: "w1" }),
-		).toEqual({ step: 2, walkthrough: "w1" });
-		// No step means the next one, which only the host knows.
-		expect(parseCoordinatorToolInput("archboard_voice", "present_step", {})).toEqual({});
-		expect(() =>
-			parseCoordinatorToolInput("archboard_voice", "present_step", { step: 0 }),
-		).toThrow();
-		expect(() =>
-			parseCoordinatorToolInput("archboard_voice", "present_step", { step: 1, pane: "left" }),
-		).toThrow();
+		expect(Object.keys(VOICE_TOOL_INPUT_SCHEMAS)).toEqual(["resolve_spoken_approval"]);
 
 		const values = [
 			[

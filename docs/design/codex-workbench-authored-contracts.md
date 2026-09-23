@@ -782,7 +782,7 @@ Every start uses a new host-minted `realtimeSessionId` and these choices:
 	"outputModality": "audio",
 	"includeStartupContext": false,
 	"initialItems": [],
-	"realtimeStartInstructions": "<voice channel rule, plus the presentation instructions when narrating>",
+	"realtimeStartInstructions": "<voice channel rule>",
 	"realtimeEndInstructions": "Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.",
 	"prompt": null,
 	"realtimeSessionId": "<new-opaque-id>",
@@ -798,6 +798,20 @@ selector, persistence, per-session override, or fallback choice.
 The start response is `{}`. The SDP answer comes only from a matching
 `thread/realtime/sdp` notification. Readiness additionally requires matching
 `thread/realtime/started` child, thread, realtime-session, and version identity.
+
+A start that narrates a walkthrough (TASK-251) differs only in `prompt`, which
+gains the walkthrough's name and how to explain a step it is handed; the
+coordinator is told nothing of it. While Codex starts the session the host asks
+the pane for the first step (`pane_present`): the pane in the browser the
+session was started from, by the client id the start carries, because a shell
+id such as "A" is not exact when a second browser holds the canvas too
+(TASK-294). Once the pane's own report
+says the step arrived it hands the step to the voice model through
+`thread/realtime/appendSpeech`, serialized behind the start. Every step the user
+moves to by hand after that is handed over the same way, and leaving is handed
+over as one line the voice model acknowledges. Nothing is retried: the next
+step says where the picture is. No coordinator turn is started for any of it.
+
 WebSocket transport, `appendAudio`, and `outputAudio` are outside this product
 contract.
 
@@ -925,16 +939,6 @@ The `ok.value` object is closed per tool:
 	"resolve_spoken_approval": {
 		"verdict": "accept|decline",
 		"settlement": "delivered|not_delivered|outcome_unknown"
-	},
-	"present_step": {
-		"walkthroughId": "<id>",
-		"walkthroughName": "<name>",
-		"step": 1,
-		"of": 1,
-		"heading": "<text>",
-		"body": "<text>",
-		"subjects": ["<name>"],
-		"view": "<name>|null"
 	}
 }
 ```
@@ -1806,7 +1810,7 @@ accepts no other property.
 {
 	"type": "namespace",
 	"name": "archboard_voice",
-	"description": "Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn, and present a walkthrough step in the voice-linked pane. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
+	"description": "Voice-session tools the host validates: resolve the sole spoken binary approval from a later ordinary coordinator turn. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	"tools": [
 		{
 			"type": "function",
@@ -1819,47 +1823,10 @@ accepts no other property.
 				"additionalProperties": false
 			},
 			"deferLoading": false
-		},
-		{
-			"type": "function",
-			"name": "present_step",
-			"description": "Present a step of the walkthrough in the voice-linked pane and answer only once that step has finished arriving on screen, with the step's heading, body and subjects to hand to the voice model as speakable prose. Call it with no step to present the next step: the host knows which step was presented last, or which one the person moved to by hand, and the first call of a narration presents step 1. Pass step only when the person asked for a particular step. The host supplies the pane, board and variant. Name the walkthrough by id or name on the first call unless voice started in presentation mode; omit it afterwards. A refusal says why no step is on screen, including that the walkthrough is complete.",
-			"inputSchema": {
-				"type": "object",
-				"properties": {
-					"step": { "type": "integer", "minimum": 1, "maximum": 1000 },
-					"walkthrough": { "type": "string", "minLength": 1, "maxLength": 120 }
-				},
-				"required": [],
-				"additionalProperties": false
-			},
-			"deferLoading": false
 		}
 	]
 }
 ```
-
-`present_step` (TASK-251) moves the voice-linked pane's walkthrough
-presentation to one step and answers only once that pane's own report says the
-step has finished arriving. Its authority target is `host_bound_voice_pane`:
-the pane, board and variant are host links (`realtimeSessionId`, `paneId`,
-`boardKey`) and never arguments. The pane is the one in the browser the voice
-session was started from, by that pane's client id, which the start carries
-as the command's browser id: a shell id such as "A" is not exact when a second
-browser holds the canvas too (TASK-294). The step is usually the host's too: a V3
-delegation carries the latest user-side item replayed (usually the person's last
-utterance) and never words the voice model composed, so the coordinator is not told which step is wanted, and a call with
-no `step` presents the one after where the narration stands (the last step
-handed over, or the one the person moved to by hand). The model names a step
-only when the person asked for one and, until the session knows which
-walkthrough is being narrated, the walkthrough by id or name. Nobody approves
-it and it writes nothing, so a cancelled call is refused rather than left
-unknown. It is refused `not_ready` with no voice-linked pane on a board,
-`not_loaded` when the board cannot be read, `invalid_call` for a walkthrough or
-step the board does not have, `busy` when a person stepped by hand or a later
-step replaced it, and `expired` when the pane did not report arrival within
-`PRESENTATION_ARRIVAL_TIMEOUT_MS`. `heading` is at most 512 characters, `body`
-4,096, names 200, and `subjects` 32 entries; a longer body is cut by the host.
 
 `resolve_spoken_approval` is never called from realtime directly. After the
 effect prompt, the host arms one immutable eligible request only from the next

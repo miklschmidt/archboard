@@ -33,18 +33,10 @@ export {
 	type PresentOutcome,
 } from "@/server/canvas/lib/pane-presentation";
 export {
-	presentWalkthroughStep,
-	type PresentStepParts,
-} from "@/server/canvas/lib/present-walkthrough-step";
-export {
 	bindVoicePane,
 	narrationFor,
-	nextCountsFrom,
-	noteNarratedWalkthrough,
-	presentStepInCanvasPane,
 	subscribeNarrationChanges,
 } from "@/server/canvas/lib/walkthrough-narration";
-export { createNarrationTiming } from "@/server/canvas/lib/narration-timing";
 export { createVoiceStartTrace } from "@/server/canvas/lib/voice-start-trace";
 export { watchTranscriptChanges } from "@/server/canvas/lib/transcript-changes";
 export {

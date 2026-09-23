@@ -84,14 +84,12 @@ type AuthorityTarget =
 	| "host_bound_workhorse"
 	| "host_created_workhorse_queue"
 	| "host_proven_workhorse_turn"
-	| "host_validated_spoken_approval"
-	| "host_bound_voice_pane";
+	| "host_validated_spoken_approval";
 const AuthorityTargetSchema = z.enum([
 	"host_bound_workhorse",
 	"host_created_workhorse_queue",
 	"host_proven_workhorse_turn",
 	"host_validated_spoken_approval",
-	"host_bound_voice_pane",
 ]);
 
 type RequiredLink =
@@ -111,9 +109,7 @@ type RequiredLink =
 	| "finalUserItemId"
 	| "finalUserSequence"
 	| "effectFingerprint"
-	| "expiry"
-	| "paneId"
-	| "boardKey";
+	| "expiry";
 const RequiredLinkSchema = z.enum([
 	"child",
 	"epoch",
@@ -132,8 +128,6 @@ const RequiredLinkSchema = z.enum([
 	"finalUserSequence",
 	"effectFingerprint",
 	"expiry",
-	"paneId",
-	"boardKey",
 ]);
 
 const CoordinatorToolContractSchema = z
@@ -190,14 +184,6 @@ const VOICE_LINKS = [
 	"expiry",
 ] as const;
 
-/** The pane and board a presented step lands on are the host's; the model names only the step. */
-const PRESENT_STEP_LINKS = [
-	...TOOL_CORRELATION_LINKS,
-	"realtimeSessionId",
-	"paneId",
-	"boardKey",
-] as const;
-
 const INSPECT_REFUSALS = [
 	"invalid_call",
 	"not_ready",
@@ -235,23 +221,6 @@ const VOICE_REFUSALS = [
 	"approval_declined",
 	"expired",
 	"unsupported",
-] as const satisfies readonly DynamicToolRefusalReason[];
-
-/**
- * How presenting a step is refused: no voice-linked pane or no such walkthrough or step
- * (`not_ready`, `invalid_call`), a person with a hand on the keys (`busy`), and a step that never
- * arrived (`expired`). Nobody approves it, so it is never declined.
- */
-const PRESENT_STEP_REFUSALS = [
-	"invalid_call",
-	"not_ready",
-	"not_loaded",
-	"system_error",
-	"stale_child",
-	"prior_epoch",
-	"unknown_provenance",
-	"busy",
-	"expired",
 ] as const satisfies readonly DynamicToolRefusalReason[];
 
 /**
@@ -313,12 +282,6 @@ const ARCHBOARD_VOICE_TOOL_CONTRACTS = deepFreeze([
 		requiredLinks: [...VOICE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.resolve_spoken_approval },
 		refusalErrors: [...VOICE_REFUSALS],
-	}),
-	contract("archboard_voice", "present_step", {
-		authorityTarget: "host_bound_voice_pane",
-		requiredLinks: [...PRESENT_STEP_LINKS],
-		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.present_step },
-		refusalErrors: [...PRESENT_STEP_REFUSALS],
 	}),
 ] satisfies readonly CoordinatorToolContract[]);
 

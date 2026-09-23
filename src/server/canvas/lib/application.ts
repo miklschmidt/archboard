@@ -17,7 +17,6 @@ import { mountMutationAdmission, trackMutationWork } from "@/server/canvas/lib/m
 import { mountPaneRoutes } from "@/server/canvas/lib/pane-routes";
 import { mountSemanticLockRoutes } from "@/server/canvas/lib/semantic-lock-routes";
 import { mountSemanticBoardRoutes } from "@/server/canvas/lib/semantic-board-routes";
-import { mountNarrationTimingRoute } from "@/server/canvas/lib/narration-timing";
 import { mountVoiceStartTraceRoute } from "@/server/canvas/lib/voice-start-trace";
 import { mountSemanticPaneContextRoutes } from "@/server/canvas/lib/semantic-pane-context";
 import { watchSemanticBoardFiles } from "@/server/canvas/lib/semantic-disk-watch";
@@ -105,7 +104,6 @@ mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
 mountSemanticBoardRoutes(app);
 mountSemanticPaneContextRoutes(app);
-mountNarrationTimingRoute(app);
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one canvas, and the lease says who may write

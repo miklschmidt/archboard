@@ -64,27 +64,12 @@ const SteerWorkhorseInputSchema = z.object({ input: z.string().min(1).max(4_096)
 const ResolveSpokenApprovalInputSchema = z
 	.object({ verdict: z.enum(["accept", "decline"]) })
 	.strict();
-/**
- * Which step of a walkthrough to present, counted from one as a person says it; omitted for the
- * next step. The next step is the host's to know, not the model's: in a full-duplex voice session
- * a delegation carries the latest user-side item replayed, never words the voice model composed, so the
- * coordinator is not told which step is wanted (Codex 0.155.1, `delegation.created`). The
- * walkthrough is named by id or name only until the voice session knows which one is being
- * presented; the pane, board and variant are the host's and never arguments.
- */
-const PresentStepInputSchema = z
-	.object({
-		step: z.int().min(1).max(1_000).optional(),
-		walkthrough: z.string().min(1).max(120).optional(),
-	})
-	.strict();
 
 type InspectWorkhorseInput = z.infer<typeof InspectWorkhorseInputSchema>;
 type DelegateToWorkhorseInput = z.infer<typeof DelegateToWorkhorseInputSchema>;
 type ManageWorkhorseQueueInput = z.infer<typeof ManageWorkhorseQueueInputSchema>;
 type SteerWorkhorseInput = z.infer<typeof SteerWorkhorseInputSchema>;
 type ResolveSpokenApprovalInput = z.infer<typeof ResolveSpokenApprovalInputSchema>;
-type PresentStepInput = z.infer<typeof PresentStepInputSchema>;
 
 const WORKHORSE_TOOL_INPUT_SCHEMAS = Object.freeze({
 	inspect_workhorse: InspectWorkhorseInputSchema,
@@ -95,7 +80,6 @@ const WORKHORSE_TOOL_INPUT_SCHEMAS = Object.freeze({
 
 const VOICE_TOOL_INPUT_SCHEMAS = Object.freeze({
 	resolve_spoken_approval: ResolveSpokenApprovalInputSchema,
-	present_step: PresentStepInputSchema,
 } satisfies Record<VoiceToolName, z.ZodTypeAny>);
 
 /**
@@ -176,13 +160,11 @@ export {
 	ManageWorkhorseQueueInputSchema,
 	SteerWorkhorseInputSchema,
 	ResolveSpokenApprovalInputSchema,
-	PresentStepInputSchema,
 	type InspectWorkhorseInput,
 	type DelegateToWorkhorseInput,
 	type ManageWorkhorseQueueInput,
 	type SteerWorkhorseInput,
 	type ResolveSpokenApprovalInput,
-	type PresentStepInput,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
 	VOICE_TOOL_INPUT_SCHEMAS,
 	parseWorkhorseToolInput,

@@ -20,21 +20,11 @@ import {
 	invokeWorkhorse,
 	isMutation,
 	issueOperationIdentity,
-	presentStepResponse,
 	responseForWorkhorseError,
 	spokenResponse,
 	workhorseResponse,
 	type IssuedOperationIdentity,
 } from "@/runtime/codex-coordinator-tools/lib/tool-execution";
-
-/** The voice call that settles a spoken approval. */
-type ValidatedSpokenApprovalCall = Extract<
-	ValidatedVoiceCall,
-	{ readonly tool: "resolve_spoken_approval" }
->;
-
-/** The voice call that presents a walkthrough step. */
-type ValidatedPresentStepCall = Extract<ValidatedVoiceCall, { readonly tool: "present_step" }>;
 
 /** What the executor needs from the dispatcher beyond its options. */
 interface ExecutionContext {
@@ -129,7 +119,7 @@ function cancelledSpokenResult(
  */
 function spokenResult(
 	state: CallState,
-	validated: ValidatedSpokenApprovalCall,
+	validated: ValidatedVoiceCall,
 	result: Awaited<ReturnType<CodexCoordinatorToolsOptions["spokenApproval"]["resolve"]>>,
 	spokenOperation: IssuedOperationIdentity | null,
 ): CoordinatorToolDispatchResult {
@@ -204,57 +194,10 @@ function workhorseResult(
 	return complete(workhorseResponse(context.options, validated.tool, operation, result), true);
 }
 
-/**
- * Present one walkthrough step and shape what came of it. Presenting writes nothing, so a call
- * cancelled while the pane was still on its way is refused rather than left unknown, and the
- * wait on the pane stops with it.
- * @param context - The execution context.
- * @param state - The wire call.
- * @param validated - The validated call.
- * @param operation - The issued operation identity.
- * @returns The frozen dispatch result.
- */
-async function presentStep(
-	context: ExecutionContext,
-	state: CallState,
-	validated: ValidatedPresentStepCall,
-	operation: IssuedOperationIdentity,
-): Promise<CoordinatorToolDispatchResult> {
-	const stop = new AbortController();
-	void state.cancellation.then(() => stop.abort());
-	try {
-		const outcome = await context.options.presentation.presentStep({
-			input: validated.input,
-			signal: stop.signal,
-		});
-		if (state.cancelled !== null) {
-			return complete(
-				refusedResponse(
-					"invalid_call",
-					"The coordinator tool call was cancelled before the step could be reported.",
-					true,
-				),
-				true,
-			);
-		}
-		return complete(presentStepResponse(outcome, operation), true);
-	} catch (error) {
-		return complete(
-			refusedResponse("system_error", `The step could not be presented: ${errorMessage(error)}`),
-			true,
-		);
-	}
-}
-
 /** What one validated call needs before it runs, or the refusal that stops it first. */
 type CallPlan =
 	| { readonly kind: "refused"; readonly result: CoordinatorToolDispatchResult }
-	| { readonly kind: "voice"; readonly validated: ValidatedSpokenApprovalCall }
-	| {
-			readonly kind: "presentation";
-			readonly validated: ValidatedPresentStepCall;
-			readonly operation: IssuedOperationIdentity;
-	  }
+	| { readonly kind: "voice"; readonly validated: ValidatedVoiceCall }
 	| {
 			readonly kind: "workhorse";
 			readonly validated: ValidatedWorkhorseCall;
@@ -269,14 +212,11 @@ type CallPlan =
  * @returns The plan.
  */
 function planCall(context: ExecutionContext, validated: ValidatedCoordinatorToolCall): CallPlan {
-	if (validated.tool === "resolve_spoken_approval") {
+	if (validated.namespace === "archboard_voice") {
 		return { kind: "voice", validated };
 	}
 	try {
-		const operation = issueOperationIdentity(context.options);
-		return validated.tool === "present_step"
-			? { kind: "presentation", validated, operation }
-			: { kind: "workhorse", validated, operation };
+		return { kind: "workhorse", validated, operation: issueOperationIdentity(context.options) };
 	} catch (error) {
 		return {
 			kind: "refused",
@@ -289,26 +229,6 @@ function planCall(context: ExecutionContext, validated: ValidatedCoordinatorTool
 			),
 		};
 	}
-}
-
-/**
- * Run one voice-namespace call: settle the spoken approval, or present the step.
- * @param context - The execution context.
- * @param state - The wire call.
- * @param plan - The planned voice call.
- * @returns The frozen dispatch result.
- */
-async function executeVoiceCall(
-	context: ExecutionContext,
-	state: CallState,
-	plan: Extract<CallPlan, { readonly kind: "voice" | "presentation" }>,
-): Promise<CoordinatorToolDispatchResult> {
-	if (plan.kind === "presentation") {
-		return presentStep(context, state, plan.validated, plan.operation);
-	}
-	const spokenOperation = captureSpokenOperationIdentity(context.options);
-	const result = await context.options.spokenApproval.resolve(state.request);
-	return spokenResult(state, plan.validated, result, spokenOperation);
 }
 
 /**
@@ -340,8 +260,10 @@ async function executeCall(
 	}
 
 	state.operationAttempted = true;
-	if (plan.kind !== "workhorse") {
-		return executeVoiceCall(context, state, plan);
+	if (plan.kind === "voice") {
+		const spokenOperation = captureSpokenOperationIdentity(context.options);
+		const result = await context.options.spokenApproval.resolve(state.request);
+		return spokenResult(state, plan.validated, result, spokenOperation);
 	}
 	try {
 		const result = await invokeWorkhorse(

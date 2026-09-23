@@ -16,7 +16,6 @@ import {
 	pollUntil,
 	registerCanvasBase,
 	runCanvasCli,
-	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import {
 	openWithControlledVoiceMedia,
@@ -33,21 +32,23 @@ import {
 	BOARD_NAME_EXPRESSION,
 	PANE_SECTIONS,
 	PANE_TABS,
-	PRESENTATION_BAR,
-	STAGE_ROOT,
 	clickTab,
 	stageIsFullscreen,
 } from "./support/shell-dom.ts";
 import { emulateMedia } from "./support/shell-render-matrix.ts";
+import {
+	EXPANDED_CONTROLS,
+	PRESENTATION_CONTROLS,
+	focusedControl,
+	layoutSnapshot,
+	presentationSnapshot,
+	presentedStep,
+	voiceSnapshot,
+} from "./support/voice-page.ts";
 
 const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
 const RAW_COORDINATOR_THREAD_ID = "thread-1";
-/** The expanded voice controls in the workbench side panel. */
-const EXPANDED_CONTROLS = 'section[aria-label="Agent workbench"] [data-voice-controls="expanded"]';
-/** The compact voice controls in the fullscreen presentation bar. */
-const PRESENTATION_CONTROLS = `${PRESENTATION_BAR} [data-voice-controls="compact"]`;
-
 interface FixtureRecord {
 	readonly kind?: string;
 	readonly method?: string;
@@ -55,110 +56,8 @@ interface FixtureRecord {
 	readonly params?: Record<string, unknown>;
 }
 
-/** The voice session as the workbench presents it. */
-interface VoiceSnapshot {
-	/** The expanded controls' state words. */
-	readonly stateText: string;
-	/** The controls the session offers, by accessible name. */
-	readonly controls: string[];
-	/** The output wave's state text, from its live region. */
-	readonly waveText: string | null;
-	/** animated or static, from the wave's own marker. */
-	readonly wavePresentation: string | null;
-	readonly transcript: string;
-	readonly context: string;
-	/** What the subtitle over the picture reads, or null when there is none. */
-	readonly subtitle: string | null;
-}
-
-interface LayoutSnapshot {
-	readonly viewport: readonly [number, number, number];
-	readonly pageOverflow: boolean;
-	readonly voiceInsideWorkbench: boolean;
-	readonly voiceOverlapsCanvas: boolean;
-	readonly canvasHeight: number;
-	readonly workbenchHeight: number;
-}
-
-interface PresentationSnapshot {
-	readonly fullscreen: boolean;
-	readonly stateText: string;
-	readonly controls: string[];
-	readonly stopEnabled: boolean;
-	readonly insideStage: boolean;
-	readonly paneChromeHidden: boolean;
-}
-
 /** WCAG 2.5.8 target size floor. */
 const MIN_TARGET = 24;
-
-function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
-	return browser.eval<VoiceSnapshot>(`(() => {
-		const workbench = document.querySelector('section[aria-label="Agent workbench"]');
-		const controls = document.querySelector('${EXPANDED_CONTROLS}');
-		const wave = workbench?.querySelector('[data-voice-wave]');
-		const panel = name => [...(workbench?.querySelectorAll('[role="tabpanel"]') ?? [])]
-			.find(node => node.getAttribute('aria-labelledby') && document.getElementById(node.getAttribute('aria-labelledby'))?.textContent?.startsWith(name));
-		return {
-			stateText: controls?.querySelector('output')?.textContent?.trim() ?? '',
-			controls: [...(controls?.querySelectorAll('button') ?? [])].map(node => node.textContent.trim()),
-			waveText: wave?.querySelector('output')?.textContent?.trim() ?? null,
-			wavePresentation: wave?.getAttribute('data-voice-wave') ?? null,
-			transcript: panel('Transcript')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			context: panel('Context')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			subtitle: document.querySelector('[data-slot="voice-subtitles"]')?.textContent ?? null,
-		};
-	})()`);
-}
-
-function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
-	return browser.eval<LayoutSnapshot>(`(() => {
-		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
-		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
-			right.height > 0 && left.left < right.right && left.right > right.left &&
-			left.top < right.bottom && left.bottom > right.top;
-		const voice = document.querySelector('${EXPANDED_CONTROLS}');
-		const frame = document.querySelector('section[aria-label="Agent workbench"]');
-		const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
-		const voiceRect = rect(voice);
-		const frameRect = rect(frame);
-		return {
-			viewport: [innerWidth, innerHeight, devicePixelRatio],
-			pageOverflow: document.documentElement.scrollWidth > innerWidth ||
-				document.documentElement.scrollHeight > innerHeight,
-			voiceInsideWorkbench: voiceRect.left >= frameRect.left && voiceRect.right <= frameRect.right &&
-				voiceRect.top >= frameRect.top && voiceRect.bottom <= frameRect.bottom,
-			voiceOverlapsCanvas: overlaps(voiceRect, rect(canvas)),
-			canvasHeight: rect(canvas).height,
-			workbenchHeight: frameRect.height,
-		};
-	})()`);
-}
-
-function presentationSnapshot(browser: AgentBrowserSession): Promise<PresentationSnapshot> {
-	return browser.eval<PresentationSnapshot>(`(() => {
-		const stage = document.querySelector('${STAGE_ROOT}');
-		const controls = document.querySelector('${PRESENTATION_CONTROLS}');
-		const stop = [...(controls?.querySelectorAll('button') ?? [])].find(node => node.getAttribute('aria-label') === 'Stop voice');
-		const presented = [...document.querySelectorAll('${PANE_SECTIONS}')].find(node => !node.hidden);
-		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-sidebar"], [data-slot="semantic-view-bar"], [data-slot="semantic-variant-bar"]') ?? [])];
-		return {
-			fullscreen: document.fullscreenElement === stage,
-			stateText: controls?.querySelector('output')?.textContent?.trim() ?? '',
-			controls: [...(controls?.querySelectorAll('button') ?? [])].map(node => node.getAttribute('aria-label') ?? ''),
-			stopEnabled: stop instanceof HTMLButtonElement && !stop.disabled,
-			insideStage: !!controls && !!stage && stage.contains(controls),
-			paneChromeHidden: chrome.every(node => !node.checkVisibility()),
-		};
-	})()`);
-}
-
-/** The accessible name of the focused element, and whether it is disabled. */
-function focusedControl(browser: AgentBrowserSession): Promise<readonly [string, boolean]> {
-	return browser.eval<readonly [string, boolean]>(
-		"[document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim() ?? '', document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled]",
-	);
-}
 
 test(
 	"controlled live voice remains operable through the production browser composition",
@@ -182,7 +81,22 @@ test(
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(canvas);
 
-		await seedSemanticBoard(api, "workbench");
+		await seedSemanticBoard(api, "workbench", {
+			nodes: [
+				{ name: "Ingest", kind: "service" },
+				{ name: "Warehouse", kind: "datastore" },
+			],
+			edges: [{ from: "Ingest", to: "Warehouse", kind: "data" }],
+			walkthroughs: [
+				{
+					name: "Where rows go",
+					beats: [
+						{ heading: "All of it", body: "Two parts, one direction." },
+						{ heading: "The warehouse", body: "Where the rows land." },
+					],
+				},
+			],
+		});
 		await openWithControlledVoiceMedia(
 			browser,
 			canvas.base,
@@ -456,6 +370,64 @@ test(
 			})()`),
 		).toBe(true);
 
+		// Narrate: the host opens the first step in the pane and, once the pane says it arrived,
+		// hands it to the voice model as speech. The user then steps by hand, and leaves; each is
+		// handed over the same way, and no coordinator turn is started for any of it.
+		const narrationFrom = productionFixtureRecords<FixtureRecord>(fixture).length;
+		const narrationRecords = () =>
+			productionFixtureRecords<FixtureRecord>(fixture).slice(narrationFrom);
+		const speeches = () =>
+			narrationRecords()
+				.filter(({ kind, method }) => kind === "frame" && method === "thread/realtime/appendSpeech")
+				.map(({ params }) => String(params?.["text"] ?? ""));
+		await browser.run(["click", "[data-slot='semantic-walkthrough-narrate']"]);
+		await pollUntil(
+			() => presentedStep(browser),
+			(step) => step.index === "0" && !step.moving,
+			"Narrate to open the walkthrough on its first step",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		const [first] = await pollUntil(
+			speeches,
+			(said) => said.length === 1,
+			"the first step to be handed to the voice model",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(first).toContain("All of it");
+		// The step was opened by the host, so the pane credits nobody with what it lit.
+		const said = await api<{ panes: { byUser?: string[] }[] }>("/api/panes/semantic-context");
+		expect(said.body.panes[0]?.byUser).toBeUndefined();
+		await browser.run(["press", "ArrowRight"]);
+		const [, second] = await pollUntil(
+			speeches,
+			(spoken) => spoken.length === 2,
+			"the user's step to be handed to the voice model",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(second).toContain("The warehouse");
+		await browser.run(["press", "Escape"]);
+		await pollUntil(
+			speeches,
+			(spoken) => spoken.length === 3,
+			"leaving to be told to the voice model",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect((await presentedStep(browser)).index).toBeNull();
+		const narrationStart = narrationRecords().find(
+			({ kind, method }) => kind === "frame" && method === "thread/realtime/start",
+		);
+		expect(narrationStart?.params?.["initialItems"]).toEqual([]);
+		expect(
+			narrationRecords().some(({ kind, method }) => kind === "frame" && method === "turn/start"),
+		).toBe(false);
+		await roleAction(browser, "button", "Stop voice");
+		await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.controls.includes("Start voice"),
+			"the narration to stop",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+
 		const records = productionFixtureRecords<FixtureRecord>(fixture);
 		const versionProbes = records.filter(({ kind }) => kind === "version_probe");
 		expect(versionProbes).toHaveLength(2);
@@ -479,6 +451,7 @@ test(
 		);
 		expect(realtimeStop?.params).toEqual({ threadId: RAW_COORDINATOR_THREAD_ID });
 		expect(records.filter(({ kind }) => kind === "realtime_stop")).toEqual([
+			expect.objectContaining({ threadId: RAW_COORDINATOR_THREAD_ID }),
 			expect.objectContaining({ threadId: RAW_COORDINATOR_THREAD_ID }),
 		]);
 		expect(records.some(({ kind }) => kind === "fixture_rejection")).toBe(false);

@@ -296,11 +296,11 @@ while highlighting the parts being discussed.
 _Avoid_: variant, flow
 
 **Narration**:
-A voice session started to present one walkthrough as a talk. The voice model
-paces it, asking for one step at a time; the coordinator presents each step in
-the linked pane and hands it back once the pane says it has arrived. The
-position in the walkthrough stays the pane's. What the user does to the pane by
-hand is pane news the narrator stops for, so the words follow the picture.
+A voice session started to explain one walkthrough while the user steps
+through it by hand. The host opens its first step in the pane and hands the
+voice model each step once the pane says it is on screen; the voice explains it
+and waits. The position in the walkthrough stays the pane's, and the words
+follow the picture.
 _Avoid_: playback, autoplay, slideshow
 
 **Subtitle**:
