@@ -112,8 +112,8 @@ browser opens. Keep the initial board version from `semantic show`.
 ### Prove the dedicated roots without exposing them
 
 On Linux, Archboard's workbench root is below the XDG state directory. This
-check prints only ownership and mode facts. It also proves that `config.toml`
-contains the one canonical `sqlite_home` line for the separate SQLite root.
+check prints only ownership and mode facts. It also proves that the first line
+of `config.toml` is the canonical `sqlite_home` line for the separate SQLite root.
 
 ```bash
 accept_state_root="${XDG_STATE_HOME:-$HOME/.local/state}/archboard/codex-workbench"
@@ -135,7 +135,7 @@ const facts = (path, expectedMode) => {
     mode: mode.toString(8).padStart(4, "0") };
 };
 const expected = `sqlite_home = ${JSON.stringify(sqliteHome)}\n`;
-if (readFileSync(configPath, "utf8") !== expected)
+if (!readFileSync(configPath, "utf8").startsWith(expected))
   throw new Error("config.toml does not select the dedicated SQLite root");
 console.log(JSON.stringify({
   codexHome: facts(codexHome, 0o700),

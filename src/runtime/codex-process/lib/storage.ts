@@ -117,12 +117,38 @@ function writeConfigAtomically(
 }
 
 /**
- * Render the one-line strict config that pins the sqlite home.
+ * What every thread in the home runs under (TASK-314). Codex's auto-review mode: the sandbox is
+ * the workspace, and whatever it refuses goes to a reviewer subagent that approves or denies it
+ * instead of asking the user (Codex 0.155.1 `approvals_reviewer`, paired as its TUI pairs it
+ * with on-request approvals and the workspace-write profile). Network access, because every
+ * archboard command an agent runs reaches the canvas over localhost.
+ */
+const PERMISSIONS_CONFIG = [
+	'approval_policy = "on-request"',
+	'approvals_reviewer = "auto_review"',
+	'sandbox_mode = "workspace-write"',
+	"",
+	"[sandbox_workspace_write]",
+	"network_access = true",
+	"",
+].join("\n");
+
+/**
+ * The line that pins the sqlite home, which is all the config held before TASK-314.
+ * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
+ * @returns The line.
+ */
+function sqliteHomeLine(sqliteHome: string): string {
+	return `sqlite_home = ${JSON.stringify(sqliteHome)}\n`;
+}
+
+/**
+ * Render the strict config: the sqlite home and the permissions.
  * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
  * @returns The config text.
  */
 function configTextFor(sqliteHome: string): string {
-	return `sqlite_home = ${JSON.stringify(sqliteHome)}\n`;
+	return `${sqliteHomeLine(sqliteHome)}${PERMISSIONS_CONFIG}`;
 }
 
 /**
@@ -234,18 +260,25 @@ function existingConfig(
 }
 
 /**
- * Whether a config is archboard's own one-line form naming a sqlite home that
- * no longer exists: what is left when the state directory holding both homes
+ * Whether a config is archboard's own and may be replaced: the earlier form
+ * naming this sqlite home, or either form naming a sqlite home that no longer
+ * exists, which is what is left when the state directory holding both homes
  * was moved, since the config records the sqlite home as an absolute path.
- * Anything else, including our form naming a directory that still exists, is
- * somebody's config or a second store, and is refused.
+ * Anything else, including our form naming another directory that still
+ * exists, is somebody's config or a second store, and is refused.
  * @param configText - The config on disk.
+ * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
  * @param fileSystem - The file-system seam.
- * @returns True when the config only points at where the sqlite home used to be.
+ * @returns True when the config is archboard's own and out of date.
  */
-function namesMovedSqliteHome(configText: string, fileSystem: CodexStorageFileSystem): boolean {
+function replaceableOwnConfig(
+	configText: string,
+	sqliteHome: string,
+	fileSystem: CodexStorageFileSystem,
+): boolean {
 	const previous = ownConfigSqliteHome(configText);
 	if (previous === undefined) return false;
+	if (previous === sqliteHome) return true;
 	try {
 		fileSystem.lstatSync(previous);
 		return false;
@@ -255,16 +288,29 @@ function namesMovedSqliteHome(configText: string, fileSystem: CodexStorageFileSy
 }
 
 /**
- * The sqlite home a config names, when the config is exactly the one line
- * `configTextFor` writes for an absolute path.
+ * The sqlite home a config names, when the config is exactly what
+ * `configTextFor` writes for an absolute path, or the one line it wrote
+ * before TASK-314.
  * @param configText - The config on disk.
  * @returns The absolute sqlite home, or undefined for any other content.
  */
 function ownConfigSqliteHome(configText: string): string | undefined {
-	const quoted = /^sqlite_home = ("(?:[^"\\]|\\.)*")\n$/.exec(configText)?.[1];
+	const previous = firstLineSqliteHome(configText);
+	if (previous === undefined) return undefined;
+	return [configTextFor(previous), sqliteHomeLine(previous)].includes(configText)
+		? previous
+		: undefined;
+}
+
+/**
+ * The absolute sqlite home a config's first line names, as `sqliteHomeLine` writes it.
+ * @param configText - The config on disk.
+ * @returns The absolute sqlite home, or undefined when the first line is anything else.
+ */
+function firstLineSqliteHome(configText: string): string | undefined {
+	const quoted = /^sqlite_home = ("(?:[^"\\]|\\.)*")\n/.exec(configText)?.[1];
 	const previous = quoted === undefined ? undefined : parsedString(quoted);
-	if (previous === undefined || !path.isAbsolute(previous)) return undefined;
-	return configTextFor(previous) === configText ? previous : undefined;
+	return previous !== undefined && path.isAbsolute(previous) ? previous : undefined;
 }
 
 /**
@@ -282,27 +328,28 @@ function parsedString(quoted: string): string | undefined {
 }
 
 /**
- * Ensure the canonical config is on disk: keep a matching one, follow one the
- * state directory's move left naming the old sqlite home, refuse any other,
- * publish and re-read a missing one.
+ * Ensure the canonical config is on disk: keep a matching one, replace an
+ * out-of-date one of archboard's own, refuse any other, publish and re-read a
+ * missing one.
  * @param configPath - The config path.
- * @param configText - The canonical config bytes.
+ * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
  * @param codexHome - The directory that receives the config.
  * @param fileSystem - The file-system seam.
  */
 function ensureCanonicalConfig(
 	configPath: string,
-	configText: string,
+	sqliteHome: string,
 	codexHome: string,
 	fileSystem: CodexStorageFileSystem,
 ): void {
+	const configText = configTextFor(sqliteHome);
 	const existing = existingConfig(configPath, fileSystem)?.toString("utf8");
 	if (existing === configText) return;
-	if (existing !== undefined && !namesMovedSqliteHome(existing, fileSystem))
+	if (existing !== undefined && !replaceableOwnConfig(existing, sqliteHome, fileSystem))
 		throw failure(
 			"config_conflict",
 			configPath,
-			`Pre-existing Codex config ${configPath} conflicts with the canonical sqlite_home. Refusing to overwrite it.`,
+			`Pre-existing Codex config ${configPath} is not the one archboard writes. Refusing to overwrite it.`,
 		);
 	writeConfigAtomically(configPath, configText, codexHome, fileSystem);
 	verifyOwnedRegularFile(configPath, "Codex config", fileSystem);
@@ -345,7 +392,7 @@ function unwindConfigFailure(cause: unknown, configPath: string, releaseLock: ()
 }
 
 /**
- * Prepare two private Codex stores and publish the one-line strict config.
+ * Prepare two private Codex stores and publish the strict config.
  * The returned lock remains held until `release` is called.
  * @param input - The storage root or the two explicit homes.
  * @param options - An injectable file-system seam.
@@ -373,7 +420,7 @@ export function prepareCodexStorage(
 	const configPath = path.join(codexHome, "config.toml");
 	const configText = configTextFor(sqliteHome);
 	try {
-		ensureCanonicalConfig(configPath, configText, codexHome, fileSystem);
+		ensureCanonicalConfig(configPath, sqliteHome, codexHome, fileSystem);
 	} catch (cause) {
 		unwindConfigFailure(cause, configPath, releaseLock);
 	}

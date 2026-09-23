@@ -37,7 +37,7 @@ Canvas-driving commands auto-start the server; they start no other transport.
 
 Starting the canvas starts one package-local Codex app-server child over
 stdio. Archboard owns a `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
-`config.toml` and sign-in below `$XDG_STATE_HOME/archboard/codex-workbench` (or
+`config.toml` (the SQLite root and the permissions every thread runs under) and sign-in below `$XDG_STATE_HOME/archboard/codex-workbench` (or
 `~/.local/state/archboard/codex-workbench`), which every canvas on the machine
 shares; each canvas keeps its owner lock and epoch manifest under
 `codex-workbench/canvases/<port>`. Never edit user-global
