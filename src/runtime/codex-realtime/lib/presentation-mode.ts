@@ -12,6 +12,12 @@
 // so the voice is told to explain each step and fall silent, since silence is what moves the
 // screen on. Its steps are handed over as "On screen now", and leaving is never told: the page
 // ends a recording by stopping the session.
+//
+// A step is handed over with what it highlights on screen, named in words, and on a variant
+// branched from another, how each of those stands against it (TASK-309): the picture marks what
+// was added and changed, and the voice can only explain what it is told.
+
+import type { ChangeKind } from "@/shared/semantic-board/index";
 
 /** How much of a walkthrough's name a start carries, in characters. */
 const PRESENTATION_NAME_MAX_CHARS = 200;
@@ -44,6 +50,10 @@ function presentationName(name: string): string {
 		: `${name.slice(0, PRESENTATION_NAME_MAX_CHARS - 1)}…`;
 }
 
+/** What every presenting voice is told about the subjects a step hands over. */
+const STEP_SUBJECTS_RULE =
+	'A step may end with "It highlights", listing what the screen highlights for that step and, when the architecture is a proposal, whether each was added or changed against the one it was branched from and what moved. Use it to say what the step is about and what changed, in your own words; never read the list out, say "highlighted", or name a change the list does not give.';
+
 /**
  * What the voice model is told when it is started to narrate a walkthrough the user steps.
  * @param name The walkthrough's name.
@@ -53,6 +63,7 @@ function narrationPrompt(name: string): string {
 	return [
 		`Walkthrough narration. The user pressed Narrate on the walkthrough "${presentationName(name)}". They step through it by hand on their screen, and you explain the step they are on. Each step reaches you as it lands on their screen, beginning "On the user's screen now", with which step of how many it is, its heading and what it says: the first as soon as the session starts, and every step they move to after that.`,
 		"When a step reaches you, explain it at once, without waiting to be spoken to, as a good conference speaker would: what it shows and why it matters, in your own words and their language, with names and never ids, and at most one aside. Never say a step's number or the total aloud; their screen shows where they are. The number is how you know the last step: after it, say the walkthrough is complete and invite questions.",
+		STEP_SUBJECTS_RULE,
 		"Explain only the step you were handed last, and never one you have not been handed. When you have explained it, stop and wait: they move on when they are ready. Never ask for the next step, hand off for it, or go on to it by yourself.",
 		"If they interrupt, answer, handing the question to the coordinator when it needs the board, then finish the step if you were cut off. If a new step reaches you while you are speaking, drop the old one and explain the new one. If you are told they left the walkthrough, acknowledge it in a few words and narrate nothing more.",
 	].join("\n\n");
@@ -67,6 +78,7 @@ function recordingPrompt(name: string): string {
 	return [
 		`Recorded walkthrough. You are narrating the walkthrough "${presentationName(name)}" for a video people will watch later. Nobody is listening live, nobody will answer you, and nobody is at the controls: the screen moves to the next step by itself once you have finished explaining the one on it. Each step reaches you as it lands on screen, beginning "On screen now", with which step of how many it is, its heading and what it says.`,
 		"When a step reaches you, explain it at once, as a good conference speaker would: what it shows and why it matters, in your own words, with names and never ids, in the language the step is written in. Keep it to a few sentences with at most one aside. The screen shows the heading and the text, so explain them rather than read them out. Never say a step's number or the total aloud; the number is how you know the last step.",
+		STEP_SUBJECTS_RULE,
 		"When you have explained a step, stop talking: your silence is what moves the screen on. Never ask or invite questions, never ask for the next step, never hand anything to the coordinator, and never say you are waiting. After the last step, close the walkthrough with one short sentence.",
 	].join("\n\n");
 }
@@ -83,6 +95,16 @@ function voicePresentationPrompt(presentation: RealtimePresentation): string {
 		: narrationPrompt(presentation.name);
 }
 
+/** One thing a step highlights on screen, as the voice model is told it. */
+interface StepSubject {
+	/** What it is called: a part or a sequence by name, a relationship or a step by its ends and label. */
+	readonly name: string;
+	/** How it stands against the variant this one was branched from, or null when there is none. */
+	readonly standing: ChangeKind | null;
+	/** For a changed subject, what moved, in words; otherwise empty. */
+	readonly moved: readonly string[];
+}
+
 /** Where a narrated walkthrough now is on the user's screen. */
 type RealtimePresentationChange =
 	| {
@@ -92,8 +114,23 @@ type RealtimePresentationChange =
 			readonly of: number;
 			readonly heading: string;
 			readonly body: string;
+			/** What the step highlights, in the order the beat names it. */
+			readonly subjects: readonly StepSubject[];
 	  }
 	| { readonly kind: "left" };
+
+/**
+ * One highlighted subject as the voice model is told it.
+ * @param subject The subject.
+ * @returns Its name, and how it changed when it did.
+ */
+function subjectSpeech(subject: StepSubject): string {
+	if (subject.standing === null || subject.standing === "unchanged") {
+		return subject.name;
+	}
+	const moved = subject.moved.length === 0 ? "" : `: ${subject.moved.join("; ")}`;
+	return `${subject.name} (${subject.standing}${moved})`;
+}
 
 /**
  * What the voice model is handed, as speech, when a narrated walkthrough's step lands on screen
@@ -117,7 +154,10 @@ function presentationSpeech(change: RealtimePresentationChange, recording: boole
 			? change.body
 			: `${change.body.slice(0, STEP_BODY_MAX_CHARS - 1)}…`;
 	const where = recording ? "On screen now" : "On the user's screen now";
-	return `${where}: step ${change.step} of ${change.of}, "${change.heading}". ${body}`;
+	const said = `${where}: step ${change.step} of ${change.of}, "${change.heading}". ${body}`;
+	return change.subjects.length === 0
+		? said
+		: `${said}\nIt highlights: ${change.subjects.map(subjectSpeech).join("; ")}.`;
 }
 
 export {
@@ -125,4 +165,5 @@ export {
 	voicePresentationPrompt,
 	type RealtimePresentation,
 	type RealtimePresentationChange,
+	type StepSubject,
 };

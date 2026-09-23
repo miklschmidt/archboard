@@ -140,6 +140,7 @@ export {
 export { scopedContent, findView } from "@/shared/semantic-board/lib/scope";
 export {
 	drawingOf,
+	predecessorOf,
 	type DrawnChanges,
 	type DrawnProposal,
 } from "@/shared/semantic-board/lib/drawing";
@@ -150,6 +151,7 @@ export {
 	type FieldChange,
 	type SubjectChange,
 	type VariantComparison,
+	changeOf,
 	compareVariants,
 	withRemoved,
 	standingOf,

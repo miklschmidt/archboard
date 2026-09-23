@@ -120,7 +120,14 @@ test("each step and leaving reach the voice model as speech, the first once the 
 	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, walkthrough(false));
 	try {
 		// The first step lands on screen while Codex is still starting the session.
-		source.fire({ kind: "stepped", step: 1, of: 2, heading: "All of it", body: "Three parts." });
+		source.fire({
+			kind: "stepped",
+			step: 1,
+			of: 2,
+			heading: "All of it",
+			body: "Three parts.",
+			subjects: [],
+		});
 		await settle();
 		expect(h.session.speeches).toHaveLength(0);
 		const realtimeSessionId = h.session.starts[0]?.realtimeSessionId;
@@ -138,6 +145,10 @@ test("each step and leaving reach the voice model as speech, the first once the 
 			of: 2,
 			heading: "One writer",
 			body: "It owns writes.",
+			subjects: [
+				{ name: "Ledger", standing: "added", moved: [] },
+				{ name: 'Gateway → Ledger "write"', standing: "changed", moved: ['label was "read"'] },
+			],
 		});
 		source.fire({ kind: "left" });
 		await settle();
@@ -148,6 +159,12 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		expect(h.session.starts[0]?.prompt).toContain(`"${leadIn(said[0])}"`);
 		expect(said[1]).toContain("One writer");
 		expect(said[1]).toContain("It owns writes.");
+		// What the step highlights, and how each changed, under the words the prompt says they
+		// follow.
+		expect(said[1]).toContain("Ledger (added)");
+		expect(said[1]).toContain('label was "read"');
+		expect(said[1]).toContain("It highlights");
+		expect(h.session.starts[0]?.prompt).toContain('"It highlights"');
 		expect(h.session.speeches.every((speech) => speech.threadId === h.coordinatorThreadId)).toBe(
 			true,
 		);
@@ -181,7 +198,14 @@ test("a recording's steps reach the voice model in the words its prompt names, a
 	const h = harness(undefined, source);
 	try {
 		await started(h, "", walkthrough(true));
-		source.fire({ kind: "stepped", step: 1, of: 2, heading: "All of it", body: "Three parts." });
+		source.fire({
+			kind: "stepped",
+			step: 1,
+			of: 2,
+			heading: "All of it",
+			body: "Three parts.",
+			subjects: [],
+		});
 		source.fire({ kind: "left" });
 		await settle();
 		const said = h.session.speeches.map((speech) => speech.text);
