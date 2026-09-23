@@ -4,7 +4,7 @@ A person runs this with a real microphone and speaker. It proves what the
 deterministic owners cannot: that a real voice model explains the step it is
 handed, without being spoken to, and then waits for the user. It assumes the
 [real-voice smoke](codex-workbench-voice-acceptance.md) already passes on this
-machine: sign-in, microphone, speaker, and one linked workhorse.
+machine: sign-in, microphone and speaker.
 
 The flow being proven is in
 [DESIGN.md](../../DESIGN.md#2-mid-conversation-context--the-bound-app-server-session).
@@ -26,9 +26,9 @@ bun run build:frontend
 ./bin/dogfood browser show Archboard --pane primary
 ```
 
-Open <http://127.0.0.1:3000/?paneA=Archboard>, link a workhorse to the pane in
-the agent dock, and wait until the voice control offers Start. Do not start
-voice from the dock.
+Open <http://127.0.0.1:3000/?paneA=Archboard>. Do not start voice with Talk:
+Narrate starts it, and signs in to Codex and links the workhorse first if
+nothing has yet.
 
 ## 2. Narrate
 
@@ -56,5 +56,5 @@ note what it did instead.
 
 ## 3. Stop
 
-Stop voice from the dock, then `./bin/dogfood stop`. Presenting and narrating
+Stop voice with End in the agent bar, then `./bin/dogfood stop`. Presenting and narrating
 write nothing: `git status .archboard/vault` is clean.
