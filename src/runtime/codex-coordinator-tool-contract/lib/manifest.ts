@@ -23,9 +23,9 @@ type NamespaceName = "archboard_workhorse" | "archboard_voice";
 type ManifestName = "workhorse" | "voice";
 
 const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
-	"6243da412a5902b929f62180b421dee0105e91ec9938a0a6d95e8e296a3634eb" as const;
+	"0004ea893c9a90b7826d22595f05159c44bc895c7a2d34dbda32a4f5d92f0849" as const;
 const ARCHBOARD_VOICE_MANIFEST_SHA256 =
-	"7c14fcdc624241e02de9267be092876ebfb780c7c7869acd82ea89f807264b97" as const;
+	"04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b" as const;
 
 const MANIFEST_FILES = Object.freeze({
 	archboard_workhorse: "archboard-workhorse.json",

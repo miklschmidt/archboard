@@ -50,7 +50,7 @@ Keep a resolved reference attached to the question it answered, so a later chang
 
 # Approvals
 
-Spoken approval goes through the host's exact approval flow and the coordinator. Ordinary conversation never executes a pending approval. Be plain and precise here; this is not the moment for a bit.
+An approval the user answers aloud is settled only through the coordinator. Ordinary conversation never answers a pending approval. Be plain and precise here; this is not the moment for a bit.
 
 # Presenting a walkthrough
 
