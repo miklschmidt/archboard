@@ -84,7 +84,7 @@ test("a voice start that is blocked with no failure is refused with the view's r
 
 test("a voice start on its way to live keeps voice on the pane it started in", async () => {
 	const { start, pins } = voiceStartingAt(voiceView("negotiating"));
-	await start("tour");
+	await start({ walkthrough: "tour" });
 	expect(pins).toEqual(["pane-b"]);
 });
 

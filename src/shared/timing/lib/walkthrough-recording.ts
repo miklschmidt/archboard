@@ -83,7 +83,48 @@ const RECORDING_PACE_TICK_MS = 100;
  */
 const RECORDING_POLL_MS = 250;
 
+/**
+ * How long the recorder waits for its private Chromium to start and answer on
+ * DevTools. A cold start of a headless browser on a loaded machine takes a
+ * few seconds; this is the bound past which it is not coming.
+ */
+const RECORDING_BROWSER_START_MS = 15_000;
+
+/**
+ * How long one DevTools call into the recording page may take: reading its
+ * state, starting it, asking for its file. Each is a function call in a page
+ * that is otherwise busy drawing; seconds mean the page is stuck.
+ */
+const RECORDING_CALL_MS = 10_000;
+
+/**
+ * How long the recorder waits for the page's state to change before it
+ * decides the page is stuck. The page bounds every wait of its own, and the
+ * longest a live page stays on one state is a step's explanation
+ * (`RECORDING_STEP_MAX_MS`) or getting voice live (`RECORDING_VOICE_START_MS`),
+ * so this is both: past it the page has stopped keeping its own bounds.
+ */
+const RECORDING_STALL_MS = RECORDING_STEP_MAX_MS + RECORDING_VOICE_START_MS;
+
+/**
+ * How long streaming the finished file out of the page may take. It moves
+ * over a local DevTools socket in base64 chunks; a ten-minute recording at
+ * the capture's bit rate is a few hundred megabytes.
+ */
+const RECORDING_FILE_READ_MS = 5 * 60_000;
+
+/**
+ * How long the recorder waits for its Chromium's process group to be gone
+ * once it has asked it to stop.
+ */
+const RECORDING_BROWSER_STOP_MS = 5000;
+
 export {
+	RECORDING_BROWSER_START_MS,
+	RECORDING_BROWSER_STOP_MS,
+	RECORDING_CALL_MS,
+	RECORDING_FILE_READ_MS,
+	RECORDING_STALL_MS,
 	RECORDING_LEAD_MS,
 	RECORDING_PACE_TICK_MS,
 	RECORDING_PAGE_READY_MS,
