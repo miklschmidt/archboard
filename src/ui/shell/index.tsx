@@ -1,5 +1,6 @@
-// The desktop frame: header, navigator, the pane centre and the workbench
-// dock, composed from typed inputs and typed actions. The centre is also the
+// The desktop frame: header, navigator, the pane centre, the agent bar under
+// it and the conversation panel beside it while open, composed from typed
+// inputs and typed actions. The centre is also the
 // fullscreen root, so presenting a pane never remounts it.
 
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";

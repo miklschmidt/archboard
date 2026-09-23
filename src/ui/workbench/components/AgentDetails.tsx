@@ -10,6 +10,7 @@ import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 
 /** The usage Codex last reported for the conversation. */
 type BrowserTimelineUsage = NonNullable<NonNullable<BrowserSnapshot["timeline"]>["usage"]>;
+import { VoiceContextDetails } from "@/ui/workbench/components/VoiceContextDetails";
 import type { AgentView } from "@/ui/workbench/contracts";
 
 /** Inputs for the details. */
@@ -33,6 +34,15 @@ function accountWords(snapshot: BrowserSnapshot | null): string {
 	const account = snapshot?.account;
 	if (account?.state !== "ready") return "Not signed in";
 	return `Signed in with ${ACCOUNT_WORDS[account.accountType] ?? account.accountType}`;
+}
+
+/**
+ * The usage Codex last reported for the conversation.
+ * @param snapshot The snapshot, or null.
+ * @returns The usage, or null before Codex reports it.
+ */
+function usageOf(snapshot: BrowserSnapshot | null): BrowserTimelineUsage | null {
+	return snapshot?.timeline?.usage ?? null;
 }
 
 /**
@@ -78,7 +88,7 @@ function AgentDetails(props: AgentDetailsProps): JSX.Element {
 			</Section>
 			<Section title="Conversation">
 				<Row label="Model" value={modelWords(snapshot, "workhorse")} />
-				<Row label="Context" value={contextWords(snapshot?.timeline?.usage ?? null)} />
+				<Row label="Context" value={contextWords(usageOf(snapshot))} />
 				<Row label="Thread" value={threadId} technical />
 			</Section>
 			<Section title="Voice">
@@ -87,6 +97,7 @@ function AgentDetails(props: AgentDetailsProps): JSX.Element {
 					The voice agent is a separate conversation. It decides which spoken requests become work
 					for the agent, and which approvals it may answer from what it heard.
 				</p>
+				<VoiceContextDetails voiceContext={snapshot?.voiceContext} />
 			</Section>
 		</div>
 	);

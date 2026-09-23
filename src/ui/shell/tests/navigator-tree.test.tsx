@@ -139,7 +139,6 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Asked {
 	};
 	const view: ShellView = {
 		theme: "light",
-		current: { board: "Payments", variant: "current" },
 		boards: { boards: [...BOARDS], levels: ["system", "service", "module"], onScreen: [] },
 		boardsError: null,
 		boardsLoading: false,

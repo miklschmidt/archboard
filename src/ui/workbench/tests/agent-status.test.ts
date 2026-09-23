@@ -64,7 +64,6 @@ function view(parts: {
 		busyApprovals: [],
 		approvalErrors: {},
 		lastProgressAtMs: parts.lastProgressAtMs ?? null,
-		subtitles: false,
 	};
 }
 
