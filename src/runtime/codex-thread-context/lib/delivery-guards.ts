@@ -1,7 +1,8 @@
 import type { EpochExecutionRequest } from "@/runtime/codex-epoch";
-import type {
-	ThreadLinkBindingSnapshot,
-	ThreadLinkClassification,
+import {
+	sameThreadLinkIdentity,
+	type ThreadLinkBindingSnapshot,
+	type ThreadLinkClassification,
 } from "@/runtime/codex-thread-link";
 import type {
 	CodexThreadContextDeliveryOptions,
@@ -12,7 +13,7 @@ import type {
 	DeliveryTarget,
 } from "@/runtime/codex-thread-context/lib/delivery-state";
 import { eventIdentityReason } from "@/runtime/codex-thread-context/lib/event-identity";
-import { sameBinding, sameLink } from "@/runtime/codex-thread-context/lib/link-equality";
+import { sameBinding } from "@/runtime/codex-thread-context/lib/link-equality";
 import {
 	epochErrorReason,
 	eventReason,
@@ -59,6 +60,8 @@ function currentBinding(
 
 /**
  * Checks the live pane binding against the captured one and the classification.
+ * The classification must name the same link — thread, child and epoch — but
+ * may observe it differently: a running turn makes a bound idle thread active.
  * @param options - The delivery options.
  * @param state - The delivery state holding the initial binding.
  * @param classification - The classification read just before the final gate.
@@ -73,7 +76,7 @@ function finalBindingReason(
 	if (binding === "link_changed") {
 		return binding;
 	}
-	if (!sameLink(binding.link, classification.link)) {
+	if (!sameThreadLinkIdentity(binding.link, classification.link)) {
 		return "link_changed";
 	}
 	return targetLinkReason(binding.link, options.target);
