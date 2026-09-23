@@ -23,9 +23,9 @@ import type {
 	WorkbenchCommandIntent,
 } from "@/ui/workbench-approvals/transport-port";
 import type {
+	AgentActions,
 	ApprovalChoice,
 	DynamicApprovalVerdict,
-	WorkbenchActions,
 } from "@/ui/workbench/contracts";
 
 /** The controller's own state beside the transport's. */
@@ -52,7 +52,7 @@ interface WorkbenchApprovalsController {
 		verdict: DynamicApprovalVerdict,
 	) => Promise<WorkbenchApprovalDecisionResult>;
 	/** The actions the committed approvals panel calls. */
-	readonly panelActions: Pick<WorkbenchActions, "respondToApproval" | "respondToDynamicApproval">;
+	readonly panelActions: Pick<AgentActions, "respondToApproval" | "respondToDynamicApproval">;
 }
 
 /** How the controller reads the clock. */

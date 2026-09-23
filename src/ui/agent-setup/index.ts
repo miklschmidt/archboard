@@ -12,5 +12,6 @@ export {
 	type HeldState,
 	type SendOptions,
 	type SetupStep,
+	type TalkOptions,
 	type SetupStepResult,
 } from "@/ui/agent-setup/lib/setup";
