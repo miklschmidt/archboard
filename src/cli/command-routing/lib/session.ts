@@ -87,9 +87,8 @@ async function runInterruptibleCommand(
 const RETIRED_COMMANDS: Readonly<Record<string, string>> = {
 	pane: "Use `archboard browser open` or `archboard browser close <pane>`.",
 	panes: "Use `archboard browser panes`.",
-	selection: "Use `archboard browser selection --pane <spec>`.",
-	viewport: "Use `archboard browser viewport --pane <spec> ...`.",
-	screenshot: "Use `archboard browser capture --pane <spec> ...`.",
+	selection: "Use `archboard browser panes`: it lists what each pane shows and what is selected.",
+	screenshot: "Use `archboard semantic rasterize <board> --out <file.png>`.",
 };
 
 /**

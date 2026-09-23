@@ -35,26 +35,20 @@ interface BoardIdentity {
 // the unadorned filename and is the default everywhere a variant is optional.
 const CURRENT_VARIANT = "current";
 
-// The board the canvas holds before anything has been opened: somewhere to put
-// things before there is a name for them. It has a note like every other board
-// (ADR 0015) — the vault is where board content lives, and a board the process
-// held and the vault did not would be the one exception that makes that a
-// suggestion. What it does not have is a name anybody chose, which is what
-// `board save --board scratch --as <name>` is for.
+// The board the canvas holds before anything has been opened. It has a note like
+// every other board (ADR 0015), kept under the vault's state directory rather
+// than beside the named boards, because nobody chose its name.
 const SCRATCH_BOARD = "scratch";
 
-// Where archboard keeps its own state inside somebody's vault: the library
-// (ADR 0007) and the scratch note. Alongside the boards, out of the way —
-// Obsidian hides dot-directories, so the vault's note list stays notes, and
-// `listBoards` skips them for the same reason. One directory rather than one
-// per thing, so there is a single convention to learn and a single thing to
-// leave alone.
+// Where archboard keeps its own state inside somebody's vault: the configuration,
+// the lock files and the scratch note. Alongside the boards, out of the way —
+// `listBoards` skips dot-directories, so nothing in it reads as a board. One
+// directory rather than one per thing, so there is a single convention to learn
+// and a single thing to leave alone.
 const VAULT_STATE_DIR = ".archboard";
 
-// The abstraction tiers in use today. A controlled vocabulary that grows by
-// being edited, so this is advisory rather than enforced — `promote --level`
-// accepts anything slug-shaped and boards must not be stricter than the nodes
-// on them.
+// The abstraction tiers of the default vocabulary, named when a refusal needs to
+// say which levels exist.
 const LEVELS = ["system", "service", "module"] as const;
 
 const SLUG_RE = /^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/i;

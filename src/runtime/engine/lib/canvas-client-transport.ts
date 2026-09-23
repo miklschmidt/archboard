@@ -127,7 +127,6 @@ async function assertCanvasIdentity(): Promise<void> {
 /** An error carrying what the canvas said about the request it turned away. */
 type CanvasError = Error & {
 	code?: unknown;
-	conflict?: unknown;
 	available?: unknown;
 	refusal?: unknown;
 };
@@ -156,17 +155,11 @@ function responseError(data: unknown, response: Response): Error {
 }
 
 /**
- * Put the canvas's own code on the error: a conflict is named as one, and any
- * other code it stated is carried through with the alternatives it offered.
+ * Put the canvas's own code on the error, with the alternatives it offered.
  * @param error The error being built.
  * @param body The answer body.
  */
 function describeFailure(error: CanvasError, body: Record<string, unknown>): void {
-	if (body["conflict"]) {
-		error.code = "BOARD_CONFLICT";
-		error.conflict = body["conflict"];
-		return;
-	}
 	const code = stringAt(body, "code");
 	if (code === undefined) {
 		return;
