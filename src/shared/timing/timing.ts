@@ -234,8 +234,7 @@ const BROWSER_VIEWPORT_SETTLEMENT_MS = 10_000;
 // ── Server-owned board rendering (ADR 0020) ──────────────────────────────
 
 /**
- * Bound for one serialized PNG, SVG, findings batch, or Mermaid job in the
- * private renderer. This is intentionally half the proof harness's 20-second
+ * Bound for one serialized PNG or SVG job in the private renderer. This is intentionally half the proof harness's 20-second
  * fault deadline. Product work renders one immutable request and reports its
  * named page phase when this bound expires.
  */

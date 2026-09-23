@@ -128,12 +128,4 @@ export const processCommandHost = {
 	setExitCode(value: number): void {
 		process.exitCode = value;
 	},
-	/**
-	 * Nothing is ever held back from disk: an accepted write is committed
-	 * before it is answered (ADR 0023), so there is no such state to report.
-	 * @returns Null, always.
-	 */
-	held(): null {
-		return null;
-	},
 };

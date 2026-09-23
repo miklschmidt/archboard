@@ -124,7 +124,7 @@ function runningStatus(
 const statusContract = defineCommand({
 	path: ["status"],
 	shared: ["url"],
-	summary: "Canvas health, element count, browser clients",
+	summary: "Canvas health, board count, browser clients",
 	description:
 		"Reports canvas availability, identity, source freshness, and synchronization state.",
 	examples: ["archboard status"],

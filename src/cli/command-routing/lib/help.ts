@@ -48,7 +48,7 @@ function conventions(): string {
 		"otherwise; diagnostics go to stderr.",
 		"",
 		"Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser pane required,",
-		"5 board write refused (held, claim revoked, version moved, or the note changed on disk).",
+		"5 board write refused (held, claim revoked, or version moved).",
 		"`check` exits 1 while the vault still has diagnostics.",
 		"",
 		`Inside the archboard checkout, \`./bin/canvas <command>\` runs the CLI from source.`,

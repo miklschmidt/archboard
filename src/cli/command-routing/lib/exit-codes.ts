@@ -36,12 +36,12 @@ function errorMessage(error: unknown): string {
 
 /**
  * Whether the code names a refused board write: the note stays unwritten, whether another
- * holder, a revoked claim, a moved version or a changed note stopped it.
+ * holder, a revoked claim or a moved version stopped it.
  * @param code - The error code, if any.
  * @returns True for a board-write refusal.
  */
 function isBoardRefusalCode(code: string | undefined): boolean {
-	return code === "BOARD_CONFLICT" || (code !== undefined && BOARD_REFUSAL_CODES.has(code));
+	return code !== undefined && BOARD_REFUSAL_CODES.has(code);
 }
 
 const WELL_KNOWN_EXIT_CODES: Readonly<Record<string, number>> = {
