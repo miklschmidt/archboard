@@ -1,6 +1,6 @@
-// Chromium as a process: which executable draws the bitmap, how it is
-// started in a private profile and its own group, how its DevTools endpoint
-// is found, and how the whole group is made to go away.
+// Chromium as a process: which executable to start, how it is started in a
+// private profile and its own group, how its DevTools endpoint is found, and
+// how the whole group is made to go away.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir, userInfo } from "node:os";
@@ -12,7 +12,7 @@ import {
 } from "@/runtime/codex-process/process-group";
 import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
 
-import { isJsonRecord } from "@/runtime/semantic-rasterizer/lib/devtools";
+import { isJsonRecord } from "@/runtime/headless-chromium/lib/devtools";
 
 /** The process a session leads. */
 type ChromiumProcess = Bun.Subprocess<"ignore", "pipe", "pipe">;
@@ -46,7 +46,7 @@ function discoveredChromiumPath(): string {
 }
 
 /**
- * Where the session keeps its profile and document. Chromium adds two long
+ * Where the session keeps its profile and files. Chromium adds two long
  * singleton-directory segments below TMPDIR; the root stays short enough for
  * the Unix-socket path limit.
  * @returns The parent directory.
@@ -88,25 +88,27 @@ function prepareProfile(profile: string): void {
 }
 
 /**
- * The command line Chromium is started with: headless, without GPU, crash
- * reporting, extensions, scrollbars or any device scale of its own, on a
- * private profile, listening for DevTools on a port it picks.
+ * The command line Chromium is started with: headless, without first-run
+ * prompts, crash reporting or extensions, with whatever the caller adds, on a
+ * private profile, listening for DevTools on a loopback port it picks.
  * @param chromiumPath The executable.
  * @param profile The private user data directory.
+ * @param extraArgs What the caller adds.
  * @returns The command line.
  */
-function chromiumCommand(chromiumPath: string, profile: string): string[] {
+function chromiumCommand(
+	chromiumPath: string,
+	profile: string,
+	extraArgs: readonly string[],
+): string[] {
 	return [
 		chromiumPath,
 		"--headless=new",
-		"--disable-gpu",
 		"--no-first-run",
 		"--no-default-browser-check",
 		"--disable-crash-reporter",
 		"--disable-extensions",
-		"--hide-scrollbars",
-		"--force-device-scale-factor=1",
-		"--force-color-profile=srgb",
+		...extraArgs,
 		...(process.platform === "darwin" ? ["--use-mock-keychain", "--password-store=basic"] : []),
 		`--user-data-dir=${profile}`,
 		"--remote-debugging-port=0",
@@ -118,12 +120,17 @@ function chromiumCommand(chromiumPath: string, profile: string): string[] {
  * Start Chromium in its own process group under the temporary root.
  * @param chromiumPath The executable.
  * @param tempRoot The session-owned temporary directory.
+ * @param extraArgs What the caller adds to the command line.
  * @returns The process.
  */
-function spawnChromium(chromiumPath: string, tempRoot: string): ChromiumProcess {
+function spawnChromium(
+	chromiumPath: string,
+	tempRoot: string,
+	extraArgs: readonly string[],
+): ChromiumProcess {
 	const profile = join(tempRoot, "profile");
 	prepareProfile(profile);
-	return Bun.spawn(chromiumCommand(chromiumPath, profile), {
+	return Bun.spawn(chromiumCommand(chromiumPath, profile, extraArgs), {
 		cwd: tempRoot,
 		env: chromiumEnvironment(tempRoot),
 		stdin: "ignore",
@@ -181,28 +188,26 @@ function devToolsPortIn(tempRoot: string): number | null {
 }
 
 /**
- * Open a fresh blank page target on a listening Chromium and answer its
- * DevTools socket URL.
+ * The DevTools socket URL of a listening Chromium's browser target.
  * @param port The DevTools port.
  * @param timeoutMs How long to wait.
  * @param signal Cancels startup.
  * @returns The socket URL.
  */
-async function openPageTarget(
+async function browserSocketUrl(
 	port: number,
 	timeoutMs: number,
 	signal?: AbortSignal,
 ): Promise<string> {
-	const target = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, {
-		method: "PUT",
+	const answer = await fetch(`http://127.0.0.1:${port}/json/version`, {
 		signal:
 			signal === undefined
 				? AbortSignal.timeout(timeoutMs)
 				: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
 	});
-	const description: unknown = await target.json();
+	const description: unknown = await answer.json();
 	if (!isJsonRecord(description) || typeof description["webSocketDebuggerUrl"] !== "string") {
-		throw new Error("Chromium did not describe a page target.");
+		throw new Error("Chromium did not describe its browser target.");
 	}
 	return description["webSocketDebuggerUrl"];
 }
@@ -274,9 +279,9 @@ function removeTempRoot(tempRoot: string, errors: string[]): boolean {
 
 export {
 	processGroups,
+	browserSocketUrl,
 	devToolsPortIn,
 	discoveredChromiumPath,
-	openPageTarget,
 	pollUntil,
 	removeTempRoot,
 	spawnChromium,
