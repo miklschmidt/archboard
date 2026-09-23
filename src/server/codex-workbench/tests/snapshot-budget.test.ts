@@ -29,7 +29,13 @@ test("fits timeline history after every competing snapshot field is present", as
 				threadId,
 				turns: [
 					{
-						turn: { id: turnId, status: "completed" },
+						turn: {
+							id: turnId,
+							status: "completed",
+							startedAt: null,
+							completedAt: null,
+							durationMs: null,
+						},
 						items: [
 							{
 								kind: "agent_message",
@@ -60,9 +66,12 @@ test("fits timeline history after every competing snapshot field is present", as
 							summary: "A large turn competes with the rest of the gateway projection.",
 							outputs: { included: true, truncated: false },
 						},
+						error: null,
+						plan: null,
 					},
 				],
 				cursor: "next-page",
+				usage: null,
 			},
 			// A full inventory competes for the same bytes as the timeline. It is
 			// bounded rather than fitted, so it must stay small enough that the
@@ -182,10 +191,16 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 								summary: "A final paginated timeline turn",
 								outputsIncluded: true,
 								outputsTruncated: false,
+								startedAtMs: null,
+								completedAtMs: null,
+								durationMs: null,
+								error: null,
+								plan: null,
 							},
 						]
 					: [],
 				nextCursor: "older-turns",
+				usage: null,
 			},
 			queue: {
 				kind: "queue",

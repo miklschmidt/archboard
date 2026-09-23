@@ -271,6 +271,39 @@ describe.serial("actual production Codex composition", () => {
 					] === "idle",
 				"the workhorse turn to finish",
 			);
+			// The finished turn carries what the person sent, when it ran, and the
+			// plan and token usage Codex reported only as notifications.
+			const finished = await waitFor(async () => {
+				const timeline = snapshots(await current.request("snapshot"))["timeline"] as {
+					readonly usage: unknown;
+					readonly turns: readonly Record<string, unknown>[];
+				} | null;
+				const turn = timeline?.turns.at(-1);
+				return timeline &&
+					turn?.["status"] === "completed" &&
+					turn["plan"] !== null &&
+					timeline.usage !== null
+					? { timeline, turn }
+					: undefined;
+			}, "the finished workhorse turn to carry its evidence");
+			if (finished === undefined) {
+				throw new Error("The finished workhorse turn disappeared.");
+			}
+			expect((finished.turn["items"] as readonly Record<string, unknown>[])[0]).toMatchObject({
+				media: "prompt",
+				text: "Exercise both production reverse-request owners.",
+			});
+			expect(finished.turn["startedAtMs"]).toBeGreaterThan(0);
+			expect(finished.turn["completedAtMs"]).toBeGreaterThanOrEqual(
+				finished.turn["startedAtMs"] as number,
+			);
+			expect(finished.turn["plan"]).toMatchObject({
+				steps: [{ status: "completed" }, { status: "completed" }],
+			});
+			expect(finished.timeline.usage).toMatchObject({
+				total: { totalTokens: 1_200 },
+				modelContextWindow: 258_000,
+			});
 			// Nothing is discovered until the browser asks. The refresh exhausts the
 			// real persisted and loaded lists and publishes the joined inventory.
 			expect(snapshots(await current.request("snapshot"))["threadCandidates"]).toMatchObject({

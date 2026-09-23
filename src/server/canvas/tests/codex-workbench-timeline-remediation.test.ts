@@ -239,7 +239,10 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 		throw new Error("bounded timeline was not loaded");
 	}
 	expect(projection.cursor).toBe("timeline-cursor");
-	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual(["agent_message"]);
+	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
+		"user_message",
+		"agent_message",
+	]);
 	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
 	owner.dispose();
 });
@@ -468,7 +471,7 @@ test("a budget cut drops the oldest turns and keeps the newest in-progress turn"
 	// Newest-first paging is what makes the cut safe.
 	expect(requests.map((request) => request.sortDirection)).toEqual(["desc", "desc"]);
 	// Published chronologically, oldest retained first.
-	expect(projection.turns.map((entry) => entry.turn)).toEqual([
+	expect(projection.turns.map(({ turn }) => ({ id: turn.id, status: turn.status }))).toEqual([
 		{ id: authorities.identity.decoder.adoptTurnId("turn-older"), status: "completed" },
 		{ id: authorities.identity.decoder.adoptTurnId("turn-running"), status: "inProgress" },
 	]);
