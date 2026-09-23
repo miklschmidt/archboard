@@ -50,7 +50,7 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 				{
 					turnId: "archboard:turn:s7475726e2d34",
 					status: "completed",
-					summary: "completed · user: none · assistant: none",
+					summary: "completed · user: Send through the controlled process. · assistant: none",
 					outputsIncluded: true,
 					outputsTruncated: false,
 				},

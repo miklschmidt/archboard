@@ -396,8 +396,8 @@ const invalidateStale = (): void => {
 		'data: params["limit"] === 10 ? [threads.get("thread-3")].filter(Boolean) : [...threads.values()].filter(',
 	);
 	const withGeneralItems = withGeneralList.replace(
-		"items: isWorkhorse ? [dynamicItem] : [],",
-		"items: isWorkhorse ? [dynamicItem, ...generalQueryItems] : [],",
+		"items: isWorkhorse ? [prompt, dynamicItem] : [prompt],",
+		"items: isWorkhorse ? [prompt, dynamicItem, ...generalQueryItems] : [prompt],",
 	);
 	const withEmission = withGeneralItems.replace(
 		"\t\t\t\tsetTimeout(emitReverseRequests, 10);",
