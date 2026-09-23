@@ -1,4 +1,4 @@
-# Recorded walkthrough: real-voice acceptance (TASK-304)
+# Recorded walkthrough: real-voice acceptance (TASK-304, TASK-305)
 
 A person runs this on a canvas whose Codex is signed in. It proves what the
 deterministic owners cannot: that a real voice model explains each step it is
@@ -22,8 +22,9 @@ and answers with the file, its size, its duration and the number of steps.
 
 ## 2. Watch it
 
-Open the file in a player that plays H.264 with Opus audio (a browser, mpv or
-VLC).
+Open the file in a browser. With `ffmpeg` on `PATH` its sound is AAC and it
+plays with sound in Safari too; without one the command said so, and it plays
+with sound in Chromium, Firefox, mpv and VLC.
 
 | #   | Observe                                                                                                                        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ |
@@ -45,3 +46,16 @@ VLC).
 Recording writes nothing to the vault. Only `--discard` removes the board it
 recorded, and only after the file is written. `git status .archboard/vault` is
 clean again once the board is discarded.
+
+## 4. Record a pull request for its reviewers
+
+Follow the archboard skill's
+[pull request's recording](../../skills/archboard/references/sequences-views-walkthroughs.md#a-pull-requests-recording)
+for a real pull request, with `ffmpeg` on `PATH`, and attach the file to it.
+
+| #   | Observe                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------- |
+| a   | The command said nothing about sound, and the receipt's `mimeType` names `mp4a.40.2`.                    |
+| b   | What the pull request added and changed is marked on screen, and a removed part is drawn as removed.     |
+| c   | The video plays with sound in the pull request's page in Chromium, Firefox and Safari.                   |
+| d   | Somebody who has not read the diff can say what the pull request changed and why after watching it once. |

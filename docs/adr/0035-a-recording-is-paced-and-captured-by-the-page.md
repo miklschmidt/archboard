@@ -52,10 +52,11 @@ makes the file. It captures its own tab with the browser's screen capture
 (`getDisplayMedia` with `preferCurrentTab`, accepted without a prompt by
 `--auto-accept-this-tab-capture`), mixes the voice into one Web Audio track
 from its stream (a headless tab's own audio is silence), and writes both with
-`MediaRecorder`: MP4 with H.264, or WebM with VP9. No encoder runs outside the
-browser. A page opened with `?record=<walkthrough>` shows its one pane at the
-full 1920x1080 viewport and nothing else, with the caption's controls dropped,
-and the recorder drives it through one global (`@/shared/walkthrough-recording`).
+`MediaRecorder`: MP4 with H.264, or WebM with VP9. The picture is never encoded
+outside the browser. A page opened with `?record=<walkthrough>` shows its one
+pane at the full 1920x1080 viewport and nothing else, with the caption's
+controls dropped, and the recorder drives it through one global
+(`@/shared/walkthrough-recording`).
 
 - **Not Remotion.** Remotion renders frames it seeks to, so everything on screen
   would have to move on a frame clock. The canvas moves on wall-clock time
@@ -67,6 +68,19 @@ and the recorder drives it through one global (`@/shared/walkthrough-recording`)
   screen capture on Chromium 153; the microphone is granted over DevTools
   instead, and the fake device plays a silent file, since its default tone is
   something the voice model would hear.
+
+## It plays with sound wherever it is watched
+
+A recording is most often attached to a pull request and watched in whatever
+browser its reviewer has (TASK-305). `MediaRecorder` on Linux has no AAC
+encoder, Google Chrome's included, so MP4 sound is Opus, and Safari plays an
+Opus MP4 as a silent picture. So when an `ffmpeg` is at hand (`PATH`, or
+`ARCHBOARD_FFMPEG`) the recorder converts the sound to AAC, copies the picture
+untouched and moves the index to the front of the file. ffmpeg stays optional:
+without one, or when it fails, the file is kept as recorded and the command says
+that a Safari viewer would hear nothing and how to change it. Only an Opus MP4
+is converted; a WebM, or an MP4 the browser wrote with AAC where the operating
+system has an encoder, is handed over as recorded.
 
 ## It records on the canvas the CLI talks to
 
