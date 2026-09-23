@@ -140,7 +140,8 @@ test("account updated clears only the pending sign-in captured by its authoritat
 		response.resolve(accountResponse);
 		await flush();
 		expect(value.state.login.state).toBe("cancelled");
-		expect(value.state.account).toMatchObject({ kind: "account", state: "unknown" });
+		// The cancel reads the account again; that read does not complete the sign-in.
+		expect(value.state.account).toMatchObject({ kind: "codex_account_response" });
 		value.complete();
 		expect(value.state.login.state).toBe("cancelled");
 	} finally {
