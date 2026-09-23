@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 
 import {
-	resolveVariant,
+	addressedVariant,
 	type ReconciliationIssue,
 	type SemanticBoard,
 	type SemanticVariant,
@@ -368,10 +368,11 @@ function explain(
 	if (!reading.ok) {
 		return { ...nothing, notice: `This board could not be read. ${reading.problem}` };
 	}
-	const shown = resolveVariant(reading.board, variant);
-	if (shown === undefined) {
-		return { ...nothing, notice: "The variant on screen is not in this board any more." };
+	const opened = addressedVariant(reading.board, variant);
+	if (!opened.ok) {
+		return { ...nothing, notice: `This board cannot say what is on screen: ${opened.problem}.` };
 	}
+	const shown = opened.variant;
 	return {
 		...comparedSubject(reading.board, shown, selection),
 		open: openOn(shown, selection),
