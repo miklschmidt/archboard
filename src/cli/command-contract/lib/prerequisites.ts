@@ -1,4 +1,4 @@
-import { getHealth } from "@/runtime/engine/canvas-client";
+import { getHealth } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { ensureCanvasRunning } from "@/runtime/engine/spawn";
 import type { RuntimePrerequisite } from "@/cli/command-contract/contract";

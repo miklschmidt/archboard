@@ -24,7 +24,7 @@
 			"kind": "route",
 			"parent": "Agent surface",
 			"responsibility": "One intent per board write request",
-			"binding": { "repo": "archboard", "path": "src/server/canvas/lib/element-routes.ts" }
+			"binding": { "repo": "archboard", "path": "src/server/archboard/lib/element-routes.ts" }
 		},
 
 		{
@@ -39,7 +39,7 @@
 			"kind": "module",
 			"parent": "Board runtime",
 			"responsibility": "Takes the lease, checks the version, refuses a stale write",
-			"binding": { "repo": "archboard", "path": "src/server/canvas/lib/write-boundary.ts" },
+			"binding": { "repo": "archboard", "path": "src/server/archboard/lib/write-boundary.ts" },
 			"drillDown": {
 				"board": "archboard/write-path",
 				"variant": { "kind": "named", "name": "One write, as it is" }

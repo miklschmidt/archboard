@@ -1,7 +1,10 @@
 // How a fake host answers a stop: delivered with an exact, missing, swapped,
 // stale, future or mismatched identity, or a refusal or a lost response.
 
-import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract";
 import type { CommandOutcome, RealtimeCorrelation } from "@/ui/codex-realtime";
 
 type StopMode = "delivered" | "rejected" | "not_delivered" | "outcome_unknown" | "paused";

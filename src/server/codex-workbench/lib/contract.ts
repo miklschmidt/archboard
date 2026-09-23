@@ -19,7 +19,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
 } from "@/runtime/codex-thread-link";
-import type { AnswerSdp } from "@/shared/codex-realtime-host";
+import type { AnswerSdp } from "@/shared/codex-realtime-contract";
 import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
 import type { SupportedLoginAccountParams } from "@/runtime/codex-protocol";
 import type {

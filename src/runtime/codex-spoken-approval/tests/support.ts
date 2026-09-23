@@ -2,12 +2,12 @@ import type {
 	RealtimeSemanticEvent,
 	RealtimeSemanticEventListener,
 	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 import {
 	createIdentityAuthority,
 	type DynamicToolCallId,

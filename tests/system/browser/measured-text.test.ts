@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
 	canvasTestEnvironment,

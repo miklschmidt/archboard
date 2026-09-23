@@ -6,11 +6,11 @@ import { join, resolve } from "node:path";
 import {
 	type ApplicationSocket,
 	type WorkbenchResult,
-} from "../../canvas-state/support/codex-production.ts";
-import { waitFor } from "../../canvas-state/support/http.ts";
-import { buildOwnedCanvasEnvironment } from "../../support/owned-canvas.ts";
+} from "../../server-state/support/codex-production.ts";
+import { waitFor } from "../../server-state/support/http.ts";
+import { buildOwnedCanvasEnvironment } from "../../support/owned-server.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
-const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
+const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
 
 export interface FixtureRecord {
@@ -212,7 +212,7 @@ export function extendFixture(root: string, storageMode?: StorageMode): string {
 	const source = readFileSync(fixtureSource, "utf8")
 		.replaceAll(
 			"./fake-codex-production-data.ts",
-			join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production-data.ts"),
+			join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production-data.ts"),
 		)
 		.replace(
 			'import { appendFileSync, readFileSync } from "node:fs";',

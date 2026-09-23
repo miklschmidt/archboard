@@ -15,7 +15,7 @@ import {
 	type SemanticWalkthrough,
 } from "@/shared/semantic-board/index";
 import { RecordingContainerSchema, type RecordingState } from "@/shared/walkthrough-recording";
-import { currentWriteDoing } from "@/runtime/engine/canvas-client";
+import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
 	discardSemanticBoardOnCanvas,

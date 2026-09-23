@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
 import { createInstallFixture } from "./support/install-fixture.ts";
 import {

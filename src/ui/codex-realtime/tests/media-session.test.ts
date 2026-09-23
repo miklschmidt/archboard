@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract";
 import { createRealtimeMediaSession, REALTIME_MEDIA_FEATURE } from "@/ui/codex-realtime";
 import type {
 	RealtimeMediaSnapshot,

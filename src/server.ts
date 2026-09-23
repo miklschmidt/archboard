@@ -1,5 +1,5 @@
 import { isMainModule } from "@/runtime/engine/entry";
-import { app, canvasStartupFailureMessage, startServer } from "@/server/canvas";
+import { app, canvasStartupFailureMessage, startServer } from "@/server/archboard";
 
 export { app, startServer };
 

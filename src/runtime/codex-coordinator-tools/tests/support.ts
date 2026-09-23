@@ -37,7 +37,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 
 interface ResponseWrite {
 	readonly request: DynamicServerRequest;

@@ -12,7 +12,7 @@ import {
 import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

@@ -3,7 +3,7 @@
 // measured model output when the session is live and silent otherwise: the
 // browser media session never learns the coordinator's turn phases itself.
 
-import type { RealtimePhase } from "@/shared/codex-realtime-host";
+import type { RealtimePhase } from "@/shared/codex-realtime-contract";
 import type { VoiceWaveState } from "@/ui/voice-wave/wave-state";
 
 /** What the wave renderer takes. */

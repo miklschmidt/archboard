@@ -2,7 +2,7 @@ import type {
 	RealtimeCorrelation,
 	RealtimeDiagnosticCode,
 	RealtimeState,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type { CodexRealtimeAdapterOptions } from "@/runtime/codex-realtime/lib/contract";
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 

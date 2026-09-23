@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-import { parseRealtimeItemId, parseRealtimeSessionId } from "@/shared/codex-realtime-host/index";
-import type { RealtimeItemId, RealtimeSessionId } from "@/shared/codex-realtime-host/index";
+import {
+	parseRealtimeItemId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract/index";
+import type { RealtimeItemId, RealtimeSessionId } from "@/shared/codex-realtime-contract/index";
 import { boundedText } from "@/shared/codex-browser-model/lib/scalars";
 import type { IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 

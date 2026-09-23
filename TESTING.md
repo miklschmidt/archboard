@@ -94,7 +94,7 @@ context and the workbench together:
 
 ```bash
 bun test src/runtime/codex-semantic-context/tests src/runtime/codex-thread-context/tests
-bun test tests/system/canvas-state/codex-workbench-production.test.ts
+bun test tests/system/server-state/codex-workbench-production.test.ts
 ```
 
 Before accepting a release that changes the workbench or realtime path, run
@@ -103,7 +103,7 @@ deterministic gates first, then a user proves microphone, speaker, sign-in,
 reconnect, callback and spoken approval.
 
 A recording (`archboard semantic record`) runs end to end against the fake
-Codex in `tests/system/canvas-state/walkthrough-recording.test.ts`: a real headless
+Codex in `tests/system/server-state/walkthrough-recording.test.ts`: a real headless
 Chromium, the real page, and a fake that speaks a transcript for every step it
 is handed. What only a real voice can show, that it explains each step and falls
 silent so the talk moves on, is the

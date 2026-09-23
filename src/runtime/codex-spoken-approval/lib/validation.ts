@@ -9,7 +9,10 @@ import type {
 	SpokenApprovalFallbackReason,
 } from "@/runtime/codex-spoken-approval/lib/contract";
 import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
-import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type {
+	RealtimeCorrelation,
+	RealtimeTranscriptRecord,
+} from "@/shared/codex-realtime-contract";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@/shared/timing/timing";
 import {

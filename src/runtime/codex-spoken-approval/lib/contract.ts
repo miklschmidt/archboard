@@ -19,7 +19,7 @@ import type {
 	RealtimeItemId,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type {
 	DynamicToolRefusalReason,
 	ResolveSpokenApprovalInput,

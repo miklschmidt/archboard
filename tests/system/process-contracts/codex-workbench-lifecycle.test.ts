@@ -6,9 +6,9 @@ import { parseDynamicToolCallResponse } from "../../../src/runtime/codex-thread-
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
-} from "../canvas-state/support/codex-production.ts";
-import { createRequester, waitFor } from "../canvas-state/support/http.ts";
-import { processExists } from "../support/owned-canvas.ts";
+} from "../server-state/support/codex-production.ts";
+import { createRequester, waitFor } from "../server-state/support/http.ts";
+import { processExists } from "../support/owned-server.ts";
 import {
 	approveOrdinary,
 	codexWorkbenchRoot,

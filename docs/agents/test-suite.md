@@ -76,7 +76,7 @@ scaled dimensions, full bounds past a display, font readiness, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
 `src/runtime/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
-file, and provable teardown. `tests/system/canvas-state/walkthrough-recording.test.ts`
+file, and provable teardown. `tests/system/server-state/walkthrough-recording.test.ts`
 owns `semantic record` end to end: the real CLI drives the built page in a
 headless Chromium against a canvas whose fake Codex narrates, and the owner
 checks the MP4, the order the steps reached the voice and `--discard`;
@@ -152,10 +152,10 @@ Every transitional package check now has one final owner lane:
 | `test:contracts`                                                               | modules and system | `src/cli/command-contract/tests/`, `src/cli/finding-rendering/tests/`, `tests/system/cli/`                           |
 | `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                              |
 | `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                                    |
-| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `src/runtime/engine/tests/`, `src/ui/canvas/tests/`, `tests/system/canvas-state/`, `tests/system/process-contracts/` |
+| `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `src/runtime/engine/tests/`, `src/ui/canvas/tests/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
 | `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                                  |
 | `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                           |
-| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/canvas-state/`                                                                                         |
+| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/server-state/`                                                                                         |
 | `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
 | `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
 | `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                               |

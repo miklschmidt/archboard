@@ -1,7 +1,10 @@
 import type { ApprovalBinding, ApprovalSettlement } from "@/runtime/codex-approvals";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { DynamicServerRequest } from "@/runtime/codex-transport";
-import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type {
+	RealtimeCorrelation,
+	RealtimeTranscriptRecord,
+} from "@/shared/codex-realtime-contract";
 import type {
 	ApprovalId,
 	ChildEpoch,

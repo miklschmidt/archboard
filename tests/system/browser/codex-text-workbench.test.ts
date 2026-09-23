@@ -7,8 +7,8 @@ import {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
-import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
 	canvasTestEnvironment,
@@ -30,8 +30,8 @@ import {
 	PANE_SECTIONS,
 } from "./support/shell-dom.ts";
 
-const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
-const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
+const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
+const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts");
 
 /** The provider page the fixture names for a ChatGPT sign-in. */
 const LOGIN_URL = "https://example.test/login";

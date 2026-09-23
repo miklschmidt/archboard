@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 
-import { parseRealtimeSessionId as parseBrowserRealtimeSessionId } from "@/shared/codex-realtime-host/index";
+import { parseRealtimeSessionId as parseBrowserRealtimeSessionId } from "@/shared/codex-realtime-contract/index";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,

@@ -12,7 +12,7 @@ import {
 	waitForPaneMessage,
 	waitForPaneMessageWhere,
 } from "../support/pane-websocket.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-server.ts";
 import { RawLockReadySchema } from "./fixtures/process-resource-owner.ts";
 import { startOwnedPeer } from "./support/owned-peer-process.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";

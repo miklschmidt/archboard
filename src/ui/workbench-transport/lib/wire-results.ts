@@ -7,7 +7,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type AnswerSdp,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type {
 	BrowserGatewayErrorCode,
 	BrowserWorkbenchAccountReadResult,

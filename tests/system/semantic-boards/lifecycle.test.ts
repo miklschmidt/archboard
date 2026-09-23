@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
 // The whole path a person and an agent actually use: a command makes a board,

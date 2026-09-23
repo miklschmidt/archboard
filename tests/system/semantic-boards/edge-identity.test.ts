@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");

@@ -3,7 +3,7 @@ import {
 	transitionRealtimeState,
 	type RealtimeSemanticEvent,
 	type RealtimeState,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 import type { CodexRealtimeAdapter } from "../index.js";
 
 export function recordReducerCheckedEvents(

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-server.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
 // The public path to a group: configure it, put parts of two containers in it,

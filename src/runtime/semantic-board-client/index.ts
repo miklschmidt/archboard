@@ -19,7 +19,7 @@ import {
 	currentWriteDoing,
 	currentWriteSession,
 	requestJson,
-} from "@/runtime/engine/canvas-client";
+} from "@/runtime/engine/server-client";
 import {
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,

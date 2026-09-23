@@ -13,7 +13,10 @@ import type {
 	RealtimeMediaSnapshot,
 } from "@/ui/codex-realtime";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
-import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract";
 import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/media-host";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */
