@@ -157,7 +157,7 @@ function Disclosure(props: {
 			tabIndex={-1}
 			aria-label={`${expanded ? "Collapse" : "Expand"} ${props.name}`}
 			onClick={handleClick}
-			className="text-muted-foreground hover:text-foreground -my-px flex h-5 w-4 shrink-0 items-center justify-center rounded-[2px]"
+			className="text-muted-foreground hover:text-foreground -mx-1 -my-[3px] flex size-6 shrink-0 items-center justify-center rounded-[2px]"
 		>
 			<RiArrowRightSLine
 				className={`size-3.5 transition-transform ${expanded ? "rotate-90" : ""}`}
@@ -359,7 +359,7 @@ function BoardTrailing(props: RowHandlers & { readonly row: BoardRow }): JSX.Ele
 					aria-expanded={row.statesOpen}
 					aria-label={`${row.statesOpen ? "Hide" : "Show"} ${row.otherStates} other ${row.otherStates === 1 ? "state" : "states"} of ${row.label}`}
 					onClick={handleStates}
-					className={`hover:text-foreground hover:bg-background/60 flex h-[18px] items-center gap-0.5 rounded-[2px] px-1 ${row.statesOpen ? "text-foreground" : "text-muted-foreground"}`}
+					className={`hover:text-foreground hover:bg-background/60 -my-[3px] flex h-6 items-center gap-0.5 rounded-[2px] px-1 ${row.statesOpen ? "text-foreground" : "text-muted-foreground"}`}
 				>
 					<RiGitBranchLine className="size-3" aria-hidden="true" />
 					<span className="text-technical font-mono">{row.otherStates}</span>

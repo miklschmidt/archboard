@@ -66,3 +66,23 @@ test("a turn or an item published twice is refused, never merged", () => {
 		projectTimelineTurns(timeline([{ ...doubled, items: [...doubled.items, ...doubled.items] }])),
 	).toThrow();
 });
+
+test("one call asked about twice is two approvals in its turn, not a duplicate", () => {
+	const asked = turn("t3", "inProgress");
+	const call = decoder.adoptItemId("t3-call");
+	/**
+	 * One approval of that call.
+	 * @param id The approval's id.
+	 * @returns The item.
+	 */
+	const approval = (id: string): BrowserTurn["items"][number] => ({
+		media: "approval",
+		itemId: call,
+		approvalId: decoder.adoptApprovalId(id),
+		status: "pending",
+	});
+	const [projected] = projectTimelineTurns(
+		timeline([{ ...asked, items: [...asked.items, approval("first"), approval("second")] }]),
+	);
+	expect(projected?.items.filter((item) => item.media === "approval")).toHaveLength(2);
+});

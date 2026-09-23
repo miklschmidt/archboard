@@ -55,6 +55,23 @@ const STEP_MARKS = {
 const STEP_WORDS = { completed: "done", inProgress: "in progress", pending: "to do" } as const;
 
 /**
+ * Each step with a key of its own: its words, and which time they recur,
+ * since the model may write the same step twice.
+ * @param steps The plan's steps.
+ * @returns Each step with its key.
+ */
+function stepKeys<Step extends { readonly step: string }>(
+	steps: readonly Step[],
+): [string, Step][] {
+	const seen = new Map<string, number>();
+	return steps.map((step) => {
+		const time = (seen.get(step.step) ?? 0) + 1;
+		seen.set(step.step, time);
+		return [`${step.step}#${time}`, step];
+	});
+}
+
+/**
  * The plan the agent is working to, updated in place as it goes.
  * @param props The plan.
  * @param props.plan The latest plan Codex published.
@@ -77,8 +94,8 @@ function PlanProgress(props: {
 				<p className="text-body text-muted-foreground mb-1.5">{plan.explanation}</p>
 			)}
 			<ol className="flex flex-col gap-1">
-				{plan.steps.map((step) => (
-					<li key={step.step} className="text-body flex items-start gap-2">
+				{stepKeys(plan.steps).map(([key, step]) => (
+					<li key={key} className="text-body flex items-start gap-2">
 						<span className="mt-px">{STEP_MARKS[step.status]}</span>
 						<span className={step.status === "completed" ? "text-muted-foreground" : ""}>
 							<span className="sr-only">{STEP_WORDS[step.status]}: </span>
@@ -160,11 +177,7 @@ function FailedLine(props: {
 }): JSX.Element {
 	const { error } = props;
 	return (
-		<div
-			data-slot="turn-failed"
-			role="alert"
-			className="text-body text-destructive flex items-start gap-2"
-		>
+		<div data-slot="turn-failed" className="text-body text-destructive flex items-start gap-2">
 			<RiErrorWarningLine aria-hidden="true" className="mt-px size-3.5 shrink-0" />
 			<span className="min-w-0 wrap-break-word">
 				{error?.message ?? "The turn failed."}

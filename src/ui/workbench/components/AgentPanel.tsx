@@ -28,7 +28,8 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 interface AgentPanelProps {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
-	readonly transport: BrowserWorkbenchTransport;
+	/** The focused pane's transport, or null while its socket is down. */
+	readonly transport: BrowserWorkbenchTransport | null;
 	/** Put a suggestion in the composer. */
 	readonly suggest: (text: string) => void;
 	readonly onClose: () => void;
@@ -53,8 +54,14 @@ function titleOf(view: AgentView): string {
  * @returns True for an empty conversation.
  */
 function nothingSaid(view: AgentView): boolean {
-	const spoken = view.snapshot?.voice.transcript.length ?? 0;
-	return view.conversation.turns.length === 0 && view.setup.held.length === 0 && spoken === 0;
+	const { conversation, setup, snapshot } = view;
+	const spoken = snapshot?.voice.transcript.length ?? 0;
+	return (
+		conversation.turns.length === 0 &&
+		conversation.failure === null &&
+		setup.held.length === 0 &&
+		spoken === 0
+	);
 }
 
 /**
@@ -67,7 +74,6 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 	const [details, setDetails] = useState(false);
 	const showDetails = useCallback(() => setDetails(true), []);
 	const hideDetails = useCallback(() => setDetails(false), []);
-	const empty = nothingSaid(view);
 	return (
 		<aside
 			data-slot="agent-panel"
@@ -88,18 +94,50 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 					<RiCloseLine />
 				</IconAction>
 			</header>
-			{details ? (
-				<AgentDetails view={view} actions={actions} />
-			) : (
-				<AgentRuntimeProvider transport={props.transport}>
-					<Conversation>
-						{empty && <FirstUse view={view} actions={actions} suggest={props.suggest} />}
-						<VoiceLines snapshot={view.snapshot} />
-						<PendingWork view={view} actions={actions} />
-					</Conversation>
-				</AgentRuntimeProvider>
-			)}
+			{details ? <AgentDetails view={view} actions={actions} /> : <PanelBody {...props} />}
 		</aside>
+	);
+}
+
+/**
+ * The conversation, or — while the focused pane's socket is down — that it
+ * will be back, in the panel's place so nothing moves.
+ * @param props The panel's inputs.
+ * @returns The body.
+ */
+function PanelBody(props: AgentPanelProps): JSX.Element {
+	const { view, actions, transport } = props;
+	if (transport === null) {
+		return (
+			<p data-slot="conversation-offline" className="text-body text-muted-foreground px-5 py-4">
+				The conversation is back once this pane reconnects to the canvas.
+			</p>
+		);
+	}
+	return (
+		<AgentRuntimeProvider transport={transport}>
+			<Conversation>
+				{nothingSaid(view) && <FirstUse view={view} actions={actions} suggest={props.suggest} />}
+				<ConversationFailure failure={view.conversation.failure} />
+				<VoiceLines snapshot={view.snapshot} />
+				<PendingWork view={view} actions={actions} />
+			</Conversation>
+		</AgentRuntimeProvider>
+	);
+}
+
+/**
+ * Why the conversation could not be read, in place of it.
+ * @param props The failure.
+ * @param props.failure What went wrong, or null.
+ * @returns The line, or nothing.
+ */
+function ConversationFailure(props: { readonly failure: string | null }): JSX.Element | null {
+	if (props.failure === null) return null;
+	return (
+		<p data-slot="conversation-failure" className="text-body text-destructive">
+			The conversation could not be read: {props.failure}
+		</p>
 	);
 }
 

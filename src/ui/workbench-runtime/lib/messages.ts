@@ -24,7 +24,7 @@ interface ActivityRun {
 	readonly items: readonly ActivityItem[];
 	/** The turn has ended, so nothing in the run will change. */
 	readonly ended: boolean;
-	/** The run is the running turn's latest, so it may grow and its last row is live. */
+	/** The run is the running turn's latest and its last step is still going: that row is live. */
 	readonly live: boolean;
 }
 
@@ -116,6 +116,17 @@ function wordsPart(item: Exclude<ConversationItem, ActivityItem>): MessagePart {
 }
 
 /**
+ * Whether a step is still going: it says so, or it has no status to say it
+ * with (a thought, a search) and nothing came after it.
+ * @param item The step.
+ * @returns True while it runs.
+ */
+function stillGoing(item: ActivityItem | undefined): boolean {
+	if (item === undefined) return false;
+	return !("status" in item) || item.status === "inProgress";
+}
+
+/**
  * A turn's items as parts: words one by one, work gathered into runs.
  * @param turn The turn.
  * @returns The parts.
@@ -126,10 +137,13 @@ function itemParts(turn: ConversationTurn): MessagePart[] {
 	const ended = turn.outcome !== "running";
 	/**
 	 * Close the current run of work, if there is one.
-	 * @param live Whether it is the running turn's latest.
+	 * @param latest Whether it is the running turn's latest, whose last step may be live.
 	 */
-	const flush = (live: boolean): void => {
-		if (run.length > 0) parts.push(dataPart("activity", { items: run, ended, live }));
+	const flush = (latest: boolean): void => {
+		if (run.length > 0)
+			parts.push(
+				dataPart("activity", { items: run, ended, live: latest && stillGoing(run.at(-1)) }),
+			);
 		run = [];
 	};
 	for (const item of turn.items) {
@@ -144,17 +158,26 @@ function itemParts(turn: ConversationTurn): MessagePart[] {
 }
 
 /**
- * The parts of a turn: its items, the plan's progress after the first prompt,
- * and how the turn ended at its foot.
+ * The parts with the plan's progress right after the first prompt, or first
+ * of all when the turn shows no prompt.
+ * @param parts The turn's parts.
+ * @param plan The plan, or null.
+ * @returns The parts with the plan placed.
+ */
+function withPlan(parts: MessagePart[], plan: ConversationTurn["plan"]): MessagePart[] {
+	if (plan === null || plan.steps.length === 0) return parts;
+	const prompt = parts.findIndex((part) => part.type === "data" && part.name === "prompt");
+	return parts.toSpliced(prompt + 1, 0, dataPart("plan-progress", plan));
+}
+
+/**
+ * The parts of a turn: its items with the plan's progress, and how the turn
+ * ended at its foot.
  * @param turn The turn.
  * @returns The parts.
  */
 function turnParts(turn: ConversationTurn): MessagePart[] {
-	const parts = itemParts(turn);
-	if (turn.plan !== null && turn.plan.steps.length > 0) {
-		const firstPrompt = turn.items.findIndex((item) => item.media === "prompt");
-		parts.splice(firstPrompt < 0 ? 0 : 1, 0, dataPart("plan-progress", turn.plan));
-	}
+	const parts = withPlan(itemParts(turn), turn.plan);
 	const end: TurnEnd = {
 		outcome: turn.outcome,
 		startedAtMs: turn.startedAtMs,

@@ -19,7 +19,7 @@ import {
 	PromptBlock,
 	TurnEndLine,
 } from "@/ui/workbench-thread/components/TurnParts";
-import { MarkdownText } from "@/ui/workbench-thread/markdown-text";
+import { AnswerText } from "@/ui/workbench-thread/components/AnswerText";
 
 /**
  * What a data part carries, as the seam that made it named it.
@@ -97,7 +97,7 @@ function TurnEndPart(props: DataMessagePartProps): JSX.Element | null {
 
 /** Every part the conversation renders, by kind and name. */
 const PART_COMPONENTS = {
-	Text: MarkdownText,
+	Text: AnswerText,
 	data: {
 		by_name: {
 			prompt: PromptPart,

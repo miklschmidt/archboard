@@ -39,6 +39,22 @@ function claimIdentity(seen: Set<string>, identity: string, what: string): void 
 }
 
 /**
+ * What makes one item of a turn itself. An approval shares the item id of
+ * the call it gates, and one call can be asked about more than once, so an
+ * approval is itself by its own id.
+ * @param turnId The turn.
+ * @param item The item.
+ * @returns The identity.
+ */
+function itemIdentity(
+	turnId: string,
+	item: BrowserTimeline["turns"][number]["items"][number],
+): string {
+	const own = item.media === "approval" ? item.approvalId : item.itemId;
+	return `${turnId}/${item.media}/${own}`;
+}
+
+/**
  * The conversation a timeline holds.
  * @param timeline The authoritative timeline.
  * @returns One turn per Codex turn, in order.
@@ -49,8 +65,7 @@ function projectTimelineTurns(timeline: BrowserTimeline): readonly ConversationT
 	const items = new Set<string>();
 	return timeline.turns.map((turn) => {
 		claimIdentity(turns, turn.turnId, "turn");
-		for (const item of turn.items)
-			claimIdentity(items, `${turn.turnId}/${item.itemId}/${item.media}`, "item");
+		for (const item of turn.items) claimIdentity(items, itemIdentity(turn.turnId, item), "item");
 		return {
 			id: conversationTurnId(timeline.threadId, turn.turnId),
 			threadId: timeline.threadId,

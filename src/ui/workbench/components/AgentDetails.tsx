@@ -43,12 +43,10 @@ function accountWords(snapshot: BrowserSnapshot | null): string {
  */
 function contextWords(usage: BrowserTimelineUsage | null): string | null {
 	if (usage === null) return null;
-	const used = usage.last.inputTokens + usage.last.outputTokens;
 	const window = usage.modelContextWindow ?? 0;
 	const total = `${usage.total.totalTokens.toLocaleString("en")} tokens in total`;
-	return window === 0
-		? total
-		: `${Math.round((used / window) * 100)}% of the context window · ${total}`;
+	const share = Math.min(100, Math.round((usage.last.totalTokens / Math.max(window, 1)) * 100));
+	return window === 0 ? total : `${share}% of the context window · ${total}`;
 }
 
 /**

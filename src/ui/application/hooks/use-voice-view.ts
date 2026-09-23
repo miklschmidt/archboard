@@ -8,6 +8,7 @@ import { useSyncExternalStore } from "react";
 import type { AgentSetupSnapshot } from "@/ui/agent-setup";
 import type { VoiceOwner } from "@/ui/application/lib/workbench-owners";
 import type { VoiceSession, VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
+import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@/ui/voice-output-level";
 import type { AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 
 /** The stage each session status is at. */
@@ -33,6 +34,9 @@ interface VoiceSource {
 	readonly subscribeLevel: VoiceSession["subscribeLevel"];
 	readonly level: VoiceSession["level"];
 }
+
+/** The stages in which the model's measured output can make it audible. */
+const LIVE_STAGES: ReadonlySet<VoiceStage> = new Set(["listening", "speaking", "muted"]);
 
 /**
  * Nothing to listen to without a voice session.
@@ -90,11 +94,13 @@ function useVoiceView(voice: VoiceOwner | null, setup: AgentSetupSnapshot): Agen
 	const source: VoiceSource = voice?.session ?? NO_SESSION;
 	const view = useSyncExternalStore(source.subscribe, source.view, source.view);
 	const level = useSyncExternalStore(source.subscribeLevel, source.level, source.level);
+	const stage = stageOf(view, setup.talk);
 	return {
-		stage: stageOf(view, setup.talk),
+		stage,
 		problem: problemOf(view, setup),
 		busy: view?.busy === true,
 		level,
+		audible: LIVE_STAGES.has(stage) && level >= VOICE_OUTPUT_SPEAKING_LEVEL,
 	};
 }
 

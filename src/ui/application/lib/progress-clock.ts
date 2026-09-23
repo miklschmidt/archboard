@@ -2,18 +2,40 @@
 // the last item, a plan step — heard as the transport publishes, so the agent
 // bar can say a turn has gone quiet without reading the clock while it draws.
 
+import type { BrowserTimeline } from "@/shared/codex-browser-model";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
+/** One item of a published turn. */
+type TimelineItem = BrowserTimeline["turns"][number]["items"][number];
+
 /**
- * What the running turn has said so far, as one comparable value.
+ * One item's progress as a short mark: which it is, where it stands, and how
+ * much it has said — never its whole text, which a long turn would make heavy.
+ * @param item The item.
+ * @returns The mark.
+ */
+function itemMark(item: TimelineItem): string {
+	const status = "status" in item ? item.status : "";
+	const said = "text" in item ? item.text.length : 0;
+	const output = "output" in item && item.output !== null ? item.output.length : 0;
+	return `${item.itemId}:${status}:${said}:${output}`;
+}
+
+/**
+ * What the running turn has done so far, as one comparable value: every item
+ * of work and what the agent said, and the plan. Approvals are not progress:
+ * one arriving or being retired is the person's business, not the agent's.
  * @param transport The transport.
  * @returns The signature, or null while no turn runs.
  */
 function runningSignature(transport: BrowserWorkbenchTransport): string | null {
-	const turn = transport.snapshot()?.timeline?.turns.at(-1);
-	if (turn?.status !== "inProgress") return null;
-	return JSON.stringify([turn.turnId, turn.items.length, turn.items.at(-1) ?? null, turn.plan]);
+	const turn = transport
+		.snapshot()
+		?.timeline?.turns.findLast((entry) => entry.status === "inProgress");
+	if (turn === undefined) return null;
+	const marks = turn.items.filter((item) => item.media !== "approval").map(itemMark);
+	return JSON.stringify([turn.turnId, marks, turn.plan]);
 }
 
 /**

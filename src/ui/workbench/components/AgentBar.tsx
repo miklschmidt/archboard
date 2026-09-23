@@ -42,7 +42,7 @@ function AgentBar(props: AgentBarProps): JSX.Element {
 		<section
 			data-slot="agent-bar"
 			aria-label="Agent"
-			className="border-border bg-sidebar flex h-10 shrink-0 items-stretch border-t"
+			className="border-border bg-sidebar flex h-[41px] shrink-0 items-stretch border-t"
 		>
 			<div className="flex min-w-0 flex-1 items-center gap-2 pr-3 pl-2">
 				<StatusLine status={status} actions={actions} />
