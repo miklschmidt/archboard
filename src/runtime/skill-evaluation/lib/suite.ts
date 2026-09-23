@@ -217,9 +217,9 @@ const ScenarioSchema = z
 		name: z.string().min(1),
 		report: z.enum(["primary", "broad"]),
 		workflow: z.enum(WORKFLOWS),
-		flask: z.enum(FLASK_REVISIONS),
+		flask: z.enum(FLASK_REVISIONS).optional(),
 		fixture: z.string().min(1),
-		sources: Names.min(1),
+		sources: Names.min(1).optional(),
 		prompt: z.string().min(1),
 		expectedFeatures: z.array(ExpectedFeatureSchema).min(1),
 		outcomes: z.array(OutcomeCheckSchema).min(1),
@@ -234,7 +234,10 @@ const ScenarioSchema = z
 				message: "declare at least one capture that names its picture, besides every-view captures",
 			}),
 	})
-	.strict();
+	.strict()
+	.refine((scenario) => (scenario.flask === undefined) === (scenario.sources === undefined), {
+		message: "name flask and sources together; a planning scenario (ADR 0031) names neither",
+	});
 type Scenario = z.infer<typeof ScenarioSchema>;
 
 const SuiteSchema = z
