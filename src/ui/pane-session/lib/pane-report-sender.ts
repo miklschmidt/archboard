@@ -31,6 +31,7 @@ interface PaneReportSenderParts {
 	readonly paneElement: () => HTMLElement | null;
 	readonly primary: () => boolean;
 	readonly focused: () => boolean;
+	readonly recording: () => boolean;
 	readonly connector: PaneSocketConnector;
 	readonly setConnected: (connected: boolean) => void;
 	/**
@@ -230,6 +231,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			paneId: parts.paneId,
 			primary: parts.primary(),
 			focused: parts.focused(),
+			recording: parts.recording(),
 		});
 	}
 

@@ -26,6 +26,11 @@ interface PaneReport {
 	rect: { x: number; y: number; width: number; height: number };
 	/** Which bundle this tab is running, so the canvas can say when it is old. */
 	build?: string;
+	/**
+	 * The pane is a recording page's (TASK-304), which the canvas leaves out of addressing: no
+	 * agent or user is to point at it. Said only when true.
+	 */
+	recording?: true;
 }
 
 /** The server's answer to a pane report. */
