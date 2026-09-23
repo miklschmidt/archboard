@@ -17,11 +17,15 @@ function useVaultRepair(
 ): () => void {
 	useEffect(() => {
 		if (transport === null) return undefined;
-		let turns = new Map(transport.snapshot()?.timeline?.turns.map((turn) => [turn.turnId, turn.status]));
+		let turns = new Map(
+			transport.snapshot()?.timeline?.turns.map((turn) => [turn.turnId, turn.status]),
+		);
 		return transport.subscribe(() => {
 			const next = transport.snapshot()?.timeline?.turns;
 			if (next === undefined) return;
-			if (next.some((turn) => turn.status !== "inProgress" && turns.get(turn.turnId) === "inProgress")) {
+			if (
+				next.some((turn) => turn.status !== "inProgress" && turns.get(turn.turnId) === "inProgress")
+			) {
 				recheck();
 			}
 			turns = new Map(next.map((turn) => [turn.turnId, turn.status]));

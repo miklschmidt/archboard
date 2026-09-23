@@ -36,7 +36,11 @@ function StatusLine(props: StatusLineProps): JSX.Element {
 	const { status, actions } = props;
 	const now = useClock(status.sinceMs === null ? SHELL_AGE_TICK_MS : AGENT_ELAPSED_TICK_MS);
 	return (
-		<div data-slot="agent-status" data-tone={status.tone} className="flex h-full min-w-0 flex-1 items-center gap-3 pr-2">
+		<div
+			data-slot="agent-status"
+			data-tone={status.tone}
+			className="flex h-full min-w-0 flex-1 items-center gap-3 pr-2"
+		>
 			<button
 				type="button"
 				onClick={actions.openPanel}
@@ -46,12 +50,15 @@ function StatusLine(props: StatusLineProps): JSX.Element {
 				<span className="text-control shrink-0 font-semibold">{status.headline}</span>
 				<Timing status={status} now={now} />
 				{status.detail !== null && (
-					<span className="text-control text-muted-foreground min-w-0 flex-1 truncate font-normal" title={status.detail}>
+					<span
+						className="text-control text-muted-foreground min-w-0 flex-1 truncate font-normal"
+						title={status.detail}
+					>
 						{status.detail}
 					</span>
 				)}
 			</button>
-			<Facts status={status} now={now} />
+			<Facts status={status} />
 			<StatusAction status={status} actions={actions} />
 		</div>
 	);
@@ -67,7 +74,11 @@ function StatusLine(props: StatusLineProps): JSX.Element {
 function Timing(props: { readonly status: AgentStatus; readonly now: number }): JSX.Element | null {
 	const { status, now } = props;
 	if (status.sinceMs !== null) {
-		return <span className="text-technical text-muted-foreground shrink-0 font-mono">{clockDuration(now - status.sinceMs)}</span>;
+		return (
+			<span className="text-technical text-muted-foreground shrink-0 font-mono">
+				{clockDuration(now - status.sinceMs)}
+			</span>
+		);
 	}
 	if (status.endedAtMs === null) return null;
 	return (
@@ -79,16 +90,14 @@ function Timing(props: { readonly status: AgentStatus; readonly now: number }): 
 
 /**
  * The facts after the words: plan progress, what is queued, and whether it has gone quiet.
- * @param props The status and the clock.
+ * @param props The status.
  * @param props.status The status.
- * @param props.now The clock.
  * @returns The facts.
  */
-function Facts(props: { readonly status: AgentStatus; readonly now: number }): JSX.Element | null {
+function Facts(props: { readonly status: AgentStatus }): JSX.Element {
 	const { progress, queued, quiet } = props.status;
-	if (progress === null && queued === 0 && !quiet) return null;
 	return (
-		<span className="text-technical text-muted-foreground flex shrink-0 items-center gap-3 font-mono">
+		<span className="text-technical text-muted-foreground flex shrink-0 items-center gap-3 font-mono empty:hidden">
 			{progress !== null && <PlanMeter done={progress.done} total={progress.total} />}
 			{queued > 0 && <span>{queued} queued</span>}
 			{quiet && <span className="text-warning-foreground">quiet</span>}
@@ -107,10 +116,16 @@ function PlanMeter(props: { readonly done: number; readonly total: number }): JS
 	const segments = Math.min(props.total, 12);
 	const lit = Math.round((props.done / Math.max(props.total, 1)) * segments);
 	return (
-		<span className="flex items-center gap-1.5" title={`${props.done} of ${props.total} plan steps done`}>
+		<span
+			className="flex items-center gap-1.5"
+			title={`${props.done} of ${props.total} plan steps done`}
+		>
 			<span aria-hidden="true" className="flex gap-[2px]">
 				{Array.from({ length: segments }, (_, index) => (
-					<span key={index} className={`h-2 w-1 rounded-[1px] ${index < lit ? "bg-foreground/70" : "bg-foreground/15"}`} />
+					<span
+						key={index}
+						className={`h-2 w-1 rounded-[1px] ${index < lit ? "bg-foreground/70" : "bg-foreground/15"}`}
+					/>
 				))}
 			</span>
 			<span>
@@ -127,13 +142,21 @@ function PlanMeter(props: { readonly done: number; readonly total: number }): JS
  * @param props.actions The actions.
  * @returns The control, or nothing.
  */
-function StatusAction(props: { readonly status: AgentStatus; readonly actions: AgentActions }): JSX.Element | null {
+function StatusAction(props: {
+	readonly status: AgentStatus;
+	readonly actions: AgentActions;
+}): JSX.Element | null {
 	const { status, actions } = props;
 	const signIn = useCallback(() => actions.signIn({ type: "chatgpt" }), [actions]);
 	switch (status.action) {
 		case "stop":
 			return (
-				<Button variant="outline" size="sm" className="h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5" onClick={actions.stop}>
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5"
+					onClick={actions.stop}
+				>
 					<RiStopFill aria-hidden="true" className="size-3" />
 					Stop
 				</Button>
@@ -164,7 +187,10 @@ function StatusAction(props: { readonly status: AgentStatus; readonly actions: A
  * @param props.onCancel Cancel the sign-in.
  * @returns The controls.
  */
-function SignInPending(props: { readonly url: string | null; readonly onCancel: () => void }): JSX.Element {
+function SignInPending(props: {
+	readonly url: string | null;
+	readonly onCancel: () => void;
+}): JSX.Element {
 	return (
 		<span className="flex shrink-0 items-center gap-1">
 			{props.url !== null && (
@@ -178,7 +204,12 @@ function SignInPending(props: { readonly url: string | null; readonly onCancel: 
 					<RiExternalLinkLine aria-hidden="true" className="size-3.5" />
 				</a>
 			)}
-			<Button variant="ghost" size="sm" className="h-7 rounded-[3px] px-2.5" onClick={props.onCancel}>
+			<Button
+				variant="ghost"
+				size="sm"
+				className="h-7 rounded-[3px] px-2.5"
+				onClick={props.onCancel}
+			>
 				Cancel
 			</Button>
 		</span>

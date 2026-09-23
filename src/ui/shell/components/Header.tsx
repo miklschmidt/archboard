@@ -122,13 +122,10 @@ function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 function ConnectionTrouble(props: { readonly connected: boolean }): JSX.Element | null {
 	if (props.connected) return null;
 	return (
-		<span
-			role="status"
-			className="text-body text-foreground flex shrink-0 items-center gap-1.5 px-3 font-medium"
-		>
+		<output className="text-body text-foreground flex shrink-0 items-center gap-1.5 px-3 font-medium">
 			<StatusDot tone="warning" />
 			Reconnecting
-		</span>
+		</output>
 	);
 }
 

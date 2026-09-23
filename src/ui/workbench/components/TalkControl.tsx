@@ -10,9 +10,10 @@ import {
 	RiMicOffLine,
 	RiPhoneLine,
 } from "@remixicon/react";
+import { cn } from "cn";
 import type { JSX } from "react";
 
-import { Button } from "@/ui/components/button";
+import { Button, buttonVariants } from "@/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
 import { VoiceOutputWave, type VoiceWaveState } from "@/ui/voice-wave";
@@ -66,11 +67,19 @@ function TalkControl(props: TalkControlProps): JSX.Element {
 				<output aria-live="polite" className="text-control w-[70px] font-medium">
 					{word}
 				</output>
-				<IconAction label={voice.stage === "muted" ? "Unmute" : "Mute"} onClick={voice.stage === "muted" ? actions.unmute : actions.mute}>
+				<IconAction
+					label={voice.stage === "muted" ? "Unmute" : "Mute"}
+					onClick={voice.stage === "muted" ? actions.unmute : actions.mute}
+				>
 					{voice.stage === "muted" ? <RiMicOffLine /> : <RiMicLine />}
 				</IconAction>
 				<SubtitlesToggle />
-				<Button variant="outline" size="sm" className="h-7 gap-1.5 rounded-[3px] px-2.5" onClick={actions.endVoice}>
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-7 gap-1.5 rounded-[3px] px-2.5"
+					onClick={actions.endVoice}
+				>
 					<RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />
 					End
 				</Button>
@@ -87,29 +96,31 @@ function TalkControl(props: TalkControlProps): JSX.Element {
  * @param props.actions The actions.
  * @returns The button.
  */
-function TalkButton(props: { readonly voice: AgentVoiceView; readonly actions: AgentActions }): JSX.Element {
+function TalkButton(props: {
+	readonly voice: AgentVoiceView;
+	readonly actions: AgentActions;
+}): JSX.Element {
 	const { voice, actions } = props;
 	const waiting = voice.stage !== "idle";
-	const button = (
-		<Button
-			variant="outline"
-			size="sm"
-			data-voice-controls="talk"
-			disabled={waiting}
-			onClick={actions.talk}
-			className="h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5"
-		>
-			<TalkIcon stage={voice.stage} problem={voice.problem !== null} />
-			{waiting ? STAGE_WORDS[voice.stage] : "Talk"}
-		</Button>
-	);
-	if (voice.problem === null) return button;
 	return (
-		<Tooltip>
-			<TooltipTrigger render={button} />
-			<TooltipContent side="top" className="max-w-72">
-				{voice.problem}
-			</TooltipContent>
+		<Tooltip disabled={voice.problem === null}>
+			<TooltipTrigger
+				data-voice-controls="talk"
+				disabled={waiting}
+				onClick={actions.talk}
+				className={cn(
+					buttonVariants({ variant: "outline", size: "sm" }),
+					"h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5",
+				)}
+			>
+				<TalkIcon stage={voice.stage} problem={voice.problem !== null} />
+				{waiting ? STAGE_WORDS[voice.stage] : "Talk"}
+			</TooltipTrigger>
+			{voice.problem !== null && (
+				<TooltipContent side="top" className="max-w-72">
+					{voice.problem}
+				</TooltipContent>
+			)}
 		</Tooltip>
 	);
 }

@@ -30,8 +30,9 @@ function EmptyConversation(props: EmptyConversationProps): JSX.Element {
 			<div className="flex flex-col gap-1">
 				<h3 className="text-title">{board === null ? "Ask the agent" : `Ask about ${board}`}</h3>
 				<p className="text-body text-muted-foreground">
-					The agent reads the board in the focused pane, and what you picked out on it. It can explain the
-					architecture, check it against the code, or propose a change as a new state of the board.
+					The agent reads the board in the focused pane, and what you picked out on it. It can
+					explain the architecture, check it against the code, or propose a change as a new state of
+					the board.
 				</p>
 			</div>
 			<ul className="flex flex-col gap-1">
@@ -50,7 +51,10 @@ function EmptyConversation(props: EmptyConversationProps): JSX.Element {
  * @param props.suggest Put it in the composer.
  * @returns The suggestion.
  */
-function Suggestion(props: { readonly text: string; readonly suggest: (text: string) => void }): JSX.Element {
+function Suggestion(props: {
+	readonly text: string;
+	readonly suggest: (text: string) => void;
+}): JSX.Element {
 	const { text, suggest } = props;
 	const handleClick = useCallback(() => suggest(text), [suggest, text]);
 	return (

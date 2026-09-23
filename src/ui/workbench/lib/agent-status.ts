@@ -5,15 +5,24 @@
 
 import { AGENT_QUIET_MS } from "@/shared/timing/timing";
 import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
+import type { AgentPhase } from "@/ui/agent-setup";
 import type { AgentView } from "@/ui/workbench/contracts";
 import { activityLabel, runSummary } from "@/ui/workbench-thread";
-import type { ConversationTurn } from "@/ui/workbench-timeline";
+import type { ActivityItem } from "@/ui/workbench-runtime";
+import type { ConversationItem, ConversationTurn } from "@/ui/workbench-timeline";
 
 /** How the line is lit. */
 type StatusTone = "quiet" | "working" | "attention" | "failed";
 
 /** The one control the line offers. */
-type StatusAction = "stop" | "review" | "sign_in" | "cancel_sign_in" | "open_sign_in" | "show" | null;
+type StatusAction =
+	| "stop"
+	| "review"
+	| "sign_in"
+	| "cancel_sign_in"
+	| "open_sign_in"
+	| "show"
+	| null;
 
 /** The agent's state in one line. */
 interface AgentStatus {
@@ -85,6 +94,36 @@ function askOf(approval: BrowserApproval | BrowserDynamicApproval): string {
 	return ASKS[approval.approvalKind];
 }
 
+/** What a running turn is doing when its latest item is not a row of work. */
+const PHASE_WORDS: Readonly<
+	Record<Exclude<ConversationItem["media"], ActivityItem["media"]> | "reasoning", string>
+> = {
+	prompt: "Reading your message",
+	text: "Writing a reply",
+	approval: "Planning",
+	plan: "Planning",
+	reasoning: "Thinking",
+};
+
+/** The items that are rows of work. */
+const WORK_MEDIA: ReadonlySet<ConversationItem["media"]> = new Set([
+	"reasoning",
+	"command",
+	"fileChange",
+	"tool",
+	"search",
+	"compaction",
+]);
+
+/**
+ * Whether an item is a row of work.
+ * @param item The item.
+ * @returns Whether it is.
+ */
+function isWork(item: ConversationItem): item is ActivityItem {
+	return WORK_MEDIA.has(item.media);
+}
+
 /**
  * What a running turn is on now: its plan's current step, else its latest item.
  * @param turn The running turn.
@@ -94,10 +133,8 @@ function currentStep(turn: ConversationTurn): string {
 	const planned = turn.plan?.steps.find((step) => step.status === "inProgress");
 	if (planned !== undefined) return planned.step;
 	const last = turn.items.at(-1);
-	if (last === undefined || last.media === "prompt") return "Reading your message";
-	if (last.media === "text") return "Writing a reply";
-	if (last.media === "approval" || last.media === "plan") return "Planning";
-	return last.media === "reasoning" ? "Thinking" : activityLabel(last);
+	if (last === undefined) return PHASE_WORDS.prompt;
+	return isWork(last) && last.media !== "reasoning" ? activityLabel(last) : PHASE_WORDS[last.media];
 }
 
 /**
@@ -150,9 +187,7 @@ function ended(turn: ConversationTurn): AgentStatus {
 			action: "show",
 		};
 	}
-	const work = turn.items.filter(
-		(item) => item.media !== "prompt" && item.media !== "text" && item.media !== "approval" && item.media !== "plan",
-	);
+	const work = turn.items.filter(isWork);
 	return {
 		...BLANK,
 		tone: "quiet",
@@ -160,6 +195,37 @@ function ended(turn: ConversationTurn): AgentStatus {
 		detail: work.length === 0 ? null : runSummary(work),
 		endedAtMs,
 	};
+}
+
+/**
+ * The line while the account stands between the person and the agent.
+ * @param phase The phase.
+ * @returns The status.
+ */
+function accountStatus(
+	phase: Extract<AgentPhase, { readonly kind: "unavailable" | "signed_out" | "signing_in" }>,
+): AgentStatus {
+	switch (phase.kind) {
+		case "unavailable":
+			return { ...BLANK, tone: "failed", headline: "Codex is unavailable", detail: phase.reason };
+		case "signed_out":
+			return {
+				...BLANK,
+				tone: "quiet",
+				headline: "Sign in to use the agent",
+				detail: phase.failure,
+				action: "sign_in",
+			};
+		default:
+			return {
+				...BLANK,
+				tone: "attention",
+				headline: "Finish signing in",
+				detail: "on the ChatGPT page",
+				action: "cancel_sign_in",
+				signInUrl: phase.authUrl,
+			};
+	}
 }
 
 /**
@@ -172,23 +238,14 @@ function setupStatus(view: AgentView): AgentStatus | null {
 	switch (phase.kind) {
 		case "connecting":
 			return { ...BLANK, tone: "quiet", headline: "Connecting" };
-		case "unavailable":
-			return { ...BLANK, tone: "failed", headline: "Codex is unavailable", detail: phase.reason };
 		case "starting":
 			return { ...BLANK, tone: "quiet", headline: "Starting Codex" };
-		case "signed_out":
-			return { ...BLANK, tone: "quiet", headline: "Sign in to use the agent", detail: phase.failure, action: "sign_in" };
-		case "signing_in":
-			return {
-				...BLANK,
-				tone: "attention",
-				headline: "Finish signing in",
-				detail: "on the ChatGPT page",
-				action: "cancel_sign_in",
-				signInUrl: phase.authUrl,
-			};
+		case "ready":
+			return step === "link"
+				? { ...BLANK, tone: "working", headline: "Starting a conversation" }
+				: null;
 		default:
-			return step === "link" ? { ...BLANK, tone: "working", headline: "Starting a conversation" } : null;
+			return accountStatus(phase);
 	}
 }
 
@@ -204,7 +261,13 @@ function agentStatus(view: AgentView, now: number): AgentStatus {
 	const [asked, ...more] = waitingApprovals(view);
 	if (asked !== undefined) {
 		const others = more.length > 0 ? ` · ${more.length + 1} waiting` : "";
-		return { ...BLANK, tone: "attention", headline: "Needs you", detail: `${askOf(asked)}${others}`, action: "review" };
+		return {
+			...BLANK,
+			tone: "attention",
+			headline: "Needs you",
+			detail: `${askOf(asked)}${others}`,
+			action: "review",
+		};
 	}
 	const turns = view.conversation.turns;
 	const running = turns.find((turn) => turn.outcome === "running");

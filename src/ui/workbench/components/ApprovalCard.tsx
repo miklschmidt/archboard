@@ -26,20 +26,32 @@ interface ApprovalCardProps {
 }
 
 /**
+ * The card an approval is drawn as.
+ * @param approval The approval.
+ * @param busy Whether its decision is on the wire.
+ * @returns The projected card.
+ */
+function cardOf(approval: BrowserApproval | BrowserDynamicApproval, busy: boolean): Card {
+	return approval.kind === "dynamic_approval"
+		? projectDynamicApproval(approval, busy)
+		: projectApproval(approval, busy);
+}
+
+/**
  * A decision the agent is waiting on.
  * @param props The approval, whether its decision is on the wire, and the actions.
  * @returns The card.
  */
 function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 	const { approval, busy, actions } = props;
-	const card =
-		approval.kind === "dynamic_approval"
-			? projectDynamicApproval(approval, busy)
-			: projectApproval(approval, busy);
+	const card = cardOf(approval, busy);
 	const choose = useCallback(
 		(choice: ApprovalChoice): void => {
 			if (approval.kind === "dynamic_approval") {
-				actions.respondToDynamicApproval(approval, choice.kind === "approve" ? "approve" : "decline");
+				actions.respondToDynamicApproval(
+					approval,
+					choice.kind === "approve" ? "approve" : "decline",
+				);
 			} else {
 				actions.respondToApproval(approval, choice);
 			}
@@ -54,7 +66,9 @@ function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 		>
 			<header className="flex items-baseline justify-between gap-3">
 				<h3 className="text-control font-semibold">{card.title}</h3>
-				<span className="text-technical text-muted-foreground shrink-0 font-mono">{card.phaseText}</span>
+				<span className="text-technical text-muted-foreground shrink-0 font-mono">
+					{card.phaseText}
+				</span>
 			</header>
 			<Details card={card} />
 			{props.error !== null && <p className="text-body text-destructive">{props.error}</p>}
@@ -66,7 +80,9 @@ function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 				</div>
 			)}
 			{props.spoken && approval.kind === "approval" && approval.spoken.eligible && (
-				<p className="text-body text-muted-foreground">You can answer aloud; the voice agent decides what it heard.</p>
+				<p className="text-body text-muted-foreground">
+					You can answer aloud; the voice agent decides what it heard.
+				</p>
 			)}
 		</article>
 	);

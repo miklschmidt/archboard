@@ -56,7 +56,6 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 	const [details, setDetails] = useState(false);
 	const showDetails = useCallback(() => setDetails(true), []);
 	const hideDetails = useCallback(() => setDetails(false), []);
-	const signedOut = view.setup.phase.kind === "signed_out" || view.setup.phase.kind === "signing_in";
 	const empty = view.conversation.turns.length === 0 && view.setup.held.length === 0;
 	return (
 		<aside
@@ -65,8 +64,15 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 			className="border-border bg-background flex w-(--agent-panel-width) shrink-0 flex-col border-l"
 		>
 			<header className="border-border bg-sidebar flex h-9 shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
-				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">{details ? "Session" : titleOf(view)}</h2>
-				<PanelMenu actions={actions} details={details} onDetails={showDetails} onConversation={hideDetails} />
+				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">
+					{details ? "Session" : titleOf(view)}
+				</h2>
+				<PanelMenu
+					actions={actions}
+					details={details}
+					onDetails={showDetails}
+					onConversation={hideDetails}
+				/>
 				<IconAction label="Close the conversation" onClick={props.onClose}>
 					<RiCloseLine />
 				</IconAction>
@@ -75,14 +81,35 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 				<AgentDetails view={view} actions={actions} />
 			) : (
 				<AgentRuntimeProvider transport={props.transport}>
-					<Conversation
-						empty={empty ? signedOut ? <SignInCard view={view} actions={actions} /> : <EmptyConversation view={view} suggest={props.suggest} /> : null}
-						footer={<PendingWork view={view} actions={actions} />}
-					/>
+					<Conversation>
+						{empty && <FirstUse view={view} actions={actions} suggest={props.suggest} />}
+						<PendingWork view={view} actions={actions} />
+					</Conversation>
 				</AgentRuntimeProvider>
 			)}
 		</aside>
 	);
+}
+
+/**
+ * What an empty conversation offers: signing in when nobody has, otherwise
+ * something to ask.
+ * @param props The view, the actions and the suggestion.
+ * @param props.view The agent view.
+ * @param props.actions The actions.
+ * @param props.suggest Put a suggestion in the composer.
+ * @returns The card.
+ */
+function FirstUse(props: {
+	readonly view: AgentView;
+	readonly actions: AgentActions;
+	readonly suggest: (text: string) => void;
+}): JSX.Element {
+	const { view } = props;
+	const signedOut =
+		view.setup.phase.kind === "signed_out" || view.setup.phase.kind === "signing_in";
+	if (signedOut) return <SignInCard view={view} actions={props.actions} />;
+	return <EmptyConversation view={view} suggest={props.suggest} />;
 }
 
 /** Inputs for the panel's menu. */
@@ -108,7 +135,11 @@ function PanelMenu(props: PanelMenuProps): JSX.Element {
 			>
 				<RiMoreLine className="size-4" />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" sideOffset={6} className="border-border w-52 rounded-md border shadow-none">
+			<DropdownMenuContent
+				align="end"
+				sideOffset={6}
+				className="border-border w-52 rounded-md border shadow-none"
+			>
 				<DropdownMenuItem onClick={actions.newConversation}>New conversation</DropdownMenuItem>
 				<DropdownMenuItem onClick={props.details ? props.onConversation : props.onDetails}>
 					{props.details ? "Back to the conversation" : "Session details"}

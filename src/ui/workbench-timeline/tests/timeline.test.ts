@@ -58,7 +58,9 @@ test("each Codex turn is one conversation turn, in order, with its items, timing
 });
 
 test("a turn or an item published twice is refused, never merged", () => {
-	expect(() => projectTimelineTurns(timeline([turn("t1", "completed"), turn("t1", "completed")]))).toThrow();
+	expect(() =>
+		projectTimelineTurns(timeline([turn("t1", "completed"), turn("t1", "completed")])),
+	).toThrow();
 	const doubled = turn("t2", "completed");
 	expect(() =>
 		projectTimelineTurns(timeline([{ ...doubled, items: [...doubled.items, ...doubled.items] }])),

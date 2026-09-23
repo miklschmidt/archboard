@@ -4,10 +4,7 @@
 // never something silently merged.
 
 import type { BrowserTimeline } from "@/shared/codex-browser-model";
-import type {
-	ConversationOutcome,
-	ConversationTurn,
-} from "@/ui/workbench-timeline/types/contract";
+import type { ConversationOutcome, ConversationTurn } from "@/ui/workbench-timeline/types/contract";
 
 type BrowserTurn = BrowserTimeline["turns"][number];
 
@@ -52,7 +49,8 @@ function projectTimelineTurns(timeline: BrowserTimeline): readonly ConversationT
 	const items = new Set<string>();
 	return timeline.turns.map((turn) => {
 		claimIdentity(turns, turn.turnId, "turn");
-		for (const item of turn.items) claimIdentity(items, `${turn.turnId}/${item.itemId}/${item.media}`, "item");
+		for (const item of turn.items)
+			claimIdentity(items, `${turn.turnId}/${item.itemId}/${item.media}`, "item");
 		return {
 			id: conversationTurnId(timeline.threadId, turn.turnId),
 			threadId: timeline.threadId,

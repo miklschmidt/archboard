@@ -24,7 +24,10 @@ function SignInCard(props: SignInCardProps): JSX.Element {
 	const { phase } = view.setup;
 	const [apiKey, setApiKey] = useState("");
 	const chatgpt = useCallback(() => actions.signIn({ type: "chatgpt" }), [actions]);
-	const changeKey = useCallback((event: ChangeEvent<HTMLInputElement>) => setApiKey(event.target.value), []);
+	const changeKey = useCallback(
+		(event: ChangeEvent<HTMLInputElement>) => setApiKey(event.target.value),
+		[],
+	);
 	const submitKey = useCallback(
 		(event: FormEvent<HTMLFormElement>) => {
 			event.preventDefault();
@@ -44,7 +47,9 @@ function SignInCard(props: SignInCardProps): JSX.Element {
 			{phase.kind === "signed_out" && phase.failure !== null && (
 				<p className="text-body text-destructive">{phase.failure}</p>
 			)}
-			{view.setup.failure !== null && <p className="text-body text-destructive">{view.setup.failure}</p>}
+			{view.setup.failure !== null && (
+				<p className="text-body text-destructive">{view.setup.failure}</p>
+			)}
 			{pending ? (
 				<div className="flex items-center gap-2">
 					{phase.authUrl !== null && (
@@ -57,7 +62,12 @@ function SignInCard(props: SignInCardProps): JSX.Element {
 							Open the ChatGPT page
 						</a>
 					)}
-					<Button variant="ghost" size="sm" className="h-8 rounded-[3px]" onClick={actions.cancelSignIn}>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-8 rounded-[3px]"
+						onClick={actions.cancelSignIn}
+					>
 						Cancel
 					</Button>
 				</div>
@@ -80,7 +90,13 @@ function SignInCard(props: SignInCardProps): JSX.Element {
 						placeholder="sk-…"
 						className="border-border bg-background text-control focus:border-ring/60 h-8 min-w-0 flex-1 rounded-[3px] border px-2.5 font-mono outline-none"
 					/>
-					<Button type="submit" variant="outline" size="sm" className="h-8 rounded-[3px] px-3" disabled={apiKey.trim() === ""}>
+					<Button
+						type="submit"
+						variant="outline"
+						size="sm"
+						className="h-8 rounded-[3px] px-3"
+						disabled={apiKey.trim() === ""}
+					>
 						Sign in
 					</Button>
 				</div>

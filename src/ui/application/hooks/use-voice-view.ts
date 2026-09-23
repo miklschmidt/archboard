@@ -6,8 +6,8 @@
 import { useSyncExternalStore } from "react";
 
 import type { AgentSetupSnapshot } from "@/ui/agent-setup";
-import type { VoiceOwner } from "@/ui/application/hooks/use-workbench";
-import type { VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
+import type { VoiceOwner } from "@/ui/application/lib/workbench-owners";
+import type { VoiceSession, VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
 import type { AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 
 /** The stage each session status is at. */
@@ -26,6 +26,14 @@ const STAGES: Readonly<Record<VoiceSessionStatus, VoiceStage>> = {
 	failed: "idle",
 };
 
+/** What the bar reads from a voice session, or from its absence. */
+interface VoiceSource {
+	readonly subscribe: VoiceSession["subscribe"];
+	readonly view: () => VoiceSessionView | null;
+	readonly subscribeLevel: VoiceSession["subscribeLevel"];
+	readonly level: VoiceSession["level"];
+}
+
 /**
  * Nothing to listen to without a voice session.
  * @returns How to stop listening.
@@ -34,21 +42,21 @@ function subscribeToNothing(): () => void {
 	return () => undefined;
 }
 
-/**
- * No view without a voice session.
- * @returns Null.
- */
-function noView(): null {
-	return null;
-}
-
-/**
- * No level without a voice session.
- * @returns Silence.
- */
-function silence(): number {
-	return 0;
-}
+/** No voice session: no view, silence. */
+const NO_SESSION: VoiceSource = Object.freeze({
+	subscribe: subscribeToNothing,
+	/**
+	 * No view without a voice session.
+	 * @returns Null.
+	 */
+	view: () => null,
+	subscribeLevel: subscribeToNothing,
+	/**
+	 * No level without a voice session.
+	 * @returns Silence.
+	 */
+	level: () => 0,
+});
 
 /**
  * The stage, counting a Talk the setup is still getting ready.
@@ -79,21 +87,13 @@ function problemOf(view: VoiceSessionView | null, setup: AgentSetupSnapshot): st
  * @returns The voice view.
  */
 function useVoiceView(voice: VoiceOwner | null, setup: AgentSetupSnapshot): AgentVoiceView {
-	const session = voice?.session ?? null;
-	const view = useSyncExternalStore(
-		session?.subscribe ?? subscribeToNothing,
-		session?.view ?? noView,
-		session?.view ?? noView,
-	);
-	const level = useSyncExternalStore(
-		session?.subscribeLevel ?? subscribeToNothing,
-		session?.level ?? silence,
-		session?.level ?? silence,
-	);
+	const source: VoiceSource = voice?.session ?? NO_SESSION;
+	const view = useSyncExternalStore(source.subscribe, source.view, source.view);
+	const level = useSyncExternalStore(source.subscribeLevel, source.level, source.level);
 	return {
 		stage: stageOf(view, setup.talk),
 		problem: problemOf(view, setup),
-		busy: view?.busy ?? false,
+		busy: view?.busy === true,
 		level,
 	};
 }
