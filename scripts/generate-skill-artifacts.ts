@@ -2,9 +2,9 @@
 // Regenerate the consumer skill's derived files in place: the JSON Schemas for
 // the persisted board document, the vault configuration and the authoring
 // payloads, and the installation-local copy of INSTALL.md, under
-// skills/archboard/references/generated/ (ignored). The same preparation runs
-// on every skill sync and every install, so this is only for looking at the
-// output or checking it by hand.
+// skills/archboard/references/generated/ (ignored). `bun install` runs it, and
+// every install of the skill runs the same preparation; run it again after
+// changing a schema or INSTALL.md.
 //
 // Run: bun scripts/generate-skill-artifacts.ts [--output-dir <skill-copy>]
 

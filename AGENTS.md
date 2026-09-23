@@ -3,8 +3,7 @@
 A private internal tool, never published: agents author the architecture of code
 and infrastructure as meaning, and the renderer draws it. There is no way to move
 a box and deliberately none — a diagram whose layout somebody repaired by hand
-cannot be improved for every board at once (ADR 0023). `main` forked from
-`yctimlin/mcp_excalidraw` v2.0.0 and is deliberately not kept mergeable with it.
+cannot be improved for every board at once (ADR 0023).
 
 Where things are written down:
 
@@ -30,8 +29,8 @@ Where things are written down:
   CLI command, not the running server: `./bin/canvas stop && ./bin/canvas start`.
   Stop never refuses: every accepted write is on disk before it is answered.
 - `bun run check` is the complete gate. `skills/` is the tracked source of the
-  skills; `.agents/skills/` and `.claude/skills/` are derived and untracked
-  (`bun scripts/sync-skills.ts`, `skills experimental_install`).
+  skills, reached from `.claude/skills/` and `.agents/skills/` through tracked
+  symlinks; the third-party skills there come from `skills experimental_install`.
 
 ## Invariants nothing refuses
 
