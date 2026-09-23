@@ -132,9 +132,14 @@ function agentContextOf(listing: BoardListing, boardKey: string | null): AgentCo
  * The subtitles of the voice, laid over the pane it runs for.
  * @param workbench The workbench host.
  * @param reducedMotion The motion preference.
+ * @param recording Whether the page is a recording.
  * @returns The overlay and the pane it belongs over, or null.
  */
-function useSubtitleOverlay(workbench: WorkbenchHost, reducedMotion: boolean): PaneOverlay | null {
+function useSubtitleOverlay(
+	workbench: WorkbenchHost,
+	reducedMotion: boolean,
+	recording: boolean,
+): PaneOverlay | null {
 	const { voice } = workbench;
 	return useMemo(
 		() =>
@@ -142,9 +147,15 @@ function useSubtitleOverlay(workbench: WorkbenchHost, reducedMotion: boolean): P
 				? null
 				: {
 						paneId: voice.paneId,
-						element: <PaneSubtitles transport={voice.transport} reducedMotion={reducedMotion} />,
+						element: (
+							<PaneSubtitles
+								transport={voice.transport}
+								reducedMotion={reducedMotion}
+								recording={recording}
+							/>
+						),
 					},
-		[voice, reducedMotion],
+		[voice, reducedMotion, recording],
 	);
 }
 
@@ -359,7 +370,7 @@ function ApplicationBody(): JSX.Element {
 		[actions, panes.records],
 	);
 	const narration = useNarration(workbench.setup, agent.view.voice, panes.list.activePaneId);
-	const overlay = useSubtitleOverlay(workbench, reducedMotion);
+	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
 	const mounted = usePaneViews({
 		panes,

@@ -1,9 +1,9 @@
-// What a pane's subtitles show of the voice (TASK-292, TASK-304).
+// What a pane's subtitles show of the voice (TASK-292, TASK-304, TASK-306).
 //
 // The transcript is server truth the transport publishes, a word at a time as the voice speaks.
-// Subtitles show it only while a session carries audio, and never a recording's: its voice
-// narrates a board in a page nobody here is looking at, and the canvas shares one voice session
-// between its browsers, so its words over this pane's picture would be about something else.
+// Subtitles show it only while a session carries audio. A recording's words are subtitled only on
+// the page that records it: the canvas shares one voice session between its browsers, and over
+// any other pane's picture they would be about a board nobody there is looking at.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
@@ -19,14 +19,18 @@ const NOTHING_SAID: readonly SubtitleSource[] = Object.freeze([]);
 /**
  * The transcript a pane subtitles.
  * @param voice The voice as the transport last published it, or null without a snapshot.
+ * @param recording Whether this page is a recording.
  * @returns Its transcript, or nothing while no session this pane may subtitle carries audio.
  */
-function subtitledTranscript(voice: SubtitledVoice | null): readonly SubtitleSource[] {
+function subtitledTranscript(
+	voice: SubtitledVoice | null,
+	recording: boolean,
+): readonly SubtitleSource[] {
 	if (voice === null) {
 		return NOTHING_SAID;
 	}
 	const audible = voice.state === "active" || voice.state === "recovering";
-	return audible && voice.recording !== true ? voice.transcript : NOTHING_SAID;
+	return audible && (voice.recording === true) === recording ? voice.transcript : NOTHING_SAID;
 }
 
 export { subtitledTranscript };
