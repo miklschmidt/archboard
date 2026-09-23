@@ -12,8 +12,9 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { TEST_RECORDING_CLI_MS } from "../support/timing.ts";
+import { TEST_RECORDING_CASE_MS, TEST_RECORDING_CLI_MS } from "../support/timing.ts";
 import {
 	prepareProductionFixture,
 	productionRecords as records,
@@ -28,106 +29,121 @@ const BOARD = "tour";
 /** The steps the walkthrough tells, in order. */
 const HEADINGS = ["The front door", "One writer"];
 
-test("a walkthrough is recorded to a video with every step narrated, and --discard removes the board", async () => {
-	const resources = new AsyncDisposableStack();
-	try {
-		const fixture = prepareProductionFixture(resources, executableSource);
-		writeFileSync(fixture.controlPath, JSON.stringify({ narrates: true }));
-		const canvas = await startOwnedCanvas({
-			serverPath,
-			vault: fixture.vault,
-			env: {
-				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-				XDG_STATE_HOME: join(fixture.root, "state"),
-			},
-		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
-		const created = await request("/api/semantic-boards/create", {
-			method: "POST",
-			doing: "making a board to record",
-			body: {
-				board: BOARD,
-				create: {
-					level: "system",
-					nodes: [
-						{ name: "Gateway", kind: "service" },
-						{ name: "Ledger", kind: "service" },
-					],
-					edges: [{ from: "Gateway", to: "Ledger", kind: "call" }],
-					walkthroughs: [
-						{
-							name: "How a request lands",
-							beats: [
-								{ heading: HEADINGS[0], body: "Every request enters at the gateway." },
-								{ heading: HEADINGS[1], body: "Only the ledger writes.", subjects: ["Ledger"] },
-							],
-						},
-					],
-				},
-			},
-		});
-		expect(created.status).toBe(200);
+const RECORDED =
+	"a walkthrough is recorded to a video with every step narrated, and --discard removes the board";
 
-		const out = join(fixture.root, "tour.mp4");
-		const recorded = spawnSync(
-			join(repoRoot, "bin/canvas"),
-			["semantic", "record", BOARD, "--out", out, "--discard", "--doing", "recording the tour"],
-			{
-				cwd: repoRoot,
-				encoding: "utf8",
-				timeout: TEST_RECORDING_CLI_MS,
-				killSignal: "SIGKILL",
+test(
+	RECORDED,
+	async () => {
+		declareTestWallClockBudget({
+			test: RECORDED,
+			reason:
+				"A recording is as long as its talk: the overview lead, two steps each glided to, spoken and paused after, and the tail, all on the wall clock the page paces by",
+			outerBoundMs: TEST_RECORDING_CASE_MS,
+			task: "TASK-304",
+			evidence: "10.2 s on 2026-09-23, of which about 8 s is the recorded talk itself",
+		});
+		const resources = new AsyncDisposableStack();
+		try {
+			const fixture = prepareProductionFixture(resources, executableSource);
+			writeFileSync(fixture.controlPath, JSON.stringify({ narrates: true }));
+			const canvas = await startOwnedCanvas({
+				serverPath,
+				vault: fixture.vault,
 				env: {
-					...process.env,
-					ARCHBOARD_VAULT: fixture.vault,
-					EXPRESS_SERVER_URL: canvas.base,
-					ARCHBOARD_NO_AUTOSTART: "1",
+					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+					ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+					ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+					XDG_STATE_HOME: join(fixture.root, "state"),
 				},
-			},
-		);
-		expect({ status: recorded.status, stderr: recorded.stderr }).toMatchObject({ status: 0 });
-		const receipt = JSON.parse(recorded.stdout) as {
-			steps: number;
-			bytes: number;
-			mimeType: string;
-			file: string;
-			discarded: boolean;
-		};
-		expect(receipt).toMatchObject({ steps: 2, file: out, discarded: true });
-		expect(receipt.mimeType.startsWith("video/mp4")).toBe(true);
+			});
+			resources.defer(() => canvas.dispose());
+			const request = createRequester(canvas);
+			const created = await request("/api/semantic-boards/create", {
+				method: "POST",
+				doing: "making a board to record",
+				body: {
+					board: BOARD,
+					create: {
+						level: "system",
+						nodes: [
+							{ name: "Gateway", kind: "service" },
+							{ name: "Ledger", kind: "service" },
+						],
+						edges: [{ from: "Gateway", to: "Ledger", kind: "call" }],
+						walkthroughs: [
+							{
+								name: "How a request lands",
+								beats: [
+									{ heading: HEADINGS[0], body: "Every request enters at the gateway." },
+									{ heading: HEADINGS[1], body: "Only the ledger writes.", subjects: ["Ledger"] },
+								],
+							},
+						],
+					},
+				},
+			});
+			expect(created.status).toBe(200);
 
-		// An MP4 whose size is what the receipt says.
-		const video = readFileSync(out);
-		expect(video.byteLength).toBe(receipt.bytes);
-		expect(video.subarray(4, 8).toString("latin1")).toBe("ftyp");
+			const out = join(fixture.root, "tour.mp4");
+			const recorded = spawnSync(
+				join(repoRoot, "bin/canvas"),
+				["semantic", "record", BOARD, "--out", out, "--discard", "--doing", "recording the tour"],
+				{
+					cwd: repoRoot,
+					encoding: "utf8",
+					timeout: TEST_RECORDING_CLI_MS,
+					killSignal: "SIGKILL",
+					env: {
+						...process.env,
+						ARCHBOARD_VAULT: fixture.vault,
+						EXPRESS_SERVER_URL: canvas.base,
+						ARCHBOARD_NO_AUTOSTART: "1",
+					},
+				},
+			);
+			expect({ status: recorded.status, stderr: recorded.stderr }).toMatchObject({ status: 0 });
+			const receipt = JSON.parse(recorded.stdout) as {
+				steps: number;
+				bytes: number;
+				mimeType: string;
+				file: string;
+				discarded: boolean;
+			};
+			expect(receipt).toMatchObject({ steps: 2, file: out, discarded: true });
+			expect(receipt.mimeType.startsWith("video/mp4")).toBe(true);
 
-		// Every step reached the voice, in order, and the next only after the voice had finished
-		// the one before: its line was completed before the next step was handed over.
-		const frames = records(fixture.logPath);
-		const handed = frames.filter(
-			(frame) => frame.kind === "frame" && frame.method === "thread/realtime/appendSpeech",
-		);
-		expect(
-			handed.map((frame) =>
-				HEADINGS.find((heading) => String(frame.params?.["text"]).includes(heading)),
-			),
-		).toEqual(HEADINGS);
-		const secondHanded = frames.indexOf(handed[1] ?? handed[0]!);
-		const firstExplained = frames.findIndex(
-			(frame) =>
-				frame.kind === "notification" &&
-				frame.method === "thread/realtime/item/completed" &&
-				(frame.params?.["item"] as { id?: string } | undefined)?.id === "narrated-step-1",
-		);
-		expect(firstExplained).toBeGreaterThan(-1);
-		expect(firstExplained).toBeLessThan(secondHanded);
+			// An MP4 whose size is what the receipt says.
+			const video = readFileSync(out);
+			expect(video.byteLength).toBe(receipt.bytes);
+			expect(video.subarray(4, 8).toString("latin1")).toBe("ftyp");
 
-		// Discarded once the file was written.
-		expect(existsSync(join(fixture.vault, `${BOARD}.semantic.json`))).toBe(false);
-	} finally {
-		await resources.disposeAsync();
-	}
-});
+			// Every step reached the voice, in order, and the next only after the voice had finished
+			// the one before: its line was completed before the next step was handed over.
+			const frames = records(fixture.logPath);
+			const handed = frames.filter(
+				(frame) => frame.kind === "frame" && frame.method === "thread/realtime/appendSpeech",
+			);
+			expect(
+				handed.map((frame) =>
+					HEADINGS.find((heading) => String(frame.params?.["text"]).includes(heading)),
+				),
+			).toEqual(HEADINGS);
+			const secondHanded = frames.indexOf(handed[1] ?? handed[0]!);
+			const firstExplained = frames.findIndex(
+				(frame) =>
+					frame.kind === "notification" &&
+					frame.method === "thread/realtime/item/completed" &&
+					(frame.params?.["item"] as { id?: string } | undefined)?.id === "narrated-step-1",
+			);
+			expect(firstExplained).toBeGreaterThan(-1);
+			expect(firstExplained).toBeLessThan(secondHanded);
+
+			// Discarded once the file was written.
+			expect(existsSync(join(fixture.vault, `${BOARD}.semantic.json`))).toBe(false);
+		} finally {
+			await resources.disposeAsync();
+		}
+	},
+	TEST_RECORDING_CASE_MS,
+);

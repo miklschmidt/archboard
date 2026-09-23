@@ -127,6 +127,9 @@ const TEST_VAULT_CLI_TIMEOUT_MS = 20_000;
  */
 const TEST_RECORDING_CLI_MS = 90_000;
 
+/** The recording case: the command's bound, and the canvas's start and disposal around it. */
+const TEST_RECORDING_CASE_MS = TEST_RECORDING_CLI_MS + 30_000;
+
 /**
  * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
  * case receive rejection, assert it, and dispose a retained generation.
@@ -239,6 +242,7 @@ const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2000;
 
 export {
 	TEST_HUMAN_UNDO_CASE_TIMEOUT_MS,
+	TEST_RECORDING_CASE_MS,
 	TEST_RECORDING_CLI_MS,
 	TEST_VAULT_CLI_TIMEOUT_MS,
 	TEST_GIT_FIXTURE_START_MS,
