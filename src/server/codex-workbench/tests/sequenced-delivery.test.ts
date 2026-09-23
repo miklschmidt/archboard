@@ -17,7 +17,13 @@ function oversizedTimeline(
 		threadId: decoder.adoptThreadId("gateway-thread"),
 		turns: [
 			{
-				turn: { id: decoder.adoptTurnId("gateway-turn"), status: "completed" },
+				turn: {
+					id: decoder.adoptTurnId("gateway-turn"),
+					status: "completed",
+					startedAt: null,
+					completedAt: null,
+					durationMs: null,
+				},
 				items: Array.from({ length: 32 }, (_unused, index) => ({
 					kind: "agent_message" as const,
 					item: {
@@ -30,9 +36,12 @@ function oversizedTimeline(
 					summary: "A history page larger than one delta.",
 					outputs: { included: true, truncated: false },
 				},
+				error: null,
+				plan: null,
 			},
 		],
 		cursor: null,
+		usage: null,
 	};
 }
 

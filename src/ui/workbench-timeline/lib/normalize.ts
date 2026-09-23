@@ -142,12 +142,15 @@ function normalizeApproval(
 }
 
 const RUNTIME_LABELS: Readonly<Record<RuntimeItem["media"], { label: string; type: string }>> = {
+	prompt: { label: "User message", type: "userMessage" },
 	text: { label: "Assistant message", type: "agentMessage" },
 	reasoning: { label: "Reasoning", type: "reasoning" },
 	plan: { label: "Plan", type: "plan" },
 	command: { label: "Command", type: "commandExecution" },
 	fileChange: { label: "File change", type: "fileChange" },
 	tool: { label: "Tool call", type: "dynamicToolCall" },
+	search: { label: "Web search", type: "webSearch" },
+	compaction: { label: "Context compacted", type: "contextCompaction" },
 	approval: { label: "Approval", type: "approval" },
 };
 

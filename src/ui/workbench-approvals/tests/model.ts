@@ -136,7 +136,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			truncated: false,
 			reason: null,
 		},
-		timeline: { kind: "timeline", threadId: THREAD, turns: [], nextCursor: null },
+		timeline: { kind: "timeline", threadId: THREAD, turns: [], nextCursor: null, usage: null },
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
 		approvals: [],

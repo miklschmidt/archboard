@@ -1,6 +1,15 @@
 #!/usr/bin/env bun
 import { appendFileSync, readFileSync } from "node:fs";
-import { configFixture, modelFixture, unsetThreadFields } from "./fake-codex-production-data.ts";
+import {
+	configFixture,
+	dynamicItem,
+	modelFixture,
+	promptItem,
+	unixSeconds,
+	unsetThreadFields,
+	workhorsePlan,
+	workhorseTokenUsage,
+} from "./fake-codex-production-data.ts";
 const logPath = "__ARCHBOARD_TEST_CODEX_LOG__";
 const controlPath = "__ARCHBOARD_TEST_CODEX_CONTROL__";
 let signedIn =
@@ -177,18 +186,6 @@ const coordinatorSettings = (params: Record<string, unknown>) => ({
 	personality: null,
 });
 
-const dynamicItem = {
-	type: "dynamicToolCall",
-	id: "dynamic-call-1",
-	namespace: "archboard_app",
-	tool: "create_thread",
-	arguments: { prompt: "Create the production proof thread." },
-	status: "inProgress",
-	contentItems: null,
-	success: null,
-	durationMs: null,
-};
-
 const emitReverseRequests = (): void => {
 	if (reverseRequestsSent || workhorseThreadId === null) {
 		return;
@@ -345,14 +342,16 @@ const handle = (frame: WireFrame): void => {
 		case "turn/start": {
 			const thread = threads.get(String(params["threadId"]));
 			const isWorkhorse = thread?.id === workhorseThreadId;
+			const id = `turn-${++turnSequence}`;
+			const prompt = promptItem(`${id}-prompt`, params["input"]);
 			const turn = {
-				id: `turn-${++turnSequence}`,
-				items: isWorkhorse ? [dynamicItem] : [],
+				id,
+				items: isWorkhorse ? [prompt, dynamicItem] : [prompt],
 				itemsView: "full",
 				status: isWorkhorse ? "inProgress" : "completed",
 				error: null,
-				startedAt: Date.now(),
-				completedAt: isWorkhorse ? null : Date.now(),
+				startedAt: unixSeconds(),
+				completedAt: isWorkhorse ? null : unixSeconds(),
 				durationMs: isWorkhorse ? null : 1,
 			};
 			if (thread !== undefined) {
@@ -471,8 +470,14 @@ const controlTimer = setInterval(() => {
 		const workhorse = threads.get(workhorseThreadId ?? "");
 		const turn = workhorse?.turns[0];
 		if (control.completeWorkhorseTurn === true && workhorse && turn?.["status"] === "inProgress") {
+			notify("turn/plan/updated", { threadId: workhorse.id, turnId: turn["id"], ...workhorsePlan });
+			notify("thread/tokenUsage/updated", {
+				threadId: workhorse.id,
+				turnId: turn["id"],
+				tokenUsage: workhorseTokenUsage,
+			});
 			turn["status"] = "completed";
-			turn["completedAt"] = Date.now();
+			turn["completedAt"] = unixSeconds();
 			workhorse.status = { type: "idle" };
 			notify("turn/completed", { threadId: workhorse.id, turn });
 			notify("thread/status/changed", { threadId: workhorse.id, status: workhorse.status });

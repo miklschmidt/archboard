@@ -60,4 +60,57 @@ const unsetThreadFields = {
 	daybreakEnabled: null,
 };
 
-export { configFixture, modelFixture, unsetThreadFields };
+/** The plan the workhorse turn reports, which reaches a client only as a notification. */
+const workhorsePlan = {
+	explanation: "Prove both reverse-request owners.",
+	plan: [
+		{ step: "Answer the command approval", status: "completed" },
+		{ step: "Answer the dynamic tool call", status: "completed" },
+	],
+};
+
+const breakdown = {
+	totalTokens: 1_200,
+	inputTokens: 1_000,
+	cachedInputTokens: 600,
+	cacheWriteInputTokens: 0,
+	outputTokens: 200,
+	reasoningOutputTokens: 50,
+};
+
+/** The thread token usage the workhorse turn reports. */
+const workhorseTokenUsage = { total: breakdown, last: breakdown, modelContextWindow: 258_000 };
+
+/** Now, as the Unix seconds Codex reports turn times in. */
+const unixSeconds = (): number => Math.floor(Date.now() / 1000);
+
+const dynamicItem = {
+	type: "dynamicToolCall",
+	id: "dynamic-call-1",
+	namespace: "archboard_app",
+	tool: "create_thread",
+	arguments: { prompt: "Create the production proof thread." },
+	status: "inProgress",
+	contentItems: null,
+	success: null,
+	durationMs: null,
+};
+
+/** What the person sent, as the item Codex opens every turn's history with. */
+const promptItem = (id: string, input: unknown) => ({
+	type: "userMessage",
+	id,
+	clientId: null,
+	content: input ?? [],
+});
+
+export {
+	configFixture,
+	dynamicItem,
+	modelFixture,
+	promptItem,
+	unixSeconds,
+	unsetThreadFields,
+	workhorsePlan,
+	workhorseTokenUsage,
+};

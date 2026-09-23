@@ -72,6 +72,7 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		threadId,
 		turns: [],
 		cursor: null,
+		usage: null,
 	};
 	const received: {
 		read: {

@@ -10,7 +10,11 @@ import type {
 	CodexTimelineItemProjectionInput,
 } from "@/server/codex-workbench/lib/projection-contract";
 
-type BrowserTimelineItem = BrowserTimeline["turns"][number]["items"][number];
+type BrowserTimelineTurn = BrowserTimeline["turns"][number];
+type BrowserTimelineItem = BrowserTimelineTurn["items"][number];
+type TimelineTurnInput = NonNullable<BrowserProjectionInput["timeline"]>["turns"][number];
+type TimelineUsageInput = NonNullable<BrowserProjectionInput["timeline"]>["usage"];
+type TokenUsageBreakdownInput = NonNullable<TimelineUsageInput>["total"];
 type BrowserTimelineApprovalStatus = Extract<
 	BrowserTimelineItem,
 	{ readonly media: "approval" }
@@ -21,7 +25,15 @@ type TimelineApprovalState = Extract<
 >["state"];
 type TimelineTextItemInput = Extract<
 	CodexTimelineItemProjectionInput,
-	{ readonly kind: "agent_message" | "reasoning_summary" | "plan" }
+	{
+		readonly kind:
+			| "user_message"
+			| "agent_message"
+			| "reasoning_summary"
+			| "plan"
+			| "web_search"
+			| "context_compaction";
+	}
 >;
 type ThreadCandidateInput = Extract<
 	BrowserProjectionInput["threadCandidates"],
@@ -71,6 +83,30 @@ function projectTimelineTextItem(item: TimelineTextItemInput): BrowserTimelineIt
 		case "plan":
 			return { media: "plan", itemId: item.item.id, text: item.item.text };
 		default:
+			return projectTimelineConversationItem(item);
+	}
+}
+
+/**
+ * Project what the person said and the markers of what happened to the
+ * conversation: a web search, a compaction.
+ * @param item The owner's timeline item.
+ * @returns The browser timeline item.
+ */
+function projectTimelineConversationItem(
+	item: Exclude<
+		TimelineTextItemInput,
+		{ readonly kind: "agent_message" | "reasoning_summary" | "plan" }
+	>,
+): BrowserTimelineItem {
+	switch (item.kind) {
+		case "user_message":
+			return { media: "prompt", itemId: item.item.id, text: item.text };
+		case "web_search":
+			return { media: "search", itemId: item.item.id, query: item.query };
+		case "context_compaction":
+			return { media: "compaction", itemId: item.item.id };
+		default:
 			return unprojected(item);
 	}
 }
@@ -88,6 +124,10 @@ function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTim
 				itemId: item.item.id,
 				name: item.item.tool,
 				status: item.item.status,
+				server: item.server,
+				arguments: item.arguments,
+				durationMs: item.item.durationMs,
+				error: item.error,
 			};
 		case "command_execution":
 			return {
@@ -95,9 +135,26 @@ function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTim
 				itemId: item.item.id,
 				command: item.item.command,
 				status: item.item.status,
+				cwd: item.cwd,
+				exitCode: item.item.exitCode,
+				durationMs: item.item.durationMs,
+				output: item.output.tail,
+				outputTruncated: item.output.truncated,
 			};
 		case "file_change":
-			return { media: "fileChange", itemId: item.item.id, status: item.item.status };
+			return {
+				media: "fileChange",
+				itemId: item.item.id,
+				status: item.item.status,
+				changes: item.changes.map((change) => ({
+					path: change.path,
+					kind: change.kind,
+					movePath: change.movePath,
+					added: change.added,
+					removed: change.removed,
+				})),
+				changesTruncated: item.changesTruncated,
+			};
 		case "approval_request":
 			return {
 				media: "approval",
@@ -111,6 +168,75 @@ function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTim
 }
 
 /**
+ * A Codex Unix timestamp in seconds as milliseconds.
+ * @param seconds The timestamp, when Codex reported one.
+ * @returns The milliseconds, or null.
+ */
+function secondsToMilliseconds(seconds: number | null): number | null {
+	return seconds === null ? null : seconds * 1000;
+}
+
+/**
+ * Project one owner turn, with its timing, failure and latest plan.
+ * @param entry The owner's turn.
+ * @returns The browser turn.
+ */
+function projectTimelineTurn(entry: TimelineTurnInput): BrowserTimelineTurn {
+	return {
+		turnId: entry.turn.id,
+		status: entry.turn.status,
+		items: entry.items.map(projectTimelineItem),
+		summary: entry.presentation.summary,
+		outputsIncluded: entry.presentation.outputs.included,
+		outputsTruncated: entry.presentation.outputs.truncated,
+		startedAtMs: secondsToMilliseconds(entry.turn.startedAt),
+		completedAtMs: secondsToMilliseconds(entry.turn.completedAt),
+		durationMs: entry.turn.durationMs,
+		error:
+			entry.error === null ? null : { message: entry.error.message, details: entry.error.details },
+		plan:
+			entry.plan === null
+				? null
+				: {
+						explanation: entry.plan.explanation,
+						steps: entry.plan.plan.map(({ step, status }) => ({ step, status })),
+					},
+	};
+}
+
+/**
+ * One token usage breakdown, closed to the fields the browser is shown.
+ * @param usage The breakdown as Codex reported it.
+ * @returns The browser breakdown.
+ */
+function projectTokenUsageBreakdown(
+	usage: TokenUsageBreakdownInput,
+): NonNullable<BrowserTimeline["usage"]>["total"] {
+	return {
+		totalTokens: usage.totalTokens,
+		inputTokens: usage.inputTokens,
+		cachedInputTokens: usage.cachedInputTokens,
+		cacheWriteInputTokens: usage.cacheWriteInputTokens,
+		outputTokens: usage.outputTokens,
+		reasoningOutputTokens: usage.reasoningOutputTokens,
+	};
+}
+
+/**
+ * Project the thread's token usage, when Codex has reported it.
+ * @param usage The owner's usage.
+ * @returns The browser usage, or null.
+ */
+function projectTimelineUsage(usage: TimelineUsageInput): BrowserTimeline["usage"] {
+	if (usage === null) return null;
+	return {
+		total: projectTokenUsageBreakdown(usage.total),
+		last: projectTokenUsageBreakdown(usage.last),
+		modelContextWindow: usage.modelContextWindow,
+	};
+}
+
+/**
  * Project the owner's timeline, turn by turn, for the browser.
  * @param input The owner's timeline, if it holds one.
  * @returns The browser timeline, or null.
@@ -120,15 +246,9 @@ export function projectTimeline(input: BrowserProjectionInput["timeline"]): Brow
 	return {
 		kind: "timeline",
 		threadId: input.threadId,
-		turns: input.turns.map((entry) => ({
-			turnId: entry.turn.id,
-			status: entry.turn.status,
-			items: entry.items.map(projectTimelineItem),
-			summary: entry.presentation.summary,
-			outputsIncluded: entry.presentation.outputs.included,
-			outputsTruncated: entry.presentation.outputs.truncated,
-		})),
+		turns: input.turns.map(projectTimelineTurn),
 		nextCursor: input.cursor,
+		usage: projectTimelineUsage(input.usage),
 	};
 }
 

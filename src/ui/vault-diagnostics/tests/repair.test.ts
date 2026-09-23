@@ -23,6 +23,7 @@ test.each([false, true])(
 					kind: "timeline",
 					threadId: THREAD,
 					nextCursor: null,
+					usage: null,
 					turns: busy
 						? [
 								{
@@ -32,6 +33,11 @@ test.each([false, true])(
 									summary: "Work",
 									outputsIncluded: true,
 									outputsTruncated: false,
+									startedAtMs: null,
+									completedAtMs: null,
+									durationMs: null,
+									error: null,
+									plan: null,
 								},
 							]
 						: [],
