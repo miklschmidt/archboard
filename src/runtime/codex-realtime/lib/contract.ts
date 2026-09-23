@@ -82,6 +82,8 @@ interface CodexRealtimeAdapter extends Omit<RealtimeHost, "attachRemoteMedia" | 
 	readonly onNotification: SessionNotificationHandler;
 	readonly transcript: () => readonly RealtimeTranscriptRecord[];
 	readonly generation: () => CodexRealtimeGeneration | null;
+	/** The walkthrough the live session presents (TASK-251), or null with none or an ordinary one. */
+	readonly presentation: () => RealtimePresentation | null;
 	readonly dispose: () => void;
 }
 

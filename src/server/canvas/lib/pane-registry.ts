@@ -1,7 +1,7 @@
 import { WebSocket } from "ws";
 import { logger } from "@/runtime/engine/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
-import { panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
+import { addressablePanes, panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
@@ -86,7 +86,7 @@ function paneBoardOf(clientId: string): string | null {
  * @returns One entry per pane with its place on screen and its board.
  */
 function boardsOnScreen(): Array<{ paneId: string; place: string; board: string | null }> {
-	return panesInOrder(Array.from(panes.values())).map((entry) => ({
+	return panesInOrder(addressablePanes([...panes.values()])).map((entry) => ({
 		paneId: entry.pane.paneId,
 		place: entry.place,
 		board: boardForPane(entry.pane),
@@ -233,7 +233,7 @@ function syncLockWatch(): void {
  * @returns The reference pane, or null with nothing on screen.
  */
 function referencePane(): PaneRegistration | null {
-	const existing = Array.from(panes.values());
+	const existing = addressablePanes([...panes.values()]);
 	return (
 		existing.find((pane) => pane.primary) ??
 		existing.find((pane) => pane.focused) ??
@@ -380,7 +380,7 @@ function paneFromRequest(spec: unknown): PaneRegistration | null {
  * @returns The primary pane, else the first, else null with nothing on screen.
  */
 function primaryPane(): PaneRegistration | null {
-	const registrations = Array.from(panes.values());
+	const registrations = addressablePanes([...panes.values()]);
 	return registrations.find((pane) => pane.primary) ?? registrations[0] ?? null;
 }
 
@@ -390,7 +390,7 @@ function primaryPane(): PaneRegistration | null {
  * @returns Its ids, place and reading-order position.
  */
 function paneRef(pane: PaneRegistration): Record<string, unknown> {
-	const entry = panesInOrder(Array.from(panes.values())).find(
+	const entry = panesInOrder(addressablePanes([...panes.values()])).find(
 		(p) => p.pane.clientId === pane.clientId,
 	);
 	return {
@@ -438,10 +438,13 @@ const pendingPaneCloses = new Set<PendingPaneClose>();
 
 /**
  * A pane has registered: settle every open request that was waiting for a
- * pane it did not already know.
+ * pane it did not already know. A recording page's is not a pane anybody asked for.
  * @param registration The pane that arrived.
  */
 function notePaneOpened(registration: PaneRegistration): void {
+	if (registration.recording === true) {
+		return;
+	}
 	for (const pending of pendingPaneOpens) {
 		if (pending.known.has(registration.clientId)) {
 			continue;

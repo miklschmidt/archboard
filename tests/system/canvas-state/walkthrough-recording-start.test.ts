@@ -3,9 +3,11 @@
 //
 // What is guarded: a recording start opens no step itself, because the recording page opens step
 // 1 and moves on by itself; the page's own move to step 1, reported with no request behind it,
-// reaches the voice model as speech the way a step chosen by hand does; and a second recording
-// asked for while voice is live is refused with a reason the browser receives, without stopping
-// the session that is talking.
+// reaches the voice model as speech the way a step chosen by hand does; the voice projection
+// says the live session is a recording; the recording page's pane hears its own steps by client
+// id and is neither listed nor shown a board by a show that names no pane; and a second
+// recording asked for while voice is live is refused with a reason the browser receives, without
+// stopping the session that is talking.
 
 import { expect, test } from "bun:test";
 import { join } from "node:path";
@@ -90,7 +92,7 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 				await request("/api/panes", {
 					method: "POST",
 					doing: false,
-					body: { ...pane(CLIENT, PANE, true, true), board: BOARD },
+					body: { ...pane(CLIENT, PANE, true, true), board: BOARD, recording: true },
 				})
 			).status,
 		).toBe(200);
@@ -147,7 +149,11 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 				.map((entry) => entry.params?.["text"])
 				.filter((text): text is string => typeof text === "string");
 
+		const voice = async () =>
+			snapshots(await socket.request("snapshot"))["voice"] as Record<string, unknown>;
+		expect((await voice())["recording"]).toBe(false);
 		expect(await startRecording()).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+		expect((await voice())["recording"]).toBe(true);
 		expect(frames("thread/realtime/start")).toHaveLength(1);
 		// Nothing asks the pane for a step, and nothing is said before the page moves. A step the
 		// start asked for would be sent down this socket before the start's own answer.
@@ -172,6 +178,18 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 		expect(frames("thread/realtime/start")).toHaveLength(1);
 		expect(frames("thread/realtime/stop")).toHaveLength(0);
 		expect(paneMessages).not.toContain("pane_present");
+
+		// Nobody can point at the recording page's pane: it is not listed, and a show that names no
+		// pane finds no browser rather than moving the recording.
+		const listed = await request<{ paneCount: number }>("/api/panes");
+		expect(listed.body.paneCount).toBe(0);
+		const shown = await request("/api/panes/show", {
+			method: "POST",
+			doing: false,
+			body: { board: BOARD },
+		});
+		expect(shown.status).toBe(503);
+		expect(paneMessages).not.toContain("pane_board");
 	} finally {
 		await resources.disposeAsync();
 	}
