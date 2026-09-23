@@ -15,6 +15,7 @@ export {
 	createBrowserLeaseManager,
 } from "@/server/codex-workbench/lib/lease";
 export { CodexWorkbenchGatewayError } from "@/server/codex-workbench/lib/contract";
+export { redactSecrets } from "@/server/codex-workbench/lib/secret-keys";
 
 export type {
 	BrowserAccount,

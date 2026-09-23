@@ -256,7 +256,9 @@ function advanceCursor(
 }
 
 /**
- * Keep as much of one page as the turn and byte budgets allow.
+ * Keep as much of one page as the turn and byte budgets allow. The turn that
+ * crosses the byte bound is kept too, and the projection fits it by cutting
+ * its oldest items: skipping it would hide a long running turn entirely.
  * @param page The page's turns, newest first.
  * @param newestFirst What has been kept so far; appended to.
  * @param retainedBytes How many bytes those take.
@@ -277,10 +279,10 @@ function keepPage(
 		const projected = projectTurnData(turn, budget.maxItemsPerTurn);
 		const projectedBytes = textEncoder.encode(JSON.stringify(projected)).byteLength;
 		const nextBytes = bytes + projectedBytes + (newestFirst.length === 0 ? 0 : 1);
-		if (nextBytes > budget.maxBytes) {
-			return { retainedBytes: bytes, full: true };
-		}
 		newestFirst.push(projected);
+		if (nextBytes > budget.maxBytes) {
+			return { retainedBytes: nextBytes, full: true };
+		}
 		bytes = nextBytes;
 	}
 	return { retainedBytes: bytes, full: false };
