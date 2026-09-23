@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 21:35'
-updated_date: '2026-09-23 22:35'
+updated_date: '2026-09-23 22:39'
 labels:
   - voice
   - coordinator
@@ -31,6 +31,7 @@ In the 2026-09-23 23:15 narration the voice model handed off while explaining st
 - [x] #1 The coordinator is told that a handoff holding only the voice model's own words (assistant lines with no user line) is the voice model's, never the user's: it starts no board change from it, answers a request the words show, such as an announced lookup, and otherwise tells the voice model in one [COMMENTARY] line that the handoff request was unclear
 - [x] #2 The narration prompt tells the voice model that the step it was handed is all it needs, and that it hands off only for a question the user asks
 - [ ] #3 A real-voice narration with fast stepping starts no workhorse work, as the user reports
+- [x] #4 The coordinator's channel rule says [FINAL] is the only message the voice model reacts to, and a turn that answers a handoff always ends with one
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -51,4 +52,6 @@ User correction: the voice was picked up by their microphone. The coordinator ru
 User decision 2026-09-24: no rule for the microphone echo case (rare); only the assistant-only handoff is handled. The echo clause is removed from the coordinator instructions; digest re-pinned, tests pass (183).
 
 User direction 2026-09-24: what went wrong is that the coordinator took the voice model's words as the user's explicit instruction. The rule now says assistant-only input is the voice model's spoken words: the coordinator never treats it as the user's instruction and starts no board change from it, answers a request those words show (such as a lookup the voice announced), and otherwise tells the voice model the handoff request was unclear. Digest re-pinned; tests pass (183).
+
+User point 2026-09-24: coordinator answers must wake the voice model. The channel rule (start-policy.ts, rendered into the coordinator's world state while voice is live, not the developer instructions) now says [FINAL] is the only message the voice model reacts to (Codex 0.155.1 v3_output_writer: FINAL is a speakable append, COMMENTARY a quiet one), and every turn that answers a handoff ends with one. In the 23:15 session the first handoff turn ended with only [COMMENTARY] ("The workhorse has started..."), the voice fell silent after "Give me a second", and the user asked "You good" 18 s later. The recording rule shares the channel lines but keeps its never-[FINAL] line without the handoff line. The unclear own-words handoff is now answered with a short [FINAL]. Tests pass (183), lint exit 0.
 <!-- SECTION:NOTES:END -->
