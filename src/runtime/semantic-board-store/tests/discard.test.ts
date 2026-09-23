@@ -59,6 +59,10 @@ test("a discard removes the whole board, and a later read and discard find it mi
 	await create("neighbour");
 	const location = store.locateSemanticBoard("recorded");
 
+	const stale = await store.discardSemanticBoard({ board: "recorded", writer, expectedVersion: 2 });
+	expect(stale).toMatchObject({ outcome: "rejected", code: "BOARD_VERSION_CONFLICT" });
+	expect(existsSync(location.file)).toBeTrue();
+
 	const discarded = await store.discardSemanticBoard({ board: "Recorded", writer });
 	expect(discarded).toMatchObject({ outcome: "discarded", previousVersion: 1 });
 	expect(existsSync(location.file)).toBeFalse();

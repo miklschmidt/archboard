@@ -59,6 +59,14 @@ test("a discarded board leaves the vault, the listing and the pane showing it", 
 		status: 400,
 		code: "DOING_REQUIRED",
 	});
+	const misspelled = await request<Reply>("/api/semantic-boards/discard?expectVersion=one", {
+		method: "POST",
+		body: { board: "recorded" },
+	});
+	expect({ status: misspelled.status, code: misspelled.body.code }).toEqual({
+		status: 400,
+		code: "BAD_EXPECTED_VERSION",
+	});
 	expect(existsSync(file)).toBeTrue();
 
 	const start = pane.mark();

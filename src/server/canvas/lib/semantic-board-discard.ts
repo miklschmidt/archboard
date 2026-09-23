@@ -16,7 +16,7 @@ import { announceDoing } from "@/server/canvas/lib/board-announcements";
 import { broadcast } from "@/server/canvas/lib/pane-registry";
 import { settledChangeFields } from "@/server/canvas/lib/semantic-change-feed";
 import { answerRefusal, describedWrite, writerOf } from "@/server/canvas/lib/semantic-board-writes";
-import { statedEnvelope } from "@/server/canvas/lib/semantic-write-requests";
+import { expectedVersion, statedEnvelope } from "@/server/canvas/lib/semantic-write-requests";
 
 /**
  * Tell everything that shows the board that it is gone.
@@ -67,9 +67,18 @@ async function discardRoute(
 	if (doing === null) {
 		return;
 	}
+	// Unlike an edit's, the version is optional: the agent that made a board to
+	// record it discards it. A stated one is checked, and one spelled wrong is
+	// refused rather than read as absent.
+	const stated = expectedVersion(req);
+	if (!stated.ok) {
+		res.status(400).json({ success: false, code: "BAD_EXPECTED_VERSION", error: stated.problem });
+		return;
+	}
 	const result = await discardSemanticBoard({
 		board: envelope.board,
 		writer: writerOf(envelope),
+		expectedVersion: stated.version,
 		signal,
 	});
 	if (result.outcome !== "discarded") {
