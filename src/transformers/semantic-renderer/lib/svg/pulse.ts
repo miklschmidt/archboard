@@ -161,8 +161,9 @@ function cometLayer(
  * A steady stream of comets measured directly along the final SVG path.
  *
  * Each comet is a head ringed by the page's colour, with a soft glow, and a
- * tail that tapers and fades behind it, all in its line's ink shaded toward the
- * page's text, spaced speed/volume units apart. Every layer is one dash pattern
+ * tail that tapers and fades behind it, in its relationship's colour at full
+ * strength (or, on the neutral line, shaded toward the page's text), spaced
+ * speed/volume units apart. Every layer is one dash pattern
  * over the whole route, advanced by one spacing every 1/volume seconds, which
  * gives fixed distance per second on straight and curved routes, already
  * populated at load, and any volume without one element per comet (ADR 0027).
