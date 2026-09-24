@@ -17,6 +17,7 @@ import type {
 	CoordinatorCallbackOptions,
 	CoordinatorSemanticCallback,
 	CoordinatorCallbackRealtimeRequest,
+	WorkhorseNewsSituation,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 /** What one delivery record says about the attempt it describes. */
@@ -217,6 +218,17 @@ function reportsOutcome(callback: CoordinatorCallback): boolean {
 }
 
 /**
+ * What a callback given to the coordinator is: a wait, a message, or work that ended.
+ * @param callback - The normalized callback.
+ * @returns The situation the coordinator's prompt is written for.
+ */
+function situationOf(callback: CoordinatorCallback): WorkhorseNewsSituation {
+	if (callback.kind !== "workhorse_news") return "ended";
+	if (callback.type === "waiting") return "waiting";
+	return callback.type === "message" ? "message" : "ended";
+}
+
+/**
  * Give the coordinator one workhorse outcome at once, in the turn it is running or a new one, so
  * it decides what the user hears. Nothing is sent while a recording holds the voice.
  * @param callback - The normalized callback.
@@ -240,9 +252,8 @@ async function deliverThroughCoordinatorTurn(
 		return recordOnly(callback, evidence, text, "not_ready");
 	}
 	const attemptedAtMs = (options.now ?? Date.now)();
-	const waiting = callback.kind === "workhorse_turn" && callback.type === "waiting";
 	const news = workhorseNewsSentence(callback);
-	const result = await port.report({ threadId, news, waiting });
+	const result = await port.report({ threadId, news, situation: situationOf(callback) });
 	if (result === "recording") {
 		return recordOnly(callback, evidence, text, "voice_inactive");
 	}
@@ -403,7 +414,7 @@ async function deliverOne(
 	if (generation === null) {
 		return recordOnly(callback, evidence, text, "voice_inactive");
 	}
-	if (callback.kind === "workhorse_turn") {
+	if (callback.kind === "workhorse_news") {
 		const turnPort = options.coordinatorTurn;
 		return turnPort === undefined
 			? recordOnly(callback, evidence, text, "recorded_only")

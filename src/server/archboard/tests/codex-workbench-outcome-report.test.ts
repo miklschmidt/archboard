@@ -54,7 +54,7 @@ describe("a workhorse outcome given to the coordinator", () => {
 		const result = await h.port.report({
 			threadId: h.threadId,
 			news: "The workhorse finished a turn.",
-			waiting: false,
+			situation: "ended",
 		});
 		expect(result).toEqual({ attempted: true, outcome: "delivered", reason: null });
 		expect(h.starts).toHaveLength(1);
@@ -66,7 +66,7 @@ describe("a workhorse outcome given to the coordinator", () => {
 	test("sends nothing while a recording holds the voice", async () => {
 		// Whatever the coordinator answered would be spoken into the video.
 		const h = harness(false, true);
-		expect(await h.port.report({ threadId: h.threadId, news: "News.", waiting: false })).toBe(
+		expect(await h.port.report({ threadId: h.threadId, news: "News.", situation: "ended" })).toBe(
 			"recording",
 		);
 		expect(h.starts).toHaveLength(0);
@@ -74,7 +74,9 @@ describe("a workhorse outcome given to the coordinator", () => {
 
 	test("says the outcome is unknown when the start may or may not have landed", async () => {
 		const h = harness(true);
-		expect(await h.port.report({ threadId: h.threadId, news: "News.", waiting: false })).toEqual({
+		expect(
+			await h.port.report({ threadId: h.threadId, news: "News.", situation: "ended" }),
+		).toEqual({
 			attempted: true,
 			outcome: "outcome_unknown",
 			reason: "response_lost",

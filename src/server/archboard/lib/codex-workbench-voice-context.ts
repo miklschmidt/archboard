@@ -50,7 +50,7 @@ function entryKind(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number]["kind"] {
 	const callback = delivery.callback;
-	if (callback === null || callback.kind === "operation" || callback.kind === "workhorse_turn") {
+	if (callback === null || callback.kind === "operation" || callback.kind === "workhorse_news") {
 		return "callback";
 	}
 	if (callback.type === "change") {

@@ -706,12 +706,12 @@ message with one `input_text` part:
 Coordinator callback text is compact JSON with no prose prefix or suffix. Every
 object key is serialized in lexical order, recursively. Arrays retain source
 order. The top-level `schema` is `1`; `kind` is `operation`, `semantic` or
-`workhorse_turn`; and `type` is one of the closed fifteen-member set:
+`workhorse_news`; and `type` is one of the closed sixteen-member set:
 
 ```text
 operation: accepted, queued, started, progress, attention, completed, failed, outcome_unknown
 semantic: change, focus, selection
-workhorse_turn: completed, failed, stopped, waiting
+workhorse_news: completed, failed, stopped, waiting, message
 ```
 
 Every operation member contains `correlation`, `detail`, `kind`, `operation`,
@@ -758,10 +758,11 @@ While voice is live an operation callback of type `outcome_unknown` goes to
 `turn/start`, which Codex adds to a running coordinator turn or starts a turn
 with. Every other operation callback is recorded `not_delivered` with reason
 `recorded_only`: that a turn ended or waits on the user is workhorse news. A
-`workhorse_turn` callback (`completed`, `failed`, `stopped`, or `waiting`) is
+`workhorse_news` callback (`completed`, `failed`, `stopped`, or `waiting`) is
 observed on the linked workhorse thread's own `turn/completed` and
 `thread/status/changed` notifications, whoever started the turn, a wait once
-when it begins; it goes to the coordinator the same way. The coordinator is
+when it begins; it goes to the coordinator the same way. A `message` callback
+is what the workhorse said through `tell_coordinator`, carried in `detail`. The coordinator is
 given one plain sentence for either, never the callback bytes, which stay on the
 delivery record. With no voice session, or while a recording holds the voice,
 every operation and workhorse callback is recorded `not_delivered` with reason
@@ -838,13 +839,15 @@ contract.
 
 ## Dynamic-tool wire form
 
-All three catalogues use `DynamicToolNamespaceSpec` with `type: "namespace"`.
+All four catalogues use `DynamicToolNamespaceSpec` with `type: "namespace"`.
 Every listed function has `type: "function"` and `deferLoading: false`; the
 catalogues are eager and ordered as written. Every object schema has
 `additionalProperties: false`.
 
-A valid call response contains exactly one text item. The text is canonical
-compact JSON in one of these envelopes:
+A valid call response contains exactly one text item. Except for
+`tell_coordinator`, which answers in plain prose
+([`archboard_coordinator` manifest](#archboard_coordinator-manifest)), the text
+is canonical compact JSON in one of these envelopes:
 
 <!-- prettier-ignore -->
 ```json
@@ -1162,6 +1165,27 @@ Operation and pagination semantics are exact:
   pagination direction, and canonical query. Authority reads exhaust pages
   with repeated-cursor detection; tool reads preserve the exact bounded page
   behavior above.
+
+## `archboard_coordinator` manifest
+
+The workhorse is started with a second namespace beside `archboard_app`,
+`src/runtime/codex-coordinator-callbacks/archboard-coordinator.json`, which the
+Archboard server loads and pins by its digest (TASK-321). It has one tool,
+`tell_coordinator`, that takes one `message` of 1 to 2048 characters. The
+manifest hash that a workhorse start records is the SHA-256 of the compact JSON
+`{"app":"<archboard_app digest>","coordinator":"<archboard_coordinator digest>"}`.
+A change to either manifest therefore changes it.
+
+A call is answered with one `inputText` item in plain prose. An invalid call
+answers `success: false` and sends nothing. Every other answer is
+`success: true`:
+
+- A call from a thread other than the linked workhorse sends nothing and says so.
+- A call with no ready coordinator, or with no voice session, sends nothing and
+  says that nobody is listening.
+- Otherwise the message becomes a `workhorse_news` callback of type `message`.
+  It is delivered the way other workhorse news is, and the answer says whether
+  the coordinator got it.
 
 ## Dynamic coordination approval lifecycle
 

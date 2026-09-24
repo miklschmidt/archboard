@@ -381,6 +381,7 @@ export function createCodexWorkbenchGenerationFixture(
 		get: () => undefined,
 		pendingCount: () => 0,
 		onNotification: () => undefined,
+		onServerRequest: () => undefined,
 		dispose: () => void events.push("callbacks:dispose"),
 	} satisfies CodexWorkbenchComponents["callbacks"];
 	const gateway = {

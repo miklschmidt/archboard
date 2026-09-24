@@ -1,14 +1,21 @@
 // Workhorse news (TASK-321): the coordinator hears when a turn on the linked workhorse thread ends
-// or starts waiting on the user, whoever started the turn, and only while voice is live.
+// or starts waiting on the user, whoever started the turn, and what the workhorse tells it, only
+// while voice is live.
 //
 // What is guarded: a turn the agent bar started reaches the coordinator when it ends, as news
 // that it finished, failed or was stopped; a wait is news when it begins, not on every status
 // change while it lasts; another thread, a prior epoch and a session with no voice tell the
-// coordinator nothing; and the coordinator is given a plain sentence, never the callback envelope.
+// coordinator nothing; the coordinator is given a plain sentence, never the callback envelope; and
+// the workhorse's tell_coordinator reaches the coordinator at once while voice is live, and with
+// no voice sends nothing and tells the workhorse so.
 
 import { describe, expect, test } from "bun:test";
 
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type {
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "../../codex-transport/server-requests.js";
+import { TELL_COORDINATOR_OWNER } from "../index.js";
 import { close, harness } from "./support.js";
 
 type Harness = ReturnType<typeof harness>;
@@ -85,6 +92,42 @@ function statusChanged(
 	});
 }
 
+/**
+ * The linked workhorse calling tell_coordinator.
+ * @param h - The harness.
+ * @param message - What it tells the coordinator.
+ * @returns The call as the transport hands it over.
+ */
+function tellCoordinator(h: Harness, message: string): DynamicServerRequest {
+	const { decoder } = h.ids.authorities.identity;
+	const requestId = decoder.adoptJsonRpcRequestId("tell-coordinator");
+	const callId = decoder.adoptDynamicToolCallId("tell-call");
+	return {
+		child: h.ids.child,
+		epoch: h.ids.epoch,
+		requestId,
+		correlation: decoder.createWireRequestCorrelation({ requestId }),
+		method: "item/tool/call",
+		params: {
+			threadId: "workhorse",
+			turnId: "workhorse-turn",
+			callId: String(callId),
+			namespace: "archboard_coordinator",
+			tool: "tell_coordinator",
+			arguments: { message },
+		},
+		owner: TELL_COORDINATOR_OWNER,
+		logicalCall: decoder.createLogicalToolCallCorrelation({
+			threadId: h.ids.workhorse,
+			turnId: decoder.adoptTurnId("workhorse-turn"),
+			callId,
+			namespace: "archboard_coordinator",
+			tool: "tell_coordinator",
+			manifestHash: "manifest-hash",
+		}),
+	};
+}
+
 describe("workhorse news", () => {
 	test("a turn the agent bar started reaches the coordinator when it ends, as a plain sentence", async () => {
 		const h = harness(true);
@@ -94,7 +137,7 @@ describe("workhorse news", () => {
 		await h.callbacks.flush();
 		expect(h.reports).toHaveLength(3);
 		expect(h.reports.every((report) => report.threadId === h.ids.coordinator)).toBe(true);
-		expect(h.reports.every((report) => !report.waiting)).toBe(true);
+		expect(h.reports.every((report) => report.situation === "ended")).toBe(true);
 		// The coordinator is told what happened in words, never the identities around it.
 		for (const report of h.reports) {
 			expect(report.news).not.toContain(h.ids.child);
@@ -117,7 +160,7 @@ describe("workhorse news", () => {
 		h.callbacks.onNotification(statusChanged(h, []));
 		h.callbacks.onNotification(statusChanged(h, ["waitingOnUserInput"]));
 		await h.callbacks.flush();
-		expect(h.reports.map((report) => report.waiting)).toEqual([true, true]);
+		expect(h.reports.map((report) => report.situation)).toEqual(["waiting", "waiting"]);
 		close(h);
 	});
 
@@ -146,6 +189,31 @@ describe("workhorse news", () => {
 		expect(quiet.callbacks.inspect()).toMatchObject([
 			{ path: "silent", outcome: "not_delivered", reason: "voice_inactive" },
 		]);
+		close(quiet);
+	});
+
+	test("what the workhorse tells the coordinator reaches it at once while voice is live, and nothing is sent without voice", async () => {
+		const question = "Should the tests move with the module?";
+		const live = harness(true);
+		const liveAnswer = live.nextAnswer();
+		live.callbacks.onServerRequest(tellCoordinator(live, question));
+		const heard = await liveAnswer;
+		expect(live.reports).toMatchObject([{ threadId: live.ids.coordinator, situation: "message" }]);
+		expect(live.reports[0]?.news).toContain(question);
+		expect(heard.response).toMatchObject({ result: { success: true } });
+		close(live);
+
+		const quiet = harness(false);
+		const quietAnswer = quiet.nextAnswer();
+		quiet.callbacks.onServerRequest(tellCoordinator(quiet, question));
+		const unheard = await quietAnswer;
+		expect(quiet.reports).toHaveLength(0);
+		expect(quiet.callbacks.inspect()).toMatchObject([
+			{ outcome: "not_delivered", reason: "voice_inactive" },
+		]);
+		// The workhorse is told something other than that the coordinator has it.
+		expect(unheard.response).toMatchObject({ result: { success: true } });
+		expect(unheard.response).not.toEqual(heard.response);
 		close(quiet);
 	});
 });

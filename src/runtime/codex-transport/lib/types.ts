@@ -47,6 +47,7 @@ type ResponseOwner =
 	| "codex-approvals"
 	| "codex-dynamic-tools"
 	| "codex-coordinator-tools"
+	| "codex-coordinator-callbacks"
 	| "codex-session";
 
 type DynamicDispatcherOwner = Exclude<ResponseOwner, "codex-approvals" | "codex-session">;
@@ -55,6 +56,7 @@ type DynamicDispatcherOwner = Exclude<ResponseOwner, "codex-approvals" | "codex-
 const DYNAMIC_DISPATCHER_OWNERS: readonly DynamicDispatcherOwner[] = Object.freeze([
 	"codex-dynamic-tools",
 	"codex-coordinator-tools",
+	"codex-coordinator-callbacks",
 ]);
 
 const HUMAN_APPROVAL_METHODS = Object.freeze([

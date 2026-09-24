@@ -14,8 +14,8 @@ import type {
 	CoordinatorCallbackSource,
 	CoordinatorOperationCallback,
 	CoordinatorSemanticCallback,
-	CoordinatorWorkhorseTurnCallback,
-	WorkhorseTurnSource,
+	CoordinatorWorkhorseNewsCallback,
+	WorkhorseNewsSource,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 /**
@@ -323,13 +323,13 @@ function normalizeSemanticCallback(
  * @param realtimeGeneration - The voice generation in force, or null.
  * @returns The frozen callback.
  */
-function normalizeWorkhorseTurnCallback(
-	event: WorkhorseTurnSource,
+function normalizeWorkhorseNewsCallback(
+	event: WorkhorseNewsSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
-): CoordinatorWorkhorseTurnCallback {
+): CoordinatorWorkhorseNewsCallback {
 	return freeze({
-		kind: "workhorse_turn",
+		kind: "workhorse_news",
 		type: event.type,
 		sequence: event.sequence,
 		detail: event.detail,
@@ -363,8 +363,8 @@ function normalizeCoordinatorCallback(
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorCallback {
-	if ("kind" in event && event.kind === "workhorse_turn") {
-		return normalizeWorkhorseTurnCallback(event, workhorseLink, realtimeGeneration);
+	if ("kind" in event && event.kind === "workhorse_news") {
+		return normalizeWorkhorseNewsCallback(event, workhorseLink, realtimeGeneration);
 	}
 	if ("kind" in event) {
 		return normalizeSemanticCallback(event, workhorseLink, realtimeGeneration);
@@ -405,9 +405,9 @@ function semanticScope(callback: CoordinatorSemanticCallback): string {
  * @param callback - The workhorse news.
  * @returns The key.
  */
-function workhorseTurnKey(callback: CoordinatorWorkhorseTurnCallback): string {
+function workhorseNewsKey(callback: CoordinatorWorkhorseNewsCallback): string {
 	const { correlation } = callback;
-	return `workhorse_turn:${JSON.stringify([
+	return `workhorse_news:${JSON.stringify([
 		correlation.childId,
 		correlation.epoch,
 		correlation.workhorseThreadId,
@@ -426,8 +426,8 @@ function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
 	}
-	if (callback.kind === "workhorse_turn") {
-		return workhorseTurnKey(callback);
+	if (callback.kind === "workhorse_news") {
+		return workhorseNewsKey(callback);
 	}
 	return semanticKey(callback);
 }
@@ -458,8 +458,8 @@ function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
 	}
-	if (callback.kind === "workhorse_turn") {
-		return workhorseTurnKey(callback);
+	if (callback.kind === "workhorse_news") {
+		return workhorseNewsKey(callback);
 	}
 	return `semantic:${callback.type}:${semanticScope(callback)}`;
 }

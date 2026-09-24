@@ -335,6 +335,7 @@ function createCodexWorkbenchGenerationLifecycle(
 		approvals: components.approvals,
 		dynamicTools: components.dynamicTools,
 		coordinatorTools: components.coordinatorTools,
+		callbacks: components.callbacks,
 		session: components.session,
 	});
 	const router = createCodexWorkbenchRequestRouter(owners);

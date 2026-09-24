@@ -16,6 +16,11 @@ export {
 	encodeCoordinatorCallback,
 } from "@/runtime/codex-coordinator-callbacks/lib/encoding";
 export {
+	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
+	ARCHBOARD_COORDINATOR_NAMESPACE,
+	TELL_COORDINATOR_OWNER,
+} from "@/runtime/codex-coordinator-callbacks/lib/tell-coordinator";
+export {
 	createCoordinatorCallbackRealtimePort,
 	sameRealtimeGeneration,
 } from "@/runtime/codex-coordinator-callbacks/lib/realtime";
@@ -38,6 +43,7 @@ export type {
 	CoordinatorCallbackRealtimePort,
 	CoordinatorCallbackTurnPort,
 	CoordinatorCallbackTurnResult,
+	WorkhorseNewsSituation,
 	CoordinatorCallbackRealtimeRequest,
 	CoordinatorCallbacks,
 	CoordinatorCallbacksRetainedState,
