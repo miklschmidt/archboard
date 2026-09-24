@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 4,
+	"version": 5,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-09-24T09:36:53.793Z",
+	"updatedAt": "2026-09-24T14:03:38.236Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -229,7 +229,7 @@
 						"order": 1000,
 						"from": "tIEJl3KY",
 						"to": "4slFgCMu",
-						"kind": "call",
+						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
 						"emphasis": "hero",
 						"traffic": {
@@ -282,8 +282,8 @@
 						"order": 6000,
 						"from": "5SYKj5bN",
 						"to": "4slFgCMu",
-						"kind": "call",
-						"label": "queue/add, update, reorder, delete, start",
+						"kind": "rpc",
+						"label": "thread/queue/add, update, reorder, delete, start",
 						"emphasis": "normal"
 					},
 					{
@@ -309,7 +309,7 @@
 						"order": 9000,
 						"from": "fDdhxdXp",
 						"to": "4slFgCMu",
-						"kind": "call",
+						"kind": "rpc",
 						"label": "thread/start with the authored body",
 						"emphasis": "normal"
 					},
@@ -372,7 +372,7 @@
 						"order": 16000,
 						"from": "glxfDGYq",
 						"to": "4slFgCMu",
-						"kind": "call",
+						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
 						"emphasis": "hero",
 						"traffic": {
