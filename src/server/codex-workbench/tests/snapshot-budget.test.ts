@@ -4,7 +4,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 import { BROWSER_THREAD_CANDIDATE_LIMIT } from "../../../shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { fitBrowserSnapshotBounded } from "../index.js";

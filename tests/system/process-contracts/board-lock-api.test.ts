@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import {
 	openTestPane,
@@ -12,7 +12,7 @@ import {
 } from "../support/pane-websocket.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";
 
-// What the public lock surface promises, against a real canvas process: a
+// What the public lock surface promises, against a real Archboard server process: a
 // claim is one writer for a stretch of work, a person can end it with one
 // explicit control, and the agent is told once that it lost the board and
 // never quietly carries on (ADR 0016, ADR 0022).
@@ -28,13 +28,13 @@ test("the public lock API preserves claims, refusals and told-once recovery", as
 	const root = mkdtempSync(join(tmpdir(), "archboard-lock-api-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const canvas = await startOwnedCanvas({
+	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
-	resources.defer(() => canvas.dispose());
-	const request = createJsonRequester(canvas);
+	resources.defer(() => server.dispose());
+	const request = createJsonRequester(server);
 
 	const created = await request<{ success: boolean }>("/api/semantic-boards/create", {
 		method: "POST",
@@ -47,7 +47,7 @@ test("the public lock API preserves claims, refusals and told-once recovery", as
 	});
 	expect(created.status).toBe(200);
 
-	const pane = await openTestPane(canvas.base, request, "pane-lock-owner", 0, {
+	const pane = await openTestPane(server.base, request, "pane-lock-owner", 0, {
 		board: "payments",
 	});
 	resources.defer(() => pane.close());

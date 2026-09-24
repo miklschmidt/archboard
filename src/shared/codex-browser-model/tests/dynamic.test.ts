@@ -29,7 +29,7 @@ describe("dynamic coordination approval browser contract", () => {
 		);
 	});
 
-	test("keeps host authority and login secrets out of browser DTOs", () => {
+	test("keeps server authority and login secrets out of browser DTOs", () => {
 		const fixture = createDynamicFixture();
 		const request = fixture.requests[0]!;
 		const browserApproval = fixture.pending;
@@ -64,7 +64,7 @@ describe("dynamic coordination approval browser contract", () => {
 		const approved = decisionFor(request, "approved", "person_approved");
 		const declined = decisionFor(request, "declined", "person_declined");
 		const expired = decisionFor(request, "expired", "deadline_reached");
-		const cancelled = decisionFor(request, "cancelled", "host_shutdown");
+		const cancelled = decisionFor(request, "cancelled", "server_shutdown");
 		const browserDisconnected = decisionFor(request, "disconnected", "browser_disconnected");
 		const childDisconnected = decisionFor(request, "disconnected", "child_disconnected");
 		const cases = [
@@ -274,7 +274,7 @@ describe("dynamic coordination approval browser contract", () => {
 				...approvalFor(
 					request,
 					"cancelled",
-					decisionFor(request, "cancelled", "host_shutdown"),
+					decisionFor(request, "cancelled", "server_shutdown"),
 					null,
 					"approval_required",
 				),

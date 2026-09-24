@@ -3,7 +3,7 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_workhorse",
 	description:
-		"Work with your workhorse, the agent that does sustained work for this canvas. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
+		"Work with your workhorse, the agent that does sustained work for this Archboard server. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
 		{
 			type: "function",

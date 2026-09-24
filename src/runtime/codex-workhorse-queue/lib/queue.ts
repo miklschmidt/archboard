@@ -149,7 +149,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 * Whether a captured binding is still the host's current one, on a child epoch that is still current.
+	 * Whether a captured binding is still the server's current one, on a child epoch that is still current.
 	 * @param binding - The binding captured when the command started.
 	 * @returns True when the binding still holds.
 	 */

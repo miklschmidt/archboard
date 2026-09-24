@@ -41,7 +41,7 @@ function operationIdsForRetirement(operations: DynamicIssuedOperations): readonl
 }
 
 /**
- * Serialize an operation identity for a wire field the host owns, refusing an empty
+ * Serialize an operation identity for a wire field the server owns, refusing an empty
  * serialization since nothing downstream could name the operation by it.
  * @param options The dynamic tools options.
  * @param operationId The identity.
@@ -60,7 +60,7 @@ function operationWireForResult(
 	} catch (error) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
-			"The host could not serialize the canonical dynamic operation identity.",
+			"The Archboard server could not serialize the canonical dynamic operation identity.",
 			error,
 		);
 	}
@@ -81,7 +81,7 @@ function operationWireForIssuedResult(
 	} catch (error) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
-			"The host could not validate a canonical dynamic operation identity.",
+			"The Archboard server could not validate a canonical dynamic operation identity.",
 			error,
 		);
 	}
@@ -105,16 +105,16 @@ function operationWire(options: CodexDynamicToolsOptions, operationId: Operation
 	} catch (error) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
-			"The host could not validate a canonical dynamic operation identity.",
+			"The Archboard server could not validate a canonical dynamic operation identity.",
 			error,
 		);
 	}
 }
 
 /**
- * Cross-check a terminal result the host returned: it must be exactly the reviewed shape, name
+ * Cross-check a terminal result the server returned: it must be exactly the reviewed shape, name
  * the identity that was settled, and say it is terminal.
- * @param value What the host returned.
+ * @param value What the server returned.
  * @param operationId The identity that was settled.
  * @returns The terminal result.
  */
@@ -138,7 +138,7 @@ function exactTerminalResult(
 /**
  * The disposition a terminal result reports, when it reports one the boundary knows and says
  * the operation is terminal under it.
- * @param value What the host returned.
+ * @param value What the server returned.
  * @returns The disposition, or null.
  */
 function terminalDisposition(value: object): DynamicOperationTerminalDisposition | null {
@@ -153,7 +153,7 @@ function terminalDisposition(value: object): DynamicOperationTerminalDisposition
 }
 
 /**
- * What the host already reports for an identity, or nothing when the host still reports it
+ * What the server already reports for an identity, or nothing when the server still reports it
  * current and unconsumed.
  * @param port The operation identity port.
  * @param operationId The identity.
@@ -172,7 +172,7 @@ function readTerminalResult(
 }
 
 /**
- * Ask the host to settle an identity, refusing a settlement under a disposition other than the
+ * Ask the server to settle an identity, refusing a settlement under a disposition other than the
  * one asked for.
  * @param port The operation identity port.
  * @param operationId The identity.
@@ -192,20 +192,20 @@ function settleOnce(
 		throw new CodexDynamicOperationTerminalizationError(
 			operationId,
 			disposition,
-			"The host terminalized the dynamic operation with another disposition.",
+			"The Archboard server terminalized the dynamic operation with another disposition.",
 		);
 	}
 	return result;
 }
 
 /**
- * Read back what the host says about an identity after an attempt failed, refusing a terminal
+ * Read back what the server says about an identity after an attempt failed, refusing a terminal
  * disposition other than the one asked for.
  * @param port The operation identity port.
  * @param operationId The identity.
  * @param disposition How it should have been settled.
  * @param causes What the attempts have thrown so far.
- * @returns The terminal result, or null when the host still reports it current.
+ * @returns The terminal result, or null when the server still reports it current.
  */
 function confirmSettlement(
 	port: DynamicOperationIdPort,
@@ -221,7 +221,7 @@ function confirmSettlement(
 		throw new CodexDynamicOperationTerminalizationError(
 			operationId,
 			disposition,
-			"The host reports another terminal disposition for the dynamic operation.",
+			"The Archboard server reports another terminal disposition for the dynamic operation.",
 			Object.freeze([...causes]),
 		);
 	}
@@ -251,9 +251,9 @@ function attemptSettlement(
 }
 
 /**
- * Cross the host terminal boundary with an idempotent operation. A thrown
- * attempt is inspected and retried only while the host still reports the ID
- * current. Returning means the requested host disposition is proven.
+ * Cross the server terminal boundary with an idempotent operation. A thrown
+ * attempt is inspected and retried only while the server still reports the ID
+ * current. Returning means the requested server disposition is proven.
  * @param port The operation identity port.
  * @param operationId The identity.
  * @param disposition How it should be settled.
@@ -281,7 +281,7 @@ function terminalizeDynamicOperationId(
 	throw new CodexDynamicOperationTerminalizationError(
 		operationId,
 		disposition,
-		"The host could not prove the dynamic operation terminal after idempotent settlement.",
+		"The Archboard server could not prove the dynamic operation terminal after idempotent settlement.",
 		Object.freeze(causes),
 	);
 }
@@ -371,7 +371,7 @@ function assertDistinctIdentities(
 
 /**
  * Refuse a settlement that changes its mind about what was asked for, since the first request
- * is the one the host may already have acted on.
+ * is the one the server may already have acted on.
  * @param requested What each identity was asked to be settled as.
  * @param operationId The identity.
  * @param disposition What it is being asked to be settled as now.
@@ -392,7 +392,7 @@ function assertUnchangedRequest(
 
 /**
  * How one call's identities are settled: each exactly once, under one disposition, and never
- * one the settlement does not own. A settlement the host cannot prove is deferred rather than
+ * one the settlement does not own. A settlement the server cannot prove is deferred rather than
  * raised, so the caller's own path decides whether the call can still be called terminal.
  * @param options The dynamic tools options.
  * @param operations The identities the call was issued.

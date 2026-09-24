@@ -2,7 +2,7 @@
 //
 // A pane is known to the server only while its socket is open (see server.ts):
 // a closed tab or an unsplit takes its registration with it, so there are no
-// ghosts. No pane at all is the normal state of a headless canvas, not an
+// ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
 import { type BoardIdentity } from "@/runtime/engine/board";
@@ -129,7 +129,7 @@ interface PaneContext {
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
 	/** Where to open the canvas, for the no-pane case. */
-	canvasUrl?: string;
+	serverUrl?: string;
 }
 
 /** One pane, with where it sits and what that place is called. */
@@ -200,7 +200,7 @@ function arrangementOf(panes: PaneRegistration[]): Arrangement {
 
 /**
  * What a grid of rows and columns is called. One of each is two panes in the
- * same place — separate tabs on one canvas, not a split.
+ * same place — separate tabs on one server, not a split.
  * @param rows How many rows the panes fall in.
  * @param columns How many columns.
  * @returns The arrangement.

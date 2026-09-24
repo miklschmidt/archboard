@@ -51,7 +51,7 @@ function mutationOutcome(error: unknown): QueueMutationOutcome {
 }
 
 /**
- * Prove the mutation's operation identity is the current host-issued one, and, for an add, serialize it as the client identity the submission will carry. Only an add needs that text: it is what makes the new submission attributable to this operation.
+ * Prove the mutation's operation identity is the current server-issued one, and, for an add, serialize it as the client identity the submission will carry. Only an add needs that text: it is what makes the new submission attributable to this operation.
  * @param port - The operation identity port.
  * @param operation - The mutation being made.
  * @param operationId - The identity the caller supplied.
@@ -73,7 +73,7 @@ function operationIdPort<OperationIdValue extends string>(
 		if (error instanceof CodexWorkhorseQueueError) throw error;
 		throw queueError(
 			"invalid_input",
-			"The queue mutation requires a current host-issued operation identity.",
+			"The queue mutation requires a current operation identity issued by the Archboard server.",
 			{ operation, cause: error },
 		);
 	}

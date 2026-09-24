@@ -1,6 +1,6 @@
 // Fixtures built through the closed browser model with a real identity
 // authority, so a snapshot the contract would refuse fails here instead of
-// proving something about a shape the host can never publish.
+// proving something about a shape the server can never publish.
 
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
@@ -58,7 +58,7 @@ function executableLink(
 
 /**
  * An inspect-only link.
- * @param reason The host's reason.
+ * @param reason The server's reason.
  * @returns The link.
  */
 function inspectOnlyLink(reason: string): BrowserSnapshot["threadLink"] {
@@ -78,7 +78,7 @@ function inspectOnlyLink(reason: string): BrowserSnapshot["threadLink"] {
 
 /**
  * An unbound link.
- * @param reason The host's reason, or null.
+ * @param reason The server's reason, or null.
  * @returns The link.
  */
 function unboundLink(reason: string | null = null): BrowserSnapshot["threadLink"] {

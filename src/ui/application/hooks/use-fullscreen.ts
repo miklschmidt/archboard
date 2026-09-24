@@ -144,7 +144,7 @@ function shellPresentationOf(
 	return {
 		kind: "recovery",
 		paneId: snapshot.paneId,
-		message: `Pane ${snapshot.paneId} lost its connection to the canvas. It reconnects on its own; exit the presentation to keep working in the workspace.`,
+		message: `Pane ${snapshot.paneId} lost its connection to the Archboard server. It reconnects on its own; exit the presentation to keep working in the workspace.`,
 	};
 }
 

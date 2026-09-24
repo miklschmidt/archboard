@@ -1,7 +1,7 @@
 {
 	"type": "namespace",
 	"name": "archboard_app",
-	"description": "Work with the other Codex threads of this Archboard canvas.",
+	"description": "Work with the other Codex threads of this Archboard server.",
 	"tools": [
 		{
 			"type": "function",
@@ -20,7 +20,7 @@
 		{
 			"type": "function",
 			"name": "fork_thread",
-			"description": "Fork a thread of this canvas at the end of one of its turns, once the user approves it.",
+			"description": "Fork a thread of this Archboard server at the end of one of its turns, once the user approves it.",
 			"inputSchema": {
 				"type": "object",
 				"properties": {
@@ -36,7 +36,7 @@
 		{
 			"type": "function",
 			"name": "list_threads",
-			"description": "List the Codex threads of this canvas that you can read.",
+			"description": "List the Codex threads of this Archboard server that you can read.",
 			"inputSchema": {
 				"type": "object",
 				"properties": {
@@ -68,7 +68,7 @@
 		{
 			"type": "function",
 			"name": "send_message_to_thread",
-			"description": "Send one message to another thread of this canvas, once the user approves it. If the result is uncertain, do not send it again.",
+			"description": "Send one message to another thread of this Archboard server, once the user approves it. If the result is uncertain, do not send it again.",
 			"inputSchema": {
 				"type": "object",
 				"properties": {

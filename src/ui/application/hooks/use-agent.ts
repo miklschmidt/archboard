@@ -1,4 +1,4 @@
-// The agent surfaces' one view and one set of actions, over the canvas-wide
+// The agent surfaces' one view and one set of actions, over the server-wide
 // agent setup, the focused pane's owners and the voice session. Everything the
 // agent bar and the conversation panel show comes through `AgentView`;
 // everything a person does there goes out through `AgentActions`.

@@ -178,7 +178,7 @@ function boundedDetail(value: string): string {
 
 /**
  * Compare two coordinator calls field by field; a call is trusted only when every identity
- * component matches the one the host is currently executing.
+ * component matches the one the server is currently executing.
  * @param left - One coordinator call.
  * @param right - The other coordinator call.
  * @returns Whether both calls name the same logical tool call.

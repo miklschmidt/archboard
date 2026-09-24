@@ -1,6 +1,6 @@
 // What a drawn board looks like on the wire.
 //
-// Three things consume a render: the canvas that produces it, the command that
+// Three things consume a render: the server that produces it, the command that
 // writes it to a file, and the pane that shows it. They are in three areas of
 // the repository and cannot import each other, so without one owner the same
 // shape gets written down three times and drifts the first time a field is
@@ -31,8 +31,8 @@ type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
 /**
  * Where a drawn document's faces come from.
  *
- * A pane is inside a page the canvas serves, so it links them and the browser
- * fetches each one once. A file somebody keeps has no canvas behind it, so it
+ * A pane is inside a page the server serves, so it links them and the browser
+ * fetches each one once. A file somebody keeps has no server behind it, so it
  * carries them. Nothing else is offered: naming a face without delivering it is
  * how a picture ends up drawn in a font nobody measured.
  */

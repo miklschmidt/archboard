@@ -3,14 +3,14 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
-	runCanvasCli,
+	registerServerBase,
+	runServerCli,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { seedSemanticBoard } from "./support/semantic-page.ts";
@@ -49,7 +49,7 @@ async function goBack(browser: AgentBrowserSession, expected: string): Promise<v
 
 /**
  * What the panes are showing, as the server reports it.
- * @param request The canvas's JSON requester.
+ * @param request The server's JSON requester.
  * @returns A reader of the pane inventory.
  */
 function panesOf(request: <T>(path: string) => Promise<{ body: T }>): () => Promise<PanesBody> {
@@ -61,18 +61,18 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
-	const cli = (...args: string[]): string => runCanvasCli(canvas.base, vault, args);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
+	const cli = (...args: string[]): string => runServerCli(server.base, vault, args);
 
 	await Promise.all(
 		["payments", "billing", "ledger"].map((board) => seedSemanticBoard(request, board)),
 	);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=payments&paneB=billing&pane=B`]);
+	await browser.run(["open", `${server.base}/?paneA=payments&paneB=billing&pane=B`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	const panes = (): Promise<PanesBody> =>
 		request<PanesBody>("/api/panes").then((reply) => reply.body);
@@ -125,7 +125,7 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 		[paneA.clientId, paneB.clientId].toSorted(),
 	);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 30_000);
 
 test("an address naming a board that is not there says so and settles on what is shown", async () => {
@@ -133,14 +133,14 @@ test("an address naming a board that is not there says so and settles on what is
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "missing-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 	await seedSemanticBoard(request, "payments");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=nowhere`]);
+	await browser.run(["open", `${server.base}/?paneA=nowhere`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => shellNotices(browser),
@@ -166,7 +166,7 @@ test("an address naming a board that is not there says so and settles on what is
 		(search) => search === `paneA=${board!}`,
 		"the address to settle on the workspace that is shown",
 	);
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 30_000);
 
 test("choosing a variant in the navigator moves the pane it was chosen for, and only that one", async () => {
@@ -174,10 +174,10 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "variant-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 	await seedSemanticBoard(request, "payments");
 	const branched = await request<{ board: { variants: Array<{ id: string; name: string }> } }>(
 		"/api/semantic-boards/branch?expectVersion=1",
@@ -195,7 +195,7 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 	// Both panes on the same board, and the LEFT one active: the person is about
 	// to move to the right one and choose a variant for it. A pane does not offer
 	// its own board's states; the navigator does, for the active pane.
-	await browser.run(["open", `${canvas.base}/?paneA=payments&paneB=payments&pane=A`]);
+	await browser.run(["open", `${server.base}/?paneA=payments&paneB=payments&pane=A`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		panesOf(request),
@@ -230,5 +230,5 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 		"the pane the variant was chosen in to show the proposal",
 	);
 	expect(after.panes.map((pane) => pane.board)).toEqual(["payments", `payments@${proposal.id}`]);
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 30_000);

@@ -167,7 +167,7 @@ describe("coordinator candidate reuse and replacement", () => {
 		expect(fixtureValue.epoch.records.every((record) => record.status === "committed")).toBe(true);
 	});
 
-	test("replaces an uncontrollable candidate but refuses replacement without a host operation id", async () => {
+	test("replaces an uncontrollable candidate but refuses replacement without a server operation id", async () => {
 		const fixtureValue = fixture();
 		const first = await ready(fixtureValue);
 		const coordinatorPersistence = persistence(first);
@@ -179,7 +179,7 @@ describe("coordinator candidate reuse and replacement", () => {
 
 		const inspected = await fixtureValue.coordinator.ensure();
 		expect(inspected.state).toBe("inspect_only");
-		expect(inspected.reason).toContain("fresh host operation id");
+		expect(inspected.reason).toContain("fresh server operation id");
 		expect(fixtureValue.session.startParams).toHaveLength(1);
 		expect(fixtureValue.epoch.records).toHaveLength(1);
 	});

@@ -1,7 +1,7 @@
-// The agent over the canvas's panes: each pane's current transport, heard
+// The agent over the server's panes: each pane's current transport, heard
 // through one publication per pane; the owners over the focused pane's
 // transport, which is the pane a message speaks from; one agent setup for the
-// whole canvas, so a message waiting on sign-in survives the person clicking
+// whole server, so a message waiting on sign-in survives the person clicking
 // the other pane; and the voice session, which stays with the pane voice was
 // started from until it ends, because its media belongs to that pane's socket.
 // Voice is kept on a pane only once a start succeeded, and let go when that
@@ -41,7 +41,7 @@ type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>
 interface WorkbenchHost {
 	/** The owners over the focused pane's transport, or null while it has none. */
 	readonly owners: WorkbenchOwners | null;
-	/** The canvas-wide agent setup. */
+	/** The server-wide agent setup. */
 	readonly setup: AgentSetup;
 	/** The voice session, or null while its pane has no transport. */
 	readonly voice: VoiceOwner | null;
@@ -164,7 +164,7 @@ function useVoiceRelease(inputs: VoiceRelease): {
 }
 
 /**
- * The agent over the canvas's panes.
+ * The agent over the server's panes.
  * @param handles The pane sessions.
  * @param activePaneId The focused pane.
  * @returns The owners, the setup, the voice and the moves.

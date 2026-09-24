@@ -1,6 +1,6 @@
 // The behaviour the archived approval-surface owner asserted through the old
 // markup, re-targeted at the projection: every family under its real
-// identity, the broker identity, the exact host-offered decisions, reviewed
+// identity, the broker identity, the exact server-offered decisions, reviewed
 // fields, secrets, safe links, permission scope, dynamic effect facts, spoken
 // eligibility, terminal authority, reconciliation and the app-global beacon.
 
@@ -103,7 +103,7 @@ function rowValue(card: WorkbenchApprovalCard, label: string): string | undefine
 }
 
 /**
- * The dynamic card whose effect carries one host summary.
+ * The dynamic card whose effect carries one server summary.
  * @param summary The effect's visual summary.
  * @param cards The cards.
  * @returns The card.
@@ -172,7 +172,7 @@ describe("ordinary approval families", () => {
 		expect(rowValue(card, "Approval id")).toContain("no ApprovalId");
 	});
 
-	test("offers exactly the decisions the host published", () => {
+	test("offers exactly the decisions the server published", () => {
 		expect(only(commandApproval()).offers.map((offer) => offer.label)).toEqual([
 			"Approve",
 			"Decline",
@@ -185,7 +185,7 @@ describe("ordinary approval families", () => {
 		]);
 	});
 
-	test("offers a host-proposed amendment as its own decision instead of an editable one", () => {
+	test("offers a server-proposed amendment as its own decision instead of an editable one", () => {
 		const card = only(
 			commandApproval({
 				availableDecisions: [
@@ -245,7 +245,7 @@ describe("ordinary approval families", () => {
 		const missing = only(safeUrlElicitation({ url: null }));
 		expect(missing.links).toEqual([]);
 		expect(missing.notices).toContain(
-			"The host published no safe http or https URL, so nothing here can be opened.",
+			"The Archboard server published no safe http or https URL, so nothing here can be opened.",
 		);
 		expect(missing.offers.map((offer) => offer.id)).toEqual(["decline", "cancel"]);
 	});
@@ -385,7 +385,7 @@ describe("spoken eligibility", () => {
 		}
 	});
 
-	test("refuses a host annotation that is not a plain accept or decline", () => {
+	test("refuses a server annotation that is not a plain accept or decline", () => {
 		const card = only(
 			commandApproval({
 				availableDecisions: ["accept", "acceptForSession", "decline"],

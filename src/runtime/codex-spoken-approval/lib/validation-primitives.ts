@@ -2,7 +2,10 @@ import type { ApprovalSnapshot, SpokenApprovalEffectPresentation } from "@/runti
 import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
 import type { SpokenApprovalFallbackReason } from "@/runtime/codex-spoken-approval/lib/contract";
 import { IdentityValidationError } from "@/shared/codex-workbench-identity";
-import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type {
+	RealtimeCorrelation,
+	RealtimeTranscriptRecord,
+} from "@/shared/codex-realtime-contract";
 
 /** Why one spoken approval step refused, in both the person's and the tool call's vocabulary. */
 interface CallValidationFailure {

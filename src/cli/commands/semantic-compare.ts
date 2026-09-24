@@ -9,7 +9,7 @@
 // the same reading in an answer, so an agent that cannot see a picture can
 // still say where the proposal leaves each relationship.
 //
-// It needs no browser and no second route: the canvas holds the aggregate, the
+// It needs no browser and no second route: the server holds the aggregate, the
 // comparison is pure, and it is done here — the way `semantic inspect` runs the
 // pure group inspection here.
 
@@ -33,7 +33,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import { VaultDiagnosticSchema, type VaultDiagnostic } from "@/shared/semantic-policy/index";
-import { readSemanticBoardAnswerOnCanvas } from "@/runtime/semantic-board-client/index";
+import { readSemanticBoardAnswerOnServer } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
@@ -315,7 +315,7 @@ function comparedBeat(change: SubjectChange<PlacedBeat>): z.infer<typeof Compare
  * The whole comparison, as the answer carries it.
  *
  * Pure: two states of one board in, one answer out. Nothing is read or written
- * here, which is what lets the same reading be checked without a canvas.
+ * here, which is what lets the same reading be checked without a server.
  * @param board What the board is called and where it stands.
  * @param board.name Its name.
  * @param board.version The version this was read at.
@@ -531,7 +531,7 @@ const semanticCompareContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic compare");
-		const answer = await readSemanticBoardAnswerOnCanvas(input.name);
+		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		const variant = askedVariant(answer.board, input.variant);
 		const against = predecessorOf(answer.board, variant);
 		const result = comparisonAnswer(answer.board, variant, against, answer.warnings);

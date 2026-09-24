@@ -31,7 +31,7 @@ import {
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "../../../shared/codex-realtime-contract/index.js";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;

@@ -47,7 +47,7 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	/** The pane the person last touched. */
 	focused: boolean;
 	/**
-	 * The pane is a recording page's (TASK-304): nobody's to point at, so the canvas leaves it out
+	 * The pane is a recording page's (TASK-304): nobody's to point at, so the server leaves it out
 	 * of every pane it picks for somebody who did not name it. Absent means false.
 	 */
 	recording?: boolean;
@@ -95,7 +95,7 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	onBoardError?: (error: string) => void;
 	/**
-	 * This tab is running a bundle the canvas no longer serves (TASK-056).
+	 * This tab is running a bundle the server no longer serves (TASK-056).
 	 * @param message What the server said about it.
 	 */
 	onStaleFrontend?: (message: string) => void;

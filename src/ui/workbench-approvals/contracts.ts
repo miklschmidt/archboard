@@ -47,7 +47,7 @@ interface WorkbenchApprovalStatus {
 	readonly label: string;
 	readonly detail: string;
 	readonly recovery: string | null;
-	/** What the host recorded, in human words, once something was decided. */
+	/** What the server recorded, in human words, once something was decided. */
 	readonly decision: string | null;
 	readonly delivery: DeliveryOutcome | null;
 	readonly terminal: boolean;
@@ -169,7 +169,7 @@ interface WorkbenchApprovalCardBase {
 interface WorkbenchOrdinaryApprovalCard extends WorkbenchApprovalCardBase {
 	readonly kind: "ordinary";
 	readonly family: WorkbenchApprovalFamily;
-	/** The immutable request exactly as the host published it. */
+	/** The immutable request exactly as the server published it. */
 	readonly request: BrowserApproval;
 	/** The broker's own identity for this request. */
 	readonly broker: readonly WorkbenchApprovalDisclosure[];
@@ -181,7 +181,7 @@ interface WorkbenchOrdinaryApprovalCard extends WorkbenchApprovalCardBase {
 interface WorkbenchDynamicApprovalCard extends WorkbenchApprovalCardBase {
 	readonly kind: "dynamic";
 	readonly tool: WorkbenchDynamicTool;
-	/** The immutable request exactly as the host published it. */
+	/** The immutable request exactly as the server published it. */
 	readonly request: BrowserDynamicApproval;
 	readonly effectHash: string;
 	readonly toolResult: string | null;
@@ -211,7 +211,7 @@ interface WorkbenchApprovalsBeacon {
 	readonly entries: readonly WorkbenchApprovalBeaconEntry[];
 }
 
-/** The host's authoritative outcome for the last operation. */
+/** The server's authoritative outcome for the last operation. */
 interface WorkbenchApprovalsReconciliation {
 	readonly operationId: string;
 	readonly outcome: DeliveryOutcome;

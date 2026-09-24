@@ -14,15 +14,15 @@ import { withFixtureOrders } from "./fixture-orders.ts";
 const ARCHITECTURE = {
 	nodes: [
 		{ id: "cli", name: "CLI", kind: "app" },
-		{ id: "cnv", name: "Canvas", kind: "service" },
+		{ id: "srv", name: "Server", kind: "service" },
 	],
-	edges: [{ id: "e1", from: "cli", to: "cnv", kind: "http" }],
+	edges: [{ id: "e1", from: "cli", to: "srv", kind: "http" }],
 	flows: [
 		{
 			id: "f1",
 			name: "One edit",
-			participants: ["cli", "cnv"],
-			steps: [{ id: "s1", from: "cli", to: "cnv", label: "state the change" }],
+			participants: ["cli", "srv"],
+			steps: [{ id: "s1", from: "cli", to: "srv", label: "state the change" }],
 		},
 	],
 };

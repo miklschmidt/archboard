@@ -23,7 +23,7 @@ export interface ApprovalViewContext {
 	readonly requireRecord: (value: JsonRpcRequestId) => ApprovalRecord;
 	/** The binding the approval would have right now, or null when it can no longer be built. */
 	readonly currentBinding: (record: ApprovalRecord) => ApprovalBinding | null;
-	/** What the host says it knows about answering this approval aloud. */
+	/** What the server says it knows about answering this approval aloud. */
 	readonly getSpokenEligibilityFacts: CodexApprovalBrokerOptions["getSpokenEligibilityFacts"];
 }
 
@@ -41,12 +41,12 @@ export interface ApprovalViews {
 /**
  * Build the broker's read-only surface: what an owner may look at, and the one thing it may forget.
  * Nothing here settles an approval or answers Codex.
- * @param context - The records and the identity, binding and host lookups over them.
+ * @param context - The records and the identity, binding and server lookups over them.
  * @returns The read-only surface.
  */
 export function createApprovalViews(context: ApprovalViewContext): ApprovalViews {
 	/**
-	 * Whether one approval may be answered aloud right now. A host that cannot say what it knows
+	 * Whether one approval may be answered aloud right now. A server that cannot say what it knows
 	 * about the approval is treated as reporting an unsupported schema, which keeps voice off
 	 * rather than on.
 	 * @param record - The record.
@@ -60,7 +60,7 @@ export function createApprovalViews(context: ApprovalViewContext): ApprovalViews
 		return assessSpokenEligibility(
 			record.request,
 			live !== null && sameBinding(live, record.request.binding),
-			hostFacts(context, record),
+			serverFacts(context, record),
 			record.spokenEffectPresentation,
 		);
 	};
@@ -165,13 +165,13 @@ export function createApprovalViews(context: ApprovalViewContext): ApprovalViews
 }
 
 /**
- * What the host says it knows about answering this approval aloud. A host that throws is treated as
+ * What the server says it knows about answering this approval aloud. A server that throws is treated as
  * reporting an unsupported schema, which keeps voice off rather than on.
- * @param context - The broker context carrying the host lookup.
+ * @param context - The broker context carrying the server lookup.
  * @param record - The record.
  * @returns The facts.
  */
-function hostFacts(context: ApprovalViewContext, record: ApprovalRecord): SpokenEligibilityFacts {
+function serverFacts(context: ApprovalViewContext, record: ApprovalRecord): SpokenEligibilityFacts {
 	try {
 		return context.getSpokenEligibilityFacts?.(record.request) ?? {};
 	} catch {

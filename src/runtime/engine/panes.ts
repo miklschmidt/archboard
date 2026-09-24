@@ -15,7 +15,7 @@
 //
 // A pane is known to the server only while its socket is open (see server.ts):
 // a closed tab or an unsplit takes its registration with it, so there are no
-// ghosts. No pane at all is the normal state of a headless canvas, not an error.
+// ghosts. No pane at all is the normal state of a headless server, not an error.
 
 import { type BoardIdentity, paneBoardAddress, parseBoardKey } from "@/runtime/engine/board";
 import {
@@ -54,10 +54,10 @@ function advice(
 ): string[] {
 	const lines: string[] = [];
 	if (arrangement === "overlapping") {
-		// Not a split: two browsers on the same canvas. Saying so stops a thread
+		// Not a split: two browsers on the same server. Saying so stops a thread
 		// offering "the left one" as a way to tell them apart.
 		lines.push(
-			"These are separate tabs or windows on the same canvas, not a split — nothing is to the left of anything.",
+			"These are separate tabs or windows on the same Archboard server, not a split — nothing is to the left of anything.",
 		);
 	}
 	if (panes.length === 1) {
@@ -105,12 +105,12 @@ function boardAdvice(panes: readonly PaneReport[], sameBoard: boolean): string[]
 /**
  * The read-out when nothing is on screen.
  * @param arrangement How the panes are laid out, which is "none".
- * @param context Where to read the canvas URL from.
+ * @param context Where to read the server URL from.
  * @returns The report.
  */
 function emptyReport(arrangement: Arrangement, context: PaneContext): PanesReport {
-	const where = context.canvasUrl
-		? ` Open ${context.canvasUrl} to put it in front of somebody.`
+	const where = context.serverUrl
+		? ` Open ${context.serverUrl} to put it in front of somebody.`
 		: "";
 	const summary = `No pane is open, so nothing is on screen.${where}`;
 	return {
@@ -331,7 +331,7 @@ function paneLine(pane: PaneReport): string {
  * Build the read-out. Cost is one pass over the registry: what each pane is
  * reading is what that pane itself reported, so nothing here reads a board.
  * @param registrations The panes on screen, of which only the addressable ones are reported.
- * @param context Where to read board identities, readings and the canvas URL from.
+ * @param context Where to read board identities, readings and the server URL from.
  * @returns The report, and the text an agent reads out.
  */
 function buildPanesReport(registrations: PaneRegistration[], context: PaneContext): PanesReport {

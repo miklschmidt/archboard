@@ -1,4 +1,4 @@
-// A recording page's recorder, kept in step with the canvas (TASK-304): the
+// A recording page's recorder, kept in step with the server (TASK-304): the
 // agent and the voice are bound to it every render, as they change; its
 // contract is published on the page for the recorder outside it; and the step
 // it moves the pane to is read as state, so the pane renders it.
@@ -40,9 +40,9 @@ const NO_STEP = Object.freeze({
 });
 
 /**
- * Keep a recorder in step with the canvas, and publish it on the page.
+ * Keep a recorder in step with the server, and publish it on the page.
  * @param recorder The page's recorder, or null when the page is not a recording.
- * @param sources The canvas's agent and voice.
+ * @param sources The server's agent and voice.
  * @returns The step the recorded pane is to show, or null.
  */
 function useWalkthroughRecording(
@@ -50,7 +50,7 @@ function useWalkthroughRecording(
 	sources: RecordingSources,
 ): RecordedStep | null {
 	// Bound each render, like the pane events: the recorder reads the agent and the voice
-	// when its tick asks, and they are whatever the canvas holds now.
+	// when its tick asks, and they are whatever the server holds now.
 	recorder?.bind(sources);
 	usePublished(recorder);
 	const store = recorder ?? NO_STEP;

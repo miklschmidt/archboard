@@ -71,7 +71,7 @@ function offer(seed: OfferSeed): WorkbenchApprovalOffer {
 }
 
 /**
- * The offer for a plain host-offered decision.
+ * The offer for a plain server-offered decision.
  * @param id The offer id.
  * @param decision The decision.
  * @param spokenEligible Whether voice may answer it.
@@ -93,7 +93,7 @@ function plainDecisionOffer(
 
 /**
  * The offer for one command execution decision, plain or amended.
- * @param decision The host-offered decision.
+ * @param decision The server-offered decision.
  * @param index Its position among the offered decisions.
  * @param spoken Whether the request as a whole is spoken-eligible.
  * @returns The offer.
@@ -113,7 +113,7 @@ function commandDecisionOffer(
 			id,
 			label: "Approve with the proposed exec policy amendment",
 			tone: "secondary",
-			description: `The host proposed: ${decision.acceptWithExecpolicyAmendment.execpolicy_amendment.join(" · ")}`,
+			description: `The Archboard server proposed: ${decision.acceptWithExecpolicyAmendment.execpolicy_amendment.join(" · ")}`,
 		});
 	}
 	const amendment = decision.applyNetworkPolicyAmendment.network_policy_amendment;
@@ -126,7 +126,7 @@ function commandDecisionOffer(
 }
 
 /**
- * The offers of a file change: the host-offered decisions, in order.
+ * The offers of a file change: the server-offered decisions, in order.
  * @param approval The request.
  * @returns The offers.
  */
@@ -137,7 +137,7 @@ function fileChangeOffers(approval: FileChangeApproval): readonly WorkbenchAppro
 }
 
 /**
- * The offers of an elicitation: accept only when the host published what
+ * The offers of an elicitation: accept only when the server published what
  * accepting needs.
  * @param approval The request.
  * @returns The offers.
@@ -191,10 +191,10 @@ const LEGACY_OFFERS: readonly WorkbenchApprovalOffer[] = Object.freeze([
 ]);
 
 /**
- * The offers of the families whose decisions the host enumerates.
+ * The offers of the families whose decisions the server enumerates.
  * @param approval The request.
  * @param spoken Whether the request is spoken-eligible.
- * @returns The offers, in the host's order.
+ * @returns The offers, in the server's order.
  */
 function enumeratedOffers(
 	approval: CommandApproval | FileChangeApproval,
@@ -234,9 +234,9 @@ function ordinaryOffers(
 }
 
 /**
- * A genuine ordinary binary approval is a command execution whose host-offered
+ * A genuine ordinary binary approval is a command execution whose server-offered
  * decision set is exactly accept and decline. Every other family, every
- * broader grant, and every amendment stays visual-only whatever the host
+ * broader grant, and every amendment stays visual-only whatever the server
  * annotated.
  * @param approval The request.
  * @returns True for exactly accept and decline on a command execution.
@@ -259,10 +259,10 @@ function ordinarySpoken(
 	approval: BrowserApproval,
 	phase: WorkbenchApprovalPhase,
 ): WorkbenchApprovalSpoken {
-	const host = approval.spoken;
+	const published = approval.spoken;
 	const eligible =
-		host.eligible &&
-		host.reason === "eligible" &&
+		published.eligible &&
+		published.reason === "eligible" &&
 		phase === "pending" &&
 		isGenuineBinaryApproval(approval);
 	if (eligible) {
@@ -272,9 +272,9 @@ function ordinarySpoken(
 			detail: SPOKEN_REASONS.eligible,
 		});
 	}
-	const detail = host.eligible
+	const detail = published.eligible
 		? "Visual only: this browser could not confirm a plain accept or decline."
-		: spokenDetail(host.reason);
+		: spokenDetail(published.reason);
 	return Object.freeze({ eligible: false, label: "Visual only", detail });
 }
 

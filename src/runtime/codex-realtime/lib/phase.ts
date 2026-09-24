@@ -1,4 +1,4 @@
-import { canTransitionRealtimeState, type RealtimeState } from "@/shared/codex-realtime-host";
+import { canTransitionRealtimeState, type RealtimeState } from "@/shared/codex-realtime-contract";
 
 /**
  * The state steps a user input (text, speech or a final user transcript segment) implies from

@@ -3,7 +3,10 @@
 // the real owners do.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
-import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract";
 import type {
 	RealtimeCorrelation,
 	RealtimeMediaSnapshot,

@@ -10,7 +10,7 @@ import {
 	withHarness,
 } from "./fixtures/codex-realtime-process.ts";
 import { createIdentityAuthority } from "../../../src/shared/codex-workbench-identity/index.ts";
-import { parseRealtimeItemId } from "../../../src/shared/codex-realtime-host/index.ts";
+import { parseRealtimeItemId } from "../../../src/shared/codex-realtime-contract/index.ts";
 import {
 	browserCorrelation,
 	expectPendingOffer,

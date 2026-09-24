@@ -17,9 +17,9 @@ import {
 	type SemanticBoard,
 } from "@/shared/semantic-board/index";
 import {
-	adoptSemanticBoardOnCanvas,
-	resolveSemanticBoardOnCanvas,
-	shelveSemanticBoardOnCanvas,
+	adoptSemanticBoardOnServer,
+	resolveSemanticBoardOnServer,
+	shelveSemanticBoardOnServer,
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import {
@@ -153,7 +153,7 @@ const semanticResolveContract = defineCommand({
 			context.diagnostic(line);
 		}
 		const resolution = context.parse(ResolutionInputSchema, targeted.stated);
-		const written = await resolveSemanticBoardOnCanvas(input.name, resolution);
+		const written = await resolveSemanticBoardOnServer(input.name, resolution);
 		return {
 			result: writeResult(written),
 			diagnostics: describedWrite(written),
@@ -258,7 +258,7 @@ const semanticAdoptContract = defineCommand({
 			variant: input.variant,
 			...(input.reason === undefined ? {} : { reason: input.reason }),
 		});
-		const written = await adoptSemanticBoardOnCanvas(input.name, adopting);
+		const written = await adoptSemanticBoardOnServer(input.name, adopting);
 		return { result: writeResult(written), diagnostics: [adoptedLine(written.board)] };
 	},
 });
@@ -375,7 +375,7 @@ const semanticShelveContract = defineCommand({
 			variant: input.variant,
 			reason: input.reason,
 		});
-		const written = await shelveSemanticBoardOnCanvas(input.name, shelving);
+		const written = await shelveSemanticBoardOnServer(input.name, shelving);
 		const board = written.board;
 		const shelved = board.shelvings?.at(-1);
 		const name = board.variants.find((one) => one.id === shelved?.variant)?.name ?? input.variant;

@@ -1,4 +1,4 @@
-// One entry as the host holds it, with what this pane may do to it and why
+// One entry as the server holds it, with what this pane may do to it and why
 // each unavailable control is unavailable.
 
 import type {
@@ -16,11 +16,11 @@ import type { QueueCommandName } from "@/ui/workbench-queue/transport-port";
 const ENABLED: WorkbenchQueueAvailability = Object.freeze({ enabled: true, reason: null });
 
 const UNSUPPORTED = {
-	queueAdd: "The host is not accepting queue add commands for this link.",
-	queueUpdate: "The host is not accepting queue update commands for this link.",
-	queueDelete: "The host is not accepting queue delete commands for this link.",
-	queueReorder: "The host is not accepting queue reorder commands for this link.",
-	queueStart: "The host is not accepting queue start commands for this link.",
+	queueAdd: "The Archboard server is not accepting queue add commands for this link.",
+	queueUpdate: "The Archboard server is not accepting queue update commands for this link.",
+	queueDelete: "The Archboard server is not accepting queue delete commands for this link.",
+	queueReorder: "The Archboard server is not accepting queue reorder commands for this link.",
+	queueStart: "The Archboard server is not accepting queue start commands for this link.",
 } as const satisfies Record<QueueCommandName, string>;
 
 const FOREIGN = "Only a submission this coordinator queued can be reordered.";
@@ -49,7 +49,7 @@ function disabled(reason: string): WorkbenchQueueAvailability {
 
 /**
  * Whether a command is offered: not while the region is blocked, and only
- * when the host accepts it for this link.
+ * when the server accepts it for this link.
  * @param input The projection input.
  * @param block The region or entry block, or null.
  * @param command The gateway command.

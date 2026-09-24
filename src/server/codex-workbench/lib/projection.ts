@@ -58,7 +58,7 @@ const BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE = {
 } as const satisfies Record<CodexAccountType, string>;
 
 /**
- * Project the account as the browser presents it, from a Codex read or a host-known state.
+ * Project the account as the browser presents it, from a Codex read or a server-known state.
  * @param input The account projection input.
  * @returns The browser account.
  */
@@ -161,7 +161,7 @@ function projectSandbox(policy: SandboxPolicy): BrowserSettings["sandbox"] {
  * The queue's condition against the workhorse it belongs to.
  *
  * Every arm is derived from an authoritative fact the projection already holds:
- * the thread-link status the host read for this pane, and that thread's own
+ * the thread-link status the server read for this pane, and that thread's own
  * pending approvals. That is five of the eleven statuses the closed contract
  * allows, and the other six are deliberately never produced here:
  *
@@ -169,7 +169,7 @@ function projectSandbox(policy: SandboxPolicy): BrowserSettings["sandbox"] {
  *   timeline owns turn status; a queue holds pending submissions, and a
  *   submission that ran has already left the list.
  * - `stale` and `reconnecting` are transport facts. The browser transport knows
- *   its own sequence gaps and socket state; the host would only be guessing.
+ *   its own sequence gaps and socket state; the server would only be guessing.
  * - `outcome_unknown` belongs to one command's settlement, which the gateway
  *   already publishes as its own operation outcome.
  *
@@ -230,7 +230,7 @@ function projectQueue(
 }
 
 /**
- * Project the last semantic delivery, when the host holds a complete, fresh record of one.
+ * Project the last semantic delivery, when the server holds a complete, fresh record of one.
  * @param input The semantic projection input.
  * @returns The browser semantic delivery, or null.
  */

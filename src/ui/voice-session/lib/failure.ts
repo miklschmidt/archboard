@@ -1,5 +1,5 @@
 // One presentation code per authoritative realtime reason. The tables are
-// total by construction: a reason added to the neutral host contract is a
+// total by construction: a reason added to the neutral realtime server contract is a
 // type error here until it is given a code, and the module's message is
 // carried through untouched.
 
@@ -53,7 +53,7 @@ const FAILURE_SUBJECTS = {
 	protocol: "The realtime protocol",
 	fatal: "The realtime session",
 	replaced: "This voice session's pane, thread link, or coordinator",
-	host_voice: "The host's voice session",
+	server_voice: "The Archboard server's voice session",
 } as const satisfies Record<VoiceSessionFailureCode, string>;
 
 /**

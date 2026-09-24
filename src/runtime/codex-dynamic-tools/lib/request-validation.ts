@@ -82,7 +82,7 @@ function dynamicError(
 
 /**
  * Refuse a catalogue that is not byte-for-byte the reviewed manifest.
- * @param catalogue Catalogue option supplied by the host, if any.
+ * @param catalogue Catalogue option supplied by the server, if any.
  */
 function exactCatalogue(catalogue: unknown): void {
 	const candidate = catalogue ?? ARCHBOARD_APP_NAMESPACE;
@@ -93,7 +93,7 @@ function exactCatalogue(catalogue: unknown): void {
 
 /**
  * Validate the catalogue, converting an unexpected failure into a refusal.
- * @param catalogue Catalogue option supplied by the host, if any.
+ * @param catalogue Catalogue option supplied by the server, if any.
  */
 function assertReviewedCatalogue(catalogue: unknown): void {
 	try {

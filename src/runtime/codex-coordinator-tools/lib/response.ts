@@ -63,14 +63,14 @@ function boundedMessage(message: string): string {
 }
 
 /**
- * Insist on a host-supplied operation identity before an envelope may name one.
+ * Insist on a server-supplied operation identity before an envelope may name one.
  * @param operationId - The wire form of the operation identity.
  * @returns The same identity when it is present and bounded.
  */
 function requireOperationId(operationId: string | null | undefined): string {
 	if (typeof operationId !== "string" || operationId.length === 0 || operationId.length > 128) {
 		throw new TypeError(
-			"A coordinator tool response requires one host-supplied operation identity.",
+			"A coordinator tool response requires one server-supplied operation identity.",
 		);
 	}
 	return operationId;
@@ -107,7 +107,7 @@ function responseForEnvelope(envelope: DynamicToolEnvelope, success: boolean): D
 /**
  * Build the successful response for one tool, checked against that tool's reviewed result schema.
  * @param name - The tool that succeeded.
- * @param operationId - The wire form of the host-issued operation identity.
+ * @param operationId - The wire form of the server-issued operation identity.
  * @param value - The tool's result.
  * @returns The frozen response.
  */
@@ -133,7 +133,7 @@ function okResponse<Name extends CoordinatorToolName>(
  * result against the tool's reviewed schema at runtime. This is how a port result whose static
  * type the dispatcher does not track becomes a checked response.
  * @param name - The tool that succeeded.
- * @param operationId - The wire form of the host-issued operation identity.
+ * @param operationId - The wire form of the server-issued operation identity.
  * @param value - The result as the port produced it.
  * @returns The frozen response.
  */
@@ -175,7 +175,7 @@ function refusedResponse(
 
 /**
  * Build the response that tells the coordinator a person must approve before the effect runs.
- * @param operationId - The wire form of the host-issued operation identity.
+ * @param operationId - The wire form of the server-issued operation identity.
  * @param summary - What is awaiting approval.
  * @returns The frozen response.
  */
@@ -191,8 +191,8 @@ function approvalRequiredResponse(operationId: string, summary: string): Dynamic
 }
 
 /**
- * Build the response for an effect whose outcome the host cannot prove either way.
- * @param operationId - The wire form of the host-issued operation identity.
+ * Build the response for an effect whose outcome the server cannot prove either way.
+ * @param operationId - The wire form of the server-issued operation identity.
  * @returns The frozen response.
  */
 function outcomeUnknownResponse(operationId: string): DynamicToolResponse {

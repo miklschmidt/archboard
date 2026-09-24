@@ -19,7 +19,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
 } from "@/runtime/codex-thread-link";
-import type { AnswerSdp } from "@/shared/codex-realtime-host";
+import type { AnswerSdp } from "@/shared/codex-realtime-contract";
 import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
 import type { SupportedLoginAccountParams } from "@/runtime/codex-protocol";
 import type {
@@ -150,7 +150,7 @@ export interface BrowserProjectionPort {
 	 * Re-read owner state a snapshot request must not serve from a cache.
 	 *
 	 * `read` is synchronous because a projection is assembled from owners that
-	 * already hold their state. Some of that state is a cache the host filled
+	 * already hold their state. Some of that state is a cache the server filled
 	 * from its own command results — the workhorse queue is one — and a browser
 	 * asking for a snapshot is asking for state it can trust. The gateway awaits
 	 * this before serving a snapshot request so `refresh()` genuinely re-reads.
@@ -175,7 +175,7 @@ export type BrowserDisconnectReason =
 	| "gateway_shutdown";
 
 /**
- * Browser-only host settlement. Typed Codex request and result values end at
+ * Browser-only server settlement. Typed Codex request and result values end at
  * their session owner; the gateway never mirrors them into a second result.
  */
 export type BrowserActionResult = void | {

@@ -95,7 +95,7 @@ describe("reviewed field descriptors", () => {
 });
 
 describe("reviewed field validation", () => {
-	test("requires an answer only when the host required one", () => {
+	test("requires an answer only when the server required one", () => {
 		expect(errorFor({ required: true }, "")).toContain("needs an answer");
 		expect(errorFor({ required: false }, "")).toBeNull();
 	});

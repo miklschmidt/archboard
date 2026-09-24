@@ -2,13 +2,13 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 } from "./support/agent-browser.ts";
 import {
 	assertDialogClosedAndFocusReturned,
@@ -49,21 +49,21 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	resources.defer(() => rmSync(testRoot, { recursive: true, force: true }));
 	mkdirSync(testRoot, { recursive: true });
 	const vault = join(testRoot, "vault");
-	const logPath = join(testRoot, "canvas.log");
+	const logPath = join(testRoot, "server.log");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({
+	const server = await startOwnedServer({
 		serverPath,
 		vault,
-		env: canvasTestEnvironment({
+		env: serverTestEnvironment({
 			LOG_FILE_PATH: logPath,
 			ARCHBOARD_OPENER_CONFIG: join(testRoot, "machine-state", "opener.json"),
 		}),
 	});
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
 	const browser = resources.use(await createAgentBrowser());
 
-	await browser.run(["open", canvas.base]);
+	await browser.run(["open", server.base]);
 	await browser.run(["set", "viewport", "1920", "1080", "1"]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await pollUntil(
@@ -464,8 +464,8 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	const pageErrors = await browser.run(["errors"]);
 	expect(consoleOutput.trim()).toBe("");
 	expect(pageErrors.trim()).toBe("");
-	await canvas.assertRunning();
-	expect(canvas.stderr.trim()).toBe("");
+	await server.assertRunning();
+	expect(server.stderr.trim()).toBe("");
 	const serverLog = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
 	expect(serverLog).not.toMatch(/\[(?:warn|error)\]/i);
 }, 30_000);

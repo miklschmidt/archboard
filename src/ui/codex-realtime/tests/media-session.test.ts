@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract";
 import { createRealtimeMediaSession, REALTIME_MEDIA_FEATURE } from "@/ui/codex-realtime";
 import type {
 	RealtimeMediaSnapshot,
@@ -13,12 +16,18 @@ import {
 	FakeBrowser,
 	SILENT_SAMPLES,
 	correlation,
-	host,
+	realtimeServer,
 	settle,
 	type Stage,
 } from "@/ui/codex-realtime/tests/support/media-session-fakes";
 
-const NEGOTIATION_STAGES: Stage[] = ["createOffer", "setLocal", "hostOffer", "setRemote", "resume"];
+const NEGOTIATION_STAGES: Stage[] = [
+	"createOffer",
+	"setLocal",
+	"serverOffer",
+	"setRemote",
+	"resume",
+];
 const PAUSE_STAGES: Stage[] = ["getUserMedia", ...NEGOTIATION_STAGES];
 const DEVICE_LOSS_CHECKPOINTS: string[] = ["attachRemote", "play", "meter"];
 
@@ -28,7 +37,7 @@ const DEVICE_LOSS_CHECKPOINTS: string[] = ["attachRemote", "play", "meter"];
  * @returns The session.
  */
 function session(env: FakeBrowser): RealtimeMediaSession {
-	return createRealtimeMediaSession(host(env), { environment: env.environment() });
+	return createRealtimeMediaSession(realtimeServer(env), { environment: env.environment() });
 }
 
 /**
@@ -60,7 +69,7 @@ describe("realtime browser media session", () => {
 		input.sessionId = parseRealtimeSessionId("mutated");
 		const started = await starting;
 		expect(env.order.join(",")).toBe(
-			"getUserMedia,peer,transceiver,channel,createOffer,setLocal,hostOffer,setRemote,attachRemote,meter",
+			"getUserMedia,peer,transceiver,channel,createOffer,setLocal,serverOffer,setRemote,attachRemote,meter",
 		);
 		expect(started.correlation).toEqual(correlation());
 		expect(Object.isFrozen(started.correlation)).toBe(true);
@@ -111,7 +120,7 @@ describe("realtime browser media session", () => {
 		["getUserMedia", "permission_denied"],
 		["createOffer", "sdp_failed"],
 		["setLocal", "sdp_failed"],
-		["hostOffer", "sdp_failed"],
+		["serverOffer", "sdp_failed"],
 		["setRemote", "sdp_failed"],
 		["resume", "sdp_failed"],
 	] as const)("maps %s failure to one recoverable state", async (stage, reason) => {
@@ -286,9 +295,9 @@ describe("realtime browser media session", () => {
 		env.assertReleased();
 	});
 
-	test("ICE failure aborts a pending host answer", async () => {
+	test("ICE failure aborts a pending server answer", async () => {
 		const env = new FakeBrowser();
-		env.pause = "hostOffer";
+		env.pause = "serverOffer";
 		const media = session(env);
 		const starting = media.start(correlation());
 		await settle();
@@ -368,7 +377,7 @@ describe("realtime browser media session", () => {
 		const failed = await media.start(correlation());
 		expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
 		expect(failures).toEqual(["device_lost"]);
-		expect(env.order).not.toContain("hostOffer");
+		expect(env.order).not.toContain("serverOffer");
 		expect(env.stopCount).toBe(0);
 		env.assertReleased();
 	});
@@ -430,17 +439,20 @@ describe("realtime browser media session", () => {
 
 	test.each([
 		["localDescription", false],
-		["hostOffer", true],
-	] as const)("device loss at %s records exact host offer ownership", async (checkpoint, sent) => {
-		const env = new FakeBrowser();
-		const media = session(env);
-		loseDeviceAt(env, checkpoint);
-		const failed = await media.start(correlation());
-		expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
-		expect(env.stopRequests).toEqual(sent ? [correlation()] : []);
-		expect(env.order.includes("hostOffer")).toBe(sent);
-		env.assertReleased();
-	});
+		["serverOffer", true],
+	] as const)(
+		"device loss at %s records exact server offer ownership",
+		async (checkpoint, sent) => {
+			const env = new FakeBrowser();
+			const media = session(env);
+			loseDeviceAt(env, checkpoint);
+			const failed = await media.start(correlation());
+			expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
+			expect(env.stopRequests).toEqual(sent ? [correlation()] : []);
+			expect(env.order.includes("serverOffer")).toBe(sent);
+			env.assertReleased();
+		},
+	);
 
 	test("a stale play rejection cannot fail or detach its replacement", async () => {
 		const env = new FakeBrowser();

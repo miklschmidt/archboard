@@ -1,12 +1,12 @@
 // The conversation as the workbench shows it: one turn per Codex turn, in
-// order, each carrying the items the host published with their evidence, how
+// order, each carrying the items the server published with their evidence, how
 // long it ran, how it ended, and the plan it was working to.
 
 import type { BrowserTimeline } from "@/shared/codex-browser-model";
 
 type BrowserTurn = BrowserTimeline["turns"][number];
 
-/** One item of a turn exactly as the host published it: a prompt, prose, work, a plan, an approval. */
+/** One item of a turn exactly as the server published it: a prompt, prose, work, a plan, an approval. */
 type ConversationItem = BrowserTurn["items"][number];
 
 /** The plan Codex published for a turn. */

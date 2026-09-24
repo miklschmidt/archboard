@@ -2,7 +2,7 @@ import type { ApprovalSettlement } from "@/runtime/codex-approvals";
 import type { DynamicToolRefusalReason } from "@/runtime/codex-coordinator-tool-contract";
 import { createTurnStartParams, type TurnStartParams } from "@/runtime/codex-instructions";
 import type { SessionParams, SessionResponse } from "@/runtime/codex-session";
-import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
 import { type IdentityAuthority, type TurnId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexSpokenApprovalGateOptions,
@@ -14,7 +14,7 @@ import type { ActiveSlot, TurnReadyControls } from "@/runtime/codex-spoken-appro
 import { sameBinding } from "@/runtime/codex-spoken-approval/lib/validation";
 import { createSpokenApprovalClassifierPrompt } from "@/runtime/codex-spoken-approval/lib/classifier";
 
-interface ClassifierTurnHost {
+interface ClassifierTurnContext {
 	readonly approvalBroker: CodexSpokenApprovalGateOptions["approvalBroker"];
 	readonly session: CodexSpokenApprovalGateOptions["session"];
 	readonly identity: IdentityAuthority;
@@ -85,13 +85,13 @@ function safeMessage(error: unknown): string {
 
 /**
  * Fail the classifier turn: settle the readiness promise so a waiting resolver call stops waiting, then fall the gate back to the visual surface.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @param ready - The readiness controls.
  * @param error - What went wrong.
  */
 function failReady(
-	host: ClassifierTurnHost,
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 	ready: TurnReadyControls,
 	error: unknown,
@@ -100,8 +100,8 @@ function failReady(
 		ready.settled = true;
 		ready.reject(error);
 	}
-	if (host.isLive(slot)) {
-		host.enterFallback(slot, "classifier_lost");
+	if (context.isLive(slot)) {
+		context.enterFallback(slot, "classifier_lost");
 	}
 }
 
@@ -109,17 +109,17 @@ function failReady(
  * Whether the turn that just started is still the classifier turn this gate can use: the gate is
  * live, no other turn has started on the thread, and the turn has not already completed without a
  * resolver call.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @param turnId - The turn the session returned.
  * @returns True when the gate may adopt the turn.
  */
 function isUsableClassifierTurn(
-	host: ClassifierTurnHost,
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 	turnId: TurnId,
 ): boolean {
-	if (!host.isLive(slot)) {
+	if (!context.isLive(slot)) {
 		return false;
 	}
 	if (slot.startedTurnId !== null && slot.startedTurnId !== turnId) {
@@ -129,13 +129,13 @@ function isUsableClassifierTurn(
 }
 
 /**
- * Whether the host's current coordinator is the one this gate was armed on.
- * @param coordinator - The host's current coordinator, or null when there is none.
+ * Whether the server's current coordinator is the one this gate was armed on.
+ * @param coordinator - The server's current coordinator, or null when there is none.
  * @param slot - The armed gate.
  * @returns True when it is the same coordinator on the same child and epoch.
  */
 function isSameCoordinator(
-	coordinator: ReturnType<ClassifierTurnHost["currentCoordinator"]>,
+	coordinator: ReturnType<ClassifierTurnContext["currentCoordinator"]>,
 	slot: ActiveSlot,
 ): boolean {
 	return (
@@ -147,13 +147,13 @@ function isSameCoordinator(
 }
 
 /**
- * Whether the host's current voice session is the one this gate was armed on.
- * @param realtime - The host's current voice correlation, or null when there is none.
+ * Whether the server's current voice session is the one this gate was armed on.
+ * @param realtime - The server's current voice correlation, or null when there is none.
  * @param slot - The armed gate.
  * @returns True when it is the same session and connection.
  */
 function isSameRealtimeSession(
-	realtime: ReturnType<ClassifierTurnHost["currentRealtime"]>,
+	realtime: ReturnType<ClassifierTurnContext["currentRealtime"]>,
 	slot: ActiveSlot,
 ): boolean {
 	return (
@@ -167,40 +167,40 @@ function isSameRealtimeSession(
  * Why the classifier must not be started: the conversation moved on, the approval changed, or the
  * gate has expired. Everything the arm captured is re-checked here, because the person has only
  * just spoken and the world may have changed while they did.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @returns The fallback reason, or null when the classifier may start.
  */
 function classifierStartRefusal(
-	host: ClassifierTurnHost,
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 ): SpokenApprovalFallbackReason | null {
-	if (!isSameCoordinator(host.currentCoordinator(), slot)) {
+	if (!isSameCoordinator(context.currentCoordinator(), slot)) {
 		return "stale_state";
 	}
-	if (!isSameRealtimeSession(host.currentRealtime(), slot)) {
+	if (!isSameRealtimeSession(context.currentRealtime(), slot)) {
 		return "stale_realtime_session";
 	}
-	if (!isUnchangedApproval(host, slot)) {
+	if (!isUnchangedApproval(context, slot)) {
 		return "changed_effect";
 	}
-	const time = host.currentTime();
+	const time = context.currentTime();
 	return time === null || time >= slot.expiresAtMs ? "timeout" : null;
 }
 
 /**
  * Whether the approval is still exactly the one the person was read: pending, the same approval,
  * the same binding, and still eligible for a spoken answer.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @returns True when nothing about the approval has changed.
  */
-function isUnchangedApproval(host: ClassifierTurnHost, slot: ActiveSlot): boolean {
+function isUnchangedApproval(context: ClassifierTurnContext, slot: ActiveSlot): boolean {
 	let approval;
 	let eligibility;
 	try {
-		approval = host.approvalBroker.get(slot.requestId);
-		eligibility = host.approvalBroker.spokenEligibility(slot.requestId);
+		approval = context.approvalBroker.get(slot.requestId);
+		eligibility = context.approvalBroker.spokenEligibility(slot.requestId);
 	} catch {
 		return false;
 	}
@@ -219,28 +219,28 @@ function isUnchangedApproval(host: ClassifierTurnHost, slot: ActiveSlot): boolea
 /**
  * Adopt the classifier turn once the session has confirmed it, and let any resolver call that is
  * already waiting on its identity proceed.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @param ready - The turn-identity promise the resolver may be waiting on.
  * @param response - The turn/start response.
  */
 function finishTurn(
-	host: ClassifierTurnHost,
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 	ready: TurnReadyControls,
 	response: SessionResponse<"turn/start">,
 ): void {
 	let turnId: TurnId;
 	try {
-		turnId = host.identity.decoder.parseTurnId(response.turn.id);
-		host.identity.validator.assertCurrentEpoch(slot.child, slot.epoch);
+		turnId = context.identity.decoder.parseTurnId(response.turn.id);
+		context.identity.validator.assertCurrentEpoch(slot.child, slot.epoch);
 	} catch (error) {
-		failReady(host, slot, ready, error);
+		failReady(context, slot, ready, error);
 		return;
 	}
-	if (!isUsableClassifierTurn(host, slot, turnId)) {
+	if (!isUsableClassifierTurn(context, slot, turnId)) {
 		failReady(
-			host,
+			context,
 			slot,
 			ready,
 			new Error("The classifier turn completed or changed before it was usable."),
@@ -249,7 +249,7 @@ function finishTurn(
 	}
 	slot.classifierTurnId = turnId;
 	slot.phase = "awaiting_resolver";
-	host.publish(slot);
+	context.publish(slot);
 	if (!ready.settled) {
 		ready.settled = true;
 		ready.resolve(turnId);
@@ -290,46 +290,46 @@ function classifierTurnParams(
  * Start the classifier turn for what the person just said. The gate re-checks everything it was
  * armed on first, then asks the coordinator to classify the utterance as an acceptance or a
  * refusal; the turn's identity settles the promise a resolver call may already be waiting on.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @param record - The person's final utterance.
  */
 function startClassifier(
-	host: ClassifierTurnHost,
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 	record: RealtimeTranscriptRecord,
 ): void {
-	if (!host.isLive(slot) || slot.phase !== "awaiting_user") {
+	if (!context.isLive(slot) || slot.phase !== "awaiting_user") {
 		return;
 	}
-	const reason = classifierStartRefusal(host, slot);
+	const reason = classifierStartRefusal(context, slot);
 	if (reason !== null) {
-		host.enterFallback(slot, reason);
+		context.enterFallback(slot, reason);
 		return;
 	}
 	slot.finalUser = Object.freeze({ ...record });
 	slot.phase = "classifying";
-	host.publish(slot);
-	if (!host.isLive(slot)) {
+	context.publish(slot);
+	if (!context.isLive(slot)) {
 		return;
 	}
 	const turnParams = classifierTurnParams(slot, record);
 	if (turnParams === null) {
-		host.enterFallback(slot, "classifier_lost");
+		context.enterFallback(slot, "classifier_lost");
 		return;
 	}
-	dispatchClassifierTurn(host, slot, turnParams);
+	dispatchClassifierTurn(context, slot, turnParams);
 }
 
 /**
  * Send the classifier turn and settle its readiness promise when the session answers. The promise
  * is what a resolver call waits on, so it is settled whether the turn starts or fails.
- * @param host - The classifier host.
+ * @param context - The classifier context.
  * @param slot - The armed gate.
  * @param turnParams - The turn/start body.
  */
 function dispatchClassifierTurn(
-	host: ClassifierTurnHost,
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 	turnParams: SessionParams<"turn/start">,
 ): void {
@@ -338,16 +338,16 @@ function dispatchClassifierTurn(
 	void ready.promise.catch(() => undefined);
 	let turn: Promise<SessionResponse<"turn/start">>;
 	try {
-		turn = host.session.turnStart(turnParams);
+		turn = context.session.turnStart(turnParams);
 	} catch (error) {
-		failReady(host, slot, ready, error);
+		failReady(context, slot, ready, error);
 		return;
 	}
 	void turn.then(
-		(response) => finishTurn(host, slot, ready, response),
-		(error) => failReady(host, slot, ready, error),
+		(response) => finishTurn(context, slot, ready, response),
+		(error) => failReady(context, slot, ready, error),
 	);
 }
 
-export { type ClassifierTurnHost, refusal, safeMessage, startClassifier, success };
+export { type ClassifierTurnContext, refusal, safeMessage, startClassifier, success };
 export { resolveSpokenApproval } from "@/runtime/codex-spoken-approval/lib/resolver-turn";

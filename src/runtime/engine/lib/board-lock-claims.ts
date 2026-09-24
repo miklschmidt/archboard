@@ -13,7 +13,7 @@ import type { Claim, ClaimEntry, ClaimRevocation } from "@/runtime/engine/lib/bo
 import { newToken, releaseHold } from "@/runtime/engine/lib/board-lock-state";
 
 /**
- * Claim a board for an agent campaign, or extend this canvas's existing claim.
+ * Claim a board for an agent campaign, or extend this server's existing claim.
  * @param request Board, reason, bounded campaign duration, wait, and cancellation evidence.
  * @returns The active claim and whether this call created its holder identity.
  */
@@ -62,9 +62,9 @@ function campaignLength(asked: number | undefined): number {
 }
 
 /**
- * Release this canvas's claim without treating an already-ended claim as an error.
+ * Release this server's claim without treating an already-ended claim as an error.
  * @param board Board key or alias.
- * @returns The released process claim, or null when this canvas retained no claim for the board.
+ * @returns The released process claim, or null when this server retained no claim for the board.
  */
 function releaseClaim(board: string): Claim | null {
 	// A late release after expiry or take-back is harmless and reports null.
@@ -79,7 +79,7 @@ function releaseClaim(board: string): Claim | null {
 }
 
 /**
- * Read this canvas's live claim, expiring it first when its campaign deadline passed.
+ * Read this server's live claim, expiring it first when its campaign deadline passed.
  * @param board Board key or alias.
  * @returns The live claim, or null.
  */
@@ -95,7 +95,7 @@ function claimOn(board: string): Claim | null {
  * @returns The live claim holder id, or null for an ordinary per-write acquisition.
  */
 function claimWriterId(board: string): string | null {
-	// The canvas supplies this id across command-lived agent requests. If the
+	// The server supplies this id across command-lived agent requests. If the
 	// vault lease was lost, ordinary acquisition must not silently rebuild the
 	// claim; the renewal/revocation owner resolves that state.
 	const entry = liveClaim(normalizeBoardKey(board));
@@ -103,7 +103,7 @@ function claimWriterId(board: string): string | null {
 }
 
 /**
- * Consume the one-shot notice that this canvas's claim was taken back.
+ * Consume the one-shot notice that this server's claim was taken back.
  * @param board Board key or alias.
  * @returns The revocation once, or null after it has been consumed.
  */

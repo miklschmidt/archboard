@@ -182,9 +182,9 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 *
 		 * A live socket is not enough, and the difference is what a direct load
 		 * races. A socket opens, the shell reads an address naming a board, and
-		 * the canvas has no pane to point at yet — so the open is refused and the
+		 * the server has no pane to point at yet — so the open is refused and the
 		 * address the person typed is abandoned as unreachable. Waiting for the
-		 * pane the canvas actually registered costs one report and gets it right.
+		 * pane the server actually registered costs one report and gets it right.
 		 * @param paneId The pane.
 		 * @returns True once the server knows this pane.
 		 */

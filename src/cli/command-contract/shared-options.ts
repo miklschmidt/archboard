@@ -19,7 +19,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		spellings: ["--url"],
 		value: "required",
 		placeholder: "url",
-		description: "The canvas to talk to; overrides ARCHBOARD_URL",
+		description: "The Archboard server to talk to; overrides ARCHBOARD_URL",
 		default: "http://127.0.0.1:3000",
 	},
 	board: {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import { decodeServerNotification } from "../../codex-protocol/index.js";
-import { parseRealtimeItemId } from "../../../shared/codex-realtime-host/index.js";
+import { parseRealtimeItemId } from "../../../shared/codex-realtime-contract/index.js";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
 import {
 	COORDINATOR_WIRE_THREAD_ID,

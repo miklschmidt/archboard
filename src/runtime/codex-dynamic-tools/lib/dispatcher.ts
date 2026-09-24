@@ -156,7 +156,7 @@ function quarantinedDispatch(
 		response: refusedDynamicResponse(
 			state.mutationName,
 			"system_error",
-			"The dynamic operation authority is quarantined pending host recovery.",
+			"The dynamic operation authority is quarantined pending Archboard server recovery.",
 		),
 		settlement:
 			state.operationSettlement ?? createDynamicOperationRecoverySettlement(options, error),
@@ -165,7 +165,7 @@ function quarantinedDispatch(
 
 /**
  * The dynamic tool boundary a child talks to: one response per reverse request, every mutation
- * put to a person first, and every operation identity accounted for even when the host cannot
+ * put to a person first, and every operation identity accounted for even when the server cannot
  * prove it settled.
  * @param options The dynamic tools options.
  * @returns The dynamic tools.

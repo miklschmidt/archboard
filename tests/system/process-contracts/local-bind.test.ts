@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 
 import { z } from "zod";
 
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
 import {
 	availablePort,
@@ -17,7 +17,7 @@ import {
 import { plantStaticProbes } from "./support/static-probes.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
-const fixture = join(import.meta.dir, "fixtures/canvas-start-environment.ts");
+const fixture = join(import.meta.dir, "fixtures/server-start-environment.ts");
 const healthFixture = join(import.meta.dir, "fixtures/health-responder.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
 const HealthResponderReadySchema = ReadySchema.extend({ port: z.number().int().positive() });
@@ -38,7 +38,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	mkdirSync(hiddenParent);
 	symlinkSync(repoRoot, hiddenRepo, "dir");
 	const vault = join(root, "vault");
-	const canvas = await startOwnedCanvas({
+	const server = await startOwnedServer({
 		serverPath: fixture,
 		vault,
 		env: {
@@ -46,12 +46,12 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 			ARCHBOARD_TEST_SERVER_ENTRY: join(hiddenRepo, "src/server.ts"),
 		},
 	});
-	resources.defer(() => canvas.dispose());
+	resources.defer(() => server.dispose());
 	try {
-		const healthPayload: unknown = await (await fetch(`${canvas.base}/health`)).json();
+		const healthPayload: unknown = await (await fetch(`${server.base}/health`)).json();
 		const health = HealthSchema.parse(healthPayload);
-		expect(health.pid).toBe(canvas.pid!);
-		const ipv6 = await fetch(canvas.base.replace("127.0.0.1", "[::1]") + "/health").catch(
+		expect(health.pid).toBe(server.pid!);
+		const ipv6 = await fetch(server.base.replace("127.0.0.1", "[::1]") + "/health").catch(
 			(error: unknown) => error,
 		);
 		expect(ipv6).toBeInstanceOf(Error);
@@ -59,13 +59,13 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 		const probes = plantStaticProbes(repoRoot);
 		resources.defer(() => probes.restore());
 		const statuses = await Promise.all([
-			fetch(`${canvas.base}/${probes.frontend}`).then((response) => response.status),
-			fetch(`${canvas.base}/${probes.stale}`).then((response) => response.status),
-			fetch(`${canvas.base}/${probes.hidden}`).then((response) => response.status),
+			fetch(`${server.base}/${probes.frontend}`).then((response) => response.status),
+			fetch(`${server.base}/${probes.stale}`).then((response) => response.status),
+			fetch(`${server.base}/${probes.hidden}`).then((response) => response.status),
 		]);
 		expect(statuses).toEqual([200, 404, 404]);
 
-		const port = Number(new URL(canvas.base).port);
+		const port = Number(new URL(server.base).port);
 		for (const mode of ["default", "broad"] as const) {
 			const failed = await runOwnedPeerToExit({
 				argv: [process.execPath, fixture],
@@ -96,7 +96,7 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 	});
 	resources.defer(() => foreign.dispose());
 	try {
-		const collision = await startOwnedCanvas({
+		const collision = await startOwnedServer({
 			serverPath: fixture,
 			port,
 			vault,
@@ -105,7 +105,7 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		expect(collision).toBeInstanceOf(Error);
 		expect((collision as Error).message).toMatch(/not owned pid|answered for pid/i);
 		await foreign.dispose();
-		const recovered = await startOwnedCanvas({
+		const recovered = await startOwnedServer({
 			serverPath: fixture,
 			port,
 			vault,

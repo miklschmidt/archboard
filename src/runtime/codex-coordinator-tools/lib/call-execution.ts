@@ -206,7 +206,7 @@ type CallPlan =
 
 /**
  * Plan one validated call: a voice call runs as it is, a workhorse call runs under a freshly
- * issued operation identity, and a host that cannot issue one refuses the call before any effect.
+ * issued operation identity, and a server that cannot issue one refuses the call before any effect.
  * @param context - The execution context.
  * @param validated - The validated call.
  * @returns The plan.
@@ -223,7 +223,7 @@ function planCall(context: ExecutionContext, validated: ValidatedCoordinatorTool
 			result: complete(
 				refusedResponse(
 					"system_error",
-					`The host could not issue a current operation identity: ${errorMessage(error)}`,
+					`The Archboard server could not issue a current operation identity: ${errorMessage(error)}`,
 				),
 				false,
 			),

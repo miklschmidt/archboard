@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { TEST_VAULT_CLI_TIMEOUT_MS } from "./timing.ts";
 
-interface CanvasCliInput {
+interface ServerCliInput {
 	readonly repoRoot: string;
 	readonly vault: string;
 	readonly base: string;
@@ -18,13 +18,13 @@ interface CanvasCliInput {
 	readonly env?: Readonly<Record<string, string>> | undefined;
 }
 
-interface CanvasCliResult {
+interface ServerCliResult {
 	readonly status: number | null;
 	readonly stdout: string;
 	readonly stderr: string;
 }
 
-export function runCanvasCli(options: CanvasCliInput): CanvasCliResult {
+export function runServerCli(options: ServerCliInput): ServerCliResult {
 	const result = spawnSync(join(options.repoRoot, "bin/archboard"), options.args, {
 		cwd: options.repoRoot,
 		encoding: "utf8",

@@ -15,12 +15,12 @@ import {
 const processClaims = new Map<string, ClaimEntry>();
 const processRevocations = new Map<string, ClaimRevocation>();
 
-// Claims are process knowledge layered over the vault lease. The canvas, not a
+// Claims are process knowledge layered over the vault lease. The server, not a
 // command-lived agent, survives between writes and can renew on its behalf.
 /**
  * One process claim as a caller is told about it.
  * @param board The board key.
- * @param entry The claim this canvas holds.
+ * @param entry The claim this server holds.
  * @returns The claim, with its campaign deadline as a timestamp.
  */
 function claimOf(board: string, entry: ClaimEntry): Claim {
@@ -39,7 +39,7 @@ function stopRenewing(entry: ClaimEntry): void {
 }
 
 /**
- * End one claim on this canvas.
+ * End one claim on this server.
  *
  * Ending the process claim also ends renewal and its remembered write
  * identity. It does not undo anything already committed to the note.
@@ -52,13 +52,13 @@ function dropClaim(board: string, entry: ClaimEntry): void {
 }
 
 /**
- * The claim this canvas holds on a board, when it still stands.
+ * The claim this server holds on a board, when it still stands.
  *
  * Claim expiry bounds a live agent or one that walked away, so an expired
  * claim is dropped the moment it is asked about rather than whenever the
  * renewal timer next lands.
  * @param board The board key.
- * @returns The claim, or null when this canvas has none.
+ * @returns The claim, or null when this server has none.
  */
 function liveClaim(board: string): ClaimEntry | null {
 	const entry = processClaims.get(board);
@@ -80,7 +80,7 @@ function liveClaim(board: string): ClaimEntry | null {
  *
  * Both sides discover the same event here: a local take-back at proven
  * acquisition, or a later refused renewal after a remote take-back. Only the
- * canvas that owned this claim records it, and the record is consumed once.
+ * server that owned this claim records it, and the record is consumed once.
  * @param board The board key.
  * @param lost Who held the claim.
  * @param by Who took it back, when that is known.
@@ -120,7 +120,7 @@ function renewClaim(board: string): void {
 /**
  * Start renewing the lease under one claim.
  *
- * The short lease bounds a dead canvas; repeated renewal is what makes a long
+ * The short lease bounds a dead server; repeated renewal is what makes a long
  * claim long. This timer never moves the separate claim expiry.
  * @param board The board key.
  * @returns The timer, so the claim can stop it.
@@ -136,7 +136,7 @@ function startRenewing(board: string): ReturnType<typeof setInterval> {
 
 /**
  * Drop every claim this process remembers. For a check that wants a fresh
- * canvas; the vault leases are released as each claim goes.
+ * server; the vault leases are released as each claim goes.
  */
 function forgetClaimState(): void {
 	for (const [board, entry] of processClaims) {

@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { BoardRenameInputSchema } from "@/shared/semantic-board/index";
-import { renameSemanticBoardOnCanvas } from "@/runtime/semantic-board-client/index";
+import { renameSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { defineCommand } from "@/cli/command-contract/contract";
 import {
 	boardHeldRefusal,
@@ -124,7 +124,7 @@ const semanticRenameContract = defineCommand({
 			to: input.to,
 			...(input.variant === undefined ? {} : { variant: input.variant }),
 		});
-		const written = await renameSemanticBoardOnCanvas(input.name, renaming);
+		const written = await renameSemanticBoardOnServer(input.name, renaming);
 		return { result: writeResult(written), diagnostics: describedWrite(written) };
 	},
 });

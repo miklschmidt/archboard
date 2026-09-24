@@ -8,8 +8,8 @@ import { ownerRecord, recordedOwnerIsGone, recordedOwnerPid } from "@/shared/pro
 const PID_FILE_NAME = /^server-\d+\.pid$/u;
 
 /**
- * Where the canvas listening on a port records its pid.
- * @param port The port the canvas binds.
+ * Where the Archboard server listening on a port records its pid.
+ * @param port The port the server binds.
  * @returns The pidfile path under the machine-local state directory.
  */
 function pidFilePath(port: number): string {
@@ -19,10 +19,10 @@ function pidFilePath(port: number): string {
 // Written by the Archboard server once it is actually listening, so `stop` and
 // stale-process checks work for both auto-spawned and manually started servers.
 /**
- * Record the canvas pid for a port, with its kernel start time so a later
+ * Record the server pid for a port, with its kernel start time so a later
  * sweep can tell it from a process that inherited the pid. Failure is logged
- * rather than thrown: a canvas that cannot write its pidfile still serves.
- * @param port The port the canvas binds.
+ * rather than thrown: a server that cannot write its pidfile still serves.
+ * @param port The port the server binds.
  * @param pid The Archboard server's pid.
  */
 function writePidFile(port: number, pid: number): void {
@@ -31,13 +31,13 @@ function writePidFile(port: number, pid: number): void {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		fs.writeFileSync(file, ownerRecord(pid), "utf-8");
 	} catch (error) {
-		logger.warn("Failed to write canvas pidfile:", errorMessage(error));
+		logger.warn("Failed to write server pidfile:", errorMessage(error));
 	}
 }
 
 /**
  * The pid recorded for a port, if the pidfile exists and holds a positive integer.
- * @param port The port the canvas binds.
+ * @param port The port the server binds.
  * @returns The pid, or null when there is no usable pidfile.
  */
 function readPidFile(port: number): number | null {
@@ -50,7 +50,7 @@ function readPidFile(port: number): number | null {
 
 /**
  * Delete the pidfile for a port, tolerating one that is already gone.
- * @param port The port the canvas binds.
+ * @param port The port the server binds.
  */
 function removePidFile(port: number): void {
 	try {
@@ -61,7 +61,7 @@ function removePidFile(port: number): void {
 }
 
 /**
- * Remove the pidfile of every canvas that is gone, on any port. A canvas
+ * Remove the pidfile of every server that is gone, on any port. A server
  * removes its own on a clean exit; one killed or crashed cannot, and without
  * this the state directory keeps one per port forever. A pidfile whose owner
  * may still run is kept, whatever port it names.
@@ -84,7 +84,7 @@ function sweepDeadPidFiles(): number {
 }
 
 /**
- * Remove one pidfile when the canvas it records is gone.
+ * Remove one pidfile when the server it records is gone.
  * @param file The pidfile.
  * @returns True when it was removed.
  */
@@ -96,7 +96,7 @@ function removeIfOwnerGone(file: string): boolean {
 		fs.unlinkSync(file);
 		return true;
 	} catch {
-		// Another canvas swept it first, or it is unreadable; either way, keep going.
+		// Another server swept it first, or it is unreadable; either way, keep going.
 		return false;
 	}
 }

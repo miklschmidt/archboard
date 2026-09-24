@@ -3,13 +3,13 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { WAIT, press } from "./support/drilling.ts";
@@ -95,10 +95,10 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-presentation-vault");
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	const created = await request<{ success: boolean }>("/api/semantic-boards/create", {
 		method: "POST",
@@ -137,7 +137,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	const before = readFileSync(join(vault, "tour.semantic.json"), "utf8");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=tour`]);
+	await browser.run(["open", `${server.base}/?paneA=tour`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => pictureAtRest(browser.eval.bind(browser)),
@@ -199,5 +199,5 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 
 	// Nothing a person did in the browser wrote a board.
 	expect(readFileSync(join(vault, "tour.semantic.json"), "utf8")).toBe(before);
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 60_000);

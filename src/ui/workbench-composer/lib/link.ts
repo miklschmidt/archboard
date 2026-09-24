@@ -12,7 +12,7 @@ const INSPECT_ONLY = "This Codex history is inspect-only.";
 const UNBOUND = "This pane has no Codex workhorse yet.";
 
 /**
- * The authoritative in-progress turn. The host's own steer owner refuses
+ * The authoritative in-progress turn. The server's own steer owner refuses
  * unless exactly one turn is `inProgress` and its id is the one the command
  * named; the composer reads the same fact from the published snapshot rather
  * than remembering a turn it once saw.
@@ -34,7 +34,7 @@ function readComposerTurn(snapshot: BrowserSnapshot): WorkbenchComposerTurn {
 /**
  * Why a workbench cannot take direct input.
  * @param state The transport state.
- * @returns The host's reason, or a sentence naming the readiness.
+ * @returns The server's reason, or a sentence naming the readiness.
  */
 function unavailableReason(state: BrowserWorkbenchState): string {
 	if ("reason" in state) {
@@ -46,7 +46,7 @@ function unavailableReason(state: BrowserWorkbenchState): string {
 /**
  * What the composer may target right now. Only a connected, thread-capable
  * workbench whose pane link is `executable` can take a turn command; every
- * other reachable state is disabled with the host's own reason.
+ * other reachable state is disabled with the server's own reason.
  * @param state The transport state.
  * @returns The link.
  */

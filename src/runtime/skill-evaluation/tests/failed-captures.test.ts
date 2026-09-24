@@ -65,7 +65,7 @@ function savedBundle(job: RunJob): RunBundle {
 }
 
 describe("failed runs keep grader capture evidence", () => {
-	test.each([false, true])("unavailable canvas, cancelled=%s", async (cancelled) => {
+	test.each([false, true])("unavailable server, cancelled=%s", async (cancelled) => {
 		const root = mkdtempSync(path.join(tmpdir(), "failed-captures-"));
 		try {
 			const job = jobAt(root, cancelled ? AbortSignal.abort() : undefined);

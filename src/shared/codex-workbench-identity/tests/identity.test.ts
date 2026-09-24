@@ -24,11 +24,11 @@ function errorCode(action: () => unknown): string {
 }
 
 describe("codex workbench identities", () => {
-	test("separates ordinary validation, host issuance, and trusted decoding", () => {
+	test("separates ordinary validation, Archboard server issuance, and trusted decoding", () => {
 		const authority = createIdentityAuthority();
 		const { validator, issuer, decoder } = authority;
 		const browserCommand = issuer.mintBrowserCommandId();
-		const hostRequest = issuer.mintJsonRpcRequestId();
+		const archboardRequest = issuer.mintJsonRpcRequestId();
 		const realtime = issuer.mintRealtimeSessionId();
 		const threadId = decoder.adoptThreadId("thread-from-codex");
 		const serverIds = [
@@ -45,7 +45,7 @@ describe("codex workbench identities", () => {
 			validator.childId,
 			validator.epoch,
 			browserCommand,
-			hostRequest,
+			archboardRequest,
 			realtime,
 			...serverIds,
 		];
@@ -214,8 +214,8 @@ describe("codex workbench identities", () => {
 				new TextEncoder().encode(raw),
 			);
 		}
-		const hostRequest = issuer.mintJsonRpcRequestId();
-		expect(decoder.serializeCodexIdentity(hostRequest)).toMatch(/^[a-f0-9]{32}$/u);
+		const archboardRequest = issuer.mintJsonRpcRequestId();
+		expect(decoder.serializeCodexIdentity(archboardRequest)).toMatch(/^[a-f0-9]{32}$/u);
 		expect(decoder.adoptThreadId(rawValues[0]!)).toBe(threadId);
 	});
 

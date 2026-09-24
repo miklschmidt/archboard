@@ -1,4 +1,4 @@
-// What the canvas-wide agent setup speaks through while focus moves between
+// What the server-wide agent setup speaks through while focus moves between
 // panes: the focused pane's owners and its transport, and the voice session,
 // as one object that stays the same while they change. The setup listens to
 // its transport and hears the new pane's state the moment focus moves.
@@ -13,7 +13,7 @@ const NO_TRANSPORT: BrowserWorkbenchState = Object.freeze({
 	connection: "stopped",
 	snapshot: null,
 	sequence: null,
-	reason: "No pane is connected to the canvas.",
+	reason: "No pane is connected to the Archboard server.",
 });
 
 /**

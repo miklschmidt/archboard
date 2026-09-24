@@ -121,7 +121,7 @@ const SemanticPanePresentationSchema = z
 type SemanticPanePresentation = z.infer<typeof SemanticPanePresentationSchema>;
 
 /**
- * What the canvas asks of a pane presenting a walkthrough, over its socket.
+ * What the server asks of a pane presenting a walkthrough, over its socket.
  *
  * Addressed to the board the pane is showing, like every board message, so a
  * pane that has moved on ignores it.

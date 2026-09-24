@@ -1,9 +1,11 @@
 ---
 id: TASK-324
 title: 'Code names say Archboard server, and host only where it means something else'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-23 23:24'
+updated_date: '2026-09-24 00:07'
 labels:
   - naming
 dependencies:
@@ -25,3 +27,29 @@ After TASK-323 renamed the canvas server to the Archboard server in prose, code 
 - [ ] #2 Host remains only where it means the renderer environment, the HTTP Host header or a repository host
 - [ ] #3 Comments follow the same names
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move modules and files named after the canvas or host that mean the Archboard server (src/server/canvas -> src/server/archboard, engine canvas-* -> server-*, shared/canvas-startup-terminal, shared/codex-realtime-host, tests/system/canvas-state and owned-canvas support), rewriting imports, package.json lanes, lint config and doc paths. Commit.
+2. Rename exported and local identifiers that mean the server (canvas -> server, host -> server or what the thing is); CANVAS_SERVICE_NAME -> ARCHBOARD_SERVICE_NAME with value archboard-server. Commit.
+3. Sweep comments, test names, log and error text and model-facing text for canvas and host meaning the server. Commit.
+4. Gate lanes one at a time; list stale vault code bindings for the parent.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Naming decisions (TASK-324):
+- The short identifier word for the Archboard server is server (serverPid, startOwnedServer, SERVER_* timing constants); Archboard only where server alone is ambiguous (ARCHBOARD_SERVICE_NAME, src/server/archboard, user- and model-facing text says Archboard server).
+- CanvasCodexWorkbenchHost is CodexWorkbenchServer (codex-workbench-server.ts); canvas-codex-host.ts is codex-wiring.ts after its codexWiring export; codex-workbench-canvas-link.ts is codex-workbench-server-link.ts.
+- RealtimeHost is RealtimeServer and src/shared/codex-realtime-host is codex-realtime-contract: six of its seven members are calls into the server's realtime session. The UI's browser proxy of it (media-host.ts) is lib/realtime.ts with createRealtimeServer; the name is short so media-owner.ts stays under the 600-line limit.
+- The spoken-approval ClassifierTurnHost and ValidationHost were context objects built by the gate, so they are ClassifierTurnContext and ValidationContext.
+- Host stays where it means the renderer's environment, the HTTP Host header, a network host or bind address, a repository host, Codex's own network fields, hosted login or CI, a fake browser media or playback host, and the environment an embedder hands an embedded module or component (PaneHost, PaneCoreHost, WorkbenchHost, VoiceHost, StreamHost, SocketRunHost, processCommandHost, React host components). That last group is the renderer-host sense, not the server.
+- Values: the health service is archboard-server (accepted: an older running server reads as foreign until restarted). In-process and same-version values follow (startup pipe tag and serverPid field, workbench owner name, thread-link key, host_* causes and authority labels, test markers and log names, skill-eval server.log). Kept unchanged as public or on-disk contracts: CLI and HTTP error codes CANVAS_UNREACHABLE, CANVAS_BUSY, CANVAS_STOPPING; the canvases directory under CODEX_HOME; the canvas key in skill-eval run.json.
+- Model-facing text: the workhorse and app manifests (this canvas), the classifier prompt (the host) and the Codex clientInfo title (archboard canvas) say Archboard server; three reviewed digests re-pinned, as TASK-322 did.
+- The package script that runs the server is server (was canvas); skill setup looked for bin/canvas after TASK-323 and now looks for bin/archboard.
+- Not edited (instructions files, for the owner): AGENTS.md lines 79-80 and .claude/rules/agent-work.md line 7 still say canvas for the server.
+
+Gate (worktree, after the last code commit): type-check pass; lint pass; fmt:check pass; test:modules 3378 pass 0 fail; test:system 178 pass 0 fail; test:repository 8 pass 0 fail; test:serial-browser 15 files, 17 pass 0 fail. Environment note: this worktree's fresh install of @chenglou/pretext 0.0.9 lacks setMeasureFunction that src/ui/voice-subtitles/tests uses; the main checkout's node_modules copy has it, so it was copied in (ignored node_modules only). Vault code bindings to renamed paths are listed for the parent to update through the CLI.
+<!-- SECTION:NOTES:END -->

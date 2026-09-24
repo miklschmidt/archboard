@@ -1,6 +1,6 @@
 import type { BrowserSnapshot, DeliveryOutcome } from "@/shared/codex-browser-model/index";
 import type { BrowserCommandId, TurnId } from "@/shared/codex-workbench-identity/index";
-import type { AnswerSdp } from "@/shared/codex-realtime-host/index";
+import type { AnswerSdp } from "@/shared/codex-realtime-contract/index";
 
 /**
  * The wire envelope the Codex workbench gateway speaks: the request actions it
@@ -42,7 +42,7 @@ const BROWSER_GATEWAY_ERROR_CODES = [
 	"approval_not_pending",
 	"dynamic_approval_not_pending",
 	"unsupported_command",
-	/** A recording was asked to start while voice is live on the canvas (TASK-304). */
+	/** A recording was asked to start while voice is live on the server (TASK-304). */
 	"voice_live",
 	"command_failed",
 	"outcome_unknown",

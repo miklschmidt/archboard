@@ -69,10 +69,10 @@ const COORDINATOR_TOOL_RESULT_SCHEMAS = Object.freeze({
 } satisfies Record<CoordinatorToolName, z.ZodTypeAny>);
 
 /**
- * Validates the value a host produced for one coordinator tool before it is returned to the
- * model, so a malformed host result is refused rather than echoed as a success.
+ * Validates the value a server produced for one coordinator tool before it is returned to the
+ * model, so a malformed server result is refused rather than echoed as a success.
  * @param toolName - The tool whose result is being checked.
- * @param value - The raw host result.
+ * @param value - The raw server result.
  * @returns The validated result value.
  */
 function parseCoordinatorToolResult(toolName: CoordinatorToolName, value: unknown): unknown {

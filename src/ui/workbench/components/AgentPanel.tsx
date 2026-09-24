@@ -99,7 +99,7 @@ function PanelBody(props: AgentPanelProps): JSX.Element {
 	if (transport === null) {
 		return (
 			<p data-slot="conversation-offline" className="text-body text-muted-foreground px-5 py-4">
-				The conversation is back once this pane reconnects to the canvas.
+				The conversation is back once this pane reconnects to the Archboard server.
 			</p>
 		);
 	}

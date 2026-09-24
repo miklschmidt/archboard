@@ -44,7 +44,7 @@ afterEach(() => {
 	}
 });
 
-test("a sweep removes the pidfiles of gone canvases and keeps live ones", () => {
+test("a sweep removes the pidfiles of gone servers and keeps live ones", () => {
 	const directory = isolatedState();
 	writePidFile(4101, process.pid);
 	const live = readFileSync(pidFilePath(4101), "utf-8");

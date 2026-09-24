@@ -50,7 +50,7 @@ interface Run {
 	remoteElement?: HTMLMediaElement | undefined;
 	meter?: VoiceOutputMeter | undefined;
 	cleanup?: Promise<void>;
-	hostStop?: Promise<boolean>;
+	serverStop?: Promise<boolean>;
 	failure?: Promise<void>;
 }
 
@@ -142,7 +142,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 /**
- * Whether a run is a stop the host never confirmed.
+ * Whether a run is a stop the server never confirmed.
  * @param run The run.
  * @returns True for the stop_failed recoverable error.
  */

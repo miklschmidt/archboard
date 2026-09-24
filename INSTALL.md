@@ -35,7 +35,7 @@ bun run build
 
 If `bun install` fails while it extracts a package, run it again. `bun install`
 also installs the Codex version that archboard is pinned to, inside the
-checkout, and generates the contract for it. The canvas does not start unless
+checkout, and generates the contract for it. The Archboard server does not start unless
 that Codex passes its checks. A Codex on your `PATH` is not used.
 
 `bun run build` builds the browser application into `dist/frontend`. Without
@@ -81,7 +81,7 @@ Codex. The installer does these things:
 4. It writes a block into the `CLAUDE.md` file of the repository, or into
    `AGENTS.md` when there is no `CLAUDE.md`. The block gives the location of the
    skill and the vault of the repository. It also gives the command that runs
-   the CLI on this machine, and the canvas URL.
+   the CLI on this machine, and the Archboard server URL.
 
 The repository is the nearest parent directory that holds `.git`. The block
 sits between `<!-- archboard:begin -->` and `<!-- archboard:end -->`. When you
@@ -118,11 +118,11 @@ repository uses a shared vault, give `--vault` again when you run the installer
 again. If you use `--yes` without `--vault` and without `ARCHBOARD_VAULT`, the
 repository changes to `<repo>/.archboard/vault`.
 
-## 4. Set the vault before the canvas starts
+## 4. Set the vault before the Archboard server starts
 
 The installer writes the `export ARCHBOARD_VAULT=...` line into the block, but
 it does not set the variable in your shell. Set it yourself, or put it in a
-`.env` file in the directory where you run the commands. The canvas does not
+`.env` file in the directory where you run the commands. The server does not
 start without a vault, and its message points to `archboard install-skill`.
 
 The Archboard server reads and writes the vault. A running server keeps the vault
@@ -141,24 +141,24 @@ archboard install-skill --agent claude-code --vault ~/vaults/architecture
 While an agent works on a board, archboard keeps a lock file for it in
 `<vault>/.archboard/locks/`. If you commit the vault, ignore that directory.
 
-## 5. Start the canvas and sign in to Codex
+## 5. Start the Archboard server and sign in to Codex
 
-If the canvas is not running, every command that talks to it starts it. If you
+If the server is not running, every command that talks to it starts it. If you
 do not want this, set `ARCHBOARD_NO_AUTOSTART=1`. `archboard start` starts the
-canvas in both cases. The canvas uses the environment of the command that
+server in both cases. The server uses the environment of the command that
 started it.
 
-The canvas listens on <http://127.0.0.1:3000>. To use another address, set
-`ARCHBOARD_URL`, or give `--url` to one command. A command starts a canvas only
+The server listens on <http://127.0.0.1:3000>. To use another address, set
+`ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only
 for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message.
 
-Several canvases can run on one machine at the same time, each on its own port.
-They share one Codex sign-in. If you sign out in one canvas, you sign out of all
-of them. A canvas that is already running shows a sign-in or a sign-out from
-another canvas only after you restart it.
+Several Archboard servers can run on one machine at the same time, each on its own port.
+They share one Codex sign-in. If you sign out in one server, you sign out of all
+of them. A server that is already running shows a sign-in or a sign-out from
+another server only after you restart it.
 
-Open the canvas URL in your browser. The agent bar, the voice and video
+Open the server URL in your browser. The agent bar, the voice and video
 recording need a Codex sign-in. Sign in from the agent bar, with ChatGPT or with
 an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 `codex-workbench/codex-home` in the state directory.
@@ -168,7 +168,7 @@ an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 Run these commands in the repository:
 
 ```bash
-archboard status          # the canvas runs, and at which URL
+archboard status          # the server runs, and at which URL
 archboard check           # the vault configuration and every board are valid
 archboard semantic config # the vocabulary in use, and the configuration file
 ```
@@ -293,7 +293,7 @@ The PNG has these properties:
 ## Recording a walkthrough
 
 `archboard semantic record <board> --out <file.mp4>` presents one walkthrough
-in the same kind of private Chromium, with the Codex voice of the canvas, and
+in the same kind of private Chromium, with the Codex voice of the server, and
 writes an MP4 or a WebM file. It is how an agent gives the reviewers of a pull
 request a narrated video of the change. `--discard --doing "<why>"` deletes the
 board after the file is written, for a board made only for the video.
@@ -301,7 +301,7 @@ board after the file is written, for a board made only for the video.
 A recording needs these things:
 
 - The Chromium that rasterizing needs.
-- A canvas where Codex is signed in, and where the voice is not live in any
+- An Archboard server where Codex is signed in, and where the voice is not live in any
   browser.
 - A frontend built from the same checkout, with `bun run build`.
 
@@ -314,7 +314,7 @@ pull request, use `gh pr comment --attach`, which needs gh 2.99 or newer.
 ## Update and remove
 
 To update archboard, run `git pull`, `bun install` and `bun run build` in the
-checkout, then run `archboard stop`. `archboard status` reports a canvas that
+checkout, then run `archboard stop`. `archboard status` reports a server that
 runs older source. Run `archboard install-skill` again in each repository to
 update its copy of the skill and its block.
 
@@ -324,7 +324,7 @@ There is no uninstall command. To remove archboard, delete these things:
 - The block between the markers in each repository.
 - The `archboard` link on your `PATH`.
 - The state directory. It holds the Codex sign-in, `repos.json`, the opener
-  configuration, the canvas process files and the log.
+  configuration, the server process files and the log.
 
 If you do not want to keep the boards, delete the vault too.
 

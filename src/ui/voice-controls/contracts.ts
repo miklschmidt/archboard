@@ -9,7 +9,7 @@ type VoiceSessionState = BrowserVoice["state"];
 
 /** What the voice controls show. */
 interface VoiceControlsView {
-	/** False when this pane cannot start voice at all: no coordinator, no realtime host. */
+	/** False when this pane cannot start voice at all: no coordinator, no realtime voice on the server. */
 	available: boolean;
 	sessionState: VoiceSessionState;
 	muted: boolean;

@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { openTestPane, waitForPaneMessageWhere } from "../support/pane-websocket.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 // Renaming through the public surface (TASK-281): the command renames, the
 // old names go on opening what they named — a drill-down on another board, a
@@ -15,16 +15,16 @@ import { runCanvasCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-renaming-"));
-let canvas: OwnedCanvas;
+let server: OwnedServer;
 
 /**
- * Run one archboard command against the owned canvas.
+ * Run one archboard command against the owned server.
  * @param args The command line.
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 /**
  * The version a board is at, read the way an agent reads it.
@@ -36,16 +36,16 @@ function versionOf(name: string): number {
 }
 
 beforeAll(async () => {
-	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 
 test("a renamed board keeps its links, its pane and its old address", async () => {
-	const request = createJsonRequester(canvas);
+	const request = createJsonRequester(server);
 	const made = cli(
 		["semantic", "new", "platform-public-api", "--doing", "drawing the public API"],
 		JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
@@ -84,7 +84,7 @@ test("a renamed board keeps its links, its pane and its old address", async () =
 	expect(linking.status, linking.stderr).toBe(0);
 	const before = JSON.parse(cli(["semantic", "show", "platform-public-api"]).stdout).board;
 
-	const pane = await openTestPane(canvas.base, request, "pane-renaming", 0, {
+	const pane = await openTestPane(server.base, request, "pane-renaming", 0, {
 		board: "platform-public-api@public-api-independent",
 	});
 	try {
@@ -173,7 +173,7 @@ test("a renamed board keeps its links, its pane and its old address", async () =
 }, 60_000);
 
 test("a name already taken is refused, and a claim follows the board it was taken on", async () => {
-	const request = createJsonRequester(canvas);
+	const request = createJsonRequester(server);
 	const made = cli(
 		["semantic", "new", "common-weblib", "--doing", "drawing the web library"],
 		JSON.stringify({ level: "system" }),

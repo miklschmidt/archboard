@@ -97,7 +97,7 @@ export interface AgentActivityEntry {
  *
  * Mirrors `DoingEntry` in `src/runtime/engine/board-doing.ts`. It is never board
  * content and it is nowhere in the board file: it is what somebody said while
- * changing something, and it dies with the canvas.
+ * changing something, and it dies with the server.
  */
 export interface DoingEntry {
 	doing: string;
@@ -151,7 +151,7 @@ export interface PaneStatus {
 	 *
 	 * Not the same as connected, and the difference is a real moment rather than
 	 * a formality. A socket opens before the pane it carries has been registered,
-	 * and in that window the canvas has nothing to address — so anything told to
+	 * and in that window the server has nothing to address — so anything told to
 	 * point this pane at a board is told there is no such pane.
 	 */
 	registered: boolean;

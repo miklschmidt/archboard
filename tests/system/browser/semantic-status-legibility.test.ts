@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
@@ -180,10 +180,10 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	policy.nodeKinds["datastore"]!.color = "amber";
 	policy.groups = { "write-path": { name: "the write path" }, payments: { name: "payments" } };
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(policy));
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	// The architecture as it stands: two parts of one effort, one of another,
 	// one relationship carrying traffic with words on it, and one exchange.
@@ -349,7 +349,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	).toBe(200);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=legible@Proposed`]);
+	await browser.run(["open", `${server.base}/?paneA=legible@Proposed`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	// At rest: an arriving picture draws its lines on and gives them their
 	// arrowheads last, and what is under test is the picture a reader reads.
@@ -484,5 +484,5 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	expect(await iconInk(browser, "Queue")).not.toBe(darkWritePath);
 	expect(await iconInk(browser, "Ledger")).not.toBe(darkWritePath);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 90_000);

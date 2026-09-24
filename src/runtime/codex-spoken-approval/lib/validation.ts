@@ -9,7 +9,10 @@ import type {
 	SpokenApprovalFallbackReason,
 } from "@/runtime/codex-spoken-approval/lib/contract";
 import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
-import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type {
+	RealtimeCorrelation,
+	RealtimeTranscriptRecord,
+} from "@/shared/codex-realtime-contract";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@/shared/timing/timing";
 import {
@@ -31,7 +34,7 @@ interface CoordinatorIdentity {
 	readonly threadId: ThreadId;
 }
 
-interface ValidationHost {
+interface ValidationContext {
 	readonly approvalBroker: Pick<
 		CodexApprovalBroker,
 		"get" | "spokenEligibility" | "spokenEffectPresentation"
@@ -95,8 +98,8 @@ function armInputText(input: SpokenApprovalArmInput): ArmInputText | null {
 	}
 }
 
-/** The host state an arm runs against, or the refusal that stops it. */
-type ArmHostState =
+/** The server state an arm runs against, or the refusal that stops it. */
+type ArmServerState =
 	| {
 			readonly ok: true;
 			readonly coordinator: CoordinatorIdentity;
@@ -107,21 +110,21 @@ type ArmHostState =
 /**
  * The coordinator and voice session an arm must run against: both must exist, the voice session
  * must be the one the request names, and the coordinator must still be on the current epoch.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param input - The arm request.
- * @returns The host state, or the refusal.
+ * @returns The server state, or the refusal.
  */
-function armHostState(host: ValidationHost, input: SpokenApprovalArmInput): ArmHostState {
-	const coordinator = host.currentCoordinator();
+function armServerState(context: ValidationContext, input: SpokenApprovalArmInput): ArmServerState {
+	const coordinator = context.currentCoordinator();
 	if (coordinator === null) {
 		return { ok: false, result: invalid("coordinator_unavailable") };
 	}
-	const realtime = host.currentRealtime();
+	const realtime = context.currentRealtime();
 	if (realtime === null || !sameRealtime(realtime, input.realtime)) {
 		return { ok: false, result: invalid("realtime_unavailable") };
 	}
 	try {
-		host.identity.validator.assertCurrentEpoch(coordinator.child, coordinator.epoch);
+		context.identity.validator.assertCurrentEpoch(coordinator.child, coordinator.epoch);
 	} catch {
 		return { ok: false, result: invalid("stale_state") };
 	}
@@ -137,21 +140,21 @@ type ArmApproval =
  * The pending approval an arm is for. Only a pending command-execution approval on the
  * coordinator's own child and epoch may be spoken; everything else falls back to the visual
  * surface rather than being resolved by voice.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param input - The arm request.
  * @param coordinator - The current coordinator.
  * @returns The approval, or the refusal.
  */
 function armApproval(
-	host: ValidationHost,
+	context: ValidationContext,
 	input: SpokenApprovalArmInput,
 	coordinator: CoordinatorIdentity,
 ): ArmApproval {
 	let approval: ApprovalSnapshot | undefined;
-	let eligibility: ReturnType<ValidationHost["approvalBroker"]["spokenEligibility"]>;
+	let eligibility: ReturnType<ValidationContext["approvalBroker"]["spokenEligibility"]>;
 	try {
-		approval = host.approvalBroker.get(input.requestId);
-		eligibility = host.approvalBroker.spokenEligibility(input.requestId);
+		approval = context.approvalBroker.get(input.requestId);
+		eligibility = context.approvalBroker.spokenEligibility(input.requestId);
 	} catch {
 		return { ok: false, result: invalid("approval_unavailable") };
 	}
@@ -186,7 +189,7 @@ function sameCoordinatorEpoch(
  */
 function spokenArmRefusal(
 	approval: ApprovalSnapshot,
-	eligibility: ReturnType<ValidationHost["approvalBroker"]["spokenEligibility"]>,
+	eligibility: ReturnType<ValidationContext["approvalBroker"]["spokenEligibility"]>,
 	coordinator: CoordinatorIdentity,
 ): SpokenApprovalFallbackReason | null {
 	if (!eligibility.eligible || approval.state !== "pending") {
@@ -201,21 +204,21 @@ function spokenArmRefusal(
 /**
  * The effect presentation the person was actually read, refused unless it describes exactly this
  * approval and says exactly what the arm request claims was said aloud.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param input - The arm request.
  * @param approval - The pending approval.
  * @param effectSummary - The summary the arm request claims was spoken.
  * @returns The presentation, or null when it does not match.
  */
 function armPresentation(
-	host: ValidationHost,
+	context: ValidationContext,
 	input: SpokenApprovalArmInput,
 	approval: ApprovalSnapshot,
 	effectSummary: string,
 ): SpokenApprovalEffectPresentation | null {
 	let presentation: SpokenApprovalEffectPresentation;
 	try {
-		presentation = host.approvalBroker.spokenEffectPresentation(input.requestId);
+		presentation = context.approvalBroker.spokenEffectPresentation(input.requestId);
 	} catch {
 		return null;
 	}
@@ -226,15 +229,18 @@ function armPresentation(
 }
 
 /**
- * Validate a request to arm the spoken approval gate: the request's own fields, the host state it
+ * Validate a request to arm the spoken approval gate: the request's own fields, the server state it
  * runs against, the approval it is for, and the effect that was actually read aloud. Every
  * refusal names the fallback reason the caller reports, because a spoken gate that cannot be armed
  * must send the person to the visual surface rather than fail silently.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param input - The arm request.
  * @returns The validated arm, or the refusal.
  */
-function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmValidationResult {
+function validateArm(
+	context: ValidationContext,
+	input: SpokenApprovalArmInput,
+): ArmValidationResult {
 	const text = armInputText(input);
 	if (text === null) {
 		return invalid("invalid_context");
@@ -242,19 +248,19 @@ function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmVa
 	if (!validSequence(input.effectPrompt.sequence)) {
 		return invalid("invalid_effect_prompt");
 	}
-	const state = armHostState(host, input);
+	const state = armServerState(context, input);
 	if (!state.ok) {
 		return state.result;
 	}
-	const approval = armApproval(host, input, state.coordinator);
+	const approval = armApproval(context, input, state.coordinator);
 	if (!approval.ok) {
 		return approval.result;
 	}
-	const presentation = armPresentation(host, input, approval.approval, text.effectSummary);
+	const presentation = armPresentation(context, input, approval.approval, text.effectSummary);
 	if (presentation === null) {
 		return invalid("invalid_effect_prompt");
 	}
-	return validateArmContext(host, input, {
+	return validateArmContext(context, input, {
 		effectSummary: presentation.effectSummary,
 		operationId: text.operationId,
 		clientUserMessageId: text.clientUserMessageId,
@@ -390,17 +396,17 @@ function armBaseline(
 /**
  * When the spoken gate expires: the sooner of the approval's own expiry and the gate's fixed
  * window, so voice never holds an approval open longer than the approval itself.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param values - What the arm has established.
  * @returns The expiry, or the refusal when time is unknown or already past it.
  */
 function armExpiry(
-	host: ValidationHost,
+	context: ValidationContext,
 	values: ArmContextValues,
 ):
 	| { readonly ok: true; readonly expiresAtMs: number }
 	| { readonly ok: false; readonly result: ArmValidationResult } {
-	const time = host.currentTime();
+	const time = context.currentTime();
 	if (time === null || !Number.isFinite(values.approval.expiresAtMs)) {
 		return { ok: false, result: invalid("stale_state") };
 	}
@@ -423,19 +429,19 @@ type ArmTranscript =
 /**
  * Read the transcript and find the effect prompt in it. Both are needed together: the prompt is
  * what the gate is armed against, and the transcript around it is the baseline.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param input - The arm request.
  * @param effectSummary - The summary that must have been spoken.
  * @returns The transcript and prompt, or the refusal.
  */
 function armTranscript(
-	host: ValidationHost,
+	context: ValidationContext,
 	input: SpokenApprovalArmInput,
 	effectSummary: string,
 ): ArmTranscript {
 	let records: readonly RealtimeTranscriptRecord[];
 	try {
-		records = host.transcript();
+		records = context.transcript();
 	} catch {
 		return { ok: false, result: invalid("realtime_unavailable") };
 	}
@@ -449,13 +455,13 @@ function armTranscript(
  * Validate the classifier context and transcript behind an arm: the context must name this
  * conversation, the effect must have been read aloud, nothing may have been said since, and the
  * gate must still have time to run.
- * @param host - The validation host.
+ * @param context - The validation context.
  * @param input - The arm request.
  * @param values - What the arm has already established.
  * @returns The validated arm, or the refusal.
  */
 function validateArmContext(
-	host: ValidationHost,
+	context: ValidationContext,
 	input: SpokenApprovalArmInput,
 	values: ArmContextValues,
 ): ArmValidationResult {
@@ -463,7 +469,7 @@ function validateArmContext(
 	if (!parsedContext.success || !armContextMatches(parsedContext.data, values)) {
 		return invalid("invalid_context");
 	}
-	const transcript = armTranscript(host, input, values.effectSummary);
+	const transcript = armTranscript(context, input, values.effectSummary);
 	if (!transcript.ok) {
 		return transcript.result;
 	}
@@ -471,7 +477,7 @@ function validateArmContext(
 	if (!baseline.ok) {
 		return baseline.result;
 	}
-	const expiry = armExpiry(host, values);
+	const expiry = armExpiry(context, values);
 	if (!expiry.ok) {
 		return expiry.result;
 	}
@@ -491,7 +497,7 @@ function validateArmContext(
 
 export {
 	type CoordinatorIdentity,
-	type ValidationHost,
+	type ValidationContext,
 	type ArmValidationResult,
 	sameRealtime,
 	recordKey,

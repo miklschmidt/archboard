@@ -1,7 +1,7 @@
 // The agent's way into a semantic board (ADR 0023).
 //
 // Four commands: make one, change one, read one, draw one. Every change goes to
-// the running canvas, which is the process that can take the board's lease,
+// the running Archboard server, which is the process that can take the board's lease,
 // check the version, write the aggregate and then tell the panes — writing the
 // file from here would get the first three and leave every pane on screen
 // showing the board as it was.
@@ -20,12 +20,12 @@ import {
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import {
-	branchSemanticBoardOnCanvas,
-	createSemanticBoardOnCanvas,
-	editSemanticBoardOnCanvas,
-	listSemanticBoardsOnCanvas,
+	branchSemanticBoardOnServer,
+	createSemanticBoardOnServer,
+	editSemanticBoardOnServer,
+	listSemanticBoardsOnServer,
 	SemanticBoardEntrySchema,
-	readSemanticBoardAnswerOnCanvas,
+	readSemanticBoardAnswerOnServer,
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import {
@@ -137,7 +137,7 @@ const semanticNewContract = defineCommand({
 			BoardCreateInputSchema,
 			named(await statedJson(input, context), input.name),
 		);
-		const written = await createSemanticBoardOnCanvas(input.name, asked);
+		const written = await createSemanticBoardOnServer(input.name, asked);
 		const board = written.board;
 		return {
 			result: writeResult(written),
@@ -266,7 +266,7 @@ const semanticEditContract = defineCommand({
 			context.diagnostic(line);
 		}
 		const edit = context.parse(VariantEditInputSchema, targeted.stated);
-		const written = await editSemanticBoardOnCanvas(input.name, edit);
+		const written = await editSemanticBoardOnServer(input.name, edit);
 		return {
 			result: writeResult(written),
 			diagnostics: describedWrite(written),
@@ -382,7 +382,7 @@ const semanticBranchContract = defineCommand({
 			name: input.as,
 			...(input.summary === undefined ? {} : { summary: input.summary }),
 		});
-		const written = await branchSemanticBoardOnCanvas(input.name, branch);
+		const written = await branchSemanticBoardOnServer(input.name, branch);
 		const board = written.board;
 		const proposal = board.variants.find((variant) => variant.name === input.as);
 		return {
@@ -447,7 +447,7 @@ const semanticContract = defineCommand({
 	 */
 	async handler(_input, context) {
 		await context.require("server", "semantic");
-		return { result: await listSemanticBoardsOnCanvas() };
+		return { result: await listSemanticBoardsOnServer() };
 	},
 });
 
@@ -506,7 +506,7 @@ const semanticShowContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic show");
-		const answer = await readSemanticBoardAnswerOnCanvas(input.name);
+		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		return {
 			result: answer,
 			diagnostics: answer.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),

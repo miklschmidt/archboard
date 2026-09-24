@@ -86,7 +86,7 @@ function callBelongsToBinding(
 }
 
 /**
- * Read the coordinator call the host is executing right now.
+ * Read the coordinator call the server is executing right now.
  * @param options - The operation options holding the current-call source.
  * @returns The current call, or null when none is executing.
  */

@@ -1,14 +1,14 @@
 // The one flag that has to be read before anything else: `--url` names the
-// canvas, and the modules that talk to the canvas read its address from the
+// Archboard server, and the modules that talk to the server read its address from the
 // environment as they load. So the flag is taken out of the arguments first,
 // in either spelling, and put into the environment — except for a help
 // request, which contacts nothing and must leave the environment alone.
 
 /** What the bootstrap took out of the arguments. */
 interface CliBootstrap {
-	/** The canvas address the person named, or null when they named none. */
+	/** The server address the person named, or null when they named none. */
 	readonly url: string | null;
-	/** Whether the invocation asks for help, which contacts no canvas. */
+	/** Whether the invocation asks for help, which contacts no server. */
 	readonly help: boolean;
 }
 

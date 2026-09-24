@@ -1,4 +1,4 @@
-import type { OwnedCanvas } from "./owned-canvas.ts";
+import type { OwnedServer } from "./owned-server.ts";
 
 export interface JsonResponse<T> {
 	status: number;
@@ -13,31 +13,31 @@ export interface JsonRequestOptions {
 }
 
 export async function readOwnedJsonResponse<T>(
-	canvas: OwnedCanvas,
+	server: OwnedServer,
 	responsePromise: Promise<Response>,
 ): Promise<JsonResponse<T>> {
-	await canvas.assertRunning();
+	await server.assertRunning();
 	try {
 		const response = await responsePromise;
-		await canvas.assertRunning();
+		await server.assertRunning();
 		const body = (await response.json()) as T;
-		await canvas.assertRunning();
+		await server.assertRunning();
 		return { status: response.status, body };
 	} catch (error) {
-		await canvas.assertRunning(error);
+		await server.assertRunning(error);
 		throw error;
 	}
 }
 
-export function createJsonRequester(canvas: OwnedCanvas) {
+export function createJsonRequester(server: OwnedServer) {
 	return async <T>(path: string, options: JsonRequestOptions = {}): Promise<JsonResponse<T>> => {
 		const method = (options.method ?? "GET").toUpperCase();
-		const url = new URL(path, canvas.base);
+		const url = new URL(path, server.base);
 		if (method !== "GET" && method !== "HEAD" && !url.searchParams.has("doing")) {
 			url.searchParams.set("doing", options.doing ?? "checking the board contract");
 		}
 		return readOwnedJsonResponse<T>(
-			canvas,
+			server,
 			fetch(url, {
 				method,
 				...(options.signal === undefined ? {} : { signal: options.signal }),

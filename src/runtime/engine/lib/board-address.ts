@@ -35,7 +35,7 @@ interface BoardIdentity {
 // the unadorned filename and is the default everywhere a variant is optional.
 const CURRENT_VARIANT = "current";
 
-// The board the canvas holds before anything has been opened. It has a note like
+// The board the server holds before anything has been opened. It has a note like
 // every other board (ADR 0015), kept under the vault's state directory rather
 // than beside the named boards, because nobody chose its name.
 const SCRATCH_BOARD = "scratch";
@@ -365,8 +365,8 @@ function isScratchKey(key: string): boolean {
 }
 
 /**
- * The vault root, or the same refusal a canvas gives when it has none. A
- * canvas refuses to start without a vault (ADR 0015), so in a running server
+ * The vault root, or the same refusal a server gives when it has none. A
+ * server refuses to start without a vault (ADR 0015), so in a running server
  * this cannot fire; it stays as the backstop for anything that reaches vault
  * paths another way.
  * @returns The absolute vault path.

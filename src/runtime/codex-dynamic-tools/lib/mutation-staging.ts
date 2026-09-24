@@ -120,7 +120,7 @@ function operationWire(options: CodexDynamicToolsOptions, operationId: Operation
 		}
 		throw new CodexDynamicToolsError(
 			"invalid_call",
-			"The host could not validate a canonical dynamic operation identity.",
+			"The Archboard server could not validate a canonical dynamic operation identity.",
 			error,
 		);
 	}

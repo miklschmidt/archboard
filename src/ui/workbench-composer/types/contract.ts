@@ -27,7 +27,7 @@ type WorkbenchComposerAction = "start" | "steer" | "interrupt" | "queue";
 
 /**
  * How a submitted message reaches the workhorse. `auto` steers while a turn
- * runs and starts otherwise; `send` always starts, so the host's in-progress
+ * runs and starts otherwise; `send` always starts, so the server's in-progress
  * guard answers a person who chose it deliberately; `steer` requires the
  * active turn; `queue` parks the message in the thread queue.
  */
@@ -80,7 +80,7 @@ type WorkbenchComposerPlan =
 	  }
 	| { readonly kind: "refuse"; readonly refusal: WorkbenchComposerRefusal };
 
-/** The authoritative in-progress turn read, taken only from the host snapshot. */
+/** The authoritative in-progress turn read, taken only from the server snapshot. */
 type WorkbenchComposerTurn =
 	| { readonly kind: "idle" }
 	| { readonly kind: "active"; readonly turnId: WorkbenchComposerTurnId }
@@ -143,7 +143,7 @@ interface WorkbenchComposerSubmission {
 
 /**
  * The workbench's own submission result, shaped for the runtime's `onNew`.
- * `delivered` names the authoritative turn when the host reported one; a
+ * `delivered` names the authoritative turn when the server reported one; a
  * queued message has no turn and reports the submission it parked.
  */
 type WorkbenchComposerSubmissionResult =

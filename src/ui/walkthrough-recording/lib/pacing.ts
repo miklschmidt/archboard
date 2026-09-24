@@ -145,7 +145,7 @@ function paceStart(
 	return failed(
 		observed.voice.kind === "live"
 			? "The page did not get back to the size it was captured at after the browser's sharing bar took room. Record again; if it keeps happening, the browser may draw a bar the recorder cannot give back."
-			: `Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this canvas, then record again.`,
+			: `Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
 	);
 }
 
@@ -198,7 +198,7 @@ function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	}
 	if (reading.spoken.length === 0 && waited > RECORDING_SPEECH_START_MS) {
 		return failed(
-			`The voice said nothing about step ${step} within ${RECORDING_SPEECH_START_MS / 1000} seconds. Record again; if it keeps happening, check voice on this canvas.`,
+			`The voice said nothing about step ${step} within ${RECORDING_SPEECH_START_MS / 1000} seconds. Record again; if it keeps happening, check voice on this Archboard server.`,
 		);
 	}
 	return waited > RECORDING_STEP_MAX_MS
@@ -321,7 +321,7 @@ function pace(state: PaceState, observed: PaceObservation): PaceTurn {
 	return observed.voice.kind === "live"
 		? paceLive(state, observed)
 		: failed(
-				"Voice stopped before the recording finished. Starting voice anywhere on this canvas ends a recording; record again once voice is free.",
+				"Voice stopped before the recording finished. Starting voice anywhere on this Archboard server ends a recording; record again once voice is free.",
 			);
 }
 

@@ -116,7 +116,7 @@ function refuseBeforeAttempt(
 /**
  * Re-classify a callback's link target and say why the result does not authorize delivery.
  * @param callback - The normalized callback.
- * @param options - The host authorities and ports.
+ * @param options - The server authorities and ports.
  * @returns The refusal reason, or null when the fresh classification still authorizes delivery.
  */
 async function classifyForDelivery(
@@ -134,9 +134,9 @@ async function classifyForDelivery(
 
 /**
  * Everything that must hold before a callback may be attempted: it encodes, its link still
- * classifies as the one it was captured against, and every host authority still holds.
+ * classifies as the one it was captured against, and every server authority still holds.
  * @param callback - The normalized callback.
- * @param options - The host authorities and ports.
+ * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed, read at each step.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @returns The encoded text once the callback is cleared, or the refusal that stops it.
@@ -171,7 +171,7 @@ async function clearForDelivery(
  * Speak one callback into the coordinator's live voice session. Authority is re-checked after the
  * append, because an append that lands as the generation turns over has an unknown outcome.
  * @param callback - The normalized callback.
- * @param options - The host authorities and ports.
+ * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @param generation - The voice generation the callback was correlated against.
@@ -312,7 +312,7 @@ function recordOnly(
  * Give the live voice session the pane news a semantic callback is, or record the callback when
  * there is none to give: no voice session, or nothing of it that was the user's own doing.
  * @param callback - The normalized semantic callback.
- * @param options - The host authorities and ports.
+ * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @param text - The encoded callback, kept on the record of one that is told to nobody.
@@ -329,7 +329,7 @@ function deliverPaneNews(
 	const { news } = callback.semantic;
 	if (generation === null || news === null) {
 		// With voice live the only thing that keeps a semantic callback from anybody is that
-		// nothing of it was the user's own doing: an agent or the canvas caused it.
+		// nothing of it was the user's own doing: an agent or the server caused it.
 		const reason = generation === null ? "voice_inactive" : "agent";
 		return Promise.resolve(recordOnly(callback, evidence, text, reason));
 	}
@@ -343,7 +343,7 @@ function deliverPaneNews(
  * delegation went in, progress is what inspect_workhorse reads, and the correlation envelope they
  * used to be appended as is machine text a speech model says out loud (TASK-293).
  * @param callback - The normalized operation callback.
- * @param options - The host authorities and ports.
+ * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @param text - The encoded callback.
@@ -380,7 +380,7 @@ function deliverOperationWhileVoiceIsLive(
  * it then answered (33 of them in the sessions of 2026-09-20). The sentence is a hint for what
  * "this" means; the coordinator still reads the live pane through its own tools when asked.
  * @param callback - The normalized callback.
- * @param options - The host authorities and ports.
+ * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @returns The delivery record, whether or not anything was attempted.

@@ -12,7 +12,7 @@ import {
 	waitForPaneMessage,
 	waitForPaneMessageWhere,
 } from "../support/pane-websocket.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import { RawLockReadySchema } from "./fixtures/process-resource-owner.ts";
 import { startOwnedPeer } from "./support/owned-peer-process.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";
@@ -40,7 +40,7 @@ async function observeCrossProcessLock(
 	return { message, elapsedMs: performance.now() - startedAt };
 }
 
-test("raw lock peer and two canvases exclude and recover through one vault", async () => {
+test("raw lock peer and two servers exclude and recover through one vault", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-cross-process-lock-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
@@ -57,7 +57,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		readySchema: RawLockReadySchema,
 	});
 	resources.defer(() => raw.dispose());
-	const first = await startOwnedCanvas({
+	const first = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env,
@@ -76,7 +76,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		});
 		expect(blocked.status).toBe(409);
 		expect(blocked.body.code).toBe("BOARD_HELD");
-		expect(blocked.body.error).toMatch(/on another canvas \(/);
+		expect(blocked.body.error).toMatch(/on another [\w ]+ \(/);
 		expect(blocked.body.holder.process).toBe(raw.ready.process);
 		await raw.dispose();
 		expect(existsSync(raw.ready.lockFile)).toBeFalse();
@@ -89,7 +89,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			).status,
 		).toBe(200);
 
-		const second = await startOwnedCanvas({
+		const second = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env: { ...env, XDG_STATE_HOME: join(root, "second-state") },

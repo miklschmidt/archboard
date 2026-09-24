@@ -205,7 +205,7 @@ function assertCallerState(caller: CallerFacts): void {
 
 /**
  * Whether an authority record carries a well-formed role and thread identity.
- * @param authority Record returned by the host authority.
+ * @param authority Record returned by the server authority.
  * @param role The role this record must claim.
  * @returns Whether the identity fields are well-formed.
  */
@@ -220,7 +220,7 @@ function hasAuthorityIdentity(authority: AuthorityShape, role: "caller" | "targe
 
 /**
  * Whether an authority record carries well-formed epoch and ownership fields.
- * @param authority Record returned by the host authority.
+ * @param authority Record returned by the server authority.
  * @returns Whether the epoch fields are well-formed.
  */
 function hasAuthorityEpochFields(authority: AuthorityShape): boolean {
@@ -235,7 +235,7 @@ function hasAuthorityEpochFields(authority: AuthorityShape): boolean {
 /**
  * Whether an authority record carries well-formed observation fields and a
  * thread-link target naming the same thread.
- * @param authority Record returned by the host authority.
+ * @param authority Record returned by the server authority.
  * @returns Whether the observation fields are well-formed.
  */
 function hasAuthorityObservation(authority: AuthorityShape): boolean {
@@ -251,7 +251,7 @@ function hasAuthorityObservation(authority: AuthorityShape): boolean {
 /**
  * Refuse an authority record whose shape is not the reviewed identity shape,
  * whatever its static type promised.
- * @param authority Record returned by the host authority.
+ * @param authority Record returned by the server authority.
  * @param role The role this record must claim.
  */
 function assertAuthorityShape(authority: AuthorityShape, role: "caller" | "target"): void {

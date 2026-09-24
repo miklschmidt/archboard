@@ -2,7 +2,7 @@ import type {
 	AppendOutcome,
 	RealtimeCorrelationId,
 	RealtimeSessionId,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import { CodexSessionMutationError } from "@/runtime/codex-session";
 import { realtimeErrorMessage } from "@/runtime/codex-realtime/lib/binding";
 

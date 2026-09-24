@@ -60,7 +60,7 @@ function wrappedAt(width: number): (text: string) => number {
 
 describe("subtitle cues", () => {
 	const text =
-		"An agent states meaning through the command line. The canvas checks the write, takes the lease of the board, commits the whole family to disk and only then answers. Nothing else writes a board, which is refreshingly strict.";
+		"An agent states meaning through the command line. The server checks the write, takes the lease of the board, commits the whole family to disk and only then answers. Nothing else writes a board, which is refreshingly strict.";
 	const words = wordsOf(text);
 	const lines = wrappedAt(40);
 	const cues = cuesOf(words, lines);
@@ -80,7 +80,7 @@ describe("subtitle cues", () => {
 			// The sentence ends on the second line.
 			"An agent states meaning through the command line.",
 			// Both lines are full: "family" would begin a third.
-			"The canvas checks the write, takes the lease of the board, commits the whole",
+			"The server checks the write, takes the lease of the board, commits the whole",
 			// A sentence that ends on the first line does not end the cue.
 			"family to disk and only then answers. Nothing else writes a board, which is",
 			"refreshingly strict.",

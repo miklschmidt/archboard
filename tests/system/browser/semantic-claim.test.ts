@@ -3,13 +3,13 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
@@ -53,14 +53,14 @@ test("a claimed board says who has it, keeps drawing, and gives the person one w
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "claim-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 	await seedSemanticBoard(request, "pipeline");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(canvas.base, "pipeline")]);
+	await browser.run(["open", addressShowing(server.base, "pipeline")]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser.eval.bind(browser)),
@@ -133,5 +133,5 @@ test("a claimed board says who has it, keeps drawing, and gives the person one w
 	);
 	expect(read.body.board.version).toBe(2);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);

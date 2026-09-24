@@ -36,7 +36,7 @@ const queue = createCodexWorkhorseQueue({
 
 void queue.add({ operationId, prompt: "valid" });
 
-// @ts-expect-error Queue mutations require the host-issued OperationId brand inferred from the port.
+// @ts-expect-error Queue mutations require the server-issued OperationId brand inferred from the port.
 void queue.add({ operationId: "plain-string", prompt: "invalid" });
 
 type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;

@@ -3,7 +3,7 @@
 // hands it back to `executeCommand()`, so a pane that navigated between
 // composing and sending is refused by the transport rather than silently
 // retargeted. The controller holds no message list: the only turn a person
-// ever sees came from the host snapshot through the runtime.
+// ever sees came from the server snapshot through the runtime.
 
 import type { DeliveryOutcome } from "@/shared/codex-browser-model";
 import {
@@ -96,8 +96,8 @@ function settlement(
 }
 
 /**
- * The settlement a thrown error means. The host's own message, when it sent
- * one, beats the composer's vocabulary: only the host knows which guard refused.
+ * The settlement a thrown error means. The server's own message, when it sent
+ * one, beats the composer's vocabulary: only the server knows which guard refused.
  * @param error The rejection.
  * @returns The settlement.
  */
@@ -114,7 +114,7 @@ function refusalOf(error: unknown): Settlement {
 /**
  * Failing to capture an intent is always `not_delivered`, whatever the error
  * says: the capture happens before the command exists, so nothing reached the
- * host and the person's text is safe to send again.
+ * server and the person's text is safe to send again.
  * @param error The rejection.
  * @returns The settlement.
  */
@@ -133,7 +133,7 @@ function captureRefusal(error: unknown): Settlement {
  * a start has no id of its own, so its id comes from the accepted response; a
  * queued message has no turn at all.
  * @param plan The dispatched plan.
- * @param result The host's result.
+ * @param result The server's result.
  * @returns The settlement.
  */
 function deliveredSettlement(
@@ -153,9 +153,9 @@ function deliveredSettlement(
 }
 
 /**
- * The settlement of a host result.
+ * The settlement of a server result.
  * @param plan The dispatched plan.
- * @param result The host's result.
+ * @param result The server's result.
  * @returns The settlement.
  */
 function resultSettlement(plan: DispatchPlan, result: BrowserWorkbenchCommandResult): Settlement {
@@ -272,7 +272,7 @@ function createWorkbenchComposerController(
 	}
 
 	/**
-	 * Send one plan and read what the host said.
+	 * Send one plan and read what the server said.
 	 * @param plan The plan.
 	 * @returns The settlement.
 	 */
@@ -309,7 +309,7 @@ function createWorkbenchComposerController(
 		let settled = await sendPlan(plan);
 		// A relink while the command was in flight makes a delivered or unknown
 		// answer unreadable here. It does not make a definitive refusal unknown:
-		// the host said nothing was delivered, and the text is safe to send again.
+		// the server said nothing was delivered, and the text is safe to send again.
 		if (settled.outcome !== "not_delivered" && lateFor(threadId)) {
 			settled = settlement("outcome_unknown", LATE_RESULT_REASON);
 		}
@@ -331,7 +331,7 @@ function createWorkbenchComposerController(
 	/**
 	 * A second activation while a command is in flight is refused here and
 	 * sends nothing. `not_delivered` is the honest answer: this activation
-	 * reached no host.
+	 * reached no server.
 	 * @returns The refusal result.
 	 */
 	function refusePending(): WorkbenchComposerCommandResult {

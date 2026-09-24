@@ -51,7 +51,7 @@ const MONO_CSS_FAMILY = "Archboard Diagram Mono";
 const SANS_STACK = `"${SANS_CSS_FAMILY}", ui-sans-serif, system-ui, sans-serif`;
 const MONO_STACK = `"${MONO_CSS_FAMILY}", ui-monospace, monospace`;
 
-/** Where the canvas serves the same files from. */
+/** Where the Archboard server serves the same files from. */
 const FONT_URL_PREFIX = "/assets/diagram-fonts";
 
 /** One registered face. */
@@ -135,7 +135,7 @@ function base64Of(file: string): string {
 /**
  * Where one face's bytes come from.
  *
- * A linked document is what a pane shows: the canvas serves the same files, so
+ * A linked document is what a pane shows: the server serves the same files, so
  * the browser fetches four small files and the SVG stays a few kilobytes. An
  * embedded one is what somebody keeps: it carries its faces with it and draws
  * the same picture on a machine that has never heard of Archboard, at the cost

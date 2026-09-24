@@ -7,15 +7,15 @@ import {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
-import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
-	runCanvasCli,
+	registerServerBase,
+	runServerCli,
 } from "./support/agent-browser.ts";
 import {
 	productionFixtureRecords,
@@ -30,8 +30,8 @@ import {
 	PANE_SECTIONS,
 } from "./support/shell-dom.ts";
 
-const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
-const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
+const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
+const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts");
 
 /** The provider page the fixture names for a ChatGPT sign-in. */
 const LOGIN_URL = "https://example.test/login";
@@ -142,26 +142,26 @@ test(
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
 
-		const canvas = await startOwnedCanvas({
+		const server = await startOwnedServer({
 			serverPath,
 			vault,
-			env: canvasTestEnvironment({
+			env: serverTestEnvironment({
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
 				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
 				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
 			}),
 		});
-		resources.defer(() => canvas.dispose());
-		registerCanvasBase(canvas.base);
+		resources.defer(() => server.dispose());
+		registerServerBase(server.base);
 		const browser = resources.use(await createAgentBrowser());
-		const api = createJsonRequester(canvas);
+		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
 
 		await seedSemanticBoard(api, "workbench");
-		await browser.run(["open", canvas.base]);
+		await browser.run(["open", server.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
-		runCanvasCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		runServerCli(server.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
 			(value) => value.panes === 1 && value.board === "workbench" && value.drawn,
@@ -213,7 +213,7 @@ test(
 		expect(provider.find(({ active }) => active)?.url).toBe(LOGIN_URL);
 		await browser.run(["tab", "close"]);
 		expect(
-			(await browserTabs(browser)).map(({ active, url }) => active && url.startsWith(canvas.base)),
+			(await browserTabs(browser)).map(({ active, url }) => active && url.startsWith(server.base)),
 		).toEqual([true]);
 
 		// The message waits on the sign-in it started; nothing reaches a thread yet.

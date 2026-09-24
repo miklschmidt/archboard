@@ -1,6 +1,6 @@
 // The behaviour the archived mounted-queue owner asserted through the old
 // region, re-targeted at the controller that now feeds the committed queue
-// panel: the host's order until the host republishes, refusals that never
+// panel: the server's order until the server republishes, refusals that never
 // reach the wire, uncertainty that only a refresh clears, a replaced child
 // read as a restart, and the panel's actions mapped onto exact wire drafts.
 
@@ -96,7 +96,7 @@ describe("queue controller commands", () => {
 		}
 	});
 
-	test("refuses a panel action naming a submission the host is not holding", async () => {
+	test("refuses a panel action naming a submission the server is not holding", async () => {
 		const { fake, controller } = controllerWith();
 
 		controller.panelActions.sendNow("gone");
@@ -176,12 +176,12 @@ describe("queue controller reorder", () => {
 		});
 	});
 
-	test("shows the host's order, never the requested one, until the host republishes", async () => {
+	test("shows the server's order, never the requested one, until the server republishes", async () => {
 		const { fake, controller } = controllerWith({
 			onCommand: answering(snapshot({ queue: queue("queued", SEEDS) }), {
 				outcome: "not_delivered",
 				code: "command_failed",
-				message: "The host refused the reorder.",
+				message: "The Archboard server refused the reorder.",
 			}),
 		});
 
@@ -189,10 +189,10 @@ describe("queue controller reorder", () => {
 
 		expect(fake.commands[0]?.draft).toMatchObject({ command: "queueReorder" });
 		expect(renderedOrder(controller)).toEqual(["s1", "s2", "s3"]);
-		expect(controller.view().settlement?.message).toBe("The host refused the reorder.");
+		expect(controller.view().settlement?.message).toBe("The Archboard server refused the reorder.");
 	});
 
-	test("re-renders in the host's new order once the authoritative snapshot arrives", async () => {
+	test("re-renders in the server's new order once the authoritative snapshot arrives", async () => {
 		const { fake, controller } = controllerWith();
 		observe(controller);
 

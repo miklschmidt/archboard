@@ -3,7 +3,7 @@
 // required resources.
 
 import type {
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
@@ -25,7 +25,7 @@ import type { VoiceOutputLevelSource } from "@/ui/voice-output-level";
 
 /** What the start stages need from the session that owns the run. */
 interface RunController {
-	readonly host: RealtimeHost;
+	readonly server: RealtimeServer;
 	readonly environment: RealtimeMediaEnvironment;
 	readonly outputLevel: VoiceOutputLevelSource;
 	/** True once the run is no longer the current, live one. */

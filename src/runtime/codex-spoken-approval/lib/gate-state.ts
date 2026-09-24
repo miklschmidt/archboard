@@ -1,4 +1,7 @@
-import type { RealtimeSemanticEvent, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type {
+	RealtimeSemanticEvent,
+	RealtimeTranscriptRecord,
+} from "@/shared/codex-realtime-contract";
 import type { TurnId } from "@/shared/codex-workbench-identity";
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type {

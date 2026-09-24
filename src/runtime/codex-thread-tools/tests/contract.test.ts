@@ -27,7 +27,7 @@ import {
 	okEnvelope,
 } from "./fixtures.js";
 
-const EXPECTED_MANIFEST_SHA256 = "03ef5a946a19b3f635e5cde3176de15bf9f696ea5c6f639b6680fac7c15b44f5";
+const EXPECTED_MANIFEST_SHA256 = "5399a33a0466d31518de7067536dc6c578d559bb2b46b3668ff8d4e18bdd1860";
 const EXPECTED_WORKHORSE_SHA256 =
 	"0f9fbf590c1546cffa1db8390dbd1b159cae930fd2fef7dda0461bad4ff44d14";
 

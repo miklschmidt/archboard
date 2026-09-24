@@ -7,19 +7,19 @@ import {
 	sameBinding,
 	sameRealtime,
 	type CallValidationFailure,
-	type ValidationHost,
+	type ValidationContext,
 } from "@/runtime/codex-spoken-approval/lib/validation";
 import type { DynamicServerRequest } from "@/runtime/codex-transport";
 
 /**
  * Why a resolver call is not one this gate owns: it must come from the coordinator's own tool
  * dispatcher and carry identities this child issued.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param request - The resolver call.
  * @returns The failure, or null.
  */
 function resolverOwnershipFailure(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	request: DynamicServerRequest,
 ): CallValidationFailure | null {
 	if (request.owner !== "codex-coordinator-tools") {
@@ -30,9 +30,9 @@ function resolverOwnershipFailure(
 		);
 	}
 	try {
-		host.identity.decoder.parseJsonRpcRequestId(request.requestId);
-		host.identity.decoder.parseWireRequestCorrelation(request.correlation);
-		host.identity.decoder.parseLogicalToolCallCorrelation(request.logicalCall);
+		context.identity.decoder.parseJsonRpcRequestId(request.requestId);
+		context.identity.decoder.parseWireRequestCorrelation(request.correlation);
+		context.identity.decoder.parseLogicalToolCallCorrelation(request.logicalCall);
 	} catch (error) {
 		return failureForIdentity(error);
 	}
@@ -52,13 +52,13 @@ function resolverOwnershipFailure(
 
 /**
  * Why a resolver call does not belong to the armed gate's own child and epoch.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param slot - The armed gate.
  * @param request - The resolver call.
  * @returns The failure, or null.
  */
 function resolverEpochFailure(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): CallValidationFailure | null {
@@ -77,7 +77,7 @@ function resolverEpochFailure(
 		);
 	}
 	try {
-		host.identity.validator.assertCurrentEpoch(request.child, request.epoch);
+		context.identity.validator.assertCurrentEpoch(request.child, request.epoch);
 	} catch (error) {
 		return failureForIdentity(error);
 	}
@@ -118,17 +118,17 @@ function resolverContractFailure(
 }
 
 /**
- * Why the host no longer holds the conversation the gate was armed on: the coordinator changed,
+ * Why the server no longer holds the conversation the gate was armed on: the coordinator changed,
  * the voice session changed, or the gate's own window has passed.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param slot - The armed gate.
  * @returns The failure, or null.
  */
 function resolverConversationFailure(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
-	const coordinator = host.currentCoordinator();
+	const coordinator = context.currentCoordinator();
 	if (coordinator === null) {
 		return failure(
 			"stale_state",
@@ -157,20 +157,20 @@ function resolverConversationFailure(
 			"The coordinator thread changed while the spoken approval was pending.",
 		);
 	}
-	return resolverSessionFailure(host, slot);
+	return resolverSessionFailure(context, slot);
 }
 
 /**
  * Why the voice session or the gate's own expiry no longer allows a spoken resolution.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param slot - The armed gate.
  * @returns The failure, or null.
  */
 function resolverSessionFailure(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
-	const realtime = host.currentRealtime();
+	const realtime = context.currentRealtime();
 	if (realtime === null || !sameRealtime(realtime, slot.realtime)) {
 		return failure(
 			"stale_realtime_session",
@@ -178,7 +178,7 @@ function resolverSessionFailure(
 			"The realtime session changed while the spoken approval was pending.",
 		);
 	}
-	const time = host.currentTime();
+	const time = context.currentTime();
 	if (time === null || time >= slot.expiresAtMs) {
 		return failure(
 			"timeout",
@@ -192,15 +192,15 @@ function resolverSessionFailure(
 /**
  * Why the approval itself can no longer be resolved by voice: it is gone, expired, no longer
  * pending, or its target or effect has changed since the person was read it.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param slot - The armed gate.
  * @returns The failure, or null.
  */
 function resolverApprovalFailure(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
-	const approval = host.approvalBroker.get(slot.requestId);
+	const approval = context.approvalBroker.get(slot.requestId);
 	if (approval === undefined) {
 		return failure(
 			"resolver_lost",
@@ -225,7 +225,7 @@ function resolverApprovalFailure(
 			"The approval target or effect changed while the spoken gate was pending.",
 		);
 	}
-	return resolverEligibilityFailure(host, slot);
+	return resolverEligibilityFailure(context, slot);
 }
 
 /**
@@ -247,17 +247,17 @@ function sameArmedApproval(approval: ApprovalSnapshot, slot: ActiveSlot): boolea
 
 /**
  * Why the broker no longer considers the approval eligible for spoken resolution.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param slot - The armed gate.
  * @returns The failure, or null.
  */
 function resolverEligibilityFailure(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 ): CallValidationFailure | null {
 	let eligibility;
 	try {
-		eligibility = host.approvalBroker.spokenEligibility(slot.requestId);
+		eligibility = context.approvalBroker.spokenEligibility(slot.requestId);
 	} catch {
 		return failure(
 			"resolver_lost",
@@ -307,24 +307,24 @@ function resolverTurnFailure(
  * this point, because the person answered aloud some time after the gate was armed: the call's
  * ownership and identities, the child and epoch, the reviewed voice contract, the conversation it
  * belongs to, the approval itself, and the turn it came from.
- * @param host - The validation host, without its transcript.
+ * @param context - The validation context, without its transcript.
  * @param slot - The armed gate.
  * @param request - The resolver call.
  * @param requireTurn - Whether the call must come from the classifier turn.
  * @returns The failure, or null when the call may resolve the approval.
  */
 function validateResolverCall(
-	host: Omit<ValidationHost, "transcript">,
+	context: Omit<ValidationContext, "transcript">,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 	requireTurn: boolean,
 ): CallValidationFailure | null {
 	return (
-		resolverOwnershipFailure(host, request) ??
-		resolverEpochFailure(host, slot, request) ??
+		resolverOwnershipFailure(context, request) ??
+		resolverEpochFailure(context, slot, request) ??
 		resolverContractFailure(slot, request) ??
-		resolverConversationFailure(host, slot) ??
-		resolverApprovalFailure(host, slot) ??
+		resolverConversationFailure(context, slot) ??
+		resolverApprovalFailure(context, slot) ??
 		resolverTurnFailure(slot, request, requireTurn)
 	);
 }

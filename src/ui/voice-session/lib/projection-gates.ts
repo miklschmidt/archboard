@@ -1,5 +1,5 @@
 // Why a start is blocked, and which failures arrive from outside the realtime
-// state machine: the transport, the media owner, and the host's coordinator
+// state machine: the transport, the media owner, and the server's coordinator
 // and voice projections.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
@@ -27,21 +27,21 @@ const MEDIA_UNAVAILABLE_FAILURES = {
 } as const satisfies Record<MediaUnavailable["reason"], VoiceSessionFailureCode | null>;
 
 /**
- * Why each host coordinator state blocks a start, exhaustive over the published
+ * Why each server coordinator state blocks a start, exhaustive over the published
  * union, so a state added to the browser model is a type error here until it is
  * decided.
  */
 const COORDINATOR_BLOCKERS = {
-	unbound: "The host has no coordinator bound to this pane for voice.",
-	starting: "The host is still confirming the voice coordinator.",
-	reconnecting: "The host is reconnecting the voice coordinator.",
-	failed: "The host has no usable coordinator for voice.",
+	unbound: "The Archboard server has no coordinator bound to this pane for voice.",
+	starting: "The Archboard server is still confirming the voice coordinator.",
+	reconnecting: "The Archboard server is reconnecting the voice coordinator.",
+	failed: "The Archboard server has no usable coordinator for voice.",
 	ready: null,
 	active: null,
 } as const satisfies Record<BrowserSnapshot["coordinator"]["state"], string | null>;
 
 const VOICE_BLOCKERS = {
-	unavailable: "The host reports that voice is unavailable on this pane.",
+	unavailable: "The Archboard server reports that voice is unavailable on this pane.",
 	ready: null,
 	starting: null,
 	active: null,
@@ -79,12 +79,15 @@ function mediaBlocker(mediaState: BrowserWorkbenchMediaState): string | null {
 }
 
 /**
- * Why the host's published snapshot cannot anchor a start, or null when it can.
+ * Why the server's published snapshot cannot anchor a start, or null when it can.
  * @param input The projection input.
  * @param snapshot The published snapshot.
  * @returns The blocker sentence, or null.
  */
-function hostBlocker(input: VoiceSessionProjectionInput, snapshot: BrowserSnapshot): string | null {
+function serverBlocker(
+	input: VoiceSessionProjectionInput,
+	snapshot: BrowserSnapshot,
+): string | null {
 	const { capabilities } = input;
 	if (!capabilities.connected) {
 		return "The Codex workbench is not connected.";
@@ -102,7 +105,7 @@ function hostBlocker(input: VoiceSessionProjectionInput, snapshot: BrowserSnapsh
 }
 
 /**
- * Why the host's coordinator or voice projection blocks a start, or null.
+ * Why the server's coordinator or voice projection blocks a start, or null.
  * @param snapshot The published snapshot.
  * @returns The blocker sentence, or null.
  */
@@ -131,9 +134,9 @@ function startBlocker(input: VoiceSessionProjectionInput): string | null {
 	}
 	const snapshot = input.transportState.snapshot;
 	if (snapshot === null) {
-		return "The host has not published a workbench snapshot yet.";
+		return "The Archboard server has not published a workbench snapshot yet.";
 	}
-	return hostBlocker(input, snapshot);
+	return serverBlocker(input, snapshot);
 }
 
 /**
@@ -152,25 +155,26 @@ function externalFailure(
 			return presentedFailure(code, mediaState.message);
 		}
 	}
-	return snapshot === null ? null : hostFailure(snapshot);
+	return snapshot === null ? null : serverFailure(snapshot);
 }
 
 /**
- * A coordinator or voice failure the host published.
+ * A coordinator or voice failure the server published.
  * @param snapshot The published snapshot.
  * @returns The failure, or null.
  */
-function hostFailure(snapshot: BrowserSnapshot): VoiceSessionFailure | null {
+function serverFailure(snapshot: BrowserSnapshot): VoiceSessionFailure | null {
 	if (snapshot.coordinator.state === "failed") {
 		return presentedFailure(
 			"coordinator",
-			snapshot.coordinator.reason ?? "The host reported that the voice coordinator failed.",
+			snapshot.coordinator.reason ??
+				"The Archboard server reported that the voice coordinator failed.",
 		);
 	}
 	if (snapshot.voice.state === "failed") {
 		return presentedFailure(
-			"host_voice",
-			snapshot.voice.reason ?? "The host reported that the voice session failed.",
+			"server_voice",
+			snapshot.voice.reason ?? "The Archboard server reported that the voice session failed.",
 		);
 	}
 	return null;

@@ -1,4 +1,4 @@
-// Is this canvas running the source and the bundle that are on disk now?
+// Is this Archboard server running the source and the bundle that are on disk now?
 //
 // Nothing used to answer that, and the answer is not obvious from anywhere
 // else, because a stale process has no symptom of its own: every command still
@@ -7,14 +7,14 @@
 // only one of them is always current:
 //
 //   the CLI        a fresh process per command, so it always has your edit
-//   the canvas     read its source once, at start or at the last reload
+//   the server     read its source once, at start or at the last reload
 //   a browser tab  loaded a built bundle once, when the tab was opened
 //
 // Two commands disagreeing about one board is what that looks like from the
 // outside, and it has been diagnosed wrongly more than once (TASK-056).
 //
 // The two halves are measured differently because they are made differently.
-// The canvas runs TypeScript directly, so the question is whether any file it
+// The server runs TypeScript directly, so the question is whether any file it
 // loaded has been written since it loaded it. The tab runs a vite build, so the
 // question is whether the bundle it fetched is still the bundle on disk.
 
@@ -33,12 +33,12 @@ const srcDir = path.join(__dirname, "..", "..");
 const repoRoot = path.join(__dirname, "..", "..", "..");
 
 interface SourceState {
-	/** When the canvas last read its source: process start, or the last reload. */
+	/** When the server last read its source: process start, or the last reload. */
 	evaluatedAt: string;
 	/** The file that has been written most recently, relative to the repo root. */
 	newestFile: string | null;
 	newestAt: string | null;
-	/** True when that write happened after the canvas read its source. */
+	/** True when that write happened after the server read its source. */
 	stale: boolean;
 }
 
@@ -63,7 +63,7 @@ function sourceState(): SourceState {
 		try {
 			mtimeMs = fs.statSync(file).mtimeMs;
 		} catch {
-			// A file that has been deleted under a running canvas is not something
+			// A file that has been deleted under a running server is not something
 			// this can report usefully, and it must not throw in a health check.
 			continue;
 		}
@@ -159,7 +159,7 @@ function frontendBuild(): string | null {
  *
  * Silent unless both sides name a built asset and the two names differ. A tab
  * served by the vite dev server names its source file, not a hashed bundle, and
- * a canvas with no `dist/frontend` has nothing to compare against; in both
+ * a server with no `dist/frontend` has nothing to compare against; in both
  * cases the honest answer is nothing at all rather than a guess.
  * @param loadedBuild The entry script the tab says it loaded.
  * @returns Both names, whether they differ, and what to tell the tab.
@@ -173,7 +173,7 @@ function frontendState(loadedBuild: string | null | undefined): FrontendState {
 		loaded: reported,
 		stale,
 		message: stale
-			? `This tab loaded ${reported} and the canvas is serving ${current}. ` +
+			? `This tab loaded ${reported} and the Archboard server is serving ${current}. ` +
 				"The frontend has been rebuilt since this tab opened, so it is running older code. " +
 				"Reload the tab."
 			: null,

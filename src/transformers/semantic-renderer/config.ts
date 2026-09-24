@@ -1,5 +1,5 @@
 // Renderer distances are diagram pixels, independent of camera zoom.
-// Edit this file to tune spacing; rebuild the frontend, restart the canvas,
+// Edit this file to tune spacing; rebuild the frontend, restart the server,
 // and reload the viewer.
 // Text sizes and visual styling remain in lib/design.ts.
 

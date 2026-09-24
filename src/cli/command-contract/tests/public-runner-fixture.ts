@@ -23,7 +23,7 @@ const server = Bun.serve({
 		const url = new URL(request.url);
 		if (url.pathname === "/health") {
 			return Response.json({
-				service: "archboard-canvas",
+				service: "archboard-server",
 				status: "ok",
 				websocket_clients: 1,
 			});
@@ -40,7 +40,7 @@ try {
 	process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 	const [{ getSyncStatus }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([
-			import("../../../runtime/engine/canvas-client.js"),
+			import("../../../runtime/engine/server-client.js"),
 			import("../../commands/run.js"),
 			import("../contract.js"),
 			import("../runner.js"),

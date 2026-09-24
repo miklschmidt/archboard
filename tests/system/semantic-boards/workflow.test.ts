@@ -2,24 +2,24 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 // The public path a person and an agent use: commands create, change, read and
-// draw a board across a canvas restart. Store tests own the guarantees inside.
+// draw a board across an Archboard server restart. Store tests own the guarantees inside.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-workflow-"));
-let canvas: OwnedCanvas;
+let server: OwnedServer;
 
 /**
- * Run one archboard command against the owned canvas.
+ * Run one archboard command against the owned server.
  * @param args The command line.
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 /** The architecture this feature's own pipeline has today. */
 const currentPipeline = {
@@ -53,11 +53,11 @@ const currentPipeline = {
 };
 
 beforeAll(async () => {
-	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 
@@ -155,11 +155,11 @@ describe("authoring and opening a semantic board", () => {
 		expect(JSON.parse(cli(["semantic", "show", "pipeline"]).stdout).board.version).toBe(before);
 	});
 
-	test("the board survives a restart of the canvas", async () => {
+	test("the board survives a restart of the server", async () => {
 		const before = JSON.parse(cli(["semantic", "show", "pipeline"]).stdout).board;
-		// A real restart of the same canvas over the same vault. The store keeps
+		// A real restart of the same server over the same vault. The store keeps
 		// nothing between processes, so what comes back is what the file says.
-		await canvas.restart();
+		await server.restart();
 		const reread = cli(["semantic", "show", "pipeline"]);
 		expect(reread.stderr, reread.stderr).toBe("");
 		expect(JSON.parse(reread.stdout).board).toEqual(before);
@@ -258,10 +258,10 @@ describe("authoring and opening a semantic board", () => {
 		const view = stored.views[0];
 
 		const whole = await (
-			await fetch(`${canvas.base}/api/semantic-boards/render?board=pipeline`)
+			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline`)
 		).json();
 		const sequence = await (
-			await fetch(`${canvas.base}/api/semantic-boards/render?board=pipeline&view=${view.id}`)
+			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&view=${view.id}`)
 		).json();
 
 		// The answer says which reading it is, and what else could be asked for.
@@ -283,7 +283,7 @@ describe("authoring and opening a semantic board", () => {
 	test("a render selector that says nothing is refused rather than answered with everything", async () => {
 		const asked = async (query: string): Promise<{ status: number; code: string }> => {
 			const answer = await fetch(
-				`${canvas.base}/api/semantic-boards/render?board=pipeline${query}`,
+				`${server.base}/api/semantic-boards/render?board=pipeline${query}`,
 			);
 			const body = (await answer.json()) as { code?: string };
 			return { status: answer.status, code: body.code ?? "" };
@@ -382,7 +382,7 @@ describe("authoring and opening a semantic board", () => {
 		);
 
 		const drawn = await (
-			await fetch(`${canvas.base}/api/semantic-boards/render?board=pipeline&variant=${proposal.id}`)
+			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&variant=${proposal.id}`)
 		).json();
 		expect(drawn.changes.predecessor.id).toBe(baseline.id);
 		// The one node the proposal added is the one thing labelled as added.
@@ -393,7 +393,7 @@ describe("authoring and opening a semantic board", () => {
 
 		// The variant it came from changed nothing, because it came from nothing.
 		const base = await (
-			await fetch(`${canvas.base}/api/semantic-boards/render?board=pipeline&variant=${baseline.id}`)
+			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&variant=${baseline.id}`)
 		).json();
 		expect(base.changes).toBeNull();
 
@@ -468,7 +468,7 @@ describe("authoring and opening a semantic board", () => {
 		const everything = stored.views.find((view: { name: string }) => view.name === "All of it");
 		const reporting = stored.views.find((view: { name: string }) => view.name === "Reporting only");
 
-		const endpoint = `${canvas.base}/api/semantic-boards/render?board=two-roots&variant=${proposal.id}`;
+		const endpoint = `${server.base}/api/semantic-boards/render?board=two-roots&variant=${proposal.id}`;
 		const draw = async (view = "") => (await fetch(`${endpoint}${view}`)).json();
 		const whole = await draw();
 		const plain = await draw("&comparison=off");

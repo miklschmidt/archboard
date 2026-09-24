@@ -1,6 +1,6 @@
-import { getHealth } from "@/runtime/engine/canvas-client";
+import { getHealth } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
-import { ensureCanvasRunning } from "@/runtime/engine/spawn";
+import { ensureServerRunning } from "@/runtime/engine/spawn";
 import type { RuntimePrerequisite } from "@/cli/command-contract/contract";
 
 /**
@@ -16,7 +16,7 @@ export async function requirePrerequisite(
 	description: string,
 ): Promise<void> {
 	if (prerequisite === "server") {
-		await ensureCanvasRunning();
+		await ensureServerRunning();
 		return;
 	}
 	const health = await getHealth();

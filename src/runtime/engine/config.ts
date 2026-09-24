@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 // Load environment variables once for every entry point (CLI and Archboard server)
 dotenv.config({ quiet: true });
 
-// The canvas the CLI talks to, and where an auto-started canvas listens.
+// The Archboard server the CLI talks to, and where an auto-started one listens.
 const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || "http://127.0.0.1:3000";
 
 // Opt out of auto-starting the Archboard server from the CLI.
@@ -14,27 +14,27 @@ const ARCHBOARD_NO_AUTOSTART = process.env["ARCHBOARD_NO_AUTOSTART"] === "1";
 // working directory would scatter boards across checkouts and quietly create a
 // different "vault" per cwd.
 //
-// Unset, the canvas does not start (ADR 0015). The vault is the only place a
-// board may live, so a canvas without one has nowhere to put anything, and a
-// canvas somebody can draw on before discovering the drawing was never
+// Unset, the server does not start (ADR 0015). The vault is the only place a
+// board may live, so a server without one has nowhere to put anything, and a
+// server somebody can draw on before discovering the drawing was never
 // anywhere is the worst of the three ways out.
 const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
 
 /**
- * What a canvas with no vault says, in one place because three surfaces say it:
+ * What an Archboard server with no vault says, in one place because three surfaces say it:
  * the server before it binds, the CLI before it spawns a server, and
  * requireVaultRoot() for anything that gets past both.
  *
  * It points at the install step rather than teaching what a vault is.
  * `install-skill` is what chooses a vault, creates it and writes the path into
  * the repo's own agent doc (TASK-036), and on the ordinary path it has run
- * long before anybody starts a canvas. This is the backstop for the run where
+ * long before anybody starts a server. This is the backstop for the run where
  * it has not.
  * @returns The refusal text, ready to print.
  */
 function noVaultMessage(): string {
 	return [
-		"archboard has no vault, so there is nowhere to put a board and the canvas will not start.",
+		"archboard has no vault, so there is nowhere to put a board and the Archboard server will not start.",
 		"",
 		"Boards are files in a vault directory, and choosing one is part of installing",
 		"archboard into a repository:",
@@ -42,7 +42,7 @@ function noVaultMessage(): string {
 		"  archboard install-skill",
 		"",
 		"That creates the vault and writes its path into the repo's CLAUDE.md or AGENTS.md.",
-		"Then start the canvas with it set:",
+		"Then start the Archboard server with it set:",
 		"",
 		"  export ARCHBOARD_VAULT=/path/to/vault",
 		"  archboard start",
@@ -50,8 +50,8 @@ function noVaultMessage(): string {
 }
 
 /**
- * The refusal for the canvas URL's old name, before archboard named its own environment
- * (TASK-310). A shell or `.envrc` that still sets it would otherwise have its canvas ignored and
+ * The refusal for the server URL's old name, before archboard named its own environment
+ * (TASK-310). A shell or `.envrc` that still sets it would otherwise have its server ignored and
  * another started on the default port, over the same vault.
  * @returns The refusal text, or null when the old name is not set.
  */

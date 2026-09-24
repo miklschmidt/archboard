@@ -24,19 +24,19 @@ const SEED = {
 	level: "system",
 	nodes: [
 		{ name: "CLI", kind: "app" },
-		{ name: "Canvas", kind: "service" },
+		{ name: "Server", kind: "service" },
 		{ name: "Vault", kind: "datastore" },
 	],
-	edges: [{ from: "CLI", to: "Canvas", kind: "http" }],
+	edges: [{ from: "CLI", to: "Server", kind: "http" }],
 	flows: [
 		{
 			name: "One edit",
-			participants: ["CLI", "Canvas", "Vault"],
+			participants: ["CLI", "Server", "Vault"],
 			steps: [
-				{ from: "CLI", to: "Canvas", label: "state the change" },
-				{ from: "Canvas", to: "Canvas", label: "take the lease" },
-				{ from: "Canvas", to: "Vault", label: "atomic write" },
-				{ from: "Canvas", to: "CLI", label: "what it became", kind: "return" },
+				{ from: "CLI", to: "Server", label: "state the change" },
+				{ from: "Server", to: "Server", label: "take the lease" },
+				{ from: "Server", to: "Vault", label: "atomic write" },
+				{ from: "Server", to: "CLI", label: "what it became", kind: "return" },
 			],
 		},
 	],
@@ -92,7 +92,7 @@ test("flows and views land in one batch and read back resolved", () => {
 
 	// Two views over the same identities: the data-flow one keeps its flow's nodes.
 	const drawn = contract.scopedContent(content, scope);
-	expect(drawn.nodes.map((n) => n.name).toSorted()).toEqual(["CLI", "Canvas", "Vault"]);
+	expect(drawn.nodes.map((n) => n.name).toSorted()).toEqual(["CLI", "Server", "Vault"]);
 	expect(drawn.flows).toHaveLength(1);
 }, 20_000);
 
@@ -154,11 +154,11 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 					{
 						id: flow.id,
 						name: "One edit",
-						participants: ["CLI", "Canvas", "Vault"],
+						participants: ["CLI", "Server", "Vault"],
 						steps: [
-							{ id: moved, from: "Canvas", to: "CLI", label: "what it became", kind: "return" },
-							{ id: kept, from: "CLI", to: "Canvas", label: "state the change, precisely" },
-							{ from: "Canvas", to: "Vault", label: "atomic write" },
+							{ id: moved, from: "Server", to: "CLI", label: "what it became", kind: "return" },
+							{ id: kept, from: "CLI", to: "Server", label: "state the change, precisely" },
+							{ from: "Server", to: "Vault", label: "atomic write" },
 						],
 					},
 				],
@@ -183,8 +183,8 @@ test("a step keeps its id when its flow is rewritten, and a stated id must name 
 					{
 						id: flow.id,
 						name: "One edit",
-						participants: ["CLI", "Canvas"],
-						steps: [{ id: "notastep", from: "CLI", to: "Canvas", label: "typo" }],
+						participants: ["CLI", "Server"],
+						steps: [{ id: "notastep", from: "CLI", to: "Server", label: "typo" }],
 					},
 				],
 			}),
@@ -327,7 +327,7 @@ test("a node keeps everything it was written with, including where it drills dow
 				name: "drilling",
 				level: "system",
 				nodes: [
-					{ id: undefined, name: "Canvas", kind: "service", description: "serves the panes" },
+					{ id: undefined, name: "Server", kind: "service", description: "serves the panes" },
 				],
 			}),
 		),
@@ -345,7 +345,7 @@ test("a node keeps everything it was written with, including where it drills dow
 				nodes: [
 					{
 						id: node.id,
-						name: "Canvas",
+						name: "Server",
 						kind: "service",
 						description: "serves the panes",
 						responsibility: "one board at a time",

@@ -3,13 +3,13 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
@@ -149,10 +149,10 @@ test("a person reads containment, code and the level below it, and writes nothin
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-inspection-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	// The board one level down, with a variant named for the state it describes.
 	const below = await request<{ success: boolean }>("/api/semantic-boards/create", {
@@ -213,7 +213,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	const before = readFileSync(join(vault, "pipeline.semantic.json"), "utf8");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=pipeline`]);
+	await browser.run(["open", `${server.base}/?paneA=pipeline`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser),
@@ -355,5 +355,5 @@ test("a person reads containment, code and the level below it, and writes nothin
 
 	// Nothing a person did in the browser wrote a board.
 	expect(readFileSync(join(vault, "pipeline.semantic.json"), "utf8")).toBe(before);
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 60_000);

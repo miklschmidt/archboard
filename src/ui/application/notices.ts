@@ -28,7 +28,7 @@ function boardErrorNotice(paneId: string, error: string): ShellNotice {
 }
 
 /**
- * This tab runs a bundle the canvas no longer serves (TASK-056).
+ * This tab runs a bundle the server no longer serves (TASK-056).
  * @param message What the server said.
  * @returns The notice, offering a reload.
  */

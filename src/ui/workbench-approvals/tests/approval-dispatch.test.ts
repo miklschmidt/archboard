@@ -126,7 +126,7 @@ function codeOf(outcome: WorkbenchApprovalDecisionResult): string | null {
 }
 
 describe("ordinary approval payloads", () => {
-	test("sends the exact host-offered command execution decision", async () => {
+	test("sends the exact server-offered command execution decision", async () => {
 		const card = only(commandApproval());
 		const { outcome, sent } = await send(card, "decision:1", seeded(card));
 
@@ -140,7 +140,7 @@ describe("ordinary approval payloads", () => {
 		expect(sent[0]?.target).toEqual(commandIntent());
 	});
 
-	test("sends a file change session grant only when the host offered it", async () => {
+	test("sends a file change session grant only when the server offered it", async () => {
 		const card = only(fileChangeApproval());
 		const { sent } = await send(card, "decision:1", seeded(card));
 
@@ -350,7 +350,7 @@ describe("captured-target refusals and reconciliation", () => {
 	});
 
 	for (const outcomeValue of ["delivered", "not_delivered", "outcome_unknown"] as const) {
-		test(`reports ${outcomeValue} from the host result`, async () => {
+		test(`reports ${outcomeValue} from the server result`, async () => {
 			const card = only(commandApproval());
 			const transport = new FakeApprovalsTransport({ result: { outcome: outcomeValue } });
 			const { outcome } = await send(card, "decision:0", seeded(card), transport);

@@ -5,17 +5,17 @@
 
 import { createRealtimeMediaSession } from "@/ui/codex-realtime";
 import type {
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeMediaSession,
 	RealtimeMediaSnapshot,
 } from "@/ui/codex-realtime";
-import { createMediaHost } from "@/ui/codex-workbench-media/lib/media-host";
-import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/media-host";
+import { createRealtimeServer } from "@/ui/codex-workbench-media/lib/realtime";
+import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/realtime";
 import {
 	browserAudioElements,
 	browserMediaSupported,
 	capabilityFailure,
-	hostRevokedVoice,
+	serverRevokedVoice,
 	leaseCorrelation,
 	noSnapshotState,
 	removeAudioElements,
@@ -123,15 +123,17 @@ function createBrowserWorkbenchMediaOwner(
 	};
 
 	/**
-	 * The current run when it is open, with its session and host.
+	 * The current run when it is open, with its session and server.
 	 * @returns The run, or null.
 	 */
-	const openRun = (): (MediaRun & { media: RealtimeMediaSession; host: RealtimeHost }) | null => {
+	const openRun = ():
+		| (MediaRun & { media: RealtimeMediaSession; server: RealtimeServer })
+		| null => {
 		const active = run;
-		if (active === null || active.closed || active.media === null || active.host === null) {
+		if (active === null || active.closed || active.media === null || active.server === null) {
 			return null;
 		}
-		return { ...active, media: active.media, host: active.host };
+		return { ...active, media: active.media, server: active.server };
 	};
 
 	/**
@@ -176,7 +178,7 @@ function createBrowserWorkbenchMediaOwner(
 		active.releaseMedia = noop;
 		const media = active.media;
 		active.media = null;
-		active.host = null;
+		active.server = null;
 		active.handle = null;
 		active.startOperation = null;
 		removeAudioElements(active);
@@ -217,7 +219,7 @@ function createBrowserWorkbenchMediaOwner(
 			return;
 		}
 		const media = active.media;
-		if (media !== null && hostRevokedVoice(active)) {
+		if (media !== null && serverRevokedVoice(active)) {
 			active.voiceStopRequested = true;
 			void media
 				.stop()
@@ -240,7 +242,7 @@ function createBrowserWorkbenchMediaOwner(
 			remove: noop,
 			releaseMedia: noop,
 			media: null,
-			host: null,
+			server: null,
 			handle: null,
 			startOperation: null,
 			voiceStopRequested: false,
@@ -253,11 +255,11 @@ function createBrowserWorkbenchMediaOwner(
 	};
 
 	/**
-	 * Builds the run's realtime session over its host and forwards its publications.
+	 * Builds the run's realtime session over its server and forwards its publications.
 	 * @param active The run.
 	 */
 	const installMedia = (active: MediaRun): void => {
-		const host = createMediaHost({
+		const server = createRealtimeServer({
 			transport: active.transport,
 			audioElements,
 			mountedElements: active.mountedElements,
@@ -277,11 +279,11 @@ function createBrowserWorkbenchMediaOwner(
 			},
 		});
 		const media = createMediaSession(
-			host,
+			server,
 			options.environment === undefined ? {} : { environment: options.environment },
 		);
 		active.media = media;
-		active.host = host;
+		active.server = server;
 		// The realtime session publishes every browser-originated change to its
 		// own subscribers alone; forwarding is what lets a presentation see them.
 		active.releaseMedia = media.subscribe(() => {
@@ -498,7 +500,7 @@ function createBrowserWorkbenchMediaOwner(
 		if (open === null || correlation === null) {
 			throw new Error("No realtime media session is active.");
 		}
-		return open.host.appendText({ ...correlation, text });
+		return open.server.appendText({ ...correlation, text });
 	};
 
 	return Object.freeze({
