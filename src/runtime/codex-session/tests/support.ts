@@ -237,8 +237,8 @@ export const configFixture = (
 });
 
 export const modelFixture = {
-	id: "gpt-5.6-luna",
-	model: "gpt-5.6-luna",
+	id: "gpt-6-luna",
+	model: "gpt-6-luna",
 	upgrade: null,
 	upgradeInfo: null,
 	availabilityNux: null,

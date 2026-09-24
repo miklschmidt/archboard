@@ -233,7 +233,7 @@ function startResponse(
 ): SessionResponse<"thread/start"> {
 	return {
 		thread,
-		model: "gpt-5.6-luna",
+		model: "gpt-6-luna",
 		modelProvider: "openai",
 		serviceTier: "priority",
 		cwd: CHECKOUT_ROOT,

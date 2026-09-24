@@ -10,7 +10,7 @@ import {
 	type CoordinatorPersistedState,
 	type CoordinatorReviewHashes,
 } from "@/runtime/codex-coordinator/lib/contract";
-import { COORDINATOR_MODEL } from "@/runtime/codex-coordinator/lib/model";
+import { COORDINATOR_EFFORT, COORDINATOR_MODEL } from "@/runtime/codex-coordinator/lib/model";
 import { hashCoordinatorSettings } from "@/runtime/codex-coordinator/lib/review";
 import { errorMessage } from "@/runtime/codex-coordinator/lib/state";
 
@@ -483,7 +483,7 @@ function effectiveSettingsMatch(
 	const effective = persistence.settings.effective;
 	const checks = [
 		effective.model === COORDINATOR_MODEL,
-		effective.effort === "medium",
+		effective.effort === COORDINATOR_EFFORT,
 		configured.serviceTier !== "priority" || effective.serviceTier === "priority",
 	];
 	return checks.every((matched) => matched);

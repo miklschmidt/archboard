@@ -115,7 +115,7 @@ const serverNotificationFixtures: Record<ServerNotificationMethod, unknown> = {
 			approvalsReviewer: "user",
 			sandboxPolicy: { type: "dangerFullAccess" },
 			activePermissionProfile: null,
-			model: "gpt-5.6-luna",
+			model: "gpt-6-luna",
 			modelProvider: "openai",
 			serviceTier: null,
 			effort: "medium",
@@ -123,7 +123,7 @@ const serverNotificationFixtures: Record<ServerNotificationMethod, unknown> = {
 			collaborationMode: {
 				mode: "default",
 				settings: {
-					model: "gpt-5.6-luna",
+					model: "gpt-6-luna",
 					reasoning_effort: "medium",
 					developer_instructions: null,
 				},

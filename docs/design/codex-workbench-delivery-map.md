@@ -71,23 +71,23 @@ composition root and TASK-143.05-.07 inputs.
 ## Delegation classes
 
 Every leaf records one literal model and effort. **54 of 83 leaves** are
-intentionally suitable for `gpt-5.6-luna`; the remaining 29 use
-`gpt-5.6-sol`:
+intentionally suitable for `gpt-6-luna`; the remaining 29 use
+`gpt-6-sol`:
 
-- `gpt-5.6-luna`, high: bounded exploration, mechanical configuration,
+- `gpt-6-luna`, high: bounded exploration, mechanical configuration,
   generated-boundary checks, exports, cleanup, documentation, and fixtures.
-- `gpt-5.6-luna`, xhigh/max: one behavioral runtime module with a frozen public
+- `gpt-6-luna`, xhigh/max: one behavioral runtime module with a frozen public
   contract, including protocol/session, media, reducers, catalogues, queue,
   callbacks, and state-policy modules.
-- `gpt-5.6-sol`, medium: production composition, cross-module legacy removal,
+- `gpt-6-sol`, medium: production composition, cross-module legacy removal,
   lifecycle/process owners, and broad integration review.
-- `gpt-5.6-sol`, high: routine rendered UI and browser implementation. This
+- `gpt-6-sol`, high: routine rendered UI and browser implementation. This
   includes TASK-143.03.03-.09, TASK-143.03.11, TASK-143.03.13,
   TASK-143.04.02-.07, TASK-143.04.10, TASK-144.03, TASK-144.08,
   TASK-144.11, TASK-144.14, TASK-144.19, and TASK-144.20.
-- `gpt-5.6-sol`, xhigh: the substantial workbench-frame design in
+- `gpt-6-sol`, xhigh: the substantial workbench-frame design in
   TASK-143.03.10 and any change to the reference-mockup/aesthetic contract.
-- `gpt-5.6-sol`, xhigh: TASK-143.01.17 authors the immutable agent/tool bytes.
+- `gpt-6-sol`, xhigh: TASK-143.01.17 authors the immutable agent/tool bytes.
   Luna implementers may only load, hash, validate, and dispatch that record.
 
 This leaves a clear Luna majority without assigning visual design, authored
@@ -95,7 +95,7 @@ agent policy, or cross-module composition to a cheaper model.
 
 ## Root orchestration topology
 
-One persistent `gpt-5.6-sol` / `xhigh` root thread owns the complete global DAG
+One persistent `gpt-6-sol` / `xhigh` root thread owns the complete global DAG
 directly. It does **not** create permanent child orchestrators for TASK-143.01
 through TASK-143.07 or TASK-144: cross-parent dependencies, shared package,
 CSS, and browser owners, and final composition would split ready-state and
@@ -210,7 +210,7 @@ reconciliation lane is empty, finalized, committed, and clean.
    dispatch prompt supplies the exact parent callback thread.
 3. Keep code and focused verification inside the named seam. A discovered
    contract change returns to the parent instead of leaking into a peer leaf.
-4. Assign one independent reviewer thread to the leaf with `gpt-5.6-sol`:
+4. Assign one independent reviewer thread to the leaf with `gpt-6-sol`:
    medium for broad code review, higher architectural reasoning only when the
    seam changes. It must reject weakened tests, lint, formatting, types, or
    public verification, and its prompt names the parent callback thread, fixed

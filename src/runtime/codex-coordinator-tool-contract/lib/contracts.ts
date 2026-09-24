@@ -45,8 +45,8 @@ const COORDINATOR_THREAD_CONFIG = deepFreeze({
 /** The reviewed identity that a coordinator turn must carry. */
 const COORDINATOR_IDENTITY = deepFreeze({
 	role: COORDINATOR_ROLE,
-	model: "gpt-5.6-luna",
-	effort: "medium",
+	model: "gpt-6-luna",
+	effort: "high",
 	allowProviderModelFallback: false,
 	config: COORDINATOR_THREAD_CONFIG,
 	serviceName: "archboard",
@@ -61,8 +61,8 @@ const COORDINATOR_IDENTITY = deepFreeze({
 const CoordinatorIdentitySchema = z
 	.object({
 		role: z.literal(COORDINATOR_ROLE),
-		model: z.literal("gpt-5.6-luna"),
-		effort: z.literal("medium"),
+		model: z.literal("gpt-6-luna"),
+		effort: z.literal("high"),
 		allowProviderModelFallback: z.literal(false),
 		config: z
 			.object({

@@ -154,13 +154,13 @@ function modelSettingsMismatch(
 		return "Coordinator settings changed the checkout root.";
 	}
 	if (settings.model !== COORDINATOR_MODEL) {
-		return "Coordinator settings did not confirm gpt-5.6-luna.";
+		return `Coordinator settings did not confirm ${COORDINATOR_MODEL}.`;
 	}
 	if (settings.modelProvider !== started.modelProvider) {
 		return "Coordinator settings changed the provider selected at start.";
 	}
 	if (settings.effort !== COORDINATOR_EFFORT) {
-		return "Coordinator settings did not confirm medium effort.";
+		return `Coordinator settings did not confirm ${COORDINATOR_EFFORT} effort.`;
 	}
 	return tierMismatch(started, configured, settings);
 }

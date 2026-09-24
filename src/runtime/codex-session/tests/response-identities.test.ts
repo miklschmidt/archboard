@@ -110,7 +110,7 @@ const richThread = {
 function threadStartResponse(thread: RawThread): ResponsePayloads["thread/start"] {
 	return {
 		thread,
-		model: "gpt-5.6-luna",
+		model: "gpt-6-luna",
 		modelProvider: "openai",
 		serviceTier: null,
 		cwd: "/tmp/archboard",

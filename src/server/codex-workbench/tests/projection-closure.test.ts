@@ -372,7 +372,7 @@ test("settings projection closes loose nested records and refuses secrets", () =
 	const input = projectionInput(authorities);
 	const settings = {
 		cwd: "/private/vendor/checkout",
-		model: "gpt-5.6-sol",
+		model: "gpt-6-sol",
 		effort: "xhigh",
 		serviceTier: "priority",
 		approvalPolicy: {

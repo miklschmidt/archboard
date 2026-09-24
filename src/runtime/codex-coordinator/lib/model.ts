@@ -14,8 +14,8 @@ import {
 	type CoordinatorThreadStartParams,
 } from "@/runtime/codex-coordinator/lib/contract";
 
-const COORDINATOR_MODEL = "gpt-5.6-luna" as const;
-const COORDINATOR_EFFORT = "medium" as const;
+const COORDINATOR_MODEL = "gpt-6-luna" as const;
+const COORDINATOR_EFFORT = "high" as const;
 const COORDINATOR_MODEL_PAGE_LIMIT = 100 as const;
 
 interface CoordinatorModelSelection {

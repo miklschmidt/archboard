@@ -27,8 +27,8 @@ const configFixture = {
 	desktop: null,
 };
 const modelFixture = {
-	id: "gpt-5.6-luna",
-	model: "gpt-5.6-luna",
+	id: "gpt-6-luna",
+	model: "gpt-6-luna",
 	upgrade: null,
 	upgradeInfo: null,
 	availabilityNux: null,
@@ -36,8 +36,8 @@ const modelFixture = {
 	description: "production fixture",
 	modelSpecialty: null,
 	hidden: false,
-	supportedReasoningEfforts: [{ reasoningEffort: "medium", description: "fixture" }],
-	defaultReasoningEffort: "medium",
+	supportedReasoningEfforts: [{ reasoningEffort: "high", description: "fixture" }],
+	defaultReasoningEffort: "high",
 	inputModalities: ["text"],
 	supportsPersonality: false,
 	multiAgentVersion: null,

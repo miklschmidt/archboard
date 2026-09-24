@@ -155,7 +155,7 @@ threads.set(
 
 const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThread) => ({
 	thread,
-	model: typeof params["model"] === "string" ? params["model"] : "gpt-5.6-luna",
+	model: typeof params["model"] === "string" ? params["model"] : "gpt-6-luna",
 	modelProvider: "openai",
 	serviceTier: params["serviceTier"] ?? null,
 	cwd: params["cwd"],
@@ -165,7 +165,7 @@ const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThr
 	approvalsReviewer: "user",
 	sandbox: { type: "dangerFullAccess" },
 	activePermissionProfile: null,
-	reasoningEffort: params["model"] === "gpt-5.6-luna" ? "medium" : null,
+	reasoningEffort: params["model"] === "gpt-6-luna" ? "high" : null,
 	multiAgentMode: "explicitRequestOnly",
 });
 
