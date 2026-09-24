@@ -1,5 +1,10 @@
 import { createCodexApprovalBroker } from "@/runtime/codex-approvals";
-import { createCodexCoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
+import {
+	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
+	ARCHBOARD_COORDINATOR_NAMESPACE,
+	createCodexCoordinatorCallbacks,
+	TELL_COORDINATOR_OWNER,
+} from "@/runtime/codex-coordinator-callbacks";
 import {
 	COORDINATOR_DYNAMIC_DISPATCHERS,
 	createCodexCoordinatorTools,
@@ -69,6 +74,11 @@ function installDynamicRegistrations(transport: CodexTransport): void {
 	for (const registration of COORDINATOR_DYNAMIC_DISPATCHERS) {
 		transport.registerDynamicDispatcher(registration);
 	}
+	transport.registerDynamicDispatcher({
+		owner: TELL_COORDINATOR_OWNER,
+		namespace: ARCHBOARD_COORDINATOR_NAMESPACE.name,
+		manifestHash: ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
+	});
 }
 
 /**
@@ -370,6 +380,7 @@ function createProductionCodexWorkbenchFactories(
 				operations: requireComponent(created, "operations"),
 				identity: requireComponent(created, "identity").identity,
 				threadLink: requireComponent(created, "threadLink"),
+				transport: requireComponent(created, "transport"),
 			}),
 		/**
 		 * The gateway the browser talks to, built last because it is given every

@@ -1,4 +1,5 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
 import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import type { CodexSession } from "@/runtime/codex-session";
@@ -11,6 +12,7 @@ interface CodexWorkbenchRequestOwners {
 	readonly approvals: Pick<CodexApprovalBroker, "receive">;
 	readonly dynamicTools: Pick<CodexDynamicTools, "dispatch">;
 	readonly coordinatorTools: Pick<CoordinatorToolDispatcher, "onServerRequest">;
+	readonly callbacks: Pick<CoordinatorCallbacks, "onServerRequest">;
 	readonly session: Pick<
 		CodexSession,
 		"respondCurrentTime" | "respondUnsupportedTokenRefresh" | "respondUnsupportedAttestation"
@@ -64,6 +66,9 @@ function routeDynamicRequest(
 			return;
 		case "codex-coordinator-tools":
 			owners.coordinatorTools.onServerRequest(request);
+			return;
+		case "codex-coordinator-callbacks":
+			owners.callbacks.onServerRequest(request);
 			return;
 		default:
 			return unroutedOwner(request.owner);

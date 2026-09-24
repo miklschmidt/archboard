@@ -22,6 +22,7 @@ import {
 	type SettledSemanticChangeEvent,
 } from "../../codex-semantic-context/index.js";
 import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
+import type { ReverseResponse } from "../../codex-transport/server-requests.js";
 import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/index.js";
 import {
 	restoreIdentityAuthorities,
@@ -295,6 +296,12 @@ function semanticSources(ids: Identities, active: boolean): SemanticSources {
 
 type MutationMode = "delivered" | "rejected" | "lost";
 
+/** One answer the callbacks module sent to a workhorse tool call. */
+interface Answer {
+	readonly owner: string;
+	readonly response: ReverseResponse;
+}
+
 interface HarnessState {
 	child: CoordinatorCallbackCurrentChild | null;
 	coordinator: CoordinatorCallbackReadyCoordinator | null;
@@ -314,6 +321,8 @@ interface Harness {
 	/** What the coordinator was given, in order: every workhorse outcome that reached it. */
 	readonly reports: Parameters<CoordinatorCallbackTurnPort["report"]>[0][];
 	readonly realtimeRequests: CoordinatorCallbackRealtimeRequest[];
+	/** The next answer to a workhorse tool call, once it is sent. */
+	readonly nextAnswer: () => Promise<Answer>;
 	readonly callbacks: ReturnType<typeof createCodexCoordinatorCallbacks>;
 	readonly options: CoordinatorCallbackOptions;
 	readonly setMutationMode: (mode: MutationMode) => void;
@@ -406,7 +415,14 @@ function harness(active = true): Harness {
 			},
 		},
 	});
+	let answerWaiter: ((answer: Answer) => void) | null = null;
 	const options: CoordinatorCallbackOptions = {
+		transport: {
+			respond: async (_request, owner, response) => {
+				answerWaiter?.({ owner, response });
+				answerWaiter = null;
+			},
+		},
 		semantic: semantic.publisher,
 		operations: {
 			subscribe(listener) {
@@ -442,6 +458,10 @@ function harness(active = true): Harness {
 		},
 		reports,
 		realtimeRequests,
+		nextAnswer: () =>
+			new Promise<Answer>((resolve) => {
+				answerWaiter = resolve;
+			}),
 		callbacks: createCodexCoordinatorCallbacks(options),
 		options,
 		setMutationMode: (value) => {
@@ -462,6 +482,7 @@ function close(value: Harness): void {
 }
 
 export {
+	type Answer,
 	type Identities,
 	identities,
 	link,

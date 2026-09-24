@@ -1,3 +1,9 @@
+import { createHash } from "node:crypto";
+
+import {
+	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
+	ARCHBOARD_COORDINATOR_NAMESPACE,
+} from "@/runtime/codex-coordinator-callbacks";
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST_SHA256,
@@ -18,7 +24,16 @@ const WORKHORSE_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
 const WORKHORSE_THREAD_SOURCE_TAG = "archboard";
 
 const WORKHORSE_INSTRUCTION_HASH = WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256;
-const WORKHORSE_MANIFEST_HASH = ARCHBOARD_APP_MANIFEST_SHA256;
+/** The workhorse's tools, proven by both reviewed manifests it is started with. */
+const WORKHORSE_MANIFEST_HASH = createHash("sha256")
+	.update(
+		JSON.stringify({
+			app: ARCHBOARD_APP_MANIFEST_SHA256,
+			coordinator: ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
+		}),
+		"utf8",
+	)
+	.digest("hex");
 
 /**
  * Build the literal workhorse profile; omitted fields deliberately inherit child defaults.
@@ -38,7 +53,7 @@ function createWorkhorseThreadStartParams(checkoutRoot: string): SessionParams<"
 		historyMode: "paginated",
 		sessionStartSource: "startup",
 		threadSource: "archboard",
-		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS],
+		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS, ARCHBOARD_COORDINATOR_NAMESPACE],
 		experimentalRawEvents: false,
 	} satisfies SessionParams<"thread/start">;
 }

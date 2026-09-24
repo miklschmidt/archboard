@@ -44,7 +44,7 @@ describe("a coordinator operation's outcome while voice is live", () => {
 			const unknown = await callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 			expect(unknown).toMatchObject({ path: "coordinator_turn", outcome: "delivered" });
 			expect(reports).toHaveLength(1);
-			expect(reports[0]).toMatchObject({ threadId: h.ids.coordinator, waiting: false });
+			expect(reports[0]).toMatchObject({ threadId: h.ids.coordinator, situation: "ended" });
 			expect(h.realtimeRequests).toHaveLength(0);
 		} finally {
 			callbacks.dispose();

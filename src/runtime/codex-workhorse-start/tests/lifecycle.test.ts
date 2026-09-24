@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
+	WORKHORSE_INSTRUCTION_HASH,
+	WORKHORSE_MANIFEST_HASH,
 	WORKHORSE_OPERATION_KIND,
 	WORKHORSE_RPC,
 } from "../index.js";
@@ -55,8 +57,8 @@ describe("codex workhorse start transaction", () => {
 				approvalsReviewer: "user",
 				sandbox: { type: "dangerFullAccess" },
 				activePermissionProfile: { id: "archboard-default", extends: null },
-				instructionHash: "0f9fbf590c1546cffa1db8390dbd1b159cae930fd2fef7dda0461bad4ff44d14",
-				manifestHash: "5399a33a0466d31518de7067536dc6c578d559bb2b46b3668ff8d4e18bdd1860",
+				instructionHash: WORKHORSE_INSTRUCTION_HASH,
+				manifestHash: WORKHORSE_MANIFEST_HASH,
 			});
 			expect(fixture.session.startParams).toHaveLength(1);
 			expect(fixture.link.targets).toHaveLength(1);

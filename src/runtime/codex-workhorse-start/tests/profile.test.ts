@@ -4,15 +4,9 @@ import {
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
 } from "../../codex-instructions/index.js";
-import {
-	WORKHORSE_INSTRUCTION_HASH,
-	WORKHORSE_MANIFEST_HASH,
-	createWorkhorseThreadStartParams,
-} from "../index.js";
-import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-} from "../../codex-thread-tools/index.js";
+import { WORKHORSE_INSTRUCTION_HASH, createWorkhorseThreadStartParams } from "../index.js";
+import { ARCHBOARD_APP_NAMESPACE } from "../../codex-thread-tools/index.js";
+import { ARCHBOARD_COORDINATOR_NAMESPACE } from "../../codex-coordinator-callbacks/index.js";
 
 const CHECKOUT_ROOT = "/workspace/archboard";
 
@@ -45,7 +39,7 @@ describe("codex workhorse start profile", () => {
 			historyMode: "paginated",
 			sessionStartSource: "startup",
 			threadSource: "archboard",
-			dynamicTools: [ARCHBOARD_APP_NAMESPACE],
+			dynamicTools: [ARCHBOARD_APP_NAMESPACE, ARCHBOARD_COORDINATOR_NAMESPACE],
 			experimentalRawEvents: false,
 		});
 		expect(params.dynamicTools?.[0]).toBe(ARCHBOARD_APP_NAMESPACE);
@@ -74,8 +68,7 @@ describe("codex workhorse start profile", () => {
 		}
 	});
 
-	test("keeps the reviewed instruction and catalogue hashes at the module boundary", () => {
+	test("keeps the reviewed instruction hash at the module boundary", () => {
 		expect(WORKHORSE_INSTRUCTION_HASH).toBe(WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256);
-		expect(WORKHORSE_MANIFEST_HASH).toBe(ARCHBOARD_APP_MANIFEST_SHA256);
 	});
 });

@@ -90,8 +90,10 @@ read out as if it were the answer. It is also why work that ends later cannot be
 told to the voice model directly. Instead, while voice is live the coordinator
 is given **workhorse news**: when a turn on the linked workhorse thread ends
 (finished, failed or stopped) or starts waiting on the user, whoever started the
-turn, from the coordinator's own delegation or from the agent bar. It comes from
-the workhorse thread's own notifications, one source for every turn, and reaches
+turn, from the coordinator's own delegation or from the agent bar, and what the
+workhorse tells it with its `tell_coordinator` tool: a question for the user, a
+milestone or what stops it. A turn's news comes from the workhorse thread's own
+notifications, one source for every turn. Each piece reaches
 the coordinator as one plain sentence with no identities in it, from the
 reviewed `workhorse_outcome_report` producer; the coordinator reads the rest
 through `inspect_workhorse`. It is one `turn/start`, which Codex adds to the
@@ -101,6 +103,7 @@ history without a turn that acts on it. What it replies under `[FINAL]` is
 spoken without the user asking again; a `[COMMENTARY]` reply stays silent. With
 no voice session, and while a recording holds the voice, the coordinator is
 told nothing: it is the voice model's subconscious and never runs without it.
+Then `tell_coordinator` sends nothing and answers that nobody is listening.
 Of a coordinator operation's own callbacks only an outcome nobody can vouch for
 (outcome unknown) is told the same way; the rest (accepted, queued, started,
 progress, and the completed, failed and attention that workhorse news already

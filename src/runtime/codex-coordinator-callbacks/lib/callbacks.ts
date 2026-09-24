@@ -6,6 +6,7 @@ import {
 } from "@/runtime/codex-coordinator-callbacks/lib/settled-ledger";
 import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
 import { createWorkhorseNewsObserver } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-news";
+import { createTellCoordinator } from "@/runtime/codex-coordinator-callbacks/lib/tell-coordinator";
 import {
 	coordinatorCallbackCoalescingKey,
 	coordinatorCallbackKey,
@@ -399,7 +400,12 @@ export function createCodexCoordinatorCallbacks(
 	};
 
 	const cleanups = subscribeSources(options, enqueue);
-	const observeWorkhorse = createWorkhorseNewsObserver(options);
+	const workhorseNews = createWorkhorseNewsObserver(options);
+	const tellCoordinator = createTellCoordinator({
+		transport: options.transport,
+		news: workhorseNews.message,
+		enqueue,
+	});
 
 	return freeze({
 		enqueue,
@@ -411,10 +417,17 @@ export function createCodexCoordinatorCallbacks(
 			if (disposed) {
 				return;
 			}
-			const news = observeWorkhorse(event);
+			const news = workhorseNews.observe(event);
 			if (news !== null) {
 				void enqueue(news);
 			}
+		},
+		/**
+		 * Answer the workhorse's tell_coordinator call: its message is workhorse news (TASK-321).
+		 * @param request - The call.
+		 */
+		onServerRequest: (request) => {
+			void tellCoordinator(request).catch(() => undefined);
 		},
 		/**
 		 * Wait for every scheduled drain to finish.

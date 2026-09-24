@@ -23,7 +23,11 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 } from "@/shared/codex-realtime-contract";
-import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type {
+	CodexTransport,
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "@/runtime/codex-transport";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -40,11 +44,11 @@ type SemanticCallbackSource = SettledSemanticChangeEvent | PaneFocusEvent | Pane
 
 /**
  * One event of the linked workhorse thread itself, whoever started the turn (TASK-321): a turn
- * that ended, or one that began waiting on the user.
+ * that ended, one that began waiting on the user, or a message the workhorse sent the coordinator.
  */
-interface WorkhorseTurnSource {
-	readonly kind: "workhorse_turn";
-	readonly type: "completed" | "failed" | "stopped" | "waiting";
+interface WorkhorseNewsSource {
+	readonly kind: "workhorse_news";
+	readonly type: "completed" | "failed" | "stopped" | "waiting" | "message";
 	/** Counts news from one observer, so two waits in one turn are two pieces of news. */
 	readonly sequence: number;
 	readonly childId: ChildId;
@@ -52,14 +56,14 @@ interface WorkhorseTurnSource {
 	readonly coordinatorThreadId: ThreadId;
 	readonly workhorseThreadId: ThreadId;
 	readonly turnId: TurnId | null;
-	/** What a failed turn's error said, or null. */
+	/** What a failed turn's error said, or what the workhorse's message said; null otherwise. */
 	readonly detail: string | null;
 }
 
 type CoordinatorCallbackSource =
 	| WorkhorseOperationEvent
 	| SemanticCallbackSource
-	| WorkhorseTurnSource;
+	| WorkhorseNewsSource;
 
 interface CoordinatorCallbackLinkCorrelation {
 	readonly binding: ThreadLinkBindingSnapshot;
@@ -162,9 +166,9 @@ type CoordinatorSemanticCallback =
 	| (CoordinatorSemanticCallbackBase & { readonly type: "focus" })
 	| (CoordinatorSemanticCallbackBase & { readonly type: "selection" });
 /** Workhorse news about the linked workhorse thread, as the coordinator is given it (TASK-321). */
-interface CoordinatorWorkhorseTurnCallback {
-	readonly kind: "workhorse_turn";
-	readonly type: WorkhorseTurnSource["type"];
+interface CoordinatorWorkhorseNewsCallback {
+	readonly kind: "workhorse_news";
+	readonly type: WorkhorseNewsSource["type"];
 	readonly sequence: number;
 	readonly correlation: CoordinatorCallbackCorrelation;
 	readonly detail: string | null;
@@ -173,7 +177,7 @@ interface CoordinatorWorkhorseTurnCallback {
 type CoordinatorCallback =
 	| CoordinatorOperationCallback
 	| CoordinatorSemanticCallback
-	| CoordinatorWorkhorseTurnCallback;
+	| CoordinatorWorkhorseNewsCallback;
 
 interface CoordinatorCallbackRealtimeGeneration {
 	readonly childId: ChildId;
@@ -202,6 +206,9 @@ interface CoordinatorCallbackRealtimePort {
 	) => Promise<CoordinatorCallbackMutationResult>;
 }
 
+/** What news the coordinator is given is: work that ended, a wait on the user, or a message. */
+type WorkhorseNewsSituation = "ended" | "waiting" | "message";
+
 /**
  * What giving the coordinator a workhorse outcome came to: an ordinary mutation result, or
  * recording when a recording holds the voice and nothing was sent, since whatever the
@@ -223,8 +230,11 @@ interface CoordinatorCallbackTurnPort {
 		readonly threadId: ThreadId;
 		/** What happened, as one plain sentence with no identities in it. */
 		readonly news: string;
-		/** Whether the workhorse waits on the user, for an approval or an answer, rather than having finished. */
-		readonly waiting: boolean;
+		/**
+		 * What the news is: work that ended, the workhorse waiting on the user for an approval or an
+		 * answer, or something the workhorse chose to tell the coordinator while it works.
+		 */
+		readonly situation: WorkhorseNewsSituation;
 	}) => Promise<CoordinatorCallbackTurnResult>;
 }
 
@@ -306,6 +316,8 @@ interface CoordinatorCallbackOptions {
 	readonly realtime: CoordinatorCallbackRealtimePort;
 	/** Absent where nothing can reach the coordinator; workhorse outcomes then stay quiet. */
 	readonly coordinatorTurn?: CoordinatorCallbackTurnPort;
+	/** Answers the workhorse's tell_coordinator calls. */
+	readonly transport: Pick<CodexTransport, "respond">;
 	readonly threadLink: Pick<CodexThreadLinkClassifier, "classify">;
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
@@ -329,6 +341,8 @@ interface CoordinatorCallbacks {
 	readonly enqueue: (event: CoordinatorCallbackSource) => Promise<CoordinatorCallbackDelivery>;
 	/** Takes every Codex notification, and queues the workhorse news among them. */
 	readonly onNotification: (event: TransportServerNotification) => void;
+	/** Answers the workhorse's tell_coordinator call, queueing its message as workhorse news. */
+	readonly onServerRequest: (request: DynamicServerRequest) => void;
 	readonly flush: () => Promise<void>;
 	readonly inspect: () => readonly CoordinatorCallbackDelivery[];
 	readonly inspectHistory: (
@@ -351,8 +365,9 @@ interface CoordinatorCallbackClassification {
 export {
 	type SemanticCallbackSource,
 	type CoordinatorCallbackSource,
-	type WorkhorseTurnSource,
-	type CoordinatorWorkhorseTurnCallback,
+	type WorkhorseNewsSource,
+	type WorkhorseNewsSituation,
+	type CoordinatorWorkhorseNewsCallback,
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorOperationCallback,
