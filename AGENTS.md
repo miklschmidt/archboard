@@ -16,7 +16,8 @@ Where things are written down:
 - Measured investigations: `docs/design/`; the UI's visual authority is
   `docs/design/operator-canvas-shell.md` with its reference image
 - Changing tests or CI: `docs/agents/test-suite.md`
-- Working on this repo: the `archboard-dev` skill; using archboard: the `archboard` skill
+- Working on this repo, including planning and closing a task (each carries a board
+  proposal): the `archboard-dev` skill; using archboard: the `archboard` skill
 - Reading or updating this repo's architecture: `.archboard/README.md`; start at
   `Archboard` using `./bin/dogfood` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
