@@ -33,7 +33,7 @@ import { proveCodexStorage } from "@/runtime/codex-session/lib/storage-proof";
 
 const CLIENT_INFO = Object.freeze({
 	name: "archboard",
-	title: "archboard canvas",
+	title: "archboard server",
 	version: "0.1.0",
 });
 const INITIALIZE_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
