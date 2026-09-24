@@ -179,3 +179,57 @@ test("a branch is one version, written against the version it was asked for", as
 	expect(read(board).version).toBe(before.version + 1);
 	expect(read(board).variants.map((one) => one.name)).not.toContain("Derived from a stale read");
 }, 20_000);
+
+test("an edit restates the summary of the variant it lands on, and a record refuses it", async () => {
+	/**
+	 * Write one transition against the version the board is at.
+	 * @param transition The transition.
+	 * @returns What the write did.
+	 */
+	const write = async (transition: StoreModule.SemanticTransition) =>
+		store.writeSemanticBoard({ board, writer, expectedVersion: read(board).version, transition });
+	/**
+	 * Edit the board with one stated batch.
+	 * @param batch The batch.
+	 * @returns What the write did.
+	 */
+	const edit = async (batch: Record<string, unknown>) =>
+		write(store.editVariantTransition(contract.VariantEditInputSchema.parse(batch)));
+	const summaryOf = (name: string) =>
+		read(board).variants.find((variant) => variant.name === name)?.summary;
+	const baseline = read(board).variants[0]!.name;
+
+	// With content, in one write; the other variants keep theirs.
+	const before = read(board).version;
+	const both = await edit({
+		variant: PROPOSAL,
+		summary: "Orders arrive through a queue",
+		nodes: [{ name: "Queue", kind: "queue" }],
+	});
+	expect(both.outcome).toBe("applied");
+	expect(read(board).version).toBe(before + 1);
+	expect(summaryOf(PROPOSAL)).toBe("Orders arrive through a queue");
+	expect(summaryOf(baseline)).toBeUndefined();
+
+	// Alone, on the current variant; the draft under it does not inherit it.
+	expect((await edit({ summary: "Orders as they are served today" })).outcome).toBe("applied");
+	expect(summaryOf(baseline)).toBe("Orders as they are served today");
+	expect(summaryOf(PROPOSAL)).toBe("Orders arrive through a queue");
+
+	// A shelved proposal and a superseded architecture are records: refused, nothing written.
+	await branch(board, baseline, "Spare");
+	await write(
+		store.shelveVariantTransition(
+			contract.BoardShelveInputSchema.parse({ variant: "Spare", reason: "not carried out" }),
+		),
+	);
+	await write(
+		store.adoptVariantTransition(contract.BoardAdoptInputSchema.parse({ variant: PROPOSAL })),
+	);
+	const records = read(board);
+	const shelved = await edit({ variant: "Spare", summary: "Rewritten" });
+	expect(shelved.outcome === "rejected" && shelved.code).toBe("VARIANT_SHELVED");
+	const historical = await edit({ variant: baseline, summary: "Rewritten" });
+	expect(historical.outcome === "rejected" && historical.code).toBe("VARIANT_HISTORICAL");
+	expect(read(board)).toEqual(records);
+}, 20_000);
