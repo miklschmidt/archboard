@@ -53,7 +53,8 @@ const edgeInks = (
 			`  band: getComputedStyle(band).stroke,` +
 			`  head: getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill,` +
-			`  streams: [...group.querySelectorAll("path.ab-pulse")].map((path) => getComputedStyle(path).stroke),` +
+			`  streams: [...group.querySelectorAll(".ab-pulse")].map((comet) => [...new Set(` +
+			`   [...comet.querySelectorAll("path:not([data-pulse-part='moat'])")].map((path) => getComputedStyle(path).stroke))].join(" ")),` +
 			` }; })()`,
 	);
 

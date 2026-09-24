@@ -295,6 +295,18 @@ function nothingToSeek(): void {
 }
 
 /**
+ * Hide where routes join until the lines have landed. Where routes join depends
+ * on where they land, so a mark would sit at its new join while the lines are
+ * still on their way. Landing stages the untouched picture, marks and all.
+ * @param root The new picture.
+ */
+function parkJunctions(root: Element): void {
+	for (const marks of root.querySelectorAll<SVGElement>(".ab-junctions")) {
+		marks.style.opacity = "0";
+	}
+}
+
+/**
  * Turn the picture on a surface into the next one.
  *
  * The next picture goes on the surface at once; the steps then draw each
@@ -346,6 +358,7 @@ function transitionPicture(
 	if (root instanceof SVGElement) {
 		root.style.overflow = "visible";
 	}
+	parkJunctions(root);
 	/**
 	 * Draw the moment this far through.
 	 * @param progress How far through, 0 to 1.

@@ -63,7 +63,7 @@ function timedCrossings(
 	return lines(
 		Array.from({ length: placed.slot.count }, (_, index) => {
 			const start = (placed.slot.start + index) * width;
-			return timedPulse({ path, colour, radius }, cycle, {
+			return timedPulse({ path, colour, radius, page: palette }, cycle, {
 				start,
 				finish: start + width,
 				ramp: width * FLOW_PULSE_RAMP,

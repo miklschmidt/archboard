@@ -83,6 +83,13 @@ Narrow SVG masks clear lower ink by 1.5 drawing units on each side of the upper 
 revealing the actual container background without a painted patch.
 Lines, traffic, selection halos and the atlas all consume
 the bridged curve, and exports retain the same treatment.
+Where two routes join or part on a shared lane, `lib/svg/junctions.ts` marks
+the join with a dot in the heavier line's ink, as a circuit diagram does
+(TASK-337). The marks are found from the finished routes. Two stretches whose
+strokes touch count as one lane, because routing may nudge a shared lane's
+routes a unit apart. Routes that only end at one point, or turn together, are
+not marked. The marks move nothing, and a picture transition hides them until
+its lines have landed.
 The atlas uses those same boxes and curves, with
 the same document translation. Change standings and reconciliation marks do not
 affect layout. The old grid, corridor, congestion, and label repair passes have

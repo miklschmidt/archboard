@@ -1,6 +1,8 @@
 // The layout's own rules that focused runtime checks hold without a whole
-// board: label reservations, spacing, corner rounding and crossing bridges.
+// board: label reservations, spacing, corner rounding, crossing bridges and
+// the marks where routes join.
 export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
+export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions";
 export {
 	curveThrough,
 	curveClearanceIssue,
