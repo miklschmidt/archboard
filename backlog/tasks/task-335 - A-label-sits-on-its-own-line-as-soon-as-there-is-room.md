@@ -4,6 +4,7 @@ title: A label sits on its own line as soon as there is room
 status: To Do
 assignee: []
 created_date: '2026-09-24 13:59'
+updated_date: '2026-09-24 15:17'
 labels:
   - renderer
 dependencies: []
@@ -24,3 +25,9 @@ Seen on Voice coordinator (2026-09-24): the label 'start the realtime leg' sits 
 - [ ] #2 One test owner fails without the fix
 - [ ] #3 Every view of every dogfood board still draws, and each picture that changed was looked at and is no worse
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User decision 2026-09-24: narrow the rule (option 3). A label sits at the first stretch from its source where its line runs alone: a stretch that shares its lane with other routes, or runs within a lane's width beside another route, does not count as room. The Voice coordinator fix stays; fan-out bundles (Command interface, Skill evaluation) must not collect labels.
+<!-- SECTION:NOTES:END -->
