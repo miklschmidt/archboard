@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 11,
+	"version": 12,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-24T13:43:34.999Z",
+	"updatedAt": "2026-09-24T13:49:40.396Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -52,7 +52,7 @@
 		{
 			"id": "tVCqUn1A",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Module level: board-store as implemented on 2026-09-13. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
@@ -673,7 +673,7 @@
 		{
 			"id": "Y8SHNDOe",
 			"name": "TASK-331",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "tVCqUn1A",
 			"summary": "Adopting a proposal whose parent another adoption superseded warns and needs --force",
 			"content": {
@@ -1289,5 +1289,13 @@
 			}
 		}
 	],
-	"current": "tVCqUn1A"
+	"current": "Y8SHNDOe",
+	"adoptions": [
+		{
+			"variant": "Y8SHNDOe",
+			"from": "tVCqUn1A",
+			"at": "2026-09-24T13:49:40.396Z",
+			"reason": "TASK-331: adoption refuses a proposal built on an architecture a later adoption superseded, unless forced, and records forced adoptions"
+		}
+	]
 }
