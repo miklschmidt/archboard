@@ -26,7 +26,7 @@ const QUEUE_STATUS_STATES = {
 	outcome_unknown: "outcome_unknown",
 } as const satisfies Record<WorkbenchQueueEntry["status"], WorkbenchQueueState>;
 
-/** Statuses whose submission the host is no longer holding as pending work. */
+/** Statuses whose submission the server is no longer holding as pending work. */
 const SETTLED_ENTRY_STATUSES: ReadonlySet<WorkbenchQueueEntry["status"]> = new Set([
 	"completed",
 	"failed",
@@ -46,10 +46,10 @@ const STALE_STATES: ReadonlySet<WorkbenchQueueState> = new Set([
 type Readiness = Extract<WorkbenchTransportState, { readonly kind: "readiness" }>["state"];
 
 /**
- * Every readiness arm the host can publish, and what it means for the queue.
+ * Every readiness arm the server can publish, and what it means for the queue.
  *
  * A readiness state always arrives over a live socket, so none of these arms
- * is `disconnected`: they say something about the host's Codex session, not
+ * is `disconnected`: they say something about the Archboard server's Codex session, not
  * about this pane's connection. `null` hands the decision to the queue's own
  * status. The exhaustive map is the point: a new readiness arm fails
  * type-check here rather than falling through to an ordinary label.
@@ -72,7 +72,7 @@ const READINESS_STATES = {
 } as const satisfies Record<Readiness, WorkbenchQueueState | null>;
 
 /**
- * Whether the host no longer holds this entry as pending work.
+ * Whether the server no longer holds this entry as pending work.
  * @param status The entry status.
  * @returns True for completed, failed and empty.
  */
@@ -146,7 +146,7 @@ function connectionOwnerState(
  * The transport state that outranks the queue's own status. The stream owner
  * reports a sequence gap as stale; the connection owner reports a dropped or
  * retrying socket, which is the only thing disconnected ever means; readiness
- * is the host telling the browser how far its Codex child has got over a
+ * is the server telling the browser how far its Codex child has got over a
  * socket that is still up.
  * @param state The transport state.
  * @returns The governing state, or null when the queue's own status decides.

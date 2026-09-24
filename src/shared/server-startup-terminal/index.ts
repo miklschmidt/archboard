@@ -42,10 +42,10 @@ function positiveInteger(value: unknown): value is number {
 }
 
 /**
- * Builds the ownership record the canvas child writes once it owns the Codex
+ * Builds the ownership record the server child writes once it owns the Codex
  * process group, so the launcher can clean that group up if the child dies.
  * @param input - The facts the launcher needs to clean up after the child.
- * @param input.serverPid - The canvas child's pid.
+ * @param input.serverPid - The server child's pid.
  * @param input.codexGroup - The process-group identity it now owns.
  * @returns A frozen ownership record carrying the protocol tag.
  */
@@ -62,10 +62,10 @@ function serverStartupOwnershipRecord(input: {
 }
 
 /**
- * Builds the terminal record the canvas child writes on the way out, stating
+ * Builds the terminal record the server child writes on the way out, stating
  * whether it proved its own cleanup so the launcher knows what is left to do.
  * @param input - What the child can say about its own exit.
- * @param input.serverPid - The canvas child's pid.
+ * @param input.serverPid - The server child's pid.
  * @param input.cleanupProven - Whether the child proved its cleanup completed.
  * @param input.message - An optional explanation for the launcher's log.
  * @returns A frozen terminal record carrying the protocol tag.
@@ -111,7 +111,7 @@ const terminalBodySchema = z.looseObject({
 });
 
 /**
- * Parses one line the canvas child wrote to the startup pipe into a typed
+ * Parses one line the server child wrote to the startup pipe into a typed
  * record, refusing anything that is not exactly an ownership or terminal
  * record of this protocol version.
  * @param line - One newline-delimited JSON line from the pipe.
@@ -121,12 +121,12 @@ const terminalBodySchema = z.looseObject({
 function parseServerStartupProtocolRecord(line: string): ServerStartupProtocolRecord {
 	const envelope = envelopeSchema.safeParse(JSON.parse(line));
 	if (!envelope.success) {
-		throw new Error("The canvas child returned an invalid startup cleanup record.");
+		throw new Error("The server child returned an invalid startup cleanup record.");
 	}
 	if (envelope.data.kind === "ownership") {
 		const body = ownershipBodySchema.safeParse(envelope.data);
 		if (!body.success) {
-			throw new Error("The canvas child returned an invalid startup cleanup ownership record.");
+			throw new Error("The server child returned an invalid startup cleanup ownership record.");
 		}
 		return serverStartupOwnershipRecord({
 			serverPid: envelope.data.serverPid,
@@ -135,7 +135,7 @@ function parseServerStartupProtocolRecord(line: string): ServerStartupProtocolRe
 	}
 	const body = terminalBodySchema.safeParse(envelope.data);
 	if (!body.success) {
-		throw new Error("The canvas child returned an invalid startup cleanup terminal record.");
+		throw new Error("The server child returned an invalid startup cleanup terminal record.");
 	}
 	return Object.freeze({
 		protocol: PROTOCOL,

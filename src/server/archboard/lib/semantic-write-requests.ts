@@ -16,7 +16,7 @@ import { semanticBoardAddress } from "@/runtime/semantic-board-store/index";
  *
  * A command that does not fit the contract is the caller's mistake and is
  * reported as one, with what was wrong. Letting the parse throw would make it a
- * five-hundred, which says the canvas broke when the truth is that the request
+ * five-hundred, which says the server broke when the truth is that the request
  * did.
  * @param schema What the command has to be.
  * @param schema.safeParse How that schema reads a value without throwing.

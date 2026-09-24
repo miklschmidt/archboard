@@ -112,7 +112,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
  * How a pane registers, and what a recording gives it.
  *
  * A recording's pane is nobody's primary or focused pane, and says it is a recording's so the
- * canvas leaves it out of addressing altogether: the canvas it records on may be in use in
+ * server leaves it out of addressing altogether: the server it records on may be in use in
  * another browser, whose panes those words mean.
  * @param recording The page's recording, or null.
  * @param first Whether the pane is first in reading order.

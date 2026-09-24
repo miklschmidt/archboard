@@ -37,7 +37,7 @@ interface ServerDynamicApprovalOwner {
 	readonly bindLease: (paneId: string, commandId: BrowserCommandId) => void;
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly onNotification: (event: TransportServerNotification) => void;
-	readonly settleAll: (cause: "host_shutdown" | "child_disconnected") => void;
+	readonly settleAll: (cause: "server_shutdown" | "child_disconnected") => void;
 	/**
 	 * Release the generation's presentation and its at-most-once decision ledger.
 	 * The ledger only has to outlive the epoch that issued the decisions, so a
@@ -422,7 +422,7 @@ function createServerDynamicApprovalOwner(
 			),
 		/**
 		 * Re-point every presented approval at the pane holding the lease, so the
-		 * pane that holds it can answer: the canvas has one conversation, and an
+		 * pane that holds it can answer: the server has one conversation, and an
 		 * approval belongs to it rather than to whichever pane it was first shown
 		 * in. The captured link is unchanged, so an answer is still refused once
 		 * the link moves.
@@ -462,13 +462,13 @@ function createServerDynamicApprovalOwner(
 			}
 		},
 		/**
-		 * Settle every presented approval, because the host or the child is going
+		 * Settle every presented approval, because the server or the child is going
 		 * away and no answer can arrive.
 		 * @param cause Which of the two it is.
 		 */
-		settleAll: (cause: "host_shutdown" | "child_disconnected") => {
+		settleAll: (cause: "server_shutdown" | "child_disconnected") => {
 			for (const entry of pending.values()) {
-				terminal(entry, cause === "host_shutdown" ? "cancelled" : "disconnected", cause);
+				terminal(entry, cause === "server_shutdown" ? "cancelled" : "disconnected", cause);
 			}
 		},
 		/** Drop every timer, presentation and recorded decision this owner held. */

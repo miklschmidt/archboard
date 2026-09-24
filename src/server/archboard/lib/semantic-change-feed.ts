@@ -42,7 +42,7 @@ type SettledChangeListener = (event: SettledBoardChange) => void;
  * This process's feed of settled board changes.
  *
  * The id is minted per process: a cursor is only meaningful against the feed
- * that issued it, and a canvas that restarted has not got the same one.
+ * that issued it, and a server that restarted has not got the same one.
  */
 const feedId = mintId();
 
@@ -71,7 +71,7 @@ type SettledAnnouncement = {
 	 * wrote itself. Everything else about who wrote what is custody's business.
 	 *
 	 * Null is the ordinary case for a person's terminal and for anything outside
-	 * this canvas, and it means delivered to everybody.
+	 * this server, and it means delivered to everybody.
 	 */
 	readonly by: string | null;
 	/** The identity the board was held under: custody, not authorship. */
@@ -176,7 +176,7 @@ const semanticChangeFeed = {
 	 * @returns Its id and the cursor of the last change it issued.
 	 */
 	status: (): { feedId: string; cursor: number } => ({ feedId, cursor }),
-	/** Forget every listener, because the canvas is stopping. */
+	/** Forget every listener, because the server is stopping. */
 	dispose: (): void => {
 		listeners.clear();
 	},

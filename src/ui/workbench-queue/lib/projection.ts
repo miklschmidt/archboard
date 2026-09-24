@@ -1,6 +1,6 @@
 // Project the authoritative workbench state into everything the queue region
 // renders. Nothing here reads a local optimistic order or a guessed outcome:
-// the entries are the host's entries, in the host's order.
+// the entries are the server's entries, in the server's order.
 
 import type {
 	WorkbenchQueueAvailability,

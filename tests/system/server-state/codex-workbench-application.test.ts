@@ -31,7 +31,7 @@ interface PublicSocketClient {
 	) => Promise<Record<string, unknown>>;
 }
 
-test("the live canvas socket crosses the real gateway and approval broker exactly once", async () => {
+test("the live server socket crosses the real gateway and approval broker exactly once", async () => {
 	const identity = createIdentityAuthorities();
 	const model = createCodexBrowserModel(identity);
 	const childId = identity.identity.validator.childId;

@@ -103,7 +103,7 @@ function createValidator(ledger: IdentityLedger): IdentityValidator {
 }
 
 /**
- * Builds the issuer: the host-owned identities this session may mint.
+ * Builds the issuer: the Archboard-server-owned identities this session may mint.
  * @param ledger - The ledger the issuer records into.
  * @returns A frozen issuer.
  */
@@ -115,7 +115,7 @@ function createIssuer(ledger: IdentityLedger): IdentityIssuer {
 		 */
 		mintBrowserCommandId: (): BrowserCommandId => mint(ledger, "browser-command"),
 		/**
-		 * Mints a JSON-RPC request id for a request this host sends.
+		 * Mints a JSON-RPC request id for a request this Archboard server sends.
 		 * @returns The fresh id.
 		 */
 		mintJsonRpcRequestId: (): JsonRpcRequestId => mint(ledger, "json-rpc-request"),

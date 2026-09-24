@@ -82,7 +82,7 @@ const unboundLink: BrowserThreadLink = {
 
 /**
  * An inspect-only link to one thread.
- * @param reason The host's reason.
+ * @param reason The server's reason.
  * @param threadId The thread.
  * @returns The link.
  */
@@ -112,7 +112,7 @@ const unknownCandidates: ThreadLinkInventory = {
 /**
  * One listed inventory arm, exactly as the workbench snapshot publishes it.
  * @param records The records.
- * @param truncated Whether the host published only the first page.
+ * @param truncated Whether the server published only the first page.
  * @returns The inventory.
  */
 function listed(
@@ -209,7 +209,7 @@ function capabilities(seed: CapabilitiesSeed = {}): WorkbenchTransportCapabiliti
 		connected: seed.connected ?? true,
 		canReadAccount: seed.canReadAccount ?? true,
 		/**
-		 * Whether the host accepts a command.
+		 * Whether the server accepts a command.
 		 * @param command The command.
 		 * @returns True when the fixture lists it.
 		 */
@@ -491,7 +491,7 @@ class FakeTransport implements ThreadLinkTransportPort {
 /**
  * The pane one action is captured against.
  * @param transport The double.
- * @param serverRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The capture.
  */
 function pane(
@@ -504,7 +504,7 @@ function pane(
 /**
  * A pane capture over one double, read once per action.
  * @param transport The double.
- * @param serverRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The capture function.
  */
 function capturing(
@@ -515,7 +515,7 @@ function capturing(
 }
 
 /**
- * A host recovery owner for one pane.
+ * A server recovery owner for one pane.
  * @param paneId The pane the owner answers for.
  * @param recover What the owner runs.
  * @returns The capture function.

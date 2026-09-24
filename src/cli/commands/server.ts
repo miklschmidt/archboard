@@ -20,7 +20,7 @@ const startContract = defineCommand({
 	path: ["start"],
 	shared: ["url"],
 	summary: "Start the Archboard server (detached)",
-	description: "Explicitly starts the local canvas, overriding automatic-start opt-outs.",
+	description: "Explicitly starts the local Archboard server, overriding automatic-start opt-outs.",
 	examples: ["archboard start"],
 	parameters: [
 		{
@@ -58,7 +58,7 @@ const startContract = defineCommand({
 			code: "CANVAS_UNREACHABLE",
 			exit: 3,
 			stream: "stderr",
-			description: "The explicitly started canvas did not become healthy.",
+			description: "The explicitly started server did not become healthy.",
 		},
 	],
 	relationships: [
@@ -70,9 +70,9 @@ const startContract = defineCommand({
 		},
 	],
 	/**
-	 * Starts the canvas even when automatic start is opted out, reporting whether a process
+	 * Starts the server even when automatic start is opted out, reporting whether a process
 	 * was spawned or one was already serving.
-	 * @returns The running state, plus a diagnostic when the canvas was already up.
+	 * @returns The running state, plus a diagnostic when the server was already up.
 	 */
 	async handler() {
 		const result = await ensureServerRunning({ force: true });
@@ -104,7 +104,7 @@ const stopContract = defineCommand({
 	path: ["stop"],
 	shared: ["url"],
 	summary: "Stop the Archboard server",
-	description: "Stops only a live process that identifies itself as this canvas service.",
+	description: "Stops only a live process that identifies itself as this Archboard server.",
 	examples: ["archboard stop"],
 	parameters: [
 		{
@@ -147,7 +147,7 @@ const stopContract = defineCommand({
 		},
 	],
 	/**
-	 * Stops the local canvas after it identifies itself as this service.
+	 * Stops the local server after it identifies itself as this service.
 	 * @returns The stop result from the spawn owner.
 	 */
 	async handler() {

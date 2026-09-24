@@ -8,7 +8,7 @@ export type PresentablePane = Readonly<Pick<PaneRegistration, "paneId" | "focuse
  * brief a voice session opens with, the context a delegated turn or an outcome
  * report runs under.
  *
- * The conversation belongs to the canvas, not to the pane that created it
+ * The conversation belongs to the server, not to the pane that created it
  * (TASK-302.06), so closing that pane must not strand the work. The preferred
  * pane when it is still open, else the pane the person is in, else the first
  * pane in reading order. A browser command never comes here: it runs against
@@ -16,7 +16,7 @@ export type PresentablePane = Readonly<Pick<PaneRegistration, "paneId" | "focuse
  *
  * A recording page's pane (TASK-304) presents the same id as somebody's and
  * is nobody's to read, so it is chosen only when it is all that is open: a
- * recording on a canvas with no browser still opens its session through it.
+ * recording on a server with no browser still opens its session through it.
  * @param preferredPaneId The pane the work names, or null when it names none.
  * @param panesInReadingOrder Every pane on screen, in reading order.
  * @returns The pane.

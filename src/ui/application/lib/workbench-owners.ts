@@ -1,6 +1,6 @@
 // The owners the application composes over one pane's workbench transport:
 // the composer, queue, approvals and thread-link controllers. The
-// conversation is the canvas's (TASK-302.06), so whichever pane the person is
+// conversation is the server's (TASK-302.06), so whichever pane the person is
 // reading speaks for it, with that pane's board as context.
 
 import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/snapshot-cache";

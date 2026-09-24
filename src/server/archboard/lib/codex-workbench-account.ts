@@ -445,7 +445,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		},
 		/**
 		 * Sign out, and drop the queue with the account: the submissions belonged
-		 * to a thread this host can no longer act on.
+		 * to a thread this server can no longer act on.
 		 * @returns The browser outcome.
 		 */
 		logout: async () => {

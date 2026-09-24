@@ -92,10 +92,10 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("browser:remove")).toBeLessThan(events.indexOf("gateway:dispose"));
 	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
 	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
-	expect(events).toContain("dynamic:cancel:host_shutdown");
-	expect(events).toContain("ordinary:settle:host_shutdown");
+	expect(events).toContain("dynamic:cancel:server_shutdown");
+	expect(events).toContain("ordinary:settle:server_shutdown");
 	expect(events.filter((event) => event === "transport:shutdown")).toHaveLength(1);
-	expect(events.indexOf("ordinary:settle:host_shutdown")).toBeLessThan(
+	expect(events.indexOf("ordinary:settle:server_shutdown")).toBeLessThan(
 		events.indexOf("transport:shutdown"),
 	);
 	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
@@ -193,7 +193,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			effectHash: projected.request.effectHash,
 			decidedAtMs: request.expiresAtMs,
 		});
-		owner.settleAll("host_shutdown");
+		owner.settleAll("server_shutdown");
 		jest.advanceTimersByTime(CODEX_APPROVAL_EXPIRY_MS * 2);
 		await Promise.resolve();
 		expect(settlements).toBe(1);

@@ -89,8 +89,8 @@ function mountMutationAdmission(app: Express): void {
 				success: false,
 				code: "CANVAS_STOPPING",
 				error:
-					"The canvas is checking whether it can stop and is not accepting writes. " +
-					"If the canvas remains running, retry after resolving any held board it reports.",
+					"The Archboard server is checking whether it can stop and is not accepting writes. " +
+					"If the server remains running, retry after resolving any held board it reports.",
 			});
 			return;
 		}

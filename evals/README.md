@@ -63,7 +63,7 @@ grader, untouched.
    `PATH` that runs this checkout.
 2. Flask cloned from the bare cache at the scenario's pinned commit, with the
    real origin recorded so the repository identity is `github.com/pallets/flask`.
-3. A canvas of its own on a free port, against the run's vault.
+3. An Archboard server of its own on a free port, against the run's vault.
 4. `archboard install-skill --agent codex --repo <flask> --vault <vault> --yes`.
    For the baseline arm the installed skill is then replaced by the frozen
    package under `docs/design/skill-evals/baseline/archboard` and prepared with
@@ -89,8 +89,8 @@ grader, untouched.
    as failed with the reason; a declared view is never replaced by the
    whole-board picture. The author never supplies a capture, and its own
    SVG or PNG files are not evidence.
-9. The canvas stopped, whatever happened. A failed or cancelled run is still a
-   row with its error; where its canvas was still up, the declared captures
+9. The server stopped, whatever happened. A failed or cancelled run is still a
+   row with its error; where its server was still up, the declared captures
    are taken of the partial state and recorded like any other, and where
    they could not be, they are recorded as not taken. Nothing stands in for
    a picture.

@@ -1,6 +1,6 @@
 // Project the authoritative workbench state into the approvals surface: one
 // card per ordinary and dynamic approval, pending first by expiry, the
-// app-global beacon, the host's reconciliation, and whether this browser
+// app-global beacon, the server's reconciliation, and whether this browser
 // holds any authority at all.
 
 import type {
@@ -114,7 +114,7 @@ function actionSummary(
 	switch (approval.approvalKind) {
 		case "command_execution":
 			return approval.command === null
-				? "Run a command the host did not publish."
+				? "Run a command the Archboard server did not publish."
 				: bounded(`Run ${approval.command}`);
 		case "exec_command":
 			return bounded(`Run ${approval.command.join(" ")}`);
@@ -284,14 +284,14 @@ const RECONCILIATION_LABELS = {
 } as const;
 
 const RECONCILIATION_DETAILS = {
-	delivered: "The host confirmed the workbench delivered this decision.",
-	not_delivered: "The host confirmed nothing was delivered, so nothing was executed.",
+	delivered: "The Archboard server confirmed the workbench delivered this decision.",
+	not_delivered: "The Archboard server confirmed nothing was delivered, so nothing was executed.",
 	outcome_unknown:
-		"The host lost the answer. Archboard never retries an unknown mutation; read the thread before assuming either result.",
+		"The Archboard server lost the answer. Archboard never retries an unknown mutation; read the thread before assuming either result.",
 } as const;
 
 /**
- * The host's authoritative outcome for the last operation.
+ * The server's authoritative outcome for the last operation.
  * @param snapshot The snapshot.
  * @returns The reconciliation, or null when none was published.
  */
@@ -309,7 +309,7 @@ function reconciliation(snapshot: BrowserSnapshot): WorkbenchApprovalsReconcilia
 }
 
 /**
- * Every card, pending first by expiry, then the rest in the host's order.
+ * Every card, pending first by expiry, then the rest in the server's order.
  * @param snapshot The snapshot.
  * @param ordinaryContext The ordinary authority context.
  * @param dynamicContext The dynamic authority context.
@@ -347,7 +347,7 @@ function surfaceAuthorityReason(
 		return connection;
 	}
 	if (context.staleSnapshot) {
-		return "This snapshot is behind the host, so no decision can name the right request.";
+		return "This snapshot is behind the Archboard server, so no decision can name the right request.";
 	}
 	return input.canCommand
 		? null
@@ -356,7 +356,7 @@ function surfaceAuthorityReason(
 
 /**
  * Why the connection removes every authority, if it does.
- * @param noSnapshot Whether the host has published no snapshot.
+ * @param noSnapshot Whether the server has published no snapshot.
  * @param context The ordinary authority context.
  * @returns The reason, or null.
  */
@@ -371,7 +371,7 @@ function connectionAuthorityReason(
 		);
 	}
 	if (context.connection !== "connected") {
-		return context.connectionReason ?? "The browser is not connected to the workbench host.";
+		return context.connectionReason ?? "The browser is not connected to the Archboard server.";
 	}
 	return null;
 }

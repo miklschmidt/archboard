@@ -17,10 +17,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "@/shared/codex-realtime-contract";
-import type {
-	StartOperation,
-	VoicePresentation,
-} from "@/ui/codex-workbench-media/lib/realtime-server";
+import type { StartOperation, VoicePresentation } from "@/ui/codex-workbench-media/lib/realtime";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */
 type BrowserWorkbenchMediaState =
@@ -40,7 +37,7 @@ type BrowserWorkbenchMediaState =
 /** The media boundary accepts the shared transport, never a raw socket. */
 type BrowserWorkbenchMediaSource = BrowserWorkbenchTransport;
 
-/** Owns local realtime media while the workbench transport owns the canvas socket. */
+/** Owns local realtime media while the workbench transport owns the server socket. */
 interface BrowserWorkbenchMediaOwner {
 	readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>;
 	readonly detach: (transport: BrowserWorkbenchTransport) => Promise<void>;
@@ -216,7 +213,7 @@ interface MediaRun {
 	/** Releases this run's subscription to its own realtime media session. */
 	releaseMedia: () => void;
 	media: RealtimeMediaSession | null;
-	host: RealtimeServer | null;
+	server: RealtimeServer | null;
 	handle: BrowserCommandLease["commandId"] | null;
 	startOperation: StartOperation | null;
 	voiceStopRequested: boolean;
@@ -283,9 +280,9 @@ function leaseCorrelation(lease: BrowserCommandLease): RealtimeCorrelation {
 }
 
 /**
- * Whether the host declared voice unavailable under a still-live browser run.
+ * Whether the server declared voice unavailable under a still-live browser run.
  * @param run The run.
- * @returns True when the run should be stopped for the host.
+ * @returns True when the run should be stopped for the server.
  */
 function serverRevokedVoice(run: MediaRun): boolean {
 	const phase = run.media?.getSnapshot().state.phase;

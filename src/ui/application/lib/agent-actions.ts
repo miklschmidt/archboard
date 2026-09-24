@@ -1,4 +1,4 @@
-// Everything a person does from the agent surfaces, over the canvas-wide
+// Everything a person does from the agent surfaces, over the server-wide
 // agent setup, the focused pane's controllers and the voice session. A step
 // that needs a provider's sign-in page opens its tab from the person's own
 // gesture, so the browser lets it through.

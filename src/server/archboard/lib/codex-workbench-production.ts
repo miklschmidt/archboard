@@ -18,14 +18,14 @@ import type {
 } from "@/server/archboard/lib/codex-workbench-server";
 
 /**
- * Create this installation's Codex storage under the canvas state directory,
+ * Create this installation's Codex storage under the server state directory,
  * with a mode nobody else on the machine can read.
  *
- * The Codex home and its database are the machine's, shared by every canvas, so
+ * The Codex home and its database are the machine's, shared by every server, so
  * one sign-in serves them all: Codex takes several processes on one home. What
  * archboard keeps about its own child, the owner lock and the epoch ledger, is
- * the canvas's, under its port (TASK-313). The ledger is read, changed and
- * written by one process, and a second canvas's child would make this one's
+ * the server's, under its port (TASK-313). The ledger is read, changed and
+ * written by one process, and a second server's child would make this one's
  * stale.
  * @returns Where each part of it lives.
  */
@@ -45,14 +45,14 @@ function createWorkbenchStorage(): CodexWorkbenchStorage {
 }
 
 /**
- * Build the one mandatory real production installation used by the canvas
+ * Build the one mandatory real production installation used by the server
  * application: the proven executable, the storage under it, and the bindings
  * and hooks each generation is built from.
- * @param host What the canvas provides the workbench.
+ * @param server What the server provides the workbench.
  * @returns The installation options.
  */
 export function createServerCodexWorkbenchInstallation(
-	host: CodexWorkbenchServer,
+	server: CodexWorkbenchServer,
 ): InstallProductionCodexWorkbenchOptions {
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
@@ -65,9 +65,9 @@ export function createServerCodexWorkbenchInstallation(
 	return {
 		process: {
 			executablePath,
-			checkoutRoot: host.checkoutRoot,
+			checkoutRoot: server.checkoutRoot,
 			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
-			onGroupOwned: host.onCodexProcessGroupOwned,
+			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
 		/**
 		 * Everything one generation is built from.
@@ -76,7 +76,7 @@ export function createServerCodexWorkbenchInstallation(
 		 */
 		bindings: (input) =>
 			createProductionBindings({
-				host,
+				server,
 				storage,
 				waitGraph,
 				input,
@@ -87,7 +87,7 @@ export function createServerCodexWorkbenchInstallation(
 		 * @param input The generation's input.
 		 * @returns Its hooks.
 		 */
-		hooks: (input) => createProductionHooks({ host, input, owners: generations.for(input) }),
+		hooks: (input) => createProductionHooks({ server, input, owners: generations.for(input) }),
 	};
 }
 

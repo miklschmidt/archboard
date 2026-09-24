@@ -84,14 +84,14 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 	};
 }
 
-describe.serial("production canvas Codex WebSocket ownership", () => {
+describe.serial("production server Codex WebSocket ownership", () => {
 	test("a successful replacement retires the prior transport without erasing current authority", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-application-sockets-"));
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault: join(root, "vault"),
 		});
-		const request = createRequester(canvas);
+		const request = createRequester(server);
 		const clientId = "overlapping-codex-pane";
 		let first: ApplicationSocket | null = null;
 		let replacement: ApplicationSocket | null = null;
@@ -108,7 +108,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					})
 				).status,
 			).toBe(200);
-			first = await openApplicationSocket(canvas.base, clientId);
+			first = await openApplicationSocket(server.base, clientId);
 			await request("/api/panes", {
 				method: "POST",
 				doing: false,
@@ -146,7 +146,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			expect(await first.request("claimLease")).toMatchObject({ ok: true });
 
 			const retired = first;
-			replacement = await openApplicationSocket(canvas.base, clientId);
+			replacement = await openApplicationSocket(server.base, clientId);
 			expect(await replacement.request("connect")).toMatchObject({ ok: true });
 			await waitFor(
 				() => (retired.socket.readyState === WebSocket.CLOSED ? true : undefined),
@@ -196,7 +196,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		} finally {
 			await first?.close();
 			await replacement?.close();
-			await canvas.dispose();
+			await server.dispose();
 			rmSync(root, { recursive: true, force: true });
 		}
 	}, 60_000);
@@ -204,7 +204,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 	test("a failed replacement initial send leaves the live original authoritative", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-initial-send-failure-"));
 		const sendLog = join(root, "initial-send.log");
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(
 				repoRoot,
 				"tests/system/server-state/fixtures/initial-send-failure-server.ts",
@@ -212,12 +212,12 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			vault: join(root, "vault"),
 			env: { ARCHBOARD_TEST_INITIAL_SEND_LOG: sendLog },
 		});
-		const request = createRequester(canvas);
+		const request = createRequester(server);
 		const clientId = "failed-initial-send-pane";
 		let original: ApplicationSocket | null = null;
 		let replacement: WebSocket | null = null;
 		try {
-			original = await openApplicationSocket(canvas.base, clientId);
+			original = await openApplicationSocket(server.base, clientId);
 			await request("/api/panes", {
 				method: "POST",
 				doing: false,
@@ -232,7 +232,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			});
 			expect(await original.request("connect")).toMatchObject({ ok: true });
 			replacement = new WebSocket(
-				`${canvas.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}`,
+				`${server.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}`,
 			);
 			replacement.on("error", () => undefined);
 			const replacementClosed = new Promise<void>((resolveClosed) =>
@@ -256,7 +256,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		} finally {
 			await original?.close();
 			replacement?.terminate();
-			await canvas.dispose();
+			await server.dispose();
 			rmSync(root, { recursive: true, force: true });
 		}
 	}, 60_000);

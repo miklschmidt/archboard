@@ -12,16 +12,16 @@ import { runServerCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-groups-"));
-let canvas: OwnedServer;
+let server: OwnedServer;
 
 /**
- * Run one archboard command against the owned canvas.
+ * Run one archboard command against the owned server.
  * @param args The command line.
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 /** Fulfillment across Orders and Shipping; the worker is also Billing's. */
 const ARCHITECTURE = {
@@ -56,11 +56,11 @@ beforeAll(async () => {
 			},
 		}),
 	);
-	canvas = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 

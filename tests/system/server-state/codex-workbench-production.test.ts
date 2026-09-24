@@ -30,9 +30,9 @@ describe.serial("actual production Codex composition", () => {
 		try {
 			const fixture = prepareProductionFixture(resources, executableSource);
 			const { controlPath, executablePath, logPath, root, vault } = fixture;
-			let canvas: Awaited<ReturnType<typeof startOwnedServer>>;
+			let server: Awaited<ReturnType<typeof startOwnedServer>>;
 			try {
-				canvas = await startOwnedServer({
+				server = await startOwnedServer({
 					serverPath,
 					vault,
 					env: {
@@ -45,12 +45,12 @@ describe.serial("actual production Codex composition", () => {
 				});
 			} catch (error) {
 				throw new Error(
-					`Production canvas startup failed.\nControlled app-server log:\n${readFileSync(logPath, "utf8")}`,
+					`Production server startup failed.\nControlled app-server log:\n${readFileSync(logPath, "utf8")}`,
 					{ cause: error },
 				);
 			}
-			resources.defer(() => canvas.dispose());
-			const request = createRequester(canvas);
+			resources.defer(() => server.dispose());
+			const request = createRequester(server);
 			const removedStatus = await request("/api/injection");
 			const unknownStatus = await request("/api/unknown-route-contract");
 			expect(removedStatus.status).toBe(404);
@@ -71,9 +71,9 @@ describe.serial("actual production Codex composition", () => {
 			expect(removedProbe.text.replace("/api/injection/test", "<path>")).toBe(
 				unknownProbe.text.replace("/api/unknown-route-contract", "<path>"),
 			);
-			const first = await openApplicationSocket(canvas.base, "bound-client");
+			const first = await openApplicationSocket(server.base, "bound-client");
 			resources.defer(() => first.close());
-			const focused = await openApplicationSocket(canvas.base, "focused-client");
+			const focused = await openApplicationSocket(server.base, "focused-client");
 			resources.defer(() => focused.close());
 			const boundPane = await request("/api/panes", {
 				method: "POST",
@@ -90,7 +90,7 @@ describe.serial("actual production Codex composition", () => {
 
 			expect(await first.request("connect")).toMatchObject({ ok: true });
 			expect(await first.request("claimLease")).toMatchObject({ ok: true });
-			const current = await openApplicationSocket(canvas.base, "bound-client");
+			const current = await openApplicationSocket(server.base, "bound-client");
 			resources.defer(() => current.close());
 			await first.close();
 			expect(await current.request("connect")).toMatchObject({ ok: true });
@@ -418,7 +418,7 @@ describe.serial("actual production Codex composition", () => {
 				throw new Error("The retired gateway result disappeared.");
 			}
 			expect(retired.error).toContain("unavailable");
-			await canvas.assertRunning();
+			await server.assertRunning();
 		} finally {
 			await resources.disposeAsync();
 		}

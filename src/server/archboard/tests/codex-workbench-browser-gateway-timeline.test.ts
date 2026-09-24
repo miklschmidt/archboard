@@ -62,7 +62,7 @@ function executableLink(
 	};
 }
 
-test("canvas gateway binds exact connection reads and retires it at disconnect", () => {
+test("server gateway binds exact connection reads and retires it at disconnect", () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("gateway-timeline-thread");
 	const link = executableLink(authorities, threadId);

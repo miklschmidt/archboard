@@ -9,14 +9,14 @@ import {
 	presentingPane,
 } from "../codex-workbench-adapters.js";
 
-test("host-started work presents through the bound pane while it is open, another once it is not, and a recording page's only when nothing else is open", () => {
+test("server-started work presents through the bound pane while it is open, another once it is not, and a recording page's only when nothing else is open", () => {
 	const panes = [
 		{ paneId: "pane-left", focused: false },
 		{ paneId: "pane-focused", focused: true },
 		{ paneId: "pane-bound", focused: false },
 	];
 	expect(presentingPane("pane-bound", panes)).toBe(panes[2]!);
-	// The conversation belongs to the canvas: closing the pane that made it
+	// The conversation belongs to the server: closing the pane that made it
 	// moves presentation to the pane the person is in, not to a refusal.
 	expect(presentingPane("pane-gone", panes)).toBe(panes[1]!);
 	expect(presentingPane(null, panes)).toBe(panes[1]!);
@@ -277,7 +277,7 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 			},
 			cas: { revision: 1, paneId, childId, epoch, threadId },
 		}) as const;
-	let canvasRevision = 0;
+	let serverRevision = 0;
 	let releaseStart!: () => void;
 	const startGate = new Promise<void>((resolve) => {
 		releaseStart = resolve;
@@ -290,7 +290,7 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 			start: async ({ paneId }: { readonly paneId: string }) => {
 				starts.push(paneId);
 				await startGate;
-				canvasRevision = 1;
+				serverRevision = 1;
 				return {
 					state: "ready",
 					paneId,
@@ -304,7 +304,7 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 		} as never,
 		threadLink: {
 			read: (paneId: string) =>
-				canvasRevision === 0
+				serverRevision === 0
 					? {
 							paneId,
 							revision: 0,

@@ -438,7 +438,7 @@ function sweepBoardLocks(): void {
 /**
  * Watch the boards a browser has on screen.
  *
- * A lock file cannot call another canvas, so the state is polled. Polling runs
+ * A lock file cannot call another server, so the state is polled. Polling runs
  * only while a browser supplies boards that are actually on screen; with no
  * pane, nobody can be misled.
  * @param boards Which boards are on screen, or null to stop watching.

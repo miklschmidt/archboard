@@ -76,7 +76,7 @@ interface ApplicationPaneProps {
 	reducedMotion: boolean;
 	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
 	step?: SemanticBoardStageProps["driven"];
-	/** The pane is a recording page's, which the canvas leaves out of addressing (TASK-304). */
+	/** The pane is a recording page's, which the server leaves out of addressing (TASK-304). */
 	recording?: boolean;
 	/**
 	 * Hear what this pane is reading, as well as reporting it (a recording, TASK-304).

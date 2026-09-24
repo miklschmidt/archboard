@@ -1,7 +1,7 @@
-// Proving that a failed canvas start left nothing running.
+// Proving that a failed Archboard server start left nothing running.
 //
 // A start that died may have taken Codex process groups with it, or may not
-// have. The canvas is asked first, because only it knows what it owned; if its
+// have. The server is asked first, because only it knows what it owned; if its
 // own account does not arrive, this takes the groups it did report and drives
 // them down itself, one bounded step at a time. Nothing here guesses: an
 // unproven cleanup is said out loud, with the pids to inspect.
@@ -87,8 +87,8 @@ function remaining(now: () => number, deadlineAtMs: number): number {
 }
 
 /**
- * Words for one Codex group that did not go quiet under a frozen canvas.
- * @param serverPid The frozen canvas.
+ * Words for one Codex group that did not go quiet under a frozen server.
+ * @param serverPid The frozen server.
  * @param identity The group.
  * @param state What inspection found, or which operation failed.
  * @returns The reason text.
@@ -99,14 +99,14 @@ function stoppedServerGroup(
 	state: CodexProcessGroupInspection | "inspection_error" | "signalling_error",
 ): string {
 	return (
-		`Canvas pid ${serverPid} remains stopped with Codex group leader pid ${identity.leaderPid}, ` +
+		`Server pid ${serverPid} remains stopped with Codex group leader pid ${identity.leaderPid}, ` +
 		`pgid ${identity.pgid}, starttime ${identity.leaderStartTime} in state ${state}.`
 	);
 }
 
 /**
- * Words for several Codex groups that did not go quiet under a frozen canvas.
- * @param serverPid The frozen canvas.
+ * Words for several Codex groups that did not go quiet under a frozen server.
+ * @param serverPid The frozen server.
  * @param states The groups and what inspection found for each.
  * @returns The reason text.
  */
@@ -118,7 +118,7 @@ function stoppedServerGroups(
 	}[],
 ): string {
 	return (
-		`Canvas pid ${serverPid} remains stopped with non-quiescent Codex groups: ` +
+		`Server pid ${serverPid} remains stopped with non-quiescent Codex groups: ` +
 		states
 			.map(
 				({ identity, status }) =>
@@ -131,10 +131,10 @@ function stoppedServerGroups(
 }
 
 /**
- * Kill the canvas process itself and wait for it to be reaped.
+ * Kill the server process itself and wait for it to be reaped.
  * @param operations The process operations.
  * @param deadlineAtMs The absolute cleanup deadline.
- * @returns True when the canvas exited before the deadline.
+ * @returns True when the server exited before the deadline.
  */
 async function reapOuter(
 	operations: FailedServerCleanupOperations,
@@ -151,12 +151,12 @@ async function reapOuter(
 }
 
 /**
- * Freeze the canvas so it can no longer signal the Codex groups the launcher
+ * Freeze the server so it can no longer signal the Codex groups the launcher
  * is about to take over.
  * @param operations The process operations.
  * @param timing The poll interval.
  * @param deadlineAtMs The absolute cleanup deadline.
- * @returns True once the canvas is exited or stopped.
+ * @returns True once the server is exited or stopped.
  */
 async function freezeServer(
 	operations: FailedServerCleanupOperations,
@@ -200,7 +200,7 @@ class TransferredGroups {
 	/**
 	 * Record the groups and inspect each once.
 	 * @param operations The process operations.
-	 * @param identities The groups the canvas transferred, in order.
+	 * @param identities The groups the server transferred, in order.
 	 */
 	constructor(
 		private readonly operations: FailedServerCleanupOperations,
@@ -311,7 +311,7 @@ async function terminateGroups(
 
 /**
  * The unproven outcome for groups that did not go quiet.
- * @param serverPid The frozen canvas.
+ * @param serverPid The frozen server.
  * @param notQuiescent The groups still live, in transfer order.
  * @returns The unproven result naming the first of them.
  */
@@ -329,12 +329,12 @@ function groupsStillLive(
 }
 
 /**
- * Freeze the canvas and take over shutting down the Codex groups it transferred.
- * @param identities The groups the canvas reported owning, in order.
+ * Freeze the server and take over shutting down the Codex groups it transferred.
+ * @param identities The groups the server reported owning, in order.
  * @param options The cleanup inputs.
  * @param applicationGraceAtMs When the polite phase ends.
  * @param deadlineAtMs The absolute cleanup deadline.
- * @returns Proven when every group is quiescent and the canvas reaped.
+ * @returns Proven when every group is quiescent and the server reaped.
  */
 async function takeCleanupOwnership(
 	identities: readonly ServerStartupProcessGroupIdentity[],
@@ -347,7 +347,7 @@ async function takeCleanupOwnership(
 	if (!(await freezeServer(operations, timing, deadlineAtMs))) {
 		return unproven(
 			latest,
-			`The launcher could not freeze canvas pid ${options.serverPid} before taking Codex group ${latest.pgid}.`,
+			`The launcher could not freeze server pid ${options.serverPid} before taking Codex group ${latest.pgid}.`,
 		);
 	}
 	let groups: TransferredGroups;
@@ -371,7 +371,7 @@ async function takeCleanupOwnership(
 	if (!(await reapOuter(operations, deadlineAtMs))) {
 		return unproven(
 			latest,
-			`The launcher proved every transferred Codex group quiescent but could not prove canvas pid ${options.serverPid} reaped before the cleanup deadline.`,
+			`The launcher proved every transferred Codex group quiescent but could not prove server pid ${options.serverPid} reaped before the cleanup deadline.`,
 		);
 	}
 	return { cleanup: "proven", owner: "launcher", group: latest };
@@ -392,7 +392,7 @@ function sameGroup(
 	);
 }
 
-/** What one protocol event means for the wait on the canvas's own cleanup. */
+/** What one protocol event means for the wait on the server's own cleanup. */
 type ProtocolStep =
 	| { readonly kind: "continue" }
 	| { readonly kind: "proven" }
@@ -403,7 +403,7 @@ const CONTINUE: ProtocolStep = { kind: "continue" };
 /**
  * The reason to stop reading, when the event is not a record this cleanup can
  * act on: the grace ran out, the protocol broke or closed, or the record named
- * some other canvas.
+ * some other server.
  * @param event The event, or null when the grace ran out.
  * @param serverPid The pid the records must name.
  * @returns The stop, or null when the event is a usable record.
@@ -413,25 +413,25 @@ function eventStop(
 	serverPid: number,
 ): ProtocolStep | null {
 	if (event === null) {
-		return { kind: "stop", reason: "The canvas cleanup proof timed out." };
+		return { kind: "stop", reason: "The server cleanup proof timed out." };
 	}
 	if (event.kind === "invalid") {
-		return { kind: "stop", reason: `The canvas cleanup protocol failed: ${event.message}` };
+		return { kind: "stop", reason: `The server cleanup protocol failed: ${event.message}` };
 	}
 	if (event.kind === "closed") {
-		return { kind: "stop", reason: "The canvas cleanup protocol closed before terminal proof." };
+		return { kind: "stop", reason: "The server cleanup protocol closed before terminal proof." };
 	}
 	if (event.record.serverPid !== serverPid) {
 		return {
 			kind: "stop",
-			reason: `The canvas cleanup protocol named pid ${event.record.serverPid} instead of ${serverPid}.`,
+			reason: `The server cleanup protocol named pid ${event.record.serverPid} instead of ${serverPid}.`,
 		};
 	}
 	return null;
 }
 
 /**
- * Interpret one record the canvas wrote about its own cleanup.
+ * Interpret one record the server wrote about its own cleanup.
  * @param record The record.
  * @param groups The groups reported so far; extended in place.
  * @returns Whether to keep waiting, stop with a reason, or accept the proof.
@@ -452,7 +452,7 @@ function recordStep(
 	}
 	return {
 		kind: "stop",
-		reason: record.message ?? "The canvas reported that application cleanup was not proven.",
+		reason: record.message ?? "The server reported that application cleanup was not proven.",
 	};
 }
 
@@ -476,15 +476,15 @@ function protocolStep(
 	// anything reaching here has one.
 	return event?.kind === "record"
 		? recordStep(event.record, groups)
-		: { kind: "stop", reason: "The canvas cleanup protocol closed before terminal proof." };
+		: { kind: "stop", reason: "The server cleanup protocol closed before terminal proof." };
 }
 
 /**
- * Wait for the canvas to prove its own cleanup within the application grace.
+ * Wait for the server to prove its own cleanup within the application grace.
  * @param options The cleanup inputs.
- * @param applicationGraceAtMs When the canvas's turn ends.
+ * @param applicationGraceAtMs When the server's turn ends.
  * @param groups The groups reported so far; extended in place.
- * @returns Proven, or the reason the canvas's proof did not arrive.
+ * @returns Proven, or the reason the server's proof did not arrive.
  */
 async function awaitApplicationProof(
 	options: CompleteFailedServerCleanupOptions,
@@ -500,30 +500,30 @@ async function awaitApplicationProof(
 			return step;
 		}
 	}
-	return { kind: "stop", reason: "The canvas cleanup proof timed out." };
+	return { kind: "stop", reason: "The server cleanup proof timed out." };
 }
 
 /**
- * The reason to report when the canvas neither proved cleanup nor transferred
+ * The reason to report when the server neither proved cleanup nor transferred
  * a group.
- * @param transferReason Why the wait on the canvas's proof stopped.
+ * @param transferReason Why the wait on the server's proof stopped.
  * @returns The reason text.
  */
 function noGroupTransferred(transferReason: string): string {
-	if (transferReason === "The canvas cleanup proof timed out.") {
-		return "The canvas cleanup proof timed out before transferring an exact Codex group identity.";
+	if (transferReason === "The server cleanup proof timed out.") {
+		return "The server cleanup proof timed out before transferring an exact Codex group identity.";
 	}
 	if (transferReason.includes("cleanup")) {
-		return "The canvas reported failed cleanup before transferring an exact Codex group identity.";
+		return "The server reported failed cleanup before transferring an exact Codex group identity.";
 	}
 	return `${transferReason} No exact Codex group identity was transferred.`;
 }
 
 /**
- * The result once the canvas has proved its own cleanup: proven, unless the
+ * The result once the server has proved its own cleanup: proven, unless the
  * process itself is still there, which is a cleanup nobody has finished.
  * @param options The cleanup inputs.
- * @param groups The groups the canvas reported.
+ * @param groups The groups the server reported.
  * @param deadlineAtMs When the whole cleanup must be done.
  * @returns Proven, or the reason the pid outlived its own proof.
  */
@@ -535,7 +535,7 @@ async function afterApplicationProof(
 	if (!(await reapOuter(options.operations, deadlineAtMs))) {
 		return unproven(
 			groups.at(-1) ?? null,
-			`The canvas proved application cleanup but pid ${options.serverPid} did not reap before the cleanup deadline.`,
+			`The server proved application cleanup but pid ${options.serverPid} did not reap before the cleanup deadline.`,
 		);
 	}
 	return { cleanup: "proven", owner: "application", group: groups.at(-1) ?? null };
@@ -544,9 +544,9 @@ async function afterApplicationProof(
 /**
  * Finish one failed public start under one absolute deadline.
  *
- * The canvas owns cleanup until it proves completion or the launcher freezes it.
+ * The server owns cleanup until it proves completion or the launcher freezes it.
  * After SIGSTOP, only the launcher signals the transferred exact Codex group.
- * @param options The canvas pid, its protocol reader, the process operations and the timing.
+ * @param options The server pid, its protocol reader, the process operations and the timing.
  * @returns Whether cleanup was proven, by whom, and which group it concerned.
  */
 async function completeFailedServerCleanup(

@@ -31,7 +31,7 @@ import {
 describe.serial("composed Codex process lifecycle", () => {
 	test("owns exact storage, the closed reverse router, disconnect, and terminal cleanup", async () => {
 		const resources = new AsyncDisposableStack();
-		let canvas: ServerProcess | null = null;
+		let server: ServerProcess | null = null;
 		try {
 			const staging = join(
 				process.env["TMPDIR"] ?? "/tmp",
@@ -42,11 +42,11 @@ describe.serial("composed Codex process lifecycle", () => {
 			resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 			const extendedSource = extendFixture(staging);
 			const fixture = prepareProductionFixture(resources, extendedSource);
-			canvas = await startServer(fixture);
-			const ownedServer = canvas;
+			server = await startServer(fixture);
+			const ownedServer = server;
 			resources.defer(() => ownedServer.dispose());
-			const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
-			let socket = await openApplicationSocket(canvas.base, "lifecycle-client");
+			const request = createRequester({ base: server.base, assertRunning: async () => undefined });
+			let socket = await openApplicationSocket(server.base, "lifecycle-client");
 			resources.defer(() => socket.close());
 			expect(
 				(
@@ -61,7 +61,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				const result = await socket.request("connect");
 				return result.ok ? result : undefined;
 			}, "the replacement workbench connection").catch((error: unknown) => {
-				throw new Error(`Replacement connection failed.\n${canvas!.output()}`, { cause: error });
+				throw new Error(`Replacement connection failed.\n${server!.output()}`, { cause: error });
 			});
 
 			const root = codexWorkbenchRoot(fixture.root);
@@ -174,7 +174,7 @@ describe.serial("composed Codex process lifecycle", () => {
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${id} visual approval`).catch((error: unknown) => {
 					throw new Error(
-						`${id} did not reach approval: ${JSON.stringify(reverseResponses(fixture.logPath, id))}\n${canvas!.output()}`,
+						`${id} did not reach approval: ${JSON.stringify(reverseResponses(fixture.logPath, id))}\n${server!.output()}`,
 						{ cause: error },
 					);
 				});
@@ -337,7 +337,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				operationId: disconnectedDynamic.operationId,
 				summary: "Create thread: This authority must end with the browser.",
 			});
-			socket = await openApplicationSocket(canvas.base, "lifecycle-client");
+			socket = await openApplicationSocket(server.base, "lifecycle-client");
 			expect(
 				(
 					await request("/api/panes", {
@@ -384,8 +384,8 @@ describe.serial("composed Codex process lifecycle", () => {
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			expect(reverseResponses(fixture.logPath, "general-decline")).toHaveLength(1);
 
-			await canvas.dispose("SIGTERM");
-			canvas = null;
+			await server.dispose("SIGTERM");
+			server = null;
 			expect(existsSync(fixture.root)).toBeTrue();
 		} finally {
 			await resources.disposeAsync();

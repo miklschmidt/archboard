@@ -28,8 +28,8 @@ import type {
 
 /**
  * The pane's socket to the Archboard server, as the transport sees it. It is
- * shaped exactly like the canvas module's `PaneSocket` so the canvas can hand
- * its socket over without an adapter; the canvas remains the only owner that
+ * shaped exactly like the pane session's `PaneSocket` so the pane session can hand
+ * its socket over without an adapter; the pane session remains the only owner that
  * opens or closes it.
  */
 interface BrowserWorkbenchSocket extends EventTarget {
@@ -126,7 +126,7 @@ interface BrowserWorkbenchReconnectingState {
 	readonly reason: string;
 }
 
-/** The transport after its socket closed, waiting for the canvas to reattach. */
+/** The transport after its socket closed, waiting for the pane session to reattach. */
 interface BrowserWorkbenchBackoffState {
 	readonly kind: "connection";
 	readonly state: "backoff";
@@ -149,7 +149,7 @@ interface BrowserWorkbenchStaleState {
 	readonly reason: string;
 }
 
-/** The host spoke a contract this browser cannot read; nothing recovers it. */
+/** The server spoke a contract this browser cannot read; nothing recovers it. */
 interface BrowserWorkbenchIncompatibleState {
 	readonly kind: "connection";
 	readonly state: "incompatible_contract";
@@ -159,7 +159,7 @@ interface BrowserWorkbenchIncompatibleState {
 	readonly reason: string;
 }
 
-/** A published snapshot, named by the host's readiness. */
+/** A published snapshot, named by the server's readiness. */
 interface BrowserWorkbenchReadinessState {
 	readonly kind: "readiness";
 	readonly state: BrowserReadiness["state"];

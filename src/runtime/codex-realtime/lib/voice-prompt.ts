@@ -5,7 +5,7 @@
 // 0.155.1 and both visible in every recorded session. The voice model does not write its handoff:
 // a delegation's text is the latest user-side item of the conversation replayed, which is usually
 // what the user last said, in whatever language and however garbled, but can be something the
-// host put to the voice model as the user (once a fragment of a JSON append, and in earlier
+// server put to the voice model as the user (once a fragment of a JSON append, and in earlier
 // narrations an opening request), plus the running transcript, which includes what the voice
 // model just said aloud. When the user said nothing since the last handoff, Codex hands over that
 // transcript alone: the voice model's own words, which the coordinator is told are never the

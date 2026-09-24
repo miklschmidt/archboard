@@ -1,12 +1,12 @@
-// What the voice model is told of a narrated walkthrough, over this canvas's panes (TASK-251).
+// What the voice model is told of a narrated walkthrough, over this Archboard server's panes (TASK-251).
 //
 // The user steps the presentation; the voice explains the step on screen. Pressing Narrate starts
-// voice for one walkthrough, and the host opens its first step in the pane. From then on every
+// voice for one walkthrough, and the server opens its first step in the pane. From then on every
 // step the pane says it is on, the first included, reaches the voice model the same way, and so
 // does leaving. Nothing here chooses a step: the pane is where the talk is.
 //
 // A recording (TASK-304) is started the same way, but its page opens step 1 itself and moves on
-// by itself, so the host opens nothing: every step the recording pane reports, the first
+// by itself, so the server opens nothing: every step the recording pane reports, the first
 // included, reaches the voice model as a step chosen by hand does.
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
@@ -30,7 +30,7 @@ import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-con
 // Which browser's pane each voice session is about, by the pane id the shell and the
 // coordinator name it by.
 //
-// A pane id is not exact. A second browser on the same canvas presents a pane "A" of its own
+// A pane id is not exact. A second browser on the same server presents a pane "A" of its own
 // (on 2026-09-22 the ChatGPT desktop app held one for a day beside Chrome's), and whichever
 // registered first would answer for both: Narrate looked for the walkthrough on the other
 // browser's board and refused. A voice session is started from one browser, whose client id the

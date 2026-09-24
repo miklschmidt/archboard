@@ -1,5 +1,5 @@
 // The pane's thread-link selection. Every classification fact comes from the
-// host record unchanged: this module runs no second classifier, joins no
+// server record unchanged: this module runs no second classifier, joins no
 // list, infers no thread from recency, and loads nothing. It decides only
 // which separate command a row would run and whether that command is offered.
 
@@ -17,7 +17,7 @@ import type {
 import type { WorkbenchTransportCapabilities } from "@/ui/workbench-thread-link/transport-port";
 
 /**
- * The reason codes the host classifier publishes on a listed record. Anything
+ * The reason codes the server classifier publishes on a listed record. Anything
  * outside this vocabulary is shown verbatim rather than translated, so a Codex
  * or classifier change cannot be silently relabelled here.
  */
@@ -70,8 +70,8 @@ interface RowIntent {
 
 /**
  * The words for a classifier reason.
- * @param reason The host's reason code, or none.
- * @param fallback The words when the host named none.
+ * @param reason The server's reason code, or none.
+ * @param fallback The words when the server named none.
  * @returns The label, or the code verbatim when it is not in the vocabulary.
  */
 function threadLinkReasonLabel(reason: string | null | undefined, fallback: string): string {
@@ -120,7 +120,7 @@ function intentOf(currentLink: BrowserThreadLink, threadId: ThreadId): RowIntent
 
 /**
  * The words for a record's controllability.
- * @param value The host's direct-input fact.
+ * @param value The server's direct-input fact.
  * @returns The label.
  */
 function controllabilityLabel(value: boolean | null): string {
@@ -153,13 +153,13 @@ function recordReason(record: ThreadLinkInventoryRecord): string {
 		record.reason,
 		record.state === "executable"
 			? "Classified executable against the current child epoch."
-			: "The host did not name a reason for this classification.",
+			: "The Archboard server did not name a reason for this classification.",
 	);
 }
 
 /**
  * One record as a row.
- * @param record The host's record.
+ * @param record The server's record.
  * @param currentLink The pane's current link.
  * @param capabilities The transport capabilities.
  * @returns The row.
@@ -194,7 +194,7 @@ function projectRow(
 /**
  * The words for a listed inventory.
  * @param count How many rows.
- * @param truncated Whether the host published only the first page.
+ * @param truncated Whether the server published only the first page.
  * @returns The summary.
  */
 function summarize(count: number, truncated: boolean): string {
@@ -236,7 +236,7 @@ function projectThreadLinkSelection(input: SelectionInput): ThreadLinkSelection 
 			recovery,
 		});
 	}
-	// Duplicate rows are impossible on this wire: the host dedupes by thread and
+	// Duplicate rows are impossible on this wire: the server dedupes by thread and
 	// the shared schema rejects a repeated selection outright.
 	const rows = inventory.records.map((record) =>
 		projectRow(record, input.currentLink, input.capabilities),

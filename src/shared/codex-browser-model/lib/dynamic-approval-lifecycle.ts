@@ -94,7 +94,7 @@ const APPROVAL_RELATIONS: Record<DynamicApprovalStateName, readonly ApprovalRela
 		},
 		{
 			decision: "cancelled",
-			cause: "host_shutdown",
+			cause: "server_shutdown",
 			delivery: "none",
 			toolResult: "approval_required",
 			binding: "none",

@@ -35,8 +35,8 @@ class ServerApplicationBusyError extends Error {
 			)
 			.join("; ");
 		super(
-			`Canvas shutdown refused because mutation work did not settle within ${timeoutMs} ms: ${details}. ` +
-				"No resource was torn down; the canvas resumed write admission. Finish or cancel the named work, then retry stop.",
+			`Archboard server shutdown refused because mutation work did not settle within ${timeoutMs} ms: ${details}. ` +
+				"No resource was torn down; the server resumed write admission. Finish or cancel the named work, then retry stop.",
 		);
 		this.name = "ServerApplicationBusyError";
 	}
@@ -51,7 +51,9 @@ class ServerApplicationBusyError extends Error {
  */
 function createServerMutationAdmission(options: ServerMutationAdmissionOptions) {
 	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0) {
-		throw new Error("Canvas mutation drain timeout must be a non-negative finite duration.");
+		throw new Error(
+			"Archboard server mutation drain timeout must be a non-negative finite duration.",
+		);
 	}
 
 	let accepting = true;
@@ -89,9 +91,9 @@ function createServerMutationAdmission(options: ServerMutationAdmissionOptions) 
 
 	return Object.freeze({
 		/**
-		 * Admit one mutation request, unless the canvas has stopped admitting them.
+		 * Admit one mutation request, unless the server has stopped admitting them.
 		 * @param name What the request is.
-		 * @returns Its lease, or null when the canvas is stopping.
+		 * @returns Its lease, or null when the server is stopping.
 		 */
 		admit: (name: string): ServerMutationLease | null => {
 			if (!accepting) {
@@ -179,7 +181,7 @@ function createServerMutationAdmission(options: ServerMutationAdmissionOptions) 
 		},
 		/**
 		 * Whether writes are being admitted.
-		 * @returns True while the canvas accepts them.
+		 * @returns True while the server accepts them.
 		 */
 		accepting: (): boolean => accepting,
 		/**

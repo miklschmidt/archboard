@@ -23,7 +23,7 @@ class CodexDynamicToolsError extends Error {
 }
 
 /**
- * The host could not prove one issued operation identity terminal. It is never
+ * The server could not prove one issued operation identity terminal. It is never
  * retried by the dispatcher; the epoch is quarantined instead.
  */
 class CodexDynamicOperationTerminalizationError extends CodexDynamicToolsError {
@@ -34,7 +34,7 @@ class CodexDynamicOperationTerminalizationError extends CodexDynamicToolsError {
 	/**
 	 * Build a terminalization error for one operation identity.
 	 * @param operationId The identity whose terminal state is unproven.
-	 * @param disposition The disposition the caller asked the host for.
+	 * @param disposition The disposition the caller asked the server for.
 	 * @param message Human-readable explanation.
 	 * @param cause The underlying thrown values, if any.
 	 */

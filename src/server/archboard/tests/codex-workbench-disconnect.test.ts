@@ -7,7 +7,7 @@
 // session bound to it until somebody opened another window and relinked, and no
 // amount of loosening the checks further down could have helped.
 //
-// This is the real production action object, built by the factory the canvas
+// This is the real production action object, built by the factory the server
 // composes, with a controller that records what is asked of it.
 
 import { expect, test } from "bun:test";

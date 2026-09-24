@@ -16,7 +16,7 @@ function formatHostForUrl(host: string): string {
 }
 
 /**
- * The URL this canvas is reachable at.
+ * The URL this server is reachable at.
  * @returns The base URL.
  */
 function serverUrl(): string {
@@ -54,7 +54,7 @@ function canConnect(host: string, port: number): Promise<boolean> {
 
 /**
  * Which loopback address, if any, already has a listener on the port. Both
- * are probed so an IPv4 and an IPv6 canvas cannot split state between them.
+ * are probed so an IPv4 and an IPv6 server cannot split state between them.
  * @param port The port.
  * @returns The listening loopback address, or null.
  */
@@ -92,7 +92,7 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 			`Archboard server cannot bind ${formatHostForUrl(HOST)}:${PORT}: permission denied.`,
 		);
 	} else {
-		logger.error("Canvas HTTP server failed:", error);
+		logger.error("Archboard HTTP server failed:", error);
 	}
 }
 

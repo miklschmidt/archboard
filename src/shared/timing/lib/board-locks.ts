@@ -129,8 +129,8 @@ const CLAIM_MAX_MS = 60 * 60_000;
  * How long a claimed board's lease runs between renewals.
  *
  * Deliberately the same lease as unknown other hold: what makes a claim long is
- * that the canvas keeps renewing it, not that it is written down for longer. A
- * long lease with no renewal would mean a canvas that died mid-claim costs the
+ * that the server keeps renewing it, not that it is written down for longer. A
+ * long lease with no renewal would mean a server that died mid-claim costs the
  * vault the whole claim, which is the failure the lease exists to prevent
  * arriving on a bigger scale.
  *
@@ -143,14 +143,14 @@ const CLAIM_MAX_MS = 60 * 60_000;
 const CLAIM_LEASE_MS = LOCK_LEASE_MS;
 
 /**
- * How often a canvas looks at the lock files of the boards on its screen.
+ * How often a server looks at the lock files of the boards on its screen.
  *
  * The lock is a broadcast as well as a guard, and the broadcast reaches one
- * canvas: taking a board is news the canvas that did it can send, and a second
- * canvas over the same vault has nothing to tell it because a file does not
+ * server: taking a board is news the server that did it can send, and a second
+ * server over the same vault has nothing to tell it because a file does not
  * call anybody. Excluded correctly, told late. ADR 0016 left the poll undone
  * for the per-write hold, where being wrong costs milliseconds, and named the
- * long claim as what makes it worth paying for — a pane on the second canvas
+ * long claim as what makes it worth paying for — a pane on the second server
  * would otherwise let somebody draw into a board an agent has had for minutes.
  *
  * One renewal interval, so a pane learns about a claim about as fast as the

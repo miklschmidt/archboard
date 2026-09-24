@@ -95,7 +95,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 		});
 
 	/**
-	 * One host-discovered thread the pane may bind, projected exactly as the
+	 * One server-discovered thread the pane may bind, projected exactly as the
 	 * thread-link classifier published it. The browser re-derives none of it:
 	 * `state` and `reason` are the classifier's own verdict, and `selectionId`
 	 * is the one-shot handle that names which retained candidate a bind consumes.
@@ -321,7 +321,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 						status: QueueStatusSchema,
 						/**
 						 * The Archboard operation that queued this submission, or null when
-						 * Archboard did not queue it. The host recovers it from the
+						 * Archboard did not queue it. The server recovers it from the
 						 * submission's clientUserMessageId, which the queue port sets to the
 						 * serialized OperationId on every add it makes.
 						 */

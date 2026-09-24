@@ -31,17 +31,17 @@ ln -s /path/to/archboard/bin/archboard ~/.local/bin/archboard
 cd /path/to/project && archboard install-skill --vault /path/to/vault
 ```
 
-Canvas-driving commands auto-start the server; they start no other transport.
+Commands that talk to the server auto-start it; they start no other transport.
 
 ## 4. The Archboard-owned Codex session
 
-Starting the canvas starts one package-local Codex app-server child over
+Starting the Archboard server starts one package-local Codex app-server child over
 stdio. Archboard owns a `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
 `config.toml` (the SQLite root and the permissions every thread runs under) and sign-in below `$XDG_STATE_HOME/archboard/codex-workbench` (or
-`~/.local/state/archboard/codex-workbench`), which every canvas on the machine
-shares; each canvas keeps its owner lock and epoch manifest under
+`~/.local/state/archboard/codex-workbench`), which every Archboard server on the machine
+shares; each server keeps its owner lock and epoch manifest under
 `codex-workbench/canvases/<port>`. Never edit user-global
-Codex configuration for this integration. A canvas has one conversation, one
+Codex configuration for this integration. An Archboard server has one conversation, one
 workhorse that every pane shares, and nobody sets it up: the first message in
 the agent bar, or the first press of Talk, signs in if needed, starts Codex and
 links the workhorse. Voice attaches to a separate persistent coordinator for
@@ -149,6 +149,6 @@ properties in `:root` and `:root[data-theme="dark"]`; keep layout values in
 `app.css`. Unsupported cascade rules and unresolved colors are refused.
 
 `archboard semantic render --theme light|dark` still needs no browser or frontend
-build. Restart the canvas after editing the shared theme; rebuild the frontend
+build. Restart the Archboard server after editing the shared theme; rebuild the frontend
 when serving its production bundle. The existing measured-text browser owner
 also compares the built shell colors with standalone export colors in both themes.

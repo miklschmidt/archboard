@@ -74,7 +74,7 @@ function turnText(facts: CorrelationFacts): string {
  * One sentence naming the queue, its workhorse, and its coordinator.
  * @param state The governing state.
  * @param facts The correlation facts.
- * @param entryCount How many entries the host holds.
+ * @param entryCount How many entries the server holds.
  * @returns The sentence.
  */
 function correlationSummary(
@@ -117,7 +117,7 @@ function snapshotFacts(snapshot: BrowserSnapshot, sequence: number | null): Corr
  * @param state The governing state.
  * @param snapshot The published snapshot, or null.
  * @param sequence The transport sequence, or null.
- * @param entryCount How many entries the host holds.
+ * @param entryCount How many entries the server holds.
  * @returns The correlation.
  */
 function projectCorrelation(

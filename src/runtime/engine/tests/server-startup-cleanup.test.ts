@@ -102,7 +102,7 @@ function fixture(events: readonly (ServerStartupProtocolEvent | null)[]) {
 
 const timing = Object.freeze({ shutdownDeadlineMs: 80, applicationGraceMs: 30, pollMs: 10 });
 
-describe("failed public canvas cleanup", () => {
+describe("failed public server cleanup", () => {
 	test("keeps production readiness and cleanup inside the reviewed boundaries", () => {
 		expect(SERVER_STARTUP_READINESS_MS).toBe(8_000);
 		expect(failedServerCleanupTiming()).toEqual({
@@ -146,7 +146,7 @@ describe("failed public canvas cleanup", () => {
 		closed.destroy();
 	});
 
-	test("accepts application proof before forcing only the outer canvas", async () => {
+	test("accepts application proof before forcing only the outer server", async () => {
 		const run = fixture([ownership(), terminal("proven")]);
 		const result = await completeFailedServerCleanup({
 			serverPid: 31,
@@ -287,7 +287,7 @@ describe("failed public canvas cleanup", () => {
 			owner: "unknown",
 			group,
 			reason:
-				"Canvas pid 31 remains stopped with Codex group leader pid 41, pgid 41, " +
+				"Server pid 31 remains stopped with Codex group leader pid 41, pgid 41, " +
 				"starttime 100 in state signalling_error. injected first-group signalling failure.",
 		});
 		expect(serverSignals).toEqual(["SIGTERM", "SIGSTOP"]);
@@ -333,7 +333,7 @@ describe("failed public canvas cleanup", () => {
 			owner: "unknown",
 			group,
 			reason:
-				"Canvas pid 31 remains stopped with non-quiescent Codex groups: " +
+				"Server pid 31 remains stopped with non-quiescent Codex groups: " +
 				"leader pid 41, pgid 41, starttime 100 in state reused; " +
 				"leader pid 42, pgid 42, starttime 200 in state unproven.",
 		});
@@ -384,7 +384,7 @@ describe("failed public canvas cleanup", () => {
 			expectedError: "injected signalling failure",
 		},
 	] as const) {
-		test(`keeps the stopped canvas after ${terminalCase.name}`, async () => {
+		test(`keeps the stopped server after ${terminalCase.name}`, async () => {
 			const run = fixture([ownership(), terminal("unproven")]);
 			const groupSignals: NodeJS.Signals[] = [];
 			const result = await completeFailedServerCleanup({
@@ -408,7 +408,7 @@ describe("failed public canvas cleanup", () => {
 				owner: "unknown",
 				group,
 				reason:
-					`Canvas pid 31 remains stopped with Codex group leader pid 41, pgid 41, ` +
+					`Server pid 31 remains stopped with Codex group leader pid 41, pgid 41, ` +
 					`starttime 100 in state ${terminalCase.expectedState}.` +
 					(terminalCase.expectedError === null ? "" : ` ${terminalCase.expectedError}.`),
 			});
@@ -432,7 +432,7 @@ describe("failed public canvas cleanup", () => {
 			owner: "unknown",
 			group: null,
 			reason:
-				"The canvas reported failed cleanup before transferring an exact Codex group identity.",
+				"The server reported failed cleanup before transferring an exact Codex group identity.",
 		});
 		expect(run.serverSignals).toEqual(["SIGTERM"]);
 		expect(run.groupSignals).toEqual([]);

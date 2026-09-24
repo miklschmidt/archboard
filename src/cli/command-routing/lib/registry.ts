@@ -61,7 +61,7 @@ function usesPaneOption(command: AnyCommandContract): boolean {
 }
 
 /**
- * Whether the command calls a canvas route that reads or changes browser-session state.
+ * Whether the command calls a server route that reads or changes browser-session state.
  * @param command - The command contract.
  * @returns True when any declared relationship targets a session route.
  */

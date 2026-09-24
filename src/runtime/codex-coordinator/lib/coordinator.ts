@@ -67,7 +67,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 
 	/**
 	 * Ensure the workbench has a coordinator, behind every ensure enqueued before it.
-	 * @param input - The durable candidate and the host operation identity, when supplied.
+	 * @param input - The durable candidate and the server operation identity, when supplied.
 	 * @returns The snapshot the ensure settled as.
 	 */
 	const ensure = (input: CoordinatorEnsureInput = {}): Promise<CoordinatorSnapshot> => {
@@ -82,7 +82,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	/**
 	 * Run one ensure: choose the model, prove the reviewed artifacts and the epoch, then decide
 	 * about whatever coordinator is retained.
-	 * @param input - The durable candidate and the host operation identity, when supplied.
+	 * @param input - The durable candidate and the server operation identity, when supplied.
 	 * @returns The snapshot the ensure settled as.
 	 */
 	async function ensureOne(input: CoordinatorEnsureInput): Promise<CoordinatorSnapshot> {
@@ -118,7 +118,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 				null,
 				configured,
 				candidate,
-				`${decision.reason} A fresh host operation id is required before replacement.`,
+				`${decision.reason} A fresh server operation id is required before replacement.`,
 			);
 		}
 		return starter.start(operationId, selection, configured, reviewed, epochSnapshot);

@@ -4,7 +4,7 @@ import { createRealtimeMediaSession } from "@/ui/codex-realtime";
 import {
 	FakeBrowser,
 	correlation,
-	host,
+	realtimeServer,
 } from "@/ui/codex-realtime/tests/support/media-session-fakes";
 
 /**
@@ -13,18 +13,18 @@ import {
  * @returns The session.
  */
 function session(env: FakeBrowser): ReturnType<typeof createRealtimeMediaSession> {
-	return createRealtimeMediaSession(host(env), { environment: env.environment() });
+	return createRealtimeMediaSession(realtimeServer(env), { environment: env.environment() });
 }
 
 // The mute path is deliberately the smallest possible: the captured local
 // audio track carries a browser-native `enabled` flag, so silencing the
-// microphone sends the realtime host nothing and renegotiates nothing. These
+// microphone sends the realtime server nothing and renegotiates nothing. These
 // owners pin that the flag and the published phase move together, that no
-// host command is issued, that a press arriving in any other phase is inert
+// server command is issued, that a press arriving in any other phase is inert
 // rather than a failure, and that the model output level never follows the
 // microphone.
 describe("realtime media mute", () => {
-	test("disables the captured track, publishes muted, and sends the host nothing", async () => {
+	test("disables the captured track, publishes muted, and sends the server nothing", async () => {
 		const env = new FakeBrowser();
 		const media = session(env);
 		const published: string[] = [];

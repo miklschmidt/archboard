@@ -171,12 +171,12 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * The server accepted, or stopped accepting, this pane's report.
 	 *
 	 * Becoming registered is where a reading is said again, and it has to be:
-	 * the reader keeps a report only while its pane is one the canvas has, so a
+	 * the reader keeps a report only while its pane is one the server has, so a
 	 * report sent between a socket opening and its pane being accepted is
 	 * dropped and never asked for again. This is the first moment there is a
 	 * pane to attach a reading to, and every later acceptance re-arms it, so a
 	 * registration that lapses and comes back recovers without a retry loop.
-	 * @param registered Whether the canvas has this pane.
+	 * @param registered Whether the server has this pane.
 	 */
 	function setRegistered(registered: boolean): void {
 		if (status.registered === registered) {
@@ -337,13 +337,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		openedBefore = true;
 		status.connected = false;
 		// A new socket has not had a pane accepted on it yet, whatever the last
-		// one had: until the canvas answers a report there is no pane to address.
+		// one had: until the server answers a report there is no pane to address.
 		status.registered = false;
 		host.setConnected(false);
 		// The server retires a pane when its socket closes, so a reconnection
 		// re-announces this one even though nothing about it changed.
 		paneReports.forget();
-		// What this pane is reading is said again when the canvas accepts the pane,
+		// What this pane is reading is said again when the server accepts the pane,
 		// not here: until then there is no pane for a report to belong to.
 		publishStatus();
 		schedulePaneReport(false);

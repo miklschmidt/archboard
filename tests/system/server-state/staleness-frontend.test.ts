@@ -52,19 +52,19 @@ describe.serial("frontend staleness", () => {
 
 		const root = mkdtempSync(join(tmpdir(), "archboard-staleness-frontend-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault: join(root, "vault"),
 			env: { XDG_STATE_HOME: join(root, "state"), LOG_FILE_PATH: join(root, "server.log") },
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
-		const health = (await (await fetch(`${canvas.base}/health`)).json()) as {
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
+		const health = (await (await fetch(`${server.base}/health`)).json()) as {
 			frontendBuild: string;
 		};
 		expect(health.frontendBuild).toBe(expectedBuild);
 
-		const pane = await openPaneSession(canvas.base, request, {
+		const pane = await openPaneSession(server.base, request, {
 			clientId: "stale-frontend-pane",
 			primary: true,
 			focused: true,

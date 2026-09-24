@@ -6,7 +6,7 @@ import {
 import { createCheckoutWorkOwner } from "@/server/archboard/lib/checkout-work";
 import type { Request } from "express";
 
-/** Admits mutation requests while the canvas is running and drains them when it stops. */
+/** Admits mutation requests while the server is running and drains them when it stops. */
 const mutationAdmission = createServerMutationAdmission({
 	drainTimeoutMs: SERVER_MUTATION_DRAIN_TIMEOUT_MS,
 });

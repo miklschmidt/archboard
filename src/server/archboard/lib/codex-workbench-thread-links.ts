@@ -159,7 +159,7 @@ function expectedBrowserLink(context: BrowserActionContext) {
 
 /**
  * Refuse a command whose pane no longer sees the link it named: another pane
- * changed the canvas's one link while this command waited its turn.
+ * changed the server's one link while this command waited its turn.
  * @param threadLink What reads the link.
  * @param context The pane and the link it named.
  */
@@ -171,7 +171,9 @@ function assertBrowserLinkStands(
 	const expected = expectedBrowserLink(context);
 	const fields = ["revision", "childId", "epoch", "threadId"] as const;
 	if (fields.some((field) => cas[field] !== expected[field])) {
-		throw new Error("The canvas thread link changed while this command waited; read it again.");
+		throw new Error(
+			"The Archboard server's thread link changed while this command waited; read it again.",
+		);
 	}
 }
 
@@ -331,7 +333,7 @@ function createServerThreadLinkActions(
 	>();
 	let linkChanges: Promise<unknown> = Promise.resolve();
 	/**
-	 * Run one link change after every earlier one has settled. The canvas has one
+	 * Run one link change after every earlier one has settled. The server has one
 	 * link whichever pane asks, so a create that lost a race must be refused
 	 * before thread/start: past it, the loser's failed compare-and-swap would
 	 * leave the workhorse failed under the link the winner made.
@@ -513,7 +515,7 @@ function createServerThreadLinkActions(
 	};
 	return Object.freeze({
 		/**
-		 * Start a new workhorse thread and make it the canvas's link.
+		 * Start a new workhorse thread and make it the server's link.
 		 * @param _command The creation, which names nothing to choose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
@@ -549,14 +551,14 @@ function createServerThreadLinkActions(
 			return { outcome: "delivered" };
 		},
 		/**
-		 * Make a thread that already exists the canvas's link.
+		 * Make a thread that already exists the server's link.
 		 * @param command What the browser chose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
 		 */
 		attach: (command, context) => serializeLinkChange(() => adoptCandidate(command, context)),
 		/**
-		 * Move the canvas's link to another existing thread.
+		 * Move the server's link to another existing thread.
 		 * @param command What the browser chose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.

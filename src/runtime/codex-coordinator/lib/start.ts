@@ -149,7 +149,7 @@ function createCoordinatorStarter(
 
 	/**
 	 * Start one coordinator thread end to end.
-	 * @param operationId - The host operation identity the start runs under.
+	 * @param operationId - The server operation identity the start runs under.
 	 * @param selection - The chosen model and service tier.
 	 * @param configured - The settings the coordinator is asked for.
 	 * @param reviewed - The reviewed instruction and manifest hashes.
@@ -293,7 +293,7 @@ function createCoordinatorStarter(
 	 * session says was never delivered is rolled back and can be retried; anything else leaves a
 	 * thread that may exist, so the snapshot becomes inspect-only and nothing is retried.
 	 * @param transaction - The staged transaction.
-	 * @param operationId - The host operation identity.
+	 * @param operationId - The server operation identity.
 	 * @param selection - The chosen model and service tier.
 	 * @param configured - The settings the coordinator is asked for.
 	 * @param startParams - The authored thread/start body.
@@ -344,7 +344,7 @@ function createCoordinatorStarter(
 	 * Settle a thread/start that threw: rolled back when the session proves it was never sent, and
 	 * inspect-only otherwise, because a thread may exist that nothing has proven.
 	 * @param transaction - The staged transaction.
-	 * @param operationId - The host operation identity.
+	 * @param operationId - The server operation identity.
 	 * @param configured - The settings the coordinator is asked for.
 	 * @param error - What the session threw.
 	 * @returns The snapshot the start settled as.
@@ -380,7 +380,7 @@ function createCoordinatorStarter(
 	/**
 	 * Stage the durable start operation, so a thread is never created without a record of the
 	 * attempt.
-	 * @param operationId - The host operation identity.
+	 * @param operationId - The server operation identity.
 	 * @param configured - The settings the coordinator is asked for.
 	 * @param reviewed - The reviewed hashes.
 	 * @param epochSnapshot - The epoch the operation is staged against.

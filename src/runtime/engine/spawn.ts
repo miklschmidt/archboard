@@ -115,7 +115,7 @@ function refuseDisabledAutoStart(): void {
 /**
  * Refuse a start the machine could not carry out.
  *
- * The canvas refuses to start without a vault (ADR 0015), and it is spawned
+ * The Archboard server refuses to start without a vault (ADR 0015), and it is spawned
  * detached with its stdio thrown away, so its refusal would land nowhere and
  * the caller would wait eight seconds to be told the server "did not become
  * healthy". Ask the same questions here, where somebody is reading.
@@ -124,7 +124,7 @@ function refuseDisabledAutoStart(): void {
  */
 function refuseUnstartableServer(): void {
 	if (!isLoopbackUrl()) {
-		throw unreachableError("refusing to auto-start a non-loopback canvas URL");
+		throw unreachableError("refusing to auto-start a non-loopback server URL");
 	}
 	if (!ARCHBOARD_VAULT) {
 		throw codedError(noVaultMessage(), "CANVAS_UNREACHABLE");
@@ -144,7 +144,7 @@ function refuseUnstartableServer(): void {
  * Refuse an auto-start that the configuration or the environment rules out,
  * before any process is spawned.
  * @param force True for the explicit `start` command, which overrides the opt-outs.
- * @throws {Error} When this canvas may not, or could not, be started.
+ * @throws {Error} When this server may not, or could not, be started.
  */
 function refuseUnlessAutoStartAllowed(force: boolean): void {
 	if (!force) {
@@ -289,7 +289,7 @@ async function cleanupFailedStart(spawned: SpawnedServer, failure: Error): Promi
 	}).catch((error: unknown) => {
 		protocol.destroy();
 		throw startupRefusal(
-			`${failure.message} The bounded cleanup state machine failed for exact canvas pid ${String(pid)}: ${errorMessage(error)}. Inspect that attempt before retrying.`,
+			`${failure.message} The bounded cleanup state machine failed for exact server pid ${String(pid)}: ${errorMessage(error)}. Inspect that attempt before retrying.`,
 		);
 	});
 	protocol.destroy();
@@ -298,7 +298,7 @@ async function cleanupFailedStart(spawned: SpawnedServer, failure: Error): Promi
 	}
 	if (cleanup.cleanup !== "proven") {
 		throw startupRefusal(
-			`${failure.message} ${cleanup.reason} Inspect canvas pid ${String(pid)}${cleanup.group === null ? "" : ` and Codex group ${cleanup.group.pgid}`} before retrying.`,
+			`${failure.message} ${cleanup.reason} Inspect server pid ${String(pid)}${cleanup.group === null ? "" : ` and Codex group ${cleanup.group.pgid}`} before retrying.`,
 		);
 	}
 	const terminalMessage = protocol.terminalMessage();
@@ -314,7 +314,7 @@ interface DeferredFailure {
  * What a server's exit before readiness amounts to.
  *
  * A concurrent owner's refusal is deferred rather than returned, so the wait
- * continues against the canvas that won.
+ * continues against the server that won.
  * @param spawned The spawned server.
  * @param deferred Where a concurrent-owner refusal is kept for the deadline.
  * @returns The failure to act on now, or null to keep waiting.
@@ -355,7 +355,7 @@ function startFailureOf(spawned: SpawnedServer, deferred: DeferredFailure): Erro
  * whatever stopped it.
  * @param spawned The spawned server.
  * @param timeoutMs How long readiness may take.
- * @returns The canvas URL once it answers as itself.
+ * @returns The server URL once it answers as itself.
  */
 async function awaitServerReadiness(
 	spawned: SpawnedServer,
@@ -401,8 +401,8 @@ async function awaitServerReadiness(
  * the losing process exit, and every caller here only proceeds once /health
  * answers.
  * @param options How long readiness may take, and whether this is an explicit start.
- * @returns The canvas URL and whether this call started the server.
- * @throws {Error} When another service holds the port, or the canvas may not
+ * @returns The server URL and whether this call started the server.
+ * @throws {Error} When another service holds the port, or the server may not
  * be started.
  */
 async function ensureServerRunning(options: EnsureOptions = {}): Promise<EnsureResult> {
@@ -432,7 +432,7 @@ interface StopResult {
 /**
  * What `stop` answers when nothing is listening: a stale pidfile is cleaned
  * up, never signalled.
- * @param port The canvas port.
+ * @param port The server port.
  * @param filePid The pid the pidfile recorded, if any.
  * @returns The stop result for an absent server.
  */
@@ -453,7 +453,7 @@ function absentServerResult(port: number, filePid: number | null): StopResult {
  * identity marker and a sane positive value: pid 0 or a negative value would
  * make process.kill signal our own process group.
  * @param health The responder's health payload.
- * @returns The pid to signal, or null when the responder is not this canvas.
+ * @returns The pid to signal, or null when the responder is not this server.
  */
 function verifiedServerPid(health: HealthStatus): number | null {
 	const pid = health.pid;
@@ -463,8 +463,8 @@ function verifiedServerPid(health: HealthStatus): number | null {
 }
 
 /**
- * Wait for a signalled canvas to stop answering, refusing if it starts holding work.
- * @param port The canvas port, whose pidfile is removed on success.
+ * Wait for a signalled server to stop answering, refusing if it starts holding work.
+ * @param port The server port, whose pidfile is removed on success.
  * @param pid The pid that was signalled.
  * @returns The stop result once `/health` stops answering.
  */
@@ -486,7 +486,7 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 /**
  * Stop the Archboard server. Identity-safe: we only ever signal the pid that a
  * live /health responder reports about ITSELF, and only when it identifies
- * as this canvas service. A stale pidfile is cleaned up, never killed —
+ * as this Archboard server. A stale pidfile is cleaned up, never killed —
  * recycled pids and unrelated apps squatting on the port are safe.
  * @returns Whether a server was stopped, and which.
  */

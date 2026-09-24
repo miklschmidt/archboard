@@ -85,7 +85,7 @@ interface SemanticPaneInput {
 	readonly focused: boolean;
 	/**
 	 * What the user changed by hand to bring this about. Absent means nothing, which is what
-	 * a change an agent or the canvas caused says, and what nobody is told about.
+	 * a change an agent or the server caused says, and what nobody is told about.
 	 */
 	readonly userChanged?: readonly SemanticUserChange[];
 }

@@ -42,7 +42,7 @@ const CODEX_WORKBENCH_OWNER = "archboard-server-codex-workbench" as const;
 /** Where the workbench owner is in its life. */
 type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
 
-/** Why a generation is stopping: the canvas is going, or its child went. */
+/** Why a generation is stopping: the server is going, or its child went. */
 type CodexWorkbenchStopReason = "shutdown" | "child_exit";
 
 /** What the transport reports when the Codex child exits. */
@@ -103,11 +103,11 @@ interface CodexWorkbenchGenerationHooks {
 	readonly retireDynamicLifecycle: (child: ChildId, epoch: ChildEpoch) => Promise<void> | void;
 	readonly cancelDynamicApprovalsAndWaits: (
 		components: CodexWorkbenchComponents,
-		cause: "host_shutdown" | "child_disconnected",
+		cause: "server_shutdown" | "child_disconnected",
 	) => Promise<void>;
 	readonly settleOrdinaryRequests: (
 		approvals: CodexApprovalBroker,
-		cause: "host_shutdown" | "child_disconnected",
+		cause: "server_shutdown" | "child_disconnected",
 	) => Promise<void>;
 }
 

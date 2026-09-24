@@ -5,7 +5,7 @@
 // pure inspection the browser runs over the same document, so a command line
 // and a pane looking at one variant say the same thing about one group. It
 // reads the whole variant before any view narrows it, and it needs no browser:
-// the canvas holds the board and the policy, and that is all it asks for.
+// the server holds the board and the policy, and that is all it asks for.
 
 import { z } from "zod";
 import {

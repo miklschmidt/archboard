@@ -53,7 +53,7 @@ interface RecordedViews {
 }
 
 /**
- * What a recording gives its pane, kept in step with the canvas's agent and voice. A recording is
+ * What a recording gives its pane, kept in step with the server's agent and voice. A recording is
  * not narrated by hand; its subtitles are the page's own.
  * @param recorder The page's recorder, or null.
  * @param workbench The workbench host.

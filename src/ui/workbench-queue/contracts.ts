@@ -16,7 +16,7 @@ import type {
  * Five are queue commands the gateway publishes. `list` is not: the closed
  * browser contract has no `queueList` command. Serving a snapshot request
  * re-reads the authoritative queue for the link this pane is on, so a refresh
- * is a genuine read of the host's list rather than a redraw of the last
+ * is a genuine read of the server's list rather than a redraw of the last
  * command's result.
  */
 const WORKBENCH_QUEUE_CONTROLS = ["add", "list", "edit", "cancel", "reorder", "start"] as const;
@@ -87,7 +87,7 @@ interface WorkbenchQueueCorrelation {
 
 type WorkbenchQueueOwnership = "coordinator" | "foreign";
 
-/** One entry as the host holds it, with what this pane may do to it. */
+/** One entry as the server holds it, with what this pane may do to it. */
 interface WorkbenchQueueEntryView {
 	readonly submissionId: WorkbenchQueueSubmissionId;
 	readonly prompt: string;
@@ -116,9 +116,9 @@ interface WorkbenchQueuePending {
 }
 
 /**
- * Authoritative reconciliation only. `reconciled` means the host answered
+ * Authoritative reconciliation only. `reconciled` means the server answered
  * `delivered` and republished the queue; nothing here reports a terminal or
- * reordered state the host has not confirmed.
+ * reordered state the server has not confirmed.
  */
 type WorkbenchQueueSettlementState = "reconciled" | "refused" | "outcome_unknown";
 

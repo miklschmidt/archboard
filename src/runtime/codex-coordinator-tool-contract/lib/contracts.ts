@@ -81,15 +81,15 @@ const CoordinatorIdentitySchema = z
 	.strict();
 
 type AuthorityTarget =
-	| "host_bound_workhorse"
-	| "host_created_workhorse_queue"
-	| "host_proven_workhorse_turn"
-	| "host_validated_spoken_approval";
+	| "server_bound_workhorse"
+	| "server_created_workhorse_queue"
+	| "server_proven_workhorse_turn"
+	| "server_validated_spoken_approval";
 const AuthorityTargetSchema = z.enum([
-	"host_bound_workhorse",
-	"host_created_workhorse_queue",
-	"host_proven_workhorse_turn",
-	"host_validated_spoken_approval",
+	"server_bound_workhorse",
+	"server_created_workhorse_queue",
+	"server_proven_workhorse_turn",
+	"server_validated_spoken_approval",
 ]);
 
 type RequiredLink =
@@ -224,8 +224,8 @@ const VOICE_REFUSALS = [
 ] as const satisfies readonly DynamicToolRefusalReason[];
 
 /**
- * Joins one reviewed manifest tool with the host-side authority facts the catalogue adds:
- * which host object it acts on, the links a call must carry, and how it may be refused.
+ * Joins one reviewed manifest tool with the server-side authority facts the catalogue adds:
+ * which server object it acts on, the links a call must carry, and how it may be refused.
  * @param namespace - The namespace that declares the tool.
  * @param toolName - The tool being described.
  * @param metadata - The authority target, required links, success shape and refusal reasons.
@@ -251,25 +251,25 @@ function contract(
 
 const ARCHBOARD_WORKHORSE_TOOL_CONTRACTS = deepFreeze([
 	contract("archboard_workhorse", "inspect_workhorse", {
-		authorityTarget: "host_bound_workhorse",
+		authorityTarget: "server_bound_workhorse",
 		requiredLinks: [...WORKHORSE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.inspect_workhorse },
 		refusalErrors: [...INSPECT_REFUSALS],
 	}),
 	contract("archboard_workhorse", "delegate_to_workhorse", {
-		authorityTarget: "host_bound_workhorse",
+		authorityTarget: "server_bound_workhorse",
 		requiredLinks: [...WORKHORSE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.delegate_to_workhorse },
 		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
 	}),
 	contract("archboard_workhorse", "manage_workhorse_queue", {
-		authorityTarget: "host_created_workhorse_queue",
+		authorityTarget: "server_created_workhorse_queue",
 		requiredLinks: [...QUEUE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.manage_workhorse_queue },
 		refusalErrors: [...QUEUE_REFUSALS],
 	}),
 	contract("archboard_workhorse", "steer_workhorse", {
-		authorityTarget: "host_proven_workhorse_turn",
+		authorityTarget: "server_proven_workhorse_turn",
 		requiredLinks: [...STEER_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.steer_workhorse },
 		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
@@ -278,7 +278,7 @@ const ARCHBOARD_WORKHORSE_TOOL_CONTRACTS = deepFreeze([
 
 const ARCHBOARD_VOICE_TOOL_CONTRACTS = deepFreeze([
 	contract("archboard_voice", "resolve_spoken_approval", {
-		authorityTarget: "host_validated_spoken_approval",
+		authorityTarget: "server_validated_spoken_approval",
 		requiredLinks: [...VOICE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.resolve_spoken_approval },
 		refusalErrors: [...VOICE_REFUSALS],

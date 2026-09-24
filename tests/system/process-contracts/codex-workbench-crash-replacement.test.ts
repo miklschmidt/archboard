@@ -62,15 +62,15 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 	let replacement: ProcessIdentity | null = null;
 	try {
 		const fixture = prepareProductionFixture(resources, replacementCensusSource(resources));
-		const canvas = await startServer(fixture);
+		const server = await startServer(fixture);
 		resources.defer(async () => {
-			await canvas.dispose();
+			await server.dispose();
 		});
-		const socket = await openApplicationSocket(canvas.base, "crash-replacement-client");
+		const socket = await openApplicationSocket(server.base, "crash-replacement-client");
 		resources.defer(async () => {
 			await socket.close();
 		});
-		const registered = await fetch(new URL("/api/panes", canvas.base), {
+		const registered = await fetch(new URL("/api/panes", server.base), {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(pane("crash-replacement-client")),
@@ -157,7 +157,7 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 			return result.ok ? result : undefined;
 		}, "replacement dispatch readiness");
 
-		await canvas.normalClose();
+		await server.normalClose();
 		expect(exactProcessExists(replacement)).toBeFalse();
 		expect(processGroupMembers(replacement.group)).toEqual([]);
 	} finally {

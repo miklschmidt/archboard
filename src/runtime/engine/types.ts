@@ -1,4 +1,4 @@
-// What the canvas sends a pane over its socket, and what a caller gets back
+// What the Archboard server sends a pane over its socket, and what a caller gets back
 // from an HTTP route.
 //
 // Every board message carries the board it is about. A tab can have two panes
@@ -16,7 +16,7 @@ interface ApiResponse<T = unknown> {
 	message?: string;
 }
 
-/** What the canvas says to a pane. */
+/** What the server says to a pane. */
 interface WebSocketMessage {
 	type: WebSocketMessageType;
 	/** The board it is about; null when the news is that there is no board. */
@@ -48,7 +48,7 @@ type WebSocketMessageType =
 	// A board could not be read or drawn. The pane shows this through the
 	// shell's board-error notice.
 	| "board_error"
-	// Which boards an agent is working on, across this whole canvas (ADR 0022).
+	// Which boards an agent is working on, across this whole server (ADR 0022).
 	// Boardless on purpose: it is one thing behind every board, and the
 	// navigator marks each one it names.
 	| "agent_activity"

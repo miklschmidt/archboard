@@ -8,7 +8,7 @@ import { startOwnedServer } from "../support/owned-server.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
-// A vault can be open in more than one canvas, and one board file can be
+// A vault can be open in more than one Archboard server, and one board file can be
 // replaced by something that is not this process (ADR 0015: the file is the
 // board). The lease says who may write; it says nothing about who has been
 // told. Without this, a pane goes on showing a board that was replaced under it
@@ -78,13 +78,13 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	const root = mkdtempSync(join(tmpdir(), "archboard-external-write-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
-	resources.defer(() => canvas.dispose());
-	const request = createRequester(canvas);
+	resources.defer(() => server.dispose());
+	const request = createRequester(server);
 
 	const created = await request<{ version: number }>("/api/semantic-boards/create", {
 		method: "POST",
@@ -96,7 +96,7 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	});
 	expect(created.status).toBe(200);
 
-	const pane = await openPaneSession(canvas.base, request, {
+	const pane = await openPaneSession(server.base, request, {
 		clientId: "external-write-pane",
 		board: "payments",
 		primary: true,
@@ -128,7 +128,7 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	replaceBoard(file, board as unknown as Record<string, unknown>);
 
 	// The pane is told, in the same words a write in this process uses, so it
-	// cannot tell which canvas wrote the board and does not need to.
+	// cannot tell which server wrote the board and does not need to.
 	const told = await waitFor(
 		() => pane.events.slice(start).find((event: PaneEvent) => event.type === "board_note"),
 		"the pane to hear that its board changed under it",
@@ -136,14 +136,14 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	);
 	expect(told).toMatchObject({ type: "board_note", board: "payments" });
 
-	// And what the canvas answers is the board that is on disk now: the picture
+	// And what the server answers is the board that is on disk now: the picture
 	// the pane asks for next is of the replacement, not of what it had.
 	const read = await request<{ board: { variants: Array<{ content: { nodes: unknown[] } }> } }>(
 		"/api/semantic-boards/board?board=payments",
 	);
 	expect(read.body.board.variants[0]?.content.nodes).toHaveLength(2);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);
 
 test("a second pane arriving does not swallow the news for the pane already there", async () => {
@@ -155,14 +155,14 @@ test("a second pane arriving does not swallow the news for the pane already ther
 	const file = join(vault, "payments.semantic.json");
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
-	resources.defer(() => canvas.dispose());
-	const request = createRequester(canvas);
-	const first = await openPaneSession(canvas.base, request, {
+	resources.defer(() => server.dispose());
+	const request = createRequester(server);
+	const first = await openPaneSession(server.base, request, {
 		clientId: "arrival-first-pane",
 		board: "payments",
 		primary: true,
@@ -179,7 +179,7 @@ test("a second pane arriving does not swallow the news for the pane already ther
 	// with it, and the pane that was already reading the old bytes would never
 	// be told — for as long as it stayed open.
 	replaceBoard(file, boardDocument([node("Gateway"), node("Ledger")]));
-	const second = await openPaneSession(canvas.base, request, {
+	const second = await openPaneSession(server.base, request, {
 		clientId: "arrival-second-pane",
 		board: "payments",
 		x: 960,
@@ -192,7 +192,7 @@ test("a second pane arriving does not swallow the news for the pane already ther
 		{ timeoutMs: 15_000 },
 	);
 	expect(told).toMatchObject({ type: "board_note", board: "payments" });
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);
 
 test("a board that was already in the vault is watched from the moment it is shown", async () => {
@@ -202,20 +202,20 @@ test("a board that was already in the vault is watched from the moment it is sho
 	const vault = join(root, "vault");
 	mkdirSync(vault, { recursive: true });
 
-	// Written before the canvas starts, the way a vault that has been used
+	// Written before the server starts, the way a vault that has been used
 	// before arrives: nothing in this process ever wrote it, so nothing in this
 	// process has a fingerprint for it either.
 	const file = join(vault, "payments.semantic.json");
 	writeFileSync(file, `${JSON.stringify(boardDocument([node("Gateway")]), null, "\t")}\n`);
 
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
-	resources.defer(() => canvas.dispose());
-	const request = createRequester(canvas);
-	const pane = await openPaneSession(canvas.base, request, {
+	resources.defer(() => server.dispose());
+	const request = createRequester(server);
+	const pane = await openPaneSession(server.base, request, {
 		clientId: "existing-board-pane",
 		board: "payments",
 		primary: true,
@@ -237,5 +237,5 @@ test("a board that was already in the vault is watched from the moment it is sho
 		{ timeoutMs: 15_000 },
 	);
 	expect(told).toMatchObject({ type: "board_note", board: "payments" });
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);

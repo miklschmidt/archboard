@@ -172,7 +172,7 @@ function createProductionCodexWorkbenchFactories(
 				...(adoptedSession === null ? {} : { adoptedReadiness: adoptedSession }),
 			}),
 		/**
-		 * The link binding the canvas to the one workhorse thread every pane
+		 * The link binding the server to the one workhorse thread every pane
 		 * speaks to, whichever pane asks.
 		 * @param created What the graph has built so far.
 		 * @returns The link.

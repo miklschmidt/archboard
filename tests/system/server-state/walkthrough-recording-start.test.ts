@@ -39,7 +39,7 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath,
 			vault: fixture.vault,
 			env: {
@@ -49,9 +49,9 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 				XDG_STATE_HOME: join(fixture.root, "state"),
 			},
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
-		const socket = await openApplicationSocket(canvas.base, CLIENT);
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
+		const socket = await openApplicationSocket(server.base, CLIENT);
 		resources.defer(() => socket.close());
 		const paneMessages: string[] = [];
 		socket.socket.on("message", (raw) => {

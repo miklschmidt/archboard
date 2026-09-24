@@ -1,6 +1,6 @@
 // What a `catch` clause holds is `unknown`, and the runtime modules mostly want
 // one of two things from it: the message to put in front of a person, or the
-// `code` a system call or a canvas refusal attached. Narrowing lives here so
+// `code` a system call or a server refusal attached. Narrowing lives here so
 // the reading sites stay honest about what they know.
 
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";

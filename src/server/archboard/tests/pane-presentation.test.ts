@@ -96,7 +96,7 @@ describe("a walkthrough step asked of a pane", () => {
 		expect(changes.map((change) => change.presentation?.beat ?? null)).toEqual([0, 1, null]);
 	});
 
-	test("is refused for a pane that has gone, when replaced by a later request, and when the canvas stops", async () => {
+	test("is refused for a pane that has gone, when replaced by a later request, and when the server stops", async () => {
 		expect(
 			await harness(false).port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 }),
 		).toEqual({ kind: "refused", reason: "no_pane" });

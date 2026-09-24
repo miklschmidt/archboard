@@ -20,10 +20,10 @@ function sameJson(left: unknown, right: unknown): boolean {
 }
 
 /**
- * Whether the host's current link is the same binding, at the same revision, naming the same
+ * Whether the server's current link is the same binding, at the same revision, naming the same
  * thread, child and epoch, with the same target as the one captured with the callback. The
  * thread's observed status is not compared: it is not what the link is.
- * @param left - The host's current link, or null when there is none.
+ * @param left - The server's current link, or null when there is none.
  * @param right - The link captured with the callback.
  * @returns True when the two describe the same binding.
  */
@@ -137,7 +137,7 @@ function classificationAccepted(callback: CoordinatorCallback, live: LiveClassif
  * workhorse link: the child exited, turned over, or the coordinator thread is no longer the one
  * the callback belongs to.
  * @param correlation - The callback's correlation.
- * @param options - The host authorities.
+ * @param options - The server authorities.
  * @returns The refusal reason, or null when the child and coordinator still hold.
  */
 function childAuthorityReason(
@@ -161,7 +161,7 @@ function childAuthorityReason(
  * Why the coordinator no longer authorizes delivery: there is none, or it is not the same
  * coordinator thread on the same child and epoch the callback belongs to.
  * @param correlation - The callback's correlation.
- * @param options - The host authorities.
+ * @param options - The server authorities.
  * @returns The refusal reason, or null when the coordinator still holds.
  */
 function coordinatorAuthorityReason(
@@ -181,10 +181,10 @@ function coordinatorAuthorityReason(
 }
 
 /**
- * Why the workhorse link no longer authorizes delivery: the host's current link has moved on, or
+ * Why the workhorse link no longer authorizes delivery: the server's current link has moved on, or
  * the captured link is not an executable link on the callback's own thread.
  * @param correlation - The callback's correlation.
- * @param options - The host authorities.
+ * @param options - The server authorities.
  * @returns The refusal reason, or null when the link still holds.
  */
 function linkAuthorityReason(
@@ -209,7 +209,7 @@ function linkAuthorityReason(
  * Why the voice session no longer authorizes delivery: the generation turned over, or a semantic
  * callback names a voice session other than the one the generation is speaking through.
  * @param callback - The normalized callback.
- * @param options - The host authorities.
+ * @param options - The server authorities.
  * @returns The refusal reason, or null when the voice generation still holds.
  */
 function voiceAuthorityReason(
@@ -233,10 +233,10 @@ function voiceAuthorityReason(
 }
 
 /**
- * Why the host no longer authorizes delivering this callback, checked in the order the authority
+ * Why the server no longer authorizes delivering this callback, checked in the order the authority
  * is layered: child, then coordinator, then workhorse link, then voice generation.
  * @param callback - The normalized callback.
- * @param options - The host authorities.
+ * @param options - The server authorities.
  * @returns The refusal reason, or null when every authority still holds.
  */
 function finalAuthorityReason(
@@ -253,7 +253,7 @@ function finalAuthorityReason(
 /**
  * Why an attempt that has already happened can no longer be reported as delivered: the module was disposed, or an authority moved on while the attempt was in flight.
  * @param callback - The normalized callback.
- * @param options - The host authorities.
+ * @param options - The server authorities.
  * @param disposed - Whether the module was disposed during the attempt.
  * @returns The reason, or null when the attempt still counts.
  */

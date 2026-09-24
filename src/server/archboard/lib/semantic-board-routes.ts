@@ -1,4 +1,4 @@
-// The canvas's semantic-board surface.
+// The Archboard server's semantic-board surface.
 //
 // A semantic write states its own boundary: `writeSemanticBoard` takes the
 // board-global lease, honours the claim, makes the expected-version check,
@@ -38,8 +38,8 @@ const RenderThemeSchema = z.enum(["light", "dark"]).default("light");
 /**
  * Where the drawn faces come from.
  *
- * A pane is inside a page the canvas serves, so it links them and the browser
- * caches them once. A file somebody keeps has no canvas behind it, so it
+ * A pane is inside a page the server serves, so it links them and the browser
+ * caches them once. A file somebody keeps has no server behind it, so it
  * carries them. The default is the pane's, because that is the render the
  * viewer asks for on every change.
  */
@@ -283,12 +283,12 @@ function readableBoard(res: Response, asked: string): SemanticBoard | null {
 /**
  * Mount the semantic-board routes.
  *
- * The two writes go through `asyncEndpoint`, which is the canvas's own
+ * The two writes go through `asyncEndpoint`, which is the server's own
  * mutation admission: it gives the work a lease that the shutdown drain counts,
  * and a signal that is aborted when the caller disconnects. A write that made
- * its own signal would be work the canvas does not know it is doing — a caller
+ * its own signal would be work the server does not know it is doing — a caller
  * that walked away could still be queued behind a lock and still commit, and a
- * stop could decide the canvas was idle while it happened.
+ * stop could decide the server was idle while it happened.
  * @param app The express application.
  */
 function mountSemanticBoardRoutes(app: Express): void {

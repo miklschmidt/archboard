@@ -123,7 +123,7 @@ async function startOwnedServer({
 }: Readonly<StartOwnedServerOptions>): Promise<OwnedServer> {
 	ensureSemanticVaultConfiguration(vault);
 	const paths = createOwnedServerPaths();
-	const pathsDiagnostic = `\nOwned canvas paths: ${JSON.stringify(paths)}`;
+	const pathsDiagnostic = `\nOwned server paths: ${JSON.stringify(paths)}`;
 	let currentGeneration: Generation | null = null;
 	let visibleBase = explicitPort === undefined ? "" : `http://127.0.0.1:${explicitPort}`;
 	let nextGeneration = 1;
@@ -144,7 +144,7 @@ async function startOwnedServer({
 	};
 	const refuseDisposed = (): void => {
 		if (disposed) {
-			throw new Error("Cannot restart a disposed canvas process.");
+			throw new Error("Cannot restart a disposed server process.");
 		}
 	};
 	const deathError = (
@@ -156,8 +156,8 @@ async function startOwnedServer({
 		const diagnostic = tail(stderr);
 		return Object.assign(
 			new Error(
-				`Owned canvas pid ${generation?.pid ?? "unknown"} died (${detail}).${
-					diagnostic === "" ? "" : `\nCanvas stderr:\n${diagnostic}`
+				`Owned server pid ${generation?.pid ?? "unknown"} died (${detail}).${
+					diagnostic === "" ? "" : `\nServer stderr:\n${diagnostic}`
 				}${pathsDiagnostic}`,
 				{ cause },
 			),
@@ -209,7 +209,7 @@ async function startOwnedServer({
 					: {
 							exited: false,
 							failure: new Error(
-								`Owned canvas generation ${generation.number} did not exit after SIGKILL.${pathsDiagnostic}`,
+								`Owned server generation ${generation.number} did not exit after SIGKILL.${pathsDiagnostic}`,
 							),
 						},
 			);
@@ -224,7 +224,7 @@ async function startOwnedServer({
 			stdio: ["ignore", "ignore", "pipe"],
 		});
 		if (child.pid === undefined) {
-			throw new Error("Owned canvas has no process id.");
+			throw new Error("Owned server has no process id.");
 		}
 		let resolveExit!: (exit: Readonly<Exit>) => void;
 		let expectedStop = false;
@@ -249,7 +249,7 @@ async function startOwnedServer({
 		currentGeneration = generation;
 		visibleBase = generation.base;
 		stderr += stderr
-			? `\n--- canvas generation ${generation.number} pid ${generation.pid} ---\n`
+			? `\n--- server generation ${generation.number} pid ${generation.pid} ---\n`
 			: "";
 		child.stderr.on("data", (...chunks: readonly unknown[]) => {
 			const [chunk] = chunks;
@@ -266,7 +266,7 @@ async function startOwnedServer({
 		const pollHealth = async (): Promise<Generation> => {
 			if (Date.now() >= deadline) {
 				throw new AttemptError(
-					`Owned canvas pid ${generation.pid} did not answer /health within ${TEST_SERVER_STARTUP_TIMEOUT_MS}ms.`,
+					`Owned server pid ${generation.pid} did not answer /health within ${TEST_SERVER_STARTUP_TIMEOUT_MS}ms.`,
 					false,
 				);
 			}
@@ -275,7 +275,7 @@ async function startOwnedServer({
 					await generation.exitPromise;
 				}
 				throw new AttemptError(
-					`Owned canvas pid ${generation.pid} died (${exitDescription(generation.exit)}).`,
+					`Owned server pid ${generation.pid} died (${exitDescription(generation.exit)}).`,
 					/EADDRINUSE|already (?:in use|listening)/iu.test(generation.stderr),
 				);
 			}
@@ -312,7 +312,7 @@ async function startOwnedServer({
 		const attemptStart = async (attempt: number): Promise<void> => {
 			if (attempt >= limit) {
 				throw new Error(
-					`Owned canvas exhausted ${MAX_START_ATTEMPTS} collision-safe start attempts.\n${attempts
+					`Owned server exhausted ${MAX_START_ATTEMPTS} collision-safe start attempts.\n${attempts
 						.map((record, index) => `${index + 1}. ${JSON.stringify(record)}`)
 						.join("\n")}${pathsDiagnostic}`,
 				);
@@ -357,7 +357,7 @@ async function startOwnedServer({
 				attempts.push(failure.attempt);
 				if (failure.cleanupError !== undefined) {
 					throw new Error(
-						`${attemptError.message}\nFailed to reap the exact owned canvas generation; refusing to start another.\n` +
+						`${attemptError.message}\nFailed to reap the exact owned server generation; refusing to start another.\n` +
 							`Attempt: ${JSON.stringify(failure.attempt)}${pathsDiagnostic}`,
 						{ cause: error },
 					);
@@ -366,7 +366,7 @@ async function startOwnedServer({
 					const diagnostic = tail(failed?.stderr ?? "");
 					throw new Error(
 						`${attemptError.message}${
-							diagnostic === "" ? "" : `\nCanvas stderr:\n${diagnostic}`
+							diagnostic === "" ? "" : `\nServer stderr:\n${diagnostic}`
 						}${pathsDiagnostic}`,
 						{ cause: error },
 					);

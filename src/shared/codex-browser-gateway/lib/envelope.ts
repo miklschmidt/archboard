@@ -42,7 +42,7 @@ const BROWSER_GATEWAY_ERROR_CODES = [
 	"approval_not_pending",
 	"dynamic_approval_not_pending",
 	"unsupported_command",
-	/** A recording was asked to start while voice is live on the canvas (TASK-304). */
+	/** A recording was asked to start while voice is live on the server (TASK-304). */
 	"voice_live",
 	"command_failed",
 	"outcome_unknown",

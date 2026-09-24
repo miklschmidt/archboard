@@ -6,14 +6,14 @@ import { fail } from "@/runtime/codex-coordinator-tools/lib/call-identity";
 import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
 import type { WorkhorseOperationBinding } from "@/runtime/codex-workhorse-operations";
 
-/** A host fact that claims a child and epoch. */
+/** A server fact that claims a child and epoch. */
 interface ChildEpochOwner {
 	readonly childId: unknown;
 	readonly epoch: unknown;
 }
 
 /**
- * Check that a host fact belongs to the identity authority's current child and epoch.
+ * Check that a server fact belongs to the identity authority's current child and epoch.
  * @param options - The dispatcher options carrying the identity authority.
  * @param owner - The child and epoch the fact claims.
  * @param subject - How the diagnostic names the fact.
@@ -33,7 +33,7 @@ function assertCurrentChildEpoch(
 
 /**
  * Resolve the ready coordinator the call originated from.
- * @param options - The dispatcher options carrying the host authority.
+ * @param options - The dispatcher options carrying the server authority.
  * @param call - The decoded logical call.
  * @returns The current coordinator facts.
  */
@@ -55,7 +55,7 @@ function currentCoordinator(
 /**
  * Check that the binding is attached to this coordinator: same coordinator thread, child and
  * epoch.
- * @param binding - The host's current workhorse binding.
+ * @param binding - The server's current workhorse binding.
  * @param call - The decoded logical call.
  * @param coordinator - The current coordinator facts.
  */
@@ -69,14 +69,17 @@ function assertAttachedToCoordinator(
 		binding.coordinator.childId !== coordinator.childId ||
 		binding.coordinator.epoch !== coordinator.epoch
 	) {
-		fail("unknown_provenance", "The host workhorse binding is not attached to this coordinator.");
+		fail(
+			"unknown_provenance",
+			"The Archboard server's workhorse binding is not attached to this coordinator.",
+		);
 	}
 }
 
 /**
  * Check that the binding names a distinct workhorse in its own child and epoch, owned by the
- * host.
- * @param binding - The host's current workhorse binding.
+ * server.
+ * @param binding - The server's current workhorse binding.
  */
 function assertOwnedWorkhorse(binding: WorkhorseOperationBinding): void {
 	if (
@@ -90,13 +93,13 @@ function assertOwnedWorkhorse(binding: WorkhorseOperationBinding): void {
 		);
 	}
 	if (binding.workhorse.operationId.length === 0) {
-		fail("unknown_provenance", "The workhorse binding has no host ownership proof.");
+		fail("unknown_provenance", "The workhorse binding has no Archboard server ownership proof.");
 	}
 }
 
 /**
- * Resolve the host-bound workhorse a workhorse-namespace call operates on.
- * @param options - The dispatcher options carrying the host authority.
+ * Resolve the server-bound workhorse a workhorse-namespace call operates on.
+ * @param options - The dispatcher options carrying the server authority.
  * @param call - The decoded logical call.
  * @param coordinator - The current coordinator facts.
  * @returns The current workhorse binding.
@@ -108,7 +111,7 @@ function workhorseBinding(
 ): WorkhorseOperationBinding {
 	const binding = options.authority.currentWorkhorseBinding();
 	if (binding === null) {
-		fail("not_ready", "The coordinator has no current host-bound workhorse.");
+		fail("not_ready", "The coordinator has no current workhorse bound by the Archboard server.");
 	}
 	assertCurrentChildEpoch(options, binding, "bound workhorse");
 	assertAttachedToCoordinator(binding, call, coordinator);

@@ -68,7 +68,7 @@ by having no upward link, which is why the breadcrumb exists.
 | Module  | `Voice coordinator`   | The separate thread voice attaches to               |
 
 Here, service-level boards explain one application or explicitly named subsystem;
-they do not imply separate deployments. The workbench lives inside the canvas
+they do not imply separate deployments. The workbench lives inside the Archboard
 server, while Codex app-server runs as its private child, and the skill
 evaluation harness is a developer tool a person starts. Module boards expand
 the central implementation paths rather than inventorying every source file.

@@ -7,7 +7,7 @@ import type {
 /**
  * Every teardown step one generation owes, in the order it owes them: the
  * child's own settlement first when the child is what went, then each owner,
- * then the transport, and last the child settlement a host shutdown waits for.
+ * then the transport, and last the child settlement a server shutdown waits for.
  * @param state The generation.
  * @param reason Why it is stopping.
  * @returns The steps, in order.
@@ -17,7 +17,7 @@ function shutdownSteps(
 	reason: CodexWorkbenchStopReason,
 ): (() => Promise<unknown> | void)[] {
 	const { components, hooks } = state;
-	const cause = reason === "shutdown" ? "host_shutdown" : "child_disconnected";
+	const cause = reason === "shutdown" ? "server_shutdown" : "child_disconnected";
 	const childSettlement = state.childSettlement;
 	const settleChild =
 		childSettlement === null
@@ -99,7 +99,7 @@ function shutdownSteps(
 		...(reason === "shutdown"
 			? [
 					/**
-					 * Shut the transport down, which a host shutdown owns and a child
+					 * Shut the transport down, which a server shutdown owns and a child
 					 * exit does not.
 					 * @returns Resolves once it has.
 					 */

@@ -151,7 +151,7 @@ describe("CLI resource cleanup", () => {
 		expect(existsSync(repositoryRoot)).toBeFalse();
 	});
 
-	test("removes a registered repository fixture when canvas startup rejects", async () => {
+	test("removes a registered repository fixture when server startup rejects", async () => {
 		let root = "";
 		let missingServer = "";
 		let retainedFixture: ReturnType<typeof createRepositoryFixture> | undefined;
@@ -186,13 +186,13 @@ describe("CLI resource cleanup", () => {
 		expect(existsSync(root)).toBeFalse();
 	});
 
-	test("awaits a verified canvas after an assertion failure", async () => {
+	test("awaits a verified server after an assertion failure", async () => {
 		let root = "";
 		let vault = "";
 		let registry = "";
 		let base = "";
 		let fixture: ReturnType<typeof createRepositoryFixture> | undefined;
-		let canvas: OwnedServer | undefined;
+		let server: OwnedServer | undefined;
 		let fixtureRegistered = false;
 		let serverDisposerRegistered = false;
 		let verifiedRunning = false;
@@ -205,33 +205,33 @@ describe("CLI resource cleanup", () => {
 			vault = acquiredFixture.vault;
 			registry = acquiredFixture.registry;
 			fixtureRegistered = true;
-			canvas = await startOwnedServer({
+			server = await startOwnedServer({
 				serverPath: join(checkoutRoot, "src/server.ts"),
 				vault: acquiredFixture.vault,
 				env: acquiredFixture.serverEnvironment,
 			});
-			resources.defer(() => canvas!.dispose());
+			resources.defer(() => server!.dispose());
 			serverDisposerRegistered = true;
-			base = canvas.base;
-			await canvas.assertRunning();
+			base = server.base;
+			await server.assertRunning();
 			verifiedRunning = true;
-			expect("running canvas").toBe("intended assertion failure");
+			expect("running server").toBe("intended assertion failure");
 		} catch (error) {
 			intended = error;
 		}
 		expect(intended).toBeInstanceOf(Error);
 		const intendedError = intended as Error;
 		expect(plain(intendedError)).toBe(
-			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "running canvas"\n',
+			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "running server"\n',
 		);
 		expect(verifiedRunning).toBeTrue();
 		expect(fixtureRegistered).toBeTrue();
 		expect(serverDisposerRegistered).toBeTrue();
 		if (!fixture) {
-			throw new Error("Verified canvas fixture was not retained.");
+			throw new Error("Verified server fixture was not retained.");
 		}
-		if (!canvas) {
-			throw new Error("Verified canvas handle was not retained.");
+		if (!server) {
+			throw new Error("Verified server handle was not retained.");
 		}
 		expect(root.length).toBeGreaterThan(0);
 		expect(vault.length).toBeGreaterThan(0);
@@ -240,8 +240,8 @@ describe("CLI resource cleanup", () => {
 		expect(root).toBe(fixture.root);
 		expect(vault).toBe(fixture.vault);
 		expect(registry).toBe(fixture.registry);
-		expect(base).toBe(canvas.base);
-		expect(canvas.vault).toBe(vault);
+		expect(base).toBe(server.base);
+		expect(server.vault).toBe(vault);
 		expect(existsSync(root)).toBeFalse();
 		expect(existsSync(vault)).toBeFalse();
 		expect(existsSync(registry)).toBeFalse();
@@ -259,7 +259,7 @@ describe("CLI resource cleanup", () => {
 		expect(refusal.message).toBe("Unable to connect. Is the computer able to access the url?");
 		let childError: unknown;
 		try {
-			await canvas.assertRunning(intendedError);
+			await server.assertRunning(intendedError);
 		} catch (error) {
 			childError = error;
 		}
@@ -267,7 +267,7 @@ describe("CLI resource cleanup", () => {
 		const death = childError as Error & { code?: string };
 		expect(death.code).toBe("SERVER_PROCESS_DIED");
 		expect(death.message).toBe(
-			`Owned canvas pid unknown died (has no live generation).\nOwned canvas paths: ${JSON.stringify(canvas.paths)}`,
+			`Owned server pid unknown died (has no live generation).\nOwned server paths: ${JSON.stringify(server.paths)}`,
 		);
 		expect(death.cause).toBe(intendedError);
 	}, 30_000);

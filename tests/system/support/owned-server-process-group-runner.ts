@@ -24,7 +24,7 @@ interface OwnedRecord {
 }
 
 interface ReplacementRecord {
-	readonly marker: "replacement-canvas";
+	readonly marker: "replacement-server";
 	readonly mode: string;
 	readonly pid: number;
 	readonly vault: string;
@@ -83,7 +83,7 @@ const isOwnedRecord = (record: JsonRecord): record is JsonRecord & OwnedRecord =
 	hasString(record, "namespaceRoot") &&
 	hasNumber(record, "at");
 const isReplacementRecord = (record: JsonRecord): record is JsonRecord & ReplacementRecord =>
-	record["marker"] === "replacement-canvas" &&
+	record["marker"] === "replacement-server" &&
 	hasString(record, "mode") &&
 	hasNumber(record, "pid") &&
 	hasString(record, "vault") &&

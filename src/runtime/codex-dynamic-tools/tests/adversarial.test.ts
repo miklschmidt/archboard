@@ -165,10 +165,10 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		expect(fixture.epoch.stages).toHaveLength(0);
 	});
 
-	test("host shutdown is terminal approval_required while approval is pending", async () => {
+	test("server shutdown is terminal approval_required while approval is pending", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const approval = new FakeApproval((request) =>
-			dynamicDecision(request, { outcome: "cancelled", cause: "host_shutdown" }),
+			dynamicDecision(request, { outcome: "cancelled", cause: "server_shutdown" }),
 		);
 		const fixture = optionsFor(authorities, caller, { approval });
 		const response = await createCodexDynamicTools(fixture.options).dispatch(
@@ -179,7 +179,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		expect(parsed.envelope.tag).toBe("approval_required");
 		expect(approval.settled[0]?.decision).toMatchObject({
 			outcome: "cancelled",
-			cause: "host_shutdown",
+			cause: "server_shutdown",
 		});
 		expect(fixture.session.calls).toHaveLength(0);
 		expect(fixture.epoch.stages).toHaveLength(0);

@@ -24,9 +24,9 @@ import { publishProjection } from "@/server/archboard/lib/codex-workbench-bindin
 function createGatewayBinding(
 	context: BindingContext,
 ): ProductionCodexWorkbenchBindings["gateway"] {
-	const { host, owners, input } = context;
+	const { server, owners, input } = context;
 	const dynamicContext: DynamicOwnerContext = {
-		host,
+		server,
 		waitGraph: context.waitGraph,
 		input,
 		owners,
@@ -50,8 +50,8 @@ function createGatewayBinding(
 			timeline: owners.timeline,
 			budget,
 			state: owners.browserState,
-			leaseLedger: host.browserLeaseLedger,
-			checkoutRoot: host.checkoutRoot,
+			leaseLedger: server.browserLeaseLedger,
+			checkoutRoot: server.checkoutRoot,
 			/**
 			 * What the owned Codex process reports, which browser readiness is
 			 * partly derived from.
@@ -70,7 +70,7 @@ function createGatewayBinding(
 				if (threadId === null) {
 					throw new Error("A browser command has no executable thread link.");
 				}
-				return host.contextForOperation(
+				return server.contextForOperation(
 					{
 						paneId: commandContext.paneId,
 						childId: commandContext.childId,

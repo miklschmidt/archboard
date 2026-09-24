@@ -120,7 +120,7 @@ function assertExecutableClassification(
 }
 
 /**
- * Recognise the workhorse this host created, the only thread whose queue it may touch.
+ * Recognise the workhorse this server created, the only thread whose queue it may touch.
  * @param classification - The classified workhorse link.
  * @returns Whether the link is executable, app-server sourced and proven by a creation record.
  */

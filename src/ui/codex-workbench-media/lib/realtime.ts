@@ -1,4 +1,4 @@
-// The neutral realtime host over one workbench transport: the start offer
+// The neutral realtime server over one workbench transport: the start offer
 // rides the exact start lease, text and stop ride the current session handle,
 // and remote media lands on an audio element the owner mounts. A refused start
 // fails with one sentence, except a recording refused over live voice
@@ -19,7 +19,7 @@ import type {
 	BrowserWorkbenchTransport,
 } from "@/ui/workbench-transport";
 
-/** The mutable session record the host reads and writes. */
+/** The mutable session record the realtime server reads and writes. */
 interface MediaSessionRecord {
 	handle: BrowserCommandLease["commandId"] | null;
 	startOperation: StartOperation | null;
@@ -38,7 +38,7 @@ interface StartOperation {
 /** A walkthrough voice is started to present, by id, and whether it is recorded. */
 type VoicePresentation = BrowserVoicePresentation;
 
-/** What the host needs from the run that owns it. */
+/** What the realtime server needs from the run that owns it. */
 interface MediaRunPort {
 	readonly transport: BrowserWorkbenchTransport;
 	readonly audioElements: BrowserAudioElementPort;
@@ -54,7 +54,7 @@ interface MediaRunPort {
  * A refusal or an uncertain outcome for one request.
  * @param request The request.
  * @param outcome The transport's outcome.
- * @returns The host outcome.
+ * @returns The server's outcome.
  */
 function refusal<T extends RealtimeCorrelation>(
 	request: T,
@@ -101,8 +101,8 @@ function startLease(
 
 /**
  * Whether a delivered answer names the offer and rides the start lease.
- * @param answer The host's answer.
- * @param handle The session handle the host returned.
+ * @param answer The server's answer.
+ * @param handle The session handle the server returned.
  * @param offer The offer.
  * @param lease The start lease.
  * @returns True when every identity matches.
@@ -160,7 +160,7 @@ function startAnswer(
  * Sends the start offer on the exact start lease.
  * @param run The run.
  * @param offer The offer.
- * @returns The host's answer.
+ * @returns The server's answer.
  */
 async function createOffer(
 	run: MediaRunPort,
@@ -242,9 +242,9 @@ async function stop(run: MediaRunPort, request: RealtimeCorrelation): Promise<Co
 }
 
 /**
- * The host for one run.
+ * The realtime server for one run.
  * @param run The run.
- * @returns The neutral realtime host.
+ * @returns The neutral realtime server.
  */
 function createRealtimeServer(run: MediaRunPort): RealtimeServer {
 	return {

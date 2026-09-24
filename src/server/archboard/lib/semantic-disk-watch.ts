@@ -1,11 +1,11 @@
 // Noticing that a board changed on disk without this process writing it.
 //
 // The file is the board (ADR 0015, ADR 0023), and one vault can be open in more
-// than one canvas: ADR 0016's lease is what stops two writers colliding, not
+// than one server: ADR 0016's lease is what stops two writers colliding, not
 // what tells the loser its picture went stale. A write from another process, or
 // an editor replacing the file, reaches a pane through nothing at all — the
 // change feed hears this process's own broadcasts, and there is no second
-// socket between canvases to hear anything else on.
+// socket between servers to hear anything else on.
 //
 // So the file is watched, and watched the cheap way: a fingerprint of the
 // directory entry, never its content. What changed is not read here and could
@@ -61,7 +61,7 @@ function fingerprintOf(board: string): string {
  * Tell every pane on a board that it moved.
  *
  * The same announcement a write makes, and deliberately: a pane cannot tell
- * which canvas wrote a board and must not need to, and the agent's context
+ * which server wrote a board and must not need to, and the agent's context
  * feed reads the same broadcast, so the two can never disagree about what
  * happened.
  *
@@ -152,7 +152,7 @@ function watchSemanticBoardFiles(): void {
 	onBoardSweep(sweepBoard);
 }
 
-/** Stop watching and forget every fingerprint, because the canvas is stopping. */
+/** Stop watching and forget every fingerprint, because the server is stopping. */
 function forgetSemanticBoardFiles(): void {
 	stopObserving?.();
 	stopObserving = null;

@@ -2,7 +2,7 @@ import path from "node:path";
 import { homedir } from "os";
 
 /**
- * Where archboard keeps machine-local state: the canvas pidfile, the registry
+ * Where archboard keeps machine-local state: the server pidfile, the registry
  * of repository checkouts on this machine (ADR 0011), and the Codex workbench
  * with its own home and sessions.
  *

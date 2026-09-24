@@ -69,7 +69,7 @@ test("a change carries the session that wrote it, or nothing at all", () => {
 	expect(mine[0]?.by).toBe("session-mine");
 
 	// And a write nobody attributed — a person's terminal, anything outside this
-	// canvas — says so rather than borrowing the identity the board was held
+	// server — says so rather than borrowing the identity the board was held
 	// under. Unattributable is delivered to everybody.
 	const outside = announced({ version: 3, by: null, heldAs: "agent-1QZZ4mkP" });
 	expect(outside[0]?.by).toBeNull();

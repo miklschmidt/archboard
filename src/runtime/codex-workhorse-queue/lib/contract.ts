@@ -37,7 +37,7 @@ interface WorkhorseQueueIdentityPort {
 }
 
 /**
- * Narrow capability for the shared host-owned operation identity.
+ * Narrow capability for the shared server-owned operation identity.
  *
  * The queue never issues, adopts, or invents an operation identity. The
  * eventual shared OperationId authority supplies this capability at the

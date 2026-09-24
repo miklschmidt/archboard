@@ -169,7 +169,7 @@ sits.
 
 Emphasis answers "what am I looking at": `hero` marks the spine, the path or
 backbone the board exists to show. On a board of how one write lands, that is
-the CLI's call into the canvas, the canvas's write through the board store and
+the CLI's call into the Archboard server, the server's write through the board store and
 the store's atomic write to the file; the lease, the version check and the
 broadcast are the context that path runs through. Keep `hero` to about a third
 of the relationships and never past half: weight is a contrast and spends

@@ -113,7 +113,7 @@ export function createDynamicApprovalBrowserSchemas(
 				identity: DynamicApprovalIdentitySchema,
 				effectHash: EffectHashSchema,
 				decidedAtMs: NonNegativeIntegerSchema,
-				cause: z.enum(["call_cancelled", "caller_turn_interrupted", "host_shutdown"]),
+				cause: z.enum(["call_cancelled", "caller_turn_interrupted", "server_shutdown"]),
 			})
 			.strict(),
 		z

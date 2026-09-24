@@ -10,8 +10,8 @@ export type { CheckoutTask, CheckoutWorkOwner } from "@/server/archboard/lib/che
 export { semanticBoardContext } from "@/server/archboard/lib/semantic-board-context";
 export type { BoardContext } from "@/server/archboard/lib/semantic-board-context";
 export { canonicalContextFromBrief } from "@/server/archboard/lib/codex-semantic-input";
-// What the canvas publishes about settled board changes, and the publish it
-// arrives by. The agent host reads the feed; every write announces through the
+// What the Archboard server publishes about settled board changes, and the publish it
+// arrives by. The Codex workbench reads the feed; every write announces through the
 // broadcast. They are one path with two ends, and the module says so here
 // rather than leaving each end private to whoever found it first.
 export { broadcast, panes } from "@/server/archboard/lib/pane-registry";

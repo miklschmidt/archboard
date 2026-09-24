@@ -1,7 +1,7 @@
-// The canvas's own account of shutting itself down.
+// The Archboard server's own account of shutting itself down.
 //
 // A failed start has to prove it left nothing running, and the only thing that
-// can say what it owned is the canvas itself. It writes that account down a
+// can say what it owned is the server itself. It writes that account down a
 // dedicated file descriptor as a line-delimited protocol; this reads it, one
 // record at a time, and lets a caller wait for the next one under a deadline.
 
@@ -49,7 +49,7 @@ interface ProtocolWaiter {
 }
 
 /**
- * Read the canvas startup protocol off the server's fd 3: one JSON record per
+ * Read the server startup protocol off the server's fd 3: one JSON record per
  * line, queued until the cleanup state machine asks for the next event.
  * @param stream The pipe from the spawned server, or null when there is none.
  * @returns The reader the cleanup consumes, with its failure and terminal message.
@@ -112,7 +112,7 @@ function createServerStartupProtocolReader(stream: Readable | null): ServerStart
 		closed = true;
 		if (!terminalSeen) {
 			protocolFailure = new Error(
-				"The canvas startup cleanup protocol closed before terminal proof.",
+				"The server startup cleanup protocol closed before terminal proof.",
 			);
 		}
 		push({ kind: "closed" });
@@ -139,7 +139,7 @@ function createServerStartupProtocolReader(stream: Readable | null): ServerStart
 			return Promise.resolve(null);
 		}
 		if (waiter !== null) {
-			return Promise.reject(new Error("The canvas startup cleanup protocol already has a waiter."));
+			return Promise.reject(new Error("The server startup cleanup protocol already has a waiter."));
 		}
 		return new Promise((resolve) => {
 			const timer = setTimeout(() => {
@@ -187,14 +187,14 @@ function createServerStartupProtocolReader(stream: Readable | null): ServerStart
 function validateTiming(timing: FailedServerCleanupTiming): void {
 	for (const [name, value] of Object.entries(timing)) {
 		if (!Number.isFinite(value) || value < 0) {
-			throw new Error(`Failed canvas cleanup ${name} must be a non-negative finite duration.`);
+			throw new Error(`Failed server cleanup ${name} must be a non-negative finite duration.`);
 		}
 	}
 	if (timing.pollMs <= 0) {
-		throw new Error("Failed canvas cleanup pollMs must be greater than zero.");
+		throw new Error("Failed server cleanup pollMs must be greater than zero.");
 	}
 	if (timing.applicationGraceMs > timing.shutdownDeadlineMs) {
-		throw new Error("Failed canvas cleanup application grace cannot exceed its deadline.");
+		throw new Error("Failed server cleanup application grace cannot exceed its deadline.");
 	}
 }
 

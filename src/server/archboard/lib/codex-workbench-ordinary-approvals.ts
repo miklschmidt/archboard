@@ -28,7 +28,7 @@ function disconnectWording(
 	reason: Parameters<NonNullable<BrowserOrdinaryApprovalActions["onBrowserDisconnect"]>>[1],
 ): string {
 	if (reason === "gateway_shutdown") {
-		return "host shutdown";
+		return "Archboard server shutdown";
 	}
 	if (reason === "child_disconnected") {
 		return "child disconnected";

@@ -2,7 +2,7 @@
 //
 // The transcript is server truth the transport publishes, a word at a time as the voice speaks.
 // Subtitles show it only while a session carries audio. A recording's words are subtitled only on
-// the page that records it: the canvas shares one voice session between its browsers, and over
+// the page that records it: the server shares one voice session between its browsers, and over
 // any other pane's picture they would be about a board nobody there is looking at.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";

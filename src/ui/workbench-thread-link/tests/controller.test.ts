@@ -31,7 +31,7 @@ import {
 /**
  * A controller over one double.
  * @param transport The double.
- * @param serverRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The controller.
  */
 function controllerFor(
@@ -82,7 +82,7 @@ function recoveryOf(settled: ThreadLinkActionSnapshot): string | null {
 }
 
 /**
- * A pending ChatGPT sign-in as the host publishes it.
+ * A pending ChatGPT sign-in as the server publishes it.
  * @returns The snapshot.
  */
 function pendingLoginSnapshot(): BrowserSnapshot {
@@ -181,7 +181,7 @@ describe("thread-link action controller", () => {
 		});
 	});
 
-	test("binds the row the host listed under one selection id", async () => {
+	test("binds the row the server listed under one selection id", async () => {
 		const transport = new FakeTransport(
 			connected(snapshot({ threadCandidates: listed([record({ selectionId: "listed-a" })]) })),
 		);
@@ -197,7 +197,9 @@ describe("thread-link action controller", () => {
 		});
 		await controller.bindSelection("gone");
 		expect(transport.commands).toHaveLength(1);
-		expect(announcementOf(controller.snapshot())).toContain("no longer in the host's list");
+		expect(announcementOf(controller.snapshot())).toContain(
+			"no longer in the Archboard server's list",
+		);
 	});
 
 	test("unlink is refused with the two ways a pane can move on, and sends nothing", async () => {

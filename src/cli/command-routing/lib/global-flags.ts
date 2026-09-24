@@ -30,7 +30,7 @@ function takeGlobalFlag(argv: string[], name: string): string | null {
 /**
  * Pull `--board <key>` out of the arguments before the command sees it.
  *
- * Global, like `--url`, because it applies to every canvas request a command
+ * Global, like `--url`, because it applies to every server request a command
  * makes rather than to one of them. It is the only way to name the persisted
  * board for a command because there is no active or default board (ADR 0020).
  * Stripped here so no command has to declare it and none can forget to pass it
@@ -51,7 +51,7 @@ function takeBoardFlag(argv: string[]): string | null {
  * command's own parser sees it, so no command declares it and none can be the
  * one that dropped it.
  *
- * Not refused here. The canvas knows which routes are board writes and it is
+ * Not refused here. The server knows which routes are board writes and it is
  * the only side that should; a second list on this side would be a second
  * answer to the same question, and the two would drift.
  * @param argv - The arguments after the command name; the flag is spliced out.

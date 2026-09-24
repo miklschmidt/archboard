@@ -24,20 +24,20 @@ const SEED = {
 	level: "system",
 	nodes: [
 		{ name: "CLI", kind: "app" },
-		{ name: "Canvas", kind: "service" },
+		{ name: "Server", kind: "service" },
 		{ name: "Vault", kind: "datastore" },
 		// A node and a flow may share a name; the ambiguity case below needs it.
 		{ name: "Ingest", kind: "service" },
 		{ name: "Ledger", kind: "datastore" },
 	],
-	edges: [{ from: "CLI", to: "Canvas", kind: "http" }],
+	edges: [{ from: "CLI", to: "Server", kind: "http" }],
 	flows: [
 		{
 			name: "Ingest",
-			participants: ["CLI", "Canvas", "Vault"],
+			participants: ["CLI", "Server", "Vault"],
 			steps: [
-				{ from: "CLI", to: "Canvas", label: "state the change" },
-				{ from: "Canvas", to: "Vault", label: "atomic write" },
+				{ from: "CLI", to: "Server", label: "state the change" },
+				{ from: "Server", to: "Vault", label: "atomic write" },
 			],
 		},
 	],

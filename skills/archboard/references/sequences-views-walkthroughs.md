@@ -121,7 +121,7 @@ changed; a change that no beat names is not spoken about.
 
 - `--walkthrough <name>` picks one when the variant states several, and
   `--variant` and `--theme dark` choose what is drawn.
-- It needs the canvas's Codex signed in and voice not live on that canvas. A
+- It needs the Archboard server's Codex signed in and voice not live on that server. A
   refusal says which. It takes about as long as the talk and prints each beat
   as it is reached.
 - For a board made only for the video, create it with `semantic new`, look at

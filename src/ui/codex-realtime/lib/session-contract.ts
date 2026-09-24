@@ -1,5 +1,5 @@
 // The session contract and the pure helpers over one run that the session
-// factory composes: refusal errors, host stop confirmation, the stop_failed
+// factory composes: refusal errors, server stop confirmation, the stop_failed
 // state, the mute toggle target, and stoppability.
 
 import type {
@@ -26,7 +26,7 @@ interface RealtimeMediaSession {
 	/**
 	 * Silences the captured microphone without touching the negotiated
 	 * connection: every local audio track is disabled and the run publishes
-	 * `muted`. The host receives nothing. A run that is not `listening` is left
+	 * `muted`. The server receives nothing. A run that is not `listening` is left
 	 * exactly as it is.
 	 */
 	readonly mute: () => Promise<RealtimeMediaSnapshot>;
@@ -62,9 +62,9 @@ function restartRefusal(run: Run, previous: Run): Error {
 }
 
 /**
- * Whether a host stop outcome confirms exactly this run stopped.
+ * Whether a server stop outcome confirms exactly this run stopped.
  * @param run The run.
- * @param outcome What the host answered.
+ * @param outcome What the server answered.
  * @returns True on an exact delivered confirmation.
  */
 function stopConfirmed(run: Run, outcome: Awaited<ReturnType<RealtimeServer["stop"]>>): boolean {
@@ -84,7 +84,7 @@ function stopFailedState(run: Run): FailureState {
 	return {
 		phase: "recoverable_error",
 		reason: "stop_failed",
-		message: `The realtime host did not confirm that ${run.correlation.sessionId}/${run.correlation.correlationId} stopped.`,
+		message: `The realtime server did not confirm that ${run.correlation.sessionId}/${run.correlation.correlationId} stopped.`,
 	};
 }
 
@@ -100,7 +100,7 @@ function muteTarget(muted: boolean): RealtimeState {
 }
 
 /**
- * Whether a run is still open: not closed, and not a stop the host refused.
+ * Whether a run is still open: not closed, and not a stop the server refused.
  * @param run The run, or null.
  * @returns True when a stop should still act on it.
  */

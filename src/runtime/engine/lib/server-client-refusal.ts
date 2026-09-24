@@ -1,6 +1,6 @@
-// A board write the canvas turned away, and how a caller recognises one.
+// A board write the Archboard server turned away, and how a caller recognises one.
 //
-// A refusal is a result, not a fault: it carries the board as the canvas
+// A refusal is a result, not a fault: it carries the board as the server
 // holds it and the version the writer should have been working from, so the
 // CLI can answer without reading the board again.
 
@@ -20,7 +20,7 @@ const BOARD_REFUSAL_CODES = new Set(["BOARD_HELD", "BOARD_VERSION_CONFLICT", "CL
 /**
  * Whether an answer is a refused board write, which is decided by the shape
  * the write boundary promises rather than by the code it carries.
- * @param data Anything the canvas answered with.
+ * @param data Anything the server answered with.
  * @returns True when the answer is a refusal.
  */
 function isBoardRefusal(data: unknown): data is BoardRefusal {

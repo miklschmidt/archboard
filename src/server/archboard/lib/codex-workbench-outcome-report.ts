@@ -24,7 +24,7 @@ import { CODEX_WAIT_TARGET_POLL_MS, COORDINATOR_IDLE_WAIT_MS } from "@/shared/ti
 interface OutcomeReportParts {
 	readonly session: Pick<CodexSession, "threadRead" | "turnStart">;
 	/**
-	 * Mint the host operation identity the turn runs under.
+	 * Mint the server operation identity the turn runs under.
 	 * @returns Its wire spelling, which is also the turn's client message id.
 	 */
 	readonly issue: () => string;

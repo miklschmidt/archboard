@@ -58,7 +58,7 @@ You need these things:
 
 - Bun 1.4 or newer, and Git.
 - Chromium or Google Chrome, for PNG files and videos.
-- A Codex sign-in on the canvas, for the voice and for videos. You sign in from
+- A Codex sign-in on the Archboard server, for the voice and for videos. You sign in from
   the agent bar in the browser.
 
 ```bash
@@ -76,7 +76,7 @@ Archboard has no default vault, by design. The server does not start until
 `.archboard/config.yaml` file holds the kinds of node and relationship that the
 boards can use.
 
-If the canvas is not running, every command that talks to it starts it. If you
+If the server is not running, every command that talks to it starts it. If you
 do not want this, set `ARCHBOARD_NO_AUTOSTART=1`.
 
 Open <http://127.0.0.1:3000>. Then create a first board and read it back:
@@ -182,8 +182,8 @@ each checkout of the repository on this machine.
 
 ## Codex and the voice
 
-The canvas runs its own private Codex app-server session, with its own Codex
-state and sign-in. The canvas links to one workhorse, the Codex thread that
+The Archboard server runs its own private Codex app-server session, with its own Codex
+state and sign-in. The server links to one workhorse, the Codex thread that
 does the long work, and all panes share that link. The first message or the
 first press of Talk makes the link. The voice talks through a separate
 coordinator thread, so the conversation and the long work do not share a
@@ -193,10 +193,10 @@ gives the full contract.
 
 ## Security
 
-Keep the canvas on loopback, which only this machine can connect to. The canvas
+Keep the Archboard server on loopback, which only this machine can connect to. The server
 has no authentication, so any process that can connect to its port can use it.
-By default, the canvas binds to `127.0.0.1`. To connect from another machine,
-use an SSH tunnel. Do not expose the canvas directly to a network.
+By default, the server binds to `127.0.0.1`. To connect from another machine,
+use an SSH tunnel. Do not expose the server directly to a network.
 
 ## Documentation
 

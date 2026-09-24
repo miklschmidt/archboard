@@ -33,8 +33,8 @@ interface CheckoutWorkOwner {
 }
 
 /**
- * The owner of this canvas's machine-local checkout work: it admits work while
- * the canvas is running, cancels it when a request disconnects, and lets
+ * The owner of this server's machine-local checkout work: it admits work while
+ * the server is running, cancels it when a request disconnects, and lets
  * shutdown wait for what is already in flight.
  * @returns The owner.
  */
@@ -44,7 +44,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 
 	/**
 	 * Run one piece of checkout work under a cancellable signal of its own,
-	 * refusing it once the canvas has stopped admitting work.
+	 * refusing it once the server has stopped admitting work.
 	 * @param name What the work is, for the refusal and the cancellation.
 	 * @param externalSignal A caller's signal that also cancels it, if it has one.
 	 * @param work The work.
@@ -57,7 +57,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	): Promise<T> {
 		if (!accepting) {
 			return Promise.reject(
-				new Error(`Canvas checkout work is stopping; ${name} was not admitted.`),
+				new Error(`Archboard server checkout work is stopping; ${name} was not admitted.`),
 			);
 		}
 		const controller = new AbortController();
@@ -117,7 +117,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	function quiesce(): void {
 		accepting = false;
 		for (const owner of active) {
-			owner.controller.abort(new Error("Canvas checkout work stopped."));
+			owner.controller.abort(new Error("Archboard server checkout work stopped."));
 		}
 	}
 

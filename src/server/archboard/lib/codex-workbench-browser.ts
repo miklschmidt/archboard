@@ -172,7 +172,7 @@ async function sendPublishedResult(
 }
 
 /**
- * Own the public canvas WebSocket bridge for one installed gateway generation.
+ * Own the public server WebSocket bridge for one installed gateway generation.
  * @param options The gateway, and how a browser's pane is resolved.
  * @returns The owner.
  */

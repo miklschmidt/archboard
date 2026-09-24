@@ -25,7 +25,7 @@ import {
 
 /** What building one generation's dynamic owners needs from around it. */
 interface DynamicOwnerContext {
-	readonly host: CodexWorkbenchServer;
+	readonly server: CodexWorkbenchServer;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
 	readonly input: CodexWorkbenchGenerationInput;
 	readonly owners: GenerationOwners;
@@ -60,7 +60,7 @@ function createAuthority(
 		identity: created.identity,
 		epoch: created.epoch,
 		threadLink: created.threadLink,
-		paneIds: context.host.paneIds,
+		paneIds: context.server.paneIds,
 		/**
 		 * The canonical context one dynamic effect runs under, captured against
 		 * the caller's own pane and thread rather than whatever is current.
@@ -68,7 +68,7 @@ function createAuthority(
 		 * @returns The context.
 		 */
 		contextFor: (authorityContext) => {
-			const captured = context.host.contextForOperation(
+			const captured = context.server.contextForOperation(
 				{
 					paneId: authorityContext.authority.paneId,
 					childId: authorityContext.authority.childId,
@@ -150,7 +150,7 @@ function createLifecycle(
 	return createServerDynamicLifecycleOwner({
 		identity: requireCreated(created, "identity"),
 		waitGraph: context.waitGraph,
-		waitForTargets: context.host.waitForTargets,
+		waitForTargets: context.server.waitForTargets,
 		/**
 		 * End this child's epoch, fail-closed.
 		 *
@@ -174,7 +174,7 @@ function createLifecycle(
 			}
 			return { child, epoch, sessionClosed: true, transportClosed: true };
 		},
-		onFatal: context.host.onFatal,
+		onFatal: context.server.onFatal,
 	});
 }
 

@@ -1,6 +1,6 @@
 // Every fact an ordinary card discloses: the request's identity, the
 // broker's identity, the effect, a safe link, and the notices that say what
-// the host did not publish or what this browser will not do.
+// the server did not publish or what this browser will not do.
 
 import type { BrowserApproval } from "@/shared/codex-browser-model";
 import type {
@@ -15,21 +15,23 @@ type Permissions = Extract<BrowserApproval, { readonly approvalKind: "permission
 type UserInput = Extract<BrowserApproval, { readonly approvalKind: "user_input" }>;
 type Rows = readonly WorkbenchApprovalDisclosure[];
 
-const NO_TURN = "The host published no turn identity for this request.";
-const NO_ITEM = "The host published no item identity for this request.";
-const NO_APPROVAL_ID = "The host issued no ApprovalId for this request.";
-const NO_LINK = "The host published no link presentation for this request.";
-const NO_REASON = "The host published no reason.";
-const NO_COMMAND = "The host did not publish the command text.";
-const NO_SAFE_URL = "The host published no safe http or https URL, so nothing here can be opened.";
+const NO_TURN = "The Archboard server published no turn identity for this request.";
+const NO_ITEM = "The Archboard server published no item identity for this request.";
+const NO_APPROVAL_ID = "The Archboard server issued no ApprovalId for this request.";
+const NO_LINK = "The Archboard server published no link presentation for this request.";
+const NO_REASON = "The Archboard server published no reason.";
+const NO_COMMAND = "The Archboard server did not publish the command text.";
+const NO_SAFE_URL =
+	"The Archboard server published no safe http or https URL, so nothing here can be opened.";
 const NO_FIELDS =
-	"The host published no reviewed fields for this form, so it cannot be answered here.";
+	"The Archboard server published no reviewed fields for this form, so it cannot be answered here.";
 const SECRET_NOTICE = "A secret answer is never shown back, never defaulted, and never spoken.";
 const NOTHING_GRANTABLE_NOTICE =
 	"This request names no permission this browser can grant, so the only honest answer here is to grant nothing.";
 const FILE_ACCESS_NOTICE =
-	"The host published which file-access modes were asked for but no paths. Archboard never invents a path list, so only network access, grant scope, and strict auto review can be granted here.";
-const NO_DECISIONS_NOTICE = "The host offered no decisions, so this request can only be read.";
+	"The Archboard server published which file-access modes were asked for but no paths. Archboard never invents a path list, so only network access, grant scope, and strict auto review can be granted here.";
+const NO_DECISIONS_NOTICE =
+	"The Archboard server offered no decisions, so this request can only be read.";
 
 /**
  * One row.
@@ -46,7 +48,7 @@ function row(label: string, value: string, technical = false): WorkbenchApproval
  * A technical row, or the words for its absence.
  * @param label The label.
  * @param value The value, or null.
- * @param absent The words when the host published nothing.
+ * @param absent The words when the server published nothing.
  * @returns The row.
  */
 function optionalRow(
@@ -99,7 +101,7 @@ function brokerRows(approval: BrowserApproval): Rows {
 }
 
 /**
- * The host's reason row.
+ * The server's reason row.
  * @param reason The reason, or null.
  * @returns The row.
  */
@@ -277,7 +279,7 @@ function userInputNotices(approval: UserInput): readonly string[] {
 }
 
 /**
- * The notices of the families whose decisions the host enumerates.
+ * The notices of the families whose decisions the server enumerates.
  * @param approval The request.
  * @returns The notices.
  */
@@ -298,7 +300,7 @@ function enumeratedNotices(
 }
 
 /**
- * What the host did not publish, or what this browser will not do.
+ * What the server did not publish, or what this browser will not do.
  * @param approval The request.
  * @returns The notices.
  */

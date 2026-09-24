@@ -48,12 +48,12 @@ import type {
 
 /**
  * Creates the session.
- * @param host The neutral realtime host.
+ * @param server The neutral realtime server.
  * @param options The environment, when not the browser's own.
  * @returns The session.
  */
 function createRealtimeMediaSession(
-	host: RealtimeServer,
+	server: RealtimeServer,
 	options: RealtimeMediaSessionOptions = {},
 ): RealtimeMediaSession {
 	const environment = options.environment ?? browserRealtimeMediaEnvironment();
@@ -186,9 +186,9 @@ function createRealtimeMediaSession(
 	};
 
 	/**
-	 * Asks the host to stop a run whose offer it saw, once.
+	 * Asks the server to stop a run whose offer it saw, once.
 	 * @param run The run.
-	 * @returns True when the host confirmed the exact stop.
+	 * @returns True when the server confirmed the exact stop.
 	 */
 	const stopServer = (run: Run): Promise<boolean> => {
 		if (!run.offerSent) {
@@ -198,7 +198,7 @@ function createRealtimeMediaSession(
 			run,
 			environment,
 			() =>
-				host.stop(run.correlation).then(
+				server.stop(run.correlation).then(
 					(outcome) => stopConfirmed(run, outcome),
 					() => false,
 				),
@@ -209,7 +209,7 @@ function createRealtimeMediaSession(
 	};
 
 	/**
-	 * Fails a run once: publish, cancel, release, tell the host.
+	 * Fails a run once: publish, cancel, release, tell the server.
 	 * @param run The run.
 	 * @param state The error state.
 	 * @returns The shared failure completion.
@@ -231,7 +231,7 @@ function createRealtimeMediaSession(
 	/**
 	 * Publishes the end of a stop: closed, or stop_failed when unconfirmed.
 	 * @param run The run.
-	 * @param serverStopped Whether the host confirmed.
+	 * @param serverStopped Whether the server confirmed.
 	 * @param disposing Whether this is a disposal.
 	 * @param visible Whether the public snapshot follows.
 	 */
@@ -251,7 +251,7 @@ function createRealtimeMediaSession(
 	};
 
 	/**
-	 * Closes a run: stopping, release, host stop, closed or stop_failed.
+	 * Closes a run: stopping, release, server stop, closed or stop_failed.
 	 * @param run The run.
 	 * @param dispose Whether this is a disposal.
 	 */
@@ -288,7 +288,7 @@ function createRealtimeMediaSession(
 	};
 
 	const controller: RunController = {
-		host,
+		server,
 		environment,
 		outputLevel,
 		inactive,

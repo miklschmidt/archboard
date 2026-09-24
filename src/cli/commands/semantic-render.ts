@@ -1,6 +1,6 @@
 // Drawing a semantic board to a file: one variant, optionally through one of
 // the board's shared views, with its faces embedded so the file outlives the
-// canvas that drew it (ADR 0023: the renderer owns every coordinate).
+// server that drew it (ADR 0023: the renderer owns every coordinate).
 
 import { z } from "zod";
 import { OfferedViewSchema, RenderedVariantSchema } from "@/shared/semantic-board/index";
@@ -143,7 +143,7 @@ const semanticRenderContract = defineCommand({
 			...(input.variant === undefined ? {} : { variant: input.variant }),
 			...(input.view === undefined ? {} : { view: input.view }),
 			theme: input.theme,
-			// The file outlives the canvas that drew it, so it carries its faces
+			// The file outlives the server that drew it, so it carries its faces
 			// rather than pointing at a server that may not be running.
 			fonts: "embedded",
 		});

@@ -24,13 +24,13 @@ test("a discarded board leaves the vault, the listing and the pane showing it", 
 	const root = mkdtempSync(join(tmpdir(), "archboard-board-discard-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: { LOG_FILE_PATH: join(root, "server.log") },
 	});
-	resources.defer(() => canvas.dispose());
-	const request = createRequester(canvas);
+	resources.defer(() => server.dispose());
+	const request = createRequester(server);
 	const file = join(vault, "recorded.semantic.json");
 
 	const created = await request("/api/semantic-boards/create", {
@@ -41,7 +41,7 @@ test("a discarded board leaves the vault, the listing and the pane showing it", 
 		},
 	});
 	expect(created.status).toBe(200);
-	const pane = await openPaneSession(canvas.base, request, {
+	const pane = await openPaneSession(server.base, request, {
 		clientId: "discard-pane",
 		board: "recorded",
 		primary: true,
@@ -99,5 +99,5 @@ test("a discarded board leaves the vault, the listing and the pane showing it", 
 		status: 422,
 		code: "BOARD_MISSING",
 	});
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);

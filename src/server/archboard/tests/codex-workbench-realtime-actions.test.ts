@@ -161,7 +161,7 @@ test("stale handles and replacement sockets cannot append to the active realtime
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });
 
-test("another pane of the canvas can stop voice on the same link but cannot speak into it", async () => {
+test("another pane of the server can stop voice on the same link but cannot speak into it", async () => {
 	const value = fixture();
 	const actions = createServerRealtimeActions(value.components as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
@@ -261,7 +261,7 @@ test("a recording is refused over a live voice session, and not over one Codex a
 		);
 	await expect(recording()).rejects.toMatchObject({ code: "voice_live" });
 	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
-	// Codex ended the session by itself: the canvas's record of it is let go rather than refused
+	// Codex ended the session by itself: the server's record of it is let go rather than refused
 	// over. This start then fails on its own account, since no pane here shows the walkthrough.
 	live = false;
 	const second = await recording().catch((error: unknown) => error);

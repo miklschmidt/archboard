@@ -101,7 +101,7 @@ test("a word is on screen as soon as it arrives, and what was said earlier is no
 
 test("the subtitle begins again where its box would wrap to a third line", () => {
 	const said =
-		"The canvas checks the write, takes the lease of the board, commits the whole family";
+		"The server checks the write, takes the lease of the board, commits the whole family";
 	const words = said.split(" ");
 	const view = render(<VoiceSubtitles transcript={transcriptOf("")} enabled reducedMotion />);
 	view.rerender(

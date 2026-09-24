@@ -1,12 +1,12 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source — the sweep that keeps every description true when something is removed or renamed, where the tracked skills live and what is generated from them, maintaining the consumer skill, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, removing or renaming anything a reader sees, editing its skills, or verifying a canvas change.
+description: Working on archboard's own source — the sweep that keeps every description true when something is removed or renamed, where the tracked skills live and what is generated from them, maintaining the consumer skill, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, removing or renaming anything a reader sees, editing its skills, or verifying an Archboard server change.
 ---
 
 # Working on archboard
 
 Always-on rules are in `AGENTS.md`; procedures for running and verifying the
-canvas are in `TESTING.md`. This skill holds only what neither the code nor
+Archboard server are in `TESTING.md`. This skill holds only what neither the code nor
 those documents will tell you.
 
 ## Removing or renaming something
@@ -51,7 +51,7 @@ sweep, in the same change:
   `semantic record` said `--doing` was always required.
 - Every environment variable is named `ARCHBOARD_*`. Renaming one refuses the
   old name by name, as `renamedUrlMessage` does. A silent fallback to the
-  default URL starts a second canvas over the same vault.
+  default URL starts a second Archboard server over the same vault.
 - An optional field is a promise to every reader of its object. Adding one means
   finding every path that reads the object and making each honour it: a
   binding's `branch` and `commit` were accepted and stored while the local
@@ -222,7 +222,7 @@ Two facts about the evidence that the first batch had to teach:
 - **The harness takes the pictures; the author never supplies one.** Every
   scenario declares `captures`: the boards, views and variants its request
   names, both sides of a comparison, the data-flow view of a sequence. After
-  the author ran, and after a failed run where the canvas is still up, the
+  the author ran, and after a failed run where the server is still up, the
   harness draws each through `archboard semantic rasterize` at native scale,
   records provenance (version, variant, view, size, SVG digest), cuts a large
   one into native-scale tiles, and lists a capture it could not take as

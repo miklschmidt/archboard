@@ -129,7 +129,7 @@ describe("ordinary approval lifecycle", () => {
 		});
 	}
 
-	test("carries the host's own reason into the terminal detail", () => {
+	test("carries the server's own reason into the terminal detail", () => {
 		const card = ordinaryCard({
 			state: "settled",
 			decision: "declined",
@@ -141,7 +141,7 @@ describe("ordinary approval lifecycle", () => {
 		expect(card.status.decision).toBe("You declined this request.");
 	});
 
-	test("treats a pending request past its expiry as expired without inventing a host record", () => {
+	test("treats a pending request past its expiry as expired without inventing a server record", () => {
 		const card = cardFor(connected(snapshot({ approvals: [commandApproval()] })), {
 			nowMs: NOW + 90_001,
 		});
@@ -182,7 +182,7 @@ describe("connection and lease authority", () => {
 		});
 
 		expect(card.offers).toHaveLength(0);
-		expect(card.status.authorityReason).toContain("behind the host");
+		expect(card.status.authorityReason).toContain("behind the Archboard server");
 	});
 
 	test("removes authority without a usable command lease", () => {
@@ -206,7 +206,7 @@ describe("connection and lease authority", () => {
 		expect(card.status.authorityReason).toContain("no longer accepts a response");
 	});
 
-	test("reports no card and no authority when the host published no snapshot", () => {
+	test("reports no card and no authority when the server published no snapshot", () => {
 		const stopped = projectWorkbenchApprovals(
 			approvalsInput(
 				{

@@ -1,6 +1,6 @@
 // Every fact a dynamic coordination card discloses: the full call identity,
 // the exact target, prompt and fork boundary, both OperationIds, the
-// immutable effect hash, and the tool result once the host published one.
+// immutable effect hash, and the tool result once the server published one.
 
 import type { BrowserDynamicApproval } from "@/shared/codex-browser-model";
 import type { WorkbenchApprovalDisclosure } from "@/ui/workbench-approvals/contracts";
@@ -60,7 +60,7 @@ function promptText(effect: Effect): string {
 }
 
 /**
- * The effect exactly as the host published it.
+ * The effect exactly as the server published it.
  * @param approval The request.
  * @returns The rows.
  */
@@ -82,9 +82,9 @@ function dynamicEffectRows(approval: BrowserDynamicApproval): Rows {
 		row("Effect hash", approval.effectHash, true),
 		row("Created", timestampText(approval.createdAtMs), true),
 		row("Expires", timestampText(approval.expiresAtMs), true),
-		row("Host summary", effect.visualSummary),
+		row("Server summary", effect.visualSummary),
 		approval.toolResult === null
-			? row("Tool result", "The host published no tool result yet.")
+			? row("Tool result", "The Archboard server published no tool result yet.")
 			: row("Tool result", approval.toolResult, true),
 	]);
 }

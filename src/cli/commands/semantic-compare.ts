@@ -9,7 +9,7 @@
 // the same reading in an answer, so an agent that cannot see a picture can
 // still say where the proposal leaves each relationship.
 //
-// It needs no browser and no second route: the canvas holds the aggregate, the
+// It needs no browser and no second route: the server holds the aggregate, the
 // comparison is pure, and it is done here — the way `semantic inspect` runs the
 // pure group inspection here.
 
@@ -315,7 +315,7 @@ function comparedBeat(change: SubjectChange<PlacedBeat>): z.infer<typeof Compare
  * The whole comparison, as the answer carries it.
  *
  * Pure: two states of one board in, one answer out. Nothing is read or written
- * here, which is what lets the same reading be checked without a canvas.
+ * here, which is what lets the same reading be checked without a server.
  * @param board What the board is called and where it stands.
  * @param board.name Its name.
  * @param board.version The version this was read at.

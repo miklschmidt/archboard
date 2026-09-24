@@ -7,7 +7,7 @@
 // of what you are asking for, so you say it.
 //
 // This costs a flag on every call and buys the one property worth having: a
-// write can never land on a board the caller did not name. A canvas with two
+// write can never land on a board the caller did not name. A server with two
 // panes on two boards has no answer to "the board", and inventing one that is
 // right most of the time is the failure mode that takes longest to notice.
 //

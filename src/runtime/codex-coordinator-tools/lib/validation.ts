@@ -255,14 +255,14 @@ function declaredTool(call: LogicalToolCallCorrelation): DeclaredTool {
 }
 
 /**
- * Resolve the active workhorse turn a steer must target; the host proves it, never the caller.
- * @param options - The dispatcher options carrying the host authority.
+ * Resolve the active workhorse turn a steer must target; the server proves it, never the caller.
+ * @param options - The dispatcher options carrying the server authority.
  * @returns The expected turn id.
  */
 function steerExpectedTurnId(options: CodexCoordinatorToolsOptions): TurnId {
 	const expectedTurnId = options.authority.expectedTurnId();
 	if (expectedTurnId === null) {
-		fail("busy", "The host has not proven an active workhorse turn.");
+		fail("busy", "The Archboard server has not proven an active workhorse turn.");
 	}
 	try {
 		options.identity.decoder.parseTurnId(expectedTurnId);
@@ -274,7 +274,7 @@ function steerExpectedTurnId(options: CodexCoordinatorToolsOptions): TurnId {
 
 /**
  * Assemble a validated workhorse-namespace call for one parsed input.
- * @param options - The dispatcher options carrying the host authority.
+ * @param options - The dispatcher options carrying the server authority.
  * @param evidence - The call, fingerprint and coordinator facts.
  * @param parsed - The tagged workhorse tool input.
  * @param binding - The current workhorse binding.
@@ -307,10 +307,10 @@ function workhorseCall(
 
 /**
  * Validate one coordinator dynamic-tool request end to end: envelope, logical call, coordinator,
- * arguments and, for workhorse tools, the host-bound workhorse.
- * @param options - The dispatcher options carrying the identity and host authorities.
+ * arguments and, for workhorse tools, the server-bound workhorse.
+ * @param options - The dispatcher options carrying the identity and server authorities.
  * @param request - The dynamic request from the transport.
- * @returns The validated call with its typed input and host facts.
+ * @returns The validated call with its typed input and server facts.
  */
 function validateCoordinatorToolRequest(
 	options: CodexCoordinatorToolsOptions,

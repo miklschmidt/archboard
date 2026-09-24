@@ -31,7 +31,7 @@ import { serverPath, type PanesBody } from "./support/navigator-support.ts";
 // Everything that is about "the board this pane holds" has to follow it there:
 // the inventory an agent reads before it does anything, the claim the pane
 // says is on its board, the code a picked node opens, the address, and the
-// file the canvas watches for somebody else's writes. A pane that reports one
+// file the Archboard server watches for somebody else's writes. A pane that reports one
 // board and draws another sends an agent to the wrong architecture — it reads
 // the parent while the person is discussing the child — and every part of that
 // failure is invisible from inside any one of those owners, which is why this
@@ -41,7 +41,7 @@ import { serverPath, type PanesBody } from "./support/navigator-support.ts";
 const REPOSITORY = "github.com/acme/drill";
 
 /**
- * A checkout the two boards can bind code into, registered so the canvas can
+ * A checkout the two boards can bind code into, registered so the server can
  * find it on this machine (ADR 0004, ADR 0011).
  * @param root Where to build it.
  * @returns The checkout root and the registry file naming it.
@@ -73,7 +73,7 @@ function aCheckout(root: string): { checkout: string; registry: string } {
 /**
  * An opener that records what it was asked to open instead of opening it.
  *
- * The whole point of the assertion is the path the canvas resolved, and that
+ * The whole point of the assertion is the path the server resolved, and that
  * is the one thing a real editor would swallow.
  * @param root Where to put the script and its log.
  * @returns The opener config file and the log it appends to.
@@ -106,7 +106,7 @@ function opened(log: string): string[] {
 
 /**
  * Replace a board file the way an atomic write does: a new inode in place of
- * the old one, with nothing in this canvas involved.
+ * the old one, with nothing in this server involved.
  * @param file The board file.
  * @param change What to do to the document before it is written back.
  */
@@ -126,7 +126,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	mkdirSync(vault, { recursive: true });
 	const { registry } = aCheckout(root);
 	const opener = aRecordingOpener(root);
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath,
 		vault,
 		env: serverTestEnvironment({
@@ -134,9 +134,9 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 			ARCHBOARD_OPENER_CONFIG: opener.config,
 		}),
 	});
-	resources.defer(() => canvas.dispose());
-	registerServerBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	// The board one level down, and the one a reader starts on. Each binds a
 	// different file, so what the opener is handed says which board answered.
@@ -198,7 +198,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	expect(above.status).toBe(200);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=pipeline`]);
+	await browser.run(["open", `${server.base}/?paneA=pipeline`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser),
@@ -309,7 +309,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	expect(paths).toHaveLength(1);
 	expect(paths[0]?.endsWith("src/engine.ts")).toBeTrue();
 
-	// And the file the canvas watches is the one on screen: another writer
+	// And the file the server watches is the one on screen: another writer
 	// replaces it, and the picture the reader is looking at follows (ADR 0015,
 	// ADR 0016). Watching the board the pane was opened on would leave this
 	// reader on a version nobody has for as long as they stayed here.
@@ -334,5 +334,5 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 		WAIT,
 	);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 90_000);

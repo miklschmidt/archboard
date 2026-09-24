@@ -1,5 +1,5 @@
 // The peer and negotiation stages: connection, listeners, local offer,
-// host answer, remote description.
+// server answer, remote description.
 
 import type { AnswerSdp } from "@/ui/codex-realtime/types/contract";
 import type {
@@ -174,11 +174,11 @@ async function publishLocalOffer(
 }
 
 /**
- * Reads the host's answer field by field, each read guarded, so a host
+ * Reads the server's answer field by field, each read guarded, so a server
  * that stops the session from inside a getter cannot be trusted past it.
  * @param controller The session.
  * @param run The run.
- * @param answer The host's answer.
+ * @param answer The server's answer.
  * @returns A plain copy, or null when the run went inactive while reading.
  */
 function readAnswer(controller: RunController, run: Run, answer: AnswerSdp): AnswerSdp | null {
@@ -211,7 +211,7 @@ async function verifiedAnswer(
 		run,
 		() => {
 			run.offerSent = true;
-			return controller.host.createOffer({ ...run.correlation, sdp: offerSdp });
+			return controller.server.createOffer({ ...run.correlation, sdp: offerSdp });
 		},
 		"The realtime answer timed out.",
 	);

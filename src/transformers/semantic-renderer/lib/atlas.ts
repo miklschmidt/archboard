@@ -20,7 +20,7 @@ import {
 
 // The box and the atlas are the shared render contract's
 // (`@/shared/semantic-board`), not this module's. Three areas of the
-// repository read an atlas — the canvas that serves it, the command that writes
+// repository read an atlas — the server that serves it, the command that writes
 // it beside a file, and the pane that hit-tests against it — so the shape is
 // written down once, where all three can reach it.
 

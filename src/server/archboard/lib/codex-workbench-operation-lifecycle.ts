@@ -49,7 +49,7 @@ function createServerDynamicOperationIdAdapter(
 			}
 		},
 		/**
-		 * The operation as it is spelled in a wire field this host owns.
+		 * The operation as it is spelled in a wire field this server owns.
 		 * @param operationId The operation.
 		 * @returns The wire string.
 		 */
@@ -208,12 +208,12 @@ function waitCancellation(
 ): (Error & { readonly code: string }) | null {
 	const names = waitWireNames(owner, decoder);
 	if (itemCancelledWait(notification, names)) {
-		return Object.assign(new Error("The dynamic wait call completed before host settlement."), {
+		return Object.assign(new Error("The dynamic wait call completed before server settlement."), {
 			code: "cancellation",
 		});
 	}
 	if (turnInterruptedWait(notification, names)) {
-		return Object.assign(new Error("The caller turn was interrupted before host settlement."), {
+		return Object.assign(new Error("The caller turn was interrupted before server settlement."), {
 			code: "interruption",
 		});
 	}
@@ -487,10 +487,10 @@ function createServerDynamicLifecycleOwner(
 		port,
 		onNotification,
 		childExit,
-		// Asymmetric on purpose: edge release lives in childExit, so a host
+		// Asymmetric on purpose: edge release lives in childExit, so a server
 		// shutdown with no quarantined epoch never reaches it. The wait graph is
 		// plain in-process state with no timer, handle, or child behind it, and
-		// host shutdown is the end of the process, so the surviving edges cost
+		// server shutdown is the end of the process, so the surviving edges cost
 		// nothing. Releasing them here would only add a second teardown order to
 		// keep in step with the one child exit already owns.
 		/**

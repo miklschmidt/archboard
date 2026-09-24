@@ -72,7 +72,7 @@ function latestThreadRecord(
 
 /**
  * The thread as the link port is asked about it: the thread itself, plus
- * whatever provenance this host already holds for it.
+ * whatever provenance this server already holds for it.
  * @param threadId The thread.
  * @param record The operation owning it, or null.
  * @returns The target.
@@ -108,7 +108,7 @@ function epochStateOf(
 }
 
 /**
- * How this host came by a thread: it created it, adopted one that existed, or
+ * How this server came by a thread: it created it, adopted one that existed, or
  * does not own it at all.
  * @param record The operation owning the thread, or null.
  * @returns The ownership.
@@ -127,7 +127,7 @@ interface CallerEpochFacts {
 }
 
 /**
- * The child epoch a caller may act under: only a thread this host created, in
+ * The child epoch a caller may act under: only a thread this server created, in
  * the epoch running now, and naming both.
  * @param base The thread's facts.
  * @returns The child epoch, or null when the caller may not act.
@@ -198,7 +198,7 @@ export function createServerDynamicAuthorityAdapters(
 	/**
 	 * The pane whose context one thread's agent may read: the first open pane,
 	 * in reading order, whose link can run turns on that thread. Every pane of a
-	 * canvas shows the one link, so this is the first pane while it is linked.
+	 * server shows the one link, so this is the first pane while it is linked.
 	 * @param threadId The thread.
 	 * @returns The pane, or null when no pane is linked to it.
 	 */

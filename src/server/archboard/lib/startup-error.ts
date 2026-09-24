@@ -20,7 +20,7 @@ function failures(error: unknown): readonly Error[] {
 
 /**
  * The Codex failure inside a startup failure, which is the one worth naming
- * to whoever started the canvas.
+ * to whoever started the server.
  * @param error Whatever startup threw.
  * @returns The Codex failure, or null when startup failed for another reason.
  */
@@ -47,7 +47,7 @@ const CODEX_STARTUP_REFUSALS = new Set([
 const CODEX_INSTALL_FAILURES = new Set(["early_exit", "spawn_failed", "strict_config_rejected"]);
 
 /**
- * What a Codex process failure says to whoever started the canvas.
+ * What a Codex process failure says to whoever started the server.
  * @param codex The failure.
  * @returns The line.
  */
@@ -57,7 +57,7 @@ function codexProcessLine(codex: CodexProcessError): string {
 	}
 	if (CODEX_INSTALL_FAILURES.has(codex.code)) {
 		return (
-			"Codex app-server exited before the canvas became ready. " +
+			"Codex app-server exited before the Archboard server became ready. " +
 			"Run bun install to restore @openai/codex 0.155.1, then retry. " +
 			codex.message
 		);
@@ -66,7 +66,7 @@ function codexProcessLine(codex: CodexProcessError): string {
 }
 
 /**
- * One bounded, actionable line for the public canvas startup boundary.
+ * One bounded, actionable line for the public server startup boundary.
  * @param error Whatever startup threw.
  * @returns The line.
  */
@@ -78,5 +78,7 @@ export function serverStartupFailureMessage(error: unknown): string {
 	if (codex instanceof CodexProcessError) {
 		return codexProcessLine(codex);
 	}
-	return error instanceof Error ? error.message : "Canvas startup failed for an unknown reason.";
+	return error instanceof Error
+		? error.message
+		: "Archboard server startup failed for an unknown reason.";
 }

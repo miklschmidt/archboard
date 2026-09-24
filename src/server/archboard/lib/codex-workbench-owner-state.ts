@@ -87,7 +87,7 @@ interface CodexWorkbenchOwnerRuntime {
 }
 
 /**
- * The owner's process-lifetime publication. It lives for one canvas application
+ * The owner's process-lifetime publication. It lives for one server application
  * lifetime inside `installCodexWorkbenchOwnerLifecycle` and is never handed to a
  * caller: backend source changes take effect only through a full restart
  * (ADR 0021), so no module replacement ever observes it.

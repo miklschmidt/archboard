@@ -106,7 +106,7 @@ function currentWriteDoing(): string | null {
  * Unless the caller has already said it. A command that builds its own query —
  * a semantic write states its line and the version it read together — is the
  * one that knows; adding a second `doing=` behind it would put two values on
- * the wire, and the canvas would read an array where it expects a line and
+ * the wire, and the server would read an array where it expects a line and
  * refuse the write as undescribed.
  * @param path The path.
  * @returns The path, with `?doing=` when there is a line to state and none yet.

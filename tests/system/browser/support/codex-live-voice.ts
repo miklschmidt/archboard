@@ -238,7 +238,7 @@ interface TalkWire {
 	/** The thread Talk created: the workhorse. */
 	readonly workhorse: string | null;
 	readonly createdAt: number;
-	/** The conversation reading the created thread's turns: it is the canvas's linked thread. */
+	/** The conversation reading the created thread's turns: it is the server's linked thread. */
 	readonly readAt: number;
 	readonly voiceAt: number;
 	/** The board catalogue, naming the given board, injected into the coordinator. */

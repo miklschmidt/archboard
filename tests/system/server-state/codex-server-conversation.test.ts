@@ -59,14 +59,14 @@ async function finishedTurn(socket: ApplicationSocket): Promise<string | undefin
 	return latest?.status === "completed" ? latest.turnId : undefined;
 }
 
-// One conversation per canvas, whichever pane speaks (TASK-302.06): the link
-// lives on the canvas, a turn carries the board of the pane that sent it, and
+// One conversation per Archboard server, whichever pane speaks (TASK-302.06): the link
+// lives on the server, a turn carries the board of the pane that sent it, and
 // closing the pane that created the link strands nothing.
 test("two panes share one conversation that outlives the pane that created it", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath,
 			vault: fixture.vault,
 			env: {
@@ -76,8 +76,8 @@ test("two panes share one conversation that outlives the pane that created it", 
 				XDG_STATE_HOME: join(fixture.root, "state"),
 			},
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
 		for (const [board, node] of [
 			["scratch", "Gateway"],
 			["payments", "Ledger"],
@@ -98,9 +98,9 @@ test("two panes share one conversation that outlives the pane that created it", 
 				})
 			).status;
 		// A is first in reading order and not focused; B is focused and reads another board.
-		const a = await openApplicationSocket(canvas.base, "client-a");
+		const a = await openApplicationSocket(server.base, "client-a");
 		resources.defer(() => a.close());
-		const b = await openApplicationSocket(canvas.base, "client-b");
+		const b = await openApplicationSocket(server.base, "client-b");
 		resources.defer(() => b.close());
 		expect(await registerA()).toBe(200);
 		const registerB = await request("/api/panes", {
@@ -154,7 +154,7 @@ test("two panes share one conversation that outlives the pane that created it", 
 		await waitFor(async () => {
 			const listed = await request<{ paneCount: number }>("/api/panes");
 			return listed.body.paneCount === 1;
-		}, "pane A to leave the canvas");
+		}, "pane A to leave the server");
 
 		// B answers both approvals: neither was cancelled with A, and the
 		// coordination approval follows B's lease.
@@ -270,9 +270,9 @@ test("two panes share one conversation that outlives the pane that created it", 
 			return finished !== first ? finished : undefined;
 		}, "the second workhorse turn to finish");
 
-		// A pane reopened under A's old id is shown the canvas's link, and a
+		// A pane reopened under A's old id is shown the server's link, and a
 		// create from B replaces it for every pane.
-		const reopened = await openApplicationSocket(canvas.base, "client-a");
+		const reopened = await openApplicationSocket(server.base, "client-a");
 		resources.defer(() => reopened.close());
 		expect(await registerA()).toBe(200);
 		expect(await reopened.request("connect")).toMatchObject({ ok: true });

@@ -34,9 +34,9 @@ function inspectOnly(threadId: ThreadId): InspectOnlyThreadLink {
 }
 
 /**
- * A canvas link over a real compare-and-swap store, whose binds record the key
+ * A server link over a real compare-and-swap store, whose binds record the key
  * they were addressed to.
- * @returns The canvas port and the keys the store was asked about.
+ * @returns The server port and the keys the store was asked about.
  */
 function serverLink(): { readonly link: CodexThreadLinkPort; readonly keys: string[] } {
 	const store = createCodexThreadLinkBinding();
@@ -60,7 +60,7 @@ function serverLink(): { readonly link: CodexThreadLinkPort; readonly keys: stri
 	return { link: createServerThreadLink(port), keys };
 }
 
-describe("one thread link per canvas", () => {
+describe("one thread link per server", () => {
 	test("every pane reads the one link, labelled for the pane that asked", async () => {
 		const { link, keys } = serverLink();
 		const target = { threadId: authority.decoder.adoptThreadId("thread-a") } as never;

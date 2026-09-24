@@ -269,7 +269,7 @@ async function auditOwner(context: OwnerContext): Promise<void> {
 		failures.push(`owned processes remain: ${state.processes.join(", ")}`);
 	if (state.sockets.length > 0)
 		failures.push(`agent-browser sockets remain: ${state.sockets.join(", ")}`);
-	for (const base of state.listeners) failures.push(`canvas listener remains at ${base}`);
+	for (const base of state.listeners) failures.push(`server listener remains at ${base}`);
 	rmSync(context.root, { recursive: true, force: true });
 	if (existsSync(context.root)) failures.push("file-specific owner directory remains");
 	if (failures.length > 0) {

@@ -1,6 +1,6 @@
-// The issuance ledger and the operations over it: minting host identities,
-// adopting server identities, checking that an identity was issued here, and
-// giving the server's raw value back for one that was.
+// The issuance ledger and the operations over it: minting Archboard server identities,
+// adopting app-server identities, checking that an identity was issued here, and
+// giving the app-server's raw value back for one that was.
 
 import {
 	assertIssued,
@@ -106,7 +106,7 @@ interface StagedResponseIdentity<Domain extends ResponseAdoptionDomain> {
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param token - The token to spell the wire value from.
- * @param raw - The value the token stands for: the server's own value, or for a host
+ * @param raw - The value the token stands for: the app-server's own value, or for an Archboard server
  * identity the unprefixed nonce the token was spelled from.
  * @returns The branded identity.
  */
@@ -132,7 +132,7 @@ function issue<Domain extends IdentityDomain>(
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param value - The branded identity.
- * @param raw - The server's raw value, or the token for a host identity.
+ * @param raw - The app-server's raw value, or the token for an Archboard server identity.
  * @returns The same identity.
  */
 function issueExisting<Domain extends IdentityDomain>(
@@ -145,7 +145,7 @@ function issueExisting<Domain extends IdentityDomain>(
 }
 
 /**
- * Mints and records a host-owned identity.
+ * Mints and records an Archboard-server-owned identity.
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @returns The fresh branded identity.

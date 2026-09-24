@@ -38,7 +38,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	mkdirSync(hiddenParent);
 	symlinkSync(repoRoot, hiddenRepo, "dir");
 	const vault = join(root, "vault");
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath: fixture,
 		vault,
 		env: {
@@ -46,12 +46,12 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 			ARCHBOARD_TEST_SERVER_ENTRY: join(hiddenRepo, "src/server.ts"),
 		},
 	});
-	resources.defer(() => canvas.dispose());
+	resources.defer(() => server.dispose());
 	try {
-		const healthPayload: unknown = await (await fetch(`${canvas.base}/health`)).json();
+		const healthPayload: unknown = await (await fetch(`${server.base}/health`)).json();
 		const health = HealthSchema.parse(healthPayload);
-		expect(health.pid).toBe(canvas.pid!);
-		const ipv6 = await fetch(canvas.base.replace("127.0.0.1", "[::1]") + "/health").catch(
+		expect(health.pid).toBe(server.pid!);
+		const ipv6 = await fetch(server.base.replace("127.0.0.1", "[::1]") + "/health").catch(
 			(error: unknown) => error,
 		);
 		expect(ipv6).toBeInstanceOf(Error);
@@ -59,13 +59,13 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 		const probes = plantStaticProbes(repoRoot);
 		resources.defer(() => probes.restore());
 		const statuses = await Promise.all([
-			fetch(`${canvas.base}/${probes.frontend}`).then((response) => response.status),
-			fetch(`${canvas.base}/${probes.stale}`).then((response) => response.status),
-			fetch(`${canvas.base}/${probes.hidden}`).then((response) => response.status),
+			fetch(`${server.base}/${probes.frontend}`).then((response) => response.status),
+			fetch(`${server.base}/${probes.stale}`).then((response) => response.status),
+			fetch(`${server.base}/${probes.hidden}`).then((response) => response.status),
 		]);
 		expect(statuses).toEqual([200, 404, 404]);
 
-		const port = Number(new URL(canvas.base).port);
+		const port = Number(new URL(server.base).port);
 		for (const mode of ["default", "broad"] as const) {
 			const failed = await runOwnedPeerToExit({
 				argv: [process.execPath, fixture],

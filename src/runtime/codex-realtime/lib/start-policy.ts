@@ -103,7 +103,7 @@ export function createRealtimeStartParams(input: {
 }): SessionParams<"thread/realtime/start"> {
 	// A narration adds to the voice prompt and replaces none of it: the voice is still the board
 	// assistant between steps. The coordinator is told nothing of it, since every step reaches the
-	// voice model from the host and a question asked during a narration is an ordinary request.
+	// voice model from the server and a question asked during a narration is an ordinary request.
 	// A recording hands nothing off, so it has no delegation to fill: the Realtime API's own
 	// "one moment" filler would be the only thing it could say that nobody asked for. Its
 	// coordinator is told to say nothing, because a turn it ran anyway would be heard in the video.

@@ -1,7 +1,7 @@
 // The queue's one owner of in-flight and settled command state. It reads the
 // authoritative queue through the store, emits commands against the target
 // captured for the queue on screen, and never commits an optimistic order or
-// outcome: the view re-renders in the host's order when the host republishes.
+// outcome: the view re-renders in the server's order when the server republishes.
 
 import type {
 	WorkbenchQueueCommands,
@@ -241,8 +241,8 @@ function createWorkbenchQueueController(
 
 	/**
 	 * The panel names a submission as a plain string; the wire needs the
-	 * branded id the host published. Only an id the authoritative queue holds
-	 * resolves, so the panel can never name a submission the host has not.
+	 * branded id the server published. Only an id the authoritative queue holds
+	 * resolves, so the panel can never name a submission the server has not.
 	 * @param control The control asking.
 	 * @param submissionId The panel's string.
 	 * @param dispatch The command, given the resolved id.

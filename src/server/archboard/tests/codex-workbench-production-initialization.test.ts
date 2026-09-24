@@ -44,7 +44,7 @@ function deferred(): {
 	return { promise, resolve };
 }
 
-function installation(host: Record<string, unknown> = {}) {
+function installation(server: Record<string, unknown> = {}) {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-activation-"));
 	const prior = process.env["XDG_STATE_HOME"];
 	process.env["XDG_STATE_HOME"] = root;
@@ -53,7 +53,7 @@ function installation(host: Record<string, unknown> = {}) {
 			root,
 			value: createServerCodexWorkbenchInstallation({
 				checkoutRoot: "/repo",
-				...host,
+				...server,
 			} as never),
 		};
 	} finally {
@@ -66,7 +66,7 @@ function installation(host: Record<string, unknown> = {}) {
 }
 
 describe("production Codex storage", () => {
-	test("the canvases on a machine share one Codex home, and each port owns its own state", () => {
+	test("the servers on a machine share one Codex home, and each port owns its own state", () => {
 		const { root, value } = installation();
 		try {
 			const workbench = join(root, "archboard", "codex-workbench");

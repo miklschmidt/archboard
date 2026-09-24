@@ -82,7 +82,7 @@ describe.serial("production Codex setup cleanup", () => {
 				expect(result.status, scenario).not.toBe(0);
 				const lines = result.stderr.split(/\r?\n/u).filter(Boolean);
 				expect(lines, scenario).toHaveLength(1);
-				expect(lines[0], scenario).toMatch(/Codex|canvas child/iu);
+				expect(lines[0], scenario).toMatch(/Codex|server child/iu);
 				expect(lines[0], scenario).not.toMatch(/\bat\s+\S+|AggregateError/iu);
 				expect(readFileSync(join(publicWorkbenchRoot(root), "pre-existing-sentinel"), "utf8")).toBe(
 					"preserve me",
@@ -101,7 +101,7 @@ describe.serial("production Codex setup cleanup", () => {
 			}
 		}
 	}, 20_000);
-	test("concurrent public starts share one Codex owner and one canvas", async () => {
+	test("concurrent public starts share one Codex owner and one server", async () => {
 		const resources = new AsyncDisposableStack();
 		let environment: NodeJS.ProcessEnv | null = null;
 		let spawned: ProcessRecord[] = [];
@@ -186,7 +186,7 @@ describe.serial("production Codex setup cleanup", () => {
 			});
 			expect(action.value).not.toMatchObject({ outcome: "delivered" });
 			// A board write and a pane move, so the census below is taken after the
-			// canvas has actually done work rather than only after it started.
+			// server has actually done work rather than only after it started.
 			expect(
 				(
 					await request("/api/semantic-boards/create", {
@@ -310,7 +310,7 @@ describe.serial("production Codex setup cleanup", () => {
 				onRoot: (value) => void (root = value),
 				onRootCleanup: () => void cleanupOrder.push("root"),
 			});
-			const canvas = await startOwnedServer({
+			const server = await startOwnedServer({
 				serverPath,
 				vault: fixture.vault,
 				env: {
@@ -320,13 +320,13 @@ describe.serial("production Codex setup cleanup", () => {
 					XDG_STATE_HOME: join(root, "state"),
 				},
 			});
-			serverPid = canvas.pid;
-			const request = createRequester(canvas);
+			serverPid = server.pid;
+			const request = createRequester(server);
 			resources.defer(async () => {
-				await canvas.dispose();
+				await server.dispose();
 				cleanupOrder.push("server");
 			});
-			const focusedSocket = await openApplicationSocket(canvas.base, "focused-client");
+			const focusedSocket = await openApplicationSocket(server.base, "focused-client");
 			resources.defer(() => focusedSocket.close());
 			for (const scenario of ["hook_throw", "socket_error", "early_close", "timeout"] as const) {
 				const peer =
@@ -338,7 +338,7 @@ describe.serial("production Codex setup cleanup", () => {
 				const failureBase =
 					scenario === "socket_error"
 						? await closedLoopbackEndpoint()
-						: (peer?.base ?? canvas.base);
+						: (peer?.base ?? server.base);
 				let socket: WebSocket | null = null;
 				const failure = await openApplicationSocket(failureBase, "bound-client", {
 					timeoutMs: scenario === "timeout" ? 25 : 2_000,
@@ -366,7 +366,7 @@ describe.serial("production Codex setup cleanup", () => {
 					expect(peer.server.listening, scenario).toBeFalse();
 				}
 
-				const recovery = await openApplicationSocket(canvas.base, "bound-client");
+				const recovery = await openApplicationSocket(server.base, "bound-client");
 				for (const paneRegistration of [
 					pane("bound-client", false, true),
 					pane("focused-client", true, false),
@@ -383,7 +383,7 @@ describe.serial("production Codex setup cleanup", () => {
 				expect(await recovery.request("releaseLease"), scenario).toMatchObject({ ok: true });
 				await recovery.close();
 			}
-			const finalSocket = await openApplicationSocket(canvas.base, "cleanup-order");
+			const finalSocket = await openApplicationSocket(server.base, "cleanup-order");
 			resources.defer(async () => {
 				await finalSocket.close();
 				cleanupOrder.push("socket");
@@ -397,7 +397,7 @@ describe.serial("production Codex setup cleanup", () => {
 		await assertProcessesStopped([...records, ...(serverPid === null ? [] : [{ pid: serverPid }])]);
 	}, 20_000);
 
-	test("Codex child start failure reaps both child and canvas before removing the root", async () => {
+	test("Codex child start failure reaps both child and server before removing the root", async () => {
 		const resources = new AsyncDisposableStack();
 		let root = "";
 		let records: ProcessRecord[] = [];

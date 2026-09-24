@@ -1,4 +1,4 @@
-// Running the coordinator with a terminal workhorse outcome (TASK-291): the host's half.
+// Running the coordinator with a terminal workhorse outcome (TASK-291): the server's half.
 //
 // A turn can only be started on an idle thread, and the callbacks behind this one wait while it
 // waits. What is guarded: the turn is started once the coordinator is idle, under a minted

@@ -1,7 +1,7 @@
 // One author run, start to finish: a private world, Flask at the pin, a
-// canvas of its own, the fixture laid, the skill installed and verified, a
+// Archboard server of its own, the fixture laid, the skill installed and verified, a
 // snapshot, one Codex exec with the scenario's prompt, and then everything
-// the checks and the grader need read back and written down. The canvas is
+// the checks and the grader need read back and written down. The server is
 // stopped whatever happened.
 
 import fs from "node:fs";
@@ -109,14 +109,14 @@ interface AuthorRecord {
 interface RunWorld {
 	readonly paths: RunPaths;
 	readonly cli: CliContext;
-	readonly canvas: OwnedServer;
+	readonly server: OwnedServer;
 	/** The Flask commit checked out, or null for a planning scenario's empty repository. */
 	readonly commit: string | null;
 }
 
 /**
  * Brings one run's world up: directory, Flask (or, for a planning scenario, an
- * empty repository), canvas, configuration.
+ * empty repository), server, configuration.
  * @param job The job.
  * @returns The world.
  */
@@ -140,17 +140,17 @@ async function bringUp(job: RunJob): Promise<RunWorld> {
 		operatorAuthFile(),
 		authorConfigToml(job.pins.codex.author, paths),
 	);
-	const canvas = await startServer(
+	const server = await startServer(
 		job.checkout,
 		paths,
 		runEnvironment(paths, "http://127.0.0.1:0"),
 		job.signal,
 	);
-	const env = runEnvironment(paths, canvas.url);
+	const env = runEnvironment(paths, server.url);
 	return {
 		paths,
 		cli: { checkout: job.checkout, env, cwd: paths.flask, signal: job.signal },
-		canvas,
+		server,
 		commit,
 	};
 }
@@ -340,7 +340,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 	} catch (error) {
 		return await failedRun(job, id, world, error, startedAt);
 	} finally {
-		await world?.canvas.stop();
+		await world?.server.stop();
 	}
 }
 
@@ -443,7 +443,7 @@ function assemble(
 			job.scenario.flask === undefined
 				? null
 				: { revision: job.scenario.flask, commit: world.commit },
-		canvas: { url: world.canvas.url, pid: world.canvas.pid },
+		canvas: { url: world.server.url, pid: world.server.pid },
 		codex: {
 			executable: job.pins.codex.executable,
 			version: job.pins.codex.version,
@@ -465,7 +465,7 @@ function assemble(
 
 /**
  * What a failed run can still show: the declared diagrams as the vault holds
- * them at the point of failure, when the canvas is still there to draw them.
+ * them at the point of failure, when the server is still there to draw them.
  * A capture that cannot be taken is recorded as such, never invented.
  * @param job The job.
  * @param world The world, if it got that far.
@@ -479,7 +479,7 @@ async function partialCaptures(job: RunJob, world: RunWorld | null): Promise<Cap
 		boards = await readVault(world.cli).catch(() => boards);
 	}
 	return sequentially(expandCaptures(job.scenario.captures, boards), async (declaration) => {
-		let detail = "the run failed before its canvas was ready";
+		let detail = "the run failed before its server was ready";
 		if (job.signal.aborted) detail = "the run was cancelled";
 		else if (world !== null) {
 			try {

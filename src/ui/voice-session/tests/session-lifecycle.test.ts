@@ -191,7 +191,7 @@ describe("voice session controls", () => {
 		const unconfirmed = mediaSnapshot({
 			phase: "recoverable_error",
 			reason: "stop_failed",
-			message: "The realtime host did not confirm that session-1 stopped.",
+			message: "The realtime server did not confirm that session-1 stopped.",
 		});
 		realtime.onStop(() => {
 			realtime.set(unconfirmed);

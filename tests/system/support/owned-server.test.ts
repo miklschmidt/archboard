@@ -121,23 +121,23 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 	const ownedServerUrl = new URL("./owned-server.ts", import.meta.url).href;
 	const { startOwnedServer: startMockedServer } = await import(ownedServerUrl);
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-failed-reap-"));
-	const canvas = await startMockedServer({ serverPath, vault });
+	const server = await startMockedServer({ serverPath, vault });
 	let surfaced = "";
 	try {
-		await canvas.restart();
+		await server.restart();
 	} catch (error) {
 		surfaced = error instanceof Error ? error.message : String(error);
 	}
-	const retainedPid = canvas.pid;
+	const retainedPid = server.pid;
 	allowFailedGenerationExit = true;
-	await canvas.dispose();
+	await server.dispose();
 	// oxlint-disable-next-line no-console -- JSON is the isolated child protocol.
 	console.log(
 		JSON.stringify({
 			spawnCount,
 			surfaced,
 			retainedPid,
-			disposed: canvas.pid === null,
+			disposed: server.pid === null,
 			vaultExists: fs.existsSync(vault),
 		}),
 	);
@@ -147,7 +147,7 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 const { isOwnedServerNamespaceRoot, processExists, startOwnedServer, waitForProcessExit } =
 	await import("./owned-server.ts");
 
-describe("owned canvas direct lifecycle", () => {
+describe("owned server direct lifecycle", () => {
 	const emergencyVaults = new Set<string>();
 	afterAll(() => {
 		for (const vault of emergencyVaults) {
@@ -239,19 +239,19 @@ describe("owned canvas direct lifecycle", () => {
 	test("allocates and verifies a port when the caller names none", async () => {
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
 		emergencyVaults.add(vault);
-		const canvas = await startOwnedServer({ serverPath, vault });
+		const server = await startOwnedServer({ serverPath, vault });
 		try {
-			const health = (await fetch(`${canvas.base}/health`).then((response) => response.json())) as {
+			const health = (await fetch(`${server.base}/health`).then((response) => response.json())) as {
 				pid: number;
 			};
-			expect(health.pid).toBe(canvas.pid!);
-			expect(Number(new URL(canvas.base).port)).toBeGreaterThan(0);
+			expect(health.pid).toBe(server.pid!);
+			expect(Number(new URL(server.base).port)).toBeGreaterThan(0);
 		} finally {
-			await canvas.dispose();
+			await server.dispose();
 		}
 	});
 
-	test("keeps two live test canvases in separate state directories", async () => {
+	test("keeps two live test servers in separate state directories", async () => {
 		const callerRoot = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-shared-caller-"));
 		emergencyVaults.add(callerRoot);
 		const callerPaths = {
@@ -298,10 +298,10 @@ describe("owned canvas direct lifecycle", () => {
 				vault: path.join(callerRoot, "vault-second"),
 				env,
 			});
-			for (const canvas of [first, second]) {
-				namespaceRoots.push(canvas.paths.root);
+			for (const server of [first, second]) {
+				namespaceRoots.push(server.paths.root);
 				namespaces.push(
-					(await fetch(`${canvas.base}/namespace`).then((response) =>
+					(await fetch(`${server.base}/namespace`).then((response) =>
 						response.json(),
 					)) as (typeof namespaces)[number],
 				);
@@ -309,8 +309,8 @@ describe("owned canvas direct lifecycle", () => {
 			expect(new Set(namespaces.map(({ xdgState }) => xdgState)).size).toBe(2);
 			expect(new Set(namespaces.map(({ lock }) => lock)).size).toBe(2);
 			for (const [index, namespace] of namespaces.entries()) {
-				const canvas = [first, second][index]!;
-				const { paths } = canvas;
+				const server = [first, second][index]!;
+				const { paths } = server;
 				const workbench =
 					process.platform === "darwin"
 						? path.join(
@@ -338,7 +338,7 @@ describe("owned canvas direct lifecycle", () => {
 					path.join(
 						workbench,
 						"canvases",
-						new URL(canvas.base).port,
+						new URL(server.base).port,
 						".archboard-codex-process.lock",
 					),
 				);
@@ -363,15 +363,15 @@ describe("owned canvas direct lifecycle", () => {
 	test("reallocates an automatic port stolen after the retired generation exits", async () => {
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
 		emergencyVaults.add(vault);
-		const canvas = await startOwnedServer({ serverPath, vault });
-		const retiredBase = canvas.base;
-		const retiredPid = canvas.pid;
+		const server = await startOwnedServer({ serverPath, vault });
+		const retiredBase = server.base;
+		const retiredPid = server.pid;
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
 		try {
-			await canvas.restart({
+			await server.restart({
 				whileStopped() {
-					expect(canvas.base).toBe(retiredBase);
-					expect(canvas.pid).toBeNull();
+					expect(server.base).toBe(retiredBase);
+					expect(server.pid).toBeNull();
 					foreign = Bun.serve({
 						hostname: "127.0.0.1",
 						port: Number(new URL(retiredBase).port),
@@ -379,21 +379,21 @@ describe("owned canvas direct lifecycle", () => {
 					});
 				},
 			});
-			expect(canvas.base).not.toBe(retiredBase);
-			expect(canvas.pid).not.toBe(retiredPid);
+			expect(server.base).not.toBe(retiredBase);
+			expect(server.pid).not.toBe(retiredPid);
 			expect(
-				await fetch(`${canvas.base}/health`).then((response) => response.json()),
+				await fetch(`${server.base}/health`).then((response) => response.json()),
 			).toMatchObject({
 				status: "healthy",
 				service: "archboard-server",
-				pid: canvas.pid,
+				pid: server.pid,
 			});
 			expect(await fetch(`${retiredBase}/health`).then((response) => response.json())).toEqual({
 				pid: process.pid,
 			});
 		} finally {
 			void foreign?.stop(true);
-			await canvas.dispose();
+			await server.dispose();
 		}
 	});
 
@@ -415,7 +415,7 @@ describe("owned canvas direct lifecycle", () => {
 		expect(failure?.message.match(/EADDRINUSE fixture/g)).toHaveLength(8);
 		expect(failure?.message.match(/"cleanup":"reaped"/g)).toHaveLength(8);
 		const paths = JSON.parse(
-			/^Owned canvas paths: (.+)$/m.exec(failure?.message ?? "")?.[1] ?? "null",
+			/^Owned server paths: (.+)$/m.exec(failure?.message ?? "")?.[1] ?? "null",
 		) as { root?: string } | null;
 		expect(paths?.root).toStartWith(
 			path.join(fs.realpathSync(os.tmpdir()), "archboard-owned-server-"),
@@ -428,12 +428,12 @@ describe("owned canvas direct lifecycle", () => {
 		const port = await probeLoopbackPort();
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-foreign-pid-"));
 		emergencyVaults.add(vault);
-		const canvas = await startOwnedServer({ serverPath, port, vault });
+		const server = await startOwnedServer({ serverPath, port, vault });
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
 		try {
 			let failure: unknown;
 			try {
-				await canvas.restart({
+				await server.restart({
 					whileStopped() {
 						foreign = Bun.serve({
 							hostname: "127.0.0.1",
@@ -447,13 +447,13 @@ describe("owned canvas direct lifecycle", () => {
 			}
 			expect(failure).toBeInstanceOf(Error);
 			expect((failure as Error).message).toMatch(/answered for pid .* not owned pid/);
-			expect(canvas.base).toBe(`http://127.0.0.1:${port}`);
-			expect(await fetch(`${canvas.base}/health`).then((response) => response.json())).toEqual({
+			expect(server.base).toBe(`http://127.0.0.1:${port}`);
+			expect(await fetch(`${server.base}/health`).then((response) => response.json())).toEqual({
 				pid: process.pid,
 			});
 		} finally {
 			void foreign?.stop(true);
-			await canvas.dispose();
+			await server.dispose();
 		}
 		expect(fs.existsSync(vault)).toBeFalse();
 	});
@@ -480,7 +480,7 @@ describe("owned canvas direct lifecycle", () => {
 		expect(result.spawnCount).toBe(2);
 		expect(result.surfaced).toContain("did not exit after SIGKILL");
 		expect(result.surfaced).toMatch(
-			/"cleanup":"Owned canvas generation 2 did not exit after SIGKILL\.\\nOwned canvas paths: \{/,
+			/"cleanup":"Owned server generation 2 did not exit after SIGKILL\.\\nOwned server paths: \{/,
 		);
 		expect(result.surfaced).toContain("refusing to start another");
 		expect(result.retainedPid).toBe(1_002);

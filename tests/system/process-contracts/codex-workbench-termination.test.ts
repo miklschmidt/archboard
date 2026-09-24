@@ -30,12 +30,12 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 	mkdirSync(staging, { recursive: true });
 	resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 	const fixture = prepareProductionFixture(resources, extendFixture(staging));
-	const canvas = await startServer(fixture);
-	resources.defer(() => canvas.dispose());
+	const server = await startServer(fixture);
+	resources.defer(() => server.dispose());
 	const clientId = `termination-${label}`;
-	const socket = await openApplicationSocket(canvas.base, clientId);
+	const socket = await openApplicationSocket(server.base, clientId);
 	resources.defer(() => socket.close());
-	const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
+	const request = createRequester({ base: server.base, assertRunning: async () => undefined });
 	expect(
 		(
 			await request("/api/panes", {
@@ -97,7 +97,7 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 	if (childPid === undefined) {
 		throw new Error("The pending-shutdown child did not start.");
 	}
-	return { canvas, childPid, fixture, socket };
+	return { server, childPid, fixture, socket };
 }
 
 describe.serial("composed Codex terminal process lifecycle", () => {
@@ -105,12 +105,12 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 		for (const signal of ["SIGINT", "SIGTERM"] as const) {
 			const resources = new AsyncDisposableStack();
 			try {
-				const { canvas, childPid, fixture } = await pendingShutdownBatch(resources, signal);
+				const { server, childPid, fixture } = await pendingShutdownBatch(resources, signal);
 				const mutationCount = records(fixture.logPath).filter(
 					(entry) => entry.kind === "frame" && entry.method === "thread/start",
 				).length;
-				await canvas.dispose(signal);
-				expect(processExists(canvas.pid), signal).toBeFalse();
+				await server.dispose(signal);
+				expect(processExists(server.pid), signal).toBeFalse();
 				expect(processExists(childPid), signal).toBeFalse();
 				for (const id of ["shutdown-ordinary", "shutdown-dynamic", "shutdown-wait"]) {
 					expect(reverseResponses(fixture.logPath, id), `${signal}:${id}`).toHaveLength(1);
@@ -137,7 +137,7 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 					).length,
 				).toBe(mutationCount);
 				const terminalLog = readFileSync(fixture.logPath, "utf8");
-				await canvas.dispose(signal);
+				await server.dispose(signal);
 				expect(readFileSync(fixture.logPath, "utf8")).toBe(terminalLog);
 			} finally {
 				await resources.disposeAsync();
