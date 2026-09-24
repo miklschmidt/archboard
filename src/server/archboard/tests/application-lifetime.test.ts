@@ -287,7 +287,7 @@ describe("server application lifetime", () => {
 		expect(concurrent).toBe(first);
 		const refusal = await first.catch((error: unknown) => error);
 		expect(refusal).toBeInstanceOf(ServerApplicationBusyError);
-		expect((refusal as ServerApplicationBusyError).code).toBe("CANVAS_BUSY");
+		expect((refusal as ServerApplicationBusyError).code).toBe("SERVER_BUSY");
 		expect((refusal as Error).message).toContain("POST /api/selection");
 		expect(lifetime.phase()).toBe("running");
 		expect(admission.accepting()).toBeTrue();

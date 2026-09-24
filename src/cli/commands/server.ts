@@ -55,7 +55,7 @@ const startContract = defineCommand({
 	effects: ["local-write"],
 	refusals: [
 		{
-			code: "CANVAS_UNREACHABLE",
+			code: "SERVER_UNREACHABLE",
 			exit: 3,
 			stream: "stderr",
 			description: "The explicitly started server did not become healthy.",

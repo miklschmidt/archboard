@@ -112,7 +112,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 				},
 			);
 			expect(raced.status).toBe(503);
-			expect(await raced.json()).toMatchObject({ code: "CANVAS_STOPPING" });
+			expect(await raced.json()).toMatchObject({ code: "SERVER_STOPPING" });
 			await waitFor(async () => {
 				const response = await fetch(`${server.base}/health`);
 				if (!response.ok) {

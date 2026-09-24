@@ -48,7 +48,7 @@ function hasErrorCode(cause: unknown, code: string): boolean {
 /**
  * Build an Error with a code the CLI can branch on, without an unchecked cast.
  * @param message What went wrong, for a person.
- * @param code The machine-readable code, such as `CANVAS_UNREACHABLE`.
+ * @param code The machine-readable code, such as `SERVER_UNREACHABLE`.
  * @returns The error with the code attached as an own property.
  */
 function codedError(message: string, code: string): CodedError {

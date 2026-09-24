@@ -127,7 +127,7 @@ function refuseUnstartableServer(): void {
 		throw unreachableError("refusing to auto-start a non-loopback server URL");
 	}
 	if (!ARCHBOARD_VAULT) {
-		throw codedError(noVaultMessage(), "CANVAS_UNREACHABLE");
+		throw codedError(noVaultMessage(), "SERVER_UNREACHABLE");
 	}
 	try {
 		verifyCodexExecutable(resolveProjectCodexExecutable());
