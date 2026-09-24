@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 12,
+	"version": 13,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-24T09:39:29.716Z",
+	"updatedAt": "2026-09-24T14:03:29.434Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -383,9 +383,13 @@
 						"order": 3000,
 						"from": "jylkTBp7",
 						"to": "FxzIjbIO",
-						"kind": "dependency",
-						"label": "send reviewed methods",
-						"emphasis": "normal"
+						"kind": "rpc",
+						"label": "one JSON-RPC request per method",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "3vlSu8a3",
@@ -405,8 +409,8 @@
 						"order": 5000,
 						"from": "byMaoUe0",
 						"to": "jylkTBp7",
-						"kind": "call",
-						"label": "discover and bind a thread",
+						"kind": "data",
+						"label": "thread/list and thread/read: the candidates",
 						"emphasis": "normal"
 					},
 					{
@@ -414,8 +418,8 @@
 						"order": 6000,
 						"from": "2ffhMTdn",
 						"to": "jylkTBp7",
-						"kind": "call",
-						"label": "queue/add, update, reorder, delete, start",
+						"kind": "rpc",
+						"label": "thread/queue/add, update, reorder, delete, start",
 						"emphasis": "normal"
 					},
 					{
@@ -423,8 +427,8 @@
 						"order": 7000,
 						"from": "Fg9dkGj3",
 						"to": "jylkTBp7",
-						"kind": "call",
-						"label": "run the coordinator thread",
+						"kind": "rpc",
+						"label": "thread/start and settings for the coordinator",
 						"emphasis": "normal"
 					},
 					{
@@ -441,7 +445,7 @@
 						"order": 9000,
 						"from": "u2LFaG7R",
 						"to": "jylkTBp7",
-						"kind": "call",
+						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
 						"emphasis": "hero",
 						"traffic": {
@@ -521,8 +525,8 @@
 						"order": 17000,
 						"from": "ZQxB1ZaK",
 						"to": "jylkTBp7",
-						"kind": "call",
-						"label": "start the realtime leg",
+						"kind": "rpc",
+						"label": "thread/realtime/start, append, stop",
 						"emphasis": "normal"
 					},
 					{
@@ -566,7 +570,7 @@
 						"order": 22000,
 						"from": "tlC2W839",
 						"to": "jylkTBp7",
-						"kind": "call",
+						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
 						"emphasis": "hero",
 						"traffic": {
@@ -588,8 +592,8 @@
 						"order": 24000,
 						"from": "08zJvPJq",
 						"to": "jylkTBp7",
-						"kind": "call",
-						"label": "news as a coordinator turn; pane news appended",
+						"kind": "rpc",
+						"label": "news as a coordinator turn/start; pane news appended",
 						"emphasis": "normal"
 					},
 					{
@@ -615,7 +619,7 @@
 						"order": 27000,
 						"from": "RkhHgrhb",
 						"to": "jylkTBp7",
-						"kind": "call",
+						"kind": "rpc",
 						"label": "thread/inject_items into the workhorse",
 						"emphasis": "normal"
 					},
