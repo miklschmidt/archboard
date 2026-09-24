@@ -10,8 +10,9 @@
 //   bun docs/design/wide-board-layout-fixtures/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
+import { parseSemanticBoard } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
@@ -39,7 +40,7 @@ for (const file of fs
 
 // Warm the engine and the measurement caches once, on a board measured nowhere below.
 await renderArchitecture({
-	content: VariantContentSchema.parse({
+	content: orderedFixture({
 		nodes: ["warm-a", "warm-b", "warm-c"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
 			{ id: "warm-ab", from: "warm-a", to: "warm-b", kind: "call", label: "warms" },
@@ -51,7 +52,8 @@ await renderArchitecture({
 
 let slowest = { name: "", ms: 0 };
 for (const item of items) {
-	const content = VariantContentSchema.parse(item.content);
+	// A fixture authored before subjects carried an order is given one by position.
+	const content = orderedFixture(item.content);
 	// A layout is remembered by its content, so only the first render lays
 	// it out; the rest are the same picture painted again, in the other theme.
 	const started = performance.now();

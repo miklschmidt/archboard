@@ -1603,9 +1603,8 @@ non-current variant and every view, rendered through a server before and after):
   label attempt with that set routes the same placement, and the engine takes
   a stage option (`place`, `route`) to answer one half.
 - The column-count readings settle side by side instead of one after another,
-  and are compared in the same order with the same tightening bound. When the
-  choice is made, or a reading is refused, that reading asks for no more
-  solves.
+  and are compared in the same order with the same tightening bound. (Replaced
+  on 2026-09-25 by choosing the count on placements, below.)
 
 Measured and not kept, because they change pictures or have not been shown not
 to:
@@ -1630,3 +1629,58 @@ Archboard server still takes 37 to 45 s, so it does not yet lay out in a few
 seconds. Its wall time is the sequential chain
 of solves in the six-column reading, the one the router refuses last, at 1 to
 2 s per routed solve.
+
+### A fixed solve budget (2026-09-25)
+
+The user's budget is under 1 s of layout per board. After the changes above
+one picture still ran hundreds of solves (Command interface 202, Browser
+application 294, Voice coordinator 702, Archboard server over 1000), each
+placement or route 40 to 80 ms. The number of solves is the cost, so two rules
+now bound it. Both change pictures, and the user accepted that for the time.
+
+- **The column count is chosen on placements** (`column-readings.ts`). The
+  unfolded reading is settled as before. Every column count its bands allow is
+  then placed once, with no label reserved and nothing routed, side by side.
+  In increasing order, starting from the settled unfolded page, a count
+  replaces the page kept so far when its placement fits materially better
+  (`WRAP_MIN_FIT_GAIN`), fewer columns winning ties. Only the chosen count is
+  settled, and it is kept when its settled drawing still fits materially
+  better than the unfolded one; a count the router refuses keeps the unfolded
+  reading. Every other count costs one placement instead of its label rounds.
+- **Unused reservations are released in one round** (`label-reservations.ts`):
+  every unused one together, then each alone, side by side, and the first that
+  holds is kept. The drawing that release settles is not searched for further
+  releases.
+
+The comparison starts from the settled unfolded page, not from the unfolded
+placement. The unfolded placement reserves no label and so fits better than
+the settled page (Archboard server 0.51 placed, 0.34 settled); starting from it
+lost the fold of Archboard server view FawxUEKE, which main draws folded at
+1317x958 and which then drew unfolded at 834x1372. Starting from the settled
+page changes no picture's fold on the vault, and costs Archboard server one
+settled fold the router refuses (3.2 s with the placement start, 6.5 s with
+the settled start).
+
+First layout in ms, `timing.ts` in-process, two runs each on an otherwise
+quiet box; every other board and fixture is under 700 ms on both:
+
+| board               | main 6f5f08c7 | budget     |
+| ------------------- | ------------- | ---------- |
+| Archboard server    | 35752, 32967  | 6475, 6524 |
+| Voice coordinator   | 1835, 1779    | 394, 411   |
+| Browser application | 1589, 1601    | 608, 672   |
+| Skill evaluation    | 1007, 998     | 628, 630   |
+| Board viewer        | 977, 952      | 542, 567   |
+| Semantic renderer   | 924, 938      | 313, 313   |
+| Archboard           | 820, 763      | 63, 64     |
+| Command interface   | 789, 751      | 451, 496   |
+| flask-map-2         | 650, 617      | 494, 514   |
+| Agent workbench     | 615, 601      | 466, 461   |
+
+Every board but Archboard server lays out in under 1 s. Of the 49 dogfood
+pictures (every board whole and every view, rendered through a server on a
+copy of the vault), four change, all from the single release round, each
+keeping a reservation a second round had given back: Browser application
+2558x1697 to 2870x1697, its view D87Mmg83 1752x1092 to 1752x1180, Skill
+evaluation 4124x1594 to 4420x1594 and Board rasterizer view vAJmBRF7 1549x861
+to 1728x1008. The column rule alone changes none.

@@ -54,8 +54,9 @@ Architecture boards read top-to-bottom and lay every variant out fresh. Long
 paths can wrap into adjacent downward columns when the complete routed result
 improves pane fit by at least 5%. Whole frames and overlapping rows remain together; side-entry
 sources stay with their consumers. Column count is chosen dynamically.
-Candidates whose proposed card footprint cannot meet that gain are skipped
-before the more expensive label and routing settlement.
+Candidates whose proposed card footprint cannot meet that gain are skipped.
+The count is chosen on each candidate's placement with no label reserved, and
+only the chosen count is settled with its labels and routes (TASK-342).
 The automatic down/right fit comparison was removed after the user rejected
 the resulting long horizontal chains. Corner rounding and crossing bridges remain shared drawing operations.
 
