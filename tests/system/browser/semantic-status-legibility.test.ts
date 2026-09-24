@@ -55,7 +55,7 @@ const edgeInks = (
 			`  head: getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill,` +
 			`  streams: [...group.querySelectorAll(".ab-pulse")].map((comet) => [...new Set(` +
-			`   [...comet.querySelectorAll("path:not([data-pulse-part='moat'])")].map((path) => getComputedStyle(path).stroke))].join(" ")),` +
+			`   [...comet.querySelectorAll("path:not([data-pulse-part='moat'])")].map((path) => getComputedStyle(path).stroke))].join("|")),` +
 			` }; })()`,
 	);
 
@@ -383,10 +383,12 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const added = await edgeInks(browser, ids["added"] ?? "");
 	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
-	// The comets carry the colour at full strength, the band's; the line is drawn weaker.
+	// The comets carry the relationship's colour, the band's hue; the line is drawn weaker.
 	expect(added.streams.length).toBe(1);
 	for (const stream of added.streams) {
-		expect(stream).toBe(added.band);
+		for (const part of stream.split("|")) {
+			expect(sameHue(part, added.band)).toBe(true);
+		}
 	}
 	// A relationship the proposal dropped is still drawn, in its own ink, and
 	// sends nothing: a removed line that looked like live traffic would be the

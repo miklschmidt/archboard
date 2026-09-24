@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-24 14:01'
-updated_date: '2026-09-24 15:40'
+updated_date: '2026-09-24 15:47'
 labels:
   - renderer
 dependencies: []
@@ -43,6 +43,8 @@ No board affected: traffic marks are painting, not architecture.
 
 <!-- SECTION:NOTES:BEGIN -->
 User decisions 2026-09-24: comets over dots; coloured lines drawn at 75% of their colour (mixed, not translucent) with comets at full strength, and only the neutral grey's comets shaded toward the text colour; a faint glow on light pages as well; default traffic raised to 80 units and one mark a second, keeping the 80-unit spacing. The one-ink owners became one-colour owners (same hue, comets and band at full strength). Legend samples use the same line strength. ADR 0025 and 0027 amended. A dash rounding drift (80.001) was caught by the rate owner and fixed.
+
+User refinement 2026-09-24: a coloured comet's head mixes 30% of the page's text colour into the relationship's full colour (the neutral grey's head 60%), and each tail layer blends from the head's colour back into the line's drawn colour by how far back it reaches; the sequence comet's gradient runs from the line's colour to the head's. The colour owners now hold every comet layer to the line's hue and the head farther from the page than the line.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

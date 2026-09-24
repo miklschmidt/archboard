@@ -307,12 +307,13 @@ describe("a relationship is drawn in one colour from end to end", () => {
 			expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
 			const comets = dotInks(subject(drawn, "edge", id));
 			expect(comets.length).toBeGreaterThan(0);
+			// The same colour, never a grey over it: every part of a comet has the
+			// line's hue, and its head stands farther from the page than the line.
 			for (const comet of comets) {
-				// The same colour, never a grey over it: the same hue, and farther
-				// from the page than the line it rides.
 				expect(Math.abs(hueOf(comet) - hueOf(drawnLine.ink))).toBeLessThan(6);
-				expect(colourDistance(comet, page)).toBeGreaterThan(colourDistance(drawnLine.ink, page));
 			}
+			const strongest = Math.max(...comets.map((comet) => colourDistance(comet, page)));
+			expect(strongest).toBeGreaterThan(colourDistance(drawnLine.ink, page));
 		}
 		// A plain board uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
@@ -353,8 +354,8 @@ describe("a relationship is drawn in one colour from end to end", () => {
 				group.markup,
 			);
 		expect(band, "the changed relationship drew no band").not.toBeNull();
-		// The band is the relationship's colour at full strength, the colour its comets carry.
-		expect(dotInks(group)).toContain(band![1]!);
+		// The band is the relationship's colour at full strength: the line's hue.
+		expect(Math.abs(hueOf(band![1]!) - hueOf(line(group).ink))).toBeLessThan(6);
 		expect(Number(band![2])).toBeGreaterThan(2.2);
 		expect(Number(band![3])).toBeLessThan(1);
 		expect(band![4]).toBe("7 3.5");

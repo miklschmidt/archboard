@@ -175,6 +175,7 @@ function paintEdgeLine(
 				: travellingPulses({
 						path,
 						colour: relationshipInk(edge, palette, standing, policy, appearance),
+						lineColour: ink,
 						lineWidth: width,
 						page: palette,
 						traffic: edge.traffic,
