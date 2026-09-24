@@ -74,13 +74,14 @@ function semanticBoardListQuery() {
 		queryKey: semanticBoardKeys.boards,
 		/**
 		 * Read the vault's semantic boards, and tell the picture source which
-		 * versions they are at, so it can forget pictures of older ones.
-		 * @param context The query context, carrying this read's cancellation.
+		 * versions they are at, so it can forget pictures of older ones and draw
+		 * the boards ahead.
+		 * @param context The query context, carrying this read's cancellation and the tab's cache.
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
 			const listing = await fetchSemanticBoards(context.signal);
-			pictureSource().listed?.(listing.boards);
+			pictureSource().listed?.(listing.boards, context.client);
 			return listing;
 		},
 		refetchOnWindowFocus: true,

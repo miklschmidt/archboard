@@ -31,8 +31,9 @@ interface PictureSource {
 	/**
 	 * Told the boards the server lists, whenever it lists them.
 	 * @param boards The boards, with their versions.
+	 * @param client The tab's cache, for drawing listed boards ahead.
 	 */
-	readonly listed?: (boards: readonly SemanticBoardEntry[]) => void;
+	readonly listed?: (boards: readonly SemanticBoardEntry[], client: QueryClient) => void;
 }
 
 const fromServer: PictureSource = {

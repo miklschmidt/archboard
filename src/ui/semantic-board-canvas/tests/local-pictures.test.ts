@@ -1,4 +1,4 @@
-// Pictures a page draws itself: drawn ahead when the server says a board moved,
+// Pictures a page draws itself: drawn ahead when the page loads and when the server says a board moved,
 // and kept across page loads only while they are of the version the server has.
 //
 // What these catch: a changed board whose proposals are laid out only when
@@ -302,4 +302,27 @@ test("a page loading against a moved board forgets the kept picture and never sh
 	server.listed = false;
 	await page(storage).client.fetchQuery(semanticBoardListQuery());
 	expect(storage.length).toBe(0);
+});
+
+test("a page that loads draws every listed board ahead, and never one it has kept", async () => {
+	const storage = memoryStorage();
+	const request = { board: "pipeline", theme: "light" } as const;
+	// Nothing kept yet, as after a new renderer build: listing the boards draws
+	// each one ahead, whole, before anybody opens it.
+	const first = page(storage);
+	await first.client.fetchQuery(semanticBoardListQuery());
+	await until(() => first.draws.length === 1);
+	expect(first.draws[0]).toMatchObject({ version: 1, theme: "light" });
+	expect(first.draws[0]?.variant).toBeUndefined();
+	expect(first.draws[0]?.view).toBeUndefined();
+	// Opening it finds it drawn, without laying it out again.
+	await until(() => first.client.getQueryData(semanticBoardKeys.render(request)) !== undefined);
+	await first.client.fetchQuery(semanticRenderQuery(request));
+	expect(first.draws).toHaveLength(1);
+
+	// Loaded again: the kept picture comes out of storage and nothing is laid out.
+	const again = page(storage);
+	await again.client.fetchQuery(semanticBoardListQuery());
+	await until(() => again.client.getQueryData(semanticBoardKeys.render(request)) !== undefined);
+	expect(again.draws).toHaveLength(0);
 });

@@ -15,9 +15,16 @@
 //   it without laying it out again. When the server lists its boards, pictures
 //   of boards that moved or went away are forgotten.
 //
-//   Drawing ahead. When the server announces that a board changed, its variants
-//   are drawn again in the background, one at a time, in the themes and views
-//   this tab has been reading, rather than when somebody next opens them.
+//   Drawing ahead. When the page loads and the server lists its boards, every
+//   listed board is drawn in the background, one at a time: the variant its name
+//   opens, whole, in the themes this tab reads. A board with a kept picture of
+//   its version comes out of storage without being laid out, so this costs
+//   nothing once the pictures are kept; after a new renderer build or a cleared
+//   cache it means a board is ready before anybody opens it (TASK-341). And when
+//   the server announces that a board changed, its variants are drawn again in
+//   the themes and views this tab has been reading. A board somebody opens is
+//   drawn by the pane itself, on another of the renderer's workers, so neither
+//   waits for it.
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -35,6 +42,7 @@ import type {
 } from "@/transformers/semantic-renderer/board";
 import {
 	SemanticBoardError,
+	type SemanticBoardEntry,
 	type SemanticRender,
 	type SemanticRenderRequest,
 	type SemanticTheme,
@@ -291,12 +299,34 @@ async function drawAhead(client: QueryClient, board: string): Promise<void> {
 }
 
 /**
+ * Draw every listed board ahead, one at a time: the variant its name opens,
+ * whole, in each theme this tab reads. A kept picture of the board's version
+ * comes out of storage without a layout. A failure to draw one ahead is left
+ * for the pane that asks for it to report.
+ * @param client The tab's cache.
+ * @param boards The boards the server lists.
+ */
+async function drawListedAhead(
+	client: QueryClient,
+	boards: readonly SemanticBoardEntry[],
+): Promise<void> {
+	for (const entry of boards) {
+		const { name, themes } = readingsOf(client, entry.name);
+		for (const theme of themes) {
+			// oxlint-disable-next-line no-await-in-loop -- one board at a time, so drawing ahead never takes more than one of the renderer's workers
+			await client.prefetchQuery(semanticRenderQuery({ board: name, theme }));
+		}
+	}
+}
+
+/**
  * A picture source that draws in this page.
  * @param setup The renderer, its build and the storage.
  * @returns The source.
  */
 function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	const warmed = new WeakSet<QueryClient>();
+	const sweeping = new WeakSet<QueryClient>();
 	const drawing = new Map<string, Promise<SemanticRenderReply>>();
 	return {
 		/**
@@ -315,11 +345,18 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 			return drawHere(setup, request, client, drawing);
 		},
 		/**
-		 * Forget kept pictures of boards that moved or went away.
+		 * Forget kept pictures of boards that moved or went away, and draw the
+		 * listed boards ahead unless a sweep is already under way.
 		 * @param boards The boards the server lists.
+		 * @param client The tab's cache.
 		 */
-		listed: (boards) => {
+		listed: (boards, client) => {
 			if (setup.storage !== undefined) forgetStalePictures(setup.storage, boards, setup.renderer);
+			if (sweeping.has(client)) return;
+			sweeping.add(client);
+			void drawListedAhead(client, boards)
+				.catch(() => undefined)
+				.finally(() => sweeping.delete(client));
 		},
 	};
 }
