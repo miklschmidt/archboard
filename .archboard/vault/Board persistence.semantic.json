@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 12,
+	"version": 16,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-24T13:49:40.396Z",
+	"updatedAt": "2026-09-24T14:08:31.189Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -673,7 +673,7 @@
 		{
 			"id": "Y8SHNDOe",
 			"name": "TASK-331",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "tVCqUn1A",
 			"summary": "Adopting a proposal whose parent another adoption superseded warns and needs --force",
 			"content": {
@@ -1287,15 +1287,639 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "u8eW4BzU",
+			"name": "TASK-332",
+			"lifecycle": "current",
+			"parent": "Y8SHNDOe",
+			"summary": "semantic edit can change a variant's summary",
+			"content": {
+				"nodes": [
+					{
+						"id": "4P7YZdnj",
+						"order": 1000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "The only caller: every read and every write of a board comes through it",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "hoh4xPWb",
+						"order": 2000,
+						"name": "Address and locate",
+						"kind": "function",
+						"responsibility": "Maps names to safe vault paths",
+						"description": "semanticBoardAddress normalizes board identity without I/O; locateSemanticBoard resolves the .semantic.json file and follows existing ancestors to refuse symlink paths that leave the configured vault.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/location.ts"
+						}
+					},
+					{
+						"id": "NM28UA5U",
+						"order": 3000,
+						"name": "List boards",
+						"kind": "function",
+						"responsibility": "Discovers semantic board files",
+						"description": "Recursively enumerates semantic board locations to a bounded depth, recognizing only .semantic.json aggregates and preserving their nested board names.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/listing.ts"
+						}
+					},
+					{
+						"id": "tcwsrSQv",
+						"order": 4000,
+						"name": "Read and validate",
+						"kind": "function",
+						"responsibility": "Reads a coherent aggregate from disk, by its name or a name it used to have",
+						"description": "readSemanticBoard asks Former names which board a name answers to; readSemanticBoardAt synchronously reads fresh bytes, parses JSON into the shared semantic schema, distinguishes missing from unreadable files, and rejects a document whose internal name disagrees with its address. A document of an older contract is migrated, and persisted when its lease is free, before it is answered.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/read.ts"
+						}
+					},
+					{
+						"id": "i2CrY6Xj",
+						"order": 5000,
+						"name": "Lifecycle transitions",
+						"kind": "function",
+						"responsibility": "Defines board lifecycle changes",
+						"description": "Factories return pure create, edit, branch, settle, adopt and shelve transitions; a rename is its own transition. An edit may also restate the summary of the variant it lands on, in the same write, and is refused on a historical or shelved variant as a content edit is. The write boundary executes the chosen transition against the board read under lease.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/transitions.ts"
+						}
+					},
+					{
+						"id": "xoapCJNG",
+						"order": 6000,
+						"name": "Edit semantic content",
+						"kind": "function",
+						"responsibility": "Resolves names into stable subjects",
+						"description": "editContent, editViews, and editWalkthroughs plan removals, mint identifiers centrally, resolve same-write handles and references, preserve replacement semantics, and refuse orphaned containment or stranded narrative references.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/edit-content.ts"
+						}
+					},
+					{
+						"id": "8CAH6rSD",
+						"order": 7000,
+						"name": "Propagate descendant edits",
+						"kind": "function",
+						"responsibility": "Carries parent changes into drafts",
+						"description": "propagateEdit walks descendants of an edited variant, automatically merges compatible changes, records reconciliation issues where meanings diverge, and blocks descendants behind unresolved ancestors.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/propagate.ts"
+						}
+					},
+					{
+						"id": "DJXluInA",
+						"order": 8000,
+						"name": "Settle disagreements",
+						"kind": "function",
+						"responsibility": "Answers the disagreements a proposal holds and carries the answer down",
+						"description": "settleVariant applies explicit reconciliation choices and ordering decisions; an ordinary edit that restores what a proposal removed settles through the same catch-up. A draft waiting on the answer is merged in the same write and reports what it finds.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/settle.ts"
+						}
+					},
+					{
+						"id": "1gdbsn6M",
+						"order": 9000,
+						"name": "Write under lease",
+						"kind": "function",
+						"responsibility": "Commits one durable version",
+						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/write.ts"
+						}
+					},
+					{
+						"id": "qTv7HuBw",
+						"order": 10000,
+						"name": "Atomic file replacement",
+						"kind": "function",
+						"responsibility": "Fsyncs every change to a board file: a replacement, a move and an unlink",
+						"description": "writeFileAtomic writes a temporary sibling, fsyncs file content, renames it over the destination, and fsyncs the directory; moveFileDurably and unlinkDurably sync the directory the same way, so accepted board writes are committed before callers receive success.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/atomic-write.ts"
+						}
+					},
+					{
+						"id": "IKUAjnNG",
+						"order": 11000,
+						"name": "Vault diagnostics",
+						"kind": "function",
+						"responsibility": "Everything wrong with the vault's boards, as warnings a repair can answer",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts"
+						}
+					},
+					{
+						"id": "wBw5FntC",
+						"order": 12000,
+						"name": "Drill-down checks",
+						"kind": "function",
+						"responsibility": "What a board can say about a link to another one, checked across the whole vault",
+						"description": "A link is the one thing on a board that names something outside it, so no single board can check it: a node with nothing but its link, a board the vault does not hold, and a kind that disagrees with the level it opens (ADR 0029).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/drill-down.ts"
+						}
+					},
+					{
+						"id": "CxaaWj4x",
+						"order": 13000,
+						"name": "Replaced relationships",
+						"kind": "function",
+						"responsibility": "Warns when a write may have lost a relationship's identity: re-added under a new id, or stated twice",
+						"description": "A write that breaks a continuing relationship's identity is not refused: the board is valid, so the write lands and its answer carries RELATIONSHIP_REPLACED or RELATIONSHIP_DUPLICATED naming the repair. An explicit removeEdges plus an idless addition declares a replacement and draws no notice.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts"
+						}
+					},
+					{
+						"id": "803TfwDf",
+						"order": 14000,
+						"name": "Adopt",
+						"kind": "function",
+						"responsibility": "Makes a settled draft current, or gives a board nobody had built its first current variant; refuses a draft derived from an architecture a later adoption superseded unless forced",
+						"description": "Adoption renames nothing and rewrites no history: the variant that was current becomes a historical state under its own name. On a board with no current variant nothing becomes history (ADR 0031). A draft standing on a historical variant would drop what was adopted over it, so it is refused as PARENT_SUPERSEDED unless the request forces it, and the adoption record then says it was forced (ADR 0037)."
+					},
+					{
+						"id": "eCpnhcUh",
+						"order": 15000,
+						"name": "Shelve",
+						"kind": "function",
+						"responsibility": "Lets a proposal go without deleting it, so every link that names it still opens it",
+						"description": "Shelving changes nothing the variant says; the board records that nobody intends to carry it out (ADR 0030).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/shelve.ts"
+						}
+					},
+					{
+						"id": "GWg2Fads",
+						"order": 16000,
+						"name": "Rename",
+						"kind": "function",
+						"responsibility": "A pure transition that moves one name, the board's or a variant's, and keeps the old one as a former name",
+						"description": "Every id, lifecycle, ancestry and record of adoption stays as it was (TASK-281, ADR 0036).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/rename.ts"
+						}
+					},
+					{
+						"id": "lkf45vPe",
+						"order": 17000,
+						"name": "Former names",
+						"kind": "function",
+						"responsibility": "Which board a name answers to: the board that carries it, else the one that used to",
+						"description": "A board's own name always wins. Only a miss looks through the vault's formerNames, so a drill-down, a saved pane address or a command written before a rename keeps opening the board it meant; nothing is cached (ADR 0036).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/former-names.ts"
+						}
+					},
+					{
+						"id": "uZ8BMtTA",
+						"order": 18000,
+						"name": "Place the file",
+						"kind": "function",
+						"responsibility": "Writes the board's file where its name puts it, moving it there first when a rename changed that name",
+						"description": "A new name is taken under its own lease as well, without waiting, and refused when another board carries it or used to. A write that fails after the move puts the file back, so a refused rename leaves the vault as it was.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/relocation.ts"
+						}
+					},
+					{
+						"id": "QPkSSQP8",
+						"order": 19000,
+						"name": "Discard",
+						"kind": "function",
+						"responsibility": "Removes a whole board under the lease and version check a write takes, and gives back the claim it ran under",
+						"description": "Used for a board made only to be recorded (TASK-304.02). A board somebody else holds is refused with the words a write gets.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/discard.ts"
+						}
+					},
+					{
+						"id": "UFO3ulXp",
+						"order": 20000,
+						"name": "Board lease",
+						"kind": "function",
+						"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
+						"description": "ADR 0016. The lease lives in the vault, so every server on the vault sees the same exclusion; a dead holder costs one lease rather than wedging the board.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/board-lock.ts"
+						}
+					},
+					{
+						"id": "jCCx4b3f",
+						"order": 21000,
+						"name": "Binding checks",
+						"kind": "function",
+						"responsibility": "A node on the current variant whose binding names a file the repository no longer has",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/bindings.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "hx5UtSvH",
+						"order": 1000,
+						"from": "4P7YZdnj",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "address board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "lcZxhHuv",
+						"order": 2000,
+						"from": "4P7YZdnj",
+						"to": "NM28UA5U",
+						"kind": "call",
+						"label": "catalogue boards",
+						"emphasis": "normal"
+					},
+					{
+						"id": "k1IwXpzd",
+						"order": 3000,
+						"from": "4P7YZdnj",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read current bytes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "i6pk24Ov",
+						"order": 4000,
+						"from": "4P7YZdnj",
+						"to": "i2CrY6Xj",
+						"kind": "call",
+						"label": "state requested change",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kOdz3Hxq",
+						"order": 5000,
+						"from": "i2CrY6Xj",
+						"to": "xoapCJNG",
+						"kind": "call",
+						"label": "apply content edit",
+						"emphasis": "normal"
+					},
+					{
+						"id": "JRnj6xbQ",
+						"order": 6000,
+						"from": "i2CrY6Xj",
+						"to": "8CAH6rSD",
+						"kind": "call",
+						"label": "reconcile descendants",
+						"emphasis": "normal"
+					},
+					{
+						"id": "3yXrbLgg",
+						"order": 7000,
+						"from": "i2CrY6Xj",
+						"to": "DJXluInA",
+						"kind": "call",
+						"label": "settle disagreements",
+						"emphasis": "normal"
+					},
+					{
+						"id": "smLdyKlp",
+						"order": 8000,
+						"from": "4P7YZdnj",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "submit transition",
+						"emphasis": "hero"
+					},
+					{
+						"id": "E4f3pKJb",
+						"order": 9000,
+						"from": "1gdbsn6M",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "resolve target",
+						"emphasis": "normal"
+					},
+					{
+						"id": "9O4o9jcE",
+						"order": 10000,
+						"from": "1gdbsn6M",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read under lease",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VWo4vJh0",
+						"order": 11000,
+						"from": "1gdbsn6M",
+						"to": "i2CrY6Xj",
+						"kind": "call",
+						"label": "apply transition",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EqTEFYDa",
+						"order": 12000,
+						"from": "uZ8BMtTA",
+						"to": "qTv7HuBw",
+						"kind": "data",
+						"label": "commit serialized board",
+						"emphasis": "hero"
+					},
+					{
+						"id": "6HYXV63O",
+						"order": 13000,
+						"from": "4P7YZdnj",
+						"to": "IKUAjnNG",
+						"kind": "call",
+						"label": "check the vault",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DPHKb9jc",
+						"order": 14000,
+						"from": "IKUAjnNG",
+						"to": "wBw5FntC",
+						"kind": "call",
+						"label": "the links out of every board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "gkXKmHDc",
+						"order": 15000,
+						"from": "xoapCJNG",
+						"to": "CxaaWj4x",
+						"kind": "call",
+						"label": "which restatements lost their identity",
+						"emphasis": "normal"
+					},
+					{
+						"id": "a85kagAw",
+						"order": 16000,
+						"from": "1gdbsn6M",
+						"to": "uZ8BMtTA",
+						"kind": "call",
+						"label": "write it where its name puts it",
+						"emphasis": "hero"
+					},
+					{
+						"id": "rs3a5Xhm",
+						"order": 17000,
+						"from": "1gdbsn6M",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "hold the board for the pass",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EKOObsIQ",
+						"order": 18000,
+						"from": "1gdbsn6M",
+						"to": "lkf45vPe",
+						"kind": "call",
+						"label": "the board the name answers to",
+						"emphasis": "normal"
+					},
+					{
+						"id": "CfW74kWK",
+						"order": 19000,
+						"from": "tcwsrSQv",
+						"to": "lkf45vPe",
+						"kind": "call",
+						"label": "a former name opens the board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Wv77mINZ",
+						"order": 20000,
+						"from": "tcwsrSQv",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "migrate only if the lease is free",
+						"emphasis": "muted"
+					},
+					{
+						"id": "C0t1t0gb",
+						"order": 21000,
+						"from": "tcwsrSQv",
+						"to": "qTv7HuBw",
+						"kind": "data",
+						"label": "a migrated document",
+						"emphasis": "muted"
+					},
+					{
+						"id": "Vo0aT7uz",
+						"order": 22000,
+						"from": "lkf45vPe",
+						"to": "NM28UA5U",
+						"kind": "call",
+						"label": "look through every board",
+						"emphasis": "muted"
+					},
+					{
+						"id": "8Let5OXd",
+						"order": 23000,
+						"from": "uZ8BMtTA",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "take the new name's lease",
+						"emphasis": "normal"
+					},
+					{
+						"id": "V478HCgq",
+						"order": 24000,
+						"from": "uZ8BMtTA",
+						"to": "lkf45vPe",
+						"kind": "call",
+						"label": "does another board answer to it",
+						"emphasis": "normal"
+					},
+					{
+						"id": "dWqqFFkC",
+						"order": 25000,
+						"from": "i2CrY6Xj",
+						"to": "803TfwDf",
+						"kind": "call",
+						"label": "adopt a draft",
+						"emphasis": "normal"
+					},
+					{
+						"id": "HyyLvPct",
+						"order": 26000,
+						"from": "i2CrY6Xj",
+						"to": "eCpnhcUh",
+						"kind": "call",
+						"label": "shelve a proposal",
+						"emphasis": "normal"
+					},
+					{
+						"id": "wyTy54Ob",
+						"order": 27000,
+						"from": "4P7YZdnj",
+						"to": "GWg2Fads",
+						"kind": "call",
+						"label": "rename transition",
+						"emphasis": "normal"
+					},
+					{
+						"id": "s73zYKpi",
+						"order": 28000,
+						"from": "4P7YZdnj",
+						"to": "QPkSSQP8",
+						"kind": "call",
+						"label": "discard a whole board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8TcPZofq",
+						"order": 29000,
+						"from": "QPkSSQP8",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "the same lease and version check",
+						"emphasis": "normal"
+					},
+					{
+						"id": "WhfWPohX",
+						"order": 30000,
+						"from": "QPkSSQP8",
+						"to": "qTv7HuBw",
+						"kind": "call",
+						"label": "unlink and sync the directory",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zaZzD0Ti",
+						"order": 31000,
+						"from": "QPkSSQP8",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "give back its claim",
+						"emphasis": "muted"
+					},
+					{
+						"id": "p7rwBQ3M",
+						"order": 32000,
+						"from": "IKUAjnNG",
+						"to": "jCCx4b3f",
+						"kind": "call",
+						"label": "every current binding's file",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "P7V1u4aN",
+						"name": "One requested change becomes one write",
+						"beats": [
+							{
+								"id": "xaTiUHzJ",
+								"heading": "Callers state a transition",
+								"body": "The server constructs a pure transition from a create, edit, branch, settle, adopt, shelve or rename request, and hands it to the one write boundary.",
+								"subjects": [
+									"4P7YZdnj",
+									"hoh4xPWb",
+									"i2CrY6Xj"
+								],
+								"view": "jLQUM0Qo"
+							},
+							{
+								"id": "oWVSSCzc",
+								"heading": "The aggregate changes under one lease",
+								"body": "The write boundary takes the board's lease, rereads the file, checks the expected version, applies semantic edits and descendant reconciliation, then validates the complete candidate before advancing its version.",
+								"subjects": [
+									"1gdbsn6M",
+									"UFO3ulXp",
+									"tcwsrSQv",
+									"i2CrY6Xj",
+									"8CAH6rSD"
+								]
+							},
+							{
+								"id": "WtlDz9xU",
+								"heading": "Success follows durable replacement",
+								"body": "Only the validated whole-board candidate reaches the file, moved first when its name changed; file and directory fsync complete before the applied result returns.",
+								"subjects": [
+									"1gdbsn6M",
+									"uZ8BMtTA",
+									"qTv7HuBw"
+								],
+								"view": "jLQUM0Qo"
+							},
+							{
+								"id": "eGyxmrMK",
+								"heading": "An old name keeps opening the board",
+								"body": "A rename keeps the old name as a former name and moves the file in the same write. Reads and writes ask which board a name answers to, so a link or a claim made under the old name reaches the board without any other board changing.",
+								"subjects": [
+									"GWg2Fads",
+									"lkf45vPe",
+									"uZ8BMtTA",
+									"tcwsrSQv"
+								],
+								"view": "jLQUM0Qo"
+							},
+							{
+								"id": "VEmV9iKK",
+								"heading": "Letting a board go is a write too",
+								"body": "A discard takes the same lease and version check a write does, unlinks the file durably, and gives back the claim it ran under, so a board somebody changed meanwhile is kept.",
+								"subjects": [
+									"QPkSSQP8",
+									"1gdbsn6M",
+									"UFO3ulXp",
+									"qTv7HuBw"
+								]
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "Y8SHNDOe",
+	"current": "u8eW4BzU",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
 			"from": "tVCqUn1A",
 			"at": "2026-09-24T13:49:40.396Z",
 			"reason": "TASK-331: adoption refuses a proposal built on an architecture a later adoption superseded, unless forced, and records forced adoptions"
+		},
+		{
+			"variant": "u8eW4BzU",
+			"from": "Y8SHNDOe",
+			"at": "2026-09-24T14:08:31.189Z",
+			"reason": "TASK-332: an edit can restate the summary of the variant it lands on, in the same write; historical and shelved variants refuse it"
 		}
 	]
 }

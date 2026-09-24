@@ -152,6 +152,13 @@ const AdoptionSchema = z
 		at: TimestampSchema,
 		/** Why, when whoever adopted it said so. */
 		reason: DescriptionSchema.optional(),
+		/**
+		 * Present when whoever adopted it overrode the refusal to adopt a proposal
+		 * built on an architecture a later adoption had superseded: what that
+		 * later adoption brought is not in the variant that became current, and
+		 * this says somebody decided so rather than missed it.
+		 */
+		forced: z.literal(true).optional(),
 	})
 	.strict();
 type Adoption = z.infer<typeof AdoptionSchema>;

@@ -26,6 +26,11 @@ import {
 } from "@/shared/semantic-board/index";
 import { editContent } from "@/runtime/semantic-board-store/lib/edit-content";
 import {
+	editsContent,
+	editsVariant,
+	summarized,
+} from "@/runtime/semantic-board-store/lib/edit-scope";
+import {
 	propagateEdit,
 	unsettledAncestor,
 	type DescendantOutcome,
@@ -274,7 +279,7 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
 			const changesContent = editsContent(input);
-			const editable = editableVariant(before, input.variant, changesContent);
+			const editable = editableVariant(before, input.variant, editsVariant(input));
 			if (!editable.ok) {
 				return editable;
 			}
@@ -298,7 +303,7 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 					...before,
 					...(input.level === undefined ? {} : { level: input.level }),
 					views: content.views,
-					variants: [...carried.variants],
+					variants: summarized(carried.variants, variant.id, input.summary),
 					updatedAt: at,
 				},
 				descendants: carried.descendants,
@@ -367,7 +372,7 @@ function adoptVariantTransition(input: BoardAdoptInput): SemanticTransition {
 			if (!adopting.ok) {
 				return adopting;
 			}
-			const adopted = adoptVariant(before, adopting.variant, at, input.reason);
+			const adopted = adoptVariant(before, adopting.variant, at, input);
 			if (!adopted.ok) {
 				return adopted;
 			}
@@ -468,48 +473,30 @@ export {
 };
 
 /**
- * Whether a stated batch edits variant content at all, as opposed to the
- * board's views or level alone.
- * @param input The batch as stated.
- * @returns True when any content collection is stated or removed.
- */
-function editsContent(input: VariantEditInput): boolean {
-	return [
-		input.nodes,
-		input.edges,
-		input.flows,
-		input.walkthroughs,
-		input.removeNodes,
-		input.removeEdges,
-		input.removeFlows,
-		input.removeWalkthroughs,
-	].some((entries) => entries.length > 0);
-}
-
-/**
  * The variant an edit names, when it exists and may be edited: a state that
  * was implemented and superseded is a record, and records are not edited, and
  * a proposal that has been let go is an argument that is over.
  *
  * Both refusals are narrow on purpose — they fire only when a batch changes
- * content. Views and level belong to the board rather than to any one variant,
- * so a command that only changes those is not editing a frozen state at all.
+ * the variant: its content or its summary. Views and level belong to the board
+ * rather than to any one variant, so a command that only changes those is not
+ * editing a frozen state at all.
  * @param board The board as it stands.
  * @param wanted The variant's id or name, or undefined for the one the board's name opens.
- * @param changesContent Whether variant content is being edited.
+ * @param changesVariant Whether the variant's content or summary is being edited.
  * @returns The variant, or why it cannot be edited.
  */
 function editableVariant(
 	board: SemanticBoard,
 	wanted: string | undefined,
-	changesContent: boolean,
+	changesVariant: boolean,
 ): { readonly ok: true; readonly variant: SemanticVariant } | SemanticRefusal {
 	const found = addressed(board, wanted);
 	if (!found.ok) {
 		return found;
 	}
 	const { variant } = found;
-	if (variant.lifecycle === "historical" && changesContent) {
+	if (variant.lifecycle === "historical" && changesVariant) {
 		return refuse(
 			"VARIANT_HISTORICAL",
 			`"${variant.name}" is an architecture that was implemented and has since been ` +
@@ -517,7 +504,7 @@ function editableVariant(
 				"want to say something different.",
 		);
 	}
-	if (variant.lifecycle === "shelved" && changesContent) {
+	if (variant.lifecycle === "shelved" && changesVariant) {
 		return refuse(
 			"VARIANT_SHELVED",
 			`"${variant.name}" is a proposal this board has let go, and it is kept as it was left. ` +

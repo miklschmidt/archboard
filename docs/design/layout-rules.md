@@ -108,7 +108,9 @@ high-degree node treatment (off), splines (unused).
 16. Bridges: later-painted route rises at a proper perpendicular crossing,
     groups within 20 share a crest, and a bridge is refused near any ink,
     card, label or corner. This runs in the painter, so `layoutCompound`'s
-    curves are not the painted ones.
+    curves are not the painted ones. Two routes whose rows at their cards lie
+    on one line and overlap in opposite directions first exchange lanes
+    (`folded-crossings.ts`), so their crossing lands on straight runs.
 
 ### E. Continuity across variants (`compound-predecessor.ts` and friends)
 
