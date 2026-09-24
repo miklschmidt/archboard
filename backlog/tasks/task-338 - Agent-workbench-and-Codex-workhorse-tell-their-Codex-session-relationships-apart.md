@@ -3,9 +3,11 @@ id: TASK-338
 title: >-
   Agent workbench and Codex workhorse tell their Codex session relationships
   apart
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-24 13:59'
+updated_date: '2026-09-24 13:59'
 labels:
   - architecture
 dependencies: []
