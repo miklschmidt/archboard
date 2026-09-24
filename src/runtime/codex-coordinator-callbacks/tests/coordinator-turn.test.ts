@@ -1,10 +1,10 @@
-// A terminal workhorse outcome during a live voice session runs the coordinator (TASK-291).
+// What a coordinator operation's own outcome does while voice is live (TASK-291, TASK-321).
 //
-// In a full-duplex voice session appended text is quiet context, so work that ended would sit
-// unheard until the person asked again. What is guarded: a terminal outcome starts exactly one
-// coordinator turn and is not also appended to the voice model; everything that is not a terminal
-// outcome stays quiet context; a coordinator that stays busy still gets the outcome, once, as the
-// injected developer message; and with no voice session nothing changes.
+// That a turn ended or waits on the user is workhorse news from the thread itself, whoever started
+// the turn, so an operation's completed, failed and attention stay quiet here rather than telling
+// the coordinator twice. What is guarded: only an outcome nobody can vouch for reaches the
+// coordinator, and none of it is appended to the voice model; a recording gets nothing; and with
+// no voice session nothing reaches the coordinator.
 
 import { describe, expect, test } from "bun:test";
 
@@ -33,19 +33,18 @@ function withTurnPort(active: boolean, result: CoordinatorCallbackTurnResult) {
 
 const DELIVERED = { attempted: true, outcome: "delivered", reason: null } as const;
 
-describe("a terminal workhorse outcome while voice is live", () => {
-	test("runs the coordinator once with the outcome, and is not also appended to the voice model", async () => {
+describe("a coordinator operation's outcome while voice is live", () => {
+	test("reaches the coordinator only when nobody can vouch for it, and is never appended to the voice model", async () => {
 		const { h, reports, callbacks } = withTurnPort(true, DELIVERED);
 		try {
-			for (const type of ["completed", "failed", "attention", "outcome_unknown"] as const) {
+			for (const type of ["completed", "failed", "attention"] as const) {
 				const delivery = await callbacks.enqueue(operationEvent(h.ids, type));
-				expect(delivery).toMatchObject({ path: "coordinator_turn", outcome: "delivered" });
+				expect(delivery).toMatchObject({ path: "silent", reason: "recorded_only" });
 			}
-			expect(reports).toHaveLength(4);
-			expect(reports.every((report) => report.threadId === h.ids.coordinator)).toBe(true);
-			expect(reports[0]?.text).toContain('"type":"completed"');
-			// Waiting on the user is reported, but as waiting: the work has not ended (TASK-316).
-			expect(reports.map((report) => report.waiting)).toEqual([false, false, true, false]);
+			const unknown = await callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
+			expect(unknown).toMatchObject({ path: "coordinator_turn", outcome: "delivered" });
+			expect(reports).toHaveLength(1);
+			expect(reports[0]).toMatchObject({ threadId: h.ids.coordinator, waiting: false });
 			expect(h.realtimeRequests).toHaveLength(0);
 		} finally {
 			callbacks.dispose();
@@ -77,7 +76,7 @@ describe("a terminal workhorse outcome while voice is live", () => {
 	test("sends nothing while a recording holds the voice, and records the outcome", async () => {
 		const { h, reports, callbacks } = withTurnPort(true, "recording");
 		try {
-			const delivery = await callbacks.enqueue(operationEvent(h.ids, "completed"));
+			const delivery = await callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 			expect(delivery).toMatchObject({
 				path: "silent",
 				outcome: "not_delivered",
@@ -95,7 +94,7 @@ describe("a terminal workhorse outcome while voice is live", () => {
 		const lost = { attempted: true, outcome: "outcome_unknown", reason: "response_lost" } as const;
 		const { h, callbacks } = withTurnPort(true, lost);
 		try {
-			const delivery = await callbacks.enqueue(operationEvent(h.ids, "completed"));
+			const delivery = await callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 			expect(delivery).toMatchObject({ path: "coordinator_turn", outcome: "outcome_unknown" });
 			expect(h.realtimeRequests).toHaveLength(0);
 		} finally {
@@ -107,7 +106,7 @@ describe("a terminal workhorse outcome while voice is live", () => {
 	test("reaches nobody with no voice session: the coordinator is never run without voice", async () => {
 		const { h, reports, callbacks } = withTurnPort(false, DELIVERED);
 		try {
-			const delivery = await callbacks.enqueue(operationEvent(h.ids, "completed"));
+			const delivery = await callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 			expect(delivery).toMatchObject({ path: "silent", reason: "voice_inactive" });
 			expect(reports).toHaveLength(0);
 		} finally {

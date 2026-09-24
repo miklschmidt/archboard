@@ -5,6 +5,7 @@ import {
 	type RealtimeGeneration,
 } from "@/runtime/codex-coordinator-callbacks/lib/settled-ledger";
 import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
+import { createWorkhorseNewsObserver } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-news";
 import {
 	coordinatorCallbackCoalescingKey,
 	coordinatorCallbackKey,
@@ -398,9 +399,23 @@ export function createCodexCoordinatorCallbacks(
 	};
 
 	const cleanups = subscribeSources(options, enqueue);
+	const observeWorkhorse = createWorkhorseNewsObserver(options);
 
 	return freeze({
 		enqueue,
+		/**
+		 * Queue the workhorse news a Codex notification carries, if any (TASK-321).
+		 * @param event - Any Codex notification.
+		 */
+		onNotification: (event) => {
+			if (disposed) {
+				return;
+			}
+			const news = observeWorkhorse(event);
+			if (news !== null) {
+				void enqueue(news);
+			}
+		},
 		/**
 		 * Wait for every scheduled drain to finish.
 		 * @returns The drain tail.

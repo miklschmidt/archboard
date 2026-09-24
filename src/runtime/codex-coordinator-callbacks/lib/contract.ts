@@ -23,9 +23,11 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 } from "@/shared/codex-realtime-host";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type {
 	ChildEpoch,
 	ChildId,
+	IdentityAuthority,
 	LogicalToolCallCorrelation,
 	OperationId,
 	QueuedSubmissionId,
@@ -35,7 +37,29 @@ import type {
 } from "@/shared/codex-workbench-identity";
 
 type SemanticCallbackSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
-type CoordinatorCallbackSource = WorkhorseOperationEvent | SemanticCallbackSource;
+
+/**
+ * One event of the linked workhorse thread itself, whoever started the turn (TASK-321): a turn
+ * that ended, or one that began waiting on the user.
+ */
+interface WorkhorseTurnSource {
+	readonly kind: "workhorse_turn";
+	readonly type: "completed" | "failed" | "stopped" | "waiting";
+	/** Counts news from one observer, so two waits in one turn are two pieces of news. */
+	readonly sequence: number;
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly coordinatorThreadId: ThreadId;
+	readonly workhorseThreadId: ThreadId;
+	readonly turnId: TurnId | null;
+	/** What a failed turn's error said, or null. */
+	readonly detail: string | null;
+}
+
+type CoordinatorCallbackSource =
+	| WorkhorseOperationEvent
+	| SemanticCallbackSource
+	| WorkhorseTurnSource;
 
 interface CoordinatorCallbackLinkCorrelation {
 	readonly binding: ThreadLinkBindingSnapshot;
@@ -137,7 +161,19 @@ type CoordinatorSemanticCallback =
 	| (CoordinatorSemanticCallbackBase & { readonly type: "change" })
 	| (CoordinatorSemanticCallbackBase & { readonly type: "focus" })
 	| (CoordinatorSemanticCallbackBase & { readonly type: "selection" });
-type CoordinatorCallback = CoordinatorOperationCallback | CoordinatorSemanticCallback;
+/** Workhorse news about the linked workhorse thread, as the coordinator is given it (TASK-321). */
+interface CoordinatorWorkhorseTurnCallback {
+	readonly kind: "workhorse_turn";
+	readonly type: WorkhorseTurnSource["type"];
+	readonly sequence: number;
+	readonly correlation: CoordinatorCallbackCorrelation;
+	readonly detail: string | null;
+}
+
+type CoordinatorCallback =
+	| CoordinatorOperationCallback
+	| CoordinatorSemanticCallback
+	| CoordinatorWorkhorseTurnCallback;
 
 interface CoordinatorCallbackRealtimeGeneration {
 	readonly childId: ChildId;
@@ -185,8 +221,8 @@ type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "record
 interface CoordinatorCallbackTurnPort {
 	readonly report: (request: {
 		readonly threadId: ThreadId;
-		/** The callback as the coordinator already receives it: canonical JSON. */
-		readonly text: string;
+		/** What happened, as one plain sentence with no identities in it. */
+		readonly news: string;
 		/** Whether the workhorse waits on the user, for an approval or an answer, rather than having finished. */
 		readonly waiting: boolean;
 	}) => Promise<CoordinatorCallbackTurnResult>;
@@ -265,6 +301,8 @@ interface CoordinatorCallbackOptions {
 		"subscribeSettledChange" | "subscribePaneFocus" | "subscribePaneSelection"
 	>;
 	readonly operations: Pick<CodexWorkhorseOperations, "subscribe">;
+	/** Reads Codex thread and turn identities in the notifications workhorse news comes from. */
+	readonly identity: Pick<IdentityAuthority, "decoder" | "validator">;
 	readonly realtime: CoordinatorCallbackRealtimePort;
 	/** Absent where nothing can reach the coordinator; workhorse outcomes then stay quiet. */
 	readonly coordinatorTurn?: CoordinatorCallbackTurnPort;
@@ -289,6 +327,8 @@ interface CoordinatorCallbackHistory {
 
 interface CoordinatorCallbacks {
 	readonly enqueue: (event: CoordinatorCallbackSource) => Promise<CoordinatorCallbackDelivery>;
+	/** Takes every Codex notification, and queues the workhorse news among them. */
+	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly flush: () => Promise<void>;
 	readonly inspect: () => readonly CoordinatorCallbackDelivery[];
 	readonly inspectHistory: (
@@ -311,6 +351,8 @@ interface CoordinatorCallbackClassification {
 export {
 	type SemanticCallbackSource,
 	type CoordinatorCallbackSource,
+	type WorkhorseTurnSource,
+	type CoordinatorWorkhorseTurnCallback,
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorOperationCallback,

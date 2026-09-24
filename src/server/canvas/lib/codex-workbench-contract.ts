@@ -125,7 +125,7 @@ interface ProductionCodexWorkbenchBindings {
 	>;
 	readonly coordinatorCall: CodexWorkbenchCoordinatorCallOwner;
 	readonly callbacks: ComponentBuilder<
-		Omit<CoordinatorCallbackOptions, "operations" | "session" | "threadLink">
+		Omit<CoordinatorCallbackOptions, "operations" | "identity" | "threadLink">
 	>;
 	readonly gateway: (
 		created: Readonly<Omit<CodexWorkbenchComponents, "gateway">>,

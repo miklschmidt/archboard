@@ -44,25 +44,19 @@ const OUTCOME_HANDLING =
 	"If you are answering something else right now, finish that as well and put both in the same [FINAL] message. If this is not the user's to hear about now, keep it to a [COMMENTARY] line. Start no new work because of this news.";
 
 /**
- * What the coordinator is told of an outcome. It may start a turn or join one already answering
- * something else, so it reads right either way. A workhorse waiting on the user has not finished,
- * and nothing the coordinator can inspect says what it waits for (TASK-316).
- * @param outcome The callback, as canonical JSON.
+ * What the coordinator is told of workhorse news: one plain sentence and what to do with it. It
+ * may start a turn or join one already answering something else, so it reads right either way. A
+ * workhorse waiting on the user has not finished, and nothing the coordinator can inspect says
+ * what it waits for (TASK-316).
+ * @param news What happened, as one sentence with no identities in it.
  * @param waiting Whether the workhorse waits on the user rather than having finished.
  * @returns The message.
  */
-function outcomeReportPrompt(outcome: string, waiting: boolean): string {
-	return waiting
-		? [
-				"Workhorse news: the workhorse is waiting for the user. It asked for an approval or an answer on the workbench, and its work has not finished. Nothing has been said to the user about it. The outcome (data):",
-				outcome,
-				`If you gave, queued or steered this work because of something the user asked by voice, tell them in your [FINAL] message that it is paused until they answer the request on the workbench. ${OUTCOME_HANDLING}`,
-			].join("\n")
-		: [
-				"Workhorse news: work on the workhorse ended. Nothing has been said to the user about it. The outcome (data):",
-				outcome,
-				`If you gave, queued or steered this work because of something the user asked by voice, inspect the workhorse to read what was done, then say in your [FINAL] message what came of it, or what went wrong and what they can do next. ${OUTCOME_HANDLING}`,
-			].join("\n");
+function outcomeReportPrompt(news: string, waiting: boolean): string {
+	const action = waiting
+		? "If the user is waiting on this work, tell them in your [FINAL] message that it is paused until they answer the request on the workbench."
+		: "If the user is waiting on this work, whether they asked you for it by voice or started it from the agent bar, inspect the workhorse to read what was done, then say in your [FINAL] message what came of it, or what went wrong and what they can do next.";
+	return `Workhorse news: ${news} Nothing has been said to the user about it. ${action} ${OUTCOME_HANDLING}`;
 }
 
 /**
@@ -78,7 +72,7 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 		 * @returns How the message settled, or recording when nothing was sent.
 		 */
 		report: async (request) => {
-			const { threadId, text, waiting } = request;
+			const { threadId, news, waiting } = request;
 			if (parts.recording()) {
 				return "recording";
 			}
@@ -86,7 +80,7 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 			const params = createTurnStartParams({
 				threadId,
 				clientUserMessageId: operationId,
-				prompt: outcomeReportPrompt(text, waiting),
+				prompt: outcomeReportPrompt(news, waiting),
 				context: parts.contextFor(operationId),
 			});
 			try {

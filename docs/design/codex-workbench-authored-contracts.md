@@ -690,14 +690,14 @@ limits below. Encoding rejects overflow rather than truncating silently:
 | wait timeout          | 0 through 120,000 milliseconds                 |
 | transcript delegation | input 4,096 bytes; transcriptDelta 4,096 bytes |
 
-An Archboard semantic injection or callback is exactly one raw Responses API
-developer message with one `input_text` part:
+An Archboard semantic injection is exactly one raw Responses API developer
+message with one `input_text` part:
 
 ```json
 {
 	"type": "message",
 	"role": "developer",
-	"content": [{ "type": "input_text", "text": "<canonical-context-or-callback-text>" }]
+	"content": [{ "type": "input_text", "text": "<canonical-context-text>" }]
 }
 ```
 
@@ -705,12 +705,13 @@ developer message with one `input_text` part:
 
 Coordinator callback text is compact JSON with no prose prefix or suffix. Every
 object key is serialized in lexical order, recursively. Arrays retain source
-order. The top-level `schema` is `1`; `kind` is `operation` or `semantic`; and
-`type` is one of the closed eleven-member set:
+order. The top-level `schema` is `1`; `kind` is `operation`, `semantic` or
+`workhorse_turn`; and `type` is one of the closed fifteen-member set:
 
 ```text
 operation: accepted, queued, started, progress, attention, completed, failed, outcome_unknown
 semantic: change, focus, selection
+workhorse_turn: completed, failed, stopped, waiting
 ```
 
 Every operation member contains `correlation`, `detail`, `kind`, `operation`,
@@ -720,7 +721,9 @@ outcome, and submission tuple. Every semantic member contains `correlation`,
 `kind`, `schema`, `semantic`, `threadLinkReason`, `threadLinkState`, and `type`.
 The semantic object contains `brief`, `capturedAtMs`, `detail`, `feedId`,
 `focused`, `news`, `origin`, `paneId`, `selection`, `sequence`, and
-`significance`.
+`significance`. Every workhorse member contains `correlation`, `detail`, `kind`,
+`schema`, `sequence` and `type`; `sequence` counts the news one observer made,
+so two waits in one turn are two callbacks.
 
 The common correlation object contains `childId`, `clientUserMessageId`,
 `coordinatorCall`, `coordinatorThreadId`, `coordinatorTurnId`, `epoch`,
@@ -748,17 +751,21 @@ The encoder rejects any callback above 32,768 UTF-8 bytes, any string above
 8,192 UTF-8 bytes, or any array above 128 entries. Both the singular
 `correlation.queuedSubmissionId` and each `queuedSubmissionIds` entry allow at
 most 1,024 UTF-8 bytes. A selection ID allows at most 64 UTF-8 bytes. The
-encoder does not truncate. The callback is the exact `text` in the one
-developer message above.
-While voice is live an outcome the user waits for (`completed`, `failed`,
-`outcome_unknown`, and `attention`, which the report calls waiting on the user
-rather than ended) goes to `coordinatorThreadId` at once through the reviewed
-outcome report: one `turn/start`, which Codex adds to a running coordinator
-turn or starts a turn with. `accepted`, `queued`, `started` and `progress` are
-recorded `not_delivered` with reason `recorded_only`. With no voice session, or
-while a recording holds the voice, every operation callback is recorded
-`not_delivered` with reason `voice_inactive`, and nothing reaches the
-coordinator thread. Callback bytes are
+encoder does not truncate. The encoded callback is the `text` of its delivery
+record; no model is given it.
+While voice is live an operation callback of type `outcome_unknown` goes to
+`coordinatorThreadId` at once through the reviewed outcome report: one
+`turn/start`, which Codex adds to a running coordinator turn or starts a turn
+with. Every other operation callback is recorded `not_delivered` with reason
+`recorded_only`: that a turn ended or waits on the user is workhorse news. A
+`workhorse_turn` callback (`completed`, `failed`, `stopped`, or `waiting`) is
+observed on the linked workhorse thread's own `turn/completed` and
+`thread/status/changed` notifications, whoever started the turn, a wait once
+when it begins; it goes to the coordinator the same way. The coordinator is
+given one plain sentence for either, never the callback bytes, which stay on the
+delivery record. With no voice session, or while a recording holds the voice,
+every operation and workhorse callback is recorded `not_delivered` with reason
+`voice_inactive`, and nothing reaches the coordinator thread. Callback bytes are
 never sent through `thread/realtime/appendText`. The workhorse thread is
 correlation only and is never the callback mutation target.
 

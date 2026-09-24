@@ -7,16 +7,11 @@ import { close, harness, link, operationEvent, semanticInput } from "./support.j
  * coordinator, or a pick the user made by hand to the voice model as pane news.
  * @param h - The harness.
  * @param route - Which route.
- * @param type - The outcome, for the coordinator route.
  * @returns The callback source to enqueue.
  */
-function userPickOrOutcome(
-	h: ReturnType<typeof harness>,
-	route: "coordinator" | "voice",
-	type: "attention" | "failed",
-) {
+function userPickOrOutcome(h: ReturnType<typeof harness>, route: "coordinator" | "voice") {
 	if (route === "coordinator") {
-		return operationEvent(h.ids, type);
+		return operationEvent(h.ids, "outcome_unknown");
 	}
 	const base = semanticInput(h.ids, true);
 	return h.semantic.publisher.publishPaneSelection({
@@ -70,7 +65,7 @@ describe("coordinator callback live authority", () => {
 							h.state.generation = null;
 						}
 					});
-					const delivery = await h.callbacks.enqueue(operationEvent(h.ids, "completed"));
+					const delivery = await h.callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 					expect(delivery.attempted).toBe(false);
 					expect(delivery.outcome).toBe("not_delivered");
 					expect(h.realtimeRequests).toHaveLength(0);
@@ -128,7 +123,7 @@ describe("coordinator callback live authority", () => {
 				h.setMutationHook(() => {
 					h.state.child = null;
 				});
-				const delivery = await h.callbacks.enqueue(userPickOrOutcome(h, route, "attention"));
+				const delivery = await h.callbacks.enqueue(userPickOrOutcome(h, route));
 				expect(delivery.attempted).toBe(true);
 				expect(delivery.outcome).toBe("outcome_unknown");
 				expect(h.realtimeRequests.length + h.reports.length).toBe(1);
@@ -147,7 +142,7 @@ describe("coordinator callback live authority", () => {
 				modes.map(async (mode) => {
 					const h = harness(true);
 					h.setMutationMode(mode);
-					const delivery = await h.callbacks.enqueue(userPickOrOutcome(h, route, "failed"));
+					const delivery = await h.callbacks.enqueue(userPickOrOutcome(h, route));
 					expect(delivery.outcome).toBe(mode === "lost" ? "outcome_unknown" : "not_delivered");
 					expect(h.realtimeRequests.length + h.reports.length).toBe(1);
 					close(h);

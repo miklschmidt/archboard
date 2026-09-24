@@ -4,16 +4,23 @@ import { CALLBACK_BUFFER_LIMIT, createCodexCoordinatorCallbacks } from "../index
 import { close, harness, operationEvent } from "./support.js";
 
 describe("coordinator callback lifecycle", () => {
-	test("with voice live, an outcome the user waits for reaches the coordinator once and nothing else reaches anybody", async () => {
+	test("with voice live, only an operation outcome nobody can vouch for reaches the coordinator, and nothing else reaches anybody", async () => {
 		const h = harness(true);
-		for (const type of ["accepted", "queued", "started", "progress"] as const) {
+		// A turn that ended or waits on the user is workhorse news from the thread (TASK-321).
+		for (const type of [
+			"accepted",
+			"queued",
+			"started",
+			"progress",
+			"attention",
+			"completed",
+			"failed",
+		] as const) {
 			const result = await h.callbacks.enqueue(operationEvent(h.ids, type));
 			expect(result).toMatchObject({ outcome: "not_delivered", path: "silent" });
 		}
-		for (const type of ["attention", "completed", "failed", "outcome_unknown"] as const) {
-			const result = await h.callbacks.enqueue(operationEvent(h.ids, type));
-			expect(result).toMatchObject({ outcome: "delivered", path: "coordinator_turn" });
-		}
+		const unknown = await h.callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
+		expect(unknown).toMatchObject({ outcome: "delivered", path: "coordinator_turn" });
 		for (const source of [h.semantic.change, h.semantic.focus, h.semantic.selection]) {
 			// A change, a focus or a selection nobody's hand made is never put into a speech
 			// model's context.
@@ -23,13 +30,13 @@ describe("coordinator callback lifecycle", () => {
 		}
 		// No callback envelope reaches the voice session from any path.
 		expect(h.realtimeRequests).toHaveLength(0);
-		expect(h.reports).toHaveLength(4);
+		expect(h.reports).toHaveLength(1);
 		close(h);
 	});
 
 	test("preserves FIFO when a callback emits another callback", async () => {
 		const h = harness(true);
-		const second = operationEvent(h.ids, "failed");
+		const second = operationEvent(h.ids, "outcome_unknown");
 		let emitted = false;
 		h.setMutationHook(() => {
 			if (emitted) {
@@ -38,13 +45,19 @@ describe("coordinator callback lifecycle", () => {
 			emitted = true;
 			h.operations.emit(second);
 		});
-		await h.callbacks.enqueue(operationEvent(h.ids, "completed"));
+		const first = operationEvent(h.ids, "outcome_unknown");
+		await h.callbacks.enqueue(first);
 		await h.callbacks.flush();
 		expect(h.reports).toHaveLength(2);
-		expect(h.callbacks.inspect().map((delivery) => delivery.callback?.type)).toEqual([
-			"completed",
-			"failed",
-		]);
+		expect(
+			h.callbacks
+				.inspect()
+				.map((delivery) =>
+					delivery.callback?.kind === "operation"
+						? delivery.callback.correlation.operationId
+						: null,
+				),
+		).toEqual([first.correlation.operationId, second.correlation.operationId]);
 		close(h);
 	});
 

@@ -1,4 +1,5 @@
 import { encodeCoordinatorCallback } from "@/runtime/codex-coordinator-callbacks/lib/encoding";
+import { workhorseNewsSentence } from "@/runtime/codex-coordinator-callbacks/lib/workhorse-news";
 import {
 	afterAttemptReason,
 	classificationAccepted,
@@ -205,23 +206,14 @@ async function deliverThroughVoice(
 }
 
 /**
- * The operation outcomes a waiting user wants to hear: the work ended, or it waits on them
- * (`attention`), which is not an end (TASK-316).
- */
-const REPORTED_OPERATION_TYPES: ReadonlySet<string> = new Set([
-	"completed",
-	"failed",
-	"attention",
-	"outcome_unknown",
-]);
-
-/**
- * Whether a callback is a workhorse outcome the coordinator should be run with.
+ * Whether an operation callback is something the coordinator is told. Only an outcome nobody can
+ * vouch for: that a turn ended or waits on the user is workhorse news from the thread itself,
+ * whoever started the turn (TASK-321), so telling it here as well would tell it twice.
  * @param callback - The normalized callback.
- * @returns True for an operation callback that ended the work or waits on the user.
+ * @returns True for an operation whose outcome is unknown.
  */
 function reportsOutcome(callback: CoordinatorCallback): boolean {
-	return callback.kind === "operation" && REPORTED_OPERATION_TYPES.has(callback.type);
+	return callback.kind === "operation" && callback.type === "outcome_unknown";
 }
 
 /**
@@ -248,8 +240,9 @@ async function deliverThroughCoordinatorTurn(
 		return recordOnly(callback, evidence, text, "not_ready");
 	}
 	const attemptedAtMs = (options.now ?? Date.now)();
-	const waiting = callback.kind === "operation" && callback.type === "attention";
-	const result = await port.report({ threadId, text, waiting });
+	const waiting = callback.kind === "workhorse_turn" && callback.type === "waiting";
+	const news = workhorseNewsSentence(callback);
+	const result = await port.report({ threadId, news, waiting });
 	if (result === "recording") {
 		return recordOnly(callback, evidence, text, "voice_inactive");
 	}
@@ -344,11 +337,11 @@ function deliverPaneNews(
 }
 
 /**
- * What an operation callback does while a voice generation is live. An outcome the user waits for
- * goes to the coordinator at once, which decides what the user hears. The rest (accepted, queued,
- * started, progress) reach nobody: the tool result already told the coordinator how its delegation
- * went in, progress is what inspect_workhorse reads, and the correlation envelope they used to be
- * appended as is machine text a speech model says out loud (TASK-293).
+ * What an operation callback does while a voice generation is live. An outcome nobody can vouch
+ * for goes to the coordinator at once. The rest reach nobody: that a turn ended or waits on the
+ * user is workhorse news (TASK-321), the tool result already told the coordinator how its
+ * delegation went in, progress is what inspect_workhorse reads, and the correlation envelope they
+ * used to be appended as is machine text a speech model says out loud (TASK-293).
  * @param callback - The normalized operation callback.
  * @param options - The host authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -373,11 +366,11 @@ function deliverOperationWhileVoiceIsLive(
 }
 
 /**
- * Deliver one callback down exactly one path, at most once. While a voice generation is live a
- * workhorse outcome the user waits for goes to the coordinator at once, which decides what the
- * user hears, and any other operation callback is recorded and told to nobody. With no voice
- * session the coordinator is never run (it is the voice model's subconscious, TASK-321), so an
- * operation callback is only recorded.
+ * Deliver one callback down exactly one path, at most once. While a voice generation is live,
+ * workhorse news (a turn that ended or waits on the user, whoever started it) and an operation
+ * outcome nobody can vouch for go to the coordinator at once, which decides what the user hears;
+ * any other operation callback is recorded and told to nobody. With no voice session the
+ * coordinator is never run (it is the voice model's subconscious, TASK-321), so neither is sent.
  *
  * A semantic callback (a change, a focus, a selection) reaches the voice model only as pane news:
  * one sentence of names saying where the user's reading now stands, and only for what the pane
@@ -407,10 +400,16 @@ async function deliverOne(
 	if (callback.kind === "semantic") {
 		return deliverPaneNews(callback, options, isDisposed, evidence, text);
 	}
-	if (generation !== null) {
-		return deliverOperationWhileVoiceIsLive(callback, options, isDisposed, evidence, text);
+	if (generation === null) {
+		return recordOnly(callback, evidence, text, "voice_inactive");
 	}
-	return recordOnly(callback, evidence, text, "voice_inactive");
+	if (callback.kind === "workhorse_turn") {
+		const turnPort = options.coordinatorTurn;
+		return turnPort === undefined
+			? recordOnly(callback, evidence, text, "recorded_only")
+			: deliverThroughCoordinatorTurn(callback, options, isDisposed, evidence, turnPort, text);
+	}
+	return deliverOperationWhileVoiceIsLive(callback, options, isDisposed, evidence, text);
 }
 
 export { type CallbackDeliveryEvidence, makeDelivery, deliverOne };
