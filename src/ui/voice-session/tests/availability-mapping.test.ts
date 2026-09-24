@@ -85,7 +85,7 @@ const GATES: readonly [string, VoiceSessionProjectionInput, string][] = [
 				snapshot({ coordinator: coordinator({ state: "starting", threadId: null, reason: null }) }),
 			),
 		}),
-		"The host is still confirming the voice coordinator.",
+		"The Archboard server is still confirming the voice coordinator.",
 	],
 	[
 		"voice unavailable",
@@ -107,7 +107,7 @@ describe("voice session availability mapping", () => {
 		expect(view.accessibleStatus).toBe(`Voice unavailable. ${detail}`);
 	});
 
-	test("presents a host coordinator failure and a host voice failure with their own codes", () => {
+	test("presents a server coordinator failure and a server voice failure with their own codes", () => {
 		const coordinatorFailed = projectVoiceSession(
 			input({
 				transportState: connectedState(
@@ -136,7 +136,7 @@ describe("voice session availability mapping", () => {
 			}),
 		);
 		expect(voiceFailed.status).toBe("failed");
-		expect(voiceFailed.failure?.code).toBe("host_voice");
+		expect(voiceFailed.failure?.code).toBe("server_voice");
 	});
 
 	test.each([
@@ -162,7 +162,7 @@ describe("voice session availability mapping", () => {
 		},
 	);
 
-	test("shows a host coordinator failure that arrives while a run is healthy", () => {
+	test("shows a server coordinator failure that arrives while a run is healthy", () => {
 		const failed = snapshot({
 			coordinator: coordinator({
 				state: "failed",
@@ -195,9 +195,12 @@ describe("voice session availability mapping", () => {
 		});
 	});
 
-	test("renames a live run to recovering while the host says it is recovering", () => {
+	test("renames a live run to recovering while the server says it is recovering", () => {
 		const recovering = snapshot({
-			voice: voice({ state: "recovering", reason: "The host is renegotiating realtime audio." }),
+			voice: voice({
+				state: "recovering",
+				reason: "The Archboard server is renegotiating realtime audio.",
+			}),
 		});
 		const live = projectVoiceSession(
 			input({
@@ -208,10 +211,10 @@ describe("voice session availability mapping", () => {
 		expect(live.status).toBe("recovering");
 		expect(live.label).toBe("Recovering voice");
 		expect(live.detail).toBe(
-			"Voice is connected and listening. The host is renegotiating realtime audio.",
+			"Voice is connected and listening. The Archboard server is renegotiating realtime audio.",
 		);
 
-		// A stop or a closed run is not a recovery, whatever the host is doing.
+		// A stop or a closed run is not a recovery, whatever the server is doing.
 		const stopping = projectVoiceSession(
 			input({
 				media: mediaSnapshot({ phase: "stopping", reason: "stop_requested" }),

@@ -1,4 +1,4 @@
-// The one total mapping from authoritative module, host-adapter, and
+// The one total mapping from authoritative module, server-adapter, and
 // transport state to render-ready values. It reduces no protocol event, keeps
 // no history, and chooses no recovery: an actionable failure becomes an
 // offered control and the person decides.
@@ -42,7 +42,7 @@ const LIVE_PHASES: ReadonlySet<RealtimeState["phase"]> = new Set([
 	"stopping",
 ]);
 
-/** Statuses a host-published recovery renames; a stop or a stopped run is not one. */
+/** Statuses a server-published recovery renames; a stop or a stopped run is not one. */
 const RECOVERABLE_STATUSES: ReadonlySet<VoiceSessionStatus> = new Set([
 	"requesting_permission",
 	"negotiating",
@@ -55,7 +55,7 @@ const RECOVERABLE_STATUSES: ReadonlySet<VoiceSessionStatus> = new Set([
 const REPLACED_RECOVERY =
 	"Close this session; a new one can then be started on the current thread link.";
 const STOP_UNCONFIRMED_RECOVERY =
-	"The realtime host never confirmed the stop, so this session cannot restart. Close it and reconnect this pane.";
+	"The realtime server never confirmed the stop, so this session cannot restart. Close it and reconnect this pane.";
 const TERMINAL_RECOVERY = "This session cannot be resumed. Close it and start a new one.";
 const RESTART_RECOVERY = "Restart voice to negotiate a new realtime session on the coordinator.";
 const STOP_FIRST_RECOVERY =
@@ -242,10 +242,10 @@ function runControls(
 }
 
 /**
- * The status a healthy run presents, renamed to recovering while the host recovers it.
+ * The status a healthy run presents, renamed to recovering while the server recovers it.
  * @param state The realtime state.
  * @param input The projection input.
- * @returns The narrated status and whether the host renamed it.
+ * @returns The narrated status and whether the server renamed it.
  */
 function runStatus(
 	state: RealtimeState,
@@ -259,9 +259,9 @@ function runStatus(
 }
 
 /**
- * The narrated detail, extended with the host's recovery reason while recovering.
+ * The narrated detail, extended with the server's recovery reason while recovering.
  * @param detail The narrated detail.
- * @param serverRecovering Whether the host renamed the run to recovering.
+ * @param serverRecovering Whether the server renamed the run to recovering.
  * @param input The projection input.
  * @returns The detail sentence.
  */
@@ -274,7 +274,7 @@ function recoveringDetail(
 		return detail;
 	}
 	const reason = input.transportState.snapshot?.voice.reason ?? null;
-	return `${detail} ${reason ?? "The host is recovering this voice session."}`;
+	return `${detail} ${reason ?? "The Archboard server is recovering this voice session."}`;
 }
 
 /**
@@ -296,7 +296,7 @@ function healthyRunView(
 	const { status, serverRecovering } = runStatus(state, input);
 	const controls = runControls(state, blocker === null, input.busy);
 	const narrated = recoveringDetail(detail, serverRecovering, input);
-	// A coordinator or voice failure the host publishes mid-run, or a control
+	// A coordinator or voice failure the server publishes mid-run, or a control
 	// this adapter drove and had refused, is the only news on the screen.
 	const attached = external ?? input.controlFailure;
 	if (attached === null) {

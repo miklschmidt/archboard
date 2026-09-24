@@ -9,9 +9,9 @@ import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 const ARCHBOARD_SERVICE_NAME = "archboard-server";
 
 // Revalidating identity gate in front of every /api request: mutations must
-// not reach a foreign service squatting on the canvas port. The verification
+// not reach a foreign service squatting on the server port. The verification
 // is cached only briefly (burst-coalescing TTL) so a long-lived client
-// re-checks identity after its verified canvas goes away — a service swapped
+// re-checks identity after its verified server goes away — a service swapped
 // onto the port is refused within seconds, while batch operations (align =
 // many concurrent requests) share a single probe instead of stampeding
 // /health. Note this is defense-in-depth against accidents, not a security
@@ -21,20 +21,20 @@ let identityVerifiedAt = 0;
 let identityProbe: Promise<void> | null = null;
 
 /**
- * The error for something that answers on the canvas port but is not the
- * canvas.
+ * The error for something that answers on the server port but is not the
+ * Archboard server.
  * @returns The error, carrying the CANVAS_UNREACHABLE code.
  */
 function foreignServiceError(): Error {
 	return unreachableError(
 		`Something is answering at ${ARCHBOARD_URL} but does not identify as this Archboard server ` +
-			`(a pre-1.1 canvas build or an unrelated service on the port). ` +
+			`(a pre-1.1 server build or an unrelated service on the port). ` +
 			`Upgrade/stop that service, or point ARCHBOARD_URL elsewhere.`,
 	);
 }
 
 /**
- * An error the CLI reports as "no canvas to talk to".
+ * An error the CLI reports as "no server to talk to".
  * @param message What went wrong.
  * @returns The error, carrying the CANVAS_UNREACHABLE code.
  */
@@ -45,7 +45,7 @@ function unreachableError(message: string): Error {
 }
 
 /**
- * Record that the canvas has just identified itself, so a caller that
+ * Record that the server has just identified itself, so a caller that
  * verified it another way does not make this probe it again.
  */
 function markServerIdentityVerified(): void {
@@ -54,7 +54,7 @@ function markServerIdentityVerified(): void {
 
 /**
  * The /health answer, or null when the probe could not reach the service at
- * all: connection-level unreachable (refused, reset, DNS) means the canvas is
+ * all: connection-level unreachable (refused, reset, DNS) means the server is
  * down or booting, and the actual request should fail with its own error.
  * @returns The response, or null.
  * @throws {Error} When the service accepts the connection but never answers,
@@ -78,9 +78,9 @@ async function probeHealth(): Promise<Response | null> {
 /**
  * Whether a /health answer is this Archboard server's. Something answered, so
  * only a 200 carrying our identity may pass: a 404 or an HTML page here is a
- * foreign service, not a down canvas.
+ * foreign service, not a down server.
  * @param response The answer.
- * @returns True when the canvas identified itself.
+ * @returns True when the server identified itself.
  */
 async function identifiesAsServer(response: Response): Promise<boolean> {
 	if (!response.ok) {
@@ -92,7 +92,7 @@ async function identifiesAsServer(response: Response): Promise<boolean> {
 
 /**
  * One identity probe, shared by every request that starts while it runs.
- * @throws {Error} When something other than this canvas answers.
+ * @throws {Error} When something other than this server answers.
  */
 async function verifyIdentity(): Promise<void> {
 	try {
@@ -111,10 +111,10 @@ async function verifyIdentity(): Promise<void> {
 }
 
 /**
- * Check the canvas is who it says it is before sending it anything, reusing
+ * Check the server is who it says it is before sending it anything, reusing
  * a probe already in flight and a recent verification.
- * @returns When the canvas has identified itself, or was already verified.
- * @throws {Error} When something other than this canvas answers.
+ * @returns When the server has identified itself, or was already verified.
+ * @throws {Error} When something other than this server answers.
  */
 async function assertServerIdentity(): Promise<void> {
 	if (Date.now() - identityVerifiedAt < IDENTITY_TTL_MS) {
@@ -124,7 +124,7 @@ async function assertServerIdentity(): Promise<void> {
 	return identityProbe;
 }
 
-/** An error carrying what the canvas said about the request it turned away. */
+/** An error carrying what the server said about the request it turned away. */
 type ServerError = Error & {
 	code?: unknown;
 	available?: unknown;
@@ -132,11 +132,11 @@ type ServerError = Error & {
 };
 
 /**
- * The error for an answer that was not ok, carrying the canvas's own reason
+ * The error for an answer that was not ok, carrying the server's own reason
  * and the structured body behind it.
  *
  * Refused board writes are results, not faults. Keeping their body on the
- * error means the CLI does not have to reconstruct what the canvas said, or
+ * error means the CLI does not have to reconstruct what the server said, or
  * read the board after the refusal.
  * @param data The answer body.
  * @param response The answer.
@@ -155,7 +155,7 @@ function responseError(data: unknown, response: Response): Error {
 }
 
 /**
- * Put the canvas's own code on the error, with the alternatives it offered.
+ * Put the server's own code on the error, with the alternatives it offered.
  * @param error The error being built.
  * @param body The answer body.
  */
@@ -171,9 +171,9 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 }
 
 /**
- * One request to the canvas, answered as JSON.
+ * One request to the Archboard server, answered as JSON.
  *
- * Every canvas request carries the board when one was named, and every answer
+ * Every server request carries the board when one was named, and every answer
  * is read for what it says about that board — whether it is still saving, and
  * which version of it this process has now been told about (TASK-091).
  * Attached and read here rather than at 30 call sites, so a route can never be
@@ -181,7 +181,7 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
  * @param path The request path.
  * @param init The request, whose method decides whether write claims ride along.
  * @returns The answer body, as the route's own shape.
- * @throws {Error} When the canvas is not there, is not itself, or answers with a failure.
+ * @throws {Error} When the server is not there, is not itself, or answers with a failure.
  */
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	await assertServerIdentity();
@@ -200,7 +200,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Whether an error is the network failing rather than the canvas answering.
+ * Whether an error is the network failing rather than the server answering.
  * @param error The thrown value.
  * @returns True when nothing was reached.
  */

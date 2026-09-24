@@ -7,23 +7,23 @@ import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 
 // The whole path a person and an agent actually use: a command makes a board,
-// a command changes it, a command reads it back, the canvas is restarted, and
+// a command changes it, a command reads it back, the Archboard server is restarted, and
 // the picture is drawn — all through the public surface, with nothing reaching
 // into the store. What this owner is for is the claim that those five things
 // join up; the store's own contract tests own the guarantees inside them.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-lifecycle-"));
-let canvas: OwnedServer;
+let server: OwnedServer;
 
 /**
- * Run one archboard command against the owned canvas.
+ * Run one archboard command against the owned server.
  * @param args The command line.
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 /** The variant ancestry fields exposed by the board listing. */
 function listedVariants(board: Pick<SemanticBoard, "variants">) {
@@ -36,11 +36,11 @@ function listedVariants(board: Pick<SemanticBoard, "variants">) {
 }
 
 beforeAll(async () => {
-	canvas = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 
@@ -158,7 +158,7 @@ describe("settling a proposal and adopting an architecture", () => {
 
 	test("adopting moves the designation and records why, through the command line", async () => {
 		const held = JSON.parse(cli(["semantic", "show", "settling"]).stdout).board;
-		const beforeListing = await (await fetch(`${canvas.base}/api/semantic-boards`)).json();
+		const beforeListing = await (await fetch(`${server.base}/api/semantic-boards`)).json();
 		expect(
 			beforeListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
 		).toEqual(listedVariants(held));
@@ -188,7 +188,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		);
 		expect(after.adoptions).toHaveLength(1);
 		expect(after.adoptions[0].reason).toBe("the gateway shipped");
-		const afterListing = await (await fetch(`${canvas.base}/api/semantic-boards`)).json();
+		const afterListing = await (await fetch(`${server.base}/api/semantic-boards`)).json();
 		expect(
 			afterListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
 		).toEqual(listedVariants(after));
@@ -303,7 +303,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// What the picture was answered with, read off the route the viewer reads:
 		// which state has to decide, and nothing the store keeps for itself.
 		const answered = await fetch(
-			`${canvas.base}/api/semantic-boards/render?board=blocking&variant=${encodeURIComponent(
+			`${server.base}/api/semantic-boards/render?board=blocking&variant=${encodeURIComponent(
 				"Queued and batched",
 			)}`,
 		);
@@ -328,7 +328,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		// names the board alone — every variant lives in the one document — so this
 		// is a caller spelling a write the way it spells what it is looking at.
 		const answer = await fetch(
-			`${canvas.base}/api/semantic-boards/edit?expectVersion=${start.version}`,
+			`${server.base}/api/semantic-boards/edit?expectVersion=${start.version}`,
 			{
 				method: "POST",
 				headers: { "content-type": "application/json" },
@@ -359,7 +359,7 @@ describe("settling a proposal and adopting an architecture", () => {
 				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
 			).status,
 		).toBe(0);
-		const endpoint = new URL(canvas.base);
+		const endpoint = new URL(server.base);
 		endpoint.protocol = "ws:";
 		endpoint.searchParams.set("clientId", "listening-pane");
 		const socket = new WebSocket(endpoint);
@@ -381,7 +381,7 @@ describe("settling a proposal and adopting an architecture", () => {
 			const at = JSON.parse(cli(["semantic", "show", "attributed"]).stdout).board.version;
 			const before = heard.length;
 			const answer = await fetch(
-				`${canvas.base}/api/semantic-boards/edit?expectVersion=${at}&doing=${encodeURIComponent("attributing a write")}`,
+				`${server.base}/api/semantic-boards/edit?expectVersion=${at}&doing=${encodeURIComponent("attributing a write")}`,
 				{
 					method: "POST",
 					headers: { "content-type": "application/json" },
@@ -426,7 +426,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		const bound = runServerCli({
 			repoRoot,
 			vault,
-			base: canvas.base,
+			base: server.base,
 			args: [
 				"semantic",
 				"edit",

@@ -91,7 +91,7 @@ const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>>
  * Hands the request to the next handler; the preguard only refuses, it never answers a success.
  * @param _request The request, unused here.
  * @param _response The response, unused here.
- * @param next Continues to the canvas's own handler.
+ * @param next Continues to the Archboard server's own handler.
  */
 const pass: RequestHandler = (_request, _response, next) => {
 	next();
@@ -184,7 +184,7 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 		),
 	launch: launchOpener,
 	/**
-	 * Runs checkout work directly; the canvas supplies request-scoped scheduling in production.
+	 * Runs checkout work directly; the Archboard server supplies request-scoped scheduling in production.
 	 * @param _request The request, unused here.
 	 * @param _response The response, unused here.
 	 * @param _name The work's name, unused here.
@@ -193,7 +193,7 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	 */
 	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
 	/**
-	 * Runs mutation work directly; the canvas supplies request-scoped scheduling in production.
+	 * Runs mutation work directly; the Archboard server supplies request-scoped scheduling in production.
 	 * @param _request The request, unused here.
 	 * @param _name The work's name, unused here.
 	 * @param work The mutation work.
@@ -375,7 +375,7 @@ export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean
 }
 
 /**
- * Builds the router mounted ahead of the canvas that guards and parses the opener routes.
+ * Builds the router mounted ahead of the Archboard server that guards and parses the opener routes.
  * @returns The preguard router.
  */
 export function createCodeOpenerPreguard(): Router {
@@ -429,7 +429,7 @@ function parseActivationRequest(request: Request): ActivationRequest {
 
 /**
  * Builds the opener routes: settings read, save, reset and test, and code-target activation.
- * @param overrides Dependencies replaced by the canvas or by tests.
+ * @param overrides Dependencies replaced by the Archboard server or by tests.
  * @returns The opener router.
  */
 export function createCodeOpenerRouter(

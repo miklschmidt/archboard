@@ -81,7 +81,7 @@ test("the last presenter's disconnect, from any pane of the link, settles and ac
 			respond: async (_request, _owner, response) => void responses.push(response),
 		},
 		// The approval names the pane that created the link; the browser leaving
-		// is on another pane of the same canvas link.
+		// is on another pane of the same server link.
 		getCurrentBinding: () => ({ link: "pane:pane-that-created-the-link" }),
 	});
 	try {

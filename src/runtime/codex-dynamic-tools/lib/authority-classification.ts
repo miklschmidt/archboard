@@ -71,7 +71,7 @@ async function linkFor(
 
 /**
  * Refuse a caller record without non-empty turn identities.
- * @param caller Record returned by the host authority.
+ * @param caller Record returned by the server authority.
  */
 function assertCallerTurnIdentity(caller: DynamicCallerAuthority): void {
 	if (!isNonEmptyString(caller.turnId) || !isNonEmptyString(caller.wireTurnId)) {
@@ -81,7 +81,7 @@ function assertCallerTurnIdentity(caller: DynamicCallerAuthority): void {
 
 /**
  * Whether a caller record names the request's logical call and wire identities.
- * @param caller Record returned by the host authority.
+ * @param caller Record returned by the server authority.
  * @param request The dynamic request being dispatched.
  * @returns Whether the thread and turn identities match.
  */
@@ -99,7 +99,7 @@ function callerNamesRequest(
 
 /**
  * Refuse a caller record that is not the executing logical call of the request.
- * @param caller Record returned by the host authority.
+ * @param caller Record returned by the server authority.
  * @param request The dynamic request being dispatched.
  */
 function assertCallerMatchesRequest(
@@ -128,7 +128,7 @@ function assertExecutableCallerLink(link: ThreadLinkClassification, message: str
 }
 
 /**
- * Ask the host authority for the logical caller of a request.
+ * Ask the server authority for the logical caller of a request.
  * @param request The dynamic request being dispatched.
  * @param options Authority dependencies.
  * @returns The caller record.
@@ -146,7 +146,7 @@ async function resolvedCaller(
 
 /**
  * Resolve and prove the executing caller of a dynamic request against the
- * host authority and the live thread-link.
+ * server authority and the live thread-link.
  * @param request The dynamic request being dispatched.
  * @param options Authority dependencies.
  * @returns The proven caller with its link classification attached.
@@ -167,7 +167,7 @@ async function resolveCaller(
 }
 
 /**
- * Ask the host authority to classify a target thread.
+ * Ask the server authority to classify a target thread.
  * @param caller The proven caller.
  * @param threadId Requested target thread identity.
  * @param options Authority dependencies.
@@ -209,7 +209,7 @@ function assertCurrentTargetInCallerEpoch(
 }
 
 /**
- * Classify and prove a target thread against the host authority and the live
+ * Classify and prove a target thread against the server authority and the live
  * thread-link.
  * @param caller The proven caller.
  * @param threadId Requested target thread identity.
@@ -258,7 +258,7 @@ async function assertStillExecuting(
 }
 
 /**
- * Ask the host authority to revalidate a caller record.
+ * Ask the server authority to revalidate a caller record.
  * @param caller The previously proven caller.
  * @param options Authority dependencies.
  * @returns The fresh caller record.
@@ -342,7 +342,7 @@ async function revalidateCaller(
 }
 
 /**
- * Ask the host authority to revalidate a target record.
+ * Ask the server authority to revalidate a target record.
  * @param target The previously proven target.
  * @param options Authority dependencies.
  * @returns The fresh target record.

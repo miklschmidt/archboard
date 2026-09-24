@@ -491,7 +491,7 @@ function registerLivePane(registration: PaneRegistration): void {
 /**
  * Say so when a second browser presents a pane id another live browser already holds.
  *
- * The canvas is one operator's, but nothing stops a second browser (the ChatGPT desktop app,
+ * The server is one operator's, but nothing stops a second browser (the ChatGPT desktop app,
  * on 2026-09-22) opening it too, and then "pane A" names two panes. Voice and narration address
  * the browser that started them (TASK-294); anything that still goes by the shell id alone may
  * land on the other one, and this line is how that is read afterwards. A recording page shares

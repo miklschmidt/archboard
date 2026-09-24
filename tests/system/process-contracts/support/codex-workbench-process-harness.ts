@@ -22,12 +22,12 @@ async function startLinkedWorkbench(
 	executableSource: string,
 ) {
 	const fixture = prepareProductionFixture(resources, executableSource);
-	const canvas = await startServer(fixture);
-	resources.defer(() => canvas.dispose());
+	const server = await startServer(fixture);
+	resources.defer(() => server.dispose());
 	const clientId = `process-${label}`;
-	const socket = await openApplicationSocket(canvas.base, clientId);
+	const socket = await openApplicationSocket(server.base, clientId);
 	resources.defer(() => socket.close());
-	const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
+	const request = createRequester({ base: server.base, assertRunning: async () => undefined });
 	expect(
 		(
 			await request("/api/panes", {
@@ -81,7 +81,7 @@ async function startLinkedWorkbench(
 	if (childPid === undefined) {
 		throw new Error(`${label} child did not start.`);
 	}
-	return { canvas, childPid, fixture, link, request, socket };
+	return { server, childPid, fixture, link, request, socket };
 }
 
 function mutationCount(logPath: string): number {

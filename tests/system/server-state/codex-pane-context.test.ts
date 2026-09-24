@@ -36,7 +36,7 @@ test("live voice is told what the user changed by hand, and nothing of what anyb
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath,
 			vault: fixture.vault,
 			env: {
@@ -46,9 +46,9 @@ test("live voice is told what the user changed by hand, and nothing of what anyb
 				XDG_STATE_HOME: join(fixture.root, "state"),
 			},
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
-		const socket = await openApplicationSocket(canvas.base, "voice-client");
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
+		const socket = await openApplicationSocket(server.base, "voice-client");
 		resources.defer(() => socket.close());
 		expect(
 			(

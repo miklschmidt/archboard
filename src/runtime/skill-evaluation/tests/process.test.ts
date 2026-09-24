@@ -117,8 +117,8 @@ describe("evaluation process ownership with local shell fakes", () => {
 	});
 });
 
-test("cancelled canvas readiness stops the exact fake server and its inherited child", async () => {
-	const root = mkdtempSync(path.join(tmpdir(), "skill-canvas-cancel-"));
+test("cancelled server readiness stops the exact fake server and its inherited child", async () => {
+	const root = mkdtempSync(path.join(tmpdir(), "skill-server-cancel-"));
 	const controller = new AbortController();
 	const pids = path.join(root, "pids");
 	mkdirSync(path.join(root, "src"));

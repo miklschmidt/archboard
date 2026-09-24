@@ -3,7 +3,7 @@
 // failed, and the plan a turn is working to. Each is bounded to its wire limit.
 // A tool's arguments have the values of secret-named keys redacted; command
 // output is carried as the operator's own terminal would show it, because the
-// browser on the loopback-bound canvas shares the operator's trust boundary.
+// browser on the loopback-bound server shares the operator's trust boundary.
 
 import type { SessionThreadItem, SessionTurn } from "@/runtime/codex-session";
 import type { CodexServerNotificationParamsByMethod } from "@/shared/codex-app-server-contract";

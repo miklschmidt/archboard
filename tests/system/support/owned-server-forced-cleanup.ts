@@ -70,7 +70,7 @@ async function stopChildGroup(
 	if (status === "quiescent") return;
 	if (status !== "owned") {
 		throw new Error(
-			`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${status}).`,
+			`Owned server child group ${group.pgid} did not become quiescent after forced server death (${status}).`,
 		);
 	}
 	operations.signal(group, "SIGTERM");
@@ -83,7 +83,7 @@ async function stopChildGroup(
 	const final = status === "owned" ? await waitForQuiescence(group, operations, deadline) : status;
 	if (final !== "quiescent") {
 		throw new Error(
-			`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${final}).`,
+			`Owned server child group ${group.pgid} did not become quiescent after forced server death (${final}).`,
 		);
 	}
 }
@@ -139,7 +139,7 @@ async function completeCapturedServerCleanup(
 	if (failures.length > 1) {
 		throw new AggregateError(
 			failures,
-			"Owned canvas parent and captured descendant cleanup reported multiple failures.",
+			"Owned server parent and captured descendant cleanup reported multiple failures.",
 		);
 	}
 }

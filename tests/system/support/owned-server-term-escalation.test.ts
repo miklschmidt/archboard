@@ -44,20 +44,20 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "term-escalation") {
 	});
 }
 
-test("ordinary TERM escalation completes forced canvas cleanup", async () => {
+test("ordinary TERM escalation completes forced server cleanup", async () => {
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
-	const canvas = await startOwnedServer({
+	const server = await startOwnedServer({
 		serverPath: thisFile,
 		vault,
 		env: { ARCHBOARD_LIFECYCLE_SERVER: "term-escalation" },
 	});
-	const stateResponse = await fetch(`${canvas.base}/cleanup-state`);
+	const stateResponse = await fetch(`${server.base}/cleanup-state`);
 	const state = z
 		.object({ descendant: z.number().int().positive(), lock: z.string() })
 		.parse(await stateResponse.json());
 	let disposalFailure: unknown;
 	try {
-		await canvas.dispose();
+		await server.dispose();
 	} catch (error) {
 		disposalFailure = error;
 	} finally {
@@ -77,9 +77,9 @@ test("ordinary TERM escalation completes forced canvas cleanup", async () => {
 		throw disposalFailure;
 	}
 	if (disposalFailure !== undefined) {
-		throw new Error("Canvas cleanup failed with a non-error value.", { cause: disposalFailure });
+		throw new Error("Server cleanup failed with a non-error value.", { cause: disposalFailure });
 	}
 	expect(processExists(state.descendant)).toBeFalse();
 	expect(fs.existsSync(state.lock)).toBeFalse();
-	expect(fs.existsSync(canvas.paths.root)).toBeFalse();
+	expect(fs.existsSync(server.paths.root)).toBeFalse();
 });

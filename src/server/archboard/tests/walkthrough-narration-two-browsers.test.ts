@@ -1,6 +1,6 @@
 // A voice session is about the pane in the browser it was started from, and no other.
 //
-// The failure this guards: two browsers on one canvas each present a pane "A" (Chrome and the
+// The failure this guards: two browsers on one server each present a pane "A" (Chrome and the
 // ChatGPT desktop app, 2026-09-22), the other browser's registration is first in the registry,
 // and Narrate looks for the chosen walkthrough on the board that browser is showing, refuses,
 // and the user reads "Realtime negotiation was unavailable or failed" (TASK-294).
@@ -22,7 +22,7 @@ const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-two-browsers-"));
 process.env["ARCHBOARD_VAULT"] = vault;
 
-let canvas: typeof ServerModule;
+let server: typeof ServerModule;
 let store: typeof StoreModule;
 let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
@@ -59,7 +59,7 @@ async function writeBoard(name: string, walkthroughs: readonly { name: string }[
 }
 
 beforeAll(async () => {
-	canvas = await import("@/server/archboard/index");
+	server = await import("@/server/archboard/index");
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
 	const landing = store.locateSemanticBoard(NARRATED).file;
@@ -80,8 +80,8 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-	canvas.panes.clear();
-	canvas.forgetSemanticPaneContexts();
+	server.panes.clear();
+	server.forgetSemanticPaneContexts();
 	if (callerVault === undefined) {
 		delete process.env["ARCHBOARD_VAULT"];
 	} else {
@@ -105,8 +105,8 @@ function browserPane(clientId: string, board: string): void {
 		rect: { x: 0, y: 0, width: 1, height: 1 },
 		at: new Date().toISOString(),
 	};
-	canvas.panes.set(clientId, registration);
-	canvas.recordSemanticPaneContext(report(clientId, board, null));
+	server.panes.set(clientId, registration);
+	server.recordSemanticPaneContext(report(clientId, board, null));
 }
 
 /**
@@ -141,8 +141,8 @@ test("narration is about the browser that pressed Narrate, not the first pane wi
 	browserPane("client-app", OTHER);
 	browserPane("client-chrome", NARRATED);
 
-	expect(() => canvas.narrationFor("A", "client-app", walkthroughId, false)).toThrow();
-	expect(canvas.narrationFor("A", "client-chrome", walkthroughId, false)).toEqual({
+	expect(() => server.narrationFor("A", "client-app", walkthroughId, false)).toThrow();
+	expect(server.narrationFor("A", "client-chrome", walkthroughId, false)).toEqual({
 		walkthrough: walkthroughId,
 		name: "How a request lands",
 		recording: false,
@@ -150,10 +150,10 @@ test("narration is about the browser that pressed Narrate, not the first pane wi
 });
 
 test("a hand on the other browser's pane of the same id is not this narration's news", () => {
-	canvas.bindVoicePane("A", "client-chrome");
-	canvas.narrationFor("A", "client-chrome", walkthroughId, false);
+	server.bindVoicePane("A", "client-chrome");
+	server.narrationFor("A", "client-chrome", walkthroughId, false);
 	const heard: string[] = [];
-	const stop = canvas.subscribeNarrationChanges((change) => heard.push(change.kind));
+	const stop = server.subscribeNarrationChanges((change) => heard.push(change.kind));
 	const stepped: SemanticPanePresentation = {
 		walkthrough: walkthroughId,
 		beat: 0,
@@ -161,10 +161,10 @@ test("a hand on the other browser's pane of the same id is not this narration's 
 		arrived: true,
 		answering: null,
 	};
-	canvas.panePresentations.note(report("client-app", OTHER, stepped));
-	canvas.panePresentations.note(report("client-app", OTHER, null));
+	server.panePresentations.note(report("client-app", OTHER, stepped));
+	server.panePresentations.note(report("client-app", OTHER, null));
 	expect(heard).toEqual([]);
-	canvas.panePresentations.note(report("client-chrome", NARRATED, stepped));
+	server.panePresentations.note(report("client-chrome", NARRATED, stepped));
 	expect(heard).toEqual(["stepped"]);
 	stop();
 });

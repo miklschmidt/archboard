@@ -371,14 +371,14 @@ _Avoid_: score, cost, quality metric
 ### Working
 
 **Workhorse**:
-The primary Codex thread linked to the canvas for sustained code, repository,
+The primary Codex thread linked to the Archboard server for sustained code, repository,
 and multi-step work. It may continue working while a voice coordinator answers and
 investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
 
 **Thread link**:
-The runtime association between the canvas and one controllable Codex
+The runtime association between the Archboard server and one controllable Codex
 workhorse on Archboard's owned app-server child, made by the first message or
 Talk; whichever pane is focused speaks through it. It never lives in the board
 or follows another client's active thread, and child exit invalidates it, so
@@ -387,7 +387,7 @@ _Avoid_: binding (that means node-to-code here), attachment, selected thread,
 active task, task link
 
 **Voice coordinator**:
-The persistent fast Codex thread linked to the canvas's workhorse. Realtime voice
+The persistent fast Codex thread linked to the server's workhorse. Realtime voice
 attaches to it. It handles conversation and bounded direct work, and it gives
 sustained work to the workhorse. With the voice model it is one assistant: the
 voice model speaks, and the coordinator is its subconscious, which reads the

@@ -23,7 +23,7 @@ import {
 const RUNNING = connected(snapshot({ timeline: timeline([[TURN, "inProgress"]]) }));
 
 /**
- * A result the host lost.
+ * A result the server lost.
  * @returns The result.
  */
 function unknownOutcome(): ReturnType<typeof commandResult> {
@@ -31,7 +31,7 @@ function unknownOutcome(): ReturnType<typeof commandResult> {
 }
 
 /**
- * A result the host refused as not ready.
+ * A result the server refused as not ready.
  * @returns The result.
  */
 function notReady(): ReturnType<typeof commandResult> {
@@ -300,7 +300,7 @@ describe("the draft policy for each settled outcome", () => {
 		expect(controller.getState().retained).toEqual({
 			text: "Rename the node.",
 			threadId: THREAD,
-			reason: "The host never answered, so the command's outcome is unknown.",
+			reason: "The Archboard server never answered, so the command's outcome is unknown.",
 		});
 	});
 
@@ -364,7 +364,7 @@ describe("refusals, disconnects, and late results", () => {
 		expect(result).toEqual({
 			outcome: "outcome_unknown",
 			reason:
-				"The pane moved to another thread link before the host answered, so this result is not applied here.",
+				"The pane moved to another thread link before the Archboard server answered, so this result is not applied here.",
 		});
 		expect(controller.getState().retained?.threadId).toBe(THREAD);
 	});
@@ -426,7 +426,7 @@ describe("remediations from the fixed-range review", () => {
 		);
 		const controller = createWorkbenchComposerController({ transport });
 		const result = await controller.submit({ text: "Rename the node." });
-		// The host said nothing was delivered, so the text stays safe to resend
+		// The server said nothing was delivered, so the text stays safe to resend
 		// rather than moving into the inert region.
 		expect(result).toEqual({
 			outcome: "not_delivered",
@@ -435,8 +435,8 @@ describe("remediations from the fixed-range review", () => {
 		expect(controller.getState().retained).toBeNull();
 	});
 
-	test("the host's in-progress guard on a start is a definitive refusal with a next action", async () => {
-		// What the gateway sends when the canvas start action refuses a start
+	test("the server's in-progress guard on a start is a definitive refusal with a next action", async () => {
+		// What the gateway sends when the server start action refuses a start
 		// because its authoritative thread read found a running turn.
 		const transport = fakeComposerTransport();
 		transport.setCommand(
@@ -457,7 +457,7 @@ describe("remediations from the fixed-range review", () => {
 		expect(controller.getState().retained).toBeNull();
 	});
 
-	test("a refusal the host sent no message for falls back to the composer's own sentence", async () => {
+	test("a refusal the server sent no message for falls back to the composer's own sentence", async () => {
 		const transport = fakeComposerTransport();
 		transport.setCommand(
 			answering(
@@ -467,7 +467,7 @@ describe("remediations from the fixed-range review", () => {
 		const controller = createWorkbenchComposerController({ transport });
 		expect((await controller.submit({ text: "Go." })).outcome).toBe("not_delivered");
 		expect(controller.getState().status.message).toBe(
-			"The host refused this command for the workhorse's current state. Read the timeline, then send again.",
+			"The Archboard server refused this command for the workhorse's current state. Read the timeline, then send again.",
 		);
 	});
 

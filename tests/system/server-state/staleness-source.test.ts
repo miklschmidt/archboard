@@ -28,15 +28,15 @@ describe.serial("source staleness", () => {
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
 		const state = join(root, "state");
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env: { XDG_STATE_HOME: state, LOG_FILE_PATH: join(root, "server.log") },
 		});
-		resources.defer(() => canvas.dispose());
+		resources.defer(() => server.dispose());
 		const health = async () => {
-			const response = await fetch(`${canvas.base}/health`);
-			await canvas.assertRunning();
+			const response = await fetch(`${server.base}/health`);
+			await server.assertRunning();
 			return (await response.json()) as Health;
 		};
 		const cli = () => {
@@ -45,7 +45,7 @@ describe.serial("source staleness", () => {
 				encoding: "utf8",
 				env: {
 					...process.env,
-					ARCHBOARD_URL: canvas.base,
+					ARCHBOARD_URL: server.base,
 					ARCHBOARD_NO_AUTOSTART: "1",
 					ARCHBOARD_VAULT: vault,
 					XDG_STATE_HOME: state,
@@ -76,9 +76,9 @@ describe.serial("source staleness", () => {
 		const stale = await waitFor(async () => {
 			const current = await health();
 			return current.source.stale ? current : undefined;
-		}, "canvas to report touched source");
+		}, "server to report touched source");
 		if (!stale) {
-			throw new Error("The canvas never returned its stale source state.");
+			throw new Error("The server never returned its stale source state.");
 		}
 		expect(stale.source.newestFile).toBe("src/runtime/engine/board-doing.ts");
 		expect(stale.pid).toBe(first.pid);

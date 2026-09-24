@@ -6,7 +6,7 @@ import {
 } from "@/runtime/codex-thread-link";
 
 /**
- * The one key a canvas keeps its thread link under. A canvas holds one
+ * The one key a server keeps its thread link under. A server holds one
  * conversation whichever pane speaks, so every pane addresses this entry.
  */
 const SERVER_LINK_KEY = "server";
@@ -25,10 +25,10 @@ function requirePaneId(paneId: string): void {
 }
 
 /**
- * The canvas link as the pane that asked is shown it. Its `paneId` and its CAS
+ * The server's thread link as the pane that asked is shown it. Its `paneId` and its CAS
  * token's `paneId` name the asking pane, so two reads for the same pane compare
  * equal and a token read for any pane swaps the one link.
- * @param binding The canvas binding.
+ * @param binding The server binding.
  * @param paneId The pane that asked.
  * @returns The relabelled snapshot.
  */
@@ -41,8 +41,8 @@ function forPane(binding: ThreadLinkBindingSnapshot, paneId: string): ThreadLink
 }
 
 /**
- * A caller's expectation, addressed to the canvas entry. A null expectation
- * still means the canvas link must be untouched; anything malformed is left for
+ * A caller's expectation, addressed to the server entry. A null expectation
+ * still means the server's thread link must be untouched; anything malformed is left for
  * the store to refuse.
  * @param expected The token the caller read, or null.
  * @returns The token the store compares.
@@ -55,7 +55,7 @@ function toServerLink(expected: ThreadLinkCasToken | null): ThreadLinkCasToken |
 }
 
 /**
- * One thread link per canvas, whichever pane asks (TASK-302.06).
+ * One thread link per server, whichever pane asks (TASK-302.06).
  *
  * Every pane reads, creates, relinks and clears the same entry, so a command
  * sent over any pane's transport targets the one conversation, and a change
@@ -67,11 +67,11 @@ function toServerLink(expected: ThreadLinkCasToken | null): ThreadLinkCasToken |
  * through fresh classification and the live epoch proof, prior epochs
  * inspect-only, and every change behind one compare-and-swap.
  * @param port The per-key thread-link port.
- * @returns The canvas-scoped port.
+ * @returns The server-scoped port.
  */
 function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort {
 	/**
-	 * The canvas link, labelled for one pane.
+	 * The server's thread link, labelled for one pane.
 	 * @param paneId The pane that asked.
 	 * @returns The snapshot.
 	 */
@@ -85,7 +85,7 @@ function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 		snapshot: read,
 		read,
 		/**
-		 * Swap the canvas link for a non-executable one.
+		 * Swap the server's thread link for a non-executable one.
 		 * @param input The asking pane, its expectation and the link.
 		 * @returns The new snapshot, labelled for that pane.
 		 */
@@ -101,7 +101,7 @@ function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 			);
 		},
 		/**
-		 * Return the canvas to no link.
+		 * Return the server to no link.
 		 * @param paneId The pane that asked.
 		 * @param expected Its expectation.
 		 * @returns The new snapshot, labelled for that pane.
@@ -111,7 +111,7 @@ function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 			return forPane(port.clear(SERVER_LINK_KEY, toServerLink(expected)), paneId);
 		},
 		/**
-		 * Classify a target and adopt it as the canvas link.
+		 * Classify a target and adopt it as the server's thread link.
 		 * @param paneId The pane that asked.
 		 * @param expected Its expectation.
 		 * @param target The thread.
@@ -125,7 +125,7 @@ function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 			);
 		},
 		/**
-		 * Adopt one discovered candidate as the canvas link.
+		 * Adopt one discovered candidate as the server's thread link.
 		 * @param paneId The pane that asked.
 		 * @param expected Its expectation.
 		 * @param selectionId The candidate.

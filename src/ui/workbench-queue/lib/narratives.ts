@@ -31,13 +31,13 @@ const WORKBENCH_QUEUE_NARRATIVES = {
 		label: "Running",
 		// The authoritative list holds pending submissions only, and the busy turn
 		// may be direct input rather than anything this queue supplied, so this
-		// says what the host's facts support: the workhorse is busy.
+		// says what the server's facts support: the workhorse is busy.
 		detail: "The linked workhorse is busy, so this queue is waiting behind the current turn.",
 		recovery: "Wait for the turn to settle, or interrupt it from the workhorse timeline.",
 	},
 	interrupted_preserved: {
 		label: "Interrupted, queue preserved",
-		detail: "The workhorse turn was interrupted and the host preserved every queued submission.",
+		detail: "The workhorse turn was interrupted and the server preserved every queued submission.",
 		recovery: "Start the next submission when the workhorse is idle, or cancel what is stale.",
 	},
 	approval_blocked: {
@@ -47,7 +47,7 @@ const WORKBENCH_QUEUE_NARRATIVES = {
 	},
 	failed: {
 		label: "Failed",
-		detail: "The host reported a failure for this queue on the linked workhorse.",
+		detail: "The Archboard server reported a failure for this queue on the linked workhorse.",
 		recovery: "Refresh the list to read the authoritative queue, then retry or cancel.",
 	},
 	restarted: {
@@ -58,7 +58,7 @@ const WORKBENCH_QUEUE_NARRATIVES = {
 	},
 	completed: {
 		label: "Completed",
-		detail: "Every submission the host is reporting for this queue has completed.",
+		detail: "Every submission the server is reporting for this queue has completed.",
 		recovery: "Add a submission, or refresh the list to read the authoritative queue.",
 	},
 	stale: {
@@ -78,19 +78,19 @@ const WORKBENCH_QUEUE_NARRATIVES = {
 	},
 	session_stopped: {
 		label: "Codex session stopped",
-		detail: "This pane is connected, but the host's Codex session is not running.",
-		recovery: "Refresh the list once the host's Codex session is running again.",
+		detail: "This pane is connected, but the Archboard server's Codex session is not running.",
+		recovery: "Refresh the list once the Archboard server's Codex session is running again.",
 	},
 	session_incompatible: {
 		label: "Codex session incompatible",
 		detail:
-			"This pane is connected, but the host's Codex session reports a contract it cannot serve.",
+			"This pane is connected, but the Archboard server's Codex session reports a contract it cannot serve.",
 		recovery:
-			"Install the pinned Codex version and restart the host session; refreshing will keep reporting this until then.",
+			"Install the pinned Codex version and restart the Archboard server; refreshing will keep reporting this until then.",
 	},
 	unavailable: {
 		label: "Queue unavailable",
-		detail: "The host is not publishing a queue for the thread link this pane is on.",
+		detail: "The Archboard server is not publishing a queue for the thread link this pane is on.",
 		recovery: "Choose an executable thread link, then refresh the list.",
 	},
 	outcome_unknown: {

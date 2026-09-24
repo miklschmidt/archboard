@@ -3,7 +3,7 @@ interface OwnedServerRegistration {
 	readonly disposeSync: () => void;
 }
 
-const activeServeres = new Set<OwnedServerRegistration>();
+const activeServers = new Set<OwnedServerRegistration>();
 let handlersInstalled = false;
 let interruptionInProgress = false;
 
@@ -12,7 +12,7 @@ async function disposeForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
 		return;
 	}
 	interruptionInProgress = true;
-	await Promise.allSettled([...activeServeres].map(async (canvas) => canvas.dispose()));
+	await Promise.allSettled([...activeServers].map(async (server) => server.dispose()));
 	process.exit(signal === "SIGINT" ? 130 : 143);
 }
 
@@ -25,13 +25,13 @@ function onSigterm(): void {
 }
 
 function onExit(): void {
-	for (const canvas of activeServeres) {
-		canvas.disposeSync();
+	for (const server of activeServers) {
+		server.disposeSync();
 	}
 }
 
 function uninstallHandlers(): void {
-	if (!handlersInstalled || activeServeres.size > 0) {
+	if (!handlersInstalled || activeServers.size > 0) {
 		return;
 	}
 	process.off("SIGINT", onSigint);
@@ -51,12 +51,12 @@ function installHandlers(): void {
 }
 
 function registerOwnedServer(registration: Readonly<OwnedServerRegistration>): void {
-	activeServeres.add(registration);
+	activeServers.add(registration);
 	installHandlers();
 }
 
 function unregisterOwnedServer(registration: Readonly<OwnedServerRegistration>): void {
-	activeServeres.delete(registration);
+	activeServers.delete(registration);
 	uninstallHandlers();
 }
 

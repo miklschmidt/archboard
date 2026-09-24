@@ -1,4 +1,4 @@
-// The canvas's one voice session: started, spoken into and stopped by the browser that holds it.
+// The Archboard server's one voice session: started, spoken into and stopped by the browser that holds it.
 //
 // A start replaces whatever session was running, except a recording's (TASK-304): a recording is
 // started from a headless page nobody is watching, and must never stop somebody who is talking,
@@ -177,7 +177,7 @@ function narrationOfStart(
 }
 
 /**
- * The refusal of a recording while voice is live on the canvas, kept in the start trace: a
+ * The refusal of a recording while voice is live on the server, kept in the start trace: a
  * recording needs the voice to itself, and taking it would stop somebody who is talking.
  * @returns The refusal to throw.
  */
@@ -185,7 +185,7 @@ function recordingRefusal(): CodexWorkbenchGatewayError {
 	// The browser is told the gateway's own sentence for this code; this one is for the trace.
 	const refusal = new CodexWorkbenchGatewayError(
 		"voice_live",
-		"A recording was refused because voice is live on the canvas.",
+		"A recording was refused because voice is live on the Archboard server.",
 	);
 	voiceStartTrace.note("refused", { message: traceMessage(refusal) });
 	return refusal;
@@ -266,7 +266,7 @@ export function createServerRealtimeActions(
 	/**
 	 * Make room for a new session: stop the one running, or refuse a recording while one is.
 	 *
-	 * Live means the adapter still holds the session. One Codex ended by itself leaves the canvas's
+	 * Live means the adapter still holds the session. One Codex ended by itself leaves the server's
 	 * record of it behind until something stops it, and refusing a recording over that would say
 	 * voice is live when nobody is talking.
 	 * @param recording Whether the new session is a recording.
@@ -286,7 +286,7 @@ export function createServerRealtimeActions(
 	 * @param handle The handle the command named.
 	 * @param context The pane and the link it named.
 	 * @param socketBound Whether the command must come from the session's own
-	 * socket; only stopping may come from any pane of the canvas.
+	 * socket; only stopping may come from any pane of the server.
 	 * @returns The session.
 	 */
 	const requireActive = (
@@ -441,7 +441,7 @@ export function createServerRealtimeActions(
 				return { outcome: "delivered" as const };
 			}),
 		/**
-		 * Stop the session, from whichever pane holds the lease: the canvas has
+		 * Stop the session, from whichever pane holds the lease: the server has
 		 * one conversation, and ending its voice needs no media of its own.
 		 * @param command The handle.
 		 * @param context The pane and the link it named.

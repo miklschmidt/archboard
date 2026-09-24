@@ -19,20 +19,20 @@ export interface RequestOptions {
 export const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => setTimeout(resolve, ms));
 
-export function createRequester(canvas: RequestServer) {
+export function createRequester(server: RequestServer) {
 	return async <T = unknown>(
 		path: string,
 		options: RequestOptions = {},
 	): Promise<CapturedResponse<T>> => {
 		const method = (options.method ?? "GET").toUpperCase();
-		const url = new URL(path, canvas.base);
+		const url = new URL(path, server.base);
 		if (
 			method !== "GET" &&
 			method !== "HEAD" &&
 			options.doing !== false &&
 			!url.searchParams.has("doing")
 		) {
-			url.searchParams.set("doing", options.doing ?? "checking canvas state");
+			url.searchParams.set("doing", options.doing ?? "checking server state");
 		}
 		try {
 			const response = await fetch(url, {
@@ -47,7 +47,7 @@ export function createRequester(canvas: RequestServer) {
 							body: JSON.stringify(options.body),
 						}),
 			});
-			await canvas.assertRunning();
+			await server.assertRunning();
 			const text = await response.text();
 			let body: T;
 			try {
@@ -57,7 +57,7 @@ export function createRequester(canvas: RequestServer) {
 			}
 			return { status: response.status, text, body };
 		} catch (error) {
-			await canvas.assertRunning(error);
+			await server.assertRunning(error);
 			throw error;
 		}
 	};

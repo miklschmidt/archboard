@@ -49,10 +49,10 @@ test("the address names the view of the board on screen, down a level and back",
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "drill-address-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerServerBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	for (const [board, create] of [
 		[
@@ -83,7 +83,7 @@ test("the address names the view of the board on screen, down a level and back",
 	}
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=pipeline`]);
+	await browser.run(["open", `${server.base}/?paneA=pipeline`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser),
@@ -126,7 +126,7 @@ test("the address names the view of the board on screen, down a level and back",
 
 	// Which is the whole point: that address reopens what is on screen. A person
 	// who sends it, or reloads, lands where they were.
-	await browser.run(["open", `${canvas.base}/?paneA=engine&viewA=${below}`]);
+	await browser.run(["open", `${server.base}/?paneA=engine&viewA=${below}`]);
 	await pollUntil(
 		() => stageState(browser),
 		(state) => state === "drawn",
@@ -141,5 +141,5 @@ test("the address names the view of the board on screen, down a level and back",
 		),
 	).toBe(below);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 90_000);

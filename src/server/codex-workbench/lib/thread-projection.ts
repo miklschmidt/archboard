@@ -269,10 +269,10 @@ function projectThreadLinkSource(
 }
 
 /**
- * Map the host inventory into the browser vocabulary and bound it. Nothing here
+ * Map the server inventory into the browser vocabulary and bound it. Nothing here
  * reclassifies a record or joins the two Codex lists a second time: TASK-143.01.09
  * owns that, and this projection carries its verdict through unchanged.
- * @param input The host's candidate inventory.
+ * @param input The server's candidate inventory.
  * @returns The browser candidate list.
  */
 export function projectThreadCandidates(
@@ -316,7 +316,7 @@ export function projectThreadCandidates(
 
 /**
  * Project the pane's thread link for the browser, presenting its source.
- * @param input The host's thread-link snapshot for the pane.
+ * @param input The server's thread-link snapshot for the pane.
  * @returns The browser thread link.
  */
 export function projectThreadLink(input: BrowserProjectionInput["threadLink"]): BrowserThreadLink {

@@ -1,5 +1,5 @@
-// Where the canvas is expected to answer, and how the launcher tells that
-// answer apart from a foreign service or a canvas holding unsaved work.
+// Where the Archboard server is expected to answer, and how the launcher tells that
+// answer apart from a foreign service or a server holding unsaved work.
 
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
@@ -12,7 +12,7 @@ import { codedError } from "@/runtime/engine/lib/thrown-error";
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
 /**
- * The port the canvas URL names, with the scheme's default when it names none.
+ * The port the server URL names, with the scheme's default when it names none.
  * @returns The port number; 3000 when the URL cannot be parsed.
  */
 function serverPort(): number {
@@ -25,7 +25,7 @@ function serverPort(): number {
 }
 
 /**
- * The host the canvas URL names.
+ * The host the server URL names.
  * @returns The hostname; the IPv4 loopback when the URL cannot be parsed.
  */
 function serverHostname(): string {
@@ -50,7 +50,7 @@ function spawnBindHost(): string {
 }
 
 /**
- * Whether the canvas URL points at this machine, which is the only place an
+ * Whether the server URL points at this machine, which is the only place an
  * auto-start can put a server.
  * @returns True for a loopback host.
  */
@@ -59,7 +59,7 @@ function isLoopbackUrl(): boolean {
 }
 
 /**
- * The error a caller gets when no canvas answers and none will be started.
+ * The error a caller gets when no server answers and none will be started.
  * @param reason Why, in a clause that follows the URL.
  * @returns An error carrying the `CANVAS_UNREACHABLE` code.
  */
@@ -96,7 +96,7 @@ async function healthOrNull(): Promise<HealthStatus | null> {
  * Whether a `/health` payload came from OUR Archboard server (the v1.1+ identity
  * marker). Anything else answering the port is a foreign service.
  * @param health The payload, or null when nothing answered.
- * @returns True only for this canvas service.
+ * @returns True only for this Archboard server.
  */
 function isServerHealth(health: { service?: string } | null): boolean {
 	return health?.service === ARCHBOARD_SERVICE_NAME;

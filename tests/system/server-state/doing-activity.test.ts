@@ -12,7 +12,7 @@ import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 // that arrives part way through — and beside it the boardless account the
 // navigator reads, which can never disagree because both ride the same
 // announcement. None of it is board content: the lines live in the running
-// canvas and the file on disk never hears about them (ADR 0023).
+// Archboard server and the file on disk never hears about them (ADR 0023).
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -43,13 +43,13 @@ describe.serial("doing activity", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-doing-activity-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
 
 		/**
 		 * One agent edit to the board, stating its step.
@@ -84,7 +84,7 @@ describe.serial("doing activity", () => {
 		});
 		let version = created.body.version;
 
-		const left = await openPaneSession(canvas.base, request, {
+		const left = await openPaneSession(server.base, request, {
 			clientId: "doing-left",
 			board: "payments",
 			x: 0,
@@ -92,7 +92,7 @@ describe.serial("doing activity", () => {
 			focused: true,
 		});
 		resources.defer(() => left.close());
-		const right = await openPaneSession(canvas.base, request, {
+		const right = await openPaneSession(server.base, request, {
 			clientId: "doing-right",
 			board: "ledger",
 			x: 640,
@@ -215,7 +215,7 @@ describe.serial("doing activity", () => {
 
 		// A pane arriving part way through is told the story so far rather than
 		// sitting blank until the next write.
-		const late = await openPaneSession(canvas.base, request, {
+		const late = await openPaneSession(server.base, request, {
 			clientId: "doing-late",
 			board: "payments",
 			x: 0,
@@ -228,7 +228,7 @@ describe.serial("doing activity", () => {
 		expect(replay?.recent).toHaveLength(5);
 		expect(replay?.recent?.at(-1)?.doing).toBe(repeatedLine);
 
-		// And none of it is on the board. The lines are what a running canvas
+		// And none of it is on the board. The lines are what a running server
 		// knows about an agent at work, and the file is the architecture.
 		const bytes = readFileSync(join(vault, "payments.semantic.json"), "utf8");
 		expect(bytes).not.toContain("rerouting orders through it");

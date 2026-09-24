@@ -288,7 +288,7 @@ function contextPane(contextBoard: string, exactPaneId: string): PaneRegistratio
 		// grammar refuses an empty board name — so without it the predicate THROWS
 		// rather than failing to match, which aborts the whole scan. One pane
 		// between boards would take context away from every other pane on the
-		// canvas for as long as it sat there.
+		// server for as long as it sat there.
 		const showing = boardForPane(candidate);
 		return candidate.paneId === exactPaneId && showing !== null && aggregateKey(showing) === wanted;
 	});

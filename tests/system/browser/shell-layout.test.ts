@@ -98,15 +98,15 @@ test(
 		const { ownerRoot } = browserTestRoots();
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath,
 			vault,
 			env: serverTestEnvironment({ LOG_FILE_PATH: join(ownerRoot, "server.log") }),
 		});
-		resources.defer(() => canvas.dispose());
-		registerServerBase(canvas.base);
+		resources.defer(() => server.dispose());
+		registerServerBase(server.base);
 		const browser = resources.use(await createAgentBrowser());
-		const api = createJsonRequester(canvas);
+		const api = createJsonRequester(server);
 		await seedSemanticBoard(api, "fixedpoint");
 		// Shown on a proposal rather than on what is current, so the header has a
 		// variant to name: a board read through the variant its name opens has
@@ -123,7 +123,7 @@ test(
 		const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
 		expect(proposal).toBeDefined();
 
-		await browser.run(["open", addressShowing(canvas.base, `fixedpoint@${proposal.id}`)]);
+		await browser.run(["open", addressShowing(server.base, `fixedpoint@${proposal.id}`)]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		await pollUntil(
@@ -243,14 +243,14 @@ test(
 			expect(snapshot.fontChecks).toEqual([true, true, true, true, true, true]);
 			expect(snapshot.fontResources).toHaveLength(3);
 			expect(
-				snapshot.fontResources.every((url) => new URL(url).origin === new URL(canvas.base).origin),
+				snapshot.fontResources.every((url) => new URL(url).origin === new URL(server.base).origin),
 			).toBe(true);
 			expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
-			// The drawn board's own faces, served from this canvas rather than a CDN.
+			// The drawn board's own faces, served from this server rather than a CDN.
 			expect(snapshot.diagramFontResources.length).toBeGreaterThan(0);
 			expect(
 				snapshot.diagramFontResources.every(
-					(url) => new URL(url).origin === new URL(canvas.base).origin,
+					(url) => new URL(url).origin === new URL(server.base).origin,
 				),
 			).toBe(true);
 			expect(snapshot.humanLabels).toHaveLength(2);

@@ -39,7 +39,7 @@ function composerRefusal(code: WorkbenchComposerRefusalCode): WorkbenchComposerP
 }
 
 /**
- * Each non-executable link keeps the host's own sentence and gains the next
+ * Each non-executable link keeps the server's own sentence and gains the next
  * action that belongs to it.
  * @param link The link.
  * @returns A refusal, or null for an executable link.
@@ -72,7 +72,7 @@ function executableLinkOrRefusal(
 
 /**
  * The prompt the closed contract accepts: non-empty, NUL-free, and within the
- * body's UTF-8 bound. Checked here so a message the host would reject is
+ * body's UTF-8 bound. Checked here so a message the server would reject is
  * refused with the person's text still in front of them.
  * @param text The prompt.
  * @returns A refusal code, or null.
@@ -159,7 +159,7 @@ function deliveryPlan(
 /**
  * What a submit sends. With `auto`, an idle submit is the literal `turn/start`
  * body and a submit while a turn runs is the literal `turn/steer` body carrying
- * the authoritative turn id the host re-proves as `expectedTurnId`. Nothing
+ * the authoritative turn id the server re-proves as `expectedTurnId`. Nothing
  * else is ever sent from the send path: the composer does not fork or retry.
  * @param state The transport state.
  * @param text The prompt.

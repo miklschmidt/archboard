@@ -243,7 +243,7 @@ const SEMANTIC_RASTER_JOB_TIMEOUT_MS = 10_000;
 /**
  * Bound for the private Chromium control port, target, and renderer page to
  * become ready. Startup is lazy, so this delay belongs to the first Board
- * render rather than to every canvas launch. A five-second page deadline
+ * render rather than to every server launch. A five-second page deadline
  * expired under a half-CPU quota; ten seconds completed three cold starts
  * with valid PNG/SVG output (TASK-162).
  */
@@ -297,7 +297,7 @@ const DEFAULT_SETTLE_MS = 1200;
  */
 const DEFAULT_SETTLE_MAX_MS = 6000;
 
-// ── Canvas application shutdown (ADR 0021) ────────────────────────────────
+// ── Server application shutdown (ADR 0021) ────────────────────────────────
 
 /**
  * Longest a stop attempt waits for admitted request parsing and explicit
@@ -325,7 +325,7 @@ const SERVER_HTTP_STOP_GRACE_MS = 250;
  * Outer bound for one Git identity probe while an operation captures its
  * checkout snapshot. Snapshot work runs before a board lock or synchronous
  * note write, so this never extends either critical section. It is longer
- * than the canvas mutation-drain refusal window: stop may refuse and keep the
+ * than the server mutation-drain refusal window: stop may refuse and keep the
  * application intact while a slow probe is still cancellable by its request
  * or application owner.
  */
@@ -403,7 +403,7 @@ const CODEX_TERM_GRACE_MS = 5000;
 /** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
 const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
 
-/** Public canvas readiness classification. Pulls against mandatory Codex startup readiness. */
+/** Public server readiness classification. Pulls against mandatory Codex startup readiness. */
 const SERVER_STARTUP_READINESS_MS = 8000;
 
 /**
@@ -432,15 +432,15 @@ const COORDINATOR_IDLE_WAIT_MS = 10_000;
  *
  * Serving a browser snapshot request re-reads the authoritative workhorse
  * queue, which is a paginated app-server call. A client is free to ask for a
- * snapshot as often as it likes, so the host coalesces concurrent re-reads and
+ * snapshot as often as it likes, so the Archboard server coalesces concurrent re-reads and
  * will not start a new one inside this floor. It sits at or above one
- * wait-target poll, because a browser must not out-run the cadence the host
+ * wait-target poll, because a browser must not out-run the cadence the server
  * observes thread state at, and far below request settlement, so a person's
  * refresh still reads as immediate.
  */
 const CODEX_QUEUE_REREAD_FLOOR_MS = 1000;
 
-// ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
+// ── Server subprocesses owned by checks (TASK-086) ───────────────────────
 
 export {
 	FLOW_CYCLE_CAP_MS,
@@ -538,17 +538,17 @@ export const VAULT_CHECK_POLL_MS = 5_000;
 
 // ── Skill evaluation harness (TASK-209) ──────────────────────────────────
 // Every duration the on-demand skill evaluation pulls against. None of them is
-// reached from the product: the harness owns its own canvas per run, spawns the
+// reached from the product: the harness owns its own Archboard server per run, spawns the
 // archboard CLI to lay fixtures, and runs Codex authors and one grader, and
 // each of those has a point past which waiting longer is a hang, not patience.
 
-/** An owned evaluation canvas answering /health after spawn; a cold bun start on a busy box. */
+/** An owned evaluation server answering /health after spawn; a cold bun start on a busy box. */
 export const SKILL_EVAL_SERVER_STARTUP_MS = 20_000;
-/** Between /health probes while an evaluation canvas starts. */
+/** Between /health probes while an evaluation server starts. */
 export const SKILL_EVAL_HEALTH_POLL_MS = 100;
 /** One /health probe; a listener that cannot answer in this time is treated as not up yet. */
 export const SKILL_EVAL_HEALTH_REQUEST_MS = 1000;
-/** Let the canvas finish its separately owned Codex shutdown before harness escalation, with one composed budget of margin. */
+/** Let the server finish its separately owned Codex shutdown before harness escalation, with one composed budget of margin. */
 export const SKILL_EVAL_SERVER_SHUTDOWN_MS = CODEX_COMPOSED_SHUTDOWN_MS * 2;
 /** One archboard CLI call laying a fixture or reading an outcome; each is one HTTP round trip. */
 export const SKILL_EVAL_CLI_TIMEOUT_MS = 60_000;

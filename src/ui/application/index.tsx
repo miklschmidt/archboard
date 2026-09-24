@@ -244,7 +244,7 @@ interface SettingsHostsProps {
 }
 
 /**
- * The settings dialog: where the canvas opens code.
+ * The settings dialog: where the server opens code.
  * @param props The open surface, the notices and the close.
  * @returns The open dialog, or nothing.
  */

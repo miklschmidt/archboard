@@ -123,7 +123,7 @@ function createBrowserCommandSchemas(
 		z.object({ ...BrowserCommandBase, command: z.literal("threadLinkCreate") }).strict(),
 		z.object({ ...BrowserCommandBase, command: z.literal("threadLinkRefresh") }).strict(),
 		// A bind names the one-shot selection it consumes as well as the thread it
-		// believes that selection is, so a list the host has since replaced is
+		// believes that selection is, so a list the server has since replaced is
 		// refused instead of silently binding whatever now sits at that thread id.
 		z
 			.object({

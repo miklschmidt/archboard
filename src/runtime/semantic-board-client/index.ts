@@ -4,10 +4,10 @@ import {
 	type VaultDiagnostic,
 	type VaultCheck,
 } from "@/shared/semantic-policy/index";
-// How the CLI reaches a semantic board: through the running canvas, never the
+// How the CLI reaches a semantic board: through the running Archboard server, never the
 // vault directly.
 //
-// The canvas is the one process that can take the board's lease, check the
+// The server is the one process that can take the board's lease, check the
 // version, write the aggregate and then tell the panes about it. A command that
 // wrote the file itself would get the first three and lose the fourth, so every
 // pane on screen would sit there showing the board as it was until somebody
@@ -130,7 +130,7 @@ function statedSession(): { session?: string } {
 }
 
 /**
- * Post a stated command to the canvas.
+ * Post a stated command to the server.
  * @param path The route.
  * @param body What the command states.
  * @returns The board as it now stands.
@@ -159,7 +159,7 @@ async function postSemantic(
 }
 
 /**
- * Every semantic board the canvas's vault holds.
+ * Every semantic board the server's vault holds.
  * @returns The boards, by name.
  */
 async function listSemanticBoardsOnServer(): Promise<SemanticBoardListing> {

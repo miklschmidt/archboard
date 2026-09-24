@@ -106,7 +106,7 @@ export function createCodexCoordinatorTools(
 	const executionContext: ExecutionContext = { options, disposed: isDisposed };
 
 	/**
-	 * The key of the logical call the host is executing right now.
+	 * The key of the logical call the server is executing right now.
 	 * @returns The key, or null when no call is executing.
 	 */
 	const currentLogicalKey = (): string | null => {
@@ -440,7 +440,7 @@ export function createCodexCoordinatorTools(
 	};
 
 	/**
-	 * Shut the dispatcher down: cancel every live call for host shutdown and forget everything.
+	 * Shut the dispatcher down: cancel every live call for server shutdown and forget everything.
 	 */
 	const dispose = (): void => {
 		if (disposed) {
@@ -451,7 +451,7 @@ export function createCodexCoordinatorTools(
 		for (const state of liveWireCalls.values()) {
 			state.cancelled ??= Object.freeze({
 				requestId: state.request.requestId,
-				cause: "host_shutdown",
+				cause: "server_shutdown",
 			});
 			state.wakeCancellation();
 		}

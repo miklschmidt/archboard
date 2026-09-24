@@ -121,7 +121,7 @@ export async function closeBrowserOwners(): Promise<void> {
 /** The HTTP listener's own phase, distinct from the lifetime's. */
 type HttpPhase = "idle" | "starting" | "running" | "failed" | "stopping";
 
-/** What the HTTP resource owns while the canvas runs. */
+/** What the HTTP resource owns while the server runs. */
 interface HttpOwnership {
 	phase: HttpPhase;
 	startPromise: Promise<void> | null;
@@ -161,7 +161,7 @@ function listen(
 	signal: AbortSignal,
 	onRuntimeError: (error: NodeJS.ErrnoException) => void,
 ): Promise<void> {
-	const cancellation = new Error("Canvas HTTP startup was canceled.");
+	const cancellation = new Error("Archboard server HTTP startup was canceled.");
 	const listenController = new AbortController();
 	return new Promise<void>((resolve, reject) => {
 		http.phase = "starting";
@@ -175,7 +175,7 @@ function listen(
 			settleStart(
 				signal.aborted
 					? cancellation
-					: new Error("Canvas HTTP server closed before startup completed."),
+					: new Error("Archboard HTTP server closed before startup completed."),
 			);
 		};
 		/**
@@ -198,7 +198,7 @@ function listen(
 		};
 		/**
 		 * Route a server error by phase: a startup error fails the start, a
-		 * runtime error stops the canvas.
+		 * runtime error stops the server.
 		 * @param error The failure.
 		 */
 		http.errorListener = (error) => {
@@ -228,7 +228,7 @@ function listen(
 				http.ownsPidFile = true;
 				const swept = sweepDeadPidFiles();
 				if (swept > 0) {
-					logger.debug(`Removed ${swept} pidfiles of canvases that are gone`);
+					logger.debug(`Removed ${swept} pidfiles of servers that are gone`);
 				}
 				settleStart();
 			});

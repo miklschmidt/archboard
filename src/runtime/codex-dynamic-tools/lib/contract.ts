@@ -230,7 +230,7 @@ interface DynamicToolLifecyclePort {
 	readonly releaseWaitOwnersForChild: (input: { readonly child: ChildId }) => Promise<void> | void;
 	/**
 	 * Synchronously poisons the exact child epoch before returning its owner.
-	 * The owner may call retryTerminalization only on a host or lifecycle trigger;
+	 * The owner may call retryTerminalization only on a server or lifecycle trigger;
 	 * childExit resolves only after shutdown of that exact child epoch is confirmed.
 	 */
 	readonly poisonEpochAndOwnMutationQuarantine: (input: {

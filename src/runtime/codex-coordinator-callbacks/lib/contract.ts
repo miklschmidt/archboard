@@ -168,7 +168,7 @@ interface CoordinatorCallbackRealtimePort {
 
 /**
  * What starting the coordinator's turn came to: an ordinary mutation result, or busy when the
- * coordinator was still in a turn of its own at the host's bound and no turn was started.
+ * coordinator was still in a turn of its own at the server's bound and no turn was started.
  */
 type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "busy";
 
@@ -178,7 +178,7 @@ type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "busy";
  * In a full-duplex voice session text appended to the voice model is quiet context and nothing
  * answers it, so work that ended would sit unheard until the person asked again. The coordinator
  * is the one that knows whether the work came from a voice request, so it is run with the
- * outcome and its reply decides what the person hears. The host owns the turn's body: its message
+ * outcome and its reply decides what the person hears. The server owns the turn's body: its message
  * identity, its canonical context and waiting for an idle coordinator.
  */
 interface CoordinatorCallbackTurnPort {

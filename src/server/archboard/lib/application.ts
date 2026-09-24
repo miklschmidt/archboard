@@ -22,7 +22,7 @@ import { mountSemanticPaneContextRoutes } from "@/server/archboard/lib/semantic-
 import { watchSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
 import { mountServiceRoutes } from "@/server/archboard/lib/service-routes";
 
-// The canvas application, assembled in the order Express will run it. Each
+// The Archboard server application, assembled in the order Express will run it. Each
 // mount owns one concern; this file decides only their order, which is the
 // contract: admission before parsing, and the checkout snapshot before any
 // route that can open a file in somebody's editor.
@@ -106,7 +106,7 @@ mountSemanticBoardRoutes(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
-// A vault can be open in more than one canvas, and the lease says who may write
+// A vault can be open in more than one server, and the lease says who may write
 // rather than who has been told. Watching the boards on screen is what keeps a
 // pane from reading a board another writer replaced under it.
 watchSemanticBoardFiles();

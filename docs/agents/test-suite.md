@@ -69,7 +69,7 @@ The opt-in renderer-tooling owners load `dist/frontend/renderer.html`. Run
 still builds the frontend before product owners.
 
 `tests/system/semantic-boards/rasterize.test.ts` owns the zero-client bitmap
-workflow: `semantic rasterize` against a real canvas, the same selectors as
+workflow: `semantic rasterize` against a real Archboard server, the same selectors as
 `semantic render`, and a board file that does not move. The rasterizer's own
 owner, `src/runtime/semantic-rasterizer/tests`, proves real pixels, native and
 scaled dimensions, full bounds past a display, font readiness, bounds refusals,
@@ -78,7 +78,7 @@ cancellation and a Chromium that is provably gone. The Chromium it runs on is
 window viewport, event delivery without retention, a page Blob streamed to a
 file, and provable teardown. `tests/system/server-state/walkthrough-recording.test.ts`
 owns `semantic record` end to end: the real CLI drives the built page in a
-headless Chromium against a canvas whose fake Codex narrates, and the owner
+headless Chromium against a server whose fake Codex narrates, and the owner
 checks the MP4, the order the steps reached the voice and `--discard`;
 `walkthrough-recording-refusals.test.ts` beside it owns the refusals that start
 no browser and no voice. Every owner in this paragraph but the refusals needs a
@@ -184,7 +184,7 @@ for named-board runtime operations. The lane:
   polls cleanup with `TEST_BROWSER_POLL_MS`, and treats spawn errors, signals,
   prerequisite failures, and nonzero preflight statuses as could-not-run exit 2;
 - gives every owner an isolated home, vault, temporary directory, browser
-  namespace, socket, session, canvas listener, and headless allowlisted
+  namespace, socket, session, server listener, and headless allowlisted
   environment, and audits all of them during cleanup. The code-target system
   owners also reap controlled fake processes and capture/release files.
 
@@ -331,7 +331,7 @@ failure matrices.
   `tests/system/board-inspection/` drive the pure raw-record inspector and the real package binary. They pin
   the dense whole-board reroute and run the comparison-limit behavior matrix against an internal
   2,000-comparison detector budget while production code and public schemas stay pinned to 2,000,000.
-  Its package checks run with no canvas process, parse JSON through the
+  Its package checks run with no server process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
   before and after every read. The inert input snapshot matrix covers proxies, revoked proxies,
   accessors, cycles, custom prototypes, unsafe scalar values, holes, sparse arrays, exact string and

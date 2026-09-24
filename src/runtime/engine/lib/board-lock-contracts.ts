@@ -91,7 +91,7 @@ interface ClaimEntry {
 }
 
 /**
- * This canvas, as a lease names it: a host and a pid, so a refusal can say
+ * This server, as a lease names it: a host and a pid, so a refusal can say
  * the board is held on another machine.
  * @returns The process name.
  */
@@ -142,7 +142,7 @@ function describeWriter(holder: Readonly<LockHolder>): string {
 
 /**
  * The sentence a bounded wait ends with: who has the board, since when, for
- * how long, on which canvas, and how long this caller waited.
+ * how long, on which server, and how long this caller waited.
  * @param board The board key.
  * @param holder Who has it, when the wait could still see them.
  * @param waitedMs How long this caller waited.
@@ -159,7 +159,7 @@ function describeHold(
 	}
 	const held = seconds(Math.max(0, Date.now() - Date.parse(holder.since)));
 	const who = describeWriter(holder);
-	const where = holder.process === processName() ? "" : ` on another canvas (${holder.process})`;
+	const where = holder.process === processName() ? "" : ` on another server (${holder.process})`;
 	return `Board "${board}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
 

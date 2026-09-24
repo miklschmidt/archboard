@@ -193,13 +193,13 @@ interface CodexThreadContextControllerOptions extends Omit<
 	readonly publisher: Pick<SemanticContextPublisher, "subscribeSettledChange">;
 	readonly hooks: CodexThreadContextControllerHooks;
 	/**
-	 * The thread paired with the workhorse this controller serves, when the host
+	 * The thread paired with the workhorse this controller serves, when the server
 	 * has one: the coordinator of the same session.
 	 *
 	 * Asked for rather than remembered, because a coordinator comes and goes
 	 * within one workhorse's life. Its only use is that the pair does not hear
 	 * each other's board writes — they are one session to the person talking to
-	 * them. A host with no coordinator returns null and nothing changes.
+	 * them. A server with no coordinator returns null and nothing changes.
 	 */
 	readonly pairedThreadId?: () => string | null;
 	/** Retire the exact child epoch after execution has been made unavailable. */

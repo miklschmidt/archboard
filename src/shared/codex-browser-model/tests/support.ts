@@ -2,7 +2,7 @@ import { createIdentityAuthorities } from "../../codex-workbench-identity/index.
 import { BROWSER_IDLE_SPOKEN_APPROVAL, createCodexBrowserModel } from "../index.js";
 import type { BrowserCommand, BrowserSnapshot } from "../index.js";
 
-// The queue carries a host OperationId, so the fixture model needs the complete
+// The queue carries a server OperationId, so the fixture model needs the complete
 // authority pair rather than the identity half alone.
 const authorities = createIdentityAuthorities();
 const authority = authorities.identity;

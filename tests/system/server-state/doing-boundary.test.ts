@@ -9,7 +9,7 @@ import { createRequester } from "./support/http.ts";
 
 // Every agent write to a board says what it is doing, or it does not happen
 // (TASK-095). The rule is about the write boundary rather than about any one
-// command, so this crosses the whole of it against a real canvas: the three
+// command, so this crosses the whole of it against a real Archboard server: the three
 // semantic write routes, a claim that does not stand in for the step, a line
 // that is not a line, and the command line that carries it.
 
@@ -35,13 +35,13 @@ describe.serial("doing write boundary", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-doing-boundary-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
 		const boardFile = join(vault, "payments.semantic.json");
 
 		// A create that says nothing is refused, and says how to say it: on the
@@ -143,7 +143,7 @@ describe.serial("doing write boundary", () => {
 				input,
 				env: {
 					...process.env,
-					ARCHBOARD_URL: canvas.base,
+					ARCHBOARD_URL: server.base,
 					ARCHBOARD_NO_AUTOSTART: "1",
 					ARCHBOARD_VAULT: vault,
 					LOG_LEVEL: "error",

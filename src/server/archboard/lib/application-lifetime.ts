@@ -47,7 +47,7 @@ interface ServerApplicationLifetimeOptions {
 	readonly resources: readonly ServerApplicationResource[];
 	/** Stop admitting writes and settle every admitted write. */
 	readonly quiesce?: () => Promise<void> | void;
-	/** Restore write admission when quiescing fails and the canvas stays up. */
+	/** Restore write admission when quiescing fails and the server stays up. */
 	readonly resume?: () => Promise<void> | void;
 	readonly observe?: (event: ServerApplicationEvent) => void;
 	/** Hear why startup failed while every acquired resource, the log included, still runs. */
@@ -60,7 +60,7 @@ class ServerApplicationStartupCancelledError extends Error {
 	 * @param reason What asked.
 	 */
 	constructor(readonly reason: ServerApplicationStopReason) {
-		super(`Canvas application startup was canceled by ${reason}.`);
+		super(`Archboard server application startup was canceled by ${reason}.`);
 		this.name = "ServerApplicationStartupCancelledError";
 	}
 }
@@ -83,7 +83,7 @@ interface GracefulStopState {
  * Begin a resource's graceful stop, recording how it ends without waiting
  * for it, so a stop grace can observe whether it has settled.
  * @param resource The resource.
- * @param reason Why the canvas is stopping.
+ * @param reason Why the server is stopping.
  * @returns The observable state and the promise that settles with it.
  */
 const beginGracefulStop = (
@@ -136,7 +136,7 @@ const waitOutStopGrace = async (
 	}
 };
 
-/** Every reason a canvas stop can carry, for narrowing an abort signal's own. */
+/** Every reason a server stop can carry, for narrowing an abort signal's own. */
 const STOP_REASONS: ReadonlySet<string> = new Set<ServerApplicationStopReason>([
 	"server-error",
 	"startup-failed",
@@ -179,7 +179,7 @@ function requireStartupNotCancelled(signal: AbortSignal): void {
 }
 
 /**
- * Own one canvas process generation.
+ * Own one server process generation.
  *
  * Resources enter ownership before start is invoked, start in declaration
  * order, and stop in reverse order. A signal can therefore stop an owner that
@@ -230,7 +230,7 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 	 * it. forceStop terminalizes the resource; the graceful stop still has to
 	 * settle so no cleanup work is left running past this boundary.
 	 * @param resource The resource.
-	 * @param reason Why the canvas is stopping.
+	 * @param reason Why the server is stopping.
 	 */
 	const stopResource = async (
 		resource: ServerApplicationResource,
@@ -263,7 +263,7 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 	/**
 	 * Stop every resource that entered ownership, in reverse order, keeping
 	 * every failure so one aggregate names them all.
-	 * @param reason Why the canvas is stopping.
+	 * @param reason Why the server is stopping.
 	 * @returns Resolves once every resource has reached its terminal state.
 	 */
 	const unwind = (reason: ServerApplicationStopReason): Promise<void> => {
@@ -287,7 +287,7 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 			if (failures.length > 0) {
 				throw new AggregateError(
 					failures,
-					`Canvas application cleanup failed: ${failures.map((item) => item.message).join(" ")}`,
+					`Archboard server application cleanup failed: ${failures.map((item) => item.message).join(" ")}`,
 				);
 			}
 			cleanupProven = true;
@@ -296,9 +296,9 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 	};
 
 	/**
-	 * Stop a canvas that is still starting: cancel the startup and unwind
+	 * Stop a server that is still starting: cancel the startup and unwind
 	 * whatever it had already acquired.
-	 * @param reason Why the canvas is stopping.
+	 * @param reason Why the server is stopping.
 	 * @returns Resolves once it has stopped.
 	 */
 	const stopStarting = (reason: ServerApplicationStopReason): Promise<void> => {
@@ -351,7 +351,7 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 		} catch (cleanupError) {
 			combined = new AggregateError(
 				[combined, cleanupError],
-				"Canvas application startup and cleanup failed.",
+				"Archboard server application startup and cleanup failed.",
 			);
 		}
 		setPhase("failed");
@@ -360,7 +360,7 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 
 	return Object.freeze({
 		/**
-		 * Which phase the canvas is in.
+		 * Which phase the server is in.
 		 * @returns The phase.
 		 */
 		phase: (): ServerApplicationPhase => phase,
@@ -373,14 +373,16 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 		/**
 		 * Start every resource in declaration order, unwinding what was acquired
 		 * if one of them fails.
-		 * @returns Resolves once the canvas is running.
+		 * @returns Resolves once the server is running.
 		 */
 		start: (): Promise<void> => {
 			if (startPromise !== null) {
 				return startPromise;
 			}
 			if (phase !== "idle") {
-				return Promise.reject(new Error(`Canvas application cannot start from ${phase}.`));
+				return Promise.reject(
+					new Error(`Archboard server application cannot start from ${phase}.`),
+				);
 			}
 			setPhase("starting");
 			startPromise = (async () => {
@@ -394,10 +396,10 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 			return startPromise;
 		},
 		/**
-		 * Stop the canvas: quiesce writes, then unwind every resource. A stop that
-		 * fails before teardown leaves the canvas running and admitting writes
+		 * Stop the server: quiesce writes, then unwind every resource. A stop that
+		 * fails before teardown leaves the server running and admitting writes
 		 * again.
-		 * @param reason Why the canvas is stopping.
+		 * @param reason Why the server is stopping.
 		 * @returns Resolves once it has stopped.
 		 */
 		stop: (reason: ServerApplicationStopReason): Promise<void> => {
@@ -411,7 +413,7 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 				return stopStarting(reason);
 			}
 			if (phase !== "running") {
-				return Promise.reject(new Error(`Canvas application cannot stop from ${phase}.`));
+				return Promise.reject(new Error(`Archboard server application cannot stop from ${phase}.`));
 			}
 
 			let teardownStarted = false;

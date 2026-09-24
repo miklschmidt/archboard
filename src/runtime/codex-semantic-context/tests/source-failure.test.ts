@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createSemanticContextPublisher, type SettledChangeSourceEvent } from "../index.ts";
 
 describe("semantic context source failures", () => {
-	test("keeps the feed alive when an unbound canvas cannot capture context", () => {
+	test("keeps the feed alive when an unbound server cannot capture context", () => {
 		let feedListener: ((event: SettledChangeSourceEvent) => void) | null = null;
 		const publisher = createSemanticContextPublisher({
 			feed: {

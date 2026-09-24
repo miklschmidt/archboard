@@ -1,4 +1,4 @@
-// Refusing a recording (TASK-304): `archboard semantic record` against a real canvas, with no
+// Refusing a recording (TASK-304): `archboard semantic record` against a real Archboard server, with no
 // browser and no voice. What is guarded: a recording that cannot happen keeps the board even when
 // --discard asked for it gone, and writes no file; and what the command can tell before a browser
 // starts it refuses before one does. The recorder is named as /bin/false throughout, so a refusal
@@ -17,7 +17,7 @@ const vault = mkdtempSync(join(tmpdir(), "archboard-recording-refusals-"));
 const BOARD = "tour";
 const boardFile = join(vault, `${BOARD}.semantic.json`);
 const out = join(vault, "tour.mp4");
-let canvas: OwnedServer;
+let server: OwnedServer;
 
 /**
  * Record the board, with a browser that can never start.
@@ -28,7 +28,7 @@ const record = (args: readonly string[]) =>
 	runServerCli({
 		repoRoot,
 		vault,
-		base: canvas.base,
+		base: server.base,
 		args: ["semantic", "record", BOARD, ...args],
 		input: undefined,
 		env: { ARCHBOARD_RENDERER_CHROMIUM: "/bin/false" },
@@ -42,11 +42,11 @@ const nothingWritten = () =>
 	!readdirSync(vault).some((name) => name.endsWith(".mp4") || name.endsWith(".partial"));
 
 beforeAll(async () => {
-	canvas = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: join(repoRoot, "src/server.ts"), vault });
 	const created = runServerCli({
 		repoRoot,
 		vault,
-		base: canvas.base,
+		base: server.base,
 		args: ["semantic", "new", BOARD, "--doing", "making a board to record"],
 		input: JSON.stringify({
 			level: "system",
@@ -60,7 +60,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	rmSync(vault, { recursive: true, force: true });
 });
 

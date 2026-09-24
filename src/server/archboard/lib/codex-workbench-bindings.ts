@@ -33,7 +33,7 @@ import type {
 
 /** What building one generation's bindings needs from around it. */
 interface BindingContext {
-	readonly host: CodexWorkbenchServer;
+	readonly server: CodexWorkbenchServer;
 	readonly storage: CodexWorkbenchStorage;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
 	readonly input: CodexWorkbenchGenerationInput;
@@ -69,7 +69,7 @@ function storageBindings(
 	| "dynamicTools"
 	| "coordinator"
 > {
-	const { storage, host, input } = context;
+	const { storage, server, input } = context;
 	return {
 		/**
 		 * Where this installation keeps its epoch manifest and Codex storage.
@@ -95,7 +95,7 @@ function storageBindings(
 				sqliteHome: storage.sqliteHome,
 				configPath: storage.configPath,
 			},
-			checkoutRoot: host.checkoutRoot,
+			checkoutRoot: server.checkoutRoot,
 			lifecycle: input.child.lifecycle,
 		}),
 		/**
@@ -114,23 +114,23 @@ function storageBindings(
 		 * The checkout a workhorse turn runs in.
 		 * @returns The workhorse binding.
 		 */
-		workhorse: () => ({ checkoutRoot: host.checkoutRoot }),
+		workhorse: () => ({ checkoutRoot: server.checkoutRoot }),
 		/**
-		 * Where semantic context is published from, which is the canvas itself.
+		 * Where semantic context is published from, which is the server itself.
 		 * @returns The publisher options.
 		 */
-		semanticPublisher: () => host.semanticPublisher,
+		semanticPublisher: () => server.semanticPublisher,
 		/**
 		 * What the dynamic tools may wait on and work in.
 		 * @returns The dynamic tools binding.
 		 */
-		dynamicTools: () => ({ waitGraph: context.waitGraph, checkoutRoot: host.checkoutRoot }),
+		dynamicTools: () => ({ waitGraph: context.waitGraph, checkoutRoot: server.checkoutRoot }),
 		/**
 		 * The checkout the coordinator runs in, and whatever state it inherits.
 		 * @returns The coordinator binding.
 		 */
 		coordinator: () => ({
-			checkoutRoot: host.checkoutRoot,
+			checkoutRoot: server.checkoutRoot,
 			persisted: input.adoptedCoordinator,
 		}),
 	};
@@ -141,13 +141,13 @@ function storageBindings(
  * against, presented through an open pane, refused when any of them is open.
  *
  * The pane that created the link is preferred, but the conversation belongs to
- * the canvas: once that pane closes, the work presents through another.
- * @param host What picks the presenting pane.
+ * the server: once that pane closes, the work presents through another.
+ * @param server What picks the presenting pane.
  * @param workhorse The workhorse snapshot.
  * @returns The target.
  */
 function provenWorkhorseTarget(
-	host: Pick<CodexWorkbenchServer, "presentingPaneId">,
+	server: Pick<CodexWorkbenchServer, "presentingPaneId">,
 	workhorse: ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>,
 ): Parameters<CodexWorkbenchServer["contextForOperation"]>[0] {
 	const { paneId, childId, epoch, threadId } = workhorse;
@@ -157,7 +157,7 @@ function provenWorkhorseTarget(
 	}
 	return {
 		...target,
-		paneId: host.presentingPaneId(target.paneId),
+		paneId: server.presentingPaneId(target.paneId),
 		...(workhorse.binding ? { linkRevision: workhorse.binding.revision } : {}),
 	};
 }
@@ -175,7 +175,7 @@ function currentBindingReaders(
 	ProductionCodexWorkbenchBindings,
 	"realtime" | "queue" | "operations" | "spokenApproval" | "coordinatorTools" | "coordinatorCall"
 > {
-	const { host, owners } = context;
+	const { server, owners } = context;
 	return {
 		/**
 		 * What the voice session is bound to, and how it reads a fresh brief.
@@ -184,7 +184,7 @@ function currentBindingReaders(
 		 */
 		realtime: (created) => ({
 			boardCatalogue: { read: readBoardCatalogue, subscribe: watchBoardCatalogue },
-			presentationChanges: { subscribe: host.narrationChanges },
+			presentationChanges: { subscribe: server.narrationChanges },
 			trace: voiceStartTrace.note,
 			/**
 			 * The semantic brief one voice session opens with, read fresh and
@@ -193,7 +193,7 @@ function currentBindingReaders(
 			 * @returns The brief.
 			 */
 			freshSemanticBrief: (wireSessionId) => {
-				const freshInput = host.semanticPublisher.fresh.read();
+				const freshInput = server.semanticPublisher.fresh.read();
 				return requireCreated(created, "semanticPublisher").freshBriefFor({
 					...freshInput,
 					coordinator: {
@@ -266,8 +266,8 @@ function currentBindingReaders(
 			 */
 			contextFor: (operation) => {
 				const workhorse = requireCreated(created, "workhorse").snapshot();
-				const target = provenWorkhorseTarget(host, workhorse);
-				return host.contextForOperation(target, {
+				const target = provenWorkhorseTarget(server, workhorse);
+				return server.contextForOperation(target, {
 					id: operation.operationId,
 					kind: operation.kind,
 					rpc: operation.rpc,
@@ -361,9 +361,9 @@ function deliveryBindings(
 	ProductionCodexWorkbenchBindings,
 	"approvals" | "semanticDelivery" | "callbacks" | "dynamicAdapters"
 > {
-	const { host, owners } = context;
+	const { server, owners } = context;
 	const dynamicContext: DynamicOwnerContext = {
-		host,
+		server,
 		waitGraph: context.waitGraph,
 		input: context.input,
 		owners,
@@ -375,7 +375,7 @@ function deliveryBindings(
 		 * @returns The approvals binding.
 		 */
 		approvals: (created) => ({
-			onError: host.onFatal,
+			onError: server.onFatal,
 			/**
 			 * The pane one approval belongs to, which is the pane the semantic
 			 * delivery is bound to when that binding names the same thread.
@@ -399,7 +399,7 @@ function deliveryBindings(
 		 * @returns The delivery binding.
 		 */
 		semanticDelivery: (created) => ({
-			feedId: host.semanticPublisher.feedId,
+			feedId: server.semanticPublisher.feedId,
 			/**
 			 * The coordinator paired with this delivery's workhorse.
 			 * @returns Its thread, or null when none is ready.
@@ -426,7 +426,7 @@ function deliveryBindings(
 				 * @param binding The pane it is delivered to.
 				 * @returns The context.
 				 */
-				contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
+				contextForEvent: (event, binding) => server.contextForEvent(event, binding.paneId),
 			},
 			/**
 			 * Close the epoch store, which retires the epoch itself.
@@ -499,8 +499,8 @@ function deliveryBindings(
 				 * @returns The context.
 				 */
 				contextFor: (operationId) =>
-					host.contextForOperation(
-						provenWorkhorseTarget(host, requireCreated(created, "workhorse").snapshot()),
+					server.contextForOperation(
+						provenWorkhorseTarget(server, requireCreated(created, "workhorse").snapshot()),
 						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
 					),
 				/**

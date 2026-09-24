@@ -121,7 +121,7 @@ function writeConfigAtomically(
  * the workspace, and whatever it refuses goes to a reviewer subagent that approves or denies it
  * instead of asking the user (Codex 0.155.1 `approvals_reviewer`, paired as its TUI pairs it
  * with on-request approvals and the workspace-write profile). Network access, because every
- * archboard command an agent runs reaches the canvas over localhost.
+ * archboard command an agent runs reaches the server over localhost.
  */
 const PERMISSIONS_CONFIG = [
 	'approval_policy = "on-request"',

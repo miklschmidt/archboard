@@ -1,6 +1,6 @@
 // Starting voice to narrate one walkthrough, and what the voice model is told as it goes (TASK-251).
 //
-// The user steps the presentation; the voice explains the step on screen. The host hands the
+// The user steps the presentation; the voice explains the step on screen. The server hands the
 // voice model each step as speech once the pane shows it: the first when Narrate opens it, and
 // every step the user moves to after that. Leaving is told the same way. No coordinator turn is
 // involved and nothing asks for a next step: in a full-duplex (V3) session a handoff carries the

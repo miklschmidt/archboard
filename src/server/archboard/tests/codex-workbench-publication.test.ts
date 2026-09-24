@@ -17,7 +17,7 @@ async function rejectedSend(error: Error): Promise<void> {
 	throw error;
 }
 
-describe("canvas Codex publication boundary", () => {
+describe("server Codex publication boundary", () => {
 	test("the production socket adapter rejects closing and callback-failed sends", async () => {
 		let attempts = 0;
 		const closing = createServerCodexBrowserSocketSend({

@@ -11,7 +11,7 @@ import {
 } from "../index.js";
 import { closeLogger } from "../../../runtime/engine/logger.js";
 
-describe("canvas application lifetime", () => {
+describe("server application lifetime", () => {
 	test("starts in order and stops every owner in reverse order", async () => {
 		const actions: string[] = [];
 		const lifetime = createServerApplicationLifetime({
@@ -99,7 +99,9 @@ describe("canvas application lifetime", () => {
 		});
 		await lifetime.start();
 
-		await expect(lifetime.stop("test")).rejects.toThrow("Canvas application cleanup failed");
+		await expect(lifetime.stop("test")).rejects.toThrow(
+			"Archboard server application cleanup failed",
+		);
 		expect(actions).toEqual(["http", "codex", "engine"]);
 		expect(lifetime.phase()).toBe("failed");
 		expect(lifetime.cleanupProven()).toBeFalse();
@@ -209,7 +211,7 @@ describe("canvas application lifetime", () => {
 		expect(lifetime.phase()).toBe("stopped");
 	});
 
-	test("a stop that cannot drain leaves the canvas running and admitting writes", async () => {
+	test("a stop that cannot drain leaves the server running and admitting writes", async () => {
 		const actions: string[] = [];
 		let quiesces = 0;
 		let resumes = 0;
@@ -234,7 +236,7 @@ describe("canvas application lifetime", () => {
 		});
 		await lifetime.start();
 
-		// Nothing was torn down, so the canvas goes back to serving rather than
+		// Nothing was torn down, so the server goes back to serving rather than
 		// sitting in a half-stopped state nobody asked for.
 		await expect(lifetime.stop("test")).rejects.toThrow("a write would not settle");
 		expect(lifetime.phase()).toBe("running");

@@ -19,7 +19,7 @@ function text(value: string | null | undefined): string | null {
 }
 
 /**
- * The coordinator thread the host published, as a plain string.
+ * The coordinator thread the server published, as a plain string.
  * @param snapshot The snapshot.
  * @returns The thread id, or null.
  */
@@ -72,7 +72,7 @@ function identityMoved(bound: VoiceSessionBinding, observed: VoiceSessionBinding
 }
 
 /**
- * Whether an observed binding replaces the bound one. A coordinator the host
+ * Whether an observed binding replaces the bound one. A coordinator the server
  * has not published yet is not a replacement; a different published one is.
  * @param bound The binding the session started with.
  * @param observed What the transport says now.

@@ -57,7 +57,7 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 }
 
 /**
- * The current time, refusing a host clock that does not read as one, because every approval
+ * The current time, refusing a server clock that does not read as one, because every approval
  * deadline is measured against it.
  * @param options The dynamic tools options.
  * @returns The current time.
@@ -67,7 +67,7 @@ function nowOf(options: CodexDynamicToolsOptions): number {
 	if (!Number.isSafeInteger(now) || now < 0) {
 		throw new CodexDynamicToolsError(
 			"system_error",
-			"The host clock returned an invalid timestamp.",
+			"The Archboard server clock returned an invalid timestamp.",
 		);
 	}
 	return now;

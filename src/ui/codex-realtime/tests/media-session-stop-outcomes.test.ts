@@ -6,7 +6,7 @@ import type { RealtimeMediaSession, RealtimeMediaSnapshot } from "@/ui/codex-rea
 import {
 	FakeBrowser,
 	correlation,
-	host,
+	realtimeServer,
 	settle,
 } from "@/ui/codex-realtime/tests/support/media-session-fakes";
 import {
@@ -31,7 +31,7 @@ type Ending = "stop" | "dispose";
  * @returns The session.
  */
 function session(env: FakeBrowser): RealtimeMediaSession {
-	return createRealtimeMediaSession(host(env), { environment: env.environment() });
+	return createRealtimeMediaSession(realtimeServer(env), { environment: env.environment() });
 }
 
 /**
@@ -46,7 +46,7 @@ function end(media: RealtimeMediaSession, ending: Ending): Promise<unknown> {
 
 describe("realtime browser media stop outcomes", () => {
 	test.each(STOP_MODES)(
-		"active A owns every idempotent stop when host stop is %s",
+		"active A owns every idempotent stop when server stop is %s",
 		async (mode) => {
 			const env = new FakeBrowser();
 			env.stopMode = mode;
@@ -90,7 +90,7 @@ describe("realtime browser media stop outcomes", () => {
 	);
 
 	test.each(STOP_MODES)(
-		"implicit restart publishes active A when host stop is %s",
+		"implicit restart publishes active A when server stop is %s",
 		async (mode) => {
 			const env = new FakeBrowser();
 			env.stopMode = mode;
@@ -188,7 +188,7 @@ describe("realtime browser media stop outcomes", () => {
 		(["stop", "dispose", "restart"] as const).flatMap((action) =>
 			STOP_IDENTITIES.map((identity): [typeof action, StopIdentityMode] => [action, identity]),
 		),
-	)("%s verifies a delivered host identity that is %s", async (action, identity) => {
+	)("%s verifies a delivered server identity that is %s", async (action, identity) => {
 		const env = new FakeBrowser();
 		env.stopIdentity = identity;
 		const media = session(env);
@@ -212,7 +212,7 @@ describe("realtime browser media stop outcomes", () => {
 });
 
 /**
- * What an exactly confirmed host stop leaves behind for one action.
+ * What an exactly confirmed server stop leaves behind for one action.
  * @param action The action taken.
  * @returns The expected state fragment.
  */
@@ -224,7 +224,7 @@ function exactExpectation(action: "stop" | "dispose" | "restart"): Record<string
 }
 
 /**
- * Runs one action against a host answering with one identity mode.
+ * Runs one action against a server answering with one identity mode.
  * @param media The session.
  * @param action The action.
  * @param identity The identity mode.
@@ -252,7 +252,7 @@ async function endWithIdentity(
 /**
  * After a stop: a confirmed one admits a new run, an unconfirmed one refuses.
  * @param media The session.
- * @param delivered Whether the host confirmed.
+ * @param delivered Whether the server confirmed.
  * @param stopped The snapshot the stop left.
  */
 async function expectAfterStop(

@@ -11,7 +11,7 @@
 //   the note, every variant with it, because one document holds them all. It
 //     is unlinked and its directory synced, so the removal is as durable as a
 //     write (`atomic-write.ts`).
-//   this canvas's claim on the board, when the discard ran under it. A claim is
+//   this server's claim on the board, when the discard ran under it. A claim is
 //     a fact about the board, and one left standing would keep a banner over a
 //     pane that has nothing left to show until the campaign ran out. Releasing
 //     it removes its lease file; a per-write lease is released by the lock as

@@ -16,9 +16,9 @@ interface ServerCodexWorkbenchApplicationOptions {
 }
 
 /**
- * Own one production Codex graph for one canvas application stage.
+ * Own one production Codex graph for one server application stage.
  *
- * The Canvas application lifetime owns application phases (TASK-143.08.04);
+ * The server application lifetime owns application phases (TASK-143.08.04);
  * this owner publishes none of its own. It keeps exactly the one closure-local
  * guard `prepare` needs so a second installation cannot start a second child,
  * and it hands `start`/`stop`/`forceStop` straight to the stage.

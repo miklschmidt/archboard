@@ -132,7 +132,7 @@ interface ProductionCodexWorkbenchBindings {
 	) => Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink">;
 }
 
-/** What installing the one production workbench for a canvas lifetime needs. */
+/** What installing the one production workbench for a server lifetime needs. */
 interface InstallProductionCodexWorkbenchOptions {
 	readonly process: CodexProcessOptions;
 	readonly bindings: (input: CodexWorkbenchGenerationInput) => ProductionCodexWorkbenchBindings;

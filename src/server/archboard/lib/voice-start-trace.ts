@@ -2,8 +2,8 @@
 //
 // A voice start crosses the browser, this server, the Codex child and OpenAI's realtime backend,
 // and when it fails the person is told one sentence: "realtime negotiation was unavailable or
-// failed". The canvas has no log file, and Codex keeps no line for a start it refused. So the
-// canvas keeps the last few attempts itself: every stage it went through, what was sent and how
+// failed". The server has no log file, and Codex keeps no line for a start it refused. So the
+// server keeps the last few attempts itself: every stage it went through, what was sent and how
 // large it was, every state the session moved through, and the exact words of whatever refused
 // it. Nothing here decides anything. It holds no audio, no SDP, no prompt text and no board
 // content: identities, sizes, states and messages only.
@@ -29,7 +29,7 @@ interface VoiceStartAttempt {
 const KEPT_ATTEMPTS = 8;
 const KEPT_ENTRIES = 200;
 
-/** The trace over one canvas's voice starts. */
+/** The trace over one server's voice starts. */
 interface VoiceStartTrace {
 	/**
 	 * A new attempt begins; later entries belong to it.
@@ -91,7 +91,7 @@ function createVoiceStartTrace(now: () => number = Date.now): VoiceStartTrace {
 	return { begin, note, attempts };
 }
 
-/** This canvas's trace. */
+/** This server's trace. */
 const voiceStartTrace = createVoiceStartTrace();
 
 /** Where the trace is read. */

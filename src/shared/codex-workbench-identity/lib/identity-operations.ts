@@ -1,4 +1,4 @@
-// Operation identities: host-issued mutation correlations whose token carries
+// Operation identities: Archboard-server-issued mutation correlations whose token carries
 // the child epoch they were issued in, so a stale or foreign one is refused by
 // inspection rather than by lookup alone.
 

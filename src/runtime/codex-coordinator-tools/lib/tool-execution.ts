@@ -34,7 +34,7 @@ interface IssuedOperationIdentity {
 type WorkhorseToolName = Exclude<CoordinatorToolName, "resolve_spoken_approval">;
 
 /**
- * Prove an operation identity is a current host-issued one and pair it with its wire form.
+ * Prove an operation identity is a current server-issued one and pair it with its wire form.
  * @param options - The dispatcher options carrying the operation authority.
  * @param value - The candidate identity in any form.
  * @returns The typed identity and its wire text.
@@ -49,7 +49,7 @@ function operationIdentity(
 }
 
 /**
- * Mint the host operation identity one workhorse effect will run under.
+ * Mint the server operation identity one workhorse effect will run under.
  * @param options - The dispatcher options carrying the operation authority.
  * @returns The fresh identity.
  */

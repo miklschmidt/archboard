@@ -67,7 +67,7 @@ function recoveryFor(
 }
 
 /**
- * How a login command settled: the host's account facts decide, and a start
+ * How a login command settled: the server's account facts decide, and a start
  * ChatGPT only accepted is not a completed sign-in.
  * @param result The transport's result.
  * @returns The settlement.
@@ -109,7 +109,7 @@ function linkSettlement(
 	if (link.state !== "executable") {
 		return {
 			state: "inspect_only",
-			announcement: `The ${action} completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The host named no reason."}`,
+			announcement: `The ${action} completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The Archboard server named no reason."}`,
 		};
 	}
 	if (target.threadId !== null && link.threadId !== target.threadId) {

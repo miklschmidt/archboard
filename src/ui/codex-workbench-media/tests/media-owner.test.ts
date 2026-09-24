@@ -169,7 +169,7 @@ test("the media owner delegates leases, commands, readiness, and snapshots to on
 	}
 });
 
-test("a start refused because voice is live on the canvas fails with the gateway's reason", async () => {
+test("a start refused because voice is live on the server fails with the gateway's reason", async () => {
 	const browser = new FakeMediaBrowser();
 	const transport = new FakeTransport();
 	transport.startRefusal = { code: "voice_live", message: "the gateway's reason" };
@@ -351,7 +351,7 @@ test("voice Stop stays pending while the transport sequences its captured sessio
 	}
 });
 
-test("a host that declares voice unavailable stops the live browser run", async () => {
+test("a server that declares voice unavailable stops the live browser run", async () => {
 	const browser = new FakeMediaBrowser();
 	const transport = new FakeTransport();
 	const owner = browserOwner(browser);

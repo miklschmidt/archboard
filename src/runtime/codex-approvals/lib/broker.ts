@@ -271,7 +271,7 @@ export function createCodexApprovalBroker(
 	};
 
 	/**
-	 * The normalized request, bound to the host's current binding when the host supplies one.
+	 * The normalized request, bound to the server's current binding when the server supplies one.
 	 * @param request - The transport request.
 	 * @returns The normalized request.
 	 */
@@ -308,7 +308,7 @@ export function createCodexApprovalBroker(
 	};
 
 	/**
-	 * Take one approval request from the transport and record it, without publishing it as pending yet. The request is normalized, bound to the host's current binding, given its spoken presentation when it has one, and given the timer that expires it.
+	 * Take one approval request from the transport and record it, without publishing it as pending yet. The request is normalized, bound to the server's current binding, given its spoken presentation when it has one, and given the timer that expires it.
 	 * @param request - The transport request.
 	 * @returns The staged snapshot.
 	 */

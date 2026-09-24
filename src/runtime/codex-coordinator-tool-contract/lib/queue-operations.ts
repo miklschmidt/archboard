@@ -55,7 +55,7 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolRequiredFields: ["threadId", "input", "clientUserMessageId"],
 		protocolOptionalNullableFields: [],
 		serverSuppliedFields: ["threadId", "clientUserMessageId"],
-		fieldMapping: { prompt: "input", clientUserMessageId: "host_minted" },
+		fieldMapping: { prompt: "input", clientUserMessageId: "server_minted" },
 	},
 	{
 		operation: "update",

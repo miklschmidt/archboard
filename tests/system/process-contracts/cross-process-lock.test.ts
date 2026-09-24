@@ -40,7 +40,7 @@ async function observeCrossProcessLock(
 	return { message, elapsedMs: performance.now() - startedAt };
 }
 
-test("raw lock peer and two canvases exclude and recover through one vault", async () => {
+test("raw lock peer and two servers exclude and recover through one vault", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-cross-process-lock-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
@@ -76,7 +76,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		});
 		expect(blocked.status).toBe(409);
 		expect(blocked.body.code).toBe("BOARD_HELD");
-		expect(blocked.body.error).toMatch(/on another canvas \(/);
+		expect(blocked.body.error).toMatch(/on another [\w ]+ \(/);
 		expect(blocked.body.holder.process).toBe(raw.ready.process);
 		await raw.dispose();
 		expect(existsSync(raw.ready.lockFile)).toBeFalse();

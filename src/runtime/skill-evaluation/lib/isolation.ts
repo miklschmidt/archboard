@@ -122,7 +122,7 @@ function writeCliWrapper(paths: RunPaths, checkout: string): void {
 
 /**
  * The config.toml an author's Codex reads: the pinned model and effort,
- * approvals off, a workspace-write sandbox that may reach the local canvas
+ * approvals off, a workspace-write sandbox that may reach the local Archboard server
  * and write inside the author's world — never the harness's records beside
  * it — and the checkout trusted.
  * @param settings The pins.
@@ -190,7 +190,7 @@ function fillCodexHome(
  * The environment every process of a run gets: the archboard variables the
  * setup block names, the private homes, and PATH with the run's bin first.
  * @param paths The run.
- * @param serverUrl The run's own canvas.
+ * @param serverUrl The run's own server.
  * @returns The environment.
  */
 function runEnvironment(paths: RunPaths, serverUrl: string): Record<string, string> {

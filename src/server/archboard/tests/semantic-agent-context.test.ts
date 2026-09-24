@@ -20,7 +20,7 @@ const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-agent-context-"));
 process.env["ARCHBOARD_VAULT"] = vault;
 
-let canvas: typeof ServerModule;
+let server: typeof ServerModule;
 let store: typeof StoreModule;
 let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
@@ -30,7 +30,7 @@ const PROPOSAL = "Queued ingest";
 let reported = 0;
 
 beforeAll(async () => {
-	canvas = await import("@/server/archboard/index");
+	server = await import("@/server/archboard/index");
 	store = await import("@/runtime/semantic-board-store/index");
 	contract = await import("@/shared/semantic-board/index");
 	// Where this owner's boards actually land, asked rather than assumed.
@@ -153,7 +153,7 @@ function nodeId(name: string): string {
 
 test("a selected id reaches the agent as the subject the board answers to", () => {
 	const gateway = nodeId("Gateway");
-	const context = canvas.semanticBoardContext(board(), reading(showing(), [gateway]));
+	const context = server.semanticBoardContext(board(), reading(showing(), [gateway]));
 
 	expect(context.architecture.selection).toEqual({
 		count: 1,
@@ -175,7 +175,7 @@ test("the pane's own idea of what an id is never overrules the board", () => {
 		selection: [{ id: gateway, kind: "flow", name: "Something else entirely" }],
 	};
 
-	const context = canvas.semanticBoardContext(board(), misreported);
+	const context = server.semanticBoardContext(board(), misreported);
 
 	expect(context.architecture.selection).toEqual({
 		count: 1,
@@ -184,7 +184,7 @@ test("the pane's own idea of what an id is never overrules the board", () => {
 });
 
 test("an id the variant no longer holds is reported rather than passed on", () => {
-	const context = canvas.semanticBoardContext(board(), reading(showing(), ["ZZZZ"]));
+	const context = server.semanticBoardContext(board(), reading(showing(), ["ZZZZ"]));
 
 	expect(context.architecture.selection.subjects).toEqual([]);
 	expect(context.ambiguity).toHaveLength(1);
@@ -215,7 +215,7 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 		),
 	});
 
-	const context = canvas.semanticBoardContext(board(), reading(PROPOSAL, []));
+	const context = server.semanticBoardContext(board(), reading(PROPOSAL, []));
 	const differences = context.architecture.differences;
 
 	expect(context.architecture.variant?.name).toBe(PROPOSAL);
@@ -230,7 +230,7 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 
 	const shared = board().views[0];
 	if (shared === undefined) throw new Error("Expected the shared Gateway only view");
-	const throughView = canvas.semanticBoardContext(board(), reading(PROPOSAL, [], shared.id));
+	const throughView = server.semanticBoardContext(board(), reading(PROPOSAL, [], shared.id));
 	expect(throughView.architecture.view).toEqual({
 		id: shared.id,
 		name: "Gateway only",
@@ -272,7 +272,7 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 			: [];
 	expect(conflicted).toHaveLength(1);
 
-	const context = canvas.semanticBoardContext(board(), reading(PROPOSAL, [gateway]));
+	const context = server.semanticBoardContext(board(), reading(PROPOSAL, [gateway]));
 	const issue = context.architecture.reconciliation.issues[0];
 
 	expect(context.architecture.reconciliation.required).toBe(true);
@@ -292,7 +292,7 @@ test("the context an operation delivers is the board's grounding, not a summary 
 	const { createSemanticContextPublisher } = await import("@/runtime/codex-semantic-context");
 	const authority = createIdentityAuthority();
 	const gateway = nodeId("Front door");
-	const read = canvas.semanticBoardContext(board(), reading(PROPOSAL, [gateway]));
+	const read = server.semanticBoardContext(board(), reading(PROPOSAL, [gateway]));
 	const input = {
 		repository: vault,
 		child: { id: authority.validator.childId, epoch: authority.validator.epoch },
@@ -320,7 +320,7 @@ test("the context an operation delivers is the board's grounding, not a summary 
 		contextForChange: () => input,
 	});
 
-	const context = canvas.canonicalContextFromBrief(publisher.freshBrief(), "pane-a", {
+	const context = server.canonicalContextFromBrief(publisher.freshBrief(), "pane-a", {
 		id: null,
 		kind: null,
 		rpc: null,
@@ -355,7 +355,7 @@ test("the description reads as sentences, because a coordinator says it out loud
 		),
 	});
 
-	const context = canvas.semanticBoardContext(board(), reading("Narrated", []));
+	const context = server.semanticBoardContext(board(), reading("Narrated", []));
 
 	expect(context.description).toContain(`${unterminated}. Its nodes are`);
 	expect(context.description).not.toContain(`${unterminated} Its nodes`);
@@ -368,7 +368,7 @@ test("a report about the board the pane just left grounds nothing", async () => 
 		board: { name: "Another board", key: "another board" },
 	};
 
-	const context = canvas.semanticBoardContext(board(), elsewhere);
+	const context = server.semanticBoardContext(board(), elsewhere);
 
 	// The ids might well resolve against this board and mean something else, so
 	// none of them is used: what a person pointed at in one architecture is not
@@ -391,7 +391,7 @@ test("a board nobody is looking at is described without a selection being invent
 	// What must not happen is the context borrowing one: a selection is a person
 	// pointing at something in one architecture, and it is not a fact about
 	// another.
-	const context = canvas.semanticBoardContext(board(), null);
+	const context = server.semanticBoardContext(board(), null);
 
 	expect(context.architecture.selection).toEqual({ count: 0, subjects: [] });
 	expect(context.architecture.variant?.lifecycle).toBe("current");

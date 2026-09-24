@@ -103,7 +103,7 @@ describe("voice session mute", () => {
 	test("surfaces a control this adapter drove and had refused", async () => {
 		const { session, realtime } = harness();
 		realtime.set(listening());
-		realtime.onStop(() => Promise.reject(new Error("The realtime host refused the stop.")));
+		realtime.onStop(() => Promise.reject(new Error("The realtime server refused the stop.")));
 
 		const view = await session.stop();
 
@@ -113,10 +113,10 @@ describe("voice session mute", () => {
 		expect(view.status).toBe("listening");
 		expect(view.failure).toMatchObject({
 			code: "realtime",
-			message: "The realtime host refused the stop.",
+			message: "The realtime server refused the stop.",
 		});
-		expect(view.detail).toContain("The realtime host refused the stop.");
-		expect(view.accessibleStatus).toContain("The realtime host refused the stop.");
+		expect(view.detail).toContain("The realtime server refused the stop.");
+		expect(view.accessibleStatus).toContain("The realtime server refused the stop.");
 		expect(view.outcome).toMatchObject({ kind: "retry", control: "restart" });
 		expect(view.controls.canMute).toBe(true);
 	});
@@ -124,9 +124,9 @@ describe("voice session mute", () => {
 	test("drops a refused control the moment the run moves past it", async () => {
 		const { session, realtime } = harness();
 		realtime.set(listening());
-		realtime.onStop(() => Promise.reject(new Error("The realtime host refused the stop.")));
+		realtime.onStop(() => Promise.reject(new Error("The realtime server refused the stop.")));
 		await session.stop();
-		expect(session.view().failure?.message).toBe("The realtime host refused the stop.");
+		expect(session.view().failure?.message).toBe("The realtime server refused the stop.");
 
 		realtime.set(mediaSnapshot({ phase: "processing", reason: "input_completed" }));
 

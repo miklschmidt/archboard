@@ -196,10 +196,10 @@ function operationPane(paneId: string): PaneRegistration {
 }
 
 /**
- * The host the Codex workbench installation runs against: how it reads the
- * canvas (panes, boards, selection, locks) and how it wires itself into the
- * canvas's sockets.
- * @returns The host.
+ * The server the Codex workbench installation runs against: how it reads the
+ * server (panes, boards, selection, locks) and how it wires itself into the
+ * server's sockets.
+ * @returns The server.
  */
 function createCodexWorkbenchServer(): CodexWorkbenchServer {
 	let active: CodexWorkbenchComponents | null = null;
@@ -225,7 +225,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 	/**
 	 * The pane a fresh read presents through: the one the delivery is bound to
 	 * while it is open, and another open pane once it is not, since the
-	 * conversation belongs to the canvas rather than to the pane that made it.
+	 * conversation belongs to the server rather than to the pane that made it.
 	 *
 	 * For the reads that need a pane to speak for what is on screen. A settled
 	 * change does not need one — `boundPaneId` answers that.
@@ -284,7 +284,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 */
 		paneIds: () => orderedPanes().map((pane) => pane.paneId),
 		/**
-		 * The open pane host-started work presents through.
+		 * The open pane server-started work presents through.
 		 * @param preferredPaneId The pane the work names.
 		 * @returns The pane id.
 		 */
@@ -358,7 +358,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			active = components;
 			/**
 			 * Publish fresh context when any pane changes focus or selection, once
-			 * the canvas has a conversation to tell: it is one conversation
+			 * the server has a conversation to tell: it is one conversation
 			 * whichever pane the person is reading.
 			 * @param clientId The pane reporting a change.
 			 * @param kind The semantic change to publish.
@@ -455,7 +455,7 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	const application = applicationModule.createServerCodexWorkbenchApplication({
 		module: productionModule,
 		/**
-		 * Build the installation against this canvas's host.
+		 * Build the installation against this server.
 		 * @returns The installation.
 		 */
 		installation: () =>

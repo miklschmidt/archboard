@@ -20,10 +20,10 @@ type PendingOperation = Omit<
 >;
 
 /**
- * Everything the production Codex workbench needs from the canvas around it:
+ * Everything the production Codex workbench needs from the Archboard server around it:
  * what it may read (panes, boards, selection, locks), where its canonical
- * context comes from, and how it wires itself into the canvas's sockets and
- * lifetime. The canvas provides one of these; the workbench keeps none of it.
+ * context comes from, and how it wires itself into the server's sockets and
+ * lifetime. The server provides one of these; the workbench keeps none of it.
  */
 export interface CodexWorkbenchServer {
 	readonly checkoutRoot: string;
@@ -73,7 +73,7 @@ export interface CodexWorkbenchStorage {
 	readonly root: string;
 	readonly codexHome: string;
 	readonly sqliteHome: string;
-	/** What this canvas alone owns: its owner lock and its epoch ledger. */
+	/** What this server alone owns: its owner lock and its epoch ledger. */
 	readonly ownerDirectory: string;
 	readonly epochRoot: string;
 	readonly configPath: string;

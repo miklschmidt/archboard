@@ -26,9 +26,9 @@ import type {
 	RemoteMediaAttachment,
 } from "@/ui/codex-realtime";
 
-const sessionId = parseRealtimeSessionId("session-from-host");
-const correlationId = parseRealtimeCorrelationId("correlation-from-host");
-const itemId = parseRealtimeItemId("item-from-host");
+const sessionId = parseRealtimeSessionId("session-from-server");
+const correlationId = parseRealtimeCorrelationId("correlation-from-server");
+const itemId = parseRealtimeItemId("item-from-server");
 
 /**
  * Every state the neutral contract declares, written out in full so no test
@@ -130,8 +130,8 @@ function ignoreElement(element: HTMLMediaElement): void {
 }
 
 /**
- * A host that echoes offers and answers every request with a fixed outcome.
- * @returns The host.
+ * A server that echoes offers and answers every request with a fixed outcome.
+ * @returns The server.
  */
 function echoServer(): RealtimeServer {
 	return {
@@ -208,16 +208,16 @@ function echoServer(): RealtimeServer {
 }
 
 describe("codex realtime public contract", () => {
-	test("exports one host port and no implementation handles", async () => {
-		const host = echoServer();
-		const offer = await host.createOffer({ sessionId, correlationId, sdp: "offer" });
+	test("exports one server port and no implementation handles", async () => {
+		const server = echoServer();
+		const offer = await server.createOffer({ sessionId, correlationId, sdp: "offer" });
 		expect(offer).toEqual({ sessionId, correlationId, sdp: "offer" });
-		expect(host.attachRemoteMedia).toBeTypeOf("function");
-		expect(host.onSemanticEvent).toBeTypeOf("function");
-		expect(host.appendText).toBeTypeOf("function");
-		expect(host.appendSpeech).toBeTypeOf("function");
-		expect(host.stop).toBeTypeOf("function");
-		expect(host.recover).toBeTypeOf("function");
+		expect(server.attachRemoteMedia).toBeTypeOf("function");
+		expect(server.onSemanticEvent).toBeTypeOf("function");
+		expect(server.appendText).toBeTypeOf("function");
+		expect(server.appendSpeech).toBeTypeOf("function");
+		expect(server.stop).toBeTypeOf("function");
+		expect(server.recover).toBeTypeOf("function");
 	});
 
 	test("keeps the phase vocabulary and transition reasons closed", () => {
@@ -334,11 +334,11 @@ describe("codex realtime public contract", () => {
 	});
 });
 
-// @ts-expect-error A session identity is host-created and cannot come from a plain string.
+// @ts-expect-error A session identity is server-created and cannot come from a plain string.
 const callerSession: RealtimeSessionId = "caller-selected";
 void callerSession;
 
-// @ts-expect-error An item identity is host-created and cannot come from a plain string.
+// @ts-expect-error An item identity is server-created and cannot come from a plain string.
 const callerItem: RealtimeItemId = "caller-selected";
 void callerItem;
 

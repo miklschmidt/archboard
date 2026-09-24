@@ -2,7 +2,7 @@
 //
 // Small on purpose. The CLI writes boards through one owner
 // (`src/runtime/semantic-board-client`), which states its own routes; what is
-// here is everything else a command needs from a running canvas: its health,
+// here is everything else a command needs from a running Archboard server: its health,
 // the claim on a board, and the panes on screen.
 //
 // One request goes through `lib/server-client-transport.ts`, which owns the
@@ -74,7 +74,7 @@ interface HealthStatus {
 	pid?: number;
 	/** How many boards the vault holds. */
 	boards?: number;
-	/** How many browsers are looking at this canvas. */
+	/** How many browsers are looking at this server. */
 	websocket_clients?: number;
 	/** Whether this process is running the source that is on disk now. */
 	source?: SourceFreshness;
@@ -117,7 +117,7 @@ interface ShowBoardResponse {
 }
 
 /**
- * Whether the canvas is up, and whether it is the canvas rather than something
+ * Whether the server is up, and whether it is the Archboard server rather than something
  * else listening on the port.
  * @returns The health body.
  */
@@ -126,7 +126,7 @@ function getHealth(): Promise<HealthStatus> {
 }
 
 /**
- * What the canvas is holding, for `status`.
+ * What the server is holding, for `status`.
  * @returns The sync status body.
  */
 function getSyncStatus(): Promise<Record<string, unknown>> {

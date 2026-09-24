@@ -87,7 +87,7 @@ function currentUserId(): number | undefined {
 }
 
 /**
- * Create a missing private directory. A concurrent canvas start may create it
+ * Create a missing private directory. A concurrent server start may create it
  * first; that is tolerated because the exclusive owner lock decides later.
  * @param candidate - The directory to create.
  * @param name - The role of the directory, for messages.

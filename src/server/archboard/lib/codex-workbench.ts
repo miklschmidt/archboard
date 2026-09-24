@@ -88,7 +88,7 @@ function productionKernelFactory(
 }
 
 /**
- * Install the mandatory production owner for one canvas application lifetime.
+ * Install the mandatory production owner for one server application lifetime.
  * @param options The child process, and the bindings and hooks each generation
  * is built from.
  * @returns The owner.

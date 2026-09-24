@@ -29,7 +29,7 @@ function operationTypeBoundary(requestId: JsonRpcRequestId, operationId: Operati
 }
 void operationTypeBoundary;
 
-describe("workhorse host-issued operation identity", () => {
+describe("workhorse server-issued operation identity", () => {
 	test("reuses one supplied identity through direct, queue, and steer mutation boundaries", async () => {
 		const direct = fixture();
 		try {

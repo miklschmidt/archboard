@@ -1,6 +1,6 @@
-// What the canvas says about every board in the vault, in one answer.
+// What the Archboard server says about every board in the vault, in one answer.
 //
-// It is one protocol with a producer, the canvas's listing route, and a
+// It is one protocol with a producer, the server's listing route, and a
 // consumer, the browser's navigator, so it has one owner here: the route is
 // typed against this schema and the browser parses with it, and a field added
 // on one side cannot be stripped by the other.

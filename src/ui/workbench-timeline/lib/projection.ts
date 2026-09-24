@@ -1,4 +1,4 @@
-// The host's authoritative timeline as the conversation: one turn per Codex
+// The server's authoritative timeline as the conversation: one turn per Codex
 // turn, identified by thread and turn, its items passed through with their
 // evidence. A turn or item published twice is a failure the caller shows,
 // never something silently merged.

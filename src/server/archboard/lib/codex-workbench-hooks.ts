@@ -16,7 +16,7 @@ const EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
 
 /** What building one generation's hooks needs from around it. */
 interface HookContext {
-	readonly host: CodexWorkbenchServer;
+	readonly server: CodexWorkbenchServer;
 	readonly input: CodexWorkbenchGenerationInput;
 	readonly owners: GenerationOwners;
 }
@@ -33,7 +33,7 @@ async function startEpochAndSession(
 	session: Parameters<CodexWorkbenchGenerationHooks["initializeSession"]>[0],
 	components: CodexWorkbenchComponents,
 ): Promise<void> {
-	const { input, host } = context;
+	const { input, server } = context;
 	const epochSnapshot = components.epoch.snapshot();
 	input.assertActivationCurrent();
 	components.epoch.startEpoch({
@@ -42,7 +42,7 @@ async function startEpochAndSession(
 		operationId: components.identity.operation.issuer.mintOperationId(),
 		kind: "epoch_start",
 		rpc: "epoch/start",
-		workspaceRoot: host.checkoutRoot,
+		workspaceRoot: server.checkoutRoot,
 		// Epoch ownership has no remote instruction or tool-manifest effect.
 		instructionHash: EMPTY_HASH,
 		manifestHash: EMPTY_HASH,
@@ -120,9 +120,9 @@ async function initializeSession(
  */
 async function settleOrdinaryRequests(
 	approvals: CodexApprovalBroker,
-	cause: "host_shutdown" | "child_disconnected",
+	cause: "server_shutdown" | "child_disconnected",
 ): Promise<void> {
-	const reason = cause === "host_shutdown" ? "host shutdown" : "child disconnected";
+	const reason = cause === "server_shutdown" ? "Archboard server shutdown" : "child disconnected";
 	for (const snapshot of approvals.inspect()) {
 		if (snapshot.state === "pending") {
 			// oxlint-disable-next-line no-await-in-loop -- approvals are cancelled one at a time, each fully before the next
@@ -140,7 +140,7 @@ async function settleOrdinaryRequests(
  */
 async function settleGenerationOwners(
 	owners: GenerationOwners,
-	cause: "host_shutdown" | "child_disconnected",
+	cause: "server_shutdown" | "child_disconnected",
 ): Promise<void> {
 	owners.timeline?.dispose();
 	owners.approval?.settleAll(cause);
@@ -169,7 +169,7 @@ function releaseGenerationOwners(owners: GenerationOwners): void {
  * @returns The hooks.
  */
 function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHooks {
-	const { host, owners } = context;
+	const { server, owners } = context;
 	return {
 		threadContext: {
 			/**
@@ -178,7 +178,7 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 			 * @param binding The pane it is delivered to.
 			 * @returns The context.
 			 */
-			contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
+			contextForEvent: (event, binding) => server.contextForEvent(event, binding.paneId),
 		},
 		/**
 		 * Hand one server notification to every owner in this generation that
@@ -191,8 +191,8 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 			owners.approval?.onNotification(event);
 			owners.lifecycle?.onNotification(event);
 		},
-		installIdentityDecoders: host.installIdentityDecoders,
-		installLifecycleSignals: host.installLifecycleSignals,
+		installIdentityDecoders: server.installIdentityDecoders,
+		installLifecycleSignals: server.installLifecycleSignals,
 		/**
 		 * Begin publishing this generation's approvals to browsers, once.
 		 * @returns Stops publishing them.
@@ -206,7 +206,7 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 				owners.approvalProjectionInstalled = false;
 			};
 		},
-		installBrowserGateway: host.installBrowserGateway,
+		installBrowserGateway: server.installBrowserGateway,
 		/**
 		 * Initialize this generation's session.
 		 * @param session The session.
@@ -214,9 +214,9 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 		 * @returns Resolves once its readiness has been published.
 		 */
 		initializeSession: (session, components) => initializeSession(context, session, components),
-		stopBrowser: host.stopBrowser,
-		stopRealtime: host.stopRealtime,
-		stopQueue: host.stopQueue,
+		stopBrowser: server.stopBrowser,
+		stopRealtime: server.stopRealtime,
+		stopQueue: server.stopQueue,
 		/**
 		 * Retire the dynamic wait and quarantine owner on child exit, which
 		 * ordinary settlement never reaches.

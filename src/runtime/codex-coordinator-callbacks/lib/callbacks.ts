@@ -161,7 +161,7 @@ function semanticFreshnessOf(
  * delivers each one at most once, in source order, down a single path. Callbacks with the same
  * identity share one delivery; a newer callback that supersedes a pending one replaces it in
  * place; and everything the buffer cannot hold settles as not delivered with the reason why.
- * @param options - The host authorities, source ports, delivery ports and clock.
+ * @param options - The server authorities, source ports, delivery ports and clock.
  * @returns The callbacks module.
  */
 export function createCodexCoordinatorCallbacks(
@@ -255,7 +255,7 @@ export function createCodexCoordinatorCallbacks(
 	/**
 	 * Deliver the queue one callback at a time, in order. The awaits are sequential on purpose:
 	 * two callbacks must never be in flight on the same coordinator at once, and each one's
-	 * authority is re-checked against a host that the previous delivery may have changed.
+	 * authority is re-checked against a server that the previous delivery may have changed.
 	 */
 	const drain = async (): Promise<void> => {
 		if (draining) {
@@ -292,7 +292,7 @@ export function createCodexCoordinatorCallbacks(
 	}
 
 	/**
-	 * Normalize one source event against the host's current link and voice generation.
+	 * Normalize one source event against the server's current link and voice generation.
 	 * @param event - The source event.
 	 * @returns The callback, or null when there is no link or the event cannot be normalized.
 	 */
@@ -456,9 +456,9 @@ export function createCodexCoordinatorCallbacks(
 }
 
 /**
- * Install the callbacks module once for a host: a second install returns the module already
+ * Install the callbacks module once for a server: a second install returns the module already
  * retained, so two callers can never subscribe two modules to the same sources.
- * @param retained - Where the host keeps its module.
+ * @param retained - Where the server keeps its module.
  * @param options - The module options, used only on the first install.
  * @returns The retained module.
  */

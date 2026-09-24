@@ -2,7 +2,7 @@
 // cards, re-targeted at the controller that now feeds the committed approvals
 // panel: a decision on the wire disables that card and no other, the result
 // stays beside the card, the panel's choices resolve to exact wire drafts, and
-// a choice the host did not offer never reaches the wire.
+// a choice the server did not offer never reaches the wire.
 
 import { describe, expect, test } from "bun:test";
 
@@ -94,7 +94,7 @@ const ONE_QUESTION = userInputApproval({
 });
 
 describe("approvals controller decisions", () => {
-	test("resolves the panel's command decision onto the exact host-offered decision", async () => {
+	test("resolves the panel's command decision onto the exact server-offered decision", async () => {
 		const { transport, controller } = controllerWith();
 		const approval = commandApproval();
 
@@ -112,7 +112,7 @@ describe("approvals controller decisions", () => {
 		});
 	});
 
-	test("refuses a decision the host did not offer without reaching the wire", async () => {
+	test("refuses a decision the server did not offer without reaching the wire", async () => {
 		const { transport, controller } = controllerWith();
 
 		const result = await controller.respondToApproval(commandApproval(), {

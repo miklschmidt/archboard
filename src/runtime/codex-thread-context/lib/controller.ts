@@ -248,8 +248,8 @@ function assertCurrentAuthority(
  * The threads one session writes as.
  *
  * The workhorse the binding names, and the coordinator paired with it when the
- * host knows of one: a person talking to the pair is talking to one session, so
- * neither is told about the other's writes. Deduplicated, because a host that
+ * server knows of one: a person talking to the pair is talking to one session, so
+ * neither is told about the other's writes. Deduplicated, because a server that
  * reports the same thread twice must not turn one identity into two.
  * @param binding - The active binding.
  * @param paired - The coordinator thread, when there is one.

@@ -16,16 +16,16 @@ import { runServerCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));
-let canvas: OwnedServer;
+let server: OwnedServer;
 
 /**
- * Run one archboard command against the owned canvas.
+ * Run one archboard command against the owned server.
  * @param args The command line.
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runServerCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 /**
  * The board as it stands.
@@ -94,7 +94,7 @@ function edit(args: readonly string[], batch: Record<string, unknown>) {
 }
 
 beforeAll(async () => {
-	canvas = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 	const made = cli(
 		["semantic", "new", "queues", "--doing", "starting the queue board"],
 		JSON.stringify({ level: "system", nodes: [{ name: "Intake", kind: "service" }] }),
@@ -115,7 +115,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 
@@ -246,7 +246,7 @@ describe("a board nobody has built", () => {
 		const [draft] = held.variants;
 		// What the route answers is what the browser's parse of it keeps.
 		const listing = BoardListingSchema.parse(
-			await (await fetch(`${canvas.base}/api/semantic-boards`)).json(),
+			await (await fetch(`${server.base}/api/semantic-boards`)).json(),
 		);
 		const listed = listing.boards.find((entry) => entry.name === planned);
 		expect(listed?.opens).toBe(draft.id);

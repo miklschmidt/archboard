@@ -253,7 +253,7 @@ interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>>
 }
 
 /**
- * The host's own candidate inventory, handed over exactly as the thread-link
+ * The server's own candidate inventory, handed over exactly as the thread-link
  * classifier published it. The gateway maps it to the browser vocabulary and
  * bounds it; it never reclassifies a record or joins the lists a second time.
  */

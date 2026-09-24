@@ -54,7 +54,7 @@ function isNonEmptyString(value: unknown): value is string {
 
 /**
  * Whether a value is the boolean `true`. Used to re-check literal `true`
- * fields on records supplied by host ports without trusting their static type.
+ * fields on records supplied by server ports without trusting their static type.
  * @param value Candidate of unknown origin.
  * @returns Whether the value is exactly `true`.
  */

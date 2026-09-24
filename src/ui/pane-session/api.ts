@@ -24,10 +24,10 @@ interface PaneReport {
 	focused: boolean;
 	/** Where the pane is in the page, in CSS pixels. */
 	rect: { x: number; y: number; width: number; height: number };
-	/** Which bundle this tab is running, so the canvas can say when it is old. */
+	/** Which bundle this tab is running, so the server can say when it is old. */
 	build?: string;
 	/**
-	 * The pane is a recording page's (TASK-304), which the canvas leaves out of addressing: no
+	 * The pane is a recording page's (TASK-304), which the server leaves out of addressing: no
 	 * agent or user is to point at it. Said only when true.
 	 */
 	recording?: true;
@@ -39,7 +39,7 @@ interface PaneReply {
 	registered: boolean;
 	paneCount: number;
 	/**
-	 * Set when this tab is running a bundle the canvas no longer serves, i.e.
+	 * Set when this tab is running a bundle the server no longer serves, i.e.
 	 * somebody rebuilt the frontend after the tab was opened (TASK-056).
 	 */
 	staleFrontend?: { loaded: string | null; current: string | null; message: string | null };
@@ -57,7 +57,7 @@ function reportPane(pane: PaneReport): Promise<PaneReply> {
 
 /**
  * The entry script this tab loaded, hash and all, read off the served
- * document so the tab and the canvas read the same fact from the same place.
+ * document so the tab and the server read the same fact from the same place.
  * @returns The script URL, or undefined when the document names none.
  */
 function loadedBundle(): string | undefined {

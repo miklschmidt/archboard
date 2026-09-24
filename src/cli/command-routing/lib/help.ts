@@ -31,7 +31,7 @@ function sharedSpelling(key: (typeof SHARED_OPTION_KEYS)[number]): string {
 
 /**
  * What the root help says after the command list: the options every command
- * may share, where the canvas is, and the exit codes.
+ * may share, where the Archboard server is, and the exit codes.
  * @returns The text.
  */
 function conventions(): string {
@@ -43,11 +43,11 @@ function conventions(): string {
 			(key) => `  ${sharedSpelling(key).padEnd(width)}  ${SHARED_OPTIONS[key].description}`,
 		),
 		"",
-		"Commands that contact the canvas start it when nothing answers, unless",
+		"Commands that contact the Archboard server start it when nothing answers, unless",
 		"ARCHBOARD_NO_AUTOSTART=1. Results are JSON on stdout unless a command's help says",
 		"otherwise; diagnostics go to stderr.",
 		"",
-		"Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser pane required,",
+		"Exit codes: 0 ok, 1 error, 2 usage, 3 server unreachable, 4 browser pane required,",
 		"5 board write refused (held, claim revoked, or version moved).",
 		"`check` exits 1 while the vault still has diagnostics.",
 		"",

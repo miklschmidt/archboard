@@ -1,4 +1,4 @@
-// A canvas the harness owns for one run: started on a free port against the
+// An Archboard server the harness owns for one run: started on a free port against the
 // run's vault, known by its own pid through /health, and stopped by the run
 // that started it. Every accepted write is on disk before it is answered, so
 // stopping is never a loss.
@@ -16,7 +16,7 @@ import {
 import type { RunPaths } from "@/runtime/skill-evaluation/lib/isolation";
 import { ownProcess, pause, settlesWithin } from "@/runtime/skill-evaluation/lib/process";
 
-/** A running canvas. */
+/** A running server. */
 interface OwnedServer {
 	readonly url: string;
 	readonly port: number;
@@ -46,8 +46,8 @@ async function freePort(): Promise<number> {
 }
 
 /**
- * The pid /health reports, when the canvas at the URL answers.
- * @param url The canvas.
+ * The pid /health reports, when the server at the URL answers.
+ * @param url The server.
  * @returns The pid, or null when nothing answered.
  */
 async function healthPid(url: string): Promise<number | null> {
@@ -63,11 +63,11 @@ async function healthPid(url: string): Promise<number | null> {
 }
 
 /**
- * Waits until the canvas answers /health as itself, or gives up.
- * @param child The canvas process.
+ * Waits until the server answers /health as itself, or gives up.
+ * @param child The server process.
  * @param url Where it should answer.
  * @param log Where its stderr goes, for the failure message.
- * @param signal Cancels startup before the canvas is healthy.
+ * @param signal Cancels startup before the server is healthy.
  */
 async function awaitHealthy(
 	child: Bun.Subprocess,
@@ -81,7 +81,7 @@ async function awaitHealthy(
 		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
 		if (await settlesWithin(child.exited, 0)) {
 			throw new Error(
-				`the evaluation canvas died before answering /health (exit ${child.exitCode ?? child.signalCode}); see ${log}`,
+				`the evaluation server died before answering /health (exit ${child.exitCode ?? child.signalCode}); see ${log}`,
 			);
 		}
 		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
@@ -92,17 +92,17 @@ async function awaitHealthy(
 		await pause(SKILL_EVAL_HEALTH_POLL_MS);
 	}
 	throw new Error(
-		`the evaluation canvas did not answer /health within ${SKILL_EVAL_SERVER_STARTUP_MS}ms; see ${log}`,
+		`the evaluation server did not answer /health within ${SKILL_EVAL_SERVER_STARTUP_MS}ms; see ${log}`,
 	);
 }
 
 /**
- * Starts one canvas for one run.
+ * Starts one server for one run.
  * @param checkout The archboard checkout whose server runs.
  * @param paths The run.
  * @param env The run's environment.
- * @param signal Cancels startup before the canvas is healthy.
- * @returns The running canvas.
+ * @param signal Cancels startup before the server is healthy.
+ * @returns The running server.
  */
 async function startServer(
 	checkout: string,

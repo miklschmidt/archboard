@@ -182,7 +182,7 @@ function browserCleanupObservationMs(idleTimeout: string): number {
 function registerServerBase(base: string): void {
 	const url = new URL(base);
 	if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) {
-		throw new Error(`Owned canvas base is not an explicit loopback listener: ${base}`);
+		throw new Error(`Owned server base is not an explicit loopback listener: ${base}`);
 	}
 	const { ownerRoot } = browserTestRoots();
 	appendFileSync(join(ownerRoot, ".server-bases"), `${url.origin}\n`, { encoding: "utf8" });

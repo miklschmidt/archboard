@@ -9,7 +9,7 @@ import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent, type PaneSession } from "./support/pane-session.ts";
 
 // A proposal read beside what it proposes to change, driven the way an agent
-// drives it: every step a cold CLI invocation against a running canvas, with
+// drives it: every step a cold CLI invocation against a running Archboard server, with
 // two panes on screen.
 //
 // What this owns is the pane a person is using. An agent branching a board,
@@ -42,13 +42,13 @@ describe.serial("side-by-side proposal workflow", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-side-by-side-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
 			env: { LOG_FILE_PATH: join(root, "server.log") },
 		});
-		resources.defer(() => canvas.dispose());
-		const request = createRequester(canvas);
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
 		const panes: PaneSession[] = [];
 		resources.defer(async () =>
 			Promise.allSettled(panes.map((pane) => pane.close())).then(() => undefined),
@@ -69,7 +69,7 @@ describe.serial("side-by-side proposal workflow", () => {
 						cwd: repoRoot,
 						env: {
 							...process.env,
-							ARCHBOARD_URL: canvas.base,
+							ARCHBOARD_URL: server.base,
 							ARCHBOARD_NO_AUTOSTART: "1",
 							ARCHBOARD_VAULT: vault,
 							LOG_LEVEL: "error",
@@ -100,7 +100,7 @@ describe.serial("side-by-side proposal workflow", () => {
 			x = panes.length * 640,
 			options: { primary?: boolean; focused?: boolean; board?: string } = {},
 		): Promise<PaneSession> => {
-			const pane = await openPaneSession(canvas.base, request, {
+			const pane = await openPaneSession(server.base, request, {
 				clientId,
 				x,
 				...(options.primary === undefined ? {} : { primary: options.primary }),

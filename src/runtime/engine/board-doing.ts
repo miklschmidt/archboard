@@ -17,7 +17,7 @@
 // ── And it is not board content ───────────────────────────────────
 //
 // It never reaches the note. It is not what is on the board, it is what
-// somebody said while changing it, so it dies with the canvas — the same
+// somebody said while changing it, so it dies with the server — the same
 // carve-out ADR 0015 draws for sockets, panes and what a person has selected.
 // The requirement rides as a query parameter for that reason as much as for
 // DELETE having no body: a field in an element's body is one careless spread
@@ -71,7 +71,7 @@ interface Store {
 const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
 /**
  * Where the lines are kept, which is this process and nowhere else: what an
- * agent said it was doing is a fact about a canvas that is running, not one
+ * agent said it was doing is a fact about a server that is running, not one
  * the vault has a file for.
  * @returns The store.
  */
@@ -147,7 +147,7 @@ function recentDoing(board: string): DoingEntry[] {
  *
  * Nothing calls this on the ordinary path — the list is meant to outlive the
  * work it describes for as long as somebody might still be looking at the
- * board. It exists for the checks, which run several boards through one canvas.
+ * board. It exists for the checks, which run several boards through one server.
  * @param board Which board, or every board when omitted.
  */
 function forgetDoing(board?: string): void {

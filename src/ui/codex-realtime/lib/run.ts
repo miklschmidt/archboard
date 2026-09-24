@@ -142,7 +142,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 /**
- * Whether a run is a stop the host never confirmed.
+ * Whether a run is a stop the server never confirmed.
  * @param run The run.
  * @returns True for the stop_failed recoverable error.
  */

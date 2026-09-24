@@ -73,7 +73,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		for (const directory of Object.values(paths)) {
 			mkdirSync(directory, { recursive: true, mode: 0o700 });
 		}
-		const canvas = spawn(process.execPath, [wrapper], {
+		const server = spawn(process.execPath, [wrapper], {
 			cwd: repoRoot,
 			detached: true,
 			env: buildOwnedServerEnvironment({
@@ -89,14 +89,14 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 			}),
 			stdio: ["ignore", "pipe", "pipe"],
 		});
-		if (canvas.pid === undefined) {
-			throw new Error("The startup-signal canvas has no pid.");
+		if (server.pid === undefined) {
+			throw new Error("The startup-signal server has no pid.");
 		}
-		const serverPid = canvas.pid;
+		const serverPid = server.pid;
 		let output = "";
-		canvas.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
-		canvas.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
-		const serverExit = new Promise<void>((resolve) => canvas.once("exit", () => resolve()));
+		server.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
+		server.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
+		const serverExit = new Promise<void>((resolve) => server.once("exit", () => resolve()));
 		resources.defer(async () => {
 			if (!processExists(serverPid)) {
 				return;
@@ -121,12 +121,12 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 			throw new Error("The pre-readiness Codex child was not observed.");
 		}
 
-		canvas.kill("SIGTERM");
+		server.kill("SIGTERM");
 		await Promise.race([
 			serverExit,
 			new Promise<never>((_resolve, reject) =>
 				setTimeout(
-					() => reject(new Error(`Canvas did not stop after pre-readiness signal.\n${output}`)),
+					() => reject(new Error(`Server did not stop after pre-readiness signal.\n${output}`)),
 					5_000,
 				),
 			),
@@ -149,7 +149,7 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 	}
 }, 20_000);
 
-test("public cleanup-error takeover reaps the exact terminal group and outer canvas", async () => {
+test("public cleanup-error takeover reaps the exact terminal group and outer server", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-public-terminal-"));
 	const marker = join(root, "processes.json");
 	const executable = join(root, "codex");
@@ -179,7 +179,7 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 	launcher.stderr.on("data", (chunk: Buffer) => void (stderr += chunk));
 	const result = new Promise<number | null>((resolve) => launcher.once("close", resolve));
 	let leader: ProcessIdentity | null = null;
-	let canvas: ProcessIdentity | null = null;
+	let server: ProcessIdentity | null = null;
 	try {
 		await waitFor(() => {
 			if (existsSync(marker)) {
@@ -199,20 +199,20 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 		if (leader === null || descendant === null) {
 			throw new Error("The exact TERM-resistant Codex identities were not live.");
 		}
-		canvas = processIdentity(leader.parentPid);
-		if (canvas === null) {
-			throw new Error("The owning canvas identity was not live.");
+		server = processIdentity(leader.parentPid);
+		if (server === null) {
+			throw new Error("The owning server identity was not live.");
 		}
 		expect(leader.group).toBe(leader.pid);
 		expect(descendant.group).toBe(leader.group);
 		expect(await result).not.toBe(0);
 		expect(performance.now() - startedAt).toBeLessThan(2_000);
 		await Promise.all([
-			waitForProcessExit(canvas.pid),
+			waitForProcessExit(server.pid),
 			waitForProcessExit(leader.pid),
 			waitForProcessExit(descendant.pid),
 		]);
-		expect(exactProcessExists(canvas)).toBeFalse();
+		expect(exactProcessExists(server)).toBeFalse();
 		expect(exactProcessExists(leader)).toBeFalse();
 		expect(exactProcessExists(descendant)).toBeFalse();
 		expect(processGroupMembers(leader.group)).toEqual([]);
@@ -221,8 +221,8 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 		if (leader !== null) {
 			killExactGroup(leader);
 		}
-		if (canvas !== null) {
-			killExactGroup(canvas);
+		if (server !== null) {
+			killExactGroup(server);
 		}
 		if (launcher.exitCode === null && launcher.signalCode === null) {
 			launcher.kill("SIGKILL");

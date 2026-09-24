@@ -145,7 +145,7 @@ export async function startServer(options: {
 		}),
 		stdio: ["ignore", "pipe", "pipe"],
 	});
-	if (child.pid === undefined) throw new Error("The canvas has no pid.");
+	if (child.pid === undefined) throw new Error("The server has no pid.");
 	let output = "";
 	child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
 	child.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
@@ -156,7 +156,7 @@ export async function startServer(options: {
 			done();
 		}),
 	);
-	const canvas: ServerProcess = {
+	const server: ServerProcess = {
 		base,
 		pid: child.pid,
 		output: () => output,
@@ -164,7 +164,7 @@ export async function startServer(options: {
 			if (exited) return;
 			child.kill("SIGTERM");
 			if (!(await Promise.race([exit.then(() => true), sleep(5_000).then(() => false)])))
-				throw new Error(`Canvas ${child.pid} did not close normally.\n${output}`);
+				throw new Error(`Server ${child.pid} did not close normally.\n${output}`);
 		},
 		async dispose(signal = "SIGTERM") {
 			if (!exited) {
@@ -182,7 +182,7 @@ export async function startServer(options: {
 					await Promise.race([exit, sleep(5_000)]);
 				}
 			}
-			if (!exited) throw new Error(`Canvas ${child.pid} did not exit.\n${output}`);
+			if (!exited) throw new Error(`Server ${child.pid} did not exit.\n${output}`);
 		},
 	};
 	try {
@@ -194,18 +194,18 @@ export async function startServer(options: {
 					const health = (await response.json()) as { readonly pid?: unknown };
 					return health.pid === child.pid ? health : undefined;
 				} catch {
-					if (exited) throw new Error(`Canvas startup failed.\n${output}`);
+					if (exited) throw new Error(`Server startup failed.\n${output}`);
 					return undefined;
 				}
 			},
-			"production canvas readiness",
+			"production server readiness",
 			options.readinessTimeoutMs === undefined ? {} : { timeoutMs: options.readinessTimeoutMs },
 		);
 	} catch (error) {
-		await canvas.dispose();
-		throw new Error(`Canvas did not become ready.\n${output}`, { cause: error });
+		await server.dispose();
+		throw new Error(`Server did not become ready.\n${output}`, { cause: error });
 	}
-	return canvas;
+	return server;
 }
 
 export function extendFixture(root: string, storageMode?: StorageMode): string {

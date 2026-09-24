@@ -56,7 +56,7 @@ import {
 } from "@/server/archboard/lib/codex-workbench-owner-transitions";
 
 /**
- * Install one stable process port for one canvas application lifetime. Every
+ * Install one stable process port for one server application lifetime. Every
  * graph remains only in replaceable source closures, and the publication that
  * dispatches to them is owner-local: nothing outside this call can observe or
  * hand back a previous lifetime's state (ADR 0021).
@@ -425,7 +425,7 @@ function installCodexWorkbenchOwnerLifecycle(
 		 */
 		start: () => dispatchSlots().start(),
 		// Keep terminal ownership in this returned handle after public dispatch
-		// is revoked. The Canvas lifetime may need one force retry to prove the
+		// is revoked. The server lifetime may need one force retry to prove the
 		// detached process group is gone.
 		/**
 		 * Shut the workbench down for good.

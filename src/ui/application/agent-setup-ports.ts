@@ -1,4 +1,4 @@
-// What the canvas-wide agent setup speaks through: the focused pane's
+// What the server-wide agent setup speaks through: the focused pane's
 // thread-link controller and composer, the voice session, which is kept on the
 // pane it started in only once it started and let go once it ends, and a tab
 // opened from the person's own gesture for a provider's sign-in page, so a
@@ -35,7 +35,7 @@ function threadLinkStep(
 }
 
 /** Why a step cannot be taken while no pane is connected. */
-const NO_PANE_WORDS = "No pane is connected to the canvas.";
+const NO_PANE_WORDS = "No pane is connected to the Archboard server.";
 const NO_PANE: SetupStepResult = { ok: false, reason: NO_PANE_WORDS };
 
 /** Keep voice on one pane, or let it follow the focused pane again with null. */
@@ -101,7 +101,7 @@ function releaseWhenVoiceEnds(
 }
 
 /**
- * The ports the canvas-wide agent setup speaks through: the focused pane's
+ * The ports the server-wide agent setup speaks through: the focused pane's
  * transport and controllers, whichever pane that is when a step is taken.
  * @param focus The agent focus.
  * @param pinVoice Keep voice on the pane it started in, or release it.
@@ -111,7 +111,7 @@ function agentSetupPorts(focus: AgentFocus, pinVoice: PinVoice): AgentSetupPorts
 	return {
 		transport: focus,
 		/**
-		 * Create the canvas's conversation.
+		 * Create the server's conversation.
 		 * @returns How it settled.
 		 */
 		createConversation: async () => {

@@ -87,7 +87,7 @@ function semanticPaneContexts(): readonly SemanticPaneContext[] {
 	return [...reports.values()];
 }
 
-/** Forget every report, for a canvas that is starting over. */
+/** Forget every report, for a server that is starting over. */
 function forgetSemanticPaneContexts(): void {
 	reports.clear();
 }

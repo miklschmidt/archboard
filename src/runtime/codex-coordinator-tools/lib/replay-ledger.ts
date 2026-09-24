@@ -62,7 +62,7 @@ interface ReplayLedger {
 
 /**
  * Create the ledger that remembers which calls are executing and which settled results may still
- * be replayed, bounded so a chatty coordinator cannot grow host memory.
+ * be replayed, bounded so a chatty coordinator cannot grow server memory.
  * @returns A fresh, empty ledger.
  */
 function createReplayLedger(): ReplayLedger {
@@ -120,7 +120,7 @@ function createReplayLedger(): ReplayLedger {
 	/**
 	 * Drop every retained record that does not belong to the current logical call, because only
 	 * the executing call may still be replayed.
-	 * @param currentLogicalKey - The key of the call the host is executing, or null.
+	 * @param currentLogicalKey - The key of the call the server is executing, or null.
 	 */
 	const pruneStaleTerminals = (currentLogicalKey: string | null): void => {
 		for (const key of retainedLogicalCalls.keys()) {

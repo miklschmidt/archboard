@@ -175,7 +175,7 @@ function nullableString(value: unknown): value is string | null {
 
 /**
  * What a person is shown when they are asked to approve one mutation. The summary is bounded,
- * because the approval is read on a canvas and not in a log.
+ * because the approval is read in a pane and not in a log.
  * @param tool The mutation tool.
  * @param argumentsValue The effect's arguments.
  * @returns The summary.

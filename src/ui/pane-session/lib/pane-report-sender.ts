@@ -35,8 +35,8 @@ interface PaneReportSenderParts {
 	readonly connector: PaneSocketConnector;
 	readonly setConnected: (connected: boolean) => void;
 	/**
-	 * Say whether the canvas has this pane.
-	 * @param registered What the canvas answered.
+	 * Say whether the server has this pane.
+	 * @param registered What the server answered.
 	 */
 	readonly setRegistered: (registered: boolean) => void;
 	/** The session's listeners, read at the moment there is something to say. */
@@ -53,7 +53,7 @@ interface PaneReportSender {
 
 /** What an answer says about this tab's build, once it says anything. */
 interface StaleBuild {
-	/** The build the canvas serves now, which is what a repeat is judged against. */
+	/** The build the server serves now, which is what a repeat is judged against. */
 	readonly current: string;
 	/** What to tell the person about it. */
 	readonly message: string;
@@ -181,7 +181,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 
 	/**
 	 * Apply the freshness half: forgetting a refused report, and noting that
-	 * this tab is running a build the canvas no longer serves.
+	 * this tab is running a build the server no longer serves.
 	 * @param effects What the sequencer permits.
 	 * @param result The answer, when the request settled.
 	 */

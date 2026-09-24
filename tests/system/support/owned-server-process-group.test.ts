@@ -24,16 +24,16 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const serverPath = path.join(repoRoot, "src/server.ts");
 const thisFile = fileURLToPath(import.meta.url);
 
-async function readJson(canvas: OwnedServer, responsePromise: Promise<Response>): Promise<unknown> {
-	await canvas.assertRunning();
+async function readJson(server: OwnedServer, responsePromise: Promise<Response>): Promise<unknown> {
+	await server.assertRunning();
 	try {
 		const response = await responsePromise;
-		await canvas.assertRunning();
+		await server.assertRunning();
 		const body = await response.json();
-		await canvas.assertRunning();
+		await server.assertRunning();
 		return body;
 	} catch (error) {
-		await canvas.assertRunning(error);
+		await server.assertRunning(error);
 		throw error;
 	}
 }
@@ -52,7 +52,7 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "early-death") {
 					start(controller) {
 						controller.enqueue(new TextEncoder().encode('{"unfinished":'));
 						// oxlint-disable-next-line no-console -- child stderr is the contract under test.
-						console.error("intentional early canvas death after response headers");
+						console.error("intentional early server death after response headers");
 						setTimeout(() => process.exit(23), TEST_SERVER_EARLY_DEATH_DELAY_MS);
 					},
 				});
@@ -109,7 +109,7 @@ if (childMode) {
 			await owned.restart({
 				async whileStopped() {
 					// oxlint-disable-next-line no-console -- JSON lines coordinate the external listener.
-					console.log(JSON.stringify({ marker: "retired-canvas", base: owned!.base }));
+					console.log(JSON.stringify({ marker: "retired-server", base: owned!.base }));
 					const deadline = Date.now() + TEST_SERVER_SHUTDOWN_TIMEOUT_MS;
 					while (!(await listenerAnswers(owned!.base)) && Date.now() < deadline) {
 						await Bun.sleep(TEST_SERVER_HEALTH_POLL_MS);
@@ -119,7 +119,7 @@ if (childMode) {
 			// oxlint-disable-next-line no-console -- JSON lines are the child protocol.
 			console.log(
 				JSON.stringify({
-					marker: "replacement-canvas",
+					marker: "replacement-server",
 					mode: childMode,
 					pid: owned.pid!,
 					vault,
@@ -178,7 +178,7 @@ if (childMode) {
 			await disposal;
 			if (
 				!(restartError instanceof Error) ||
-				!/disposed canvas process/.test(restartError.message)
+				!/disposed server process/.test(restartError.message)
 			) {
 				throw new Error(`Restart escaped concurrent disposal as pid ${owned.pid ?? "unknown"}.`);
 			}
@@ -192,7 +192,7 @@ if (childMode) {
 			} catch (error) {
 				reported = error instanceof Error ? error.message : String(error);
 			}
-			if (!/died/.test(reported) || !/intentional early canvas death/.test(reported)) {
+			if (!/died/.test(reported) || !/intentional early server death/.test(reported)) {
 				throw new Error(`Early death was not reported with stderr: ${reported}`);
 			}
 			// oxlint-disable-next-line no-console -- JSON lines are the child protocol.
@@ -213,7 +213,7 @@ if (childMode) {
 
 const runLifecycleChild = createLifecycleChildRunner(thisFile);
 
-describe("owned canvas lifecycle", () => {
+describe("owned server lifecycle", () => {
 	const emergencyVaults = new Set<string>();
 	afterAll(() => {
 		for (const vault of emergencyVaults) {
@@ -276,7 +276,7 @@ describe("owned canvas lifecycle", () => {
 					expect({ marker: report?.["marker"], reported: String(report?.["reported"]) }).toEqual({
 						marker: "early-death",
 						reported: expect.stringMatching(
-							/(?=.*died)(?=.*intentional early canvas death after response headers)/s,
+							/(?=.*died)(?=.*intentional early server death after response headers)/s,
 						),
 					});
 				}
@@ -298,7 +298,7 @@ describe("owned canvas lifecycle", () => {
 			await runLifecycleChild("timeout", {
 				timeoutMs: TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 				onRecord(record) {
-					if (record["marker"] !== "retired-canvas") {
+					if (record["marker"] !== "retired-server") {
 						return;
 					}
 					const base = String(record["base"]);
@@ -308,7 +308,7 @@ describe("owned canvas lifecycle", () => {
 						fetch: () => Response.json({ pid: process.pid }),
 					});
 				},
-				timeoutAfterRecord: "replacement-canvas",
+				timeoutAfterRecord: "replacement-server",
 			});
 		} catch (error) {
 			failure = error as LifecycleTimeoutError;
@@ -336,7 +336,7 @@ describe("owned canvas lifecycle", () => {
 		let failure: LifecycleTimeoutError | undefined;
 		try {
 			await runLifecycleChild("timeout-before-replacement", {
-				timeoutAfterRecord: "replacement-canvas",
+				timeoutAfterRecord: "replacement-server",
 				spawnWatchdogMs: TEST_SERVER_SHUTDOWN_TIMEOUT_MS,
 			});
 		} catch (error) {

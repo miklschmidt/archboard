@@ -8,12 +8,18 @@ import {
 	PUBLISHED_CHECKPOINTS,
 	SIDE_EFFECT_CHECKPOINTS,
 	correlation,
-	host,
+	realtimeServer,
 	settle,
 	type Stage,
 } from "@/ui/codex-realtime/tests/support/media-session-fakes";
 
-const NEGOTIATION_STAGES: Stage[] = ["createOffer", "setLocal", "hostOffer", "setRemote", "resume"];
+const NEGOTIATION_STAGES: Stage[] = [
+	"createOffer",
+	"setLocal",
+	"serverOffer",
+	"setRemote",
+	"resume",
+];
 const LISTENER_POSITIONS: ListenerPosition[] = ["first", "middle", "last"];
 const ENDINGS: Ending[] = ["stop", "dispose"];
 type ListenerPosition = "first" | "middle" | "last";
@@ -25,7 +31,7 @@ type Ending = "stop" | "dispose";
  * @returns The session.
  */
 function session(env: FakeBrowser): RealtimeMediaSession {
-	return createRealtimeMediaSession(host(env), { environment: env.environment() });
+	return createRealtimeMediaSession(realtimeServer(env), { environment: env.environment() });
 }
 
 /**
@@ -116,7 +122,7 @@ describe("realtime browser media lifecycle boundaries", () => {
 	);
 
 	test.each(LISTENER_POSITIONS)(
-		"a throwing %s listener cannot change ordinary stop or suppress host stop",
+		"a throwing %s listener cannot change ordinary stop or suppress server stop",
 		async (throwing) => {
 			const env = new FakeBrowser();
 			const media = session(env);
@@ -162,17 +168,17 @@ describe("realtime browser media lifecycle boundaries", () => {
 		"a throwing %s listener cannot replace a terminal failure",
 		async (throwing) => {
 			const env = new FakeBrowser();
-			const realtimeServer = host(env);
+			const server = realtimeServer(env);
 			const media = createRealtimeMediaSession(
 				{
-					...realtimeServer,
+					...server,
 					/**
 					 * Answers with a foreign session identity.
 					 * @param offer The offer.
 					 * @returns A mismatched answer.
 					 */
 					createOffer: async (offer) => ({
-						...(await realtimeServer.createOffer(offer)),
+						...(await server.createOffer(offer)),
 						sessionId: correlation(9).sessionId,
 					}),
 				},
@@ -349,7 +355,7 @@ describe("realtime browser media lifecycle boundaries", () => {
 		const env = new FakeBrowser();
 		env.costs.set("createOffer", 4_000);
 		env.costs.set("setLocal", 4_000);
-		env.costs.set("hostOffer", 4_000);
+		env.costs.set("serverOffer", 4_000);
 		env.pause = "setRemote";
 		const media = session(env);
 		const starting = media.start(correlation());

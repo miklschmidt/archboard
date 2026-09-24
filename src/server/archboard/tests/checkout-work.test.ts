@@ -24,12 +24,12 @@ describe("checkout work owner", () => {
 		const runningResult = running.catch((error: unknown) => error);
 
 		await owner.stop();
-		expect(await runningResult).toEqual(new Error("Canvas checkout work stopped."));
+		expect(await runningResult).toEqual(new Error("Archboard server checkout work stopped."));
 		const lateResult = await owner
 			.track("late snapshot", undefined, resolved.bind(undefined, "late"))
 			.catch((error: unknown) => error);
 		expect(lateResult).toEqual(
-			new Error("Canvas checkout work is stopping; late snapshot was not admitted."),
+			new Error("Archboard server checkout work is stopping; late snapshot was not admitted."),
 		);
 	});
 

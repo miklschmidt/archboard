@@ -92,7 +92,7 @@ function chooseDoc(repo: string, targetSpec: string): { file: string; existed: b
  * @param options.command - How the CLI is invoked when it is not on PATH.
  * @param options.onPath - Whether `archboard` resolves on PATH.
  * @param options.skill - Where the installed skill lives.
- * @param options.serverUrl - The canvas URL when it is not the default.
+ * @param options.serverUrl - The server URL when it is not the default.
  * @returns The block text, markers included, ending in a newline.
  */
 function renderBlock(options: {
@@ -128,7 +128,7 @@ function renderBlock(options: {
 		...env,
 		"```",
 		"",
-		"Every archboard command needs that in its environment, and so does the canvas",
+		"Every archboard command needs that in its environment, and so does the Archboard",
 		"server, which is what does the vault I/O. If your shell does not carry",
 		"variables from one command to the next, prefix each command instead:",
 		"",
@@ -238,9 +238,9 @@ function chooseSetupDoc(options: SetupOptions, repo: string): { file: string; ex
 }
 
 /**
- * A canvas on a non-default URL is part of the environment too, and the one thing a fresh
+ * A server on a non-default URL is part of the environment too, and the one thing a fresh
  * agent has no way of guessing.
- * @returns The configured canvas URL when it differs from the default, else undefined.
+ * @returns The configured server URL when it differs from the default, else undefined.
  */
 function serverUrlOverride(): string | undefined {
 	const configured = process.env["ARCHBOARD_URL"];

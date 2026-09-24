@@ -1,7 +1,7 @@
 // What one row of work opens to: the command's directory, exit code and the
 // tail of its output; the files a change touched with the lines it added and
 // removed; a tool call's arguments and error; a reasoning summary in full.
-// Everything here is exactly what the host published, bounded by the host.
+// Everything here is exactly what the server published, bounded by the server.
 
 import type { JSX } from "react";
 

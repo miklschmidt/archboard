@@ -81,10 +81,10 @@ describe("the semantic board aggregate", () => {
 	test("a created board is readable again with the content it was given", async () => {
 		const written = await create("round-trip", {
 			nodes: [
-				{ name: "Canvas", kind: "service", responsibility: "Serves boards to panes" },
-				{ name: "Engine", kind: "module", parent: "Canvas" },
+				{ name: "Server", kind: "service", responsibility: "Serves boards to panes" },
+				{ name: "Engine", kind: "module", parent: "Server" },
 			],
-			edges: [{ from: "Engine", to: "Canvas", kind: "call" }],
+			edges: [{ from: "Engine", to: "Server", kind: "call" }],
 		});
 		expect(written.outcome).toBe("applied");
 
@@ -92,10 +92,10 @@ describe("the semantic board aggregate", () => {
 		expect(read.ok).toBe(true);
 		if (!read.ok) return;
 		expect(read.board.version).toBe(1);
-		expect(namesOn(read.board)).toEqual(["Canvas", "Engine"]);
+		expect(namesOn(read.board)).toEqual(["Engine", "Server"]);
 		const engine = read.board.variants[0]!.content.nodes.find((n) => n.name === "Engine")!;
-		const canvas = read.board.variants[0]!.content.nodes.find((n) => n.name === "Canvas")!;
-		expect(engine.parent).toBe(canvas.id);
+		const server = read.board.variants[0]!.content.nodes.find((n) => n.name === "Server")!;
+		expect(engine.parent).toBe(server.id);
 		expect(read.board.variants[0]!.content.edges[0]!.from).toBe(engine.id);
 	});
 

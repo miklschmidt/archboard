@@ -96,7 +96,7 @@ describe("the link the composer may target", () => {
 		).toEqual({ kind: "unbound", reason: "Sign in first." });
 	});
 
-	test("an inspect-only link keeps the host's own reason", () => {
+	test("an inspect-only link keeps the server's own reason", () => {
 		const value = connected(
 			snapshot({ threadLink: inspectOnlyLink("A prior child owned this thread.") }),
 		);
@@ -232,7 +232,7 @@ describe("what the composer refuses before anything is sent", () => {
 		expect(refusalCode(planComposerSubmit(connected(), multibyte))).toBe("prompt_too_long");
 	});
 
-	test("a prompt carrying NUL is refused rather than sent for the host to reject", () => {
+	test("a prompt carrying NUL is refused rather than sent for the server to reject", () => {
 		expect(refusalCode(planComposerSubmit(connected(), "before\0after"))).toBe("prompt_invalid");
 	});
 

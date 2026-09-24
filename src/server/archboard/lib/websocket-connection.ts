@@ -37,7 +37,7 @@ function retirePaneOwner(closingId: string): void {
 
 /**
  * Forget a socket that has closed. Exact Codex cleanup is safe for a replaced
- * socket. Client-id keyed canvas state is not: a replacement may already own
+ * socket. Client-id keyed server state is not: a replacement may already own
  * that pane identity, so only the socket that owns it retires it.
  * @param ws The closed socket.
  * @param acceptanceToken The token this socket's acceptance was stamped with.

@@ -32,10 +32,10 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 		resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 		const fixture = prepareProductionFixture(resources, extendFixture(staging, mode));
 		const startup = await startServer({ ...fixture, readinessTimeoutMs: 3_000 }).then(
-			(canvas) => ({ canvas, error: null }),
-			(error: unknown) => ({ canvas: null, error }),
+			(server) => ({ server, error: null }),
+			(error: unknown) => ({ server: null, error }),
 		);
-		if (startup.canvas === null) {
+		if (startup.server === null) {
 			expect(String(startup.error), mode).toContain(
 				"The production Codex workbench did not become ready.",
 			);
@@ -68,11 +68,11 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 			}
 			return;
 		}
-		const canvas = startup.canvas;
-		resources.defer(() => canvas.dispose());
-		const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
+		const server = startup.server;
+		resources.defer(() => server.dispose());
+		const request = createRequester({ base: server.base, assertRunning: async () => undefined });
 		const clientId = `storage-${mode}`;
-		const socket = await openApplicationSocket(canvas.base, clientId);
+		const socket = await openApplicationSocket(server.base, clientId);
 		resources.defer(() => socket.close());
 		expect(
 			(
@@ -100,11 +100,11 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 			return readiness["state"] === "unavailable" ? readiness : undefined;
 		}, `${mode} storage refusal`).catch((error: unknown) => {
 			throw new Error(
-				`${mode} did not expose its storage refusal. Last snapshot: ${JSON.stringify(observed)}\n${canvas.output()}\n${readFileSync(fixture.logPath, "utf8")}`,
+				`${mode} did not expose its storage refusal. Last snapshot: ${JSON.stringify(observed)}\n${server.output()}\n${readFileSync(fixture.logPath, "utf8")}`,
 				{ cause: error },
 			);
 		});
-		expect(`${JSON.stringify(refusal)}\n${canvas.output()}`, mode).toMatch(
+		expect(`${JSON.stringify(refusal)}\n${server.output()}`, mode).toMatch(
 			/storage proof refused|storage is unavailable/i,
 		);
 	} finally {
@@ -127,7 +127,7 @@ describe.serial("composed Codex process lifecycle", () => {
 
 	test("accepts and preserves the exact managed sqlite requirement", async () => {
 		const resources = new AsyncDisposableStack();
-		let canvas: Awaited<ReturnType<typeof startServer>> | null = null;
+		let server: Awaited<ReturnType<typeof startServer>> | null = null;
 		try {
 			const staging = join(
 				process.env["TMPDIR"] ?? "/tmp",
@@ -140,13 +140,13 @@ describe.serial("composed Codex process lifecycle", () => {
 				resources,
 				extendFixture(staging, "requirements-match"),
 			);
-			canvas = await startServer(fixture);
-			const ownedServer = canvas;
+			server = await startServer(fixture);
+			const ownedServer = server;
 			resources.defer(() => ownedServer.dispose());
 			const clientId = "managed-requirements";
-			const socket = await openApplicationSocket(canvas.base, clientId);
+			const socket = await openApplicationSocket(server.base, clientId);
 			resources.defer(() => socket.close());
-			const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
+			const request = createRequester({ base: server.base, assertRunning: async () => undefined });
 			expect(
 				(
 					await request("/api/panes", {
@@ -199,13 +199,13 @@ describe.serial("composed Codex process lifecycle", () => {
 			if (childPid === undefined) {
 				throw new Error("The managed-requirement child did not start.");
 			}
-			await canvas.dispose();
-			canvas = null;
+			await server.dispose();
+			server = null;
 			expect(processExists(childPid)).toBeFalse();
 			expect(readFileSync(configPath, "utf8")).toBe(configBytes);
 			expect(statSync(configPath).mtimeMs).toBe(publishedAt);
 		} finally {
-			await canvas?.dispose();
+			await server?.dispose();
 			await resources.disposeAsync();
 		}
 	}, 30_000);
@@ -225,9 +225,9 @@ describe.serial("composed Codex process lifecycle", () => {
 				prepareProductionFixture(resources, extendedSource),
 				prepareProductionFixture(resources, extendedSource),
 			] as const;
-			const canvases = await Promise.all(fixtures.map((fixture) => startServer(fixture)));
-			for (const canvas of canvases) {
-				resources.defer(() => canvas.dispose());
+			const servers = await Promise.all(fixtures.map((fixture) => startServer(fixture)));
+			for (const server of servers) {
+				resources.defer(() => server.dispose());
 			}
 			const childPids = fixtures.map(
 				(fixture) =>
@@ -237,13 +237,13 @@ describe.serial("composed Codex process lifecycle", () => {
 			expect(new Set(childPids).size).toBe(2);
 			const homes = fixtures.map((fixture) => join(codexWorkbenchRoot(fixture.root), "codex-home"));
 			expect(new Set(homes).size).toBe(2);
-			for (const [index, canvas] of canvases.entries()) {
+			for (const [index, server] of servers.entries()) {
 				const clientId = `two-home-${index}`;
 				const request = createRequester({
-					base: canvas.base,
+					base: server.base,
 					assertRunning: async () => undefined,
 				});
-				const socket = await openApplicationSocket(canvas.base, clientId);
+				const socket = await openApplicationSocket(server.base, clientId);
 				resources.defer(() => socket.close());
 				expect(
 					(

@@ -298,8 +298,8 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	}
 
 	/**
-	 * Bind one row. The one-shot selection the host published names the exact
-	 * row; the thread id travels with it so a list the host has replaced is
+	 * Bind one row. The one-shot selection the server published names the exact
+	 * row; the thread id travels with it so a list the server has replaced is
 	 * refused rather than binding whatever now sits at that thread.
 	 * @param row The row.
 	 * @returns Whether the settlement was published.
@@ -321,7 +321,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	}
 
 	/**
-	 * Bind the row the host listed under one selection id, as the pane sees
+	 * Bind the row the server listed under one selection id, as the pane sees
 	 * its inventory now.
 	 * @param selectionId The one-shot selection.
 	 * @returns Whether the settlement was published.
@@ -336,13 +336,17 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 		});
 		const row = selection.rows.find((candidate) => candidate.selectionId === selectionId);
 		if (row === undefined) {
-			return refuse("attach", null, "That conversation is no longer in the host's list.");
+			return refuse(
+				"attach",
+				null,
+				"That conversation is no longer in the Archboard server's list.",
+			);
 		}
 		return bind(row);
 	}
 
 	/**
-	 * Run one host-owned recovery against the captured pane and intent.
+	 * Run one server-owned recovery against the captured pane and intent.
 	 * @param pane The pane.
 	 * @param target The recovery target.
 	 * @returns Null when it ran, else the failed snapshot.
@@ -484,7 +488,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 		 */
 		unlink: () => refuse("unlink", null, NO_UNLINK_COMMAND),
 		/**
-		 * Ask the host to rediscover its inventory.
+		 * Ask the server to rediscover its inventory.
 		 * @returns Whether the settlement was published.
 		 */
 		refreshInventory: () => run("refresh_inventory", { command: "threadLinkRefresh" }, null),

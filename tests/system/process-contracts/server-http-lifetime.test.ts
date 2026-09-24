@@ -182,7 +182,7 @@ async function spawnServer(
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 	if (child.pid === undefined) {
-		throw new Error(`${mode} canvas has no pid.`);
+		throw new Error(`${mode} server has no pid.`);
 	}
 	const pid = child.pid;
 	let output = "";
@@ -221,30 +221,30 @@ test(
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, fixtureSource);
-			const canvas = await spawnServer(resources, fixture, "delayed-listen-cancel");
+			const server = await spawnServer(resources, fixture, "delayed-listen-cancel");
 			await waitFor(
-				async () => (existsSync(canvas.pendingPath) ? true : undefined),
+				async () => (existsSync(server.pendingPath) ? true : undefined),
 				"delayed HTTP listen",
 				{ timeoutMs: TEST_SERVER_STARTUP_TIMEOUT_MS },
 			);
-			canvas.child.kill("SIGTERM");
+			server.child.kill("SIGTERM");
 			const result = await Promise.race([
-				canvas.exit,
+				server.exit,
 				new Promise<never>((_resolve, reject) =>
 					setTimeout(
-						() => reject(new Error(`Delayed-listen canvas did not exit.\n${canvas.output()}`)),
+						() => reject(new Error(`Delayed-listen server did not exit.\n${server.output()}`)),
 						TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 					),
 				),
 			]);
 			expect(result).toEqual({ code: 0, signal: null });
-			expect(readFileSync(canvas.outcomePath, "utf8")).toBe("listen-cancelled");
+			expect(readFileSync(server.outcomePath, "utf8")).toBe("listen-cancelled");
 
 			const childPid = records(fixture.logPath).find(
 				(entry) => entry.kind === "app_server_spawn",
 			)?.pid;
 			if (childPid === undefined) {
-				throw new Error(`The delayed-listen Codex owner never started.\n${canvas.output()}`);
+				throw new Error(`The delayed-listen Codex owner never started.\n${server.output()}`);
 			}
 			await waitForProcessExit(childPid);
 			expect(processExists(childPid)).toBeFalse();
@@ -260,7 +260,7 @@ test(
 			});
 			await new Promise<void>((resolve, reject) => {
 				probe.once("error", reject);
-				probe.listen({ host: "127.0.0.1", port: canvas.port, exclusive: true }, resolve);
+				probe.listen({ host: "127.0.0.1", port: server.port, exclusive: true }, resolve);
 			});
 		} finally {
 			await resources.disposeAsync();
@@ -275,12 +275,12 @@ test(
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, fixtureSource);
-			const canvas = await spawnServer(resources, fixture, "bind-race");
+			const server = await spawnServer(resources, fixture, "bind-race");
 			const result = await Promise.race([
-				canvas.exit,
+				server.exit,
 				new Promise<never>((_resolve, reject) =>
 					setTimeout(
-						() => reject(new Error(`Bind-race canvas did not exit.\n${canvas.output()}`)),
+						() => reject(new Error(`Bind-race server did not exit.\n${server.output()}`)),
 						TEST_SERVER_STARTUP_TIMEOUT_MS,
 					),
 				),
@@ -290,12 +290,12 @@ test(
 				(entry) => entry.kind === "app_server_spawn",
 			)?.pid;
 			if (childPid === undefined) {
-				throw new Error(`The bind-race Codex owner never started.\n${canvas.output()}`);
+				throw new Error(`The bind-race Codex owner never started.\n${server.output()}`);
 			}
 			await waitForProcessExit(childPid);
-			expect(processExists(canvas.pid)).toBeFalse();
+			expect(processExists(server.pid)).toBeFalse();
 			expect(processExists(childPid)).toBeFalse();
-			expect(canvas.output()).toContain("already in use");
+			expect(server.output()).toContain("already in use");
 		} finally {
 			await resources.disposeAsync();
 		}
@@ -309,36 +309,36 @@ test(
 		const resources = new AsyncDisposableStack();
 		try {
 			const fixture = prepareProductionFixture(resources, fixtureSource);
-			const canvas = await spawnServer(resources, fixture, "runtime-error");
+			const server = await spawnServer(resources, fixture, "runtime-error");
 			await waitFor(
 				async () => {
 					try {
-						const response = await fetch(`${canvas.base}/health`);
+						const response = await fetch(`${server.base}/health`);
 						const health = (await response.json()) as { application?: { phase?: unknown } };
 						return health.application?.phase === "running" ? true : undefined;
 					} catch {
-						if (!processExists(canvas.pid)) {
-							throw new Error(`Runtime-error canvas exited during startup.\n${canvas.output()}`);
+						if (!processExists(server.pid)) {
+							throw new Error(`Runtime-error server exited during startup.\n${server.output()}`);
 						}
 						return undefined;
 					}
 				},
-				"runtime-error canvas readiness",
+				"runtime-error server readiness",
 				{ timeoutMs: TEST_SERVER_STARTUP_TIMEOUT_MS },
 			);
-			const socket = new WebSocket(canvas.base.replace("http:", "ws:"));
+			const socket = new WebSocket(server.base.replace("http:", "ws:"));
 			resources.defer(() => socket.terminate());
 			await new Promise<void>((resolve, reject) => {
 				socket.once("open", resolve);
 				socket.once("error", reject);
 			});
 			const closed = new Promise<void>((resolve) => socket.once("close", () => resolve()));
-			canvas.child.kill("SIGUSR2");
+			server.child.kill("SIGUSR2");
 			const result = await Promise.race([
-				canvas.exit,
+				server.exit,
 				new Promise<never>((_resolve, reject) =>
 					setTimeout(
-						() => reject(new Error(`Runtime-error canvas did not exit.\n${canvas.output()}`)),
+						() => reject(new Error(`Runtime-error server did not exit.\n${server.output()}`)),
 						TEST_SERVER_CHILD_EXIT_TIMEOUT_MS,
 					),
 				),
@@ -353,7 +353,7 @@ test(
 			}
 			await waitForProcessExit(childPid);
 			expect(processExists(childPid)).toBeFalse();
-			expect(canvas.output()).toContain("Canvas HTTP server failed");
+			expect(server.output()).toContain("HTTP server failed");
 		} finally {
 			await resources.disposeAsync();
 		}

@@ -1,5 +1,5 @@
 // The playback stage: the remote stream is built from the peer's receivers
-// and offered to the host's element, the output meter is built over that same
+// and offered to the element the server hands over, the output meter is built over that same
 // remote stream, and the run publishes listening.
 
 import { detachRemote, errorMessage } from "@/ui/codex-realtime/lib/run";
@@ -57,7 +57,7 @@ function startPlayback(controller: RunController, run: Run, element: HTMLMediaEl
  * Attaches the remote stream to one element and starts playback.
  * @param controller The session.
  * @param run The run.
- * @param element The host's media element.
+ * @param element The media element the server handed over.
  */
 function attachElement(controller: RunController, run: Run, element: HTMLMediaElement): void {
 	const stream = run.remoteStream;
@@ -80,7 +80,7 @@ function attachElement(controller: RunController, run: Run, element: HTMLMediaEl
 }
 
 /**
- * Builds the remote stream from the peer's receivers and offers it to the host.
+ * Builds the remote stream from the peer's receivers and offers it to the server.
  * @param controller The session.
  * @param run The run.
  */
@@ -95,10 +95,10 @@ function attachRemote(controller: RunController, run: Run): void {
 	if (controller.inactive(run)) {
 		return;
 	}
-	controller.host.attachRemoteMedia({
+	controller.server.attachRemoteMedia({
 		...run.correlation,
 		/**
-		 * Attaches the remote stream to the host's element.
+		 * Attaches the remote stream to the element the server handed over.
 		 * @param element The element.
 		 */
 		attachTo: (element) => {
@@ -163,7 +163,7 @@ async function followPlayback(controller: RunController, run: Run): Promise<void
 }
 
 /**
- * Offers the remote stream to the host, failing the run when that throws.
+ * Offers the remote stream to the server, failing the run when that throws.
  * @param controller The session.
  * @param run The run.
  * @returns The settled snapshot, or null to continue.

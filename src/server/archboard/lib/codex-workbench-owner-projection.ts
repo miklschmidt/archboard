@@ -45,7 +45,7 @@ interface ServerOwnerProjectionInput {
 /**
  * Whether the controller's current binding is the link this pane shows: the
  * same link revision and the same target. Which pane created it does not
- * matter, since every pane of a canvas shows the one link.
+ * matter, since every pane of a server shows the one link.
  * @param binding The controller's binding.
  * @param context The pane being read.
  * @returns True when they are the same binding.

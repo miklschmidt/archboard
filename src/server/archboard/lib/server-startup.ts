@@ -41,7 +41,7 @@ type ServerLifetime = ReturnType<typeof createServerApplicationLifetime>;
 let serverLifetime: ServerLifetime | null = null;
 
 /**
- * Which phase the canvas lifetime is in, for the health report.
+ * Which phase the server lifetime is in, for the health report.
  * @returns The phase, or "idle" before the lifetime exists.
  */
 function serverPhase(): ReturnType<ServerLifetime["phase"]> | "idle" {
@@ -49,7 +49,7 @@ function serverPhase(): ReturnType<ServerLifetime["phase"]> | "idle" {
 }
 
 /**
- * Whether a stop failure is one the canvas recovers from by staying up.
+ * Whether a stop failure is one the server recovers from by staying up.
  * @param error The failure.
  * @returns True for a busy refusal.
  */
@@ -63,7 +63,7 @@ function isRecoverableServerStopError(error: unknown): boolean {
  * @param error The failure.
  */
 function reportServerStopError(error: unknown): void {
-	const message = `Canvas shutdown refused or failed: ${messageOf(error)}`;
+	const message = `Archboard server shutdown refused or failed: ${messageOf(error)}`;
 	if (isRecoverableServerStopError(error)) {
 		logger.error(message);
 	} else {
@@ -74,7 +74,7 @@ function reportServerStopError(error: unknown): void {
 
 /**
  * Refuse to start without a vault (ADR 0015). Every board is a note, so a
- * canvas without a vault has nowhere to put anything, and the failure it used
+ * server without a vault has nowhere to put anything, and the failure it used
  * to produce came later and cost more: the canvas opened, somebody drew on it,
  * and the drawing turned out to have been nowhere all along.
  *
@@ -93,7 +93,7 @@ function vaultRefusal(): string | null {
 }
 
 /**
- * Refuse to start beside a canvas already listening on the other loopback
+ * Refuse to start beside a server already listening on the other loopback
  * address, which would split state between an IPv4 and an IPv6 server.
  * @returns The refusal, or null when the port is free on both.
  */
@@ -169,7 +169,7 @@ function processHandlers(
 	terminal: StartupTerminal,
 ): ProcessHandlers {
 	let runtimeServerStop: Promise<void> | null = null;
-	/** Stop the canvas after an HTTP runtime error, failing the process. */
+	/** Stop the server after an HTTP runtime error, failing the process. */
 	const stopServerAfterHttpError = async (): Promise<void> => {
 		const lifetime = lifetimeOf();
 		try {
@@ -184,7 +184,7 @@ function processHandlers(
 		}
 	};
 	/**
-	 * Stop the canvas on a signal, exiting cleanly unless a stop failed.
+	 * Stop the server on a signal, exiting cleanly unless a stop failed.
 	 * @param signal The signal.
 	 */
 	const stopServerAfterSignal = async (signal: NodeJS.Signals): Promise<void> => {
@@ -221,7 +221,7 @@ function processHandlers(
 			}
 		},
 		/**
-		 * Stop the canvas after an HTTP error while it was running, once.
+		 * Stop the server after an HTTP error while it was running, once.
 		 * @param error The failure.
 		 */
 		onRuntimeError: (error) => {
@@ -235,7 +235,7 @@ function processHandlers(
 }
 
 /**
- * Build the lifetime: every resource the canvas owns, in start order, with
+ * Build the lifetime: every resource the server owns, in start order, with
  * how each stops.
  * @param http The HTTP ownership.
  * @param handlers The process handlers.
@@ -273,9 +273,9 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				return;
 			}
 			if (action === "force") {
-				logger.warn(`Canvas lifetime forcing stop: ${resource}`);
+				logger.warn(`Archboard server lifetime forcing stop: ${resource}`);
 			} else {
-				logger.debug(`Canvas lifetime ${action}: ${resource}`);
+				logger.debug(`Archboard server lifetime ${action}: ${resource}`);
 			}
 		},
 		resources: [
@@ -293,7 +293,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 			},
 			{
 				name: "process-signals",
-				/** Listen for the signals that stop the canvas. */
+				/** Listen for the signals that stop the server. */
 				start: () => {
 					process.on("SIGTERM", handlers.onTerm);
 					process.on("SIGINT", handlers.onInterrupt);
@@ -378,7 +378,7 @@ function cleanupProvenBeforeResourceAcquisition(): boolean {
 }
 
 /**
- * Start the canvas: refuse without a vault or beside a duplicate listener,
+ * Start the server: refuse without a vault or beside a duplicate listener,
  * then run every resource through the lifetime.
  */
 async function startServer(): Promise<void> {
@@ -406,7 +406,7 @@ async function startServer(): Promise<void> {
 	 */
 	const lifetimeOf = (): ServerLifetime => {
 		if (lifetime === null) {
-			throw new Error("The canvas lifetime is not built yet.");
+			throw new Error("The server lifetime is not built yet.");
 		}
 		return lifetime;
 	};

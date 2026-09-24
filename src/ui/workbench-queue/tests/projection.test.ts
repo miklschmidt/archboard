@@ -262,7 +262,7 @@ describe("workbench queue states", () => {
 			// The recovery has to agree with the control: the socket is up, so a
 			// refresh is reachable, and it is what recovers this.
 			expect(view.recovery).toBe(
-				"Refresh the list once the host's Codex session is running again.",
+				"Refresh the list once the Archboard server's Codex session is running again.",
 			);
 			expect(view.list.enabled).toBe(true);
 			expect(view.stale).toBe(true);
@@ -295,7 +295,7 @@ describe("workbench queue states", () => {
 		expect(overSocketLoss.list.enabled).toBe(false);
 	});
 
-	test("every readiness arm the host can publish has its own queue state", () => {
+	test("every readiness arm the server can publish has its own queue state", () => {
 		const arms = [
 			["stopped", "session_stopped"],
 			["backoff", "reconnecting"],
@@ -395,10 +395,10 @@ describe("workbench queue correlation and controls", () => {
 		});
 
 		expect(unsupported.entries[0]?.cancel.reason).toBe(
-			"The host is not accepting queue delete commands for this link.",
+			"The Archboard server is not accepting queue delete commands for this link.",
 		);
 		expect(unsupported.entries[0]?.moveLater.reason).toBe(
-			"The host is not accepting queue reorder commands for this link.",
+			"The Archboard server is not accepting queue reorder commands for this link.",
 		);
 		expect(unsupported.entries[0]?.edit.enabled).toBe(true);
 		expect(untargeted.add.reason).toBe("A browser command lease is required.");

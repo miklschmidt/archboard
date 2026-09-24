@@ -12,7 +12,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 	const steers: unknown[] = [];
 	const contexts: unknown[] = [];
 	// Both mutations read the authoritative thread first, so the fake reports the
-	// thread the host would actually see: idle for the start, running for the steer.
+	// thread the server would actually see: idle for the start, running for the steer.
 	let activeTurns: readonly { readonly id: unknown; readonly status: string }[] = [];
 	const session = {
 		turnStart: async (params: unknown) => {

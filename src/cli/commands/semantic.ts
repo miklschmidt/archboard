@@ -1,7 +1,7 @@
 // The agent's way into a semantic board (ADR 0023).
 //
 // Four commands: make one, change one, read one, draw one. Every change goes to
-// the running canvas, which is the process that can take the board's lease,
+// the running Archboard server, which is the process that can take the board's lease,
 // check the version, write the aggregate and then tell the panes — writing the
 // file from here would get the first three and leave every pane on screen
 // showing the board as it was.

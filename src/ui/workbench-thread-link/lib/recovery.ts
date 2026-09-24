@@ -1,5 +1,5 @@
 // One recovery a person may take, with the owner that can actually perform
-// it: the transport, the host where Archboard runs, or nobody.
+// it: the transport, the Archboard server, or nobody.
 
 import type {
 	ThreadLinkRecovery,
@@ -112,9 +112,9 @@ const TRANSPORT_AVAILABILITY: Record<
 };
 
 /**
- * Whether an intent is one the host performs where Archboard runs.
+ * Whether an intent is one the server performs.
  * @param intent The intent.
- * @returns True for the four host intents.
+ * @returns True for the four server intents.
  */
 function isServerIntent(
 	intent: ThreadLinkRecoveryIntent,
@@ -126,7 +126,7 @@ function isServerIntent(
  * One recovery, with its owner.
  * @param intent The intent.
  * @param capabilities The transport capabilities.
- * @param serverRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The recovery.
  */
 function threadLinkRecovery(
@@ -143,7 +143,7 @@ function threadLinkRecovery(
 			description: available
 				? text.description
 				: `${text.description} Do this where Archboard is running.`,
-			owner: available ? "host" : "none",
+			owner: available ? "server" : "none",
 			available,
 		});
 	}

@@ -1,6 +1,6 @@
 // How the workbench rides a pane's socket: pane-report sequencing, the
 // registration latch, and the owner that keeps one transport generation and
-// one media generation together per socket. The canvas session remains the
+// one media generation together per socket. The pane session remains the
 // only owner that can close the actual socket.
 
 import {
@@ -18,7 +18,7 @@ interface PaneReportRequest {
 }
 
 /**
- * The authoritative pane registration acknowledgement for one canvas socket.
+ * The authoritative pane registration acknowledgement for one pane socket.
  * A negative acknowledgement deliberately leaves the promise pending: the pane
  * report path recovers it on a later report without a second retry loop.
  */
@@ -312,7 +312,7 @@ async function quietly(step: () => Promise<unknown>): Promise<void> {
 
 /**
  * Keep socket generation, transport generation, and media generation together.
- * Retiring a transport only removes its listeners and pending work; the canvas
+ * Retiring a transport only removes its listeners and pending work; the pane
  * session remains the only owner that closes the actual socket.
  * @param options The media owner and the transport factory.
  * @returns The owner.
@@ -335,8 +335,8 @@ function createPaneWorkbenchSocketOwner<Transport extends WorkbenchTransportPort
 		}
 		return stoppedState(
 			disposed
-				? "The canvas workbench socket owner is disposed."
-				: "No canvas workbench socket is attached.",
+				? "The pane's workbench socket owner is disposed."
+				: "No pane workbench socket is attached.",
 		);
 	}
 
@@ -450,7 +450,7 @@ function createPaneWorkbenchSocketOwner<Transport extends WorkbenchTransportPort
 	async function attach(socket: PaneSocket): Promise<WorkbenchTransportState> {
 		const request = ++latestAttach;
 		if (disposed) {
-			return stoppedState("The canvas workbench socket owner is disposed.");
+			return stoppedState("The pane's workbench socket owner is disposed.");
 		}
 		const previous = active;
 		if (previous?.socket === socket && !previous.retired) {

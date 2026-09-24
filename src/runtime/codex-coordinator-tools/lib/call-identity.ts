@@ -274,8 +274,8 @@ function assertCallMatchesRequest(
 
 /**
  * Decode the logical call and check that it belongs to this request, matches the app-server's
- * tool-call fields, carries the reviewed manifest hash and is the call the host is executing now.
- * @param options - The dispatcher options carrying the identity and host authorities.
+ * tool-call fields, carries the reviewed manifest hash and is the call the server is executing now.
+ * @param options - The dispatcher options carrying the identity and server authorities.
  * @param request - The dynamic request from the transport.
  * @returns The decoded logical call.
  */

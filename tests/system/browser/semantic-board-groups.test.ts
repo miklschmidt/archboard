@@ -61,10 +61,10 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 			groups: { fulfillment: { name: "Fulfillment" }, billing: { name: "Billing" } },
 		}),
 	);
-	const canvas = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerServerBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	// Fulfillment crosses two services; the worker inside Shipping is also
 	// Billing's; the ledger is Billing's alone; the gateway belongs to nothing.
@@ -100,7 +100,7 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 	const before = readFileSync(join(vault, "orders.semantic.json"), "utf8");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=orders`]);
+	await browser.run(["open", `${server.base}/?paneA=orders`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	// At rest: an arriving picture fades its cards in, and what is under test is
 	// which of them the inspection lets recede.
@@ -204,5 +204,5 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 
 	// Nothing a person did in the browser wrote a board.
 	expect(readFileSync(join(vault, "orders.semantic.json"), "utf8")).toBe(before);
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 60_000);

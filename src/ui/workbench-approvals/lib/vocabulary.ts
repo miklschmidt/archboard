@@ -1,5 +1,5 @@
 // The words of the approvals surface: family titles and kickers, phase
-// labels, the host's spoken-eligibility vocabulary in human words, and the
+// labels, the server's spoken-eligibility vocabulary in human words, and the
 // transport's refusals.
 
 import type { BrowserApproval } from "@/shared/codex-browser-model";
@@ -63,7 +63,7 @@ const TERMINAL_PHASES: ReadonlySet<WorkbenchApprovalPhase> = new Set([
 	"outcome_unknown",
 ]);
 
-/** The host's own spoken-eligibility vocabulary, said in human words. */
+/** The server's own spoken-eligibility vocabulary, said in human words. */
 const SPOKEN_REASONS = {
 	eligible: "This is a plain accept or decline, so it may also be answered by voice.",
 	not_pending: "Visual only: this request is no longer waiting for a decision.",
@@ -74,7 +74,8 @@ const SPOKEN_REASONS = {
 	url: "Visual only: this request hands over a URL.",
 	permission_scope: "Visual only: this request asks for a scoped permission grant.",
 	coordinator_blocking: "Visual only: answering this would block the voice coordinator.",
-	unsupported_schema: "Visual only: the host could not reduce this request to a spoken effect.",
+	unsupported_schema:
+		"Visual only: the Archboard server could not reduce this request to a spoken effect.",
 	broader_grant: "Visual only: one of the offered decisions grants more than this one action.",
 	not_binary: "Visual only: this request is not a plain accept or decline.",
 } as const satisfies Record<BrowserApproval["spoken"]["reason"], string>;
@@ -106,12 +107,12 @@ const TRANSPORT_REFUSALS: ReadonlyMap<string, string> = new Map([
 	["socket_unavailable", "The workbench lost its connection before the decision was sent."],
 	[
 		"incompatible_contract",
-		"The host answered with a workbench contract this browser cannot read.",
+		"The Archboard server answered with a workbench contract this browser cannot read.",
 	],
-	["response_lost", "The host never answered, so the decision's outcome is unknown."],
+	["response_lost", "The Archboard server never answered, so the decision's outcome is unknown."],
 ]);
 
-const GENERIC_REFUSAL = "The host refused this decision.";
+const GENERIC_REFUSAL = "The Archboard server refused this decision.";
 
 /**
  * The words for a refusal code.
@@ -123,8 +124,8 @@ function refusalMessage(code: string): string {
 }
 
 /**
- * The words for the host's spoken-eligibility reason.
- * @param reason The host's reason.
+ * The words for the server's spoken-eligibility reason.
+ * @param reason The server's reason.
  * @returns The detail.
  */
 function spokenDetail(reason: BrowserApproval["spoken"]["reason"]): string {

@@ -142,7 +142,7 @@ test(
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
 
-		const canvas = await startOwnedServer({
+		const server = await startOwnedServer({
 			serverPath,
 			vault,
 			env: serverTestEnvironment({
@@ -151,17 +151,17 @@ test(
 				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
 			}),
 		});
-		resources.defer(() => canvas.dispose());
-		registerServerBase(canvas.base);
+		resources.defer(() => server.dispose());
+		registerServerBase(server.base);
 		const browser = resources.use(await createAgentBrowser());
-		const api = createJsonRequester(canvas);
+		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
 
 		await seedSemanticBoard(api, "workbench");
-		await browser.run(["open", canvas.base]);
+		await browser.run(["open", server.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
-		runServerCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		runServerCli(server.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
 			(value) => value.panes === 1 && value.board === "workbench" && value.drawn,
@@ -213,7 +213,7 @@ test(
 		expect(provider.find(({ active }) => active)?.url).toBe(LOGIN_URL);
 		await browser.run(["tab", "close"]);
 		expect(
-			(await browserTabs(browser)).map(({ active, url }) => active && url.startsWith(canvas.base)),
+			(await browserTabs(browser)).map(({ active, url }) => active && url.startsWith(server.base)),
 		).toEqual([true]);
 
 		// The message waits on the sign-in it started; nothing reaches a thread yet.

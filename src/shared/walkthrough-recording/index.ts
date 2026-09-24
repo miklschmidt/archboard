@@ -1,7 +1,7 @@
 // A recording of one walkthrough, as the page that records it and the command
 // that drives the page agree on it (TASK-304).
 //
-// The page is the canvas's own page, opened on one board with one more search
+// The page is the Archboard server's own page, opened on one board with one more search
 // parameter naming the walkthrough to record, which it reads once as it loads.
 // It shows that board's pane and nothing else, and it paces the talk itself:
 // the position in a walkthrough is the browser's (ADR 0023), and the page is

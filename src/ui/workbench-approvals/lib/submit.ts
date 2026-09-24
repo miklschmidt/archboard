@@ -1,7 +1,7 @@
 // Sending one decision. It goes out on the transport's captured-target
 // command, so a workbench that navigated between reading the request and
 // answering it is refused rather than retargeted. This module never writes a
-// protocol response or mutates host state; the gateway and its broker own both.
+// protocol response or mutates server state; the gateway and its broker own both.
 
 import type { DeliveryOutcome } from "@/shared/codex-browser-model";
 import type {
@@ -18,10 +18,10 @@ import type {
 } from "@/ui/workbench-approvals/transport-port";
 
 const SENT_MESSAGES = {
-	delivered: "The host delivered your decision.",
-	not_delivered: "The host could not deliver your decision, so nothing was executed.",
+	delivered: "The Archboard server delivered your decision.",
+	not_delivered: "The Archboard server could not deliver your decision, so nothing was executed.",
 	outcome_unknown:
-		"The host lost the answer, so the outcome is unknown. Archboard never retries an unknown mutation.",
+		"The Archboard server lost the answer, so the outcome is unknown. Archboard never retries an unknown mutation.",
 } as const satisfies Record<DeliveryOutcome, string>;
 
 const NO_TARGET =

@@ -32,7 +32,7 @@ type PresentRefusal =
 	| "person_took_over"
 	/** The pane never said the step arrived. */
 	| "timeout"
-	/** The canvas is stopping. */
+	/** The server is stopping. */
 	| "stopping";
 
 /** How asking a pane for a step ended. */
@@ -44,7 +44,7 @@ type PresentOutcome =
 interface PresentInput {
 	/**
 	 * The pane, by its client id: exact, where a shell id ("A") is one a second browser on the
-	 * same canvas presents a pane of too.
+	 * same server presents a pane of too.
 	 */
 	readonly clientId: string;
 	/** The walkthrough to present. */
@@ -82,7 +82,7 @@ interface PresentablePane {
 	readonly board: string;
 }
 
-/** What the port needs of the canvas around it. */
+/** What the port needs of the server around it. */
 interface PanePresentationParts {
 	/**
 	 * The live pane with that client id, showing a board.
@@ -123,7 +123,7 @@ interface PanePresentations {
 	 * @returns Stops listening.
 	 */
 	readonly onUserChange: (listener: (change: UserPresentationChange) => void) => () => void;
-	/** Refuse every unanswered request and forget every position: the canvas is stopping. */
+	/** Refuse every unanswered request and forget every position: the server is stopping. */
 	readonly forget: () => void;
 }
 
@@ -277,7 +277,7 @@ function noteReport(ledger: PresentationLedger, report: SemanticPaneContext): vo
 }
 
 /**
- * The port over one canvas's panes.
+ * The port over one server's panes.
  * @param parts How to find a pane and how to send to it.
  * @returns The port.
  */
@@ -337,7 +337,7 @@ function createPanePresentations(parts: PanePresentationParts): PanePresentation
 	};
 }
 
-/** This canvas's port, over the pane registry. */
+/** This server's port, over the pane registry. */
 const panePresentations = createPanePresentations({
 	// By the pane's own client id and nothing looser: a narrator is linked to one pane in one
 	// browser, "the only pane on screen" is not that pane once it has gone, and a second

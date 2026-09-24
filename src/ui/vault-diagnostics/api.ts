@@ -5,8 +5,8 @@ const REPAIR_INSTRUCTIONS =
 	"Repair clear configuration and board issues reported by the checker. Ask me when a repair is ambiguous. Use ordinary board claims and version checks for all board writes; do not bypass them. Run the checker again after repairs and report any remaining diagnostics.";
 
 /**
- * The repair request, addressed to the canvas this browser shows.
- * @param serverUrl The canvas origin.
+ * The repair request, addressed to the server this browser shows.
+ * @param serverUrl The server's origin.
  * @returns The message for the agent.
  */
 function vaultRepairRequest(serverUrl: string): string {

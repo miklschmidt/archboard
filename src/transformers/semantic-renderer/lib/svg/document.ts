@@ -9,7 +9,7 @@
 // viewer toggles.
 //
 // There is no script in the document. In `linked` mode it refers to the four
-// font files the canvas serves and to nothing else; in `embedded` mode it
+// font files the Archboard server serves and to nothing else; in `embedded` mode it
 // refers to nothing at all.
 
 import { coord, type Canvas } from "@/transformers/semantic-renderer/lib/geometry";

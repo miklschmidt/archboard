@@ -13,7 +13,7 @@ import type { BrowserConnectionInstance } from "@/server/archboard/codex-workben
 import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@/server/codex-workbench";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
-// is the board and the canvas holds no copy of one (ADR 0015, ADR 0023).
+// is the board and the server holds no copy of one (ADR 0015, ADR 0023).
 //
 // Session and display state answers "what is on this screen, now": the sockets
 // below, `clientIds`, `panes`, `paneBoards`, the `pending*` sets and the Codex
@@ -208,7 +208,7 @@ function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean 
 /**
  * Watch the lock files of the boards on screen, while there is a screen.
  *
- * The lock broadcast reaches the panes of this canvas. A second canvas over
+ * The lock broadcast reaches the panes of this server. A second server over
  * the same vault cannot be told anything, because the lock is a file, so its
  * panes would learn about a claim at the write rather than before the touch —
  * for a claim that runs minutes, that is minutes of a pane letting somebody
@@ -217,7 +217,7 @@ function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean 
  *
  * Only while a tab is connected: a pane exists while something renders it, and
  * with nothing rendering there is nobody to be wrong. Called on every
- * connection and every close, so the cost is paid by a canvas somebody is
+ * connection and every close, so the cost is paid by a server somebody is
  * looking at and by no other.
  */
 function syncLockWatch(): void {
@@ -471,16 +471,16 @@ function notePaneClosed(clientId: string): void {
 }
 
 /**
- * Fail every layout request still waiting, because the canvas is stopping.
+ * Fail every layout request still waiting, because the server is stopping.
  */
 function rejectPendingLayouts(): void {
 	for (const pending of pendingPaneOpens) {
 		clearTimeout(pending.timeout);
-		pending.reject(new Error("Canvas stopped before the pane opened."));
+		pending.reject(new Error("The Archboard server stopped before the pane opened."));
 	}
 	for (const pending of pendingPaneCloses) {
 		clearTimeout(pending.timeout);
-		pending.reject(new Error("Canvas stopped before the pane closed."));
+		pending.reject(new Error("The Archboard server stopped before the pane closed."));
 	}
 	pendingPaneOpens.clear();
 	pendingPaneCloses.clear();
@@ -521,7 +521,7 @@ async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Prom
 }
 
 /**
- * Forget every socket and pane this process was holding, because the canvas is
+ * Forget every socket and pane this process was holding, because the server is
  * stopping and there is no screen any more.
  */
 function forgetDisplay(): void {
@@ -576,7 +576,7 @@ export type { PendingPaneClose, PendingPaneOpen };
 const broadcastObservers = new Set<(message: WebSocketMessage, board: string) => void>();
 
 /**
- * Watch every board announcement this canvas makes.
+ * Watch every board announcement this server makes.
  *
  * For a reader that needs to know what the panes were told without being a
  * pane: the agent's context, which must never be able to disagree with what is

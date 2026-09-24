@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { targetedVariant } from "@/cli/commands/semantic";
 
 // Which variant a write lands on, where the command line and the stated change
-// both get to say it. The canvas suite owns what lands where; what is owned
+// both get to say it. The server suite owns what lands where; what is owned
 // here is the rule itself, on every branch of it: the flag always decides, and
 // it is spoken about exactly when it overrode something somebody else wrote.
 

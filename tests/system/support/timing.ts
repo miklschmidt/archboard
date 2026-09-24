@@ -75,7 +75,7 @@ const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1000;
 /** Bounds both retained parent-SIGTERM owners while they join cleanup before replaying the signal. */
 const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
 
-/** Canvas identity startup stays below TEST_SERVER_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
+/** Server identity startup stays below TEST_SERVER_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
 const TEST_SERVER_STARTUP_TIMEOUT_MS = 15_000;
 
 /**
@@ -109,7 +109,7 @@ const TEST_SERVER_SHUTDOWN_TIMEOUT_MS = 1000;
 /**
  * Outer threshold for one lifecycle proof subprocess, from spawn through cleanup.
  *
- * It clears startup, owner shutdown, and post-`canvas stop` PID observation
+ * It clears startup, owner shutdown, and post-`archboard stop` PID observation
  * beyond the server's 2,000 ms forced-exit fallback. A stuck proof therefore
  * fails with its PID and mode instead of hanging the whole board suite.
  */
@@ -127,7 +127,7 @@ const TEST_VAULT_CLI_TIMEOUT_MS = 20_000;
  */
 const TEST_RECORDING_CLI_MS = 90_000;
 
-/** The recording case: the command's bound, and the canvas's start and disposal around it. */
+/** The recording case: the command's bound, and the server's start and disposal around it. */
 const TEST_RECORDING_CASE_MS = TEST_RECORDING_CLI_MS + 30_000;
 
 /**

@@ -70,7 +70,7 @@ type CoordinatorToolCoordinatorAuthority = Pick<
 >;
 
 /**
- * Host facts for the executing coordinator call and its bound workhorse.
+ * Server facts for the executing coordinator call and its bound workhorse.
  * None of these values are accepted from dynamic-tool arguments.
  */
 interface CoordinatorToolAuthorityPort {
@@ -149,7 +149,7 @@ interface CoordinatorReplayStateSnapshot {
 type CoordinatorToolLifecycleCause =
 	| "call_cancelled"
 	| "caller_turn_interrupted"
-	| "host_shutdown"
+	| "server_shutdown"
 	| "browser_disconnect"
 	| "child_disconnect";
 

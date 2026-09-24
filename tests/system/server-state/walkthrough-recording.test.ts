@@ -1,4 +1,4 @@
-// Recording a walkthrough end to end (TASK-304): `archboard semantic record` against a real canvas
+// Recording a walkthrough end to end (TASK-304): `archboard semantic record` against a real Archboard server
 // whose Codex is the production fixture, narrating, in a real headless Chromium running the real
 // page. Only the voice is fake: it answers the browser's WebRTC offer with an answer nobody
 // connects to, and speaks one line about every step it is handed.
@@ -47,7 +47,7 @@ test(
 		try {
 			const fixture = prepareProductionFixture(resources, executableSource);
 			writeFileSync(fixture.controlPath, JSON.stringify({ narrates: true }));
-			const canvas = await startOwnedServer({
+			const server = await startOwnedServer({
 				serverPath,
 				vault: fixture.vault,
 				env: {
@@ -57,8 +57,8 @@ test(
 					XDG_STATE_HOME: join(fixture.root, "state"),
 				},
 			});
-			resources.defer(() => canvas.dispose());
-			const request = createRequester(canvas);
+			resources.defer(() => server.dispose());
+			const request = createRequester(server);
 			// Another board first, so a new pane's first board is not the one recorded: the
 			// recording page has to ask for its board by its own client id.
 			const other = await request("/api/semantic-boards/create", {
@@ -109,7 +109,7 @@ test(
 					env: {
 						...process.env,
 						ARCHBOARD_VAULT: fixture.vault,
-						ARCHBOARD_URL: canvas.base,
+						ARCHBOARD_URL: server.base,
 						ARCHBOARD_NO_AUTOSTART: "1",
 					},
 				},

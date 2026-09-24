@@ -42,7 +42,7 @@ function waitOwnerFor(h: TerminalIdentities, target: string): DynamicWaitOwner {
 	};
 }
 
-/** One lifecycle owner whose host wait never settles, with its observed counters. */
+/** One lifecycle owner whose server wait never settles, with its observed counters. */
 function waitProbe(h: TerminalIdentities, graph: CodexWaitGraph) {
 	const counters = { serverCalls: 0, aborts: 0 };
 	const owner = createServerDynamicLifecycleOwner({

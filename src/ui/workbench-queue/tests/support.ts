@@ -130,7 +130,7 @@ function executableLink(overrides: Partial<ExecutableLink> = {}): BrowserThreadL
 
 /**
  * An inspect-only link to the workhorse.
- * @param reason The host's reason.
+ * @param reason The server's reason.
  * @returns The link.
  */
 function inspectOnlyLink(reason: string): BrowserThreadLink {
@@ -299,7 +299,7 @@ function stopped(reason = "No Codex workbench socket is attached."): WorkbenchTr
 /**
  * Transport capabilities.
  * @param overrides Fields that differ.
- * @param unsupported Commands the host refuses.
+ * @param unsupported Commands the server refuses.
  * @returns The capabilities.
  */
 function capabilities(
@@ -311,7 +311,7 @@ function capabilities(
 		readiness: "thread_capable",
 		...overrides,
 		/**
-		 * Whether the host accepts a command.
+		 * Whether the server accepts a command.
 		 * @param name The command.
 		 * @returns True unless the fixture refuses it.
 		 */

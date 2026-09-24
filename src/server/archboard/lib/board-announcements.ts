@@ -1,4 +1,4 @@
-// What the canvas tells its panes about a board: who is writing it, and what
+// What the Archboard server tells its panes about a board: who is writing it, and what
 // they said they were doing.
 //
 // Board content is not here and cannot be. A board is a file the server reads,

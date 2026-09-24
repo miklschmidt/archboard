@@ -73,7 +73,7 @@ test("a discard removes the whole board, and a later read and discard find it mi
 	expect(again).toMatchObject({ outcome: "rejected", code: "BOARD_MISSING" });
 });
 
-test("a discard under this canvas's claim ends the claim with the board", async () => {
+test("a discard under this server's claim ends the claim with the board", async () => {
 	await create("claimed");
 	const key = store.locateSemanticBoard("claimed").key;
 	const { claim } = await lock.claimBoard({ board: key, reason: "recording the walkthrough" });

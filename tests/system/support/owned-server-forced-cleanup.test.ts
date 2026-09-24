@@ -12,7 +12,7 @@ const group = (pid: number): CodexProcessGroupIdentity => ({
 	leaderStartTime: `start-${pid}`,
 });
 
-describe("owned canvas forced cleanup", () => {
+describe("owned server forced cleanup", () => {
 	test("waits through a transient unproven census before signalling an owned group", async () => {
 		const descendant = group(99);
 		const inspections: Array<"unproven" | "owned" | "quiescent"> = [
@@ -128,7 +128,7 @@ describe("owned canvas forced cleanup", () => {
 		expect(surfaced.errors[0]).toBe(parentFailure);
 		expect(surfaced.errors[1]).toMatchObject({
 			message:
-				"Owned canvas child group 303 did not become quiescent after forced canvas death (unproven).",
+				"Owned server child group 303 did not become quiescent after forced server death (unproven).",
 		});
 		expect(descendantInspections).toBeGreaterThan(0);
 		expect(descendantSignals).toBe(0);

@@ -94,7 +94,7 @@ interface DiagramRenderRequest {
 	readonly theme: DiagramTheme;
 	/**
 	 * Where the drawn faces come from. Defaults to `"linked"`, which points at
-	 * the files the canvas serves — a few kilobytes, and what a pane wants.
+	 * the files the Archboard server serves — a few kilobytes, and what a pane wants.
 	 * `"embedded"` carries the faces in the document, which is what a file
 	 * somebody keeps needs and costs about half a megabyte.
 	 */

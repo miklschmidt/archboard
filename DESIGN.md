@@ -59,17 +59,17 @@ There is no hook process, hook trust grant or second context diff.
 ### 2. Mid-conversation context — the bound app-server session
 
 The workbench owns one private stdio app-server child and one thread link from
-the canvas to its workhorse, made by the first message or Talk; that link is
+the Archboard server to its workhorse, made by the first message or Talk; that link is
 the only automatic target for semantic board updates. Archboard never inspects recent activity, reads an
 environment-selected thread, or connects a second client. The child runs in an
 Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with one sign-in, shared by
-the canvases on the machine, and each canvas's own epoch manifest outside Codex
+the Archboard servers on the machine, and each server's own epoch manifest outside Codex
 storage makes every thread its current child does not own inspect-only: an operational boundary against cold resume of persisted dynamic
 tools, not protection against a process pointed at those paths on purpose.
 
 The change feed settles a user's gesture, discards visual noise and renders
 a compact semantic delta. Immediately before delivery Archboard revalidates the
-child, epoch, canvas link, loaded membership, controllability, thread status,
+child, epoch, thread link, loaded membership, controllability, thread status,
 semantic cursor and origin. A human or mixed-origin layout or structural update
 gets one `thread/inject_items` attempt on the same owned connection: one
 developer message with one `input_text` part, entering model-visible history
@@ -118,7 +118,7 @@ came back to it as news. With no voice session nothing is sent
 (`voice_inactive`).
 
 Realtime voice attaches to a persistent fast coordinator thread linked to the
-canvas's workhorse, not to the workhorse itself, so quick questions, lookups and
+Archboard server's workhorse, not to the workhorse itself, so quick questions, lookups and
 immediate board interaction stay responsive while a heavier turn continues. The
 coordinator starts with `project_doc_max_bytes: 0`, so the checkout's `AGENTS.md`,
 which is written for an agent working in the repository, never reaches it. The
@@ -160,7 +160,7 @@ After explaining a step the voice waits for the user. The position stays the
 browser's: the pane is asked once, and its report is the acknowledgement.
 
 A recording (TASK-304, ADR 0035) is a narration nobody is at the controls of.
-`archboard semantic record` opens the canvas page with `?record=<walkthrough>`
+`archboard semantic record` opens the Archboard server's page with `?record=<walkthrough>`
 in a private headless Chromium: the page shows the one pane at 1920x1080,
 captures its own tab and mixes the voice's WebRTC stream into the same file.
 It starts voice with `presentation.recording`, which gives the voice model its
@@ -173,8 +173,8 @@ voice model as speech by the same path as a step chosen by hand. The page moves
 on once every line the voice said about the step is final and its measured
 output has been quiet for a moment, because a final line can come before its
 audio has finished playing. A recording start is refused while voice is live on
-the canvas, and every wait in it is bounded and fails with the reason. The
-recording page's pane registers as a recording's, which the canvas leaves out
+the server, and every wait in it is bounded and fails with the reason. The
+recording page's pane registers as a recording's, which the server leaves out
 of pane addressing and which other browsers do not subtitle.
 
 ### 3. On-demand query — CLI
@@ -200,7 +200,7 @@ cycles. Remote access must tunnel over SSH or run without the workbench.
 Every Codex thread runs in the auto-review mode of Codex, which the
 `config.toml` that Archboard writes sets. Its sandbox can write the workspace
 and reach the network, because every archboard command that an agent runs
-reaches the canvas over loopback. When the sandbox refuses a command, Codex
+reaches the Archboard server over loopback. When the sandbox refuses a command, Codex
 gives it to its reviewer subagent, which approves or denies it. Codex does not
 ask the user.
 
