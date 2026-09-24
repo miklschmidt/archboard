@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 7,
+	"version": 8,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-09-24T01:47:28.163Z",
+	"updatedAt": "2026-09-24T09:33:35.926Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -16,12 +16,14 @@
 			"scope": {
 				"kind": "selection",
 				"nodes": [
+					"peyArgPx",
 					"vAQwlVuz",
 					"iIVu1bGE",
 					"PQcK5dF2",
 					"E2MAq7W7",
 					"cWbvcIYa",
 					"OfRn3av3",
+					"iIJ5MRhi",
 					"MUs4pwRq"
 				],
 				"edges": [],
@@ -32,7 +34,7 @@
 			"id": "36hDtNB5",
 			"name": "What the CLI can be asked",
 			"grammar": "architecture",
-			"summary": "The command groups, and the one client they all speak through.",
+			"summary": "Every command group, and the two clients the ones that reach the Archboard server speak through.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -40,12 +42,20 @@
 					"cWbvcIYa",
 					"eOsn0BO4",
 					"e8DKQF2E",
+					"gQ3aPXau",
 					"69392DWF",
+					"4oWqpsOB",
+					"7QFtvP30",
+					"cw2FjFYV",
 					"yQCdykGt",
 					"qBnro8cs",
 					"vn4RDLH9",
 					"fOJvfmZv",
-					"OfRn3av3"
+					"2KmUovkl",
+					"jAKtfzMA",
+					"XgeEM0Pb",
+					"OfRn3av3",
+					"iIJ5MRhi"
 				],
 				"edges": [],
 				"flows": []
@@ -104,7 +114,7 @@
 						"order": 4000,
 						"name": "Contract execution",
 						"kind": "module",
-						"responsibility": "Checks a command's prerequisites, runs its contract and presents the answer",
+						"responsibility": "Parses and validates a command's input, runs its handler with the prerequisites it asks for, and presents the answer",
 						"description": "runner.ts is the seam callers import; the steps live here.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -116,7 +126,7 @@
 						"order": 5000,
 						"name": "Semantic authoring",
 						"kind": "module",
-						"responsibility": "new, edit, branch and show: the commands that state a board",
+						"responsibility": "The board list, new, edit, branch and show: the commands that state a board and read it back",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic.ts"
@@ -125,9 +135,9 @@
 					{
 						"id": "OfRn3av3",
 						"order": 6000,
-						"name": "Server client",
+						"name": "Board client",
 						"kind": "module",
-						"responsibility": "The one way a command speaks to the Archboard server, and the refusals it reads back",
+						"responsibility": "The board routes: reads, writes, renders and the vault check, and the refusals they come back with",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-client/index.ts"
@@ -149,7 +159,7 @@
 						"order": 8000,
 						"name": "Archboard server",
 						"kind": "service",
-						"responsibility": "Owns every board and answers every command",
+						"responsibility": "Owns every board and answers every command that reads or writes one",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/index.ts"
@@ -166,7 +176,7 @@
 						"order": 9000,
 						"name": "Semantic lifecycle",
 						"kind": "module",
-						"responsibility": "resolve and adopt: settling a proposal and moving the current designation",
+						"responsibility": "resolve, adopt and shelve: settling a proposal, moving the current designation, setting a proposal aside",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-lifecycle.ts"
@@ -189,7 +199,7 @@
 						"name": "Rasterize",
 						"kind": "module",
 						"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
-						"description": "The sibling render command answers with the SVG the Archboard server drew; this one takes that SVG into a headless browser and photographs it.",
+						"description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-rasterize.ts"
@@ -244,17 +254,139 @@
 								"kind": "current"
 							}
 						}
+					},
+					{
+						"id": "peyArgPx",
+						"order": 16000,
+						"name": "Entry point",
+						"kind": "module",
+						"responsibility": "Takes --url out of argv before any configuration loads, refuses a retired server variable, then runs the table",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						}
+					},
+					{
+						"id": "iIJ5MRhi",
+						"order": 17000,
+						"name": "Server client",
+						"kind": "module",
+						"responsibility": "Health, claims and panes, and the one request path every call to the Archboard server takes",
+						"description": "The typed surface for everything but board content. Its transport checks the server's identity and shapes its errors; the board, doing line, expected version and writing session the invocation stated ride on every request from here.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/server-client.ts"
+						}
+					},
+					{
+						"id": "gQ3aPXau",
+						"order": 18000,
+						"name": "Render",
+						"kind": "module",
+						"responsibility": "render: a board, a variant or one of its views as the SVG the Archboard server draws",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-render.ts"
+						}
+					},
+					{
+						"id": "cw2FjFYV",
+						"order": 19000,
+						"name": "Inspect",
+						"kind": "module",
+						"responsibility": "inspect: one configured group of a board, its members and what crosses its boundary",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-inspect.ts"
+						}
+					},
+					{
+						"id": "7QFtvP30",
+						"order": 20000,
+						"name": "Rename",
+						"kind": "module",
+						"responsibility": "rename: another name for a board or one of its variants, the old name kept opening it",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-rename.ts"
+						}
+					},
+					{
+						"id": "4oWqpsOB",
+						"order": 21000,
+						"name": "Record",
+						"kind": "module",
+						"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
+						"description": "Reads the board through the Archboard server and hands the walkthrough to the recorder. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-record.ts"
+						}
+					},
+					{
+						"id": "XAJYaUnv",
+						"order": 22000,
+						"name": "Walkthrough recorder",
+						"kind": "module",
+						"responsibility": "Opens the Archboard server's own page in a private headless browser and saves the tab's capture as the file",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/index.ts"
+						},
+						"drillDown": {
+							"board": "Board rasterizer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "jAKtfzMA",
+						"order": 23000,
+						"name": "Repositories",
+						"kind": "module",
+						"responsibility": "repo list, add and forget: the checkouts a binding resolves to, in a registry on this machine the CLI writes itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/repo.ts"
+						}
+					},
+					{
+						"id": "XgeEM0Pb",
+						"order": 24000,
+						"name": "Install skill",
+						"kind": "module",
+						"responsibility": "install-skill: copies the bundled skill into a skills root and writes the setup into this repository",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/install-skill.ts"
+						}
+					},
+					{
+						"id": "2KmUovkl",
+						"order": 25000,
+						"name": "Status",
+						"kind": "module",
+						"responsibility": "status: whether the Archboard server answers, who it is, and what it reports",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-contract/status.ts"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "SWg7BPZu",
 						"order": 1000,
-						"from": "vAQwlVuz",
+						"from": "peyArgPx",
 						"to": "iIVu1bGE",
 						"kind": "call",
-						"label": "load the table",
-						"emphasis": "normal"
+						"label": "argv, and what bootstrap took",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "WUygSWX0",
@@ -263,7 +395,11 @@
 						"to": "PQcK5dF2",
 						"kind": "call",
 						"label": "argv",
-						"emphasis": "normal"
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "jKqNz2j3",
@@ -307,7 +443,7 @@
 					{
 						"id": "pB6BrbXY",
 						"order": 6000,
-						"from": "OfRn3av3",
+						"from": "iIJ5MRhi",
 						"to": "MUs4pwRq",
 						"kind": "http",
 						"label": "JSON",
@@ -420,16 +556,16 @@
 						"id": "RoUCyRav",
 						"order": 18000,
 						"from": "qBnro8cs",
-						"to": "OfRn3av3",
+						"to": "iIJ5MRhi",
 						"kind": "call",
-						"label": "board operation",
+						"label": "claim, release",
 						"emphasis": "normal"
 					},
 					{
 						"id": "b7q8WlCg",
 						"order": 19000,
 						"from": "vn4RDLH9",
-						"to": "OfRn3av3",
+						"to": "iIJ5MRhi",
 						"kind": "call",
 						"label": "browser operation",
 						"emphasis": "normal"
@@ -451,6 +587,176 @@
 						"kind": "call",
 						"label": "start and stop the child",
 						"emphasis": "muted"
+					},
+					{
+						"id": "VN95JmCC",
+						"order": 22000,
+						"from": "peyArgPx",
+						"to": "vAQwlVuz",
+						"kind": "call",
+						"label": "take --url",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "EBy8Rjwh",
+						"order": 23000,
+						"from": "OfRn3av3",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "requestJson",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "REIYPxdO",
+						"order": 24000,
+						"from": "PQcK5dF2",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "the stated board, doing and version",
+						"emphasis": "muted"
+					},
+					{
+						"id": "lkwXJ78e",
+						"order": 25000,
+						"from": "E2MAq7W7",
+						"to": "MUs4pwRq",
+						"kind": "call",
+						"label": "start it when nothing answers",
+						"emphasis": "muted"
+					},
+					{
+						"id": "HEDb25Es",
+						"order": 26000,
+						"from": "E2MAq7W7",
+						"to": "gQ3aPXau",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "gbDLoul8",
+						"order": 27000,
+						"from": "E2MAq7W7",
+						"to": "cw2FjFYV",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZPdOT4dc",
+						"order": 28000,
+						"from": "E2MAq7W7",
+						"to": "7QFtvP30",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "bbPBYyFU",
+						"order": 29000,
+						"from": "E2MAq7W7",
+						"to": "4oWqpsOB",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "OzD86zWV",
+						"order": 30000,
+						"from": "E2MAq7W7",
+						"to": "jAKtfzMA",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Xrd124y5",
+						"order": 31000,
+						"from": "E2MAq7W7",
+						"to": "XgeEM0Pb",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "LL4azQxP",
+						"order": 32000,
+						"from": "E2MAq7W7",
+						"to": "2KmUovkl",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "W0x3eks9",
+						"order": 33000,
+						"from": "gQ3aPXau",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "the drawn SVG",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ckxyypj5",
+						"order": 34000,
+						"from": "cw2FjFYV",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yyAsw9tJ",
+						"order": 35000,
+						"from": "7QFtvP30",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2CGrRQ78",
+						"order": 36000,
+						"from": "4oWqpsOB",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "read, and discard with --discard",
+						"emphasis": "normal"
+					},
+					{
+						"id": "e0tKOIVM",
+						"order": 37000,
+						"from": "4oWqpsOB",
+						"to": "XAJYaUnv",
+						"kind": "call",
+						"label": "record the walkthrough",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mLWF1WuB",
+						"order": 38000,
+						"from": "XAJYaUnv",
+						"to": "MUs4pwRq",
+						"kind": "http",
+						"label": "the recording page",
+						"emphasis": "normal"
+					},
+					{
+						"id": "vGr5usXc",
+						"order": 39000,
+						"from": "2KmUovkl",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "health",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
@@ -462,8 +768,10 @@
 							{
 								"id": "BT60n3Ki",
 								"heading": "One catalogue defines the surface",
-								"body": "Every command this CLI has is a row of one table, with the contract that says what it takes. Nothing is registered anywhere else, so help, routing and execution cannot disagree about what exists.",
+								"body": "Every command this CLI has is a row of one table, with the contract that says what it takes. Nothing is registered anywhere else, so help, routing and execution cannot disagree about what exists. The entry point takes --url out first, because the modules that talk to the server read its address as they load.",
 								"subjects": [
+									"peyArgPx",
+									"vAQwlVuz",
 									"iIVu1bGE",
 									"PQcK5dF2"
 								]
@@ -471,30 +779,38 @@
 							{
 								"id": "iVdPEdem",
 								"heading": "The contract bounds the invocation",
-								"body": "Input is validated against the contract before a handler runs, the prerequisites the command declares are checked, and the answer is presented one way for every command.",
+								"body": "Input is validated against the contract before a handler runs, a prerequisite the handler asks for is ensured once, so a server that is not running is started, and the answer is presented one way for every command.",
 								"subjects": [
 									"E2MAq7W7",
-									"kcqc65Ye"
+									"kcqc65Ye",
+									"lkwXJ78e"
 								]
 							},
 							{
 								"id": "Mr26GVEr",
 								"heading": "Persistence stays in the server",
-								"body": "No command writes a vault file. Every board operation is JSON over HTTP to the Archboard server, which owns the file, the lease and the version check.",
+								"body": "No command writes a vault file. Board operations go through the board client, health, claims and panes through the server client, and both reach the Archboard server as JSON over HTTP; the server owns the file, the lease and the version check. What the CLI keeps itself is this machine's list of repository checkouts.",
 								"subjects": [
 									"OfRn3av3",
+									"EBy8Rjwh",
+									"iIJ5MRhi",
 									"pB6BrbXY",
-									"MUs4pwRq"
+									"MUs4pwRq",
+									"jAKtfzMA"
 								]
 							},
 							{
 								"id": "tHI5I16e",
-								"heading": "The one command that draws for itself",
-								"body": "Rasterizing asks the Archboard server for the SVG like every other command, then takes it into a headless browser of its own: the picture is photographed in this process, not on the server.",
+								"heading": "Two commands draw for themselves",
+								"body": "Rasterize asks the Archboard server for the SVG like every other command, then photographs it in a headless browser of its own. Record hands a walkthrough to the recorder, whose headless browser opens the server's own page: the page plays the walkthrough, the Codex voice narrates it, and the tab's capture becomes the video file.",
 								"subjects": [
 									"69392DWF",
 									"uwbAloqv",
-									"I6RAbOlG"
+									"I6RAbOlG",
+									"4oWqpsOB",
+									"e0tKOIVM",
+									"XAJYaUnv",
+									"mLWF1WuB"
 								]
 							}
 						]
