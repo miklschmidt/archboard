@@ -162,8 +162,8 @@ const semanticEditContract = defineCommand({
 	summary: "Change a semantic architecture board",
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
-		"optional board `level` metadata, `nodes`, `edges`, `flows`, `views`, `walkthroughs` and the matching " +
-		"`remove...` lists, read from --input or " +
+		"optional board `level` metadata, the target variant's `summary`, `nodes`, `edges`, `flows`, " +
+		"`views`, `walkthroughs` and the matching `remove...` lists, read from --input or " +
 		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
 		"variant; views are shared by the whole board. --variant says which variant the change lands " +
 		`on, by id or name, ${UNNAMED_VARIANT}; the batch's own \`variant\` says ` +

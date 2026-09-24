@@ -44,18 +44,20 @@ When the task closes, before you mark any acceptance criterion:
    comparison reports as added or changed: a source line for each
    relationship, and a binding to the file that owns each part. Every place
    where the build left the plan is a deviation.
-2. **Correct the proposal to what was built**, not to what was planned. Done:
+2. **Correct the proposal to what was built**, not to what was planned. In
+   the same edit, give it the `summary` the board should carry once it is
+   current: the board's scope, not the task title and not a date. Done:
    every entry that `semantic compare` reports has a source line behind it.
-3. **Make sure that the proposal still derives from the current variant.**
-   `semantic show` gives its `parent`. If another task adopted a proposal
-   after you branched, that parent is history, and adoption silently drops
-   the change of the other task. In that case, branch a new proposal from the
-   current variant. Restate the change of this task on it from the old
-   comparison, and shelve the old proposal with that reason.
-4. **Adopt it:**
+3. **Adopt it:**
    `./bin/dogfood semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.
    If the proposal holds a disagreement, adoption is refused until
    `semantic resolve` settles it ([variants](../archboard/references/variants.md)).
+4. **If adoption is refused as `PARENT_SUPERSEDED`,** another task adopted a
+   proposal after you branched, and adopting yours would drop its change.
+   Branch a new proposal from the current variant, restate this task's change
+   on it from the old comparison, shelve the old proposal with that reason,
+   and adopt the new one. Use `--force` only when dropping the other task's
+   change is intended.
 5. **Run `./bin/dogfood check`.** Done: it reports no diagnostics. Commit the
    vault files with the closing.
 
