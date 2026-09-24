@@ -4,15 +4,15 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 10,
+	"version": 11,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-24T01:47:27.862Z",
+	"updatedAt": "2026-09-24T09:34:53.588Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
 			"name": "Reading a board",
 			"grammar": "architecture",
-			"summary": "What it takes to show one board in one pane.",
+			"summary": "What it takes to show one board in one pane, and to hear that it changed.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -32,14 +32,37 @@
 			"id": "D87Mmg83",
 			"name": "Working with an agent",
 			"grammar": "architecture",
-			"summary": "The agent bar, the socket it rides, and the voice session beside it.",
+			"summary": "The agent bar, the setup that carries a message or Talk through, the voice with its subtitles, and the pane socket's agent channel.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
+					"HggZR41l",
 					"0x47EMoO",
+					"zs2QxCu7",
 					"0SRnYXnC",
+					"0yb2VbKc",
+					"941UBxya",
 					"xsn0RvSi",
 					"G4NHQC25"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "sFp2m6M1",
+			"name": "Recording a walkthrough",
+			"grammar": "architecture",
+			"summary": "A page that records one walkthrough: Talk as a recording, the voice it listens to, and the pane it moves.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"HggZR41l",
+					"fscW90Xt",
+					"zs2QxCu7",
+					"0SRnYXnC",
+					"0yb2VbKc",
+					"dtYjWvlf"
 				],
 				"edges": [],
 				"flows": []
@@ -78,7 +101,7 @@
 						"name": "Application composition",
 						"kind": "module",
 						"responsibility": "Connects pane and feature owners",
-						"description": "Composes shell, pane sessions, semantic viewer, workbench, routing, notices, settings, and voice around shared browser state.",
+						"description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. It holds no board content.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -91,7 +114,7 @@
 						"name": "Semantic viewer",
 						"kind": "module",
 						"responsibility": "Reads and explores rendered boards",
-						"description": "Fetches server-rendered semantic boards and owns only camera, selection, view, variant, walkthrough, and drill-down presentation.",
+						"description": "Reads the board document from the server and draws its picture in this page (or asks the server's render route when the page runs no renderer). Owns only camera, selection, view, variant, walkthrough position and drill-down trail, and writes nothing (ADR 0023).",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -110,7 +133,7 @@
 						"name": "Pane session",
 						"kind": "module",
 						"responsibility": "Keeps each pane in server contact",
-						"description": "Owns pane registration, socket generations, current semantic reading reports, and the workbench transport carried by the pane socket.",
+						"description": "Owns the pane's socket and its generations, registration and pane reports, board news, taking back a claim, opening code, and the workbench transport each socket generation carries.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -123,7 +146,7 @@
 						"name": "Workspace routing",
 						"kind": "module",
 						"responsibility": "Restores pane display intent",
-						"description": "Maps pane board keys and active pane to URL state, preflights navigation, and applies browser history without becoming board authority.",
+						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs. It is never board authority.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -136,7 +159,7 @@
 						"name": "Board catalog",
 						"kind": "module",
 						"responsibility": "Lists boards available to open",
-						"description": "Owns the cached server listing and provider used by navigation surfaces to find persisted semantic boards.",
+						"description": "Owns the tab's query cache and the live panes' inventory query, composes that inventory with the viewer's board listing into what the navigator shows, and holds the invalidations the application calls when pane news says a board moved.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -149,6 +172,7 @@
 						"name": "Workbench client",
 						"kind": "service",
 						"responsibility": "The agent bar under the panes and the conversation beside them: the agent's state and its one action, Talk, the composer, and the conversation with its work, plans and approvals",
+						"description": "Reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -166,7 +190,8 @@
 						"order": 8000,
 						"name": "Voice session",
 						"kind": "module",
-						"responsibility": "The live voice session this tab holds: availability, the peer connection, mute, recovery",
+						"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
+						"description": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to that pane's media owner (codex-workbench-media), negotiated over the pane's workbench transport.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -184,8 +209,8 @@
 						"order": 9000,
 						"name": "Code target",
 						"kind": "module",
-						"responsibility": "Activates bound source locations",
-						"description": "Turns a selected semantic node's persisted repo and path binding into an opener request through the host shell.",
+						"responsibility": "Opens the code a subject is bound to",
+						"description": "Sends the board and the subject's id to the Archboard server, which owns the binding, the opener and the checkout registry, and opens the code at the branch or commit the binding pins. The browser never reads a local path. Also reads, tests and saves the opener settings.",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -214,7 +239,7 @@
 						"order": 11000,
 						"name": "Shell",
 						"kind": "ui",
-						"responsibility": "The desktop frame: header, navigator, the pane centre and the workbench dock",
+						"responsibility": "The desktop frame: header, navigator, the panes, the agent bar under them and the conversation panel beside them",
 						"parent": "yAFyqal3",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -250,6 +275,57 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/server-requests/index.ts"
 						}
+					},
+					{
+						"id": "zs2QxCu7",
+						"order": 14000,
+						"name": "Agent setup",
+						"kind": "module",
+						"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation",
+						"description": "One setup for the whole server, outliving focus. Each held message says what it waits on; a failure stays on it with the reason, and nothing is retried behind the user's back. It speaks through ports the application wires to the focused pane's thread link, composer and voice session.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/agent-setup/index.ts"
+						}
+					},
+					{
+						"id": "941UBxya",
+						"order": 15000,
+						"name": "Workbench transport",
+						"kind": "module",
+						"responsibility": "The agent's channel on one pane socket: the server's agent state in, the controllers' commands out",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench-transport/index.ts"
+						}
+					},
+					{
+						"id": "0yb2VbKc",
+						"order": 16000,
+						"name": "Voice subtitles",
+						"kind": "ui",
+						"responsibility": "The voice's words over the pane it runs for, measured into two lines",
+						"description": "Cut into cues from the transcript on the pane's transport; a subtitle that stops growing lingers, then goes. A person can turn them off; a recording always has them.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-subtitles/index.ts"
+						}
+					},
+					{
+						"id": "fscW90Xt",
+						"order": 17000,
+						"name": "Walkthrough recording",
+						"kind": "module",
+						"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
+						"description": "Asked for by the page's address. The page shows the one pane (RecordingStage) instead of the shell and publishes its contract on the window for the recorder that drives it (drawn on Board rasterizer). The voice's audio element is muted, so nobody hears it; the voice is mixed into the tab capture through one Web Audio destination, silent until the voice plays.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording/index.ts"
+						}
 					}
 				],
 				"edges": [
@@ -268,34 +344,34 @@
 						"from": "HggZR41l",
 						"to": "xsn0RvSi",
 						"kind": "call",
-						"label": "owns pane lifecycle",
+						"label": "a session per pane; open a board in one",
 						"emphasis": "normal"
 					},
 					{
 						"id": "zfz9dQDf",
 						"order": 3000,
 						"from": "HCghQa6I",
-						"to": "xsn0RvSi",
+						"to": "HggZR41l",
 						"kind": "call",
-						"label": "opens board keys",
+						"label": "restore through the workspace port",
 						"emphasis": "normal"
 					},
 					{
 						"id": "4iVsoxG0",
 						"order": 4000,
 						"from": "zWQG6LJZ",
-						"to": "6uWT4mUj",
+						"to": "dtYjWvlf",
 						"kind": "call",
-						"label": "fetch the board list",
+						"label": "the vault's board listing",
 						"emphasis": "normal"
 					},
 					{
 						"id": "pqG9kqlF",
 						"order": 5000,
 						"from": "dtYjWvlf",
-						"to": "6uWT4mUj",
-						"kind": "call",
-						"label": "fetch the board",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "board documents, listing, policy",
 						"emphasis": "hero",
 						"traffic": {
 							"speed": 40,
@@ -308,34 +384,16 @@
 						"from": "xsn0RvSi",
 						"to": "G4NHQC25",
 						"kind": "event",
-						"label": "report reading and receive news",
+						"label": "the pane socket: registration and news",
 						"emphasis": "hero"
-					},
-					{
-						"id": "Z6caFkg7",
-						"order": 7000,
-						"from": "0x47EMoO",
-						"to": "xsn0RvSi",
-						"kind": "dependency",
-						"label": "rides current socket",
-						"emphasis": "normal"
-					},
-					{
-						"id": "YZqZjfIj",
-						"order": 8000,
-						"from": "0SRnYXnC",
-						"to": "0x47EMoO",
-						"kind": "call",
-						"label": "steer session",
-						"emphasis": "normal"
 					},
 					{
 						"id": "Cw08FQeQ",
 						"order": 9000,
-						"from": "dtYjWvlf",
+						"from": "xsn0RvSi",
 						"to": "4LDuKQvq",
 						"kind": "call",
-						"label": "open binding",
+						"label": "open the bound code",
 						"emphasis": "normal"
 					},
 					{
@@ -350,10 +408,10 @@
 					{
 						"id": "VbLQ6rfX",
 						"order": 11000,
-						"from": "c4LPnwh5",
+						"from": "HggZR41l",
 						"to": "dtYjWvlf",
 						"kind": "render",
-						"label": "one canvas per pane",
+						"label": "one stage per pane",
 						"emphasis": "hero"
 					},
 					{
@@ -372,10 +430,10 @@
 					{
 						"id": "WchncnH1",
 						"order": 13000,
-						"from": "c4LPnwh5",
+						"from": "HggZR41l",
 						"to": "0x47EMoO",
 						"kind": "render",
-						"label": "the agent bar",
+						"label": "agent bar, conversation, Talk",
 						"emphasis": "normal"
 					},
 					{
@@ -385,11 +443,182 @@
 						"to": "G4NHQC25",
 						"kind": "http",
 						"label": "JSON",
-						"emphasis": "hero",
+						"emphasis": "normal",
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
 						}
+					},
+					{
+						"id": "vo87NlJg",
+						"order": 15000,
+						"from": "HggZR41l",
+						"to": "HCghQa6I",
+						"kind": "call",
+						"label": "opening address; write what panes show",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ep2NF6Z5",
+						"order": 16000,
+						"from": "HggZR41l",
+						"to": "zWQG6LJZ",
+						"kind": "call",
+						"label": "the listing, read again on pane news",
+						"emphasis": "normal"
+					},
+					{
+						"id": "fbpFPAWn",
+						"order": 17000,
+						"from": "zWQG6LJZ",
+						"to": "xsn0RvSi",
+						"kind": "call",
+						"label": "the live panes' inventory",
+						"emphasis": "muted"
+					},
+					{
+						"id": "NcFmPj3W",
+						"order": 18000,
+						"from": "c4LPnwh5",
+						"to": "zWQG6LJZ",
+						"kind": "call",
+						"label": "the navigator's outline",
+						"emphasis": "muted"
+					},
+					{
+						"id": "5U5bpM9T",
+						"order": 19000,
+						"from": "xsn0RvSi",
+						"to": "6uWT4mUj",
+						"kind": "call",
+						"label": "report the pane, show a board, take back",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZDhACWtE",
+						"order": 20000,
+						"from": "xsn0RvSi",
+						"to": "dtYjWvlf",
+						"kind": "event",
+						"label": "a board's new version",
+						"emphasis": "hero"
+					},
+					{
+						"id": "rcSUaP1b",
+						"order": 21000,
+						"from": "xsn0RvSi",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "one per socket generation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EAT8ges2",
+						"order": 22000,
+						"from": "941UBxya",
+						"to": "G4NHQC25",
+						"kind": "event",
+						"label": "agent commands and snapshots",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kZtsu0nq",
+						"order": 23000,
+						"from": "HggZR41l",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "controllers over the focused pane's",
+						"emphasis": "normal"
+					},
+					{
+						"id": "md5cpNZV",
+						"order": 24000,
+						"from": "HggZR41l",
+						"to": "zs2QxCu7",
+						"kind": "call",
+						"label": "send, Talk, narrate",
+						"emphasis": "normal"
+					},
+					{
+						"id": "FWzvKaC4",
+						"order": 25000,
+						"from": "zs2QxCu7",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "sign in, create the conversation, deliver",
+						"emphasis": "normal"
+					},
+					{
+						"id": "UBmrpsBg",
+						"order": 26000,
+						"from": "zs2QxCu7",
+						"to": "0SRnYXnC",
+						"kind": "call",
+						"label": "start voice",
+						"emphasis": "normal"
+					},
+					{
+						"id": "qKwYD1B2",
+						"order": 27000,
+						"from": "HggZR41l",
+						"to": "0SRnYXnC",
+						"kind": "call",
+						"label": "a session for voice's pane; mute, stop",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DTRtWKab",
+						"order": 28000,
+						"from": "0SRnYXnC",
+						"to": "941UBxya",
+						"kind": "data",
+						"label": "the pane's agent and media state",
+						"emphasis": "normal"
+					},
+					{
+						"id": "vm1xFAYO",
+						"order": 29000,
+						"from": "HggZR41l",
+						"to": "0yb2VbKc",
+						"kind": "render",
+						"label": "over voice's pane",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4zVUlTbS",
+						"order": 30000,
+						"from": "HggZR41l",
+						"to": "fscW90Xt",
+						"kind": "call",
+						"label": "the recorder, when the address asks",
+						"emphasis": "normal"
+					},
+					{
+						"id": "UEuRPGRJ",
+						"order": 31000,
+						"from": "fscW90Xt",
+						"to": "zs2QxCu7",
+						"kind": "call",
+						"label": "Talk, as a recording",
+						"emphasis": "normal"
+					},
+					{
+						"id": "5y8UuVhP",
+						"order": 32000,
+						"from": "fscW90Xt",
+						"to": "0SRnYXnC",
+						"kind": "call",
+						"label": "live and loud yet; stop",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Gxh1Pbx3",
+						"order": 33000,
+						"from": "fscW90Xt",
+						"to": "dtYjWvlf",
+						"kind": "data",
+						"label": "the step to show",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
@@ -401,7 +630,7 @@
 							{
 								"id": "Xd4nFMUy",
 								"heading": "Restore the workspace",
-								"body": "Routing supplies opaque board keys; application composition asks pane sessions to open them and keeps the active pane visible.",
+								"body": "Routing reads the address and restores it through the workspace port: application composition opens each board in its pane with the same command the navigator runs, and writes the address only once the pane reports its new board.",
 								"subjects": [
 									"HCghQa6I",
 									"HggZR41l",
@@ -410,22 +639,45 @@
 							},
 							{
 								"id": "tHpt14lf",
-								"heading": "Read the server's drawing",
-								"body": "The semantic viewer fetches the board document and rendered SVG, then owns camera, selection, views, variants, walkthroughs, and local drill-down only.",
+								"heading": "Read the board, draw it here",
+								"body": "The semantic viewer reads the board document from the server and the browser renderer draws it in this tab. The viewer owns camera, selection, views, variants, walkthroughs and drill-down only, and writes nothing.",
 								"subjects": [
 									"dtYjWvlf",
+									"hDWpDois",
 									"G4NHQC25"
 								]
 							},
 							{
 								"id": "y2YVfOOs",
 								"heading": "Carry the active context",
-								"body": "The pane socket reports what is actually on screen and carries the bound workbench; voice and code opening act through their narrow browser owners.",
+								"body": "The pane socket brings a board's new version to the viewer and carries the workbench transport. The pane reports what is on screen, and opens bound code through the code target.",
 								"subjects": [
 									"xsn0RvSi",
+									"941UBxya",
+									"4LDuKQvq",
+									"6uWT4mUj"
+								]
+							},
+							{
+								"id": "TVrlXIEC",
+								"heading": "Talk without setup",
+								"body": "A message, Talk or Narrate goes to the agent setup, which carries it through sign-in, Codex starting and the conversation's creation, then delivers it or starts voice for the focused pane. The voice's words appear as subtitles over that pane.",
+								"subjects": [
 									"0x47EMoO",
+									"zs2QxCu7",
 									"0SRnYXnC",
-									"4LDuKQvq"
+									"0yb2VbKc"
+								]
+							},
+							{
+								"id": "WHOtxYjT",
+								"heading": "Record a walkthrough",
+								"body": "A page opened to record captures its own tab, asks for voice as a recording, and moves its one pane a step at a time as the voice paces it. The voice is mixed into the file, never played aloud.",
+								"subjects": [
+									"fscW90Xt",
+									"zs2QxCu7",
+									"0SRnYXnC",
+									"dtYjWvlf"
 								]
 							}
 						]
