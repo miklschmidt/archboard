@@ -49,23 +49,23 @@ added to carry it, and it says the level of what it opens through its kind
 it describes, or through the caller it draws — and a board with neither says so
 by having no upward link, which is why the breadcrumb exists.
 
-| Level   | Board                 | Scope                                               |
-| ------- | --------------------- | --------------------------------------------------- |
-| System  | `Archboard`           | The processes that run, and what they keep          |
-| Service | `Command interface`   | CLI application modules and its command groups      |
-| Service | `Archboard server`    | Archboard server modules and the one write boundary |
-| Service | `Browser application` | Browser application modules                         |
-| Service | `Agent workbench`     | Codex integration inside the server                 |
-| Service | `Skill evaluation`    | The harness that measures the consumer skill        |
-| Module  | `Command dispatch`    | Dispatch and invocation lifetime                    |
-| Module  | `Board persistence`   | Board reads, transitions, and durable writes        |
-| Module  | `Semantic renderer`   | Meaning to SVG and interaction geometry             |
-| Module  | `Renderer layout`     | How one drawing is settled, and by what measure     |
-| Module  | `Board rasterizer`    | One board as a PNG, through a headless browser      |
-| Module  | `Board viewer`        | Reading, selection, camera, and navigation          |
-| Module  | `Codex session`       | Reviewed app-server protocol operations             |
-| Module  | `Codex workhorse`     | The one door into a workhorse thread, and its queue |
-| Module  | `Voice coordinator`   | The separate thread voice attaches to               |
+| Level   | Board                 | Scope                                                          |
+| ------- | --------------------- | -------------------------------------------------------------- |
+| System  | `Archboard`           | The processes that run, and what they keep                     |
+| Service | `Command interface`   | CLI application modules and its command groups                 |
+| Service | `Archboard server`    | Archboard server modules and the one write boundary            |
+| Service | `Browser application` | Browser application modules                                    |
+| Service | `Agent workbench`     | Codex integration inside the server                            |
+| Service | `Skill evaluation`    | The harness that measures the consumer skill                   |
+| Module  | `Command dispatch`    | Dispatch and invocation lifetime                               |
+| Module  | `Board persistence`   | Board reads, transitions, and durable writes                   |
+| Module  | `Semantic renderer`   | Meaning to SVG and interaction geometry                        |
+| Module  | `Renderer layout`     | How one drawing is settled, and by what measure                |
+| Module  | `Board rasterizer`    | Pictures and recordings of a board, through a headless browser |
+| Module  | `Board viewer`        | Reading, selection, camera, and navigation                     |
+| Module  | `Codex session`       | Reviewed app-server protocol operations                        |
+| Module  | `Codex workhorse`     | The workhorse thread, its queue, and the coordinator's door    |
+| Module  | `Voice coordinator`   | The separate thread voice attaches to                          |
 
 Here, service-level boards explain one application or explicitly named subsystem;
 they do not imply separate deployments. The workbench lives inside the Archboard
@@ -92,12 +92,14 @@ not change.
 
 ## Maintain the architecture
 
-These boards were rewritten against the implementation on 2026-09-17 (TASK-257).
-Update the affected boards with intentional architecture changes, preserving
+These boards were checked against the implementation on 2026-09-24 (TASK-328).
+A task changes them through a proposal: each affected board gets one while the
+task is planned, and the proposal is corrected to what was built and adopted
+when the task closes. The `archboard-dev` skill gives the steps. Edit a current
+variant in place only to correct a board that was already wrong. Preserve
 subject IDs.
 Read with `./bin/dogfood semantic show <board>` and edit with the reported version
-and `--doing`. Keep current boards about implemented behavior; branch variants
-for proposals. The historical migration example in `docs/design/semantic-pipeline`
+and `--doing`. The historical migration example in `docs/design/semantic-pipeline`
 is separate from this living vault.
 
 For an export, write outside the canonical vault, for example:
