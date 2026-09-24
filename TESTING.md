@@ -36,8 +36,9 @@ Commands that talk to the server auto-start it; they start no other transport.
 ## 4. The Archboard-owned Codex session
 
 Starting the Archboard server starts one package-local Codex app-server child over
-stdio. Archboard owns a `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
-`config.toml` (the SQLite root and the permissions every thread runs under) and sign-in below `$XDG_STATE_HOME/archboard/codex-workbench` (or
+stdio. Archboard owns a `CODEX_HOME`, `CODEX_SQLITE_HOME`, a `config.toml`
+that it gives the SQLite root and default permissions (it adds what is missing
+and keeps what Codex or you set), and sign-in below `$XDG_STATE_HOME/archboard/codex-workbench` (or
 `~/.local/state/archboard/codex-workbench`), which every Archboard server on the machine
 shares; each server keeps its owner lock and epoch manifest under
 `codex-workbench/canvases/<port>`. Never edit user-global

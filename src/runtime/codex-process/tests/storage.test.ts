@@ -153,10 +153,8 @@ describe("dedicated Codex storage", () => {
 			expect(refusalCode(() => prepareCodexStorage({ rootDirectory: root }))).toBe("lock");
 			first.release();
 
-			for (const foreign of [
-				`sqlite_home = ${JSON.stringify(root)}\n`,
-				`sqlite_home = ${JSON.stringify(path.join(root, "gone"))}\nmodel = "o3"\n`,
-			]) {
+			// Another store that still exists, and a file Codex could not read either.
+			for (const foreign of [`sqlite_home = ${JSON.stringify(root)}\n`, "model = [\n"]) {
 				fs.writeFileSync(first.configPath, foreign, { mode: 0o600 });
 				let conflict: unknown;
 				try {
@@ -244,6 +242,36 @@ describe("dedicated Codex storage", () => {
 			expect(fs.readdirSync(first.codexHome).filter((name) => name.includes(".stale-"))).toEqual(
 				[],
 			);
+		} finally {
+			removeRoot(root);
+		}
+	});
+
+	test("keeps what Codex and a person put in its config, and fills in only what is missing", () => {
+		const root = temporaryRoot();
+		try {
+			const first = prepareCodexStorage({ rootDirectory: root });
+			first.release();
+			// What Codex appends when a thread starts in a folder its sandbox can write.
+			const trusted = `${first.configText}\n[projects."/work/checkout"]\ntrust_level = "trusted"\n`;
+			fs.writeFileSync(first.configPath, trusted, { mode: 0o600 });
+			const kept = prepareCodexStorage({ rootDirectory: root });
+			expect(readFileSync(kept.configPath, "utf8")).toBe(trusted);
+			kept.release();
+
+			// A person chose never to be asked and a model: both stay, the rest is filled in.
+			const chosen = `sqlite_home = ${JSON.stringify(first.sqliteHome)}\napproval_policy = "never"\nmodel = "o3"\n`;
+			fs.writeFileSync(first.configPath, chosen, { mode: 0o600 });
+			const completed = prepareCodexStorage({ rootDirectory: root });
+			expect(Bun.TOML.parse(readFileSync(completed.configPath, "utf8"))).toMatchObject({
+				sqlite_home: first.sqliteHome,
+				approval_policy: "never",
+				model: "o3",
+				approvals_reviewer: "auto_review",
+				sandbox_mode: "workspace-write",
+				sandbox_workspace_write: { network_access: true },
+			});
+			completed.release();
 		} finally {
 			removeRoot(root);
 		}
