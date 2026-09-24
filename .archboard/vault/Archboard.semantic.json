@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 7,
+	"version": 8,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-23T11:29:52.532Z",
+	"updatedAt": "2026-09-24T01:47:26.822Z",
 	"views": [],
 	"variants": [
 		{
@@ -22,7 +22,7 @@
 						"name": "Agent CLI",
 						"kind": "service",
 						"responsibility": "Authors named boards: one short-lived process per command, writing nothing itself",
-						"description": "Every stated change reaches the canvas over HTTP. The one command that draws for itself is rasterize, which takes the SVG the canvas made into a headless browser here.",
+						"description": "Every stated change reaches the Archboard server over HTTP. The one command that draws for itself is rasterize, which takes the SVG the Archboard server made into a headless browser here.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/bin.ts"
@@ -37,16 +37,16 @@
 					{
 						"id": "cPOdAA3f",
 						"order": 2000,
-						"name": "Canvas server",
+						"name": "Archboard server",
 						"kind": "service",
 						"responsibility": "Owns every board, draws every view, and answers both applications",
 						"description": "One process. Board persistence, the renderer, the pane sockets and the agent workbench all live in it; the Codex app-server is its private child.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/index.ts"
+							"path": "src/server/archboard/index.ts"
 						},
 						"drillDown": {
-							"board": "Canvas server",
+							"board": "Archboard server",
 							"variant": {
 								"kind": "current"
 							}
@@ -82,8 +82,8 @@
 						"order": 5000,
 						"name": "Codex app-server",
 						"kind": "external",
-						"responsibility": "Runs the linked agent threads, as one private child of the canvas",
-						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the canvas server."
+						"responsibility": "Runs the linked agent threads, as one private child of the Archboard server",
+						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the Archboard server."
 					},
 					{
 						"id": "19855Ply",
@@ -227,7 +227,7 @@
 							{
 								"id": "JnVoCQnm",
 								"heading": "Agents author, people read",
-								"body": "An agent states meaning through the CLI. The canvas checks the write, takes the board's lease, commits the whole family to disk and only then answers. Nothing else writes a board.",
+								"body": "An agent states meaning through the CLI. The Archboard server checks the write, takes the board's lease, commits the whole family to disk and only then answers. Nothing else writes a board.",
 								"subjects": [
 									"TBnOCNx2",
 									"9m47dJzG",
@@ -248,7 +248,7 @@
 							{
 								"id": "FlAhpGUe",
 								"heading": "Agent work has a lifetime of its own",
-								"body": "The canvas owns a private Codex child with its own storage and process group. A pane's thread link names one workhorse; the child's exit invalidates it rather than leaving it dangling.",
+								"body": "The Archboard server owns a private Codex child with its own storage and process group. A pane's thread link names one workhorse; the child's exit invalidates it rather than leaving it dangling.",
 								"subjects": [
 									"xr1MHYE7",
 									"2OeapIzk",
