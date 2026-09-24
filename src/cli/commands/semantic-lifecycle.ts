@@ -165,7 +165,18 @@ const AdoptInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema,
 	reason: SelectorSchema.optional(),
+	force: z.boolean().optional(),
 });
+
+const parentSupersededRefusal = {
+	code: "PARENT_SUPERSEDED",
+	exit: 1,
+	stream: "stderr" as const,
+	description:
+		"The proposal is built on an architecture a later adoption superseded, so adopting it would " +
+		"leave out what that adoption brought. Branch again from the current variant and restate the " +
+		"change, or pass --force.",
+};
 
 const semanticAdoptContract = defineCommand({
 	path: ["semantic", "adopt"],
@@ -179,7 +190,9 @@ const semanticAdoptContract = defineCommand({
 		"history: this is the moment its architecture starts existing. Every proposal still says " +
 		"which state it was derived from. The move itself is recorded " +
 		"with its reason, which is the part somebody is looking for a year later. A variant that is " +
-		"still holding a disagreement, or that is derived from one that is, cannot be adopted.",
+		"still holding a disagreement, or that is derived from one that is, cannot be adopted. " +
+		"Neither can one built on an architecture a later adoption superseded, unless forced: it " +
+		"would leave out what that adoption brought.",
 	examples: [
 		'archboard semantic adopt pipeline --variant "Queued ingest" --reason "the queue paid for itself in a week" --expect-version 9 --doing "adopting the queued ingest"',
 	],
@@ -207,6 +220,15 @@ const semanticAdoptContract = defineCommand({
 			value: "required",
 			placeholder: "why",
 			description: "Why the architecture changed, kept with the record of the move",
+		},
+		{
+			kind: "option",
+			key: "force",
+			spellings: ["--force"],
+			value: "none",
+			description:
+				"Adopt a proposal built on an architecture a later adoption superseded, leaving out what " +
+				"that adoption brought; the record says it was forced",
 		},
 	],
 	input: { ingress: AdoptInputSchema },
@@ -236,6 +258,7 @@ const semanticAdoptContract = defineCommand({
 		boardHeldRefusal,
 		boardVersionRefusal,
 		claimRevokedRefusal,
+		parentSupersededRefusal,
 	],
 	relationships: [
 		{
@@ -257,6 +280,7 @@ const semanticAdoptContract = defineCommand({
 		const adopting = context.parse(BoardAdoptInputSchema, {
 			variant: input.variant,
 			...(input.reason === undefined ? {} : { reason: input.reason }),
+			...(input.force === true ? { force: true } : {}),
 		});
 		const written = await adoptSemanticBoardOnServer(input.name, adopting);
 		return { result: writeResult(written), diagnostics: [adoptedLine(written.board)] };

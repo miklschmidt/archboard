@@ -12,7 +12,8 @@ import { runServerCli } from "../support/run-cli.ts";
 // rule does to a board: the flag decides where the change lands, it says what it
 // overrode even when the write it aimed at is refused, and edit and resolve both
 // behave that way. A board nobody has built has no current variant, so what its
-// bare name opens and what adopting it means are owned here too.
+// bare name opens and what adopting it means are owned here too, as is adopting
+// a proposal whose base another adoption superseded (ADR 0037).
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));
@@ -282,5 +283,52 @@ describe("a board nobody has built", () => {
 		const after = JSON.parse(cli(["semantic", "show", planned]).stdout).board;
 		expect(after.current).toBe(draft.id);
 		expect(after.adoptions).toEqual([{ variant: draft.id, at: expect.any(String) }]);
+	}, 60_000);
+
+	test("a proposal built on an architecture a later adoption superseded is adopted only when forced", () => {
+		expect(
+			cli(
+				["semantic", "new", "superseding", "--doing", "starting a board to adopt twice on"],
+				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
+			).status,
+		).toBe(0);
+		const show = () => JSON.parse(cli(["semantic", "show", "superseding"]).stdout).board;
+		const baseline = show().variants[0].name;
+		/**
+		 * Run one lifecycle command at the version the board is at.
+		 * @param args The command after `semantic`, without the version and doing line.
+		 * @returns What the command printed and how it exited.
+		 */
+		const write = (...args: string[]) =>
+			cli([
+				"semantic",
+				...args,
+				"--expect-version",
+				String(show().version),
+				"--doing",
+				`${args[0]} on the superseding board`,
+			]);
+		// Two tasks branch from the same current variant, and the first is adopted.
+		expect(write("branch", "superseding", "--as", "Queue").status).toBe(0);
+		expect(write("branch", "superseding", "--as", "Cache").status).toBe(0);
+		expect(write("adopt", "superseding", "--variant", "Queue").status).toBe(0);
+
+		const before = show();
+		const refused = write("adopt", "superseding", "--variant", "Cache");
+		expect(refused.status).toBe(1);
+		expect(refused.stderr).toContain(baseline);
+		expect(refused.stderr).toContain("Queue");
+		expect(show()).toEqual(before);
+
+		const forced = write("adopt", "superseding", "--variant", "Cache", "--force");
+		expect(forced.status, forced.stderr).toBe(0);
+		const after = show();
+		const cache = after.variants.find((one: { name: string }) => one.name === "Cache");
+		expect(after.current).toBe(cache.id);
+		expect(after.adoptions.at(-1)).toMatchObject({ variant: cache.id, forced: true });
+		// A proposal branched from the current variant adopts as before, unforced.
+		expect(write("branch", "superseding", "--as", "Worker").status).toBe(0);
+		expect(write("adopt", "superseding", "--variant", "Worker").status).toBe(0);
+		expect(show().adoptions.at(-1).forced).toBeUndefined();
 	}, 60_000);
 });
