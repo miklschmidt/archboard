@@ -143,6 +143,15 @@ and nothing becomes historical. A draft holding a disagreement, or derived
 from one that is, is refused until it is settled. Adopt when asked, and report
 which variant is current and which, if any, became historical.
 
+A draft built on a variant that a later adoption made historical is refused as
+`PARENT_SUPERSEDED`: two proposals off one current variant, one adopted, then
+the other. Adopting it would drop what the first adoption brought, because a
+historical variant passes nothing on. The refusal names the superseded variant
+and the variant adopted over it. Branch a new proposal from the current variant,
+state the change on it again from `semantic compare` of the old one, and shelve
+the old one with that reason. Add `--force` only when dropping the other change
+is intended; the adoption record then says `forced: true`.
+
 A proposal nobody will carry out is shelved rather than left standing:
 `archboard semantic shelve <board> --variant <name> --reason "<why>" --expect-version <n> --doing "..."`.
 It keeps its name and everything it says, and a link naming it still opens it,

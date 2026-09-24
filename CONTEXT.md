@@ -254,7 +254,8 @@ _Avoid_: latest, default proposal
 Explicitly designating a variant as the implemented architecture and recording when
 the designation changed. A formerly current state is retained as named history; on a
 board that had no current variant, adoption is the moment its architecture starts
-existing, and nothing becomes history.
+existing, and nothing becomes history. A proposal built on a state that a later
+adoption superseded is adopted only when forced, and the record says so (ADR 0037).
 _Avoid_: promotion, rename, merge
 
 **Historical variant**:

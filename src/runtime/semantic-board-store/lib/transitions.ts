@@ -367,7 +367,7 @@ function adoptVariantTransition(input: BoardAdoptInput): SemanticTransition {
 			if (!adopting.ok) {
 				return adopting;
 			}
-			const adopted = adoptVariant(before, adopting.variant, at, input.reason);
+			const adopted = adoptVariant(before, adopting.variant, at, input);
 			if (!adopted.ok) {
 				return adopted;
 			}

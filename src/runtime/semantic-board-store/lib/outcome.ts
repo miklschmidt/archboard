@@ -62,6 +62,8 @@ type SemanticRefusalCode =
 	| "VARIANT_UNSETTLED"
 	| "VARIANT_BLOCKED"
 	| "VARIANT_HISTORICAL"
+	/** A later adoption superseded what the proposal was built on, and the request did not force it. */
+	| "PARENT_SUPERSEDED"
 	// Letting a proposal go.
 	/** The variant is the implemented architecture, not a proposal about it. */
 	| "VARIANT_CURRENT"
