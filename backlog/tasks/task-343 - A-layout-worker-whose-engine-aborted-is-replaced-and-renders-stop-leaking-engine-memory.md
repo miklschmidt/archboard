@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-24 16:29'
+updated_date: '2026-09-24 17:36'
 labels:
   - renderer
 dependencies: []
@@ -26,3 +27,9 @@ Seen 2026-09-24 twice: after a run of renders on one server (49 pictures, or und
 - [ ] #2 Rendering every dogfood board and view twice in a row on one server fails none of them
 - [ ] #3 One test owner proves a worker is replaced after an abort
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Lead from the TASK-342 profile (2026-09-24): nativeRoutePoints in lib/layout/avoid-routes.ts never deletes the PolyLine that displayRoute() returns or the Point each at() returns. Four in-process renders of Board viewer showed no WASM memory growth (16 MiB), so embind's finalizers may reclaim them on GC; a long batch (Archboard server, about 1310 solves) is where to measure before and after deleting them. The same profile found one slow solve throwing 762,356 Avoid::UnsatisfiableException, which the TASK-342 libavoid patch now throws without a stack trace.
+<!-- SECTION:NOTES:END -->
