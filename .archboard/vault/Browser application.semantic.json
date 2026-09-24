@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 11,
+	"version": 12,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-24T09:34:53.588Z",
+	"updatedAt": "2026-09-24T15:41:39.465Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -74,7 +74,7 @@
 			"id": "IVTpHq7O",
 			"name": "Current architecture",
 			"lifecycle": "current",
-			"summary": "Service level: browser as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{

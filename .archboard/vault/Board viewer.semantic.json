@@ -4,16 +4,16 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 9,
+	"version": 10,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-24T09:36:11.765Z",
+	"updatedAt": "2026-09-24T15:41:38.980Z",
 	"views": [],
 	"variants": [
 		{
 			"id": "mbDAkbS0",
 			"name": "Current architecture",
 			"lifecycle": "current",
-			"summary": "Module level: semantic-viewer as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{

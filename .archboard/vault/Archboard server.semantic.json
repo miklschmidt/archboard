@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 13,
+	"version": 14,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-24T09:36:51.125Z",
+	"updatedAt": "2026-09-24T15:41:37.946Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -80,7 +80,7 @@
 			"id": "GC6SAtGL",
 			"name": "Current architecture",
 			"lifecycle": "current",
-			"summary": "Service level: server as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"summary": "Service level: Archboard server modules and the one write boundary. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{

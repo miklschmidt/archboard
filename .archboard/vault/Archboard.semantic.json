@@ -4,16 +4,16 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 9,
+	"version": 10,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-24T09:34:42.285Z",
+	"updatedAt": "2026-09-24T15:41:37.452Z",
 	"views": [],
 	"variants": [
 		{
 			"id": "J5Sigjhi",
 			"name": "Current architecture",
 			"lifecycle": "current",
-			"summary": "System level: the running applications and storage behind archboard. Current source as inspected 2026-09-13; drill into each application for its internal modules.",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{

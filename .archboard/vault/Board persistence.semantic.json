@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 16,
+	"version": 17,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-24T14:08:31.189Z",
+	"updatedAt": "2026-09-24T15:41:38.466Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -1293,7 +1293,7 @@
 			"name": "TASK-332",
 			"lifecycle": "current",
 			"parent": "Y8SHNDOe",
-			"summary": "semantic edit can change a variant's summary",
+			"summary": "Module level: board reads, transitions, and durable writes. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
