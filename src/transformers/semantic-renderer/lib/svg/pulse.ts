@@ -109,7 +109,10 @@ function cometLayer(
 	},
 ): string {
 	const { path, spacing, seconds } = stream;
-	const { length, width, opacity, colour, moat } = layer;
+	const { width, opacity, colour, moat } = layer;
+	// Rounded once, so the dash and its gap add up to exactly one spacing and
+	// the pattern repeats where the clock says it does.
+	const length = Number(coord(layer.length));
 	return wrap(
 		"path",
 		{
@@ -120,13 +123,13 @@ function cometLayer(
 			"stroke-width": coord(width),
 			"stroke-opacity": opacity === 1 ? undefined : opacity,
 			"stroke-linecap": "round",
-			"stroke-dasharray": `${coord(length)} ${Math.max(Number.MIN_VALUE, spacing - length)}`,
-			"stroke-dashoffset": length === 0 ? undefined : coord(length),
+			"stroke-dasharray": `${length} ${Math.max(Number.MIN_VALUE, spacing - length)}`,
+			"stroke-dashoffset": length === 0 ? undefined : length,
 		},
 		tag("animate", {
 			attributeName: "stroke-dashoffset",
-			from: length === 0 ? 0 : coord(length),
-			to: length === 0 ? -spacing : coord(length - spacing),
+			from: length,
+			to: length - spacing,
 			dur: seconds,
 			repeatCount: "indefinite",
 			calcMode: "linear",
