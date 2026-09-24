@@ -79,6 +79,11 @@ move cards, or choose new route corridors. At clear perpendicular crossings,
 the later-painted connection receives a small semicircular bridge from `lib/layout/crossings.ts`.
 Nearby crossings share a raised section; shared endpoints, collinear overlaps,
 and crossings too close to labels, cards, corners or other routes remain untouched.
+Two routes that finish on one row, each turning toward the other's card, cross
+inside their corners where no bridge fits; `lib/layout/folded-crossings.ts` first
+exchanges their two lanes, with any label riding a lane, so the crossing lands on
+straight runs and is bridged like any other. It does so only when nothing else is
+between the lanes and nothing comes closer to anything than routing and labels allow.
 Narrow SVG masks clear lower ink by 1.5 drawing units on each side of the upper arc,
 revealing the actual container background without a painted patch.
 Lines, traffic, selection halos and the atlas all consume
