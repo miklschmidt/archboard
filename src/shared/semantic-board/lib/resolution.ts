@@ -59,12 +59,15 @@ type ResolutionInput = z.infer<typeof ResolutionInputSchema>;
  *
  * The reason is optional and is kept for good: it is the only part of the
  * record that says why the architecture changed, and a year later it is the
- * part somebody is actually looking for.
+ * part somebody is actually looking for. `force` adopts a proposal built on an
+ * architecture a later adoption superseded, which is otherwise refused because
+ * it would leave out what that adoption brought.
  */
 const BoardAdoptInputSchema = z
 	.object({
 		variant: z.string().trim().min(1),
 		reason: z.string().trim().min(1).max(280).optional(),
+		force: z.boolean().optional(),
 	})
 	.strict();
 type BoardAdoptInput = z.infer<typeof BoardAdoptInputSchema>;

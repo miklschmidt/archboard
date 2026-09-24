@@ -460,6 +460,13 @@
 					"owner": "fixtures carry --summary; variant-exists"
 				},
 				{
+					"path": "a variant's summary restated by an edit batch",
+					"expectedUse": "summary in the semantic edit batch replaces the target variant's summary in the same write",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/branching.test.ts, an edit restates the summary"
+				},
+				{
 					"path": "lifecycle draft | current | historical",
 					"expectedUse": "adoption moves current and leaves historical",
 					"scenarios": ["S06"],
@@ -479,6 +486,13 @@
 					"scenarios": ["S06"],
 					"evidence": "harness-check",
 					"owner": "adoptions-count withReason"
+				},
+				{
+					"path": "adoption of a proposal built on an architecture a later adoption superseded",
+					"expectedUse": "refused as PARENT_SUPERSEDED; branch again from current, or --force records forced",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/variant-targeting.test.ts, adopted only when forced"
 				},
 				{
 					"path": "comparison against direct predecessor: added/removed/changed/unchanged, continuing versus replacement edges, sequence subjects",
@@ -764,7 +778,7 @@
 					"owner": "variant-exists, current-variant"
 				},
 				{
-					"path": "adoptions[].variant/from/at/reason",
+					"path": "adoptions[].variant/from/at/reason/forced",
 					"expectedUse": "recorded by adopt",
 					"scenarios": ["S06"],
 					"evidence": "harness-check",
