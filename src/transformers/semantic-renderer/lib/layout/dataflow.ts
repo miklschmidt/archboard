@@ -56,6 +56,7 @@ import {
 	type ColumnBounds,
 	type PlacedNote,
 } from "@/transformers/semantic-renderer/lib/layout/step-rows";
+import { frameSpan } from "@/transformers/semantic-renderer/lib/layout/messages";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { fittedSize, measure } from "@/transformers/semantic-renderer/lib/text";
@@ -531,9 +532,8 @@ function layoutFlow(
 	return {
 		flow,
 		frame: {
-			x: DIAGRAM_MARGIN,
+			...frameSpan(steps, activationLookup(columns), DIAGRAM_MARGIN, NEST_INSET * 2 + contentWidth),
 			y: top,
-			width: NEST_INSET * 2 + contentWidth,
 			height: lifelineBottom + CONTAINER_BOTTOM_PAD - top,
 		},
 		header,
