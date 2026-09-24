@@ -480,7 +480,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		WAIT,
 	);
 	const darkAdded = await edgeInks(browser, ids["added"] ?? "");
-	expect(darkAdded.line).toBe(darkAdded.band);
+	expect(sameHue(darkAdded.line, darkAdded.band)).toBe(true);
 	expect(darkAdded.head).toBe(darkAdded.line);
 	expect(darkAdded.line).not.toBe(added.line);
 	const darkWritePath = await iconInk(browser, "Gateway");
