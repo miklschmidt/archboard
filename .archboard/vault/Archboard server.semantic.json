@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 12,
+	"version": 13,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-24T01:47:26.054Z",
+	"updatedAt": "2026-09-24T09:36:51.125Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -25,7 +25,9 @@
 					"8B8O9ZiT",
 					"wYcdVszt",
 					"yiSc1qWU",
-					"Eh7icS73"
+					"Eh7icS73",
+					"8imgDQSw",
+					"EAiFrCYk"
 				],
 				"edges": [],
 				"flows": []
@@ -43,7 +45,11 @@
 					"ZuLyutvj",
 					"9G6CmNgt",
 					"wYcdVszt",
-					"Eh7icS73"
+					"Eh7icS73",
+					"M9w3f93y",
+					"ws1UusCP",
+					"EAiFrCYk",
+					"jpk7aRzD"
 				],
 				"edges": [],
 				"flows": []
@@ -104,7 +110,7 @@
 						"order": 3000,
 						"name": "Mutation admission",
 						"kind": "module",
-						"responsibility": "One admitted change at a time, with a drain timeout, so a stop never loses an accepted write",
+						"responsibility": "Admits changes while the server runs and counts each until it settles, so a stop drains every accepted write or refuses with SERVER_BUSY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/mutation-admission.ts"
@@ -113,9 +119,9 @@
 					{
 						"id": "Y70KOm9C",
 						"order": 4000,
-						"name": "Board read routes",
+						"name": "Board routes",
 						"kind": "route",
-						"responsibility": "Answers every read of a board: the family, the catalogue, one drawn view",
+						"responsibility": "Mounts every board route and answers the reads: the family, the catalogue, one drawn view, the vault check",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-board-routes.ts"
@@ -262,6 +268,99 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-lock-routes.ts"
 						}
+					},
+					{
+						"id": "JPg03tjh",
+						"order": 15000,
+						"name": "Rename route",
+						"kind": "route",
+						"responsibility": "Renames a board or a variant as a write, and moves what the server keyed by the old name: its panes, its claim, what the agent said",
+						"description": "TASK-281, ADR 0036. The old name stays a former name, so a pane or a command that still uses it reaches the board.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts"
+						}
+					},
+					{
+						"id": "lLWMHtNU",
+						"order": 16000,
+						"name": "Discard route",
+						"kind": "route",
+						"responsibility": "Lets a whole board go under the write's admission and lease, and tells every pane on it the board is gone",
+						"description": "TASK-304.02: a board made only to be recorded, discarded by semantic record --discard.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts"
+						}
+					},
+					{
+						"id": "tirq1uzi",
+						"order": 17000,
+						"name": "Service routes",
+						"kind": "route",
+						"responsibility": "Serves the page, and the health answer naming the archboard-server service, its pid and whether it runs the source on disk",
+						"description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts"
+						}
+					},
+					{
+						"id": "ws1UusCP",
+						"order": 18000,
+						"name": "Pane routes",
+						"kind": "route",
+						"responsibility": "What each pane shows and where, pushed by the browser; the CLI opens, closes and shows panes through it",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts"
+						}
+					},
+					{
+						"id": "M9w3f93y",
+						"order": 19000,
+						"name": "Pane socket",
+						"kind": "module",
+						"responsibility": "One socket per page: registers it with the panes, and passes its agent messages to the Codex workbench",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts"
+						}
+					},
+					{
+						"id": "8imgDQSw",
+						"order": 20000,
+						"name": "Board lease",
+						"kind": "module",
+						"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
+						"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/board-lock.ts"
+						}
+					},
+					{
+						"id": "EAiFrCYk",
+						"order": 21000,
+						"name": "Board announcements",
+						"kind": "module",
+						"responsibility": "Tells every pane on a board who holds it and what they said they were doing",
+						"description": "ADR 0022: a claim is visible wherever the board is shown. Board content is never in the news; a pane reads the board again.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts"
+						}
+					},
+					{
+						"id": "jpk7aRzD",
+						"order": 22000,
+						"name": "Change feed",
+						"kind": "module",
+						"responsibility": "Every settled board change as one stream with a cursor, read off the panes' announcements, for the agent's context",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-change-feed.ts"
+						}
 					}
 				],
 				"edges": [
@@ -296,9 +395,9 @@
 						"id": "dHru8Ng6",
 						"order": 4000,
 						"from": "2naazvac",
-						"to": "yiSc1qWU",
+						"to": "ws1UusCP",
 						"kind": "dependency",
-						"label": "mounts panes",
+						"label": "mounts the pane routes",
 						"emphasis": "muted"
 					},
 					{
@@ -349,10 +448,10 @@
 					{
 						"id": "fISQ9jAX",
 						"order": 10000,
-						"from": "yiSc1qWU",
+						"from": "M9w3f93y",
 						"to": "9G6CmNgt",
 						"kind": "event",
-						"label": "bridge browser session",
+						"label": "the page's agent messages",
 						"emphasis": "normal"
 					},
 					{
@@ -417,8 +516,8 @@
 						"id": "VkGzebtq",
 						"order": 17000,
 						"from": "Eh7icS73",
-						"to": "yiSc1qWU",
-						"kind": "event",
+						"to": "ws1UusCP",
+						"kind": "http",
 						"label": "what this pane is reading",
 						"emphasis": "normal"
 					},
@@ -434,10 +533,10 @@
 					{
 						"id": "ppZ60bja",
 						"order": 19000,
-						"from": "2naazvac",
+						"from": "Y70KOm9C",
 						"to": "8B8O9ZiT",
 						"kind": "dependency",
-						"label": "mounts the write boundary",
+						"label": "mounts the write routes",
 						"emphasis": "muted"
 					},
 					{
@@ -475,9 +574,243 @@
 						"id": "JnPKFYwB",
 						"order": 23000,
 						"from": "Ck9cBsJC",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "take, release or take back the claim",
+						"emphasis": "normal"
+					},
+					{
+						"id": "s7mFwrXO",
+						"order": 24000,
+						"from": "Ck9cBsJC",
 						"to": "wYcdVszt",
 						"kind": "call",
-						"label": "take, release or override the claim",
+						"label": "is there such a board",
+						"emphasis": "muted"
+					},
+					{
+						"id": "xjqxaA6G",
+						"order": 25000,
+						"from": "2naazvac",
+						"to": "tirq1uzi",
+						"kind": "dependency",
+						"label": "mounts the page and health",
+						"emphasis": "muted"
+					},
+					{
+						"id": "zFPpXsbO",
+						"order": 26000,
+						"from": "Eh7icS73",
+						"to": "tirq1uzi",
+						"kind": "http",
+						"label": "the page",
+						"emphasis": "muted"
+					},
+					{
+						"id": "VyIQhwhS",
+						"order": 27000,
+						"from": "mTtiV3hX",
+						"to": "tirq1uzi",
+						"kind": "http",
+						"label": "health: is this the Archboard server",
+						"emphasis": "normal"
+					},
+					{
+						"id": "FXbSibQJ",
+						"order": 28000,
+						"from": "Y70KOm9C",
+						"to": "JPg03tjh",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted"
+					},
+					{
+						"id": "VF10KyMB",
+						"order": 29000,
+						"from": "Y70KOm9C",
+						"to": "lLWMHtNU",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted"
+					},
+					{
+						"id": "Op6Hnezg",
+						"order": 30000,
+						"from": "mTtiV3hX",
+						"to": "JPg03tjh",
+						"kind": "http",
+						"label": "rename a board or a variant",
+						"emphasis": "normal"
+					},
+					{
+						"id": "oLrYwZPK",
+						"order": 31000,
+						"from": "mTtiV3hX",
+						"to": "lLWMHtNU",
+						"kind": "http",
+						"label": "discard a recorded board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "25nn5k7O",
+						"order": 32000,
+						"from": "JPg03tjh",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "rename under the board's lease",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NZRaUiVz",
+						"order": 33000,
+						"from": "JPg03tjh",
+						"to": "8B8O9ZiT",
+						"kind": "call",
+						"label": "the write envelope and answer",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zlpNLCzO",
+						"order": 34000,
+						"from": "JPg03tjh",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "point its panes at the new name",
+						"emphasis": "normal"
+					},
+					{
+						"id": "E9NIclM9",
+						"order": 35000,
+						"from": "JPg03tjh",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "carry the claim to the new name",
+						"emphasis": "normal"
+					},
+					{
+						"id": "iqwlU6YF",
+						"order": 36000,
+						"from": "lLWMHtNU",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "discard under the board's lease",
+						"emphasis": "normal"
+					},
+					{
+						"id": "0C4a5V24",
+						"order": 37000,
+						"from": "lLWMHtNU",
+						"to": "8B8O9ZiT",
+						"kind": "call",
+						"label": "the write envelope and refusal",
+						"emphasis": "normal"
+					},
+					{
+						"id": "v0DTS3Av",
+						"order": 38000,
+						"from": "lLWMHtNU",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "the board is gone",
+						"emphasis": "normal"
+					},
+					{
+						"id": "HfrzUYSB",
+						"order": 39000,
+						"from": "wYcdVszt",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "hold the board for each write",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Ac9VTagz",
+						"order": 40000,
+						"from": "8imgDQSw",
+						"to": "EAiFrCYk",
+						"kind": "event",
+						"label": "the holder changed",
+						"emphasis": "normal"
+					},
+					{
+						"id": "AjWTGwUA",
+						"order": 41000,
+						"from": "EAiFrCYk",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "tell the panes on the board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "83xq2SSC",
+						"order": 42000,
+						"from": "8B8O9ZiT",
+						"to": "EAiFrCYk",
+						"kind": "call",
+						"label": "what the writer said it was doing",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DcOrPKY2",
+						"order": 43000,
+						"from": "mTtiV3hX",
+						"to": "ws1UusCP",
+						"kind": "http",
+						"label": "open, close and show panes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Hjes93OK",
+						"order": 44000,
+						"from": "ws1UusCP",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "record the pane; send it a board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ENymHNDK",
+						"order": 45000,
+						"from": "Eh7icS73",
+						"to": "M9w3f93y",
+						"kind": "event",
+						"label": "one socket per page",
+						"emphasis": "normal"
+					},
+					{
+						"id": "9i6d5e2R",
+						"order": 46000,
+						"from": "M9w3f93y",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "register the page's socket",
+						"emphasis": "normal"
+					},
+					{
+						"id": "7kWTFGGA",
+						"order": 47000,
+						"from": "J7yOKraz",
+						"to": "M9w3f93y",
+						"kind": "dependency",
+						"label": "starts the socket server",
+						"emphasis": "muted"
+					},
+					{
+						"id": "XsinJmCx",
+						"order": 48000,
+						"from": "yiSc1qWU",
+						"to": "jpk7aRzD",
+						"kind": "event",
+						"label": "every board broadcast",
+						"emphasis": "normal"
+					},
+					{
+						"id": "hjFA6kH4",
+						"order": 49000,
+						"from": "9G6CmNgt",
+						"to": "jpk7aRzD",
+						"kind": "data",
+						"label": "changes since its cursor",
 						"emphasis": "normal"
 					}
 				],
@@ -490,7 +823,7 @@
 							{
 								"id": "V6wttd3K",
 								"heading": "One application, one admission",
-								"body": "Every request enters the same composed application, and a change to a board is admitted one at a time so a stop can drain what it has accepted rather than lose it.",
+								"body": "Every request enters the same composed application, and every change is admitted and counted until it settles, so a stop drains what it has accepted rather than lose it, or refuses with SERVER_BUSY and goes on serving.",
 								"subjects": [
 									"2naazvac",
 									"K6P74fM7"
@@ -514,17 +847,41 @@
 									"8B8O9ZiT",
 									"iG4T44Pd",
 									"wYcdVszt",
+									"8imgDQSw",
 									"Ck9cBsJC"
+								]
+							},
+							{
+								"id": "uKlyn7Bt",
+								"heading": "A claim is visible wherever the board is",
+								"body": "When the holder of a board's lease changes, every pane showing the board is told who has it and what they said they were doing, and a person's one control is taking the claim back.",
+								"subjects": [
+									"8imgDQSw",
+									"EAiFrCYk",
+									"yiSc1qWU",
+									"Ck9cBsJC"
+								]
+							},
+							{
+								"id": "5qNrPkqO",
+								"heading": "A rename carries what the server keyed by the name",
+								"body": "A rename is a write like any other, and then the panes on the board, the claim on it and what the agent said it was doing move to the new name. The old name stays a former name, so anything still using it reaches the board.",
+								"subjects": [
+									"JPg03tjh",
+									"wYcdVszt",
+									"yiSc1qWU",
+									"8imgDQSw"
 								]
 							},
 							{
 								"id": "HRtMJ3Oc",
 								"heading": "The file stays the truth while panes stay live",
-								"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. Nothing about a board lives in a pane.",
+								"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. The agent reads the same announcements as a feed with a cursor. Nothing about a board lives in a pane.",
 								"subjects": [
 									"ZuLyutvj",
 									"yiSc1qWU",
 									"VO9ngl7m",
+									"jpk7aRzD",
 									"9G6CmNgt"
 								]
 							}
