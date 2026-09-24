@@ -112,7 +112,9 @@ describe("coordinator model and literal profile", () => {
 		);
 		expect(() =>
 			selectCoordinatorModel([
-				model({ supportedReasoningEfforts: [{ reasoningEffort: "high", description: "fixture" }] }),
+				model({
+					supportedReasoningEfforts: [{ reasoningEffort: "medium", description: "fixture" }],
+				}),
 			]),
 		).toThrowError(expect.objectContaining({ code: "unsupported_effort" }));
 	});

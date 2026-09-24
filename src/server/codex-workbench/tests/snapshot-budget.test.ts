@@ -105,7 +105,7 @@ test("fits timeline history after every competing snapshot field is present", as
 					kind: "codex_thread_settings",
 					owner: "workhorse",
 					settings: {
-						model: "gpt-5.6-sol",
+						model: "gpt-6-sol",
 						effort: "high",
 						serviceTier: "priority",
 						approvalPolicy: "never",
@@ -148,7 +148,7 @@ test("fits timeline history after every competing snapshot field is present", as
 	expect(bytes).toBeLessThanOrEqual(32_768);
 	expect(snapshot.queue.entries).toHaveLength(1);
 	expect(snapshot.settings).toEqual([
-		expect.objectContaining({ owner: "workhorse", model: "gpt-5.6-sol" }),
+		expect.objectContaining({ owner: "workhorse", model: "gpt-6-sol" }),
 	]);
 	expect(snapshot.approvals).toHaveLength(1);
 	expect(snapshot.dynamicApprovals).toHaveLength(1);

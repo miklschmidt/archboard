@@ -54,8 +54,8 @@ interface CoordinatorIdentityPort {
 }
 
 interface CoordinatorConfiguredSettings {
-	readonly model: "gpt-5.6-luna";
-	readonly effort: "medium";
+	readonly model: "gpt-6-luna";
+	readonly effort: "high";
 	readonly serviceTier: "priority" | null;
 }
 

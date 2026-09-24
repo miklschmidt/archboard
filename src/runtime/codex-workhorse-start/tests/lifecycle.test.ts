@@ -48,7 +48,7 @@ describe("codex workhorse start transaction", () => {
 				historyMode: "paginated",
 				source: "vscode",
 				threadSource: "archboard",
-				model: "gpt-5.6-luna",
+				model: "gpt-6-luna",
 				modelProvider: "openai",
 				serviceTier: "priority",
 				approvalPolicy: "on-request",

@@ -43,7 +43,7 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 	if (method === "thread/start" || method === "thread/fork") {
 		return {
 			thread: threadFixture,
-			model: "gpt-5.6-luna",
+			model: "gpt-6-luna",
 			modelProvider: "openai",
 			serviceTier: null,
 			cwd: "/tmp/archboard",

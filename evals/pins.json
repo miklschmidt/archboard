@@ -32,7 +32,7 @@
 		"version": "0.155.0",
 		"exec": "codex exec --json --skip-git-repo-check -C <checkout>",
 		"author": {
-			"model": "gpt-5.6-luna",
+			"model": "gpt-6-luna",
 			"reasoningEffort": "high",
 			"sandbox": "workspace-write",
 			"approvalPolicy": "never"

@@ -175,7 +175,7 @@ the recipes were that codebase's answers (`evals/README.md`).
 
 `evals/README.md` is the manual; `bun run eval:skill` is the command;
 `evals/rubric.md` is what the grader reads. The harness runs real
-Codex authors (gpt-5.6-luna, high reasoning) on pinned Flask checkouts, three
+Codex authors (gpt-6-luna, high reasoning) on pinned Flask checkouts, three
 repetitions per scenario per skill version in parallel with isolated state, an
 installed baseline (`docs/design/skill-evals/baseline/archboard`) against an
 installed candidate (the live `skills/archboard`), the same CLI, prompts,
