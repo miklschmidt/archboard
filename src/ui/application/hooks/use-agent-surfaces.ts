@@ -8,13 +8,13 @@ import { useCallback, useMemo, useState } from "react";
 
 import { useAgent } from "@/ui/application/hooks/use-agent";
 import { useAgentPanel, useUnread } from "@/ui/application/hooks/use-agent-panel";
-import type { WorkbenchHost } from "@/ui/application/hooks/use-workbench";
+import type { Workbench } from "@/ui/application/hooks/use-workbench";
 import { createDraftStore, type AgentBarProps, type AgentPanelProps } from "@/ui/workbench";
 import type { AgentActions, AgentContext, AgentView } from "@/ui/workbench/contracts";
 
 /** What the agent's surfaces are composed from. */
 interface AgentSurfaceInputs {
-	readonly workbench: WorkbenchHost;
+	readonly workbench: Workbench;
 	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
 }
@@ -43,7 +43,7 @@ function useAgentSurfaces(inputs: AgentSurfaceInputs): AgentSurfaces {
 	const [draft] = useState(createDraftStore);
 	const panel = useAgentPanel();
 	const { view, actions } = useAgent({
-		host: workbench,
+		workbench,
 		draft,
 		context,
 		openPanel: panel.openPanel,

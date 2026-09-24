@@ -67,7 +67,7 @@ function picker() {
 			 * Read the fixture state.
 			 * @returns Never; session callbacks are outside this test.
 			 */
-			get host() {
+			get callbacks() {
 				return unrelated();
 			},
 			add: unrelated,

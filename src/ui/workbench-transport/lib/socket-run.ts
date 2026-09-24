@@ -53,7 +53,7 @@ interface SocketRun {
 }
 
 /** What a run needs from its transport. */
-interface SocketRunHost {
+interface SocketRunPorts {
 	readonly isCurrent: (run: SocketRun) => boolean;
 	readonly nextRequestId: () => string;
 	readonly onGatewayMessage: (run: SocketRun, message: BrowserWorkbenchGatewayMessage) => void;
@@ -199,15 +199,15 @@ interface RequestSpec {
 /**
  * Send one request and wait for its answer or its deadline.
  * @param run The run.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @param spec The action, its kind, extra fields and the command it belongs to.
  * @returns The answer's value.
  */
-function sendRequest(run: SocketRun, host: SocketRunHost, spec: RequestSpec): Promise<unknown> {
-	if (!host.isCurrent(run) || !socketOpen(run.socket)) {
+function sendRequest(run: SocketRun, ports: SocketRunPorts, spec: RequestSpec): Promise<unknown> {
+	if (!ports.isCurrent(run) || !socketOpen(run.socket)) {
 		throw transportFailure("socket_unavailable", "The Codex workbench socket is unavailable.");
 	}
-	const requestId = host.nextRequestId();
+	const requestId = ports.nextRequestId();
 	const commandId = spec.commandId ?? null;
 	const request = {
 		type: "codex_workbench_request",
@@ -289,10 +289,10 @@ function settlePending(
 /**
  * Settle a pending request from its response.
  * @param run The run.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @param raw The response record.
  */
-function handleResponse(run: SocketRun, host: SocketRunHost, raw: Record<string, unknown>): void {
+function handleResponse(run: SocketRun, ports: SocketRunPorts, raw: Record<string, unknown>): void {
 	const requestId = typeof raw["requestId"] === "string" ? raw["requestId"] : null;
 	const pending = requestId === null ? undefined : run.pending.get(requestId);
 	if (requestId === null || pending === undefined) {
@@ -311,7 +311,7 @@ function handleResponse(run: SocketRun, host: SocketRunHost, raw: Record<string,
 				{ outcome: "outcome_unknown", requestId, cause: error },
 			),
 		);
-		host.incompatible(run, error);
+		ports.incompatible(run, error);
 	}
 }
 
@@ -336,35 +336,35 @@ function messageRecord(event: Event): Record<string, unknown> | null {
 /**
  * Route one socket message to the event or response path.
  * @param run The run.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @param event The socket event.
  */
-function onMessage(run: SocketRun, host: SocketRunHost, event: Event): void {
-	const raw = host.isCurrent(run) ? messageRecord(event) : null;
+function onMessage(run: SocketRun, ports: SocketRunPorts, event: Event): void {
+	const raw = ports.isCurrent(run) ? messageRecord(event) : null;
 	if (raw === null) {
 		return;
 	}
 	if (raw["type"] === "codex_workbench_result") {
-		handleResponse(run, host, raw);
+		handleResponse(run, ports, raw);
 		return;
 	}
 	if (raw["type"] !== "codex_workbench_event") {
 		return;
 	}
 	try {
-		host.onGatewayMessage(run, parseBrowserEvent(raw));
+		ports.onGatewayMessage(run, parseBrowserEvent(raw));
 	} catch (error) {
-		host.incompatible(run, error);
+		ports.incompatible(run, error);
 	}
 }
 
 /**
  * Start a run on a socket, listening for its messages and its close.
  * @param socket The socket.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @returns The run.
  */
-function createSocketRun(socket: BrowserWorkbenchSocket, host: SocketRunHost): SocketRun {
+function createSocketRun(socket: BrowserWorkbenchSocket, ports: SocketRunPorts): SocketRun {
 	const run: SocketRun = {
 		socket,
 		pending: new Map(),
@@ -380,11 +380,11 @@ function createSocketRun(socket: BrowserWorkbenchSocket, host: SocketRunHost): S
 	 * @param event The socket event.
 	 */
 	function messageListener(event: Event): void {
-		onMessage(run, host, event);
+		onMessage(run, ports, event);
 	}
 	/** Forward the close. */
 	function closeListener(): void {
-		host.onClose(run);
+		ports.onClose(run);
 	}
 	/** Remove the run's socket listeners. */
 	function remove(): void {
@@ -447,5 +447,5 @@ export {
 	type PendingRequest,
 	type RequestSpec,
 	type SocketRun,
-	type SocketRunHost,
+	type SocketRunPorts,
 };

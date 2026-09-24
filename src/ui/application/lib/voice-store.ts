@@ -16,7 +16,7 @@ interface VoicePane {
 }
 
 /** The voice owner, and the move that makes it. */
-interface VoiceHost extends SnapshotStore<VoiceOwner | null> {
+interface VoiceStore extends SnapshotStore<VoiceOwner | null> {
 	/**
 	 * Make the voice session for one pane's transport.
 	 * @param pane The pane, its transport and its media.
@@ -26,10 +26,10 @@ interface VoiceHost extends SnapshotStore<VoiceOwner | null> {
 }
 
 /**
- * A voice host, with no session yet.
- * @returns The host.
+ * A voice store, with no session yet.
+ * @returns The store.
  */
-function createVoiceHost(): VoiceHost {
+function createVoiceStore(): VoiceStore {
 	let current: VoiceOwner | null = null;
 	const listeners = new Set<() => void>();
 	/**
@@ -77,4 +77,4 @@ function createVoiceHost(): VoiceHost {
 	});
 }
 
-export { createVoiceHost, type VoiceHost };
+export { createVoiceStore, type VoiceStore };

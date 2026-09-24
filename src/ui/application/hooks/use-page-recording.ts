@@ -9,7 +9,7 @@ import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneOverlay, PaneRecording } from "@/ui/application/hooks/use-pane-views";
 import type { PaneList } from "@/ui/application/pane-list";
 import type { BrowserWorkbenchMediaOwnerOptions } from "@/ui/codex-workbench-media";
-import type { WorkbenchHost } from "@/ui/application/hooks/use-workbench";
+import type { Workbench } from "@/ui/application/hooks/use-workbench";
 import type { WorkspaceAddress } from "@/ui/board-routing";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import {
@@ -56,13 +56,13 @@ interface RecordedViews {
  * What a recording gives its pane, kept in step with the server's agent and voice. A recording is
  * not narrated by hand; its subtitles are the page's own.
  * @param recorder The page's recorder, or null.
- * @param workbench The workbench host.
+ * @param workbench The workbench.
  * @param usual The narration and the subtitles the page gives its panes.
  * @returns What the panes are given.
  */
 function useRecordedViews(
 	recorder: WalkthroughRecorder | null,
-	workbench: WorkbenchHost,
+	workbench: Workbench,
 	usual: Omit<RecordedViews, "recording">,
 ): RecordedViews {
 	const step = useWalkthroughRecording(recorder, {

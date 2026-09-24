@@ -35,7 +35,7 @@ import { activateCodeTarget, openedNotice } from "@/ui/code-target";
 import type { BoardIdentity, DoingEntry, LockHolder, PaneStatus } from "@/ui/types";
 
 /** What the core reads out of React and writes back into it. */
-interface PaneCoreHost<Transport extends WorkbenchTransportPort> {
+interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly paneId: string;
 	readonly clientId: string;
 	/**
@@ -108,13 +108,13 @@ function named(key: string | null | undefined): key is string {
 
 /**
  * Wire one pane.
- * @param host What the core reads from React and writes back to it.
+ * @param ports What the core reads from React and writes back to it.
  * @returns The core.
  */
 function createPaneCore<Transport extends WorkbenchTransportPort>(
-	host: PaneCoreHost<Transport>,
+	ports: PaneCorePorts<Transport>,
 ): PaneCore<Transport> {
-	const { paneId, clientId } = host;
+	const { paneId, clientId } = ports;
 	let disposed = false;
 	// Whether a socket has ever opened here: what tells a reconnection apart.
 	let openedBefore = false;
@@ -134,7 +134,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param snapshot The pane's status.
 	 */
 	function onStatus(snapshot: PaneStatus): void {
-		host.options().onStatus(snapshot);
+		ports.options().onStatus(snapshot);
 	}
 
 	const { live: status, publish: publishStatus } = createPaneStatus({ paneId, clientId, onStatus });
@@ -153,8 +153,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param _mine Whether this pane is the holder, which changes nothing here.
 	 */
 	function setHolder(holder: LockHolder | null, _mine = false): void {
-		host.setHeldBy(holder);
-		host.options().onHolder?.(paneId, status.boardKey, holder);
+		ports.setHeldBy(holder);
+		ports.options().onHolder?.(paneId, status.boardKey, holder);
 	}
 
 	/**
@@ -163,7 +163,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function setConnected(connected: boolean): void {
 		status.connected = connected;
-		host.setConnected(connected);
+		ports.setConnected(connected);
 		publishStatus();
 	}
 
@@ -194,7 +194,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @returns True when primary.
 	 */
 	function isPrimary(): boolean {
-		return host.options().primary;
+		return ports.options().primary;
 	}
 
 	/**
@@ -202,7 +202,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @returns True when focused.
 	 */
 	function isFocused(): boolean {
-		return host.options().focused;
+		return ports.options().focused;
 	}
 
 	/**
@@ -210,7 +210,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @returns True when it is.
 	 */
 	function isRecording(): boolean {
-		return host.options().recording === true;
+		return ports.options().recording === true;
 	}
 
 	/**
@@ -246,19 +246,19 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		status.opened = key;
 		status.boardKey = key;
 		status.board = identity ?? { board: key, variant: "current" };
-		host.setOpened(key);
-		host.setBoard(status.board);
+		ports.setOpened(key);
+		ports.setBoard(status.board);
 		if (changed) {
 			// A different board is a different version and a different writer, and
 			// what an agent said about the last one is not news about this one.
 			status.version = null;
 			status.doing = [];
-			host.setDoing([]);
+			ports.setDoing([]);
 			// The board we are arriving at is somebody else's until we are told it
 			// is not; the server sends that immediately behind the board (ADR 0016).
 			setHolder(UNKNOWN_HOLDER);
 			reading.reset();
-			host.options().onBoardAdopted?.(paneId, key, previousKey);
+			ports.options().onBoardAdopted?.(paneId, key, previousKey);
 		}
 		publishStatus();
 		// Immediately, not on the debounce: `browser panes` is read every turn.
@@ -281,7 +281,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function setDoing(entries: DoingEntry[]): void {
 		status.doing = entries;
-		host.setDoing(entries);
+		ports.setDoing(entries);
 	}
 
 	const messageContext: MessageContext = {
@@ -297,28 +297,28 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
 		get onLayoutRequest() {
-			return host.options().onLayoutRequest;
+			return ports.options().onLayoutRequest;
 		},
 		/**
 		 * Where a request to present a walkthrough step goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
 		get onPresentRequest() {
-			return host.options().onPresentRequest;
+			return ports.options().onPresentRequest;
 		},
 		/**
 		 * Where a board refusal goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
 		get onBoardError() {
-			return host.options().onBoardError;
+			return ports.options().onBoardError;
 		},
 		/**
 		 * Where the agent-activity snapshot goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
 		get onAgentActivity() {
-			return host.options().onAgentActivity;
+			return ports.options().onAgentActivity;
 		},
 	};
 
@@ -329,7 +329,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param generation The socket generation.
 	 */
 	function socketOpened(generation: PaneSocketGeneration): void {
-		const sockets = host.workbenchSockets;
+		const sockets = ports.workbenchSockets;
 		if (sockets !== null) {
 			attachWorkbenchOwner({ sockets, generation, connector, live: isLive, publishStatus });
 		}
@@ -339,7 +339,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		// A new socket has not had a pane accepted on it yet, whatever the last
 		// one had: until the server answers a report there is no pane to address.
 		status.registered = false;
-		host.setConnected(false);
+		ports.setConnected(false);
 		// The server retires a pane when its socket closes, so a reconnection
 		// re-announces this one even though nothing about it changed.
 		paneReports.forget();
@@ -351,7 +351,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		// never announced, so whoever caches an answer from this server is told
 		// to ask again (TASK-167). The first connection has nothing stale yet.
 		if (returning) {
-			host.options().onPaneReconnected?.(paneId);
+			ports.options().onPaneReconnected?.(paneId);
 		}
 	}
 
@@ -370,9 +370,9 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param socket The socket.
 	 */
 	function socketRetired(socket: WebSocket): void {
-		void host.workbenchSockets?.detach(socket).catch(() => undefined);
+		void ports.workbenchSockets?.detach(socket).catch(() => undefined);
 		if (disposed) {
-			host.options().onPaneRetired?.(paneId);
+			ports.options().onPaneRetired?.(paneId);
 		}
 	}
 
@@ -396,14 +396,14 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		paneId,
 		clientId,
 		boardKey,
-		paneElement: host.paneElement,
+		paneElement: ports.paneElement,
 		primary: isPrimary,
 		focused: isFocused,
 		recording: isRecording,
 		connector,
 		setConnected,
 		setRegistered,
-		listeners: host.options,
+		listeners: ports.options,
 	});
 
 	/**
@@ -433,7 +433,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param notice The notice and whatever it offers.
 	 */
 	function tell(notice: CodeTargetNotice): void {
-		host.options().onCodeTargetNotice?.(notice);
+		ports.options().onCodeTargetNotice?.(notice);
 	}
 
 	/**
@@ -468,7 +468,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		reading.dispose();
 		// Closing the socket is also how this pane stops being reported: the
 		// server drops it on the close.
-		const sockets = host.workbenchSockets;
+		const sockets = ports.workbenchSockets;
 		if (sockets === null) {
 			connector.close();
 			return;
@@ -536,11 +536,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			address === null
 				? status.board
 				: { board: address.board, variant: address.variant ?? "current" };
-		host.setBoard(status.board);
+		ports.setBoard(status.board);
 		// A different board is a different version and a different writer.
 		status.version = null;
 		status.doing = [];
-		host.setDoing([]);
+		ports.setDoing([]);
 		setHolder(UNKNOWN_HOLDER);
 		publishStatus();
 		// Immediately, not on the debounce: the pane inventory is read every turn,
@@ -554,7 +554,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @returns The transport, or null.
 	 */
 	function workbenchTransport(): Transport | null {
-		return host.workbenchSockets?.current()?.transport ?? null;
+		return ports.workbenchSockets?.current()?.transport ?? null;
 	}
 
 	return {
@@ -572,4 +572,4 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	};
 }
 
-export { createPaneCore, type PaneCore, type PaneCoreHost };
+export { createPaneCore, type PaneCore, type PaneCorePorts };

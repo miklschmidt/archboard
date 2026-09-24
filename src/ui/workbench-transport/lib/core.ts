@@ -19,7 +19,7 @@ import {
 	transportFailure,
 	type SocketRun,
 } from "@/ui/workbench-transport/lib/socket-run";
-import type { StreamHost } from "@/ui/workbench-transport/lib/stream";
+import type { StreamPorts } from "@/ui/workbench-transport/lib/stream";
 import { sameCapturedLink } from "@/ui/workbench-transport/lib/targeting";
 
 /** Where an intent was captured, and the revision it is valid for. */
@@ -261,9 +261,9 @@ function markStale(
 /**
  * The stream reducer's view of the core.
  * @param core The core.
- * @returns The host.
+ * @returns The ports.
  */
-function streamHost(core: TransportCore): StreamHost {
+function streamHost(core: TransportCore): StreamPorts {
 	/**
 	 * Whether a run is current.
 	 * @param run The run.

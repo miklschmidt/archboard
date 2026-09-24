@@ -30,7 +30,7 @@ import {
 	waitForOpen,
 	type RequestSpec,
 	type SocketRun,
-	type SocketRunHost,
+	type SocketRunPorts,
 } from "@/ui/workbench-transport/lib/socket-run";
 import { applyMessage } from "@/ui/workbench-transport/lib/stream";
 import { parseBrowserSnapshotMessage } from "@/ui/workbench-transport/lib/wire";
@@ -40,9 +40,9 @@ const CLOSED_REASON = "The Codex workbench connection was closed.";
 /**
  * The socket run's view of the core.
  * @param core The core.
- * @returns The host.
+ * @returns The ports.
  */
-function socketHost(core: TransportCore): SocketRunHost {
+function socketHost(core: TransportCore): SocketRunPorts {
 	/**
 	 * Whether a run is current.
 	 * @param run The run.

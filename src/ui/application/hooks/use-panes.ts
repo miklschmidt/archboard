@@ -1,5 +1,5 @@
 // The panes as React state: the list, the records collected from each session,
-// and the one stable host every session reports into. Callbacks that belong to
+// and the one stable callbacks every session reports into. Callbacks that belong to
 // other owners (boards, notices, theme, workbench) are bound live each render,
 // so a session never has to be re-optioned for them.
 
@@ -45,7 +45,7 @@ interface PaneEvents {
 }
 
 /** The session callbacks every pane shares; stable for the application's life. */
-type PaneHost = Required<
+type PaneCallbacks = Required<
 	Pick<
 		PaneSessionOptions<BrowserWorkbenchTransport>,
 		| "onStatus"
@@ -76,7 +76,7 @@ interface Panes {
 	readonly list: PaneList;
 	readonly records: PaneRecords;
 	readonly handles: PaneHandles;
-	readonly host: PaneHost;
+	readonly callbacks: PaneCallbacks;
 	/** Open the second pane; false when there is no pane to open. */
 	readonly add: () => boolean;
 	/** Close a pane; false when the list refuses, and nothing is forgotten. */
@@ -87,14 +87,14 @@ interface Panes {
 	/** The active pane's record. */
 	readonly active: PaneRecord;
 	/**
-	 * Bind the events the host forwards to. Called during render, after the
+	 * Bind the events the callbacks forwards to. Called during render, after the
 	 * owners exist, so a callback fired from a child's effect sees them.
 	 */
 	readonly bindEvents: (events: PaneEvents) => void;
 }
 
-/** The setters the host writes through. */
-interface HostSetters {
+/** The setters the callbacks writes through. */
+interface CallbackSetters {
 	readonly patch: (paneId: string, patch: Partial<PaneRecord>) => void;
 	readonly events: LiveBinding<PaneEvents>;
 	readonly handles: PaneHandles;
@@ -103,11 +103,11 @@ interface HostSetters {
 }
 
 /**
- * The one host every session reports into.
- * @param setters Where the host writes.
- * @returns The host.
+ * The one callbacks every session reports into.
+ * @param setters Where the callbacks writes.
+ * @returns The callbacks.
  */
-function createPaneHost(setters: HostSetters): PaneHost {
+function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 	const { patch, events, handles } = setters;
 	/**
 	 * A pane said what it is.
@@ -226,7 +226,7 @@ function usePanes(
 ): Panes {
 	const [list, setList] = useState<PaneList>(initial);
 	// The moves read the list as it is when somebody acts, rather than as it was
-	// when their callback was made: the pane host keeps these for the
+	// when their callback was made: the pane callbacks keeps these for the
 	// application's life, and the server asks it to close panes opened since.
 	const [moves] = useState(() => createPaneMoves(list, setList));
 	const [records, setRecords] = useState<PaneRecords>({});
@@ -251,13 +251,13 @@ function usePanes(
 		[moves],
 	);
 	const select = useCallback((paneId: string): boolean => moves.select(paneId), [moves]);
-	const [host] = useState(() => createPaneHost({ patch, events, handles, add, close }));
+	const [callbacks] = useState(() => createPaneCallbacks({ patch, events, handles, add, close }));
 	const bindEvents = useCallback((next: PaneEvents): void => events.bind(next), [events]);
 	const active = recordFor(records, list.activePaneId);
 	return useMemo(
-		() => ({ list, records, handles, host, add, close, select, patch, active, bindEvents }),
-		[list, records, handles, host, add, close, select, patch, active, bindEvents],
+		() => ({ list, records, handles, callbacks, add, close, select, patch, active, bindEvents }),
+		[list, records, handles, callbacks, add, close, select, patch, active, bindEvents],
 	);
 }
 
-export { usePanes, type PaneEvents, type PaneHost, type Panes };
+export { usePanes, type PaneEvents, type PaneCallbacks, type Panes };

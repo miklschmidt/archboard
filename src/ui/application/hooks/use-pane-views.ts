@@ -95,7 +95,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		paneId,
 		...recordedOrNot(sources.recording, index === 0, paneId === panes.list.activePaneId),
 		theme: sources.theme,
-		host: panes.host,
+		callbacks: panes.callbacks,
 		handles: panes.handles,
 		view: readings.viewOf(paneId),
 		onViewChange: readThrough,
@@ -145,7 +145,7 @@ function recordedOrNot(
 /**
  * The mounted panes, one per pane id.
  *
- * The pane list, the host and the handles are what a pane is made from; the
+ * The pane list, the callbacks and the handles are what a pane is made from; the
  * records are not, so a status arriving from one pane never rebuilds the other
  * pane's element.
  * @param sources The panes, the theme, the readings and the motion preference.
@@ -154,13 +154,13 @@ function recordedOrNot(
 function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNode>> {
 	const { panes, theme, readings, reducedMotion, onVariantChange, narration, overlay, recording } =
 		sources;
-	const { list, host, handles } = panes;
+	const { list, callbacks, handles } = panes;
 	return useMemo(() => {
 		const mounted: Record<string, ReactNode> = {};
 		list.panes.forEach((entry, index) => {
 			mounted[entry.paneId] = paneElement(
 				{
-					panes: { ...panes, list, host, handles },
+					panes: { ...panes, list, callbacks, handles },
 					theme,
 					readings,
 					reducedMotion,
@@ -177,7 +177,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 	}, [
 		panes,
 		list,
-		host,
+		callbacks,
 		handles,
 		theme,
 		readings,

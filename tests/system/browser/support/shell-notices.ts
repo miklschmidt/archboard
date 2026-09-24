@@ -22,7 +22,7 @@ function publishActionableNotice(browser: AgentBrowserSession): Promise<boolean>
 		const key = stage && Object.keys(stage).find(candidate => candidate.startsWith('__reactFiber$'));
 		let fiber = key ? stage[key] : null;
 		for (let depth = 0; fiber && depth < 60; depth += 1, fiber = fiber.return) {
-			const notify = fiber.memoizedProps?.host?.onCodeTargetNotice
+			const notify = fiber.memoizedProps?.callbacks?.onCodeTargetNotice
 				?? fiber.memoizedProps?.options?.onCodeTargetNotice;
 			if (typeof notify !== 'function') continue;
 			notify({ message: ${JSON.stringify(PERSISTENT_NOTICE_TEXT)},
