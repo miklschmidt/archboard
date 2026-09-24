@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 3,
+	"version": 5,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-23T11:29:16.388Z",
+	"updatedAt": "2026-09-24T09:38:07.618Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -31,7 +31,7 @@
 			"id": "0w8KW8AP",
 			"name": "A spoken instruction becomes work",
 			"grammar": "architecture",
-			"summary": "From a tool call to a workhorse turn, and back to something said.",
+			"summary": "From a tool call to a workhorse turn, and back to the coordinator as news.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -40,7 +40,34 @@
 					"ZDMIGM5P",
 					"LIpURyJE",
 					"B0SAnbtM",
-					"2vHAg1Ei"
+					"5uPyMgoI",
+					"hxZxt8Wy",
+					"eyQ2AZaA",
+					"AjPVQ0BZ",
+					"4A6j6Xk3"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "RbD5P0sE",
+			"name": "Workhorse news",
+			"grammar": "architecture",
+			"summary": "What the coordinator and the voice model are told while voice is live, and how it reaches them.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"LHBPlItu",
+					"B0SAnbtM",
+					"5uPyMgoI",
+					"hxZxt8Wy",
+					"AahDTiw9",
+					"eyQ2AZaA",
+					"AjPVQ0BZ",
+					"qZsXIuQG",
+					"2vHAg1Ei",
+					"4A6j6Xk3"
 				],
 				"edges": [],
 				"flows": []
@@ -56,9 +83,10 @@
 				"nodes": [
 					{
 						"id": "0eYa0szs",
+						"order": 1000,
 						"name": "Browser pane",
 						"kind": "service",
-						"responsibility": "Where a person speaks: the tab makes the peer connection and carries the audio itself",
+						"responsibility": "Where a user speaks: the tab makes the peer connection and carries the audio itself",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/voice-session/index.ts"
@@ -68,122 +96,124 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "NUoTEPga",
+						"order": 2000,
 						"name": "Coordinator thread",
 						"kind": "module",
-						"responsibility": "The separate fast thread voice attaches to: its model, its settings, and how it is started",
+						"responsibility": "The separate fast thread voice attaches to, the voice model's subconscious: its model, its settings, and how it is started",
+						"description": "Started once the account is signed in, on gpt-6-luna at high effort with project_doc_max_bytes 0 and the archboard_workhorse and archboard_voice tools. It runs turns only for a live voice session: a handoff, workhorse news, a spoken approval.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator/index.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "2vHAg1Ei",
+						"order": 3000,
 						"name": "Realtime voice",
 						"kind": "module",
-						"responsibility": "The realtime leg of that thread: the offer, the answer, the phase and the transcript",
-						"description": "Archboard never reaches a voice provider itself. The child brokers the session; the media travels between the tab and the provider over the peer connection the tab made.",
+						"responsibility": "The realtime leg of that thread: the offer, the answer, the channel rule, a narrated walkthrough's steps, and the transcript",
+						"description": "Archboard never reaches a voice provider itself. The child brokers the session; the media travels between the tab and the provider over the peer connection the tab made. The start tells the coordinator the [FINAL] and [COMMENTARY] channel rule, or for a recording to write only commentary; the board catalogue is kept on the coordinator's thread for the session's life.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-realtime/index.ts"
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "5sWG4uuq",
+						"order": 4000,
 						"name": "Coordinator tools",
 						"kind": "module",
 						"responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-tools/index.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "ZDMIGM5P",
+						"order": 5000,
 						"name": "Tool contract",
 						"kind": "module",
 						"responsibility": "The frozen tool manifests and their digests: what the coordinator is allowed to ask for",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-tool-contract/index.ts"
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "B0SAnbtM",
-						"name": "Turn callbacks",
+						"order": 6000,
+						"name": "Coordinator callbacks",
 						"kind": "module",
-						"responsibility": "Reports a workhorse turn's outcome back into the live session, once, and only to the generation that asked",
+						"responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, pane news for the voice model",
+						"description": "Nothing is sent with no voice session. Every callback settles once as delivered, not delivered with a reason, or outcome unknown.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-callbacks/index.ts"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "fEiupnAD",
+						"order": 7000,
 						"name": "Spoken approval",
 						"kind": "module",
 						"responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to the pane",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-spoken-approval/index.ts"
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "C3wBXyPG",
+						"order": 8000,
 						"name": "Approvals",
 						"kind": "module",
 						"responsibility": "Every approval the child raises, answered exactly once whichever way the answer came",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-approvals/index.ts"
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "qZsXIuQG",
-						"name": "Semantic brief",
+						"order": 9000,
+						"name": "Semantic context",
 						"kind": "module",
-						"responsibility": "What the board says right now, published as the brief a session starts with",
+						"responsibility": "What the board says right now and what the user changed on it: the brief a voice start records, and the reports that become pane news",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-semantic-context/index.ts"
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "YVc05dVh",
+						"order": 10000,
 						"name": "Authored instructions",
 						"kind": "module",
-						"responsibility": "The coordinator's role extension, composed and pinned by its digest",
+						"responsibility": "The coordinator's own developer instructions, which neither contain nor refer to the workhorse's, pinned by digest",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-instructions/index.ts"
-						},
-						"order": 10000
+						}
 					},
 					{
 						"id": "LHBPlItu",
+						"order": 11000,
 						"name": "Codex transport",
 						"kind": "module",
-						"responsibility": "Where a tool call the child made arrives, as a request back down the wire",
+						"responsibility": "Where a tool call or notification from the child arrives, routed to the owner registered for it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-transport/index.ts"
-						},
-						"order": 11000
+						}
 					},
 					{
 						"id": "4A6j6Xk3",
+						"order": 12000,
 						"name": "Codex session",
 						"kind": "module",
 						"responsibility": "The reviewed methods the coordinator and its realtime leg are started on",
@@ -196,14 +226,14 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 12000
+						}
 					},
 					{
 						"id": "LIpURyJE",
+						"order": 13000,
 						"name": "Workhorse operations",
 						"kind": "module",
-						"responsibility": "Where anything sustained goes: the same four operations a pane uses",
+						"responsibility": "Where anything sustained goes: the four operations the coordinator may ask of the workhorse, one at a time",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-operations/index.ts"
@@ -213,31 +243,92 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 13000
+						}
+					},
+					{
+						"id": "5uPyMgoI",
+						"order": 14000,
+						"name": "Callback queue",
+						"kind": "function",
+						"responsibility": "Takes news, operation events and pane reports in order, drops the session's own writes, and delivers one at a time",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts"
+						}
+					},
+					{
+						"id": "hxZxt8Wy",
+						"order": 15000,
+						"name": "Workhorse news",
+						"kind": "function",
+						"responsibility": "A turn on the linked workhorse that ended or began waiting on the user, whoever started it, as one plain sentence",
+						"description": "Read from the workhorse thread's own turn/completed and thread/status/changed notifications: completed, failed, stopped or waiting, and a message from tell_coordinator. The sentence carries no identities; the coordinator reads the rest through inspect_workhorse.",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/workhorse-news.ts"
+						}
+					},
+					{
+						"id": "AahDTiw9",
+						"order": 16000,
+						"name": "Tell coordinator",
+						"kind": "function",
+						"responsibility": "Answers the workhorse's tell_coordinator call: its message becomes news, or it is told nobody is listening",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts"
+						}
+					},
+					{
+						"id": "eyQ2AZaA",
+						"order": 17000,
+						"name": "Callback delivery",
+						"kind": "function",
+						"responsibility": "Gives each callback one path: news to a coordinator turn, the user's own pane changes to the voice model, the rest recorded only",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts"
+						}
+					},
+					{
+						"id": "AjPVQ0BZ",
+						"order": 18000,
+						"name": "Outcome report",
+						"kind": "module",
+						"responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while a recording holds the voice",
+						"description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-outcome-report.ts"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "uWKB5oF9",
+						"order": 1000,
 						"from": "NUoTEPga",
 						"to": "4A6j6Xk3",
 						"kind": "call",
 						"label": "thread/start with the coordinator body",
-						"emphasis": "hero",
-						"order": 1000
+						"emphasis": "hero"
 					},
 					{
 						"id": "QEitA6l5",
+						"order": 2000,
 						"from": "NUoTEPga",
 						"to": "YVc05dVh",
 						"kind": "dependency",
-						"label": "the role extension, by digest",
-						"emphasis": "muted",
-						"order": 2000
+						"label": "its developer instructions, by digest",
+						"emphasis": "muted"
 					},
 					{
 						"id": "ntLLD7Df",
+						"order": 3000,
 						"from": "0eYa0szs",
 						"to": "2vHAg1Ei",
 						"kind": "event",
@@ -246,11 +337,11 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "eRYh0zYO",
+						"order": 4000,
 						"from": "2vHAg1Ei",
 						"to": "4A6j6Xk3",
 						"kind": "call",
@@ -259,29 +350,29 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "jKgud5yQ",
+						"order": 5000,
 						"from": "2vHAg1Ei",
 						"to": "qZsXIuQG",
 						"kind": "call",
-						"label": "what the board says now",
-						"emphasis": "normal",
-						"order": 5000
+						"label": "the brief this start records",
+						"emphasis": "normal"
 					},
 					{
 						"id": "oyurpL2B",
+						"order": 6000,
 						"from": "2vHAg1Ei",
 						"to": "0eYa0szs",
 						"kind": "event",
 						"label": "the answer, then the transcript",
-						"emphasis": "hero",
-						"order": 6000
+						"emphasis": "hero"
 					},
 					{
 						"id": "NfthRpE6",
+						"order": 7000,
 						"from": "LHBPlItu",
 						"to": "5sWG4uuq",
 						"kind": "event",
@@ -290,20 +381,20 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "FRlXCCgx",
+						"order": 8000,
 						"from": "5sWG4uuq",
 						"to": "ZDMIGM5P",
 						"kind": "call",
 						"label": "validate against the frozen manifest",
-						"emphasis": "normal",
-						"order": 8000
+						"emphasis": "normal"
 					},
 					{
 						"id": "gxWbt0Mt",
+						"order": 9000,
 						"from": "5sWG4uuq",
 						"to": "LIpURyJE",
 						"kind": "call",
@@ -312,44 +403,151 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "jWYpMYjr",
+						"order": 10000,
 						"from": "5sWG4uuq",
 						"to": "fEiupnAD",
 						"kind": "call",
-						"label": "arm the spoken gate",
-						"emphasis": "normal",
-						"order": 10000
+						"label": "resolve the approval answered aloud",
+						"emphasis": "normal"
 					},
 					{
 						"id": "0yGbIQl9",
+						"order": 11000,
 						"from": "fEiupnAD",
 						"to": "C3wBXyPG",
 						"kind": "call",
 						"label": "answer the one it was armed for",
-						"emphasis": "normal",
-						"order": 11000
+						"emphasis": "normal"
 					},
 					{
 						"id": "5QnOXTuc",
-						"from": "B0SAnbtM",
-						"to": "LIpURyJE",
-						"kind": "dependency",
-						"label": "the turn it reports",
-						"emphasis": "normal",
-						"order": 12000
+						"order": 12000,
+						"from": "LIpURyJE",
+						"to": "5uPyMgoI",
+						"kind": "event",
+						"label": "operation events; only an unknown outcome is told",
+						"emphasis": "muted"
 					},
 					{
 						"id": "1joDYyhX",
-						"from": "B0SAnbtM",
-						"to": "2vHAg1Ei",
+						"order": 13000,
+						"from": "eyQ2AZaA",
+						"to": "4A6j6Xk3",
+						"kind": "call",
+						"label": "pane news: realtime/appendText",
+						"emphasis": "normal"
+					},
+					{
+						"id": "AkgtBxFY",
+						"order": 14000,
+						"from": "2vHAg1Ei",
+						"to": "fEiupnAD",
 						"kind": "event",
-						"label": "an outcome to say out loud",
-						"emphasis": "normal",
-						"order": 13000
+						"label": "a final user reply arms the gate",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yjIBH8F4",
+						"order": 15000,
+						"from": "LHBPlItu",
+						"to": "5uPyMgoI",
+						"kind": "event",
+						"label": "workhorse notifications, tell_coordinator calls",
+						"emphasis": "normal"
+					},
+					{
+						"id": "F1500O9D",
+						"order": 16000,
+						"from": "5uPyMgoI",
+						"to": "hxZxt8Wy",
+						"kind": "call",
+						"label": "is this notification news?",
+						"emphasis": "normal"
+					},
+					{
+						"id": "z89BWp39",
+						"order": 17000,
+						"from": "5uPyMgoI",
+						"to": "AahDTiw9",
+						"kind": "call",
+						"label": "answer a tell_coordinator call",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kK1YexMf",
+						"order": 18000,
+						"from": "AahDTiw9",
+						"to": "hxZxt8Wy",
+						"kind": "call",
+						"label": "the news this message is",
+						"emphasis": "normal"
+					},
+					{
+						"id": "35DJDouE",
+						"order": 19000,
+						"from": "AahDTiw9",
+						"to": "5uPyMgoI",
+						"kind": "call",
+						"label": "queue it, wait for its delivery",
+						"emphasis": "normal"
+					},
+					{
+						"id": "5EeoHuyh",
+						"order": 20000,
+						"from": "AahDTiw9",
+						"to": "LHBPlItu",
+						"kind": "call",
+						"label": "answer the workhorse",
+						"emphasis": "muted"
+					},
+					{
+						"id": "LJ71MbJ0",
+						"order": 21000,
+						"from": "5uPyMgoI",
+						"to": "eyQ2AZaA",
+						"kind": "call",
+						"label": "one at a time, in order",
+						"emphasis": "hero"
+					},
+					{
+						"id": "VdOucvLo",
+						"order": 22000,
+						"from": "eyQ2AZaA",
+						"to": "AjPVQ0BZ",
+						"kind": "call",
+						"label": "report the news",
+						"emphasis": "hero"
+					},
+					{
+						"id": "kdzh3hrY",
+						"order": 23000,
+						"from": "AjPVQ0BZ",
+						"to": "4A6j6Xk3",
+						"kind": "call",
+						"label": "turn/start on the coordinator thread",
+						"emphasis": "hero"
+					},
+					{
+						"id": "tMugyhPT",
+						"order": 24000,
+						"from": "AjPVQ0BZ",
+						"to": "2vHAg1Ei",
+						"kind": "call",
+						"label": "is a recording holding the voice?",
+						"emphasis": "muted"
+					},
+					{
+						"id": "wyliCZzQ",
+						"order": 25000,
+						"from": "qZsXIuQG",
+						"to": "5uPyMgoI",
+						"kind": "event",
+						"label": "the user's changes, focus and selection",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
@@ -361,7 +559,7 @@
 							{
 								"id": "15w2iD6r",
 								"heading": "Two threads, two jobs",
-								"body": "The coordinator is a separate thread with its own model and settings. It answers, investigates a little, and hands anything sustained to the workhorse, which goes on working while it talks.",
+								"body": "The coordinator is a separate thread with its own model and settings, and the voice model's subconscious: it reads the boards, follows the workhorse and decides what the voice model says. It answers, investigates a little, and hands anything sustained to the workhorse, which goes on working while it talks.",
 								"subjects": [
 									"NUoTEPga",
 									"5sWG4uuq",
@@ -388,10 +586,38 @@
 								]
 							},
 							{
+								"id": "05IbJcd0",
+								"heading": "The workhorse's news arrives at once",
+								"body": "A workhorse turn that ends or begins waiting on the user, whoever started it, and anything the workhorse says through tell_coordinator become one sentence of workhorse news. It goes out as one turn/start, which Codex adds to the coordinator's running turn or starts a turn with, so nothing waits for the coordinator to be idle and nothing enters its history without a turn that acts on it. What it answers under [FINAL] is spoken; a [COMMENTARY] line stays quiet.",
+								"subjects": [
+									"hxZxt8Wy",
+									"AahDTiw9",
+									"LJ71MbJ0",
+									"VdOucvLo",
+									"AjPVQ0BZ",
+									"kdzh3hrY"
+								],
+								"view": "RbD5P0sE"
+							},
+							{
+								"id": "9Q8uVxC0",
+								"heading": "Nobody is told without a listener",
+								"body": "With no voice session the coordinator never runs, so no news is sent and tell_coordinator answers that nobody is listening. While a recording holds the voice the outcome report sends nothing, because whatever the coordinator answered would be spoken into the video. Pane news goes to the voice model alone, and only for what the user changed by hand.",
+								"subjects": [
+									"AahDTiw9",
+									"AjPVQ0BZ",
+									"tMugyhPT",
+									"1joDYyhX",
+									"wyliCZzQ"
+								],
+								"view": "RbD5P0sE"
+							},
+							{
 								"id": "DyoMzztk",
 								"heading": "An approval is answered once",
-								"body": "A spoken answer arms a gate on one approval. Whether it is then answered out loud or in the pane, it settles exactly once, and an unproven answer falls back to the narrowest outcome.",
+								"body": "A final spoken reply arms a gate on one approval. Whether it is then answered out loud or in the pane, it settles exactly once, and an unproven answer falls back to the narrowest outcome.",
 								"subjects": [
+									"AkgtBxFY",
 									"fEiupnAD",
 									"C3wBXyPG"
 								]
