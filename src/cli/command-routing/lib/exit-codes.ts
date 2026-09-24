@@ -45,7 +45,7 @@ function isBoardRefusalCode(code: string | undefined): boolean {
 }
 
 const WELL_KNOWN_EXIT_CODES: Readonly<Record<string, number>> = {
-	CANVAS_UNREACHABLE: 3,
+	SERVER_UNREACHABLE: 3,
 	BROWSER_REQUIRED: 4,
 	// A missing board is a mistake at the keyboard, like any other usage error.
 	BOARD_REQUIRED: 2,

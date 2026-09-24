@@ -23,7 +23,7 @@ let identityProbe: Promise<void> | null = null;
 /**
  * The error for something that answers on the server port but is not the
  * Archboard server.
- * @returns The error, carrying the CANVAS_UNREACHABLE code.
+ * @returns The error, carrying the SERVER_UNREACHABLE code.
  */
 function foreignServiceError(): Error {
 	return unreachableError(
@@ -36,11 +36,11 @@ function foreignServiceError(): Error {
 /**
  * An error the CLI reports as "no server to talk to".
  * @param message What went wrong.
- * @returns The error, carrying the CANVAS_UNREACHABLE code.
+ * @returns The error, carrying the SERVER_UNREACHABLE code.
  */
 function unreachableError(message: string): Error {
 	const error: Error & { code?: string } = new Error(message);
-	error.code = "CANVAS_UNREACHABLE";
+	error.code = "SERVER_UNREACHABLE";
 	return error;
 }
 

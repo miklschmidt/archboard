@@ -16,7 +16,7 @@ interface ServerActiveMutation {
 }
 
 class ServerApplicationBusyError extends Error {
-	readonly code = "CANVAS_BUSY";
+	readonly code = "SERVER_BUSY";
 
 	/**
 	 * Refuse a stop, naming the mutation work that did not settle so whoever

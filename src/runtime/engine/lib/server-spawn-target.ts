@@ -61,23 +61,23 @@ function isLoopbackUrl(): boolean {
 /**
  * The error a caller gets when no server answers and none will be started.
  * @param reason Why, in a clause that follows the URL.
- * @returns An error carrying the `CANVAS_UNREACHABLE` code.
+ * @returns An error carrying the `SERVER_UNREACHABLE` code.
  */
 function unreachableError(reason: string): Error {
 	return codedError(
 		`Archboard server is not reachable at ${ARCHBOARD_URL} (${reason}). ` +
 			`Start it with \`archboard start\` (\`./bin/archboard start\` in the repo) or \`bun src/server.ts\`.`,
-		"CANVAS_UNREACHABLE",
+		"SERVER_UNREACHABLE",
 	);
 }
 
 /**
  * A start that was refused, in the server's or the launcher's own words.
  * @param message The refusal text.
- * @returns An error carrying the `CANVAS_UNREACHABLE` code.
+ * @returns An error carrying the `SERVER_UNREACHABLE` code.
  */
 function startupRefusal(message: string): Error {
-	return codedError(message.trim(), "CANVAS_UNREACHABLE");
+	return codedError(message.trim(), "SERVER_UNREACHABLE");
 }
 
 /**

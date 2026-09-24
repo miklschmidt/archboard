@@ -87,7 +87,7 @@ function mountMutationAdmission(app: Express): void {
 			res.setHeader("Retry-After", "1");
 			res.status(503).json({
 				success: false,
-				code: "CANVAS_STOPPING",
+				code: "SERVER_STOPPING",
 				error:
 					"The Archboard server is checking whether it can stop and is not accepting writes. " +
 					"If the server remains running, retry after resolving any held board it reports.",

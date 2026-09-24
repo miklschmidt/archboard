@@ -7,7 +7,7 @@ const boardRequiredRefusal = {
 	description: "A board-sensitive request did not name a board.",
 };
 const serverRefusal = {
-	code: "CANVAS_UNREACHABLE",
+	code: "SERVER_UNREACHABLE",
 	exit: 3,
 	stream: "stderr" as const,
 	description: "The Archboard server could not be reached or started.",
