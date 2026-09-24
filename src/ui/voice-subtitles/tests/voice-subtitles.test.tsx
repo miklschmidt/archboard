@@ -5,9 +5,10 @@
 // and turning subtitles off takes them away at once and stays off for the next visit.
 //
 // The box is measured for where it breaks its lines. This DOM lays nothing out and has no canvas,
-// so the box is given a width by a stylesheet and every character is measured 10 px wide.
+// so the box is given a width by a stylesheet, and pretext measures with a stand-in canvas on
+// which every character is 10 px wide (pretext 0.0.9 measures with OffscreenCanvas when there is
+// one).
 
-import { setMeasureFunction } from "@chenglou/pretext";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
@@ -23,17 +24,41 @@ import {
 	type SubtitleSource,
 } from "@/ui/voice-subtitles";
 
+/**
+ * How wide the stand-in canvas measures a text.
+ * @param text - The text.
+ * @returns Its metrics: 10 px per character.
+ */
+function tenPixelsPerCharacter(text: string): { width: number } {
+	return { width: text.length * 10 };
+}
+
+/** A canvas whose 2D context measures every character 10 px wide, whatever the font. */
+class TenPixelCanvas {
+	/**
+	 * The drawing context, which only measures.
+	 * @returns The context.
+	 */
+	getContext(): { font: string; measureText: (text: string) => { width: number } } {
+		return { font: "", measureText: tenPixelsPerCharacter };
+	}
+}
+
 beforeAll(() => {
 	GlobalRegistrator.register();
 	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 	const box = document.createElement("style");
 	box.textContent = "[data-slot='voice-subtitles'] { width: 400px; }";
 	document.head.append(box);
-	setMeasureFunction((text) => text.length * 10);
+	Object.defineProperty(globalThis, "OffscreenCanvas", {
+		value: TenPixelCanvas,
+		writable: true,
+		configurable: true,
+	});
 });
 
 afterAll(async () => {
-	setMeasureFunction(null);
+	Reflect.deleteProperty(globalThis, "OffscreenCanvas");
 	await GlobalRegistrator.unregister();
 });
 
