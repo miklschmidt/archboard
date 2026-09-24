@@ -21,8 +21,6 @@ import { normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
 import { listSemanticBoards } from "@/runtime/semantic-board-store/lib/listing";
 import {
 	locateSemanticBoard,
-	semanticBoardAddress,
-	type SemanticBoardAddress,
 	type SemanticBoardLocation,
 } from "@/runtime/semantic-board-store/lib/location";
 
@@ -77,33 +75,19 @@ function boardFormerlyCalled(
 }
 
 /**
- * The address of the board a name answers to: the board that carries it, else
- * the one that used to, else the name's own address, which holds no board yet.
- * Reads a directory, so it is asked before a board's lease rather than inside
- * it: the lease is taken on the key this answers.
+ * Where the board a name answers to lives: the board that carries it, else the
+ * one that used to, else the name's own location, which holds no board yet.
+ *
+ * Reads a directory, so a writer asks it before taking a board's lease and
+ * takes the lease on the key it answers, locating the file again once held.
  * @param asked The board name as typed.
  * @param root The vault root; defaults to the configured vault.
- * @returns The name and key of that board.
- * @throws {Error} When the name is not usable or would escape the vault.
- */
-function answeringAddress(asked: string, root = requireVaultRoot()): SemanticBoardAddress {
-	const own = locateSemanticBoard(asked, root);
-	if (fs.existsSync(own.file)) {
-		return semanticBoardAddress(asked);
-	}
-	const formerly = boardFormerlyCalled(own.key, root);
-	return formerly === null ? semanticBoardAddress(asked) : semanticBoardAddress(formerly.name);
-}
-
-/**
- * Where the board a name answers to lives.
- * @param asked The board name as typed.
- * @param root The vault root; defaults to the configured vault.
- * @returns Its location; the name's own, holding nothing, when no board answers.
+ * @returns Where that board is.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
 function resolveSemanticBoard(asked: string, root = requireVaultRoot()): SemanticBoardLocation {
-	return locateSemanticBoard(answeringAddress(asked, root).name, root);
+	const own = locateSemanticBoard(asked, root);
+	return fs.existsSync(own.file) ? own : (boardFormerlyCalled(own.key, root) ?? own);
 }
 
-export { answeringAddress, boardFormerlyCalled, resolveSemanticBoard };
+export { boardFormerlyCalled, resolveSemanticBoard };
