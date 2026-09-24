@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-19 16:15'
-updated_date: '2026-09-24 00:00'
+updated_date: '2026-09-24 00:07'
 labels:
   - needs-triage
 dependencies: []
@@ -58,4 +58,7 @@ Unchanged name: refused with NAME_UNCHANGED, no version advance. Variant names s
 No schema-version bump: formerNames is optional and additive; a bump would have made every board of every vault rewrite itself (version+1) on first read through the migration path, and an older build refuses the unknown field by name either way.
 Server follow-ups on a board rename: panes on the old key get pane_board with the accepted address (so the address bar is replaced with the new name), this canvas's claim is carried to the new key for the rest of its campaign (warning CLAIM_NOT_CARRIED if it cannot be), doing lines move with the board, the change feed says the board was renamed. pane show, claims, reads and writes resolve former names; the listing reports drill links under accepted names; vault diagnostics accept a drill-down naming a former name.
 UI (minimal): the drill-down panel matches a named variant by former name, names and opens the target by its accepted name, and hears its news under that name.
+
+Evidence: src/runtime/semantic-board-store/tests/renaming.test.ts (identity and history preserved, file moved, old names resolve for reads and writes, drill-down diagnostics, stale version, board/variant collisions, invalid name, unchanged and case-only, taking a former name back, new-name lease held); tests/system/semantic-boards/renaming.test.ts (CLI rename of board and variant, stale refusal, live pane re-pointed, listing links under accepted names, saved pane address resolved to the accepted one, taken name refused, claim follows the board); src/ui/semantic-board-canvas/tests/semantic-board-inspection.test.tsx (drill-down written before a rename opens board and variant under their new names). Gates on 5a781469: type-check, lint, fmt:check pass; test:modules 3389/0; test:system 180/0; test:repository 8/0; test:serial-browser 18/0. Manual: a scratch copy of .archboard/vault renamed Canvas server to Archboard server at version 10->11; check reported no unknown drill-downs; the old name still reads the board.
+Left out: a pane's selected view and selection are cleared when a rename re-points it (usePaneReadings treats a new board key as a new board); a pane that had drilled into a renamed board keeps the old name on its drill stack until reopened (it still reads it through the former name).
 <!-- SECTION:NOTES:END -->
