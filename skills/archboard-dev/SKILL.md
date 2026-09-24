@@ -1,6 +1,6 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source — the sweep that keeps every description true when something is removed or renamed, where the tracked skills live and what is generated from them, maintaining the consumer skill, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, removing or renaming anything a reader sees, editing its skills, or verifying an Archboard server change.
+description: Working on archboard's own source. It holds the board proposal of a task from planning to closing, the sweep after a removal or rename, where the tracked skills live, how to maintain the consumer skill, and facts the code does not show. Use it to plan or close a task, change this repo or its skills, remove or rename what a reader sees, or test a server change.
 ---
 
 # Working on archboard
@@ -8,6 +8,58 @@ description: Working on archboard's own source — the sweep that keeps every de
 Always-on rules are in `AGENTS.md`; procedures for running and verifying the
 Archboard server are in `TESTING.md`. This skill holds only what neither the code nor
 those documents will tell you.
+
+## A task's board proposal
+
+The dogfood vault is `.archboard/vault`, and only `./bin/dogfood` writes it. It
+is how the next agent learns this repository. A task therefore changes it the
+way it changes the code. During planning, you draw a proposal. When the task
+closes, you adopt it. Edit a current variant in place only to correct a board
+that was already wrong about code the task does not change.
+
+While you plan, before `backlog task edit --plan`:
+
+1. **Name the affected boards.** If the task adds, removes, renames or rewires
+   anything a board draws, or adds something the board's question needs, the
+   board is affected. `.archboard/README.md` gives the scope of each board.
+   Done: the plan names every affected board, or it says that no board is
+   affected (a test or a wording fix).
+2. **Branch one proposal per affected board, named by the task id:**
+   `./bin/dogfood semantic branch "<board>" --as TASK-123 --summary "<task title>" --expect-version <n> --doing "..."`.
+   If code needs a board of its own, `semantic new` makes it as a draft that
+   nobody has built. The proposal on the board above it gains the part that
+   drills down to it.
+3. **Draw the planned architecture on each proposal** with the
+   [propose and compare](../archboard/references/propose-compare.md) recipe of
+   the consumer skill. A planned part binds to the path that the plan gives
+   it. A planned relationship states the mechanism that the plan intends.
+   Done: `semantic compare` reports exactly the changes that the plan makes.
+4. **Name each proposal in the plan** as `<board>@TASK-123`. Commit the vault
+   files with the plan.
+
+When the task closes, before you mark any acceptance criterion:
+
+1. **Inspect each proposal against the code as built.** Apply the evidence
+   rules of the consumer skill to every part and relationship that the
+   comparison reports as added or changed: a source line for each
+   relationship, and a binding to the file that owns each part. Every place
+   where the build left the plan is a deviation.
+2. **Correct the proposal to what was built**, not to what was planned. Done:
+   every entry that `semantic compare` reports has a source line behind it.
+3. **Make sure that the proposal still derives from the current variant.**
+   `semantic show` gives its `parent`. If another task adopted a proposal
+   after you branched, that parent is history, and adoption silently drops
+   the change of the other task. In that case, branch a new proposal from the
+   current variant. Restate the change of this task on it from the old
+   comparison, and shelve the old proposal with that reason.
+4. **Adopt it:**
+   `./bin/dogfood semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.
+   If the proposal holds a disagreement, adoption is refused until
+   `semantic resolve` settles it ([variants](../archboard/references/variants.md)).
+5. **Run `./bin/dogfood check`.** Done: it reports no diagnostics. Commit the
+   vault files with the closing.
+
+If a task closes without its change, shelve its proposals with the reason.
 
 ## Removing or renaming something
 
