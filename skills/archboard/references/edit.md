@@ -73,6 +73,28 @@ calls it.
    fields you kept, `version` moved by one, and nothing landed on a variant
    you did not name. Draw and look when the picture matters.
 
+## Renaming a board or a variant
+
+`archboard semantic rename <board> --to "<name>" --expect-version <n> --doing "..."`
+gives the board another name; with `--variant <id|name>` it renames that variant
+instead. Only the name changes: every id, each variant's lifecycle and ancestry,
+and the records of adoption, shelving and reconciliation stay as they were, and
+the board's file is renamed with the board. The old name is kept as a former
+name and goes on opening what it named, so a drill-down on another board, a
+saved pane address and a later command that use it still reach the board or the
+variant: no other board needs an edit, and panes showing it move to the new
+name. A change of case alone keeps every address as it is.
+
+```bash
+archboard semantic rename "Canvas server" --to "Archboard server" --expect-version 14 --doing "naming the board for the server it describes"
+archboard semantic rename "Archboard server" --variant Initial --to "Before the queue" --expect-version 15 --doing "naming the first state for what it was"
+```
+
+Refused, with nothing written: a board name another board carries or used to
+carry, or one a board name cannot hold (`@` is the variant's); a variant name
+another variant of the board answers to; and the name it already has. Each
+rename is one write, so take the next `--expect-version` from its answer.
+
 Read [authoring](references/authoring.md) only when the change needs it: a
 removal beyond `removeEdges`, a binding with revision evidence, group
 membership, a drill-down link, or a refusal you must repair. A change of one

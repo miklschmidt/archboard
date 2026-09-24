@@ -20,6 +20,7 @@ import type { DrillDown, SemanticVariant } from "@/shared/semantic-board/index";
 import { Button } from "@/ui/components/button";
 import {
 	drillDownAsked,
+	drillTargetName,
 	resolveDrillDown,
 	type DrillResolution,
 } from "@/ui/semantic-board-canvas/lib/drill-target";
@@ -47,7 +48,12 @@ interface SemanticDrillDownProps {
 }
 
 /** Inputs for the ready state. */
-interface ReadyProps extends SemanticDrillDownProps {
+interface ReadyProps extends Pick<SemanticDrillDownProps, "onOpen"> {
+	/**
+	 * The board's name as it goes by now, which is what the link names unless
+	 * the board was renamed since (ADR 0036).
+	 */
+	board: string;
 	/** The variant that answered.  */
 	variant: SemanticVariant;
 }
@@ -58,10 +64,10 @@ interface ReadyProps extends SemanticDrillDownProps {
  * @returns The disclosure and its control.
  */
 function DrillDownReady(props: ReadyProps): JSX.Element {
-	const { target, variant, onOpen } = props;
+	const { board, variant, onOpen } = props;
 	const handleOpen = useCallback((): void => {
-		onOpen(target.board, variant.id);
-	}, [onOpen, target.board, variant.id]);
+		onOpen(board, variant.id);
+	}, [onOpen, board, variant.id]);
 	return (
 		<>
 			<p className="text-body">
@@ -76,7 +82,7 @@ function DrillDownReady(props: ReadyProps): JSX.Element {
 				data-variant-lifecycle={variant.lifecycle}
 				onClick={handleOpen}
 			>
-				Open {target.board}
+				Open {board}
 			</Button>
 		</>
 	);
@@ -127,7 +133,13 @@ function DrillDownOutcome(props: OutcomeProps): JSX.Element {
 	}
 	const resolution = resolveDrillDown(target, document);
 	if (resolution.kind === "ready") {
-		return <DrillDownReady target={target} variant={resolution.variant} onOpen={props.onOpen} />;
+		return (
+			<DrillDownReady
+				board={resolution.board.name}
+				variant={resolution.variant}
+				onOpen={props.onOpen}
+			/>
+		);
 	}
 	return <p className="text-body">{refusalWords(resolution, target)}</p>;
 }
@@ -140,6 +152,7 @@ function DrillDownOutcome(props: OutcomeProps): JSX.Element {
 function SemanticDrillDown(props: SemanticDrillDownProps): JSX.Element {
 	const { target } = props;
 	const document = useQuery(semanticBoardDocumentQuery(target.board));
+	const name = drillTargetName(target, document.data);
 	// The target board is read on the same terms as any other — no timer, fresh
 	// when it announces a new version — and that contract only holds while
 	// somebody is listening for the announcement. Without this the preview is
@@ -147,12 +160,14 @@ function SemanticDrillDown(props: SemanticDrillDownProps): JSX.Element {
 	// current would go on naming the one that was current when it was first
 	// read, and opening it would put a person in front of a state that has since
 	// been superseded, with the panel still calling it current.
-	useSemanticBoardChanges(target.board);
+	// Its news is announced under the name it goes by now, which is not the
+	// link's when the board was renamed since the link was written.
+	useSemanticBoardChanges(target.board, name);
 	return (
 		<section className="flex flex-col gap-3" data-slot="semantic-drill-down">
 			<h3 className="text-kicker text-muted-foreground uppercase">One level down</h3>
-			<p className="text-technical truncate font-mono" title={target.board}>
-				{target.board}
+			<p className="text-technical truncate font-mono" title={name}>
+				{name}
 			</p>
 			<p className="text-muted-foreground text-body">Asks for {drillDownAsked(target)}.</p>
 			<DrillDownOutcome

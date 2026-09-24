@@ -3,8 +3,8 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 39,
-		"paths": 72
+		"subcommands": 40,
+		"paths": 73
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -1530,6 +1530,50 @@
 			"semantics": "marks one proposal shelved under its own name, keeping its content and every drill-down that names it; the variant stops inheriting from its predecessor and any reconciliation standing it held is cleared; content edits and adoption are refused afterwards, pointing at branching from it; the current variant, a historical one, one already shelved, and one other drafts still stand on are refused",
 			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
 			"nextFields": ["board.shelvings", "board.variants[].lifecycle"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic rename",
+			"introducedBy": "TASK-281",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-rename.ts",
+			"stdout": "json object",
+			"result": "the board aggregate under its new name, or with the variant renamed",
+			"diagnostics": "the board's name and the version it is now at",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/rename"],
+			"semantics": "renames the board, or with --variant one variant, and nothing else: ids, lifecycles, ancestry and adoption, shelving and reconciliation records stay; the old name is kept in formerNames and still opens the board or variant, the board file moves with its name, panes on it are pointed at the new name and the canvas's claim follows it; a name another board carries or carried, a variant name another variant answers to, a name that cannot address a board and the name it already has are refused",
+			"ordering": "former-name resolution, lease, expected-version check, transition, validation, new name's lease without waiting, file move, then one atomic write",
+			"nextFields": ["board.name", "board.formerNames", "board.variants[].formerNames"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "server-state-write"],
 			"refusals": [

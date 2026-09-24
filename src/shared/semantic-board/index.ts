@@ -127,6 +127,7 @@ export {
 	addressedVariant,
 	nextVersion,
 	findVariant,
+	variantNamed,
 	resolveVariant,
 	CURRENT_DESIGNATION,
 	asksForDesignation,
@@ -214,11 +215,14 @@ export {
 	BoardListingSchema,
 	type BoardListing,
 	type ListedRead,
+	acceptedBoardNames,
 	listedBoard,
 } from "@/shared/semantic-board/lib/listing";
 export {
 	BoardAdoptInputSchema,
 	type BoardAdoptInput,
+	BoardRenameInputSchema,
+	type BoardRenameInput,
 	BoardShelveInputSchema,
 	type BoardShelveInput,
 	ChoiceSchema,

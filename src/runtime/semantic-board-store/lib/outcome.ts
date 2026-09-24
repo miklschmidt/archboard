@@ -68,7 +68,14 @@ type SemanticRefusalCode =
 	/** The variant is a proposal nobody intends to carry out. */
 	| "VARIANT_SHELVED"
 	/** Drafts are still standing on the variant, and would be stranded. */
-	| "VARIANT_HAS_DRAFTS";
+	| "VARIANT_HAS_DRAFTS"
+	// Renaming a board or a variant (ADR 0036).
+	/** The name asked for is the name it already has. */
+	| "NAME_UNCHANGED"
+	/** The name asked for cannot name a board. */
+	| "INVALID_NAME"
+	/** Another variant of the board already answers to the name asked for. */
+	| "VARIANT_EXISTS";
 
 /** A transition either produced a whole new board, or refused. */
 interface SemanticRefusal {

@@ -40,18 +40,20 @@ async function readBoardAgain(client: QueryClient, board: string): Promise<void>
 
 /**
  * Ask the server for this board's picture again whenever it changes.
- * @param board The board this pane is showing.
+ * @param board The board as this reader asks for it.
+ * @param goesBy The name the board goes by now, when this reader asks for it by
+ *   a name it had before a rename (ADR 0036); its news is announced under this.
  */
-function useSemanticBoardChanges(board: string): void {
+function useSemanticBoardChanges(board: string, goesBy: string = board): void {
 	const client = useQueryClient();
 	useEffect(
 		() =>
 			onSemanticBoardChange((changed): void => {
-				if (sameBoardName(changed, board)) {
+				if (sameBoardName(changed, board) || sameBoardName(changed, goesBy)) {
 					void readBoardAgain(client, board);
 				}
 			}),
-		[board, client],
+		[board, client, goesBy],
 	);
 }
 

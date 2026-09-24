@@ -1,6 +1,7 @@
 // The one owner of a semantic board on disk (ADR 0023).
 //
-// Reads go through `readSemanticBoard`. Authored changes go through
+// Reads go through `readSemanticBoard`, which answers a board's former name
+// with the board (ADR 0036). Authored changes go through
 // `writeSemanticBoard`, which owns the claim, expected-version check, version
 // advance and atomic fsync write. `discardSemanticBoard` removes a whole board
 // under the same lease and admission. A read of an older contract runs a registered
@@ -43,6 +44,8 @@ export {
 	settleVariantTransition,
 	shelveVariantTransition,
 } from "@/runtime/semantic-board-store/lib/transitions";
+export { renameTransition } from "@/runtime/semantic-board-store/lib/rename";
+export { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 export {
 	type SemanticWriter,
 	type SemanticWriteCommand,

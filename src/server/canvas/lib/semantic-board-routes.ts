@@ -13,7 +13,12 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@/shared/thrown-error/index";
-import { listedBoard, type BoardListing, type SemanticBoard } from "@/shared/semantic-board/index";
+import {
+	acceptedBoardNames,
+	listedBoard,
+	type BoardListing,
+	type SemanticBoard,
+} from "@/shared/semantic-board/index";
 import {
 	listSemanticBoards,
 	checkSemanticVault,
@@ -23,6 +28,7 @@ import {
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
 import { discardRoute } from "@/server/canvas/lib/semantic-board-discard";
+import { renameRoute } from "@/server/canvas/lib/semantic-board-rename";
 import {
 	adoptRoute,
 	shelveRoute,
@@ -75,12 +81,17 @@ function refuseUnnamedBoard(res: Response): void {
 function listRoute(_req: Request, res: Response): void {
 	try {
 		const configured = readSemanticBoardConfiguration();
+		const read = listSemanticBoards().map(
+			(location) => [location, readSemanticBoard(location.name)] as const,
+		);
+		// A drill-down written before a rename names the board as it was then;
+		// the listing names it as it is now, so the navigator places the board
+		// under the name it goes by (ADR 0036).
+		const accepted = acceptedBoardNames(read.map(([, one]) => one));
 		const listing: BoardListing = {
 			success: true,
 			levels: configured.configuration.levels,
-			boards: listSemanticBoards().map((location) =>
-				listedBoard(location, readSemanticBoard(location.name)),
-			),
+			boards: read.map(([location, one]) => listedBoard(location, one, accepted)),
 		};
 		res.json(listing);
 	} catch (error) {
@@ -304,6 +315,7 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.post("/api/semantic-boards/resolve", asyncEndpoint(resolveRoute));
 	app.post("/api/semantic-boards/adopt", asyncEndpoint(adoptRoute));
 	app.post("/api/semantic-boards/shelve", asyncEndpoint(shelveRoute));
+	app.post("/api/semantic-boards/rename", asyncEndpoint(renameRoute));
 	app.post("/api/semantic-boards/discard", asyncEndpoint(discardRoute));
 }
 

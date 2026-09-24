@@ -81,7 +81,7 @@ describe("what a board has to be before it is drawn", () => {
 					],
 				}),
 			),
-		).toContain("two variants are called");
+		).toContain('two variants answer to "Initial"');
 	});
 
 	test("a state named after the movable designation is refused", () => {
