@@ -7,9 +7,11 @@ status: accepted
 Amended by TASK-339 (2026-09-24): a traffic mark is a comet, not a round dot.
 It has a head stretched along its line and a tail that tapers and fades behind
 it, with a ring of the page's own background around the head and a soft glow.
-A coloured line is drawn at three quarters of its colour (ADR 0025 as amended),
-and its comets carry the colour at full strength. The neutral grey line keeps
-its colour, and its comets are shaded toward the page's text colour instead. A
+A coloured line is drawn at three quarters of its colour (ADR 0025 as amended).
+A comet's head is the colour at full strength with some of the page's text
+colour mixed in: darker on a light page, brighter on a dark one. Its tail fades
+from the head's colour back into the line's. The neutral grey line keeps its
+colour, and its comets lean further toward the text colour. A
 round dot said nothing about direction. A comet shows which way its
 relationship flows, also in a still picture, where the marks are drawn at rest.
 It also cannot be mistaken for the junction mark where two routes join

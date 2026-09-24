@@ -25,6 +25,8 @@ interface Pulse {
 	readonly path: string;
 	/** The relationship's colour at full strength; its line is drawn weaker. */
 	readonly colour: string;
+	/** The colour its line is drawn in, which the comet's tail fades back into. */
+	readonly lineColour: string;
 	/** How thick the line the comets ride is drawn, so a heavier line carries heavier comets. */
 	readonly lineWidth: number;
 	/** The page the comets are drawn on: its background, its text colour and whether it is dark. */
@@ -71,22 +73,23 @@ const COMET_HEAD_LENGTH = 0.55;
 const COMET_MOAT = 1.4;
 
 /**
- * How far a comet on the neutral line moves toward the page's text colour: far
- * enough to stand out from the grey line it rides, in both themes (a dark
- * streak on a light page, a bright one on a dark page).
+ * How far a comet's head moves from its relationship's colour toward the page's
+ * text colour: a little on a coloured line, whose colour already stands out
+ * from a line drawn weaker, and far on the neutral grey, which must stand out
+ * from a line of its own colour. Darker on a light page, brighter on a dark one.
  */
-const COMET_CONTRAST = 0.6;
+const COMET_TEXT = { coloured: 0.3, neutral: 0.6 } as const;
 
 /**
- * The colour a comet is drawn in. A coloured line is drawn at three quarters of
- * its colour, so its comets carry the colour at full strength; the neutral line
- * keeps its grey, so its comets lean toward the page's text instead.
+ * The colour a comet's head is drawn in: its relationship's colour at full
+ * strength with some of the page's text colour mixed in.
  * @param ink The relationship's colour at full strength.
  * @param page The page: its neutral line colour and its text colour.
- * @returns The comet's colour.
+ * @returns The head's colour.
  */
 function cometColour(ink: string, page: Pick<Palette, "edge" | "foreground">): string {
-	return ink === page.edge ? mixed(ink, page.foreground, COMET_CONTRAST) : ink;
+	const share = ink === page.edge ? COMET_TEXT.neutral : COMET_TEXT.coloured;
+	return mixed(ink, page.foreground, share);
 }
 
 /**
@@ -160,9 +163,9 @@ function cometLayer(
 /**
  * A steady stream of comets measured directly along the final SVG path.
  *
- * Each comet is a head ringed by the page's colour, with a soft glow, and a
- * tail that tapers and fades behind it, in its relationship's colour at full
- * strength (or, on the neutral line, shaded toward the page's text), spaced
+ * Each comet is a head ringed by the page's colour, with a soft glow, in its
+ * relationship's colour with some of the page's text mixed in, and a tail that
+ * tapers and fades from the head's colour back into the line's, spaced
  * speed/volume units apart. Every layer is one dash pattern
  * over the whole route, advanced by one spacing every 1/volume seconds, which
  * gives fixed distance per second on straight and curved routes, already
@@ -173,7 +176,7 @@ function cometLayer(
  * @returns The animated comet stream, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
-	const { path, lineWidth, page, traffic } = pulse;
+	const { path, lineWidth, lineColour, page, traffic } = pulse;
 	const colour = cometColour(pulse.colour, page);
 	const spacing = Math.max(
 		Number.MIN_VALUE,
@@ -197,12 +200,13 @@ function travellingPulses(pulse: Pulse): string {
 				colour: page.background,
 				moat: true,
 			}),
+			// The tail leaves the head in its colour and fades back into the line's.
 			...COMET_TAIL_LAYERS.map((layer) =>
 				cometLayer(stream, {
 					length: tail * layer.reach,
 					width: lineWidth + (head - lineWidth) * layer.width,
 					opacity: layer.opacity,
-					colour,
+					colour: mixed(lineColour, colour, 1 - layer.reach),
 				}),
 			),
 			cometLayer(stream, { length: headLength, width: head, opacity: 1, colour }),
@@ -230,15 +234,17 @@ const TIMED_TAIL = 6;
  *
  * The gradient's id is its colour: panes shown inline share one document's id
  * namespace, and equal ids must always define equal gradients.
- * @param colour The comet's colour.
+ * @param colour The comet's head's colour.
+ * @param lineColour The colour its line is drawn in, which the tail fades into.
  * @param radius Its head's radius.
  * @returns The gradient's definition and the tail's markup.
  */
 function timedTail(
 	colour: string,
+	lineColour: string,
 	radius: number,
 ): { readonly defs: string; readonly tail: string } {
-	const id = `ab-comet-tail-${colour.replace(/[^0-9a-z]/giu, "")}`;
+	const id = `ab-comet-tail-${lineColour.replace(/[^0-9a-z]/giu, "")}-${colour.replace(/[^0-9a-z]/giu, "")}`;
 	const reach = radius * TIMED_TAIL;
 	const defs = wrap(
 		"defs",
@@ -246,7 +252,7 @@ function timedTail(
 		wrap(
 			"linearGradient",
 			{ id, x1: 0, x2: 1, y1: 0, y2: 0 },
-			tag("stop", { offset: 0, "stop-color": colour, "stop-opacity": 0 }) +
+			tag("stop", { offset: 0, "stop-color": lineColour, "stop-opacity": 0 }) +
 				tag("stop", { offset: 1, "stop-color": colour, "stop-opacity": 0.85 }),
 		),
 	);
@@ -269,7 +275,8 @@ function timedTail(
  * relationship's traffic is drawn with.
  * @param crossing The line, its colour, the size of its comet and the page it is drawn on.
  * @param crossing.path The path the comet rides.
- * @param crossing.colour Its line's ink.
+ * @param crossing.colour Its relationship's colour at full strength.
+ * @param crossing.lineColour The colour its line is drawn in.
  * @param crossing.radius How big its head is.
  * @param crossing.page The page's background, which rings its head, and its text colour, which shades it.
  * @param cycle How long the whole exchange's clock takes, in seconds.
@@ -280,6 +287,7 @@ function timedPulse(
 	crossing: {
 		readonly path: string;
 		readonly colour: string;
+		readonly lineColour: string;
 		readonly radius: number;
 		readonly page: Pick<Palette, "background" | "edge" | "foreground">;
 	},
@@ -290,7 +298,7 @@ function timedPulse(
 	const { start, finish, ramp } = turn;
 	const { radius, page } = crossing;
 	const colour = cometColour(crossing.colour, page);
-	const { defs, tail } = timedTail(colour, radius);
+	const { defs, tail } = timedTail(colour, crossing.lineColour, radius);
 	return (
 		defs +
 		wrap(
