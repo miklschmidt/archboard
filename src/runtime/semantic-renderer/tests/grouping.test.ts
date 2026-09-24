@@ -4,6 +4,18 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { themeColor } from "@/shared/theme/server";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import { hueOf } from "@/runtime/semantic-renderer/tests/drawn-colours";
+
+/**
+ * The colour a relationship's line is stroked in: the path that ends in its arrowhead.
+ * @param markup The relationship's group.
+ * @returns The stroke colour.
+ */
+function lineStroke(markup: string): string {
+	return /<path d="[^"]*" marker-end="[^"]*" fill="none" stroke="(#[0-9a-f]{6})"/u.exec(
+		markup,
+	)![1]!;
+}
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
@@ -138,13 +150,13 @@ describe("containment and type have independent visual channels", () => {
 			policy,
 		});
 		const edge = groupOf(normal.svg, "edge", "e")!.markup;
-		expect(edge).toContain(`stroke="${themeColor("light", "--semantic-rose")}"`);
+		// The line is drawn at its line strength: the kind's colour, weaker.
+		const rose = hueOf(themeColor("light", "--semantic-rose"));
+		expect(Math.abs(hueOf(lineStroke(edge)) - rose)).toBeLessThan(6);
 		expect(edge).toContain('stroke-dasharray="1.5 3.5"');
 		expect(edge).toContain('data-arrowhead="open"');
 		expect(hero.svg).not.toContain("<animateMotion");
-		expect(groupOf(hero.svg, "edge", "e")!.markup).toContain(
-			`stroke="${themeColor("light", "--semantic-rose")}"`,
-		);
+		expect(lineStroke(groupOf(hero.svg, "edge", "e")!.markup)).toBe(lineStroke(edge));
 	});
 });
 
