@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 23:24'
-updated_date: '2026-09-24 00:04'
+updated_date: '2026-09-24 00:07'
 labels:
   - naming
 dependencies:
@@ -50,4 +50,6 @@ Naming decisions (TASK-324):
 - Model-facing text: the workhorse and app manifests (this canvas), the classifier prompt (the host) and the Codex clientInfo title (archboard canvas) say Archboard server; three reviewed digests re-pinned, as TASK-322 did.
 - The package script that runs the server is server (was canvas); skill setup looked for bin/canvas after TASK-323 and now looks for bin/archboard.
 - Not edited (instructions files, for the owner): AGENTS.md lines 79-80 and .claude/rules/agent-work.md line 7 still say canvas for the server.
+
+Gate (worktree, after the last code commit): type-check pass; lint pass; fmt:check pass; test:modules 3378 pass 0 fail; test:system 178 pass 0 fail; test:repository 8 pass 0 fail; test:serial-browser 15 files, 17 pass 0 fail. Environment note: this worktree's fresh install of @chenglou/pretext 0.0.9 lacks setMeasureFunction that src/ui/voice-subtitles/tests uses; the main checkout's node_modules copy has it, so it was copied in (ignored node_modules only). Vault code bindings to renamed paths are listed for the parent to update through the CLI.
 <!-- SECTION:NOTES:END -->
