@@ -1,9 +1,7 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
-import type { ElkExtendedEdge, ElkNode, ElkShape } from "@archboard/elk-rs";
-import { fitIn } from "@/shared/shell-geometry/index";
-import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
-import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
+import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "@archboard/elk-rs";
+import { chooseReading } from "@/transformers/semantic-renderer/lib/layout/column-readings";
 import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
@@ -38,7 +36,7 @@ import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
-import { rendererHost } from "@/transformers/semantic-renderer/lib/host";
+import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
@@ -46,6 +44,18 @@ interface Problem {
 	readonly measured: MeasuredArchitecture;
 	readonly standings?: Readonly<Record<string, ChangeKind>> | undefined;
 	readonly columns: number;
+	/** Whether the reading is no longer wanted, so its remaining solves are not asked. */
+	readonly abandoned?: () => boolean;
+}
+
+/**
+ * One reading being settled: its problem, and its placements by label
+ * reservations. Placement reads which labels are reserved and nothing about
+ * where a forced label sits, so every attempt with the same reservations
+ * routes the same placement (TASK-342).
+ */
+interface Reading extends Problem {
+	readonly place: (reserved: ReadonlySet<string>) => Promise<ElkNode>;
 }
 
 /**
@@ -181,7 +191,9 @@ async function layoutCompound(
 ): Promise<PaintedDrawing> {
 	const problem: Problem = { content, measured, standings, columns: 1 };
 	const baseline = await settleReading(problem);
-	const chosen = await chooseReading(problem, baseline);
+	const chosen = await chooseReading(baseline, (columns, unwanted) =>
+		settleReading({ ...problem, columns, abandoned: unwanted }),
+	);
 	// Lanes that fold into one row are exchanged first, so the routes the
 	// drawing reports are the ones painted (junction marks read them); bridges
 	// are then settled as part of the geometry a reader sees.
@@ -190,100 +202,30 @@ async function layoutCompound(
 }
 
 /**
- * Tighten the width bound after each improvement before trying another count.
- * @param problem The measured semantic board.
- * @param baseline Original settled geometry used to find indivisible bands.
- * @param best Best complete reading so far.
- * @param columns Next count, in increasing order so fewer columns win ties.
- * @returns The best complete reading without solving impossible improvements.
- */
-async function chooseReading(
-	problem: Problem,
-	baseline: ArchitectureDrawing,
-	best = baseline,
-	columns = 2,
-): Promise<ArchitectureDrawing> {
-	const requiredFit = fitIn(best) * (1 + WRAP_MIN_FIT_GAIN);
-	const count = columnCounts(baseline, requiredFit).find((candidate) => candidate >= columns);
-	if (count === undefined) return best;
-	const next = await betterReading({ ...problem, columns: count }, best, requiredFit);
-	return chooseReading(problem, baseline, next, count + 1);
-}
-
-/**
- * Keep the complete baseline when an alternate cannot route or improve pane fit.
- * @param problem One alternate column count.
- * @param baseline Best complete reading so far; fewer columns win equal fit.
- * @param requiredFit The material relative improvement another column must provide.
- * @returns The better complete reading.
- */
-async function betterReading(
-	problem: Problem,
-	baseline: ArchitectureDrawing,
-	requiredFit: number,
-): Promise<ArchitectureDrawing> {
-	try {
-		const candidate = await settleReading(problem);
-		const fit = fitIn(candidate);
-		return fit > fitIn(baseline) && fit >= requiredFit ? candidate : baseline;
-	} catch {
-		return baseline;
-	}
-}
-
-/**
- * Find feasible column counts from the fully settled baseline geometry.
- * Preserve hierarchy so proposed folds move whole frames and side-entry sources.
- * @param drawing The complete downward baseline.
- * @param minimumFit The fit any further candidate must improve.
- * @returns Increasing candidate counts; ties retain the earlier, simpler reading.
- */
-function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[] {
-	const subjects = [...drawing.cards, ...drawing.containers];
-	const nodes = new Map<string, ElkNode>(
-		subjects.map(({ measured, box }) => [
-			measured.node.id,
-			{
-				id: measured.node.id,
-				...box,
-				layoutOptions: { "archboard.order": String(measured.node.order) },
-			},
-		]),
-	);
-	const children: ElkNode[] = [];
-	for (const { measured } of subjects) {
-		const node = nodes.get(measured.node.id)!;
-		const parent = nodes.get(measured.node.parent ?? "");
-		if (parent === undefined) children.push(node);
-		else (parent.children ??= []).push(node);
-	}
-	return foldColumnCounts(
-		{
-			id: "column-candidates",
-			x: 0,
-			y: 0,
-			width: drawing.width,
-			height: drawing.height,
-			children,
-			edges: drawing.edges.map(({ edge }) => ({
-				id: edge.id,
-				sources: [edge.from],
-				targets: [edge.to],
-				layoutOptions: { "archboard.order": String(edge.order) },
-			})),
-		},
-		minimumFit,
-	);
-}
-
-/**
  * Settle labels independently for one candidate reading.
  * @param problem Measured content and requested downward column count.
  * @returns A complete candidate or a routing/label failure.
  */
 async function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
+	const reading: Reading = {
+		...problem,
+		place: rememberSolves((reserved) =>
+			solve(problem, graphForLabels(problem, reserved), {
+				...solveOptions(problem),
+				[SOLVE_STAGE]: "place",
+			}),
+		),
+	};
 	const drawing = await settleLabels(
-		rememberSolves((reserved) => attemptLabels(problem, reserved)),
+		{
+			/**
+			 * The page a set of reservations places, which routing leaves as it is.
+			 * @param reserved Labels given placement space.
+			 * @returns The placed page.
+			 */
+			place: (reserved) => reading.place(reserved).then(boxOf),
+			solve: rememberSolves((reserved) => attemptLabels(reading, reserved)),
+		},
 		new Set(),
 	);
 	for (const { edge, curve, label } of drawing.edges) {
@@ -297,27 +239,33 @@ async function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
  * Seed all measured relationships before omitting unneeded label reservations.
  * @param problem The board, in the solving frame.
  * @param reserved Relationships that could not fit a badge on an ordinary run.
- * @param forced Labels that also require a route through their reserved box.
- * @returns The next complete engine input.
+ * @returns The next placement input.
  */
-function graphForLabels(
-	problem: Problem,
-	reserved: ReadonlySet<string>,
-	forced: ReadonlyMap<string, LabelAnchor | undefined>,
-): ElkNode {
+function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNode {
 	const { content, measured } = problem;
 	const graph = compoundGraph(content, measured, problem.standings);
+	for (const edge of graph.edges ?? []) if (!reserved.has(edge.id)) edge.labels = [];
+	return graph;
+}
 
+/**
+ * Ask a placed graph's forced labels to be routed through.
+ * @param placed A placement of the reading, which stays as it is.
+ * @param forced Labels that require a route through their reserved box.
+ * @returns The routing input.
+ */
+function forceLabels(
+	placed: ElkNode,
+	forced: ReadonlyMap<string, LabelAnchor | undefined>,
+): ElkNode {
+	const graph = structuredClone(placed);
 	for (const edge of graph.edges ?? []) {
-		if (!reserved.has(edge.id)) edge.labels = [];
-		if (forced.has(edge.id)) {
-			const box = forced.get(edge.id);
-			edge.layoutOptions = {
-				...edge.layoutOptions,
-				"archboard.route-label": "true",
-				...anchorOptions(box),
-			};
-		}
+		if (!forced.has(edge.id)) continue;
+		edge.layoutOptions = {
+			...edge.layoutOptions,
+			"archboard.route-label": "true",
+			...anchorOptions(forced.get(edge.id)),
+		};
 	}
 	return graph;
 }
@@ -377,7 +325,7 @@ function movedOff(reserved: Box, drawn: Box | undefined): boolean {
  * @returns The drawing and remaining placement requirements.
  */
 async function attemptLabels(
-	problem: Problem,
+	problem: Reading,
 	reserved: ReadonlySet<string>,
 	forced: ReadonlyMap<string, LabelAnchor | undefined> = new Map(),
 ): Promise<LabelAttempt> {
@@ -411,7 +359,7 @@ async function attemptLabels(
  * @returns The same attempt, or one reroute with physically feasible row corrections.
  */
 async function correctLabelChannels(
-	problem: Problem,
+	problem: Reading,
 	reserved: ReadonlySet<string>,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 	attempt: Awaited<ReturnType<typeof drawAttempt>>,
@@ -455,7 +403,7 @@ async function correctLabelChannels(
  * @returns The accepted complete reading.
  */
 async function improveLabelChannels(
-	problem: Problem,
+	problem: Reading,
 	reserved: ReadonlySet<string>,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 	attempt: LabelAttempt,
@@ -475,16 +423,16 @@ async function improveLabelChannels(
  * @returns The drawing and its remaining label requirements.
  */
 async function drawAttempt(
-	problem: Problem,
+	problem: Reading,
 	reserved: ReadonlySet<string>,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 ): Promise<
 	LabelAttempt & { readonly reservedBoxes: ReadonlyMap<string, NonNullable<DrawingEdge["label"]>> }
 > {
 	const { content, measured } = problem;
-	const laidOut = await rendererHost().solve(graphForLabels(problem, reserved, forced), {
-		...COMPOUND_OPTIONS,
-		"archboard.fold.columns": String(problem.columns),
+	const laidOut = await solve(problem, forceLabels(await problem.place(reserved), forced), {
+		...solveOptions(problem),
+		[SOLVE_STAGE]: "route",
 	});
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
@@ -510,6 +458,28 @@ async function drawAttempt(
 			: [],
 	);
 	return { drawing, missing, unused, reservedBoxes: reservedLabels(laidOut, measured) };
+}
+
+/**
+ * Ask the engine one solve of a reading that is still wanted.
+ * @param problem The reading.
+ * @param graph The engine input.
+ * @param options The engine options.
+ * @returns The solved graph.
+ * @throws {Error} When the reading has been abandoned.
+ */
+async function solve(problem: Problem, graph: ElkNode, options: LayoutOptions): Promise<ElkNode> {
+	if (problem.abandoned?.() === true) throw new Error("The reading is no longer wanted");
+	return rendererHost().solve(graph, options);
+}
+
+/**
+ * The options every solve of a reading is asked with.
+ * @param problem The board and its column count.
+ * @returns The engine options.
+ */
+function solveOptions(problem: Problem): LayoutOptions {
+	return { ...COMPOUND_OPTIONS, "archboard.fold.columns": String(problem.columns) };
 }
 
 export { layoutCompound };

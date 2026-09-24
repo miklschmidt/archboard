@@ -1,9 +1,11 @@
 ---
 id: TASK-342
 title: 'A performance pass: every dogfood board lays out in seconds'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-24 16:09'
+updated_date: '2026-09-24 17:35'
 labels:
   - renderer
   - performance
@@ -25,3 +27,21 @@ Measured 2026-09-24 in-process, cold, on the dogfood vault: Archboard server tak
 - [ ] #2 Archboard server and Board viewer lay out in a few seconds, and the pictures they draw are unchanged or judged no worse
 - [ ] #3 The wide-boards owners pass within their time budget
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Board proposal: performance work changes no drawn architecture; no board is affected (layout internals only, no new part or relationship).
+1. Profile in-process and through the worker pool: solves per board, Graphviz placement vs libavoid routing vs the rest, reservation and release rounds, column readings.
+2. Safe (byte-identical) speed-ups only: (a) a release whose placement gives back no height or area is refused before it is routed (routing never changes page size); (b) placement is solved once per label-reservation set and reused by every forced-label attempt (engine gains a place/route stage option); (c) column-count readings are settled side by side, compared in the same order.
+3. Prove byte identity: render every board, every non-current variant and every view as SVG through a scratch server on a vault copy before and after, compare bytes.
+4. Measure and report, not commit, anything that changes pictures (Graphviz splines=ortho removal, fewer retries, cheaper routing).
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Profile (2026-09-24, in-process, one cold render of each current variant, before any change): Archboard server 507 s in-process, 1310 solves (397 unfolded plus 913 for the six column-count readings 2-7), Graphviz placement 36 s, libavoid routing 451 s, the rest 20 s. Board viewer 10 s, 241 solves, placement 4 s, routing 6 s. Every board: routing is 55-90% and placement is the rest; measurement, label placement, crossings and painting stay under 4%. Each routed solve runs ~4.5 libavoid transactions (the endpoint-face rejection loop, then one pin refinement pass); the slowest (Archboard server, 6 columns) take 1 s each. Half of a transaction was JS stack traces for libavoid's C++ exceptions: one slow solve throws 762,356 Avoid::UnsatisfiableException (the orthogonal nudging solver) and the Emscripten glue captured a stack and decoded the message for each. Of a release round's solves, most routed a placement whose page was already no smaller (Board viewer: 22 of 26, then 16 of 26), so they could never be kept. Folded readings: Archboard server refuses all six (routes that cannot clear obstacles, or fixed bends reversing), yet they set its wall time. No libavoid or Graphviz memory growth across four renders of Board viewer in one process (both WASM memories stayed at 16 MiB), for TASK-343.
+
+Kept (every one leaves all 54 pictures byte-identical: every board whole, every non-current variant, every view, through a server on a vault copy before and after): (1) libavoid-js patch: C++ exceptions thrown without a JS stack trace, message decoded lazily; (2) a release is placed before it is routed and refused when its page is not smaller (routing never changes page size); (3) placement solved once per reservation set, engine gains a place/route stage option (SOLVE_STAGE); (4) column-count readings settle side by side, compared in the same order, abandoned once chosen or refused (lib/layout/column-readings.ts). Paired pool timings, base vs after: Archboard server 110.5 to 43.4 s, Voice coordinator 6.0 to 2.4, Browser application 4.2 to 2.0, Semantic renderer 4.1 to 1.5, Board viewer 3.2 to 1.4 s. Not kept (change pictures or unproven): skip fold counts whose unreserved placement misses the fit (Archboard server 38 to 14 s, 0 of 54 pictures changed, but not a bound); Graphviz splines=false (1 of 54 pictures 18 px narrower); a shared worker queue (no faster). Gate: type-check, lint, fmt:check, test:system 181/0, test:repository 8/0, test:serial-browser pass; test:modules 3399/1, the one failure is wide-boards Archboard server over its 20 s budget (about 40 s standalone, was 116 s). AC2 and AC3 remain open for Archboard server.
+<!-- SECTION:NOTES:END -->

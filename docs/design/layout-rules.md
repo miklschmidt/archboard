@@ -1547,3 +1547,86 @@ A native run between disjoint card spans remains eligible to carry its label.
 Only a newly proposed adjacent channel requires an aligned endpoint; an
 existing run has already established its approach through native routing. The
 whole drawing still has to pass the existing label and curve-clearance checks.
+
+## 34. Where a render's time goes (2026-09-24, TASK-342)
+
+Measured on the dogfood vault, one cold render of each current variant. The
+profile columns come from before this section's changes, run in-process with
+one engine so that each stage can be timed. The last two columns run through
+the worker pool, as the Archboard server does. Each board's base render ran
+next to its after render, on a box shared with other work (load 8 to 17).
+
+| board               | solves | placement | routing | the rest | pool, before | pool, after |
+| ------------------- | ------ | --------- | ------- | -------- | ------------ | ----------- |
+| Archboard server    | 1310   | 36.0 s    | 451 s   | 20.2 s   | 110.5 s      | 43.4 s      |
+| Voice coordinator   | 1051   | 7.9 s     | 14.3 s  | 0.4 s    | 6.0 s        | 2.4 s       |
+| Browser application | 418    | 8.1 s     | 9.0 s   | 0.2 s    | 4.2 s        | 2.0 s       |
+| Semantic renderer   | 807    | 4.6 s     | 8.6 s   | 0.3 s    | 4.1 s        | 1.5 s       |
+| Board viewer        | 241    | 4.0 s     | 6.0 s   | 0.1 s    | 3.2 s        | 1.4 s       |
+| Skill evaluation    | 415    | 3.9 s     | 6.4 s   | 0.2 s    | 2.7 s        | 1.7 s       |
+| Command interface   | 276    | 3.1 s     | 5.3 s   | 0.2 s    | 2.3 s        | 1.3 s       |
+| Board persistence   | 120    | 1.2 s     | 2.7 s   | 0.1 s    | 2.2 s        | 1.0 s       |
+| Agent workbench     | 181    | 2.2 s     | 3.3 s   | 0.1 s    | 2.1 s        | 1.0 s       |
+| Board rasterizer    | 118    | 0.9 s     | 1.1 s   | 0.1 s    | 1.3 s        | 0.6 s       |
+
+Every other board takes under 0.6 s before and after.
+
+Routing is where the time goes: libavoid's orthogonal router takes 55 to 90% of
+every board, Graphviz placement the rest, and measurement, label placement,
+crossings and painting stay under 4%. A routed solve runs four or five native
+transactions: the router routes the whole scene again for each endpoint face it
+rejects as too cramped, and then once more to refine the pins. The nudging
+solver inside libavoid signals an unsatisfiable constraint set with a C++
+exception, and one slow solve throws 762,356 of them. For each one the
+Emscripten glue captured a JavaScript stack trace and decoded the message,
+which was half of the solve.
+
+What a board solves: the unfolded reading settles its labels (each reservation
+round places and routes the page again, and each forced label can add a reroute
+or two), then releases unused reservations in rounds that solve every
+candidate. A board whose unfolded reading is taller than the pane then settles
+the same way for every column count its bands allow, which is most of Archboard
+server's solves: six folded readings, all of which the router refuses in the
+end (routes that cannot clear an obstacle, or a fixed bend reversed).
+
+Kept, each leaving all 54 pictures byte-identical (every board whole, every
+non-current variant and every view, rendered through a server before and after):
+
+- The patched libavoid glue throws its C++ exceptions with no stack trace and
+  decodes the message only when something reads it. The slowest solve fell
+  from 7.8 to 4.8 s.
+- A release is placed before it is routed. Routing never changes a page's
+  size, so a release whose placement gives back no height or area cannot be
+  kept and is not routed. Most release candidates stop here; Board viewer
+  routes 69 solves instead of 241.
+- Placement is solved once for each set of label reservations. Every forced
+  label attempt with that set routes the same placement, and the engine takes
+  a stage option (`place`, `route`) to answer one half.
+- The column-count readings settle side by side instead of one after another,
+  and are compared in the same order with the same tightening bound. When the
+  choice is made, or a reading is refused, that reading asks for no more
+  solves.
+
+Measured and not kept, because they change pictures or have not been shown not
+to:
+
+- Skipping a column count whose placement with no labels reserved already
+  misses the required fit. It changed none of the 54 pictures and brought
+  Archboard server from 38 to 14 s, and its other variant from 51 to 5 s, but
+  the unreserved placement is not a bound. A settled reading has fitted up to
+  13% better than its unreserved placement (Voice coordinator view 0w8KW8AP,
+  four columns: 0.405 placed, 0.459 settled), so the rule needs a margin and
+  could still drop a winning fold.
+- Letting Graphviz skip its orthogonal splines, which nothing reads. It placed
+  cards identically in 94% of the vault's 5,239 placements and saved about two thirds of
+  placement in-process, but the discarded splines widen Graphviz's bounding
+  box, so the page's margin moves: one picture of 54 changed (Board
+  persistence variant tVCqUn1A, 18 px narrower). Through the pool the saving
+  was lost in the noise, because routing now dominates.
+- One queue shared by all pool workers, so a solve never waits behind a long
+  one. It was no faster on Archboard server (45.5 s against 37.6 s).
+
+Archboard server still takes 37 to 45 s, so it does not yet lay out in a few
+seconds. Its wall time is the sequential chain
+of solves in the six-column reading, the one the router refuses last, at 1 to
+2 s per routed solve.

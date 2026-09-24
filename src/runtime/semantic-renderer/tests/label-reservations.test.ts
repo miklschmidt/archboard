@@ -57,30 +57,36 @@ function page(
 }
 
 /**
- * A solve that answers from a table keyed by the reservations it is given.
+ * A solve that answers from a table keyed by the reservations it is given,
+ * and a placement that answers the size of the same page.
  * @param answers The drawing and unused reservations for each set of reservations.
- * @returns The solve, and the reservation sets it was asked for.
+ * @returns The solve, its placement, and the reservation sets routed.
  */
 function solveFrom(answers: Record<string, { drawing: ArchitectureDrawing; unused?: string[] }>) {
 	const asked: string[] = [];
-	const solve = async (reserved: ReadonlySet<string>): Promise<LabelAttempt> => {
+	const answer = (reserved: ReadonlySet<string>) => {
 		const key = [...reserved].toSorted().join(",");
-		asked.push(key);
-		const answer = answers[key];
-		if (answer === undefined) throw new Error(`unexpected reservations: ${key}`);
-		return { drawing: answer.drawing, missing: [], unused: answer.unused ?? [] };
+		const found = answers[key];
+		if (found === undefined) throw new Error(`unexpected reservations: ${key}`);
+		return { key, found };
 	};
-	return { solve, asked };
+	const solve = async (reserved: ReadonlySet<string>): Promise<LabelAttempt> => {
+		const { key, found } = answer(reserved);
+		asked.push(key);
+		return { drawing: found.drawing, missing: [], unused: found.unused ?? [] };
+	};
+	const place = async (reserved: ReadonlySet<string>) => answer(reserved).found.drawing;
+	return { solve, place, asked };
 }
 
 describe("an unused label reservation", () => {
 	test("is released when the page gets smaller", async () => {
 		const smaller = page(400, 300);
-		const { solve } = solveFrom({
+		const { solve, place } = solveFrom({
 			"a,b": { drawing: page(400, 500), unused: ["a"] },
 			b: { drawing: smaller },
 		});
-		expect(await settleLabels(solve, new Set(["a", "b"]))).toBe(smaller);
+		expect(await settleLabels({ place, solve }, new Set(["a", "b"]))).toBe(smaller);
 	});
 
 	test("is kept when a smaller release cannot fit the fixed bends", async () => {
@@ -94,34 +100,35 @@ describe("an unused label reservation", () => {
 				{ x: 200, y: 8 },
 			]),
 		};
-		const { solve } = solveFrom({
+		const { solve, place } = solveFrom({
 			a: { drawing: kept, unused: ["a"] },
 			"": { drawing: page(300, 400, [tight]) },
 		});
-		expect(await settleLabels(solve, new Set(["a"]))).toBe(kept);
+		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(kept);
 	});
 
-	test("is kept when releasing it only spreads the page sideways", async () => {
+	test("is kept, and never routed, when its placement only spreads the page sideways", async () => {
 		const kept = page(400, 500);
-		const { solve } = solveFrom({
+		const { solve, place, asked } = solveFrom({
 			a: { drawing: kept, unused: ["a"] },
 			"": { drawing: page(600, 480) },
 		});
-		expect(await settleLabels(solve, new Set(["a"]))).toBe(kept);
+		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(kept);
+		expect(asked).toEqual(["a"]);
 	});
 
 	test("is kept when releasing it makes two routes cross", async () => {
 		const kept = page(400, 500);
-		const { solve } = solveFrom({
+		const { solve, place } = solveFrom({
 			a: { drawing: kept, unused: ["a"] },
 			"": { drawing: page(300, 400, CROSSING) },
 		});
-		expect(await settleLabels(solve, new Set(["a"]))).toBe(kept);
+		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(kept);
 	});
 
 	test("is released alone when releasing every unused one together loses a label's box", async () => {
 		const smaller = page(400, 400);
-		const { solve } = solveFrom({
+		const { solve, place } = solveFrom({
 			"a,b": { drawing: page(400, 500), unused: ["a", "b"] },
 			"": { drawing: page(400, 300) },
 			b: { drawing: smaller },
@@ -133,13 +140,13 @@ describe("an unused label reservation", () => {
 			const attempt = await solve(reserved);
 			return reserved.size === 0 ? { ...attempt, missing: [CROSSING[0]!] } : attempt;
 		};
-		expect(await settleLabels(missingLabel, new Set(["a", "b"]))).toBe(smaller);
+		expect(await settleLabels({ place, solve: missingLabel }, new Set(["a", "b"]))).toBe(smaller);
 	});
 
 	test("settling ends when no reservation is unused", async () => {
 		const settled = page(400, 500);
-		const { solve, asked } = solveFrom({ a: { drawing: settled } });
-		expect(await settleLabels(solve, new Set(["a"]))).toBe(settled);
+		const { solve, place, asked } = solveFrom({ a: { drawing: settled } });
+		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(settled);
 		expect(asked).toEqual(["a"]);
 	});
 });

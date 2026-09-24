@@ -69,10 +69,12 @@ function expectIntact(drawing: RenderedDiagram, content: VariantContent) {
 	);
 }
 
+// Bun waits the suite's 20 s wall-clock budget rather than its own shorter
+// default, so the budget is what a slow layout fails (docs/agents/test-suite.md).
 for (const board of [...FIXTURES, ...vaultBoards()]) {
 	test(`${board.name}: complete architecture, clear cards, labels on their own routes`, async () => {
 		const content = orderedFixture(board.content);
 		const drawing = await renderArchitecture({ content, theme: "light" });
 		expectIntact(drawing, content);
-	});
+	}, 20_000);
 }
