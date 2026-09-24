@@ -179,6 +179,49 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 	expect(distinct.edges).toEqual(shared);
 });
 
+// Codex workhorse: two routes finish on one row between two cards, each turning
+// toward the other's card, so they cross inside their corners where no arc fits.
+test("routes that cross where they turn onto one row get a bridge on straight runs", () => {
+	const routes = [
+		[
+			{ x: -100, y: 0 },
+			{ x: 0, y: 0 },
+			{ x: 0, y: 150 },
+			{ x: 100, y: 150 },
+		],
+		[
+			{ x: 120, y: 100 },
+			{ x: 15, y: 100 },
+			{ x: 15, y: 150 },
+			{ x: -80, y: 150 },
+		],
+	];
+	const label = { x: -30, y: 30, width: 60, height: 20 };
+	const before = drawing(routes);
+	const edges = [
+		{ ...before.edges[0]!, label: { box: label, measured: { width: 60, height: 20, runs: [] } } },
+		before.edges[1]!,
+	];
+	const result = bridgeCrossings({ ...before, width: 240, height: 160, edges });
+	const bridge = result.bridges.find((one) => one.curve.segments.length > 1);
+	expect(bridge, "a raised arc, not only a corner cutout").toBeDefined();
+	expect([bridge!.edgeId, ...bridge!.under].toSorted()).toEqual(["0", "1"]);
+	// Each route still leaves and reaches its own card, and the two rows no longer overlap.
+	for (const [index, { curve }] of result.edges.entries()) {
+		expect(curve.from).toEqual(routes[index]![0]!);
+		expect(curve.segments.at(-1)!.to).toEqual(routes[index]!.at(-1)!);
+	}
+	const [east, west] = result.edges.map(({ curve }) => {
+		const [from, to] = [curve.segments.at(-2)!.to.x, curve.segments.at(-1)!.to.x];
+		return { low: Math.min(from, to), high: Math.max(from, to) };
+	});
+	expect(east!.low >= west!.high || west!.low >= east!.high).toBe(true);
+	// The label rides its moved lane.
+	const moved = result.edges[0]!.label!.box;
+	expect(moved.y).toBe(label.y);
+	expect(moved.x + moved.width / 2).toBe(15);
+});
+
 // Native endpoint and inner-leg shortages must never produce smaller bends.
 test("ordinary bends stay fixed while completed routes require room for every turn and head", () => {
 	const points = [
