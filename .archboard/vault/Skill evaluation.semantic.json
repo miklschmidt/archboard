@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 7,
+	"version": 8,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-09-24T01:47:28.853Z",
+	"updatedAt": "2026-09-24T09:31:03.441Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -25,7 +25,9 @@
 					"1snXnK3G",
 					"7LcGoxWH",
 					"xzOQOY33",
-					"RqoYaLTK"
+					"RqoYaLTK",
+					"WbFIRpiE",
+					"TJmrdpKj"
 				],
 				"edges": [],
 				"flows": []
@@ -35,16 +37,19 @@
 			"id": "AAlYF4K5",
 			"name": "Grading",
 			"grammar": "architecture",
-			"summary": "Two graders on the same blinded bundle, and where they agree.",
+			"summary": "The grader chosen when grading runs, on the blinded bundle; the report says what moved, and where two graders agree.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"PwYiE0Hr",
+					"m7s6sgLI",
 					"gwU9cyGm",
 					"bgEcePXZ",
 					"1snXnK3G",
 					"9TIT63Qz",
-					"LcKROPw0"
+					"LcKROPw0",
+					"mwlOEUS8",
+					"wOZsx1lS"
 				],
 				"edges": [],
 				"flows": []
@@ -75,7 +80,8 @@
 						"order": 2000,
 						"name": "Suite loader",
 						"kind": "module",
-						"responsibility": "Reads and validates every canonical input, and refuses a skill package that names what it is being graded on",
+						"responsibility": "Reads and validates every canonical input, refusing a fixture, a citation or a skill package that would measure the wrong thing",
+						"description": "`eval:skill check` is this alone. It refuses a fixture relationship that lands on a part with children (landings.ts), a cited passage, catalogue row or rubric section the skill does not hold (citations.ts), and a skill package that names what it is graded on (leakage.ts).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/suite.ts"
@@ -87,7 +93,7 @@
 						"name": "Batch orchestrator",
 						"kind": "module",
 						"responsibility": "Plans every arm, scenario and repetition, runs them in parallel, and can be resumed only on the same inputs",
-						"description": "It hashes the inputs, the harness and both skill packages into the batch, so a resume or a later grading pass cannot quietly change what was measured.",
+						"description": "It hashes the inputs, the harness and both skill packages into the batch and keeps a copy of the candidate skill, so a resume or a later grading pass cannot quietly change what was measured.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/batch.ts"
@@ -109,7 +115,7 @@
 						"order": 5000,
 						"name": "Pinned checkout",
 						"kind": "module",
-						"responsibility": "A detached, verified checkout of one pinned commit per run, from a bare cache",
+						"responsibility": "A detached, verified checkout of one pinned Flask commit from a bare cache, or an empty repository for a planning scenario",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/flask.ts"
@@ -131,7 +137,7 @@
 						"order": 7000,
 						"name": "Skill install",
 						"kind": "module",
-						"responsibility": "Installs the arm being measured: the live package, or the frozen baseline swapped in and re-derived",
+						"responsibility": "Installs through the CLI, then swaps in the arm's package, the frozen baseline or the candidate copy the batch kept, and re-derives its generated files",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/install.ts"
@@ -188,8 +194,8 @@
 						"order": 12000,
 						"name": "Grading session",
 						"kind": "module",
-						"responsibility": "Stages a read-only workspace, chunks the ungraded runs, and drives one resumed grader session",
-						"description": "The runs reach the grader blinded: an anonymous id from the batch salt, private paths redacted, and no arm anywhere in the bundle.",
+						"responsibility": "Stages a read-only workspace and grades the ungraded runs in chunks, in one resumed session of the grader chosen by name",
+						"description": "The runs reach the grader blinded: an anonymous id from the batch salt, private paths redacted, and no arm anywhere in the bundle. Every run of both arms is judged against the one candidate skill the batch kept, staged beside the pinned Flask sources; a batch whose kept copy is missing or changed is refused.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/grading-run.ts"
@@ -222,7 +228,8 @@
 						"order": 15000,
 						"name": "Report",
 						"kind": "module",
-						"responsibility": "Joins every run with each grader's verdict and says where the two graders agree",
+						"responsibility": "Joins every run with the verdict of each grader that graded it, and says where two graders agree",
+						"description": "A finding's cited passage is resolved against the kept candidate skill: one it lacks is the grader's error, one only the candidate carries is a departure the run was never shown. Written as report.md and report.json beside the batch.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/records.ts"
@@ -233,8 +240,8 @@
 						"order": 16000,
 						"name": "Evaluation inputs",
 						"kind": "config",
-						"responsibility": "The scenarios, fixtures, pins, coverage and rubric, kept outside every skill package on purpose",
-						"description": "An author reads whatever the installed skill carries. Authors that could read the scenario, the fixture and the rubric they were being measured against read them.",
+						"responsibility": "The scenarios, fixtures, pins, grader settings, coverage and rubric, kept outside every skill package on purpose",
+						"description": "An author reads whatever the installed skill carries. Authors that could read the scenario, the fixture and the rubric they were being measured against read them. graders.json is left out of a batch's input digest: a grader is chosen when grading runs.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "evals"
@@ -279,14 +286,16 @@
 						"order": 19000,
 						"name": "Codex CLI",
 						"kind": "external",
-						"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from"
+						"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from",
+						"description": "Authors run the model evals/pins.json pins (gpt-6-luna at high effort, workspace-write sandbox); the Codex grader runs the one evals/graders.json pins (gpt-6-astra at high effort, read-only)."
 					},
 					{
 						"id": "9TIT63Qz",
 						"order": 20000,
 						"name": "Claude CLI",
 						"kind": "external",
-						"responsibility": "The other grader, run with read-only tools and none of the operator's settings"
+						"responsibility": "The other grader, run with read-only tools and none of the operator's settings",
+						"description": "claude-opus-5 at high effort with only Read, Grep and Glob, as evals/graders.json pins it."
 					},
 					{
 						"id": "JDTuIZQZ",
@@ -297,6 +306,75 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/archboard.ts"
+						}
+					},
+					{
+						"id": "wOZsx1lS",
+						"order": 2500,
+						"name": "Skill citations",
+						"kind": "module",
+						"responsibility": "Keeps the batch's copy of the candidate skill, and holds every cited passage, catalogue row and rubric section to a heading the skill has",
+						"description": "A citation is a skill file and a heading anchor, never a line number, so rewording a passage keeps it cited and renaming a heading breaks it at check time rather than at grading.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/citations.ts"
+						}
+					},
+					{
+						"id": "WbFIRpiE",
+						"order": 8500,
+						"name": "Run vault",
+						"kind": "module",
+						"responsibility": "Lays the fixture through the CLI so every id is one the product minted, and reads back the boards, renders, group reports and diagnostics",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/vault.ts"
+						}
+					},
+					{
+						"id": "TJmrdpKj",
+						"order": 9500,
+						"name": "Command classifier",
+						"kind": "function",
+						"responsibility": "Classes each command the author ran, and flags a read of what the run is measured against: the inputs, the harness, a skill package, another run",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/classify.ts"
+						}
+					},
+					{
+						"id": "m7s6sgLI",
+						"order": 12500,
+						"name": "Grader retry",
+						"kind": "module",
+						"responsibility": "Holds each answer to what the report reads, and asks once more in the same session for the runs an answer fell short on",
+						"description": "Short means a declared feature left unanswered, a feature invented, or a capture offered and not observed. The retry is a call of the session like any other, so its usage counts, and it is never itself retried; a retry owed by an earlier pass is asked on the next one.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/grading-retry.ts"
+						}
+					},
+					{
+						"id": "zZTYX1sf",
+						"order": 15300,
+						"name": "Exposure re-audit",
+						"kind": "function",
+						"responsibility": "Reads each saved run's exposure again with today's classifier, so a classifier fix reaches a batch that cannot be run again",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/reaudit.ts"
+						}
+					},
+					{
+						"id": "mwlOEUS8",
+						"order": 15500,
+						"name": "Comparison",
+						"kind": "module",
+						"responsibility": "Per scenario, per workflow and for the broad case: what moved between the arms, a mean held to the noise the batch measures in itself",
+						"description": "A pass count is a tally and any change to it is real; a grader mean is held to the spread of the runs the two arms share, paired scenario for scenario (report-change.ts), and gets a word only where more than one scenario stands behind it. Author and grader usage are never added together.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/skill-evaluation/lib/report.ts"
 						}
 					}
 				],
@@ -320,7 +398,7 @@
 						"from": "k8wziYS4",
 						"to": "IOCRa8GO",
 						"kind": "data",
-						"label": "scenarios, fixtures, pins, rubric",
+						"label": "scenarios, fixtures, pins, graders, rubric",
 						"emphasis": "normal"
 					},
 					{
@@ -382,7 +460,7 @@
 						"from": "w4qCQkDU",
 						"to": "8NS6WwkH",
 						"kind": "call",
-						"label": "the commit this scenario is about",
+						"label": "the commit this scenario is about, or an empty repository",
 						"emphasis": "normal"
 					},
 					{
@@ -507,15 +585,6 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "EWbHFV2K",
-						"order": 22000,
-						"from": "xzOQOY33",
-						"to": "JDTuIZQZ",
-						"kind": "call",
-						"label": "read the vault back",
-						"emphasis": "normal"
-					},
-					{
 						"id": "5TtCOktb",
 						"order": 23000,
 						"from": "RqoYaLTK",
@@ -536,6 +605,132 @@
 							"speed": 40,
 							"volume": 0.5
 						}
+					},
+					{
+						"id": "pdkMb2Mv",
+						"order": 25000,
+						"from": "k8wziYS4",
+						"to": "wOZsx1lS",
+						"kind": "call",
+						"label": "every citation lands",
+						"emphasis": "muted"
+					},
+					{
+						"id": "e1NAqCVh",
+						"order": 26000,
+						"from": "7A4Joh1m",
+						"to": "wOZsx1lS",
+						"kind": "call",
+						"label": "keep the candidate this batch runs",
+						"emphasis": "normal"
+					},
+					{
+						"id": "coFF39nO",
+						"order": 27000,
+						"from": "7A4Joh1m",
+						"to": "8NS6WwkH",
+						"kind": "call",
+						"label": "fill the bare cache",
+						"emphasis": "muted"
+					},
+					{
+						"id": "UcQvakTJ",
+						"order": 28000,
+						"from": "w4qCQkDU",
+						"to": "WbFIRpiE",
+						"kind": "call",
+						"label": "lay the fixture, read the vault back",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ETX9M5TU",
+						"order": 29000,
+						"from": "WbFIRpiE",
+						"to": "JDTuIZQZ",
+						"kind": "call",
+						"label": "one command per step and read",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZgOzpUec",
+						"order": 30000,
+						"from": "w4qCQkDU",
+						"to": "TJmrdpKj",
+						"kind": "call",
+						"label": "class and exposure of each command",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NJCua3tZ",
+						"order": 31000,
+						"from": "1snXnK3G",
+						"to": "fRFvnVRE",
+						"kind": "call",
+						"label": "the author's archboard commands",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Tt8yC8yW",
+						"order": 32000,
+						"from": "fRFvnVRE",
+						"to": "EJ2b3Szn",
+						"kind": "http",
+						"label": "the run's reads and writes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "pDhY9kXG",
+						"order": 33000,
+						"from": "PwYiE0Hr",
+						"to": "m7s6sgLI",
+						"kind": "call",
+						"label": "which answers fell short",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DzWFLBp6",
+						"order": 34000,
+						"from": "PwYiE0Hr",
+						"to": "8NS6WwkH",
+						"kind": "call",
+						"label": "the Flask sources the grader reads",
+						"emphasis": "muted"
+					},
+					{
+						"id": "dYaaUdXS",
+						"order": 35000,
+						"from": "LcKROPw0",
+						"to": "mwlOEUS8",
+						"kind": "call",
+						"label": "one grader's report",
+						"emphasis": "hero"
+					},
+					{
+						"id": "t7IxZjEX",
+						"order": 36000,
+						"from": "LcKROPw0",
+						"to": "zZTYX1sf",
+						"kind": "call",
+						"label": "exposure as today's classifier reads it",
+						"emphasis": "normal"
+					},
+					{
+						"id": "x8jCskDI",
+						"order": 37000,
+						"from": "zZTYX1sf",
+						"to": "TJmrdpKj",
+						"kind": "call",
+						"label": "classify the stored commands",
+						"emphasis": "normal"
+					},
+					{
+						"id": "7Gbj2xDB",
+						"order": 38000,
+						"from": "LcKROPw0",
+						"to": "wOZsx1lS",
+						"kind": "call",
+						"label": "resolve each finding's passage",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
@@ -547,10 +742,11 @@
 							{
 								"id": "0gapAPJA",
 								"heading": "Two arms, everything else identical",
-								"body": "A batch runs the frozen baseline package and the live one against the same CLI, prompts, fixtures and pins, and hashes all of it into the batch. A resume on different inputs is refused rather than quietly comparing two different things.",
+								"body": "A batch runs the frozen baseline package and a copy of the candidate it keeps when it starts, against the same CLI, prompts, fixtures and pins, and hashes all of it into the batch. A resume on different inputs, or on a kept copy edited since, is refused rather than quietly comparing two different things.",
 								"subjects": [
 									"7A4Joh1m",
-									"IFhUy8C6"
+									"IFhUy8C6",
+									"wOZsx1lS"
 								]
 							},
 							{
@@ -566,11 +762,13 @@
 							{
 								"id": "rAuf3IXQ",
 								"heading": "The evidence is read from the stream, not reported",
-								"body": "What the author ran, what it changed and what it cost are read from its own transcript afterwards. A final board that is right proves nothing about how it got there: a board patched behind the CLI's back is a file change, and the guardrail sees it.",
+								"body": "What the author ran, what it changed and what it cost are read from its own transcript afterwards. A final board that is right proves nothing about how it got there: a board patched behind the CLI's back is a file change, and the guardrail sees it. A read of the inputs, the harness, a skill package or another run is recorded as exposure, and the report reads it again with today's classifier.",
 								"subjects": [
 									"w4qCQkDU",
 									"7LcGoxWH",
-									"xzOQOY33"
+									"xzOQOY33",
+									"TJmrdpKj",
+									"zZTYX1sf"
 								]
 							},
 							{
@@ -585,11 +783,29 @@
 							{
 								"id": "wlpFYeya",
 								"heading": "The grader never learns the arm",
-								"body": "Runs reach a grader under anonymous ids with private paths redacted. Two graders read the same bundle, and the report says where they agree rather than picking one.",
+								"body": "Runs reach the grader under anonymous ids with private paths redacted, and every run of both arms is judged against the one candidate skill the batch kept. Codex or Claude grades, chosen when grading runs; when both graded a batch, the report says where they agree rather than picking one.",
 								"subjects": [
 									"PwYiE0Hr",
 									"gwU9cyGm",
 									"bgEcePXZ",
+									"LcKROPw0"
+								]
+							},
+							{
+								"id": "KhsZufqO",
+								"heading": "A short answer is asked for once more",
+								"body": "Each verdict is held to what the report reads: every declared feature by its name, none invented, every capture observed. One that falls short is asked for again in the same session, which keeps what it read and saw; the retry costs like any call and is never itself retried.",
+								"subjects": [
+									"m7s6sgLI",
+									"PwYiE0Hr"
+								]
+							},
+							{
+								"id": "d2JIMNm6",
+								"heading": "What moved, held to its own noise",
+								"body": "The report says what moved between the arms instead of stamping a regression. A pass count is a tally and any change to it is real; a grader mean is held to the spread of the paired runs both arms share, and gets a word only where more than one scenario stands behind it.",
+								"subjects": [
+									"mwlOEUS8",
 									"LcKROPw0"
 								]
 							}
