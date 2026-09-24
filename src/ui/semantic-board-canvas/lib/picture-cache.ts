@@ -2,20 +2,27 @@
 //
 // A picture is a reading of one version of a board, under one vault policy,
 // drawn by one build of the renderer. Any of the three moving makes it a
-// picture of something that is no longer there, so each is stamped with all
-// three and a lookup misses unless all three still hold. That keeps the board
-// file the one source of truth (ADR 0023): what is kept here is a cache of what
-// the server's board looked like, and it is never shown without being checked
-// against what the server says now.
+// picture of something that is no longer there, so each is kept under a key
+// that names all three and a lookup misses unless all three still hold. That
+// keeps the board file the one source of truth (ADR 0023): what is kept here is
+// a cache of what the server's board looked like, and it is never shown without
+// being checked against what the server says now.
+//
+// Pictures are kept in IndexedDB (TASK-344). localStorage held about 5 MB for
+// the whole page, less than one theme's worth of whole boards and their views,
+// so a store that overflowed dropped pictures the page had just drawn ahead.
+// A key carries its stamp, so forgetting stale pictures reads keys and never a
+// picture.
 //
 // The browser's storage can be missing, full or refuse outright (a private
 // window, cleared site data), so every read and write here survives that and
 // simply draws again.
 
-import { z } from "zod";
+import { createStore, del, get, keys, set } from "idb-keyval";
 
 import { SemanticRenderReplySchema, type SemanticRenderReply } from "@/shared/semantic-board/index";
 import type { SemanticRenderRequest } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 
 /** What a cached picture has to agree with to be shown. */
 interface PictureStamp {
@@ -27,173 +34,159 @@ interface PictureStamp {
 	readonly renderer: string;
 }
 
-/** The storage a cache lives in: `localStorage`, or a stand-in. */
-type PictureStorage = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
-
-const PREFIX = "archboard.picture:";
-
-const CachedPictureSchema = z.object({
-	version: z.int(),
-	fingerprint: z.string(),
-	renderer: z.string(),
-	/** When it was kept, so a full store gives up its oldest pictures first. */
-	storedAt: z.number(),
-	reply: SemanticRenderReplySchema,
-});
-type CachedPicture = z.infer<typeof CachedPictureSchema>;
+/** Where pictures are kept: this browser's IndexedDB, or a stand-in. */
+interface PictureStorage {
+	readonly get: (key: string) => Promise<unknown>;
+	readonly set: (key: string, value: unknown) => Promise<void>;
+	readonly del: (key: string) => Promise<void>;
+	readonly keys: () => Promise<readonly IDBValidKey[]>;
+}
 
 /**
- * The storage key one render request is kept under.
+ * This browser's picture store, or nothing when the page has no IndexedDB.
+ * @returns The storage.
+ */
+function browserPictureStorage(): PictureStorage | undefined {
+	if (typeof indexedDB === "undefined") return undefined;
+	const store = createStore("archboard-pictures", "pictures");
+	return {
+		/**
+		 * One kept picture.
+		 * @param key Its key.
+		 * @returns The picture, or nothing.
+		 */
+		get: (key) => get(key, store),
+		/**
+		 * Keep a picture.
+		 * @param key Its key.
+		 * @param value The picture.
+		 * @returns When it is kept.
+		 */
+		set: (key, value) => set(key, value, store),
+		/**
+		 * Forget a picture.
+		 * @param key Its key.
+		 * @returns When it is gone.
+		 */
+		del: (key) => del(key, store),
+		/**
+		 * Every kept picture's key.
+		 * @returns The keys.
+		 */
+		keys: () => keys(store),
+	};
+}
+
+/**
+ * The key one render request is kept under, stamped.
  * @param request The board, variant, view and theme asked for.
+ * @param stamp The version, policy and renderer it was drawn from.
  * @returns The key.
  */
-function pictureKey(request: SemanticRenderRequest): string {
-	return `${PREFIX}${JSON.stringify([request.board, request.variant ?? "", request.view ?? "", request.theme, request.comparison === false ? "plain" : "compared"])}`;
+function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string {
+	return JSON.stringify([
+		request.board,
+		request.variant ?? "",
+		request.view ?? "",
+		request.theme,
+		request.comparison === false ? "plain" : "compared",
+		stamp.version,
+		stamp.fingerprint,
+		stamp.renderer,
+	]);
 }
 
 /**
- * One kept entry, or nothing when it is absent, unreadable or not a picture.
+ * The picture kept for a request, when it was drawn from what the server says now.
  * @param storage The storage.
- * @param key Its key.
- * @returns The entry.
+ * @param request What is asked for.
+ * @param current The board version, policy and renderer build in force now.
+ * @returns The kept picture, or nothing.
  */
-function readEntry(storage: PictureStorage, key: string): CachedPicture | undefined {
-	try {
-		const raw = storage.getItem(key);
-		if (raw === null) return undefined;
-		const parsed = CachedPictureSchema.safeParse(JSON.parse(raw));
-		if (parsed.success) return parsed.data;
-	} catch {
-		// Unreadable storage or a mangled entry: treated as absent below.
-	}
-	forget(storage, key);
-	return undefined;
-}
-
-/**
- * Remove one entry, ignoring storage that refuses.
- * @param storage The storage.
- * @param key Its key.
- */
-function forget(storage: PictureStorage, key: string): void {
-	try {
-		storage.removeItem(key);
-	} catch {
-		// Nothing more to do: the entry will fail its stamp next time anyway.
-	}
-}
-
-/**
- * Every key this cache owns.
- * @param storage The storage.
- * @returns The keys.
- */
-function pictureKeys(storage: PictureStorage): string[] {
-	const keys: string[] = [];
-	try {
-		for (let index = 0; index < storage.length; index += 1) {
-			const key = storage.key(index);
-			if (key?.startsWith(PREFIX) === true) keys.push(key);
-		}
-	} catch {
-		return [];
-	}
-	return keys;
-}
-
-/**
- * The kept picture for a request, when it still agrees with its stamp.
- * @param storage The storage.
- * @param request What is being asked for.
- * @param current What the board, policy and renderer are now.
- * @returns The picture, or nothing when there is none or it is out of date.
- */
-function readCachedPicture(
+async function readCachedPicture(
 	storage: PictureStorage,
 	request: SemanticRenderRequest,
 	current: PictureStamp,
-): SemanticRenderReply | undefined {
-	const key = pictureKey(request);
-	const entry = readEntry(storage, key);
-	if (entry === undefined) return undefined;
-	if (
-		entry.version !== current.version ||
-		entry.fingerprint !== current.fingerprint ||
-		entry.renderer !== current.renderer
-	) {
-		forget(storage, key);
+): Promise<SemanticRenderReply | undefined> {
+	try {
+		const parsed = SemanticRenderReplySchema.safeParse(
+			await storage.get(pictureKey(request, current)),
+		);
+		return parsed.success ? parsed.data : undefined;
+	} catch {
 		return undefined;
 	}
-	return entry.reply;
 }
 
 /**
- * Keep a picture. A full store gives up its oldest half and tries once more;
- * a store that still refuses is left alone, and the picture is drawn next time.
+ * Keep a freshly drawn picture. A store that refuses it keeps nothing.
  * @param storage The storage.
  * @param request What was asked for.
- * @param stamp What the board, policy and renderer were when it was drawn.
+ * @param stamp What it was drawn from.
  * @param reply The picture.
- * @param now The time it is kept at.
  */
-function writeCachedPicture(
+async function writeCachedPicture(
 	storage: PictureStorage,
 	request: SemanticRenderRequest,
 	stamp: PictureStamp,
 	reply: SemanticRenderReply,
-	now: number = Date.now(),
-): void {
-	const key = pictureKey(request);
-	const entry: CachedPicture = { ...stamp, storedAt: now, reply };
-	const raw = JSON.stringify(entry);
+): Promise<void> {
 	try {
-		storage.setItem(key, raw);
-		return;
+		await storage.set(pictureKey(request, stamp), reply);
 	} catch {
-		evictOldestHalf(storage);
-	}
-	try {
-		storage.setItem(key, raw);
-	} catch {
-		// Still full: this picture is simply not kept.
+		// Full or refused: this picture is simply not kept.
 	}
 }
 
 /**
- * Give up the older half of the kept pictures.
- * @param storage The storage.
- */
-function evictOldestHalf(storage: PictureStorage): void {
-	const aged = pictureKeys(storage)
-		.map((key) => ({ key, storedAt: readEntry(storage, key)?.storedAt ?? 0 }))
-		.toSorted((one, other) => one.storedAt - other.storedAt);
-	for (const { key } of aged.slice(0, Math.ceil(aged.length / 2))) forget(storage, key);
-}
-
-/**
- * On page load, before any kept picture is shown: forget every picture of a
- * board that is gone or has moved to another version, and every picture an
- * older renderer drew.
+ * Forget every picture of a board that moved or went away, or that another
+ * build of the renderer drew, reading only the keys.
  * @param storage The storage.
  * @param boards The boards the server lists, with their versions.
- * @param renderer Which build of the renderer this page runs.
+ * @param renderer The renderer build in force now.
  */
-function forgetStalePictures(
+async function forgetStalePictures(
 	storage: PictureStorage,
-	boards: readonly { readonly name: string; readonly version?: number | undefined }[],
+	boards: readonly {
+		readonly name: string;
+		readonly key: string;
+		readonly version?: number | undefined;
+	}[],
 	renderer: string,
-): void {
-	const versions = new Map(boards.map((board) => [board.name, board.version]));
-	for (const key of pictureKeys(storage)) {
-		const entry = readEntry(storage, key);
-		if (entry === undefined) continue;
-		if (entry.renderer !== renderer || versions.get(entry.reply.board) !== entry.version) {
-			forget(storage, key);
-		}
+): Promise<void> {
+	try {
+		const stale = (await storage.keys()).filter((key): key is string => {
+			if (typeof key !== "string") return false;
+			const [board, , , , , version, , drawnBy] = keyParts(key);
+			const listed = boards.find(
+				({ name, key: listedKey }) =>
+					typeof board === "string" &&
+					(sameBoardName(board, listedKey) || sameBoardName(board, name)),
+			);
+			return drawnBy !== renderer || listed === undefined || listed.version !== version;
+		});
+		await Promise.all(stale.map((key) => storage.del(key)));
+	} catch {
+		// Unreadable storage: a stale picture still fails its stamp on lookup.
+	}
+}
+
+/**
+ * The fields of a kept key, or none for a key this module did not write.
+ * @param key A stored key.
+ * @returns Board, variant, view, theme, comparison, version, fingerprint, renderer.
+ */
+function keyParts(key: string): unknown[] {
+	try {
+		const parts: unknown = JSON.parse(key);
+		return Array.isArray(parts) ? parts : [];
+	} catch {
+		return [];
 	}
 }
 
 export {
+	browserPictureStorage,
 	forgetStalePictures,
 	readCachedPicture,
 	writeCachedPicture,

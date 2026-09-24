@@ -54,7 +54,10 @@ export {
 	type DrawBoard,
 	type LocalPictureSetup,
 } from "@/ui/semantic-board-canvas/lib/local-pictures";
-export type { PictureStorage } from "@/ui/semantic-board-canvas/lib/picture-cache";
+export {
+	browserPictureStorage,
+	type PictureStorage,
+} from "@/ui/semantic-board-canvas/lib/picture-cache";
 export {
 	takePicturesFrom,
 	type PictureSource,
