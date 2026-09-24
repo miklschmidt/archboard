@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-23 23:24'
-updated_date: '2026-09-24 00:07'
+updated_date: '2026-09-24 00:18'
 labels:
   - naming
 dependencies:
@@ -23,9 +23,9 @@ After TASK-323 renamed the canvas server to the Archboard server in prose, code 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Modules, types, functions and constants that mean the Archboard server are named after it
+- [x] #1 Modules, types, functions and constants that mean the Archboard server are named after it
 - [ ] #2 Host remains only where it means the renderer environment, the HTTP Host header or a repository host
-- [ ] #3 Comments follow the same names
+- [x] #3 Comments follow the same names
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,4 +52,6 @@ Naming decisions (TASK-324):
 - Not edited (instructions files, for the owner): AGENTS.md lines 79-80 and .claude/rules/agent-work.md line 7 still say canvas for the server.
 
 Gate (worktree, after the last code commit): type-check pass; lint pass; fmt:check pass; test:modules 3378 pass 0 fail; test:system 178 pass 0 fail; test:repository 8 pass 0 fail; test:serial-browser 15 files, 17 pass 0 fail. Environment note: this worktree's fresh install of @chenglou/pretext 0.0.9 lacks setMeasureFunction that src/ui/voice-subtitles/tests uses; the main checkout's node_modules copy has it, so it was copied in (ignored node_modules only). Vault code bindings to renamed paths are listed for the parent to update through the CLI.
+
+Merged into main (6222d6eb) with the conflicts resolved to main's logic and the rename map applied to the code that landed meanwhile (TASK-321, TASK-281, the model rename). Gate on the merged tree: all lanes exit 0 (3584 tests). Open for the user: UI embedder names that say host (PaneHost, WorkbenchHost, VoiceHost and others), and the public error codes CANVAS_UNREACHABLE, CANVAS_BUSY and CANVAS_STOPPING.
 <!-- SECTION:NOTES:END -->
