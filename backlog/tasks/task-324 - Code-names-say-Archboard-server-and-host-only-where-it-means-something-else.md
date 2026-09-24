@@ -1,11 +1,11 @@
 ---
 id: TASK-324
 title: 'Code names say Archboard server, and host only where it means something else'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-23 23:24'
-updated_date: '2026-09-24 00:18'
+updated_date: '2026-09-24 01:38'
 labels:
   - naming
 dependencies:
@@ -24,7 +24,7 @@ After TASK-323 renamed the canvas server to the Archboard server in prose, code 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Modules, types, functions and constants that mean the Archboard server are named after it
-- [ ] #2 Host remains only where it means the renderer environment, the HTTP Host header or a repository host
+- [x] #2 Host remains only where it means the renderer environment, the HTTP Host header or a repository host
 - [x] #3 Comments follow the same names
 <!-- AC:END -->
 
@@ -54,4 +54,12 @@ Naming decisions (TASK-324):
 Gate (worktree, after the last code commit): type-check pass; lint pass; fmt:check pass; test:modules 3378 pass 0 fail; test:system 178 pass 0 fail; test:repository 8 pass 0 fail; test:serial-browser 15 files, 17 pass 0 fail. Environment note: this worktree's fresh install of @chenglou/pretext 0.0.9 lacks setMeasureFunction that src/ui/voice-subtitles/tests uses; the main checkout's node_modules copy has it, so it was copied in (ignored node_modules only). Vault code bindings to renamed paths are listed for the parent to update through the CLI.
 
 Merged into main (6222d6eb) with the conflicts resolved to main's logic and the rename map applied to the code that landed meanwhile (TASK-321, TASK-281, the model rename). Gate on the merged tree: all lanes exit 0 (3584 tests). Open for the user: UI embedder names that say host (PaneHost, WorkbenchHost, VoiceHost and others), and the public error codes CANVAS_UNREACHABLE, CANVAS_BUSY and CANVAS_STOPPING.
+
+User decisions 2026-09-24: the UI embedder types are PaneCallbacks, Workbench, VoiceStore, PaneCorePorts, SocketRunPorts and StreamPorts (OpenerSettingsHost became OpenerSettings), and the CANVAS_* error codes are SERVER_*. RendererHost and the test fakes of browser media and playback hosts keep host in its other meaning. Browser lane and module tests pass after the rename (9eedce62, 5e0c0383).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Code names say the Archboard server: the src/server/archboard module, server-named engine files and identifiers, ARCHBOARD_SERVICE_NAME archboard-server, SERVER_* error codes, and UI embedder types named for what they hold. Host remains only for the renderer environment, the HTTP Host header, network and repository hosts and test fakes. Verified by the full gate lanes after each step.
+<!-- SECTION:FINAL_SUMMARY:END -->
