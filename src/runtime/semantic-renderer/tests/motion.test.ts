@@ -108,7 +108,7 @@ function cyclesIn(svg: string): (string | undefined)[] {
  * @returns How many dots were drawn.
  */
 function dotsIn(svg: string): number {
-	return [...svg.matchAll(/<(?:circle|path) class="ab-pulse"/gu)].length;
+	return [...svg.matchAll(/<(?:circle|path|g) class="ab-pulse"/gu)].length;
 }
 
 /**
@@ -124,7 +124,7 @@ function dotsIn(svg: string): number {
 function pulsesOn(svg: string, id: string): number {
 	const after = svg.split(`data-semantic-id="${id}"`)[1] ?? "";
 	const own = after.split("data-semantic-id=")[0] ?? "";
-	return [...own.matchAll(/<(?:circle|path) class="ab-pulse"/gu)].length;
+	return [...own.matchAll(/<(?:circle|path|g) class="ab-pulse"/gu)].length;
 }
 
 describe("explicit traffic is independent of relationship kind and emphasis", () => {
@@ -162,16 +162,25 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		const { svg } = await renderSemanticView({ content, grammar: "architecture", theme: "light" });
 		for (const id of ["ab", "ac"]) {
 			const group = svg.split(`data-semantic-id="${id}"`)[1]!.split("data-semantic-id=")[0]!;
-			const traffic = group.match(/<path class="ab-pulse"[^>]+>/u)![0];
-			const animation = group.match(/<animate[^>]*attributeName="stroke-dashoffset"[^>]+>/u)![0];
-			const spacing = Number(traffic.match(/stroke-dasharray="0 ([^"]+)"/u)![1]);
-			const interval = Number(animation.match(/dur="([^s]+)s"/u)![1]);
-			expect(spacing).toBe(80);
-			expect(interval).toBe(2);
-			expect(spacing / interval).toBe(40);
-			expect(animation).toContain('to="-80"');
-			expect(traffic).toContain('stroke-linecap="round"');
-			expect(animation).toContain('calcMode="linear"');
+			// Every layer of a comet, head and tail alike, repeats once per
+			// spacing and moves one spacing per interval, so the whole comet
+			// keeps the speed and the entry rate the traffic asked for.
+			const layers = [
+				...group.matchAll(
+					/<path d="[^"]*"[^>]*stroke-dasharray="([^ ]+) ([^"]+)"[^>]*>\s*<animate([^>]+)>/gu,
+				),
+			];
+			expect(layers.length).toBeGreaterThan(1);
+			for (const [, dash, gap, animation] of layers) {
+				const spacing = Number(dash) + Number(gap);
+				const interval = Number(animation!.match(/dur="([^s]+)s"/u)![1]);
+				const from = Number(animation!.match(/from="([^"]+)"/u)![1]);
+				const to = Number(animation!.match(/to="([^"]+)"/u)![1]);
+				expect(spacing).toBeCloseTo(80, 5);
+				expect(interval).toBe(2);
+				expect(from - to).toBeCloseTo(80, 5);
+				expect(animation).toContain('calcMode="linear"');
+			}
 		}
 	});
 	for (const traffic of [
@@ -194,7 +203,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			const duration = svg.match(/dur="([^s]+)s"/u)![1]!;
 			expect(duration).not.toContain("e");
 			expect(Number(duration)).toBeGreaterThan(0);
-			const spacing = Number(svg.match(/stroke-dasharray="0 ([^"]+)"/u)![1]);
+			const spacing = Number(svg.match(/stroke-dasharray="[^ "]+ ([^"]+)"/u)![1]);
 			expect(spacing).toBeGreaterThan(0);
 			expect(Number.isFinite(spacing)).toBe(true);
 		});

@@ -199,14 +199,14 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 	await server.assertRunning();
 }, 30_000);
 
-/** How many travelling traffic paths the drawn picture carries. */
+/** How many travelling traffic streams the drawn picture carries. */
 const trafficPathsDrawn = (browser: AgentBrowserSession): Promise<number> =>
-	browser.eval<number>(`document.querySelectorAll("${SURFACE} path.ab-pulse").length`);
+	browser.eval<number>(`document.querySelectorAll("${SURFACE} .ab-pulse").length`);
 
 /** How many of them the browser actually shows. */
 const trafficPathsShown = (browser: AgentBrowserSession): Promise<number> =>
 	browser.eval<number>(
-		`[...document.querySelectorAll("${SURFACE} path.ab-pulse")]` +
+		`[...document.querySelectorAll("${SURFACE} .ab-pulse")]` +
 			`.filter((dot) => getComputedStyle(dot).display !== "none").length`,
 	);
 

@@ -20,6 +20,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/measured-cards";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import { travellingPulses } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	standingOutline,
@@ -172,6 +173,8 @@ function paintEdgeLine(
 				: travellingPulses({
 						path,
 						colour: ink,
+						lineWidth: width,
+						page: palette,
 						traffic: edge.traffic,
 					}),
 		]),
@@ -291,6 +294,23 @@ function paintArchitecture(
 				masks.get(edge.edge.id),
 				derived.has(edge.edge.id),
 			),
+		),
+		// Over the lines they join, under the cards and every relationship's words.
+		// A relationship the proposal no longer has is drawn for context and joins nothing.
+		junctionMarks(
+			drawing.edges.filter(({ edge }) => standingOf(edge.id) !== "removed"),
+			({ edge }) => ({
+				ink: String(
+					edgeAttributes(
+						edge,
+						palette,
+						standingOf(edge.id),
+						policy,
+						lineAppearance(edge, policy, derived.has(edge.id)),
+					)["stroke"],
+				),
+				width: strokeWidthOf(edge),
+			}),
 		),
 		...orderedCards.map((card) =>
 			paintMeasuredCard(

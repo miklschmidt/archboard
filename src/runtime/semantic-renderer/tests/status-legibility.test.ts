@@ -181,16 +181,19 @@ function headInk(svg: string, id: string): string {
 }
 
 /**
- * The ink the dots on one relationship are filled with.
+ * The inks the traffic marks on one relationship are drawn in: every part of
+ * every comet but the ring of the page's own colour around its head.
  * @param group The subject group.
- * @returns The colours, one per dot.
+ * @returns The colours, one per inked part.
  */
 function dotInks(group: DrawnGroup): string[] {
-	return [
-		...group.markup.matchAll(
-			/<(?:circle|path) class="ab-pulse"[^>]*(?:fill|stroke)="(#[0-9a-f]{6})"/gu,
-		),
-	].map((found) => found[1]!);
+	return [...group.markup.matchAll(/<g class="ab-pulse"[^>]*>([\s\S]*?)<\/g>/gu)].flatMap((comet) =>
+		[
+			...comet[1]!.matchAll(
+				/<(?:circle|path)(?![^>]*data-pulse-part="moat")[^>]*?(?:fill|stroke)="(#[0-9a-f]{6})"/gu,
+			),
+		].map((found) => found[1]!),
+	);
 }
 
 /**

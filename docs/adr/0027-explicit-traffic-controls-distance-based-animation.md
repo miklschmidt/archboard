@@ -4,6 +4,18 @@ status: accepted
 
 # Explicit traffic controls distance-based animation
 
+Amended by TASK-339 (2026-09-24): a traffic mark is a comet, not a round dot.
+It has a head stretched along its line and a tail that tapers and fades behind
+it, all in its line's ink, so a change's colour reads the same on the line, its
+arrowhead and its marks. A ring of the page's own background around the head
+lifts the comet off the line it rides, and a dark page adds a glow. A round
+dot said nothing about direction. A comet shows which way its relationship
+flows, also in a still picture, where the marks are drawn at rest. It also
+cannot be mistaken for the junction mark where two routes join (TASK-337). A
+sequence's timed marks are comets of the same kind that turn to follow their
+line. Every rate below is unchanged: each layer of a comet is one dash pattern
+over the whole route, spaced and advanced exactly as the dots were.
+
 Current moving dots use a fixed traversal duration, so long connections animate
 faster than short connections. TASK-203 separates traffic from emphasis and makes
 volume and speed independent, so agents can communicate traffic deliberately.
