@@ -46,8 +46,8 @@ const semanticRenameContract = defineCommand({
 		"name another board carries or used to carry is refused, as is a variant name another variant " +
 		"of the board answers to, and a name that is already the one it has.",
 	examples: [
-		'archboard semantic rename platform-public-api --to "Platform Public API" --expect-version 12 --doing "giving the public API board a readable name"',
-		'archboard semantic rename platform-public-api --variant public-api-independent --to "Independent Public and Phone APIs" --expect-version 13 --doing "naming the proposal for what it proposes"',
+		'archboard semantic rename "Canvas server" --to "Archboard server" --expect-version 14 --doing "naming the board for the server it describes"',
+		'archboard semantic rename "Archboard server" --variant readable-layout --to "Readable layout" --expect-version 15 --doing "giving the proposal a readable name"',
 	],
 	parameters: [
 		{

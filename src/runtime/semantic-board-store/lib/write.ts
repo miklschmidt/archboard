@@ -45,7 +45,7 @@ import {
 	readSemanticBoardAtUnderLease,
 	type SemanticBoardRead,
 } from "@/runtime/semantic-board-store/lib/read";
-import { answeringAddress } from "@/runtime/semantic-board-store/lib/former-names";
+import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 import {
 	relocation,
 	renamedFrom,
@@ -538,7 +538,7 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	// located again only once the lease is held, so two processes creating
 	// "Payments" and "payments" on a case-sensitive filesystem take one lease
 	// in turn rather than resolving two absent paths of their own (ADR 0010).
-	const address = answeringAddress(ask.board);
+	const address = resolveSemanticBoard(ask.board);
 	const admission = admit(address.key, ask.writer);
 	if (!admission.ok) {
 		return {
