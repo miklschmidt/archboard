@@ -1,7 +1,7 @@
 // Building the exact wire response for one decision. An ordinary response
-// echoes the host-offered decision or the reviewed answers; a dynamic
+// echoes the server-offered decision or the reviewed answers; a dynamic
 // response echoes the captured link, the full identity and the immutable
-// effect hash exactly as the host published them. Nothing here can retarget
+// effect hash exactly as the server published them. Nothing here can retarget
 // an effect or widen it.
 
 import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
@@ -253,8 +253,8 @@ function legacyResponse(
 }
 
 /**
- * The response of a family whose decisions the host enumerates: exactly the
- * host-offered decision the offer named.
+ * The response of a family whose decisions the server enumerates: exactly the
+ * server-offered decision the offer named.
  * @param approval The request.
  * @param offerId The offer.
  * @returns The response, or null for an unoffered decision.

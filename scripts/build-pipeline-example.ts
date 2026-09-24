@@ -156,7 +156,7 @@ async function draw(board: string): Promise<string[]> {
 					grammar: view.grammar,
 					policy: readSemanticBoardConfiguration().configuration,
 					theme: "light",
-					// The file outlives the canvas that drew it, so it carries its faces.
+					// The file outlives the server that drew it, so it carries its faces.
 					fonts: "embedded",
 					...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 				});

@@ -1,4 +1,4 @@
-// The neutral host contract, re-exported. This file is the one importer the
+// The neutral realtime server contract, re-exported. This file is the one importer the
 // repository policy names: it may reach the shared neutral root and nothing
 // else. Every type the module speaks is derived from that root; none is
 // redeclared here.
@@ -10,7 +10,7 @@ export {
 	REALTIME_PHASES,
 	REALTIME_TRANSITIONS,
 	transitionRealtimeState,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 export type {
 	AnswerSdp,
 	AppendNotDeliveredReason,
@@ -28,7 +28,7 @@ export type {
 	RealtimeCorrelation,
 	RealtimeCorrelationId,
 	RealtimeDiagnosticCode,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeItemId,
 	RealtimePhase,
 	RealtimeRecoverableErrorReason,
@@ -45,4 +45,4 @@ export type {
 	RecoveryRequest,
 	RemoteMediaAttachment,
 	StopRequest,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";

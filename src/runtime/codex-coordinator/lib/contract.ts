@@ -65,7 +65,7 @@ interface CoordinatorEffectiveSettings {
 	readonly serviceTier: string | null;
 }
 
-/** Settings are host facts, not a second mutable settings authority. */
+/** Settings are server facts, not a second mutable settings authority. */
 interface CoordinatorSettings {
 	readonly configured: CoordinatorConfiguredSettings;
 	readonly effective: CoordinatorEffectiveSettings;
@@ -133,7 +133,7 @@ interface CoordinatorSnapshot {
 }
 
 interface CoordinatorEnsureInput {
-	/** A fresh host-issued operation id is required for a new or replacement start. */
+	/** A fresh server-issued operation id is required for a new or replacement start. */
 	readonly operationId?: string;
 	/** Undefined uses the coordinator's current retained evidence; null clears it. */
 	readonly persisted?: CoordinatorPersistedState | null;

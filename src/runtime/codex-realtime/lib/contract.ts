@@ -1,11 +1,11 @@
 import type {
 	AnswerSdp,
 	CreateOfferSdp,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -70,7 +70,7 @@ interface CodexRealtimeAdapterOptions {
 }
 
 /** Server-owned protocol half; remote MediaStream attachment remains browser-local. */
-interface CodexRealtimeAdapter extends Omit<RealtimeHost, "attachRemoteMedia" | "createOffer"> {
+interface CodexRealtimeAdapter extends Omit<RealtimeServer, "attachRemoteMedia" | "createOffer"> {
 	/**
 	 * Accept the browser's offer and start the session, as an ordinary voice session or, given a
 	 * walkthrough, one started to present it (TASK-251).

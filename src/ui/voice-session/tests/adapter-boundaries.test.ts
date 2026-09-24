@@ -72,7 +72,7 @@ describe("voice session adapter boundaries", () => {
 		// Nothing was driven; the person's press is what drives it.
 		expect(realtime.calls()).toEqual([]);
 
-		// A further host notification still drives nothing on its own.
+		// A further server notification still drives nothing on its own.
 		transport.set(connectedState(snapshot({ voice: voice({ state: "recovering" }) })));
 		expect(realtime.calls()).toEqual([]);
 

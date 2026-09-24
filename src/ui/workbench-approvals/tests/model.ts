@@ -1,6 +1,6 @@
 // Fixtures are built through the closed browser model with a real identity
 // authority, so a fixture the contract would refuse fails here instead of
-// proving something about a shape the host can never publish.
+// proving something about a shape the server can never publish.
 
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
@@ -288,7 +288,7 @@ class FakeApprovalsTransport implements WorkbenchApprovalsTransportPort {
 		this.caps = {
 			canCommand,
 			/**
-			 * Whether the host accepts a command.
+			 * Whether the server accepts a command.
 			 * @param name The command.
 			 * @returns True while commanding and not refused by the fixture.
 			 */

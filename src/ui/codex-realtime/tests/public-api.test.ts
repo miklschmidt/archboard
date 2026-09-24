@@ -4,13 +4,13 @@ import * as publicApi from "@/ui/codex-realtime";
 import {
 	FakeBrowser,
 	correlation,
-	host,
+	realtimeServer,
 } from "@/ui/codex-realtime/tests/support/media-session-fakes";
 
 describe("codex realtime public API", () => {
 	test("drives negotiation, output metering, stop and dispose through the index alone", async () => {
 		const env = new FakeBrowser();
-		const media = publicApi.createRealtimeMediaSession(host(env), {
+		const media = publicApi.createRealtimeMediaSession(realtimeServer(env), {
 			environment: env.environment(),
 		});
 		let observedLevel = -1;
@@ -22,7 +22,7 @@ describe("codex realtime public API", () => {
 		env.frame();
 		expect(media.outputLevel.current()).toBeGreaterThan(0);
 		const stopped = await media.stop();
-		const disposable = publicApi.createRealtimeMediaSession(host(env), {
+		const disposable = publicApi.createRealtimeMediaSession(realtimeServer(env), {
 			environment: env.environment(),
 		});
 		await disposable.dispose();
@@ -30,7 +30,7 @@ describe("codex realtime public API", () => {
 		expect(observedLevel).toBeGreaterThan(0);
 		expect(stopped.state).toEqual({ phase: "closed", reason: "stopped" });
 		expect(disposable.getSnapshot().state).toEqual({ phase: "closed", reason: "disposed" });
-		expect(env.order).toContain("hostOffer");
+		expect(env.order).toContain("serverOffer");
 		env.assertReleased();
 	});
 

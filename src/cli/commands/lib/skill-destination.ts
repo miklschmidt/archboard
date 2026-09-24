@@ -166,7 +166,7 @@ function archboardOnPath(ours: ReadonlySet<string>): boolean {
  */
 function resolveInvocation(): { command: string; onPath: boolean } {
 	const root = packageRoot();
-	const wrapper = path.join(root, "bin", "canvas");
+	const wrapper = path.join(root, "bin", "archboard");
 	const entry = path.join(root, "src", "bin.ts");
 	const ours = new Set(
 		[wrapper, entry].map(realpathOrNull).filter((value): value is string => value !== null),

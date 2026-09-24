@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 
-/** Where the canvas serves one icon's path data. */
+/** Where the server serves one icon's path data. */
 const ICON_URL = "/assets/diagram-icons";
 
 /** The icon drawn for a kind the policy does not describe. */

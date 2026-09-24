@@ -135,7 +135,7 @@ interface ActionsProps {
 }
 
 /**
- * The settings: where the canvas opens code.
+ * The settings: where the server opens code.
  * @param props The actions.
  * @returns The gear.
  */

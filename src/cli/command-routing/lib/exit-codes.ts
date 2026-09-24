@@ -1,11 +1,11 @@
 // Turns a command failure into the process exit code and the stderr explanation the CLI
 // contract promises, without trusting the thrown value's shape.
 import { CliUsageError } from "@/cli/command-contract/contract";
-import { BOARD_REFUSAL_CODES, formatBoardRefusal } from "@/runtime/engine/canvas-client";
+import { BOARD_REFUSAL_CODES, formatBoardRefusal } from "@/runtime/engine/server-client";
 import { type RouteOwner } from "@/cli/command-routing/lib/route";
 
 /**
- * Reads the machine-readable code a canvas refusal or transport failure carries.
+ * Reads the machine-readable code a server refusal or transport failure carries.
  * @param error - The thrown value.
  * @returns The string code, or undefined when the value carries none.
  */
@@ -69,7 +69,7 @@ function declaredExit(
 
 /**
  * Maps a failure to the process exit code: 2 for usage, the contract's declared exit for a
- * refusal it lists, then the fixed codes for an unreachable canvas, a missing browser tab, a
+ * refusal it lists, then the fixed codes for an unreachable server, a missing browser tab, a
  * refused board write and a missing board, and 1 for everything else.
  * @param error - The thrown value.
  * @param command - The command that ran, when one was selected.
@@ -95,7 +95,7 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
 
 /**
  * Writes the failure to stderr: the message (or the formatted board refusal), then, when a
- * refused write left work held on the canvas, what happens to everything drawn from here on.
+ * refused write left work held on the server, what happens to everything drawn from here on.
  * @param error - The thrown value.
  * @param usage - The usage line to print after a usage error.
  */

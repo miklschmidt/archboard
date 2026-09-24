@@ -2,22 +2,22 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-edge-identity-"));
-let canvas: OwnedCanvas;
+let server: OwnedServer;
 
 const cli = (args: readonly string[], input?: string) =>
-	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 beforeAll(async () => {
-	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 

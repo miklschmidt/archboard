@@ -1,4 +1,4 @@
-// The browser realtime media session over the neutral host contract. One
+// The browser realtime media session over the neutral realtime server contract. One
 // private session, one microphone, one remote playback, one output meter.
 
 export {
@@ -34,7 +34,7 @@ export type {
 	RealtimeCorrelation,
 	RealtimeCorrelationId,
 	RealtimeDiagnosticCode,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeItemId,
 	RealtimePhase,
 	RealtimeRecoverableErrorReason,

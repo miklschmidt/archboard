@@ -126,7 +126,7 @@ function conversation(prompts: readonly string[]): BrowserSnapshot {
 	});
 }
 
-/** The snapshots a canvas passes through on the way to a conversation. */
+/** The snapshots a server passes through on the way to a conversation. */
 const STAGES = {
 	signedOut: snapshot({
 		readiness: { kind: "readiness", state: "signed_out" },

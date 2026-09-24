@@ -1,6 +1,6 @@
 // What a recording reads of the agent and the voice (TASK-304): whether voice
 // can be started at all, whether it is live, how loud it is, and what it has
-// said. Everything is read from the owners the canvas already has; nothing
+// said. Everything is read from the owners the server already has; nothing
 // here holds state of its own.
 
 import type { AgentPhase, AgentSetup } from "@/ui/agent-setup";
@@ -10,7 +10,7 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 import type { SpokenLine, VoiceStanding } from "@/ui/walkthrough-recording/lib/pacing";
 
-/** The canvas's agent and the voice running for the recorded pane. */
+/** The server's agent and the voice running for the recorded pane. */
 interface RecordingSources {
 	readonly setup: Pick<AgentSetup, "snapshot" | "talk">;
 	/** The voice session and its pane's transport, or null while the pane has no transport. */
@@ -49,7 +49,7 @@ const OTHER_VOICE: VoiceStanding = Object.freeze({ kind: "other" });
 const NOT_SIGNED_IN: AgentReadiness = Object.freeze({
 	kind: "refused",
 	reason:
-		"Codex is not signed in on this canvas. Sign in from the canvas's agent bar, then record again.",
+		"Codex is not signed in on this Archboard server. Sign in from the agent bar, then record again.",
 });
 
 /** Whether voice can be started, for every phase but the one that says why it cannot. */
@@ -62,14 +62,14 @@ const READINESS: Readonly<Record<Exclude<AgentPhase["kind"], "unavailable">, Age
 };
 
 /**
- * Whether the canvas's agent can start voice for a recording.
+ * Whether the server's agent can start voice for a recording.
  * @param setup The agent setup.
  * @returns Ready, waiting, or refused with what to do.
  */
 function agentReadiness(setup: RecordingSources["setup"]): AgentReadiness {
 	const { phase } = setup.snapshot();
 	return phase.kind === "unavailable"
-		? { kind: "refused", reason: `Codex is unavailable on this canvas: ${phase.reason}` }
+		? { kind: "refused", reason: `Codex is unavailable on this Archboard server: ${phase.reason}` }
 		: READINESS[phase.kind];
 }
 

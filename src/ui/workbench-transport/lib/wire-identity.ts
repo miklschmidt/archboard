@@ -98,14 +98,14 @@ function identityParser<Domain extends keyof IdentityByDomain>(
 
 /**
  * A decoder member the browser never needs: adoption, resolution and
- * serialisation belong to the host's ledger.
+ * serialisation belong to the server's ledger.
  * @param member The member name, for the refusal's words.
  * @returns A function that refuses.
  */
 function unavailable(member: string): () => never {
 	return () => {
 		throw new BrowserWorkbenchWireError(
-			`The browser identity decoder cannot ${member}; only the host ledger can.`,
+			`The browser identity decoder cannot ${member}; only the Archboard server's ledger can.`,
 		);
 	};
 }

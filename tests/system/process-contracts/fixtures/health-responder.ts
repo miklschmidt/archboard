@@ -9,7 +9,7 @@ const respondToHealth: RequestListener = (request, response) => {
 		response.end(
 			JSON.stringify({
 				pid: reportedPid,
-				service: "archboard-canvas",
+				service: "archboard-server",
 			}),
 		);
 		return;

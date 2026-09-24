@@ -45,7 +45,7 @@ function select(
 }
 
 describe("pane thread-link selection", () => {
-	test("lists the host's joined record with its state, source, status, loaded, and controllability facts", () => {
+	test("lists the server's joined record with its state, source, status, loaded, and controllability facts", () => {
 		const selection = select([record()]);
 		expect(selection.state).toBe("listed");
 		expect(selection.rows[0]).toMatchObject({
@@ -120,8 +120,8 @@ describe("pane thread-link selection", () => {
 		expect(selection.rows[2]?.statusLabel).toBe("System error");
 	});
 
-	test("takes the host's classification verbatim rather than re-deriving one", () => {
-		// Facts that a browser-side classifier would have argued with: the host
+	test("takes the server's classification verbatim rather than re-deriving one", () => {
+		// Facts that a browser-side classifier would have argued with: the server
 		// says executable, and this module renders exactly that.
 		const selection = select([record({ status: "active", reason: "prior_epoch" })]);
 		expect(selection.rows[0]?.outcome).toBe("executable");

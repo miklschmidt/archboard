@@ -2,7 +2,7 @@ import type {
 	RealtimeCorrelation,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import { IdentityValidationError, type TurnId } from "@/shared/codex-workbench-identity";
 import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
 import type {
@@ -33,7 +33,7 @@ import {
 import {
 	resolveSpokenApproval,
 	startClassifier,
-	type ClassifierTurnHost,
+	type ClassifierTurnContext,
 } from "@/runtime/codex-spoken-approval/lib/classifier-turn";
 import {
 	answerRefusal,
@@ -54,7 +54,7 @@ import {
  * transcript for the person's answer, asks the coordinator to classify it, and settles the
  * approval from the classifier's resolver call. Anything it cannot prove sends the person to the
  * visual approval surface instead, which is why every refusal carries a fallback reason.
- * @param options - The approval broker, realtime host, session, identity authority and callbacks.
+ * @param options - The approval broker, realtime adapter, session, identity authority and callbacks.
  * @returns The gate.
  */
 export function createCodexSpokenApprovalGate(
@@ -78,7 +78,7 @@ export function createCodexSpokenApprovalGate(
 	};
 
 	/**
-	 * Tell the host the person must answer visually instead. The snapshot remains the authoritative signal, so a callback that throws changes nothing.
+	 * Tell the server the person must answer visually instead. The snapshot remains the authoritative signal, so a callback that throws changes nothing.
 	 * @param reason - Why voice cannot settle this approval.
 	 * @param snapshot - The snapshot at the moment of the fallback.
 	 */
@@ -176,7 +176,7 @@ export function createCodexSpokenApprovalGate(
 	};
 
 	/**
-	 * The host's current voice correlation, or null when it cannot be read.
+	 * The server's current voice correlation, or null when it cannot be read.
 	 * @returns The correlation, or null.
 	 */
 	const currentRealtime = (): RealtimeCorrelation | null => {
@@ -188,7 +188,7 @@ export function createCodexSpokenApprovalGate(
 	};
 
 	/**
-	 * The host's current coordinator identity, or null when there is none or it cannot be read.
+	 * The server's current coordinator identity, or null when there is none or it cannot be read.
 	 * @returns The coordinator, or null.
 	 */
 	const currentCoordinator = (): CoordinatorIdentity | null => {
@@ -224,21 +224,21 @@ export function createCodexSpokenApprovalGate(
 		slot.phase !== "visual_fallback" &&
 		!disposed;
 
-	const validationHost = {
+	const validationContext = {
 		approvalBroker: options.approvalBroker,
 		identity: options.identity,
 		currentCoordinator,
 		currentRealtime,
 		currentTime,
 		/**
-		 * The voice transcript, read through the host so the gate always validates against what the
+		 * The voice transcript, read through the realtime adapter so the gate always validates against what the
 		 * session says now rather than a copy taken earlier.
 		 * @returns The transcript records.
 		 */
 		transcript: () => options.realtime.transcript(),
 	};
 
-	const classifierHost: ClassifierTurnHost = {
+	const classifierContext: ClassifierTurnContext = {
 		approvalBroker: options.approvalBroker,
 		session: options.session,
 		identity: options.identity,
@@ -282,7 +282,7 @@ export function createCodexSpokenApprovalGate(
 		assertArmable();
 		active = null;
 		currentSnapshot = EMPTY_SPOKEN_APPROVAL_SNAPSHOT;
-		const result = validateArm(validationHost, input);
+		const result = validateArm(validationContext, input);
 		if (!result.ok) {
 			return fallbackWithoutSlot(result.reason, input.requestId);
 		}
@@ -362,7 +362,7 @@ export function createCodexSpokenApprovalGate(
 			return;
 		}
 		if (record.status === "final") {
-			startClassifier(classifierHost, slot, record);
+			startClassifier(classifierContext, slot, record);
 		}
 	};
 
@@ -482,7 +482,7 @@ export function createCodexSpokenApprovalGate(
 				refusal("not_ready", "There is no pending spoken approval to resolve."),
 			);
 		}
-		return resolveSpokenApproval(classifierHost, slot, request);
+		return resolveSpokenApproval(classifierContext, slot, request);
 	};
 
 	/**

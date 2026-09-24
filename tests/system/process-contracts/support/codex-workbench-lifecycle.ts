@@ -6,11 +6,11 @@ import { join, resolve } from "node:path";
 import {
 	type ApplicationSocket,
 	type WorkbenchResult,
-} from "../../canvas-state/support/codex-production.ts";
-import { waitFor } from "../../canvas-state/support/http.ts";
-import { buildOwnedCanvasEnvironment } from "../../support/owned-canvas.ts";
+} from "../../server-state/support/codex-production.ts";
+import { waitFor } from "../../server-state/support/http.ts";
+import { buildOwnedServerEnvironment } from "../../support/owned-server.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
-const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
+const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
 
 export interface FixtureRecord {
@@ -27,7 +27,7 @@ export interface FixtureRecord {
 	};
 }
 
-export interface CanvasProcess {
+export interface ServerProcess {
 	readonly base: string;
 	readonly pid: number;
 	output(): string;
@@ -101,14 +101,14 @@ async function freePort(): Promise<number> {
 	);
 	return address.port;
 }
-export async function startCanvas(options: {
+export async function startServer(options: {
 	readonly root: string;
 	readonly vault: string;
 	readonly executablePath: string;
 	readonly logPath: string;
 	readonly controlPath: string;
 	readonly readinessTimeoutMs?: number;
-}): Promise<CanvasProcess> {
+}): Promise<ServerProcess> {
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
 	const wrapper = join(options.root, "production-server.ts");
@@ -132,7 +132,7 @@ export async function startCanvas(options: {
 	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
-		env: buildOwnedCanvasEnvironment({
+		env: buildOwnedServerEnvironment({
 			paths,
 			port,
 			vault: options.vault,
@@ -145,7 +145,7 @@ export async function startCanvas(options: {
 		}),
 		stdio: ["ignore", "pipe", "pipe"],
 	});
-	if (child.pid === undefined) throw new Error("The canvas has no pid.");
+	if (child.pid === undefined) throw new Error("The server has no pid.");
 	let output = "";
 	child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
 	child.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
@@ -156,7 +156,7 @@ export async function startCanvas(options: {
 			done();
 		}),
 	);
-	const canvas: CanvasProcess = {
+	const server: ServerProcess = {
 		base,
 		pid: child.pid,
 		output: () => output,
@@ -164,7 +164,7 @@ export async function startCanvas(options: {
 			if (exited) return;
 			child.kill("SIGTERM");
 			if (!(await Promise.race([exit.then(() => true), sleep(5_000).then(() => false)])))
-				throw new Error(`Canvas ${child.pid} did not close normally.\n${output}`);
+				throw new Error(`Server ${child.pid} did not close normally.\n${output}`);
 		},
 		async dispose(signal = "SIGTERM") {
 			if (!exited) {
@@ -182,7 +182,7 @@ export async function startCanvas(options: {
 					await Promise.race([exit, sleep(5_000)]);
 				}
 			}
-			if (!exited) throw new Error(`Canvas ${child.pid} did not exit.\n${output}`);
+			if (!exited) throw new Error(`Server ${child.pid} did not exit.\n${output}`);
 		},
 	};
 	try {
@@ -194,25 +194,25 @@ export async function startCanvas(options: {
 					const health = (await response.json()) as { readonly pid?: unknown };
 					return health.pid === child.pid ? health : undefined;
 				} catch {
-					if (exited) throw new Error(`Canvas startup failed.\n${output}`);
+					if (exited) throw new Error(`Server startup failed.\n${output}`);
 					return undefined;
 				}
 			},
-			"production canvas readiness",
+			"production server readiness",
 			options.readinessTimeoutMs === undefined ? {} : { timeoutMs: options.readinessTimeoutMs },
 		);
 	} catch (error) {
-		await canvas.dispose();
-		throw new Error(`Canvas did not become ready.\n${output}`, { cause: error });
+		await server.dispose();
+		throw new Error(`Server did not become ready.\n${output}`, { cause: error });
 	}
-	return canvas;
+	return server;
 }
 
 export function extendFixture(root: string, storageMode?: StorageMode): string {
 	const source = readFileSync(fixtureSource, "utf8")
 		.replaceAll(
 			"./fake-codex-production-data.ts",
-			join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production-data.ts"),
+			join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production-data.ts"),
 		)
 		.replace(
 			'import { appendFileSync, readFileSync } from "node:fs";',

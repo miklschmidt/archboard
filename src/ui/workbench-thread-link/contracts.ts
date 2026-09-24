@@ -1,5 +1,5 @@
-// The thread link's typed inputs and outputs: the canvas's one link to its
-// workhorse, the host's joined candidate inventory, recoveries, and how one
+// The thread link's typed inputs and outputs: the server's one link to its
+// workhorse, the server's joined candidate inventory, recoveries, and how one
 // action settles.
 
 import type {
@@ -35,8 +35,8 @@ const THREAD_LINK_MODULE_COMMANDS = [
 type ThreadLinkListedStatus = ListedThreadLink["status"];
 
 /**
- * The host's own joined inventory, exactly as the workbench snapshot publishes
- * it. The host owns the join and the classification; this module renders that
+ * The server's own joined inventory, exactly as the workbench snapshot publishes
+ * it. The server owns the join and the classification; this module renders that
  * verdict and never re-derives one.
  */
 type ThreadLinkInventory = BrowserThreadCandidates;
@@ -45,7 +45,7 @@ type ThreadLinkInventoryRecord = BrowserThreadCandidate;
 type ThreadLinkRecoveryIntent =
 	| "refresh_snapshot"
 	| "read_account"
-	/** Runs the threadLinkRefresh command; the host owns discovery itself. */
+	/** Runs the threadLinkRefresh command; the server owns discovery itself. */
 	| "refresh_inventory"
 	| "start_workbench"
 	| "choose_binary"
@@ -66,7 +66,7 @@ type ThreadLinkControllerRecoveryIntent = Exclude<
 >;
 
 /** Who can actually perform a recovery, so a dead control is never rendered. */
-type ThreadLinkRecoveryOwner = "transport" | "host" | "none";
+type ThreadLinkRecoveryOwner = "transport" | "server" | "none";
 
 /** One recovery a person may take. */
 interface ThreadLinkRecovery {
@@ -167,11 +167,11 @@ interface ThreadLinkActionCompletion {
 interface ThreadLinkPaneCapture {
 	readonly paneId: string;
 	readonly transport: ThreadLinkTransportPort;
-	readonly hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[];
+	readonly serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[];
 }
 
-/** A host-owned recovery this pane may run. */
-interface ThreadLinkHostRecovery {
+/** A server-owned recovery this pane may run. */
+interface ThreadLinkServerRecovery {
 	readonly paneId: string;
 	readonly intent: ThreadLinkRecoveryIntent;
 	readonly recover: () => Promise<void>;
@@ -181,9 +181,9 @@ interface ThreadLinkHostRecovery {
 interface ThreadLinkControllerOptions {
 	/** Read once per action; a later focus change cannot reach a running action. */
 	readonly capturePane: () => ThreadLinkPaneCapture;
-	readonly captureHostRecovery?: (
+	readonly captureServerRecovery?: (
 		target: ThreadLinkRecoveryTarget,
-	) => ThreadLinkHostRecovery | null;
+	) => ThreadLinkServerRecovery | null;
 }
 
 /** The thread-link action controller. */
@@ -192,7 +192,7 @@ interface ThreadLinkController {
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly create: () => Promise<ThreadLinkActionCompletion>;
 	readonly bind: (row: ThreadLinkRow) => Promise<ThreadLinkActionCompletion>;
-	/** Bind the row the host listed under one selection id. */
+	/** Bind the row the server listed under one selection id. */
 	readonly bindSelection: (selectionId: string) => Promise<ThreadLinkActionCompletion>;
 	/**
 	 * Ask to drop the explicit link. The closed browser contract publishes no
@@ -218,7 +218,7 @@ export {
 	type ThreadLinkController,
 	type ThreadLinkControllerOptions,
 	type ThreadLinkControllerRecoveryIntent,
-	type ThreadLinkHostRecovery,
+	type ThreadLinkServerRecovery,
 	type ThreadLinkInventory,
 	type ThreadLinkInventoryRecord,
 	type ThreadLinkListedStatus,

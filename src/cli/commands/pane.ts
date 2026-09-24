@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/canvas-client";
+import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/server-client";
 import { paneWords } from "@/runtime/engine/panes";
 import { CliUsageError, defineCommand, type TokenParameter } from "@/cli/command-contract/contract";
 import { PaneRefSchema } from "@/cli/command-contract/schemas";
@@ -219,7 +219,7 @@ const paneCloseContract = defineCommand({
 	],
 	/**
 	 * Takes one pane off screen, reminding the user that the board it showed
-	 * is still open on the canvas.
+	 * is still open on the server.
 	 * @param input - The ingress input holding the staged tokens.
 	 * @param context - The command context.
 	 * @returns The closed pane with a diagnostic naming it.
@@ -232,7 +232,7 @@ const paneCloseContract = defineCommand({
 		return {
 			result: PaneCloseResultSchema.parse(result),
 			diagnostics: [
-				`Closed ${paneWords(result.closed?.place ?? request.spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the canvas, with whatever was drawn on it.`,
+				`Closed ${paneWords(result.closed?.place ?? request.spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the Archboard server, with whatever was drawn on it.`,
 			],
 		};
 	},
@@ -331,7 +331,7 @@ type ShowInput = z.infer<typeof ShowInputSchema>;
  * What a show accepts, declared once for help and for the stage. The tokens
  * carry the board and `--pane` rather than the parser taking them, because a
  * staged command passes everything after its first word through: what a show
- * is allowed to say is decided after the canvas has answered, so the refusal
+ * is allowed to say is decided after the server has answered, so the refusal
  * can name what is actually on screen.
  */
 const SHOW_PARAMETERS: readonly TokenParameter[] = [

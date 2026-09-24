@@ -3,13 +3,13 @@ import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
@@ -75,10 +75,10 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	// An agent authors the meaning. Nothing about geometry is stated anywhere.
 	const created = await request<{ success: boolean }>("/api/semantic-boards/create", {
@@ -102,7 +102,7 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 	expect(created.body.success).toBe(true);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=pipeline`]);
+	await browser.run(["open", `${server.base}/?paneA=pipeline`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 
 	// The pane draws the server's picture, in the real shell, without the
@@ -196,7 +196,7 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 		"pipeline.semantic.json",
 	]);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 30_000);
 
 /** How many travelling traffic paths the drawn picture carries. */
@@ -215,10 +215,10 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-motion-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 
 	// One relationship something travels along, and one that is a fact about how
 	// the two parts are built.
@@ -254,7 +254,7 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 	).toBe(200);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${canvas.base}/?paneA=moving`]);
+	await browser.run(["open", `${server.base}/?paneA=moving`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser),
@@ -291,5 +291,5 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 		WAIT,
 	);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 60_000);

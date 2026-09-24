@@ -8,7 +8,7 @@ import type {
 	AnswerSdp,
 	CommandOutcome,
 	RealtimeCorrelation,
-	RealtimeHost,
+	RealtimeServer,
 	RealtimeMediaDevices,
 	RealtimeMediaEnvironment,
 	RealtimeMediaStream,
@@ -31,13 +31,13 @@ import {
 } from "@/ui/codex-realtime/tests/support/media-session-stop-fixtures";
 import type { VoiceOutputPlayback } from "@/ui/voice-output-level";
 
-type Stage = "getUserMedia" | "createOffer" | "setLocal" | "hostOffer" | "setRemote" | "resume";
+type Stage = "getUserMedia" | "createOffer" | "setLocal" | "serverOffer" | "setRemote" | "resume";
 type BrowserPromiseMode = "resolved" | "rejected" | "pending";
 
 const PUBLISHED_CHECKPOINTS = [
 	["requesting_permission", "start_requested", "getUserMedia"],
 	["negotiating", "permission_granted", "peer"],
-	["negotiating", "offer_created", "hostOffer"],
+	["negotiating", "offer_created", "serverOffer"],
 	["negotiating", "answer_received", "setRemote"],
 	["listening", "negotiation_succeeded", null],
 ] as const;
@@ -69,7 +69,7 @@ interface ScheduledTimer {
 	readonly callback: () => void;
 }
 
-/** The fake browser: media devices, environment, clock, frames and host stop. */
+/** The fake browser: media devices, environment, clock, frames and server stop. */
 class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 	readonly order: string[] = [];
 	readonly localTracks: FakeTrack[] = [];
@@ -187,7 +187,7 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 	}
 
 	/**
-	 * The host stop, answering as configured.
+	 * The server stop, answering as configured.
 	 * @param request The stop request.
 	 * @returns The outcome.
 	 */
@@ -213,8 +213,8 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 	}
 
 	/**
-	 * Releases a paused host stop.
-	 * @param mode How the host answers.
+	 * Releases a paused server stop.
+	 * @param mode How the server answers.
 	 */
 	releaseStop(mode: Exclude<StopMode, "paused" | "rejected"> = "delivered"): void {
 		const request = this.stopRequests.at(-1);
@@ -316,7 +316,7 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 
 	/**
 	 * Attaches a stream to the fake element behind an attachment.
-	 * @param element The element the host handed over.
+	 * @param element The element the server handed over.
 	 * @param stream The remote stream.
 	 */
 	attachPlayback(element: HTMLMediaElement, stream: RealtimeMediaStream): void {
@@ -404,13 +404,13 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 	}
 
 	/**
-	 * A new host media element handed to the session's attachment.
+	 * A new media element from the server handed to the session's attachment.
 	 * @returns The fake element and its typed handle.
 	 */
 	newElement(): { readonly audio: FakeAudio; readonly element: HTMLMediaElement } {
 		const audio = new FakeAudio(this);
 		this.audios.push(audio);
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The neutral host contract hands the session a browser media element; this fake implements exactly the members the session touches, and the WeakMap below is how the fake environment finds it again.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The neutral realtime server contract hands the session a browser media element; this fake implements exactly the members the session touches, and the WeakMap below is how the fake environment finds it again.
 		const element = audio as unknown as HTMLMediaElement;
 		this.elements.set(element, audio);
 		return { audio, element };
@@ -464,18 +464,18 @@ class FakeBrowser extends TrackedTarget implements RealtimeMediaDevices {
 }
 
 /**
- * A host over the fake browser.
+ * A realtime server over the fake browser.
  * @param env The fake browser.
- * @returns The host.
+ * @returns The server.
  */
-function host(env: FakeBrowser): RealtimeHost {
+function realtimeServer(env: FakeBrowser): RealtimeServer {
 	return {
 		/**
-		 * Answers the offer through the hostOffer stage gate.
+		 * Answers the offer through the serverOffer stage gate.
 		 * @param offer The offer.
 		 * @returns The answer.
 		 */
-		createOffer: (offer) => env.stage<AnswerSdp>("hostOffer", { ...offer, sdp: "remote-answer" }),
+		createOffer: (offer) => env.stage<AnswerSdp>("serverOffer", { ...offer, sdp: "remote-answer" }),
 		/**
 		 * Hands the session a fresh element.
 		 * @param attachment The attachment.
@@ -539,7 +539,7 @@ export {
 	SIDE_EFFECT_CHECKPOINTS,
 	SILENT_SAMPLES,
 	correlation,
-	host,
+	realtimeServer,
 	settle,
 	type Stage,
 };

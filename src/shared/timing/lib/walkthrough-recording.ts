@@ -15,16 +15,16 @@
  * A cold page fetches the bundle, lays the board out in its worker (elk and
  * libavoid in WebAssembly) and reads the workbench snapshot; a large board
  * takes a few seconds. It pulls against an agent that waits this long to be
- * told the canvas cannot record.
+ * told the server cannot record.
  */
 const RECORDING_PAGE_READY_MS = 30_000;
 
 /**
  * How long voice may take to go live once a recording starts: creating the
- * canvas's conversation when it has none, the coordinator and the workhorse
+ * server's conversation when it has none, the coordinator and the workhorse
  * becoming ready, and the realtime negotiation (`CODEX_REALTIME_START_MS`,
  * 15 s, inside it). Creating a conversation is the slow part and is paid
- * once per canvas.
+ * once per server.
  */
 const RECORDING_VOICE_START_MS = 60_000;
 

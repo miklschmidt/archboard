@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { getHealth, getSyncStatus } from "@/runtime/engine/canvas-client";
+import { getHealth, getSyncStatus } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { readPidFile } from "@/runtime/engine/pidfile";
-import { canvasPort, isCanvasHealth } from "@/runtime/engine/spawn";
+import { serverPort, isServerHealth } from "@/runtime/engine/spawn";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { ServerStateSchema } from "@/cli/command-contract/schemas";
 
@@ -54,10 +54,10 @@ type StatusResult = z.infer<typeof StatusResultSchema>;
 const clock = (at: string): string => new Date(at).toLocaleTimeString();
 
 /**
- * Tells the person their canvas is answering from code older than the files on
+ * Tells the person their Archboard server is answering from code older than the files on
  * disk, and what to do about it. A running server read its source at start, so
  * editing source changes the next command, not the process already running.
- * @param health - The health the canvas reported.
+ * @param health - The health the server reported.
  * @returns What is stale and what to say about it, or null when the source is current.
  */
 function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
@@ -71,14 +71,14 @@ function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 		changedFile: source.newestFile,
 		changedAt: source.newestAt,
 		says:
-			`This canvas read its source at ${clock(source.evaluatedAt)} and ${source.newestFile} ` +
+			`This Archboard server read its source at ${clock(source.evaluatedAt)} and ${source.newestFile} ` +
 			`changed at ${clock(source.newestAt)}, so it is answering from the older code. ${remedy}`,
 	};
 }
 
 /**
  * Reads the synchronization state, which is an addition to a status rather
- * than part of it: a canvas that answered its health has already reported
+ * than part of it: a server that answered its health has already reported
  * everything a status must contain.
  * @returns The synchronization fields, or nothing when they could not be read.
  */
@@ -91,11 +91,11 @@ async function bestEffortSyncStatus(): Promise<Record<string, unknown>> {
 }
 
 /**
- * The status of a canvas that answered: what it is holding, how many browsers
+ * The status of a server that answered: what it is holding, how many browsers
  * are looking at it, and a warning when it is running older code than the
- * files on disk. The pid falls back to the pid file for a canvas whose health
+ * files on disk. The pid falls back to the pid file for a server whose health
  * does not report one.
- * @param health - The health the canvas reported.
+ * @param health - The health the server reported.
  * @param sync - The synchronization fields, empty when they could not be read.
  * @returns The running status, with the staleness warning as a diagnostic.
  */
@@ -112,7 +112,7 @@ function runningStatus(
 			...sync,
 			running: true as const,
 			url: ARCHBOARD_URL,
-			pid: health.pid ?? readPidFile(canvasPort()) ?? undefined,
+			pid: health.pid ?? readPidFile(serverPort()) ?? undefined,
 			boards: health.boards,
 			browserClients: health.websocket_clients,
 			...(stale ? { stale } : {}),
@@ -124,9 +124,9 @@ function runningStatus(
 const statusContract = defineCommand({
 	path: ["status"],
 	shared: ["url"],
-	summary: "Canvas health, board count, browser clients",
+	summary: "Archboard server health, board count, browser clients",
 	description:
-		"Reports canvas availability, identity, source freshness, and synchronization state.",
+		"Reports Archboard server availability, identity, source freshness, and synchronization state.",
 	examples: ["archboard status"],
 	parameters: [
 		{
@@ -147,7 +147,7 @@ const statusContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				description: "Canvas status",
+				description: "Archboard server status",
 				presentation: ["result", "diagnostics"],
 			},
 		],
@@ -161,14 +161,14 @@ const statusContract = defineCommand({
 		{
 			id: "unavailable",
 			exit: 3,
-			description: "No canvas is answering at the configured URL.",
+			description: "No Archboard server is answering at the configured URL.",
 			stream: "stdout-only",
 			presentation: ["result"],
 		},
 		{
 			id: "foreign-service",
 			exit: 3,
-			description: "Another service or an incompatible canvas is answering.",
+			description: "Another service or an incompatible Archboard server is answering.",
 			stream: "stdout-only",
 			presentation: ["result"],
 		},
@@ -187,9 +187,9 @@ const statusContract = defineCommand({
 	],
 	/**
 	 * Reports what is answering at the configured URL: nothing, something that
-	 * is not this canvas, or the canvas with its counts, its source freshness
+	 * is not this server, or the server with its counts, its source freshness
 	 * and whatever synchronization state it can add.
-	 * @returns The status as the command's result, with an outcome when no canvas answered.
+	 * @returns The status as the command's result, with an outcome when no server answered.
 	 */
 	async handler() {
 		let health;
@@ -201,12 +201,13 @@ const statusContract = defineCommand({
 				outcome: "unavailable",
 			};
 		}
-		if (!isCanvasHealth(health)) {
+		if (!isServerHealth(health)) {
 			return {
 				result: {
 					running: false as const,
 					url: ARCHBOARD_URL,
-					conflict: "another service (or a pre-1.1 canvas build) is answering at this URL",
+					conflict:
+						"another service (or a pre-1.1 Archboard server build) is answering at this URL",
 				},
 				outcome: "foreign-service",
 			};

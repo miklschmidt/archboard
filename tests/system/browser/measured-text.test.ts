@@ -4,13 +4,13 @@ import { join } from "node:path";
 
 import { diagramTextWidth } from "@/runtime/semantic-renderer/index";
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 } from "./support/agent-browser.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
@@ -147,14 +147,14 @@ test("the server's text measurement is what a real browser draws", async () => {
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "measured-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 	await seedSemanticBoard(request, "typography");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(canvas.base, "typography")]);
+	await browser.run(["open", addressShowing(server.base, "typography")]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser.eval.bind(browser)),
@@ -193,5 +193,5 @@ test("the server's text measurement is what a real browser draws", async () => {
 	expect(drawn.every((one) => one.width > 0)).toBeTrue();
 	await assertThemeParity(browser);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);

@@ -5,7 +5,7 @@ import type {
 	RealtimeState,
 	RealtimeTranscriptRecord,
 	RealtimeTranscriptRole,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type {
 	ItemId,
 	RealtimeSessionId as WireRealtimeSessionId,

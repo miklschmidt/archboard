@@ -1,5 +1,5 @@
 // The reviewed fields a decision reads, projected from the request exactly as
-// the host published it. A secret default is never projected, so it can never
+// the server published it. A secret default is never projected, so it can never
 // be echoed either.
 
 import type { BrowserApproval } from "@/shared/codex-browser-model";
@@ -68,7 +68,7 @@ function field(seed: FieldSeed): WorkbenchApprovalField {
 
 /**
  * A default value as text, when it can be shown.
- * @param value The host's default.
+ * @param value The server's default.
  * @returns The text, or null.
  */
 function jsonText(value: unknown): string | null {
@@ -133,7 +133,7 @@ function questionFields(approval: UserInput): readonly WorkbenchApprovalField[] 
 
 /**
  * The control of a string-typed elicitation field.
- * @param source The host's field.
+ * @param source The server's field.
  * @returns A format control, multiline for long text, else text.
  */
 function stringControl(source: ElicitationField): WorkbenchApprovalControl {
@@ -145,7 +145,7 @@ function stringControl(source: ElicitationField): WorkbenchApprovalControl {
 
 /**
  * The control an elicitation field needs.
- * @param source The host's field.
+ * @param source The server's field.
  * @returns The control.
  */
 function elicitationControl(source: ElicitationField): WorkbenchApprovalControl {
@@ -160,7 +160,7 @@ function elicitationControl(source: ElicitationField): WorkbenchApprovalControl 
 
 /**
  * The control of an enumerated elicitation field.
- * @param source The host's field.
+ * @param source The server's field.
  * @returns Multiple choice when more than one item may be chosen, else single.
  */
 function choiceControl(source: ElicitationField): WorkbenchApprovalControl {
@@ -169,7 +169,7 @@ function choiceControl(source: ElicitationField): WorkbenchApprovalControl {
 
 /**
  * The options of an elicitation field.
- * @param source The host's field.
+ * @param source The server's field.
  * @returns The options, or null.
  */
 function elicitationOptions(source: ElicitationField): readonly WorkbenchApprovalOption[] | null {

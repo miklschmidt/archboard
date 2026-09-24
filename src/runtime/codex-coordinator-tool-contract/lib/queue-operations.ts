@@ -32,7 +32,7 @@ interface QueueOperationContract {
 	readonly protocolFields: readonly string[];
 	readonly protocolRequiredFields: readonly string[];
 	readonly protocolOptionalNullableFields: readonly string[];
-	readonly hostSuppliedFields: readonly string[];
+	readonly serverSuppliedFields: readonly string[];
 	readonly fieldMapping: Readonly<Record<string, string>>;
 }
 
@@ -44,7 +44,7 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolFields: ["threadId", "cursor", "limit"],
 		protocolRequiredFields: ["threadId"],
 		protocolOptionalNullableFields: ["cursor", "limit"],
-		hostSuppliedFields: ["threadId", "cursor", "limit"],
+		serverSuppliedFields: ["threadId", "cursor", "limit"],
 		fieldMapping: {},
 	},
 	{
@@ -54,8 +54,8 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolFields: ["threadId", "input", "clientUserMessageId"],
 		protocolRequiredFields: ["threadId", "input", "clientUserMessageId"],
 		protocolOptionalNullableFields: [],
-		hostSuppliedFields: ["threadId", "clientUserMessageId"],
-		fieldMapping: { prompt: "input", clientUserMessageId: "host_minted" },
+		serverSuppliedFields: ["threadId", "clientUserMessageId"],
+		fieldMapping: { prompt: "input", clientUserMessageId: "server_minted" },
 	},
 	{
 		operation: "update",
@@ -64,7 +64,7 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolFields: ["threadId", "queuedSubmissionId", "input"],
 		protocolRequiredFields: ["threadId", "queuedSubmissionId", "input"],
 		protocolOptionalNullableFields: [],
-		hostSuppliedFields: ["threadId"],
+		serverSuppliedFields: ["threadId"],
 		fieldMapping: { submissionId: "queuedSubmissionId", prompt: "input" },
 	},
 	{
@@ -74,7 +74,7 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolFields: ["threadId", "queuedSubmissionId"],
 		protocolRequiredFields: ["threadId", "queuedSubmissionId"],
 		protocolOptionalNullableFields: [],
-		hostSuppliedFields: ["threadId"],
+		serverSuppliedFields: ["threadId"],
 		fieldMapping: { submissionId: "queuedSubmissionId" },
 	},
 	{
@@ -84,7 +84,7 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolFields: ["threadId", "queuedSubmissionIds"],
 		protocolRequiredFields: ["threadId", "queuedSubmissionIds"],
 		protocolOptionalNullableFields: [],
-		hostSuppliedFields: ["threadId"],
+		serverSuppliedFields: ["threadId"],
 		fieldMapping: { orderedSubmissionIds: "queuedSubmissionIds" },
 	},
 	{
@@ -94,7 +94,7 @@ const CODEX_QUEUE_OPERATION_CONTRACTS = deepFreeze([
 		protocolFields: ["threadId", "queuedSubmissionId"],
 		protocolRequiredFields: ["threadId"],
 		protocolOptionalNullableFields: ["queuedSubmissionId"],
-		hostSuppliedFields: ["threadId"],
+		serverSuppliedFields: ["threadId"],
 		fieldMapping: { submissionId: "queuedSubmissionId" },
 	},
 ] satisfies readonly QueueOperationContract[]);

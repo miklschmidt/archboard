@@ -1,9 +1,9 @@
-// What the canvas needs from a workbench transport, and nothing more.
+// What the pane session needs from a workbench transport, and nothing more.
 //
 // A pane owns the one socket to the Archboard server. The text and voice
-// workbench ride that socket through a transport the canvas does not implement:
+// workbench ride that socket through a transport the pane session does not implement:
 // `src/ui/workbench-transport` implements `WorkbenchTransportPort`, and
-// `src/ui/codex-workbench-media` implements `WorkbenchMediaPort`. The canvas
+// `src/ui/codex-workbench-media` implements `WorkbenchMediaPort`. The pane session
 // only attaches a transport generation to its socket after the server has
 // registered the pane, retires it when the socket goes, and hands the current
 // transport to whoever asks. It never reads a workbench message itself.
@@ -15,7 +15,7 @@ interface PaneSocket extends EventTarget {
 }
 
 /**
- * The connection facts every transport state carries; the canvas reads no
+ * The connection facts every transport state carries; the pane session reads no
  * more. `stream` is the workbench transport's stale-snapshot state, carried so
  * the production transport satisfies this port without an adapter.
  */
@@ -28,7 +28,7 @@ interface WorkbenchTransportState {
 	readonly reason?: string;
 }
 
-/** The state the canvas itself reports when no transport is attached. */
+/** The state the pane session itself reports when no transport is attached. */
 interface WorkbenchStoppedState extends WorkbenchTransportState {
 	readonly kind: "connection";
 	readonly state: "stopped";

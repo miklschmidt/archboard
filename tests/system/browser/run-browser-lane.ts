@@ -218,7 +218,7 @@ function namespaceArtifacts(directory: string): string[] {
 	return found.toSorted();
 }
 
-async function canvasListenerIsClosed(base: string): Promise<boolean> {
+async function serverListenerIsClosed(base: string): Promise<boolean> {
 	try {
 		await fetch(`${base}/health`, { signal: AbortSignal.timeout(TEST_BROWSER_POLL_MS) });
 		return false;
@@ -227,8 +227,8 @@ async function canvasListenerIsClosed(base: string): Promise<boolean> {
 	}
 }
 
-function registeredCanvasBases(ownerRoot: string): string[] {
-	const registry = join(ownerRoot, ".canvas-bases");
+function registeredServerBases(ownerRoot: string): string[] {
+	const registry = join(ownerRoot, ".server-bases");
 	if (!existsSync(registry)) return [];
 	const bases = readFileSync(registry, "utf8").split("\n").filter(Boolean);
 	unlinkSync(registry);
@@ -236,11 +236,11 @@ function registeredCanvasBases(ownerRoot: string): string[] {
 }
 
 async function auditOwner(context: OwnerContext): Promise<void> {
-	const bases = registeredCanvasBases(context.root);
+	const bases = registeredServerBases(context.root);
 	const sample = async (): Promise<OwnerAuditSample> => {
 		const listeners: string[] = [];
 		for (const base of bases) {
-			if (!(await canvasListenerIsClosed(base))) listeners.push(base);
+			if (!(await serverListenerIsClosed(base))) listeners.push(base);
 		}
 		return {
 			groupAlive: processGroupExists(context.processGroup),
@@ -269,7 +269,7 @@ async function auditOwner(context: OwnerContext): Promise<void> {
 		failures.push(`owned processes remain: ${state.processes.join(", ")}`);
 	if (state.sockets.length > 0)
 		failures.push(`agent-browser sockets remain: ${state.sockets.join(", ")}`);
-	for (const base of state.listeners) failures.push(`canvas listener remains at ${base}`);
+	for (const base of state.listeners) failures.push(`server listener remains at ${base}`);
 	rmSync(context.root, { recursive: true, force: true });
 	if (existsSync(context.root)) failures.push("file-specific owner directory remains");
 	if (failures.length > 0) {

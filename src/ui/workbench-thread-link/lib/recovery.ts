@@ -1,5 +1,5 @@
 // One recovery a person may take, with the owner that can actually perform
-// it: the transport, the host where Archboard runs, or nobody.
+// it: the transport, the Archboard server, or nobody.
 
 import type {
 	ThreadLinkRecovery,
@@ -7,7 +7,7 @@ import type {
 } from "@/ui/workbench-thread-link/contracts";
 import type { WorkbenchTransportCapabilities } from "@/ui/workbench-thread-link/transport-port";
 
-const HOST_INTENTS: ReadonlySet<ThreadLinkRecoveryIntent> = new Set([
+const SERVER_INTENTS: ReadonlySet<ThreadLinkRecoveryIntent> = new Set([
 	"start_workbench",
 	"choose_binary",
 	"unlock_home",
@@ -112,38 +112,38 @@ const TRANSPORT_AVAILABILITY: Record<
 };
 
 /**
- * Whether an intent is one the host performs where Archboard runs.
+ * Whether an intent is one the server performs.
  * @param intent The intent.
- * @returns True for the four host intents.
+ * @returns True for the four server intents.
  */
-function isHostIntent(
+function isServerIntent(
 	intent: ThreadLinkRecoveryIntent,
 ): intent is "start_workbench" | "choose_binary" | "unlock_home" | "repair_storage" {
-	return HOST_INTENTS.has(intent);
+	return SERVER_INTENTS.has(intent);
 }
 
 /**
  * One recovery, with its owner.
  * @param intent The intent.
  * @param capabilities The transport capabilities.
- * @param hostRecoveryIntents The host intents this pane has an owner for.
+ * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The recovery.
  */
 function threadLinkRecovery(
 	intent: ThreadLinkRecoveryIntent,
 	capabilities: WorkbenchTransportCapabilities,
-	hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[],
+	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[],
 ): ThreadLinkRecovery {
 	const text = RECOVERY_TEXT[intent];
-	if (isHostIntent(intent)) {
-		const available = hostRecoveryIntents.includes(intent);
+	if (isServerIntent(intent)) {
+		const available = serverRecoveryIntents.includes(intent);
 		return Object.freeze({
 			intent,
 			label: text.label,
 			description: available
 				? text.description
 				: `${text.description} Do this where Archboard is running.`,
-			owner: available ? "host" : "none",
+			owner: available ? "server" : "none",
 			available,
 		});
 	}

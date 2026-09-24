@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createThreadLinkController } from "@/ui/workbench-thread-link";
-import { FakeTransport, capturing, hostOwner } from "@/ui/workbench-thread-link/tests/fixtures";
+import { FakeTransport, capturing, serverOwner } from "@/ui/workbench-thread-link/tests/fixtures";
 
 describe("thread-link recovery actions", () => {
 	test("refreshing state and re-reading the account run through the transport", async () => {
@@ -15,7 +15,7 @@ describe("thread-link recovery actions", () => {
 		expect(controller.snapshot().state).toBe("succeeded");
 	});
 
-	test("a host recovery with no declared owner fails with the reason instead of pretending", async () => {
+	test("a server recovery with no declared owner fails with the reason instead of pretending", async () => {
 		const transport = new FakeTransport();
 		const controller = createThreadLinkController({ capturePane: capturing(transport) });
 		await controller.recover("start_workbench");
@@ -26,12 +26,12 @@ describe("thread-link recovery actions", () => {
 		);
 	});
 
-	test("a declared host recovery runs against the captured pane and intent", async () => {
+	test("a declared server recovery runs against the captured pane and intent", async () => {
 		const transport = new FakeTransport();
 		const calls: string[] = [];
 		const controller = createThreadLinkController({
 			capturePane: capturing(transport, ["unlock_home"]),
-			captureHostRecovery: hostOwner("pane-a", (target) => {
+			captureServerRecovery: serverOwner("pane-a", (target) => {
 				calls.push(`${target.paneId}:${target.intent}`);
 				return Promise.resolve();
 			}),
@@ -41,11 +41,11 @@ describe("thread-link recovery actions", () => {
 		expect(controller.snapshot().state).toBe("succeeded");
 	});
 
-	test("a host authority for another pane is refused rather than run", async () => {
+	test("a server authority for another pane is refused rather than run", async () => {
 		const transport = new FakeTransport();
 		const controller = createThreadLinkController({
 			capturePane: capturing(transport, ["repair_storage"]),
-			captureHostRecovery: hostOwner("pane-b", () =>
+			captureServerRecovery: serverOwner("pane-b", () =>
 				Promise.reject(new Error("This recovery must never run.")),
 			),
 		});
@@ -53,11 +53,11 @@ describe("thread-link recovery actions", () => {
 		expect(controller.snapshot().state).toBe("failed");
 	});
 
-	test("a failing host recovery reports what happened and what to do next", async () => {
+	test("a failing server recovery reports what happened and what to do next", async () => {
 		const transport = new FakeTransport();
 		const controller = createThreadLinkController({
 			capturePane: capturing(transport, ["start_workbench"]),
-			captureHostRecovery: hostOwner("pane-a", () =>
+			captureServerRecovery: serverOwner("pane-a", () =>
 				Promise.reject(new Error("The Codex process refused to start.")),
 			),
 		});

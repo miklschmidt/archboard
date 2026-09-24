@@ -16,7 +16,7 @@ Where things are written down:
 - Measured investigations: `docs/design/`; the UI's visual authority is
   `docs/design/operator-canvas-shell.md` with its reference image
 - Changing tests or CI: `docs/agents/test-suite.md`
-- Working on this repo: the `archboard-dev` skill; using the canvas: the `archboard` skill
+- Working on this repo: the `archboard-dev` skill; using archboard: the `archboard` skill
 - Reading or updating this repo's architecture: `.archboard/README.md`; start at
   `Archboard` using `./bin/dogfood` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
@@ -76,8 +76,8 @@ The loud rules teach themselves (a call naming no board, an agent write without
   it persists on the node as `binding: { repo, path }` and is what "open the
   code" resolves.
 - **Codex runs as one private package-local app-server session over stdio**
-  with an archboard-only `CODEX_HOME` every canvas on the machine shares; the
-  canvas's thread link names one workhorse and voice belongs to its separate
+  with an archboard-only `CODEX_HOME` every Archboard server on the machine shares; the
+  server's thread link names one workhorse and voice belongs to its separate
   coordinator. The
   [bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
   is the delivery and outcome contract.

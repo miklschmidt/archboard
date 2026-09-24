@@ -2,7 +2,7 @@
 // whole policy, in one place, because getting it wrong either loses somebody's
 // words or sends them twice.
 //
-// - `delivered`: cleared. The host published an authoritative turn carrying
+// - `delivered`: cleared. The server published an authoritative turn carrying
 //   the message, so keeping the text would invite a duplicate turn.
 // - `not_delivered`: left in the live composer. Nothing reached the workhorse,
 //   so resending is safe and is the obvious next action.

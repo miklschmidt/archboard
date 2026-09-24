@@ -168,7 +168,7 @@ function retire(core: TransportCore, run: SocketRun, code: RetireCode, reason: s
 }
 
 /**
- * The host spoke a contract this browser cannot read; stop for good.
+ * The server spoke a contract this browser cannot read; stop for good.
  * @param core The core.
  * @param run The run.
  * @param error The wire error.

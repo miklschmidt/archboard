@@ -45,7 +45,7 @@ const producers = [
 	{
 		kind: "composer_message",
 		rpcs: ["turn/start", "turn/steer"],
-		operationIdSource: "host_minted",
+		operationIdSource: "server_minted",
 		omitWhen: [],
 	},
 	{
@@ -63,25 +63,25 @@ const producers = [
 	{
 		kind: "send_message_to_thread",
 		rpcs: ["turn/start"],
-		operationIdSource: "host_minted",
+		operationIdSource: "server_minted",
 		omitWhen: [],
 	},
 	{
 		kind: "delegate_to_workhorse",
 		rpcs: ["turn/start"],
-		operationIdSource: "host_minted",
+		operationIdSource: "server_minted",
 		omitWhen: ["queued"],
 	},
 	{
 		kind: "steer_workhorse",
 		rpcs: ["turn/steer"],
-		operationIdSource: "host_minted",
+		operationIdSource: "server_minted",
 		omitWhen: [],
 	},
 	{
 		kind: "spoken_approval_classifier",
 		rpcs: ["turn/start"],
-		operationIdSource: "host_minted",
+		operationIdSource: "server_minted",
 		omitWhen: [],
 	},
 	{
@@ -89,7 +89,7 @@ const producers = [
 		// live, and decides whether the person hears about it (TASK-291).
 		kind: "workhorse_outcome_report",
 		rpcs: ["turn/start"],
-		operationIdSource: "host_minted",
+		operationIdSource: "server_minted",
 		omitWhen: [],
 	},
 ] as const;

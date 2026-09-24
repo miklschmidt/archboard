@@ -123,8 +123,8 @@ describe("dedicated Codex storage", () => {
 		const root = temporaryRoot();
 		try {
 			/**
-			 * The private owner directory of the canvas on one port.
-			 * @param port The canvas's port.
+			 * The private owner directory of the server on one port.
+			 * @param port The server's port.
 			 * @returns The directory.
 			 */
 			const ownerOf = (port: string): string => {

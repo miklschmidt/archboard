@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
-import { runCanvasCli } from "../support/run-cli.ts";
+import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { runServerCli } from "../support/run-cli.ts";
 
 // The public path to a group: configure it, put parts of two containers in it,
 // and ask the command line what it is. The pure inspection owns the semantics;
@@ -12,16 +12,16 @@ import { runCanvasCli } from "../support/run-cli.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-groups-"));
-let canvas: OwnedCanvas;
+let server: OwnedServer;
 
 /**
- * Run one archboard command against the owned canvas.
+ * Run one archboard command against the owned server.
  * @param args The command line.
  * @param input What to put on standard input.
  * @returns What the command printed and how it exited.
  */
 const cli = (args: readonly string[], input?: string) =>
-	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+	runServerCli({ repoRoot, vault, base: server.base, args, input });
 
 /** Fulfillment across Orders and Shipping; the worker is also Billing's. */
 const ARCHITECTURE = {
@@ -56,11 +56,11 @@ beforeAll(async () => {
 			},
 		}),
 	);
-	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
+	server = await startOwnedServer({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await server?.dispose();
 	fs.rmSync(vault, { recursive: true, force: true });
 });
 

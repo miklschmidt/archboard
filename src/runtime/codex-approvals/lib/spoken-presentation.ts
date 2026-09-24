@@ -218,8 +218,8 @@ function toSpokenEffectPresentation(request: ApprovalRequest): SpokenApprovalEff
  * blocked on it, its schema or grant is broader than a spoken yes-or-no, its spoken presentation
  * could not be built, or the binding it was made under is no longer current.
  * @param request - The approval request.
- * @param currentBinding - Whether the binding is still the host's current one.
- * @param facts - What the host knows about the approval.
+ * @param currentBinding - Whether the binding is still the server's current one.
+ * @param facts - What the server knows about the approval.
  * @param effectPresentation - The spoken presentation, when one could be built.
  * @returns The refusal, or null when the family's own rules decide.
  */
@@ -233,7 +233,7 @@ function spokenFactsRefusal(
 		return { eligible: false, reason: "secret" };
 	}
 	const factRefusal =
-		hostFactRefusal(facts) ?? missingPresentationRefusal(request, effectPresentation);
+		serverFactRefusal(facts) ?? missingPresentationRefusal(request, effectPresentation);
 	if (factRefusal !== null) {
 		return factRefusal;
 	}
@@ -270,11 +270,11 @@ function holdsSecretQuestion(request: ApprovalRequest): boolean {
 }
 
 /**
- * Why the host's own facts rule voice out for this approval.
- * @param facts - What the host knows about the approval.
- * @returns The refusal, or null when the host's facts allow voice.
+ * Why the server's own facts rule voice out for this approval.
+ * @param facts - What the server knows about the approval.
+ * @returns The refusal, or null when the server's facts allow voice.
  */
-function hostFactRefusal(facts: SpokenEligibilityFacts): SpokenEligibility | null {
+function serverFactRefusal(facts: SpokenEligibilityFacts): SpokenEligibility | null {
 	if (facts.coordinatorBlocking === true) {
 		return { eligible: false, reason: "coordinator_blocking" };
 	}
@@ -388,8 +388,8 @@ function visualOnlyEligibility(
  * execution that offers exactly accept or decline is ever eligible; every other family is
  * answered on the visual surface, and each says which of its own properties rules voice out.
  * @param request - The approval request.
- * @param currentBinding - Whether the binding is still the host's current one.
- * @param facts - What the host knows about the approval.
+ * @param currentBinding - Whether the binding is still the server's current one.
+ * @param facts - What the server knows about the approval.
  * @param effectPresentation - The spoken presentation, when one could be built.
  * @returns The eligibility and its reason.
  */

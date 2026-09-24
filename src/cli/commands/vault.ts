@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
-import { checkSemanticVaultOnCanvas } from "@/runtime/semantic-board-client/index";
+import { checkSemanticVaultOnServer } from "@/runtime/semantic-board-client/index";
 import { VaultCheckSchema } from "@/shared/semantic-policy/index";
 import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
 
@@ -59,7 +59,7 @@ const checkContract = defineCommand({
 	 */
 	async handler(_input, context) {
 		await context.require("server", "check");
-		const result = await checkSemanticVaultOnCanvas();
+		const result = await checkSemanticVaultOnServer();
 		return {
 			result,
 			...(result.diagnostics.length === 0 ? {} : { outcome: "issues" }),
@@ -113,7 +113,7 @@ const semanticConfigContract = defineCommand({
 	async handler(input, context) {
 		if (input.schema) return { result: z.toJSONSchema(SemanticBoardConfigurationSchema) };
 		await context.require("server", "semantic config");
-		return { result: await checkSemanticVaultOnCanvas() };
+		return { result: await checkSemanticVaultOnServer() };
 	},
 });
 export { checkContract, semanticConfigContract };

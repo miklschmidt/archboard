@@ -281,7 +281,7 @@ const DECISION_CAUSES = {
 	approved: ["person_approved"],
 	declined: ["person_declined"],
 	expired: ["deadline_reached"],
-	cancelled: ["call_cancelled", "caller_turn_interrupted", "host_shutdown"],
+	cancelled: ["call_cancelled", "caller_turn_interrupted", "server_shutdown"],
 	disconnected: ["browser_disconnected", "child_disconnected"],
 } as const;
 

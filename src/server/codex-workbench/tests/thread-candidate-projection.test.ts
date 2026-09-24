@@ -58,7 +58,7 @@ function baseInput(authorities: IdentityAuthorities): BrowserProjectionInput {
 	} satisfies BrowserProjectionInput & { readonly identity?: typeof authorities };
 }
 
-test("projects the host thread inventory into the browser vocabulary and bounds it", () => {
+test("projects the server thread inventory into the browser vocabulary and bounds it", () => {
 	const authorities = createIdentityAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const decoder = authorities.identity.decoder;

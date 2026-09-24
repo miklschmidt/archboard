@@ -1,5 +1,5 @@
 // One socket reducer for the Codex workbench: the transport that rides a
-// pane's canvas socket, its published state, capabilities, lease identity,
+// pane's socket to the server, its published state, capabilities, lease identity,
 // command targeting and preparation, and the refusal it throws.
 
 export { createBrowserWorkbenchTransport } from "@/ui/workbench-transport/lib/transport";

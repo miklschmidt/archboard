@@ -19,7 +19,7 @@ import type {
 	RealtimeItemId,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "@/shared/codex-realtime-host";
+} from "@/shared/codex-realtime-contract";
 import type {
 	DynamicToolRefusalReason,
 	ResolveSpokenApprovalInput,
@@ -60,9 +60,9 @@ interface SpokenApprovalEffectPrompt {
 }
 
 interface SpokenApprovalClassifierInput {
-	/** A host-issued operation identity; this module never mints one. */
+	/** A server-issued operation identity; this module never mints one. */
 	readonly operationId: string;
-	/** A host-issued client message identity for the ordinary turn. */
+	/** A server-issued client message identity for the ordinary turn. */
 	readonly clientUserMessageId: string;
 	readonly context: ArchboardContext;
 }

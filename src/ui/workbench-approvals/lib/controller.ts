@@ -2,7 +2,7 @@
 // It feeds the committed approvals panel (`@/ui/workbench`): the busy keys it
 // disables cards on, and the two respond actions it calls. Every decision goes
 // out once, against the target captured when it was made, and its result is
-// kept beside the card until the host's own record replaces it.
+// kept beside the card until the server's own record replaces it.
 
 import type { BrowserApproval, BrowserDynamicApproval } from "@/shared/codex-browser-model";
 import type {
@@ -32,7 +32,7 @@ import type {
 interface WorkbenchApprovalsDecisionState {
 	/** Keys of decisions on the wire: an approval's request id, or a dynamic approval's call id. */
 	readonly busyApprovals: readonly string[];
-	/** The last result per key, until the host's own record replaces it. */
+	/** The last result per key, until the server's own record replaces it. */
 	readonly results: ReadonlyMap<string, WorkbenchApprovalDecisionResult>;
 }
 

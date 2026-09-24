@@ -67,7 +67,7 @@ type JsonRpcRequestId = BrandedIdentity<"json-rpc-request">;
 type DynamicToolCallId = BrandedIdentity<"dynamic-tool-call">;
 type RealtimeSessionId = BrandedIdentity<"realtime-session">;
 type ApprovalId = BrandedIdentity<"approval">;
-/** A host-issued workbench mutation correlation, bound to one child epoch. */
+/** An Archboard-server-issued workbench mutation correlation, bound to one child epoch. */
 type OperationId = BrandedIdentity<"operation">;
 
 type AnyIdentity =
@@ -226,7 +226,7 @@ function wireValue<Domain extends IdentityDomain>(
 }
 
 /**
- * Mints a fresh random token for a host-owned identity.
+ * Mints a fresh random token for an Archboard-server-owned identity.
  * @returns Thirty-two lowercase hexadecimal characters.
  */
 function mintToken(): string {
@@ -248,11 +248,11 @@ function tokenOf(value: BrandedIdentity<IdentityDomain>): string {
 }
 
 /**
- * Mints a host-owned identity whose token is marked with the `h` prefix.
+ * Mints an Archboard-server-owned identity whose token is marked with the `h` prefix.
  * @param domain - The identity domain to mint in.
  * @returns A fresh branded identity.
  */
-function mintHostValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
+function mintServerValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
 	return wireValue(domain, `h${mintToken()}`);
 }
 
@@ -459,7 +459,7 @@ export {
 	wireValue,
 	mintToken,
 	tokenOf,
-	mintHostValue,
+	mintServerValue,
 	parseValue,
 	parseEpochValue,
 	mintEpochValue,

@@ -38,14 +38,14 @@ const SAMPLE: VariantContent = variant({
 	nodes: [
 		{ id: "agent", name: "Agent", kind: "external", responsibility: "Claude, through the CLI" },
 		{ id: "cli", name: "archboard CLI", kind: "app", responsibility: "One command, one write" },
-		{ id: "canvas", name: "Archboard server", kind: "service", responsibility: "Holds the leases" },
+		{ id: "server", name: "Archboard server", kind: "service", responsibility: "Holds the leases" },
 		{ id: "io", name: "board-io", kind: "module", responsibility: "Reads and writes the note" },
 		{ id: "vault", name: "Obsidian Vault", kind: "datastore", responsibility: "The note on disk" },
 	],
 	edges: [
 		{ id: "x1", from: "agent", to: "cli", kind: "call", label: "invokes" },
-		{ id: "x2", from: "cli", to: "canvas", kind: "http", label: "HTTP" },
-		{ id: "x3", from: "canvas", to: "io", kind: "call", label: "read and write" },
+		{ id: "x2", from: "cli", to: "server", kind: "http", label: "HTTP" },
+		{ id: "x3", from: "server", to: "io", kind: "call", label: "read and write" },
 		{ id: "x4", from: "io", to: "vault", kind: "data", label: "atomic write" },
 	],
 	flows: [
@@ -53,16 +53,16 @@ const SAMPLE: VariantContent = variant({
 			id: "claim",
 			name: "An agent claims a board and edits it",
 			summary: "One writer at a time, and the note still decides",
-			participants: ["agent", "cli", "canvas", "io", "vault"],
+			participants: ["agent", "cli", "server", "io", "vault"],
 			steps: [
 				{ id: "s1", from: "agent", to: "cli", label: "draw --doing", kind: "sync" },
-				{ id: "s2", from: "cli", to: "canvas", label: "POST /claim", kind: "sync" },
-				{ id: "s3", from: "canvas", to: "canvas", label: "retry once", kind: "self" },
-				{ id: "s4", from: "canvas", to: "cli", label: "claim held", kind: "return" },
-				{ id: "s5", from: "canvas", to: "io", label: "read the note", kind: "sync" },
+				{ id: "s2", from: "cli", to: "server", label: "POST /claim", kind: "sync" },
+				{ id: "s3", from: "server", to: "server", label: "retry once", kind: "self" },
+				{ id: "s4", from: "server", to: "cli", label: "claim held", kind: "return" },
+				{ id: "s5", from: "server", to: "io", label: "read the note", kind: "sync" },
 				{ id: "s6", from: "io", to: "vault", label: "readFileSync", kind: "sync", repeat: 2 },
 				{ id: "s7", from: "vault", to: "io", label: "note bytes", kind: "return" },
-				{ id: "s8", from: "canvas", to: "agent", label: "written at v42", kind: "async" },
+				{ id: "s8", from: "server", to: "agent", label: "written at v42", kind: "async" },
 				{
 					id: "s9",
 					from: "io",
@@ -247,7 +247,7 @@ describe("renderDataFlow", () => {
 	test("a self message stays inside its own column's run", () => {
 		const rendered = render();
 		const loop = rendered.atlas.edges["s3"]!;
-		const sender = rendered.atlas.nodes["canvas"]!;
+		const sender = rendered.atlas.nodes["server"]!;
 		const neighbour = rendered.atlas.nodes["io"]!;
 
 		// It leaves its own lifeline and comes back to it, so it starts inside its
@@ -328,7 +328,7 @@ describe("renderDataFlow", () => {
 		const arrival = routeEnds(rendered.svg, "step").get("s2");
 		expect(arrival).toBeDefined();
 
-		const receiver = rendered.atlas.nodes["canvas"]!;
+		const receiver = rendered.atlas.nodes["server"]!;
 		const lifeline = receiver.x + receiver.width / 2;
 		// Short of the lifeline by the width of the bar it is busy with, plus the
 		// room the arrowhead needs of its own — a dozen units, not a column.
@@ -355,10 +355,10 @@ describe("renderDataFlow", () => {
 				{
 					id: "stale",
 					name: "A user's edit arrives stale",
-					participants: ["cli", "canvas"],
+					participants: ["cli", "server"],
 					steps: [
-						{ id: "t1", from: "cli", to: "canvas", label: "PATCH at v41", kind: "sync" },
-						{ id: "t2", from: "canvas", to: "cli", label: "409 stale", kind: "return" },
+						{ id: "t1", from: "cli", to: "server", label: "PATCH at v41", kind: "sync" },
+						{ id: "t2", from: "server", to: "cli", label: "409 stale", kind: "return" },
 					],
 				},
 			],

@@ -3,7 +3,10 @@
 // the gateway does.
 
 import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browser-model";
-import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "@/shared/codex-realtime-contract";
 import {
 	mediaLease,
 	workbenchSnapshot,

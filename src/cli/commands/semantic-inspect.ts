@@ -5,7 +5,7 @@
 // pure inspection the browser runs over the same document, so a command line
 // and a pane looking at one variant say the same thing about one group. It
 // reads the whole variant before any view narrows it, and it needs no browser:
-// the canvas holds the board and the policy, and that is all it asks for.
+// the server holds the board and the policy, and that is all it asks for.
 
 import { z } from "zod";
 import {
@@ -20,8 +20,8 @@ import {
 } from "@/shared/semantic-board/index";
 import { VaultDiagnosticSchema, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
-	checkSemanticVaultOnCanvas,
-	readSemanticBoardAnswerOnCanvas,
+	checkSemanticVaultOnServer,
+	readSemanticBoardAnswerOnServer,
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
@@ -284,9 +284,9 @@ const semanticInspectContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic inspect");
-		const answer = await readSemanticBoardAnswerOnCanvas(input.name);
+		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		const variant = askedVariant(answer.board, input.variant);
-		const { policy } = await checkSemanticVaultOnCanvas();
+		const { policy } = await checkSemanticVaultOnServer();
 		const inspection = inspectGroup(variant.content, input.group);
 		refuseUnknownGroup(policy, variant, inspection);
 		const result = answered(

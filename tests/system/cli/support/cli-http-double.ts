@@ -1,13 +1,13 @@
-// A canvas that is only a canvas as far as the CLI can tell.
+// An Archboard server that is only an Archboard server as far as the CLI can tell.
 //
 // The CLI's own owners need something on the other end of `ARCHBOARD_URL`
 // that identifies itself and answers the handful of routes a command touches,
-// without a real canvas, a real vault or a real browser. What it is for is
+// without a real server, a real vault or a real browser. What it is for is
 // process behaviour — what the CLI leaves behind, what it exits with — so the
 // answers are the smallest true ones rather than a second implementation.
 
 import { z } from "zod";
-import { CANVAS_SERVICE_NAME } from "../../../../src/runtime/engine/canvas-client.ts";
+import { ARCHBOARD_SERVICE_NAME } from "../../../../src/runtime/engine/server-client.ts";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
@@ -85,7 +85,7 @@ function answerFor(method: string, url: URL): Response | null {
 }
 
 /**
- * Start a canvas double on a free loopback port.
+ * Start a server double on a free loopback port.
  * @param observed Where every contact is also recorded, for a shared log.
  * @returns The double.
  */
@@ -103,7 +103,7 @@ function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 			observed.push(contact);
 			if (url.pathname === "/health") {
 				return Response.json({
-					service: CANVAS_SERVICE_NAME,
+					service: ARCHBOARD_SERVICE_NAME,
 					status: "ok",
 					websocket_clients: browserClients,
 				});

@@ -20,7 +20,7 @@ import {
 } from "@/ui/voice-session/tests/support/fakes";
 
 /**
- * Every state the neutral host contract declares, spelled out so the test
+ * Every state the neutral realtime server contract declares, spelled out so the test
  * asserts nothing into the union.
  */
 const DECLARED_STATES: readonly RealtimeState[] = [
@@ -229,7 +229,7 @@ describe("voice session status mapping", () => {
 			seen.add(view.status);
 		}
 		// Every status but `unavailable` is reachable from the realtime state
-		// machine alone; `unavailable` belongs to the transport and host gates.
+		// machine alone; `unavailable` belongs to the transport and server gates.
 		expect([...seen].toSorted(byName)).toEqual(
 			VOICE_SESSION_STATUSES.filter((status) => status !== "unavailable").toSorted(byName),
 		);
@@ -333,18 +333,18 @@ describe("voice session status mapping", () => {
 		const view = project({
 			phase: "recoverable_error",
 			reason: "stop_failed",
-			message: "The realtime host did not confirm that session-1 stopped.",
+			message: "The realtime server did not confirm that session-1 stopped.",
 		});
 		expect(view.failure).toEqual({
 			code: "stop",
 			recoverable: true,
-			message: "The realtime host did not confirm that session-1 stopped.",
+			message: "The realtime server did not confirm that session-1 stopped.",
 		});
 		expect(view.outcome).toEqual({
 			kind: "terminal",
 			label: "Close voice",
 			recovery:
-				"The realtime host never confirmed the stop, so this session cannot restart. Close it and reconnect this pane.",
+				"The realtime server never confirmed the stop, so this session cannot restart. Close it and reconnect this pane.",
 		});
 		expect(view.controls.canRestart).toBe(false);
 		expect(view.controls.canStop).toBe(false);

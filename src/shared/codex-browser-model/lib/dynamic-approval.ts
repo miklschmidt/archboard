@@ -77,7 +77,7 @@ type DynamicApprovalCanonicalInput = {
 };
 
 /**
- * Hashes the canonical JSON of an approval, the value both host and browser
+ * Hashes the canonical JSON of an approval, the value both server and browser
  * must agree on before a decision may be applied.
  * @param value - The canonical compact JSON.
  * @returns The `sha256:`-prefixed digest.
@@ -259,7 +259,7 @@ function canonicalHashInput(
 }
 
 /**
- * Builds every dynamic approval schema: the canonical request the host
+ * Builds every dynamic approval schema: the canonical request the server
  * validates and hashes, the effect and identity schemas it embeds, and the
  * browser-facing record and response schemas.
  * @param identity - The session's identity schemas.

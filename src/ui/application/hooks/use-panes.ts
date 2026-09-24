@@ -180,7 +180,7 @@ function createPaneHost(setters: HostSetters): PaneHost {
 			events.read().onBoardError(paneId, error);
 		},
 		/**
-		 * This tab runs a bundle the canvas no longer serves.
+		 * This tab runs a bundle the server no longer serves.
 		 * @param message What the server said.
 		 */
 		onStaleFrontend: (message: string): void => {

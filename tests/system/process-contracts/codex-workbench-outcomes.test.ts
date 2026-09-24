@@ -9,8 +9,8 @@ import {
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
-} from "../canvas-state/support/codex-production.ts";
-import { createRequester, waitFor } from "../canvas-state/support/http.ts";
+} from "../server-state/support/codex-production.ts";
+import { createRequester, waitFor } from "../server-state/support/http.ts";
 import {
 	approveOrdinary,
 	pane,
@@ -18,7 +18,7 @@ import {
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startCanvas,
+	startServer,
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 import { extendOutcomeFixture } from "./support/codex-workbench-outcomes.ts";
@@ -45,12 +45,12 @@ describe.serial("composed Codex mutation outcomes", () => {
 			mkdirSync(staging, { recursive: true });
 			resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 			const fixture = prepareProductionFixture(resources, extendOutcomeFixture(staging));
-			const canvas = await startCanvas(fixture);
-			resources.defer(() => canvas.dispose());
+			const server = await startServer(fixture);
+			resources.defer(() => server.dispose());
 			const clientId = "mutation-outcomes";
-			const socket = await openApplicationSocket(canvas.base, clientId);
+			const socket = await openApplicationSocket(server.base, clientId);
 			resources.defer(() => socket.close());
-			const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
+			const request = createRequester({ base: server.base, assertRunning: async () => undefined });
 			expect(
 				(
 					await request("/api/panes", {

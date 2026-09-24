@@ -9,15 +9,15 @@ import {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
-import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
-	runCanvasCli,
+	registerServerBase,
+	runServerCli,
 } from "./support/agent-browser.ts";
 import {
 	RAW_COORDINATOR_THREAD_ID,
@@ -56,8 +56,8 @@ import {
 	voiceSnapshot,
 } from "./support/voice-page.ts";
 
-const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
-const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
+const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
+const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts");
 /** What the controlled session transcribes, as the fixture emits it. */
 const USER_SAID = "Show the controlled voice context.";
 const VOICE_SAID = "The controlled voice context is visible.";
@@ -73,19 +73,19 @@ test(
 		const { ownerRoot } = browserTestRoots();
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
-		const canvas = await startOwnedCanvas({
+		const server = await startOwnedServer({
 			serverPath,
 			vault,
-			env: canvasTestEnvironment({
+			env: serverTestEnvironment({
 				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
 				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
 				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
 			}),
 		});
-		resources.defer(() => canvas.dispose());
-		registerCanvasBase(canvas.base);
+		resources.defer(() => server.dispose());
+		registerServerBase(server.base);
 		const browser = resources.use(await createAgentBrowser());
-		const api = createJsonRequester(canvas);
+		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
 		const frames = (from: number, method: string) =>
 			records()
@@ -110,7 +110,7 @@ test(
 		});
 		await openWithControlledVoiceMedia(
 			browser,
-			canvas.base,
+			server.base,
 			join(ownerRoot, "controlled-voice-media.js"),
 		);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
@@ -128,7 +128,7 @@ test(
 			Boolean,
 			"the production shell and its one canvas pane to mount",
 		);
-		runCanvasCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		runServerCli(server.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {
@@ -177,7 +177,7 @@ test(
 		expect(speaking.wavePresentation).toBe("animated");
 		expect(speaking.controls).toContain("Mute");
 		// The wire, in order: the workhorse is created, the conversation reads it as the
-		// canvas's linked thread, voice starts on the coordinator, and the coordinator is
+		// server's linked thread, voice starts on the coordinator, and the coordinator is
 		// given the board catalogue this voice session speaks about.
 		const wire = await pollUntil(
 			() => talkWire(records().slice(beforeTalk), "workbench"),
@@ -399,7 +399,7 @@ test(
 			})()`),
 		).toBe(true);
 
-		// Narrate: the host opens the first step in the pane and, once the pane says it arrived,
+		// Narrate: the server opens the first step in the pane and, once the pane says it arrived,
 		// hands it to the voice model as speech. The user then steps by hand, and leaves; each is
 		// handed over the same way, and no coordinator turn is started for any of it.
 		const narrationFrom = records().length;
@@ -421,7 +421,7 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(first).toContain("All of it");
-		// The step was opened by the host, so the pane credits nobody with what it lit.
+		// The step was opened by the server, so the pane credits nobody with what it lit.
 		const context = await api<{ panes: { byUser?: string[] }[] }>("/api/panes/semantic-context");
 		expect(context.body.panes[0]?.byUser).toBeUndefined();
 		await browser.run(["press", "ArrowRight"]);

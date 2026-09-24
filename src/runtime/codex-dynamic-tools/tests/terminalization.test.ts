@@ -24,7 +24,7 @@ function declinedApproval(): FakeApproval {
 	);
 }
 
-describe("codex dynamic host operation terminalization", () => {
+describe("codex dynamic server operation terminalization", () => {
 	test("returns approval_required only after before- and after-transition faults are proven terminal", async () => {
 		for (const fault of ["before", "after"] as const) {
 			const { authorities, caller } = setupAuthorities();
@@ -72,7 +72,7 @@ describe("codex dynamic host operation terminalization", () => {
 		).toThrow(/terminal/);
 	});
 
-	test("returns a refusal only after every issued identity is host-invalid", async () => {
+	test("returns a refusal only after every issued identity is server-invalid", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const approval = declinedApproval();
 		const fixture = optionsFor(authorities, caller, { approval });

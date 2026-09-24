@@ -116,7 +116,7 @@ describe("a pane's reading publisher", () => {
 			 */
 			send: (body) => {
 				sent.push(body);
-				return Promise.reject(new Error("the canvas was not there"));
+				return Promise.reject(new Error("the server was not there"));
 			},
 			/** Warnings are not what this one is about. */
 			warn: (): void => {},

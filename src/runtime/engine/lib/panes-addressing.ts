@@ -74,7 +74,7 @@ const HOW_TO_OPEN_A_PANE =
  *
  * Deliberately refuses rather than picks when a spec matches nothing or more
  * than one thing — putting a board on the wrong half of the screen is cheap to
- * notice, but so is saying which half, and a canvas that quietly ignores the
+ * notice, but so is saying which half, and a server that quietly ignores the
  * half you asked for teaches you to stop trusting the flag.
  * @param registrations The panes on screen, of which only the addressable ones answer to
  *   anything but their exact client id.

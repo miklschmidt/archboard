@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { parseDynamicToolCallResponse } from "../../../src/runtime/codex-thread-tools/index.ts";
-import { waitFor } from "../canvas-state/support/http.ts";
-import { processExists } from "../support/owned-canvas.ts";
+import { waitFor } from "../server-state/support/http.ts";
+import { processExists } from "../support/owned-server.ts";
 import {
 	records,
 	resolveDynamic,
@@ -153,7 +153,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 	test("child exit classifies every pending request without a late effect or orphan", async () => {
 		const resources = new AsyncDisposableStack();
 		try {
-			const { canvas, childPid, fixture, socket } = await startLinkedWorkbench(
+			const { server, childPid, fixture, socket } = await startLinkedWorkbench(
 				resources,
 				"child-exit",
 				terminalSource(resources, "child-exit"),
@@ -236,7 +236,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 			const terminalLog = readFileSync(fixture.logPath, "utf8");
 			expect((await socket.request("snapshot")).ok).toBeFalse();
 			expect(readFileSync(fixture.logPath, "utf8")).toBe(terminalLog);
-			expect(processExists(canvas.pid)).toBeTrue();
+			expect(processExists(server.pid)).toBeTrue();
 			expect(processExists(childPid)).toBeFalse();
 		} finally {
 			await resources.disposeAsync();

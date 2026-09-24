@@ -26,7 +26,7 @@ import {
 	queueMutationOutcome,
 } from "@/runtime/codex-workhorse-operations/lib/operation-errors";
 
-/** The host-issued identity one delegate runs under, in both typed and wire form. */
+/** The server-issued identity one delegate runs under, in both typed and wire form. */
 interface DelegateIdentity {
 	readonly operationId: OperationId;
 	readonly operationIdWire: string;

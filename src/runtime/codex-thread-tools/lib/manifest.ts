@@ -5,7 +5,7 @@ import { z } from "zod";
 import { parseStrictJson } from "@/runtime/codex-thread-tools/lib/json";
 
 export const ARCHBOARD_APP_MANIFEST_SHA256 =
-	"03ef5a946a19b3f635e5cde3176de15bf9f696ea5c6f639b6680fac7c15b44f5" as const;
+	"5399a33a0466d31518de7067536dc6c578d559bb2b46b3668ff8d4e18bdd1860" as const;
 
 export const ARCHBOARD_APP_TOOL_NAMES = [
 	"create_thread",

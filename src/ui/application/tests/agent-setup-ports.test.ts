@@ -71,7 +71,10 @@ function voiceStartingAt(view: VoiceSessionView): {
 }
 
 test("a voice start that is blocked with no failure is refused with the view's reason and keeps voice following focus", async () => {
-	const blocked = voiceView("unavailable", "The host has no usable coordinator for voice.");
+	const blocked = voiceView(
+		"unavailable",
+		"The Archboard server has no usable coordinator for voice.",
+	);
 	const { start, pins } = voiceStartingAt(blocked);
 	let refusal: unknown = null;
 	await start(null).catch((error: unknown) => {

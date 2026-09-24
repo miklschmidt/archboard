@@ -67,7 +67,7 @@ function withAvailableAuthority<Result>(
 }
 
 /**
- * Adapt one canvas pane socket to the browser workbench gateway.
+ * Adapt one pane's server socket to the browser workbench gateway.
  * @param transportOptions Clock and request-id sources.
  * @returns The transport.
  */

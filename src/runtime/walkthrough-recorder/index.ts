@@ -1,7 +1,7 @@
 // Recording one walkthrough of a board to a video file, narrated by the Codex
 // voice (TASK-304).
 //
-// The recording is made by the canvas's own page, opened on the board in a
+// The recording is made by the Archboard server's own page, opened on the board in a
 // private headless Chromium the recorder owns: the page shows the one pane,
 // paces the talk by the voice and captures its own tab. The recorder starts
 // the browser the way the page needs it (a window exactly the reference size,
@@ -9,8 +9,8 @@
 // microphone granted), drives the page through the shared recording contract,
 // streams the finished file out and tears the browser down, whatever happened.
 // An interrupt tears it down at once, so every call still waiting on it fails
-// and nothing is written. It runs against the canvas the CLI talks to, because
-// that canvas owns the Codex sign-in the voice needs.
+// and nothing is written. It runs against the server the CLI talks to, because
+// that server owns the Codex sign-in the voice needs.
 
 import { mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -75,8 +75,8 @@ class WalkthroughRecordingError extends Error {
 
 /** What to record, and where. */
 interface WalkthroughRecordingRequest {
-	/** The canvas the page is served by. */
-	readonly canvasUrl: string;
+	/** The server the page is served by. */
+	readonly serverUrl: string;
 	/** The board, as a pane addresses it: its name, or name@variant. */
 	readonly boardKey: string;
 	/** The walkthrough, by id. */
@@ -116,7 +116,7 @@ interface RecordedWalkthrough {
  * @returns The page's URL.
  */
 function pageUrl(request: WalkthroughRecordingRequest): string {
-	const url = new URL("/", request.canvasUrl);
+	const url = new URL("/", request.serverUrl);
 	url.searchParams.set("paneA", request.boardKey);
 	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough);
 	return url.toString();
@@ -235,7 +235,9 @@ async function openRecordingPage(
 		const navigation = await page.call("Page.navigate", { url }, RECORDING_CALL_MS);
 		const refused = navigation["errorText"];
 		if (typeof refused === "string" && refused !== "") {
-			throw new Error(`Chromium could not open ${url}: ${refused}. Check the canvas is running.`);
+			throw new Error(
+				`Chromium could not open ${url}: ${refused}. Check the Archboard server is running.`,
+			);
 		}
 		return window;
 	} catch (error) {

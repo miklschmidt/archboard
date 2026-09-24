@@ -16,7 +16,7 @@ interface PaneReportInput {
 	paneId: string;
 	primary: boolean;
 	focused: boolean;
-	/** The pane is a recording page's, which the canvas leaves out of addressing. */
+	/** The pane is a recording page's, which the server leaves out of addressing. */
 	recording: boolean;
 }
 

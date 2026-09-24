@@ -120,7 +120,7 @@ across 400-700, and a second registration of the same name from a different file
 be a coin toss over which file a weight came from.
 
 A caller chooses where the bytes come from. `fonts: "linked"`, the default, points at the
-four files the canvas serves at `/assets/diagram-fonts` — what a pane uses. `"embedded"`
+four files the Archboard server serves at `/assets/diagram-fonts` — what a pane uses. `"embedded"`
 carries them as data URIs, so an exported file draws the same picture on a machine that
 has never heard of Archboard.
 

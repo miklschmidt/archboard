@@ -9,7 +9,7 @@
 // acquisition, renewal, expiry, waiting, or pane announcements themselves.
 //
 // The lock lives beside the note in the vault rather than in this process, so
-// every canvas serving the vault observes the same exclusion. It is a lease,
+// every server serving the vault observes the same exclusion. It is a lease,
 // not a flag: a dead holder costs one lease rather than wedging the board.
 // Ordinary reads never take this lock; note writes are atomic. A store read
 // that must rewrite an obsolete document uses a nonblocking migration lease.
@@ -20,7 +20,7 @@
 // never undoes committed work and never interrupts a write already in flight.
 //
 // Lock state is also a broadcast. The vault file excludes every process; the
-// watcher lets panes on another canvas learn that state before their next
+// watcher lets panes on another server learn that state before their next
 // write. A disconnected pane fails closed outside this module.
 
 import { forgetClaimState } from "@/runtime/engine/lib/board-lock-claim-state";

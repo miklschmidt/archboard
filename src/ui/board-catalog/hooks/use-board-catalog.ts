@@ -95,7 +95,7 @@ function catalogCommands(
 	 * board's own document is what the inspector reads and what the variant and
 	 * walkthrough controls are built from, and it is cached for as long as the
 	 * tab is open. A board written while this tab was not being told — another
-	 * canvas on the same vault, or a socket that was down — would come back with
+	 * Archboard server on the same vault, or a socket that was down — would come back with
 	 * a fresh picture beside an inspector describing the board as it used to be.
 	 */
 	function reload(): void {

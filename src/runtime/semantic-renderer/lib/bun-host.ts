@@ -1,4 +1,4 @@
-// The renderer's host under Bun: the CLI, the rasterizer and the canvas
+// The renderer's host under Bun: the CLI, the rasterizer and the Archboard
 // server's render route.
 //
 // Text is measured by an `@napi-rs/canvas` canvas, installed as the global

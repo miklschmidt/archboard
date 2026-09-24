@@ -27,10 +27,10 @@ const RECOVERY = {
 	declined: null,
 	cancelled: "The agent must raise the request again if it still needs the effect.",
 	expired: "The agent must raise the request again if it still needs the effect.",
-	stale: "Wait for the host to publish a fresh snapshot before acting on this.",
+	stale: "Wait for the Archboard server to publish a fresh snapshot before acting on this.",
 	disconnected: "Reconnect the workbench; the agent must raise the request again.",
 	delivered: null,
-	not_delivered: "The host never delivered the decision, so nothing was executed.",
+	not_delivered: "The Archboard server never delivered the decision, so nothing was executed.",
 	outcome_unknown:
 		"Archboard never retries an unknown mutation. Read the thread before assuming either result.",
 } as const satisfies Record<WorkbenchApprovalPhase, string | null>;
@@ -38,27 +38,28 @@ const RECOVERY = {
 const DECISION_WORDS = {
 	approved: "You approved this request.",
 	declined: "You declined this request.",
-	cancelled: "The host cancelled this request.",
+	cancelled: "The Archboard server cancelled this request.",
 } as const;
 
 const DEFAULT_DETAILS = {
-	staged: "The host staged this request and has not opened it for a decision.",
-	pending: "The host is waiting for your decision.",
-	approved: "The host recorded your approval.",
-	declined: "The host recorded your decline.",
-	cancelled: "The host cancelled this request before it was answered.",
+	staged: "The Archboard server staged this request and has not opened it for a decision.",
+	pending: "The Archboard server is waiting for your decision.",
+	approved: "The Archboard server recorded your approval.",
+	declined: "The Archboard server recorded your decline.",
+	cancelled: "The Archboard server cancelled this request before it was answered.",
 	expired: "This request passed its expiry before it was answered.",
 	stale: "The request no longer belongs to the current child epoch.",
 	disconnected: "The connection that owned this request was lost.",
-	delivered: "The host delivered your decision.",
-	not_delivered: "The host could not deliver your decision.",
-	outcome_unknown: "The host lost the answer, so the outcome of your decision is unknown.",
+	delivered: "The Archboard server delivered your decision.",
+	not_delivered: "The Archboard server could not deliver your decision.",
+	outcome_unknown:
+		"The Archboard server lost the answer, so the outcome of your decision is unknown.",
 } as const satisfies Record<WorkbenchApprovalPhase, string>;
 
 const CLOCK_EXPIRED_ORDINARY =
-	"This request passed its expiry before you answered it. The host has not published its terminal record yet.";
+	"This request passed its expiry before you answered it. The Archboard server has not published its terminal record yet.";
 const CLOCK_EXPIRED_DYNAMIC =
-	"This effect passed its expiry before you answered it. The host has not published its terminal record yet.";
+	"This effect passed its expiry before you answered it. The Archboard server has not published its terminal record yet.";
 
 const DYNAMIC_CAUSES = {
 	person_approved: "You approved this effect.",
@@ -66,7 +67,7 @@ const DYNAMIC_CAUSES = {
 	deadline_reached: "The approval deadline passed before you answered.",
 	call_cancelled: "The agent cancelled its own call.",
 	caller_turn_interrupted: "The calling turn was interrupted.",
-	host_shutdown: "The host shut down before you answered.",
+	server_shutdown: "The Archboard server shut down before you answered.",
 	browser_disconnected: "This browser lost the approval before you answered.",
 	child_disconnected: "The Codex child disconnected before the decision reached it.",
 } as const;
@@ -86,10 +87,10 @@ const DYNAMIC_DECISION_WORDS = {
  */
 function connectionRemoval(context: ApprovalAuthorityContext): string | null {
 	if (context.connection === "stopped") {
-		return context.connectionReason ?? "The browser is not connected to the Codex workbench host.";
+		return context.connectionReason ?? "The browser is not connected to the Archboard server.";
 	}
 	if (context.connection === "reconnecting") {
-		return context.connectionReason ?? "The browser is reconnecting to the Codex workbench host.";
+		return context.connectionReason ?? "The browser is reconnecting to the Archboard server.";
 	}
 	return null;
 }
@@ -112,7 +113,7 @@ function authorityRemoval(
 		return connection;
 	}
 	if (context.staleSnapshot) {
-		return "This snapshot is behind the host, so a decision could name the wrong request.";
+		return "This snapshot is behind the Archboard server, so a decision could name the wrong request.";
 	}
 	if (!context.canCommand) {
 		return "This browser cannot answer approvals until it holds a usable workbench command lease.";
@@ -124,7 +125,7 @@ function authorityRemoval(
  * One status.
  * @param phase The phase.
  * @param detail The words for it.
- * @param decision What the host recorded, or null.
+ * @param decision What the server recorded, or null.
  * @param delivery The delivery outcome, or null.
  * @param context The authority context.
  * @returns The status.
@@ -152,7 +153,7 @@ function statusFor(
 }
 
 /**
- * The phase of a settled ordinary lifecycle: its delivery when the host
+ * The phase of a settled ordinary lifecycle: its delivery when the server
  * published one, else its decision.
  * @param lifecycle The settled lifecycle.
  * @returns The phase.
@@ -191,7 +192,7 @@ function ordinaryPhase(
 }
 
 /**
- * The detail of one ordinary approval: the host's own reason once it
+ * The detail of one ordinary approval: the server's own reason once it
  * published one, the clock's expiry, else the phase's default.
  * @param approval The request.
  * @param phase The phase.
@@ -203,8 +204,8 @@ function ordinaryDetail(approval: BrowserApproval, phase: WorkbenchApprovalPhase
 		return CLOCK_EXPIRED_ORDINARY;
 	}
 	const open = lifecycle.state === "pending" || lifecycle.state === "staged";
-	const hostDetail = open ? null : lifecycle.reason;
-	return hostDetail ?? DEFAULT_DETAILS[phase];
+	const serverDetail = open ? null : lifecycle.reason;
+	return serverDetail ?? DEFAULT_DETAILS[phase];
 }
 
 /**

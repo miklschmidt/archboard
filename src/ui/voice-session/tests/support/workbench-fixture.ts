@@ -1,6 +1,6 @@
 // A complete, schema-parsed workbench snapshot for the voice session tests,
 // with the overrides they need: another child, epoch, workhorse or
-// coordinator, and host coordinator and voice states.
+// coordinator, and server coordinator and voice states.
 
 import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
 import type { IdentityAuthorities } from "@/shared/codex-workbench-identity";
@@ -133,7 +133,7 @@ function coordinator(overrides: Partial<Coordinator> = {}): Coordinator {
 }
 
 /**
- * The default host voice projection, with overrides.
+ * The default server voice projection, with overrides.
  * @param overrides The fields to change.
  * @returns The voice projection.
  */

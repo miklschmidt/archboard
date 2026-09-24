@@ -37,7 +37,7 @@ interface SeedBoard {
 	readonly walkthroughs?: readonly SeedWalkthrough[];
 }
 
-/** How a test reaches the canvas's JSON routes. */
+/** How a test reaches the server's JSON routes. */
 type JsonRequester = <T>(
 	path: string,
 	options?: { method?: string; body?: unknown; doing?: string },
@@ -54,11 +54,11 @@ const A_SMALL_PIPELINE: SeedBoard = {
 
 /**
  * Create one board through the route an agent writes with.
- * @param request The canvas's JSON requester.
+ * @param request The server's JSON requester.
  * @param board The board's name.
  * @param content What is on it; a small pipeline when the test does not care.
  * @returns Settles once the board is on disk.
- * @throws {Error} When the canvas refused to create it.
+ * @throws {Error} When the server refused to create it.
  */
 async function seedSemanticBoard(
 	request: JsonRequester,
@@ -89,7 +89,7 @@ async function seedSemanticBoard(
 
 /**
  * The address that opens one board in the first pane.
- * @param base The canvas's base URL.
+ * @param base The server's base URL.
  * @param board The board key.
  * @returns The URL.
  */

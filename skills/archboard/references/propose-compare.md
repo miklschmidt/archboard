@@ -39,7 +39,7 @@ view and a removed subject stays drawn as removed. The current side comes from
 the source: `holdBoard` creates `<vault>/.archboard/locks/<board>.lock`
 exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
 (`board-lock-state.ts`), and `watchBoardLocks` polls those files because a file
-cannot notify another canvas. The table is a proposal nobody has built, and
+cannot notify another server. The table is a proposal nobody has built, and
 nothing states where its code will live, so it stays unbound.
 
 3. Read `semantic compare`'s answer against your change map. It reports every
@@ -67,7 +67,7 @@ nothing states where its code will live, so it stays unbound.
    meanings of a selection scope before writing it.
 
 4. Only when asked, adopt with the version returned by the proposal edit:
-   `archboard semantic adopt "Board lease" --variant "Lease table" --reason "Leases moved into a table the canvas can be notified from" --expect-version 4 --doing "adopting the lease table"`.
+   `archboard semantic adopt "Board lease" --variant "Lease table" --reason "Leases moved into a table the server can be notified from" --expect-version 4 --doing "adopting the lease table"`.
    The proposal becomes current, the previous current becomes historical, and
    nothing is renamed.
 

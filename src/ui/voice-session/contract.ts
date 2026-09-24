@@ -37,7 +37,7 @@ type VoiceSessionStatus = (typeof VOICE_SESSION_STATUSES)[number];
  * The presentation vocabulary for a failure. Every realtime recoverable and
  * terminal reason maps onto exactly one of these, plus the two the adapter owns
  * itself: `replaced` when the bound pane, child epoch, thread link, or
- * coordinator moved underneath a live session, and `host_voice` when the host
+ * coordinator moved underneath a live session, and `server_voice` when the server
  * published a failed voice projection the browser module cannot explain.
  */
 const VOICE_SESSION_FAILURE_CODES = Object.freeze([
@@ -58,7 +58,7 @@ const VOICE_SESSION_FAILURE_CODES = Object.freeze([
 	"protocol",
 	"fatal",
 	"replaced",
-	"host_voice",
+	"server_voice",
 ] as const);
 
 type VoiceSessionFailureCode = (typeof VOICE_SESSION_FAILURE_CODES)[number];
@@ -68,7 +68,7 @@ interface VoiceSessionFailure {
 	readonly code: VoiceSessionFailureCode;
 	/** Whether the realtime module classified this failure as recoverable. */
 	readonly recoverable: boolean;
-	/** The authoritative message from the module or host; never rewritten here. */
+	/** The authoritative message from the module or server; never rewritten here. */
 	readonly message: string;
 }
 

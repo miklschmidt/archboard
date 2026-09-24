@@ -55,7 +55,7 @@ interface WorkhorseIdentityPort {
 	readonly decoder: Pick<TrustedIdentityDecoder, "parseThreadId">;
 }
 
-/** The operation half is the sole host-owned OperationId issuing capability. */
+/** The operation half is the sole server-owned OperationId issuing capability. */
 type WorkhorseOperationPort = Pick<OperationAuthority, "issuer" | "validator">;
 
 interface WorkhorseStartInput {
@@ -77,7 +77,7 @@ type WorkhorseLifecycleState = "unbound" | "starting" | "ready" | "inspect_only"
 
 type WorkhorseSettlementOutcome = "pending" | "delivered" | "not_delivered" | "outcome_unknown";
 
-/** The reviewed values returned by thread/start and retained as host evidence. */
+/** The reviewed values returned by thread/start and retained as server evidence. */
 interface WorkhorseStartFacts {
 	readonly threadId: ThreadId;
 	readonly cwd: string;

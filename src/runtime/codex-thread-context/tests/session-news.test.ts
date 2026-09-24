@@ -51,7 +51,7 @@ describe("a session hears everything except its own writes", () => {
 		const somebody = await harness.delivery.deliver(
 			harness.events({ origin: "agent", by: "another-thread" }),
 		);
-		// And a write from outside this canvas — a person's terminal — which can
+		// And a write from outside this server — a person's terminal — which can
 		// state no session at all. Delivered, because unattributable must never
 		// mean unheard.
 		const outside = await harness.delivery.deliver(

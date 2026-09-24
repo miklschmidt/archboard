@@ -4,9 +4,9 @@ import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createCanvasApplicationLifetime } from "../../../src/server/canvas/index.ts";
-import { TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS } from "../support/timing.ts";
-import { processExists, waitForProcessExit } from "../support/owned-canvas.ts";
+import { createServerApplicationLifetime } from "../../../src/server/archboard/index.ts";
+import { TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS } from "../support/timing.ts";
+import { processExists, waitForProcessExit } from "../support/owned-server.ts";
 
 test("application timeout force-reaps a real process group before stop resolves", async () => {
 	const resources = new AsyncDisposableStack();
@@ -65,12 +65,12 @@ test("application timeout force-reaps a real process group before stop resolves"
 			new Promise<never>((_resolve, reject) =>
 				setTimeout(
 					() => reject(new Error("The process-group fixture did not report readiness.")),
-					TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
+					TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS,
 				),
 			),
 		]);
 		let forced = false;
-		const lifetime = createCanvasApplicationLifetime({
+		const lifetime = createServerApplicationLifetime({
 			resources: [
 				{
 					name: "real-process-group",
@@ -166,7 +166,7 @@ test("process-owner setup failures always reap the group and remove the root", a
 					new Promise<never>((_resolve, reject) => {
 						timeout = setTimeout(
 							() => reject(new Error("Fixture readiness timed out.")),
-							TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
+							TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS,
 						);
 					}),
 				]);

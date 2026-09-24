@@ -120,7 +120,7 @@ interface ThreadLinkClassification {
 
 type ThreadLinkCandidateSource = ThreadLinkAllowedSource | "custom" | "subAgent" | "unknown";
 
-/** The complete browser-safe projection for one host-retained candidate. */
+/** The complete browser-safe projection for one server-retained candidate. */
 interface ThreadLinkCandidate {
 	readonly selectionId: string;
 	readonly threadId: ThreadId;

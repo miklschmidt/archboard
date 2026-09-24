@@ -21,7 +21,7 @@ const collaborationMode = {
 
 const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 	initialize: {
-		clientInfo: { name: "archboard", title: "archboard canvas", version: "0.1.0" },
+		clientInfo: { name: "archboard", title: "archboard server", version: "0.1.0" },
 		capabilities: {
 			experimentalApi: true,
 			requestAttestation: false,

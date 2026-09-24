@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { parseDynamicToolCallResponse } from "../../../src/runtime/codex-thread-tools/index.ts";
-import { waitFor } from "../canvas-state/support/http.ts";
-import { processExists } from "../support/owned-canvas.ts";
+import { waitFor } from "../server-state/support/http.ts";
+import { processExists } from "../support/owned-server.ts";
 import { records, reverseResponses, snapshot } from "./support/codex-workbench-lifecycle.ts";
 import { mutationCount, startLinkedWorkbench } from "./support/codex-workbench-process-harness.ts";
 import { extendTerminalFixture } from "./support/codex-workbench-terminal-controls.ts";
@@ -21,7 +21,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 	test("normal application close settles pending owners and held outgoing RPC", async () => {
 		const resources = new AsyncDisposableStack();
 		try {
-			const { canvas, childPid, fixture, request, socket } = await startLinkedWorkbench(
+			const { server, childPid, fixture, request, socket } = await startLinkedWorkbench(
 				resources,
 				"normal-close",
 				terminalSource(resources),
@@ -54,12 +54,12 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			expect(seeded.status).toBe(200);
 
 			const blockerBody = JSON.stringify({ version: 1, kind: "platform" });
-			const blocker = httpRequest(`${canvas.base}/api/settings/opener`, {
+			const blocker = httpRequest(`${server.base}/api/settings/opener`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
 					"Content-Length": Buffer.byteLength(blockerBody),
-					Origin: canvas.base,
+					Origin: server.base,
 					"Sec-Fetch-Site": "same-origin",
 				},
 			});
@@ -75,7 +75,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			});
 			blocker.write(blockerBody.slice(0, -1));
 			await waitFor(async () => {
-				const response = await fetch(`${canvas.base}/health`);
+				const response = await fetch(`${server.base}/health`);
 				const health = (await response.json()) as { application?: { activeWrites?: unknown } };
 				return health.application?.activeWrites === 1 ? true : undefined;
 			}, "admitted opener write awaiting its request body");
@@ -83,10 +83,10 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			// The partial admitted request holds the drain before browser cleanup.
 			// The later request would conflict with the foreign note if it crossed
 			// admission, so accepting it here could create a process-only hold.
-			const closing = canvas.normalClose();
+			const closing = server.normalClose();
 			await waitFor(async () => {
 				try {
-					const response = await fetch(`${canvas.base}/health`);
+					const response = await fetch(`${server.base}/health`);
 					if (!response.ok) {
 						return undefined;
 					}
@@ -99,9 +99,9 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 				}
 			}, "shutdown write quiesce");
 			// A write arriving after admission closed is refused rather than queued,
-			// and it is told why: the canvas is on its way down.
+			// and it is told why: the server is on its way down.
 			const raced = await fetch(
-				`${canvas.base}/api/semantic-boards/edit?expectVersion=1&doing=${encodeURIComponent("a write that arrives too late")}`,
+				`${server.base}/api/semantic-boards/edit?expectVersion=1&doing=${encodeURIComponent("a write that arrives too late")}`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -114,7 +114,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			expect(raced.status).toBe(503);
 			expect(await raced.json()).toMatchObject({ code: "CANVAS_STOPPING" });
 			await waitFor(async () => {
-				const response = await fetch(`${canvas.base}/health`);
+				const response = await fetch(`${server.base}/health`);
 				if (!response.ok) {
 					return undefined;
 				}
@@ -132,7 +132,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 					)
 					? true
 					: undefined;
-			}, "bounded opener-body refusal restored the live canvas");
+			}, "bounded opener-body refusal restored the live server");
 			blocker.end(blockerBody.slice(-1));
 			expect(await blockerResponse).toBe(200);
 
@@ -141,10 +141,10 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			const afterRace = await request("/api/semantic-boards/board?board=scratch");
 			expect((afterRace.body as { board?: { version?: unknown } }).board?.version).toBe(1);
 
-			const retryClose = canvas.normalClose();
+			const retryClose = server.normalClose();
 			await Promise.all([closing, retryClose]);
 			await held;
-			expect(processExists(canvas.pid)).toBeFalse();
+			expect(processExists(server.pid)).toBeFalse();
 			expect(processExists(childPid)).toBeFalse();
 			expect(reverseResponses(fixture.logPath, "shutdown-ordinary")[0]?.frame).toEqual({
 				id: "shutdown-ordinary",

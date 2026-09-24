@@ -75,7 +75,8 @@ describe("workbench queue commands", () => {
 			control: "list",
 			state: "reconciled",
 			code: null,
-			message: "The host re-read and republished the authoritative queue for this thread link.",
+			message:
+				"The Archboard server re-read and republished the authoritative queue for this thread link.",
 			submissionId: null,
 		});
 	});
@@ -100,7 +101,7 @@ describe("workbench queue settlement", () => {
 			control: "start",
 			state: "reconciled",
 			code: null,
-			message: "The host started the queued submission and republished the queue.",
+			message: "The Archboard server started the queued submission and republished the queue.",
 			submissionId: submission("s1"),
 		});
 	});

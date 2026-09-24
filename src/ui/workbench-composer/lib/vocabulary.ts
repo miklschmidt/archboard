@@ -39,7 +39,7 @@ const REFUSAL_MESSAGES: Readonly<Record<WorkbenchComposerRefusalCode, string>> =
 /**
  * The transport's refusal codes, said in human words. Kept beside the composer
  * rather than shared, because each surface explains the same refusal in terms
- * of the action the person just took. `invalid_command` is the host refusing a
+ * of the action the person just took. `invalid_command` is the server refusing a
  * command that does not fit the workhorse's current state; the reachable case
  * is the authoritative in-progress guard on `turn/start`.
  */
@@ -51,15 +51,16 @@ const TRANSPORT_REFUSALS: Readonly<Record<string, string>> = {
 	lease_released: "The workbench command lease was released before the command was sent.",
 	not_ready: "The workbench cannot send workhorse commands in its current state.",
 	socket_unavailable: "The workbench lost its connection before the command was sent.",
-	incompatible_contract: "The host answered with a workbench contract this browser cannot read.",
-	response_lost: "The host never answered, so the command's outcome is unknown.",
+	incompatible_contract:
+		"The Archboard server answered with a workbench contract this browser cannot read.",
+	response_lost: "The Archboard server never answered, so the command's outcome is unknown.",
 	replaced: "Another workbench connection replaced this one before the command was sent.",
 	invalid_command:
-		"The host refused this command for the workhorse's current state. Read the timeline, then send again.",
-	gateway_error: "The host refused this command.",
+		"The Archboard server refused this command for the workhorse's current state. Read the timeline, then send again.",
+	gateway_error: "The Archboard server refused this command.",
 };
 
-const GENERIC_TRANSPORT_REFUSAL = "The host refused this workhorse command.";
+const GENERIC_TRANSPORT_REFUSAL = "The Archboard server refused this workhorse command.";
 
 /**
  * A transport refusal code in the composer's words.
@@ -72,9 +73,9 @@ function transportRefusalMessage(code: string): string {
 
 const OUTCOME_MESSAGES: Readonly<Record<DeliveryOutcome, string>> = {
 	delivered: "Codex accepted the message and published its authoritative turn.",
-	not_delivered: "The host delivered nothing, so the workhorse never saw this message.",
+	not_delivered: "The Archboard server delivered nothing, so the workhorse never saw this message.",
 	outcome_unknown:
-		"The host lost the answer, so the outcome is unknown. Archboard never retries an unknown mutation.",
+		"The Archboard server lost the answer, so the outcome is unknown. Archboard never retries an unknown mutation.",
 };
 
 const QUEUED_MESSAGE = "Codex parked the message in the thread queue.";
@@ -94,7 +95,7 @@ const PENDING_MESSAGES: Readonly<Record<WorkbenchComposerAction, string>> = {
 };
 
 const LATE_RESULT_REASON =
-	"The pane moved to another thread link before the host answered, so this result is not applied here.";
+	"The pane moved to another thread link before the Archboard server answered, so this result is not applied here.";
 
 export {
 	GENERIC_TRANSPORT_REFUSAL,

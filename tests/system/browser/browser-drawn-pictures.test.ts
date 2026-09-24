@@ -3,13 +3,13 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
-	canvasTestEnvironment,
+	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerCanvasBase,
+	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
@@ -65,14 +65,14 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "drawn-here-vault");
 	mkdirSync(vault, { recursive: true });
-	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
-	resources.defer(() => canvas.dispose());
-	registerCanvasBase(canvas.base);
-	const request = createJsonRequester(canvas);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
 	await seedSemanticBoard(request, "pipeline");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(canvas.base, "pipeline")]);
+	await browser.run(["open", addressShowing(server.base, "pipeline")]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await drawn(browser, "the board to be drawn in the page");
 
@@ -97,7 +97,7 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	// picture laid out again is kept again, with a later time on it, so the kept
 	// entries are exactly as they were.
 	const keptBefore = await keptPictures(browser);
-	await browser.run(["open", addressShowing(canvas.base, "pipeline")]);
+	await browser.run(["open", addressShowing(server.base, "pipeline")]);
 	await drawn(browser, "the kept picture to be shown after the page is opened again");
 	expect(await browser.eval<string>(`document.querySelector("${SURFACE}").textContent`)).toContain(
 		"Ingest",
@@ -129,5 +129,5 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	);
 	expect(keptAfter).not.toEqual(keptBefore);
 
-	await canvas.assertRunning();
+	await server.assertRunning();
 }, 40_000);

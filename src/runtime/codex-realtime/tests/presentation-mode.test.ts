@@ -70,7 +70,7 @@ test("a narration or recording start names the walkthrough to the voice model an
 		for (const start of [presented, recorded]) {
 			expect(start?.prompt).toContain("For the board");
 			// The session opens with nothing said as the user: the first step is handed over by
-			// the host.
+			// the server.
 			expect(start?.initialItems).toEqual([]);
 		}
 		// A narration's coordinator gets no presentation instructions. A recording's is told

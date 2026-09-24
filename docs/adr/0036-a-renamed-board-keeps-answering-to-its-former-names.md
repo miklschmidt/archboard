@@ -77,8 +77,8 @@ repairs a saved address.
   what it always did, and nothing caches the answer (ADR 0015).
 - Everything this process keyed by the old name follows the board: panes showing
   it are pointed at the new name and their address is rewritten to it, the
-  canvas's claim on it is carried over for what is left of the campaign, and
-  what agents said they were doing stays with it. A second canvas on the same
+  server's claim on it is carried over for what is left of the campaign, and
+  what agents said they were doing stays with it. A second server on the same
   vault still reaches the board through the old name, and its panes follow on
   their next open.
 - The fields are additive, so the contract version did not move: every document

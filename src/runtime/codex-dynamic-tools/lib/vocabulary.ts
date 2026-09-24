@@ -42,7 +42,7 @@ type DynamicApprovalCause =
 	| "deadline_reached"
 	| "call_cancelled"
 	| "caller_turn_interrupted"
-	| "host_shutdown"
+	| "server_shutdown"
 	| "browser_disconnected"
 	| "child_disconnected";
 
@@ -50,7 +50,7 @@ type DynamicLifecyclePhase = "before_approval" | "after_approval" | "before_effe
 
 type DynamicDispatchErrorCode = DynamicRefusalReason | "not_delivered" | "outcome_unknown";
 
-/** Refusal codes a host authority or lifecycle port may pass through unchanged. */
+/** Refusal codes a server authority or lifecycle port may pass through unchanged. */
 const AUTHORITY_REFUSAL_CODES = [
 	"stale_child",
 	"prior_epoch",

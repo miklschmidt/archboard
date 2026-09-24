@@ -1,7 +1,7 @@
 // The one named seam where the conversation becomes assistant-ui messages.
 // Each turn is one message. Agent prose is a text part, so it renders as
 // markdown; everything else is a data part named for what it is, rendered by
-// the workbench's own components from exactly what the host published: the
+// the workbench's own components from exactly what the server published: the
 // person's prompts, the plan's progress, the work the agent did (reasoning,
 // commands, file changes, tool calls and searches, gathered into one run
 // between two things said), plan notes, approvals, and how the turn ended.

@@ -6,8 +6,8 @@ import path from "node:path";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
-} from "../canvas-state/support/codex-production.ts";
-import { waitFor } from "../canvas-state/support/http.ts";
+} from "../server-state/support/codex-production.ts";
+import { waitFor } from "../server-state/support/http.ts";
 import {
 	exactProcessExists,
 	killExactGroup,
@@ -15,12 +15,12 @@ import {
 	processIdentity,
 } from "../support/process-census.ts";
 import type { ProcessIdentity } from "../support/process-census.ts";
-import { pane, records, startCanvas } from "./support/codex-workbench-lifecycle.ts";
+import { pane, records, startServer } from "./support/codex-workbench-lifecycle.ts";
 import type { FixtureRecord } from "./support/codex-workbench-lifecycle.ts";
 
 const { join } = path;
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
+const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
 const processObservationModule = join(repoRoot, "src/shared/process-observation/index.ts");
 
 function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, "defer">>): string {
@@ -34,7 +34,7 @@ function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, 
 		readFileSync(fixtureSource, "utf8")
 			.replaceAll(
 				"./fake-codex-production-data.ts",
-				join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production-data.ts"),
+				join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production-data.ts"),
 			)
 			.replace(
 				'import { appendFileSync, readFileSync } from "node:fs";',
@@ -62,15 +62,15 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 	let replacement: ProcessIdentity | null = null;
 	try {
 		const fixture = prepareProductionFixture(resources, replacementCensusSource(resources));
-		const canvas = await startCanvas(fixture);
+		const server = await startServer(fixture);
 		resources.defer(async () => {
-			await canvas.dispose();
+			await server.dispose();
 		});
-		const socket = await openApplicationSocket(canvas.base, "crash-replacement-client");
+		const socket = await openApplicationSocket(server.base, "crash-replacement-client");
 		resources.defer(async () => {
 			await socket.close();
 		});
-		const registered = await fetch(new URL("/api/panes", canvas.base), {
+		const registered = await fetch(new URL("/api/panes", server.base), {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(pane("crash-replacement-client")),
@@ -157,7 +157,7 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 			return result.ok ? result : undefined;
 		}, "replacement dispatch readiness");
 
-		await canvas.normalClose();
+		await server.normalClose();
 		expect(exactProcessExists(replacement)).toBeFalse();
 		expect(processGroupMembers(replacement.group)).toEqual([]);
 	} finally {

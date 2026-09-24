@@ -72,7 +72,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 				...failureNotice(
 					"board-command",
 					"Show board",
-					"This pane is reconnecting. Try again once it is connected, or reload the canvas.",
+					"This pane is reconnecting. Try again once it is connected, or reload the page.",
 				),
 				actions: [{ kind: "select", id: NOTICE_ACTIONS.reloadFrontend, label: "Reload" }],
 			});

@@ -67,7 +67,7 @@ type WorkhorseOperationEpochPort = Pick<
 	| "confirmOutcome"
 >;
 
-/** The coordinator call remains an exact, host-validated logical correlation. */
+/** The coordinator call remains an exact, server-validated logical correlation. */
 type WorkhorseCoordinatorCall = LogicalToolCallCorrelation;
 type CurrentWorkhorseCoordinatorCall = () => WorkhorseCoordinatorCall | null;
 
@@ -96,7 +96,7 @@ interface InspectWorkhorseRequest {
 
 interface DelegateToWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
-	/** Reuse this host-issued identity when the dispatcher already owns the effect. */
+	/** Reuse this server-issued identity when the dispatcher already owns the effect. */
 	readonly operationId?: OperationId;
 	readonly input: string;
 	readonly transcriptDelta: string;
@@ -132,15 +132,15 @@ type ManageWorkhorseQueueRequest =
 	  }
 	| (ManageWorkhorseQueueMutationRequest & {
 			readonly call: WorkhorseCoordinatorCall;
-			/** Reuse this host-issued identity when the dispatcher already owns the effect. */
+			/** Reuse this server-issued identity when the dispatcher already owns the effect. */
 			readonly operationId?: OperationId;
 	  });
 
 interface SteerWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
-	/** Reuse this host-issued identity when the dispatcher already owns the effect. */
+	/** Reuse this server-issued identity when the dispatcher already owns the effect. */
 	readonly operationId?: OperationId;
-	/** Captured by the host from the exact active workhorse classification. */
+	/** Captured by the server from the exact active workhorse classification. */
 	readonly expectedTurnId: TurnId;
 	readonly input: string;
 }

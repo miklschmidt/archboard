@@ -16,7 +16,7 @@ const FIELD_SEPARATOR = "";
 
 /**
  * A stable description of which cards can still be decided. The projection
- * rebuilds its cards on every host snapshot, so identity comparison would say
+ * rebuilds its cards on every server snapshot, so identity comparison would say
  * "changed" forever; this says what actually changed.
  * @param cards The cards.
  * @returns The signature.

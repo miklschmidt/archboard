@@ -1,7 +1,7 @@
 // Mapping the committed approvals panel's choice (`@/ui/workbench/contracts`)
 // onto the one offer the model allows and the reviewed answers it reads, so
 // dispatch identity is decided here and nowhere else: a choice that names a
-// decision the host did not offer resolves to no offer at all.
+// decision the server did not offer resolves to no offer at all.
 
 import type {
 	WorkbenchApprovalCard,
@@ -25,7 +25,7 @@ interface ResolvedChoice {
 }
 
 /**
- * Whether two host-offered decisions are the same decision.
+ * Whether two server-offered decisions are the same decision.
  * @param left One decision.
  * @param right The other.
  * @returns True when they spell the same decision.
@@ -38,10 +38,10 @@ function sameDecision(left: unknown, right: unknown): boolean {
 }
 
 /**
- * The offer id of a host-offered decision.
- * @param decisions The host's decisions.
+ * The offer id of a server-offered decision.
+ * @param decisions The server's decisions.
  * @param decision The chosen one.
- * @returns The offer id, or null when the host did not offer it.
+ * @returns The offer id, or null when the server did not offer it.
  */
 function decisionOffer(decisions: readonly unknown[], decision: unknown): string | null {
 	const index = decisions.findIndex((candidate) => sameDecision(candidate, decision));
@@ -105,7 +105,7 @@ function ordinaryDecline(card: WorkbenchOrdinaryApprovalCard): string | null {
  * The offer and answers an ordinary choice resolves to.
  * @param card The card.
  * @param choice The panel's choice.
- * @returns The resolution, or null when the host offers no such decision.
+ * @returns The resolution, or null when the server offers no such decision.
  */
 function resolveOrdinaryChoice(
 	card: WorkbenchOrdinaryApprovalCard,
@@ -143,7 +143,7 @@ function withOffer(
  * The offer and answers a panel choice resolves to on one card.
  * @param card The card.
  * @param choice The panel's choice.
- * @returns The resolution, or null when the host offers no such decision.
+ * @returns The resolution, or null when the server offers no such decision.
  */
 function resolveApprovalChoice(
 	card: WorkbenchApprovalCard,
