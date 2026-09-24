@@ -3,11 +3,11 @@ id: TASK-327
 title: >-
   The dogfood boards describe the renderer layout, edge identity and change fit
   as the code has them now
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-24 01:48'
-updated_date: '2026-09-24 09:04'
+updated_date: '2026-09-24 09:15'
 labels:
   - architecture
 dependencies: []
@@ -24,8 +24,8 @@ archboard check on the dogfood vault (2026-09-24) warns about five bindings to f
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard check on the dogfood vault reports no missing binding
-- [ ] #2 Each of the five nodes is rebound to the code that does its job now, redrawn to match that code, or removed with its relationships and walkthrough references
+- [x] #1 archboard check on the dogfood vault reports no missing binding
+- [x] #2 Each of the five nodes is rebound to the code that does its job now, redrawn to match that code, or removed with its relationships and walkthrough references
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,4 +45,12 @@ Board viewer v8: Fit what changed (3eeEnf3E) removed with Hk1A9VKy and XssnNMPJ.
 Renderer layout v18 (current 8JVuwOvJ): redrawn for ADR 0033. Reading choice continues as Column folds (fold-columns.ts: foldColumnCounts called by compound.ts columnCounts, foldColumns called by engine.ts). Flank rules and Scorecard removed with tY9P0yad, kKBtoqI2, L8jPgkA5: the router owns face choice, and the only measure left is pane fit in compound.ts betterReading. Layout engine is now our engine.ts createLayoutEngine (was external elk-rs), calling Graphviz placement (graphviz-placement.ts placeGraph -> viz.renderJSON) and Obstacle routing (route-graph.ts routeGraph -> scene.router.processTransaction), with Graphviz and libavoid drawn as externals. Stale text fixed on Compound layout (no predecessor reuse, ADR 0032), Compound graph and Label reservations; flow Inside the layout owner and beats FWMgjXxD/AOPSXwkc redrawn.
 ./bin/dogfood check: 0 diagnostics.
 Out of scope, not changed: the Semantic renderer board still says reading/flank rule/scorecard/ELK in Compound layout's description, an edge label and a beat.
+
+Parent verification: ./bin/dogfood check reports configurationValid true and no diagnostics; semantic show confirms Replaced relationships (CxaaWj4x) is rebound and Fit what changed, Flank rules and Scorecard are gone from their boards; the rasterized Renderer layout board reads as Graphviz placement and obstacle routing under our Layout engine.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The five dogfood nodes that named deleted files now match the code: Edge identity became Replaced relationships, bound to replaced-relationships.ts; Fit what changed was removed with its edges; Renderer layout was redrawn for ADR 0033 (Column folds, our Layout engine calling Graphviz placement and Obstacle routing, Flank rules and Scorecard removed, flow and beats redrawn). Verified with ./bin/dogfood check (0 diagnostics), semantic show and a rasterized look at Renderer layout. The Semantic renderer board still describes reading/flank rule/scorecard/ELK and is left for a follow-up.
+<!-- SECTION:FINAL_SUMMARY:END -->
