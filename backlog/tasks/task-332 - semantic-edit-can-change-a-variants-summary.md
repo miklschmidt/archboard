@@ -1,11 +1,11 @@
 ---
 id: TASK-332
 title: semantic edit can change a variant's summary
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-24 13:37'
-updated_date: '2026-09-24 14:18'
+updated_date: '2026-09-24 15:41'
 labels:
   - store
   - cli
@@ -27,7 +27,7 @@ A variant's summary is set only when it is branched (semantic branch --summary),
 - [x] #2 Historical and shelved variants refuse a summary change as they refuse any content edit
 - [x] #3 The consumer skill's edit reference and the generated schema name it
 - [x] #4 One test owner proves the change
-- [ ] #5 Every dogfood current or draft variant whose summary names a date its content no longer describes is corrected
+- [x] #5 Every dogfood current or draft variant whose summary names a date its content no longer describes is corrected
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,10 +55,12 @@ Skill: references/edit.md step 3 names summary. archboard-dev closing step 2 now
 Dogfood summaries (AC 5): current or draft variants whose summary names a date: Agent workbench, Archboard, Archboard server, Board viewer, Browser application, Codex session, Semantic renderer (all 'as implemented on/inspected 2026-09-13'). Board viewer's also names a module (semantic-viewer) that no longer exists. Board persistence's current summary is the TASK-332 title since its adoption. New summaries follow the scopes in .archboard/README.md and carry no date. Proven on a vault copy with the worktree server on port 3331: each board advanced by one version, only the current variant's summary changed, and check reported no diagnostics. The real vault's server on port 3000 runs pre-merge code that refuses the field. So AC 5 waits for the parent to run the reported commands after merge, with the dogfood server running the merged code.
 
 Validation (worktree task-331, after the edit-scope refactor): type-check 0; lint 0; fmt:check 0; test:modules 3391 pass / 3 fail; test:system 181 pass / 0 fail; test:repository 8 pass / 0 fail; test:serial-browser 18 pass / 0 fail (run just before the store-internal refactor, which changes no behaviour). The 3 module failures are the wide-boards.test.ts renderer timeouts that also fail on a clean export of HEAD 02832131. Dogfood: Board persistence@TASK-332 branched and drawn (main d3b2eda3), checked against transitions.ts and edit-scope.ts, adopted at version 16 (main cd525e33); dogfood check reports no diagnostics. The proposal's own summary (the task title) could not be corrected before adoption, because the server on port 3000 runs pre-merge code. The post-merge commands correct it along with the dated summaries. Status stays In Progress until AC 5 is done.
+
+After the merge and a restart of the dogfood server on the merged code, the eight current variants whose summaries named 2026-09-13 or a missing module were restated through semantic edit's summary field; ./bin/dogfood check reports no diagnostics.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-semantic edit takes a top-level summary in its batch. It replaces the summary of the variant the edit lands on, in the same one write as any content in the batch, and is not inherited. A historical or shelved variant refuses it with VARIANT_HISTORICAL or VARIANT_SHELVED, as it refuses a content change. It is a payload field because the edit contract already carries board- and variant-level facts in the batch (level, variant) and semantic new states its summary there. The generated semantic-edit-input schema, semantic edit's help, the consumer skill's edit reference, archboard-dev's closing step 2 (give the proposal the summary the board carries once adopted) and evals/coverage.json are updated. Proven by src/runtime/semantic-board-store/tests/branching.test.ts 'an edit restates the summary of the variant it lands on, and a record refuses it'. AC 5 (correcting the dogfood summaries) was proven on a vault copy and waits for the parent to run the reported commands after merge.
+An edit batch can restate the summary of the variant it lands on, in the same one write; historical and shelved variants refuse it. The dogfood vault's stale summaries are restated with it. Verified by the branching owner, the gate lanes and the dogfood check.
 <!-- SECTION:FINAL_SUMMARY:END -->
