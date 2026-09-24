@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 15,
+	"version": 16,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-24T14:05:41.384Z",
+	"updatedAt": "2026-09-24T14:08:31.189Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -673,7 +673,7 @@
 		{
 			"id": "Y8SHNDOe",
 			"name": "TASK-331",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "tVCqUn1A",
 			"summary": "Adopting a proposal whose parent another adoption superseded warns and needs --force",
 			"content": {
@@ -1291,7 +1291,7 @@
 		{
 			"id": "u8eW4BzU",
 			"name": "TASK-332",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Y8SHNDOe",
 			"summary": "semantic edit can change a variant's summary",
 			"content": {
@@ -1907,13 +1907,19 @@
 			}
 		}
 	],
-	"current": "Y8SHNDOe",
+	"current": "u8eW4BzU",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
 			"from": "tVCqUn1A",
 			"at": "2026-09-24T13:49:40.396Z",
 			"reason": "TASK-331: adoption refuses a proposal built on an architecture a later adoption superseded, unless forced, and records forced adoptions"
+		},
+		{
+			"variant": "u8eW4BzU",
+			"from": "Y8SHNDOe",
+			"at": "2026-09-24T14:08:31.189Z",
+			"reason": "TASK-332: an edit can restate the summary of the variant it lands on, in the same write; historical and shelved variants refuse it"
 		}
 	]
 }
