@@ -1,11 +1,11 @@
 ---
 id: TASK-251
 title: 'Let the voice agent present a walkthrough, one step at a time'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-17 08:24'
-updated_date: '2026-09-23 21:41'
+updated_date: '2026-09-24 01:38'
 labels:
   - voice
   - frontend
@@ -30,7 +30,7 @@ The user wants the voice agent to give a walkthrough as a talk: explain each ste
 - [x] #3 After an explanation the voice waits for the user; nothing in the prompts or the host asks for or presents a next step by itself
 - [x] #4 Leaving the presentation is told to the voice model as a short acknowledgement and nothing more is narrated
 - [x] #5 present_step, its coordinator presentation instructions, the stepless next-step memory and the narration timing endpoint are deleted, with their tests, digests and design text
-- [ ] #6 Covered by host delivery and browser owners, and verified by the user in a real voice session
+- [x] #6 Covered by host delivery and browser owners, and verified by the user in a real voice session
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -87,4 +87,12 @@ User decided 2026-09-23: delete present_step. The host delivers step 1 at Narrat
 Real-voice acceptance, 2026-09-23 (user, dogfood canvas, docs/design/voice-walkthrough-narration-acceptance.md): a, b, c, d, f, g, h pass; e fails: pressed twice quickly mid-explanation, the voice finished the older step and then explained neither newer one. Codex log: steps 2, 3, 4 appended as RealtimeConversationSpeech at 18:27:43.9, 18:27:46.8 and 18:27:47.2, so the host delivered them; Codex sends StandaloneSpeech as a speakable session.context.append under one fixed handoff id with no response request, and the V3 (frameless) protocol has no cancel event, so what the model does with a step arriving mid-speech is the prompt's to decide. The narration prompt now gives that case its own paragraph (commit above). AC #6 waits on a rerun of row e after a canvas restart.
 
 Real-voice run 2026-09-23 23:15 (row e after 5a68b098): steps 2 and 3 reached the voice 3.7 s and 3.9 s after step 1, 0.18 s apart. The voice folded steps 1, 2 and 3 into three quick sentences, so it did reach the last step, then said "Give me a second, checking the rest" and handed off with nothing asked. Codex handed the coordinator the voice model's own words, and the coordinator delegated board work to the workhorse (TASK-315). Step 4 came at 23:18:18 and was explained with the closing line. Row e needs a rerun after TASK-314, TASK-315 and TASK-316.
+
+User real-voice rerun 2026-09-24 after TASK-314, TASK-315, TASK-316, TASK-321.01/.02, TASK-322 and the gpt-6-luna high coordinator: row e passed. With two quick right-arrow presses the voice narrates the steps it passes through quickly rather than skipping them, and ends on the step on screen; the user accepts that. Rows a, b, c, d, f, g and h passed on 2026-09-23.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Narrate opens a walkthrough at step 1 and the host hands each step the user moves to, and leaving, to the voice model as speech, with no coordinator turn; the voice explains the step on screen and waits. present_step and its machinery are gone. Verified by the delivery and browser owners and by the user in a real voice session (all rows of the acceptance run).
+<!-- SECTION:FINAL_SUMMARY:END -->
