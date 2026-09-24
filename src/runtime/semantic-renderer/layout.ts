@@ -1,6 +1,7 @@
 // The layout's own rules, for focused runtime checks. None of these draws or
 // measures, so none needs the Bun host.
 export {
+	alignLabelRows,
 	bridgeCrossings,
 	curveThrough,
 	curveClearanceIssue,

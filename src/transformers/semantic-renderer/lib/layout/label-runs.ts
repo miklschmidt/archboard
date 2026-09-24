@@ -44,14 +44,15 @@ export interface LabelAnchor extends Box {
  * Keep badges within the engine's existing page and its quiet outside margin.
  * @param box The current or proposed label box.
  * @param drawing The unchanged engine extent.
+ * @param margin The quiet margin kept inside the page's edge.
  * @returns Whether this box can move without shifting or growing the canvas.
  */
-function insidePage(box: Box, drawing: ArchitectureDrawing): boolean {
+function insidePage(box: Box, drawing: ArchitectureDrawing, margin = DIAGRAM_MARGIN): boolean {
 	return (
-		box.x >= DIAGRAM_MARGIN &&
-		box.y >= DIAGRAM_MARGIN &&
-		box.x + box.width <= drawing.width - DIAGRAM_MARGIN &&
-		box.y + box.height <= drawing.height - DIAGRAM_MARGIN
+		box.x >= margin &&
+		box.y >= margin &&
+		box.x + box.width <= drawing.width - margin &&
+		box.y + box.height <= drawing.height - margin
 	);
 }
 
@@ -270,6 +271,8 @@ class LabelPlacement {
 	 * Remove an unroundable sideways step by aligning the existing row to its own channel.
 	 * Larger established detours retain their original reservation; this is bounded
 	 * by the space two fixed-radius bends require, not another placement search.
+	 * The route already runs on that channel, which may lie in the page's quiet
+	 * margin, so the badge may follow it there but not off the page (TASK-329).
 	 * @param edge Native relationship whose reserved row remains fixed.
 	 * @returns Nearest clear channel correction, when one fits.
 	 */
@@ -296,7 +299,7 @@ class LabelPlacement {
 				(c) =>
 					Math.abs(c.box.x - original.x) > 0.000001 &&
 					Math.abs(c.box.x - original.x) < 2 * BEND_RADIUS &&
-					insidePage(c.box, this.drawing) &&
+					insidePage(c.box, this.drawing, 0) &&
 					![...this.grownCards, ...others].some((box) => overlaps(c.box, box)),
 			)
 			.toSorted(
