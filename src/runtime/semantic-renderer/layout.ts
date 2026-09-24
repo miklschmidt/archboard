@@ -3,6 +3,7 @@
 export {
 	alignLabelRows,
 	bridgeCrossings,
+	chooseReading,
 	curveThrough,
 	curveClearanceIssue,
 	COMPOUND_OPTIONS,

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-24 16:09'
-updated_date: '2026-09-24 22:14'
+updated_date: '2026-09-24 22:30'
 labels:
   - renderer
   - performance
@@ -36,6 +36,8 @@ Board proposal: performance work changes no drawn architecture; no board is affe
 2. Safe (byte-identical) speed-ups only: (a) a release whose placement gives back no height or area is refused before it is routed (routing never changes page size); (b) placement is solved once per label-reservation set and reused by every forced-label attempt (engine gains a place/route stage option); (c) column-count readings are settled side by side, compared in the same order.
 3. Prove byte identity: render every board, every non-current variant and every view as SVG through a scratch server on a vault copy before and after, compare bytes.
 4. Measure and report, not commit, anything that changes pictures (Graphviz splines=ortho removal, fewer retries, cheaper routing).
+
+Second pass (2026-09-25, solve budget): 5. Choose the column count from placements: place the unfolded reading and every candidate count with no label reserved, side by side; compare placement fits in increasing column order (a count replaces the kept one when its fit is greater and at least WRAP_MIN_FIT_GAIN more; fewer columns win ties); settle only the winner and keep it when it fits materially better than the settled baseline, a refused winner keeping the baseline. The abandoned/unwanted plumbing goes. 6. One release round: releaseUnused tries releasesOf(unused) once through firstRelease and returns. 7. Render all 49 dogfood drawings (boards whole and views) through a server on a vault copy from main and from the branch; list changed pictures with page sizes and before/after PNG pairs. 8. Time every board's first layout with timing.ts on main and branch; every board but Archboard server under 1 s. 9. Update header comments, layout-rules.md section 34 and the owners; run each gate lane.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

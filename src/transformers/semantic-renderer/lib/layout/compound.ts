@@ -1,7 +1,10 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
 import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "@archboard/elk-rs";
-import { chooseReading } from "@/transformers/semantic-renderer/lib/layout/column-readings";
+import {
+	chooseReading,
+	type ColumnReading,
+} from "@/transformers/semantic-renderer/lib/layout/column-readings";
 import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
@@ -44,8 +47,6 @@ interface Problem {
 	readonly measured: MeasuredArchitecture;
 	readonly standings?: Readonly<Record<string, ChangeKind>> | undefined;
 	readonly columns: number;
-	/** Whether the reading is no longer wanted, so its remaining solves are not asked. */
-	readonly abandoned?: () => boolean;
 }
 
 /**
@@ -189,10 +190,8 @@ async function layoutCompound(
 	measured: MeasuredArchitecture,
 	standings?: Readonly<Record<string, ChangeKind>>,
 ): Promise<PaintedDrawing> {
-	const problem: Problem = { content, measured, standings, columns: 1 };
-	const baseline = await settleReading(problem);
-	const chosen = await chooseReading(baseline, (columns, unwanted) =>
-		settleReading({ ...problem, columns, abandoned: unwanted }),
+	const chosen = await chooseReading((columns) =>
+		columnReading({ content, measured, standings, columns }),
 	);
 	// Lanes that fold into one row are exchanged first, so the routes the
 	// drawing reports are the ones painted (junction marks read them); bridges
@@ -202,20 +201,41 @@ async function layoutCompound(
 }
 
 /**
- * Settle labels independently for one candidate reading.
+ * One column count's reading, each of its placements solved once, so the page
+ * that ranks it is the first placement settling it asks for.
  * @param problem Measured content and requested downward column count.
- * @returns A complete candidate or a routing/label failure.
+ * @returns Its unreserved page and its settlement.
  */
-async function settleReading(problem: Problem): Promise<ArchitectureDrawing> {
+function columnReading(problem: Problem): ColumnReading {
 	const reading: Reading = {
 		...problem,
 		place: rememberSolves((reserved) =>
-			solve(problem, graphForLabels(problem, reserved), {
+			rendererHost().solve(graphForLabels(problem, reserved), {
 				...solveOptions(problem),
 				[SOLVE_STAGE]: "place",
 			}),
 		),
 	};
+	return {
+		/**
+		 * The page placed with no label reserved.
+		 * @returns Its size.
+		 */
+		page: () => reading.place(new Set()).then(boxOf),
+		/**
+		 * The complete drawing.
+		 * @returns The settled reading.
+		 */
+		settle: () => settleReading(reading),
+	};
+}
+
+/**
+ * Settle labels independently for one candidate reading.
+ * @param reading Measured content, requested downward column count and its placements.
+ * @returns A complete candidate or a routing/label failure.
+ */
+async function settleReading(reading: Reading): Promise<ArchitectureDrawing> {
 	const drawing = await settleLabels(
 		{
 			/**
@@ -430,7 +450,7 @@ async function drawAttempt(
 	LabelAttempt & { readonly reservedBoxes: ReadonlyMap<string, NonNullable<DrawingEdge["label"]>> }
 > {
 	const { content, measured } = problem;
-	const laidOut = await solve(problem, forceLabels(await problem.place(reserved), forced), {
+	const laidOut = await rendererHost().solve(forceLabels(await problem.place(reserved), forced), {
 		...solveOptions(problem),
 		[SOLVE_STAGE]: "route",
 	});
@@ -458,19 +478,6 @@ async function drawAttempt(
 			: [],
 	);
 	return { drawing, missing, unused, reservedBoxes: reservedLabels(laidOut, measured) };
-}
-
-/**
- * Ask the engine one solve of a reading that is still wanted.
- * @param problem The reading.
- * @param graph The engine input.
- * @param options The engine options.
- * @returns The solved graph.
- * @throws {Error} When the reading has been abandoned.
- */
-async function solve(problem: Problem, graph: ElkNode, options: LayoutOptions): Promise<ElkNode> {
-	if (problem.abandoned?.() === true) throw new Error("The reading is no longer wanted");
-	return rendererHost().solve(graph, options);
 }
 
 /**
