@@ -41,6 +41,12 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * migrated by the store on read, preserving their array positions.
  * `2.4.0` makes the current designation optional: a board for something
  * nobody has built has none (ADR 0031).
+ *
+ * `formerNames` on a board and on a variant (TASK-281, ADR 0036) did not move
+ * the version. Both are optional and additive, so every document this build
+ * wrote before them is already a document it reads, and an older build meets
+ * the field in its strict parse and refuses it by name. A bump would only have
+ * made every board of every vault rewrite itself on its first read.
  */
 const SEMANTIC_BOARD_SCHEMA_VERSION = "2.4.0";
 
@@ -59,6 +65,16 @@ const SUPPORTED_SCHEMA_MAJOR = Number(SEMANTIC_BOARD_SCHEMA_VERSION.split(".")[0
 
 /** The first version number a freshly created board carries. */
 const FIRST_BOARD_VERSION = 1;
+
+/**
+ * The names something was known by before it was renamed, oldest first.
+ *
+ * Kept so that what named it keeps opening it: a drill-down on another board,
+ * a saved pane address, a sentence in somebody's notes. A rename changes what a
+ * thing is called and never what it is (ADR 0036). Absent until the first
+ * rename, for the reason `adoptions` is: an empty record says nothing.
+ */
+const FormerNamesSchema = z.array(DisplayNameSchema).min(1);
 
 const SemanticVersionFieldSchema = z
 	.string()
@@ -97,6 +113,7 @@ const SemanticVariantSchema = z
 	.object({
 		id: SemanticIdSchema,
 		name: DisplayNameSchema,
+		formerNames: FormerNamesSchema.optional(),
 		lifecycle: VariantLifecycleSchema,
 		parent: SemanticIdSchema.optional(),
 		summary: DescriptionSchema.optional(),
@@ -179,6 +196,7 @@ const SemanticBoardSchema = z
 		kind: z.literal("semantic-board"),
 		id: SemanticIdSchema,
 		name: DisplayNameSchema,
+		formerNames: FormerNamesSchema.optional(),
 		level: SemanticBoardLevelSchema,
 		version: z.int().min(FIRST_BOARD_VERSION),
 		createdAt: TimestampSchema,
@@ -263,6 +281,24 @@ function asksForDesignation(asked: string): boolean {
 }
 
 /**
+ * The variant a name selects: the one called that now, else the one that was
+ * called that before a rename (ADR 0036). A name is matched exactly, as a
+ * variant's name always has been, and no two variants answer to one name.
+ * @param board The board.
+ * @param name The name asked for.
+ * @returns The variant, or undefined when nothing answers to it.
+ */
+function variantNamed(
+	board: Pick<SemanticBoard, "variants">,
+	name: string,
+): SemanticVariant | undefined {
+	return (
+		board.variants.find((variant) => variant.name === name) ??
+		board.variants.find((variant) => variant.formerNames?.includes(name) === true)
+	);
+}
+
+/**
  * The variant a name or id selects, matched by id first and then by name.
  * This is the lookup by identity; `resolveVariant` is what an address goes
  * through, because an address may also ask for the designation.
@@ -271,10 +307,7 @@ function asksForDesignation(asked: string): boolean {
  * @returns The variant, or undefined when nothing answers to it.
  */
 function findVariant(board: SemanticBoard, asked: string): SemanticVariant | undefined {
-	return (
-		board.variants.find((variant) => variant.id === asked) ??
-		board.variants.find((variant) => variant.name === asked)
-	);
+	return board.variants.find((variant) => variant.id === asked) ?? variantNamed(board, asked);
 }
 
 /**
@@ -419,6 +452,7 @@ export {
 	addressedVariant,
 	nextVersion,
 	findVariant,
+	variantNamed,
 	resolveVariant,
 	CURRENT_DESIGNATION,
 	asksForDesignation,

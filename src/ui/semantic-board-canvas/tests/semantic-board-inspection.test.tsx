@@ -283,6 +283,42 @@ test("following a drill-down shows the target board and offers the way back", as
 	expect(slot("semantic-board-trail")).toBeNull();
 });
 
+test("a link written before its board and variant were renamed opens them by the names they have now", async () => {
+	// The link on n1 still says "engine" and "as built" (ADR 0036).
+	serving();
+	const renamed = {
+		...boardOf(
+			"Board Engine",
+			[{ id: "m1", name: "atomic-write", kind: "module" }],
+			[
+				{
+					id: "v2",
+					name: "Fully built",
+					formerNames: ["as built"],
+					lifecycle: "draft",
+					content: { nodes: [{ id: "m2", name: "fsync", kind: "module" }], edges: [] },
+				},
+			],
+		),
+		formerNames: ["engine"],
+	};
+	server.documents["engine"] = renamed;
+	server.documents["Board Engine"] = renamed;
+	mountStage("n1", { live: true });
+	await settled();
+
+	expect(slot("semantic-drill-down-open")?.getAttribute("data-variant-lifecycle")).toBe("draft");
+	expect(slot("semantic-drill-down")?.textContent).toContain("Board Engine");
+	expect(slot("semantic-drill-down")?.textContent).toContain("Fully built");
+
+	server.reply = { status: 200, body: drawing(1, "Board Engine") };
+	await act(async () => {
+		fireEvent.click(slot("semantic-drill-down-open")!);
+	});
+	await settled();
+	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("Board Engine");
+});
+
 test("the way back survives drilling into a board with nothing on it", async () => {
 	serving();
 	server.documents["engine"] = boardOf(

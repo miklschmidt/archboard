@@ -140,7 +140,7 @@ function usableBoard(
 function statedContent(
 	req: Request,
 	res: Response,
-	field: "create" | "edit" | "branch" | "resolve" | "adopt" | "shelve",
+	field: "create" | "edit" | "branch" | "resolve" | "adopt" | "shelve" | "rename",
 	required: boolean,
 ): Record<string, unknown> | undefined | null {
 	const stated: unknown = req.body[field];

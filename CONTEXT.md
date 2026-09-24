@@ -13,6 +13,13 @@ abstraction level. A board owns its shared views and the tree of variants record
 how that diagram evolves.
 _Avoid_: document, drawing, diagram, whiteboard, sketch
 
+**Former name**:
+A name a board or variant had before it was renamed. It keeps opening what it
+named — a drill-down on another board, a saved pane address, a command — and no
+other board may take it; the board's own name always wins over another's former
+one. A rename changes a name and nothing else (ADR 0036).
+_Avoid_: alias, old name, redirect
+
 **Canvas**:
 The live, pannable and zoomable surface on which exactly one board is open at a
 time for exploration and inspection.

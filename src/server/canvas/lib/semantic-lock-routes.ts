@@ -16,7 +16,7 @@ import {
 	releaseHold,
 	takeClaimRevocation,
 } from "@/runtime/engine/board-lock";
-import { readSemanticBoard, semanticBoardAddress } from "@/runtime/semantic-board-store/index";
+import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { callerGone, trackMutationWork } from "@/server/canvas/lib/mutation-work";
 import { boardOfRequest, bodyOf, bodyString } from "@/server/canvas/lib/request-board";
 import { aggregateOf } from "@/server/canvas/lib/pane-registry";
@@ -91,7 +91,8 @@ function lockableKey(req: Request, res: Response, what: string): string | null {
 	// document somebody is holding. Reading the pane's address as a board name
 	// would refuse a pane that happens to be on a proposal.
 	const board = aggregateOf(asked) ?? asked;
-	if (!readSemanticBoard(board).ok) {
+	const read = readSemanticBoard(board);
+	if (!read.ok) {
 		res.status(404).json({
 			success: false,
 			code: "BOARD_MISSING",
@@ -99,7 +100,9 @@ function lockableKey(req: Request, res: Response, what: string): string | null {
 		});
 		return null;
 	}
-	return semanticBoardAddress(board).key;
+	// The board's own key, which a former name resolves to (ADR 0036): a claim
+	// taken by a name the board had before a rename is a claim on the board.
+	return read.location.key;
 }
 
 /**

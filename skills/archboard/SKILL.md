@@ -133,7 +133,7 @@ recipe names.
 [--variant <id|name>]` reads one variant against the variant it came from
   ([answer from a saved board](references/read.md) says what it reports).
 - **Writes.** `semantic new` needs `--doing "<present-tense line>"`. Every
-  later write (`edit`, `branch`, `resolve`, `adopt`) also needs
+  later write (`edit`, `branch`, `resolve`, `adopt`, `rename`) also needs
   `--expect-version <n>` with the version you read; a moved board refuses the
   write (exit 5) and you read again and redo the change on what is there now.
   One requested change is one batch. The answer to a write is the saved family
@@ -369,7 +369,8 @@ Each recipe, and the request it is for:
   request, job or startup as an ordered exchange: a `flow` with participants and
   steps, on a new board or an existing one.
 - [edit an existing board](references/edit.md): change, extend, correct or
-  repair what an existing board says.
+  repair what an existing board says, or give a board or a variant a better
+  name.
 - [propose and compare a change](references/propose-compare.md): propose a
   change as a variant, compare it, settle its disagreements, or adopt it.
 - [answer from a saved board](references/read.md): answer a question from a

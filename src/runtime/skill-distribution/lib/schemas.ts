@@ -30,7 +30,8 @@ interface GeneratedSchema {
 const BOARD_RUNTIME_OBLIGATIONS = [
 	"within each variant, node, edge, flow, step, walkthrough and beat ids share one namespace and are unique; inherited subject ids may repeat across variants",
 	"board, variant and board-owned view ids do not collide with each other or with ids used on any variant",
-	"variant ids and names and board-owned view ids and names are unique; current is reserved as a designation rather than a variant name",
+	"variant ids and names and board-owned view ids and names are unique, and a variant's formerNames are names no other variant answers to; current is reserved as a designation rather than a variant name",
+	"formerNames keeps the names a board or variant had before a rename, and each still opens it; a board's own name wins over another board's former one",
 	"the schemaVersion major is supported by this build; at most one variant has lifecycle current, and current is present exactly when one does and names it (a board for something nobody has built has none)",
 	"every variant.parent names another variant and variant ancestry is acyclic",
 	"reconciliation names the variant's parent, refers only to variants in the family, and cannot claim a future board version",
