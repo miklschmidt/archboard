@@ -3,9 +3,9 @@
 //
 // The picture comes from the tab, captured with the browser's own screen
 // capture: a recording page shows nothing but the pane, so the whole tab is
-// the frame. The sound does not: a headless browser plays to no device, so a
-// tab's own audio is silence, and the voice is mixed in from its stream
-// instead. The mix is one Web Audio destination whose track is in the file
+// the frame. The sound does not: the page plays the voice to nobody (its audio
+// element is muted, so a recording is never heard through the speakers), and
+// the voice is mixed in from its stream instead. The mix is one Web Audio destination whose track is in the file
 // from its first frame, silent until the voice is heard, because a
 // MediaRecorder cannot take a track that arrives after it started.
 //
