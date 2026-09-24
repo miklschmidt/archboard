@@ -17,11 +17,11 @@ import { parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board/
 import { writeFileAtomic } from "@/runtime/engine/atomic-write";
 import { claimWriterId, withBoardLockIfFreeSync } from "@/runtime/engine/board-lock";
 import {
-	locateSemanticBoard,
 	semanticBoardAddress,
 	type SemanticBoardLocation,
 } from "@/runtime/semantic-board-store/lib/location";
 import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
+import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 import { semanticVocabularyDiagnostics } from "@/runtime/semantic-board-store/lib/vocabulary";
 import { migrateSemanticBoardDocument } from "@/runtime/semantic-board-store/lib/migrations";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
@@ -400,13 +400,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Read the board a caller asked for by name.
+ * Read the board a caller asked for by name: the board that carries the name,
+ * or the one that carried it before a rename (ADR 0036). What comes back is
+ * that board under its own name, so a caller that asked by a former name learns
+ * the name it goes by now from `board.name` and `location`.
  * @param asked The board name as typed.
  * @returns The board, or why it could not be read.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
 function readSemanticBoard(asked: string): SemanticBoardRead {
-	return readSemanticBoardAt(locateSemanticBoard(asked));
+	return readSemanticBoardAt(resolveSemanticBoard(asked));
 }
 
 export {

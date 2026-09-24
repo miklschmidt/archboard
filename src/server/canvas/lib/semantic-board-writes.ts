@@ -70,6 +70,7 @@ function announce(
 				version: result.board.version,
 				by: envelope.session ?? null,
 				heldAs: result.heldAs,
+				...(result.renamedFrom === undefined ? {} : { renamedFrom: result.renamedFrom.key }),
 			}),
 		},
 		result.location.key,
@@ -438,7 +439,7 @@ interface StatedWrite {
 async function statedWrite(
 	req: Request,
 	res: Response,
-	field: "resolve" | "adopt" | "shelve",
+	field: "resolve" | "adopt" | "shelve" | "rename",
 ): Promise<StatedWrite | null> {
 	const envelope = statedEnvelope(req, res);
 	if (envelope === null) {
@@ -502,12 +503,16 @@ function writerOf(envelope: z.infer<typeof WriteEnvelopeSchema>): {
 
 export {
 	adoptRoute,
+	announceWork,
 	answerRefusal,
+	answerWrite,
 	branchRoute,
 	createRoute,
 	describedWrite,
 	editRoute,
 	resolveRoute,
 	shelveRoute,
+	statedWrite,
+	type StatedWrite,
 	writerOf,
 };

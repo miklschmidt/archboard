@@ -34,10 +34,16 @@ function familyIssues(board: SemanticBoard): IntegrityIssue[] {
 	for (const id of repeated(board.variants.map((variant) => variant.id))) {
 		issues.push({ at: "variants", problem: `two variants share the id "${id}"` });
 	}
-	for (const name of repeated(board.variants.map((variant) => variant.name))) {
+	// A former name keeps opening the variant that carried it (ADR 0036), so it
+	// is as much an address as a name is, and no two variants answer to one.
+	const answersTo = board.variants.flatMap((variant) => [
+		variant.name,
+		...(variant.formerNames ?? []),
+	]);
+	for (const name of repeated(answersTo)) {
 		issues.push({
 			at: "variants",
-			problem: `two variants are called "${name}"; a variant name is an address somebody types`,
+			problem: `two variants answer to "${name}"; a variant name is an address somebody types`,
 		});
 	}
 	for (const variant of board.variants) {

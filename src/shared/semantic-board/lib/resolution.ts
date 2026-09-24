@@ -14,7 +14,7 @@
 // because that is what writing an architecture is.
 
 import { z } from "zod";
-import { SemanticIdSchema } from "@/shared/semantic-board/lib/primitives";
+import { DisplayNameSchema, SemanticIdSchema } from "@/shared/semantic-board/lib/primitives";
 
 /** Which side of one disagreement a proposal takes. */
 const SideSchema = z.enum(["mine", "theirs"]);
@@ -85,8 +85,27 @@ const BoardShelveInputSchema = z
 	.strict();
 type BoardShelveInput = z.infer<typeof BoardShelveInputSchema>;
 
+/**
+ * A rename as it is asked for: what to call the board, or with `variant`, what
+ * to call that one variant of it.
+ *
+ * Only the name moves. Every id, every variant, its lifecycle and ancestry, and
+ * every record of adoption, shelving and reconciliation stay exactly where they
+ * were, and the old name is kept as a former name so whatever named it keeps
+ * opening it (ADR 0036).
+ */
+const BoardRenameInputSchema = z
+	.object({
+		to: DisplayNameSchema,
+		variant: z.string().trim().min(1).optional(),
+	})
+	.strict();
+type BoardRenameInput = z.infer<typeof BoardRenameInputSchema>;
+
 export {
 	BoardAdoptInputSchema,
+	BoardRenameInputSchema,
+	type BoardRenameInput,
 	type BoardAdoptInput,
 	BoardShelveInputSchema,
 	type BoardShelveInput,

@@ -8,6 +8,7 @@
 
 import {
 	resolveVariant,
+	variantNamed,
 	type DrillDown,
 	type SemanticBoard,
 	type SemanticVariant,
@@ -44,10 +45,27 @@ function resolveDrillDown(target: DrillDown, document: unknown): DrillResolution
 			? { kind: "no-current" }
 			: { kind: "ready", board: reading.board, variant: current };
 	}
-	const named = reading.board.variants.find((variant) => variant.name === asked.name);
+	// By name, or by a name the variant had before a rename (ADR 0036): a link
+	// written then still means the state it named.
+	const named = variantNamed(reading.board, asked.name);
 	return named === undefined
 		? { kind: "no-variant", asked: asked.name }
 		: { kind: "ready", board: reading.board, variant: named };
+}
+
+/**
+ * The name the target board goes by now: what the link names, unless the board
+ * was renamed since and answered to the name it had (ADR 0036).
+ * @param target What the node's drill-down names.
+ * @param document The target board, as its route answered, or undefined before it has.
+ * @returns The board's own name once it has been read, else the link's.
+ */
+function drillTargetName(target: DrillDown, document: unknown): string {
+	if (document === undefined) {
+		return target.board;
+	}
+	const reading = readBoard(document);
+	return reading.ok ? reading.board.name : target.board;
 }
 
 /**
@@ -59,4 +77,4 @@ function drillDownAsked(target: DrillDown): string {
 	return target.variant.kind === "current" ? "whichever variant is current" : target.variant.name;
 }
 
-export { drillDownAsked, resolveDrillDown, type DrillResolution };
+export { drillDownAsked, drillTargetName, resolveDrillDown, type DrillResolution };
