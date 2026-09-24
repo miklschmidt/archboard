@@ -1,11 +1,11 @@
 ---
 id: TASK-305
 title: Make a recording a good pull request deliverable
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-23 12:46'
-updated_date: '2026-09-23 12:57'
+updated_date: '2026-09-24 01:40'
 labels:
   - cli
   - docs
@@ -24,7 +24,7 @@ The primary use of a recording is as an artifact on a pull request, so a reviewe
 <!-- AC:BEGIN -->
 - [x] #1 An MP4 recording plays with sound in Safari: with an ffmpeg on PATH or named by ARCHBOARD_FFMPEG, Opus sound is converted to AAC with the picture copied untouched and the index moved to the front; without one, the command says the sound will not play in Safari and how to fix it
 - [x] #2 The skill teaches a pull request recipe: a disposable board whose PR variant shows its comparison with the state before, a short walkthrough written for a reviewer, record with --discard, attach with gh pr comment --attach within the size limit, never commit the video
-- [ ] #3 Verified: an MP4 recorded on this machine has AAC sound, and a PR-shaped disposable board was recorded with the real voice
+- [x] #3 Verified: an MP4 recorded on this machine has AAC sound, and a PR-shaped disposable board was recorded with the real voice
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,4 +42,12 @@ Conversion (85bba178): src/runtime/walkthrough-recorder/lib/playable.ts, called 
 Skill (5c4fea8f) and docs (fb74e932: ADR 0035 'It plays with sound wherever it is watched', INSTALL.md 'Recording a walkthrough', acceptance run section 4).
 Recipe followed literally on a private canvas with a scratch copy of the tracked vault: new -> version 1, branch --expect-version 1 -> 2, change edit -> 3, walkthrough edit -> 4 as the recipe's block states; compare: 2 parts added, 4 relationships added, 2 changed, 5 beats; the draft's rasterized picture marks added parts and relationships green and changed ones orange (the pane's comparison defaults on, SemanticBoardStage.tsx:396); record on a canvas without Codex refuses with exit 4 naming the sign-in and keeps the board.
 Not done: the real-voice PR-shaped recording (AC3 second half). Copying the Codex sign-in into a private canvas was refused by the permission classifier, and the user's own canvases are not for agent verification. It is acceptance run section 4 in docs/design/walkthrough-recording-acceptance.md.
+
+User run 2026-09-24 of the pull-request acceptance script (a disposable pr-check board, a "This pull request" branch with a change and a five-step reviewer walkthrough, recorded with --discard) with the real voice: ffprobe reports codec_name=h264|codec_type=video and codec_name=aac|codec_type=audio, and the user watched the video and called it perfect.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A recording is a pull request deliverable: the MP4 carries AAC sound when ffmpeg is at hand, so it plays in Safari, and the skill teaches the recipe (a disposable board whose branch shows the change, a reviewer's walkthrough, record with --discard). Verified by the user recording a PR-shaped board with the real voice: h264 video, AAC sound, every step narrated.
+<!-- SECTION:FINAL_SUMMARY:END -->
