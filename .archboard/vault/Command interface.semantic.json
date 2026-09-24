@@ -4,15 +4,15 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 6,
+	"version": 7,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-09-23T11:29:16.322Z",
+	"updatedAt": "2026-09-24T01:47:28.163Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
 			"name": "One command's path",
 			"grammar": "architecture",
-			"summary": "From argv to the canvas and back.",
+			"summary": "From argv to the Archboard server and back.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -62,28 +62,29 @@
 				"nodes": [
 					{
 						"id": "vAQwlVuz",
+						"order": 1000,
 						"name": "Bootstrap",
 						"kind": "module",
-						"responsibility": "Takes the canvas address out of argv into the environment before any canvas-reading module loads",
+						"responsibility": "Takes the server address out of argv into the environment before any module that reads it loads",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-contract/bootstrap.ts"
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "iIVu1bGE",
+						"order": 2000,
 						"name": "Command catalogue",
 						"kind": "module",
 						"responsibility": "The one table of commands: what exists, what it takes and who owns it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/run.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "PQcK5dF2",
+						"order": 3000,
 						"name": "Command routing",
 						"kind": "module",
 						"responsibility": "Addresses one command, captures the global flags and bounds the run",
@@ -96,11 +97,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "E2MAq7W7",
+						"order": 4000,
 						"name": "Contract execution",
 						"kind": "module",
 						"responsibility": "Checks a command's prerequisites, runs its contract and presents the answer",
@@ -108,128 +109,128 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-contract/lib/execution.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "cWbvcIYa",
+						"order": 5000,
 						"name": "Semantic authoring",
 						"kind": "module",
 						"responsibility": "new, edit, branch and show: the commands that state a board",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic.ts"
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "OfRn3av3",
-						"name": "Canvas client",
+						"order": 6000,
+						"name": "Server client",
 						"kind": "module",
-						"responsibility": "The one way a command speaks to the canvas, and the refusals it reads back",
+						"responsibility": "The one way a command speaks to the Archboard server, and the refusals it reads back",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-client/index.ts"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "fOJvfmZv",
+						"order": 7000,
 						"name": "Runtime control",
 						"kind": "module",
-						"responsibility": "start and stop: the canvas as a detached child of this command",
+						"responsibility": "start and stop: the server as a detached child of this command",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/server.ts"
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "MUs4pwRq",
-						"name": "Canvas server",
+						"order": 8000,
+						"name": "Archboard server",
 						"kind": "service",
 						"responsibility": "Owns every board and answers every command",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/index.ts"
+							"path": "src/server/archboard/index.ts"
 						},
 						"drillDown": {
-							"board": "Canvas server",
+							"board": "Archboard server",
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "eOsn0BO4",
+						"order": 9000,
 						"name": "Semantic lifecycle",
 						"kind": "module",
 						"responsibility": "resolve and adopt: settling a proposal and moving the current designation",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-lifecycle.ts"
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "e8DKQF2E",
+						"order": 10000,
 						"name": "Comparison",
 						"kind": "module",
 						"responsibility": "compare: what one variant changed about the one it came from",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-compare.ts"
-						},
-						"order": 10000
+						}
 					},
 					{
 						"id": "69392DWF",
+						"order": 11000,
 						"name": "Rasterize",
 						"kind": "module",
 						"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
-						"description": "The sibling render command answers with the SVG the canvas drew; this one takes that SVG into a headless browser and photographs it.",
+						"description": "The sibling render command answers with the SVG the Archboard server drew; this one takes that SVG into a headless browser and photographs it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-rasterize.ts"
-						},
-						"order": 11000
+						}
 					},
 					{
 						"id": "yQCdykGt",
+						"order": 12000,
 						"name": "Vault check",
 						"kind": "module",
 						"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/vault.ts"
-						},
-						"order": 12000
+						}
 					},
 					{
 						"id": "qBnro8cs",
+						"order": 13000,
 						"name": "Claims",
 						"kind": "module",
 						"responsibility": "claim and release: holding a board for a stretch of agent work",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/claim.ts"
-						},
-						"order": 13000
+						}
 					},
 					{
 						"id": "vn4RDLH9",
+						"order": 14000,
 						"name": "Panes",
 						"kind": "module",
 						"responsibility": "browser: the live session, its panes, and pointing one at a board",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/pane.ts"
-						},
-						"order": 14000
+						}
 					},
 					{
 						"id": "I6RAbOlG",
+						"order": 15000,
 						"name": "Board rasterizer",
 						"kind": "module",
 						"responsibility": "One headless browser, one PNG at a time, refused rather than cropped",
@@ -242,31 +243,31 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 15000
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "SWg7BPZu",
+						"order": 1000,
 						"from": "vAQwlVuz",
 						"to": "iIVu1bGE",
 						"kind": "call",
 						"label": "load the table",
-						"emphasis": "normal",
-						"order": 1000
+						"emphasis": "normal"
 					},
 					{
 						"id": "WUygSWX0",
+						"order": 2000,
 						"from": "iIVu1bGE",
 						"to": "PQcK5dF2",
 						"kind": "call",
 						"label": "argv",
-						"emphasis": "normal",
-						"order": 2000
+						"emphasis": "normal"
 					},
 					{
 						"id": "jKqNz2j3",
+						"order": 3000,
 						"from": "PQcK5dF2",
 						"to": "E2MAq7W7",
 						"kind": "call",
@@ -275,11 +276,11 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "kcqc65Ye",
+						"order": 4000,
 						"from": "E2MAq7W7",
 						"to": "cWbvcIYa",
 						"kind": "call",
@@ -288,11 +289,11 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "ytXRvhS3",
+						"order": 5000,
 						"from": "cWbvcIYa",
 						"to": "OfRn3av3",
 						"kind": "call",
@@ -301,11 +302,11 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "pB6BrbXY",
+						"order": 6000,
 						"from": "OfRn3av3",
 						"to": "MUs4pwRq",
 						"kind": "http",
@@ -314,143 +315,142 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "34TPgaMW",
+						"order": 7000,
 						"from": "E2MAq7W7",
 						"to": "fOJvfmZv",
 						"kind": "call",
 						"label": "lifecycle command",
-						"emphasis": "normal",
-						"order": 7000
+						"emphasis": "normal"
 					},
 					{
 						"id": "LvMXIuAw",
+						"order": 8000,
 						"from": "E2MAq7W7",
 						"to": "eOsn0BO4",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal",
-						"order": 8000
+						"emphasis": "normal"
 					},
 					{
 						"id": "BsJL3bGP",
+						"order": 9000,
 						"from": "E2MAq7W7",
 						"to": "e8DKQF2E",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal",
-						"order": 9000
+						"emphasis": "normal"
 					},
 					{
 						"id": "06f3KVxy",
+						"order": 10000,
 						"from": "E2MAq7W7",
 						"to": "69392DWF",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal",
-						"order": 10000
+						"emphasis": "normal"
 					},
 					{
 						"id": "0b4tib6n",
+						"order": 11000,
 						"from": "E2MAq7W7",
 						"to": "yQCdykGt",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal",
-						"order": 11000
+						"emphasis": "normal"
 					},
 					{
 						"id": "UD3ngpHC",
+						"order": 12000,
 						"from": "E2MAq7W7",
 						"to": "qBnro8cs",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal",
-						"order": 12000
+						"emphasis": "normal"
 					},
 					{
 						"id": "yUWUF6TZ",
+						"order": 13000,
 						"from": "E2MAq7W7",
 						"to": "vn4RDLH9",
 						"kind": "call",
 						"label": "validated input",
-						"emphasis": "normal",
-						"order": 13000
+						"emphasis": "normal"
 					},
 					{
 						"id": "Ixm9Y4W9",
+						"order": 14000,
 						"from": "eOsn0BO4",
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "board operation",
-						"emphasis": "normal",
-						"order": 14000
+						"emphasis": "normal"
 					},
 					{
 						"id": "8bgnBTp4",
+						"order": 15000,
 						"from": "e8DKQF2E",
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "board operation",
-						"emphasis": "normal",
-						"order": 15000
+						"emphasis": "normal"
 					},
 					{
 						"id": "I2CofSP0",
+						"order": 16000,
 						"from": "69392DWF",
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "the drawn SVG",
-						"emphasis": "normal",
-						"order": 16000
+						"emphasis": "normal"
 					},
 					{
 						"id": "QmcmQeFK",
+						"order": 17000,
 						"from": "yQCdykGt",
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "board operation",
-						"emphasis": "normal",
-						"order": 17000
+						"emphasis": "normal"
 					},
 					{
 						"id": "RoUCyRav",
+						"order": 18000,
 						"from": "qBnro8cs",
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "board operation",
-						"emphasis": "normal",
-						"order": 18000
+						"emphasis": "normal"
 					},
 					{
 						"id": "b7q8WlCg",
+						"order": 19000,
 						"from": "vn4RDLH9",
 						"to": "OfRn3av3",
 						"kind": "call",
 						"label": "browser operation",
-						"emphasis": "normal",
-						"order": 19000
+						"emphasis": "normal"
 					},
 					{
 						"id": "uwbAloqv",
+						"order": 20000,
 						"from": "69392DWF",
 						"to": "I6RAbOlG",
 						"kind": "call",
 						"label": "photograph it headlessly",
-						"emphasis": "normal",
-						"order": 20000
+						"emphasis": "normal"
 					},
 					{
 						"id": "Hb5DPGx6",
+						"order": 21000,
 						"from": "fOJvfmZv",
 						"to": "MUs4pwRq",
 						"kind": "call",
 						"label": "start and stop the child",
-						"emphasis": "muted",
-						"order": 21000
+						"emphasis": "muted"
 					}
 				],
 				"flows": [],
@@ -480,7 +480,7 @@
 							{
 								"id": "Mr26GVEr",
 								"heading": "Persistence stays in the server",
-								"body": "No command writes a vault file. Every board operation is JSON over HTTP to the canvas, which owns the file, the lease and the version check.",
+								"body": "No command writes a vault file. Every board operation is JSON over HTTP to the Archboard server, which owns the file, the lease and the version check.",
 								"subjects": [
 									"OfRn3av3",
 									"pB6BrbXY",
@@ -490,7 +490,7 @@
 							{
 								"id": "tHI5I16e",
 								"heading": "The one command that draws for itself",
-								"body": "Rasterizing asks the canvas for the SVG like every other command, then takes it into a headless browser of its own: the picture is photographed in this process, not on the server.",
+								"body": "Rasterizing asks the Archboard server for the SVG like every other command, then takes it into a headless browser of its own: the picture is photographed in this process, not on the server.",
 								"subjects": [
 									"69392DWF",
 									"uwbAloqv",

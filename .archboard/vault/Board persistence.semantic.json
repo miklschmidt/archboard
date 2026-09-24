@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 6,
+	"version": 7,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-23T11:29:16.224Z",
+	"updatedAt": "2026-09-24T01:47:27.115Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -53,23 +53,24 @@
 				"nodes": [
 					{
 						"id": "4P7YZdnj",
-						"name": "Canvas server",
+						"order": 1000,
+						"name": "Archboard server",
 						"kind": "service",
 						"responsibility": "The only caller: every read and every write of a board comes through it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas"
+							"path": "src/server/archboard"
 						},
 						"drillDown": {
-							"board": "Canvas server",
+							"board": "Archboard server",
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "hoh4xPWb",
+						"order": 2000,
 						"name": "Address and locate",
 						"kind": "function",
 						"responsibility": "Maps names to safe vault paths",
@@ -77,11 +78,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/location.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "NM28UA5U",
+						"order": 3000,
 						"name": "List boards",
 						"kind": "function",
 						"responsibility": "Discovers semantic board files",
@@ -89,11 +90,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/listing.ts"
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "tcwsrSQv",
+						"order": 4000,
 						"name": "Read and validate",
 						"kind": "function",
 						"responsibility": "Reads a coherent aggregate from disk",
@@ -101,11 +102,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/read.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "i2CrY6Xj",
+						"order": 5000,
 						"name": "Lifecycle transitions",
 						"kind": "function",
 						"responsibility": "Defines board lifecycle changes",
@@ -113,11 +114,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/transitions.ts"
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "xoapCJNG",
+						"order": 6000,
 						"name": "Edit semantic content",
 						"kind": "function",
 						"responsibility": "Resolves names into stable subjects",
@@ -125,11 +126,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/edit-content.ts"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "8CAH6rSD",
+						"order": 7000,
 						"name": "Propagate descendant edits",
 						"kind": "function",
 						"responsibility": "Carries parent changes into drafts",
@@ -137,11 +138,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/propagate.ts"
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "DJXluInA",
+						"order": 8000,
 						"name": "Settle and adopt",
 						"kind": "function",
 						"responsibility": "Resolves proposals into current",
@@ -149,11 +150,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/settle.ts"
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "1gdbsn6M",
+						"order": 9000,
 						"name": "Write under lease",
 						"kind": "function",
 						"responsibility": "Commits one durable version",
@@ -161,11 +162,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/write.ts"
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "qTv7HuBw",
+						"order": 10000,
 						"name": "Atomic file replacement",
 						"kind": "function",
 						"responsibility": "Fsyncs and replaces the aggregate",
@@ -173,22 +174,22 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/atomic-write.ts"
-						},
-						"order": 10000
+						}
 					},
 					{
 						"id": "IKUAjnNG",
+						"order": 11000,
 						"name": "Vault diagnostics",
 						"kind": "function",
 						"responsibility": "Everything wrong with the vault's boards, as warnings a repair can answer",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts"
-						},
-						"order": 11000
+						}
 					},
 					{
 						"id": "wBw5FntC",
+						"order": 12000,
 						"name": "Drill-down checks",
 						"kind": "function",
 						"responsibility": "What a board can say about a link to another one, checked across the whole vault",
@@ -196,156 +197,155 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/drill-down.ts"
-						},
-						"order": 12000
+						}
 					},
 					{
 						"id": "CxaaWj4x",
+						"order": 13000,
 						"name": "Edge identity",
 						"kind": "function",
 						"responsibility": "When a restated relationship is the same one and when it is a replacement",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/edge-identity.ts"
-						},
-						"order": 13000
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "hx5UtSvH",
+						"order": 1000,
 						"from": "4P7YZdnj",
 						"to": "hoh4xPWb",
 						"kind": "call",
 						"label": "address board",
-						"emphasis": "normal",
-						"order": 1000
+						"emphasis": "normal"
 					},
 					{
 						"id": "lcZxhHuv",
+						"order": 2000,
 						"from": "4P7YZdnj",
 						"to": "NM28UA5U",
 						"kind": "call",
 						"label": "catalogue boards",
-						"emphasis": "normal",
-						"order": 2000
+						"emphasis": "normal"
 					},
 					{
 						"id": "k1IwXpzd",
+						"order": 3000,
 						"from": "4P7YZdnj",
 						"to": "tcwsrSQv",
 						"kind": "call",
 						"label": "read current bytes",
-						"emphasis": "normal",
-						"order": 3000
+						"emphasis": "normal"
 					},
 					{
 						"id": "i6pk24Ov",
+						"order": 4000,
 						"from": "4P7YZdnj",
 						"to": "i2CrY6Xj",
 						"kind": "call",
 						"label": "state requested change",
-						"emphasis": "normal",
-						"order": 4000
+						"emphasis": "normal"
 					},
 					{
 						"id": "kOdz3Hxq",
+						"order": 5000,
 						"from": "i2CrY6Xj",
 						"to": "xoapCJNG",
 						"kind": "call",
 						"label": "apply content edit",
-						"emphasis": "normal",
-						"order": 5000
+						"emphasis": "normal"
 					},
 					{
 						"id": "JRnj6xbQ",
+						"order": 6000,
 						"from": "i2CrY6Xj",
 						"to": "8CAH6rSD",
 						"kind": "call",
 						"label": "reconcile descendants",
-						"emphasis": "normal",
-						"order": 6000
+						"emphasis": "normal"
 					},
 					{
 						"id": "3yXrbLgg",
+						"order": 7000,
 						"from": "i2CrY6Xj",
 						"to": "DJXluInA",
 						"kind": "call",
 						"label": "resolve lifecycle",
-						"emphasis": "normal",
-						"order": 7000
+						"emphasis": "normal"
 					},
 					{
 						"id": "smLdyKlp",
+						"order": 8000,
 						"from": "4P7YZdnj",
 						"to": "1gdbsn6M",
 						"kind": "call",
 						"label": "submit transition",
-						"emphasis": "hero",
-						"order": 8000
+						"emphasis": "hero"
 					},
 					{
 						"id": "E4f3pKJb",
+						"order": 9000,
 						"from": "1gdbsn6M",
 						"to": "hoh4xPWb",
 						"kind": "call",
 						"label": "resolve target",
-						"emphasis": "normal",
-						"order": 9000
+						"emphasis": "normal"
 					},
 					{
 						"id": "9O4o9jcE",
+						"order": 10000,
 						"from": "1gdbsn6M",
 						"to": "tcwsrSQv",
 						"kind": "call",
 						"label": "read under lease",
-						"emphasis": "normal",
-						"order": 10000
+						"emphasis": "normal"
 					},
 					{
 						"id": "VWo4vJh0",
+						"order": 11000,
 						"from": "1gdbsn6M",
 						"to": "i2CrY6Xj",
 						"kind": "call",
 						"label": "apply transition",
-						"emphasis": "normal",
-						"order": 11000
+						"emphasis": "normal"
 					},
 					{
 						"id": "EqTEFYDa",
+						"order": 12000,
 						"from": "1gdbsn6M",
 						"to": "qTv7HuBw",
 						"kind": "data",
 						"label": "commit serialized board",
-						"emphasis": "hero",
-						"order": 12000
+						"emphasis": "hero"
 					},
 					{
 						"id": "6HYXV63O",
+						"order": 13000,
 						"from": "4P7YZdnj",
 						"to": "IKUAjnNG",
 						"kind": "call",
 						"label": "check the vault",
-						"emphasis": "normal",
-						"order": 13000
+						"emphasis": "normal"
 					},
 					{
 						"id": "DPHKb9jc",
+						"order": 14000,
 						"from": "IKUAjnNG",
 						"to": "wBw5FntC",
 						"kind": "call",
 						"label": "the links out of every board",
-						"emphasis": "normal",
-						"order": 14000
+						"emphasis": "normal"
 					},
 					{
 						"id": "gkXKmHDc",
+						"order": 15000,
 						"from": "xoapCJNG",
 						"to": "CxaaWj4x",
 						"kind": "call",
 						"label": "same relationship, or a replacement",
-						"emphasis": "normal",
-						"order": 15000
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],

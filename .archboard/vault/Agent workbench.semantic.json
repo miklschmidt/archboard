@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 9,
+	"version": 10,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-23T05:41:39.143Z",
+	"updatedAt": "2026-09-24T01:47:26.533Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -78,14 +78,14 @@
 						"order": 1000,
 						"name": "Agent workbench",
 						"kind": "service",
-						"responsibility": "Everything archboard owns around one private Codex child, inside the canvas server",
-						"description": "Not a deployment of its own: this lives in the canvas server process. The Codex app-server is its child.",
+						"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server",
+						"description": "Not a deployment of its own: this lives in the Archboard server process. The Codex app-server is its child.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/codex-workbench-application.ts"
+							"path": "src/server/archboard/codex-workbench-application.ts"
 						},
 						"drillDown": {
-							"board": "Canvas server",
+							"board": "Archboard server",
 							"variant": {
 								"kind": "current"
 							}
@@ -100,7 +100,7 @@
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/canvas/lib/codex-workbench-factories.ts"
+							"path": "src/server/archboard/lib/codex-workbench-factories.ts"
 						}
 					},
 					{
@@ -163,7 +163,7 @@
 						"order": 7000,
 						"name": "Thread link",
 						"kind": "module",
-						"responsibility": "Which thread the canvas is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree",
+						"responsibility": "Which thread the Archboard server is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -504,7 +504,7 @@
 							{
 								"id": "aDZPR2CP",
 								"heading": "A private child, composed once",
-								"body": "The workbench verifies the executable, gives the child its own storage under the canvas's state directory, and builds one generation's parts in the order they depend on each other. Nothing here is shared with another client's Codex.",
+								"body": "The workbench verifies the executable, gives the child its own storage under the Archboard server's state directory, and builds one generation's parts in the order they depend on each other. Nothing here is shared with another client's Codex.",
 								"subjects": [
 									"skyIeErO",
 									"9diqPrFw",
