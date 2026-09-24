@@ -524,4 +524,5 @@ export {
 	curveThrough,
 	curveClearanceIssue,
 	labelAnchorOf,
+	verticesOf,
 };
