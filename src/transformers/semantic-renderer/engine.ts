@@ -5,6 +5,7 @@ import { z } from "zod";
 import { placeGraph } from "@/transformers/semantic-renderer/lib/layout/graphviz-placement";
 import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
 import { foldColumns } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
+import { SOLVE_STAGE } from "@/transformers/semantic-renderer/lib/host";
 
 /** A value owned by the WASM heap. */
 interface Owned {
@@ -89,14 +90,28 @@ export function createLayoutEngine(viz: Viz, instance: unknown) {
 		)
 		.parse(instance);
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
-		const placed = placeGraph(viz, graph, options);
-		const columns = Number(options["archboard.fold.columns"] ?? 1);
-		const folded = columns === 1 ? undefined : foldColumns(placed, columns);
-		const reading = folded ?? placed;
-		reading.layoutOptions = {
-			...reading.layoutOptions,
-			"archboard.fold.columns": String(folded === undefined ? 1 : columns),
-		};
-		return routeGraph(avoid, reading);
+		const stage = options[SOLVE_STAGE];
+		if (stage === "route") return routeGraph(avoid, graph);
+		const reading = placeReading(viz, graph, options);
+		return stage === "place" ? reading : routeGraph(avoid, reading);
 	};
+}
+
+/**
+ * Place a graph and fold it into the columns its options ask for.
+ * @param viz The initialized Graphviz instance.
+ * @param graph The measured graph.
+ * @param options The options for this solve.
+ * @returns The placed reading, naming the column count it was folded into.
+ */
+function placeReading(viz: Viz, graph: ElkNode, options: LayoutOptions): ElkNode {
+	const placed = placeGraph(viz, graph, options);
+	const columns = Number(options["archboard.fold.columns"] ?? 1);
+	const folded = columns === 1 ? undefined : foldColumns(placed, columns);
+	const reading = folded ?? placed;
+	reading.layoutOptions = {
+		...reading.layoutOptions,
+		"archboard.fold.columns": String(folded === undefined ? 1 : columns),
+	};
+	return reading;
 }

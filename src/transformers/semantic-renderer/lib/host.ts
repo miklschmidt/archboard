@@ -29,7 +29,8 @@ type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>
 /** The place the renderer runs in. */
 interface RendererHost {
 	/**
-	 * Solve one graph with the layout engine.
+	 * Solve one graph with the layout engine: placed and routed, or one of the
+	 * two when the options name a {@link SOLVE_STAGE}.
 	 * @param graph The complete measured graph.
 	 * @param layoutOptions The options for this solve.
 	 * @returns Its solved geometry.
@@ -50,6 +51,15 @@ interface RendererHost {
 	 */
 	readonly iconPaths: (name: string) => readonly string[] | undefined;
 }
+
+/**
+ * The option that asks a solve for one stage. `place` answers the graph
+ * placed (and folded into its columns) with nothing routed: cards, frames and
+ * reserved labels have their boxes and the page its size, which routing never
+ * changes. `route` routes a graph a `place` answered. Absent, a solve does
+ * both.
+ */
+const SOLVE_STAGE = "archboard.stage";
 
 let installed: RendererHost | undefined;
 
@@ -93,4 +103,11 @@ function themeColor(theme: DiagramTheme, name: string): string {
 	return color;
 }
 
-export { installRendererHost, rendererHost, themeColor, type RendererHost, type ThemeColors };
+export {
+	installRendererHost,
+	SOLVE_STAGE,
+	rendererHost,
+	themeColor,
+	type RendererHost,
+	type ThemeColors,
+};
