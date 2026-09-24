@@ -4,16 +4,16 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 8,
+	"version": 9,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-09-24T09:36:10.959Z",
+	"updatedAt": "2026-09-24T15:41:39.943Z",
 	"views": [],
 	"variants": [
 		{
 			"id": "EMoSzDA4",
 			"name": "Current architecture",
 			"lifecycle": "current",
-			"summary": "Module level: codex-session as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"summary": "Module level: reviewed app-server protocol operations. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{

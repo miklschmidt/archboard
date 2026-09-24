@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 19,
+	"version": 20,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-24T09:32:16.913Z",
+	"updatedAt": "2026-09-24T15:41:40.450Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -117,7 +117,7 @@
 			"id": "1gSwIfid",
 			"name": "Current architecture",
 			"lifecycle": "current",
-			"summary": "Module level: renderer as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"summary": "Module level: meaning to SVG and interaction geometry. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
