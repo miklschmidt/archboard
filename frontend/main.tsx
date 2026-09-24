@@ -7,23 +7,15 @@ import { rendererBuild, themeColors } from "virtual:archboard-renderer";
 
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
-import { createLocalPictureSource, takePicturesFrom } from "@/ui/semantic-board-canvas";
+import {
+	browserPictureStorage,
+	createLocalPictureSource,
+	takePicturesFrom,
+} from "@/ui/semantic-board-canvas";
 
 const root = document.getElementById("root");
 if (!root) {
 	throw new Error("The page has no #root element to mount into.");
-}
-
-/**
- * This browser's storage for kept pictures, or nothing when it refuses one.
- * @returns The storage.
- */
-function pictureStorage(): Storage | undefined {
-	try {
-		return window.localStorage;
-	} catch {
-		return undefined;
-	}
 }
 
 // Where vite serves the routing engine's WebAssembly from, found the same way as the worker below.
@@ -66,7 +58,15 @@ takePicturesFrom(
 		 */
 		draw: async (board, choices, policy) => (await renderer).drawBoardHere(board, choices, policy),
 		renderer: rendererBuild,
-		storage: pictureStorage(),
+		storage: browserPictureStorage(),
+		/**
+		 * The theme the page shows, once the application has put one on the root.
+		 * @returns The theme, or nothing before the first one is applied.
+		 */
+		theme: () => {
+			const shown = document.documentElement.dataset["theme"];
+			return shown === "light" || shown === "dark" ? shown : undefined;
+		},
 	}),
 );
 

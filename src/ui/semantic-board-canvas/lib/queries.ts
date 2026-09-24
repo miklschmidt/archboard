@@ -111,6 +111,12 @@ function semanticBoardListQuery() {
  * a skeleton between the two. Another board's picture is not kept here: there is
  * nothing of it to carry across, and a pane must not show one board under
  * another's name for even a request's length.
+ *
+ * A picture stays in the tab's cache for as long as the tab lives, whether or
+ * not a pane shows it: one drawn ahead is there when somebody opens its board,
+ * however long after, instead of being read back while the pane waits
+ * (TASK-344). A key names a reading, not a version, so a board holds one
+ * picture per reading however often it changes.
  * @param request The board, the variant and the theme.
  * @returns The query options.
  */
@@ -136,6 +142,7 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
 		placeholderData: (previous, previousQuery) =>
 			previousQuery?.queryKey[2] === request.board ? previous : undefined,
 		staleTime: Number.POSITIVE_INFINITY,
+		gcTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: "always" as const,
 	});
