@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 18,
+	"version": 19,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-09-24T09:03:40.188Z",
+	"updatedAt": "2026-09-24T09:31:36.545Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -403,7 +403,7 @@
 						"order": 7000,
 						"name": "Compound graph",
 						"kind": "function",
-						"responsibility": "States containment, measured sizes, authored order and relationship kinds as one graph",
+						"responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/compound-graph.ts"
@@ -681,7 +681,8 @@
 								"from": "nmyK8UOO",
 								"to": "kHpIix5b",
 								"label": "Names, responsibilities and edge labels",
-								"kind": "sync"
+								"kind": "sync",
+								"note": "skipped with the layout when the same content and standing were laid out before"
 							},
 							{
 								"id": "VvuVMt2N",
@@ -746,13 +747,6 @@
 								"kind": "sync"
 							},
 							{
-								"id": "LNqaqV2F",
-								"from": "kHpIix5b",
-								"to": "kHpIix5b",
-								"label": "Fixed faces and readable width bounds",
-								"kind": "self"
-							},
-							{
 								"id": "25HE191y",
 								"from": "kHpIix5b",
 								"to": "RvOyWmEb",
@@ -781,6 +775,27 @@
 								"kind": "return"
 							},
 							{
+								"id": "5BB225La",
+								"from": "kHpIix5b",
+								"to": "RvOyWmEb",
+								"label": "measureNaturalWidth(handle)",
+								"kind": "sync"
+							},
+							{
+								"id": "mYPHaKGi",
+								"from": "RvOyWmEb",
+								"to": "kHpIix5b",
+								"label": "The widest line, unbroken",
+								"kind": "return"
+							},
+							{
+								"id": "LNqaqV2F",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Clamp the width: cards 260 to 340, labels 40 to 200",
+								"kind": "self"
+							},
+							{
 								"id": "pg7iuzfp",
 								"from": "kHpIix5b",
 								"to": "RvOyWmEb",
@@ -792,6 +807,21 @@
 								"from": "RvOyWmEb",
 								"to": "kHpIix5b",
 								"label": "Lines, widths, line count and height",
+								"kind": "return"
+							},
+							{
+								"id": "A3bYq29V",
+								"from": "kHpIix5b",
+								"to": "dYxhsEhY",
+								"label": "Measure each wrapped line whole",
+								"kind": "sync",
+								"note": "the painted width wins over the sum of segments, so no character is cut"
+							},
+							{
+								"id": "rLH2nWZg",
+								"from": "dYxhsEhY",
+								"to": "kHpIix5b",
+								"label": "Its width in the painted face",
 								"kind": "return"
 							},
 							{
@@ -864,12 +894,41 @@
 								"note": "a label no run holds is given space of its own and the graph is solved again"
 							},
 							{
+								"id": "GtqHFT5V",
+								"from": "BKjOFlgb",
+								"to": "BKjOFlgb",
+								"label": "Name the column counts that could fit the pane better",
+								"kind": "self"
+							},
+							{
+								"id": "Fp7Vqg48",
+								"from": "BKjOFlgb",
+								"to": "JwgvpLYJ",
+								"label": "Solve it again in that many columns",
+								"kind": "sync",
+								"note": "once per candidate count, fewest first; labels settle as before"
+							},
+							{
+								"id": "2pW0EofI",
+								"from": "JwgvpLYJ",
+								"to": "JwgvpLYJ",
+								"label": "Place, fold into those columns, then route",
+								"kind": "self"
+							},
+							{
+								"id": "Mt1IGOaL",
+								"from": "JwgvpLYJ",
+								"to": "BKjOFlgb",
+								"label": "The folded drawing, or a failure",
+								"kind": "return"
+							},
+							{
 								"id": "v4G3l8cW",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Solve each column count that could fit better; keep the best",
+								"label": "Keep a fold only when it fits the pane better",
 								"kind": "self",
-								"note": "a fold is kept only when pane fit improves by WRAP_MIN_FIT_GAIN; fewer columns win a tie"
+								"note": "pane fit must improve by WRAP_MIN_FIT_GAIN; fewer columns win a tie; a fold that cannot route is dropped"
 							},
 							{
 								"id": "5rR69oPZ",

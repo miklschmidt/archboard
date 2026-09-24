@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 16,
+	"version": 19,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-24T01:47:28.499Z",
+	"updatedAt": "2026-09-24T09:32:16.913Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -26,7 +26,8 @@
 					"u1OXg3Yy",
 					"J7mPrUeP",
 					"y8vuJJKu",
-					"eECDrhMc"
+					"eECDrhMc",
+					"gUN928v4"
 				],
 				"edges": [],
 				"flows": []
@@ -36,7 +37,7 @@
 			"id": "srvJJgTA",
 			"name": "Data-flow drawing",
 			"grammar": "architecture",
-			"summary": "The sequence grammar: no layout engine, no predecessor.",
+			"summary": "The sequence grammar: its own columns and rows, no layout engine",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -44,9 +45,16 @@
 					"CtoOMxca",
 					"wLF1X11D",
 					"u1OXg3Yy",
-					"eECDrhMc"
+					"eECDrhMc",
+					"J3yMo4ag"
 				],
-				"edges": [],
+				"edges": [
+					"WwNFCjLE",
+					"NSEpn12D",
+					"IvQqev1K",
+					"oCH6TGpi",
+					"rZknAbkb"
+				],
 				"flows": []
 			}
 		},
@@ -63,7 +71,8 @@
 					"wskEBeIy",
 					"J3yMo4ag",
 					"Y0smyqtZ",
-					"u1OXg3Yy"
+					"u1OXg3Yy",
+					"gUN928v4"
 				],
 				"edges": [],
 				"flows": []
@@ -134,8 +143,8 @@
 						"order": 2000,
 						"name": "View dispatcher",
 						"kind": "function",
-						"responsibility": "Chooses the grammar, remembers one layout per lineage, and returns the document",
-						"description": "renderSemanticView picks architecture or data flow; renderArchitecture turns flow steps into lines, measures, lays out, paints and wraps. The layout memo holds 64 lineages so a proposal keeps its predecessor's drawing.",
+						"responsibility": "Chooses the grammar, lays out each distinct content once, and returns the document",
+						"description": "renderSemanticView picks architecture or data flow. renderArchitecture turns flow steps into lines, measures, lays out, paints and wraps, and frames the page as planned when the board has nothing built. The last 64 layouts are remembered by content and comparison standing, independent of theme, so a repeated render or a theme switch does not lay out again. Every variant is laid out fresh; nothing is carried over from a predecessor (ADR 0032).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/index.ts"
@@ -158,8 +167,8 @@
 						"order": 4000,
 						"name": "Compound layout",
 						"kind": "module",
-						"responsibility": "Settles cards, frames, ports, routes and labels in one pass",
-						"description": "Nothing after it may repair a coordinate. A first render tries each reading and flank rule and keeps the drawing the scorecard prefers; a proposal reuses its predecessor's.",
+						"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better",
+						"description": "Nothing after it may repair a coordinate. It settles one downward drawing on the host layout engine (Graphviz placement, libavoid routing; ADR 0033), placing each label on a clear run of its route and reserving space for a label no run holds. Then it solves each column count that could fit the reference pane at least WRAP_MIN_FIT_GAIN better and keeps the best complete drawing, fewer columns winning a tie. Crossings are bridged here. Every variant is laid out fresh (ADR 0032).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/compound.ts"
@@ -199,7 +208,7 @@
 						"name": "Measured text",
 						"kind": "function",
 						"responsibility": "Measures every card, note and label with the diagram faces loaded",
-						"description": "Pretext prepares and wraps the runs; the width of each run comes from the host's canvas, never from an estimate (TASK-247).",
+						"description": "Pretext prepares and wraps the runs through the host canvas, and the width of each painted line is measured there too, never estimated (TASK-247). The painted width wins over the sum of segments, so no character is cut. The sequence grammar wraps its responsibilities and step notes with the same line breaking.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
@@ -244,7 +253,7 @@
 						"name": "Browser application",
 						"kind": "service",
 						"responsibility": "Installs its own host in the tab and draws the same board there",
-						"description": "startBrowserRenderer fills the seam with a Web Worker layout pool, the tab's own canvas for measuring and linked faces; drawBoardHere then calls the same core the server calls (ADR 0023).",
+						"description": "startBrowserRenderer fills the seam with a pool of Web Workers running the same Graphviz and libavoid engine, the icons it fetched and linked faces, and loads the diagram faces into the tab so its own canvas measures in them. drawBoardHere then calls the same core the server calls (ADR 0023).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/browser-renderer/index.ts"
@@ -261,8 +270,8 @@
 						"order": 12000,
 						"name": "Bun host",
 						"kind": "module",
-						"responsibility": "Installs the Bun host before anything is drawn or measured",
-						"description": "installBunHost registers an @napi-rs/canvas canvas as OffscreenCanvas, loads the four diagram faces, and supplies the ELK worker pool, the theme colours read from theme.css, the font bytes and the icon paths.",
+						"responsibility": "The renderer under Bun: installs the Bun host once, then calls the core",
+						"description": "Every Bun entrypoint calls installBunHost (lib/bun-host.ts) first. It registers an @napi-rs/canvas canvas as the global OffscreenCanvas with the four diagram faces loaded, and installs a pool of Bun Workers that each run Graphviz placement and libavoid routing, the theme colours read from theme.css, the font bytes and the icon paths.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/index.ts"
@@ -302,6 +311,14 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/dataflow.ts"
 						}
+					},
+					{
+						"id": "gUN928v4",
+						"order": 16000,
+						"name": "Host canvas",
+						"kind": "external",
+						"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
+						"description": "The global OffscreenCanvas: an @napi-rs/canvas canvas under Bun, the canvas of the tab in a browser. Pretext breaks lines through it and the renderer measures every painted line with it, so a word fits the face it is painted in (TASK-247)."
 					}
 				],
 				"edges": [
@@ -310,8 +327,8 @@
 						"order": 1000,
 						"from": "LgbAlvMN",
 						"to": "0XCanbzp",
-						"kind": "render",
-						"label": "render selected view",
+						"kind": "call",
+						"label": "renderBoard",
 						"emphasis": "hero",
 						"traffic": {
 							"speed": 40,
@@ -368,8 +385,8 @@
 						"order": 7000,
 						"from": "J7mPrUeP",
 						"to": "eECDrhMc",
-						"kind": "render",
-						"label": "painted body and hit boxes",
+						"kind": "data",
+						"label": "the painted body",
 						"emphasis": "hero"
 					},
 					{
@@ -496,15 +513,6 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "4ZgfK8Ac",
-						"order": 19000,
-						"from": "J3yMo4ag",
-						"to": "4nyk76pY",
-						"kind": "call",
-						"label": "measure on the host canvas",
-						"emphasis": "normal"
-					},
-					{
 						"id": "NIW5ioWQ",
 						"order": 20000,
 						"from": "u1OXg3Yy",
@@ -529,6 +537,42 @@
 						"to": "wLF1X11D",
 						"kind": "call",
 						"label": "columns, lifelines and messages",
+						"emphasis": "normal"
+					},
+					{
+						"id": "BzVsPvqY",
+						"order": 23000,
+						"from": "J3yMo4ag",
+						"to": "gUN928v4",
+						"kind": "call",
+						"label": "measure every painted line",
+						"emphasis": "normal"
+					},
+					{
+						"id": "V6JJ4OjE",
+						"order": 24000,
+						"from": "0XCanbzp",
+						"to": "gUN928v4",
+						"kind": "call",
+						"label": "install as OffscreenCanvas, faces registered",
+						"emphasis": "muted"
+					},
+					{
+						"id": "tmrkphkd",
+						"order": 25000,
+						"from": "wskEBeIy",
+						"to": "gUN928v4",
+						"kind": "call",
+						"label": "load the diagram faces into the tab",
+						"emphasis": "muted"
+					},
+					{
+						"id": "oCH6TGpi",
+						"order": 26000,
+						"from": "wLF1X11D",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "wrap responsibilities and step notes",
 						"emphasis": "normal"
 					}
 				],
@@ -559,7 +603,7 @@
 								"id": "PJduk2By",
 								"from": "0XCanbzp",
 								"to": "0XCanbzp",
-								"label": "install the canvas, the faces and the engine pool",
+								"label": "install the canvas, the faces and the layout worker pool",
 								"kind": "self",
 								"note": "installBunHost is idempotent; later renders find the host already there"
 							},
@@ -578,11 +622,19 @@
 								"kind": "sync"
 							},
 							{
+								"id": "FFhy6eL9",
+								"from": "wpI1LbzG",
+								"to": "wpI1LbzG",
+								"label": "turn flow steps into lines",
+								"kind": "self"
+							},
+							{
 								"id": "32Ao2Mfe",
 								"from": "wpI1LbzG",
 								"to": "J3yMo4ag",
 								"label": "measure every card, note and label",
-								"kind": "sync"
+								"kind": "sync",
+								"note": "skipped with the layout when the same content and standing were laid out before; the last 64 are remembered"
 							},
 							{
 								"id": "STISCFAG",
@@ -602,9 +654,9 @@
 								"id": "WFtJLlx7",
 								"from": "Y0smyqtZ",
 								"to": "Y0smyqtZ",
-								"label": "settle each reading and flank rule, keep the best",
+								"label": "settle downward; keep a column fold only if it fits better",
 								"kind": "self",
-								"note": "a variant with a predecessor reuses its drawing instead of settling again"
+								"note": "every variant is laid out fresh (ADR 0032); each candidate is solved on the host layout engine"
 							},
 							{
 								"id": "zJPQEVAa",
@@ -673,23 +725,36 @@
 							{
 								"id": "TxUv8QT5",
 								"heading": "One core, two hosts",
-								"body": "The renderer body reads no file, no clock and no random number. The server installs a Bun host with an napi canvas and an ELK worker pool; the tab installs its own with Web Workers and its own canvas. Both then call the same board answer.",
+								"body": "The renderer body reads no file, no clock and no random number. The server installs a Bun host: an @napi-rs/canvas canvas with the diagram faces, and Bun Workers running Graphviz and libavoid. The tab installs its own canvas and Web Workers running the same engines. Both then call the same board answer.",
 								"subjects": [
 									"4nyk76pY",
 									"0XCanbzp",
 									"wskEBeIy",
-									"yOV8Znnv"
+									"yOV8Znnv",
+									"gUN928v4"
 								]
 							},
 							{
 								"id": "2XXwjrOX",
 								"heading": "Words are measured before anything is placed",
-								"body": "Every card, note and label is measured with the diagram faces loaded before the layout runs, so the space a name needs is a fact the layout is given rather than one it guesses.",
+								"body": "Every card, note and label is measured before the layout runs, by the canvas of the place drawing the picture with the diagram faces loaded. The space a name needs is a fact the layout is given rather than one it guesses.",
 								"subjects": [
 									"ezsxPVcK",
 									"J3yMo4ag",
 									"eJO5yog2",
-									"Y0smyqtZ"
+									"Y0smyqtZ",
+									"BzVsPvqY",
+									"gUN928v4"
+								]
+							},
+							{
+								"id": "u7etZu06",
+								"heading": "Every variant is laid out fresh, top to bottom",
+								"body": "The compound layout settles one downward drawing and folds it into columns only when that fits the pane materially better. Nothing is carried over from a predecessor: a proposal is laid out like any variant, and stable ids carry the comparison (ADR 0032, ADR 0033).",
+								"subjects": [
+									"Y0smyqtZ",
+									"eJO5yog2",
+									"F5mgUBCT"
 								]
 							},
 							{
