@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { requireVaultRoot } from "@/runtime/engine/board";
+import { normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
 import { errorMessage } from "@/shared/thrown-error/index";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultCheck, VaultDiagnostic } from "@/shared/semantic-policy/index";
@@ -39,9 +39,7 @@ function checkSemanticVault(root = requireVaultRoot()): VaultCheck {
 		const board = readBoardFile(file, root, configured, addresses, diagnostics);
 		return board === null ? [] : [{ board, file }];
 	});
-	const targets = new Map<string, DrillDownTarget>();
-	for (const { board } of read)
-		targets.set(semanticBoardAddress(board.name).key, { name: board.name, level: board.level });
+	const targets = drillTargets(read.map(({ board }) => board));
 	const checkoutOf = createCheckoutLookup();
 	for (const { board, file } of read) {
 		diagnostics.push(...semanticDrillDownDiagnostics(board, file, targets));
@@ -55,6 +53,26 @@ function checkSemanticVault(root = requireVaultRoot()): VaultCheck {
 		diagnostics,
 	};
 }
+/**
+ * Every board a drill-down can open, by the key of every name it answers to:
+ * its own, and each it had before a rename (ADR 0036). A board's own name wins
+ * over another board's former one, as it does wherever a name is resolved.
+ * @param boards Every board the vault holds.
+ * @returns The targets, by address key.
+ */
+function drillTargets(boards: readonly SemanticBoard[]): Map<string, DrillDownTarget> {
+	const targets = new Map<string, DrillDownTarget>();
+	for (const board of boards) {
+		for (const former of board.formerNames ?? []) {
+			targets.set(normalizeBoardKey(former), { name: board.name, level: board.level });
+		}
+	}
+	for (const board of boards) {
+		targets.set(semanticBoardAddress(board.name).key, { name: board.name, level: board.level });
+	}
+	return targets;
+}
+
 /**
  * Read one board file, recording whatever stopped it from being read.
  * @param file The board file.

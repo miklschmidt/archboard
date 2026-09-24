@@ -80,6 +80,12 @@ type SettledAnnouncement = {
 	| {
 			/** The version the board landed at. */
 			readonly version: number;
+			/**
+			 * The board's key before this write, when the write renamed it
+			 * (ADR 0036). A reader that was told about the board by that name
+			 * learns here which board it is now.
+			 */
+			readonly renamedFrom?: string;
 	  }
 	| {
 			/** The board is gone: it was discarded, and has no version to land at. */
@@ -104,11 +110,13 @@ function settledChangeFields(announcement: SettledAnnouncement): {
 	semantic: true;
 	by: string | null;
 	heldAs: string;
-} & ({ version: number } | { discarded: true }) {
+} & ({ version: number; renamedFrom?: string } | { discarded: true }) {
 	const settled = { semantic: true as const, by: announcement.by, heldAs: announcement.heldAs };
-	return "version" in announcement
-		? { ...settled, version: announcement.version }
-		: { ...settled, discarded: true };
+	if (!("version" in announcement)) {
+		return { ...settled, discarded: true };
+	}
+	const { version, renamedFrom } = announcement;
+	return { ...settled, version, ...(renamedFrom === undefined ? {} : { renamedFrom }) };
 }
 
 /**
@@ -120,6 +128,9 @@ function settledChangeFields(announcement: SettledAnnouncement): {
 function changeText(message: WebSocketMessage, board: string): string {
 	if (message["discarded"] === true) {
 		return `${board} was discarded`;
+	}
+	if (typeof message["renamedFrom"] === "string") {
+		return `${message["renamedFrom"]} was renamed ${board}, which is at version ${String(message["version"])}`;
 	}
 	return typeof message["version"] === "number"
 		? `${board} is at version ${message["version"]}`

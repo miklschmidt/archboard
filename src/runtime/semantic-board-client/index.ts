@@ -285,6 +285,20 @@ async function shelveSemanticBoardOnCanvas(
 }
 
 /**
+ * Give a board, or one variant of it, another name. Its old name is kept, and
+ * goes on opening it (ADR 0036).
+ * @param board The board name, as it is now or as it was.
+ * @param rename The name asked for, and the variant when it is a variant's.
+ * @returns The board as it now stands, under the name it has now.
+ */
+async function renameSemanticBoardOnCanvas(
+	board: string,
+	rename: Readonly<Record<string, unknown>>,
+): Promise<SemanticWriteAnswer> {
+	return postSemantic("/api/semantic-boards/rename", { board, rename });
+}
+
+/**
  * Derive a proposal from a variant this board already has.
  *
  * Nothing about what it proposes is said here. A branch carries its
@@ -338,6 +352,7 @@ export {
 	type ReconciliationReport,
 	type SemanticWriteAnswer,
 	adoptSemanticBoardOnCanvas,
+	renameSemanticBoardOnCanvas,
 	shelveSemanticBoardOnCanvas,
 	resolveSemanticBoardOnCanvas,
 	listSemanticBoardsOnCanvas,

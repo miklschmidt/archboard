@@ -21,7 +21,6 @@
 // Nothing between the read and the write is asynchronous. The lease is taken
 // first and given back last, and everything in between is one synchronous pass.
 
-import { writeFileAtomic } from "@/runtime/engine/atomic-write";
 import {
 	BoardHeldError,
 	claimWriterId,
@@ -36,17 +35,24 @@ import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	type SemanticBoard,
 } from "@/shared/semantic-board/index";
-import fs from "node:fs";
-import path from "node:path";
 import {
 	locateSemanticBoard,
 	semanticBoardAddress,
+	type SemanticBoardAddress,
 	type SemanticBoardLocation,
 } from "@/runtime/semantic-board-store/lib/location";
 import {
 	readSemanticBoardAtUnderLease,
 	type SemanticBoardRead,
 } from "@/runtime/semantic-board-store/lib/read";
+import { answeringAddress } from "@/runtime/semantic-board-store/lib/former-names";
+import {
+	relocation,
+	renamedFrom,
+	underNewName,
+	writeBoardFile,
+	type Relocation,
+} from "@/runtime/semantic-board-store/lib/relocation";
 import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store/lib/outcome";
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
@@ -133,6 +139,8 @@ type SemanticWriteResult =
 			 * a change is news or its own echo is asking about this.
 			 */
 			readonly heldAs: string;
+			/** The board's address before this write, when it renamed the board (ADR 0036). */
+			readonly renamedFrom?: SemanticBoardAddress;
 	  }
 	| SemanticWriteRejection;
 
@@ -147,17 +155,6 @@ type SemanticWriteResult =
 type LeasedWriteResult =
 	| Omit<Extract<SemanticWriteResult, { outcome: "applied" }>, "heldAs">
 	| SemanticWriteRejection;
-
-/**
- * How a board is spelled on disk: indented with tabs and ending in a newline,
- * because it sits in a vault a person opens in a text editor, and a one-line
- * document there is a document nobody will ever read a diff of.
- * @param board The board to spell.
- * @returns The bytes to write.
- */
-function serializeBoard(board: SemanticBoard): string {
-	return `${JSON.stringify(board, null, "\t")}\n`;
-}
 
 /**
  * Shape a rejection.
@@ -326,8 +323,9 @@ function missingVersionRefusal(
  * Write the checked board and say what the write did.
  *
  * After every check and never before: a refused write leaves no directory
- * behind for somebody to wonder about.
- * @param location Where the board lives.
+ * behind for somebody to wonder about. A board whose name changed has its file
+ * moved to where the new name lives as part of the same write.
+ * @param moved Where the board is written, and where its file was when it moves.
  * @param board The board as it should now be.
  * @param previousVersion The version it was at before this write.
  * @param candidate What the command reported beside the board: every draft's answer and the notices the write answers with.
@@ -336,7 +334,7 @@ function missingVersionRefusal(
  * @returns What the write did.
  */
 function persisted(
-	location: SemanticBoardLocation,
+	moved: Relocation,
 	board: SemanticBoard,
 	previousVersion: number | null,
 	candidate: {
@@ -344,10 +342,10 @@ function persisted(
 		readonly notices?: readonly WriteNotice[];
 	},
 ): LeasedWriteResult {
+	const { location } = moved;
 	const descendants = candidate.descendants ?? [];
 	const notices = candidate.notices ?? [];
-	fs.mkdirSync(path.dirname(location.file), { recursive: true });
-	writeFileAtomic(location.file, serializeBoard(board));
+	writeBoardFile(moved, board);
 	const warnings = notices.map((notice) => ({
 		severity: "warning" as const,
 		code: notice.code,
@@ -356,7 +354,15 @@ function persisted(
 		board: board.name,
 		message: notice.message,
 	}));
-	return { outcome: "applied", board, location, previousVersion, descendants, warnings };
+	return {
+		outcome: "applied",
+		board,
+		location,
+		previousVersion,
+		descendants,
+		warnings,
+		...renamedFrom(moved),
+	};
 }
 
 /**
@@ -367,12 +373,14 @@ function persisted(
  * @param location Where the board lives.
  * @param command The stated command.
  * @param at The timestamp to stamp the write with.
+ * @param heldAs The identity the board is held under, which a rename holds the new name under too.
  * @returns What the write did.
  */
 function applyUnderLease(
 	location: SemanticBoardLocation,
 	command: SemanticWriteCommand,
 	at: string,
+	heldAs: string,
 ): LeasedWriteResult {
 	const missing = missingVersionRefusal(location, command);
 	if (missing !== null) {
@@ -386,7 +394,8 @@ function applyUnderLease(
 	if (!candidate.ok) {
 		return rejected(location, before.version, candidate.code, candidate.problem);
 	}
-	const checked = acceptable(location, command, before.board, {
+	const moved = relocation(location, before.board, candidate.board);
+	const checked = acceptable(moved.location, command, before.board, {
 		...candidate.board,
 		// Every accepted write stamps the contract it was written under. A board
 		// created before a field existed and then written to now holds what this
@@ -400,7 +409,12 @@ function applyUnderLease(
 	if (!("board" in checked)) {
 		return { ...checked, version: before.version };
 	}
-	return persisted(location, checked.board, before.version, candidate);
+	const written = underNewName(moved, { id: heldAs, kind: command.writer.kind }, () =>
+		persisted(moved, checked.board, before.version, candidate),
+	);
+	return "outcome" in written
+		? written
+		: rejected(location, before.version, written.code, written.problem);
 }
 
 /**
@@ -516,14 +530,15 @@ function isRejection(result: { readonly outcome: string }): result is SemanticWr
  */
 async function underBoardLease<Done extends { readonly outcome: "applied" | "discarded" }>(
 	ask: BoardLeaseAsk,
-	pass: (location: SemanticBoardLocation) => Done | SemanticWriteRejection,
+	pass: (location: SemanticBoardLocation, heldAs: string) => Done | SemanticWriteRejection,
 ): Promise<(Done & { readonly heldAs: string }) | SemanticWriteRejection> {
-	// The key comes from the name alone, without reading a directory, so the
-	// lease is taken before anything looks at the filesystem. Two processes
-	// creating "Payments" and "payments" on a case-sensitive filesystem would
-	// otherwise each resolve an absent path of their own, take the lease in turn
-	// and leave two files where the vault has one board (ADR 0010).
-	const address = semanticBoardAddress(ask.board);
+	// The lease is taken on the key of the board the name answers to: the board
+	// that carries it, or the one that carried it before a rename (ADR 0036),
+	// and otherwise the name's own key, computed from the name alone. The file is
+	// located again only once the lease is held, so two processes creating
+	// "Payments" and "payments" on a case-sensitive filesystem take one lease
+	// in turn rather than resolving two absent paths of their own (ADR 0010).
+	const address = answeringAddress(ask.board);
 	const admission = admit(address.key, ask.writer);
 	if (!admission.ok) {
 		return {
@@ -536,7 +551,7 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	}
 	try {
 		const result = await withBoardLock(leaseRequest(address.key, ask, admission), () =>
-			pass(locateSemanticBoard(ask.board)),
+			pass(locateSemanticBoard(address.name), admission.id),
 		);
 		// Said here rather than carried through the pass inside the lease: the pass
 		// reads, checks, applies and writes, and an identity it takes but never uses
@@ -565,7 +580,9 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
  */
 async function writeSemanticBoard(command: SemanticWriteCommand): Promise<SemanticWriteResult> {
 	const at = new Date().toISOString();
-	return underBoardLease(command, (location) => applyUnderLease(location, command, at));
+	return underBoardLease(command, (location, heldAs) =>
+		applyUnderLease(location, command, at, heldAs),
+	);
 }
 
 export {

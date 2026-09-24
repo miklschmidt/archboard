@@ -7,12 +7,22 @@
 
 import type { Request, Response } from "express";
 
-import { paneBoardAddress, parseBoardKey, statedVariant } from "@/runtime/engine/board";
+import {
+	makeIdentity,
+	normalizeBoardKey,
+	paneBoardAddress,
+	parseBoardKey,
+	statedVariant,
+} from "@/runtime/engine/board";
 import type { BoardIdentity } from "@/runtime/engine/board";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { logger } from "@/runtime/engine/logger";
 import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
-import { addressedVariant } from "@/shared/semantic-board/index";
+import {
+	addressedVariant,
+	type SemanticBoard,
+	type SemanticVariant,
+} from "@/shared/semantic-board/index";
 import { publishPaneContext } from "@/server/canvas/lib/canvas-codex-host";
 import { paneFromRequest, paneResponse, sendToPane } from "@/server/canvas/lib/pane-registry";
 import { bodyOf, messageOf } from "@/server/canvas/lib/request-board";
@@ -42,8 +52,8 @@ function showPaneRoute(req: Request, res: Response): void {
 	// A pane address names a board and, after the last `@`, one of its variants
 	// (ADR 0009). The board file is the whole family, so the variant is resolved
 	// against what was read rather than looked for on disk.
-	const identity = parseBoardKey(asked);
-	if (!showableBoard(identity, res)) {
+	const identity = shownIdentity(parseBoardKey(asked), res);
+	if (identity === null) {
 		return;
 	}
 	const pane = showablePane(body["pane"], res);
@@ -62,16 +72,18 @@ function showPaneRoute(req: Request, res: Response): void {
 }
 
 /**
- * Whether there is a board to show, refusing when there is not.
+ * The address a pane is pointed at, refusing when there is no board to show.
  *
  * A show writes nothing — a board is shown, not opened into existence — so a
  * name the vault has not got, or a variant the board has not got, is a refusal
- * rather than something made on the way.
+ * rather than something made on the way. A name the board had before a rename
+ * opens it under the name it has now (ADR 0036), so a saved address lands on the
+ * board and the address bar is rewritten to what the pane then reports.
  * @param identity What the address names.
  * @param res The response, which carries the refusal when there is one.
- * @returns True when the pane can be pointed at it.
+ * @returns The address to show, or null once the refusal has been sent.
  */
-function showableBoard(identity: BoardIdentity, res: Response): boolean {
+function shownIdentity(identity: BoardIdentity, res: Response): BoardIdentity | null {
 	const read = readSemanticBoard(identity.board);
 	if (!read.ok) {
 		res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
@@ -79,7 +91,7 @@ function showableBoard(identity: BoardIdentity, res: Response): boolean {
 			code: read.code,
 			error: read.problem,
 		});
-		return false;
+		return null;
 	}
 	const opened = addressedVariant(read.board, statedVariant(identity));
 	if (!opened.ok) {
@@ -88,9 +100,35 @@ function showableBoard(identity: BoardIdentity, res: Response): boolean {
 			code: "VARIANT_MISSING",
 			error: `"${identity.board}": ${opened.problem}. Read it with \`archboard semantic show ${identity.board}\` to see what it has.`,
 		});
-		return false;
+		return null;
 	}
-	return true;
+	return acceptedIdentity(identity, read.board, opened.variant);
+}
+
+/**
+ * An address as the board it opens answers to it now: the board's own name in
+ * place of a former one, and the variant's own name in place of a former one.
+ * Anything else it says — an id, the bare name, a variant's current name — is
+ * already the board's own and is kept exactly as it was spelled.
+ * @param identity The address as it was stated.
+ * @param board The board it opens.
+ * @param variant The variant it opens there.
+ * @returns The same address when nothing in it was a former name; otherwise the accepted one.
+ */
+function acceptedIdentity(
+	identity: BoardIdentity,
+	board: SemanticBoard,
+	variant: SemanticVariant,
+): BoardIdentity {
+	const stated = statedVariant(identity);
+	const renamedVariant = stated !== undefined && stated !== variant.id && stated !== variant.name;
+	if (normalizeBoardKey(board.name) === identity.board && !renamedVariant) {
+		return identity;
+	}
+	return makeIdentity({
+		board: board.name,
+		variant: renamedVariant ? variant.name : identity.variant,
+	});
 }
 
 /**
@@ -113,4 +151,4 @@ function showablePane(spec: unknown, res: Response): PaneRegistration | null {
 	return pane;
 }
 
-export { showPaneRoute };
+export { acceptedIdentity, showPaneRoute };

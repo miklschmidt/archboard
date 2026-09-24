@@ -28,7 +28,7 @@ const LISTED_DESCRIPTION_LIMIT = 160;
  * points down or sideways (ADR 0029).
  */
 const BoardLinkSchema = z.object({
-	/** The target board's name, as the drill-down names it. */
+	/** The target board's name as it goes by now, which a former name resolves to. */
 	board: z.string(),
 	/** The target variant's name, or null for whichever is current there. */
 	variant: z.string().nullable(),
@@ -82,28 +82,51 @@ function comparable(name: string): string {
 	return name.trim().normalize("NFC").toLowerCase();
 }
 
+/** The name a board goes by now, for a name a link spells it with. */
+type AcceptedName = (name: string) => string;
+
+/**
+ * The name each board goes by, looked up by any name it answers to: its own,
+ * and every one it had before a rename (ADR 0036). A board's own name wins over
+ * another board's former one, as it does wherever a name is resolved.
+ * @param reads What reading each board answered.
+ * @returns The lookup; a name no board answers to is its own answer.
+ */
+function acceptedBoardNames(reads: readonly ListedRead[]): AcceptedName {
+	const boards = reads.flatMap((read) => (read.ok ? [read.board] : []));
+	const byName = new Map<string, string>();
+	for (const board of boards) {
+		for (const former of board.formerNames ?? []) {
+			byName.set(comparable(former), board.name);
+		}
+	}
+	for (const board of boards) {
+		byName.set(comparable(board.name), board.name);
+	}
+	return (name) => byName.get(comparable(name)) ?? name;
+}
+
 /**
  * The drill-downs on one variant, each once, leaving out any back to its own board.
  * @param board The board the variant is on.
  * @param variant The variant.
+ * @param accepted The name a board goes by now, for a name a link spells it with.
  * @returns The links, in node order.
  */
-function linksOf(board: SemanticBoard, variant: SemanticVariant): BoardLink[] {
+function linksOf(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	accepted: AcceptedName,
+): BoardLink[] {
 	const { nodes } = variant.content;
 	const containers = new Set(nodes.map((node) => node.parent));
 	const seen = new Set<string>();
 	const links: BoardLink[] = [];
 	for (const node of nodes) {
-		const drill = node.drillDown;
-		if (drill === undefined || comparable(drill.board) === comparable(board.name)) {
+		const link = linkOn(node, containers, accepted);
+		if (link === null || comparable(link.board) === comparable(board.name)) {
 			continue;
 		}
-		const link = {
-			board: drill.board,
-			variant: drill.variant.kind === "named" ? drill.variant.name : null,
-			node: node.name,
-			container: containers.has(node.id),
-		};
 		const identity = JSON.stringify([link.board, link.variant, link.node]);
 		if (!seen.has(identity)) {
 			seen.add(identity);
@@ -111,6 +134,39 @@ function linksOf(board: SemanticBoard, variant: SemanticVariant): BoardLink[] {
 		}
 	}
 	return links;
+}
+
+/**
+ * The drill-down one node carries, as the listing reports it.
+ * @param node The node.
+ * @param containers The ids of the nodes that contain others.
+ * @param accepted The name a board goes by now, for a name a link spells it with.
+ * @returns The link, or null when the node carries none.
+ */
+function linkOn(
+	node: SemanticVariant["content"]["nodes"][number],
+	containers: ReadonlySet<string | undefined>,
+	accepted: AcceptedName,
+): BoardLink | null {
+	const drill = node.drillDown;
+	if (drill === undefined) {
+		return null;
+	}
+	return {
+		board: accepted(drill.board),
+		variant: drill.variant.kind === "named" ? drill.variant.name : null,
+		node: node.name,
+		container: containers.has(node.id),
+	};
+}
+
+/**
+ * A board name as it is spelled, for a listing that resolves no former names.
+ * @param name The name.
+ * @returns The same name.
+ */
+function asSpelled(name: string): string {
+	return name;
 }
 
 /**
@@ -148,11 +204,14 @@ function bounded(line: string): string {
  * @param location.name The board's name.
  * @param location.key The key every writer and lock agrees on.
  * @param read What reading it answered.
+ * @param accepted The name a board goes by now, for a name a link spells it
+ *   with; each name as it is spelled when absent.
  * @returns The listed board.
  */
 function listedBoard(
 	{ name, key }: { readonly name: string; readonly key: string },
 	read: ListedRead,
+	accepted: AcceptedName = asSpelled,
 ): ListedBoard {
 	if (!read.ok) {
 		return {
@@ -182,7 +241,7 @@ function listedBoard(
 			lifecycle,
 			parentId: parent ?? null,
 		})),
-		links: opened.ok ? linksOf(board, opened.variant) : [],
+		links: opened.ok ? linksOf(board, opened.variant, accepted) : [],
 		description: opened.ok ? descriptionOf(opened.variant.summary) : null,
 	};
 }
@@ -195,5 +254,6 @@ export {
 	BoardListingSchema,
 	type BoardListing,
 	type ListedRead,
+	acceptedBoardNames,
 	listedBoard,
 };
