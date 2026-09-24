@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 8,
+	"version": 9,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-24T01:47:26.822Z",
+	"updatedAt": "2026-09-24T09:34:42.285Z",
 	"views": [],
 	"variants": [
 		{
@@ -21,8 +21,8 @@
 						"order": 1000,
 						"name": "Agent CLI",
 						"kind": "service",
-						"responsibility": "Authors named boards: one short-lived process per command, writing nothing itself",
-						"description": "Every stated change reaches the Archboard server over HTTP. The one command that draws for itself is rasterize, which takes the SVG the Archboard server made into a headless browser here.",
+						"responsibility": "Authors named boards: one short-lived process per command, writing no board itself",
+						"description": "Every board operation reaches the Archboard server over HTTP. Two commands draw for themselves: rasterize takes the SVG the server made into a headless browser here, and record opens the server's own page in one and writes the narrated walkthrough to a video file, through ffmpeg when one is at hand. repo add writes this machine's list of checkouts itself.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/bin.ts"
@@ -58,6 +58,7 @@
 						"name": "Browser",
 						"kind": "service",
 						"responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
+						"description": "It also carries voice: the Archboard server negotiates the session with Codex for the page, and the microphone and the voice then travel over the connection that negotiation opens.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/application/index.tsx"
@@ -83,7 +84,7 @@
 						"name": "Codex app-server",
 						"kind": "external",
 						"responsibility": "Runs the linked agent threads, as one private child of the Archboard server",
-						"description": "Its own storage, its own process group, spoken to over stdio. Archboard's side of it is the agent workbench inside the Archboard server."
+						"description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. Archboard's side of it is the agent workbench inside the Archboard server."
 					},
 					{
 						"id": "19855Ply",
@@ -120,7 +121,19 @@
 						"order": 8000,
 						"name": "Headless Chromium",
 						"kind": "external",
-						"responsibility": "Paints an SVG and answers with the bitmap, or plays a walkthrough on the canvas page and records it, when a command asks"
+						"responsibility": "Paints an SVG and answers with the bitmap, or opens the Archboard server's page and captures a narrated walkthrough, when a command asks"
+					},
+					{
+						"id": "zs8yTQLI",
+						"order": 9000,
+						"name": "Codex home",
+						"kind": "datastore",
+						"responsibility": "Codex's sign-in, config and threads, shared by every Archboard server on this machine",
+						"description": "An archboard-only CODEX_HOME under the state directory, readable by nobody else. One sign-in serves every server, since Codex takes several processes on one home; what a server keeps about its own child, the owner lock and the epoch ledger, sits under its port. The server fills in the config it needs (auto-review approvals, a sandbox with network access) and keeps what Codex or the user set.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/lib/storage.ts"
+						}
 					}
 				],
 				"edges": [
@@ -196,7 +209,7 @@
 						"from": "TBnOCNx2",
 						"to": "t7W7wJHv",
 						"kind": "call",
-						"label": "photograph or record a board",
+						"label": "photograph a board, record a walkthrough",
 						"emphasis": "muted"
 					},
 					{
@@ -215,6 +228,51 @@
 						"to": "cPOdAA3f",
 						"kind": "call",
 						"label": "one per run, on its own port",
+						"emphasis": "muted"
+					},
+					{
+						"id": "vKDw0TwV",
+						"order": 10000,
+						"from": "t7W7wJHv",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "the recording page",
+						"emphasis": "muted"
+					},
+					{
+						"id": "pxP5bkpx",
+						"order": 11000,
+						"from": "cPOdAA3f",
+						"to": "zs8yTQLI",
+						"kind": "data",
+						"label": "prepare, write its config",
+						"emphasis": "muted"
+					},
+					{
+						"id": "t3P6jc5T",
+						"order": 12000,
+						"from": "xr1MHYE7",
+						"to": "zs8yTQLI",
+						"kind": "data",
+						"label": "sign-in, config, threads",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DcdR8rPv",
+						"order": 13000,
+						"from": "xr1MHYE7",
+						"to": "TBnOCNx2",
+						"kind": "call",
+						"label": "a thread's board commands",
+						"emphasis": "normal"
+					},
+					{
+						"id": "J5WjwmUn",
+						"order": 14000,
+						"from": "TBnOCNx2",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "register a checkout",
 						"emphasis": "muted"
 					}
 				],
@@ -246,13 +304,25 @@
 								]
 							},
 							{
+								"id": "JuKj0ZMA",
+								"heading": "Pictures are taken outside the server",
+								"body": "rasterize paints the SVG the server drew in a headless browser the CLI starts. record opens the server's own page in one: the page plays the walkthrough, the Codex voice narrates it, and the CLI writes the tab's capture to a video file.",
+								"subjects": [
+									"t7W7wJHv",
+									"chzSzpL4",
+									"vKDw0TwV"
+								]
+							},
+							{
 								"id": "FlAhpGUe",
 								"heading": "Agent work has a lifetime of its own",
-								"body": "The Archboard server owns a private Codex child with its own storage and process group. A pane's thread link names one workhorse; the child's exit invalidates it rather than leaving it dangling.",
+								"body": "The Archboard server owns a private Codex child in its own process group. Sign-in, config and threads live in one Codex home every Archboard server on this machine shares. A pane's thread link names one workhorse, voice belongs to its separate coordinator, and the child's exit invalidates the link rather than leaving it dangling. The threads author boards through the CLI, like any agent.",
 								"subjects": [
 									"xr1MHYE7",
 									"2OeapIzk",
-									"19855Ply"
+									"zs8yTQLI",
+									"t3P6jc5T",
+									"DcdR8rPv"
 								]
 							},
 							{

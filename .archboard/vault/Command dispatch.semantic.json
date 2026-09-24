@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 6,
+	"version": 7,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-09-23T11:29:16.304Z",
+	"updatedAt": "2026-09-24T09:32:17.408Z",
 	"views": [],
 	"variants": [
 		{
@@ -18,83 +18,84 @@
 				"nodes": [
 					{
 						"id": "qHOothyT",
+						"order": 1000,
 						"name": "runCliWith",
 						"kind": "function",
-						"responsibility": "Owns one CLI invocation",
+						"responsibility": "Owns one CLI invocation: help first, then the shared flags, dispatch and the run",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/session.ts"
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "45uNvMac",
+						"order": 2000,
 						"name": "Registry and surface",
 						"kind": "function",
-						"responsibility": "What the table says exists, and the rule every command in it has to keep",
+						"responsibility": "What the table says exists, the child lookup dispatch uses, and the rule every command in it has to keep",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/registry.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "zs4XwBa9",
+						"order": 3000,
 						"name": "Global flag readers",
 						"kind": "function",
-						"responsibility": "Captures board write context",
+						"responsibility": "Takes --board, --doing, --expect-version and --as-session out of argv before a command's parser sees them",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/global-flags.ts"
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "0R2ysy3p",
+						"order": 4000,
 						"name": "dispatchedCommand",
 						"kind": "function",
 						"responsibility": "Finds the selected contract",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/dispatch.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "ZXGh0YmG",
+						"order": 5000,
 						"name": "Interruptible run",
 						"kind": "function",
-						"responsibility": "Forwards cancellation signals",
+						"responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/session.ts"
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "MmMnif7e",
+						"order": 6000,
 						"name": "runCommand",
 						"kind": "module",
 						"responsibility": "The seam a bound command is run through, with its contract and the signal",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-contract/runner.ts"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "bV1RPiKW",
+						"order": 7000,
 						"name": "Failure reporting",
 						"kind": "function",
 						"responsibility": "Maps errors to exit codes",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/exit-codes.ts"
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "Swj3xzmd",
+						"order": 8000,
 						"name": "Command catalogue",
 						"kind": "service",
 						"responsibility": "The table of every command, and the caller that hands this module its argv",
@@ -107,78 +108,106 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "ogSW3Rjt",
+						"order": 9000,
 						"name": "Help text",
 						"kind": "function",
 						"responsibility": "The help a reader sees, projected from the table rather than written beside it",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/command-routing/lib/help.ts"
-						},
-						"order": 9000
+						}
+					},
+					{
+						"id": "EUV7iaLt",
+						"order": 10000,
+						"name": "Server client",
+						"kind": "module",
+						"responsibility": "Keeps what this invocation says about itself and puts it on every request to the Archboard server",
+						"description": "The board, the doing line, the expected version and the writing session are set once per invocation and ride on every request from here, not from each call site. It also formats a refused board write for the reader.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/server-client.ts"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "mVCMJYpN",
+						"order": 1000,
 						"from": "qHOothyT",
-						"to": "45uNvMac",
+						"to": "ogSW3Rjt",
 						"kind": "call",
-						"label": "help / version",
-						"emphasis": "normal",
-						"order": 1000
+						"label": "help, and a failure's usage line",
+						"emphasis": "normal"
 					},
 					{
 						"id": "a4PkS2Do",
+						"order": 2000,
 						"from": "qHOothyT",
 						"to": "zs4XwBa9",
 						"kind": "call",
 						"label": "capture flags",
 						"emphasis": "normal",
-						"order": 2000
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "GpvovZkt",
+						"order": 3000,
 						"from": "qHOothyT",
 						"to": "0R2ysy3p",
 						"kind": "call",
 						"label": "select",
-						"emphasis": "normal",
-						"order": 3000
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "Kbtdm1ew",
+						"order": 4000,
 						"from": "qHOothyT",
 						"to": "ZXGh0YmG",
 						"kind": "call",
 						"label": "execute",
-						"emphasis": "normal",
-						"order": 4000
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "MFROOcqh",
+						"order": 5000,
 						"from": "ZXGh0YmG",
 						"to": "MmMnif7e",
 						"kind": "call",
 						"label": "contract + signal",
-						"emphasis": "normal",
-						"order": 5000
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					},
 					{
 						"id": "HZqRR3f0",
+						"order": 6000,
 						"from": "qHOothyT",
 						"to": "bV1RPiKW",
 						"kind": "call",
 						"label": "on failure",
-						"emphasis": "normal",
-						"order": 6000
+						"emphasis": "normal"
 					},
 					{
 						"id": "Xqy7fxY0",
+						"order": 7000,
 						"from": "Swj3xzmd",
 						"to": "qHOothyT",
 						"kind": "call",
@@ -187,17 +216,47 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 7000
+						}
 					},
 					{
-						"id": "Fr1yww70",
-						"from": "45uNvMac",
-						"to": "ogSW3Rjt",
-						"kind": "data",
-						"label": "the commands to project",
+						"id": "Ba2uml5A",
+						"order": 8000,
+						"from": "0R2ysy3p",
+						"to": "45uNvMac",
+						"kind": "call",
+						"label": "childOf",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Ml9zYVzq",
+						"order": 9000,
+						"from": "Swj3xzmd",
+						"to": "45uNvMac",
+						"kind": "call",
+						"label": "registryOf, for the contract audit",
+						"emphasis": "muted"
+					},
+					{
+						"id": "wMSceuzp",
+						"order": 10000,
+						"from": "qHOothyT",
+						"to": "EUV7iaLt",
+						"kind": "call",
+						"label": "the stated board, doing and version",
 						"emphasis": "normal",
-						"order": 8000
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "1LCJsaUZ",
+						"order": 11000,
+						"from": "bV1RPiKW",
+						"to": "EUV7iaLt",
+						"kind": "call",
+						"label": "formatBoardRefusal",
+						"emphasis": "muted"
 					}
 				],
 				"flows": [],
@@ -209,25 +268,28 @@
 							{
 								"id": "Z2h2pBRk",
 								"heading": "Address one command",
-								"body": "The session receives a route table and argv. Help and registry are projections of that same table.",
+								"body": "The catalogue hands the session argv and the one route table. Help is answered first, from that table alone, before any flag is applied or any server contacted. Dispatch finds the named subcommand through the registry's lookup.",
 								"subjects": [
 									"qHOothyT",
+									"ogSW3Rjt",
+									"0R2ysy3p",
 									"45uNvMac"
 								]
 							},
 							{
 								"id": "n5fln7Yb",
 								"heading": "Capture context before dispatch",
-								"body": "Global flags identify the board, version, doing text and session. Dispatch selects a command contract from the remaining arguments.",
+								"body": "Global flags take the board, version, doing text and session out of argv. A shared option the selected command does not read is refused before anything runs; the rest become facts the server client puts on every request.",
 								"subjects": [
 									"zs4XwBa9",
-									"0R2ysy3p"
+									"0R2ysy3p",
+									"EUV7iaLt"
 								]
 							},
 							{
 								"id": "2cENlO7N",
 								"heading": "Bound the invocation lifetime",
-								"body": "The interruptible run forwards SIGINT/SIGTERM as cancellation. Failure reporting chooses a stable exit code and diagnostic.",
+								"body": "The interruptible run forwards SIGINT and SIGTERM as an abort and re-raises the signal once cleanup ends, or after a grace period. Failure reporting maps the error to a stable exit code, 5 for any refused board write, and writes the diagnostic.",
 								"subjects": [
 									"ZXGh0YmG",
 									"MmMnif7e",
