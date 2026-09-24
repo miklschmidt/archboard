@@ -12,6 +12,7 @@
 
 import type { MessageKind } from "@/shared/semantic-board/index";
 import {
+	NEST_INSET,
 	PILL_HEIGHT,
 	PILL_PADDING_X,
 	PILL_TEXT_SIZE,
@@ -29,10 +30,7 @@ import { PILL_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { covering, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { pitchOf } from "@/transformers/semantic-renderer/lib/layout/step-rows";
-import {
-	type ActiveAt,
-	type PlacedStep,
-} from "@/transformers/semantic-renderer/lib/layout/dataflow";
+import type { ActiveAt, PlacedStep } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 
 /** Which way a message crosses the page: right, left, or nowhere at all. */
 type Travel = -1 | 0 | 1;
@@ -210,4 +208,34 @@ function stepBox(placed: PlacedStep, activeAt: ActiveAt): Box {
 	return placed.note === undefined ? row : covering(row, placed.note.box);
 }
 
-export { type Ends, type Travel, endsFor, labelBox, selfStart, stepBox, travelOf };
+/**
+ * Where a flow's frame stands across the page: around its columns, and around
+ * every message's ink as well.
+ *
+ * The frame is the flow, so what a message draws belongs inside it: a
+ * self-message's words on the last column, or a crossing label longer than its
+ * hop, reach past the columns, and the frame follows them with the inset the
+ * columns keep. A frame that grows left moves the page, not the columns.
+ * @param steps The flow's messages.
+ * @param activeAt Whether a column is busy at a given height.
+ * @param x The frame's left edge around the columns alone.
+ * @param width Its width around the columns alone.
+ * @returns The frame's left edge and width, in whole units once it has grown.
+ */
+function frameSpan(
+	steps: readonly PlacedStep[],
+	activeAt: ActiveAt,
+	x: number,
+	width: number,
+): { readonly x: number; readonly width: number } {
+	let left = x;
+	let right = x + width;
+	for (const placed of steps) {
+		const ink = stepBox(placed, activeAt);
+		left = Math.min(left, Math.floor(ink.x - NEST_INSET));
+		right = Math.max(right, Math.ceil(ink.x + ink.width + NEST_INSET));
+	}
+	return { x: left, width: right - left };
+}
+
+export { type Ends, type Travel, endsFor, frameSpan, labelBox, selfStart, stepBox, travelOf };

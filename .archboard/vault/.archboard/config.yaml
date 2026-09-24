@@ -21,16 +21,20 @@
       package: { name: Package, icon: RiArchiveLine, color: purple },
       other: { name: Other, icon: RiPuzzleLine },
     },
+  # A relationship's colour says how it travels. Call, the commonest, stays
+  # neutral so the others stand out. No kind uses the comparison colours
+  # (green added, amber changed, red removed) or the selection blue, which
+  # would read as a change or a pick.
   relationshipKinds:
     {
       call: { name: Call, dash: solid, arrowhead: filled },
-      http: { name: HTTP, dash: solid, arrowhead: filled },
-      rpc: { name: RPC, dash: solid, arrowhead: filled },
-      event: { name: Event, dash: dashed, arrowhead: open },
-      queue: { name: Queue, dash: dashed, arrowhead: open },
-      data: { name: Data, dash: solid, arrowhead: filled },
+      http: { name: HTTP, color: sky, dash: solid, arrowhead: filled },
+      rpc: { name: RPC, color: violet, dash: solid, arrowhead: filled },
+      event: { name: Event, color: fuchsia, dash: dashed, arrowhead: open },
+      queue: { name: Queue, color: orange, dash: dashed, arrowhead: open },
+      data: { name: Data, color: teal, dash: solid, arrowhead: filled },
       dependency: { name: Dependency, dash: dotted, arrowhead: open },
-      render: { name: Render, dash: solid, arrowhead: filled },
+      render: { name: Render, color: pink, dash: solid, arrowhead: filled },
       other: { name: Other, dash: solid, arrowhead: filled },
     },
 }

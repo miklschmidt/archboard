@@ -217,6 +217,8 @@ const VariantEditInputSchema = z
 		/** Board metadata: omit to preserve it, or state a configured value to change it. */
 		level: SemanticBoardLevelSchema.optional(),
 		variant: NodeReferenceSchema.optional(),
+		/** The summary of the variant the edit lands on: omit to keep it, state one to replace it. */
+		summary: DescriptionSchema.optional(),
 		nodes: z.array(SemanticNodeInputSchema).default([]),
 		edges: z.array(SemanticEdgeInputSchema).default([]),
 		flows: z.array(SemanticFlowInputSchema).default([]),
