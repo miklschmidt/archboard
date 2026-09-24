@@ -11,6 +11,10 @@ import type {
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { curveBoxes } from "@/transformers/semantic-renderer/lib/layout/curve-clearance";
 import {
+	sharedTrunk,
+	unfoldCrossings,
+} from "@/transformers/semantic-renderer/lib/layout/folded-crossings";
+import {
 	curveBounds,
 	EPSILON,
 	pathOf,
@@ -381,16 +385,6 @@ function replaceRuns(
 }
 
 /**
- * Routes of one kind may intentionally share a trunk at a common endpoint.
- * @param a One semantic edge.
- * @param b Another semantic edge.
- * @returns Whether their shared endpoint makes an apparent contact intentional.
- */
-function sharedTrunk(a: DrawingEdge["edge"], b: DrawingEdge["edge"]): boolean {
-	return a.kind === b.kind && [a.from, a.to].some((id) => id === b.from || id === b.to);
-}
-
-/**
  * A rounded corner is beneath a candidate straight run in this paint-order pass.
  * @param run The straight route.
  * @param corner The other route's corner.
@@ -416,15 +410,18 @@ function cornerCandidate(
 
 /**
  * Raises connections over proper crossings, preferring later-painted ink.
- * No placement or label moves, and painters and interaction geometry share the
- * resulting curves. Corner contacts clear lower ink without distorting the turn.
- * @param drawing The drawing after routing, rounding and label placement.
+ * No placement moves, and painters and interaction geometry share the
+ * resulting curves. A crossing folded into two corners first moves onto
+ * straight runs, taking a label on a moved lane along. Other corner contacts
+ * clear lower ink without distorting the turn.
+ * @param settled The drawing after routing, rounding and label placement.
  * @returns Updated edges and local arcs for narrowly clearing lower ink.
  */
-function bridgeCrossings(drawing: ArchitectureDrawing): {
+function bridgeCrossings(settled: ArchitectureDrawing): {
 	readonly edges: readonly DrawingEdge[];
 	readonly bridges: readonly Bridge[];
 } {
+	const drawing = unfoldCrossings(settled);
 	const runs = straightRuns(drawing.edges);
 	const corners = drawing.edges.flatMap((edge, edgeIndex) =>
 		edge.curve.segments.flatMap((segment, segmentIndex) =>
