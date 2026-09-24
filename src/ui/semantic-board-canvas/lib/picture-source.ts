@@ -1,7 +1,7 @@
 // Where a pane's pictures come from.
 //
 // A page that runs the renderer draws them itself, from the board it read
-// (TASK-247). Anything that has not started a renderer asks the canvas
+// (TASK-247). Anything that has not started a renderer asks the Archboard
 // server's render route, which answers identically: both run `renderBoard`.
 // The page chooses once, at start, before anything is drawn.
 

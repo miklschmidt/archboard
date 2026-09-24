@@ -102,11 +102,11 @@ add imports or a second state path ahead of that work.
   address. The address leads on the first load and on a history navigation
   only, and there it issues that same open command. A move the person asked for
   pushes a history entry and everything else replaces one, decided by the
-  gesture rather than by the socket. `navigation-guard.ts` is the one rule for
-  every way a board leaves a pane — the picker, a board link, closing a pane
-  and the address bar — and a restore preflights every pane it would move or
-  close before applying anything. There is no route loader: restoring addresses
-  the server by board key and reads nothing, so routing shares no cache.
+  gesture rather than by the socket. A pane holds no work of its own (the
+  browser writes nothing, ADR 0023), so nothing guards a board leaving a pane
+  and a restore moves or closes panes without asking first. There is no route
+  loader: restoring addresses the server by board key and reads nothing, so
+  routing shares no cache.
 - Use TanStack Query for request/response resources where it replaces manual
   loading, error, cache, and refresh state. Start with board listings and server
   previews. Each resource has one cache owner, with query keys/options and API
