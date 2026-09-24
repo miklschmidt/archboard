@@ -20,7 +20,7 @@ import {
 
 import { createAgentSetup, type AgentSetup } from "@/ui/agent-setup";
 import { createAgentFocus } from "@/ui/application/lib/agent-focus";
-import { createVoiceHost } from "@/ui/application/lib/voice-host";
+import { createVoiceStore } from "@/ui/application/lib/voice-store";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
 import { agentSetupPorts, releaseWhenVoiceEnds } from "@/ui/application/agent-setup-ports";
 import {
@@ -38,7 +38,7 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>;
 
 /** The agent's state and the moves the panes drive. */
-interface WorkbenchHost {
+interface Workbench {
 	/** The owners over the focused pane's transport, or null while it has none. */
 	readonly owners: WorkbenchOwners | null;
 	/** The server-wide agent setup. */
@@ -119,12 +119,12 @@ function useVoiceOwner(
 	paneId: string,
 	transport: BrowserWorkbenchTransport | null,
 ): VoiceOwner | null {
-	const [host] = useState(createVoiceHost);
+	const [store] = useState(createVoiceStore);
 	useEffect(() => {
 		if (transport === null) return undefined;
-		return host.follow({ paneId, transport, realtime: handles.media(paneId) });
-	}, [host, handles, paneId, transport]);
-	return useSyncExternalStore(host.subscribe, host.getSnapshot, host.getSnapshot);
+		return store.follow({ paneId, transport, realtime: handles.media(paneId) });
+	}, [store, handles, paneId, transport]);
+	return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
 
 /** What letting voice's pane go reads and moves. */
@@ -169,7 +169,7 @@ function useVoiceRelease(inputs: VoiceRelease): {
  * @param activePaneId The focused pane.
  * @returns The owners, the setup, the voice and the moves.
  */
-function useWorkbench(handles: PaneHandles, activePaneId: string): WorkbenchHost {
+function useWorkbench(handles: PaneHandles, activePaneId: string): Workbench {
 	const { transports, paneReported, paneGone: forgetPane } = usePaneTransports(handles);
 	const transport = transports[activePaneId] ?? null;
 	// The controllers listen only while somebody does, so composing them is pure.
@@ -199,4 +199,4 @@ function useWorkbench(handles: PaneHandles, activePaneId: string): WorkbenchHost
 	);
 }
 
-export { useWorkbench, type WorkbenchHost };
+export { useWorkbench, type Workbench };

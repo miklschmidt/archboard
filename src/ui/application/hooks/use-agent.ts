@@ -6,7 +6,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 
 import { useVoiceView } from "@/ui/application/hooks/use-voice-view";
-import type { WorkbenchHost } from "@/ui/application/hooks/use-workbench";
+import type { Workbench } from "@/ui/application/hooks/use-workbench";
 import { agentActions } from "@/ui/application/lib/agent-actions";
 import type { ApprovalDecisions } from "@/ui/application/lib/workbench-owners";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
@@ -17,7 +17,7 @@ import type { ConversationTurn } from "@/ui/workbench-timeline";
 
 /** What the agent hook reads beyond the workbench. */
 interface AgentInputs {
-	readonly host: WorkbenchHost;
+	readonly workbench: Workbench;
 	readonly draft: DraftStore;
 	readonly context: AgentContext;
 	readonly openPanel: () => void;
@@ -83,8 +83,8 @@ function useAgent(inputs: AgentInputs): {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
 } {
-	const { host, draft, context, openPanel } = inputs;
-	const { setup, owners, voice, releaseVoice } = host;
+	const { workbench, draft, context, openPanel } = inputs;
+	const { setup, owners, voice, releaseVoice } = workbench;
 	const setupSnapshot = useSyncExternalStore(setup.subscribe, setup.snapshot, setup.snapshot);
 	const stores = owners ?? NO_OWNER_STORES;
 	const conversation = useConversation(owners?.transport ?? null);

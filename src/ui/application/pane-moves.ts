@@ -1,8 +1,8 @@
 // Opening, closing and focusing panes, over the list as it is at the moment
 // somebody acts.
 //
-// The moves are made once and kept for the application's life: the pane host
-// hands them to every session it wires, and the server asks that host to close
+// The moves are made once and kept for the application's life: the pane
+// callbacks hand them to every session they wire, and the server asks them to close
 // panes opened long after it was built. A move that read the list its callback
 // was made with would act on a workspace that has since changed — closing a
 // pane the shell no longer has, or refusing to close one it does.

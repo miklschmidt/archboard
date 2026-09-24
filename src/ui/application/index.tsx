@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
-import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHost";
+import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/actions";
@@ -42,7 +42,7 @@ import {
 } from "@/ui/application/hooks/use-page-recording";
 import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
-import { useWorkbench, type WorkbenchHost } from "@/ui/application/hooks/use-workbench";
+import { useWorkbench, type Workbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import {
@@ -130,13 +130,13 @@ function agentContextOf(listing: BoardListing, boardKey: string | null): AgentCo
 
 /**
  * The subtitles of the voice, laid over the pane it runs for.
- * @param workbench The workbench host.
+ * @param workbench The workbench.
  * @param reducedMotion The motion preference.
  * @param recording Whether the page is a recording.
  * @returns The overlay and the pane it belongs over, or null.
  */
 function useSubtitleOverlay(
-	workbench: WorkbenchHost,
+	workbench: Workbench,
 	reducedMotion: boolean,
 	recording: boolean,
 ): PaneOverlay | null {
@@ -261,7 +261,7 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 	);
 	if (surface !== "opener") return null;
 	return (
-		<OpenerSettingsHost
+		<OpenerSettings
 			onSuccess={onSuccess}
 			onFailure={onFailure}
 			onClose={onClose}

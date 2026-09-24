@@ -14,7 +14,7 @@ function moving(initial: PaneList = initialPaneList()) {
 }
 
 test("a move made once acts on the workspace as it is when it is called", () => {
-	// The pane host is built from these once and keeps them: the server asks it
+	// The pane callbacks are built from these once and keep them: the server asks them
 	// to close panes opened long after, so a move must not read the list it was
 	// made with.
 	const { moves, published } = moving();

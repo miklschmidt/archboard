@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
-import type { PaneHost } from "@/ui/application/hooks/use-panes";
+import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { readingOf } from "@/ui/application/pane-reading";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
@@ -43,7 +43,7 @@ interface ApplicationPaneProps {
 	primary: boolean;
 	focused: boolean;
 	theme: PaneTheme;
-	host: PaneHost;
+	callbacks: PaneCallbacks;
 	handles: PaneHandles;
 	/** Which of the board's views this pane reads it through, or null for all of it. */
 	view: string | null;
@@ -85,7 +85,7 @@ interface ApplicationPaneProps {
 	onSemanticReading?: ((reading: SemanticPaneReading) => void) | undefined;
 }
 
-/** The pane-bound callbacks the shared host cannot supply. */
+/** The pane-bound callbacks the shared ones cannot supply. */
 interface BoundCallbacks {
 	onBoardError: (error: string) => void;
 	onLayoutRequest: (request: "open" | "close") => void;
@@ -93,7 +93,7 @@ interface BoundCallbacks {
 }
 
 /**
- * The session options for one pane over the shared host.
+ * The session options for one pane over the shared callbacks.
  * @param props The pane's inputs.
  * @param bound The pane-bound callbacks.
  * @returns The options.
@@ -102,22 +102,22 @@ function optionsFor(
 	props: ApplicationPaneProps,
 	bound: BoundCallbacks,
 ): PaneSessionOptions<BrowserWorkbenchTransport> {
-	const { host } = props;
+	const { callbacks } = props;
 	return {
 		paneId: props.paneId,
 		primary: props.primary,
 		focused: props.focused,
 		recording: props.recording === true,
 		theme: props.theme,
-		onStatus: host.onStatus,
-		onHolder: host.onHolder,
-		onPaneStateAccepted: host.onPaneStateAccepted,
-		onPaneReconnected: host.onPaneReconnected,
-		onPaneRetired: host.onPaneRetired,
-		onStaleFrontend: host.onStaleFrontend,
-		onCodeTargetNotice: host.onCodeTargetNotice,
-		onAgentActivity: host.onAgentActivity,
-		onBoardAdopted: host.onBoardAdopted,
+		onStatus: callbacks.onStatus,
+		onHolder: callbacks.onHolder,
+		onPaneStateAccepted: callbacks.onPaneStateAccepted,
+		onPaneReconnected: callbacks.onPaneReconnected,
+		onPaneRetired: callbacks.onPaneRetired,
+		onStaleFrontend: callbacks.onStaleFrontend,
+		onCodeTargetNotice: callbacks.onCodeTargetNotice,
+		onAgentActivity: callbacks.onAgentActivity,
+		onBoardAdopted: callbacks.onBoardAdopted,
 		onBoardError: bound.onBoardError,
 		onLayoutRequest: bound.onLayoutRequest,
 		createWorkbenchSockets: bound.createWorkbenchSockets,
@@ -125,19 +125,19 @@ function optionsFor(
 }
 
 /**
- * The callbacks one pane binds to itself, which the shared host cannot supply.
+ * The callbacks one pane binds to itself, which the shared ones cannot supply.
  * @param props The pane's inputs.
  * @returns The bound callbacks, stable while the pane is.
  */
 function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
-	const { paneId, host, handles } = props;
+	const { paneId, callbacks, handles } = props;
 	const onBoardError = useCallback(
-		(error: string): void => host.onBoardError(paneId, error),
-		[host, paneId],
+		(error: string): void => callbacks.onBoardError(paneId, error),
+		[callbacks, paneId],
 	);
 	const onLayoutRequest = useCallback(
-		(request: "open" | "close"): void => host.onLayoutRequest(paneId, request),
-		[host, paneId],
+		(request: "open" | "close"): void => callbacks.onLayoutRequest(paneId, request),
+		[callbacks, paneId],
 	);
 	const createWorkbenchSockets = useCallback(
 		(): PaneWorkbenchSocketOwner<BrowserWorkbenchTransport> =>
@@ -155,11 +155,11 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 
 /**
  * One pane: its session, and the board it is showing.
- * @param props The pane's identity, facets, theme, host, handles and reading.
+ * @param props The pane's identity, facets, theme, callbacks, handles and reading.
  * @returns The mounted pane.
  */
 function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
-	const { paneId, host, picked, onSemanticReading } = props;
+	const { paneId, callbacks, picked, onSemanticReading } = props;
 	// What the stage says is on screen, which is the only place it is known.
 	const [onScreen, setOnScreen] = useState<SemanticPaneReading | null>(null);
 	const showReading = useCallback(
@@ -188,9 +188,9 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	// answers "gone" by tearing down the pane's media and its thread binding, so
 	// that is not a re-registration, it is a disconnection per render.
 	useEffect(() => {
-		host.onSession(paneId, session);
-	}, [host, paneId, session]);
-	useEffect(() => () => host.onSession(paneId, null), [host, paneId]);
+		callbacks.onSession(paneId, session);
+	}, [callbacks, paneId, session]);
+	useEffect(() => () => callbacks.onSession(paneId, null), [callbacks, paneId]);
 	// The element the pane fills, measured for the pane report: taken through a
 	// callback ref rather than read during render, which is the only moment a
 	// ref's value is not a rendering input.

@@ -11,8 +11,8 @@ import type {
 import { OpenerSettingsDialog } from "@/ui/opener-settings";
 import { useOpenerSettingsFlow, type OpenerSettingsFlowListener } from "@/ui/opener-settings-flow";
 
-/** Inputs for the host. */
-interface OpenerSettingsHostProps {
+/** Inputs for the opener settings dialog. */
+interface OpenerSettingsProps {
 	onSuccess: (message: string) => void;
 	onFailure: (notice: CodeTargetNotice) => void;
 	onClose: () => void;
@@ -25,7 +25,7 @@ interface OpenerSettingsHostProps {
  * @param props Where outcomes go and how the dialog closes.
  * @returns The dialog.
  */
-function OpenerSettingsHost(props: OpenerSettingsHostProps): JSX.Element {
+function OpenerSettings(props: OpenerSettingsProps): JSX.Element {
 	const { onSuccess, onFailure, onClose } = props;
 	const listener = useMemo<OpenerSettingsFlowListener>(
 		() => ({ onSuccess, onFailure, onSaved: onClose }),
@@ -71,4 +71,4 @@ function OpenerSettingsHost(props: OpenerSettingsHostProps): JSX.Element {
 	);
 }
 
-export { OpenerSettingsHost, type OpenerSettingsHostProps };
+export { OpenerSettings, type OpenerSettingsProps };

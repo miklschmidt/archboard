@@ -19,7 +19,7 @@ import { BrowserWorkbenchWireError } from "@/ui/workbench-transport/lib/wire-ide
 type StreamStatus = "applied" | "duplicate" | "stale" | "gap";
 
 /** What the reducer needs from its transport. */
-interface StreamHost {
+interface StreamPorts {
 	readonly isCurrent: (run: SocketRun) => boolean;
 	readonly markStale: (run: SocketRun, receivedSequence: number, reason: string) => void;
 	readonly publishReadiness: (run: SocketRun) => void;
@@ -41,18 +41,18 @@ function sameWireValue(left: unknown, right: unknown): boolean {
  * @param run The run.
  * @param snapshot The snapshot.
  * @param sequence Its sequence.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @returns Applied.
  */
 function adopt(
 	run: SocketRun,
 	snapshot: BrowserSnapshot,
 	sequence: number,
-	host: StreamHost,
+	ports: StreamPorts,
 ): StreamStatus {
 	run.snapshot = snapshot;
 	run.sequence = sequence;
-	host.publishReadiness(run);
+	ports.publishReadiness(run);
 	return "applied";
 }
 
@@ -62,7 +62,7 @@ function adopt(
  * @param candidate The snapshot the message would produce.
  * @param sequence The message sequence.
  * @param clearDuplicate Whether a duplicate republishes readiness.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @param reason The stale reason when the values differ.
  * @returns Duplicate or stale.
  */
@@ -71,16 +71,16 @@ function sameSequence(
 	candidate: BrowserSnapshot,
 	sequence: number,
 	clearDuplicate: boolean,
-	host: StreamHost,
+	ports: StreamPorts,
 	reason: string,
 ): StreamStatus {
 	if (sameWireValue(candidate, run.snapshot)) {
 		if (clearDuplicate) {
-			host.publishReadiness(run);
+			ports.publishReadiness(run);
 		}
 		return "duplicate";
 	}
-	host.markStale(run, sequence, reason);
+	ports.markStale(run, sequence, reason);
 	return "stale";
 }
 
@@ -89,20 +89,20 @@ function sameSequence(
  * @param run The run.
  * @param message The snapshot message.
  * @param clearDuplicate Whether a duplicate republishes readiness.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @returns What it did.
  */
 function applySnapshot(
 	run: SocketRun,
 	message: BrowserWorkbenchSnapshotMessage,
 	clearDuplicate: boolean,
-	host: StreamHost,
+	ports: StreamPorts,
 ): StreamStatus {
 	if (run.snapshot === null || run.sequence === null || message.sequence > run.sequence) {
-		return adopt(run, message.snapshot, message.sequence, host);
+		return adopt(run, message.snapshot, message.sequence, ports);
 	}
 	if (message.sequence < run.sequence) {
-		host.markStale(run, message.sequence, "A stale workbench snapshot arrived.");
+		ports.markStale(run, message.sequence, "A stale workbench snapshot arrived.");
 		return "stale";
 	}
 	return sameSequence(
@@ -110,7 +110,7 @@ function applySnapshot(
 		message.snapshot,
 		message.sequence,
 		clearDuplicate,
-		host,
+		ports,
 		"The workbench snapshot changed without advancing its sequence.",
 	);
 }
@@ -146,20 +146,20 @@ function deltaSequenceIssue(
  * @param run The run.
  * @param candidate The merged snapshot.
  * @param sequence The delta sequence.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @returns Applied, or stale after an incompatibility.
  */
 function adoptDelta(
 	run: SocketRun,
 	candidate: BrowserSnapshot,
 	sequence: number,
-	host: StreamHost,
+	ports: StreamPorts,
 ): StreamStatus {
 	const contradiction = browserSnapshotRelationshipIssues(candidate)[0];
 	if (contradiction === undefined) {
-		return adopt(run, candidate, sequence, host);
+		return adopt(run, candidate, sequence, ports);
 	}
-	host.incompatible(
+	ports.incompatible(
 		run,
 		new BrowserWorkbenchWireError(
 			`The Codex workbench delta contradicts its snapshot at ${contradiction.path.join(".")}: ${contradiction.message}`,
@@ -173,22 +173,22 @@ function adoptDelta(
  * @param run The run.
  * @param message The delta message.
  * @param clearDuplicate Whether a duplicate republishes readiness.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @returns What it did.
  */
 function applyDelta(
 	run: SocketRun,
 	message: BrowserWorkbenchDeltaMessage,
 	clearDuplicate: boolean,
-	host: StreamHost,
+	ports: StreamPorts,
 ): StreamStatus {
 	const issue = deltaSequenceIssue(run, message.sequence);
 	if (issue !== null) {
-		host.markStale(run, message.sequence, issue.reason);
+		ports.markStale(run, message.sequence, issue.reason);
 		return issue.status;
 	}
 	if (run.snapshot === null) {
-		host.markStale(run, message.sequence, "A workbench delta arrived before a full snapshot.");
+		ports.markStale(run, message.sequence, "A workbench delta arrived before a full snapshot.");
 		return "gap";
 	}
 	const candidate: BrowserSnapshot = Object.freeze({ ...run.snapshot, ...message.delta });
@@ -198,11 +198,11 @@ function applyDelta(
 			candidate,
 			message.sequence,
 			clearDuplicate,
-			host,
+			ports,
 			"The workbench delta changed the current sequence.",
 		);
 	}
-	return adoptDelta(run, candidate, message.sequence, host);
+	return adoptDelta(run, candidate, message.sequence, ports);
 }
 
 /**
@@ -210,21 +210,21 @@ function applyDelta(
  * @param run The run.
  * @param message The message.
  * @param clearDuplicate Whether a duplicate republishes readiness, clearing a stale state.
- * @param host The transport.
+ * @param ports What the transport provides.
  * @returns What it did.
  */
 function applyMessage(
 	run: SocketRun,
 	message: BrowserWorkbenchGatewayMessage,
 	clearDuplicate: boolean,
-	host: StreamHost,
+	ports: StreamPorts,
 ): StreamStatus {
-	if (!host.isCurrent(run)) {
+	if (!ports.isCurrent(run)) {
 		return "stale";
 	}
 	return message.kind === "snapshot"
-		? applySnapshot(run, message, clearDuplicate, host)
-		: applyDelta(run, message, clearDuplicate, host);
+		? applySnapshot(run, message, clearDuplicate, ports)
+		: applyDelta(run, message, clearDuplicate, ports);
 }
 
-export { applyMessage, type StreamHost, type StreamStatus };
+export { applyMessage, type StreamPorts, type StreamStatus };
