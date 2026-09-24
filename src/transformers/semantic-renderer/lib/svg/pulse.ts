@@ -1,6 +1,7 @@
 import { type SemanticEdge } from "@/shared/semantic-board/index";
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 
 /**
@@ -22,11 +23,12 @@ const TRAIN_RADIUS = 3;
 /** One connection's routed path and explicit illustrated traffic. */
 interface Pulse {
 	readonly path: string;
+	/** The relationship's colour at full strength; its line is drawn weaker. */
 	readonly colour: string;
 	/** How thick the line the comets ride is drawn, so a heavier line carries heavier comets. */
 	readonly lineWidth: number;
-	/** The page the comets are drawn on: its background and whether it is dark. */
-	readonly page: Pick<Palette, "background" | "ground">;
+	/** The page the comets are drawn on: its background, its text colour and whether it is dark. */
+	readonly page: Pick<Palette, "background" | "edge" | "foreground" | "ground">;
 	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
 }
 
@@ -53,21 +55,39 @@ const COMET_TAIL_LAYERS = [
 
 /**
  * The soft glow around a comet's head, as a multiple of the head, and how
- * opaque it is on each ground: light on a dark page, and none on a light one,
- * where a dark halo reads as a smudge.
+ * opaque it is on each ground: brighter on a dark page, where it reads as
+ * light, fainter on a light one, where it reads as a shadow.
  */
-const COMET_GLOW = { width: 2.6, opacity: { dark: 0.35, light: 0 } } as const;
+const COMET_GLOW = { width: 2.6, opacity: { dark: 0.35, light: 0.16 } } as const;
 
 /** How long a comet's head is along its line, as a share of its width: a capsule, not a dot. */
 const COMET_HEAD_LENGTH = 0.55;
 
 /**
  * The ring of the page's own background around a comet's head, as the width it
- * adds on each side. A comet is drawn in its line's ink, the same as the line
- * and its arrowhead, so a change's colour reads the same on all three; the
- * ring is what lifts it off the line it rides, as a bridge's gap does.
+ * adds on each side: what lifts the comet off the line it rides, as a bridge's
+ * gap does.
  */
 const COMET_MOAT = 1.4;
+
+/**
+ * How far a comet on the neutral line moves toward the page's text colour: far
+ * enough to stand out from the grey line it rides, in both themes (a dark
+ * streak on a light page, a bright one on a dark page).
+ */
+const COMET_CONTRAST = 0.6;
+
+/**
+ * The colour a comet is drawn in. A coloured line is drawn at three quarters of
+ * its colour, so its comets carry the colour at full strength; the neutral line
+ * keeps its grey, so its comets lean toward the page's text instead.
+ * @param ink The relationship's colour at full strength.
+ * @param page The page: its neutral line colour and its text colour.
+ * @returns The comet's colour.
+ */
+function cometColour(ink: string, page: Pick<Palette, "edge" | "foreground">): string {
+	return ink === page.edge ? mixed(ink, page.foreground, COMET_CONTRAST) : ink;
+}
 
 /**
  * SMIL timecounts require decimal spelling; SVG geometric numbers may use exponents.
@@ -140,9 +160,9 @@ function cometLayer(
 /**
  * A steady stream of comets measured directly along the final SVG path.
  *
- * Each comet is a head ringed by the page's colour, with a glow on a dark
- * page, and a tail that tapers and fades behind it, all in its line's ink,
- * spaced speed/volume units apart. Every layer is one dash pattern
+ * Each comet is a head ringed by the page's colour, with a soft glow, and a
+ * tail that tapers and fades behind it, all in its line's ink shaded toward the
+ * page's text, spaced speed/volume units apart. Every layer is one dash pattern
  * over the whole route, advanced by one spacing every 1/volume seconds, which
  * gives fixed distance per second on straight and curved routes, already
  * populated at load, and any volume without one element per comet (ADR 0027).
@@ -152,7 +172,8 @@ function cometLayer(
  * @returns The animated comet stream, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
-	const { path, colour, lineWidth, page, traffic } = pulse;
+	const { path, lineWidth, page, traffic } = pulse;
+	const colour = cometColour(pulse.colour, page);
 	const spacing = Math.max(
 		Number.MIN_VALUE,
 		Math.min(Number.MAX_VALUE, traffic.speed / traffic.volume),
@@ -167,9 +188,7 @@ function travellingPulses(pulse: Pulse): string {
 		"g",
 		{ class: PULSE_CLASS, "pointer-events": "none" },
 		[
-			glow === 0
-				? ""
-				: cometLayer(stream, { length: 0, width: head * COMET_GLOW.width, opacity: glow, colour }),
+			cometLayer(stream, { length: 0, width: head * COMET_GLOW.width, opacity: glow, colour }),
 			cometLayer(stream, {
 				length: headLength,
 				width: head + COMET_MOAT * 2,
@@ -251,7 +270,7 @@ function timedTail(
  * @param crossing.path The path the comet rides.
  * @param crossing.colour Its line's ink.
  * @param crossing.radius How big its head is.
- * @param crossing.page The page's background, which rings its head.
+ * @param crossing.page The page's background, which rings its head, and its text colour, which shades it.
  * @param cycle How long the whole exchange's clock takes, in seconds.
  * @param turn When this message's comet crosses.
  * @returns The markup for one comet.
@@ -261,14 +280,15 @@ function timedPulse(
 		readonly path: string;
 		readonly colour: string;
 		readonly radius: number;
-		readonly page: Pick<Palette, "background">;
+		readonly page: Pick<Palette, "background" | "edge" | "foreground">;
 	},
 	cycle: number,
 	turn: Turn,
 ): string {
 	const duration = `${coord(cycle)}s`;
 	const { start, finish, ramp } = turn;
-	const { colour, radius, page } = crossing;
+	const { radius, page } = crossing;
+	const colour = cometColour(crossing.colour, page);
 	const { defs, tail } = timedTail(colour, radius);
 	return (
 		defs +

@@ -6,15 +6,18 @@ status: accepted
 
 Amended by TASK-339 (2026-09-24): a traffic mark is a comet, not a round dot.
 It has a head stretched along its line and a tail that tapers and fades behind
-it, all in its line's ink, so a change's colour reads the same on the line, its
-arrowhead and its marks. A ring of the page's own background around the head
-lifts the comet off the line it rides, and a dark page adds a glow. A round
-dot said nothing about direction. A comet shows which way its relationship
-flows, also in a still picture, where the marks are drawn at rest. It also
-cannot be mistaken for the junction mark where two routes join (TASK-337). A
-sequence's timed marks are comets of the same kind that turn to follow their
-line. Every rate below is unchanged: each layer of a comet is one dash pattern
-over the whole route, spaced and advanced exactly as the dots were.
+it, with a ring of the page's own background around the head and a soft glow.
+A coloured line is drawn at three quarters of its colour (ADR 0025 as amended),
+and its comets carry the colour at full strength. The neutral grey line keeps
+its colour, and its comets are shaded toward the page's text colour instead. A
+round dot said nothing about direction. A comet shows which way its
+relationship flows, also in a still picture, where the marks are drawn at rest.
+It also cannot be mistaken for the junction mark where two routes join
+(TASK-337). A sequence's timed marks are comets of the same kind that turn to
+follow their line. The defaults are now 80 diagram units a second and one mark
+a second, which keeps the spacing of 80 units the slower defaults had. Each
+layer of a comet is one dash pattern over the whole route, spaced and advanced
+as the rates below say.
 
 Current moving dots use a fixed traversal duration, so long connections animate
 faster than short connections. TASK-203 separates traffic from emphasis and makes

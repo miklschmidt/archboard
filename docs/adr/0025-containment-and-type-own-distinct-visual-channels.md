@@ -4,6 +4,14 @@ status: accepted
 
 # Containment and type own distinct visual channels
 
+Amended by TASK-339 (2026-09-24): a coloured line, whether its colour comes
+from its relationship type or its comparison status, is drawn at three
+quarters of that colour over the page, and its arrowhead with it. The comets of
+its traffic carry the colour at full strength (ADR 0027), and the comparison
+band behind a changed line keeps the full colour too. The colour is mixed, not
+made translucent, so two lines sharing a lane draw no darker where they
+overlap. The neutral line keeps its colour.
+
 An API migrating from legacy IIS into Kubernetes should visibly change its hosting
 context while remaining recognizable as an API. Card bodies communicate containment,
 icon chips communicate node type, and comparison and selection use separate visual

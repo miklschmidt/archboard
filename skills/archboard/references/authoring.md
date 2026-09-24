@@ -164,7 +164,7 @@ sits.
 - `description`: Longer prose.
 - `emphasis`: `normal` (default), `hero` for the board's spine, `muted` for
   context. Line weight only.
-- `traffic`: `{}` for moving dots at the defaults (speed 40, volume 0.5);
+- `traffic`: `{}` for moving marks at the defaults (speed 80, volume 1);
   `{ "speed", "volume" }` positive finite numbers; omit for none.
 
 Emphasis answers "what am I looking at": `hero` marks the spine, the path or

@@ -35,6 +35,13 @@ const TEXT_LINE_HEIGHT = 1.35;
  */
 const BASELINE_RATIO = 1.02;
 
+/**
+ * How strong a coloured line is drawn, as its share of its colour over the
+ * page: three quarters, so the comets riding it stand out at full strength.
+ * The neutral line keeps its own colour; its comets are shaded instead.
+ */
+const LINE_STRENGTH = 0.75;
+
 const CARD_RADIUS = 6;
 /** Minimum participant-card heights; each additional responsibility line adds its line height. */
 const CARD_HEIGHT = 46;
@@ -94,6 +101,7 @@ export {
 	PILL_PADDING_X,
 	PILL_TEXT_SIZE,
 	PILL_RADIUS,
+	LINE_STRENGTH,
 };
 
 export {

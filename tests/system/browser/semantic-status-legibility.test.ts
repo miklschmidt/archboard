@@ -15,6 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { openSidebarTab, pictureAtRest } from "./support/semantic-page.ts";
+import { sameHue } from "./support/computed-colours.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -380,17 +381,18 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	// what a reader could not see is that the line, its arrowhead and its dots
 	// belonged to it rather than being grey scenery over the top.
 	const added = await edgeInks(browser, ids["added"] ?? "");
-	expect(added.line).toBe(added.band);
 	expect(added.head).toBe(added.line);
+	expect(sameHue(added.line, added.band)).toBe(true);
+	// The comets carry the colour at full strength, the band's; the line is drawn weaker.
 	expect(added.streams.length).toBe(1);
 	for (const stream of added.streams) {
-		expect(stream).toBe(added.line);
+		expect(stream).toBe(added.band);
 	}
 	// A relationship the proposal dropped is still drawn, in its own ink, and
 	// sends nothing: a removed line that looked like live traffic would be the
 	// picture claiming the proposal still has it.
 	const gone = await edgeInks(browser, ids["gone"] ?? "");
-	expect(gone.line).toBe(gone.band);
+	expect(sameHue(gone.line, gone.band)).toBe(true);
 	expect(gone.head).toBe(gone.line);
 	expect(gone.streams).toHaveLength(0);
 	expect(gone.line).not.toBe(added.line);

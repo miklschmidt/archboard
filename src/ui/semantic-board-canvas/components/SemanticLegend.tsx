@@ -2,6 +2,7 @@ import { useId, useMemo, type JSX, type ReactNode } from "react";
 
 import { PaletteColorSchema } from "@/shared/semantic-policy/index";
 import { STANDING_COLORS } from "@/shared/theme/index";
+import { LINE_STRENGTH } from "@/transformers/semantic-renderer/index";
 import { Checkbox } from "@/ui/components/checkbox";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
@@ -150,10 +151,16 @@ function sampleKey(item: AppliedAppearance): string {
  */
 function RelationshipSample(props: { readonly appearance: AppliedAppearance }): JSX.Element {
 	const { appearance } = props;
-	const style = useMemo(
-		() => ({ color: ink(appearance.lineColor, "--diagram-edge") }),
-		[appearance.lineColor],
-	);
+	// Drawn as the picture draws it: a coloured line at its line strength over
+	// the page, the neutral line as it is.
+	const style = useMemo(() => {
+		const colour = ink(appearance.lineColor, "--diagram-edge");
+		return {
+			color: PaletteColorSchema.safeParse(appearance.lineColor).success
+				? `color-mix(in srgb, ${colour} ${LINE_STRENGTH * 100}%, var(--background))`
+				: colour,
+		};
+	}, [appearance.lineColor]);
 	const dash =
 		appearance.dash === "dotted" ? "1 4" : appearance.dash === "dashed" ? "6 4" : undefined;
 	return (

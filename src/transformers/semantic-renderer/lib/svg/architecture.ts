@@ -33,6 +33,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
 	edgeAttributes,
+	relationshipInk,
 	strokeWidthOf,
 	stylesFor,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -129,7 +130,8 @@ function paintEdgeLine(
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
 	const width = strokeWidthOf(edge);
-	// One ink for the line, the head it ends in and the dots that ride it.
+	// One colour for the line, the head it ends in and the comets that ride it:
+	// the line and its head drawn weaker, the comets at full strength.
 	const appearance = lineAppearance(edge, policy, step);
 	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
 	const ink = String(attributes["stroke"]);
@@ -172,7 +174,7 @@ function paintEdgeLine(
 				? ""
 				: travellingPulses({
 						path,
-						colour: ink,
+						colour: relationshipInk(edge, palette, standing, policy, appearance),
 						lineWidth: width,
 						page: palette,
 						traffic: edge.traffic,
