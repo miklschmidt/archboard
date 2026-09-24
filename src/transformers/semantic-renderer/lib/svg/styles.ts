@@ -20,10 +20,12 @@ import type { EdgeEmphasis, SemanticEdge } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import {
 	HEADER_NAME_SIZE,
 	HEADER_NAME_TRACKING,
 	HEADER_NOTE_SIZE,
+	LINE_STRENGTH,
 	NOTE_SIZE,
 	PILL_TEXT_SIZE,
 } from "@/transformers/semantic-renderer/lib/design";
@@ -52,10 +54,11 @@ const WEIGHTS: readonly Weight[] = ["hero", "normal", "muted"];
 
 const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.2 };
 /**
- * The ink a line, its arrowhead and its dots are all drawn in.
+ * The ink a line and its arrowhead are drawn in; its comets carry the same
+ * colour at full strength (`fullLineColour`).
  *
  * A relationship that stands for something takes the standing's ink; everything
- * else is drawn in the neutral relationship ink. One function, asked by all three, so
+ * else is drawn in the neutral relationship ink. One colour, asked for by all three, so
  * a changed relationship cannot end up amber in one of them and grey in the
  * other two — which is exactly what it did, and it read as a coloured glow
  * behind a line that had nothing to do with it.
@@ -70,8 +73,54 @@ const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4,
  * @returns The stroke colour.
  */
 function lineColour(palette: Palette, standing: SubjectStanding | undefined): string {
+	return drawnInk(fullLineColour(palette, standing), palette);
+}
+
+/**
+ * The colour a line stands for at full strength: the standing's, or the
+ * neutral relationship ink. The line itself is drawn weaker (`drawnInk`); the
+ * comets that ride it carry this.
+ * @param palette The theme's colours.
+ * @param standing How it stands, when this is a proposal and it moved.
+ * @returns The colour.
+ */
+function fullLineColour(palette: Palette, standing: SubjectStanding | undefined): string {
 	const marked = standing === undefined ? undefined : standingInk(standing, palette);
 	return marked ?? palette.edge;
+}
+
+/**
+ * The colour a line is drawn in, from the colour it stands for: a coloured line
+ * at three quarters of its colour over the page, so the comets riding it stand
+ * out at full strength; the neutral line as it is. Mixed rather than made
+ * translucent, so two lines sharing a lane draw no darker where they overlap.
+ * @param ink The colour at full strength.
+ * @param palette The theme's colours.
+ * @returns The line's colour.
+ */
+function drawnInk(ink: string, palette: Palette): string {
+	return ink === palette.edge ? ink : mixed(palette.background, ink, LINE_STRENGTH);
+}
+
+/**
+ * The colour a relationship stands for at full strength: its standing's when it
+ * moved, its kind's configured colour, or the neutral relationship ink.
+ * @param edge The relationship.
+ * @param palette The theme's colours.
+ * @param standing How it stands, when this is a proposal and it moved.
+ * @param policy Current vault policy.
+ * @param appearance The line's appearance, when it is not the kind's (a flow step drawn on the board).
+ * @returns The colour.
+ */
+function relationshipInk(
+	edge: SemanticEdge,
+	palette: Palette,
+	standing?: SubjectStanding,
+	policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
+	appearance = relationshipAppearance(edge.kind, policy),
+): string {
+	const marked = standing === undefined ? undefined : standingInk(standing, palette);
+	return marked ?? semanticInk(appearance.color, palette) ?? palette.edge;
 }
 
 /**
@@ -126,10 +175,9 @@ function edgeAttributes(
 	appearance = relationshipAppearance(edge.kind, policy),
 ): Attributes {
 	const weight = weightOf(edge);
-	const ink = semanticInk(appearance.color, palette) ?? palette.edge;
 	return {
 		fill: "none",
-		stroke: (standing === undefined ? undefined : standingInk(standing, palette)) ?? ink,
+		stroke: drawnInk(relationshipInk(edge, palette, standing, policy, appearance), palette),
 		"stroke-width": STROKE_WIDTH[weight],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
@@ -187,6 +235,8 @@ export {
 	type SvgStyles,
 	WEIGHTS,
 	lineColour,
+	fullLineColour,
+	relationshipInk,
 	weightOf,
 	markerFor,
 	strokeWidthOf,

@@ -27,6 +27,7 @@ import {
 	type LabelAttempt,
 } from "@/transformers/semantic-renderer/lib/layout/label-reservations";
 import { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
+import { unfoldCrossings } from "@/transformers/semantic-renderer/lib/layout/folded-crossings";
 import {
 	curveClearanceIssue,
 	curveThrough,
@@ -180,8 +181,11 @@ async function layoutCompound(
 ): Promise<PaintedDrawing> {
 	const problem: Problem = { content, measured, standings, columns: 1 };
 	const baseline = await settleReading(problem);
-	const drawing = await chooseReading(problem, baseline);
-	// Bridges are settled here as part of the geometry a reader sees.
+	const chosen = await chooseReading(problem, baseline);
+	// Lanes that fold into one row are exchanged first, so the routes the
+	// drawing reports are the ones painted (junction marks read them); bridges
+	// are then settled as part of the geometry a reader sees.
+	const drawing = unfoldCrossings(chosen);
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 

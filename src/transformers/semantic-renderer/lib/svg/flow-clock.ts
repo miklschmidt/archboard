@@ -16,7 +16,7 @@ import {
 	TRAIN_RADIUS,
 } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
-import { lineColour } from "@/transformers/semantic-renderer/lib/svg/styles";
+import { fullLineColour } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 /**
  * The drawing's clock, which every message on the page shares.
@@ -58,7 +58,7 @@ function timedCrossings(
 		return "";
 	}
 	const width = 1 / turns;
-	const colour = lineColour(palette, crossing.standing);
+	const colour = fullLineColour(palette, crossing.standing);
 	const radius = placed.slot.count > 1 ? TRAIN_RADIUS : PULSE_RADIUS;
 	return lines(
 		Array.from({ length: placed.slot.count }, (_, index) => {

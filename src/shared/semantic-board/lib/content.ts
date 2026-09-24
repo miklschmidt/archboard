@@ -21,10 +21,17 @@ const MAX_EDGE_LABEL = 60;
 /** Author-controlled position among the nodes or relationships of one variant. */
 const SubjectOrderSchema = z.int().nonnegative();
 
-/** Effective traffic speed when an author enables traffic without stating one. */
-const DEFAULT_TRAFFIC_SPEED = 40;
-/** Effective dot-entry rate when an author enables traffic without stating one. */
-const DEFAULT_TRAFFIC_VOLUME = 0.5;
+/**
+ * Effective traffic speed when an author enables traffic without stating one,
+ * in diagram units a second (ADR 0027, raised from 40 by TASK-339).
+ */
+const DEFAULT_TRAFFIC_SPEED = 80;
+/**
+ * Effective mark-entry rate when an author enables traffic without stating one,
+ * in marks a second: with the speed, one mark every 80 units, the spacing the
+ * slower default had.
+ */
+const DEFAULT_TRAFFIC_VOLUME = 1;
 
 /** What one relationship carries, stated once for both spellings of an edge. */
 const EdgeLabelSchema = z.string().trim().min(1).max(MAX_EDGE_LABEL);

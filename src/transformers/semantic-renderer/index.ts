@@ -389,6 +389,7 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 		: await renderArchitecture(request);
 }
 
+export { LINE_STRENGTH } from "@/transformers/semantic-renderer/lib/design";
 export {
 	type ReadingDirection,
 	type SubjectStanding,

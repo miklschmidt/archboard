@@ -114,8 +114,8 @@ describe("traffic in reconciliation", () => {
 
 	test("holds independently changed traffic as one competing field", () => {
 		const base = content({ ...EDGE, traffic: {} });
-		const mine = content({ ...EDGE, traffic: { speed: 80 } });
-		const theirs = content({ ...EDGE, traffic: { volume: 1 } });
+		const mine = content({ ...EDGE, traffic: { speed: 120 } });
+		const theirs = content({ ...EDGE, traffic: { volume: 2 } });
 		const result = reconcileVariant({ base, mine, theirs });
 		expect(result.issues).toHaveLength(1);
 		expect(result.issues[0]).toMatchObject({
@@ -123,6 +123,9 @@ describe("traffic in reconciliation", () => {
 			kind: "competing-field",
 			field: "traffic",
 		});
-		expect(result.content.edges[0]?.traffic).toEqual({ speed: 80, volume: 0.5 });
+		expect(result.content.edges[0]?.traffic).toEqual({
+			speed: 120,
+			volume: DEFAULT_TRAFFIC_VOLUME,
+		});
 	});
 });

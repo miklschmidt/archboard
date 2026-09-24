@@ -156,7 +156,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			edges: [
 				{ id: "ab", from: "a", to: "b", kind: "call", traffic: {} },
 				{ id: "bc", from: "b", to: "c", kind: "call" },
-				{ id: "ac", from: "a", to: "c", kind: "call", traffic: { speed: 40, volume: 0.5 } },
+				{ id: "ac", from: "a", to: "c", kind: "call", traffic: { speed: 80, volume: 1 } },
 			],
 		});
 		const { svg } = await renderSemanticView({ content, grammar: "architecture", theme: "light" });
@@ -177,7 +177,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 				const from = Number(animation!.match(/from="([^"]+)"/u)![1]);
 				const to = Number(animation!.match(/to="([^"]+)"/u)![1]);
 				expect(spacing).toBeCloseTo(80, 5);
-				expect(interval).toBe(2);
+				expect(interval).toBe(1);
 				expect(from - to).toBeCloseTo(80, 5);
 				expect(animation).toContain('calcMode="linear"');
 			}

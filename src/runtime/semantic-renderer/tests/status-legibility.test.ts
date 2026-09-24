@@ -22,6 +22,7 @@ import {
 	distanceToRoute,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { colourDistance, hueOf } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({
@@ -295,15 +296,22 @@ function badges(rendered: RenderedDiagram): Map<string, At> {
 	return found;
 }
 
-describe("a relationship is drawn in one ink from end to end", () => {
-	test("the line, the arrowhead it ends in and the dots that ride it agree", async () => {
+describe("a relationship is drawn in one colour from end to end", () => {
+	test("the line and its arrowhead agree, and its comets carry the same colour at full strength", async () => {
 		const drawn = await architecture();
+		// The light page is near white, so a weaker line sits nearer white.
+		const page = "#ffffff";
 		for (const id of ["moved", "new"]) {
 			const drawnLine = line(subject(drawn, "edge", id));
 			// Every channel of the same relationship, asked separately.
 			expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
-			for (const dot of dotInks(subject(drawn, "edge", id))) {
-				expect(dot).toBe(drawnLine.ink);
+			const comets = dotInks(subject(drawn, "edge", id));
+			expect(comets.length).toBeGreaterThan(0);
+			for (const comet of comets) {
+				// The same colour, never a grey over it: the same hue, and farther
+				// from the page than the line it rides.
+				expect(Math.abs(hueOf(comet) - hueOf(drawnLine.ink))).toBeLessThan(6);
+				expect(colourDistance(comet, page)).toBeGreaterThan(colourDistance(drawnLine.ink, page));
 			}
 		}
 		// A plain board uses another colour, and two standings do not share one;
@@ -345,7 +353,8 @@ describe("a relationship is drawn in one ink from end to end", () => {
 				group.markup,
 			);
 		expect(band, "the changed relationship drew no band").not.toBeNull();
-		expect(band![1]).toBe(line(group).ink);
+		// The band is the relationship's colour at full strength, the colour its comets carry.
+		expect(dotInks(group)).toContain(band![1]!);
 		expect(Number(band![2])).toBeGreaterThan(2.2);
 		expect(Number(band![3])).toBeLessThan(1);
 		expect(band![4]).toBe("7 3.5");
