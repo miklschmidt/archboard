@@ -203,12 +203,14 @@ turn, target state and a canonical effect fingerprint, revalidated before
 dispatch; general waits join a session-owned wait-for graph that rejects
 cycles. Remote access must tunnel over SSH or run without the workbench.
 
-Every Codex thread runs in the auto-review mode of Codex, which the
-`config.toml` that Archboard writes sets. Its sandbox can write the workspace
-and reach the network, because every archboard command that an agent runs
-reaches the Archboard server over loopback. When the sandbox refuses a command, Codex
-gives it to its reviewer subagent, which approves or denies it. Codex does not
-ask the user.
+By default every Codex thread runs in the auto-review mode of Codex. If
+`config.toml` does not set these settings, Archboard puts them in, and it never
+overwrites a setting that Codex or a person made. The sandbox can write the
+workspace and reach the network, because every archboard command that an agent
+runs reaches the Archboard server over loopback. When the sandbox refuses a
+command, Codex gives it to its reviewer subagent, which approves or denies it.
+Codex does not ask the user. If the config keeps Codex's store in another
+SQLite home or is not TOML, Archboard refuses to start Codex.
 
 ## What we are not doing
 
