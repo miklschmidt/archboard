@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 7,
+	"version": 8,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-24T01:47:27.115Z",
+	"updatedAt": "2026-09-24T09:02:05.462Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -202,12 +202,13 @@
 					{
 						"id": "CxaaWj4x",
 						"order": 13000,
-						"name": "Edge identity",
+						"name": "Replaced relationships",
 						"kind": "function",
-						"responsibility": "When a restated relationship is the same one and when it is a replacement",
+						"responsibility": "Warns when a write may have lost a relationship's identity: re-added under a new id, or stated twice",
+						"description": "A write that breaks a continuing relationship's identity is not refused: the board is valid, so the write lands and its answer carries RELATIONSHIP_REPLACED or RELATIONSHIP_DUPLICATED naming the repair. An explicit removeEdges plus an idless addition declares a replacement and draws no notice.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/runtime/semantic-board-store/lib/edge-identity.ts"
+							"path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts"
 						}
 					}
 				],
@@ -344,7 +345,7 @@
 						"from": "xoapCJNG",
 						"to": "CxaaWj4x",
 						"kind": "call",
-						"label": "same relationship, or a replacement",
+						"label": "which restatements lost their identity",
 						"emphasis": "normal"
 					}
 				],

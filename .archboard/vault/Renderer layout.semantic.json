@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 17,
+	"version": 18,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-09-23T11:29:16.339Z",
+	"updatedAt": "2026-09-24T09:03:40.188Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -68,6 +68,7 @@
 				"nodes": [
 					{
 						"id": "nmyK8UOO",
+						"order": 1000,
 						"name": "Render driver",
 						"kind": "function",
 						"responsibility": "Coordinates the current passes",
@@ -81,11 +82,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "weNj8ziG",
+						"order": 2000,
 						"name": "Card text",
 						"kind": "function",
 						"responsibility": "Fits words into allocated space",
@@ -93,11 +94,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/text.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "kfgDUWyE",
+						"order": 3000,
 						"name": "Grid placement",
 						"kind": "function",
 						"responsibility": "Assigns fixed seats and rows",
@@ -105,11 +106,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "tBUl0ybN",
+						"order": 4000,
 						"name": "Route planning",
 						"kind": "function",
 						"responsibility": "Plans indexed corridors and ports",
@@ -117,11 +118,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/layout/edges.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "H0xU45vp",
+						"order": 5000,
 						"name": "SVG marks",
 						"kind": "function",
 						"responsibility": "Fits and paints the final marks",
@@ -129,55 +130,54 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer/lib/svg/cards.ts"
-						},
-						"order": 5000
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "bvxJfQzm",
+						"order": 1000,
 						"from": "nmyK8UOO",
 						"to": "kfgDUWyE",
 						"kind": "call",
 						"label": "place grid",
-						"emphasis": "normal",
-						"order": 1000
+						"emphasis": "normal"
 					},
 					{
 						"id": "VIDMaMpV",
+						"order": 2000,
 						"from": "kfgDUWyE",
 						"to": "weNj8ziG",
 						"kind": "call",
 						"label": "fit title size",
-						"emphasis": "normal",
-						"order": 2000
+						"emphasis": "normal"
 					},
 					{
 						"id": "tj0diTvb",
+						"order": 3000,
 						"from": "nmyK8UOO",
 						"to": "tBUl0ybN",
 						"kind": "call",
 						"label": "traffic and routes",
-						"emphasis": "normal",
-						"order": 3000
+						"emphasis": "normal"
 					},
 					{
 						"id": "my9Bj1QK",
+						"order": 4000,
 						"from": "nmyK8UOO",
 						"to": "H0xU45vp",
 						"kind": "render",
 						"label": "paint placed cards",
-						"emphasis": "normal",
-						"order": 4000
+						"emphasis": "normal"
 					},
 					{
 						"id": "jpAcngCZ",
+						"order": 5000,
 						"from": "H0xU45vp",
 						"to": "weNj8ziG",
 						"kind": "call",
 						"label": "truncate to fit",
-						"emphasis": "normal",
-						"order": 5000
+						"emphasis": "normal"
 					}
 				],
 				"flows": [
@@ -333,6 +333,7 @@
 				"nodes": [
 					{
 						"id": "nmyK8UOO",
+						"order": 1000,
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Measures, settles and paints one drawing, in that order",
@@ -346,127 +347,147 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "kHpIix5b",
+						"order": 2000,
 						"name": "Measured text",
 						"kind": "function",
 						"responsibility": "Wraps every card, note and label and measures what the SVG will paint",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/measurement.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "BKjOFlgb",
+						"order": 3000,
 						"name": "Compound layout",
 						"kind": "function",
-						"responsibility": "Settles cards, frames, ports, routes and labels as one drawing",
-						"description": "Nothing after it may repair a coordinate. A variant with a predecessor reuses that drawing instead of settling again, so a proposal and what it came from read the same way.",
+						"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better",
+						"description": "Nothing after it may repair a coordinate. Every variant is laid out fresh (ADR 0032): one downward drawing first, then each column count that could fit the reference pane at least WRAP_MIN_FIT_GAIN better, keeping the best complete one. Crossings are bridged here, as geometry the reader sees.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/compound.ts"
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "H0xU45vp",
+						"order": 4000,
 						"name": "Architecture painter",
 						"kind": "function",
 						"responsibility": "Paints the settled drawing and decides no geometry of its own",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/architecture.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "RvOyWmEb",
+						"order": 5000,
 						"name": "Pretext",
 						"kind": "external",
-						"responsibility": "Breaks a prepared string into lines at a given width",
-						"order": 5000
+						"responsibility": "Breaks a prepared string into lines at a given width"
 					},
 					{
 						"id": "dYxhsEhY",
+						"order": 6000,
 						"name": "Host canvas",
 						"kind": "external",
 						"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
-						"description": "An @napi-rs/canvas canvas installed as OffscreenCanvas under Bun, the tab's own canvas in a browser. Both the line breaking and the painted runs are measured through it, so a line and its words agree (TASK-247).",
-						"order": 6000
+						"description": "An @napi-rs/canvas canvas installed as OffscreenCanvas under Bun, the tab's own canvas in a browser. Both the line breaking and the painted runs are measured through it, so a line and its words agree (TASK-247)."
 					},
 					{
 						"id": "ZRFUJrjD",
+						"order": 7000,
 						"name": "Compound graph",
 						"kind": "function",
-						"responsibility": "States containment and measured sizes as one graph, with the reading's order constraints",
+						"responsibility": "States containment, measured sizes, authored order and relationship kinds as one graph",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/compound-graph.ts"
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "JwgvpLYJ",
+						"order": 8000,
 						"name": "Layout engine",
-						"kind": "external",
-						"responsibility": "Solves one compound graph into boxes and polylines",
-						"description": "@archboard/elk-rs, reached only through the host: a worker pool under Bun, Web Workers in a tab.",
-						"order": 8000
+						"kind": "function",
+						"responsibility": "Places, folds and routes one graph inside a layout worker",
+						"description": "createLayoutEngine binds the initialized Graphviz and libavoid WebAssembly engines. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0033).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/engine.ts"
+						}
 					},
 					{
 						"id": "sJEdCSmX",
-						"name": "Reading choice",
+						"order": 9000,
+						"name": "Column folds",
 						"kind": "function",
-						"responsibility": "Chooses which way the page reads and whether it folds",
-						"description": "Derived from the board's own shape (ADR 0028); a proposal keeps its predecessor's and nobody authors it.",
+						"responsibility": "Names the column counts a settled drawing could fold into, and folds a placement into that many columns",
+						"description": "Every board reads top to bottom (ADR 0033). A fold is a candidate the compound layout keeps only when it fits the reference pane materially better, fewer columns winning a tie. Nobody authors it, and a proposal is laid out fresh like any variant (ADR 0032).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/reading-choice.ts"
-						},
-						"order": 9000
-					},
-					{
-						"id": "Jdtlq0lD",
-						"name": "Flank rules",
-						"kind": "function",
-						"responsibility": "Which side return travel uses and how a skip over a rank attaches",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/flank-rules.ts"
-						},
-						"order": 10000
-					},
-					{
-						"id": "u1O704c8",
-						"name": "Scorecard",
-						"kind": "function",
-						"responsibility": "Keeps the better of two candidate drawings; no one measure decides",
-						"description": "Fit, page area, card share, route length, bends, crossings, margin lanes and the flank fan. One drawing wins when it is better on more of them than it is worse.",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/transformers/semantic-renderer/lib/layout/scorecard.ts"
-						},
-						"order": 11000
+							"path": "src/transformers/semantic-renderer/lib/layout/fold-columns.ts"
+						}
 					},
 					{
 						"id": "1hNZb5CR",
+						"order": 12000,
 						"name": "Label reservations",
 						"kind": "function",
-						"responsibility": "Settles every label onto a straight run of its own route",
+						"responsibility": "Reserves layout space for a label no run of its route can hold, and releases reservations a label no longer uses",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/layout/label-reservations.ts"
-						},
-						"order": 12000
+						}
+					},
+					{
+						"id": "QhftMIRP",
+						"order": 8250,
+						"name": "Graphviz placement",
+						"kind": "function",
+						"responsibility": "Places cards and frames with Graphviz's ranking across clusters, keeping containment",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/graphviz-placement.ts"
+						}
+					},
+					{
+						"id": "afquGGyY",
+						"order": 8500,
+						"name": "Obstacle routing",
+						"kind": "function",
+						"responsibility": "Routes every relationship orthogonally around cards and unrelated frames, through shared ports per relationship kind",
+						"description": "A relationship enters a container only when the container holds one of its ends; other frames are obstacles. The router chooses each end's face; one refinement from the settled paths is kept when it routes (ADR 0033).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/transformers/semantic-renderer/lib/layout/route-graph.ts"
+						}
+					},
+					{
+						"id": "KdNM1Q56",
+						"order": 10000,
+						"name": "Graphviz",
+						"kind": "external",
+						"responsibility": "Ranks a clustered graph and places its nodes",
+						"description": "@viz-js/viz: Graphviz compiled to WebAssembly, loaded by the layout worker."
+					},
+					{
+						"id": "LCcblgyC",
+						"order": 11000,
+						"name": "libavoid",
+						"kind": "external",
+						"responsibility": "Routes orthogonal connectors around obstacle shapes",
+						"description": "libavoid-js, patched, compiled to WebAssembly and loaded by the layout worker."
 					}
 				],
 				"edges": [
 					{
 						"id": "TPRWw9F4",
+						"order": 1000,
 						"from": "nmyK8UOO",
 						"to": "kHpIix5b",
 						"kind": "call",
@@ -475,29 +496,29 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "19pjtjrv",
+						"order": 2000,
 						"from": "kHpIix5b",
 						"to": "RvOyWmEb",
 						"kind": "call",
 						"label": "prepare and wrap",
-						"emphasis": "normal",
-						"order": 2000
+						"emphasis": "normal"
 					},
 					{
 						"id": "aESGqkun",
+						"order": 3000,
 						"from": "RvOyWmEb",
 						"to": "dYxhsEhY",
 						"kind": "dependency",
 						"label": "measures its segments there",
-						"emphasis": "normal",
-						"order": 3000
+						"emphasis": "normal"
 					},
 					{
 						"id": "notKnIIz",
+						"order": 4000,
 						"from": "nmyK8UOO",
 						"to": "BKjOFlgb",
 						"kind": "call",
@@ -506,51 +527,42 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "TSsnxsV9",
+						"order": 5000,
 						"from": "kHpIix5b",
 						"to": "dYxhsEhY",
 						"kind": "call",
 						"label": "the width of a painted line",
-						"emphasis": "normal",
-						"order": 5000
+						"emphasis": "normal"
 					},
 					{
 						"id": "eNHrvq6Y",
+						"order": 6000,
 						"from": "BKjOFlgb",
 						"to": "sJEdCSmX",
 						"kind": "call",
-						"label": "which way this board reads",
-						"emphasis": "normal",
-						"order": 6000
-					},
-					{
-						"id": "tY9P0yad",
-						"from": "BKjOFlgb",
-						"to": "Jdtlq0lD",
-						"kind": "call",
-						"label": "seats and the side returns travel",
-						"emphasis": "normal",
-						"order": 7000
+						"label": "column counts that could fit better",
+						"emphasis": "normal"
 					},
 					{
 						"id": "lbUaPzWc",
+						"order": 8000,
 						"from": "BKjOFlgb",
 						"to": "ZRFUJrjD",
 						"kind": "call",
-						"label": "state the graph for this reading",
-						"emphasis": "hero",
+						"label": "state the graph",
+						"emphasis": "normal",
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "wCXK6KYw",
+						"order": 9000,
 						"from": "BKjOFlgb",
 						"to": "JwgvpLYJ",
 						"kind": "call",
@@ -559,38 +571,20 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "hJ4xGthq",
+						"order": 10000,
 						"from": "BKjOFlgb",
 						"to": "1hNZb5CR",
 						"kind": "call",
-						"label": "settle the labels on their runs",
-						"emphasis": "normal",
-						"order": 10000
-					},
-					{
-						"id": "kKBtoqI2",
-						"from": "BKjOFlgb",
-						"to": "u1O704c8",
-						"kind": "call",
-						"label": "keep the better first render",
-						"emphasis": "hero",
-						"order": 11000
-					},
-					{
-						"id": "L8jPgkA5",
-						"from": "sJEdCSmX",
-						"to": "u1O704c8",
-						"kind": "call",
-						"label": "reject a reading that runs through a card",
-						"emphasis": "muted",
-						"order": 12000
+						"label": "reserve space for labels no run holds",
+						"emphasis": "normal"
 					},
 					{
 						"id": "oYEzQ4k5",
+						"order": 13000,
 						"from": "nmyK8UOO",
 						"to": "H0xU45vp",
 						"kind": "render",
@@ -599,8 +593,68 @@
 						"traffic": {
 							"speed": 40,
 							"volume": 0.5
-						},
-						"order": 13000
+						}
+					},
+					{
+						"id": "T4hTbGVM",
+						"order": 14000,
+						"from": "JwgvpLYJ",
+						"to": "QhftMIRP",
+						"kind": "call",
+						"label": "place cards and frames",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "S5js7d30",
+						"order": 15000,
+						"from": "JwgvpLYJ",
+						"to": "sJEdCSmX",
+						"kind": "call",
+						"label": "fold into the chosen columns",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Qvp9SqT5",
+						"order": 16000,
+						"from": "JwgvpLYJ",
+						"to": "afquGGyY",
+						"kind": "call",
+						"label": "route every relationship",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "Md6tqK1p",
+						"order": 17000,
+						"from": "QhftMIRP",
+						"to": "KdNM1Q56",
+						"kind": "call",
+						"label": "rank and place the clusters",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "PYJsIDYm",
+						"order": 18000,
+						"from": "afquGGyY",
+						"to": "LCcblgyC",
+						"kind": "call",
+						"label": "orthogonal routes around obstacles",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
 					}
 				],
 				"flows": [
@@ -762,7 +816,8 @@
 						"summary": "What one owner does between the measured sizes going in and the drawing coming out.",
 						"participants": [
 							"nmyK8UOO",
-							"BKjOFlgb"
+							"BKjOFlgb",
+							"JwgvpLYJ"
 						],
 						"steps": [
 							{
@@ -773,35 +828,48 @@
 								"kind": "sync"
 							},
 							{
-								"id": "xkkWK4nl",
-								"from": "BKjOFlgb",
-								"to": "BKjOFlgb",
-								"label": "Choose the reading and the flank rule",
-								"kind": "self",
-								"note": "a variant with a predecessor keeps its reading and reuses its drawing"
-							},
-							{
 								"id": "Jg0ZstWt",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "State the graph and solve it on the engine",
+								"label": "State containment, sizes, order and kinds as one graph",
 								"kind": "self"
+							},
+							{
+								"id": "9PtOgYTY",
+								"from": "BKjOFlgb",
+								"to": "JwgvpLYJ",
+								"label": "Solve it in one column, through the host",
+								"kind": "sync"
+							},
+							{
+								"id": "ha2mR0vC",
+								"from": "JwgvpLYJ",
+								"to": "JwgvpLYJ",
+								"label": "Place with Graphviz, route around cards with libavoid",
+								"kind": "self"
+							},
+							{
+								"id": "CDlrijzI",
+								"from": "JwgvpLYJ",
+								"to": "BKjOFlgb",
+								"label": "Boxes, frames and orthogonal routes",
+								"kind": "return"
 							},
 							{
 								"id": "wx3eSeIZ",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
 								"label": "Settle every label onto a run of its own route",
-								"kind": "self"
+								"kind": "self",
+								"note": "a label no run holds is given space of its own and the graph is solved again"
 							},
 							{
 								"id": "v4G3l8cW",
 								"from": "BKjOFlgb",
 								"to": "BKjOFlgb",
-								"label": "Score the candidates and keep the better",
+								"label": "Solve each column count that could fit better; keep the best",
 								"kind": "self",
-								"note": "one candidate per flank rule, each scored against the one before",
-								"repeat": 2
+								"note": "a fold is kept only when pane fit improves by WRAP_MIN_FIT_GAIN; fewer columns win a tie"
 							},
 							{
 								"id": "5rR69oPZ",
@@ -847,22 +915,23 @@
 							{
 								"id": "FWMgjXxD",
 								"heading": "One owner places and routes",
-								"body": "Cards, frames, ports, routes and labels settle together in one pass. Nothing after it may repair a coordinate, which is why there is no second geometry to keep in step.",
+								"body": "Graphviz places the cards and frames, libavoid routes every relationship around them, and the labels settle on those routes, all under one owner. Nothing after it may repair a coordinate, which is why there is no second geometry to keep in step.",
 								"subjects": [
 									"BKjOFlgb",
-									"lbUaPzWc",
 									"wCXK6KYw",
+									"T4hTbGVM",
+									"Qvp9SqT5",
 									"hJ4xGthq"
 								]
 							},
 							{
 								"id": "AOPSXwkc",
-								"heading": "The reading and the flank are derived, never authored",
-								"body": "Which way the page reads, whether it folds and which side return travel uses come from the board's own shape. A first render tries each and keeps what the scorecard prefers; a proposal keeps its predecessor's so the two read the same way.",
+								"heading": "Every board reads down; a fold must earn its place",
+								"body": "Every variant is laid out fresh and reads top to bottom. A settled drawing folds into more columns only when that fits the reference pane materially better, and fewer columns win a tie. Nobody authors the reading.",
 								"subjects": [
 									"eNHrvq6Y",
-									"tY9P0yad",
-									"kKBtoqI2"
+									"S5js7d30",
+									"sJEdCSmX"
 								]
 							},
 							{
