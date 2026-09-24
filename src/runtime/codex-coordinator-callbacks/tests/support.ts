@@ -414,6 +414,7 @@ function harness(active = true): Harness {
 				return () => listeners.delete(listener);
 			},
 		},
+		identity: ids.authorities.identity,
 		realtime,
 		coordinatorTurn,
 		threadLink: {

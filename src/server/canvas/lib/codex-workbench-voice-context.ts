@@ -41,7 +41,8 @@ function sameGeneration(
 
 /**
  * What kind of thing one delivery was, in the vocabulary the browser shows:
- * an operation's own callback, a semantic change, or the callback's own type.
+ * an operation's own callback or workhorse news, a semantic change, or the
+ * callback's own type.
  * @param delivery The recorded delivery.
  * @returns The entry kind.
  */
@@ -49,7 +50,7 @@ function entryKind(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number]["kind"] {
 	const callback = delivery.callback;
-	if (callback === null || callback.kind === "operation") {
+	if (callback === null || callback.kind === "operation" || callback.kind === "workhorse_turn") {
 		return "callback";
 	}
 	if (callback.type === "change") {

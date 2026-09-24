@@ -442,6 +442,29 @@ function operationCallbackDocument(callback: Extract<CoordinatorCallback, { kind
 }
 
 /**
+ * Encode one piece of workhorse news (TASK-321) for the delivery record.
+ * @param callback - The workhorse news.
+ * @returns The encodable document.
+ */
+function workhorseTurnDocument(callback: Extract<CoordinatorCallback, { kind: "workhorse_turn" }>) {
+	requireExactKeys(callback, ["kind", "type", "sequence", "detail", "correlation"]);
+	if (!["completed", "failed", "stopped", "waiting"].includes(callback.type)) {
+		throw new TypeError("Unknown workhorse news discriminant.");
+	}
+	if (!Number.isSafeInteger(callback.sequence) || callback.sequence < 1) {
+		throw new TypeError("Workhorse news needs a positive sequence.");
+	}
+	return {
+		schema: CALLBACK_SCHEMA,
+		kind: callback.kind,
+		type: callback.type,
+		sequence: callback.sequence,
+		correlation: correlation(callback.correlation),
+		detail: requireString(callback.detail),
+	};
+}
+
+/**
  * Encode one normalized callback as the closed document that goes on the wire, refusing anything
  * whose fields do not agree with each other.
  * @param callback - The normalized callback.
@@ -450,6 +473,9 @@ function operationCallbackDocument(callback: Extract<CoordinatorCallback, { kind
 function callbackDocument(callback: CoordinatorCallback) {
 	if (callback.kind === "operation") {
 		return operationCallbackDocument(callback);
+	}
+	if (callback.kind === "workhorse_turn") {
+		return workhorseTurnDocument(callback);
 	}
 	requireExactKeys(callback, [
 		"kind",

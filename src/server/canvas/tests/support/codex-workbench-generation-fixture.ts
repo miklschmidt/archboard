@@ -380,6 +380,7 @@ export function createCodexWorkbenchGenerationFixture(
 		inspectHistory: () => ({ deliveries: [], omittedPrefixCount: 0 }),
 		get: () => undefined,
 		pendingCount: () => 0,
+		onNotification: () => undefined,
 		dispose: () => void events.push("callbacks:dispose"),
 	} satisfies CodexWorkbenchComponents["callbacks"];
 	const gateway = {

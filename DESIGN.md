@@ -87,21 +87,25 @@ first characters: `[FINAL]` is spoken, `[COMMENTARY]` is quiet context, and a
 headerless message is held back until it is complete and then treated as final.
 So the coordinator's start instructions state the rule, and a preamble is never
 read out as if it were the answer. It is also why work that ends later cannot be
-told to the voice model directly: while voice is live, a workhorse outcome the
-user waits for (completed, failed, attention, outcome unknown) goes to the
-coordinator at once from the reviewed `workhorse_outcome_report` producer,
-because the coordinator knows whether the work came from a voice request. It is
-one `turn/start`, which Codex adds to the coordinator's running turn when there
-is one and starts a turn with otherwise, so nothing waits for the coordinator to
-be idle and nothing lands in its history without a turn that acts on it. What
-it replies under `[FINAL]` is spoken without the user asking again; a
-`[COMMENTARY]` reply stays silent. With no voice session, and while a recording
-holds the voice, the coordinator is told nothing: it is the voice model's
-subconscious and never runs without it. The other operation callbacks
-(accepted, queued, started, progress) reach nobody while voice is live: the tool
-result already told the coordinator how its delegation went in, progress is what
-`inspect_workhorse` reads, and they are recorded with the reason
-`recorded_only`. No path appends a callback envelope to the voice session.
+told to the voice model directly. Instead, while voice is live the coordinator
+is given **workhorse news**: when a turn on the linked workhorse thread ends
+(finished, failed or stopped) or starts waiting on the user, whoever started the
+turn, from the coordinator's own delegation or from the agent bar. It comes from
+the workhorse thread's own notifications, one source for every turn, and reaches
+the coordinator as one plain sentence with no identities in it, from the
+reviewed `workhorse_outcome_report` producer; the coordinator reads the rest
+through `inspect_workhorse`. It is one `turn/start`, which Codex adds to the
+coordinator's running turn when there is one and starts a turn with otherwise,
+so nothing waits for the coordinator to be idle and nothing lands in its
+history without a turn that acts on it. What it replies under `[FINAL]` is
+spoken without the user asking again; a `[COMMENTARY]` reply stays silent. With
+no voice session, and while a recording holds the voice, the coordinator is
+told nothing: it is the voice model's subconscious and never runs without it.
+Of a coordinator operation's own callbacks only an outcome nobody can vouch for
+(outcome unknown) is told the same way; the rest (accepted, queued, started,
+progress, and the completed, failed and attention that workhorse news already
+covers) are recorded with the reason `recorded_only`. No path appends a
+callback envelope to the voice session.
 
 What a pane reports reaches the voice model only as **pane news**: one sentence
 of names saying where the user's reading now stands ("The user is now looking at

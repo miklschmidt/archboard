@@ -368,6 +368,8 @@ function createCodexWorkbenchGenerationLifecycle(
 		components.operations.onNotification(event);
 		components.realtime.onNotification(event);
 		components.spokenApproval.onNotification(event);
+		// After the operations owner, which settles the coordinator's own delegations first.
+		components.callbacks.onNotification(event);
 	};
 	const activeRouter: CodexWorkbenchRequestRouter = {
 		/**

@@ -14,6 +14,8 @@ import type {
 	CoordinatorCallbackSource,
 	CoordinatorOperationCallback,
 	CoordinatorSemanticCallback,
+	CoordinatorWorkhorseTurnCallback,
+	WorkhorseTurnSource,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 /**
@@ -315,6 +317,41 @@ function normalizeSemanticCallback(
 }
 
 /**
+ * Normalize one piece of workhorse news into the callback the coordinator is given (TASK-321).
+ * @param event - The workhorse thread's own event.
+ * @param workhorseLink - The link correlation at the time of the event.
+ * @param realtimeGeneration - The voice generation in force, or null.
+ * @returns The frozen callback.
+ */
+function normalizeWorkhorseTurnCallback(
+	event: WorkhorseTurnSource,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
+): CoordinatorWorkhorseTurnCallback {
+	return freeze({
+		kind: "workhorse_turn",
+		type: event.type,
+		sequence: event.sequence,
+		detail: event.detail,
+		correlation: freeze({
+			operationId: null,
+			childId: event.childId,
+			epoch: event.epoch,
+			coordinatorThreadId: event.coordinatorThreadId,
+			coordinatorTurnId: null,
+			workhorseThreadId: event.workhorseThreadId,
+			turnId: event.turnId,
+			queuedSubmissionId: null,
+			clientUserMessageId: null,
+			realtimeSessionId: null,
+			coordinatorCall: null,
+			workhorseLink: copyLink(workhorseLink),
+			realtimeGeneration: realtimeGeneration === null ? null : freeze({ ...realtimeGeneration }),
+		}),
+	});
+}
+
+/**
  * Normalize whichever source event arrived. A fresh semantic brief is refused here on purpose: only a settled change reaches the coordinator, so an unsettled gesture can never be delivered.
  * @param event - The workhorse or semantic source event.
  * @param workhorseLink - The link correlation at the time of the event.
@@ -326,6 +363,9 @@ function normalizeCoordinatorCallback(
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorCallback {
+	if ("kind" in event && event.kind === "workhorse_turn") {
+		return normalizeWorkhorseTurnCallback(event, workhorseLink, realtimeGeneration);
+	}
 	if ("kind" in event) {
 		return normalizeSemanticCallback(event, workhorseLink, realtimeGeneration);
 	}
@@ -360,6 +400,24 @@ function semanticScope(callback: CoordinatorSemanticCallback): string {
 }
 
 /**
+ * The identity of one piece of workhorse news: its thread, turn, type and place in the observer's
+ * count. News never coalesces, since each one is a separate thing the coordinator may say.
+ * @param callback - The workhorse news.
+ * @returns The key.
+ */
+function workhorseTurnKey(callback: CoordinatorWorkhorseTurnCallback): string {
+	const { correlation } = callback;
+	return `workhorse_turn:${JSON.stringify([
+		correlation.childId,
+		correlation.epoch,
+		correlation.workhorseThreadId,
+		correlation.turnId,
+		callback.type,
+		callback.sequence,
+	])}`;
+}
+
+/**
  * The identity of one callback, which is what makes delivery exactly-once: the same event normalized twice produces the same key.
  * @param callback - The normalized callback.
  * @returns The key.
@@ -368,6 +426,18 @@ function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
 	}
+	if (callback.kind === "workhorse_turn") {
+		return workhorseTurnKey(callback);
+	}
+	return semanticKey(callback);
+}
+
+/**
+ * The identity of one semantic callback: its scope and what the pane reported.
+ * @param callback - The semantic callback.
+ * @returns The key.
+ */
+function semanticKey(callback: CoordinatorSemanticCallback): string {
 	const scope = semanticScope(callback);
 	if (callback.type === "change") {
 		return `semantic:change:${scope}:${callback.semantic.sequence ?? "null"}`;
@@ -387,6 +457,9 @@ function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
+	}
+	if (callback.kind === "workhorse_turn") {
+		return workhorseTurnKey(callback);
 	}
 	return `semantic:${callback.type}:${semanticScope(callback)}`;
 }
