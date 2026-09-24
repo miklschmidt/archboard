@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 7,
+	"version": 8,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-23T11:29:16.241Z",
+	"updatedAt": "2026-09-24T09:02:19.502Z",
 	"views": [],
 	"variants": [
 		{
@@ -18,6 +18,7 @@
 				"nodes": [
 					{
 						"id": "xJIh6Jdp",
+						"order": 1000,
 						"name": "Browser client",
 						"kind": "service",
 						"responsibility": "Mounts one viewer in each pane",
@@ -30,11 +31,11 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 1000
+						}
 					},
 					{
 						"id": "pZRxBz2h",
+						"order": 2000,
 						"name": "Semantic viewer",
 						"kind": "module",
 						"responsibility": "Explores one rendered architecture",
@@ -42,11 +43,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/index.ts"
-						},
-						"order": 2000
+						}
 					},
 					{
 						"id": "tmwUm8BL",
+						"order": 3000,
 						"name": "Fetch semantic reads",
 						"kind": "function",
 						"responsibility": "Decode list, board, and render",
@@ -55,11 +56,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts"
-						},
-						"order": 3000
+						}
 					},
 					{
 						"id": "ntOE7caV",
+						"order": 4000,
 						"name": "Resolve board meaning",
 						"kind": "function",
 						"responsibility": "Inspect subjects and variants",
@@ -68,11 +69,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/board-document.ts"
-						},
-						"order": 4000
+						}
 					},
 					{
 						"id": "3KqRuOEN",
+						"order": 5000,
 						"name": "Render stage states",
 						"kind": "function",
 						"responsibility": "Present every reachable state",
@@ -81,11 +82,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
-						},
-						"order": 5000
+						}
 					},
 					{
 						"id": "ijZRg0FU",
+						"order": 6000,
 						"name": "Control camera",
 						"kind": "function",
 						"responsibility": "Fit, pan, and zoom locally",
@@ -94,11 +95,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/camera.ts"
-						},
-						"order": 6000
+						}
 					},
 					{
 						"id": "UDkL7Tn6",
+						"order": 7000,
 						"name": "Select semantic subjects",
 						"kind": "function",
 						"responsibility": "Map gestures through the atlas",
@@ -107,11 +108,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/subjects.ts"
-						},
-						"order": 7000
+						}
 					},
 					{
 						"id": "yUjSLnkw",
+						"order": 8000,
 						"name": "Follow drill-downs",
 						"kind": "function",
 						"responsibility": "Navigate linked board levels",
@@ -120,11 +121,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/drill-target.ts"
-						},
-						"order": 8000
+						}
 					},
 					{
 						"id": "z0dvHsUt",
+						"order": 9000,
 						"name": "Drive walkthrough focus",
 						"kind": "function",
 						"responsibility": "Focus each narrative beat",
@@ -133,11 +134,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/narrative.ts"
-						},
-						"order": 9000
+						}
 					},
 					{
 						"id": "VC7yvPZB",
+						"order": 10000,
 						"name": "Refresh changed boards",
 						"kind": "function",
 						"responsibility": "Invalidate live cached drawings",
@@ -146,11 +147,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts"
-						},
-						"order": 10000
+						}
 					},
 					{
 						"id": "aYC7if1N",
+						"order": 11000,
 						"name": "Viewer entry point",
 						"kind": "function",
 						"responsibility": "Mount queries and reading state",
@@ -159,11 +160,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
-						},
-						"order": 11000
+						}
 					},
 					{
 						"id": "38hwLCO1",
+						"order": 12000,
 						"name": "Picture source",
 						"kind": "function",
 						"responsibility": "Which drawing this pane is entitled to show: the one it drew here, or the one the server sent",
@@ -171,11 +172,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/picture-source.ts"
-						},
-						"order": 12000
+						}
 					},
 					{
 						"id": "AaCxSfhT",
+						"order": 13000,
 						"name": "Picture cache",
 						"kind": "function",
 						"responsibility": "Holds a drawing only as a read-only cache, stamped with the version, policy and renderer build it was made for",
@@ -184,11 +185,11 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/lib/picture-cache.ts"
-						},
-						"order": 13000
+						}
 					},
 					{
 						"id": "F90402mH",
+						"order": 14000,
 						"name": "Draw here",
 						"kind": "module",
 						"responsibility": "Draws the board in this tab, with the tab's own canvas and worker pool",
@@ -201,184 +202,153 @@
 							"variant": {
 								"kind": "current"
 							}
-						},
-						"order": 14000
-					},
-					{
-						"id": "3eeEnf3E",
-						"name": "Fit what changed",
-						"kind": "function",
-						"responsibility": "Brings what a write changed into view without taking the camera away from the reader",
-						"parent": "pZRxBz2h",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/lib/change-focus.ts"
-						},
-						"order": 15000
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "SBeG5Ns0",
+						"order": 1000,
 						"from": "xJIh6Jdp",
 						"to": "aYC7if1N",
 						"kind": "render",
 						"label": "mount in pane",
-						"emphasis": "normal",
-						"order": 1000
+						"emphasis": "normal"
 					},
 					{
 						"id": "ACKA5I1k",
+						"order": 2000,
 						"from": "aYC7if1N",
 						"to": "tmwUm8BL",
 						"kind": "call",
 						"label": "request authoritative bytes",
-						"emphasis": "hero",
-						"order": 2000
+						"emphasis": "hero"
 					},
 					{
 						"id": "55rosWUN",
+						"order": 3000,
 						"from": "tmwUm8BL",
 						"to": "ntOE7caV",
 						"kind": "data",
 						"label": "decoded board",
-						"emphasis": "normal",
-						"order": 3000
+						"emphasis": "normal"
 					},
 					{
 						"id": "IJQe6RQy",
+						"order": 4000,
 						"from": "tmwUm8BL",
 						"to": "3KqRuOEN",
 						"kind": "data",
 						"label": "render query state",
-						"emphasis": "normal",
-						"order": 4000
+						"emphasis": "normal"
 					},
 					{
 						"id": "axWdg78p",
+						"order": 5000,
 						"from": "ntOE7caV",
 						"to": "3KqRuOEN",
 						"kind": "data",
 						"label": "inspection and standing",
-						"emphasis": "normal",
-						"order": 5000
+						"emphasis": "normal"
 					},
 					{
 						"id": "cdwXdyXo",
+						"order": 6000,
 						"from": "3KqRuOEN",
 						"to": "ijZRg0FU",
 						"kind": "call",
 						"label": "frame drawing",
-						"emphasis": "normal",
-						"order": 6000
+						"emphasis": "normal"
 					},
 					{
 						"id": "I1b9UiOY",
+						"order": 7000,
 						"from": "3KqRuOEN",
 						"to": "UDkL7Tn6",
 						"kind": "call",
 						"label": "pick attention",
-						"emphasis": "normal",
-						"order": 7000
+						"emphasis": "normal"
 					},
 					{
 						"id": "EIAfMMlW",
+						"order": 8000,
 						"from": "ntOE7caV",
 						"to": "yUjSLnkw",
 						"kind": "data",
 						"label": "exact link target",
-						"emphasis": "normal",
-						"order": 8000
+						"emphasis": "normal"
 					},
 					{
 						"id": "6pPtofwF",
+						"order": 9000,
 						"from": "yUjSLnkw",
 						"to": "tmwUm8BL",
 						"kind": "call",
 						"label": "read target board",
-						"emphasis": "normal",
-						"order": 9000
+						"emphasis": "normal"
 					},
 					{
 						"id": "8HTCy24H",
+						"order": 10000,
 						"from": "3KqRuOEN",
 						"to": "z0dvHsUt",
 						"kind": "call",
 						"label": "advance explanation",
-						"emphasis": "normal",
-						"order": 10000
+						"emphasis": "normal"
 					},
 					{
 						"id": "ttcJkRoJ",
+						"order": 11000,
 						"from": "z0dvHsUt",
 						"to": "ijZRg0FU",
 						"kind": "call",
 						"label": "fit beat subjects",
-						"emphasis": "normal",
-						"order": 11000
+						"emphasis": "normal"
 					},
 					{
 						"id": "xpOUXS7t",
+						"order": 12000,
 						"from": "VC7yvPZB",
 						"to": "tmwUm8BL",
 						"kind": "event",
 						"label": "invalidate matching queries",
-						"emphasis": "normal",
-						"order": 12000
+						"emphasis": "normal"
 					},
 					{
 						"id": "rlrH32yx",
+						"order": 13000,
 						"from": "ntOE7caV",
 						"to": "38hwLCO1",
 						"kind": "data",
 						"label": "the board a picture must match",
-						"emphasis": "normal",
-						"order": 13000
+						"emphasis": "normal"
 					},
 					{
 						"id": "R4zJCAXX",
+						"order": 14000,
 						"from": "38hwLCO1",
 						"to": "AaCxSfhT",
 						"kind": "call",
 						"label": "a drawing stamped for this version",
-						"emphasis": "normal",
-						"order": 14000
+						"emphasis": "normal"
 					},
 					{
 						"id": "9yW8SET1",
+						"order": 15000,
 						"from": "38hwLCO1",
 						"to": "F90402mH",
 						"kind": "call",
 						"label": "draw it here",
-						"emphasis": "hero",
-						"order": 15000
+						"emphasis": "hero"
 					},
 					{
 						"id": "QA6Vg8BG",
+						"order": 16000,
 						"from": "AaCxSfhT",
 						"to": "3KqRuOEN",
 						"kind": "data",
 						"label": "the picture to show",
-						"emphasis": "normal",
-						"order": 16000
-					},
-					{
-						"id": "Hk1A9VKy",
-						"from": "VC7yvPZB",
-						"to": "3eeEnf3E",
-						"kind": "event",
-						"label": "what this write changed",
-						"emphasis": "normal",
-						"order": 17000
-					},
-					{
-						"id": "XssnNMPJ",
-						"from": "3eeEnf3E",
-						"to": "ijZRg0FU",
-						"kind": "call",
-						"label": "fit the changed subjects",
-						"emphasis": "normal",
-						"order": 18000
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
