@@ -44,7 +44,9 @@ When the task closes, before you mark any acceptance criterion:
    comparison reports as added or changed: a source line for each
    relationship, and a binding to the file that owns each part. Every place
    where the build left the plan is a deviation.
-2. **Correct the proposal to what was built**, not to what was planned. Done:
+2. **Correct the proposal to what was built**, not to what was planned. In
+   the same edit, give it the `summary` the board should carry once it is
+   current: the board's scope, not the task title and not a date. Done:
    every entry that `semantic compare` reports has a source line behind it.
 3. **Adopt it:**
    `./bin/dogfood semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.

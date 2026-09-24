@@ -460,6 +460,13 @@
 					"owner": "fixtures carry --summary; variant-exists"
 				},
 				{
+					"path": "a variant's summary restated by an edit batch",
+					"expectedUse": "summary in the semantic edit batch replaces the target variant's summary in the same write",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests/branching.test.ts, an edit restates the summary"
+				},
+				{
 					"path": "lifecycle draft | current | historical",
 					"expectedUse": "adoption moves current and leaves historical",
 					"scenarios": ["S06"],
