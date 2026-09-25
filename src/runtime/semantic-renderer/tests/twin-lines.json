@@ -1,0 +1,148 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alpha bravobrav",
+			"kind": "service",
+			"order": 1000,
+			"responsibility": "carboncarb deltadelt eagl falcon gar harborh islan jungl, kettle lan meadowmea needle"
+		},
+		{
+			"id": "n1",
+			"name": "orang pepperpep",
+			"kind": "module",
+			"order": 5000,
+			"parent": "n0",
+			"responsibility": "qua riverri-summit timb alphaa br c delt eagl fal, gardengard ha isl junglej, ket lant mead need orange pe qua river summitsumm tim alp bravobrav",
+			"groups": ["child"]
+		},
+		{
+			"id": "n2",
+			"name": "carbo deltade",
+			"kind": "module",
+			"order": 6000,
+			"parent": "n0",
+			"responsibility": "eag falconfalco gardeng har isl jungleju kettlek la mead need",
+			"groups": ["child"]
+		},
+		{
+			"id": "n3",
+			"name": "orangeora peppe",
+			"kind": "module",
+			"order": 8000,
+			"parent": "n0",
+			"responsibility": "quartzq river su timberti alphaal bra car deltadelt: eagl, fal, gard, harborh, island, ju kettl lan mea",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "n4",
+			"name": "needl orangeorang",
+			"kind": "module",
+			"order": 9000,
+			"parent": "n0",
+			"responsibility": "pep quartzqu rive summit timbe alphaalp br, car delta eagleea falconfalcon, garde harbor islandisl jung ke lan meadowmea",
+			"groups": ["voice"]
+		},
+		{
+			"id": "n5",
+			"name": "needlenee orangeoran",
+			"kind": "module",
+			"order": 13000,
+			"parent": "n0",
+			"responsibility": "pep quar riverr sum timbertimbe alp bra ca d eagleeagl, fal ga h isla: jungleju, kettl, lantern, meadow nee orang",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "n6",
+			"name": "pepperpe quart",
+			"kind": "module",
+			"order": 14000,
+			"parent": "n0",
+			"responsibility": "riverr sum timberti alp br car deltadelta eaglee, falco g harborha islandisland jungl ke lan meado needl, ora pepperp qua riverriver summ",
+			"groups": ["voice"]
+		},
+		{
+			"id": "n7",
+			"name": "timbertimbe alphaalph",
+			"kind": "module",
+			"order": 17000,
+			"parent": "n0",
+			"responsibility": "bravo carbo de eagl, falconfal gard har isl junglejungl ket lant mead nee ora peppe quart, rive summ tim al bravo",
+			"groups": ["voice"]
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n2",
+			"to": "n1",
+			"kind": "rpc",
+			"order": 3000,
+			"label": "car delt-eag falconf gar harbor"
+		},
+		{
+			"id": "e1",
+			"from": "n3",
+			"to": "n2",
+			"kind": "rpc",
+			"order": 6000,
+			"label": "island/jungl/ket, lanter, meadowm, needle, orang"
+		},
+		{
+			"id": "e2",
+			"from": "n4",
+			"to": "n2",
+			"kind": "rpc",
+			"order": 7000,
+			"label": "pepper/quart riv summitsu tim alp bravobravo"
+		},
+		{
+			"id": "e3",
+			"from": "n5",
+			"to": "n3",
+			"kind": "call",
+			"order": 13000,
+			"label": "carbo d eagleeagle falcon gar harborh isla"
+		},
+		{
+			"id": "e4",
+			"from": "n4",
+			"to": "n5",
+			"kind": "call",
+			"order": 16000,
+			"label": "jungleju, kettl, lantern, meado"
+		},
+		{
+			"id": "e5",
+			"from": "n6",
+			"to": "n2",
+			"kind": "rpc",
+			"order": 17000,
+			"label": "needle/orangeor/peppe, quartz, rive"
+		},
+		{
+			"id": "e6",
+			"from": "n5",
+			"to": "n2",
+			"kind": "rpc",
+			"order": 22000,
+			"label": "summ/timbe alph brav, carb/delta"
+		},
+		{
+			"id": "e7",
+			"from": "n1",
+			"to": "n7",
+			"kind": "event",
+			"order": 23000,
+			"label": "eagleeagl falconfalcon, gard_harborharbo islan"
+		},
+		{
+			"id": "e8",
+			"from": "n7",
+			"to": "n2",
+			"kind": "rpc",
+			"order": 24000,
+			"label": "jung ke l meadowmeado need/orang; pepp quar riverriv"
+		}
+	]
+}
