@@ -136,31 +136,37 @@ test("blocks are packed the way their trunks run, not only the way the page fits
 });
 
 /**
- * Every upright run of every route that lies on one of a box's side walls,
- * within a point, for longer than a lane.
+ * Every route with a run longer than a lane that lies on one of a box's
+ * edges, within a point.
  * @param routes Every route's points.
  * @param box The box.
- * @param box.x Its left edge.
- * @param box.width Its width.
  * @returns The routes' ids.
  */
 function alongWalls(
 	routes: ReadonlyMap<string, readonly { x: number; y: number }[]>,
-	box: { x: number; width: number },
+	box: { x: number; y: number; width: number; height: number },
 ): string[] {
+	const on = (at: number, low: number, high: number): boolean =>
+		Math.abs(at - low) < 1 || Math.abs(at - high) < 1;
 	return [...routes].flatMap(([id, points]) =>
-		points
-			.slice(1)
-			.some(
-				(point, index) =>
-					point.x === points[index]!.x &&
-					Math.abs(point.y - points[index]!.y) > 16 &&
-					[box.x, box.x + box.width].some((wall) => Math.abs(point.x - wall) < 1),
-			)
+		points.slice(1).some((point, index) => {
+			const last = points[index]!;
+			if (point.x === last.x && Math.abs(point.y - last.y) > 16)
+				return on(point.x, box.x, box.x + box.width);
+			if (point.y === last.y && Math.abs(point.x - last.x) > 16)
+				return on(point.y, box.y, box.y + box.height);
+			return false;
+		})
 			? [id]
 			: [],
 	);
 }
+
+test("trunks reach a container's own ports from inside it, not along its border", async () => {
+	const content = orderedFixture(agentWorkbench);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["7TAwfrZF"]!)).toEqual([]);
+});
 
 /**
  * A drawn route as its straight runs, each upright or level with its signed

@@ -10,7 +10,12 @@
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
+import {
+	PACK_GAP,
+	PackLayout,
+	type Packing,
+} from "@/transformers/semantic-renderer/lib/blocks/pack";
+import { TRUNK_CLEARANCE } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import {
 	headerOf,
 	type Block,
@@ -134,8 +139,41 @@ class Settle {
 			insetsOf(block).side +
 			(block.ports.get(port) === "top" && header !== undefined ? header.width + LANE : 0);
 		const edge: Span = [low, Math.max(low, inner.width - insetsOf(block).side)];
-		const reach = this.reachOf(block, port);
-		return (reach === undefined ? undefined : overlap(edge, reach)) ?? edge;
+		const reach = this.reachOf(block, port) ?? this.openOf(block, port, edge);
+		return overlap(edge, reach) ?? edge;
+	}
+
+	/**
+	 * The stretch of a block of blocks' edge a trunk inside can reach a port
+	 * on straight: clear of every block standing nearer the edge than packed
+	 * blocks stand to each other, the free stretch nearest where the port
+	 * stands. A port under a block is reached only along the gap between.
+	 * @param block The block.
+	 * @param port The port, on its top or bottom.
+	 * @param edge The edge within the block's insets.
+	 * @returns The stretch, or the whole edge for a block of cards.
+	 */
+	openOf(block: Block, port: string, edge: Span): Span {
+		const { laid, packings } = this.settling;
+		if (!packings.has(block.id)) return edge;
+		const inner = laid.get(block.id)!;
+		const top = block.ports.get(port) === "top";
+		const face = top ? (inner.boxes.get(headerOf(block))?.height ?? 0) : inner.height;
+		const blocked = block.items
+			.map((item) => inner.boxes.get(item)!)
+			.filter((box) => (top ? box.y - face : face - box.y - box.height) < PACK_GAP)
+			.map((box): Span => [box.x - TRUNK_CLEARANCE, box.x + box.width + TRUNK_CLEARANCE])
+			.toSorted((one, other) => one[0] - other[0]);
+		const open: Span[] = [];
+		let from = edge[0];
+		for (const [low, high] of blocked) {
+			if (low > from) open.push([from, Math.min(low, edge[1])]);
+			from = Math.max(from, high);
+		}
+		if (from < edge[1]) open.push([from, edge[1]]);
+		const x = middle(inner.boxes.get(port)!);
+		const distance = ([low, high]: Span): number => Math.max(low - x, x - high, 0);
+		return open.toSorted((one, other) => distance(one) - distance(other))[0] ?? edge;
 	}
 
 	/**
