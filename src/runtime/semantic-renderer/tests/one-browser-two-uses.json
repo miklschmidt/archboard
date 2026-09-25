@@ -1,0 +1,156 @@
+{
+	"nodes": [
+		{
+			"id": "KyQxypRC",
+			"name": "Rasterizer",
+			"kind": "module",
+			"order": 2000,
+			"groups": ["drawing"],
+			"responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture"
+		},
+		{
+			"id": "8c0zvhQW",
+			"name": "Raster session",
+			"kind": "function",
+			"order": 4000,
+			"groups": ["drawing"],
+			"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots"
+		},
+		{
+			"id": "6uHnaygd",
+			"name": "Chromium launch",
+			"kind": "function",
+			"order": 5000,
+			"parent": "IzgAi2R1",
+			"responsibility": "Starts one Chromium, connects to it, opens pages and exact-size windows, and stops it with proof the group and root are gone"
+		},
+		{
+			"id": "AVCQVNqI",
+			"name": "DevTools connection",
+			"kind": "function",
+			"order": 6000,
+			"parent": "IzgAi2R1",
+			"responsibility": "One socket to a target: its calls and events, the page's last complaints, and a Blob streamed into a file"
+		},
+		{
+			"id": "R9St060W",
+			"name": "Chromium",
+			"kind": "external",
+			"order": 10000,
+			"responsibility": "The browser that paints the SVG, runs the recording page and answers over DevTools"
+		},
+		{
+			"id": "IzgAi2R1",
+			"name": "Headless browser",
+			"kind": "module",
+			"order": 11000,
+			"responsibility": "The one place archboard starts a browser of its own: private, reachable only over loopback DevTools, and proved gone"
+		},
+		{
+			"id": "ShT7QadJ",
+			"name": "Chromium executable",
+			"kind": "function",
+			"order": 12000,
+			"parent": "IzgAi2R1",
+			"responsibility": "Which Chromium to run, spawning it in its own group and temp root, and making that whole group go away"
+		},
+		{
+			"id": "ZAj4RMzN",
+			"name": "Walkthrough recorder",
+			"kind": "module",
+			"order": 15000,
+			"groups": ["walkthrough"],
+			"responsibility": "Starts the browser a recording needs, opens the page at 1920x1080, and moves the file into place only once that browser has stopped"
+		}
+	],
+	"edges": [
+		{
+			"id": "IiA7nIxT",
+			"from": "KyQxypRC",
+			"to": "8c0zvhQW",
+			"kind": "call",
+			"order": 3000,
+			"label": "capture, one job at a time"
+		},
+		{
+			"id": "tJ3SgMcL",
+			"from": "8c0zvhQW",
+			"to": "6uHnaygd",
+			"kind": "call",
+			"order": 4000,
+			"label": "launch, open a page, stop"
+		},
+		{
+			"id": "wI4kxS9L",
+			"from": "ShT7QadJ",
+			"to": "R9St060W",
+			"kind": "call",
+			"order": 5000,
+			"label": "spawn in its own group and temp root"
+		},
+		{
+			"id": "aYI0EhkT",
+			"from": "8c0zvhQW",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"order": 6000,
+			"label": "one socket to the page"
+		},
+		{
+			"id": "JgtXFRyO",
+			"from": "AVCQVNqI",
+			"to": "R9St060W",
+			"kind": "rpc",
+			"order": 7000,
+			"label": "CDP over a WebSocket"
+		},
+		{
+			"id": "De1J26nB",
+			"from": "6uHnaygd",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"order": 12000,
+			"label": "spawn, read the port, stop the group"
+		},
+		{
+			"id": "ZP5lfDZ6",
+			"from": "6uHnaygd",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"order": 13000,
+			"label": "connect the browser and each page"
+		},
+		{
+			"id": "FDMYhJSq",
+			"from": "KyQxypRC",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"order": 14000,
+			"label": "which Chromium"
+		},
+		{
+			"id": "a0oemoX5",
+			"from": "ZAj4RMzN",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"order": 18000,
+			"label": "which Chromium"
+		},
+		{
+			"id": "BN01aJai",
+			"from": "ZAj4RMzN",
+			"to": "6uHnaygd",
+			"kind": "call",
+			"order": 19000,
+			"label": "launch, a 1920x1080 window, stop"
+		},
+		{
+			"id": "2fcZLCiQ",
+			"from": "ZAj4RMzN",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"order": 20000,
+			"label": "evaluate in the page, stream its Blob"
+		}
+	]
+}
