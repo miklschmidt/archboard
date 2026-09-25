@@ -8,6 +8,7 @@ import type {
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { layoutCompound } from "@/transformers/semantic-renderer/lib/layout/compound";
 import { layoutTracks } from "@/transformers/semantic-renderer/lib/track/index";
+import { layoutBlocks } from "@/transformers/semantic-renderer/lib/blocks/index";
 
 /** One way of laying an architecture out. */
 type LayoutEngine = (
@@ -19,6 +20,7 @@ type LayoutEngine = (
 const ENGINES: Readonly<Record<LayoutEngineName, LayoutEngine>> = {
 	graphviz: layoutCompound,
 	track: layoutTracks,
+	blocks: layoutBlocks,
 };
 
 /**

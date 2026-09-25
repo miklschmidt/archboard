@@ -330,13 +330,12 @@ function keepingStacks(preferred: readonly Unit[]): Unit[] {
 }
 
 /**
- * Assign the tracks of one channel: the order that crosses least, each unit on
- * the highest track below every overlapping unit above it.
- * @param nets The channel's nets.
- * @returns How many tracks the channel holds.
+ * Stack a channel's units on tracks: the order that crosses least, each unit
+ * on the highest track below every overlapping unit above it.
+ * @param units The units that turn.
+ * @returns Each unit's track.
  */
-function assignTracks(nets: readonly Net[]): number {
-	const units = unitsOf(nets);
+function stackUnits(units: readonly Unit[]): Map<Unit, number> {
 	const preference = new Map(units.map((unit) => [unit, preferenceOf(unit, units)]));
 	const ordered = keepingStacks(
 		units.toSorted(
@@ -349,11 +348,48 @@ function assignTracks(nets: readonly Net[]): number {
 	const tracks = new Map<Unit, number>();
 	for (const unit of ordered) {
 		const above = [...tracks].filter(([other]) => overlap(unit, other)).map(([, track]) => track);
-		const track = above.length === 0 ? 0 : Math.max(...above) + 1;
-		tracks.set(unit, track);
-		for (const net of unit.nets) net.track = track;
+		tracks.set(unit, above.length === 0 ? 0 : Math.max(...above) + 1);
 	}
+	return tracks;
+}
+
+/**
+ * A unit that is no net: a run between pins that rise from its track and pins that drop from it.
+ * @param tops The x of the lines that leave it upward.
+ * @param bottoms The x of the lines that leave it downward.
+ * @param order Its tie-break.
+ * @returns The unit.
+ */
+function unitAcross(tops: readonly number[], bottoms: readonly number[], order: number): Unit {
+	return {
+		nets: [],
+		tops,
+		bottoms,
+		low: Math.min(...tops, ...bottoms),
+		high: Math.max(...tops, ...bottoms),
+		order,
+	};
+}
+
+/**
+ * Assign the tracks of one channel: the order that crosses least, each unit on
+ * the highest track below every overlapping unit above it.
+ * @param nets The channel's nets.
+ * @returns How many tracks the channel holds.
+ */
+function assignTracks(nets: readonly Net[]): number {
+	const tracks = stackUnits(unitsOf(nets));
+	for (const [unit, track] of tracks) for (const net of unit.nets) net.track = track;
 	return tracks.size === 0 ? 0 : Math.max(...tracks.values()) + 1;
 }
 
-export { assignPorts, assignTracks, bundleTrunks, type Net };
+export {
+	assignPorts,
+	assignTracks,
+	bundleTrunks,
+	spreadPorts,
+	stackUnits,
+	unitAcross,
+	type Net,
+	type Unit,
+};
