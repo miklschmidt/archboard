@@ -18,28 +18,18 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
+import { TrunkRouter, packedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 
 /** Room between two packed blocks, for the trunks that pass between them. */
 const PACK_GAP = 72;
 /** Room between a block's header or top ports and the blocks under it. */
 const HEAD_GAP = 48;
-/** How far a trunk keeps from a block it passes. */
-const TRUNK_CLEARANCE = 16;
-/** How much a trunk pays for each turn, in diagram points. */
-const TRUNK_TURN = 60;
-/** How much a trunk pays for crossing another, in diagram points. */
-const TRUNK_CROSSING = 300;
 /** The side of a port's square. */
 const PORT = 1;
 /** The most blocks whose every packing is tried. */
 const EVERY_PACKING = 9;
-/** libavoid's pin directions: a port is left the way its edge faces. */
-const DIRECTION: Readonly<Record<Side, number>> = { top: 1, bottom: 2, left: 4, right: 8 };
-
-/** A router, its ends and its connectors, as the module makes them. */
-type Router = InstanceType<AvoidEngine["Router"]>;
-type End = InstanceType<AvoidEngine["ConnEnd"]>;
-
+/** How nearly a packing's estimated fit must reach the best one's to be laid out and weighed. */
+const WORTH_LAYING = 0.8;
 /** How a block's items are packed: in rows read left to right, or in columns read down. */
 interface Packing {
 	readonly across: boolean;
@@ -89,44 +79,6 @@ function extentOf(sizes: readonly Size[], across: boolean): { long: number; thic
 		long: along.reduce((sum, value) => sum + value, 0) + (sizes.length - 1) * PACK_GAP,
 		thick: Math.max(...breadth),
 	};
-}
-
-/**
- * Whether a route runs only across and down, never on a slant.
- * @param points The route.
- * @returns True when every run is horizontal or vertical.
- */
-function orthogonal(points: readonly Point[]): boolean {
-	return (
-		points.length >= 2 &&
-		points
-			.slice(1)
-			.every(
-				(point, index) =>
-					Math.abs(point.x - points[index]!.x) < 0.5 || Math.abs(point.y - points[index]!.y) < 0.5,
-			)
-	);
-}
-
-/**
- * A plain dogleg between two ends: across then down for ends that face
- * sideways, down then across for ends that face up or down.
- * @param from The first end and the edge it faces.
- * @param from.point Where it stands.
- * @param from.side The edge it faces.
- * @param to The second end.
- * @param to.point Where it stands.
- * @returns The route.
- */
-function dogleg(from: { point: Point; side: Side }, to: { point: Point }): Point[] {
-	const a = from.point;
-	const b = to.point;
-	if (from.side === "left" || from.side === "right") {
-		const middle = (a.x + b.x) / 2;
-		return [a, { x: middle, y: a.y }, { x: middle, y: b.y }, b];
-	}
-	const middle = (a.y + b.y) / 2;
-	return [a, { x: a.x, y: middle }, { x: b.x, y: middle }, b];
 }
 
 /** A block of blocks laid out: packed, and its trunks routed. */
@@ -200,10 +152,11 @@ class PackLayout {
 	}
 
 	/**
-	 * The packing that fits the reference pane best.
-	 * @returns The packing.
+	 * The packings worth laying out: every one whose estimated size fits the
+	 * reference pane nearly as well as the best.
+	 * @returns The packings.
 	 */
-	packing(): Packing {
+	packings(): Packing[] {
 		const order = this.sequence();
 		const candidates = [true, false].flatMap((across) =>
 			cutsOf(order.length).map((sizes) => ({
@@ -219,7 +172,8 @@ class PackLayout {
 			const around = this.headRoom() + this.insets.top + this.insets.bottom;
 			return fitIn({ width: width + 2 * this.insets.side, height: height + around });
 		});
-		return candidates[fits.indexOf(Math.max(...fits))]!;
+		const best = Math.max(...fits);
+		return candidates.filter((_, index) => fits[index]! >= best * WORTH_LAYING);
 	}
 
 	/**
@@ -334,162 +288,39 @@ class PackLayout {
 	}
 
 	/**
-	 * Add one obstacle.
-	 * @param avoid The initialized libavoid module.
-	 * @param router The router.
-	 * @param box Its box.
-	 * @returns The router's shape.
-	 */
-	shape(avoid: AvoidEngine, router: Router, box: Box): object {
-		const from = new avoid.Point(box.x, box.y);
-		const to = new avoid.Point(box.x + box.width, box.y + box.height);
-		const rectangle = new avoid.Rectangle(from, to);
-		try {
-			return new avoid.ShapeRef(router, rectangle);
-		} finally {
-			rectangle.delete();
-			from.delete();
-			to.delete();
-		}
-	}
-
-	/**
-	 * A free end: the middle of one of the block's own ports.
-	 * @param avoid The initialized libavoid module.
-	 * @param at The port.
-	 * @returns The router's end.
-	 */
-	point(avoid: AvoidEngine, at: string): End {
-		const box = this.boxes.get(at)!;
-		const point = new avoid.Point(box.x + box.width / 2, box.y + box.height / 2);
-		try {
-			return new avoid.ConnEnd(point);
-		} finally {
-			point.delete();
-		}
-	}
-
-	/**
-	 * Where on its obstacle a pinned end stands, and which way it leaves.
-	 * @param at The pin or the header.
-	 * @returns The obstacle, the proportional x, and the edge it leaves by.
-	 */
-	pinOn(at: string): { owner: string; x: number; y: number; side: Side } {
-		const pin = this.tree.pins.get(at);
-		if (pin === undefined) return { owner: at, x: 0.5, y: 1, side: "bottom" };
-		const inner = this.laid.get(pin.block.id)!;
-		const port = inner.boxes.get(pin.port)!;
-		const side = pin.block.ports.get(pin.port)!;
-		const x = (port.x + port.width / 2) / inner.width;
-		const y = (port.y + port.height / 2) / inner.height;
-		const onWall = { top: [x, 0], bottom: [x, 1], left: [0, y], right: [1, y] }[side];
-		return { owner: pin.block.id, x: onWall[0]!, y: onWall[1]!, side };
-	}
-
-	/**
-	 * Where a trunk's end stands and which way it leaves: a pin on its block's
-	 * edge, or the middle of the block's own port or header.
-	 * @param at The line end.
-	 * @returns The point and the edge it faces.
-	 */
-	pinPoint(at: string): { point: Point; side: Side } {
-		if (!this.tree.pins.has(at) && at !== headerOf(this.block)) {
-			const box = this.boxes.get(at)!;
-			const side = this.block.ports.get(at) ?? "bottom";
-			return { point: { x: box.x + box.width / 2, y: box.y + box.height / 2 }, side };
-		}
-		const { owner, x, y, side } = this.pinOn(at);
-		const box = this.boxes.get(owner)!;
-		return { point: { x: box.x + x * box.width, y: box.y + y * box.height }, side };
-	}
-
-	/**
-	 * One end of a trunk: a pin on a packed block's port, a point on the
-	 * block's own port, or the bottom of its header.
-	 * @param avoid The initialized libavoid module.
-	 * @param at The line end.
-	 * @param shapes Every obstacle's shape.
-	 * @param classes The pin class each end was given.
-	 * @returns The router's end.
-	 */
-	end(
-		avoid: AvoidEngine,
-		at: string,
-		shapes: ReadonlyMap<string, object>,
-		classes: Map<string, number>,
-	): End {
-		if (!this.tree.pins.has(at) && at !== headerOf(this.block)) return this.point(avoid, at);
-		const { owner, x, y, side } = this.pinOn(at);
-		const shape = shapes.get(owner)!;
-		const known = classes.get(at);
-		const pinClass = known ?? classes.size + 1;
-		if (known === undefined) {
-			classes.set(at, pinClass);
-			const made = new avoid.ShapeConnectionPin(shape, pinClass, x, y, true, 0, DIRECTION[side]);
-			made.setExclusive(false);
-		}
-		return new avoid.ConnEnd(shape, pinClass);
-	}
-
-	/**
 	 * Route every trunk around the packed blocks.
 	 * @param avoid The initialized libavoid module.
 	 */
 	route(avoid: AvoidEngine): void {
-		const router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
-		try {
-			router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
-			router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
-			router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
-			router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
-			const header = this.block.header === undefined ? [] : [headerOf(this.block)];
-			const shapes = new Map(
-				[...this.block.items, ...header].map((id) => [
-					id,
-					this.shape(avoid, router, this.boxes.get(id)!),
-				]),
-			);
-			const classes = new Map<string, number>();
-			const connections = [...this.block.lines.values()].map((line) => {
-				const from = this.end(avoid, line.tail, shapes, classes);
-				const to = this.end(avoid, line.head, shapes, classes);
-				try {
-					const connection = new avoid.ConnRef(router, from, to);
-					connection.setRoutingType(avoid.ConnType.ConnType_Orthogonal);
-					return { line, connection };
-				} finally {
-					from.delete();
-					to.delete();
-				}
-			});
-			router.processTransaction();
-			for (const { line, connection } of connections) {
-				const route = connection.displayRoute();
-				const routed = Array.from({ length: route.size() }, (_, index) => {
-					const { x, y } = route.at(index);
-					return { x, y };
-				});
-				// libavoid answers a straight line between the blocks' middles when it finds
-				// no route; the trunk then takes a plain dogleg between its pins.
-				const points =
-					connection.hasValidRoute() && orthogonal(routed)
-						? routed
-						: dogleg(this.pinPoint(line.tail), this.pinPoint(line.head));
-				this.lines.set(line.key, line.from === line.tail ? points : points.toReversed());
-			}
-		} finally {
-			router.delete();
-		}
+		const trunks = new TrunkRouter(this.block, this.laid, this.tree, this.boxes).route(avoid);
+		for (const [key, points] of trunks) this.lines.set(key, points);
 	}
 
 	/**
-	 * Lay the block of blocks out.
+	 * Lay the block of blocks out: packed the way an earlier layout chose, or
+	 * each promising way, keeping the one that reads best once its trunks
+	 * are routed. An estimate of the packed size cannot tell a compact packing
+	 * from one whose trunks run round the page.
 	 * @param avoid The initialized libavoid module.
 	 * @param kept The packing an earlier layout chose, to keep.
 	 * @returns The laid-out block, and the packing it used.
 	 */
 	lay(avoid: AvoidEngine, kept?: Packing): Laid & { packing: Packing } {
-		const packing = kept ?? this.packing();
+		if (kept !== undefined) return this.layOut(avoid, kept);
+		const laid = this.packings().map((packing) =>
+			new PackLayout(this.block, this.laid, this.tree, this.insets).layOut(avoid, packing),
+		);
+		const scores = laid.map((one) => packedScore(one));
+		return laid[scores.indexOf(Math.max(...scores))]!;
+	}
+
+	/**
+	 * Lay the block of blocks out packed one way.
+	 * @param avoid The initialized libavoid module.
+	 * @param packing The packing.
+	 * @returns The laid-out block, and the packing it used.
+	 */
+	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
 		this.place(packing);
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
