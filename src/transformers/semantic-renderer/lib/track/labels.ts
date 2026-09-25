@@ -4,7 +4,8 @@
 // that stands to one side of both its ends has to jog on the way in and on the
 // way out. Here each box slides sideways, within its band, to where both ends
 // could reach it straight: a point both cards' faces cover, or as near as the
-// band allows. Cards, title rows, lanes and frame walls stay where they are;
+// band allows. An end that shares a trunk's port is not aimed at: the trunk
+// turns on its track wherever the box stands. Cards, title rows, lanes and frame walls stay where they are;
 // boxes between them keep their order and spacing, placed as close to where
 // they want to be as the gap allows.
 import {
@@ -13,7 +14,7 @@ import {
 	LABEL_LABEL_CLEARANCE,
 } from "@/transformers/semantic-renderer/config";
 import { LANE, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
-import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
+import { sharedAt, type Net } from "@/transformers/semantic-renderer/lib/track/channels";
 import { Scene, centreX, type Item } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Room kept between a sliding box and a card or lane beside it. */
@@ -47,21 +48,36 @@ function reach(station: Station): [number, number] {
 }
 
 /**
+ * The x a label's line reaches it at straight from one of its far ends:
+ * anywhere when that end shares a trunk's port, since the trunk turns on its
+ * track to reach the box wherever it stands.
+ * @param net The net between the label and that end.
+ * @param end Which of the net's ends is the far one.
+ * @returns The lowest and highest x.
+ */
+function reachFrom(net: Net, end: "top" | "bottom"): [number, number] {
+	return sharedAt(net, end) === undefined ? reach(net[end]) : [-OPEN_REACH, OPEN_REACH];
+}
+
+/**
  * Where a label box wants its centre: a point both its ends can reach
- * straight, nearest where it stands; else the edge of its upper end's reach
- * nearest the lower one, since its line jogs wherever the box stands.
+ * straight, nearest the trunk port one of them shares, or else nearest where
+ * it stands; failing that, the edge of its upper end's reach nearest the
+ * lower one, since its line jogs wherever the box stands.
  * @param item The label box.
- * @param above The station its line comes from.
- * @param below The station its line goes on to.
+ * @param above The net its line comes from.
+ * @param below The net its line goes on to.
  * @returns The wanted centre x.
  */
-function wantedCentre(item: Item, above: Station, below: Station): number {
-	const [a, b] = reach(above);
-	const [c, d] = reach(below);
+function wantedCentre(item: Item, above: Net, below: Net): number {
+	const [a, b] = reachFrom(above, "top");
+	const [c, d] = reachFrom(below, "bottom");
 	const low = Math.max(a, c);
 	const high = Math.min(b, d);
-	if (low <= high) return Math.min(high, Math.max(low, centreX(item)));
-	return c > b ? b : a;
+	if (low > high) return c > b ? b : a;
+	const port = sharedAt(above, "top") === undefined ? below.bottomX : above.topX;
+	const shared = sharedAt(above, "top") !== undefined || sharedAt(below, "bottom") !== undefined;
+	return Math.min(high, Math.max(low, shared ? port : centreX(item)));
 }
 
 /**
@@ -83,8 +99,8 @@ function slidersOf(nets: readonly Net[]): Slider[] {
 			: [
 					{
 						item,
-						wanted: wantedCentre(item, above.top, below.bottom),
-						reaches: [reach(above.top), reach(below.bottom)],
+						wanted: wantedCentre(item, above, below),
+						reaches: [reachFrom(above, "top"), reachFrom(below, "bottom")],
 					},
 				];
 	});
