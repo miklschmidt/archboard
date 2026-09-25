@@ -357,6 +357,17 @@ class CardLayout {
 			width: Math.abs(right! - left!),
 		});
 		const placed = this.placed(centres, polylines, clusters);
+		const laid = this.routed(placed, 0);
+		return { ...laid, reroute: (ports) => this.rerouted(placed, ports, laid.width) };
+	}
+
+	/**
+	 * Route the placed block's lines on tracks and read it back.
+	 * @param placed The placed block.
+	 * @param held The width the block keeps at least.
+	 * @returns The laid-out block.
+	 */
+	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
 		const scene = new Scene(placed);
 		const lines = routeScene(
 			scene,
@@ -376,7 +387,28 @@ class CardLayout {
 			this.insets.side,
 			this.insets.top,
 		);
-		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])));
+		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])), held);
+	}
+
+	/**
+	 * The block routed again with some of its ports moved along their edges,
+	 * where its parent settled them; Graphviz does not rank it again, and it
+	 * keeps its width.
+	 * @param placed The placed block; its ports' leaves move in place.
+	 * @param ports Each moved port's x, in the block's own coordinates.
+	 * @param held The block's width.
+	 * @returns The laid-out block.
+	 */
+	rerouted(
+		placed: ElkNode & { edges: ElkExtendedEdge[] },
+		ports: ReadonlyMap<string, number>,
+		held: number,
+	): Laid {
+		for (const leaf of placed.children ?? []) {
+			const x = ports.get(leaf.id);
+			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
+		}
+		return this.routed(placed, held);
 	}
 
 	/**
@@ -384,12 +416,14 @@ class CardLayout {
 	 * @param scene The routed scene.
 	 * @param lines Every line's points.
 	 * @param edges Every placed line, by key.
+	 * @param held The width the block keeps at least.
 	 * @returns The laid-out block.
 	 */
 	read(
 		scene: Scene,
 		lines: ReadonlyMap<string, Point[]>,
 		edges: ReadonlyMap<string, ElkExtendedEdge>,
+		held: number,
 	): Laid {
 		const { side, bottom } = this.insets;
 		const boxes = new Map<string, Box>();
@@ -410,6 +444,7 @@ class CardLayout {
 			...this.innerPoints(walled).map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
 		];
 		const width = Math.max(
+			held,
 			this.block.header?.width ?? 0,
 			...reach.map((one) => one.x + one.width + side),
 		);

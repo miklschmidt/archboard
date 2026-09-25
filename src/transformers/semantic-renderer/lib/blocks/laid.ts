@@ -27,6 +27,11 @@ interface Laid {
 	readonly frames?: readonly FrameShape[];
 	/** The group regions it draws inline, in its own coordinates. */
 	readonly regions?: readonly RegionShape[];
+	/**
+	 * The block routed again with some of its ports moved along their edges,
+	 * keeping its width, when it can be.
+	 */
+	readonly reroute?: (ports: ReadonlyMap<string, number>) => Laid;
 }
 
 /** The room a block keeps around what it holds. */

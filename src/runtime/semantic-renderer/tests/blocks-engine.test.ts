@@ -7,10 +7,15 @@ import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	bodyShift,
+	corridorPoints,
+	routePoints,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
 import oneBrowserTwoUses from "./one-browser-two-uses.json";
+import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
@@ -156,6 +161,56 @@ function alongWalls(
 			: [],
 	);
 }
+
+/**
+ * A drawn route as its straight runs, each upright or level with its signed
+ * length; the short slants of rounded corners are left out.
+ * @param points The route's points, control points included.
+ * @returns The runs, a run continuing the one before it merged into it.
+ */
+function runsOf(
+	points: readonly { x: number; y: number }[],
+): { upright: boolean; length: number }[] {
+	const runs: { upright: boolean; length: number }[] = [];
+	for (const [index, point] of points.slice(1).entries()) {
+		const [dx, dy] = [point.x - points[index]!.x, point.y - points[index]!.y];
+		if (Math.abs(dx) > 0.5 && Math.abs(dy) > 0.5) continue;
+		const run = { upright: Math.abs(dx) <= 0.5, length: Math.abs(dx) <= 0.5 ? dy : dx };
+		const last = runs.at(-1);
+		if (last?.upright === run.upright && Math.sign(last.length) === Math.sign(run.length))
+			last.length += run.length;
+		else runs.push(run);
+	}
+	return runs;
+}
+
+/**
+ * Whether a route runs one way, steps across, and runs back the other way
+ * beside itself: two opposite runs of at least 30 points joined by a step of
+ * at most 100.
+ * @param points The route's points, control points included.
+ * @returns True when it turns back.
+ */
+function turnsBack(points: readonly { x: number; y: number }[]): boolean {
+	const runs = runsOf(points);
+	return runs.slice(2).some((last, index) => {
+		const [first, step] = [runs[index]!, runs[index + 1]!];
+		return (
+			first.upright === last.upright &&
+			step.upright !== first.upright &&
+			Math.sign(first.length) === -Math.sign(last.length) &&
+			Math.min(Math.abs(first.length), Math.abs(last.length)) >= 30 &&
+			Math.abs(step.length) <= 100
+		);
+	});
+}
+
+test("a trunk between blocks meets ports placed where both its ends are known", async () => {
+	const content = orderedFixture(durableWriteBoundary);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const turning = [...corridorPoints(drawn.svg)].filter(([, points]) => turnsBack(points));
+	expect(turning.map(([id]) => id)).toEqual([]);
+});
 
 test("lines from different cards leave a region by their own ports, not along its wall", async () => {
 	const content = orderedFixture(oneBrowserTwoUses);
