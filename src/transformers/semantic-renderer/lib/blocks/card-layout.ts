@@ -259,9 +259,34 @@ class CardLayout {
 		const entering = [...block.lines.values()].filter((line) => this.entersBy(line) !== undefined);
 		const stubs = new Set(entering.map(({ from }) => this.vendorOf(from)));
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
-		for (const line of block.lines.values())
-			if (this.wallOf(line) === undefined) this.connect(line);
+		for (const line of this.boardOrder()) this.connect(line);
 		this.arrange();
+	}
+
+	/**
+	 * Every line Graphviz ranks, by where its ends stand in the board's order,
+	 * a container at its first member. Graphviz meets cards in the order it
+	 * meets their lines, and keeps that order where no other reads better:
+	 * interchangeable cards then stand as the board lists them.
+	 * @returns The lines.
+	 */
+	boardOrder(): Line[] {
+		const place = new Map(this.block.items.map((item, index) => [item, index]));
+		for (const [index, item] of this.block.items.entries())
+			for (let around = this.block.clusterOf.get(item); around !== undefined;) {
+				const title = titleOf(around);
+				place.set(title, Math.min(place.get(title) ?? index, index));
+				around = this.block.clusterOf.get(around);
+			}
+		return [...this.block.lines.values()]
+			.filter((line) => this.wallOf(line) === undefined)
+			.map((line) => ({
+				line,
+				tail: place.get(this.vendorOf(line.tail)) ?? -1,
+				head: place.get(this.vendorOf(line.head)) ?? -1,
+			}))
+			.toSorted((one, other) => one.tail - other.tail || one.head - other.head)
+			.map(({ line }) => line);
 	}
 
 	/**

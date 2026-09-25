@@ -164,7 +164,7 @@ function bestWrap(
 		: [];
 	const best = [
 		...gridded,
-		...wrapsOf(laying.whole).map((lowered) =>
+		...wrapsOf(laying.whole, block, tree).map((lowered) =>
 			new CardLayout(block, laid, tree, insets, { lowered, stacked }).lay(viz),
 		),
 	].reduce<Laid | undefined>(
@@ -176,11 +176,16 @@ function bestWrap(
 
 /**
  * The ways to wrap a block's widest rank of items into rows, when the block
- * is wider than the page's shape.
+ * is wider than the page's shape. Interchangeable cards standing together,
+ * of one kind and responsibility in one container, stay in one row: a pool
+ * of equals reads as one, and a wrap that deals them apart scrambles cards a
+ * reader expects in the board's order.
  * @param whole The block laid out whole.
+ * @param block The block.
+ * @param tree The blocks, for each card's peers.
  * @returns Each wrap, as how far each wrapped item is lowered.
  */
-function wrapsOf(whole: Laid): Map<string, number>[] {
+function wrapsOf(whole: Laid, block: Block, tree: BlockTree): Map<string, number>[] {
 	const pane = REFERENCE_PANE.width / REFERENCE_PANE.height;
 	const bands = whole.bands.filter(({ items }) => items.length >= MIN_WRAPPED);
 	if (bands.length === 0 || whole.width / whole.height <= pane) return [];
@@ -190,7 +195,39 @@ function wrapsOf(whole: Laid): Map<string, number>[] {
 	const across = widest.items.toSorted(
 		(one, other) => whole.boxes.get(one)!.x - whole.boxes.get(other)!.x,
 	);
-	return wrapPlans(across.map((id) => ({ ids: [id], width: whole.boxes.get(id)!.width })));
+	const runs = peerRuns(across, whole.boxes, (id) => {
+		const peers = tree.cards.get(id)?.peers;
+		return peers === undefined ? undefined : `${block.clusterOf.get(id) ?? ""}|${peers}`;
+	});
+	return wrapPlans(runs).filter((plan) =>
+		runs.every(({ ids }) => ids.every((id) => plan.get(id) === plan.get(ids[0]!))),
+	);
+}
+
+/**
+ * A rank's items, left to right, in runs that stand together: neighbouring
+ * peers make one run, every other item a run of its own, each with its width.
+ * @param across The items, left to right.
+ * @param boxes Where each stands.
+ * @param peersOf What an item is interchangeable with, if anything.
+ * @returns The runs.
+ */
+function peerRuns(
+	across: readonly string[],
+	boxes: ReadonlyMap<string, Box>,
+	peersOf: (id: string) => string | undefined,
+): { ids: string[]; width: number }[] {
+	const runs: { peers: string | undefined; ids: string[]; width: number }[] = [];
+	for (const id of across) {
+		const peers = peersOf(id);
+		const last = runs.at(-1);
+		const box = boxes.get(id)!;
+		if (peers !== undefined && last?.peers === peers) {
+			last.ids.push(id);
+			last.width = box.x + box.width - boxes.get(last.ids[0]!)!.x;
+		} else runs.push({ peers, ids: [id], width: box.width });
+	}
+	return runs;
 }
 
 /**
