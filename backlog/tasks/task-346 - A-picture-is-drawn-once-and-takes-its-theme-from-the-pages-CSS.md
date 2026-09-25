@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-24 23:08'
-updated_date: '2026-09-25 00:41'
+updated_date: '2026-09-25 00:52'
 labels:
   - renderer
   - frontend
@@ -51,4 +51,6 @@ Decisions:
 - Marker and comet-gradient ids are derived from the colour expression through an injective escape (colourId), since expressions are not hex.
 - Browser host carries no theme colours; the vite virtual module drops themeColors and theme.css from the renderer build digest; scripts/print-theme-colors.ts deleted.
 Pixel comparison (98 PNGs: 15 boards whole + views, both themes, main 7b0b2af6 vs branch): 45 identical; 53 differ by at most 2/255 in one channel, 51 to 1824 pixels. With the traffic layer hidden, all 10 compared rasters (5 worst boards x 2 themes) are identical: every difference is in comet layers, from CSS resolving nested color-mix() without the old per-step 8-bit rounding (tails) and glow alpha now carried as colour alpha rather than stroke-opacity.
+
+Gate on 5ec01274 (branch based on 7b0b2af6): type-check 0, lint 0, fmt:check 0, test:modules 3402 pass / 1 fail (known wide-boards Archboard server 20 s budget), test:system 181/0, test:repository 8/0, test:serial-browser 18 owners pass. Rebase onto main (153208e2) was refused by the session's permission classifier; git merge-tree shows a clean merge. The merged tree rasterizes identically to the branch (98/98), and current main rasterizes identically to 7b0b2af6 (98/98).
 <!-- SECTION:NOTES:END -->
