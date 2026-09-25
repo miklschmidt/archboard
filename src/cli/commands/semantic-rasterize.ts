@@ -5,7 +5,7 @@
 
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { DiagramThemeSchema } from "@/shared/semantic-board/index";
+import { DiagramThemeSchema, LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import {
 	RASTER_MAX_SCALE,
@@ -30,6 +30,7 @@ const RasterizeInputSchema = z.object({
 	variant: SelectorSchema.optional(),
 	view: SelectorSchema.optional(),
 	theme: DiagramThemeSchema.default("light"),
+	layout: LayoutEngineSchema.optional(),
 	scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
 	region: z
 		.string()
@@ -84,6 +85,25 @@ function regionWithin(
 		);
 	}
 	return region;
+}
+
+/**
+ * What the Archboard server is asked to draw for a raster: the selected
+ * variant, view, ground and engine, with the faces embedded, since the page
+ * loads nothing but the document.
+ * @param input What the command was given.
+ * @returns The render request.
+ */
+function drawRequest(
+	input: z.infer<typeof RasterizeInputSchema>,
+): Parameters<typeof renderSemanticBoardOnServer>[1] {
+	return {
+		...(input.variant === undefined ? {} : { variant: input.variant }),
+		...(input.view === undefined ? {} : { view: input.view }),
+		theme: input.theme,
+		...(input.layout === undefined ? {} : { layout: input.layout }),
+		fonts: "embedded",
+	};
 }
 
 const semanticRasterizeContract = defineCommand({
@@ -145,6 +165,15 @@ const semanticRasterizeContract = defineCommand({
 		},
 		{
 			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: LayoutEngineSchema.options,
+			description: "Which layout engine lays the architecture out; the default one when absent",
+		},
+		{
+			kind: "option",
 			key: "scale",
 			spellings: ["--scale"],
 			value: "required",
@@ -201,13 +230,7 @@ const semanticRasterizeContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic rasterize");
-		const drawn = await renderSemanticBoardOnServer(input.name, {
-			...(input.variant === undefined ? {} : { variant: input.variant }),
-			...(input.view === undefined ? {} : { view: input.view }),
-			theme: input.theme,
-			// The page loads nothing but the document, so the faces travel in it.
-			fonts: "embedded",
-		});
+		const drawn = await renderSemanticBoardOnServer(input.name, drawRequest(input));
 		if ("empty" in drawn) {
 			throw new CliUsageError(
 				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
