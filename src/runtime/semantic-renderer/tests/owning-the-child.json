@@ -1,0 +1,72 @@
+{
+	"nodes": [
+		{
+			"id": "7TAwfrZF",
+			"name": "Agent workbench",
+			"kind": "service",
+			"order": 1000,
+			"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server"
+		},
+		{
+			"id": "skyIeErO",
+			"name": "Generation composition",
+			"kind": "module",
+			"order": 2000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it"
+		},
+		{
+			"id": "9diqPrFw",
+			"name": "Codex process",
+			"kind": "module",
+			"order": 4000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "Owns the child: proves the executable, prepares the Codex home every Archboard server on the machine shares, spawns the child and reaps its group"
+		},
+		{
+			"id": "byMaoUe0",
+			"name": "Thread link",
+			"kind": "module",
+			"order": 7000,
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"responsibility": "Which thread the Archboard server is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree"
+		},
+		{
+			"id": "giL6EI28",
+			"name": "Codex app-server",
+			"kind": "external",
+			"order": 10000,
+			"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home"
+		},
+		{
+			"id": "Uz2qReYK",
+			"name": "Epoch ledger",
+			"kind": "module",
+			"order": 12000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back"
+		}
+	],
+	"edges": [
+		{
+			"id": "hwJPR59O",
+			"from": "skyIeErO",
+			"to": "9diqPrFw",
+			"kind": "call",
+			"order": 1000,
+			"label": "start a generation"
+		},
+		{
+			"id": "9GaG5ItC",
+			"from": "9diqPrFw",
+			"to": "giL6EI28",
+			"kind": "call",
+			"order": 2000,
+			"label": "spawn the child"
+		}
+	]
+}

@@ -1,0 +1,178 @@
+{
+	"nodes": [
+		{
+			"id": "yAFyqal3",
+			"name": "Browser client",
+			"kind": "system",
+			"order": 1000,
+			"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing"
+		},
+		{
+			"id": "HggZR41l",
+			"name": "Application composition",
+			"kind": "module",
+			"order": 2000,
+			"parent": "yAFyqal3",
+			"responsibility": "Connects pane and feature owners"
+		},
+		{
+			"id": "xsn0RvSi",
+			"name": "Pane session",
+			"kind": "module",
+			"order": 4000,
+			"parent": "yAFyqal3",
+			"groups": ["panes"],
+			"responsibility": "Keeps each pane in server contact"
+		},
+		{
+			"id": "0x47EMoO",
+			"name": "Workbench client",
+			"kind": "service",
+			"order": 7000,
+			"parent": "yAFyqal3",
+			"groups": ["agent"],
+			"responsibility": "The agent bar under the panes and the conversation beside them: the agent's state and its one action, Talk, the composer, and the conversation with its work, plans and approvals"
+		},
+		{
+			"id": "0SRnYXnC",
+			"name": "Voice session",
+			"kind": "module",
+			"order": 8000,
+			"parent": "yAFyqal3",
+			"groups": ["voice"],
+			"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery"
+		},
+		{
+			"id": "G4NHQC25",
+			"name": "Archboard server",
+			"kind": "service",
+			"order": 10000,
+			"responsibility": "Owns every board and answers every read"
+		},
+		{
+			"id": "zs2QxCu7",
+			"name": "Agent setup",
+			"kind": "module",
+			"order": 14000,
+			"parent": "yAFyqal3",
+			"groups": ["agent"],
+			"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation"
+		},
+		{
+			"id": "941UBxya",
+			"name": "Workbench transport",
+			"kind": "module",
+			"order": 15000,
+			"parent": "yAFyqal3",
+			"groups": ["agent"],
+			"responsibility": "The agent's channel on one pane socket: the server's agent state in, the controllers' commands out"
+		},
+		{
+			"id": "0yb2VbKc",
+			"name": "Voice subtitles",
+			"kind": "ui",
+			"order": 16000,
+			"parent": "yAFyqal3",
+			"groups": ["voice"],
+			"responsibility": "The voice's words over the pane it runs for, measured into two lines"
+		}
+	],
+	"edges": [
+		{
+			"id": "x9gy2EYu",
+			"from": "HggZR41l",
+			"to": "xsn0RvSi",
+			"kind": "call",
+			"order": 2000,
+			"label": "a session per pane; open a board in one"
+		},
+		{
+			"id": "PuILGsjg",
+			"from": "xsn0RvSi",
+			"to": "G4NHQC25",
+			"kind": "event",
+			"order": 6000,
+			"label": "the pane socket: registration and news"
+		},
+		{
+			"id": "WchncnH1",
+			"from": "HggZR41l",
+			"to": "0x47EMoO",
+			"kind": "render",
+			"order": 13000,
+			"label": "agent bar, conversation, Talk"
+		},
+		{
+			"id": "rcSUaP1b",
+			"from": "xsn0RvSi",
+			"to": "941UBxya",
+			"kind": "call",
+			"order": 21000,
+			"label": "one per socket generation"
+		},
+		{
+			"id": "EAT8ges2",
+			"from": "941UBxya",
+			"to": "G4NHQC25",
+			"kind": "event",
+			"order": 22000,
+			"label": "agent commands and snapshots"
+		},
+		{
+			"id": "kZtsu0nq",
+			"from": "HggZR41l",
+			"to": "941UBxya",
+			"kind": "call",
+			"order": 23000,
+			"label": "controllers over the focused pane's"
+		},
+		{
+			"id": "md5cpNZV",
+			"from": "HggZR41l",
+			"to": "zs2QxCu7",
+			"kind": "call",
+			"order": 24000,
+			"label": "send, Talk, narrate"
+		},
+		{
+			"id": "FWzvKaC4",
+			"from": "zs2QxCu7",
+			"to": "941UBxya",
+			"kind": "call",
+			"order": 25000,
+			"label": "sign in, create the conversation, deliver"
+		},
+		{
+			"id": "UBmrpsBg",
+			"from": "zs2QxCu7",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"order": 26000,
+			"label": "start voice"
+		},
+		{
+			"id": "qKwYD1B2",
+			"from": "HggZR41l",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"order": 27000,
+			"label": "a session for voice's pane; mute, stop"
+		},
+		{
+			"id": "DTRtWKab",
+			"from": "0SRnYXnC",
+			"to": "941UBxya",
+			"kind": "data",
+			"order": 28000,
+			"label": "the pane's agent and media state"
+		},
+		{
+			"id": "vm1xFAYO",
+			"from": "HggZR41l",
+			"to": "0yb2VbKc",
+			"kind": "render",
+			"order": 29000,
+			"label": "over voice's pane"
+		}
+	]
+}
