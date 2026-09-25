@@ -4,7 +4,7 @@
 // reference pane, less a share for every crossing and for every line that
 // runs from one column to another.
 import { fitIn } from "@/shared/shell-geometry/index";
-import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /** What one crossing costs a layout, as the share of its fit it keeps. */
 const CROSSING_COST = 0.97;
@@ -145,4 +145,40 @@ function anchored(
 		.map(([card, rows]) => ({ card, rows, anchor }));
 }
 
-export { anchored, crossingsOf, readsBetter, scoreOf, wrapPlans, type Weighed };
+/**
+ * Whether two boxes share some width, one over the other.
+ * @param one A box.
+ * @param other Another.
+ * @returns True when they do.
+ */
+function across(one: Box, other: Box): boolean {
+	return one.x < other.x + other.width && other.x < one.x + one.width;
+}
+
+/**
+ * Whether a wrap, laid out, sinks a card rather than wrapping it: some
+ * lowered card has no card of its own cluster in the row above standing over
+ * it, so it stands off on a late rank of its own, away from its neighbours.
+ * @param plan The wrap: every card of the rank and its row.
+ * @param boxes Where the wrap laid each card.
+ * @param around The innermost cluster around a card, if any.
+ * @returns True when it sinks a card.
+ */
+function sinks(
+	plan: ReadonlyMap<string, number>,
+	boxes: ReadonlyMap<string, Box>,
+	around: (card: string) => string | undefined,
+): boolean {
+	return [...plan].some(
+		([card, row]) =>
+			row > 0 &&
+			![...plan].some(
+				([other, above]) =>
+					above === row - 1 &&
+					around(other) === around(card) &&
+					across(boxes.get(other)!, boxes.get(card)!),
+			),
+	);
+}
+
+export { anchored, crossingsOf, readsBetter, scoreOf, sinks, wrapPlans, type Weighed };

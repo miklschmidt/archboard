@@ -1,0 +1,176 @@
+{
+	"nodes": [
+		{
+			"id": "session",
+			"name": "Codex session",
+			"kind": "service",
+			"responsibility": "One initialized app-server session: the handshake, the reviewed methods, and what came back"
+		},
+		{
+			"id": "hub",
+			"name": "Handshake and request path",
+			"kind": "function",
+			"responsibility": "Runs the handshake once, then is the one path every call takes: serialize, send, decode, adopt",
+			"parent": "session"
+		},
+		{
+			"id": "storage",
+			"name": "Prove isolated storage",
+			"kind": "function",
+			"responsibility": "Verify prepared child paths",
+			"parent": "session"
+		},
+		{
+			"id": "gate",
+			"name": "Gate protocol operations",
+			"kind": "function",
+			"responsibility": "Expose allowed reads and mutations",
+			"parent": "session"
+		},
+		{
+			"id": "serial",
+			"name": "Serialize request identities",
+			"kind": "function",
+			"responsibility": "Prove IDs before wire encoding",
+			"parent": "session"
+		},
+		{
+			"id": "contract",
+			"name": "Response contracts",
+			"kind": "function",
+			"responsibility": "Which identity kinds each method's result carries, derived from the protocol schemas",
+			"parent": "session"
+		},
+		{
+			"id": "adopt",
+			"name": "Adopt response identities",
+			"kind": "function",
+			"responsibility": "Brand returned IDs atomically",
+			"parent": "session"
+		},
+		{
+			"id": "reverse",
+			"name": "Answer reverse requests",
+			"kind": "function",
+			"responsibility": "Handle child-originated calls",
+			"parent": "session"
+		},
+		{
+			"id": "classify",
+			"name": "Classify request failures",
+			"kind": "function",
+			"responsibility": "State mutation delivery outcome",
+			"parent": "session"
+		},
+		{
+			"id": "start",
+			"name": "Workhorse start",
+			"kind": "module",
+			"responsibility": "The caller that opens a thread on this session under an epoch transaction"
+		},
+		{
+			"id": "wire",
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "The wire under the session: one newline-framed JSON object at a time, each way"
+		},
+		{
+			"id": "protocol",
+			"name": "Codex protocol",
+			"kind": "module",
+			"responsibility": "The pinned app-server contract every request and response is decoded against"
+		},
+		{
+			"id": "hooks",
+			"name": "Generation hooks",
+			"kind": "module",
+			"responsibility": "Takes the child's epoch, then initializes the session and reads the account before a generation is ready"
+		}
+	],
+	"edges": [
+		{
+			"id": "qQrqNYdt",
+			"from": "hooks",
+			"to": "hub",
+			"kind": "call",
+			"label": "initialize, once"
+		},
+		{
+			"id": "SI5PTs6X",
+			"from": "hub",
+			"to": "serial",
+			"kind": "call",
+			"label": "serialize issued identities"
+		},
+		{
+			"id": "HlhfxXJm",
+			"from": "hub",
+			"to": "adopt",
+			"kind": "call",
+			"label": "adopt returned identities"
+		},
+		{
+			"id": "mpJAeANo",
+			"from": "hub",
+			"to": "classify",
+			"kind": "call",
+			"label": "settle mutation failure"
+		},
+		{
+			"id": "7dDHchT9",
+			"from": "start",
+			"to": "gate",
+			"kind": "call",
+			"label": "thread/start for a new workhorse"
+		},
+		{
+			"id": "EAKN00R4",
+			"from": "hub",
+			"to": "wire",
+			"kind": "rpc",
+			"label": "one request frame"
+		},
+		{
+			"id": "blvoJ8p8",
+			"from": "wire",
+			"to": "reverse",
+			"kind": "event",
+			"label": "a request the child made of us"
+		},
+		{
+			"id": "jhNZqAiD",
+			"from": "gate",
+			"to": "hub",
+			"kind": "call",
+			"label": "read or mutate, behind its gate"
+		},
+		{
+			"id": "d2caVqCr",
+			"from": "hub",
+			"to": "protocol",
+			"kind": "call",
+			"label": "decode parameters and answer"
+		},
+		{
+			"id": "JOmIweJF",
+			"from": "adopt",
+			"to": "contract",
+			"kind": "dependency",
+			"label": "which identities each result holds"
+		},
+		{
+			"id": "JTrBju8L",
+			"from": "hub",
+			"to": "storage",
+			"kind": "call",
+			"label": "prove storage after config/read"
+		},
+		{
+			"id": "bEmVBBGp",
+			"from": "reverse",
+			"to": "wire",
+			"kind": "call",
+			"label": "answer the clock, refuse the rest"
+		}
+	]
+}
