@@ -23,7 +23,12 @@ const OPEN_REACH = 1_000_000;
 interface Slider {
 	readonly item: Item;
 	readonly wanted: number;
+	/** How firmly it holds its wanted centre against its neighbours: firm where its line can run straight. */
+	readonly weight: number;
 }
+
+/** How firmly a label whose line must jog anyway holds its place, against one whose line runs straight. */
+const JOGGING_WEIGHT = 0.01;
 
 /** Something that stays put on a band, as an interval a box may not enter. */
 type Wall = readonly [number, number];
@@ -41,21 +46,26 @@ function reach(station: Station): [number, number] {
 }
 
 /**
- * Where a label box wants its centre: a point both its ends can reach
- * straight, nearest where it stands; else the edge of its upper end's reach
- * nearest the lower one.
+ * Where a label box wants its centre, and how firmly: a point both its ends
+ * can reach straight, nearest where it stands, held firmly; else the edge of
+ * its upper end's reach nearest the lower one, held loosely, since its line
+ * jogs wherever the box stands.
  * @param item The label box.
  * @param above The station its line comes from.
  * @param below The station its line goes on to.
- * @returns The wanted centre x.
+ * @returns The wanted centre x, and its weight.
  */
-function wantedCentre(item: Item, above: Station, below: Station): number {
+function wantedCentre(
+	item: Item,
+	above: Station,
+	below: Station,
+): { wanted: number; weight: number } {
 	const [a, b] = reach(above);
 	const [c, d] = reach(below);
 	const low = Math.max(a, c);
 	const high = Math.min(b, d);
-	if (low <= high) return Math.min(high, Math.max(low, centreX(item)));
-	return c > b ? b : a;
+	if (low <= high) return { wanted: Math.min(high, Math.max(low, centreX(item))), weight: 1 };
+	return { wanted: c > b ? b : a, weight: JOGGING_WEIGHT };
 }
 
 /**
@@ -72,9 +82,7 @@ function slidersOf(nets: readonly Net[]): Slider[] {
 	}
 	return [...into].flatMap(([item, above]) => {
 		const below = outOf.get(item);
-		return below === undefined
-			? []
-			: [{ item, wanted: wantedCentre(item, above.top, below.bottom) }];
+		return below === undefined ? [] : [{ item, ...wantedCentre(item, above.top, below.bottom) }];
 	});
 }
 
@@ -139,8 +147,8 @@ function placeRun(sliders: readonly Slider[], low: number, high: number): void {
 	const room = high - low - (offset - LABEL_GAP);
 	if (room < 0) return;
 	const blocks: { value: number; weight: number; count: number }[] = [];
-	sliders.forEach(({ item, wanted }, index) => {
-		blocks.push({ value: wanted - item.box.width / 2 - offsets[index]!, weight: 1, count: 1 });
+	sliders.forEach(({ item, wanted, weight }, index) => {
+		blocks.push({ value: wanted - item.box.width / 2 - offsets[index]!, weight, count: 1 });
 		while (blocks.length > 1 && blocks.at(-2)!.value > blocks.at(-1)!.value) {
 			const last = blocks.pop()!;
 			const before = blocks.at(-1)!;
@@ -182,9 +190,53 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
 			);
 		}
 	});
+	settleOnLanes(scene, nets);
 	for (const net of nets) {
 		if (net.top.kind === "label") net.topX = centreX(net.top.item!);
 		if (net.bottom.kind === "label") net.bottomX = centreX(net.bottom.item!);
+	}
+}
+
+/**
+ * Whether a label box, moved, keeps clear of every other box on its band by
+ * half the usual gap.
+ * @param scene The scene.
+ * @param item The label box.
+ * @param box Where it would stand.
+ * @returns True when nothing is that close.
+ */
+function clearOnBand(scene: Scene, item: Item, box: Item["box"]): boolean {
+	const gap = LABEL_GAP / 2;
+	return [...scene.cards.values(), ...scene.titles.values(), ...scene.labels.values()]
+		.filter((other) => other !== item && other.band === item.band)
+		.every(
+			({ box: other }) =>
+				other.x >= box.x + box.width + gap || box.x >= other.x + other.width + gap,
+		);
+}
+
+/**
+ * Centre a label box on the lane its line comes down from, or else goes on
+ * down by, when the box stands within a jog's width of it and can move there
+ * clear of its neighbours: the line then runs straight through its label
+ * instead of jogging a few points on either side of it.
+ * @param scene The scene.
+ * @param nets Every net.
+ */
+function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
+	const pairs = [
+		...nets.map((net) => [net.bottom, net.top] as const),
+		...nets.map((net) => [net.top, net.bottom] as const),
+	].filter(([label, lane]) => label.kind === "label" && lane.kind === "lane");
+	const settled = new Set<Item>();
+	for (const [label, lane] of pairs) {
+		const item = label.item!;
+		const shift = lane.x - centreX(item);
+		const box = { ...item.box, x: item.box.x + shift };
+		if (settled.has(item) || Math.abs(shift) >= 2 * LANE || !clearOnBand(scene, item, box))
+			continue;
+		item.box = box;
+		settled.add(item);
 	}
 }
 
