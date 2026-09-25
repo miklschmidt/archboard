@@ -23,6 +23,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import { addInline, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
 
 /** A width and a height. */
 interface Size {
@@ -185,8 +186,8 @@ class BlockTree {
 	readonly holder = new Map<string, Block>();
 	readonly root: Block;
 	readonly captions: ReadonlyMap<string, Size>;
-	/** Every card's measured size. */
-	readonly cards = new Map<string, Size>();
+	/** Every card's measured size and peer group. */
+	readonly cards = new Map<string, Card>();
 	/** Every relationship's projection, in the board's order. */
 	readonly projections: readonly Projection[];
 	/** How each relationship is drawn, by id. */
@@ -274,7 +275,7 @@ class BlockTree {
 		if (!node.children?.length) {
 			holder.items.push(node.id);
 			this.holder.set(node.id, holder);
-			this.cards.set(node.id, { width: node.width!, height: node.height! });
+			this.cards.set(node.id, cardOf(node));
 			return;
 		}
 		const header = Number(node.layoutOptions?.["archboard.header.size"] ?? 0);

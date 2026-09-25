@@ -6,6 +6,7 @@ import type { ElkNode } from "@archboard/elk-rs";
 import { PLACING_GROUP } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import type { Block, BlockTree, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { cardOf } from "@/transformers/semantic-renderer/lib/blocks/card";
 
 /**
  * A container or group region a block of cards draws inline: a cluster of the
@@ -89,7 +90,7 @@ function addInline(tree: BlockTree, block: Block, node: ElkNode, around: string 
 		return;
 	}
 	block.items.push(node.id);
-	tree.cards.set(node.id, { width: node.width!, height: node.height! });
+	tree.cards.set(node.id, cardOf(node));
 }
 
 export { addInline, type Cluster };
