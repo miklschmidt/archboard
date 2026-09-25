@@ -423,16 +423,12 @@ class TrackPlacement {
 					height: Math.abs(y2! - y1!),
 				});
 			}
+			// The title row spans the frame, whatever the title node's own centre.
 			const centre = centres.get(`title_${id}`)!;
 			const header = headerOf(node);
 			node.layoutOptions = {
 				...node.layoutOptions,
-				[TRACK_TITLE]: [
-					centre.x - node.width! / 2,
-					centre.y - header / 2,
-					node.width!,
-					header,
-				].join(","),
+				[TRACK_TITLE]: [node.x, centre.y - header / 2, node.width!, header].join(","),
 			};
 		}
 	}

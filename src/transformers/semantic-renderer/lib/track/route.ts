@@ -401,7 +401,7 @@ function drawEdges(
 			const curve =
 				points === undefined
 					? selfLoop(scene.moved(scene.endpoint(edge.from), PAGE_MARGIN), false)
-					: curveThrough(points);
+					: curveThrough(points, true);
 			return { edge, curve, path: pathOf(curve), ...withLabel };
 		});
 }

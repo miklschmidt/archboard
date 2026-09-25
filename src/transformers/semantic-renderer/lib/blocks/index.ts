@@ -75,7 +75,7 @@ function drawingOf(
 			const curve =
 				route === undefined || route.points.length < 2
 					? selfLoop(boxes.get(edge.from)!, false)
-					: curveThrough(route.points);
+					: curveThrough(route.points, true);
 			return {
 				edge,
 				curve,

@@ -256,17 +256,19 @@ function endOf(segments: readonly Segment[], first: Point): Point {
 }
 
 /**
- * One ordinary turn always uses the same radius. Intermediate layout attempts
- * may lack room; the completed reading is checked before it can be emitted.
+ * One ordinary turn always uses the same radius, unless it is fitted to a run
+ * too short for two whole turns. Intermediate layout attempts may lack room;
+ * the completed reading is checked before it can be emitted.
  * @param corner The turn.
  * @param start Where the route currently stands.
- * @returns The straight approach and fixed-radius turn.
+ * @param fitted Whether the turn shrinks to half of a shorter run beside it.
+ * @returns The straight approach and the turn.
  */
-function bendThrough(corner: Corner, start: Point): Segment[] {
+function bendThrough(corner: Corner, start: Point, fitted: boolean): Segment[] {
 	const { previous, vertex, next } = corner;
 	const inLength = Math.hypot(vertex.x - previous.x, vertex.y - previous.y);
 	const outLength = Math.hypot(next.x - vertex.x, next.y - vertex.y);
-	const radius = BEND_RADIUS;
+	const radius = fitted ? Math.min(BEND_RADIUS, inLength / 2, outLength / 2) : BEND_RADIUS;
 	const inDir = { x: (vertex.x - previous.x) / inLength, y: (vertex.y - previous.y) / inLength };
 	const outDir = { x: (next.x - vertex.x) / outLength, y: (next.y - vertex.y) / outLength };
 	const arrive = { x: vertex.x - inDir.x * radius, y: vertex.y - inDir.y * radius };
@@ -353,9 +355,11 @@ function labelClearance(vertex: Point, end: Point, label: Box): number {
  * The polyline as one continuous line: long runs stay dead straight and only
  * the turns curve.
  * @param waypoints The native orthogonal waypoints.
+ * @param fitted Whether a turn beside a run too short for two whole turns
+ * shrinks to fit it, so a small jog draws as a small step instead of doubling back.
  * @returns The route.
  */
-function curveThrough(waypoints: readonly Point[]): Curve {
+function curveThrough(waypoints: readonly Point[], fitted = false): Curve {
 	const points = simplify(waypoints);
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
@@ -363,7 +367,7 @@ function curveThrough(waypoints: readonly Point[]): Curve {
 	for (let index = 1; index < last; index += 1) {
 		const corner = cornerAt(points, index);
 		if (corner !== undefined) {
-			segments.push(...bendThrough(corner, endOf(segments, first)));
+			segments.push(...bendThrough(corner, endOf(segments, first), fitted));
 		}
 	}
 	closeOn(segments, first, points[points.length - 1]);
