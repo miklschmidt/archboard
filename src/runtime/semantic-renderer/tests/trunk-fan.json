@@ -1,0 +1,88 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alph bravobravo",
+			"kind": "function",
+			"order": 2000,
+			"responsibility": "carbonc del eagleea, falc gar harb islandis junglej kett, lan meadowm nee orangeor"
+		},
+		{
+			"id": "n1",
+			"name": "pepp-quar riverr",
+			"kind": "function",
+			"order": 6000,
+			"responsibility": "summit timbertimbe alphaal, bravobrav car deltade eagleeag fal gar harborha"
+		},
+		{
+			"id": "n2",
+			"name": "islandis jung",
+			"kind": "function",
+			"order": 7000,
+			"responsibility": "kettleke lante mead, need ora peppe quar riv summits timbe alphaa"
+		},
+		{
+			"id": "n3",
+			"name": "bravo carbonc",
+			"kind": "function",
+			"order": 8000,
+			"responsibility": "deltadel eagle falco garden har isl jungle kettl lante me"
+		},
+		{
+			"id": "n4",
+			"name": "nee orangeor",
+			"kind": "function",
+			"order": 10000,
+			"responsibility": "peppe q riverri summ ti alp brav-carboncar deltadel eagl fal garde"
+		},
+		{
+			"id": "n5",
+			"name": "harborha islandi",
+			"kind": "function",
+			"order": 15000,
+			"responsibility": "jungle ket lanternl meadowm: needl, orangeo, pepperpe qua riverr"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n3",
+			"kind": "call",
+			"order": 3000,
+			"label": "summits timbe"
+		},
+		{
+			"id": "e1",
+			"from": "n0",
+			"to": "n5",
+			"kind": "call",
+			"order": 16000,
+			"label": "alpha bra carbonca"
+		},
+		{
+			"id": "e2",
+			"from": "n0",
+			"to": "n4",
+			"kind": "call",
+			"order": 17000,
+			"label": "delt eag falconf gard"
+		},
+		{
+			"id": "e3",
+			"from": "n5",
+			"to": "n1",
+			"kind": "call",
+			"order": 22000,
+			"label": "harborh, islandisl jun kettleke"
+		},
+		{
+			"id": "e4",
+			"from": "n1",
+			"to": "n2",
+			"kind": "call",
+			"order": 26000,
+			"label": "lant meadowmeadow nee oran peppe"
+		}
+	]
+}

@@ -467,6 +467,7 @@ export {
 	assignPorts,
 	assignTracks,
 	bundleTrunks,
+	sharedAt,
 	spreadPorts,
 	stackUnits,
 	unitAcross,
