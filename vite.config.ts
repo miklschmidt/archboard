@@ -1,7 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -21,7 +20,6 @@ const RENDERER_SOURCES = [
 	"src/runtime/semantic-renderer/lib/engine-pool.ts",
 	"src/shared/semantic-board",
 	"src/shared/semantic-policy",
-	"src/shared/theme/theme.css",
 	"node_modules/@viz-js/viz/package.json",
 	"node_modules/libavoid-js/package.json",
 	"node_modules/libavoid-js/dist/libavoid.wasm",
@@ -41,9 +39,9 @@ function filesUnder(path: string): string[] {
 }
 
 /**
- * Serve the page what drawing needs from the build: the theme colours, parsed
- * by the one parser Bun also uses, and a digest of the renderer's sources, so
- * a picture kept by an older build is never shown.
+ * Serve the page what drawing needs from the build: a digest of the renderer's
+ * sources, so a picture kept by an older build is never shown. The theme's
+ * colour values are not among them: a picture paints with the page's tokens.
  * @returns The plugin.
  */
 function rendererBuild(): Plugin {
@@ -67,13 +65,8 @@ function rendererBuild(): Plugin {
 			for (const file of files) this.addWatchFile(file);
 			const digest = createHash("sha256");
 			for (const file of files) digest.update(file).update(readFileSync(file));
-			// Bun resolves the repository's `@/` imports; the config loader does not.
-			const themeColors = execFileSync("bun", ["scripts/print-theme-colors.ts"], {
-				cwd: repositoryRoot,
-				encoding: "utf8",
-			});
 			const build = JSON.stringify(digest.digest("hex").slice(0, 16));
-			return `export const themeColors = ${themeColors};\nexport const rendererBuild = ${build};\n`;
+			return `export const rendererBuild = ${build};\n`;
 		},
 	};
 }

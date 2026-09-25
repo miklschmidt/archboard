@@ -1,4 +1,4 @@
-// One board's answer to "draw this variant, in this view, on this ground".
+// One board's answer to "draw this variant, in this view".
 //
 // The Archboard server's render route and a browser drawing from the board it has
 // read both answer that question, and they have to answer it identically: the
@@ -38,7 +38,8 @@ interface BoardRenderChoices {
 	readonly view?: string | undefined;
 	/** Whether the picture includes comparison marks and removed context. Defaults to true. */
 	readonly comparison?: boolean | undefined;
-	readonly theme: DiagramTheme;
+	/** The theme a document that stands alone is drawn in; absent, it is for a page. */
+	readonly theme?: DiagramTheme | undefined;
 	readonly fonts: FontSource;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
@@ -118,8 +119,8 @@ function pictureOf(
  * @param board The board, as read.
  * @param variant The variant to draw.
  * @param view The view to draw, or nothing for the whole variant.
- * @param how The ground, the faces and the vault policy.
- * @param how.theme Which colour scheme to draw for.
+ * @param how The theme, the faces and the vault policy.
+ * @param how.theme The theme a document that stands alone is drawn in, when it is one.
  * @param how.fonts Where the drawn faces come from.
  * @param how.policy The vault's presentation policy.
  * @param how.comparison Whether to draw comparison treatment.
@@ -131,7 +132,7 @@ async function drawnReply(
 	variant: SemanticVariant,
 	view: SemanticView | undefined,
 	how: {
-		theme: DiagramTheme;
+		theme: DiagramTheme | undefined;
 		fonts: FontSource;
 		policy: SemanticPolicy;
 		comparison: boolean;
@@ -150,7 +151,6 @@ async function drawnReply(
 		board: board.name,
 		version: board.version,
 		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
-		theme: how.theme,
 		view: view === undefined ? null : offered(view),
 		views: board.views.map(offered),
 		// Null for a variant with no predecessor, which is not an empty set of
@@ -182,7 +182,7 @@ async function drawnReply(
 /**
  * Answer a render of one board: the variant and view it names, drawn.
  * @param board The board, as read.
- * @param choices The variant, view, theme and faces asked for.
+ * @param choices The variant, view, faces and, for a document that stands alone, theme asked for.
  * @param policy The vault's presentation policy.
  * @returns The answer, or which name the board does not have.
  */

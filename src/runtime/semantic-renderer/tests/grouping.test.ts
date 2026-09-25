@@ -4,7 +4,7 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { themeColor } from "@/shared/theme/server";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
-import { hueOf } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { hueOf, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 /**
  * The colour a relationship's line is stroked in: the path that ends in its arrowhead.
@@ -40,15 +40,14 @@ const nodes = [
 describe("containment and type have independent visual channels", () => {
 	for (const theme of ["light", "dark"] as const) {
 		test(`expanded, inherited, collapsed and unknown types on ${theme}`, async () => {
-			const expanded = await renderArchitecture({
-				content: orderedFixture({ nodes }),
+			const expanded = paintedIn(
+				(await renderArchitecture({ content: orderedFixture({ nodes }), policy })).svg,
 				theme,
-				policy,
-			});
-			const cluster = groupOf(expanded.svg, "region", "cluster")!.markup;
-			const plain = groupOf(expanded.svg, "region", "plain")!.markup;
-			const api = groupOf(expanded.svg, "node", "api")!.markup;
-			const cloud = groupOf(expanded.svg, "region", "cloud")!.markup;
+			);
+			const cluster = groupOf(expanded, "region", "cluster")!.markup;
+			const plain = groupOf(expanded, "region", "plain")!.markup;
+			const api = groupOf(expanded, "node", "api")!.markup;
+			const cloud = groupOf(expanded, "region", "cloud")!.markup;
 			// Nested surfaces must composite over their parents, not replace them
 			// with a color preblended against an opaque card background.
 			for (const [markup, color] of [
@@ -62,9 +61,9 @@ describe("containment and type have independent visual channels", () => {
 				expect(body).toContain('fill-opacity="0.07"');
 				expect(body).not.toMatch(/(?:^|\s)opacity=/);
 			}
-			expect(expanded.svg.indexOf(cloud)).toBeLessThan(expanded.svg.indexOf(cluster));
-			expect(expanded.svg.indexOf(cluster)).toBeLessThan(expanded.svg.indexOf(plain));
-			expect(expanded.svg.indexOf(plain)).toBeLessThan(expanded.svg.indexOf(api));
+			expect(expanded.indexOf(cloud)).toBeLessThan(expanded.indexOf(cluster));
+			expect(expanded.indexOf(cluster)).toBeLessThan(expanded.indexOf(plain));
+			expect(expanded.indexOf(plain)).toBeLessThan(expanded.indexOf(api));
 			expect(cluster).toContain('data-body-color="green"');
 			expect(cluster).toContain('data-type-color="green"');
 			expect(plain).toContain('data-body-color="green"');
@@ -75,7 +74,6 @@ describe("containment and type have independent visual channels", () => {
 			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-violet")}"`);
 			const collapsed = await renderArchitecture({
 				content: orderedFixture({ nodes: nodes.slice(0, 2) }),
-				theme,
 				policy,
 			});
 			const card = groupOf(collapsed.svg, "node", "cluster")!.markup;
@@ -86,7 +84,6 @@ describe("containment and type have independent visual channels", () => {
 				content: orderedFixture({
 					nodes: [{ id: "u", name: "Old kind", kind: "retired" }],
 				}),
-				theme,
 				policy,
 			});
 			expect(unknown.svg).toContain('data-body-color="neutral"');
@@ -117,17 +114,12 @@ describe("containment and type have independent visual channels", () => {
 	test("comparison overrides the border while preserving body tint and type chips", async () => {
 		const rendered = await renderArchitecture({
 			content: orderedFixture({ nodes }),
-			theme: "light",
 			policy,
 			standing: { api: "changed" },
 		});
-		const api = groupOf(rendered.svg, "node", "api")!.markup;
-		const unmarked = await renderArchitecture({
-			content: orderedFixture({ nodes }),
-			theme: "light",
-			policy,
-		});
-		const before = groupOf(unmarked.svg, "node", "api")!.markup;
+		const api = groupOf(paintedIn(rendered.svg), "node", "api")!.markup;
+		const unmarked = await renderArchitecture({ content: orderedFixture({ nodes }), policy });
+		const before = groupOf(paintedIn(unmarked.svg), "node", "api")!.markup;
 		expect(api.match(/rx="6" fill="([^"]+)"/)?.[1]).toBe(
 			before.match(/rx="6" fill="([^"]+)"/)?.[1],
 		);
@@ -141,22 +133,18 @@ describe("containment and type have independent visual channels", () => {
 			nodes: nodes.slice(0, 2),
 			edges: [{ id: "e", from: "cloud", to: "cluster", kind: "call" }],
 		});
-		const normal = await renderArchitecture({ content, theme: "light", policy });
+		const normal = await renderArchitecture({ content, policy });
 		const emphasized = structuredClone(content);
 		for (const edge of emphasized.edges) edge.emphasis = "hero";
-		const hero = await renderArchitecture({
-			content: emphasized,
-			theme: "light",
-			policy,
-		});
-		const edge = groupOf(normal.svg, "edge", "e")!.markup;
+		const hero = await renderArchitecture({ content: emphasized, policy });
+		const edge = groupOf(paintedIn(normal.svg), "edge", "e")!.markup;
 		// The line is drawn at its line strength: the kind's colour, weaker.
 		const rose = hueOf(themeColor("light", "--semantic-rose"));
 		expect(Math.abs(hueOf(lineStroke(edge)) - rose)).toBeLessThan(6);
 		expect(edge).toContain('stroke-dasharray="1.5 3.5"');
 		expect(edge).toContain('data-arrowhead="open"');
 		expect(hero.svg).not.toContain("<animateMotion");
-		expect(lineStroke(groupOf(hero.svg, "edge", "e")!.markup)).toBe(lineStroke(edge));
+		expect(lineStroke(groupOf(paintedIn(hero.svg), "edge", "e")!.markup)).toBe(lineStroke(edge));
 	});
 });
 
@@ -165,13 +153,8 @@ test("inline panes never reuse an arrowhead ID for different appearance", async 
 		nodes: nodes.slice(0, 2),
 		edges: [{ id: "e", from: "cloud", to: "cluster", kind: "call" }],
 	});
-	const current = await renderArchitecture({ content, theme: "light", policy });
-	const proposal = await renderArchitecture({
-		content,
-		theme: "light",
-		policy,
-		standing: { e: "changed" },
-	});
+	const current = await renderArchitecture({ content, policy });
+	const proposal = await renderArchitecture({ content, policy, standing: { e: "changed" } });
 	const currentHead = groupOf(current.svg, "edge", "e")!.markup.match(
 		/marker-end="url\(#([^)]+)\)"/,
 	)![1]!;
@@ -180,8 +163,8 @@ test("inline panes never reuse an arrowhead ID for different appearance", async 
 	)![1]!;
 	expect(currentHead).not.toBe(proposedHead);
 	for (const [svg, head] of [
-		[current.svg, currentHead],
-		[proposal.svg, proposedHead],
+		[paintedIn(current.svg), currentHead],
+		[paintedIn(proposal.svg), proposedHead],
 	]) {
 		const definition = svg!.match(new RegExp(`<marker id="${head}"[\\s\\S]*?</marker>`))![0];
 		const lineInk = groupOf(svg!, "edge", "e")!.markup.match(

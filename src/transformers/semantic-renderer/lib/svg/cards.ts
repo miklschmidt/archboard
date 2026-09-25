@@ -154,7 +154,7 @@ function paintCard(
 				height: coord(box.height),
 				rx: CARD_RADIUS,
 				...styles.card,
-				...bodyAttributes(appearance, palette),
+				...bodyAttributes(appearance),
 				...standingOutline(standing, palette),
 			}),
 			typeChip(

@@ -18,6 +18,7 @@ import {
 	paintMeasuredHeader,
 	paintTextRuns,
 } from "@/transformers/semantic-renderer/lib/svg/measured-cards";
+import { colourId } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
@@ -137,7 +138,7 @@ function paintEdgeLine(
 	const ink = String(attributes["stroke"]);
 	// Inline panes share the document ID namespace. Equal IDs must always
 	// define equal heads, even when the same subject has a different standing.
-	const markerId = `edge-head-${appearance.arrowhead}-${ink.slice(1)}`;
+	const markerId = `edge-head-${appearance.arrowhead}-${colourId(ink)}`;
 
 	return wrap(
 		"g",

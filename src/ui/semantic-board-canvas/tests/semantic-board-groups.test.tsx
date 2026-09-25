@@ -137,7 +137,6 @@ function picture(hidden: readonly string[] = []): Record<string, unknown> {
 		board: "pipeline",
 		version: 1,
 		variant: { id: "v1", name: "as it is", lifecycle: "current" },
-		theme: "light",
 		view: null,
 		views: [],
 		changes: null,

@@ -31,7 +31,7 @@ const semanticBoardKeys = {
 	/** Every board's own document. */
 	documents: [SEMANTIC_KEY, "document"] as const,
 	/**
-	 * Every drawing of one board, whichever variant and theme it was asked in.
+	 * Every drawing of one board, whichever variant and view it was asked in.
 	 * This is the prefix a board's own change invalidates: the version moved for
 	 * the whole board, so no picture of it is current any more.
 	 * @param board The board name.
@@ -47,7 +47,9 @@ const semanticBoardKeys = {
 	 */
 	document: (board: string) => [SEMANTIC_KEY, "document", board] as const,
 	/**
-	 * One drawing: a board, a variant and a theme.
+	 * One drawing: a board, a variant and a view. Not a theme: a picture
+	 * paints with the page's colour tokens, so one picture serves both themes and
+	 * a theme switch asks for nothing.
 	 * @param request What was asked for.
 	 * @returns Its cache key.
 	 */
@@ -58,7 +60,6 @@ const semanticBoardKeys = {
 			request.board,
 			request.variant ?? "",
 			request.view ?? "",
-			request.theme,
 			request.comparison === false ? "plain" : "compared",
 			request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		] as const,
@@ -119,7 +120,7 @@ function semanticBoardListQuery() {
  * however long after, instead of being read back while the pane waits
  * (TASK-344). A key names a reading, not a version, so a board holds one
  * picture per reading however often it changes.
- * @param request The board, the variant and the theme.
+ * @param request The board, the variant and the view.
  * @returns The query options.
  */
 function semanticRenderQuery(request: SemanticRenderRequest) {

@@ -9,8 +9,10 @@
 // being checked against what the server says now.
 //
 // Pictures are kept in IndexedDB (TASK-344). localStorage held about 5 MB for
-// the whole page, less than one theme's worth of whole boards and their views,
-// so a store that overflowed dropped pictures the page had just drawn ahead.
+// the whole page, less than the whole boards and their views, so a store that
+// overflowed dropped pictures the page had just drawn ahead. A picture takes its
+// theme from the page's CSS (TASK-346), so a reading is kept once, not once per
+// theme.
 // A key carries its stamp, so forgetting stale pictures reads keys and never a
 // picture.
 //
@@ -83,7 +85,7 @@ function browserPictureStorage(): PictureStorage | undefined {
 
 /**
  * The key one render request is kept under, stamped.
- * @param request The board, variant, view and theme asked for.
+ * @param request The board, variant and view asked for.
  * @param stamp The version, policy and renderer it was drawn from.
  * @returns The key.
  */
@@ -92,7 +94,6 @@ function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string
 		request.board,
 		request.variant ?? "",
 		request.view ?? "",
-		request.theme,
 		request.comparison === false ? "plain" : "compared",
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		stamp.version,
@@ -162,7 +163,7 @@ async function forgetStalePictures(
 	try {
 		const stale = (await storage.keys()).filter((key): key is string => {
 			if (typeof key !== "string") return false;
-			const [board, , , , , , version, , drawnBy] = keyParts(key);
+			const [board, , , , , version, , drawnBy] = keyParts(key);
 			const listed = boards.find(
 				({ name, key: listedKey }) =>
 					typeof board === "string" &&
@@ -179,7 +180,7 @@ async function forgetStalePictures(
 /**
  * The fields of a kept key, or none for a key this module did not write.
  * @param key A stored key.
- * @returns Board, variant, view, theme, comparison, engine, version, fingerprint, renderer.
+ * @returns Board, variant, view, comparison, engine, version, fingerprint, renderer.
  */
 function keyParts(key: string): unknown[] {
 	try {

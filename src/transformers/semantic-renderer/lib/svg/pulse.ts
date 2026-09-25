@@ -1,7 +1,12 @@
 import { type SemanticEdge } from "@/shared/semantic-board/index";
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import {
+	colourId,
+	lightDark,
+	mixed,
+	translucent,
+} from "@/transformers/semantic-renderer/lib/svg/colour";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 
 /**
@@ -29,8 +34,8 @@ interface Pulse {
 	readonly lineColour: string;
 	/** How thick the line the comets ride is drawn, so a heavier line carries heavier comets. */
 	readonly lineWidth: number;
-	/** The page the comets are drawn on: its background, its text colour and whether it is dark. */
-	readonly page: Pick<Palette, "background" | "edge" | "foreground" | "ground">;
+	/** The page the comets are drawn on: its background, its neutral line colour and its text colour. */
+	readonly page: Pick<Palette, "background" | "edge" | "foreground">;
 	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
 }
 
@@ -58,9 +63,23 @@ const COMET_TAIL_LAYERS = [
 /**
  * The soft glow around a comet's head, as a multiple of the head, and how
  * opaque it is on each ground: brighter on a dark page, where it reads as
- * light, fainter on a light one, where it reads as a shadow.
+ * light, fainter on a light one, where it reads as a shadow. Which ground it
+ * is, is the page's `color-scheme`, so the glow's colour carries both.
  */
 const COMET_GLOW = { width: 2.6, opacity: { dark: 0.35, light: 0.16 } } as const;
+
+/**
+ * The colour of a comet's glow: its head's colour, as opaque as the ground
+ * the picture is shown on asks for.
+ * @param colour The head's colour.
+ * @returns The glow's colour.
+ */
+function glowColour(colour: string): string {
+	return lightDark(
+		translucent(colour, COMET_GLOW.opacity.light),
+		translucent(colour, COMET_GLOW.opacity.dark),
+	);
+}
 
 /** How long a comet's head is along its line, as a share of its width: a capsule, not a dot. */
 const COMET_HEAD_LENGTH = 0.55;
@@ -187,12 +206,16 @@ function travellingPulses(pulse: Pulse): string {
 	const headLength = head * COMET_HEAD_LENGTH;
 	const tail = Math.min(COMET_TAIL, spacing * COMET_TAIL_SHARE);
 	const stream = { path, spacing, seconds };
-	const glow = COMET_GLOW.opacity[page.ground];
 	return wrap(
 		"g",
 		{ class: PULSE_CLASS, "pointer-events": "none" },
 		[
-			cometLayer(stream, { length: 0, width: head * COMET_GLOW.width, opacity: glow, colour }),
+			cometLayer(stream, {
+				length: 0,
+				width: head * COMET_GLOW.width,
+				opacity: 1,
+				colour: glowColour(colour),
+			}),
 			cometLayer(stream, {
 				length: headLength,
 				width: head + COMET_MOAT * 2,
@@ -244,7 +267,8 @@ function timedTail(
 	lineColour: string,
 	radius: number,
 ): { readonly defs: string; readonly tail: string } {
-	const id = `ab-comet-tail-${lineColour.replace(/[^0-9a-z]/giu, "")}-${colour.replace(/[^0-9a-z]/giu, "")}`;
+	// `_x` cannot occur inside a colour's id, so it keeps the two apart.
+	const id = `ab-comet-tail-${colourId(lineColour)}_x${colourId(colour)}`;
 	const reach = radius * TIMED_TAIL;
 	const defs = wrap(
 		"defs",

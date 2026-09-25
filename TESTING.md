@@ -143,9 +143,12 @@ The fast owners for the harness's deterministic parts live in
 Edit `src/shared/theme/theme.css` for light/dark shadcn colors and the
 added/changed/removed comparison colors, plus the `--semantic-*` palette used by
 node types, groups and relationships. `--diagram-edge` controls neutral arrows independently
-of secondary text. All color definitions use OKLCH. `app.css` imports those tokens; the SVG
-renderer resolves the same declarations through Lightning CSS and embeds sRGB
-colors with their opacity. The shared file contains literal color custom
+of secondary text. All color definitions use OKLCH. `app.css` imports those tokens. The SVG
+renderer paints with the tokens themselves (`var(--…)`, and `color-mix()`/`light-dark()`
+of them), so a picture in the page takes the page's theme and a theme switch redraws
+nothing. A standalone SVG or PNG is drawn for one theme and carries that theme's value of
+every token it names on its root, resolved from the same declarations through Lightning
+CSS as sRGB colors with their opacity. The shared file contains literal color custom
 properties in `:root` and `:root[data-theme="dark"]`; keep layout values in
 `app.css`. Unsupported cascade rules and unresolved colors are refused.
 

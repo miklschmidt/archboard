@@ -22,10 +22,15 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 //
 // Nothing here reads a clock, a random number or a file. Text is measured by the
 // canvas of the host that draws, with the diagram faces loaded, and the host
-// supplies the layout engine, the theme colours and the font bytes a
-// self-contained document embeds (`lib/host.ts`). So one host draws the same
-// content, theme and font source to the same bytes in any order, and two
-// browsers may measure a word differently because each paints it differently.
+// supplies the layout engine, the theme colours a document that stands alone
+// carries and the font bytes a self-contained document embeds (`lib/host.ts`).
+// So one host draws the same content, theme and font source to the same bytes
+// in any order, and two browsers may measure a word differently because each
+// paints it differently.
+//
+// The picture paints with the page's own colour tokens (`lib/theme.ts`), so a
+// picture shown in the page is drawn once and takes whichever theme the page is
+// in. Only a document that stands alone is drawn for a theme.
 
 import {
 	DEFAULT_LAYOUT_ENGINE,
@@ -43,10 +48,11 @@ import type {
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/transformers/semantic-renderer/lib/measurement";
 import { withStepLines } from "@/transformers/semantic-renderer/lib/step-lines";
-import { paletteFor, type Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
+import { drawnInk } from "@/transformers/semantic-renderer/lib/svg/styles";
 import {
 	framedAsPlanned,
 	PLANNED_LABEL,
@@ -86,14 +92,19 @@ class SemanticRenderError extends Error {
 	}
 }
 
-/** What to draw, and on which ground. */
+/** What to draw, and for where. */
 interface DiagramRenderRequest {
 	/** The content, already cut down to what the caller wants drawn. */
 	readonly content: VariantContent;
 	/** Current vault presentation, shared by every variant. */
 	readonly policy?: SemanticPolicy;
-	/** Which of the two grounds to draw it on. */
-	readonly theme: DiagramTheme;
+	/**
+	 * The theme a document that stands alone is drawn in: it then carries that
+	 * theme's value of every colour token it paints with. Absent, the picture is
+	 * for a page, and takes the page's tokens and colour scheme wherever it is
+	 * put.
+	 */
+	readonly theme?: DiagramTheme | undefined;
 	/**
 	 * Where the drawn faces come from. Defaults to `"linked"`, which points at
 	 * the files the Archboard server serves — a few kilobytes, and what a pane wants.
@@ -201,7 +212,7 @@ const REMEMBERED_LAYOUTS = 64;
 const layouts = new Map<string, Promise<PaintedDrawing>>();
 
 /**
- * Lay out each distinct content and comparison channel set once per engine, independent of theme.
+ * Lay out each distinct content and comparison channel set once per engine.
  * @param content The architecture to draw.
  * @param expanded The architecture after adding drawable flow-step lines.
  * @param standing Comparison standing used to keep marked relationships apart.
@@ -245,7 +256,6 @@ function layoutRemembered(
  * @throws {SemanticRenderError} When there is nothing to draw.
  */
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
-	const { theme } = request;
 	if (request.content.nodes.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
@@ -260,7 +270,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		request.standing,
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 	);
-	const palette = paletteFor(theme);
+	const palette = PALETTE;
 	const painting = paintArchitecture(
 		drawing,
 		palette,
@@ -280,6 +290,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		fonts: request.fonts ?? "linked",
 		body: page.body,
 		reading: drawing.direction,
+		theme: request.theme,
 	});
 
 	return {
@@ -351,7 +362,7 @@ function sequenceDescriptionFor(content: VariantContent): string {
  * @throws {SemanticRenderError} When the content holds no flow.
  */
 function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
-	const { content, theme } = request;
+	const { content } = request;
 	if (content.flows.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
@@ -359,7 +370,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		);
 	}
 
-	const palette = paletteFor(theme);
+	const palette = PALETTE;
 	const painting = paintDataFlow(
 		content.flows,
 		content.nodes,
@@ -378,6 +389,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		description: sequenceDescriptionFor(content),
 		fonts: request.fonts ?? "linked",
 		body: page.body,
+		theme: request.theme,
 	});
 
 	return { svg, width: page.width, height: page.height, atlas: page.atlas };
@@ -400,7 +412,17 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 		: await renderArchitecture(request);
 }
 
-export { LINE_STRENGTH } from "@/transformers/semantic-renderer/lib/design";
+/**
+ * The colour a relationship's line is drawn in, from the colour it stands for:
+ * the one expression the picture draws the line in, for a key beside it to
+ * draw the same.
+ * @param ink The colour at full strength.
+ * @returns The line's colour.
+ */
+function lineInk(ink: string): string {
+	return drawnInk(ink, PALETTE);
+}
+
 export {
 	type ReadingDirection,
 	type SubjectStanding,
@@ -413,6 +435,7 @@ export {
 	renderArchitecture,
 	renderDataFlow,
 	renderSemanticView,
-	paletteFor,
+	lineInk,
+	PALETTE,
 	type Palette,
 };

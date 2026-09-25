@@ -2,10 +2,11 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
-	paletteFor,
+	PALETTE,
 	renderSemanticView,
 	type RenderedDiagram,
 } from "@/runtime/semantic-renderer/index";
+import { themeColor } from "@/shared/theme/server";
 import {
 	RASTER_MAX_SIDE_PX,
 	SemanticRasterError,
@@ -76,6 +77,17 @@ function tallChain(length: number): VariantContent {
 }
 
 /**
+ * The light theme's value of a colour the renderer paints with one page token.
+ * @param colour The palette's `var(--token)`.
+ * @returns The literal the light document carries for it.
+ */
+function lightValue(colour: string): string {
+	const name = /^var\((--[\w-]+)\)$/u.exec(colour)?.[1];
+	if (name === undefined) throw new Error(`${colour} is not one page token`);
+	return themeColor("light", name);
+}
+
+/**
  * Draw one diagram the way a file keeps it: faces embedded.
  * @param content What to draw.
  * @param grammar Which picture.
@@ -137,9 +149,8 @@ describe("what one capture is", () => {
 		// The theme's ground and cards are painted, so this is the picture
 		// and not a blank page of the right size.
 		const colors = pngRgbCounts(capture.png);
-		const palette = paletteFor("light");
-		for (const color of [palette.background, palette.card]) {
-			expect(colors.get(rgbOf(color)) ?? 0).toBeGreaterThan(1000);
+		for (const color of [PALETTE.background, PALETTE.card]) {
+			expect(colors.get(rgbOf(lightValue(color))) ?? 0).toBeGreaterThan(1000);
 		}
 		// Every one of the renderer's faces was declared and loaded before the shot.
 		expect(capture.fonts).toBeGreaterThan(0);
@@ -165,7 +176,7 @@ describe("what one capture is", () => {
 		// Every card is painted in the card fill, so the capture holds all of
 		// them and not only the ones a display would have shown.
 		const colors = pngRgbCounts(capture.png);
-		expect(colors.get(rgbOf(paletteFor("light").card)) ?? 0).toBeGreaterThan(24 * 500);
+		expect(colors.get(rgbOf(lightValue(PALETTE.card))) ?? 0).toBeGreaterThan(24 * 500);
 	});
 
 	test("a sequence draws through the data-flow grammar with its animation paused", async () => {

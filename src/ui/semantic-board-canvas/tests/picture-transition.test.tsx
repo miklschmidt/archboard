@@ -416,7 +416,7 @@ describe("leaving and arriving", () => {
 });
 
 describe("which pictures are continuous", () => {
-	test("another variant of the same board, read the same way, is; another board, view or ground is not", () => {
+	test("another variant of the same board, read the same way, is; another board or view is not", () => {
 		const base = picture([A], []);
 		expect(
 			continuousPictures(
@@ -425,7 +425,6 @@ describe("which pictures are continuous", () => {
 			),
 		).toBe(true);
 		expect(continuousPictures(base, picture([A], [], { board: "other" }))).toBe(false);
-		expect(continuousPictures(base, picture([A], [], { theme: "light" }))).toBe(false);
 		const view = { id: "scope", name: "Scope", grammar: "architecture" as const };
 		expect(continuousPictures(base, picture([A], [], { view }))).toBe(false);
 		expect(continuousPictures(picture([A], [], { view }), picture([B], [], { view }))).toBe(true);

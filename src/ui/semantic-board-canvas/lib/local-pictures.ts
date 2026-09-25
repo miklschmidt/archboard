@@ -17,14 +17,17 @@
 //
 //   Drawing ahead. When the page loads and the server lists its boards, every
 //   listed board is drawn in the background, one at a time: the variant its name
-//   opens, whole, in the theme the page shows and any other this tab reads. A board with a kept picture of
-//   its version comes out of storage without being laid out, so this costs
-//   nothing once the pictures are kept; after a new renderer build or a cleared
-//   cache it means a board is ready before anybody opens it (TASK-341). And when
-//   the server announces that a board changed, its variants are drawn again in
-//   the themes and views this tab has been reading. A board somebody opens is
-//   drawn by the pane itself, on another of the renderer's workers, so neither
-//   waits for it.
+//   opens, whole. A board with a kept picture of its version comes out of
+//   storage without being laid out, so this costs nothing once the pictures are
+//   kept; after a new renderer build or a cleared cache it means a board is
+//   ready before anybody opens it (TASK-341). And when the server announces that
+//   a board changed, its variants are drawn again in the views this tab has
+//   been reading. A board somebody opens is drawn by the pane itself, on another
+//   of the renderer's workers, so neither waits for it.
+//
+// A picture is drawn once for both themes: it paints with the page's colour
+// tokens (TASK-346), so a theme switch recolours what is on screen and draws
+// nothing.
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -45,7 +48,6 @@ import {
 	type SemanticBoardEntry,
 	type SemanticRender,
 	type SemanticRenderRequest,
-	type SemanticTheme,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 import { onSemanticBoardChange } from "@/ui/semantic-board-canvas/lib/board-changes";
@@ -80,8 +82,6 @@ interface LocalPictureSetup {
 	readonly renderer: string;
 	/** Where pictures are kept, or nothing when this browser keeps none. */
 	readonly storage: PictureStorage | undefined;
-	/** The theme the page shows now, when it shows one yet. */
-	readonly theme?: () => SemanticTheme | undefined;
 }
 
 /**
@@ -132,7 +132,6 @@ async function drawHere(
 		request.board,
 		request.variant,
 		request.view,
-		request.theme,
 		request.comparison === false ? "plain" : "compared",
 		request.layout,
 		stamp,
@@ -199,7 +198,6 @@ async function drawn(
 		{
 			variant: request.variant,
 			view: request.view,
-			theme: request.theme,
 			comparison: request.comparison,
 			layout: request.layout,
 		},
@@ -210,27 +208,16 @@ async function drawn(
 }
 
 /**
- * What this tab has been reading of one board: the name it asks by, the views
- * and the themes.
+ * What this tab has been reading of one board: the name it asks by, and the views.
  * @param client The tab's cache.
  * @param board The board that changed.
- * @param shown The theme the page shows now, read whether or not a picture of it is cached yet.
  * @returns How to ask for its pictures again.
  */
-function readingsOf(
-	client: QueryClient,
-	board: string,
-	shown?: SemanticTheme,
-): { name: string; views: Set<string>; themes: Set<SemanticTheme> } {
-	const reading = {
-		name: board,
-		views: new Set([""]),
-		themes: new Set<SemanticTheme>(shown === undefined ? [] : [shown]),
-	};
+function readingsOf(client: QueryClient, board: string): { name: string; views: Set<string> } {
+	const reading = { name: board, views: new Set([""]) };
 	for (const query of client.getQueryCache().findAll({ queryKey: semanticBoardKeys.renders })) {
 		readOne(reading, board, query.queryKey);
 	}
-	if (reading.themes.size === 0) reading.themes.add("light");
 	return reading;
 }
 
@@ -239,17 +226,15 @@ function readingsOf(
  * @param reading What has been gathered so far.
  * @param reading.name The name the tab asks for the board by.
  * @param reading.views The views read.
- * @param reading.themes The themes read, of any board.
  * @param board The board that changed.
- * @param key The cached picture's key: prefix, kind, board, variant, view, theme.
+ * @param key The cached picture's key: prefix, kind, board, variant, view.
  */
 function readOne(
-	reading: { name: string; views: Set<string>; themes: Set<SemanticTheme> },
+	reading: { name: string; views: Set<string> },
 	board: string,
 	key: readonly unknown[],
 ): void {
-	const [, , asked, , view, theme] = key;
-	if (theme === "light" || theme === "dark") reading.themes.add(theme);
+	const [, , asked, , view] = key;
 	if (typeof asked !== "string" || !sameBoardName(asked, board)) return;
 	reading.name = asked;
 	if (typeof view === "string") reading.views.add(view);
@@ -259,15 +244,13 @@ function readOne(
  * Every picture of a changed board this tab is likely to show next.
  * @param client The tab's cache.
  * @param board The board that changed.
- * @param shown The theme the page shows now.
  * @returns The requests, current variant first.
  */
 async function picturesToDrawAhead(
 	client: QueryClient,
 	board: string,
-	shown: SemanticTheme | undefined,
 ): Promise<SemanticRenderRequest[]> {
-	const reading = readingsOf(client, board, shown);
+	const reading = readingsOf(client, board);
 	// Marked stale without reading anything yet: a pane showing the board reads
 	// its own again, and the drawing below reads the rest.
 	for (const queryKey of [
@@ -288,15 +271,12 @@ async function picturesToDrawAhead(
 		...document.variants.filter((one) => one.id !== bare).map((one) => one.id),
 	];
 	return variants.flatMap((variant) =>
-		[...reading.views].flatMap((view) =>
-			[...reading.themes].map((theme) => ({
-				board: reading.name,
-				...(variant === "" ? {} : { variant }),
-				...(view === "" ? {} : { view }),
-				theme,
-				layout: layoutEngineNow(),
-			})),
-		),
+		[...reading.views].map((view) => ({
+			board: reading.name,
+			...(variant === "" ? {} : { variant }),
+			...(view === "" ? {} : { view }),
+			layout: layoutEngineNow(),
+		})),
 	);
 }
 
@@ -305,14 +285,9 @@ async function picturesToDrawAhead(
  * ahead is left for the pane that asks for it to report.
  * @param client The tab's cache.
  * @param board The board that changed.
- * @param shown The theme the page shows now.
  */
-async function drawAhead(
-	client: QueryClient,
-	board: string,
-	shown: SemanticTheme | undefined,
-): Promise<void> {
-	const requests = await picturesToDrawAhead(client, board, shown);
+async function drawAhead(client: QueryClient, board: string): Promise<void> {
+	const requests = await picturesToDrawAhead(client, board);
 	await requests.reduce(
 		(previous, request) => previous.then(() => client.prefetchQuery(semanticRenderQuery(request))),
 		Promise.resolve(),
@@ -321,28 +296,22 @@ async function drawAhead(
 
 /**
  * Draw every listed board ahead, one at a time: the variant its name opens,
- * whole, in the theme the page shows and any other this tab reads. A kept
- * picture of the board's version comes out of storage without a layout. A
- * failure to draw one ahead is left for the pane that asks for it to report.
+ * whole. A kept picture of the board's version comes out of storage without a
+ * layout. A failure to draw one ahead is left for the pane that asks for it to
+ * report.
  * @param client The tab's cache.
  * @param boards The boards the server lists.
- * @param shown The theme the page shows now.
  */
 async function drawListedAhead(
 	client: QueryClient,
 	boards: readonly SemanticBoardEntry[],
-	shown: SemanticTheme | undefined,
 ): Promise<void> {
 	for (const entry of boards) {
 		// Asked by its key, as a pane and an address ask for it, so the picture
 		// lands where the pane that opens the board looks for it.
-		const { name, themes } = readingsOf(client, entry.key, shown);
-		for (const theme of themes) {
-			// oxlint-disable-next-line no-await-in-loop -- one board at a time, so drawing ahead never takes more than one of the renderer's workers
-			await client.prefetchQuery(
-				semanticRenderQuery({ board: name, theme, layout: layoutEngineNow() }),
-			);
-		}
+		const { name } = readingsOf(client, entry.key);
+		// oxlint-disable-next-line no-await-in-loop -- one board at a time, so drawing ahead never takes more than one of the renderer's workers
+		await client.prefetchQuery(semanticRenderQuery({ board: name, layout: layoutEngineNow() }));
 	}
 }
 
@@ -358,7 +327,7 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	return {
 		/**
 		 * Draw a picture here; the first one also starts drawing changed boards ahead.
-		 * @param request The board, variant, view and theme.
+		 * @param request The board, variant and view.
 		 * @param client The tab's cache.
 		 * @returns The drawing, or the news that there is nothing to draw.
 		 */
@@ -366,7 +335,7 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 			if (!warmed.has(client)) {
 				warmed.add(client);
 				onSemanticBoardChange((board) => {
-					void drawAhead(client, board, setup.theme?.()).catch(() => undefined);
+					void drawAhead(client, board).catch(() => undefined);
 				});
 			}
 			return drawHere(setup, request, client, drawing);
@@ -386,7 +355,7 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 			sweeping.add(client);
 			// Stale pictures go first, so the sweep never reads one it is about to forget.
 			void forgotten
-				.then(() => drawListedAhead(client, boards, setup.theme?.()))
+				.then(() => drawListedAhead(client, boards))
 				.catch(() => undefined)
 				.finally(() => sweeping.delete(client));
 		},

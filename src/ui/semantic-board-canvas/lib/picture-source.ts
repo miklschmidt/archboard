@@ -18,7 +18,7 @@ import {
 interface PictureSource {
 	/**
 	 * One variant of one board, drawn.
-	 * @param request The board, variant, view and theme.
+	 * @param request The board, variant and view.
 	 * @param client The tab's cache, for the board and policy it is drawn from.
 	 * @param signal Cancels a read the picture waits on.
 	 * @returns The drawing, or the news that there is nothing to draw.
@@ -39,7 +39,7 @@ interface PictureSource {
 const fromServer: PictureSource = {
 	/**
 	 * Ask the Archboard server's render route.
-	 * @param request The board, variant, view and theme.
+	 * @param request The board, variant and view.
 	 * @param _client Unused: the server reads the board itself.
 	 * @param signal Cancels the request.
 	 * @returns The drawing, or the news that there is nothing to draw.

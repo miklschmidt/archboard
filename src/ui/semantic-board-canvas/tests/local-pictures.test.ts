@@ -2,8 +2,8 @@
 // and kept across page loads only while they are of the version the server has.
 //
 // What these catch: a changed board whose proposals are laid out only when
-// somebody opens them, drawing ahead that lays out every picture at once or in
-// a theme the page does not show, a picture drawn ahead that has left the tab's
+// somebody opens them, drawing ahead that lays out every picture at once or
+// once per theme, a picture drawn ahead that has left the tab's
 // cache by the time somebody opens it, and a kept picture of an older version
 // shown — or left in storage — after the page loads against a server that has
 // moved on.
@@ -30,7 +30,6 @@ interface Draw {
 	readonly version: number;
 	readonly variant?: string | undefined;
 	readonly view?: string | undefined;
-	readonly theme: string;
 }
 
 /** What the fake server holds: the board's version, and whether it lists the board at all. */
@@ -182,14 +181,13 @@ function memoryStorage(): PictureStorage & { readonly size: () => number } {
 /**
  * A page that draws its own pictures with a stand-in renderer.
  * @param storage Where pictures are kept.
- * @param shows The theme the page shows, and how long its cache keeps what nobody observes.
- * @param shows.theme The theme on the page's root, or nothing before one is applied.
+ * @param shows How long its cache keeps what nobody observes.
  * @param shows.gcTime The cache's default time to keep an unobserved query.
  * @returns The page's cache, every draw it laid out, and how many were ever laid out at once.
  */
 function page(
 	storage: PictureStorage,
-	shows: { theme?: "light" | "dark"; gcTime?: number } = {},
+	shows: { gcTime?: number } = {},
 ): { client: QueryClient; draws: Draw[]; most: () => number } {
 	globalThis.fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 	const draws: Draw[] = [];
@@ -198,7 +196,7 @@ function page(
 	/**
 	 * Lay a board out after a moment, noting what was asked and how many were under way.
 	 * @param board The board.
-	 * @param choices The variant, view and theme.
+	 * @param choices The variant and view.
 	 * @returns A blank picture of that version.
 	 */
 	const draw: DrawBoard = async (board, choices) => {
@@ -214,7 +212,6 @@ function page(
 				board: board.name,
 				version: board.version,
 				variant: { id: choices.variant ?? "v1", name: "state", lifecycle: "current" },
-				theme: choices.theme,
 				view: null,
 				views: [],
 				changes: null,
@@ -226,18 +223,7 @@ function page(
 			},
 		};
 	};
-	takePicturesFrom(
-		createLocalPictureSource({
-			draw,
-			renderer: "build-1",
-			storage,
-			/**
-			 * The theme on the page's root.
-			 * @returns It, or nothing before one is applied.
-			 */
-			theme: () => shows.theme,
-		}),
-	);
+	takePicturesFrom(createLocalPictureSource({ draw, renderer: "build-1", storage }));
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false, gcTime: shows.gcTime ?? 5 * 60_000 } },
 	});
@@ -265,21 +251,19 @@ async function until(holds: () => boolean): Promise<void> {
 // so a later test's announcement would reach this page too.
 test("an announced change draws the board's states ahead, one at a time, as this page reads them", async () => {
 	const { client, draws, most } = page(memoryStorage());
-	// The page has been reading the board whole and through one view, in the dark.
-	await client.fetchQuery(semanticRenderQuery({ board: "pipeline", theme: "dark" }));
-	await client.fetchQuery(
-		semanticRenderQuery({ board: "pipeline", view: "scope1", theme: "dark" }),
-	);
+	// The page has been reading the board whole and through one view.
+	await client.fetchQuery(semanticRenderQuery({ board: "pipeline" }));
+	await client.fetchQuery(semanticRenderQuery({ board: "pipeline", view: "scope1" }));
 	draws.length = 0;
 
 	server.version = 2;
 	announceSemanticBoardChange("pipeline", 2);
-	const proposal = { board: "pipeline", variant: "v2", theme: "dark" } as const;
+	const proposal = { board: "pipeline", variant: "v2" } as const;
 	await until(() => draws.length === 4);
 
 	// Every state, in every way it was read, from the version announced; the
 	// current architecture first, and never two layouts at once.
-	expect(draws.every((one) => one.version === 2 && one.theme === "dark")).toBe(true);
+	expect(draws.every((one) => one.version === 2)).toBe(true);
 	expect(new Set(draws.map((one) => `${one.variant ?? ""}|${one.view ?? ""}`))).toEqual(
 		new Set(["|", "|scope1", "v2|", "v2|scope1"]),
 	);
@@ -293,7 +277,7 @@ test("an announced change draws the board's states ahead, one at a time, as this
 
 test("a page loading against a moved board forgets the kept picture and never shows it", async () => {
 	const storage = memoryStorage();
-	const request = { board: "pipeline", theme: "light" } as const;
+	const request = { board: "pipeline" } as const;
 	// A previous page load drew the board at version 1 and kept it.
 	const before = page(storage);
 	await before.client.fetchQuery(semanticRenderQuery(request));
@@ -329,16 +313,16 @@ test("a page loading against a moved board forgets the kept picture and never sh
 	await until(() => storage.size() === 0);
 });
 
-test("a page that loads draws every listed board ahead in the theme it shows, and never one it has kept", async () => {
+test("a page that loads draws every listed board ahead once, for both themes, and never one it has kept", async () => {
 	const storage = memoryStorage();
-	const request = { board: "pipeline", theme: "dark" } as const;
-	// Nothing kept yet, as after a new renderer build, and no picture read yet to
-	// say which theme: listing the boards draws each one ahead, whole, in the
-	// theme on the page, before anybody opens it.
-	const first = page(storage, { theme: "dark" });
+	const request = { board: "pipeline" } as const;
+	// Nothing kept yet, as after a new renderer build: listing the boards draws
+	// each one ahead, whole, before anybody opens it. Once: a picture takes the
+	// page's theme, so a render names none and none is drawn twice.
+	const first = page(storage);
 	await first.client.fetchQuery(semanticBoardListQuery());
 	await until(() => first.draws.length === 1);
-	expect(first.draws[0]).toMatchObject({ version: 1, theme: "dark" });
+	expect(first.draws[0]).toEqual({ version: 1 });
 	expect(first.draws[0]?.variant).toBeUndefined();
 	expect(first.draws[0]?.view).toBeUndefined();
 	// Opening it finds it drawn, without laying it out again.
@@ -348,7 +332,7 @@ test("a page that loads draws every listed board ahead in the theme it shows, an
 
 	// Loaded again: the kept picture comes out of storage and nothing is laid out.
 	await until(() => storage.size() === 1);
-	const again = page(storage, { theme: "dark" });
+	const again = page(storage);
 	await again.client.fetchQuery(semanticBoardListQuery());
 	await until(() => again.client.getQueryData(semanticBoardKeys.render(request)) !== undefined);
 	expect(again.draws).toHaveLength(0);
@@ -356,8 +340,8 @@ test("a page that loads draws every listed board ahead in the theme it shows, an
 
 test("a picture drawn ahead is still in the tab when somebody opens its board, however long after", async () => {
 	// A cache that lets go of whatever nobody observes almost at once.
-	const shortLived = page(memoryStorage(), { theme: "light", gcTime: 1 });
-	const request = { board: "pipeline", theme: "light" } as const;
+	const shortLived = page(memoryStorage(), { gcTime: 1 });
+	const request = { board: "pipeline" } as const;
 	await shortLived.client.fetchQuery(semanticBoardListQuery());
 	await until(
 		() => shortLived.client.getQueryData(semanticBoardKeys.render(request)) !== undefined,

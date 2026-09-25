@@ -253,7 +253,7 @@ describe("the surface across pictures", () => {
 		});
 	});
 
-	test("a first picture and another board's come in part by part; another ground and reduced motion cut", () => {
+	test("a first picture and another board's come in part by part; reduced motion cuts", () => {
 		withFramesByHand(() => {
 			const first = picture([A], []);
 			const { rerender, container } = render(
@@ -278,14 +278,6 @@ describe("the surface across pictures", () => {
 			runFrames(2000 + PICTURE_ENTRY_MS + 1);
 			expect(visibility(surface, "n2")).toBe(1);
 
-			// The same board on another ground is the same picture in other colours.
-			rerender(
-				createElement(Surface, {
-					drawing: picture([B], [], { board: "engine", theme: "light" }),
-					reducedMotion: false,
-				}),
-			);
-			expect(visibility(surface, "n2")).toBe(1);
 			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));
 			expect(visibility(surface, "n1")).toBe(1);
 		});

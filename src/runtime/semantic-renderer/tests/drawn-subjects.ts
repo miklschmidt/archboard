@@ -97,6 +97,7 @@ const PIN = /<g transform="translate\([^"]*\)"><circle[\s\S]*?<\/g>/;
 function withoutColour(group: DrawnGroup): string {
 	return group.markup
 		.replace(/#[0-9a-fA-F]{6}\b/g, "#ink")
+		.replace(/\b(fill|stroke|stop-color):[^;"]+/g, "$1:ink")
 		.replace(/data-semantic-standing="[a-z]+"/g, "data-semantic-standing");
 }
 

@@ -11,11 +11,18 @@
 // There is no script in the document. In `linked` mode it refers to the four
 // font files the Archboard server serves and to nothing else; in `embedded` mode it
 // refers to nothing at all.
+//
+// Its colours are the page's own tokens (`lib/theme.ts`). Shown in a page, the
+// picture takes them, and the page's `color-scheme`, from wherever it is put, so
+// one picture serves both themes and a theme switch repaints nothing. A
+// document that has to stand alone — a file, a bitmap — is drawn for one theme
+// and carries that theme's value of every token it names on its root.
 
 import { coord, type Canvas } from "@/transformers/semantic-renderer/lib/geometry";
-import type { FontSource } from "@/shared/semantic-board/index";
+import type { DiagramTheme, FontSource } from "@/shared/semantic-board/index";
 import type { ReadingDirection } from "@/transformers/semantic-renderer/lib/drawing";
 import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/fonts";
+import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
@@ -167,6 +174,34 @@ interface DocumentInput {
 	readonly body: string;
 	/** Which way the page reads, when the grammar has a reading direction. */
 	readonly reading?: ReadingDirection | undefined;
+	/**
+	 * The theme a document that stands alone is drawn in; absent, it takes the
+	 * theme of the page it is shown in.
+	 */
+	readonly theme?: DiagramTheme | undefined;
+}
+
+/** A reference to one of the page's tokens. */
+const TOKEN_REFERENCE = /var\((--[\w-]+)\)/gu;
+
+/**
+ * What a document that stands alone declares on its root: the colour scheme
+ * its `light-dark()` choices follow, and one theme's value of every token the
+ * document names, in name order.
+ *
+ * On the root's own `style` rather than in the stylesheet, so that the values
+ * reach this document and nothing else wherever it is put: a stylesheet rule
+ * inside an SVG applies to the whole page it is inlined into.
+ * @param theme The theme it is drawn in.
+ * @param document Everything the document paints with.
+ * @returns The root's `style`.
+ */
+function standingAlone(theme: DiagramTheme, document: string): string {
+	const names = new Set([...document.matchAll(TOKEN_REFERENCE)].map((found) => found[1]!));
+	return [
+		`color-scheme:${theme}`,
+		...[...names].toSorted().map((name) => `${name}:${themeColor(theme, name)}`),
+	].join(";");
 }
 
 /**
@@ -175,18 +210,10 @@ interface DocumentInput {
  * @returns The whole document.
  */
 function svgDocument(input: DocumentInput): string {
-	const { width, height, palette, title, description, fonts, body, reading } = input;
-	const defs = wrap("defs", {}, markers(palette));
-	return lines([
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${coord(width)} ${coord(height)}" ` +
-			`width="${coord(width)}" height="${coord(height)}" role="img" aria-label="${escapeXml(title)}" ` +
-			`font-family="${escapeXml(SANS_STACK)}"` +
-			(reading === undefined ? "" : ` data-reading-direction="${reading}"`) +
-			">",
-		wrap("title", {}, escapeXml(title)),
-		description === undefined ? "" : wrap("desc", {}, escapeXml(description)),
+	const { width, height, palette, title, description, fonts, body, reading, theme } = input;
+	const painted = lines([
 		stylesheet(palette, fonts),
-		defs,
+		wrap("defs", {}, markers(palette)),
 		tag("rect", {
 			x: 0,
 			y: 0,
@@ -195,6 +222,17 @@ function svgDocument(input: DocumentInput): string {
 			fill: palette.background,
 		}),
 		body,
+	]);
+	return lines([
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${coord(width)} ${coord(height)}" ` +
+			`width="${coord(width)}" height="${coord(height)}" role="img" aria-label="${escapeXml(title)}" ` +
+			`font-family="${escapeXml(SANS_STACK)}"` +
+			(reading === undefined ? "" : ` data-reading-direction="${reading}"`) +
+			(theme === undefined ? "" : ` style="${escapeXml(standingAlone(theme, painted))}"`) +
+			">",
+		wrap("title", {}, escapeXml(title)),
+		description === undefined ? "" : wrap("desc", {}, escapeXml(description)),
+		painted,
 		"</svg>",
 	]);
 }
