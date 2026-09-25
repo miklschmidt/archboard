@@ -340,13 +340,4 @@ function routeScene(
 	);
 }
 
-export {
-	EMPTY_CHANNEL,
-	PAGE_MARGIN,
-	TRACK_BOTTOM,
-	TRACK_TOP,
-	channelHeight,
-	routeScene,
-	trunkKind,
-	type SceneLine,
-};
+export { EMPTY_CHANNEL, PAGE_MARGIN, TRACK_TOP, channelHeight, routeScene, trunkKind };
