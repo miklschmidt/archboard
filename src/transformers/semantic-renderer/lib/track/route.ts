@@ -19,6 +19,7 @@ import type {
 	ArchitectureDrawing,
 	DrawingEdge,
 	DrawingNode,
+	DrawingRegion,
 	MeasuredArchitecture,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
@@ -231,6 +232,67 @@ function drawFrames(
 	});
 }
 
+/** Room a group region keeps below its lowest member. */
+const REGION_BOTTOM = 14;
+/** How far a region's caption sits in from its band's left edge. */
+const REGION_CAPTION_INSET = 6;
+
+/**
+ * Every group region: Graphviz's width, from its caption row down to below its
+ * lowest member, the labels of the relationships it holds included.
+ * @param scene The spaced scene.
+ * @param edges The placed relationships.
+ * @param measured The measured captions.
+ * @param left How far every x moves.
+ * @returns The regions.
+ */
+function drawRegions(
+	scene: Scene,
+	edges: ReadonlyMap<string, ElkExtendedEdge>,
+	measured: MeasuredArchitecture,
+	left: number,
+): DrawingRegion[] {
+	return scene.regions.flatMap((region) => {
+		const caption = measured.groups?.captions.get(region.group);
+		if (caption === undefined) return [];
+		const inside = new Set(
+			region.members.flatMap((id) => [id, ...(scene.frames.get(id)?.members ?? [])]),
+		);
+		const centred = scene.moved(region.caption, left);
+		// The caption reads from the band's top-left corner, as a frame's title does.
+		const top = { ...centred, x: region.box.x + left + REGION_CAPTION_INSET };
+		const boxes = [
+			...[...inside].flatMap((id) => {
+				const item = scene.cards.get(id) ?? scene.titles.get(id);
+				return item === undefined ? [] : [scene.moved(item, left)];
+			}),
+			...[...scene.labels]
+				.filter(([edge]) => {
+					const placed = edges.get(edge)!;
+					return inside.has(placed.sources[0]!) && inside.has(placed.targets[0]!);
+				})
+				.map(([, item]) => scene.moved(item, left)),
+		];
+		const bottom = Math.max(top.y + top.height, ...boxes.map((box) => box.y + box.height));
+		const depth =
+			region.parent === undefined ? 0 : (scene.frames.get(region.parent)?.depth ?? 0) + 1;
+		return [
+			{
+				group: region.group,
+				parent: region.parent,
+				box: {
+					x: region.box.x + left,
+					y: top.y,
+					width: region.box.width,
+					height: bottom + REGION_BOTTOM - top.y,
+				},
+				caption: { box: top, measured: caption },
+				depth,
+			},
+		];
+	});
+}
+
 /**
  * Every relationship's drawn line and label.
  * @param scene The spaced scene.
@@ -318,13 +380,15 @@ function routeTracks(
 	const cards = drawCards(scene, measured, PAGE_MARGIN);
 	const containers = drawFrames(scene, edges, measured, PAGE_MARGIN);
 	const drawn = drawEdges(scene, content, routed, measured);
+	const regions = drawRegions(scene, edges, measured, PAGE_MARGIN);
 	const labels = drawn.flatMap(({ label }) => (label === undefined ? [] : [label.box]));
 	return {
 		direction: "down",
-		...pageAround([...cards, ...containers].map(({ box }) => box).concat(labels)),
+		...pageAround([...cards, ...containers, ...regions].map(({ box }) => box).concat(labels)),
 		cards,
 		containers,
 		edges: drawn,
+		...(regions.length === 0 ? {} : { regions }),
 	};
 }
 

@@ -98,20 +98,15 @@ function wallsOn(scene: Scene, band: number, lanes: readonly number[]): Wall[] {
 }
 
 /**
- * The walls of every frame a band passes through.
+ * The walls of every frame and group region a band passes through.
  * @param scene The placed scene.
  * @param band The band.
  * @returns Each wall, widened by the frame's inset.
  */
 function frameWallsOn(scene: Scene, band: number): Wall[] {
-	return [...scene.frames]
-		.filter(([id]) => band >= scene.titles.get(id)!.band && band <= scene.lastBandOf(id))
-		.flatMap(([, { node }]) =>
-			[node.x!, node.x! + node.width!].map((wall): Wall => [
-				wall - CONTAINER_INSET,
-				wall + CONTAINER_INSET,
-			]),
-		);
+	return [...scene.walled(band).values()].flatMap((walls) =>
+		walls.map((wall): Wall => [wall - CONTAINER_INSET, wall + CONTAINER_INSET]),
+	);
 }
 
 /**

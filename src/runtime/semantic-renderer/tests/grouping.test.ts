@@ -37,54 +37,44 @@ const nodes = [
 	{ id: "api", name: "API", kind: "api", parent: "plain" },
 ];
 
-describe("containment and type have independent visual channels", () => {
+describe("a card's body takes its group's colour and its chip its type's", () => {
+	const grouped = SemanticPolicySchema.parse({
+		...policy,
+		groups: { core: { name: "Core", color: "green" } },
+	});
+	const members = [
+		{ id: "cloud", name: "Azure", kind: "azure" },
+		{ id: "gate", name: "Gateway", kind: "api", parent: "cloud", groups: ["core"] },
+		{ id: "work", name: "Worker", kind: "plain", parent: "cloud", groups: ["core"] },
+		{ id: "side", name: "Sidecar", kind: "api", parent: "cloud" },
+		{ id: "lone", name: "Lone", kind: "kubernetes", groups: ["core"] },
+	];
 	for (const theme of ["light", "dark"] as const) {
-		test(`expanded, inherited, collapsed and unknown types on ${theme}`, async () => {
-			const expanded = paintedIn(
-				(await renderArchitecture({ content: orderedFixture({ nodes }), policy })).svg,
+		test(`group members, a card no group places, a container and a lone member on ${theme}`, async () => {
+			const drawn = paintedIn(
+				(await renderArchitecture({ content: orderedFixture({ nodes: members }), policy: grouped }))
+					.svg,
 				theme,
 			);
-			const cluster = groupOf(expanded, "region", "cluster")!.markup;
-			const plain = groupOf(expanded, "region", "plain")!.markup;
-			const api = groupOf(expanded, "node", "api")!.markup;
-			const cloud = groupOf(expanded, "region", "cloud")!.markup;
-			// Nested surfaces must composite over their parents, not replace them
-			// with a color preblended against an opaque card background.
-			for (const [markup, color] of [
-				[cloud, "blue"],
-				[cluster, "green"],
-				[plain, "green"],
-				[api, "green"],
-			] as const) {
+			for (const id of ["gate", "work"]) {
+				const markup = groupOf(drawn, "node", id)!.markup;
 				const body = markup.match(/<rect(?![^>]*class="ab-halo")[^>]*>/)![0];
-				expect(body).toContain(`fill="${themeColor(theme, `--semantic-${color}`)}"`);
+				expect(body).toContain(`fill="${themeColor(theme, "--semantic-green")}"`);
 				expect(body).toContain('fill-opacity="0.07"');
-				expect(body).not.toMatch(/(?:^|\s)opacity=/);
+				expect(markup).toContain('data-body-color="green"');
 			}
-			expect(expanded.indexOf(cloud)).toBeLessThan(expanded.indexOf(cluster));
-			expect(expanded.indexOf(cluster)).toBeLessThan(expanded.indexOf(plain));
-			expect(expanded.indexOf(plain)).toBeLessThan(expanded.indexOf(api));
-			expect(cluster).toContain('data-body-color="green"');
-			expect(cluster).toContain('data-type-color="green"');
-			expect(plain).toContain('data-body-color="green"');
-			expect(plain).toContain('data-type-color="neutral"');
-			expect(api).toContain('data-body-color="green"');
-			expect(api).toContain('data-type-color="violet"');
-			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-green")}"`);
-			expect(api).toContain(`stroke="${themeColor(theme, "--semantic-violet")}"`);
-			const collapsed = await renderArchitecture({
-				content: orderedFixture({ nodes: nodes.slice(0, 2) }),
-				policy,
-			});
-			const card = groupOf(collapsed.svg, "node", "cluster")!.markup;
-			expect(card).toContain('data-body-color="blue"');
-			expect(card).toContain('data-type-color="green"');
-			expect(card).toContain('data-type-icon="RiShipLine"');
+			// A container colours nothing inside it, however its own kind is coloured.
+			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
+			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-body-color="neutral"');
+			// A group with one member among its siblings places nobody.
+			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="neutral"');
+			// The chip keeps its type's colour.
+			expect(groupOf(drawn, "node", "gate")!.markup).toContain('data-type-color="violet"');
+			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-type-color="green"');
+			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-type-color="blue"');
 			const unknown = await renderArchitecture({
-				content: orderedFixture({
-					nodes: [{ id: "u", name: "Old kind", kind: "retired" }],
-				}),
-				policy,
+				content: orderedFixture({ nodes: [{ id: "u", name: "Old kind", kind: "retired" }] }),
+				policy: grouped,
 			});
 			expect(unknown.svg).toContain('data-body-color="neutral"');
 			expect(unknown.svg).toContain('data-type-color="neutral"');
@@ -92,23 +82,19 @@ describe("containment and type have independent visual channels", () => {
 		});
 	}
 
-	test("groups do not affect appearance and current policy can restyle unchanged meaning", async () => {
-		const content = orderedFixture({ nodes });
-		const plain = await renderArchitecture({ content, theme: "light", policy });
-		const groupedContent = structuredClone(content);
-		for (const node of groupedContent.nodes) node.groups = ["migration"];
-		const grouped = await renderArchitecture({
-			content: groupedContent,
+	test("the current policy restyles unchanged meaning: a group's colour, not the board, decides", async () => {
+		const content = orderedFixture({ nodes: members });
+		const green = await renderArchitecture({ content, theme: "light", policy: grouped });
+		const yellow = await renderArchitecture({
+			content,
 			theme: "light",
-			policy,
+			policy: SemanticPolicySchema.parse({
+				...policy,
+				groups: { core: { name: "Core", color: "yellow" } },
+			}),
 		});
-		expect(grouped).toEqual(plain);
-		const aws = await renderArchitecture({
-			content: orderedFixture({ nodes: [{ ...nodes[0], kind: "aws" }, nodes[1]] }),
-			theme: "light",
-			policy,
-		});
-		expect(groupOf(aws.svg, "node", "cluster")!.markup).toContain('data-body-color="yellow"');
+		expect(groupOf(green.svg, "node", "gate")!.markup).toContain('data-body-color="green"');
+		expect(groupOf(yellow.svg, "node", "gate")!.markup).toContain('data-body-color="yellow"');
 	});
 
 	test("comparison overrides the border while preserving body tint and type chips", async () => {

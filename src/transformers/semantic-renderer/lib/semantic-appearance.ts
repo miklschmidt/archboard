@@ -1,4 +1,4 @@
-import type { SemanticNode } from "@/shared/semantic-board/index";
+import { placingGroups, type SemanticNode } from "@/shared/semantic-board/index";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	type PaletteColor,
@@ -8,8 +8,10 @@ import {
 /** The independent visual channels of a node in this reading. */
 interface NodeAppearance {
 	readonly container: boolean;
+	/** Its body's colour: the colour of the group it is placed with (TASK-347). */
 	readonly bodyColor?: PaletteColor | undefined;
-	readonly scope?: string | undefined;
+	/** The group whose colour it takes, if any. */
+	readonly group?: string | undefined;
 	readonly typeColor?: PaletteColor | undefined;
 	readonly icon: string;
 	readonly typeName: string;
@@ -30,7 +32,9 @@ function ownDefinition<Definition>(
 }
 
 /**
- * Resolve containment from the final visible subjects, including comparison removals.
+ * Resolve each drawn subject's channels: its body takes the colour of the
+ * group it is placed with, and its chip the colour of its type. A container
+ * colours nothing inside it; that is a group's role (TASK-347).
  * @param nodes Subjects present in the drawing.
  * @param policy The current vault policy.
  * @returns Appearance keyed by existing subject identity.
@@ -39,20 +43,15 @@ function nodeAppearances(
 	nodes: readonly SemanticNode[],
 	policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
 ): ReadonlyMap<string, NodeAppearance> {
-	const byId = new Map(nodes.map((node) => [node.id, node]));
 	const parents = new Set(nodes.map((node) => node.parent));
+	const placing = placingGroups(nodes, policy);
 	const resolved = new Map<string, NodeAppearance>();
 	for (const node of nodes) {
-		const container = parents.has(node.id);
-		const { bodyColor, scope } = inheritedScope(
-			container ? node : byId.get(node.parent ?? ""),
-			byId,
-			policy,
-		);
+		const group = placing.get(node.id);
 		resolved.set(node.id, {
-			container,
-			bodyColor,
-			scope,
+			container: parents.has(node.id),
+			bodyColor: group === undefined ? undefined : ownDefinition(policy.groups, group)?.color,
+			group,
 			...typeAppearance(node.kind, policy),
 		});
 	}
@@ -76,27 +75,6 @@ function typeAppearance(
 		typeName: type?.name ?? kind,
 		typeKind: kind,
 	};
-}
-
-/**
- * Walk outward to the nearest colored visible container.
- * @param node First enclosing container, or the container itself.
- * @param nodes Visible node lookup.
- * @param policy Current vault policy.
- * @returns Named body color and the subject establishing it.
- */
-function inheritedScope(
-	node: SemanticNode | undefined,
-	nodes: ReadonlyMap<string, SemanticNode>,
-	policy: SemanticPolicy,
-): Pick<NodeAppearance, "bodyColor" | "scope"> {
-	let at = node;
-	while (at !== undefined) {
-		const bodyColor = ownDefinition(policy.nodeKinds, at.kind)?.color;
-		if (bodyColor !== undefined) return { bodyColor, scope: at.id };
-		at = nodes.get(at.parent ?? "");
-	}
-	return {};
 }
 
 /**

@@ -13,6 +13,11 @@ import type {
 	MeasuredNode,
 } from "@/transformers/semantic-renderer/lib/drawing";
 
+/** The layout option naming the group a node is placed with (TASK-347). */
+const PLACING_GROUP = "archboard.group";
+/** The root layout option carrying each placing group's caption size, as `[id, width, height]` rows. */
+const GROUP_CAPTIONS = "archboard.group.captions";
+
 /** Shared diagram spacing; legacy option names remain the transport spelling. */
 const COMPOUND_OPTIONS: LayoutOptions = {
 	"elk.spacing.labelNode": String(LABEL_CARD_CLEARANCE),
@@ -24,9 +29,10 @@ const COMPOUND_OPTIONS: LayoutOptions = {
 /**
  * Convert measured dimensions to a card or expandable frame.
  * @param measured The complete text measurement.
+ * @param group The group it is placed with, if any.
  * @returns The measured shape before containment is assembled.
  */
-function nodeOf(measured: MeasuredNode): ElkNode {
+function nodeOf(measured: MeasuredNode, group: string | undefined): ElkNode {
 	const { node, width, height, headerHeight } = measured;
 	return {
 		id: node.id,
@@ -34,6 +40,7 @@ function nodeOf(measured: MeasuredNode): ElkNode {
 		height,
 		layoutOptions: {
 			"archboard.order": String(node.order),
+			...(group === undefined ? {} : { [PLACING_GROUP]: group }),
 			"archboard.order-group":
 				node.responsibility === undefined
 					? String(node.order)
@@ -65,6 +72,22 @@ function labelsOf(edge: SemanticEdge, measured: MeasuredArchitecture): ElkLabel[
 }
 
 /**
+ * The root options carrying each placing group's caption size, when any group places.
+ * @param measured The measured architecture.
+ * @returns The options, or none.
+ */
+function captionOptions(measured: MeasuredArchitecture): Pick<ElkNode, "layoutOptions"> {
+	const captions = [...(measured.groups?.captions ?? [])].map(([id, { width, height }]) => [
+		id,
+		width,
+		height,
+	]);
+	return captions.length === 0
+		? {}
+		: { layoutOptions: { [GROUP_CAPTIONS]: JSON.stringify(captions) } };
+}
+
+/**
  * Construct one whole graph without rank, flank or boundary-port policies.
  * @param content The view's semantic content.
  * @param measured Its fixed text and card dimensions.
@@ -76,7 +99,9 @@ function compoundGraph(
 	measured: MeasuredArchitecture,
 	standings?: Readonly<Record<string, ChangeKind>>,
 ): ElkNode {
-	const nodes = new Map([...measured.nodes].map(([id, value]) => [id, nodeOf(value)]));
+	const nodes = new Map(
+		[...measured.nodes].map(([id, value]) => [id, nodeOf(value, measured.groups?.placing.get(id))]),
+	);
 	const children: ElkNode[] = [];
 	for (const node of content.nodes.toSorted((one, other) => one.order - other.order)) {
 		const parent = node.parent === undefined ? undefined : nodes.get(node.parent);
@@ -84,6 +109,7 @@ function compoundGraph(
 	}
 	return {
 		id: "architecture:root",
+		...captionOptions(measured),
 		children,
 		edges: content.edges
 			.toSorted((one, other) => one.order - other.order)
@@ -104,4 +130,4 @@ function compoundGraph(
 	};
 }
 
-export { COMPOUND_OPTIONS, compoundGraph };
+export { COMPOUND_OPTIONS, GROUP_CAPTIONS, PLACING_GROUP, compoundGraph };

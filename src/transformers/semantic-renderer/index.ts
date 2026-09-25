@@ -217,6 +217,7 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
  * @param expanded The architecture after adding drawable flow-step lines.
  * @param standing Comparison standing used to keep marked relationships apart.
  * @param engine The engine that lays it out.
+ * @param groups The vault's groups, in order, which place and caption regions.
  * @returns Its deterministic layout.
  */
 function layoutRemembered(
@@ -224,6 +225,7 @@ function layoutRemembered(
 	expanded: VariantContent,
 	standing: StatedStandings | undefined,
 	engine: LayoutEngineName,
+	groups: SemanticPolicy["groups"],
 ): Promise<PaintedDrawing> {
 	const edgeStandings =
 		standing === undefined
@@ -231,14 +233,19 @@ function layoutRemembered(
 			: Object.fromEntries(
 					expanded.edges.map((edge) => [edge.id, standing[edge.id] ?? "unchanged"]),
 				);
-	const key = JSON.stringify([engine, content, edgeStandings]);
+	const named = Object.entries(groups).map(([id, { name }]) => [id, name]);
+	const key = JSON.stringify([engine, content, edgeStandings, named]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
 		layouts.set(key, known);
 		return known;
 	}
-	const layout = layoutEngine(engine)(expanded, measureArchitecture(expanded), edgeStandings);
+	const layout = layoutEngine(engine)(
+		expanded,
+		measureArchitecture(expanded, { groups }),
+		edgeStandings,
+	);
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.
 	layout.catch(() => layouts.delete(key));
@@ -264,18 +271,20 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 	}
 
 	const stepLines = withStepLines(request.content);
+	const policy = request.policy ?? DEFAULT_SEMANTIC_POLICY;
 	const drawing = await layoutRemembered(
 		request.content,
 		stepLines.content,
 		request.standing,
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
+		policy.groups,
 	);
 	const painting = paintArchitecture(
 		drawing,
 		PALETTE,
 		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
-		request.policy ?? DEFAULT_SEMANTIC_POLICY,
+		policy,
 		stepLines.derived,
 	);
 	const page = pageFor(painting, PALETTE, request.unbuilt);
