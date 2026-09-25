@@ -1,0 +1,164 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaalpha",
+			"kind": "function",
+			"order": 1000,
+			"responsibility": "brav car del eagleeagle: falc garde, harb isl jungle kettl, lanternl mea nee ora"
+		},
+		{
+			"id": "n1",
+			"name": "pepperpe qua riverri",
+			"kind": "function",
+			"order": 2000,
+			"responsibility": "summ tim alpha brav carbon, del eagle falcon gardenga harb, isl jun kett lante meadowm ne or pep qu rive"
+		},
+		{
+			"id": "n2",
+			"name": "summit timb alphaal",
+			"kind": "function",
+			"order": 3000,
+			"responsibility": "bravo --carbo, --delta, --eaglee-falconf gar --ha-islandi jun ke lant meadow n orangeora pepper quar rive"
+		},
+		{
+			"id": "n3",
+			"name": "summitsummit",
+			"kind": "function",
+			"order": 4000,
+			"responsibility": "timbe alp bravobra carbonca"
+		},
+		{
+			"id": "n4",
+			"name": "deltadelta eag",
+			"kind": "function",
+			"order": 5000,
+			"responsibility": "falconfa garden har islandi ju ke lante, mead ne-orange pep quartz rive summits timb"
+		},
+		{
+			"id": "n5",
+			"name": "alphaalpha",
+			"kind": "module",
+			"order": 6000,
+			"responsibility": "bra carb d eagle falconf ga har islandi, jung ket lanternl mea nee orange"
+		},
+		{
+			"id": "n6",
+			"name": "pepperp quartzqua",
+			"kind": "function",
+			"order": 7000,
+			"responsibility": "rive summit ti alph bravo"
+		},
+		{
+			"id": "n7",
+			"name": "carbonc deltadelt",
+			"kind": "service",
+			"order": 8000,
+			"responsibility": "eag falco ga harbo islandi, jun ket lanter mead needl oran pepper qua rive"
+		},
+		{
+			"id": "n8",
+			"name": "summ timb",
+			"kind": "function",
+			"order": 9000,
+			"responsibility": "alp brav c deltad eagl, falconfal gard har islan jungle kett lantern meadow ne"
+		},
+		{
+			"id": "n9",
+			"name": "orange pepper",
+			"kind": "module",
+			"order": 10000,
+			"responsibility": "quart rive summ timbertimb alph bravo carbon del eagl fa ga harbo islandi ju ket lanternla meadow"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n8",
+			"kind": "call",
+			"order": 1000,
+			"label": "need, ora p quartzqua river summ"
+		},
+		{
+			"id": "e1",
+			"from": "n0",
+			"to": "n2",
+			"kind": "call",
+			"order": 2000,
+			"label": "timbert alpha"
+		},
+		{
+			"id": "e2",
+			"from": "n0",
+			"to": "n3",
+			"kind": "call",
+			"order": 3000,
+			"label": "bravob"
+		},
+		{
+			"id": "e3",
+			"from": "n0",
+			"to": "n4",
+			"kind": "call",
+			"order": 4000,
+			"label": "carbonc"
+		},
+		{
+			"id": "e4",
+			"from": "n4",
+			"to": "n5",
+			"kind": "call",
+			"order": 5000,
+			"label": "deltadel + eaglee"
+		},
+		{
+			"id": "e5",
+			"from": "n0",
+			"to": "n6",
+			"kind": "call",
+			"order": 6000,
+			"label": "fa gardeng"
+		},
+		{
+			"id": "e6",
+			"from": "n7",
+			"to": "n0",
+			"kind": "call",
+			"order": 7000,
+			"label": "harb"
+		},
+		{
+			"id": "e7",
+			"from": "n3",
+			"to": "n1",
+			"kind": "call",
+			"order": 8000,
+			"label": "islandi"
+		},
+		{
+			"id": "e8",
+			"from": "n7",
+			"to": "n1",
+			"kind": "call",
+			"order": 9000,
+			"label": "junglejung, ket lan meadowme needl"
+		},
+		{
+			"id": "e9",
+			"from": "n0",
+			"to": "n9",
+			"kind": "call",
+			"order": 10000,
+			"label": "ora pepper quart, river sum timbert"
+		},
+		{
+			"id": "e10",
+			"from": "n6",
+			"to": "n9",
+			"kind": "call",
+			"order": 11000,
+			"label": "alphaalpha"
+		}
+	]
+}

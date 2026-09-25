@@ -33,6 +33,7 @@ import {
 import { slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
+import { closeJogs } from "@/transformers/semantic-renderer/lib/track/jogs";
 
 /** From the band above to the first track: room for the bend off a face. */
 const TRACK_TOP = 2 * BEND_RADIUS;
@@ -324,6 +325,11 @@ function routeScene(
 	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
 	assignPorts(nets);
 	if (pullToPorts(scene, [...chains.values()], portsOf(nets))) followLanes(nets);
+	closeJogs(
+		scene,
+		[...chains.values()],
+		[...routed.values()].map((route) => route.nets),
+	);
 	for (const route of routed.values()) settleStraights(route.nets);
 	for (const line of lines.filter(({ enters }) => enters !== undefined)) {
 		const first = routed.get(line.id)!.nets[0]!;

@@ -288,6 +288,22 @@ function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
 }
 
 /**
+ * Move a label box so its centre stands at an x, when it stays clear of
+ * everything else on its band.
+ * @param scene The scene.
+ * @param nets Every net.
+ * @param item The label box.
+ * @param x Where its centre goes.
+ * @returns Whether it moved.
+ */
+function nudgeLabel(scene: Scene, nets: readonly Net[], item: Item, x: number): boolean {
+	const box = { ...item.box, x: x - item.box.width / 2 };
+	if (!clearOnBand(scene, item, box, lanesByBand(scene, nets)[item.band]!)) return false;
+	item.box = box;
+	return true;
+}
+
+/**
  * The x of every lane, by the band it passes.
  * @param scene The placed scene.
  * @param nets Every net.
@@ -303,4 +319,4 @@ function lanesByBand(scene: Scene, nets: readonly Net[]): number[][] {
 	return lanes;
 }
 
-export { slideLabels };
+export { nudgeLabel, slideLabels };

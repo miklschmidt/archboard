@@ -318,6 +318,33 @@ function freeWithout(scene: Scene, runs: readonly LaneRun[], left: LaneRun): Occ
 }
 
 /**
+ * Move the run of lanes a lane belongs to onto a column, when that column is
+ * free on every band the run passes.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param lane The lane.
+ * @param x The column.
+ * @returns Whether the run moved.
+ */
+function moveRun(scene: Scene, chains: readonly Chain[], lane: Station, x: number): boolean {
+	const runs = laneRuns(chains);
+	const run = runs.find(({ lanes }) => lanes.includes(lane));
+	if (run === undefined || !freeWithout(scene, runs, run).fits(run.lanes, x)) return false;
+	for (const each of run.lanes) each.x = x;
+	return true;
+}
+
+/**
+ * The run of lanes a lane belongs to.
+ * @param chains Every relationship's chain.
+ * @param lane The lane.
+ * @returns The run, with the stations either side of it.
+ */
+function runOf(chains: readonly Chain[], lane: Station): LaneRun | undefined {
+	return laneRuns(chains).find(({ lanes }) => lanes.includes(lane));
+}
+
+/**
  * Move one run to or from a container onto its straight column, when that is free.
  * @param scene The scene.
  * @param run The run.
@@ -399,10 +426,13 @@ function nearest(from: number, passes: (x: number) => boolean): number | undefin
 export {
 	LANE,
 	chainOf,
+	moveRun,
 	pullToPorts,
 	reachOf,
+	runOf,
 	straightenIntoContainers,
 	straightenLanes,
 	type Chain,
+	type LaneRun,
 	type Station,
 };
