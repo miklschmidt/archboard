@@ -3,7 +3,6 @@
 // side by side, each run a column block of its own. Here the cut is chosen and
 // the block's lines are cut where they leave and enter a column;
 // `fold-layout.ts` draws the folded block.
-import { fitIn } from "@/shared/shell-geometry/index";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type {
 	Block,
@@ -12,6 +11,12 @@ import type {
 	Piece,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { channelHeight } from "@/transformers/semantic-renderer/lib/track/route";
+import {
+	crossingsOf,
+	readsBetter,
+	scoreOf,
+	type Weighed,
+} from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The narrowest gutter between two columns. */
 const MIN_GUTTER = 48;
@@ -75,37 +80,70 @@ function foldedSize(
 
 /**
  * The columns a block of cards would better fold into, if any: the cut of
- * its ranks into runs that fits the reference pane best, when that beats the
- * block unfolded by a clear margin. Only the board and containers fold.
+ * its ranks into runs that reads best, when that beats the block unfolded by
+ * a clear margin. Only the board and containers fold.
  * @param block The block.
  * @param laid The block laid out unfolded.
  * @param insets Its insets.
+ * @param score How readable the block is unfolded.
  * @returns Its items, column by column, or nothing when it stays whole.
  */
-function foldPlan(block: Block, laid: Laid, insets: Insets): string[][] | undefined {
+function foldPlan(block: Block, laid: Laid, insets: Insets, score: number): string[][] | undefined {
 	const bands = laid.bands.filter(({ items }) => items.length > 0);
 	const folds = (block.kind === "root" || block.kind === "frame") && bands.length >= 3;
-	const runs = folds ? bestRuns(laid, bands, insets) : [];
+	const runs = folds ? bestRuns(block, laid, bands, { insets, score }) : [];
 	return runs.length === 0 ? undefined : runs.map((run) => run.flatMap(({ items }) => items));
 }
 
 /**
- * The runs of bands that fit the reference pane best, when they beat the
- * bands unfolded by a clear margin.
+ * How many of a block's lines run from one run of bands to another: each is
+ * drawn from the bottom of one column round to the top of a later one.
+ * @param block The block.
+ * @param runs Its bands, run by run.
+ * @returns The lines between runs.
+ */
+function busLines(block: Block, runs: readonly (readonly Band[])[]): number {
+	const runOf = new Map(
+		runs.flatMap((run, index) =>
+			run.flatMap(({ items }) => items.map((item) => [item, index] as const)),
+		),
+	);
+	return [...block.lines.values()].filter((line) => {
+		const [tail, head] = [runOf.get(line.tail), runOf.get(line.head)];
+		return tail !== undefined && head !== undefined && tail !== head;
+	}).length;
+}
+
+/**
+ * The runs of bands that read best folded, when they beat the bands unfolded
+ * by a clear margin: each run is estimated at its size with the block's
+ * crossings, less a share for every line between columns.
+ * @param block The block.
  * @param laid The block unfolded.
  * @param bands Its bands that hold items.
- * @param insets Its insets.
+ * @param unfolded Its insets, and how readable it is unfolded.
+ * @param unfolded.insets Its insets.
+ * @param unfolded.score How readable it is unfolded.
  * @returns The runs, or none.
  */
-function bestRuns(laid: Laid, bands: readonly Band[], insets: Insets): Band[][] {
-	let best = { fit: fitIn(laid) * WORTH_FOLDING, runs: [] as Band[][] };
+function bestRuns(
+	block: Block,
+	laid: Laid,
+	bands: readonly Band[],
+	unfolded: { insets: Insets; score: number },
+): Band[][] {
+	const crossings = crossingsOf(laid.lines.values());
+	let best: { weighed: Weighed; runs: Band[][] } | undefined;
 	for (const cuts of cutsOf(bands.length)) {
 		const starts = [0, ...cuts];
 		const runs = starts.map((start, index) => bands.slice(start, starts[index + 1]));
-		const fit = fitIn(foldedSize(laid, runs, insets));
-		if (fit > best.fit) best = { fit, runs };
+		const size = foldedSize(laid, runs, unfolded.insets);
+		const weighed = { ...size, crossings, bus: busLines(block, runs) };
+		if (best === undefined || readsBetter(weighed, best.weighed)) best = { weighed, runs };
 	}
-	return best.runs;
+	return best !== undefined && scoreOf(best.weighed) > unfolded.score * WORTH_FOLDING
+		? best.runs
+		: [];
 }
 
 /** One fold of a block: its columns, and the tree whose lines it cuts. */
