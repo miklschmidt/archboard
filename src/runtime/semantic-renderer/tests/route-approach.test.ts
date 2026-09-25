@@ -7,6 +7,7 @@ import frameApproach from "./frame-head-approach.json";
 import sideApproach from "./side-head-approach.json";
 import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import {
 	routeCrosses,
 	routePoints,
@@ -112,38 +113,41 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // Reduced from Cloud platform-strangler: two relationship kinds put the hero
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
-test("an incoming frame arrow has a whole head and rounded bend before its endpoint", async () => {
-	const content = orderedFixture(frameApproach);
-	const drawing = await renderArchitecture({ content, theme: "light" });
-	const points = routePoints(drawing.svg).get("g1zvz5QO")!;
-	expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
-	const group = drawing.svg.match(
-		/<g data-semantic-kind="edge" data-semantic-id="g1zvz5QO"[^>]*>([\s\S]*?)<\/g>/,
-	)![1]!;
-	const route = [
-		...group.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),
-	].at(-1)!;
-	const width = Number(route[0].match(/stroke-width="([^"]+)"/)![1]);
-	const marker = drawing.svg.match(new RegExp(`<marker id="${route[2]}"[^>]*>`))![0];
-	const refX = Number(marker.match(/refX="([^"]+)"/)![1]);
-	const markerWidth = Number(marker.match(/markerWidth="([^"]+)"/)![1]);
-	const viewWidth = Number(marker.match(/viewBox="[^ ]+ [^ ]+ ([^ ]+) [^"]+"/)![1]);
-	const headReach = ((refX * markerWidth) / viewWidth) * width;
-	const steps = [...route[1]!.matchAll(/([MLC])([^MLC]+)/g)].map((match) => ({
-		kind: match[1],
-		values: match[2]!.trim().split(/[ ,]+/).map(Number),
-	}));
-	const end = steps.at(-1)!;
-	const corner = steps.at(-2)!;
-	expect(end.kind).toBe("L");
-	expect(corner.kind, "the incoming bend stays rounded").toBe("C");
-	const tip = end.values;
-	const beside = corner.values.slice(-2);
-	expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
-	const start = steps.at(-3)!.values.slice(-2);
-	const radius = Math.min(Math.abs(start[0]! - beside[0]!), Math.abs(start[1]! - beside[1]!));
-	expect(radius, "the bend has its own room before the head").toBeGreaterThanOrEqual(7.99);
-});
+test.each(LayoutEngineSchema.options)(
+	"an incoming frame arrow has a whole head and rounded bend before its endpoint (%s)",
+	async (layout) => {
+		const content = orderedFixture(frameApproach);
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const points = routePoints(drawing.svg).get("g1zvz5QO")!;
+		expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
+		const group = drawing.svg.match(
+			/<g data-semantic-kind="edge" data-semantic-id="g1zvz5QO"[^>]*>([\s\S]*?)<\/g>/,
+		)![1]!;
+		const route = [
+			...group.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),
+		].at(-1)!;
+		const width = Number(route[0].match(/stroke-width="([^"]+)"/)![1]);
+		const marker = drawing.svg.match(new RegExp(`<marker id="${route[2]}"[^>]*>`))![0];
+		const refX = Number(marker.match(/refX="([^"]+)"/)![1]);
+		const markerWidth = Number(marker.match(/markerWidth="([^"]+)"/)![1]);
+		const viewWidth = Number(marker.match(/viewBox="[^ ]+ [^ ]+ ([^ ]+) [^"]+"/)![1]);
+		const headReach = ((refX * markerWidth) / viewWidth) * width;
+		const steps = [...route[1]!.matchAll(/([MLC])([^MLC]+)/g)].map((match) => ({
+			kind: match[1],
+			values: match[2]!.trim().split(/[ ,]+/).map(Number),
+		}));
+		const end = steps.at(-1)!;
+		const corner = steps.at(-2)!;
+		expect(end.kind).toBe("L");
+		expect(corner.kind, "the incoming bend stays rounded").toBe("C");
+		const tip = end.values;
+		const beside = corner.values.slice(-2);
+		expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
+		const start = steps.at(-3)!.values.slice(-2);
+		const radius = Math.min(Math.abs(start[0]! - beside[0]!), Math.abs(start[1]! - beside[1]!));
+		expect(radius, "the bend has its own room before the head").toBeGreaterThanOrEqual(7.99);
+	},
+);
 
 // Reduced from Kubernetes runtime HIE4JB9t: Portal's ordinary OIDC connection
 // entered a crowded side corridor with only 12.1 units for the head and bend.

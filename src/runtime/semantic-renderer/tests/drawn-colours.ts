@@ -119,15 +119,20 @@ function literalOf(colour: Rgba): string {
 	return `#${digits.join("")}${alpha}`;
 }
 
+/** What a crossing's mask paints with: luminance, kept or cut, never a theme's ink. */
+const MASK_PAINT = new Set(["white", "black"]);
+
 /**
  * One painted value as a reader sees it in one theme: a colour resolved to a
- * literal, anything else (`none`, `url(#…)`) as it is.
+ * literal, anything else (`none`, `url(#…)`, a mask's white or black) as it is.
  * @param value The paint.
  * @param theme The theme it is shown in.
  * @returns The literal.
  */
 function colourIn(value: string, theme: DiagramTheme): string {
-	return value === "none" || value.startsWith("url(") ? value : literalOf(resolve(value, theme));
+	return value === "none" || value.startsWith("url(") || MASK_PAINT.has(value)
+		? value
+		: literalOf(resolve(value, theme));
 }
 
 /**

@@ -1,6 +1,10 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import {
+	LayoutEngineSchema,
+	type LayoutEngineName,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 import {
 	renderArchitecture,
 	renderDataFlow,
@@ -130,8 +134,8 @@ function selectionInk(svg: string, theme: "light" | "dark"): string {
  * @param standing What the caller says, when it says anything.
  * @returns The rendered architecture.
  */
-function drawn(standing?: StatedStandings): Promise<RenderedDiagram> {
-	return renderArchitecture({ content: PROPOSAL, standing });
+function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<RenderedDiagram> {
+	return renderArchitecture({ content: PROPOSAL, standing, layout });
 }
 
 /**
@@ -314,23 +318,26 @@ describe("a stated standing on an architecture", () => {
 		expect(withoutColour(words)).not.toBe(withoutColour(unmarked));
 	});
 
-	test("one picture draws its standings in each theme's own ink", async () => {
-		const rendered = await drawn(STANDING);
-		for (const standing of ["added", "removed", "changed"]) {
-			expect(rendered.svg).toContain(`data-semantic-standing="${standing}"`);
-		}
-		// Each theme paints its standings in its own ink, and neither reaches for the
-		// ring a viewer already uses to mean "this is what you have selected".
-		const inks = (["light", "dark"] as const).map((theme) => {
-			const queue = groupOf(paintedIn(rendered.svg, theme), "node", "queue");
-			expect(queue, `queue was not drawn in ${theme}`).toBeDefined();
-			const mark = markInk(queue!);
-			expect(mark).toBeDefined();
-			expect(mark).not.toBe(selectionInk(rendered.svg, theme));
-			return mark;
-		});
-		expect(inks[0]).not.toBe(inks[1]);
-	});
+	test.each(LayoutEngineSchema.options)(
+		"one picture draws its standings in each theme's own ink (%s)",
+		async (layout) => {
+			const rendered = await drawn(STANDING, layout);
+			for (const standing of ["added", "removed", "changed"]) {
+				expect(rendered.svg).toContain(`data-semantic-standing="${standing}"`);
+			}
+			// Each theme paints its standings in its own ink, and neither reaches for the
+			// ring a viewer already uses to mean "this is what you have selected".
+			const inks = (["light", "dark"] as const).map((theme) => {
+				const queue = groupOf(paintedIn(rendered.svg, theme), "node", "queue");
+				expect(queue, `queue was not drawn in ${theme}`).toBeDefined();
+				const mark = markInk(queue!);
+				expect(mark).toBeDefined();
+				expect(mark).not.toBe(selectionInk(rendered.svg, theme));
+				return mark;
+			});
+			expect(inks[0]).not.toBe(inks[1]);
+		},
+	);
 });
 
 describe("a stated standing on a sequence", () => {
