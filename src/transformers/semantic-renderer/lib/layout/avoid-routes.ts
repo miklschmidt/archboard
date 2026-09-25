@@ -111,6 +111,32 @@ function invalidPoint(point: Point, index: number, points: readonly Point[]): bo
 	);
 }
 
+/** A step between native points this small is the router's rounding, not a run. */
+const ROUNDING_STEP = 0.05;
+
+/**
+ * Snap each native point onto the axis of the point before it when it stands
+ * only a rounding step off it, so dropping a coincident point can never leave
+ * a hundredth of a point of diagonal behind.
+ * @param points A native route.
+ * @returns The route with every rounding step removed.
+ */
+function squared(points: readonly Point[]): Point[] {
+	const result: Point[] = [];
+	for (const point of points) {
+		const previous = result.at(-1);
+		result.push(
+			previous === undefined
+				? point
+				: {
+						x: Math.abs(point.x - previous.x) < ROUNDING_STEP ? previous.x : point.x,
+						y: Math.abs(point.y - previous.y) < ROUNDING_STEP ? previous.y : point.y,
+					},
+		);
+	}
+	return result;
+}
+
 /**
  * Copy one complete valid route without publishing a partial native scene.
  * @param edge The semantic relationship.
@@ -122,7 +148,7 @@ function sectionsOf(
 	connections: readonly Connection[],
 ): NonNullable<ElkExtendedEdge["sections"]> {
 	const points = simplify(
-		connections.flatMap((connection) => nativeRoutePoints(connection, edge.id)),
+		squared(connections.flatMap((connection) => nativeRoutePoints(connection, edge.id))),
 	);
 	if (points.length < 2 || points.some(invalidPoint))
 		throw new Error(`Layout returned an invalid orthogonal route for relationship ${edge.id}`);
