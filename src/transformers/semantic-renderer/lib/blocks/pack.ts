@@ -85,6 +85,10 @@ function extentOf(sizes: readonly Size[], across: boolean): { long: number; thic
 class PackLayout {
 	readonly boxes = new Map<string, Box>();
 	readonly lines = new Map<string, Point[]>();
+	/** Where its parent settled its own ports on the top and bottom, by port. */
+	settled: ReadonlyMap<string, number> = new Map();
+	/** The width it keeps, once its parent has placed it. */
+	held = 0;
 
 	/**
 	 * Start the layout of a block of blocks.
@@ -257,7 +261,12 @@ class PackLayout {
 			wanted.map(({ x }) => x),
 		);
 		wanted.forEach(({ port }, index) =>
-			this.boxes.set(port, { x: xs[index]! - PORT / 2, y, width: PORT, height: PORT }),
+			this.boxes.set(port, {
+				x: (this.settled.get(port) ?? xs[index]!) - PORT / 2,
+				y,
+				width: PORT,
+				height: PORT,
+			}),
 		);
 	}
 
@@ -324,7 +333,10 @@ class PackLayout {
 		this.place(packing);
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
-		const width = Math.max(size.width, this.block.header?.width ?? 0) + 2 * side;
+		const width = Math.max(
+			Math.max(size.width, this.block.header?.width ?? 0) + 2 * side,
+			this.held,
+		);
 		const ended = [...this.block.ports.values()].includes("bottom");
 		const items = top + this.headRoom();
 		const low = items + size.height + (ended ? HEAD_GAP : 0);

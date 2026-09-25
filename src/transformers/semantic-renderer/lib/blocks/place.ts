@@ -18,6 +18,7 @@ import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/l
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
+import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
 import {
 	BlockTree,
 	type Block,
@@ -332,7 +333,9 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
 /**
  * Lay a measured hierarchy out one way and route every relationship; when a
  * trunk joins two blocks that stand side by side, once more with that trunk
- * leaving its block by the wall that faces the other.
+ * leaving its block by the wall that faces the other. Last, the ports on
+ * every block's top and bottom are settled where both ends of their trunks
+ * are known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -347,8 +350,12 @@ function layOut(
 ): { tree: BlockTree; laid: Map<string, Laid> } {
 	const first = layAll(viz, avoid, graph, undefined, nesting);
 	const exits = exitsOf(first.tree, first.laid);
-	if (exits.size === 0) return first;
-	return layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
+	const last =
+		exits.size === 0
+			? first
+			: layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
+	settlePorts({ ...last, insetsOf, avoid });
+	return last;
 }
 
 /**
