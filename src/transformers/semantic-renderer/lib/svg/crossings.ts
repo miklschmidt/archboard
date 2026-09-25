@@ -1,8 +1,24 @@
+// What each line must not show: the ink beneath a line that crosses over it,
+// the ink another route of its trunk draws for it, and the ink behind a
+// see-through label. Each is cut from the line's own group by one mask, so the
+// actual backdrop shows through, and nothing is painted over anything.
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord, inflate } from "@/transformers/semantic-renderer/lib/geometry";
+import { PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import {
+	coord,
+	inflate,
+	type Box,
+	type Point,
+} from "@/transformers/semantic-renderer/lib/geometry";
 import type { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
-import { curveBounds, pathOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { sharedInk } from "@/transformers/semantic-renderer/lib/layout/drawn-lines";
+import {
+	curveBounds,
+	pathOf,
+	type Curve,
+} from "@/transformers/semantic-renderer/lib/layout/curves";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { pulseBreadth } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import { strokeWidthOf } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 /**
@@ -29,37 +45,152 @@ function contentId(body: string): string {
 const BRIDGE_INK_GAP = 1.5;
 
 /**
- * Clear lower ink narrowly beneath each upper arc, revealing the actual backdrop.
- * @param edges Final bridged routes; local masks also allow an earlier route to rise.
- * @param bridges Local upper curves and the lower connections they cross.
- * @returns Mask definitions and the mask identity for each affected lower route.
+ * The clear space on each side of a straight line where the line it crosses is
+ * cut beneath it rather than hopped: with no arc to say so, only a gap wide
+ * enough to see at a glance tells a crossing from a join.
  */
-function crossingMasks(
+const CUT_GAP = 3;
+
+/** One piece of ink a route must not show, as mask markup. */
+interface Cutout {
+	readonly edgeId: string;
+	readonly markup: string;
+}
+
+/**
+ * Clear lower ink narrowly beneath each line that crosses over it.
+ * @param edges Final bridged routes.
+ * @param bridges Local upper ink and the lower connections it crosses.
+ * @returns One cutout per crossed route.
+ */
+function crossingCutouts(
 	edges: readonly DrawingEdge[],
 	bridges: ReturnType<typeof bridgeCrossings>["bridges"],
-): { definitions: string; masks: ReadonlyMap<string, string> } {
+): Cutout[] {
 	const byId = new Map(edges.map((route) => [route.edge.id, route]));
-	const cutouts = new Map<string, string[]>();
-	for (const bridge of bridges) {
-		const upper = byId.get(bridge.edgeId)!;
-		const cutout = tag("path", {
+	return bridges.flatMap((bridge) => {
+		// A cut beneath a straight line is its one straight piece; a hop or a turn is curved.
+		const [first, ...rest] = bridge.curve.segments;
+		const gap = rest.length === 0 && first?.kind === "line" ? CUT_GAP : BRIDGE_INK_GAP;
+		const markup = tag("path", {
 			d: pathOf(bridge.curve),
 			fill: "none",
 			stroke: "black",
-			"stroke-width": strokeWidthOf(upper.edge) + BRIDGE_INK_GAP * 2,
+			"stroke-width": strokeWidthOf(byId.get(bridge.edgeId)!.edge) + gap * 2,
 			"stroke-linecap": "round",
 			"stroke-linejoin": "round",
 		});
-		for (const id of bridge.under) {
-			const paths = cutouts.get(id) ?? [];
-			paths.push(cutout);
-			cutouts.set(id, paths);
-		}
+		return bridge.under.map((edgeId) => ({ edgeId, markup }));
+	});
+}
+
+/**
+ * A piece of a route carried on past the route's end by a distance, when it
+ * reaches that end, so it covers what the route ends in.
+ * @param piece The piece.
+ * @param end Where the route ends.
+ * @param past How far past it.
+ * @returns The piece, longer where it met the end.
+ */
+function pastEnd(piece: Curve, end: Point, past: number): Curve {
+	const last = piece.segments.at(-1)!;
+	const before = piece.segments.at(-2)?.to ?? piece.from;
+	const length = Math.hypot(last.to.x - before.x, last.to.y - before.y);
+	if (
+		last.kind !== "line" ||
+		length === 0 ||
+		Math.hypot(last.to.x - end.x, last.to.y - end.y) > 0.5
+	)
+		return piece;
+	const scale = (length + past) / length;
+	const to = {
+		x: before.x + (last.to.x - before.x) * scale,
+		y: before.y + (last.to.y - before.y) * scale,
+	};
+	return { ...piece, segments: [...piece.segments.slice(0, -1), { kind: "line", to }] };
+}
+
+/**
+ * Hide every stretch of a route's ink another route of its trunk draws: its
+ * line, its dashes, its comets and an arrowhead on the same point, so the trunk
+ * reads as one line. Square across its ends, so where the routes part the
+ * route's own ink carries on from exactly there.
+ * @param routes The routes before any hop is drawn, as the trunks were found.
+ * @returns One cutout per hidden stretch.
+ */
+function trunkCutouts(routes: readonly DrawingEdge[]): Cutout[] {
+	return [...sharedInk(routes)].flatMap(([index, pieces]) => {
+		const { edge, curve } = routes[index]!;
+		const width = strokeWidthOf(edge);
+		const end = curve.segments.at(-1)?.to ?? curve.from;
+		return pieces.map((piece) => ({
+			edgeId: edge.id,
+			markup: tag("path", {
+				// An arrowhead's tip reaches a line's width past the route's end.
+				d: pathOf(pastEnd(piece, end, width + BRIDGE_INK_GAP)),
+				"stroke-width": coord(pulseBreadth(width) + BRIDGE_INK_GAP * 2),
+				"stroke-linecap": "butt",
+				fill: "none",
+				stroke: "black",
+			}),
+		}));
+	});
+}
+
+/**
+ * Hide every line's ink behind a label that is drawn see-through, as a removed
+ * relationship's is, so the words are not struck through by what they label.
+ * @param edges Final bridged routes.
+ * @param labels The see-through labels' boxes.
+ * @returns One cutout per route passing behind such a label.
+ */
+function labelCutouts(edges: readonly DrawingEdge[], labels: readonly Box[]): Cutout[] {
+	return labels.flatMap((box) => {
+		const markup = tag("rect", {
+			x: coord(box.x),
+			y: coord(box.y),
+			width: coord(box.width),
+			height: coord(box.height),
+			rx: PILL_RADIUS,
+			fill: "black",
+		});
+		return edges
+			.filter(({ curve }) => overlaps(inflate(curveBounds(curve), 1), box))
+			.map(({ edge }) => ({ edgeId: edge.id, markup }));
+	});
+}
+
+/**
+ * Whether two boxes share area.
+ * @param a One box.
+ * @param b Another.
+ * @returns True when they do.
+ */
+function overlaps(a: Box, b: Box): boolean {
+	return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+/**
+ * One mask per route with anything to hide, keeping all the rest of its ink.
+ * @param edges Final bridged routes.
+ * @param cutouts What each route must not show.
+ * @returns Mask definitions and the mask identity for each affected route.
+ */
+function crossingMasks(
+	edges: readonly DrawingEdge[],
+	cutouts: readonly Cutout[],
+): { definitions: string; masks: ReadonlyMap<string, string> } {
+	const byId = new Map(edges.map((route) => [route.edge.id, route]));
+	const grouped = new Map<string, string[]>();
+	for (const { edgeId, markup } of cutouts) {
+		const paths = grouped.get(edgeId) ?? [];
+		if (!paths.includes(markup)) paths.push(markup);
+		grouped.set(edgeId, paths);
 	}
 	const masks = new Map<string, string>();
 	const definitions: string[] = [];
-	for (const [edgeId, paths] of cutouts) {
-		// Keep the full lower stroke, selection halo and endpoints inside the mask.
+	for (const [edgeId, paths] of grouped) {
+		// Keep the full stroke, selection halo, comets and endpoints inside the mask.
 		const box = inflate(curveBounds(byId.get(edgeId)!.curve), 18);
 		const bounds = {
 			x: coord(box.x),
@@ -85,4 +216,4 @@ function crossingMasks(
 	};
 }
 
-export { crossingMasks };
+export { crossingCutouts, crossingMasks, labelCutouts, trunkCutouts };

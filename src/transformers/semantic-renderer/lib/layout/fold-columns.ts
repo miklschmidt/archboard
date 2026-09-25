@@ -386,19 +386,67 @@ export function foldColumns(placed: ElkNode, count: number): ElkNode | undefined
 	const members = columnMembers(graph, bands, partition);
 	const positions = new Map<string, Point & { column: number }>();
 	const columns: Box[] = [];
+	const boxes = members.map((nodes) => nodes.map(boxOf).reduce(covering));
+	const tallest = Math.max(...boxes.map((box) => box.height));
 	let left = DIAGRAM_MARGIN;
 	for (const [column, nodes] of members.entries()) {
-		const box = nodes.map(boxOf).reduce(covering);
-		columns.push({ ...box, x: left, y: DIAGRAM_MARGIN });
-		translate(nodes, { x: left - box.x, y: DIAGRAM_MARGIN - box.y }, column, positions);
+		const box = boxes[column]!;
+		const top = DIAGRAM_MARGIN + columnDrop(graph, nodes, positions, box, tallest - box.height);
+		columns.push({ ...box, x: left, y: top });
+		translate(nodes, { x: left - box.x, y: top - box.y }, column, positions);
 		left += box.width + gap;
 	}
 	graph.x = 0;
 	graph.y = 0;
 	graph.width = left - gap + DIAGRAM_MARGIN;
-	graph.height = Math.max(...columns.map((column) => column.height)) + 2 * DIAGRAM_MARGIN;
+	graph.height = tallest + 2 * DIAGRAM_MARGIN;
 	translateLabels(graph, positions, columns);
 	return graph;
+}
+
+/**
+ * How far a continuation column drops below the page's top: the median of the
+ * drops that would level each of its relationships with an earlier column,
+ * within the room the tallest column leaves. A column's top once always met
+ * the page's, so a card whose only neighbour sat at the foot of the column
+ * before stood at the top and its line climbed the whole page.
+ * @param graph The hierarchy and its relationships.
+ * @param nodes The column's top-level members, still where they were placed.
+ * @param placed Each identity already placed in an earlier column.
+ * @param box The column's bounds.
+ * @param room How far it may drop without growing the page.
+ * @returns The drop.
+ */
+function columnDrop(
+	graph: ElkNode,
+	nodes: readonly ElkNode[],
+	placed: ReadonlyMap<string, unknown>,
+	box: Box,
+	room: number,
+): number {
+	const inside = new Map(flattened(nodes).map((node) => [node.id, node]));
+	const all = nodesById(graph);
+	const drops = (graph.edges ?? []).flatMap((edge) => {
+		const ends = [edge.sources[0]!, edge.targets[0]!];
+		const own = ends.find((id) => inside.has(id));
+		const other = ends.find((id) => placed.has(id));
+		if (own === undefined || other === undefined) return [];
+		return [
+			middle(boxOf(all.get(other)!)) - (middle(boxOf(inside.get(own)!)) - box.y + DIAGRAM_MARGIN),
+		];
+	});
+	if (drops.length === 0) return 0;
+	const sorted = drops.toSorted((one, other) => one - other);
+	return Math.max(0, Math.min(room, sorted[Math.floor((sorted.length - 1) / 2)]!));
+}
+
+/**
+ * A box's vertical centre.
+ * @param box The box.
+ * @returns Its centre's y.
+ */
+function middle(box: Box): number {
+	return box.y + box.height / 2;
 }
 
 /**

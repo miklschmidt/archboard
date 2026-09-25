@@ -127,6 +127,16 @@ function pulsesOn(svg: string, id: string): number {
 	return [...own.matchAll(/<(?:circle|path|g) class="ab-pulse"/gu)].length;
 }
 
+/**
+ * Where a path's data ends.
+ * @param d The path data.
+ * @returns Its last point.
+ */
+function endOf(d: string): { x: number; y: number } {
+	const numbers = d.match(/-?[\d.]+(?:e-?\d+)?/gu)!.map(Number);
+	return { x: numbers.at(-2)!, y: numbers.at(-1)! };
+}
+
 describe("explicit traffic is independent of relationship kind and emphasis", () => {
 	test("only presence enables a stream, including on a muted edge", async () => {
 		const svg = await drawn("architecture");
@@ -180,6 +190,58 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 				expect(interval).toBe(1);
 				expect(from - to).toBeCloseTo(80, 5);
 				expect(animation).toContain('calcMode="linear"');
+			}
+		}
+	});
+	test("a still picture shows whole comets clear of both ends of their line", async () => {
+		// Two stacked cards: one straight run a little shorter than the spacing,
+		// which put the resting comet's head and its ring on the arrowhead.
+		const content = variant({
+			nodes: [
+				{ id: "a", name: "A", kind: "service" },
+				{ id: "b", name: "B", kind: "service" },
+			],
+			edges: [{ id: "ab", from: "a", to: "b", kind: "call", emphasis: "hero", traffic: {} }],
+		});
+		for (const layout of ["graphviz", "track", "blocks"] as const) {
+			const { svg } = await renderSemanticView({
+				content,
+				grammar: "architecture",
+				theme: "light",
+				layout,
+			});
+			const group = svg.split('data-semantic-id="ab"')[1]!.split("data-semantic-id=")[0]!;
+			const line = /<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)!;
+			const width = Number(/stroke-width="([^"]+)"/u.exec(line[0])![1]);
+			const lineEnd = endOf(line[1]!);
+			// A filled head's ink reaches four line widths back from the route's end.
+			const headBase = 4 * width;
+			const layers = [
+				...group.matchAll(
+					/<path d="([^"]+)"[^>]*stroke-width="([^"]+)"[^>]*stroke-dasharray="([^ ]+) ([^"]+)"[^>]*stroke-dashoffset="([^"]+)"/gu,
+				),
+			].map(([, d, stroke, dash, gap, offset]) => ({
+				end: endOf(d!),
+				reach: Number(stroke) / 2,
+				dash: Number(dash),
+				spacing: Number(dash) + Number(gap),
+				offset: Number(offset),
+			}));
+			expect(layers.length).toBeGreaterThan(1);
+			const glow = Math.max(...layers.map(({ reach }) => reach));
+			for (const layer of layers) {
+				// Every solid layer's round end stops at the arrowhead's base; only
+				// the faint glow may reach over it.
+				if (layer.reach < glow) {
+					expect(
+						Math.hypot(lineEnd.x - layer.end.x, lineEnd.y - layer.end.y),
+					).toBeGreaterThanOrEqual(headBase + layer.reach - 0.05);
+				}
+				// At rest, every comet's head is half a spacing from the line's start,
+				// so no glow sits alone on the card the line leaves.
+				const rest =
+					(((layer.dash - layer.offset) % layer.spacing) + layer.spacing) % layer.spacing;
+				expect(Math.min(rest, layer.spacing - rest)).toBeGreaterThanOrEqual(glow);
 			}
 		}
 	});

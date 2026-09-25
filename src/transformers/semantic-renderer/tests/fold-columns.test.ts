@@ -218,3 +218,30 @@ test("a side-entry source stays with its consumer without changing native offset
 	expect(source.x! - consumer.x!).toBe(400 - 24);
 	expect(source.y! - consumer.y!).toBe(160 - 360);
 });
+
+test("a continuation column drops toward the card its line comes from, within the page", () => {
+	// A tall card folds away from the two it leads to, which continue from its middle.
+	const graph: ElkNode = {
+		id: "root",
+		x: 0,
+		y: 0,
+		width: 160,
+		height: 640,
+		children: [
+			{ id: "a", x: 20, y: 20, width: 120, height: 300 },
+			{ id: "b", x: 20, y: 360, width: 120, height: 100 },
+			{ id: "c", x: 20, y: 500, width: 120, height: 100 },
+		],
+		edges: [
+			{ id: "ab", sources: ["a"], targets: ["b"] },
+			{ id: "bc", sources: ["b"], targets: ["c"] },
+		],
+	};
+	const folded = foldColumns(graph, 2)!;
+	const [first, ...rest] = folded.children!;
+	const second = rest.filter((card) => card.x !== first!.x);
+	expect(second.length).toBeGreaterThan(0);
+	expect(Math.min(...second.map((card) => card.y!))).toBeGreaterThan(DIAGRAM_MARGIN);
+	const bottom = Math.max(...folded.children!.map((card) => card.y! + card.height!));
+	expect(bottom + DIAGRAM_MARGIN).toBe(folded.height!);
+});

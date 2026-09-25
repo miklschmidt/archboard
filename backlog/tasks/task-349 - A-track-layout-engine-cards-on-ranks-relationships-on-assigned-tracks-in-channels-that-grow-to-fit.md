@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-25 00:15'
-updated_date: '2026-09-25 07:28'
+updated_date: '2026-09-25 19:18'
 labels:
   - renderer
 dependencies: []
@@ -56,4 +56,9 @@ Ground-up rethink, user direction 2026-09-25: fast, beautiful, easy to understan
 2026-09-25, later still, all gated and on main: a container reaches one inset below the containers inside it and a channel's tracks start below the containers that end above it; a title or caption sits at the foot of its band; a line that can run straight between its card and its other end keeps its own port instead of joining a trunk (in and out); a line's label stands inside the container the line enters, over its card (containers only, never regions). Track since the start of the day's polish (dogfood / work vault): crossings 200 -> 155 / 30 -> 29, line length 580.2k -> 559.9k / 97.6k -> 73.7k, bends 4564 -> 4108 / 888 -> 672, mean fit 0.687 -> 0.692 / 0.884 -> 0.895; the work vault's share of line length beyond the shortest path fell from 10.1% to 3.3%. Tried and discarded: keeping Graphviz's lane order while straightening (167 crossings), aligning the lane runs either side of a label (162), and labels inside group regions (256). Remaining crossings sit mostly on the three largest whole boards (Archboard server, Browser application, Agent workbench).
 
 2026-09-25, packed groups (5cf65e84, gated): the block tree's nesting is blocks, inline or groups. Track lays a board that has groups both inline and with each (container, group) region packed as a block of its own inside the board's own layout, and keeps the packed drawing only when it scores better on the assembled drawing and draws no more line (side by side, packed blocks can loop a line round both). This answers TASK-347's open region-shape problem where it pays: Agent workbench 24 -> 12 crossings, Command interface 3 -> 0, both compact; Browser application and Archboard server stay inline (packing them scored worse). Empty channels are 24 px. Dogfood Track now 140 crossings, 542k line, fit 0.700; work vault 28 crossings, 70k line, fit 0.910 (the Graphviz engine: 252 / 30 crossings, fit 0.691 / 0.907, slowest drawing 8 s against Track's 452 ms).
+
+Visual polish round (2026-09-25), from three adversarially verified visual bug hunts (Track 29 classes, Graphviz 28, Blocks 29 confirmed). On branch visual-polish, measured on both vaults (crossings / bends / jogs, dogfood Track 140/4060/175 before):
+- Track routing: notches closed by a guarded stretch move (jogs.ts), rising lines keep an arrowhead's approach, crowded bands place labels exactly (fewest jogs, then short jogs, then displacement), labels ignore trunk-shared ends, straight labels centre on their shared face, lines keep clear of heading words, lane columns and trunks chosen for fewest crossings, lines that read as one parted, the score counts crossing places as drawn, facing containers keep an inset, stranded lanes follow slid labels, card in/out steps closed, lanes keep half a lane off walls, labels stay within the scene's extent, twin lines keep their own card ends. Track dogfood now 124/3435/107, work 20/526/18.
+- Shared: label plates fitted to balanced text (measurement.ts); sequence lifelines, divider, arrowhead reach and removed-step plates; placement: chains in one column, sunk wraps dropped, sibling frames 20 px apart, near-miss columns aligned (Graphviz dogfood 252 to 225 crossings).
+- Still running: painter (hops, junction dots, pulses), Graphviz engine, Blocks engine, Track margin-lap relay. Card line trim waits on branch measure-trim for a Graphviz alignment fix.
 <!-- SECTION:NOTES:END -->

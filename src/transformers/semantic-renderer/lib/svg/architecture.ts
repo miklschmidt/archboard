@@ -12,7 +12,12 @@ import { canvasFor, coord, inflate, union } from "@/transformers/semantic-render
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { curveBounds, labelAnchorOf } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { crossingMasks } from "@/transformers/semantic-renderer/lib/svg/crossings";
+import {
+	crossingCutouts,
+	crossingMasks,
+	labelCutouts,
+	trunkCutouts,
+} from "@/transformers/semantic-renderer/lib/svg/crossings";
 import {
 	paintMeasuredCard,
 	paintMeasuredFrame,
@@ -74,6 +79,34 @@ function lineAppearance(edge: DrawingEdge["edge"], policy: SemanticPolicy, step:
 	return step ? STEP_APPEARANCE : relationshipAppearance(edge.kind, policy);
 }
 
+/** An arrowhead's drawing: a square this many marker units wide, the line's end at `refX`. */
+const MARKER_BOX = 10;
+
+/** How many line widths an arrowhead's box spans. */
+const MARKER_WIDTHS = 5;
+
+/** How thick the open head's arms are drawn, in marker units. */
+const OPEN_ARM = 1.7;
+
+/** Where each head form puts the line's end, and where its ink reaches back to, in marker units. */
+const MARKER_FORM = {
+	filled: { refX: 8, back: 0 },
+	// The open head's arms end at x=2, and their round caps reach half their stroke further.
+	open: { refX: 10, back: 2 - OPEN_ARM / 2 },
+} as const;
+
+/**
+ * How far back from a route's end its arrowhead's ink reaches.
+ * @param head The head form.
+ * @param width The line's width.
+ * @returns The distance along the route, or 0 for a line with no head.
+ */
+function arrowheadReach(head: "filled" | "open" | "none", width: number): number {
+	if (head === "none") return 0;
+	const form = MARKER_FORM[head];
+	return ((form.refX - form.back) * width * MARKER_WIDTHS) / MARKER_BOX;
+}
+
 /**
  * A head uses the line's ink and SVG's proportional stroke-width units.
  * @param id Marker identity scoped to this edge.
@@ -90,11 +123,11 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
 			"marker",
 			{
 				id,
-				viewBox: "0 0 10 10",
-				refX: head === "filled" ? 8 : 10,
-				refY: 5,
-				markerWidth: 5,
-				markerHeight: 5,
+				viewBox: `0 0 ${MARKER_BOX} ${MARKER_BOX}`,
+				refX: MARKER_FORM[head].refX,
+				refY: MARKER_BOX / 2,
+				markerWidth: MARKER_WIDTHS,
+				markerHeight: MARKER_WIDTHS,
 				orient: "auto-start-reverse",
 			},
 			head === "filled"
@@ -103,7 +136,7 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
 						d: "M2,1 L10,5 L2,9",
 						fill: "none",
 						stroke: ink,
-						"stroke-width": 1.7,
+						"stroke-width": OPEN_ARM,
 						"stroke-linecap": "round",
 						"stroke-linejoin": "round",
 					}),
@@ -175,7 +208,8 @@ function paintEdgeLine(
 			standing === "removed" || edge.traffic === undefined
 				? ""
 				: travellingPulses({
-						path,
+						curve: routed.curve,
+						headReach: arrowheadReach(appearance.arrowhead, width),
 						colour: relationshipInk(edge, palette, standing, policy, appearance),
 						lineColour: ink,
 						lineWidth: width,
@@ -257,7 +291,17 @@ function paintArchitecture(
 ): ArchitecturePainting {
 	const { cards, containers } = drawing;
 	const { edges, bridges } = drawing.bridged;
-	const { definitions, masks } = crossingMasks(edges, bridges);
+	const { definitions, masks } = crossingMasks(edges, [
+		...crossingCutouts(edges, bridges),
+		...trunkCutouts(drawing.edges),
+		// A removed relationship's label is drawn see-through, as its line is.
+		...labelCutouts(
+			edges,
+			edges.flatMap(({ edge, label }) =>
+				label === undefined || standingOf(edge.id) !== "removed" ? [] : [label.box],
+			),
+		),
+	]);
 	const appearances = nodeAppearances(
 		[...cards, ...containers].map(({ measured }) => measured.node),
 		policy,

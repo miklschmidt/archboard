@@ -19,3 +19,9 @@ export const CARD_ROUTING_GAP = 2 * CARD_ROUTE_CLEARANCE + ROUTE_OPEN_CORRIDOR;
 
 /** A forced label is another native obstacle, whose buffer must clear the semantic solid's footprint. */
 export const ANCHOR_CARD_CLEARANCE = CARD_ROUTE_CLEARANCE + ROUTE_OBSTACLE_CLEARANCE;
+
+/**
+ * The pitch of neighbouring parallel lines: one lane, the width a reader needs
+ * to follow each line and the hops of one line need to clear the other.
+ */
+export const ROUTE_LANE = 16;
