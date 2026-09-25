@@ -58,7 +58,10 @@ test("a person inspects a group from the keyboard, sees it stand out, and writes
 		join(vault, ".archboard/config.yaml"),
 		Bun.YAML.stringify({
 			...DEFAULT_SEMANTIC_POLICY,
-			groups: { fulfillment: { name: "Fulfillment" }, billing: { name: "Billing" } },
+			groups: {
+				fulfillment: { name: "Fulfillment", color: "teal" },
+				billing: { name: "Billing", color: "amber" },
+			},
 		}),
 	);
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });

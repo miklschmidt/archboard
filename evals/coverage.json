@@ -688,7 +688,7 @@
 			"title": "TASK-207 configured grouping",
 			"entries": [
 				{
-					"path": "config.groups.<id>.name; empty default",
+					"path": "config.groups.<id>.name and required .color; empty default",
 					"expectedUse": "stable ids configured; display names free to change",
 					"scenarios": ["S03", "S08", "S09"],
 					"evidence": "harness-check",

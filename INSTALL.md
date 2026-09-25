@@ -193,7 +193,7 @@ relationshipKinds:
   http: { name: HTTP, color: cyan, dash: solid, arrowhead: filled }
   event: { name: Event, color: amber, dash: dashed, arrowhead: open }
 groups:
-  billing: { name: Billing }
+  billing: { name: Billing, color: orange }
 ```
 
 These rules apply:
@@ -205,11 +205,13 @@ These rules apply:
 - A node kind needs a `name` and an `icon`. A relationship kind needs a `name`,
   a `dash` (`solid`, `dashed` or `dotted`) and an `arrowhead` (`filled`, `open`
   or `none`).
-- `color` is optional. The colors are red, orange, amber, yellow, lime, green,
-  emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink and
-  rose. Without a color, the kind is neutral.
-- `groups` is optional. A node lists group keys in its `groups` array, and
-  readers see the group names. To examine one group, run
+- A kind's `color` is optional. The colors are red, orange, amber, yellow,
+  lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia,
+  pink and rose. Without a color, the kind is neutral.
+- `groups` is optional. Each group needs a `name` and a `color` from the same
+  colors. A node lists group keys in its `groups` array. Cards that share a
+  group in one container are drawn together in a region of the group's color,
+  and each card's body takes that color. To examine one group, run
   `archboard semantic inspect <board> --group <key>`.
 
 An icon is the React export name of a [Remix Icon](https://remixicon.com/), for

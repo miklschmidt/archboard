@@ -7,7 +7,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
-import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
 	chooseVariantInShell,
 	mountStage,
@@ -17,14 +17,17 @@ import {
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 
 /** The vault's groups: two configured, named for reading. */
-const GROUPS = { fulfillment: { name: "Fulfillment" }, billing: { name: "Billing" } };
+const GROUPS = {
+	fulfillment: { name: "Fulfillment", color: "teal" },
+	billing: { name: "Billing", color: "amber" },
+} satisfies SemanticPolicy["groups"];
 
 /**
  * The checker's answer, with whichever groups the vault defines.
  * @param groups The configured groups.
  * @returns The vault check body.
  */
-function vaultWith(groups: Record<string, { name: string }>): Record<string, unknown> {
+function vaultWith(groups: SemanticPolicy["groups"]): Record<string, unknown> {
 	return {
 		success: true,
 		policy: { ...DEFAULT_SEMANTIC_POLICY, groups },
@@ -353,7 +356,7 @@ test("a variant with no memberships says so in the control's own place", async (
 
 test("an id the configuration no longer defines is still offered, by its id, and marked", async () => {
 	serving();
-	server.vault = vaultWith({ fulfillment: { name: "Fulfillment" } });
+	server.vault = vaultWith({ fulfillment: GROUPS.fulfillment });
 	mountStage();
 	await settled();
 	const options = [...chooser().options].map((option) => option.textContent);
@@ -370,7 +373,7 @@ test("the inspection follows the board and the configuration, and stays recovera
 	expect(slot("semantic-group-status")?.getAttribute("data-members")).toBe("2");
 
 	// The vault renames Billing: the name moves, the group does not.
-	server.vault = vaultWith({ ...GROUPS, billing: { name: "Invoicing" } });
+	server.vault = vaultWith({ ...GROUPS, billing: { name: "Invoicing", color: "amber" } });
 	await act(async () => {
 		announceSemanticBoardChange("pipeline", 2);
 	});

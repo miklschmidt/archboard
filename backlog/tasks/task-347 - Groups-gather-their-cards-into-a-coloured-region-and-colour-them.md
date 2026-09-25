@@ -1,9 +1,11 @@
 ---
 id: TASK-347
 title: 'Groups gather their cards into a coloured region, and colour them'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-25 00:11'
+updated_date: '2026-09-25 01:07'
 labels:
   - renderer
   - frontend
@@ -28,3 +30,26 @@ User decision 2026-09-25: groups steer layout and carry colour. Today a group is
 - [ ] #5 An ADR records groups as the source of region and card colour, superseding the colour-scope rule of ADR 0025 and the group clause of ADR 0024
 - [ ] #6 The dogfood vault configures groups and assigns them on the boards they clarify, and the affected boards are rendered and looked at
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Vocabulary half (this branch, task-347-policy); the renderer half (placement, regions, card colour in the painter) is built separately by the parent.
+1. GroupPolicySchema becomes { name, color } with a required palette colour; regenerate skill artifacts (generate:skill-artifacts).
+2. A group without a colour makes config.yaml invalid: one INVALID_CONFIG diagnostic whose path names groups.<id>.color and whose message says to add color: with one of the palette's colours. Owner: semantic-board-store policy test through checkSemanticVault (shared by archboard check and /api/vault/check).
+3. placingGroups(nodes, policy) in shared/semantic-board/lib/groups.ts, exported from the index; unit test in groups.test.ts.
+4. Colours on every shipped example and fixture defining groups (INSTALL.md, evals S03/S09, tests); archboard skill references updated to the new rule.
+5. ADR 0038; superseded-in-part notes on 0024 and 0025; CONTEXT.md group entry gains its colour.
+6. Gate lane by lane: type-check, lint, fmt:check, test:modules, test:system, test:repository.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Vocabulary half (branch task-347-policy):
+- GroupPolicySchema is { name, color } with color a required palette colour (z.enum over PaletteColorSchema.options, so the same palette, with a custom error that lists the palette). Generated vault-config.schema.json now requires color on every group.
+- The INVALID_CONFIG diagnostic now carries path = the first key the schema refused (e.g. groups.payments.color), so archboard check, /api/vault/check and the diagnostics list route the repair to the key; the message says to add color: with one of the palette colours. Decision: one diagnostic per invalid file as before, with the first refused path, rather than one per issue, to keep the existing contract.
+- placingGroups(nodes, policy) in shared/semantic-board/lib/groups.ts: first configured group (config order) the node shares with another given node of the same parent; parent undefined = board level; unconfigured ids never place. Quadratic scan, chosen for simplicity at board sizes.
+- ADR 0038 states that a container keeps its own kind colour for its own body and passes none to its contents; the parent should confirm that reading of decision (4) when building the painter.
+- CONTEXT.md: group entry gains a colour. The Color scope entry is left for the renderer half, which removes the concept in code.
+<!-- SECTION:NOTES:END -->

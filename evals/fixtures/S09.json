@@ -3,9 +3,9 @@
 	"registerRepo": true,
 	"policy": {
 		"groups": {
-			"request-lifecycle": { "name": "Request lifecycle" },
-			"wsgi-layer": { "name": "WSGI layer" },
-			"cli-startup": { "name": "CLI startup" }
+			"request-lifecycle": { "name": "Request lifecycle", "color": "blue" },
+			"wsgi-layer": { "name": "WSGI layer", "color": "violet" },
+			"cli-startup": { "name": "CLI startup", "color": "amber" }
 		}
 	},
 	"steps": [

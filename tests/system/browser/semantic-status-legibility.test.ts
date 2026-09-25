@@ -148,7 +148,10 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	policy.nodeKinds["route"]!.color = "blue";
 	policy.nodeKinds["queue"]!.color = "green";
 	policy.nodeKinds["datastore"]!.color = "amber";
-	policy.groups = { "write-path": { name: "the write path" }, payments: { name: "payments" } };
+	policy.groups = {
+		"write-path": { name: "the write path", color: "violet" },
+		payments: { name: "payments", color: "amber" },
+	};
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(policy));
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

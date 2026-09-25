@@ -2,7 +2,11 @@ import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import {
+	DEFAULT_SEMANTIC_POLICY,
+	PaletteColorSchema,
+	type SemanticPolicy,
+} from "@/shared/semantic-policy/index";
 import type * as Store from "@/runtime/semantic-board-store/index";
 import type * as Contract from "@/shared/semantic-board/index";
 
@@ -188,6 +192,23 @@ test("missing, malformed, invalid-color and unknown-icon policies activate coher
 	save(policy);
 	expect(store.readSemanticBoardConfiguration(vault).ok).toBe(true);
 	expect(read().warnings.some((issue) => issue.code === "UNKNOWN_VOCABULARY")).toBe(true);
+});
+
+test("the shared checker refuses a group without a color and routes the repair to its key", () => {
+	// archboard check and /api/vault/check both answer with this checker; a
+	// group is drawn in its colour (ADR 0038), so one without is invalid policy.
+	save({ ...policy, groups: { payments: { name: "Payments", color: "blue" } } });
+	expect(store.checkSemanticVault(vault).configurationValid).toBe(true);
+	writeFileSync(
+		join(vault, ".archboard/config.yaml"),
+		Bun.YAML.stringify({ ...policy, groups: { payments: { name: "Payments" } } }),
+	);
+	const result = store.checkSemanticVault(vault);
+	expect(result.configurationValid).toBe(false);
+	const refusal = result.diagnostics.find((issue) => issue.code === "INVALID_CONFIG");
+	expect(refusal?.file).toBe(join(vault, ".archboard/config.yaml"));
+	expect(refusal?.path).toBe("groups.payments.color");
+	for (const color of PaletteColorSchema.options) expect(refusal?.message).toContain(color);
 });
 
 test("the shared checker reports unreadable files and every variant alongside healthy boards", async () => {

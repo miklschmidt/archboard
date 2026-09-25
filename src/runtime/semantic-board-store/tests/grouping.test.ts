@@ -27,9 +27,9 @@ const writer = { kind: "agent" as const };
 const POLICY: SemanticPolicy = {
 	...DEFAULT_SEMANTIC_POLICY,
 	groups: {
-		fulfillment: { name: "Fulfillment" },
-		billing: { name: "Billing" },
-		"read-path": { name: "The read path" },
+		fulfillment: { name: "Fulfillment", color: "teal" },
+		billing: { name: "Billing", color: "amber" },
+		"read-path": { name: "The read path", color: "violet" },
 	},
 };
 
@@ -343,7 +343,7 @@ test("valid configuration refuses a newly authored unknown group, and keeps a re
 	// The consumer retires Billing. The worker still says it; the board still
 	// reads, the warning names the node and the group, and the worker can still
 	// be restated as it is.
-	configure({ ...POLICY, groups: { fulfillment: { name: "Fulfillment" } } });
+	configure({ ...POLICY, groups: { fulfillment: { name: "Fulfillment", color: "teal" } } });
 	const answer = read(board);
 	const warning = answer.warnings.find((one) => one.path?.includes("billing"));
 	expect(warning?.code).toBe("UNKNOWN_VOCABULARY");

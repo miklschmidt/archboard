@@ -67,6 +67,7 @@ export {
 	groupsUsed,
 	inspectGroup,
 	isMemberOf,
+	placingGroups,
 } from "@/shared/semantic-board/lib/groups";
 export {
 	FlowStepSchema,

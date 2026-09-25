@@ -50,9 +50,9 @@ beforeAll(async () => {
 		Bun.YAML.stringify({
 			...DEFAULT_SEMANTIC_POLICY,
 			groups: {
-				fulfillment: { name: "Fulfillment" },
-				billing: { name: "Billing" },
-				platform: { name: "Platform" },
+				fulfillment: { name: "Fulfillment", color: "teal" },
+				billing: { name: "Billing", color: "amber" },
+				platform: { name: "Platform", color: "indigo" },
 			},
 		}),
 	);
@@ -125,7 +125,7 @@ describe("inspecting a configured group from the command line", () => {
 			path.join(vault, ".archboard/config.yaml"),
 			Bun.YAML.stringify({
 				...DEFAULT_SEMANTIC_POLICY,
-				groups: { fulfillment: { name: "Fulfillment" } },
+				groups: { fulfillment: { name: "Fulfillment", color: "teal" } },
 			}),
 		);
 		const retired = cli(["semantic", "inspect", "orders", "--group", "billing"]);

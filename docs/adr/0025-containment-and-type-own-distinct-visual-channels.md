@@ -4,6 +4,11 @@ status: accepted
 
 # Containment and type own distinct visual channels
 
+Superseded in part by [ADR 0038](0038-groups-gather-and-colour-their-cards.md):
+a card's body colour comes from the group it is placed with, and a container
+no longer establishes a colour scope for its contents. Type independence, the
+icon chip, and the relationship, comparison and selection channels stand.
+
 Amended by TASK-339 (2026-09-24): a coloured line, whether its colour comes
 from its relationship type or its comparison status, is drawn at three
 quarters of that colour over the page, and its arrowhead with it. The comets of
