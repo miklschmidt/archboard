@@ -9,7 +9,8 @@ interface AppliedAppearance {
 	readonly iconSvg: string;
 	readonly depiction: string;
 	readonly bodyColor: string;
-	readonly scope: string;
+	/** The name of the group whose colour the body takes, or empty when none does. */
+	readonly group: string;
 	readonly typeColor: string;
 	readonly lineColor: string;
 	readonly dash: string;
@@ -35,7 +36,7 @@ function pictureAppearances(svg: string): ReadonlyMap<string, AppliedAppearance>
 			typeKind: attribute(group, "data-type-kind", ""),
 			depiction: attribute(group, "data-depiction", ""),
 			bodyColor: attribute(group, "data-body-color", "neutral"),
-			scope: attribute(group, "data-color-scope", ""),
+			group: attribute(group, "data-group-name", ""),
 			typeColor: attribute(group, "data-type-color", "neutral"),
 			lineColor: attribute(group, "data-line-color", "neutral"),
 			dash: attribute(group, "data-line-dash", "solid"),

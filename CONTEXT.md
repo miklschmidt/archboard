@@ -202,11 +202,6 @@ _Avoid_: board content, variant, style override
 The curated set of named colors available to a visual policy.
 _Avoid_: vault vocabulary, group
 
-**Color scope**:
-The inherited color context established by a depicted container for itself and
-its contents, distinct from each node's kind identification.
-_Avoid_: group, platform tag, node kind
-
 **Presentation intent**:
 What a board's depiction should explain: its focal subject, main flow, and
 diagram grammar. It expresses the intended reading without specifying geometry

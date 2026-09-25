@@ -15,7 +15,7 @@ import {
 
 /**
  * A picture whose node reports its independently applied visual channels.
- * @param color The enclosing body's color.
+ * @param color The body's color, from its group.
  * @returns A render answer at the same board version.
  */
 function styledDrawing(color: string): Record<string, unknown> {
@@ -24,12 +24,12 @@ function styledDrawing(color: string): Record<string, unknown> {
 		...drawn,
 		svg: String(drawn["svg"]).replace(
 			'data-semantic-kind="node" data-semantic-id="n1"',
-			`data-semantic-kind="node" data-semantic-id="n1" data-depiction="card" data-type-name="API" data-type-color="violet" data-body-color="${color}" data-color-scope="host"`,
+			`data-semantic-kind="node" data-semantic-id="n1" data-depiction="card" data-type-name="API" data-type-color="violet" data-body-color="${color}" data-group="core" data-group-name="Core"`,
 		),
 	};
 }
 
-/** A readable architecture whose containment the applied appearance explains. */
+/** A readable architecture whose applied appearance the inspector explains. */
 const BOARD = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
@@ -64,7 +64,8 @@ test("legend and inspection explain the picture and survive a policy-only restyl
 	await settle();
 	await settle();
 	// Something is selected, so the sidebar opens on it.
-	expect(part("semantic-inspector-appearance").textContent).toContain("green from Kubernetes");
+	// The body's colour and the group it comes from, both read off the picture.
+	expect(part("semantic-inspector-appearance").textContent).toMatch(/green.*Core/u);
 	expect(part("semantic-inspector-appearance").textContent).toContain("violet type chip");
 	openSidebarTab("board");
 	expect(part("semantic-legend").textContent).toContain("API");
@@ -90,7 +91,7 @@ test("legend and inspection explain the picture and survive a policy-only restyl
 	expect(part("semantic-legend").textContent).toContain("Comparison and attention");
 	expect(part("semantic-legend").textContent).not.toContain("Containment");
 	openSidebarTab("selection");
-	expect(part("semantic-inspector-appearance").textContent).toContain("blue from Kubernetes");
+	expect(part("semantic-inspector-appearance").textContent).toMatch(/blue.*Core/u);
 });
 
 test("traffic changes are explained without animation numbers", async () => {

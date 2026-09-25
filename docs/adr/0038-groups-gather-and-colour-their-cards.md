@@ -37,15 +37,16 @@ and a column fold never splits one.
 
 **A card's body colour comes from its placing group.** Its border and tint are
 the group's colour, and a card with no placing group is neutral. The icon chip
-keeps the colour of the card's kind, as before. Containers no longer colour the
-cards inside them: a container is drawn in its own kind's colour, and passes no
-colour to its contents.
+keeps the colour of the card's kind, as before. A container is placed and
+coloured by the same rule as a card: its body takes its own placing group's
+colour, or is neutral, and it passes no colour to its contents. Its kind shows
+on its icon chip.
 
 ## Consequences
 
 Colour on a board now says which concern a card serves, and hosting stays with
-containment. A vault with no groups draws its cards neutral, with coloured icon
-chips and coloured containers. Adding, removing or reordering a group in
+containment. A vault with no groups draws every card and container neutral,
+with coloured icon chips. Adding, removing or reordering a group in
 `config.yaml` can move cards and change their colour on every board of the
 vault, without changing any board, as ADR 0024 already accepts for all visual
 policy.

@@ -47,7 +47,7 @@ function SemanticAppearance(props: {
 function appearanceSentences(subject: Subject, appearance: AppliedAppearance): string[] {
 	if (subject.kind === "node")
 		return [
-			bodyExplanation(subject, appearance),
+			bodyExplanation(appearance),
 			`${appearance.typeName} uses a ${appearance.typeColor} type chip.`,
 		];
 	if (subject.kind !== "edge") return [];
@@ -60,20 +60,14 @@ function appearanceSentences(subject: Subject, appearance: AppliedAppearance): s
 }
 
 /**
- * Describe the body color and the actual scope responsible for it.
- * @param subject The selected node with its semantic ancestry.
- * @param appearance Its depicted scope.
+ * Describe the body color and the group responsible for it.
+ * @param appearance Its depicted group.
  * @returns One sentence explaining its body.
  */
-function bodyExplanation(
-	subject: Extract<Subject, { kind: "node" }>,
-	appearance: AppliedAppearance,
-): string {
-	const scope = [subject.node, ...subject.ancestry].find((node) => node.id === appearance.scope);
+function bodyExplanation(appearance: AppliedAppearance): string {
 	const depiction = appearance.depiction === "container" ? "Container" : "Card";
-	if (appearance.scope === "")
-		return `${depiction} body is neutral because no colored container applies.`;
-	return `${depiction} border and tint use ${appearance.bodyColor} from ${scope?.name ?? `container ${appearance.scope}`}.`;
+	if (appearance.group === "") return `${depiction} body is neutral because no group places it.`;
+	return `${depiction} border and tint use ${appearance.bodyColor} from the ${appearance.group} group.`;
 }
 
 export { SemanticAppearance };
