@@ -6,7 +6,8 @@
 // Relationships of one kind (and one comparison standing) that leave one card
 // face into the same channel share a port and a trunk: one line off the card,
 // one track, and a branch down to each end. Likewise those that enter one
-// card face. A trunk never joins several sources to several ends, so a
+// card face; when they also share the card they end on, the trunk is one line
+// from face to face. A trunk never joins several sources to several ends, so a
 // reader can always tell who talks to whom; the painter marks every split.
 //
 // Cards spread their ports along a face, each as close to the other end as
@@ -27,6 +28,8 @@ interface Trunk {
 	/** Which end they share: the upper station's bottom face, or the lower station's top face. */
 	readonly side: "top" | "bottom";
 	readonly nets: Net[];
+	/** Whether they share the other end's card too, and so run as one line from face to face. */
+	readonly whole: boolean;
 }
 
 /** One relationship's run between two stations on neighbouring bands. */
@@ -78,7 +81,11 @@ function bundleTrunks(nets: readonly Net[]): void {
 	for (const side of ["top", "bottom"] as const) {
 		for (const group of sharing(nets, side)) {
 			if (group.length < 2) continue;
-			const trunk = { side, nets: group };
+			const other = side === "top" ? "bottom" : "top";
+			const ends = new Set(
+				group.map((net) => (net[other].kind === "card" ? net[other].item : net)),
+			);
+			const trunk = { side, nets: group, whole: ends.size === 1 };
 			for (const net of group) net.trunk = trunk;
 		}
 	}
@@ -144,10 +151,10 @@ function otherEnd(net: Net, side: "top" | "bottom"): number {
  */
 function portRequests(nets: readonly Net[]): Map<Item, PortRequest[]> {
 	const faces = new Map<Item, PortRequest[]>();
-	const asked = new Set<Trunk>();
+	const asked = { top: new Set<Trunk>(), bottom: new Set<Trunk>() };
 	for (const net of nets) {
 		for (const side of ["top", "bottom"] as const) {
-			const request = requestOf(net, side, asked);
+			const request = requestOf(net, side, asked[side]);
 			if (request === undefined) continue;
 			const item = net[side].item!;
 			faces.set(item, [...(faces.get(item) ?? []), request]);
@@ -157,16 +164,28 @@ function portRequests(nets: readonly Net[]): Map<Item, PortRequest[]> {
 }
 
 /**
+ * The trunk whose port one end of a net shares, if any: its trunk on the side
+ * the trunk shares, or on both sides of a whole trunk.
+ * @param net The net.
+ * @param side Which end.
+ * @returns The trunk, or nothing when that end has a port of its own.
+ */
+function sharedAt(net: Net, side: "top" | "bottom"): Trunk | undefined {
+	const trunk = net.trunk;
+	return trunk !== undefined && (trunk.side === side || trunk.whole) ? trunk : undefined;
+}
+
+/**
  * The port one end of a net asks for: its trunk's, the first time the trunk
  * is met, or its own.
  * @param net The net.
  * @param side Which end.
- * @param asked The trunks that have asked already.
+ * @param asked The trunks that have asked already on this side.
  * @returns The request, or nothing when that end is not on a card or its trunk has asked.
  */
 function requestOf(net: Net, side: "top" | "bottom", asked: Set<Trunk>): PortRequest | undefined {
 	if (net[side].kind !== "card") return undefined;
-	const shared = net.trunk?.side === side ? net.trunk : undefined;
+	const shared = sharedAt(net, side);
 	if (shared === undefined) return requestFor([net], side);
 	if (asked.has(shared)) return undefined;
 	asked.add(shared);
@@ -182,10 +201,13 @@ function requestOf(net: Net, side: "top" | "bottom", asked: Set<Trunk>): PortReq
  * @returns The request.
  */
 function requestFor(members: readonly Net[], side: "top" | "bottom"): PortRequest {
-	const ends = members.map((member) => otherEnd(member, side));
+	const ends = members
+		.toSorted((one, other) => one.order - other.order)
+		.map((member) => otherEnd(member, side));
 	const middle = ends.reduce((sum, x) => sum + x, 0) / ends.length;
+	// Of two ends as near the middle, the one the board lists first.
 	const wanted = ends.reduce((one, other) =>
-		Math.abs(other - middle) < Math.abs(one - middle) ? other : one,
+		Math.abs(other - middle) < Math.abs(one - middle) - 0.01 ? other : one,
 	);
 	return { nets: members, side, wanted, order: Math.min(...members.map(({ order }) => order)) };
 }

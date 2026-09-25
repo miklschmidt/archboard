@@ -7,12 +7,16 @@
 // band allows. Cards, title rows, lanes and frame walls stay where they are;
 // boxes between them keep their order and spacing, placed as close to where
 // they want to be as the gap allows.
-import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import {
+	CONTAINER_INSET,
+	LABEL_CARD_CLEARANCE,
+	LABEL_LABEL_CLEARANCE,
+} from "@/transformers/semantic-renderer/config";
 import { LANE, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
 import { Scene, centreX, type Item } from "@/transformers/semantic-renderer/lib/track/scene";
 
-/** Room kept between a sliding box and anything beside it. */
+/** Room kept between a sliding box and a card or lane beside it. */
 const LABEL_GAP = LANE;
 /** How far a line keeps from a card's corner, as ports do. */
 const FACE_MARGIN = 20;
@@ -142,9 +146,9 @@ function placeRun(sliders: readonly Slider[], low: number, high: number): void {
 	let offset = 0;
 	for (const { item } of sliders) {
 		offsets.push(offset);
-		offset += item.box.width + LABEL_GAP;
+		offset += item.box.width + LABEL_LABEL_CLEARANCE;
 	}
-	const room = high - low - (offset - LABEL_GAP);
+	const room = high - low - (offset - LABEL_LABEL_CLEARANCE);
 	if (room < 0) return;
 	const blocks: { value: number; weight: number; count: number }[] = [];
 	sliders.forEach(({ item, wanted, weight }, index) => {
@@ -198,16 +202,15 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
 }
 
 /**
- * Whether a label box, moved, keeps clear of every other box on its band by
- * half the usual gap.
- * @param scene The scene.
- * @param item The label box.
+ * Whether a box keeps a gap from every other item on its band.
+ * @param item The item being moved.
  * @param box Where it would stand.
- * @returns True when nothing is that close.
+ * @param others The items it must keep clear of, itself among them or not.
+ * @param gap The room it keeps.
+ * @returns True when nothing is closer.
  */
-function clearOnBand(scene: Scene, item: Item, box: Item["box"]): boolean {
-	const gap = LABEL_GAP / 2;
-	return [...scene.cards.values(), ...scene.titles.values(), ...scene.labels.values()]
+function keepsGap(item: Item, box: Item["box"], others: Iterable<Item>, gap: number): boolean {
+	return [...others]
 		.filter((other) => other !== item && other.band === item.band)
 		.every(
 			({ box: other }) =>
@@ -216,22 +219,56 @@ function clearOnBand(scene: Scene, item: Item, box: Item["box"]): boolean {
 }
 
 /**
- * Centre a label box on the lane its line comes down from, or else goes on
- * down by, when the box stands within a jog's width of it and can move there
- * clear of its neighbours: the line then runs straight through its label
- * instead of jogging a few points on either side of it.
+ * Whether a label box, moved, keeps its room from every other box on its
+ * band: a card's clearance from a card or title row, a label's from a label.
+ * @param scene The scene.
+ * @param item The label box.
+ * @param box Where it would stand.
+ * @returns True when nothing is closer.
+ */
+function clearOnBand(scene: Scene, item: Item, box: Item["box"]): boolean {
+	return (
+		keepsGap(
+			item,
+			box,
+			[...scene.cards.values(), ...scene.titles.values()],
+			LABEL_CARD_CLEARANCE,
+		) && keepsGap(item, box, scene.labels.values(), LABEL_LABEL_CLEARANCE)
+	);
+}
+
+/**
+ * Where a line would meet a label from one of its other stations: a lane's
+ * x, or the point of a card's face nearest the label.
+ * @param station The station.
+ * @param item The label box.
+ * @returns The x.
+ */
+function meetingX(station: Station, item: Item): number {
+	const [low, high] = reach(station);
+	return Math.min(high, Math.max(low, centreX(item)));
+}
+
+/**
+ * Move a label box straight over or under the lane or card face its line
+ * comes from or goes to, when it stands within a jog's width of it and can
+ * move there clear of its neighbours: the line then runs straight through its
+ * label instead of jogging a few points on either side of it, which a corner
+ * could not turn whole.
  * @param scene The scene.
  * @param nets Every net.
  */
 function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
+	// In the board's order, so which of two neighbours moves first never depends on the document's.
+	const ordered = nets.toSorted((one, other) => one.order - other.order);
 	const pairs = [
-		...nets.map((net) => [net.bottom, net.top] as const),
-		...nets.map((net) => [net.top, net.bottom] as const),
-	].filter(([label, lane]) => label.kind === "label" && lane.kind === "lane");
+		...ordered.map((net) => [net.bottom, net.top] as const),
+		...ordered.map((net) => [net.top, net.bottom] as const),
+	].filter(([label, other]) => label.kind === "label" && other.kind !== "label");
 	const settled = new Set<Item>();
-	for (const [label, lane] of pairs) {
+	for (const [label, other] of pairs) {
 		const item = label.item!;
-		const shift = lane.x - centreX(item);
+		const shift = meetingX(other, item) - centreX(item);
 		const box = { ...item.box, x: item.box.x + shift };
 		if (settled.has(item) || Math.abs(shift) >= 2 * LANE || !clearOnBand(scene, item, box))
 			continue;
