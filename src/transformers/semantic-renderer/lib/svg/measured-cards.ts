@@ -77,7 +77,12 @@ function paintMeasuredCard(
 	const chipY = box.y + ARCHITECTURE_CARD_PADDING;
 	return wrap(
 		"g",
-		{ ...subjectGroup("node", measured.node.id, standing), ...appearanceAttributes(appearance) },
+		{
+			...subjectGroup("node", measured.node.id, standing),
+			...appearanceAttributes(appearance),
+			// The card's name, for a viewer that keeps it readable when the picture is small.
+			"data-caption": measured.node.name,
+		},
 		lines([
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {

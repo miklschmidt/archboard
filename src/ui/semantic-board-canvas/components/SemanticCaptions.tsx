@@ -7,15 +7,22 @@ import { pictureCaptions, type PictureCaption } from "@/ui/semantic-board-canvas
 const READABLE = 12;
 /** How far a caption sits in from its region's corner, in screen pixels. */
 const INSET = 4;
+/** How each kind of name is set: a group's in its colour and boldest, a card's quietest. */
+const WEIGHT: Readonly<Record<PictureCaption["kind"], string>> = {
+	group: "truncate text-[14px] font-semibold",
+	container: "truncate text-[13px] font-medium text-foreground",
+	// A card's name may take a second line: a card is narrow on screen long before it is short.
+	card: "line-clamp-2 break-words text-[11.5px] font-medium text-foreground",
+};
 /** The narrowest a region can be on screen and still carry a caption. */
 const NARROWEST = 48;
 
 /**
- * The names of a picture's containers and group regions, at a size that
- * stays readable however far the camera is out. Each one shows only while
- * the picture's own name for that region is too small to read, and sits on
- * it, so the page reads like a map: the regions named first, the cards read
- * by zooming in.
+ * The names of a picture's cards, containers and group regions, at a size
+ * that stays readable however far the camera is out. Each one shows only
+ * while the picture's own name for it is too small to read, and sits on it,
+ * so the page reads like a map: every region and card named at a glance, the
+ * rest read by zooming in.
  * @param props The picture and the camera.
  * @param props.svg The picture.
  * @param props.view Where the camera is.
@@ -72,16 +79,13 @@ function Caption(props: {
 	const motion = props.easing
 		? "transition-[transform,opacity] duration-100 ease-out"
 		: "transition-opacity duration-100";
-	const weight =
-		caption.kind === "group"
-			? "text-[14px] font-semibold"
-			: "text-[13px] font-medium text-foreground";
+	const weight = WEIGHT[caption.kind];
 	return (
 		<span
 			data-slot="semantic-board-caption"
 			data-kind={caption.kind}
 			data-shown={shown}
-			className={`bg-background/85 absolute top-0 left-0 truncate rounded-sm px-1.5 py-0.5 leading-tight ${weight} ${motion} ${shown ? "opacity-100" : "opacity-0"}`}
+			className={`bg-background/85 absolute top-0 left-0 rounded-sm px-1.5 py-0.5 leading-tight ${weight} ${motion} ${shown ? "opacity-100" : "opacity-0"}`}
 			style={style}
 		>
 			{caption.text}
