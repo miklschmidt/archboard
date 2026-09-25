@@ -481,13 +481,9 @@ function layoutFlow(
 	);
 	const contentWidth = columnWidth * nodes.length + COLUMN_GAP * (nodes.length - 1);
 
-	const header = {
-		x: contentLeft,
-		y: top + CONTAINER_TOP_PAD,
-		width: contentWidth,
-		height: flow.summary === undefined ? HEADER_HEIGHT : HEADER_HEIGHT_WITH_NOTE,
-	};
-	const cardsTop = header.y + header.height + HEADER_GAP;
+	const headerTop = top + CONTAINER_TOP_PAD;
+	const headerHeight = flow.summary === undefined ? HEADER_HEIGHT : HEADER_HEIGHT_WITH_NOTE;
+	const cardsTop = headerTop + headerHeight + HEADER_GAP;
 	const cards = nodes.map((node, index) =>
 		placeColumnCard(
 			node,
@@ -520,24 +516,29 @@ function layoutFlow(
 	);
 	const lifelineBottom = lowestDrawn(steps, firstRow) + FLOW_BOTTOM_PADDING;
 
-	const columns = cards.map((card, index) => {
-		const centreX = centres[index] ?? 0;
-		return {
-			card,
-			centreX,
-			lifelineTop: card.box.y + card.box.height + LIFELINE_GAP,
-			activations: activationsFor(card.node.id, steps),
-		};
-	});
+	const columns = cards.map((card, index) => ({
+		card,
+		centreX: centres[index] ?? 0,
+		lifelineTop: card.box.y + card.box.height + LIFELINE_GAP,
+		activations: activationsFor(card.node.id, steps),
+	}));
 
+	// The title row spans the frame, which a message's words may have widened.
+	const span = frameSpan(
+		steps,
+		activationLookup(columns),
+		DIAGRAM_MARGIN,
+		NEST_INSET * 2 + contentWidth,
+	);
 	return {
 		flow,
-		frame: {
-			...frameSpan(steps, activationLookup(columns), DIAGRAM_MARGIN, NEST_INSET * 2 + contentWidth),
-			y: top,
-			height: lifelineBottom + CONTAINER_BOTTOM_PAD - top,
+		frame: { ...span, y: top, height: lifelineBottom + CONTAINER_BOTTOM_PAD - top },
+		header: {
+			x: span.x + NEST_INSET,
+			y: headerTop,
+			width: span.width - NEST_INSET * 2,
+			height: headerHeight,
 		},
-		header,
 		lifelineBottom,
 		columns,
 		steps,

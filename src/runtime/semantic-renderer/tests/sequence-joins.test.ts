@@ -102,3 +102,36 @@ test("every lifeline starts the same short way under its own card, however tall 
 	const row = Number(/\sd="M[\d.]+,([\d.]+)/.exec(first.markup)?.[1]);
 	expect(row).toBeGreaterThan(Math.max(...cards.map((card) => card.bottom)));
 });
+
+test("a flow's title rule keeps the same inset from both sides of a frame its words widened", () => {
+	// A self-message's words on the last column reach past the columns, and the
+	// frame grows to hold them; the rule under the flow's title grows with it.
+	const long = "a label long enough to reach past every column of this flow";
+	const rendered = renderDataFlow({
+		theme: "light",
+		content: orderedFixture({
+			nodes: [
+				{ id: "a", name: "A", kind: "service" },
+				{ id: "b", name: "B", kind: "service" },
+			],
+			flows: [
+				{
+					id: "f",
+					name: "Words at the edge",
+					participants: ["a", "b"],
+					steps: [
+						{ id: "s1", from: "a", to: "b", label: "short", kind: "sync" },
+						{ id: "s2", from: "b", to: "b", label: long, kind: "self" },
+					],
+				},
+			],
+		}),
+	});
+	const flow = subjectGroups(rendered.svg).find((group) => group.kind === "flow")!;
+	const frame = numbersOf(flow, "rect", (tag) => !tag.includes("ab-halo"));
+	const rule = numbersOf(flow, "line");
+	expect(rule("y1")).toBe(rule("y2"));
+	const left = rule("x1") - frame("x");
+	expect(left).toBeGreaterThan(0);
+	expect(frame("x") + frame("width") - rule("x2")).toBeCloseTo(left, 2);
+});
