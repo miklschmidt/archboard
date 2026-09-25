@@ -1,0 +1,153 @@
+{
+	"nodes": [
+		{
+			"id": "tIEJl3KY",
+			"order": 1000,
+			"name": "Alphaal bravobr",
+			"kind": "module",
+			"responsibility": "Carbo d eagl'f gardeng harborh, islandi jungleju ket lanter, mea ne orangeo pep qu riv summit't alphaal"
+		},
+		{
+			"id": "npbOHMgi",
+			"order": 2000,
+			"name": "Needleneedl orang",
+			"kind": "module",
+			"responsibility": "Pep quartzquart'r summ timbe: alph bravobr car de eag falc gardengar harborharb",
+			"groups": ["voice"]
+		},
+		{
+			"id": "glxfDGYq",
+			"order": 3000,
+			"name": "Islandisl junglejung",
+			"kind": "module",
+			"responsibility": "Ket lant meadow nee orangeorang pep qua ri s timbertim, alp br c delt: eagleeag, falco, gardeng, harbor isl jungl"
+		},
+		{
+			"id": "fDdhxdXp",
+			"order": 4000,
+			"name": "Carboncar delta",
+			"kind": "module",
+			"responsibility": "Eagle fal gar harbor isl jungle'k lant mead need, oran pep quartzquartz riv summ timb alphaalph, bravo c deltad eagle falconfal"
+		},
+		{
+			"id": "5SYKj5bN",
+			"order": 5000,
+			"name": "Summitsum timbe",
+			"kind": "module",
+			"responsibility": "Alpha'b carbo de eagleeag falconf gar har islandisl: jung, ket, lant, meadowm, needle, or peppe qua riv"
+		},
+		{
+			"id": "L4s2Ndtt",
+			"order": 8000,
+			"name": "Lanternl meadowmeadow",
+			"kind": "module",
+			"responsibility": "Nee orangeora pepperpepper q riverr summit timb, alp bra carbon delt eaglee falc gardengar"
+		},
+		{
+			"id": "6T3oOpxS",
+			"order": 9000,
+			"name": "Harbo island",
+			"kind": "module",
+			"responsibility": "Jungl kettl lanternlan mead needl orange, pe quar, rive summitsumm timb alphaa, brav carb de eag fal gardeng ha islandi",
+			"groups": ["child"]
+		},
+		{
+			"id": "4slFgCMu",
+			"order": 12000,
+			"name": "Jungl kettlek",
+			"kind": "module",
+			"responsibility": "Lan meadowme needlen o pepp qu riverriv summ ti",
+			"groups": ["child"]
+		},
+		{
+			"id": "WaIHZ8sZ",
+			"order": 13000,
+			"name": "Alph bravobravob",
+			"kind": "module",
+			"responsibility": "Car deltadelt_eagleeaglee falc g harborhar is junglej kett: lant mea needleneedl ora peppe quart ri summi",
+			"groups": ["voice"]
+		}
+	],
+	"edges": [
+		{
+			"id": "gPWhZQeZ",
+			"order": 1000,
+			"from": "tIEJl3KY",
+			"to": "4slFgCMu",
+			"kind": "rpc",
+			"label": "q river summits: timb/alpha br carb/delta"
+		},
+		{
+			"id": "e1viO4QT",
+			"order": 2000,
+			"from": "npbOHMgi",
+			"to": "glxfDGYq",
+			"kind": "call",
+			"label": "eagleeag, falco, gardeng, harbo"
+		},
+		{
+			"id": "l3RkMYAH",
+			"order": 3000,
+			"from": "glxfDGYq",
+			"to": "5SYKj5bN",
+			"kind": "call",
+			"label": "islan j kettlekett lanter mea needlen oran"
+		},
+		{
+			"id": "uiPv1wnk",
+			"order": 8000,
+			"from": "fDdhxdXp",
+			"to": "6T3oOpxS",
+			"kind": "call",
+			"label": "peppe, quartz ri summ timb alp bravo"
+		},
+		{
+			"id": "W87z7uEB",
+			"order": 9000,
+			"from": "fDdhxdXp",
+			"to": "4slFgCMu",
+			"kind": "rpc",
+			"label": "carbon/delta eagl fal gardenga harb"
+		},
+		{
+			"id": "jAdLjEha",
+			"order": 11000,
+			"from": "fDdhxdXp",
+			"to": "L4s2Ndtt",
+			"kind": "dependency",
+			"label": "isl junglejungle, ke lanter"
+		},
+		{
+			"id": "FWJMAVKj",
+			"order": 14000,
+			"from": "tIEJl3KY",
+			"to": "5SYKj5bN",
+			"kind": "call",
+			"label": "meado, need, orangeo pe quart r summits"
+		},
+		{
+			"id": "NALNPztL",
+			"order": 15000,
+			"from": "tIEJl3KY",
+			"to": "fDdhxdXp",
+			"kind": "call",
+			"label": "timbe a bravobrav car del eaglee"
+		},
+		{
+			"id": "8xJt3Mud",
+			"order": 16000,
+			"from": "glxfDGYq",
+			"to": "4slFgCMu",
+			"kind": "rpc",
+			"label": "falc/garde harb isla, jung/kettl"
+		},
+		{
+			"id": "uLGJACZb",
+			"order": 17000,
+			"from": "fDdhxdXp",
+			"to": "WaIHZ8sZ",
+			"kind": "dependency",
+			"label": "lanternla_meadowmeado, ne orange"
+		}
+	]
+}

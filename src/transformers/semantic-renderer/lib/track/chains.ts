@@ -272,12 +272,11 @@ function clearHeadings(scene: Scene, chains: readonly Chain[]): void {
  * card's face nearest the other end, where its port will stand.
  * @param station The station.
  * @param toward The x of the line's other end in that channel.
- * @param lane Where a lane stands instead of its own x, when it is the one being placed.
+ * @param at Where a lane or label stands instead of its own x, when it is the one being placed.
  * @returns The x.
  */
-function meetsAt(station: Station, toward: number, lane = station.x): number {
-	if (station.kind === "lane") return lane;
-	if (station.kind !== "card") return station.x;
+function meetsAt(station: Station, toward: number, at = station.x): number {
+	if (station.kind !== "card") return at;
 	const [low, high] = reachOf(station);
 	return Math.min(high, Math.max(low, toward));
 }
@@ -293,25 +292,31 @@ function meets(one: Station, other: Station): boolean {
 }
 
 /**
- * Whether another chain's line between two bands crosses a run's line
- * between them, where no track order undoes it.
- * @param upper The run's station on the upper band.
- * @param lower Its station on the lower band.
- * @param x The run's column.
- * @param other The other chain's stations, by band.
- * @returns True when the two cross.
+ * How many other chains a line would cross between each band and the next,
+ * its lanes and label standing at some x: those whose order against it
+ * swaps across a channel, where no track order undoes it.
+ * @param own The chain's stations, or a run of them with the stations either side.
+ * @param xs Where each of them stands; a card's is ignored.
+ * @param bands Every chain's stations, by band.
+ * @returns The count.
  */
-function crosses(
-	upper: Station,
-	lower: Station,
-	x: number,
-	other: ReadonlyMap<number, Station>,
-): boolean {
-	const [one, two] = [other.get(upper.band), other.get(lower.band)];
-	if (one === undefined || two === undefined || meets(one, upper) || meets(two, lower))
-		return false;
-	const [top, bottom] = [meetsAt(upper, x, x), meetsAt(lower, x, x)];
-	return (top - meetsAt(one, two.x)) * (bottom - meetsAt(two, one.x)) < 0;
+function crossingsOf(
+	own: readonly Station[],
+	xs: readonly number[],
+	bands: readonly ReadonlyMap<number, Station>[],
+): number {
+	return own.slice(1).reduce((count, lower, index) => {
+		const upper = own[index]!;
+		const [above, below] = [xs[index]!, xs[index + 1]!];
+		const [top, bottom] = [meetsAt(upper, below, above), meetsAt(lower, above, below)];
+		const crossed = bands.filter((other) => {
+			const [one, two] = [other.get(upper.band), other.get(lower.band)];
+			if (one === undefined || two === undefined || meets(one, upper) || meets(two, lower))
+				return false;
+			return (top - meetsAt(one, two.x)) * (bottom - meetsAt(two, one.x)) < 0;
+		});
+		return count + crossed.length;
+	}, 0);
 }
 
 /**
@@ -328,13 +333,7 @@ function inversions(
 	bands: readonly ReadonlyMap<number, Station>[],
 ): number {
 	const own = [run.before, ...run.lanes, run.after];
-	return own
-		.slice(1)
-		.reduce(
-			(count, lower, index) =>
-				count + bands.filter((other) => crosses(own[index]!, lower, x, other)).length,
-			0,
-		);
+	return crossingsOf(own, [run.before.x, ...run.lanes.map(() => x), run.after.x], bands);
 }
 
 /**
@@ -575,10 +574,14 @@ function nearest(
 
 export {
 	LANE,
+	Occupancy,
 	chainOf,
+	crossingsOf,
 	freeWithout,
 	inversions,
 	laneRuns,
+	meetsAt,
+	meets,
 	moveRun,
 	pullToPorts,
 	reachOf,
