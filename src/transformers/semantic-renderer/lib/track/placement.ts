@@ -16,6 +16,8 @@ import {
 	PLACING_GROUP,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
+import { gridEdges, grids } from "@/transformers/semantic-renderer/lib/track/grid";
+import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
 import {
 	box,
 	centresOf,
@@ -151,10 +153,12 @@ class TrackPlacement {
 	 * Start from a copy, so the caller's graph is never changed.
 	 * @param input The measured hierarchy with every label measured.
 	 * @param lowered How many rows each card a wide rank wraps is set below its place.
+	 * @param grid Whether the cards no relationship touches are set out as a grid.
 	 */
 	constructor(
 		input: ElkNode,
 		readonly lowered: ReadonlyMap<string, number> = new Map(),
+		readonly grid = false,
 	) {
 		this.result = structuredClone(input);
 		const rows = CaptionsSchema.parse(JSON.parse(input.layoutOptions?.[GROUP_CAPTIONS] ?? "[]"));
@@ -376,6 +380,7 @@ class TrackPlacement {
 		const edges = (this.result.edges ?? []).filter((edge) => edge.sources[0] !== edge.targets[0]);
 		const back = this.backEdges(edges);
 		for (const edge of edges) this.connect(edge, back);
+		this.arrange(edges);
 		const output = outputSchema.parse(viz.renderJSON(this.graph, { yInvert: true }));
 		const [left, top, right, bottom] = numbers(output.bb);
 		const origin = { x: Math.min(left!, right!), y: Math.min(top!, bottom!) };
@@ -391,6 +396,55 @@ class TrackPlacement {
 			width: Math.abs(right! - left!),
 			height: Math.abs(bottom! - top!),
 		};
+	}
+
+	/**
+	 * Hold cards where a wrap or a grid puts them: a wrapped card a row of cards
+	 * and its labels below its rank's first row for each row it is lowered, and
+	 * loose cards in a grid.
+	 * @param edges Every relationship to place.
+	 */
+	arrange(edges: readonly ElkExtendedEdge[]): void {
+		if (this.grid)
+			for (const cards of this.looseCards(edges).values())
+				this.graph.edges.push(...gridEdges(cards));
+		const arriving = new Set(edges.map((edge) => edge.targets[0]!));
+		for (const { card, rows, anchor } of anchored(this.lowered, arriving))
+			this.graph.edges.push({
+				tail: this.vendorName(anchor),
+				head: this.vendorName(card),
+				attributes: { style: "invis", minlen: 2 * rows, weight: 0 },
+			});
+	}
+
+	/**
+	 * Whether any cluster holds enough loose cards to set out as a grid.
+	 * @returns True when a grid would change the placement.
+	 */
+	gridded(): boolean {
+		const edges = (this.result.edges ?? []).filter((edge) => edge.sources[0] !== edge.targets[0]);
+		return [...this.looseCards(edges).values()].some((cards) => grids(cards));
+	}
+
+	/**
+	 * The cards no relationship touches, by the cluster that holds them, in the board's order.
+	 * @param edges Every relationship to place.
+	 * @returns Each cluster's loose cards with their sizes.
+	 */
+	looseCards(
+		edges: readonly ElkExtendedEdge[],
+	): Map<Cluster, { id: string; width: number; height: number }[]> {
+		const touched = new Set(edges.flatMap((edge) => [edge.sources[0]!, edge.targets[0]!]));
+		const loose = new Map<Cluster, { id: string; width: number; height: number }[]>();
+		for (const [id, node] of this.nodes) {
+			if (node.children?.length || touched.has(id)) continue;
+			const cluster = this.parents.get(id)!;
+			loose.set(cluster, [
+				...(loose.get(cluster) ?? []),
+				{ id, width: node.width!, height: node.height! },
+			]);
+		}
+		return loose;
 	}
 
 	/**

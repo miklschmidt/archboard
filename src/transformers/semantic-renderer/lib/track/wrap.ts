@@ -1,8 +1,9 @@
 // Wrapping the track engine's widest rank (TASK-349). A board whose ranks run
 // wider than the page reads better when its widest rank of cards is dealt out
-// over two to four staggered rows. Each way is placed and routed here, where
-// the layout engines run, and the one that fits the reference pane best is
-// kept; the router then draws it where the drawing is painted.
+// over two to four staggered rows, or its cards nothing connects are set out as
+// a grid. Each way is placed and routed here, where the layout engines run, and
+// the one that reads best is kept when it clearly beats the board as it is;
+// the router then draws it where the drawing is painted.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
@@ -134,10 +135,13 @@ function wrapsOf(whole: Routed): Map<string, number>[] {
  * @returns The same hierarchy placed, with label boxes, frame title rows and polylines.
  */
 function placeTracks(viz: Viz, graph: ElkNode): ElkNode {
-	const whole = routed(new TrackPlacement(graph).place(viz));
-	const wrapped = wrapsOf(whole).map((lowered) =>
-		routed(new TrackPlacement(graph, lowered).place(viz)),
-	);
+	const placement = new TrackPlacement(graph);
+	const whole = routed(placement.place(viz));
+	const gridded = placement.gridded() ? [new TrackPlacement(graph, new Map(), true)] : [];
+	const wrapped = [
+		...gridded.map((grid) => routed(grid.place(viz))),
+		...wrapsOf(whole).map((lowered) => routed(new TrackPlacement(graph, lowered).place(viz))),
+	];
 	const best = wrapped.reduce<Routed | undefined>(
 		(one, other) => (one === undefined || readsBetter(other, one) ? other : one),
 		undefined,

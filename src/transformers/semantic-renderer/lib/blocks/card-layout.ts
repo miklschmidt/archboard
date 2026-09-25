@@ -23,6 +23,8 @@ import {
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { TRACK_POLYLINE } from "@/transformers/semantic-renderer/lib/track/placement";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
+import { gridEdges } from "@/transformers/semantic-renderer/lib/track/grid";
+import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
 import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Horizontal room Graphviz keeps between neighbours in a rank. */
@@ -107,6 +109,7 @@ class CardLayout {
 	 * @param tree The blocks.
 	 * @param insets The block's insets.
 	 * @param lowered How many rows each item a wide rank wraps is set below its place.
+	 * @param grid Whether the cards no line touches are set out as a grid.
 	 */
 	constructor(
 		readonly block: Block,
@@ -114,6 +117,7 @@ class CardLayout {
 		readonly tree: BlockTree,
 		readonly insets: Insets,
 		readonly lowered: ReadonlyMap<string, number> = new Map(),
+		readonly grid = false,
 	) {}
 
 	/**
@@ -195,6 +199,31 @@ class CardLayout {
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of block.lines.values())
 			if (this.wallOf(line) === undefined) this.connect(line);
+		if (this.grid) graph.edges.push(...gridEdges(this.looseCards()));
+		// A wrapped item is held a row of cards and its labels below the rank's first row for each row it is lowered.
+		const arriving = new Set([...block.lines.values()].map((line) => this.vendorOf(line.head)));
+		for (const { card, rows, anchor } of anchored(this.lowered, arriving))
+			graph.edges.push({
+				tail: anchor,
+				head: card,
+				attributes: { style: "invis", minlen: 2 * rows, weight: 0 },
+			});
+	}
+
+	/**
+	 * The block's cards no line touches, in the board's order, with their sizes.
+	 * @returns The loose cards.
+	 */
+	looseCards(): { id: string; width: number; height: number }[] {
+		const touched = new Set(
+			[...this.block.lines.values()].flatMap((line) => [
+				this.vendorOf(line.tail),
+				this.vendorOf(line.head),
+			]),
+		);
+		return this.block.items
+			.filter((item) => !this.tree.blocks.has(item) && !touched.has(item))
+			.map((id) => ({ id, ...this.sizeOf(id) }));
 	}
 
 	/**
