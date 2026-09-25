@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 17,
+	"version": 18,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-09-24T15:41:38.466Z",
+	"updatedAt": "2026-09-25T01:27:44.765Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -1356,6 +1356,9 @@
 						"kind": "function",
 						"responsibility": "Defines board lifecycle changes",
 						"description": "Factories return pure create, edit, branch, settle, adopt and shelve transitions; a rename is its own transition. An edit may also restate the summary of the variant it lands on, in the same write, and is refused on a historical or shelved variant as a content edit is. The write boundary executes the chosen transition against the board read under lease.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/transitions.ts"
@@ -1368,6 +1371,9 @@
 						"kind": "function",
 						"responsibility": "Resolves names into stable subjects",
 						"description": "editContent, editViews, and editWalkthroughs plan removals, mint identifiers centrally, resolve same-write handles and references, preserve replacement semantics, and refuse orphaned containment or stranded narrative references.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/edit-content.ts"
@@ -1380,6 +1386,9 @@
 						"kind": "function",
 						"responsibility": "Carries parent changes into drafts",
 						"description": "propagateEdit walks descendants of an edited variant, automatically merges compatible changes, records reconciliation issues where meanings diverge, and blocks descendants behind unresolved ancestors.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/propagate.ts"
@@ -1392,6 +1401,9 @@
 						"kind": "function",
 						"responsibility": "Answers the disagreements a proposal holds and carries the answer down",
 						"description": "settleVariant applies explicit reconciliation choices and ordering decisions; an ordinary edit that restores what a proposal removed settles through the same catch-up. A draft waiting on the answer is merged in the same write and reports what it finds.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/settle.ts"
@@ -1404,6 +1416,9 @@
 						"kind": "function",
 						"responsibility": "Commits one durable version",
 						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/write.ts"
@@ -1416,6 +1431,9 @@
 						"kind": "function",
 						"responsibility": "Fsyncs every change to a board file: a replacement, a move and an unlink",
 						"description": "writeFileAtomic writes a temporary sibling, fsyncs file content, renames it over the destination, and fsyncs the directory; moveFileDurably and unlinkDurably sync the directory the same way, so accepted board writes are committed before callers receive success.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/atomic-write.ts"
@@ -1427,6 +1445,9 @@
 						"name": "Vault diagnostics",
 						"kind": "function",
 						"responsibility": "Everything wrong with the vault's boards, as warnings a repair can answer",
+						"groups": [
+							"checks"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/diagnostics.ts"
@@ -1439,6 +1460,9 @@
 						"kind": "function",
 						"responsibility": "What a board can say about a link to another one, checked across the whole vault",
 						"description": "A link is the one thing on a board that names something outside it, so no single board can check it: a node with nothing but its link, a board the vault does not hold, and a kind that disagrees with the level it opens (ADR 0029).",
+						"groups": [
+							"checks"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/drill-down.ts"
@@ -1451,6 +1475,9 @@
 						"kind": "function",
 						"responsibility": "Warns when a write may have lost a relationship's identity: re-added under a new id, or stated twice",
 						"description": "A write that breaks a continuing relationship's identity is not refused: the board is valid, so the write lands and its answer carries RELATIONSHIP_REPLACED or RELATIONSHIP_DUPLICATED naming the repair. An explicit removeEdges plus an idless addition declares a replacement and draws no notice.",
+						"groups": [
+							"checks"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts"
@@ -1462,7 +1489,10 @@
 						"name": "Adopt",
 						"kind": "function",
 						"responsibility": "Makes a settled draft current, or gives a board nobody had built its first current variant; refuses a draft derived from an architecture a later adoption superseded unless forced",
-						"description": "Adoption renames nothing and rewrites no history: the variant that was current becomes a historical state under its own name. On a board with no current variant nothing becomes history (ADR 0031). A draft standing on a historical variant would drop what was adopted over it, so it is refused as PARENT_SUPERSEDED unless the request forces it, and the adoption record then says it was forced (ADR 0037)."
+						"description": "Adoption renames nothing and rewrites no history: the variant that was current becomes a historical state under its own name. On a board with no current variant nothing becomes history (ADR 0031). A draft standing on a historical variant would drop what was adopted over it, so it is refused as PARENT_SUPERSEDED unless the request forces it, and the adoption record then says it was forced (ADR 0037).",
+						"groups": [
+							"writes"
+						]
 					},
 					{
 						"id": "eCpnhcUh",
@@ -1471,6 +1501,9 @@
 						"kind": "function",
 						"responsibility": "Lets a proposal go without deleting it, so every link that names it still opens it",
 						"description": "Shelving changes nothing the variant says; the board records that nobody intends to carry it out (ADR 0030).",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/shelve.ts"
@@ -1483,6 +1516,9 @@
 						"kind": "function",
 						"responsibility": "A pure transition that moves one name, the board's or a variant's, and keeps the old one as a former name",
 						"description": "Every id, lifecycle, ancestry and record of adoption stays as it was (TASK-281, ADR 0036).",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/rename.ts"
@@ -1507,6 +1543,9 @@
 						"kind": "function",
 						"responsibility": "Writes the board's file where its name puts it, moving it there first when a rename changed that name",
 						"description": "A new name is taken under its own lease as well, without waiting, and refused when another board carries it or used to. A write that fails after the move puts the file back, so a refused rename leaves the vault as it was.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/relocation.ts"
@@ -1519,6 +1558,9 @@
 						"kind": "function",
 						"responsibility": "Removes a whole board under the lease and version check a write takes, and gives back the claim it ran under",
 						"description": "Used for a board made only to be recorded (TASK-304.02). A board somebody else holds is refused with the words a write gets.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/discard.ts"
@@ -1531,6 +1573,9 @@
 						"kind": "function",
 						"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
 						"description": "ADR 0016. The lease lives in the vault, so every server on the vault sees the same exclusion; a dead holder costs one lease rather than wedging the board.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/board-lock.ts"
@@ -1542,6 +1587,9 @@
 						"name": "Binding checks",
 						"kind": "function",
 						"responsibility": "A node on the current variant whose binding names a file the repository no longer has",
+						"groups": [
+							"checks"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store/lib/bindings.ts"

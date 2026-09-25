@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 5,
+	"version": 6,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-24T09:38:07.618Z",
+	"updatedAt": "2026-09-25T01:27:43.678Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -206,6 +206,9 @@
 						"name": "Codex transport",
 						"kind": "module",
 						"responsibility": "Where a tool call or notification from the child arrives, routed to the owner registered for it",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-transport/index.ts"
@@ -217,6 +220,9 @@
 						"name": "Codex session",
 						"kind": "module",
 						"responsibility": "The reviewed methods the coordinator and its realtime leg are started on",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/index.ts"
@@ -234,6 +240,9 @@
 						"name": "Workhorse operations",
 						"kind": "module",
 						"responsibility": "Where anything sustained goes: the four operations the coordinator may ask of the workhorse, one at a time",
+						"groups": [
+							"workhorse"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-operations/index.ts"

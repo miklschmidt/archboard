@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 8,
+	"version": 9,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-09-24T09:33:35.926Z",
+	"updatedAt": "2026-09-25T01:27:42.009Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -127,6 +127,9 @@
 						"name": "Semantic authoring",
 						"kind": "module",
 						"responsibility": "The board list, new, edit, branch and show: the commands that state a board and read it back",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic.ts"
@@ -177,6 +180,9 @@
 						"name": "Semantic lifecycle",
 						"kind": "module",
 						"responsibility": "resolve, adopt and shelve: settling a proposal, moving the current designation, setting a proposal aside",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-lifecycle.ts"
@@ -200,6 +206,9 @@
 						"kind": "module",
 						"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
 						"description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it.",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-rasterize.ts"
@@ -211,6 +220,9 @@
 						"name": "Vault check",
 						"kind": "module",
 						"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards",
+						"groups": [
+							"checks"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/vault.ts"
@@ -222,6 +234,9 @@
 						"name": "Claims",
 						"kind": "module",
 						"responsibility": "claim and release: holding a board for a stretch of agent work",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/claim.ts"
@@ -233,6 +248,9 @@
 						"name": "Panes",
 						"kind": "module",
 						"responsibility": "browser: the live session, its panes, and pointing one at a board",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/pane.ts"
@@ -244,6 +262,9 @@
 						"name": "Board rasterizer",
 						"kind": "module",
 						"responsibility": "One headless browser, one PNG at a time, refused rather than cropped",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer"
@@ -284,6 +305,9 @@
 						"name": "Render",
 						"kind": "module",
 						"responsibility": "render: a board, a variant or one of its views as the SVG the Archboard server draws",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-render.ts"
@@ -306,6 +330,9 @@
 						"name": "Rename",
 						"kind": "module",
 						"responsibility": "rename: another name for a board or one of its variants, the old name kept opening it",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-rename.ts"
@@ -318,6 +345,9 @@
 						"kind": "module",
 						"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
 						"description": "Reads the board through the Archboard server and hands the walkthrough to the recorder. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile.",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-record.ts"
@@ -329,6 +359,9 @@
 						"name": "Walkthrough recorder",
 						"kind": "module",
 						"responsibility": "Opens the Archboard server's own page in a private headless browser and saves the tab's capture as the file",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/walkthrough-recorder/index.ts"
