@@ -184,6 +184,35 @@ function nearLanes(drawing: RenderedDiagram): string[] {
 }
 
 /**
+ * Upright runs within half a lane of a frame's or group region's side wall,
+ * where a line reads as part of the container's border.
+ * @param drawing The rendered board.
+ * @returns Each such run's relationship id and the wall's x.
+ */
+function wallHugs(drawing: RenderedDiagram): string[] {
+	const boxes =
+		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+	const walls = [...drawing.svg.matchAll(boxes)].flatMap(([, x, y, width, height]) =>
+		[Number(x), Number(x) + Number(width)].map((at) => ({
+			at,
+			from: Number(y),
+			to: Number(y) + Number(height),
+		})),
+	);
+	return runsOf(drawing)
+		.filter(({ vertical }) => vertical)
+		.flatMap((run) =>
+			walls
+				.filter((wall) => {
+					const gap = Math.abs(run.at - wall.at);
+					const along = Math.min(run.to, wall.to) - Math.max(run.from, wall.from);
+					return gap > 0.5 && gap < TRACK_LANE / 2 && along > 2 * TRACK_LANE;
+				})
+				.map((wall) => `${run.edge} ${wall.at}`),
+		);
+}
+
+/**
  * The routes that run on a slant anywhere longer than a rounded corner: a
  * route is drawn across and down, and a slant is a route that lost its way.
  * @param drawing The rendered board.
@@ -227,7 +256,10 @@ for (const board of cases) {
 			});
 			expectIntact(drawing, content);
 			expect(slants(drawing), "routes on a slant").toEqual([]);
-			if (layout === "track") expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
+			if (layout === "track") {
+				expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
+				expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
+			}
 		}, 20_000);
 	}
 }
