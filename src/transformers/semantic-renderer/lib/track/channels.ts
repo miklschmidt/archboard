@@ -102,7 +102,7 @@ function bundleTrunks(nets: readonly Net[]): void {
  * @param nets Every net.
  * @returns The two items, by relationship.
  */
-function endsOf(nets: readonly Net[]): Map<string, readonly [unknown, unknown]> {
+function endsOf(nets: readonly Net[]): Map<string, Ends> {
 	const lines = new Map<string, Net[]>();
 	for (const net of nets) lines.set(net.edge, [...(lines.get(net.edge) ?? []), net]);
 	return new Map(
@@ -113,20 +113,39 @@ function endsOf(nets: readonly Net[]): Map<string, readonly [unknown, unknown]> 
 	);
 }
 
+/** A line's two end items: its first net's upper station's, and its last net's lower one's. */
+type Ends = readonly [Station["item"], Station["item"]];
+
 /**
- * Whether two nets belong to different lines between the same two items.
+ * Whether two end items stand for one place: the same item, or two of a
+ * block's one-point ports, through which lines arrive from the same outside.
+ * @param one An end item.
+ * @param other Another.
+ * @returns True when they are one place.
+ */
+function samePlace(one: Station["item"], other: Station["item"]): boolean {
+	return one === other || (onePoint(one) && onePoint(other));
+}
+
+/**
+ * Whether an end item is a block's one-point port.
+ * @param item The item.
+ * @returns True for a port.
+ */
+function onePoint(item: Station["item"]): boolean {
+	return item !== undefined && item.box.width <= 1;
+}
+
+/**
+ * Whether two nets belong to different lines between the same two places.
  * @param one A net.
  * @param other Another.
  * @param ends Each line's two end items.
  * @returns True when they are twins.
  */
-function twins(
-	one: Net,
-	other: Net,
-	ends: ReadonlyMap<string, readonly [unknown, unknown]>,
-): boolean {
+function twins(one: Net, other: Net, ends: ReadonlyMap<string, Ends>): boolean {
 	const [a, b] = [ends.get(one.edge)!, ends.get(other.edge)!];
-	return one.edge !== other.edge && a[0] === b[0] && a[1] === b[1];
+	return one.edge !== other.edge && samePlace(a[0], b[0]) && samePlace(a[1], b[1]);
 }
 
 /**
@@ -142,7 +161,7 @@ function twins(
 function withoutTwins(
 	group: readonly Net[],
 	side: "top" | "bottom",
-	ends: ReadonlyMap<string, readonly [unknown, unknown]>,
+	ends: ReadonlyMap<string, Ends>,
 ): Net[] {
 	if (group.length < 2 || group[0]![side].item!.box.width <= 1) return [...group];
 	return group.filter((net) => !group.some((other) => twins(net, other, ends)));
