@@ -86,13 +86,21 @@ function foldedSize(
  * @param laid The block laid out unfolded.
  * @param insets Its insets.
  * @param score How readable the block is unfolded.
- * @returns Its items, column by column, or nothing when it stays whole.
+ * @returns Its items, column by column, and how readable the fold is
+ * estimated to be; nothing when it stays whole.
  */
-function foldPlan(block: Block, laid: Laid, insets: Insets, score: number): string[][] | undefined {
+function foldPlan(
+	block: Block,
+	laid: Laid,
+	insets: Insets,
+	score: number,
+): { items: string[][]; score: number } | undefined {
 	const bands = laid.bands.filter(({ items }) => items.length > 0);
 	const folds = (block.kind === "root" || block.kind === "frame") && bands.length >= 3;
-	const runs = folds ? bestRuns(block, laid, bands, { insets, score }) : [];
-	return runs.length === 0 ? undefined : runs.map((run) => run.flatMap(({ items }) => items));
+	const best = folds ? bestRuns(block, laid, bands, { insets, score }) : undefined;
+	return best === undefined
+		? undefined
+		: { items: best.runs.map((run) => run.flatMap(({ items }) => items)), score: best.score };
 }
 
 /**
@@ -108,10 +116,51 @@ function busLines(block: Block, runs: readonly (readonly Band[])[]): number {
 			run.flatMap(({ items }) => items.map((item) => [item, index] as const)),
 		),
 	);
+	// A container drawn inline stands in the run that holds its cards.
+	const clusters = new Map<string, number>();
+	for (const [item, index] of runOf)
+		for (let at = block.clusterOf.get(item); at !== undefined; at = block.clusters.get(at)?.parent)
+			clusters.set(at, index);
+	for (const [cluster, index] of clusters) runOf.set(cluster, index);
 	return [...block.lines.values()].filter((line) => {
 		const [tail, head] = [runOf.get(line.tail), runOf.get(line.head)];
 		return tail !== undefined && head !== undefined && tail !== head;
 	}).length;
+}
+
+/**
+ * The bands each cluster a block draws inline spans, as the first and last
+ * band holding one of its cards.
+ * @param block The block.
+ * @param bands Its bands that hold items.
+ * @returns Each cluster's first and last band.
+ */
+function clusterSpans(block: Block, bands: readonly Band[]): [number, number][] {
+	const bandOf = new Map(
+		bands.flatMap(({ items }, index) => items.map((item) => [item, index] as const)),
+	);
+	const spans = new Map<string, [number, number]>();
+	for (const [item, band] of bandOf)
+		for (
+			let at = block.clusterOf.get(item);
+			at !== undefined;
+			at = block.clusters.get(at)?.parent
+		) {
+			const [low, high] = spans.get(at) ?? [band, band];
+			spans.set(at, [Math.min(low, band), Math.max(high, band)]);
+		}
+	return [...spans.values()];
+}
+
+/**
+ * Whether cuts split a cluster: a column holds a container or region whole,
+ * never a part of one.
+ * @param cuts Where each later run starts.
+ * @param spans Each cluster's first and last band.
+ * @returns True when a cut falls inside a cluster.
+ */
+function splits(cuts: readonly number[], spans: readonly [number, number][]): boolean {
+	return cuts.some((cut) => spans.some(([low, high]) => low < cut && cut <= high));
 }
 
 /**
@@ -124,26 +173,31 @@ function busLines(block: Block, runs: readonly (readonly Band[])[]): number {
  * @param unfolded Its insets, and how readable it is unfolded.
  * @param unfolded.insets Its insets.
  * @param unfolded.score How readable it is unfolded.
- * @returns The runs, or none.
+ * @returns The runs and their estimated score, or nothing.
  */
 function bestRuns(
 	block: Block,
 	laid: Laid,
 	bands: readonly Band[],
 	unfolded: { insets: Insets; score: number },
-): Band[][] {
+): { runs: Band[][]; score: number } | undefined {
 	const crossings = crossingsOf(laid.lines.values());
-	let best: { weighed: Weighed; runs: Band[][] } | undefined;
-	for (const cuts of cutsOf(bands.length)) {
-		const starts = [0, ...cuts];
-		const runs = starts.map((start, index) => bands.slice(start, starts[index + 1]));
-		const size = foldedSize(laid, runs, unfolded.insets);
-		const weighed = { ...size, crossings, bus: busLines(block, runs) };
-		if (best === undefined || readsBetter(weighed, best.weighed)) best = { weighed, runs };
-	}
+	const spans = clusterSpans(block, bands);
+	const folds = cutsOf(bands.length)
+		.filter((cuts) => !splits(cuts, spans))
+		.map((cuts) => {
+			const starts = [0, ...cuts];
+			const runs = starts.map((start, index) => bands.slice(start, starts[index + 1]));
+			const size = foldedSize(laid, runs, unfolded.insets);
+			return { weighed: { ...size, crossings, bus: busLines(block, runs) }, runs };
+		});
+	const best = folds.reduce<{ weighed: Weighed; runs: Band[][] } | undefined>(
+		(one, other) => (one === undefined || readsBetter(other.weighed, one.weighed) ? other : one),
+		undefined,
+	);
 	return best !== undefined && scoreOf(best.weighed) > unfolded.score * WORTH_FOLDING
-		? best.runs
-		: [];
+		? { runs: best.runs, score: scoreOf(best.weighed) }
+		: undefined;
 }
 
 /** One fold of a block: its columns, and the tree whose lines it cuts. */
@@ -173,6 +227,45 @@ class Fold {
 			}
 			return column;
 		});
+		this.moveClusters();
+	}
+
+	/**
+	 * Move each cluster the block draws inline into the column that holds its
+	 * cards, whole, with every card's and cluster's place in it.
+	 */
+	moveClusters(): void {
+		for (const column of this.columns) this.holdClusters(column);
+		this.block.clusters.clear();
+		this.block.clusterOf.clear();
+	}
+
+	/**
+	 * Give one column the clusters around its cards, in the block's order so a
+	 * parent comes before the clusters inside it.
+	 * @param column The column.
+	 */
+	holdClusters(column: Block): void {
+		const held = new Set(column.items.flatMap((item) => this.clustersAround(item)));
+		const clusters = [...this.block.clusters].filter(([id]) => held.has(id));
+		for (const [id, cluster] of clusters) column.clusters.set(id, cluster);
+		for (const [member, around] of this.block.clusterOf)
+			if (held.has(around)) column.clusterOf.set(member, around);
+		for (const [id] of clusters.filter(([, cluster]) => cluster.kind === "frame"))
+			this.tree.holder.set(id, column);
+	}
+
+	/**
+	 * The clusters around an item of the block, innermost first.
+	 * @param item The item.
+	 * @returns Their ids.
+	 */
+	clustersAround(item: string): string[] {
+		const chain: string[] = [];
+		const { clusterOf, clusters } = this.block;
+		for (let at = clusterOf.get(item); at !== undefined; at = clusters.get(at)?.parent)
+			chain.push(at);
+		return chain;
 	}
 
 	/**
@@ -182,7 +275,7 @@ class Fold {
 	 */
 	columnOf(end: string): Block | undefined {
 		const item = this.tree.pins.get(end)?.block.id ?? end;
-		return this.columns.find((column) => column.items.includes(item));
+		return this.columns.find((column) => column.items.includes(item) || column.clusters.has(item));
 	}
 
 	/**

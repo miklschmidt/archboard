@@ -11,7 +11,7 @@ import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { box, numbers, type Output } from "@/transformers/semantic-renderer/lib/track/graphviz";
-import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/placement";
+import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
@@ -45,6 +45,38 @@ function titleOf(cluster: string): string {
  */
 function isTitle(name: string): boolean {
 	return name.startsWith("title:");
+}
+
+/** Which vendor nodes Graphviz must rank below which, as edges are added. */
+class Below {
+	readonly next = new Map<string, string[]>();
+
+	/**
+	 * Record that one vendor node ranks below another.
+	 * @param tail The upper node.
+	 * @param head The lower node.
+	 */
+	add(tail: string, head: string): void {
+		this.next.set(tail, [...(this.next.get(tail) ?? []), head]);
+	}
+
+	/**
+	 * Whether one vendor node leads down to another.
+	 * @param from Where to start.
+	 * @param target Where to arrive.
+	 * @returns True when it does.
+	 */
+	reaches(from: string, target: string): boolean {
+		const seen = new Set<string>();
+		const open = [from];
+		while (open.length > 0) {
+			const at = open.pop()!;
+			if (at === target) return true;
+			if (!seen.has(at)) open.push(...(this.next.get(at) ?? []));
+			seen.add(at);
+		}
+		return false;
+	}
 }
 
 /** A block's inline clusters, in its Graphviz graph and read back from it. */
@@ -135,18 +167,67 @@ class Clusters {
 	}
 
 	/**
-	 * The invisible edges that hold each title above its cluster's members.
-	 * @param lower Members held down by something else, which need no edge from their title.
+	 * The invisible edges that hold each title above its cluster's members. A
+	 * member a line from inside its own cluster already holds below the title
+	 * needs none: that edge would only pull it under the title, off the line.
+	 * @param lower Members held down by something else, such as a grid.
+	 * @param links Every line as Graphviz ranks it.
 	 * @returns The edges.
 	 */
-	titleEdges(lower: ReadonlySet<string>): Edge[] {
+	titleEdges(lower: ReadonlySet<string>, links: readonly { tail: string; head: string }[]): Edge[] {
 		return [...this.block.clusterOf]
-			.filter(([member]) => !lower.has(member))
+			.filter(([member, around]) => {
+				const vendor = this.vendorOf(member);
+				const held = links.some(
+					({ tail, head }) => head === vendor && this.around(tail).includes(around),
+				);
+				return !lower.has(member) && !held;
+			})
 			.map(([member, around]) => ({
 				tail: titleOf(around),
 				head: this.vendorOf(member),
 				attributes: { style: "invis", weight: TITLE_WEIGHT },
 			}));
+	}
+
+	/**
+	 * The invisible edges that hold a container a line from another container
+	 * enters below the line's source, so containers in a chain stack instead
+	 * of stepping sideways where one's last rank and the next one's title would
+	 * share a rank. A line from a card on its own adds none: holding containers
+	 * below every such card drew the dogfood boards taller and more crossed.
+	 * An edge that would close a loop, through the lines, the titles above
+	 * their members and the edges already added, is left out: Graphviz would
+	 * break the loop by turning some edge round, and a label would land beyond
+	 * its own card.
+	 * @param links Every line as Graphviz ranks it: its upper end, lower end, and whether a label sits between.
+	 * @returns The edges.
+	 */
+	enteringEdges(links: readonly { tail: string; head: string; labelled: boolean }[]): Edge[] {
+		const below = new Below();
+		for (const { tail, head } of links) below.add(tail, head);
+		for (const [member, around] of this.block.clusterOf)
+			below.add(titleOf(around), this.vendorOf(member));
+		return links.flatMap(({ tail, head, labelled }) =>
+			this.entered(tail, head)
+				.filter((cluster) => !below.reaches(titleOf(cluster), tail))
+				.map((cluster) => {
+					below.add(tail, titleOf(cluster));
+					const attributes = { style: "invis", minlen: labelled ? 2 : 1, weight: 0 };
+					return { tail, head: titleOf(cluster), attributes };
+				}),
+		);
+	}
+
+	/**
+	 * The clusters a line from inside another cluster enters.
+	 * @param tail The line's upper end.
+	 * @param head Its lower end.
+	 * @returns The clusters around the lower end and not around the upper; none when the upper end stands in no cluster.
+	 */
+	entered(tail: string, head: string): string[] {
+		const theirs = new Set(this.around(tail));
+		return theirs.size === 0 ? [] : this.around(head).filter((cluster) => !theirs.has(cluster));
 	}
 
 	/**

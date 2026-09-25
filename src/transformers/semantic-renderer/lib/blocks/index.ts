@@ -1,7 +1,9 @@
 // The block engine: the board, every container and every group region laid
 // out as a block of its own, compact around what it holds, and every
 // relationship drawn on tracks through the ports where it crosses a block's
-// edge (`tree.ts`, `place.ts`). Everything is laid out and routed where the
+// edge (`tree.ts`, `place.ts`). The track engine is the same engine with every
+// container and region drawn inline, as clusters of the board's one layout
+// (`inline.ts`, `clusters.ts`). Everything is laid out and routed where the
 // layout engines run; here the geometry becomes the drawing.
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
@@ -119,7 +121,7 @@ async function drawnBlocks(
 ): Promise<PaintedDrawing> {
 	const solved = await rendererHost().solve(graph, {
 		...COMPOUND_OPTIONS,
-		[SOLVE_STAGE]: inline ? "inline" : "blocks",
+		[SOLVE_STAGE]: inline ? "track" : "blocks",
 	});
 	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
 	const drawing = drawingOf(content, measured, placed);
@@ -142,14 +144,15 @@ async function layoutBlocks(
 }
 
 /**
- * Lay an architecture out as one block with its containers and group regions
- * drawn inline, ranked across them as the track engine ranks them.
+ * The track engine: the board laid out as one block with its containers and
+ * group regions drawn inline, its cards ranked across them as one board, its
+ * wide ranks wrapped and its tall columns folded when that reads better.
  * @param content The architecture.
  * @param measured Its measured cards and labels.
  * @param standings Comparison standings, which keep marked relationships off one trunk.
  * @returns The drawing painting and the atlas read.
  */
-async function layoutInline(
+async function layoutTracks(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	standings?: Readonly<Record<string, ChangeKind>>,
@@ -157,4 +160,4 @@ async function layoutInline(
 	return drawnBlocks(content, measured, compoundGraph(content, measured, standings), true);
 }
 
-export { drawnBlocks, layoutBlocks, layoutInline };
+export { layoutBlocks, layoutTracks };

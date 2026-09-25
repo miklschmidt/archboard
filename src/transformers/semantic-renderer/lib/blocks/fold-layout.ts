@@ -32,12 +32,15 @@ const PORT = 1;
 const STRAIGHT = 0.5;
 
 /**
- * How far down a laid-out column its first card stands.
+ * How far down a laid-out column the first thing it shows stands: its first
+ * card, or a container or region it draws around its first cards.
  * @param laid The column laid out.
- * @returns The top of its first rank that holds a card.
+ * @returns The top of its first card, container or region.
  */
 function firstCardTop(laid: Laid): number {
-	return laid.bands.find(({ items }) => items.length > 0)?.top ?? 0;
+	const card = laid.bands.find(({ items }) => items.length > 0)?.top ?? 0;
+	const shapes = [...(laid.frames ?? []), ...(laid.regions ?? [])].map(({ box }) => box.y);
+	return Math.min(card, ...shapes);
 }
 
 /**

@@ -88,18 +88,54 @@ function weighed(laid: Laid): Weighed {
  */
 function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
 	const insets = insetsOf(block);
-	const whole = new CardLayout(block, laid, tree, insets).lay(viz);
-	const wrapped = bestWrap(viz, tree, block, { laid, whole });
+	const { whole, stacked } = stackedOrNot(viz, tree, block, laid);
+	const wrapped = bestWrap(viz, tree, block, { laid, whole, stacked });
 	if (wrapped !== undefined) return wrapped;
 	const walled = [...block.ports.values()].some((side) => side === "left" || side === "right");
-	// A fold cannot yet cut a block whose containers it draws inline.
-	const folds = !walled && block.clusters.size === 0;
-	const plan = folds ? foldPlan(block, whole, insets, scored(whole)) : undefined;
+	const plan = walled ? undefined : foldPlan(block, whole, insets, scored(whole));
 	if (plan === undefined) return whole;
-	const columns = foldBlock(tree, block, plan);
+	const columns = foldBlock(tree, block, plan.items);
 	for (const column of columns)
-		laid.set(column.id, new CardLayout(column, laid, tree, insetsOf(column)).lay(viz));
+		laid.set(column.id, new CardLayout(column, laid, tree, insetsOf(column), { stacked }).lay(viz));
 	return new FoldLayout(block, columns, laid, tree, insets).lay();
+}
+
+/**
+ * How readable a block laid out whole can be: as it stands, or folded.
+ * @param block The block.
+ * @param laid The block laid out whole.
+ * @param insets Its insets.
+ * @returns The better score.
+ */
+function bestOf(block: Block, laid: Laid, insets: Insets): number {
+	return Math.max(scored(laid), foldPlan(block, laid, insets, scored(laid))?.score ?? 0);
+}
+
+/**
+ * A block of cards laid out whole: with the containers a line from another
+ * container enters stacked below it, when that reads better, or else as
+ * Graphviz ranks them.
+ * @param viz The initialized Graphviz instance.
+ * @param tree The blocks.
+ * @param block The block.
+ * @param laid Every block laid out so far.
+ * @returns The block laid out, and whether it stacks.
+ */
+function stackedOrNot(
+	viz: Viz,
+	tree: BlockTree,
+	block: Block,
+	laid: Map<string, Laid>,
+): { whole: Laid; stacked: boolean } {
+	const insets = insetsOf(block);
+	const plain = new CardLayout(block, laid, tree, insets);
+	const whole = plain.lay(viz);
+	if (!plain.stacks()) return { whole, stacked: false };
+	const stacked = new CardLayout(block, laid, tree, insets, { stacked: true }).lay(viz);
+	// Stacked containers often read best folded, so each is weighed at its best.
+	return bestOf(block, stacked, insets) > bestOf(block, whole, insets)
+		? { whole: stacked, stacked: true }
+		: { whole, stacked: false };
 }
 
 /**
@@ -108,26 +144,28 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
- * @param laying Every block laid out so far, and this one whole.
+ * @param laying Every block laid out so far, this one whole, and whether it stacks.
  * @param laying.laid Every block laid out so far.
  * @param laying.whole This block laid out whole.
+ * @param laying.stacked Whether its containers stack.
  * @returns The best wrap, or nothing when the block stays whole.
  */
 function bestWrap(
 	viz: Viz,
 	tree: BlockTree,
 	block: Block,
-	laying: { laid: Map<string, Laid>; whole: Laid },
+	laying: { laid: Map<string, Laid>; whole: Laid; stacked: boolean },
 ): Laid | undefined {
 	const insets = insetsOf(block);
+	const { laid, stacked } = laying;
 	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
-	const gridded = new CardLayout(block, laying.laid, tree, insets).looseCards().some(grids)
-		? [new CardLayout(block, laying.laid, tree, insets, new Map(), true).lay(viz)]
+	const gridded = new CardLayout(block, laid, tree, insets).looseCards().some(grids)
+		? [new CardLayout(block, laid, tree, insets, { grid: true, stacked }).lay(viz)]
 		: [];
 	const best = [
 		...gridded,
 		...wrapsOf(laying.whole).map((lowered) =>
-			new CardLayout(block, laying.laid, tree, insets, lowered).lay(viz),
+			new CardLayout(block, laid, tree, insets, { lowered, stacked }).lay(viz),
 		),
 	].reduce<Laid | undefined>(
 		(one, other) => (one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one),

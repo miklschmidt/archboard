@@ -1,32 +1,24 @@
 // The track router (TASK-349): every relationship drawn on tracks it owns.
 //
-// Placement put cards, label boxes and frame title rows on ranks, and said
-// where each relationship passes the ranks between its ends. Here the ranks
+// A block's placement put cards, label boxes and frame title rows on ranks,
+// and said where each relationship passes the ranks between its ends. Here the ranks
 // become bands and the space between two bands a channel. A relationship is a
 // chain of stations (`chains.ts`); between two stations it leaves the upper one
 // straight down, runs across on a track of the channel, and enters the lower
 // one straight down (`channels.ts`). Each channel is made as tall as its
 // tracks need, so lanes keep one spacing and never squeeze, and every label
 // sits on its own line by construction. One pass, no search.
-import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import {
 	APPROACH_STRAIGHT,
 	BEND_RADIUS,
 	CONTAINER_INSET,
 } from "@/transformers/semantic-renderer/config";
-import type {
-	ArchitectureDrawing,
-	DrawingEdge,
-	DrawingNode,
-	DrawingRegion,
-	MeasuredArchitecture,
-} from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { curveThrough, pathOf, selfLoop } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	LANE,
 	chainOf,
+	straightenIntoContainers,
 	straightenLanes,
 	type Chain,
 } from "@/transformers/semantic-renderer/lib/track/chains";
@@ -250,25 +242,6 @@ function pointsOf(scene: Scene, nets: readonly Net[], left: number): Point[] {
 	});
 }
 
-/**
- * Every card, in its place after spacing, at its containment depth.
- * @param scene The spaced scene.
- * @param measured The measured cards.
- * @param left How far every x moves.
- * @returns The cards.
- */
-function drawCards(scene: Scene, measured: MeasuredArchitecture, left: number): DrawingNode[] {
-	const depths = new Map<string, number>();
-	for (const { depth, members } of scene.frames.values()) {
-		for (const member of members) depths.set(member, Math.max(depths.get(member) ?? 0, depth + 1));
-	}
-	return [...scene.cards].map(([id, item]) => ({
-		measured: measured.nodes.get(id)!,
-		box: scene.moved(item, left),
-		depth: depths.get(id) ?? 0,
-	}));
-}
-
 /** A frame's box once the scene is spaced, and how deep in frames it sits. */
 interface FrameShape {
 	readonly id: string;
@@ -336,27 +309,6 @@ function frameShapes(
 	});
 }
 
-/**
- * Every frame, drawn.
- * @param scene The spaced scene.
- * @param edges The placed relationships.
- * @param measured The measured frames.
- * @param left How far every x moves.
- * @returns The frames.
- */
-function drawFrames(
-	scene: Scene,
-	edges: ReadonlyMap<string, ElkExtendedEdge>,
-	measured: MeasuredArchitecture,
-	left: number,
-): DrawingNode[] {
-	return frameShapes(scene, edges, left).map(({ id, box, depth }) => ({
-		measured: measured.nodes.get(id)!,
-		box,
-		depth,
-	}));
-}
-
 /** Room a group region keeps below its lowest member. */
 const REGION_BOTTOM = 14;
 /** How far a region's caption sits in from its band's left edge. */
@@ -398,69 +350,14 @@ function regionShapes(
 }
 
 /**
- * Every group region, drawn.
- * @param scene The spaced scene.
- * @param edges The placed relationships.
- * @param measured The measured captions.
- * @param left How far every x moves.
- * @returns The regions.
+ * Move every net's ends that stand on a lane to where the lane now stands.
+ * @param nets Every net.
  */
-function drawRegions(
-	scene: Scene,
-	edges: ReadonlyMap<string, ElkExtendedEdge>,
-	measured: MeasuredArchitecture,
-	left: number,
-): DrawingRegion[] {
-	return regionShapes(scene, edges, left).flatMap((shape) => {
-		const caption = measured.groups?.captions.get(shape.group);
-		if (caption === undefined) return [];
-		const { group, parent, box, depth } = shape;
-		return [{ group, parent, box, caption: { box: shape.caption, measured: caption }, depth }];
-	});
-}
-
-/**
- * Every relationship's drawn line and label.
- * @param scene The spaced scene.
- * @param content The architecture, for its relationships in drawing order.
- * @param routed Every routed relationship's points, from its source to its target.
- * @param measured The measured labels.
- * @returns The drawn relationships.
- */
-function drawEdges(
-	scene: Scene,
-	content: VariantContent,
-	routed: ReadonlyMap<string, Point[]>,
-	measured: MeasuredArchitecture,
-): DrawingEdge[] {
-	return content.edges
-		.toSorted((one, other) => one.order - other.order)
-		.map((edge) => {
-			const label = measured.labels.get(edge.id);
-			const item = scene.labels.get(edge.id);
-			const withLabel =
-				label === undefined || item === undefined
-					? {}
-					: { label: { measured: label, box: scene.moved(item, PAGE_MARGIN) } };
-			const points = routed.get(edge.id);
-			const curve =
-				points === undefined
-					? selfLoop(scene.moved(scene.endpoint(edge.from), PAGE_MARGIN), false)
-					: curveThrough(points, true);
-			return { edge, curve, path: pathOf(curve), ...withLabel };
-		});
-}
-
-/**
- * The page around everything drawn.
- * @param boxes Every card, frame and label box.
- * @returns Its width and height.
- */
-function pageAround(boxes: readonly Box[]): { width: number; height: number } {
-	return {
-		width: Math.max(...boxes.map((box) => box.x + box.width)) + PAGE_MARGIN,
-		height: Math.max(...boxes.map((box) => box.y + box.height)) + PAGE_MARGIN,
-	};
+function followLanes(nets: readonly Net[]): void {
+	for (const net of nets) {
+		if (net.top.kind === "lane") net.topX = net.top.x;
+		if (net.bottom.kind === "lane") net.bottomX = net.bottom.x;
+	}
 }
 
 /**
@@ -494,6 +391,7 @@ function routeScene(
 	bundleTrunks(nets);
 	assignPorts(nets);
 	slideLabels(scene, nets);
+	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
 	assignPorts(nets);
 	for (const route of routed.values()) settleStraights(route.nets);
 	for (const line of lines.filter(({ enters }) => enters !== undefined)) {
@@ -514,47 +412,6 @@ function routeScene(
 	);
 }
 
-/**
- * Route every relationship of a placed hierarchy on its own tracks.
- * @param content The architecture, for its relationships in drawing order.
- * @param placed The track placement's answer.
- * @param measured The measured cards and labels.
- * @returns The drawing painting and the atlas read.
- */
-function routeTracks(
-	content: VariantContent,
-	placed: ElkNode,
-	measured: MeasuredArchitecture,
-): ArchitectureDrawing {
-	const scene = new Scene(placed);
-	const edges = new Map((placed.edges ?? []).map((edge) => [edge.id, edge]));
-	const routed = routeScene(
-		scene,
-		content.edges
-			.filter((edge) => edge.from !== edge.to)
-			.map((edge) => ({
-				id: edge.id,
-				order: edge.order,
-				kind: trunkKind(edges.get(edge.id)!),
-				placed: edges.get(edge.id)!,
-			})),
-		PAGE_MARGIN,
-	);
-	const cards = drawCards(scene, measured, PAGE_MARGIN);
-	const containers = drawFrames(scene, edges, measured, PAGE_MARGIN);
-	const drawn = drawEdges(scene, content, routed, measured);
-	const regions = drawRegions(scene, edges, measured, PAGE_MARGIN);
-	const labels = drawn.flatMap(({ label }) => (label === undefined ? [] : [label.box]));
-	return {
-		direction: "down",
-		...pageAround([...cards, ...containers, ...regions].map(({ box }) => box).concat(labels)),
-		cards,
-		containers,
-		edges: drawn,
-		...(regions.length === 0 ? {} : { regions }),
-	};
-}
-
 export {
 	PAGE_MARGIN,
 	TRACK_BOTTOM,
@@ -563,7 +420,6 @@ export {
 	frameShapes,
 	regionShapes,
 	routeScene,
-	routeTracks,
 	trunkKind,
 	type FrameShape,
 	type RegionShape,

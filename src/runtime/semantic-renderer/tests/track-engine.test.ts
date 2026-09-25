@@ -3,8 +3,9 @@
 // line that jogs a few points on its way to a label, which its rounded corners
 // draw as a hook doubling back on itself, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
-// container of cards nothing connects drawn as one long row again, and a line
-// into a wide container that aims at its middle and comes back to its port.
+// container of cards nothing connects drawn as one long row again, a line
+// into a wide container that aims at its middle and comes back to its port,
+// and a tall board of containers drawn as one column, or folded through one.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -135,5 +136,37 @@ test("a line into a wide container stays between its ends and its label", async 
 			expect(x, `${id} beyond its ends`).toBeGreaterThanOrEqual(low - SLACK);
 			expect(x, `${id} beyond its ends`).toBeLessThanOrEqual(high + SLACK);
 		}
+	}
+});
+
+test("a tall board of containers folds into columns that each hold a container whole", async () => {
+	const stages = [0, 1, 2, 3, 4, 5];
+	const tall = orderedFixture({
+		nodes: stages.flatMap((stage) => [
+			{ id: `f${stage}`, name: `Stage ${stage}`, kind: "service" },
+			{ id: `a${stage}`, name: `Stage ${stage} intake`, kind: "module", parent: `f${stage}` },
+			{ id: `b${stage}`, name: `Stage ${stage} output`, kind: "module", parent: `f${stage}` },
+		]),
+		edges: stages.flatMap((stage) => [
+			{ id: `in${stage}`, from: `a${stage}`, to: `b${stage}`, kind: "call" },
+			...(stage < 5
+				? [{ id: `on${stage}`, from: `b${stage}`, to: `a${stage + 1}`, kind: "call" }]
+				: []),
+		]),
+	});
+	const drawing = await renderArchitecture({ content: tall, theme: "light", layout: "track" });
+	const frames = stages.map((stage) => drawing.atlas.nodes[`f${stage}`]!);
+	// Folded: some container stands beside another rather than under it.
+	expect(new Set(frames.map(({ x }) => x)).size).toBeGreaterThan(1);
+	for (const { id, parent } of tall.nodes) {
+		if (parent === undefined) continue;
+		const [card, frame] = [drawing.atlas.nodes[id]!, drawing.atlas.nodes[parent]!];
+		expect(card.x, `${id} inside ${parent}`).toBeGreaterThanOrEqual(frame.x);
+		expect(card.x + card.width, `${id} inside ${parent}`).toBeLessThanOrEqual(
+			frame.x + frame.width,
+		);
+		expect(card.y + card.height, `${id} inside ${parent}`).toBeLessThanOrEqual(
+			frame.y + frame.height,
+		);
 	}
 });
