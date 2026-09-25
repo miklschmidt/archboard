@@ -67,7 +67,7 @@ test("a line to its label runs without a hook", async () => {
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
-	const stages = Array.from({ length: 12 }, (_, index) => `s${index}`);
+	const stages = Array.from({ length: 14 }, (_, index) => `s${index}`);
 	const chain = orderedFixture({
 		nodes: stages.map((id) => ({ id, name: `Stage ${id}`, kind: "module" })),
 		edges: stages.slice(1).map((to, index) => ({
