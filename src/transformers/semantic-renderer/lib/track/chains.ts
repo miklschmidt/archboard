@@ -253,6 +253,71 @@ function straightenIntoContainers(scene: Scene, chains: readonly Chain[]): boole
 }
 
 /**
+ * Move each run of lanes that stands closer than a lane to the card port it
+ * leaves or enters onto that port's column, where the column is free on every
+ * band the run passes: the line would jog less than a lane at the card, and
+ * run too near a line through the port beside it.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param ports The port x each run's end lane wants, by that lane.
+ * @returns Whether any run moved.
+ */
+function pullToPorts(
+	scene: Scene,
+	chains: readonly Chain[],
+	ports: ReadonlyMap<Station, number>,
+): boolean {
+	const runs = laneRuns(chains);
+	return runs.map((run) => pullRun(scene, runs, run, ports)).some(Boolean);
+}
+
+/**
+ * Move one run of lanes onto the column of a card port less than a lane
+ * from it, when that column is free on every band it passes.
+ * @param scene The scene.
+ * @param runs Every run of lanes.
+ * @param run The run.
+ * @param ports The port x each run's end lane wants, by that lane.
+ * @returns Whether it moved.
+ */
+function pullRun(
+	scene: Scene,
+	runs: readonly LaneRun[],
+	run: LaneRun,
+	ports: ReadonlyMap<Station, number>,
+): boolean {
+	const x = portBeside(run, ports);
+	if (x === undefined || !freeWithout(scene, runs, run).fits(run.lanes, x)) return false;
+	for (const lane of run.lanes) lane.x = x;
+	return true;
+}
+
+/**
+ * The port a run of lanes stands closer than a lane to, if any.
+ * @param run The run.
+ * @param ports The port x each run's end lane wants, by that lane.
+ * @returns The port's x.
+ */
+function portBeside(run: LaneRun, ports: ReadonlyMap<Station, number>): number | undefined {
+	const x = ports.get(run.lanes[0]!) ?? ports.get(run.lanes.at(-1)!);
+	const off = x === undefined ? 0 : Math.abs(x - run.lanes[0]!.x);
+	return off >= 0.5 && off < LANE ? x : undefined;
+}
+
+/**
+ * What each band holds with every run but one in place.
+ * @param scene The scene.
+ * @param runs Every run of lanes.
+ * @param left The run left out.
+ * @returns The occupancy.
+ */
+function freeWithout(scene: Scene, runs: readonly LaneRun[], left: LaneRun): Occupancy {
+	const occupancy = new Occupancy(scene);
+	for (const run of runs) if (run !== left) for (const lane of run.lanes) occupancy.take(lane);
+	return occupancy;
+}
+
+/**
  * Move one run to or from a container onto its straight column, when that is free.
  * @param scene The scene.
  * @param run The run.
@@ -334,6 +399,7 @@ function nearest(from: number, passes: (x: number) => boolean): number | undefin
 export {
 	LANE,
 	chainOf,
+	pullToPorts,
 	reachOf,
 	straightenIntoContainers,
 	straightenLanes,
