@@ -1,10 +1,18 @@
-// Ports and tracks (TASK-349). A net is one relationship's run between two
-// stations on neighbouring bands: it leaves the upper station straight down,
-// crosses the channel on a track, and enters the lower station straight down.
+// Ports, trunks and tracks (TASK-349). A net is one relationship's run between
+// two stations on neighbouring bands: it leaves the upper station straight
+// down, crosses the channel on a track, and enters the lower station straight
+// down.
+//
+// Relationships of one kind (and one comparison standing) that leave one card
+// face into the same channel share a port and a trunk: one line off the card,
+// one track, and a branch down to each end. Likewise those that enter one
+// card face. A trunk never joins several sources to several ends, so a
+// reader can always tell who talks to whom; the painter marks every split.
+//
 // Cards spread their ports along a face, each as close to the other end as
-// spacing allows; each channel's turning nets get tracks in the order that
-// crosses least, every net on the highest track below the overlapping nets
-// above it.
+// spacing allows; each channel's units — a trunk, or a lone net — get tracks
+// in the order that crosses least, each on the highest track below the
+// overlapping units above it.
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
@@ -12,30 +20,86 @@ import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
 /** How far a port keeps from a card's corner. */
 const PORT_MARGIN = 20;
 
+/** Relationships that share a port and a track at one card face. */
+interface Trunk {
+	/** Which end they share: the upper station's bottom face, or the lower station's top face. */
+	readonly side: "top" | "bottom";
+	readonly nets: Net[];
+}
+
 /** One relationship's run between two stations on neighbouring bands. */
 interface Net {
 	readonly edge: string;
 	readonly order: number;
 	readonly channel: number;
+	/** What must match for two nets to share a trunk: kind and standing. */
+	readonly kind: string;
 	readonly top: Station;
 	readonly bottom: Station;
 	/** Where it leaves the upper station and enters the lower one. */
 	topX: number;
 	bottomX: number;
 	track: number;
+	trunk?: Trunk;
 }
 
-/** One side of a net that ends on a card, and where it would like its port. */
+/** One port a face must give: a trunk's, or a lone net's end. */
 interface PortRequest {
-	readonly net: Net;
+	readonly nets: readonly Net[];
 	readonly side: "top" | "bottom";
 	readonly wanted: number;
+	readonly order: number;
+}
+
+/** What a channel assigns tracks to: a trunk, or a lone net that turns. */
+interface Unit {
+	readonly nets: readonly Net[];
+	readonly tops: readonly number[];
+	readonly bottoms: readonly number[];
+	readonly low: number;
+	readonly high: number;
+	readonly order: number;
+}
+
+/**
+ * Group nets that share a card face, a channel, a kind and a standing into
+ * trunks: first those leaving a face, then, among the rest, those entering one.
+ * @param nets Every net.
+ */
+function bundleTrunks(nets: readonly Net[]): void {
+	for (const side of ["top", "bottom"] as const) {
+		for (const group of sharing(nets, side)) {
+			if (group.length < 2) continue;
+			const trunk = { side, nets: group };
+			for (const net of group) net.trunk = trunk;
+		}
+	}
+}
+
+/**
+ * The nets not yet in a trunk that end on one card face, grouped by card,
+ * channel, kind and standing.
+ * @param nets Every net.
+ * @param side Which end: the upper station's, or the lower station's.
+ * @returns The groups.
+ */
+function sharing(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
+	const groups = new Map<Item, Map<string, Net[]>>();
+	for (const net of nets) {
+		const station = net[side];
+		if (net.trunk !== undefined || station.kind !== "card") continue;
+		const byKind = groups.get(station.item!) ?? new Map<string, Net[]>();
+		const key = `${net.channel}|${net.kind}`;
+		byKind.set(key, [...(byKind.get(key) ?? []), net]);
+		groups.set(station.item!, byKind);
+	}
+	return [...groups.values()].flatMap((byKind) => [...byKind.values()]);
 }
 
 /**
  * Spread the ports on one face, each as close to its other end as spacing allows.
  * @param face The face's box.
- * @param wanted Each net's preferred x, in the order the ports must keep.
+ * @param wanted Each port's preferred x, in the order the ports must keep.
  * @returns The ports' x, in the same order.
  */
 function spreadPorts(face: Box, wanted: readonly number[]): number[] {
@@ -55,39 +119,81 @@ function spreadPorts(face: Box, wanted: readonly number[]): number[] {
 }
 
 /**
- * Every port request, by the card and face it is made on.
+ * Where a net's end on one side would like its port: under or over its other end.
+ * @param net The net.
+ * @param side The side its port is on.
+ * @returns The x of its other end.
+ */
+function otherEnd(net: Net, side: "top" | "bottom"): number {
+	return side === "top" ? net.bottomX : net.topX;
+}
+
+/**
+ * Every port request, by the card it is made on: one per trunk sharing that
+ * face, one per lone net ending there.
  * @param nets Every net.
- * @returns The requests, keyed by card, then face.
+ * @returns The requests, keyed by card.
  */
 function portRequests(nets: readonly Net[]): Map<Item, PortRequest[]> {
 	const faces = new Map<Item, PortRequest[]>();
+	const asked = new Set<Trunk>();
 	for (const net of nets) {
 		for (const side of ["top", "bottom"] as const) {
-			const station = net[side];
-			if (station.kind !== "card") continue;
-			const wanted = side === "top" ? net.bottomX : net.topX;
-			faces.set(station.item!, [...(faces.get(station.item!) ?? []), { net, side, wanted }]);
+			const request = requestOf(net, side, asked);
+			if (request === undefined) continue;
+			const item = net[side].item!;
+			faces.set(item, [...(faces.get(item) ?? []), request]);
 		}
 	}
 	return faces;
 }
 
 /**
- * Give the nets on one face their ports.
+ * The port one end of a net asks for: its trunk's, the first time the trunk
+ * is met, or its own.
+ * @param net The net.
+ * @param side Which end.
+ * @param asked The trunks that have asked already.
+ * @returns The request, or nothing when that end is not on a card or its trunk has asked.
+ */
+function requestOf(net: Net, side: "top" | "bottom", asked: Set<Trunk>): PortRequest | undefined {
+	if (net[side].kind !== "card") return undefined;
+	const shared = net.trunk?.side === side ? net.trunk : undefined;
+	if (shared === undefined) return requestFor([net], side);
+	if (asked.has(shared)) return undefined;
+	asked.add(shared);
+	return requestFor(shared.nets, side);
+}
+
+/**
+ * One port for some nets on one face, wanted under the middle of their other ends.
+ * @param members The nets sharing the port.
+ * @param side Which end.
+ * @returns The request.
+ */
+function requestFor(members: readonly Net[], side: "top" | "bottom"): PortRequest {
+	const wanted = members.reduce((sum, member) => sum + otherEnd(member, side), 0) / members.length;
+	return { nets: members, side, wanted, order: Math.min(...members.map(({ order }) => order)) };
+}
+
+/**
+ * Give the ports on one face of a card.
  * @param item The card.
  * @param requests Its requests on that face.
  */
 function placePorts(item: Item, requests: readonly PortRequest[]): void {
 	const ordered = requests.toSorted(
-		(one, other) => one.wanted - other.wanted || one.net.order - other.net.order,
+		(one, other) => one.wanted - other.wanted || one.order - other.order,
 	);
 	const ports = spreadPorts(
 		item.box,
 		ordered.map(({ wanted }) => wanted),
 	);
-	ordered.forEach(({ net, side }, index) => {
-		if (side === "top") net.topX = ports[index]!;
-		else net.bottomX = ports[index]!;
+	ordered.forEach(({ nets, side }, index) => {
+		for (const net of nets) {
+			if (side === "top") net.topX = ports[index]!;
+			else net.bottomX = ports[index]!;
+		}
 	});
 }
 
@@ -112,85 +218,107 @@ function assignPorts(nets: readonly Net[]): void {
 }
 
 /**
- * The horizontal interval a turning net takes on its track.
- * @param net The net.
- * @returns Its low and high x, widened by half a lane.
+ * The units of one channel that need a track: trunks, and lone nets that turn.
+ * @param nets The channel's nets.
+ * @returns The units that turn.
  */
-function spanOf(net: Net): [number, number] {
-	return [Math.min(net.topX, net.bottomX) - LANE / 2, Math.max(net.topX, net.bottomX) + LANE / 2];
+function unitsOf(nets: readonly Net[]): Unit[] {
+	const groups = new Map<Trunk | Net, readonly Net[]>();
+	for (const net of nets) groups.set(net.trunk ?? net, net.trunk?.nets ?? [net]);
+	return [...groups.values()].map(unitOf).filter((unit) => unit.high - unit.low > 0.5);
 }
 
 /**
- * Whether an x falls strictly inside a net's run.
- * @param x The x.
- * @param net The net.
- * @returns True when a vertical at x would cross its track.
+ * One trunk's or lone net's pins and run.
+ * @param members Its nets.
+ * @returns The unit.
  */
-function within(x: number, net: Net): boolean {
-	return x > Math.min(net.topX, net.bottomX) && x < Math.max(net.topX, net.bottomX);
+function unitOf(members: readonly Net[]): Unit {
+	const tops = [...new Set(members.map(({ topX }) => topX))];
+	const bottoms = [...new Set(members.map(({ bottomX }) => bottomX))];
+	return {
+		nets: members,
+		tops,
+		bottoms,
+		low: Math.min(...tops, ...bottoms),
+		high: Math.max(...tops, ...bottoms),
+		order: Math.min(...members.map(({ order }) => order)),
+	};
 }
 
 /**
- * Whether two nets' runs overlap, so they cannot share a track.
- * @param one A net.
- * @param other Another net.
+ * Whether two units' runs overlap, so they cannot share a track.
+ * @param one A unit.
+ * @param other Another unit.
  * @returns True when they overlap.
  */
-function overlap(one: Net, other: Net): boolean {
-	const [a, b] = spanOf(one);
-	const [c, d] = spanOf(other);
-	return a < d && c < b;
+function overlap(one: Unit, other: Unit): boolean {
+	return one.low - LANE / 2 < other.high + LANE / 2 && other.low - LANE / 2 < one.high + LANE / 2;
 }
 
 /**
- * How many crossings one net above another costs; a lower pin under an upper
+ * How many of some pins fall strictly inside a unit's run.
+ * @param pins The pins' x.
+ * @param unit The unit.
+ * @returns How many would cross its track.
+ */
+function inside(pins: readonly number[], unit: Unit): number {
+	return pins.filter((x) => x > unit.low && x < unit.high).length;
+}
+
+/**
+ * How many crossings one unit above another costs; a lower pin under an upper
  * one would run two lines down one column, which is never allowed.
- * @param above The net on the higher track.
- * @param below The net on the lower track.
+ * @param above The unit on the higher track.
+ * @param below The unit on the lower track.
  * @returns The cost.
  */
-function costAbove(above: Net, below: Net): number {
-	if (Math.abs(below.topX - above.bottomX) < LANE / 2) return 100;
-	return Number(within(below.topX, above)) + Number(within(above.bottomX, below));
+function costAbove(above: Unit, below: Unit): number {
+	const stacked = below.tops.some((top) =>
+		above.bottoms.some((bottom) => Math.abs(top - bottom) < LANE / 2),
+	);
+	return stacked ? 100 : inside(below.tops, above) + inside(above.bottoms, below);
 }
 
 /**
- * How much a net would rather be above the nets it overlaps than below them.
- * @param net The net.
- * @param nets Every turning net in its channel.
+ * How much a unit would rather be above the units it overlaps than below them.
+ * @param unit The unit.
+ * @param units Every turning unit in its channel.
  * @returns The balance of its preferences.
  */
-function preferenceOf(net: Net, nets: readonly Net[]): number {
-	return nets.reduce(
+function preferenceOf(unit: Unit, units: readonly Unit[]): number {
+	return units.reduce(
 		(sum, other) =>
-			other === net || !overlap(net, other)
+			other === unit || !overlap(unit, other)
 				? sum
-				: sum + Math.sign(costAbove(other, net) - costAbove(net, other)),
+				: sum + Math.sign(costAbove(other, unit) - costAbove(unit, other)),
 		0,
 	);
 }
 
 /**
- * Assign the tracks of one channel: the order that crosses least, each run on
- * the highest track below every overlapping run above it.
- * @param nets The channel's nets that turn.
+ * Assign the tracks of one channel: the order that crosses least, each unit on
+ * the highest track below every overlapping unit above it.
+ * @param nets The channel's nets.
  * @returns How many tracks the channel holds.
  */
 function assignTracks(nets: readonly Net[]): number {
-	const preference = new Map(nets.map((net) => [net, preferenceOf(net, nets)]));
-	const ordered = nets.toSorted(
+	const units = unitsOf(nets);
+	const preference = new Map(units.map((unit) => [unit, preferenceOf(unit, units)]));
+	const ordered = units.toSorted(
 		(one, other) =>
 			preference.get(other)! - preference.get(one)! ||
-			spanOf(one)[0] - spanOf(other)[0] ||
+			one.low - other.low ||
 			one.order - other.order,
 	);
-	const placed: Net[] = [];
-	for (const net of ordered) {
-		const above = placed.filter((other) => overlap(net, other));
-		net.track = above.length === 0 ? 0 : Math.max(...above.map(({ track }) => track)) + 1;
-		placed.push(net);
+	const tracks = new Map<Unit, number>();
+	for (const unit of ordered) {
+		const above = [...tracks].filter(([other]) => overlap(unit, other)).map(([, track]) => track);
+		const track = above.length === 0 ? 0 : Math.max(...above) + 1;
+		tracks.set(unit, track);
+		for (const net of unit.nets) net.track = track;
 	}
-	return placed.length === 0 ? 0 : Math.max(...placed.map(({ track }) => track)) + 1;
+	return tracks.size === 0 ? 0 : Math.max(...tracks.values()) + 1;
 }
 
-export { assignPorts, assignTracks, type Net };
+export { assignPorts, assignTracks, bundleTrunks, type Net };
