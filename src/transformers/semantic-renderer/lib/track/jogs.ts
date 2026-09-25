@@ -6,6 +6,12 @@
 // onto a free column, or a label box clear of the rest of its band. A move
 // that would bend a line that ran straight on the moved station's other side
 // is not made.
+//
+// The same moves part two lines that read as one: a line that comes down onto
+// its track and turns within a lane of where another line turns off a lower
+// track and goes on down draws one line with a kink, however their tracks are
+// ordered. One end of the pair moves a lane aside, or onto its own line's
+// column, when that parts more such pairs than it makes and crosses nothing.
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import {
 	LANE,
@@ -192,6 +198,7 @@ function follow(nets: readonly Net[]): void {
  * @param nets Every net.
  * @param stretch The stations, each with the net arriving at it.
  * @param x The column.
+ * @param better Whether the drawing is better for the move, asked once it is made.
  * @returns Whether it moved.
  */
 function moveStretch(
@@ -200,6 +207,7 @@ function moveStretch(
 	nets: readonly Net[],
 	stretch: readonly { station: Station; net: Net; end: End }[],
 	x: number,
+	better: () => boolean = () => true,
 ): boolean {
 	const saved = save(
 		chains,
@@ -214,7 +222,7 @@ function moveStretch(
 	});
 	if (moved) follow(nets);
 	// A move that notches a line that ran clear trades one jog for another.
-	const kept = moved && nets.every((net) => before.has(net) || !notched(net));
+	const kept = moved && nets.every((net) => before.has(net) || !notched(net)) && better();
 	if (!kept) restore(saved);
 	return kept;
 }
@@ -265,4 +273,134 @@ function closeJogs(
 	}
 }
 
-export { closeJogs };
+/**
+ * Whether two nets belong to one line or one trunk.
+ * @param one A net.
+ * @param other Another.
+ * @returns True when they are drawn together.
+ */
+function related(one: Net, other: Net): boolean {
+	return one.edge === other.edge || (one.trunk !== undefined && one.trunk === other.trunk);
+}
+
+/**
+ * Whether a line leaving a station into a channel and another line entering
+ * the station below from the same channel stand within a lane of each other:
+ * one comes down onto its track and turns where the other turns off its track
+ * and goes on down, and the two read as one line.
+ * @param leaving The net that leaves the upper station.
+ * @param entering The net that enters the lower station.
+ * @returns True when they read as one.
+ */
+function collinear(leaving: Net, entering: Net): boolean {
+	if (leaving.channel !== entering.channel || related(leaving, entering)) return false;
+	if (leaving.wall === "top" || entering.wall === "bottom") return false;
+	return Math.abs(leaving.topX - entering.bottomX) < LANE;
+}
+
+/**
+ * How many pairs of lines read as one.
+ * @param nets Every net.
+ * @returns The count.
+ */
+function collinearPairs(nets: readonly Net[]): number {
+	return nets.reduce(
+		(count, leaving) => count + nets.filter((entering) => collinear(leaving, entering)).length,
+		0,
+	);
+}
+
+/**
+ * How many pairs of lines swap sides across a channel, which no order of
+ * tracks keeps from crossing.
+ * @param nets Every net.
+ * @returns The count.
+ */
+function swapped(nets: readonly Net[]): number {
+	return nets.reduce(
+		(count, one) =>
+			count +
+			nets.filter(
+				(other) =>
+					other.channel === one.channel &&
+					(one.topX - other.topX) * (one.bottomX - other.bottomX) < 0,
+			).length,
+		0,
+	);
+}
+
+/**
+ * Part one pair of lines that read as one: move the leaving line's upper
+ * stretch, or the entering line's lower stretch, a lane aside from the other
+ * or onto its own line's column, the nearest move that parts more pairs than
+ * it makes and makes no two lines cross.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param routes Every line's nets, top to bottom.
+ * @param leaving Where the leaving net is.
+ * @param leaving.route Its line.
+ * @param leaving.index Its place in it.
+ * @param entering Where the entering net is.
+ * @param entering.route Its line.
+ * @param entering.index Its place in it.
+ * @returns Whether they parted.
+ */
+function part(
+	scene: Scene,
+	chains: readonly Chain[],
+	routes: readonly (readonly Net[])[],
+	leaving: { route: readonly Net[]; index: number },
+	entering: { route: readonly Net[]; index: number },
+): boolean {
+	const nets = routes.flat();
+	const [up, down] = [leaving.route[leaving.index]!, entering.route[entering.index]!];
+	const [count, crossing] = [collinearPairs(nets), swapped(nets)];
+	const moves = [
+		...[down.bottomX - LANE, down.bottomX + LANE, up.bottomX].map((x) => ({
+			x,
+			from: up.topX,
+			stretch: stretchBeyond(leaving.route, leaving.index, "top"),
+		})),
+		...[up.topX - LANE, up.topX + LANE, down.topX].map((x) => ({
+			x,
+			from: down.bottomX,
+			stretch: stretchBeyond(entering.route, entering.index, "bottom"),
+		})),
+	].toSorted((one, other) => Math.abs(one.x - one.from) - Math.abs(other.x - other.from));
+	return moves.some(
+		({ x, from, stretch }) =>
+			Math.abs(x - from) > STRAIGHT &&
+			moveStretch(
+				scene,
+				chains,
+				nets,
+				stretch,
+				x,
+				() => collinearPairs(nets) < count && swapped(nets) <= crossing,
+			),
+	);
+}
+
+/**
+ * Part every pair of lines that read as one where a move can.
+ * @param scene The scene, its ports and labels placed.
+ * @param chains Every relationship's chain.
+ * @param routes Every line's nets, top to bottom.
+ */
+function partCollinear(
+	scene: Scene,
+	chains: readonly Chain[],
+	routes: readonly (readonly Net[])[],
+): void {
+	const places = routes.flatMap((route) => route.map((net, index) => ({ net, route, index })));
+	for (let pass = 0; pass < PASSES; pass += 1) {
+		const parted = places.flatMap((leaving) =>
+			places
+				.filter((entering) => collinear(leaving.net, entering.net))
+				.map((entering) => part(scene, chains, routes, leaving, entering)),
+		);
+		if (!parted.some(Boolean)) return;
+	}
+}
+
+export { closeJogs, partCollinear };

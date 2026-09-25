@@ -42,8 +42,10 @@ function inside(value: number, one: number, other: number): boolean {
 }
 
 /**
- * How many times two different lines cross: a level run of one through an
- * upright run of another. Lines on one trunk run together and do not cross.
+ * How many places two different lines cross: a level run of one through an
+ * upright run of another. Lines on one trunk run together and do not cross
+ * each other, and where a trunk crosses a line its lines cross it at one
+ * place, drawn as one hop.
  * @param lines Every line's points.
  * @returns The crossings.
  */
@@ -53,17 +55,17 @@ function crossingsOf(lines: Iterable<readonly Point[]>): number {
 	);
 	const level = runs.filter(({ from, to }) => Math.abs(from.y - to.y) < 0.5);
 	const upright = runs.filter(({ from, to }) => Math.abs(from.x - to.x) < 0.5);
-	return level.reduce(
-		(total, one) =>
-			total +
-			upright.filter(
+	const places = level.flatMap((one) =>
+		upright
+			.filter(
 				(other) =>
 					other.line !== one.line &&
 					inside(other.from.x, one.from.x, one.to.x) &&
 					inside(one.from.y, other.from.y, other.to.y),
-			).length,
-		0,
+			)
+			.map((other) => `${Math.round(other.from.x)},${Math.round(one.from.y)}`),
 	);
+	return new Set(places).size;
 }
 
 /**

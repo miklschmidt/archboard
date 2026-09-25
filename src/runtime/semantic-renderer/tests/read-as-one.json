@@ -1,0 +1,129 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaal bravobr",
+			"kind": "module",
+			"order": 1000,
+			"responsibility": "carbo d eaglee falconf gardeng, harborh islandis jun kettle, lan me needlen ora pe qua riverriv summits"
+		},
+		{
+			"id": "n1",
+			"name": "timbertim alpha",
+			"kind": "module",
+			"order": 4000,
+			"responsibility": "bravo car del eaglee fal gardenga harb isla jung, kett lan meadowmeadow nee oran pepp quartzqua, river s timber alpha bravobrav"
+		},
+		{
+			"id": "n2",
+			"name": "carbon delt",
+			"kind": "module",
+			"order": 6000,
+			"responsibility": "eagle falcon gar harborhar island ju kettl la, meadowmea need oran, pep qua riverri summ t alphaa bravobr carboncar"
+		},
+		{
+			"id": "n3",
+			"name": "deltad eagle",
+			"kind": "module",
+			"order": 7000,
+			"responsibility": "fal gardengar_har islandis j kettleket la meadowm need, orange pe qua riverr"
+		},
+		{
+			"id": "n4",
+			"name": "summitsu timbertimber",
+			"kind": "module",
+			"order": 8000,
+			"responsibility": "alp bravobrav carboncarbon d eaglee falcon gard, har isl jungle kett lanter mead needlenee"
+		},
+		{
+			"id": "n5",
+			"name": "orang pepper",
+			"kind": "module",
+			"order": 9000,
+			"responsibility": "quart river summitsumm timb alpha bravob, ca delt, eagl falconfalc gard harbor, isla jung ke lan mea needlen or pepperp",
+			"groups": ["child"]
+		},
+		{
+			"id": "n6",
+			"name": "quart riverri",
+			"kind": "module",
+			"order": 12000,
+			"responsibility": "sum timberti alphaal b carb de eagleeag falc ga",
+			"groups": ["child"]
+		},
+		{
+			"id": "n7",
+			"name": "harb islandislan",
+			"kind": "module",
+			"order": 13000,
+			"responsibility": "jun kettleket_lanternlant mead n orangeora pe quartzq rive: summ tim alphaalpha bra carbo delta ea falco",
+			"groups": ["voice"]
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n6",
+			"kind": "rpc",
+			"order": 1000,
+			"label": "g harbo islandi: jung/kettl la mead/needl"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n2",
+			"kind": "call",
+			"order": 7000,
+			"label": "orangeor pep quar riv summitsu timber"
+		},
+		{
+			"id": "e2",
+			"from": "n1",
+			"to": "n5",
+			"kind": "call",
+			"order": 8000,
+			"label": "alpha, bravob ca delt eagl fal garde"
+		},
+		{
+			"id": "e3",
+			"from": "n1",
+			"to": "n6",
+			"kind": "rpc",
+			"order": 9000,
+			"label": "harbor/islan jung ket lanternl mead"
+		},
+		{
+			"id": "e4",
+			"from": "n1",
+			"to": "n3",
+			"kind": "dependency",
+			"order": 10000,
+			"label": "needlenee_ora, pe quartz"
+		},
+		{
+			"id": "e5",
+			"from": "n1",
+			"to": "n4",
+			"kind": "dependency",
+			"order": 11000,
+			"label": "riv summitsummit, ti alphaa"
+		},
+		{
+			"id": "e6",
+			"from": "n0",
+			"to": "n1",
+			"kind": "call",
+			"order": 15000,
+			"label": "bravo c deltadelt eag fal garden"
+		},
+		{
+			"id": "e7",
+			"from": "n1",
+			"to": "n7",
+			"kind": "dependency",
+			"order": 17000,
+			"label": "harborhar_islandislan, ju kettle"
+		}
+	]
+}
