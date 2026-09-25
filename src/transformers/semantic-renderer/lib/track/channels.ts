@@ -75,9 +75,9 @@ interface Unit {
 /**
  * Group nets that share a card face, a channel, a kind and a standing into
  * trunks: first those leaving a face, then, among the rest, those entering
- * one. A net that can come straight down into its card keeps its own way in,
- * unless the trunk would cross it: two straight lines read more plainly than
- * a trunk they would have to jog to.
+ * one. A net that can run straight between its card and its other end keeps
+ * its own port, unless the trunk would cross it: two straight lines read more
+ * plainly than a trunk they would have to jog to.
  * @param nets Every net.
  */
 function bundleTrunks(nets: readonly Net[]): void {
@@ -95,8 +95,8 @@ function bundleTrunks(nets: readonly Net[]): void {
 }
 
 /**
- * Whether a net can run straight down from its upper station into the card
- * below: some x lies on both.
+ * Whether a net can run straight down from its upper station to its lower
+ * one: some x lies on both.
  * @param net The net.
  * @returns True when it can.
  */
@@ -113,8 +113,7 @@ function dropsStraight(net: Net): boolean {
  * @returns The groups.
  */
 function trunkGroups(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
-	const groups = sharing(nets, side);
-	return side === "top" ? groups : groups.map(joining);
+	return sharing(nets, side).map((group) => joining(group, side));
 }
 
 /**
@@ -138,16 +137,18 @@ function sharing(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
 }
 
 /**
- * The nets entering one face that join its trunk: those that cannot come
- * straight down into the card, and a straight one the others arrive from
- * both sides of, whose line their trunk would otherwise cross.
- * @param group The nets entering one face, of one kind.
+ * The nets on one face that join its trunk: those that cannot run straight
+ * between the card and their other end, and a straight one the others reach
+ * from both sides of, whose line their trunk would otherwise cross.
+ * @param group The nets on one face, of one kind.
+ * @param side Which end the face is.
  * @returns Those that join.
  */
-function joining(group: readonly Net[]): Net[] {
-	const xs = group.filter((net) => !dropsStraight(net)).map((net) => net.top.x);
+function joining(group: readonly Net[], side: "top" | "bottom"): Net[] {
+	const other = side === "top" ? "bottom" : "top";
+	const xs = group.filter((net) => !dropsStraight(net)).map((net) => net[other].x);
 	const [low, high] = [Math.min(...xs), Math.max(...xs)];
-	return group.filter((net) => !dropsStraight(net) || (net.top.x > low && net.top.x < high));
+	return group.filter((net) => !dropsStraight(net) || (net[other].x > low && net[other].x < high));
 }
 
 /**
