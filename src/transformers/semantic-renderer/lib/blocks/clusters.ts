@@ -1,7 +1,8 @@
 // Containers and group regions a block of cards draws inline (TASK-349). Each
 // is a Graphviz cluster of the block's own layout, headed by its title row or
-// its region's caption, which invisible edges hold above every member; so the
-// board's cards are ranked across containers, as the track engine ranks them.
+// its region's caption, which invisible edges hold above every member no line
+// inside the cluster already holds; so the board's cards are ranked across
+// containers, as the track engine ranks them.
 // After Graphviz answers, the clusters are read back into the shape the track
 // scene reads: every frame a node around its members with its title row, and
 // every region on the block's root.
@@ -198,6 +199,31 @@ class Clusters {
 	}
 
 	/**
+	 * Whether a line holds its lower end below the title of the cluster that
+	 * end is a member of: its upper end stands inside that cluster too.
+	 * @param tail The line's upper end.
+	 * @param head Its lower end.
+	 * @returns True when it does.
+	 */
+	holds(tail: string, head: string): boolean {
+		const member = isTitle(head) ? head.slice("title:".length) : head;
+		const around = this.block.clusterOf.get(member);
+		return around !== undefined && this.around(tail).includes(around);
+	}
+
+	/**
+	 * How strongly a line pulls its lower end: one that holds it below its
+	 * cluster's title, in place of the title's own edge, pulls as hard as that
+	 * edge would, so the cluster stays as compact.
+	 * @param tail The line's upper end.
+	 * @param head Its lower end.
+	 * @returns The line's weight.
+	 */
+	weightOf(tail: string, head: string): number {
+		return this.holds(tail, head) ? TITLE_WEIGHT : 1;
+	}
+
+	/**
 	 * The invisible edges that hold each title above its cluster's members. A
 	 * member a line from inside its own cluster already holds below the title
 	 * needs none: that edge would only pull it under the title, off the line.
@@ -207,11 +233,9 @@ class Clusters {
 	 */
 	titleEdges(lower: ReadonlySet<string>, links: readonly { tail: string; head: string }[]): Edge[] {
 		return [...this.block.clusterOf]
-			.filter(([member, around]) => {
+			.filter(([member]) => {
 				const vendor = this.vendorOf(member);
-				const held = links.some(
-					({ tail, head }) => head === vendor && this.around(tail).includes(around),
-				);
+				const held = links.some(({ tail, head }) => head === vendor && this.holds(tail, head));
 				return !lower.has(member) && !held;
 			})
 			.map(([member, around]) => ({
@@ -392,4 +416,4 @@ class Clusters {
 	}
 }
 
-export { Clusters, isTitle, titleOf };
+export { Below, Clusters, isTitle, titleOf };

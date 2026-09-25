@@ -3,6 +3,7 @@ import type { Graph, Subgraph, Viz } from "@viz-js/viz";
 import { z } from "zod";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { Below } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import {
 	CARD_GAP,
 	CONTAINER_INSET,
@@ -247,21 +248,56 @@ class Placement {
 	}
 
 	/**
-	 * Keep a measured title ahead of every child.
+	 * Keep a measured title ahead of every child a line from inside the frame
+	 * does not already hold below it. That hold would only pull the child under
+	 * the title, off its line: each one passes beside the children above it, so
+	 * a chain inside a frame stepped sideways a card at a time.
 	 * @param node The frame to order.
+	 * @param below Which vendor nodes lead down to which, every title to each child included.
 	 */
-	order(node: ElkNode): void {
+	order(node: ElkNode, below: Below): void {
 		if (!node.children?.length || this.packed.has(node.id)) return;
 		const members = node.children
 			.toSorted((one, other) => semanticOrder(one) - semanticOrder(other))
 			.map((child) => this.endpoints.get(child.id)!);
-		for (const head of members) {
+		for (const head of members.filter((member) => !this.held(node, member, below))) {
 			this.graph.edges.push({
 				tail: this.endpoints.get(node.id)!,
 				head,
 				attributes: { style: "invis", weight: 10 },
 			});
 		}
+	}
+
+	/**
+	 * Whether a line from inside a frame holds one of its children below the
+	 * title: a line from another of its descendants, on no loop through the
+	 * child, which Graphviz could break by turning that line round.
+	 * @param frame The frame.
+	 * @param member The child's vendor node.
+	 * @param below Which vendor nodes lead down to which.
+	 * @returns True when such a line holds it.
+	 */
+	held(frame: ElkNode, member: string, below: Below): boolean {
+		return this.edges.some((edge) => {
+			const [source, target] = [edge.sources[0]!, edge.targets[0]!];
+			if (this.endpoints.get(target) !== member || !contains(frame, source)) return false;
+			return !below.reaches(member, this.endpoints.get(source)!);
+		});
+	}
+
+	/**
+	 * Which vendor nodes lead down to which: every edge, and every title to
+	 * each of its frame's children.
+	 * @returns The reach.
+	 */
+	below(): Below {
+		const below = new Below();
+		for (const { tail, head } of this.graph.edges) below.add(tail, head);
+		for (const node of this.nodes.values())
+			for (const child of node.children ?? [])
+				below.add(this.endpoints.get(node.id)!, this.endpoints.get(child.id)!);
+		return below;
 	}
 
 	/**
@@ -318,7 +354,8 @@ class Placement {
 	build(): void {
 		for (const node of this.result.children ?? []) this.visit(node, this.graph);
 		for (const edge of this.edges) this.connect(edge);
-		for (const node of this.nodes.values()) this.order(node);
+		const below = this.below();
+		for (const node of this.nodes.values()) this.order(node, below);
 		for (const edge of this.graph.edges) this.orderReturn(edge);
 	}
 

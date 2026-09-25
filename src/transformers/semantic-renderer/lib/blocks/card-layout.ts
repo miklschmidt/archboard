@@ -295,7 +295,7 @@ class CardLayout {
 		const lower = new Set(grid.map(({ head }) => head));
 		graph.edges.push(
 			...grid,
-			...this.clusters.titleEdges(lower, stacked ? links : []),
+			...this.clusters.titleEdges(lower, links),
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
@@ -399,15 +399,16 @@ class CardLayout {
 		const id = line.key;
 		// A wrapped item sits a row of cards and its labels lower for each row it is lowered.
 		const minlen = 1 + 2 * (this.arranged.lowered.get(head) ?? 0);
+		const weight = this.clusters.weightOf(tail, head);
 		if (label === undefined) {
-			this.graph.edges.push({ tail, head, attributes: { id, minlen } });
+			this.graph.edges.push({ tail, head, attributes: { id, minlen, weight } });
 			return;
 		}
 		const name = `label:${line.edge.id}`;
 		this.graph.edges.push(
 			...this.clusters.holdLabel(tail, head, box(name, label.width!, label.height!)),
-			{ tail, head: name, attributes: { id: `${id}:1`, minlen } },
-			{ tail: name, head, attributes: { id: `${id}:2` } },
+			{ tail, head: name, attributes: { id: `${id}:1`, minlen, weight } },
+			{ tail: name, head, attributes: { id: `${id}:2`, weight } },
 		);
 	}
 

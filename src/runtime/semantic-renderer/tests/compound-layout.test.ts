@@ -150,3 +150,29 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 	// The actual frame perimeter is the container's external connection boundary.
 	expect(faceOf(origin, frame)).toBe("ahead");
 });
+
+// A chain inside a container once stepped sideways a few dozen points per
+// card, its lines off both centres and its container that much wider: every
+// member was held under the container's title, and each hold passed beside
+// the cards above it.
+test.each(["graphviz", "track"] as const)(
+	"a chain inside a container stands in one column (%s)",
+	async (layout) => {
+		const stages = ["a", "b", "c", "d"];
+		const content = orderedFixture({
+			nodes: [
+				{ id: "box", name: "Service", kind: "service" },
+				...stages.map((id) => ({ id, name: `Stage ${id}`, kind: "module", parent: "box" })),
+			],
+			edges: stages
+				.slice(1)
+				.map((to, index) => ({ id: `e${index}`, from: stages[index]!, to, kind: "call" })),
+		});
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const cards = stages.map((id) => drawing.atlas.nodes[id]!);
+		expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
+		const frame = drawing.atlas.nodes["box"]!;
+		// The container keeps no more than its insets beside the column.
+		expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
+	},
+);
