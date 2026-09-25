@@ -21,12 +21,8 @@ import {
 	polylinePoints,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import {
-	frameShapes,
-	regionShapes,
-	routeScene,
-	trunkKind,
-} from "@/transformers/semantic-renderer/lib/track/route";
+import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
+import { frameShapes, regionShapes } from "@/transformers/semantic-renderer/lib/track/containers";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
