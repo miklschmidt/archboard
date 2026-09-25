@@ -174,13 +174,19 @@ function requestOf(net: Net, side: "top" | "bottom", asked: Set<Trunk>): PortReq
 }
 
 /**
- * One port for some nets on one face, wanted under the middle of their other ends.
+ * One port for some nets on one face, wanted over the other end nearest the
+ * middle of them all: that net runs straight from the port, and every other
+ * branches off the trunk at least a lane away, never close enough to hook.
  * @param members The nets sharing the port.
  * @param side Which end.
  * @returns The request.
  */
 function requestFor(members: readonly Net[], side: "top" | "bottom"): PortRequest {
-	const wanted = members.reduce((sum, member) => sum + otherEnd(member, side), 0) / members.length;
+	const ends = members.map((member) => otherEnd(member, side));
+	const middle = ends.reduce((sum, x) => sum + x, 0) / ends.length;
+	const wanted = ends.reduce((one, other) =>
+		Math.abs(other - middle) < Math.abs(one - middle) ? other : one,
+	);
 	return { nets: members, side, wanted, order: Math.min(...members.map(({ order }) => order)) };
 }
 
