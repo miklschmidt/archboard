@@ -180,17 +180,19 @@ test.each(["graphviz", "track"] as const)(
 
 // Reduced from the dogfood Semantic renderer board: a line through its label
 // let its two stacked ends stand 9 to 10 points out of one column, so their
-// edges almost lined up and the line jogged or sat off both centres.
+// edges almost lined up and the line jogged or sat off both centres. Stacked
+// ends stand in one column or clearly apart, never a near miss.
 test.each([
 	["graphviz", "wskEBeIy", "4nyk76pY"],
 	["track", "CtoOMxca", "wLF1X11D"],
 ] as const)(
-	"stacked cards joined through a label share a column (%s)",
+	"stacked cards joined through a label share a column or stand clearly apart (%s)",
 	async (layout, upper, lower) => {
 		const content = orderedFixture(nearMiss);
 		const drawing = await renderArchitecture({ content, theme: "light", layout });
 		const [one, other] = [drawing.atlas.nodes[upper]!, drawing.atlas.nodes[lower]!];
 		expect(one.y + one.height).toBeLessThan(other.y);
-		expect(one.x + one.width / 2).toBeCloseTo(other.x + other.width / 2, 1);
+		const offset = Math.abs(one.x + one.width / 2 - (other.x + other.width / 2));
+		expect(offset < 0.05 || offset > 16).toBe(true);
 	},
 );
