@@ -43,7 +43,24 @@ const fetched = (browser: AgentBrowserSession): Promise<string[]> =>
  */
 const keptPictures = (browser: AgentBrowserSession): Promise<Record<string, string>> =>
 	browser.eval<Record<string, string>>(
-		`Object.fromEntries(Object.keys(localStorage).filter((key) => key.startsWith("archboard.picture:")).map((key) => [key, localStorage.getItem(key)]))`,
+		`new Promise((resolve) => {
+			const opened = indexedDB.open("archboard-pictures");
+			opened.onerror = () => resolve({});
+			opened.onsuccess = () => {
+				const db = opened.result;
+				if (!db.objectStoreNames.contains("pictures")) return resolve({});
+				const store = db.transaction("pictures").objectStore("pictures");
+				const kept = {};
+				const cursor = store.openCursor();
+				cursor.onsuccess = () => {
+					const at = cursor.result;
+					if (at === null) return resolve(kept);
+					kept[String(at.key)] = JSON.stringify(at.value);
+					at.continue();
+				};
+				cursor.onerror = () => resolve(kept);
+			};
+		})`,
 	);
 
 /**
@@ -87,15 +104,10 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 			`document.querySelector("${SURFACE} [data-type-icon] path") !== null`,
 		),
 	).toBeTrue();
-	expect(
-		await browser.eval<number>(
-			`Object.keys(localStorage).filter((key) => key.startsWith("archboard.picture:")).length`,
-		),
-	).toBeGreaterThan(0);
+	expect(Object.keys(await keptPictures(browser)).length).toBeGreaterThan(0);
 
-	// Opened again: the kept picture is shown, and nothing is laid out for it. A
-	// picture laid out again is kept again, with a later time on it, so the kept
-	// entries are exactly as they were.
+	// Opened again: the kept picture is shown, and nothing is laid out for it, so
+	// the kept entries are exactly as they were.
 	const keptBefore = await keptPictures(browser);
 	await browser.run(["open", addressShowing(server.base, "pipeline")]);
 	await drawn(browser, "the kept picture to be shown after the page is opened again");
@@ -123,7 +135,7 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	// Laid out here and kept again, as a picture of the new version.
 	const keptAfter = await pollUntil(
 		() => keptPictures(browser),
-		(kept) => Object.values(kept).some((entry) => entry.includes('"version":2')),
+		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[5] === 2),
 		"the new version's picture to be kept",
 		WAIT,
 	);
