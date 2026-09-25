@@ -96,9 +96,10 @@ function runsFor(
 	x: number,
 	top: number,
 ): TextRun[] {
+	// A wrapped line keeps the space it broke at; the painter draws none of it.
 	return layoutWithLines(prepared, width, style.lineHeight).lines.map((line, index) => ({
-		text: line.text,
-		width: exactWidth(line.text, style),
+		text: line.text.trimEnd(),
+		width: exactWidth(line.text.trimEnd(), style),
 		x,
 		y: top + style.fontSize + index * style.lineHeight,
 		font: style.font,
