@@ -1,0 +1,192 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaalp bravo",
+			"kind": "module",
+			"order": 3000,
+			"responsibility": "car deltadel eag fa gard harbor: isl jungl, ket lanter, mea needlen oran, p quartzqu riverriver summi, tim alp bravobravo"
+		},
+		{
+			"id": "n1",
+			"name": "carboncarbo deltadelt",
+			"kind": "module",
+			"order": 6000,
+			"responsibility": "eagl fal garde harb is jung kettl lante me need: orangeora pepp qua riv summitsummi, timb alph bra car delta eagle"
+		},
+		{
+			"id": "n2",
+			"name": "falconfa gardeng",
+			"kind": "module",
+			"order": 9000,
+			"responsibility": "harb isl jungl kett lante mea nee oran pep quar riverri su ti: alp bravo c delta eagle falconf, gar har islandi jung kettle lant mead"
+		},
+		{
+			"id": "n3",
+			"name": "needl orangeora",
+			"kind": "module",
+			"order": 11000,
+			"responsibility": "peppe q rive summ ti alphaalpha brav car delta eagleea, falcon ga har islan junglejung ket la"
+		},
+		{
+			"id": "n4",
+			"name": "meado needlen",
+			"kind": "module",
+			"order": 12000,
+			"responsibility": "ora pepperpe quartzq riv summitsummi tim alp bravobra car del eagleea fa"
+		},
+		{
+			"id": "n5",
+			"name": "gardenga harbo",
+			"kind": "function",
+			"order": 14000,
+			"parent": "n1",
+			"responsibility": "islan jung, kettleket lanter mea need orangeo pe quart, river sum timbertim alp bravob, car deltadel eag fa g harb"
+		},
+		{
+			"id": "n6",
+			"name": "islandisl jung",
+			"kind": "function",
+			"order": 15000,
+			"parent": "n1",
+			"responsibility": "k lant me nee orange pepperpep quar river su timbe alphaal br car delt, eagleea falconf ga, ha isl jungl kettleke"
+		},
+		{
+			"id": "n7",
+			"name": "lant meadowmeado",
+			"kind": "function",
+			"order": 16000,
+			"parent": "n1",
+			"responsibility": "needlen ora pepperpeppe quar_riverriver summ: tim alphaal bravobr carb, de ea fa gard harbor is junglejun"
+		},
+		{
+			"id": "n8",
+			"name": "kettleke lanternl",
+			"kind": "function",
+			"order": 17000,
+			"parent": "n1",
+			"responsibility": "meado need orangeor pep quar: rive su t alphaalpha brav, car deltad eag falc gardeng ha isl jungl kettl, lan mead needlene oran"
+		},
+		{
+			"id": "n9",
+			"name": "pepperp quartz",
+			"kind": "module",
+			"order": 18000,
+			"responsibility": "river sum timbertimbe alp bravo ca delt ea fal gard/harbo, islandi jun kettlek lant me needlene ora, pep quartzq river s timbertim alpha bra carbo"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n4",
+			"kind": "call",
+			"order": 4000,
+			"label": "delta eag falconfa gar"
+		},
+		{
+			"id": "e1",
+			"from": "n0",
+			"to": "n2",
+			"kind": "call",
+			"order": 5000,
+			"label": "har islan jung kettl lantern"
+		},
+		{
+			"id": "e2",
+			"from": "n8",
+			"to": "n4",
+			"kind": "call",
+			"order": 13000,
+			"label": "mead need: orangeor/pepperpepp"
+		},
+		{
+			"id": "e3",
+			"from": "n3",
+			"to": "n5",
+			"kind": "event",
+			"order": 15000,
+			"label": "quartzqua riverriver, summ_timbertimbe alpha"
+		},
+		{
+			"id": "e4",
+			"from": "n5",
+			"to": "n6",
+			"kind": "call",
+			"order": 16000,
+			"label": "br carb deltadelta eagl?"
+		},
+		{
+			"id": "e5",
+			"from": "n5",
+			"to": "n7",
+			"kind": "call",
+			"order": 17000,
+			"label": "falcon g harb_islandislan jung"
+		},
+		{
+			"id": "e6",
+			"from": "n7",
+			"to": "n6",
+			"kind": "call",
+			"order": 18000,
+			"label": "ket lant mead needlen or"
+		},
+		{
+			"id": "e7",
+			"from": "n7",
+			"to": "n5",
+			"kind": "call",
+			"order": 19000,
+			"label": "peppe qu, rive sum tim alphaalp"
+		},
+		{
+			"id": "e8",
+			"from": "n7",
+			"to": "n3",
+			"kind": "call",
+			"order": 20000,
+			"label": "bravob car deltadelt"
+		},
+		{
+			"id": "e9",
+			"from": "n5",
+			"to": "n8",
+			"kind": "call",
+			"order": 21000,
+			"label": "eag fa g harb, is jungl"
+		},
+		{
+			"id": "e10",
+			"from": "n8",
+			"to": "n9",
+			"kind": "call",
+			"order": 22000,
+			"label": "kettle lan mead"
+		},
+		{
+			"id": "e11",
+			"from": "n9",
+			"to": "n4",
+			"kind": "call",
+			"order": 23000,
+			"label": "need/orang pe qua riverriver summit"
+		},
+		{
+			"id": "e12",
+			"from": "n9",
+			"to": "n0",
+			"kind": "call",
+			"order": 24000,
+			"label": "ti a bravobrav carbonc del eagle?"
+		},
+		{
+			"id": "e13",
+			"from": "n2",
+			"to": "n5",
+			"kind": "event",
+			"order": 25000,
+			"label": "fal garden harborh, islan jun kettleket"
+		}
+	]
+}

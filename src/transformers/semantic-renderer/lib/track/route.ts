@@ -37,6 +37,11 @@ import { closeJogs } from "@/transformers/semantic-renderer/lib/track/jogs";
 
 /** From the band above to the first track: room for the bend off a face. */
 const TRACK_TOP = 2 * BEND_RADIUS;
+/**
+ * From the band above to the first track when a line on that track rises
+ * into it: room for the bend and an arrowhead's straight approach.
+ */
+const TRACK_TOP_RISING = BEND_RADIUS + APPROACH_STRAIGHT;
 /** From the last track to the band below: room for the bend and a straight arrow approach. */
 const TRACK_BOTTOM = APPROACH_STRAIGHT + 2 * BEND_RADIUS;
 /** The height of a channel no line turns in: room for an arrowhead's straight approach and air. */
@@ -177,16 +182,42 @@ function settleStraights(nets: readonly Net[]): void {
 }
 
 /**
+ * How far below its band a channel's first track runs: below the containers
+ * that end on the band, and far enough for an arrowhead's approach when a
+ * line on it rises into the band.
+ * @param closing How far below the band the containers ending there reach.
+ * @param rising Whether a line on the first track turns and rises into the band.
+ * @returns The distance.
+ */
+function firstTrack(closing: number, rising: boolean): number {
+	return Math.max(closing + TRACK_TOP, rising ? TRACK_TOP_RISING : 0);
+}
+
+/**
  * How tall a channel is for the tracks it holds, below the containers that
  * end above it.
  * @param tracks Its track count.
  * @param closing How far below its band the containers ending there reach.
+ * @param rising Whether a line on its first track turns and rises into the band above.
  * @returns Its height.
  */
-function channelHeight(tracks: number, closing = 0): number {
+function channelHeight(tracks: number, closing = 0, rising = false): number {
 	return tracks === 0
 		? Math.max(EMPTY_CHANNEL, closing + BELOW_CONTAINER)
-		: closing + TRACK_TOP + (tracks - 1) * LANE + TRACK_BOTTOM;
+		: firstTrack(closing, rising) + (tracks - 1) * LANE + TRACK_BOTTOM;
+}
+
+/**
+ * Whether a line on a channel's first track turns there and rises into the
+ * band above, so its arrowhead lands on that band's face.
+ * @param crossing The channel's nets, their tracks assigned.
+ * @param rising The first net of every upward line: the one that ends on its target.
+ * @returns True when the first track needs an arrowhead's room above it.
+ */
+function risesOnFirstTrack(crossing: readonly Net[], rising: ReadonlySet<Net>): boolean {
+	return crossing.some(
+		(net) => net.track === 0 && rising.has(net) && Math.abs(net.topX - net.bottomX) > STRAIGHT,
+	);
 }
 
 /**
@@ -198,22 +229,27 @@ function channelHeight(tracks: number, closing = 0): number {
  * @param scene The scene, whose bands get their new tops.
  * @param nets Every net, given its track in its channel.
  * @param closings How far below each band the containers ending on it reach.
+ * @param rising The first net of every upward line.
  * @param margin Where the first band starts.
  */
 function spaceBands(
 	scene: Scene,
 	nets: readonly Net[],
 	closings: readonly number[],
+	rising: ReadonlySet<Net>,
 	margin: number,
 ): void {
 	const held = new Set([...scene.cards.values(), ...scene.labels.values()].map(({ band }) => band));
 	let top = margin;
 	scene.bands.forEach((band, index) => {
 		band.newTop = top;
-		band.closing = closings[index]!;
 		const crossing = nets.filter((net) => net.channel === index);
+		const tracks = assignTracks(crossing);
+		const closing = closings[index]!;
+		const rises = risesOnFirstTrack(crossing, rising);
+		band.firstTrack = firstTrack(closing, rises);
 		const titled = crossing.length === 0 && !held.has(index);
-		const channel = titled ? CONTAINER_INSET : channelHeight(assignTracks(crossing), band.closing);
+		const channel = titled ? CONTAINER_INSET : channelHeight(tracks, closing, rises);
 		top += band.bottom - band.top + channel;
 	});
 }
@@ -255,8 +291,7 @@ function pointsOf(scene: Scene, nets: readonly Net[], left: number): Point[] {
 	return nets.flatMap((net) => {
 		const upper = scene.bands[net.top.band]!;
 		const from = { x: net.topX + left, y: leavesAt(scene, net, left) };
-		const track =
-			upper.newTop + (upper.bottom - upper.top) + upper.closing + TRACK_TOP + net.track * LANE;
+		const track = upper.newTop + (upper.bottom - upper.top) + upper.firstTrack + net.track * LANE;
 		if (net.wall === "bottom")
 			return [from, { x: from.x, y: track }, { x: net.bottomX + left, y: track }];
 		const to = { x: net.bottomX + left, y: entersAt(scene, net, left) };
@@ -337,7 +372,10 @@ function routeScene(
 		first.topX = wallX(scene, line.enters!);
 	}
 	const edges = new Map(lines.map((line) => [line.id, line.placed]));
-	spaceBands(scene, nets, new Containers(scene, edges).closings(), top);
+	const rising = new Set(
+		[...routed.values()].filter(({ upward }) => upward).map(({ nets: [first] }) => first!),
+	);
+	spaceBands(scene, nets, new Containers(scene, edges).closings(), rising, top);
 	return new Map(
 		[...routed].map(([id, route]) => {
 			const points = pointsOf(scene, route.nets, margin);
