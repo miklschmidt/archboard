@@ -1,0 +1,123 @@
+{
+	"nodes": [
+		{
+			"id": "fSvgsFBn",
+			"name": "Alpha Hill Lambda waterfalls quartz",
+			"kind": "service",
+			"order": 1000,
+			"responsibility": "Juniper oak Alpha waterfalls quartz bay elm blossoms lantern moonlight."
+		},
+		{
+			"id": "8P3HctR4",
+			"name": "Maple Waterfalls lantern",
+			"kind": "service",
+			"order": 2000,
+			"parent": "fSvgsFBn",
+			"responsibility": "Wren oak ember-mountain waterfalls Waterfalls quartz."
+		},
+		{
+			"id": "KpJL9Y0f",
+			"name": "Meadow Riverbed",
+			"kind": "external",
+			"order": 3000,
+			"responsibility": "Ivory meadow Sky 80 bay 443 orchard."
+		},
+		{
+			"id": "42C5lYne",
+			"name": "Alpha Riverbed Dune Mountain",
+			"kind": "service",
+			"order": 4000,
+			"parent": "fSvgsFBn",
+			"responsibility": "Blossoms A4 seaside an willow Evergreen."
+		},
+		{
+			"id": "ZsN5eHIV",
+			"name": "Zephyr Inlet Compass",
+			"kind": "service",
+			"order": 5000,
+			"parent": "8P3HctR4",
+			"responsibility": "Riverbed Compass Sky seaside bay mountain willow Elm."
+		},
+		{
+			"id": "RsdfAtQ8",
+			"name": "Sandbank Evergreen",
+			"kind": "route",
+			"order": 6000,
+			"parent": "8P3HctR4",
+			"responsibility": "Meadow sandbank Tide orchard compass a willow-xxxxxxxxxxx zephyr."
+		},
+		{
+			"id": "H69iTtH7",
+			"name": "reef-horizon",
+			"kind": "service",
+			"order": 7000,
+			"parent": "8P3HctR4",
+			"responsibility": "Lambda meadow xxxxxxxxxxxx maple Elm\u2019a Juniper; a1.20.2 bay bay cobbles."
+		},
+		{
+			"id": "JnkTz8V4",
+			"name": "Driftwood sandbank evergreen",
+			"kind": "service",
+			"order": 8000,
+			"parent": "8P3HctR4",
+			"responsibility": "Blossoms, Yarrow Sky, sandbank, raven blossoms bay Jade compass."
+		},
+		{
+			"id": "WLY9p0FT",
+			"name": "Sandbank xxxxxxxxxxx driftwood",
+			"kind": "module",
+			"order": 9000,
+			"responsibility": "Yarrow orchard oak lantern bay bay blossoms lighthouse juniper."
+		}
+	],
+	"edges": [
+		{
+			"id": "f3lzoqzb",
+			"from": "KpJL9Y0f",
+			"to": "42C5lYne",
+			"kind": "call",
+			"order": 1000,
+			"label": "Sky 80 / 443"
+		},
+		{
+			"id": "aqRCM39b",
+			"from": "42C5lYne",
+			"to": "ZsN5eHIV",
+			"kind": "call",
+			"order": 2000,
+			"label": "A4 seaside an willow Evergreen"
+		},
+		{
+			"id": "vFhrXHUV",
+			"from": "ZsN5eHIV",
+			"to": "RsdfAtQ8",
+			"kind": "http",
+			"order": 3000,
+			"label": "Compass Sky saffron"
+		},
+		{
+			"id": "lpxWb2Z1",
+			"from": "RsdfAtQ8",
+			"to": "JnkTz8V4",
+			"kind": "http",
+			"order": 4000,
+			"label": "Sandbank xxxxxxxxxxx meadow"
+		},
+		{
+			"id": "keZ4NXfN",
+			"from": "H69iTtH7",
+			"to": "ZsN5eHIV",
+			"kind": "data",
+			"order": 5000,
+			"label": "Willow Elm xxxxxxxxxxx"
+		},
+		{
+			"id": "FOrXU78u",
+			"from": "JnkTz8V4",
+			"to": "WLY9p0FT",
+			"kind": "data",
+			"order": 6000,
+			"label": "Blossoms blossoms xxxxxxxxxxx"
+		}
+	]
+}

@@ -2,11 +2,18 @@
 // its labels, its header and its ports; the track router then draws every
 // line inside it on tracks in the channels between its ranks, growing each
 // channel to fit, so the block's size is final when this answers.
-import type { ElkExtendedEdge, ElkLabel, ElkNode } from "@archboard/elk-rs";
-import type { Edge, Graph, Subgraph, Viz } from "@viz-js/viz";
-import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
+import type { Edge, Subgraph, Viz } from "@viz-js/viz";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import {
+	emptyGraph,
+	holdSources,
+	placedLabel,
+	walledPoints,
+	type VendorNode,
+} from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { cornerHeader } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
 	type Block,
@@ -36,82 +43,8 @@ import {
 	TRACK_REGIONS,
 } from "@/transformers/semantic-renderer/lib/track/scene";
 
-/** Horizontal room Graphviz keeps between neighbours in a rank. */
-const NODE_GAP = 40;
-/** Vertical room Graphviz keeps between ranks; the router spaces ranks again from its tracks. */
-const RANK_GAP = 28;
 /** The side of a port's square. */
 const PORT = 1;
-
-/** A Graphviz node. */
-type VendorNode = NonNullable<Graph["nodes"]>[number];
-
-/**
- * An empty Graphviz graph with the block settings.
- * @returns The vendor graph.
- */
-function emptyGraph(): Graph & Required<Pick<Graph, "nodes" | "edges" | "subgraphs">> {
-	return {
-		directed: true,
-		graphAttributes: {
-			rankdir: "TB",
-			// More passes at ordering each rank, and one more over the whole: fewer
-			// crossings on the dogfood boards (244 to 224) at no measurable cost.
-			mclimit: 4,
-			remincross: true,
-			splines: "polyline",
-			nodesep: NODE_GAP / 72,
-			ranksep: RANK_GAP / 72,
-			pad: 0,
-			// Graphviz keeps the clusters directly in a graph its margin apart on a
-			// rank: top-level containers stand as far apart as nested ones.
-			margin: CONTAINER_INSET,
-		},
-		nodeAttributes: { shape: "box", fixedsize: true, label: "", margin: 0 },
-		edgeAttributes: { dir: "none" },
-		nodes: [],
-		edges: [],
-		subgraphs: [],
-	};
-}
-
-/**
- * A line's label box, where Graphviz put it.
- * @param id The line's id.
- * @param label The measured label.
- * @param centre Where Graphviz centred its box.
- * @returns The placed label.
- */
-function placedLabel(id: string, label: ElkLabel, centre: Point): ElkLabel {
-	const width = label.width!;
-	const height = label.height!;
-	return { id: `${id}:label`, width, height, x: centre.x - width / 2, y: centre.y - height / 2 };
-}
-
-/**
- * A line's points run onto the block's wall: its last point when it leaves
- * by a wall, its first when it enters by one.
- * @param points The line's points, from its source.
- * @param walls The walls it leaves or enters by.
- * @param walls.leaves The wall it leaves by, if any.
- * @param walls.enters The wall it enters by, if any.
- * @param width The block's width.
- * @returns The moved points, or nothing when the line meets no wall.
- */
-function walledPoints(
-	points: readonly Point[],
-	walls: { leaves: "left" | "right" | undefined; enters: "left" | "right" | undefined },
-	width: number,
-): Point[] | undefined {
-	if (walls.leaves !== undefined)
-		return [
-			...points.slice(0, -1),
-			{ x: walls.leaves === "left" ? 0 : width, y: points.at(-1)!.y },
-		];
-	if (walls.enters !== undefined)
-		return [{ x: walls.enters === "left" ? 0 : width, y: points[0]!.y }, ...points.slice(1)];
-	return undefined;
-}
 
 /** How a block is arranged beyond Graphviz's own ranking. */
 interface Arrangement {
@@ -211,7 +144,8 @@ class CardLayout {
 	 */
 	nodeOf(name: string): VendorNode {
 		const { width, height } = this.sizeOf(name);
-		return box(name, width, height);
+		// The header is ranked as a sliver: it stands in the corner once placed.
+		return box(name, name === headerOf(this.block) ? PORT : width, height);
 	}
 
 	/**
@@ -288,6 +222,7 @@ class CardLayout {
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
+		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
 	}
 
 	/**
@@ -425,6 +360,17 @@ class CardLayout {
 			width: Math.abs(right! - left!),
 		});
 		const placed = this.placed(centres, polylines, clusters);
+		const laid = this.routed(placed, 0);
+		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width) };
+	}
+
+	/**
+	 * Route the placed block's lines on tracks and read it back.
+	 * @param placed The placed block.
+	 * @param held The width the block keeps at least.
+	 * @returns The laid-out block.
+	 */
+	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
 		const scene = new Scene(placed);
 		const lines = routeScene(
 			scene,
@@ -444,7 +390,28 @@ class CardLayout {
 			this.insets.side,
 			this.insets.top,
 		);
-		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])));
+		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])), held);
+	}
+
+	/**
+	 * The block routed again with some of its ports moved along their edges,
+	 * where its parent settled them; Graphviz does not rank it again, and it
+	 * keeps its width.
+	 * @param placed The placed block; its ports' leaves move in place.
+	 * @param held The block's width.
+	 * @param ports Each moved port's x, in the block's own coordinates.
+	 * @returns The laid-out block.
+	 */
+	rerouted(
+		placed: ElkNode & { edges: ElkExtendedEdge[] },
+		held: number,
+		ports: ReadonlyMap<string, number>,
+	): Laid {
+		for (const leaf of placed.children ?? []) {
+			const x = ports.get(leaf.id);
+			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
+		}
+		return this.routed(placed, held);
 	}
 
 	/**
@@ -452,12 +419,14 @@ class CardLayout {
 	 * @param scene The routed scene.
 	 * @param lines Every line's points.
 	 * @param edges Every placed line, by key.
+	 * @param held The width the block keeps at least.
 	 * @returns The laid-out block.
 	 */
 	read(
 		scene: Scene,
 		lines: ReadonlyMap<string, Point[]>,
 		edges: ReadonlyMap<string, ElkExtendedEdge>,
+		held: number,
 	): Laid {
 		const { side, bottom } = this.insets;
 		const boxes = new Map<string, Box>();
@@ -470,26 +439,45 @@ class CardLayout {
 		}));
 		const frames = frameShapes(scene, edges, side);
 		const regions = regionShapes(scene, edges, side);
-		const all = [
+		const walled = new Map(lines);
+		const reach = [
 			...boxes.values(),
 			...frames.map((frame) => frame.box),
 			...regions.map((region) => region.box),
+			...this.innerPoints(walled).map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
 		];
 		const width = Math.max(
+			held,
 			this.block.header?.width ?? 0,
-			...all.map((one) => one.x + one.width + side),
+			...reach.map((one) => one.x + one.width + side),
 		);
-		const walled = new Map(lines);
 		const tracks = this.wallLines(walled, boxes, width);
 		return {
 			width,
-			height: Math.max(...all.map((one) => one.y + one.height), ...tracks) + bottom,
+			height: Math.max(...reach.map((one) => one.y + one.height), ...tracks) + bottom,
 			boxes,
 			lines: walled,
 			bands,
 			frames,
 			regions,
 		};
+	}
+
+	/**
+	 * Every point the lines of a block inside the board draw, which its parent
+	 * must route around: all but the end where a line to or from a wall meets
+	 * the wall, which stands where the block ends. The board's own lines are
+	 * fitted on the page when it is drawn.
+	 * @param lines Every line's points.
+	 * @returns The points.
+	 */
+	innerPoints(lines: ReadonlyMap<string, Point[]>): Point[] {
+		if (this.block.kind === "root") return [];
+		return [...this.block.lines.values()].flatMap((line) => {
+			const points = lines.get(line.key) ?? [];
+			if (this.wallOf(line) !== undefined) return points.slice(0, -1);
+			return this.entersBy(line) === undefined ? points : points.slice(1);
+		});
 	}
 
 	/**
@@ -539,6 +527,7 @@ class CardLayout {
 		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
 		for (const pin of new Set(ends.filter((end) => this.tree.pins.has(end))))
 			leaves.push(this.pinned(pin, centres));
+		cornerHeader(leaves, headerOf(this.block));
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);

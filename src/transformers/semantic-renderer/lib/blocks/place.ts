@@ -15,9 +15,11 @@ import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-lay
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
+import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
+import { routedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import {
 	BlockTree,
 	type Block,
@@ -332,7 +334,9 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
 /**
  * Lay a measured hierarchy out one way and route every relationship; when a
  * trunk joins two blocks that stand side by side, once more with that trunk
- * leaving its block by the wall that faces the other.
+ * leaving its block by the wall that faces the other. Last, the ports on
+ * every block's top and bottom are settled where both ends of their trunks
+ * are known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -347,8 +351,32 @@ function layOut(
 ): { tree: BlockTree; laid: Map<string, Laid> } {
 	const first = layAll(viz, avoid, graph, undefined, nesting);
 	const exits = exitsOf(first.tree, first.laid);
-	if (exits.size === 0) return first;
-	return layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
+	const last =
+		exits.size === 0
+			? first
+			: layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
+	const unsettled = new Map(last.laid);
+	settlePorts({ ...last, insetsOf, avoid });
+	if (
+		routedScore(...pageAndLines(last.tree, unsettled)) >
+		routedScore(...pageAndLines(last.tree, last.laid))
+	)
+		for (const [id, laid] of unsettled) last.laid.set(id, laid);
+	return last;
+}
+
+/**
+ * A drawing's page and every relationship's points, as drawn.
+ * @param tree The blocks.
+ * @param laid Every block laid out.
+ * @returns The page and the points.
+ */
+function pageAndLines(
+	tree: BlockTree,
+	laid: ReadonlyMap<string, Laid>,
+): [{ width: number; height: number }, Point[][]] {
+	const placed = new Assembly(tree, laid).placed();
+	return [placed, placed.edges.map(({ points }) => points)];
 }
 
 /**
