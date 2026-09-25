@@ -23,16 +23,13 @@ const FACE_MARGIN = 20;
 /** The bound of a stretch with nothing on one side: beyond any drawing. */
 const OPEN_REACH = 1_000_000;
 
-/** A label box that may slide, and where it wants its centre. */
+/** A label box that may slide, where it wants its centre, and where its line reaches it straight. */
 interface Slider {
 	readonly item: Item;
 	readonly wanted: number;
-	/** How firmly it holds its wanted centre against its neighbours: firm where its line can run straight. */
-	readonly weight: number;
+	/** The x its line reaches it at straight from the station above, and from the one below. */
+	readonly reaches: readonly (readonly [number, number])[];
 }
-
-/** How firmly a label whose line must jog anyway holds its place, against one whose line runs straight. */
-const JOGGING_WEIGHT = 0.01;
 
 /** Something that stays put on a band, as an interval a box may not enter. */
 type Wall = readonly [number, number];
@@ -50,26 +47,21 @@ function reach(station: Station): [number, number] {
 }
 
 /**
- * Where a label box wants its centre, and how firmly: a point both its ends
- * can reach straight, nearest where it stands, held firmly; else the edge of
- * its upper end's reach nearest the lower one, held loosely, since its line
- * jogs wherever the box stands.
+ * Where a label box wants its centre: a point both its ends can reach
+ * straight, nearest where it stands; else the edge of its upper end's reach
+ * nearest the lower one, since its line jogs wherever the box stands.
  * @param item The label box.
  * @param above The station its line comes from.
  * @param below The station its line goes on to.
- * @returns The wanted centre x, and its weight.
+ * @returns The wanted centre x.
  */
-function wantedCentre(
-	item: Item,
-	above: Station,
-	below: Station,
-): { wanted: number; weight: number } {
+function wantedCentre(item: Item, above: Station, below: Station): number {
 	const [a, b] = reach(above);
 	const [c, d] = reach(below);
 	const low = Math.max(a, c);
 	const high = Math.min(b, d);
-	if (low <= high) return { wanted: Math.min(high, Math.max(low, centreX(item))), weight: 1 };
-	return { wanted: c > b ? b : a, weight: JOGGING_WEIGHT };
+	if (low <= high) return Math.min(high, Math.max(low, centreX(item)));
+	return c > b ? b : a;
 }
 
 /**
@@ -86,7 +78,15 @@ function slidersOf(nets: readonly Net[]): Slider[] {
 	}
 	return [...into].flatMap(([item, above]) => {
 		const below = outOf.get(item);
-		return below === undefined ? [] : [{ item, ...wantedCentre(item, above.top, below.bottom) }];
+		return below === undefined
+			? []
+			: [
+					{
+						item,
+						wanted: wantedCentre(item, above.top, below.bottom),
+						reaches: [reach(above.top), reach(below.bottom)],
+					},
+				];
 	});
 }
 
@@ -134,39 +134,116 @@ function stretchOf(walls: readonly Wall[], item: Item): [number, number] {
 	return [Math.max(-OPEN_REACH, ...left), Math.min(OPEN_REACH, ...right)];
 }
 
+/** A placement's cost: how many lines jog at their labels, how many of those jogs are too short to turn whole, then how far the boxes stand from where they want to be. */
+type Cost = readonly [number, number, number];
+
+/** The shortest jog a line turns with two whole bends and a straight run between them. */
+const WHOLE_JOG = 2 * LANE;
+
+/** How far outside a reach still counts as in it: rounding, not a jog. */
+const TOLERANCE = 1e-6;
+
 /**
- * Place boxes that share one stretch: in their order, spaced, each as near its
- * wanted centre as the others and the stretch allow (pool-adjacent violators).
+ * What one box costs standing at one centre.
+ * @param slider The box.
+ * @param centre Its centre.
+ * @returns How many of its two lines jog there, and how far it stands from its wanted centre.
+ */
+function costAt(slider: Slider, centre: number): Cost {
+	const off = slider.reaches.map(([low, high]) => Math.max(low - centre, centre - high, 0));
+	return [
+		off.filter((d) => d > TOLERANCE).length,
+		off.filter((d) => d > TOLERANCE && d < WHOLE_JOG - TOLERANCE).length,
+		Math.abs(centre - slider.wanted),
+	];
+}
+
+/**
+ * Whether one cost is lower than another: fewer jogs, then less displacement.
+ * @param one A cost.
+ * @param other Another.
+ * @returns True when the first is lower.
+ */
+function cheaper(one: Cost, other: Cost): boolean {
+	if (one[0] !== other[0]) return one[0] < other[0];
+	if (one[1] !== other[1]) return one[1] < other[1];
+	return one[2] < other[2] - TOLERANCE;
+}
+
+/**
+ * Place boxes that share one stretch: in their order, spaced, so that the
+ * fewest lines jog, then each as near its wanted centre as that allows. A
+ * box's cost changes only at its reaches' edges and its wanted centre, so
+ * some best placement has every box at one of those points of its own or of
+ * a box packed against it; each box tries them all, carried along the packed
+ * row, and keeps the cheapest left neighbour that leaves it room.
  * @param sliders The boxes, left to right.
  * @param low The stretch's left edge.
  * @param high The stretch's right edge.
  */
 function placeRun(sliders: readonly Slider[], low: number, high: number): void {
-	const offsets: number[] = [];
-	let offset = 0;
-	for (const { item } of sliders) {
-		offsets.push(offset);
-		offset += item.box.width + LABEL_LABEL_CLEARANCE;
+	const widths = sliders.map(({ item }) => item.box.width);
+	const gaps = widths.map((width, index) =>
+		index === 0 ? 0 : (widths[index - 1]! + width) / 2 + LABEL_LABEL_CLEARANCE,
+	);
+	const offsets = gaps.map((_, index) =>
+		gaps.slice(0, index + 1).reduce((sum, gap) => sum + gap, 0),
+	);
+	const first = low + widths[0]! / 2;
+	const last = high - widths.at(-1)! / 2 - offsets.at(-1)!;
+	if (last < first) return;
+	const anchors = [
+		first,
+		last,
+		...sliders.flatMap((slider, index) =>
+			[
+				slider.wanted,
+				...slider.reaches.flatMap(([one, other]) => [
+					one - WHOLE_JOG,
+					one,
+					other,
+					other + WHOLE_JOG,
+				]),
+			].map((x) => x - offsets[index]!),
+		),
+	];
+	type Step = { centre: number; cost: Cost; from: number };
+	const steps: Step[][] = [];
+	sliders.forEach((slider, index) => {
+		const centres = [
+			...new Set(anchors.map((x) => Math.min(last, Math.max(first, x)) + offsets[index]!)),
+		];
+		steps.push(
+			centres.flatMap((centre): Step[] => {
+				const own = costAt(slider, centre);
+				if (index === 0) return [{ centre, cost: own, from: -1 }];
+				let best: Step | undefined;
+				let from = -1;
+				steps[index - 1]!.forEach((step, at) => {
+					if (step.centre > centre - gaps[index]! + TOLERANCE) return;
+					if (best === undefined || cheaper(step.cost, best.cost)) [best, from] = [step, at];
+				});
+				return best === undefined
+					? []
+					: [
+							{
+								centre,
+								cost: [best.cost[0] + own[0], best.cost[1] + own[1], best.cost[2] + own[2]],
+								from,
+							},
+						];
+			}),
+		);
+	});
+	let at = steps
+		.at(-1)!
+		.reduce((best, step, index, all) => (cheaper(step.cost, all[best]!.cost) ? index : best), 0);
+	for (let index = sliders.length - 1; index >= 0; index -= 1) {
+		const step = steps[index]![at]!;
+		const { item } = sliders[index]!;
+		item.box = { ...item.box, x: step.centre - item.box.width / 2 };
+		at = step.from;
 	}
-	const room = high - low - (offset - LABEL_LABEL_CLEARANCE);
-	if (room < 0) return;
-	const blocks: { value: number; weight: number; count: number }[] = [];
-	sliders.forEach(({ item, wanted, weight }, index) => {
-		blocks.push({ value: wanted - item.box.width / 2 - offsets[index]!, weight, count: 1 });
-		while (blocks.length > 1 && blocks.at(-2)!.value > blocks.at(-1)!.value) {
-			const last = blocks.pop()!;
-			const before = blocks.at(-1)!;
-			before.value =
-				(before.value * before.weight + last.value * last.weight) / (before.weight + last.weight);
-			before.weight += last.weight;
-			before.count += last.count;
-		}
-	});
-	const lefts = blocks.flatMap(({ value, count }) => Array.from({ length: count }, () => value));
-	sliders.forEach(({ item }, index) => {
-		const left = Math.min(low + room, Math.max(low, lefts[index]!)) + offsets[index]!;
-		item.box = { ...item.box, x: left };
-	});
 }
 
 /**

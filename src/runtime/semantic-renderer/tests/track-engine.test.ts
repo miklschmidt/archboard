@@ -3,7 +3,8 @@
 // line that jogs a few points on its way to a label, which its rounded corners
 // draw as a hook doubling back on itself, a line that steps sideways by less
 // than its two bends need on its way between cards, a line rising into the
-// card above whose arrowhead sits on its last bend, a long chain drawn as one tall
+// card above whose arrowhead sits on its last bend, labels on a crowded band
+// shifted together until every line through them jogs, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
@@ -113,6 +114,31 @@ test("every line's arrowhead sits on a straight run, rising lines' too", async (
 		const [before, end] = [points.at(-2)!, points.at(-1)!];
 		expect(Math.hypot(end.x - before.x, end.y - before.y), id).toBeGreaterThanOrEqual(APPROACH);
 	}
+});
+
+// Shaped like a real ingress board's band, names replaced: four labelled lines
+// between two rows, whose label boxes cannot all stand where their lines run
+// straight. Sharing the displacement out made every line but one jog.
+test("labels crowding one band leave as many of their lines straight as fit", async () => {
+	const band = orderedFixture({
+		nodes: [
+			["dns", "Name service", "Names one balancer's public address for the whole traffic cutover"],
+			["probe", "Probe", "Synthetic requests from engineers"],
+			["old", "Old balancer", "Forwards traffic to the old pool without opening it"],
+			["new", "New balancer", "Separate balancer with its own public address"],
+		].map(([id, name, responsibility]) => ({ id, name, kind: "module", responsibility })),
+		edges: [
+			["fallback", "dns", "old", "event", "If the proxy is down: falls back here"],
+			["today", "dns", "old", "call", "Today: points here"],
+			["stage2", "dns", "new", "call", "Stage 2: points here instead"],
+			["stage1", "probe", "new", "call", "Stage 1: plain HTTP on a preview port"],
+		].map(([id, from, to, kind, label]) => ({ id, from, to, kind, label })),
+	});
+	const drawing = await renderArchitecture({ content: band, theme: "light", layout: "track" });
+	const jogging = [...routePoints(drawing.svg)].filter(([, points]) =>
+		points.some((point, index) => index > 0 && Math.abs(point.x - points[index - 1]!.x) > 0.5),
+	);
+	expect(jogging.length).toBeLessThanOrEqual(1);
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
