@@ -26,14 +26,24 @@ function routes(svg: string) {
 				/stroke-width="([^"]+)"/u.exec(/<path[^>]*marker-end=[^>]*>/u.exec(group[3]!)![0])![1],
 			),
 			mask: /mask="url\(#([^)]*)\)"/u.exec(group[2]!)?.[1],
-			// Every curve the group draws, once each: its line, its halo and any
-			// traffic ride one curve, whatever layers the theme gives the traffic.
+			// Every curve the line draws, once each: its line and its halo ride one curve.
 			paths: [
 				...new Set(
 					[
 						...group[3]!
 							.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
+							.split('<g class="ab-pulse"')[0]!
 							.matchAll(/<path[^>]* d="([^"]+)"/gu),
+					].map((path) => path[1]!),
+				),
+			],
+			// The curves its traffic rides, whatever layers the theme gives the traffic.
+			rides: [
+				...new Set(
+					[
+						...(group[3]!.split('<g class="ab-pulse"')[1] ?? "").matchAll(
+							/<path[^>]* d="([^"]+)"/gu,
+						),
 					].map((path) => path[1]!),
 				),
 			],
@@ -77,10 +87,14 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 		crossings += 1;
 	}
 	for (const upper of lines) {
-		// The line and its halo, and the traffic riding them: no background patch,
-		// and every one of them on the same drawn curve.
+		// The line and its halo: no background patch, and both on the same drawn
+		// curve. Its traffic rides that curve too, stopping short of the head.
 		expect(upper.own).toBe(2);
 		expect(upper.paths).toHaveLength(1);
+		expect(upper.rides.length).toBeLessThanOrEqual(1);
+		for (const ride of upper.rides) {
+			expect(upper.paths[0]!.startsWith(ride.replace(/ [LC][^LC]*$/u, ""))).toBe(true);
+		}
 		for (const bridge of roundBridges(upper.paths[0]!)) {
 			const localCurve = bridge.span.trim().replace(/^L/u, "M");
 			const matchingCutouts = lines

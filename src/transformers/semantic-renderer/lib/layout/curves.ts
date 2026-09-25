@@ -585,6 +585,7 @@ export {
 	EPSILON,
 	segmentStart,
 	pointAt,
+	pointOnSegment,
 	pathOf,
 	curveBounds,
 	selfLoop,

@@ -1,5 +1,12 @@
 import { type SemanticEdge } from "@/shared/semantic-board/index";
-import { coord } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import {
+	pathOf,
+	pointOnSegment,
+	segmentStart,
+	type Curve,
+	type Segment,
+} from "@/transformers/semantic-renderer/lib/layout/curves";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	colourId,
@@ -27,7 +34,10 @@ const TRAIN_RADIUS = 3;
 
 /** One connection's routed path and explicit illustrated traffic. */
 interface Pulse {
-	readonly path: string;
+	/** The route as drawn, bridges and all. */
+	readonly curve: Curve;
+	/** How far back from the route's end its arrowhead reaches: no comet may cover it. */
+	readonly headReach: number;
 	/** The relationship's colour at full strength; its line is drawn weaker. */
 	readonly colour: string;
 	/** The colour its line is drawn in, which the comet's tail fades back into. */
@@ -112,6 +122,93 @@ function cometColour(ink: string, page: Pick<Palette, "edge" | "foreground">): s
 }
 
 /**
+ * How thick a comet's head is on a line of one width: a heavier line carries heavier comets.
+ * @param lineWidth The line's width.
+ * @returns The head's width.
+ */
+function cometHead(lineWidth: number): number {
+	return Math.max(PULSE_RADIUS * 2.3, lineWidth + 4.4);
+}
+
+/**
+ * How wide the widest layer of a comet on a line of one width is: its glow.
+ * @param lineWidth The line's width.
+ * @returns The width.
+ */
+function pulseBreadth(lineWidth: number): number {
+	return cometHead(lineWidth) * COMET_GLOW.width;
+}
+
+/** How many chords measure a rounded piece: a quarter bend's length to well under a tenth of a unit. */
+const CHORDS = 16;
+
+/**
+ * How long one segment is along its ink.
+ * @param from Where the segment starts.
+ * @param segment The segment.
+ * @returns Its length.
+ */
+function segmentLength(from: Point, segment: Segment): number {
+	if (segment.kind === "line") return Math.hypot(segment.to.x - from.x, segment.to.y - from.y);
+	let length = 0;
+	let previous = from;
+	for (let step = 1; step <= CHORDS; step += 1) {
+		const point = pointOnSegment(from, segment, step / CHORDS);
+		length += Math.hypot(point.x - previous.x, point.y - previous.y);
+		previous = point;
+	}
+	return length;
+}
+
+/**
+ * The point a fraction of the way from one point to another.
+ * @param a The first point.
+ * @param b The second.
+ * @param t How far, from 0 to 1.
+ * @returns The point.
+ */
+function lerp(a: Point, b: Point, t: number): Point {
+	return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+/**
+ * The first part of one segment, up to a fraction of it.
+ * @param from Where the segment starts.
+ * @param segment The segment.
+ * @param t How much of it to keep, from 0 to 1.
+ * @returns The kept part, which ends at the point `t` names.
+ */
+function segmentUpTo(from: Point, segment: Segment, t: number): Segment {
+	const to = pointOnSegment(from, segment, t);
+	if (segment.kind === "line") return { kind: "line", to };
+	const first = lerp(from, segment.first, t);
+	const second = lerp(first, lerp(segment.first, segment.second, t), t);
+	return { kind: "cubic", first, second, to };
+}
+
+/**
+ * The route with a length taken off its end: the part comets ride, which stops
+ * short of whatever the route ends in.
+ * @param curve The route.
+ * @param distance How much of its length to take off.
+ * @returns The shorter route, or undefined when that is all of it.
+ */
+function shortenedBy(curve: Curve, distance: number): Curve | undefined {
+	let left = distance;
+	for (let index = curve.segments.length - 1; index >= 0; index -= 1) {
+		const from = segmentStart(curve, index);
+		const segment = curve.segments[index]!;
+		const length = segmentLength(from, segment);
+		if (length > left) {
+			const kept = segmentUpTo(from, segment, 1 - left / length);
+			return { from: curve.from, segments: [...curve.segments.slice(0, index), kept] };
+		}
+		left -= length;
+	}
+	return undefined;
+}
+
+/**
  * SMIL timecounts require decimal spelling; SVG geometric numbers may use exponents.
  * @param seconds A duration.
  * @returns Its timecount.
@@ -126,7 +223,9 @@ function timecount(seconds: number): string {
  *
  * A dash pattern shifted back by the dash's own length puts the dash's far end
  * on the head, so every layer rides the same clock and stays behind its head
- * on straight and bent routes alike.
+ * on straight and bent routes alike. At rest the heads sit half a spacing
+ * apart from the route's ends, so a picture that does not move shows whole
+ * comets, never one's glow alone at the card it leaves.
  * @param stream The route, the spacing between comets and their clock.
  * @param stream.path The route.
  * @param stream.spacing How far apart comets travel.
@@ -155,6 +254,8 @@ function cometLayer(
 	// Rounded once, so the dash and its gap add up to exactly one spacing and
 	// the pattern repeats where the clock says it does.
 	const length = Number(coord(layer.length));
+	// Half a spacing on, rather than half back, so the far end of the clock stays finite.
+	const offset = Number(coord(length + spacing / 2));
 	return wrap(
 		"path",
 		{
@@ -166,12 +267,12 @@ function cometLayer(
 			"stroke-opacity": opacity === 1 ? undefined : opacity,
 			"stroke-linecap": "round",
 			"stroke-dasharray": `${length} ${Math.max(Number.MIN_VALUE, spacing - length)}`,
-			"stroke-dashoffset": length === 0 ? undefined : length,
+			"stroke-dashoffset": offset,
 		},
 		tag("animate", {
 			attributeName: "stroke-dashoffset",
-			from: length,
-			to: length - spacing,
+			from: offset,
+			to: offset - spacing,
 			dur: seconds,
 			repeatCount: "indefinite",
 			calcMode: "linear",
@@ -195,17 +296,21 @@ function cometLayer(
  * @returns The animated comet stream, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
-	const { path, lineWidth, lineColour, page, traffic } = pulse;
+	const { lineWidth, lineColour, page, traffic } = pulse;
 	const colour = cometColour(pulse.colour, page);
 	const spacing = Math.max(
 		Number.MIN_VALUE,
 		Math.min(Number.MAX_VALUE, traffic.speed / traffic.volume),
 	);
 	const seconds = timecount(Math.min(Number.MAX_VALUE, 1 / traffic.volume));
-	const head = Math.max(PULSE_RADIUS * 2.3, lineWidth + 4.4);
+	const head = cometHead(lineWidth);
 	const headLength = head * COMET_HEAD_LENGTH;
 	const tail = Math.min(COMET_TAIL, spacing * COMET_TAIL_SHARE);
-	const stream = { path, spacing, seconds };
+	// The comets ride the route up to the base of its arrowhead: a head there,
+	// ringed by the page, would blunt the arrowhead into a dark block.
+	const ride = shortenedBy(pulse.curve, pulse.headReach + head / 2 + COMET_MOAT);
+	if (ride === undefined) return "";
+	const stream = { path: pathOf(ride), spacing, seconds };
 	return wrap(
 		"g",
 		{ class: PULSE_CLASS, "pointer-events": "none" },
@@ -366,4 +471,4 @@ function ratio(value: number): string {
 	return Math.min(Math.max(value, 0), 1).toFixed(3);
 }
 
-export { PULSE_CLASS, PULSE_RADIUS, TRAIN_RADIUS, timedPulse, travellingPulses };
+export { PULSE_CLASS, PULSE_RADIUS, TRAIN_RADIUS, pulseBreadth, timedPulse, travellingPulses };
