@@ -71,6 +71,50 @@ function masks(svg: string) {
 	);
 }
 
+/**
+ * The points a path's commands end on, its start included.
+ * @param d The path data.
+ * @returns The points.
+ */
+function endsOf(d: string): { x: number; y: number }[] {
+	return [...d.matchAll(/([MLC])([^MLC]+)/gu)].map(([, , numbers]) => {
+		const values = numbers!.trim().split(/[ ,]+/u).map(Number);
+		return { x: values.at(-2)!, y: values.at(-1)! };
+	});
+}
+
+/**
+ * Whether a cutout lies on a route's drawn ink: every point its commands end
+ * on is on the route's path, either one of its points or on a straight piece
+ * between two of them.
+ * @param cutout The cutout's path data.
+ * @param route The route's path data.
+ * @returns True when it does.
+ */
+function follows(cutout: string, route: string): boolean {
+	const points = endsOf(route);
+	return endsOf(cutout).every((point) =>
+		points.some((from, index) => {
+			const to = points[index + 1] ?? from;
+			const length = Math.hypot(to.x - from.x, to.y - from.y);
+			const t =
+				length === 0
+					? 0
+					: Math.min(
+							1,
+							Math.max(
+								0,
+								((point.x - from.x) * (to.x - from.x) + (point.y - from.y) * (to.y - from.y)) /
+									length ** 2,
+							),
+						);
+			const x = from.x + (to.x - from.x) * t;
+			const y = from.y + (to.y - from.y) * t;
+			return Math.hypot(point.x - x, point.y - y) < 0.05;
+		}),
+	);
+}
+
 test("crossing clearances share the drawn curve and narrowly clear the ink beneath them", async () => {
 	const light = await renderArchitecture({ content: CROSSED, theme: "light" });
 	const dark = await renderArchitecture({ content: CROSSED, theme: "dark" });
@@ -80,10 +124,11 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	expect(lines).toHaveLength(9);
 	let crossings = 0;
 	for (const cutout of [...cutouts.values()].flat()) {
-		const localCommands = cutout.path.replace(/^M[-\d.,]+ /u, "");
-		const upper = lines.find((route) => route.paths[0]!.includes(localCommands));
+		const upper = lines.find((route) => follows(cutout.path, route.paths[0]!));
 		expect(upper, "a cutout follows existing upper-route ink").toBeDefined();
-		expect(cutout.width - upper!.width).toBeCloseTo(3, 5);
+		// Narrow beneath an arc; wide enough to see where a straight line crosses unhopped.
+		const cut = /^M[-\d.,]+ L[-\d.,]+$/u.test(cutout.path);
+		expect(cutout.width - upper!.width).toBeCloseTo(cut ? 6 : 3, 5);
 		crossings += 1;
 	}
 	for (const upper of lines) {
@@ -144,4 +189,70 @@ test("fan-in and fan-out connections do not acquire false crossing bridges", asy
 		expect(routes(drawn.svg).flatMap((route) => roundBridges(route.paths[0]!))).toEqual([]);
 		expect(routes(drawn.svg).every((route) => route.mask === undefined)).toBe(true);
 	}
+});
+
+/**
+ * Whether a value lies between two others, in either order.
+ * @param value The value.
+ * @param a One bound.
+ * @param b The other.
+ * @returns True when it does.
+ */
+function inside(value: number, a: number, b: number): boolean {
+	return value >= Math.min(a, b) - 0.01 && value <= Math.max(a, b) + 0.01;
+}
+
+/**
+ * Whether a mask cuts out a point: a straight cutout of the mask covers it
+ * within half its width, or a cut-out box holds it.
+ * @param svg The drawn document.
+ * @param mask The mask's id.
+ * @param point The point.
+ * @returns True when the mask hides it.
+ */
+function hides(svg: string, mask: string | undefined, point: { x: number; y: number }): boolean {
+	const body = new RegExp(`<mask id="${mask}"[^>]*>([\\s\\S]*?)</mask>`, "u").exec(svg)?.[1] ?? "";
+	const lines = [
+		...body.matchAll(
+			/<path d="M([-\d.]+),([-\d.]+) L([-\d.]+),([-\d.]+)"[^>]*stroke-width="([^"]+)"/gu,
+		),
+	].some(([, x1, y1, x2, y2, width]) => {
+		const [ax, ay, bx, by] = [x1, y1, x2, y2].map(Number) as [number, number, number, number];
+		const half = Number(width) / 2;
+		return ay === by
+			? inside(point.x, ax, bx) && Math.abs(point.y - ay) <= half
+			: inside(point.y, ay, by) && Math.abs(point.x - ax) <= half;
+	});
+	const boxes = [
+		...body.matchAll(/<rect x="([-\d.]+)" y="([-\d.]+)" width="([\d.]+)" height="([\d.]+)" rx=/gu),
+	].some(([, x, y, width, height]) => {
+		const [left, top] = [Number(x), Number(y)];
+		return (
+			point.x >= left &&
+			point.x <= left + Number(width) &&
+			point.y >= top &&
+			point.y <= top + Number(height)
+		);
+	});
+	return lines || boxes;
+}
+
+// Graphviz, Track and Blocks: routes of one kind on one trunk each drew their
+// own stroke, dash pattern and arrowhead over it, a doubled or solid line.
+test("routes sharing a trunk draw its ink once: one line, one dash pattern, one arrowhead", async () => {
+	const content = orderedFixture({
+		nodes: ["a", "b", "c", "t"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
+		edges: ["a", "b", "c"].map((from) => ({ id: `${from}t`, from, to: "t", kind: "event" })),
+	});
+	const { svg } = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawn = routes(svg);
+	const ends = drawn.map((route) => endsOf(route.paths[0]!).slice(-2));
+	// The fixture's precondition: all three arrive down one shared last stretch.
+	for (const [before, end] of ends) {
+		expect(end).toEqual(ends[0]![1]!);
+		expect(before!.x).toBe(end!.x);
+	}
+	const [, end] = ends[0]!;
+	const onTrunk = { x: end!.x, y: end!.y - 5 };
+	expect(drawn.filter((route) => !hides(svg, route.mask, onTrunk))).toHaveLength(1);
 });

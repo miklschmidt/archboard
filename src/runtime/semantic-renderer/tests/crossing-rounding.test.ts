@@ -43,84 +43,153 @@ function drawing(routes: readonly (readonly Point[])[] = ROUTES): ArchitectureDr
 	return { direction: "down", width: 120, height: 100, cards: [], containers: [], edges };
 }
 
-test("a crossing beside a rounded turn uses the other route when the preferred arc cannot fit", () => {
-	const before = drawing();
-	const result = bridgeCrossings(before);
-	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]!.edgeId).toBe("0");
-	expect(result.bridges[0]!.under).toEqual(["1"]);
-	// The tight corner is untouched: only the clear crossing route is lifted.
-	expect(result.edges[1]!.curve).toEqual(before.edges[1]!.curve);
+/**
+ * Whether a curve is one straight piece along x or y.
+ * @param curve A crossing's cut.
+ * @returns True when it is.
+ */
+function straightPiece(curve: DrawingEdge["curve"]): boolean {
+	const [segment] = curve.segments;
+	return (
+		curve.segments.length === 1 &&
+		segment?.kind === "line" &&
+		(segment.to.x === curve.from.x || segment.to.y === curve.from.y)
+	);
+}
+
+// Cloud Infrastructure, Common-WebLib and every engine's hop-on-bend: a hop
+// within its reach of a bend, on either line, fuses with the bend into a knot.
+test("a crossing within a hop's reach of a bend is cut beneath the straight line, never hopped", () => {
+	for (const routes of [
+		// The other route turns seven units past the crossing.
+		ROUTES,
+		// ... or four units past it, turning back.
+		[
+			[
+				{ x: 0, y: 50 },
+				{ x: 100, y: 50 },
+			],
+			[
+				{ x: 50, y: 0 },
+				{ x: 50, y: 62 },
+				{ x: 0, y: 62 },
+			],
+		],
+		// ... or four units before its own turn, running across.
+		[
+			[
+				{ x: 0, y: -60 },
+				{ x: 0, y: 100 },
+			],
+			[
+				{ x: -120, y: 0 },
+				{ x: 12, y: 0 },
+				{ x: 12, y: 80 },
+			],
+		],
+		// ... or its rounded corner itself crosses the straight route.
+		[
+			[
+				{ x: -20, y: -64 },
+				{ x: 0, y: -64 },
+				{ x: 0, y: 18 },
+				{ x: -8, y: 18 },
+			],
+			[
+				{ x: -100, y: 0 },
+				{ x: 6, y: 0 },
+				{ x: 6, y: 100 },
+			],
+		],
+	]) {
+		const before = drawing(routes);
+		const result = bridgeCrossings(before);
+		// Neither route moves: nothing rises beside a bend.
+		expect(result.edges).toEqual(before.edges);
+		// The straight route stays whole, and the other is cut beneath its ink.
+		expect(result.bridges).toHaveLength(1);
+		expect(result.bridges[0]!.edgeId).toBe("0");
+		expect(result.bridges[0]!.under).toEqual(["1"]);
+		expect(straightPiece(result.bridges[0]!.curve)).toBe(true);
+	}
 });
 
-// Common-WebLib's phone → ambient route turns 12px after the generated-model
-// relationship crosses it. Reserving a 10px bridge shrank that turn to 1.99px.
-test("a crossing near a turn preserves natural rounding while separating its ink", () => {
-	const routes = [
-		[
-			{ x: 0, y: 50 },
-			{ x: 100, y: 50 },
-		],
-		[
-			{ x: 50, y: 0 },
-			{ x: 50, y: 62 },
-			{ x: 0, y: 62 },
-		],
+// Browser application and Command interface: two lines twelve apart hopped one
+// line with arcs bulging toward each other, drawing a closed ring around it.
+test("a crossing with room on both lines hops, centred, and every hop bulges the same way", () => {
+	const result = bridgeCrossings(
+		drawing([
+			[
+				{ x: 50, y: 0 },
+				{ x: 50, y: 100 },
+			],
+			[
+				{ x: 0, y: 50 },
+				{ x: 100, y: 50 },
+			],
+			[
+				{ x: 0, y: 62 },
+				{ x: 100, y: 62 },
+			],
+		]),
+	);
+	const hops = result.bridges.filter((bridge) => bridge.curve.segments.length > 1);
+	// The later line rises over the earlier one, its crest on the crossing.
+	expect(hops[0]).toMatchObject({ edgeId: "1", under: ["0"] });
+	expect(hops[0]!.curve.segments[0]!.to).toEqual({ x: 50, y: 43 });
+	for (const hop of hops) {
+		const crest = hop.curve.segments[0]!.to;
+		const across = hop.curve.segments.at(-1)!.to.y === hop.curve.from.y;
+		// Up from a line across, right of a line down: never toward each other.
+		expect(across ? crest.y < hop.curve.from.y : crest.x > hop.curve.from.x).toBe(true);
+	}
+	// Both crossings are marked, one way or the other.
+	expect(result.bridges).toHaveLength(2);
+});
+
+// Track and Blocks draw a trunk as one route per relationship, on top of each
+// other; a line painted between them crossed it flat.
+test("a line crosses a trunk once, wherever it is painted among the trunk's routes", () => {
+	const across = [
+		{ x: 0, y: 50 },
+		{ x: 100, y: 50 },
 	];
-	const before = drawing(routes);
-	const result = bridgeCrossings(before);
-	const cornerRoute = curveThrough(routes[1]!);
-	expect(before.edges[1]!.curve).toEqual(cornerRoute);
-	expect(result.edges[1]!.curve).toEqual(cornerRoute);
-	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]!.edgeId).toBe("0");
-	expect(result.bridges[0]!.under).toEqual(["1"]);
+	const down = [
+		{ x: 50, y: 0 },
+		{ x: 50, y: 100 },
+	];
+	const between = bridgeCrossings(drawing([down, across, down]));
+	expect(between.bridges).toHaveLength(1);
+	expect(between.bridges[0]!.edgeId).toBe("1");
+	expect(between.bridges[0]!.under.toSorted()).toEqual(["0", "2"]);
+	// A trunk painted over the line rises as one: its drawer hops, and the
+	// route beneath it keeps its ink, which the painter leaves to the drawer.
+	const trunk = drawing([across, down, down]);
+	const over = bridgeCrossings(trunk);
+	expect(over.bridges).toHaveLength(1);
+	expect(over.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
+	expect(over.edges[2]).toEqual(trunk.edges[2]!);
 });
 
-test("a straight crossing four units before the other route turns still has an arc", () => {
-	// Cloud Infrastructure: the VM-to-database vertical route crosses a long
-	// horizontal database route immediately before that route turns downward.
-	const before = drawing([
-		[
-			{ x: 0, y: -60 },
-			{ x: 0, y: 100 },
-		],
-		[
-			{ x: -120, y: 0 },
-			{ x: 12, y: 0 },
-			{ x: 12, y: 80 },
-		],
-	]);
-	const result = bridgeCrossings(before);
-	expect(result.bridges.some((bridge) => bridge.edgeId === "0" && bridge.under.includes("1"))).toBe(
-		true,
+// Blocks: routes of one kind on one trunk, sharing no card, erased each
+// other's shared turns and the turns where they part.
+test("routes that run together through a turn, and part from each other, cut nothing", () => {
+	const result = bridgeCrossings(
+		drawing([
+			[
+				{ x: 0, y: 0 },
+				{ x: 0, y: 100 },
+				{ x: 100, y: 100 },
+			],
+			[
+				{ x: 0, y: 30 },
+				{ x: 0, y: 100 },
+				{ x: 60, y: 100 },
+				{ x: 60, y: 160 },
+			],
+		]),
 	);
-	expect(result.edges[0]!.curve).not.toEqual(before.edges[0]!.curve);
-	expect(result.edges[1]!.curve).toEqual(before.edges[1]!.curve);
-});
-
-test("a rounded corner crossing a straight route gains an arc on the straight route", () => {
-	// Common-WebLib: the dispatch route turns across a vertical dependency route.
-	// A cutout alone leaves the apparent junction; the vertical route can arc.
-	const before = drawing([
-		[
-			{ x: -20, y: -64 },
-			{ x: 0, y: -64 },
-			{ x: 0, y: 18 },
-			{ x: -8, y: 18 },
-		],
-		[
-			{ x: -100, y: 0 },
-			{ x: 6, y: 0 },
-			{ x: 6, y: 100 },
-		],
-	]);
-	const result = bridgeCrossings(before);
-	expect(result.bridges.some((bridge) => bridge.edgeId === "0" && bridge.under.includes("1"))).toBe(
-		true,
-	);
-	expect(result.edges[0]!.curve).not.toEqual(before.edges[0]!.curve);
-	expect(result.edges[1]!.curve).toEqual(before.edges[1]!.curve);
+	expect(result.bridges).toEqual([]);
 });
 
 // Opposing rounded turns from the cloud board's VM → DB and API → DB
@@ -191,8 +260,8 @@ test("routes that cross where they turn onto one row get a bridge on straight ru
 		],
 		[
 			{ x: 120, y: 100 },
-			{ x: 15, y: 100 },
-			{ x: 15, y: 150 },
+			{ x: 30, y: 100 },
+			{ x: 30, y: 150 },
 			{ x: -80, y: 150 },
 		],
 	];
@@ -219,7 +288,7 @@ test("routes that cross where they turn onto one row get a bridge on straight ru
 	// The label rides its moved lane.
 	const moved = result.edges[0]!.label!.box;
 	expect(moved.y).toBe(label.y);
-	expect(moved.x + moved.width / 2).toBe(15);
+	expect(moved.x + moved.width / 2).toBe(30);
 });
 
 // Native endpoint and inner-leg shortages must never produce smaller bends.
