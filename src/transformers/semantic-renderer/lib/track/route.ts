@@ -199,11 +199,12 @@ function firstTrack(closing: number, rising: boolean): number {
  * @param tracks Its track count.
  * @param closing How far below its band the containers ending there reach.
  * @param rising Whether a line on its first track turns and rises into the band above.
+ * @param facing Whether a container ending above it stands over one opening below it.
  * @returns Its height.
  */
-function channelHeight(tracks: number, closing = 0, rising = false): number {
+function channelHeight(tracks: number, closing = 0, rising = false, facing = false): number {
 	return tracks === 0
-		? Math.max(EMPTY_CHANNEL, closing + BELOW_CONTAINER)
+		? Math.max(EMPTY_CHANNEL, closing + (facing ? CONTAINER_INSET : BELOW_CONTAINER))
 		: firstTrack(closing, rising) + (tracks - 1) * LANE + TRACK_BOTTOM;
 }
 
@@ -225,17 +226,22 @@ function risesOnFirstTrack(crossing: readonly Net[], rising: ReadonlySet<Net>): 
  * A channel no line crosses below a band of titles alone keeps the room a
  * container keeps around its cards: no frame ends there, so a container's
  * cards stand as far below its title as in from its sides. A channel below
- * containers that end on its band starts its tracks below their edges.
+ * containers that end on its band starts its tracks below their edges, and
+ * keeps a container's inset between a container ending on its band and one
+ * opening under it.
  * @param scene The scene, whose bands get their new tops.
  * @param nets Every net, given its track in its channel.
- * @param closings How far below each band the containers ending on it reach.
+ * @param ends Where containers end: how far below each band those ending on
+ * it reach, and the bands where one stands over another.
+ * @param ends.closings The reach below each band.
+ * @param ends.facing The bands where one container stands over another.
  * @param rising The first net of every upward line.
  * @param margin Where the first band starts.
  */
 function spaceBands(
 	scene: Scene,
 	nets: readonly Net[],
-	closings: readonly number[],
+	ends: { readonly closings: readonly number[]; readonly facing: ReadonlySet<number> },
 	rising: ReadonlySet<Net>,
 	margin: number,
 ): void {
@@ -245,11 +251,12 @@ function spaceBands(
 		band.newTop = top;
 		const crossing = nets.filter((net) => net.channel === index);
 		const tracks = assignTracks(crossing);
-		const closing = closings[index]!;
+		const closing = ends.closings[index]!;
 		const rises = risesOnFirstTrack(crossing, rising);
 		band.firstTrack = firstTrack(closing, rises);
 		const titled = crossing.length === 0 && !held.has(index);
-		const channel = titled ? CONTAINER_INSET : channelHeight(tracks, closing, rises);
+		const faces = ends.facing.has(index);
+		const channel = titled ? CONTAINER_INSET : channelHeight(tracks, closing, rises, faces);
 		top += band.bottom - band.top + channel;
 	});
 }
@@ -495,7 +502,14 @@ function routeScene(
 	const rising = new Set(
 		[...routed.values()].filter(({ upward }) => upward).map(({ nets: [first] }) => first!),
 	);
-	spaceBands(scene, nets, new Containers(scene, edges).closings(), rising, top);
+	const containers = new Containers(scene, edges);
+	spaceBands(
+		scene,
+		nets,
+		{ closings: containers.closings(), facing: containers.facing() },
+		rising,
+		top,
+	);
 	return new Map(
 		[...routed].map(([id, route]) => {
 			const points = pointsOf(scene, route.nets, margin);

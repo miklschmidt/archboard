@@ -35,6 +35,8 @@ interface Container {
 	readonly items: readonly Item[];
 	/** Every frame and region inside it, however deep. */
 	readonly inner: Container[];
+	/** Its left and right walls. */
+	readonly walls: readonly [number, number];
 }
 
 /** Every frame and group region of a scene, with what each holds. */
@@ -51,10 +53,15 @@ class Containers {
 		readonly scene: Scene,
 		readonly edges: ReadonlyMap<string, ElkExtendedEdge>,
 	) {
-		for (const [id, { members }] of scene.frames)
-			this.frames.set(id, this.container(CONTAINER_INSET, scene.titles.get(id)!, members));
-		this.regions = scene.regions.map((region) =>
-			this.container(REGION_BOTTOM, region.caption, this.regionInside(region.members)),
+		for (const [id, { members, node }] of scene.frames) {
+			const walls = [node.x!, node.x! + node.width!] as const;
+			this.frames.set(id, this.container(CONTAINER_INSET, scene.titles.get(id)!, members, walls));
+		}
+		this.regions = scene.regions.map(({ caption, members, box }) =>
+			this.container(REGION_BOTTOM, caption, this.regionInside(members), [
+				box.x,
+				box.x + box.width,
+			]),
 		);
 		for (const [id, frame] of this.frames)
 			frame.inner.push(...this.within(new Set(scene.frames.get(id)!.members), id));
@@ -77,9 +84,15 @@ class Containers {
 	 * @param inset Room it keeps below them.
 	 * @param head Its title row or caption.
 	 * @param members Every member, however deep.
+	 * @param walls Its left and right walls.
 	 * @returns The container, with nothing inside it yet.
 	 */
-	container(inset: number, head: Item, members: readonly string[]): Container {
+	container(
+		inset: number,
+		head: Item,
+		members: readonly string[],
+		walls: readonly [number, number],
+	): Container {
 		const inside = new Set(members);
 		const { scene } = this;
 		const labels = [...scene.labels]
@@ -89,7 +102,7 @@ class Containers {
 			})
 			.map(([, item]) => item);
 		const held = members.flatMap((id) => scene.cards.get(id) ?? scene.titles.get(id) ?? []);
-		return { inset, items: [head, ...held, ...labels], inner: [] };
+		return { inset, items: [head, ...held, ...labels], inner: [], walls };
 	}
 
 	/**
@@ -138,6 +151,32 @@ class Containers {
 		}
 		return closing;
 	}
+
+	/**
+	 * The bands a container ends on right above another container it stands
+	 * over: the channel below keeps the two edges a container's inset apart, as
+	 * nested containers keep theirs.
+	 * @returns The bands.
+	 */
+	facing(): Set<number> {
+		const all = [...this.frames.values(), ...this.regions];
+		return new Set(
+			all.flatMap((one) => (all.some((other) => standsOver(one, other)) ? [lastBand(one)] : [])),
+		);
+	}
+}
+
+/**
+ * Whether a container ends on the band right above the band another opens on,
+ * with walls that overlap it.
+ * @param one The upper container.
+ * @param other The lower one.
+ * @returns True when one stands over the other.
+ */
+function standsOver(one: Container, other: Container): boolean {
+	const [left, right] = one.walls;
+	const opens = other.items[0]!.band === lastBand(one) + 1;
+	return opens && left < other.walls[1] && other.walls[0] < right;
 }
 
 /**

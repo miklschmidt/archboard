@@ -8,7 +8,8 @@
 // trunk turns once and whose labels then turn it a second time, two labelled
 // lines entering one card unevenly, one hugging its corner, a line crossing
 // a container's heading through its painted words, two lines lined up end to
-// end across a channel so that they read as one, lanes put where they
+// end across a channel so that they read as one, a container ending 12 px
+// above another opening under it, lanes put where they
 // cross another line that a free column would have left alone, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
@@ -38,6 +39,8 @@ const TARGETS = ["one", "two", "three", "four", "five"];
 const SLACK = 16;
 /** The most room a container keeps beside what it holds. */
 const FRAME_ROOM = 24;
+/** The room a container keeps around what it holds, and between it and a container it stands over. */
+const CONTAINER_INSET = 20;
 /** The straight run an arrowhead sits on after a line's last bend. */
 const APPROACH = 12;
 /** The sideways room a line's two fixed 8 px bends need to step aside and on. */
@@ -307,6 +310,41 @@ test("a run of lanes takes the free column that crosses fewest other lines", asy
 		layout: "track",
 	});
 	expect(crossingsOf(drawing.svg)).toBe(0);
+});
+
+/**
+ * Every frame's and group region's drawn box.
+ * @param svg The drawing.
+ * @returns The boxes.
+ */
+function containerBoxes(svg: string): { x: number; y: number; width: number; height: number }[] {
+	const opens =
+		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+	return [...svg.matchAll(opens)].map(([, x, y, width, height]) => ({
+		x: Number(x),
+		y: Number(y),
+		width: Number(width),
+		height: Number(height),
+	}));
+}
+
+// The heading fixture again: its Drawing region ended one band above a frame
+// that opened under it, and the channel between kept 12 px, not an inset.
+test("a container standing over another keeps a container's inset from it", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(headingCrossing),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const boxes = containerBoxes(drawing.svg);
+	expect(boxes.length).toBeGreaterThan(1);
+	for (const upper of boxes)
+		for (const lower of boxes) {
+			const across = upper.x < lower.x + lower.width && lower.x < upper.x + upper.width;
+			const gap = lower.y - (upper.y + upper.height);
+			if (across && gap >= 0) expect(gap).toBeGreaterThanOrEqual(CONTAINER_INSET);
+		}
 });
 
 // Reduced from a dogfood board, names replaced: a line came down onto its track
