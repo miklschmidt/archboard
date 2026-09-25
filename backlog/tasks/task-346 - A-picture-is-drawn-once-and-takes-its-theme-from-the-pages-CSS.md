@@ -1,11 +1,11 @@
 ---
 id: TASK-346
 title: A picture is drawn once and takes its theme from the page's CSS
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-24 23:08'
-updated_date: '2026-09-25 00:52'
+updated_date: '2026-09-25 01:06'
 labels:
   - renderer
   - frontend
@@ -23,10 +23,10 @@ User review 2026-09-25: switching theme should be CSS, not a redraw. Today the r
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The renderer paints every colour as a page token or a color-mix() of tokens and configured colours, and a render request no longer names a theme
-- [ ] #2 Switching the page's theme recolours the picture on screen with no new render and no new query
-- [ ] #3 The draw-ahead sweep and the kept pictures hold one picture per reading, not one per theme
-- [ ] #4 A standalone SVG from archboard semantic render, and a rasterized PNG, look as they do today in the theme asked for
+- [x] #1 The renderer paints every colour as a page token or a color-mix() of tokens and configured colours, and a render request no longer names a theme
+- [x] #2 Switching the page's theme recolours the picture on screen with no new render and no new query
+- [x] #3 The draw-ahead sweep and the kept pictures hold one picture per reading, not one per theme
+- [x] #4 A standalone SVG from archboard semantic render, and a rasterized PNG, look as they do today in the theme asked for
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +53,12 @@ Decisions:
 Pixel comparison (98 PNGs: 15 boards whole + views, both themes, main 7b0b2af6 vs branch): 45 identical; 53 differ by at most 2/255 in one channel, 51 to 1824 pixels. With the traffic layer hidden, all 10 compared rasters (5 worst boards x 2 themes) are identical: every difference is in comet layers, from CSS resolving nested color-mix() without the old per-step 8-bit rounding (tails) and glow alpha now carried as colour alpha rather than stroke-opacity.
 
 Gate on 5ec01274 (branch based on 7b0b2af6): type-check 0, lint 0, fmt:check 0, test:modules 3402 pass / 1 fail (known wide-boards Archboard server 20 s budget), test:system 181/0, test:repository 8/0, test:serial-browser 18 owners pass. Rebase onto main (153208e2) was refused by the session's permission classifier; git merge-tree shows a clean merge. The merged tree rasterizes identically to the branch (98/98), and current main rasterizes identically to 7b0b2af6 (98/98).
+
+Rebased by the main session onto main with TASK-348 (layout engine in the render request and keys) and the track engine refinements; conflicts resolved by keeping both: no theme, engine carried. The kept-picture key is [board, variant, view, comparison, engine, version, fingerprint, renderer]. Full gate on the rebased branch: type-check, lint, fmt:check, test:modules (3425 pass), test:repository, build, test:system, test:serial-browser all pass. Trade-off recorded: a standalone themed SVG now carries var(), color-mix() and light-dark(), which browsers and the rasterized PNG draw exactly but non-browser SVG viewers such as librsvg do not.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A picture is drawn once and takes its theme from the page's CSS. The painter writes every colour as a page token or a color-mix() of tokens and configured colours; theme left the browser's render request, query key, kept-picture key and draw-ahead, so switching theme recolours the picture on screen with no new render and each reading is kept once. A standalone SVG or PNG carries its theme's token values on the root. Verified by theme.test.ts, the stage and local-pictures owners, the drawn-pictures browser owner (theme switch keeps the same svg element and never asks the render route), a pixel comparison of all 98 drawings in both themes (only comet layers differ, by at most 2/255 per channel, from exact CSS mixing), and a clean gate.
+<!-- SECTION:FINAL_SUMMARY:END -->
