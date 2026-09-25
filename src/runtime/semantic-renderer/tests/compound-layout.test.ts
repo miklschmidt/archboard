@@ -1,4 +1,5 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import nearMiss from "./near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
@@ -174,5 +175,22 @@ test.each(["graphviz", "track"] as const)(
 		const frame = drawing.atlas.nodes["box"]!;
 		// The container keeps no more than its insets beside the column.
 		expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
+	},
+);
+
+// Reduced from the dogfood Semantic renderer board: a line through its label
+// let its two stacked ends stand 9 to 10 points out of one column, so their
+// edges almost lined up and the line jogged or sat off both centres.
+test.each([
+	["graphviz", "wskEBeIy", "4nyk76pY"],
+	["track", "CtoOMxca", "wLF1X11D"],
+] as const)(
+	"stacked cards joined through a label share a column (%s)",
+	async (layout, upper, lower) => {
+		const content = orderedFixture(nearMiss);
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const [one, other] = [drawing.atlas.nodes[upper]!, drawing.atlas.nodes[lower]!];
+		expect(one.y + one.height).toBeLessThan(other.y);
+		expect(one.x + one.width / 2).toBeCloseTo(other.x + other.width / 2, 1);
 	},
 );

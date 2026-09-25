@@ -14,11 +14,19 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
-import { box, numbers, type Output } from "@/transformers/semantic-renderer/lib/track/graphviz";
+import {
+	alignColumns,
+	box,
+	numbers,
+	type Join,
+	type Output,
+} from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
+/** The room a card moved into line keeps from its neighbours: half what Graphviz keeps. */
+const LINED_UP_GAP = 20;
 /** How strongly a title row holds each member below it. */
 const TITLE_WEIGHT = 10;
 
@@ -283,6 +291,80 @@ class Clusters {
 	entered(tail: string, head: string): string[] {
 		const theirs = new Set(this.around(tail));
 		return theirs.size === 0 ? [] : this.around(head).filter((cluster) => !theirs.has(cluster));
+	}
+
+	/**
+	 * The innermost cluster a vendor node stands in.
+	 * @param name The vendor node.
+	 * @returns The cluster's id, or nothing when it stands on the block itself.
+	 */
+	holding(name: string): string | undefined {
+		return (
+			this.block.clusterOf.get(name) ??
+			[...this.graphs].find(([, graph]) => graph.nodes.some((node) => node.name === name))?.[0]
+		);
+	}
+
+	/**
+	 * The span a card or label may move in: inside its innermost cluster,
+	 * clear of the cluster's inset, or inside the block.
+	 * @param name The vendor node.
+	 * @param boxes Every cluster's box.
+	 * @param width The block's width.
+	 * @returns The span, or nothing for any other vendor node, which stays.
+	 */
+	spanOf(
+		name: string,
+		boxes: ReadonlyMap<string, Box>,
+		width: number,
+	): { left: number; right: number } | undefined {
+		if (!this.block.items.includes(name) && !name.startsWith("label:")) return undefined;
+		const around = this.holding(name);
+		if (around === undefined) return { left: 0, right: width };
+		const inset =
+			this.block.clusters.get(around)!.kind === "frame" ? CONTAINER_INSET : REGION_INSET;
+		const bounds = boxes.get(around)!;
+		return { left: bounds.x + inset, right: bounds.x + bounds.width - inset };
+	}
+
+	/**
+	 * Line up the joined cards Graphviz stacked a few points out of one column
+	 * (`alignColumns`): a card or label moves inside its cluster, or the
+	 * block, and clear of the other clusters and the lines.
+	 * @param joins Every line Graphviz ranks.
+	 * @param centres Every vendor node's centre; the moved ones are replaced.
+	 * @param placed Where Graphviz put everything.
+	 * @param placed.boxes Every vendor node's box.
+	 * @param placed.clusters Every cluster's box.
+	 * @param placed.polylines Every vendor edge's polyline, by id.
+	 * @param placed.width The block's width.
+	 */
+	lineUp(
+		joins: readonly Join[],
+		centres: Map<string, Point>,
+		placed: {
+			boxes: Map<string, Box>;
+			clusters: ReadonlyMap<string, Box>;
+			polylines: ReadonlyMap<string, readonly string[]>;
+			width: number;
+		},
+	): void {
+		const { boxes, clusters, polylines, width } = placed;
+		for (const [id, at] of clusters) boxes.set(`cluster:${id}`, at);
+		alignColumns(boxes, joins, {
+			gap: LINED_UP_GAP,
+			polylines,
+			/**
+			 * Where a card or label may move.
+			 * @param name The vendor node.
+			 * @returns Its span, or nothing when it stays.
+			 */
+			within: (name) => this.spanOf(name, clusters, width),
+		});
+		for (const [name, { x, width: wide }] of boxes) {
+			const centre = centres.get(name);
+			if (centre !== undefined) centres.set(name, { x: x + wide / 2, y: centre.y });
+		}
 	}
 
 	/**

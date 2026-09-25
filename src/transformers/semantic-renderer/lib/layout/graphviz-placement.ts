@@ -4,6 +4,7 @@ import { z } from "zod";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { Below } from "@/transformers/semantic-renderer/lib/blocks/clusters";
+import { alignColumns } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import {
 	CARD_GAP,
 	CONTAINER_INSET,
@@ -99,6 +100,15 @@ function pack(node: ElkNode): Offset[] {
 		x: x + (index % columns) * (width + CARD_GAP),
 		y: y + Math.floor(index / columns) * (height + CARD_GAP),
 	}));
+}
+
+/**
+ * A placed shape's box.
+ * @param shape A node or label Graphviz placed.
+ * @returns Its box.
+ */
+function readBox(shape: Pick<ElkNode, "x" | "y" | "width" | "height">): Box {
+	return { x: shape.x ?? 0, y: shape.y ?? 0, ...dimensions(shape) };
 }
 
 /** One graph conversion, keeping vendor identities separate from semantic identities. */
@@ -384,6 +394,71 @@ class Placement {
 		}
 	}
 
+	/**
+	 * Line up the joined cards Graphviz stacked a few points out of one column
+	 * (`alignColumns`): a card or reserved label moves inside its frame, or the
+	 * drawing, and keeps the routing gap from everything beside it.
+	 * @param width The drawing's width.
+	 */
+	lineUp(width: number): void {
+		const boxes = new Map<string, Box>();
+		for (const [id, node] of this.nodes) boxes.set(id, readBox(node));
+		for (const [name, label] of this.reserved) boxes.set(name, readBox(label));
+		const joins = this.edges
+			.filter((edge) => this.card(edge.sources[0]!) && this.card(edge.targets[0]!))
+			.map((edge) => {
+				const ends = [edge.sources[0]!, edge.targets[0]!].toSorted(
+					(one, other) => boxes.get(one)!.y - boxes.get(other)!.y,
+				);
+				return { tail: ends[0]!, head: ends[1]!, label: `label_${edge.id}` };
+			});
+		alignColumns(boxes, joins, {
+			gap: CARD_ROUTING_GAP,
+			/**
+			 * Where a card or reserved label may move.
+			 * @param name The card's id or the label's name.
+			 * @returns Its span, or nothing when it stays.
+			 */
+			within: (name) => this.spanOf(name, width),
+		});
+		for (const [name, { x }] of boxes) (this.nodes.get(name) ?? this.reserved.get(name))!.x = x;
+	}
+
+	/**
+	 * Whether a semantic node is a card Graphviz placed: no frame around others.
+	 * @param id The node.
+	 * @returns True for a card.
+	 */
+	card(id: string): boolean {
+		return this.nodes.has(id) && !this.nodes.get(id)!.children?.length;
+	}
+
+	/**
+	 * The span a card or reserved label may move in: inside its frame, clear
+	 * of the frame's inset, or inside the drawing.
+	 * @param name The card's id or the label's name.
+	 * @param width The drawing's width.
+	 * @returns The span, or nothing for a frame, which stays.
+	 */
+	spanOf(name: string, width: number): { left: number; right: number } | undefined {
+		if (!this.card(name) && !this.reserved.has(name)) return undefined;
+		const frame = this.frameOf(name);
+		if (frame === undefined) return { left: 0, right: width };
+		return { left: frame.x! + CONTAINER_INSET, right: frame.x! + frame.width! - CONTAINER_INSET };
+	}
+
+	/**
+	 * The frame a card or reserved label stands in.
+	 * @param name The card's id or the label's name.
+	 * @returns The frame, or nothing when it stands on the drawing itself.
+	 */
+	frameOf(name: string): ElkNode | undefined {
+		const holder = this.labelParents.get(name) ?? this.parents.get(name);
+		return holder?.name === undefined
+			? undefined
+			: this.nodes.get(holder.name.slice("cluster_".length));
+	}
+
 	/** Expand each disconnected collection at its globally placed origin. */
 	unpack(): void {
 		for (const [id, children] of this.packed) {
@@ -491,6 +566,7 @@ export function placeGraph(viz: Viz, input: ElkNode, options: LayoutOptions): El
 	placed.unpack();
 	orderSiblingSlots(placed.result);
 	placed.orderLabels();
+	placed.lineUp(bounds.width + 2 * PLACEMENT_MARGIN);
 	for (const node of [...placed.nodes.values()].toReversed()) placed.tighten(node);
 	return {
 		...placed.result,
