@@ -34,6 +34,7 @@ import {
 	curveThrough,
 	pathOf,
 	simplify,
+	straightenedCurve,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	COMPOUND_OPTIONS,
@@ -248,11 +249,23 @@ async function settleReading(reading: Reading): Promise<ArchitectureDrawing> {
 		},
 		new Set(),
 	);
-	for (const { edge, curve, label } of drawing.edges) {
-		const issue = curveClearanceIssue(curve, label?.box);
-		if (issue !== undefined) throw new Error(`Layout relationship ${edge.id}: ${issue}`);
-	}
-	return drawing;
+	return { ...drawing, edges: drawing.edges.map((drawn) => checkedEdge(drawn)) };
+}
+
+/**
+ * A settled relationship whose route passes its checks: as it is, or with its
+ * short S-jogs straightened when only they fail it.
+ * @param drawn The settled relationship.
+ * @returns The relationship.
+ * @throws {Error} When the route fails its checks even straightened.
+ */
+function checkedEdge(drawn: DrawingEdge): DrawingEdge {
+	const { edge, curve, label } = drawn;
+	if (curveClearanceIssue(curve, label?.box) === undefined) return drawn;
+	const straightened = straightenedCurve(curve);
+	const issue = curveClearanceIssue(straightened, label?.box);
+	if (issue !== undefined) throw new Error(`Layout relationship ${edge.id}: ${issue}`);
+	return { ...drawn, curve: straightened, path: pathOf(straightened) };
 }
 
 /**
