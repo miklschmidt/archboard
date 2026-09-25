@@ -15,6 +15,9 @@ import {
 	type Projection,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
+/** How far a region's caption sits in from its band's corner. */
+const CAPTION_INSET = 4;
+
 /** A card or container, placed. */
 interface PlacedNode {
 	readonly id: string;
@@ -140,9 +143,22 @@ class Assembly {
 				group: block.group!,
 				...(block.parent?.kind === "frame" ? { parent: block.parent.id } : {}),
 				box: this.boxOf(block),
-				caption: this.inside(block, headerOf(block)),
+				caption: this.caption(block),
 				depth: this.depths.get(block.id)!,
 			}));
+	}
+
+	/**
+	 * A region's caption box: in the band's top-left corner, as a frame's
+	 * title is, whatever slot Graphviz kept for it on the first rank. Graphviz
+	 * keeps the slot left of every port on that rank, so the corner is free.
+	 * @param block The region.
+	 * @returns The caption's box.
+	 */
+	caption(block: Block): Box {
+		const slot = this.inside(block, headerOf(block));
+		const band = this.boxOf(block);
+		return { ...slot, x: band.x + CAPTION_INSET, y: band.y + CAPTION_INSET };
 	}
 
 	/**

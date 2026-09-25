@@ -46,9 +46,13 @@ const NOTE: TextStyle = {
 	role: "note",
 };
 const LABEL: TextStyle = { font: PILL_FONT, fontSize: 10, lineHeight: 15, role: "label" };
-const CAPTION: TextStyle = { font: CARD_TITLE_FONT, fontSize: 12, lineHeight: 16, role: "label" };
+/**
+ * A region's caption: the group's name, set larger than a card's title so a
+ * reader finds the regions first and can still read them at overview scale.
+ */
+const CAPTION: TextStyle = { font: CARD_TITLE_FONT, fontSize: 20, lineHeight: 26, role: "label" };
 /** Room around a region caption's words. */
-const CAPTION_PADDING = { x: 10, y: 6 };
+const CAPTION_PADDING = { x: 12, y: 8 };
 
 /**
  * Measure a whole painted line, preserving kerning across Pretext segments.

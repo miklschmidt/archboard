@@ -68,7 +68,7 @@ export interface AvoidEngine {
 	RouterFlag: { OrthogonalRouting: AvoidEnum };
 	ConnType: { ConnType_Orthogonal: AvoidEnum };
 	RoutingParameter: Record<
-		"shapeBufferDistance" | "idealNudgingDistance" | "segmentPenalty",
+		"shapeBufferDistance" | "idealNudgingDistance" | "segmentPenalty" | "crossingPenalty",
 		AvoidEnum
 	>;
 	RoutingOption: Record<"nudgeOrthogonalSegmentsConnectedToShapes", AvoidEnum>;
