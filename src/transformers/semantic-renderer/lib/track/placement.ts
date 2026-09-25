@@ -320,12 +320,11 @@ class TrackPlacement {
 			(one, other) => semanticOrder(one) - semanticOrder(other),
 		);
 		this.visitChildren(children, cluster, node.id);
-		for (const child of children) {
-			this.graph.edges.push({
-				tail: title,
-				head: this.vendorName(child.id),
-				attributes: { style: "invis", weight: 10 },
-			});
+		const captions = [...this.regions]
+			.filter(([, region]) => region.parent === node.id)
+			.map(([key]) => `caption_${key}`);
+		for (const head of [...children.map((child) => this.vendorName(child.id)), ...captions]) {
+			this.graph.edges.push({ tail: title, head, attributes: { style: "invis", weight: 10 } });
 		}
 	}
 
