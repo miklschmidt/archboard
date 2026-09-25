@@ -93,4 +93,17 @@ function addInline(tree: BlockTree, block: Block, node: ElkNode, around: string 
 	tree.cards.set(node.id, cardOf(node));
 }
 
-export { addInline, type Cluster };
+/**
+ * Whether a container or region a block draws inline holds an item, however deep.
+ * @param block The block.
+ * @param cluster The container or region.
+ * @param item The item.
+ * @returns True when the item stands inside it.
+ */
+function holds(block: Block, cluster: string, item: string): boolean {
+	for (let at = block.clusterOf.get(item); at !== undefined; at = block.clusterOf.get(at))
+		if (at === cluster) return true;
+	return false;
+}
+
+export { addInline, holds, type Cluster };

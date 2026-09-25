@@ -22,7 +22,7 @@ import {
 	PLACING_GROUP,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
-import { addInline, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import { addInline, holds, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
 
 /** A width and a height. */
@@ -391,7 +391,7 @@ class BlockTree {
 	/**
 	 * The relationships that close a cycle in the block they are drawn in,
 	 * found depth-first from the items nothing points at, in the board's
-	 * order. A line into a container's own header always runs upward.
+	 * order. A line into its own container, drawn inline or not, runs upward.
 	 * @returns The ids of those that run upward.
 	 */
 	backEdges(): Set<string> {
@@ -405,7 +405,7 @@ class BlockTree {
 	 */
 	backEdgesIn(block: Block): Set<string> {
 		const here = this.projections.filter((projection) => projection.at === block);
-		const upward = here.filter(({ to }) => to === headerOf(block));
+		const upward = here.filter(({ from, to }) => to === headerOf(block) || holds(block, to, from));
 		const out = new Map<string, Projection[]>();
 		for (const projection of here.filter((one) => !upward.includes(one)))
 			out.set(projection.from, [...(out.get(projection.from) ?? []), projection]);
