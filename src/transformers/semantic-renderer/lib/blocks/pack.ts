@@ -423,4 +423,4 @@ class PackLayout {
 	}
 }
 
-export { PackLayout, type Packing };
+export { PACK_GAP, PackLayout, type Packing };

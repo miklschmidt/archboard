@@ -22,6 +22,13 @@ const TRUNK_CROSSING = 300;
 /** libavoid's pin directions: a port is left the way its edge faces. */
 const DIRECTION: Readonly<Record<Side, number>> = { top: 1, bottom: 2, left: 4, right: 8 };
 
+/** The edge a trunk leaves a block's own port by: into the block. */
+const INWARD: Readonly<Record<Side, Side>> = {
+	top: "bottom",
+	bottom: "top",
+	left: "right",
+	right: "left",
+};
 /** A router, its ends and its connectors, as the module makes them. */
 type Router = InstanceType<AvoidEngine["Router"]>;
 type End = InstanceType<AvoidEngine["ConnEnd"]>;
@@ -135,27 +142,15 @@ class TrunkRouter {
 	}
 
 	/**
-	 * A free end: the middle of one of the block's own ports.
-	 * @param avoid The initialized libavoid module.
-	 * @param at The port.
-	 * @returns The router's end.
-	 */
-	point(avoid: AvoidEngine, at: string): End {
-		const box = this.boxes.get(at)!;
-		const point = new avoid.Point(box.x + box.width / 2, box.y + box.height / 2);
-		try {
-			return new avoid.ConnEnd(point);
-		} finally {
-			point.delete();
-		}
-	}
-
-	/**
-	 * Where on its obstacle a pinned end stands, and which way it leaves.
-	 * @param at The pin or the header.
+	 * Where on its obstacle a pinned end stands, and which way it leaves: a
+	 * pin on a packed block's edge leaves outward, the block's own port
+	 * inward, so no trunk reaches either by running along an edge.
+	 * @param at The pin, the block's own port, or the header.
 	 * @returns The obstacle, the proportional x, and the edge it leaves by.
 	 */
 	pinOn(at: string): { owner: string; x: number; y: number; side: Side } {
+		const own = this.block.ports.get(at);
+		if (own !== undefined) return { owner: at, x: 0.5, y: 0.5, side: INWARD[own] };
 		const pin = this.tree.pins.get(at);
 		if (pin === undefined) return { owner: at, x: 0.5, y: 1, side: "bottom" };
 		const inner = this.laid.get(pin.block.id)!;
@@ -185,8 +180,8 @@ class TrunkRouter {
 	}
 
 	/**
-	 * One end of a trunk: a pin on a packed block's port, a point on the
-	 * block's own port, or the bottom of its header.
+	 * One end of a trunk: a pin on a packed block's port, on the block's own
+	 * port, or on the bottom of its header.
 	 * @param avoid The initialized libavoid module.
 	 * @param at The line end.
 	 * @param shapes Every obstacle's shape.
@@ -199,7 +194,6 @@ class TrunkRouter {
 		shapes: ReadonlyMap<string, object>,
 		classes: Map<string, number>,
 	): End {
-		if (!this.tree.pins.has(at) && at !== headerOf(this.block)) return this.point(avoid, at);
 		const { owner, x, y, side } = this.pinOn(at);
 		const shape = shapes.get(owner)!;
 		const known = classes.get(at);
@@ -227,7 +221,7 @@ class TrunkRouter {
 			router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
 			const header = this.block.header === undefined ? [] : [headerOf(this.block)];
 			const shapes = new Map(
-				[...this.block.items, ...header].map((id) => [
+				[...this.block.items, ...header, ...this.block.ports.keys()].map((id) => [
 					id,
 					this.shape(avoid, router, this.boxes.get(id)!),
 				]),
@@ -267,4 +261,4 @@ class TrunkRouter {
 	}
 }
 
-export { TrunkRouter, packedScore };
+export { TRUNK_CLEARANCE, TrunkRouter, packedScore };
