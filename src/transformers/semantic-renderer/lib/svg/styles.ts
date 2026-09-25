@@ -78,6 +78,7 @@ const HEAD_REF_X: Readonly<Record<Head, number>> = { filled: 8, open: 10 };
 function headReach(head: Head, weight: Weight): number {
 	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
 }
+
 /**
  * The ink a line and its arrowhead are drawn in; its comets carry the same
  * colour at full strength (`fullLineColour`).
