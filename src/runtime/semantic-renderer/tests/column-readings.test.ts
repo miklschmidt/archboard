@@ -1,7 +1,9 @@
 // A board taller than the pane may read better folded into columns. The
 // column count is chosen on each count's placement, and only the chosen count
-// is settled (TASK-342). The engine's pages for a real board are its own to
-// change, so the rule is held against readings whose answers are fixed here.
+// is settled (TASK-342), and kept only when it also scores higher once each
+// crossing takes its share of the fit. The engine's pages for a real board
+// are its own to change, so the rule is held against readings whose answers
+// are fixed here.
 
 import { describe, expect, test } from "bun:test";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
@@ -108,6 +110,33 @@ describe("a board taller than the pane", () => {
 	] as const)("keeps the unfolded reading when the chosen count is %s", async (_name, settle) => {
 		const baseline = unfolded();
 		const { readingOf } = readingsFrom(baseline, { 3: 0.9 }, settle);
+		expect(await chooseReading(readingOf)).toBe(baseline);
+	});
+
+	test("keeps the unfolded reading when the fold fits better but crosses far more", async () => {
+		const baseline = unfolded();
+		// A grid of five level and five upright lines: twenty-five crossings.
+		const lines = [0, 1, 2, 3, 4].flatMap((index) => [
+			{ from: { x: 0, y: 100 + index * 40 }, to: { x: 400, y: 100 + index * 40 } },
+			{ from: { x: 100 + index * 40, y: 0 }, to: { x: 100 + index * 40, y: 400 } },
+		]);
+		const folded: ArchitectureDrawing = {
+			...unfolded(),
+			...pageAt(0.9),
+			edges: lines.map(({ from, to }, index) => ({
+				edge: {
+					id: `x${index}`,
+					order: index,
+					from: "c0",
+					to: "c1",
+					kind: "call",
+					emphasis: "normal",
+				},
+				curve: { from, segments: [{ kind: "line" as const, to }] },
+				path: "",
+			})),
+		};
+		const { readingOf } = readingsFrom(baseline, { 3: 0.9 }, () => folded);
 		expect(await chooseReading(readingOf)).toBe(baseline);
 	});
 });
