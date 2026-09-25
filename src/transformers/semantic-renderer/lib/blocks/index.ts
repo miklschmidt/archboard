@@ -108,16 +108,18 @@ function drawingOf(
  * @param content The architecture.
  * @param measured Its measured cards and labels.
  * @param graph Its measured hierarchy.
+ * @param inline Whether containers and group regions are drawn inline.
  * @returns The drawing painting and the atlas read.
  */
 async function drawnBlocks(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	graph: ElkNode,
+	inline = false,
 ): Promise<PaintedDrawing> {
 	const solved = await rendererHost().solve(graph, {
 		...COMPOUND_OPTIONS,
-		[SOLVE_STAGE]: "blocks",
+		[SOLVE_STAGE]: inline ? "inline" : "blocks",
 	});
 	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
 	const drawing = drawingOf(content, measured, placed);
@@ -139,4 +141,20 @@ async function layoutBlocks(
 	return drawnBlocks(content, measured, compoundGraph(content, measured, standings));
 }
 
-export { drawnBlocks, layoutBlocks };
+/**
+ * Lay an architecture out as one block with its containers and group regions
+ * drawn inline, ranked across them as the track engine ranks them.
+ * @param content The architecture.
+ * @param measured Its measured cards and labels.
+ * @param standings Comparison standings, which keep marked relationships off one trunk.
+ * @returns The drawing painting and the atlas read.
+ */
+async function layoutInline(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	standings?: Readonly<Record<string, ChangeKind>>,
+): Promise<PaintedDrawing> {
+	return drawnBlocks(content, measured, compoundGraph(content, measured, standings), true);
+}
+
+export { drawnBlocks, layoutBlocks, layoutInline };

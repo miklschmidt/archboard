@@ -51,6 +51,19 @@ interface Placed {
 	readonly edges: readonly PlacedEdge[];
 }
 
+/**
+ * How many containers a block draws inline around one of its cards.
+ * @param block The block.
+ * @param card The card.
+ * @returns The count.
+ */
+function framesAround(block: Block, card: string): number {
+	let count = 0;
+	for (let at = block.clusterOf.get(card); at !== undefined; at = block.clusters.get(at)?.parent)
+		if (block.clusters.get(at)?.kind === "frame") count += 1;
+	return count;
+}
+
 /** Every block put where its parent placed it, and every relationship joined. */
 class Assembly {
 	readonly origins = new Map<string, Point>();
@@ -114,7 +127,11 @@ class Assembly {
 		return [...this.tree.blocks.values()].flatMap((block) =>
 			block.items
 				.filter((item) => !this.tree.blocks.has(item))
-				.map((id) => ({ id, box: this.inside(block, id), depth: this.depths.get(block.id)! })),
+				.map((id) => ({
+					id,
+					box: this.inside(block, id),
+					depth: this.depths.get(block.id)! + framesAround(block, id),
+				})),
 		);
 	}
 
@@ -123,13 +140,23 @@ class Assembly {
 	 * @returns The containers.
 	 */
 	frames(): PlacedNode[] {
-		return [...this.tree.blocks.values()]
-			.filter((block) => block.kind === "frame")
-			.map((block) => ({
-				id: block.id,
-				box: this.boxOf(block),
-				depth: this.depths.get(block.parent!.id)!,
-			}));
+		const blocks = [...this.tree.blocks.values()];
+		return [
+			...blocks
+				.filter((block) => block.kind === "frame")
+				.map((block) => ({
+					id: block.id,
+					box: this.boxOf(block),
+					depth: this.depths.get(block.parent!.id)!,
+				})),
+			...blocks.flatMap((block) =>
+				(this.laid.get(block.id)!.frames ?? []).map(({ id, box, depth }) => ({
+					id,
+					box: moved(box, this.origins.get(block.id)!),
+					depth: this.depths.get(block.id)! + depth,
+				})),
+			),
+		];
 	}
 
 	/**
@@ -137,15 +164,37 @@ class Assembly {
 	 * @returns The regions.
 	 */
 	regions(): PlacedRegion[] {
-		return [...this.tree.blocks.values()]
-			.filter((block) => block.kind === "region")
-			.map((block) => ({
-				group: block.group!,
-				...(block.parent?.kind === "frame" ? { parent: block.parent.id } : {}),
-				box: this.boxOf(block),
-				caption: this.caption(block),
-				depth: this.depths.get(block.id)!,
-			}));
+		const blocks = [...this.tree.blocks.values()];
+		return [
+			...blocks
+				.filter((block) => block.kind === "region")
+				.map((block) => ({
+					group: block.group!,
+					...(block.parent?.kind === "frame" ? { parent: block.parent.id } : {}),
+					box: this.boxOf(block),
+					caption: this.caption(block),
+					depth: this.depths.get(block.id)!,
+				})),
+			...blocks.flatMap((block) => this.inlineRegions(block)),
+		];
+	}
+
+	/**
+	 * The group regions a block draws inline, in the drawing.
+	 * @param block The block.
+	 * @returns Its regions.
+	 */
+	inlineRegions(block: Block): PlacedRegion[] {
+		const origin = this.origins.get(block.id)!;
+		return (this.laid.get(block.id)!.regions ?? []).map(
+			({ group, parent, box, caption, depth }) => ({
+				group,
+				...(parent === undefined ? {} : { parent }),
+				box: moved(box, origin),
+				caption: moved(caption, origin),
+				depth: this.depths.get(block.id)! + depth,
+			}),
+		);
 	}
 
 	/**

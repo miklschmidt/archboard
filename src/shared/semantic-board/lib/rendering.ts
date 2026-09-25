@@ -34,7 +34,7 @@ type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
  * with libavoid, `track` routes every relationship on an assigned track in the
  * channels between ranks (TASK-349).
  */
-const LayoutEngineSchema = z.enum(["graphviz", "track", "blocks"]);
+const LayoutEngineSchema = z.enum(["graphviz", "track", "blocks", "inline"]);
 type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
 /** The engine a render uses when it names none. */
 const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "graphviz";

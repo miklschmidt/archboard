@@ -96,6 +96,7 @@ export function createLayoutEngine(viz: Viz, instance: unknown) {
 		if (stage === "route") return routeGraph(avoid, graph);
 		if (stage === "track") return placeTracks(viz, graph);
 		if (stage === "blocks") return placeBlocks(viz, avoid, graph);
+		if (stage === "inline") return placeBlocks(viz, avoid, graph, true);
 		const reading = placeReading(viz, graph, options);
 		return stage === "place" ? reading : routeGraph(avoid, reading);
 	};
