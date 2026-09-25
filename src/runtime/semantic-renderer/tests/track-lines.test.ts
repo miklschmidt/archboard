@@ -10,8 +10,9 @@
 // through a card entering and leaving it a few points apart, a run of lanes
 // left where a label stood before it slid aside, a container ending 12 px
 // above another opening under it, two lines lined up end to end across a
-// channel so that they read as one, and lines between the same two items
-// sharing a trunk at both ends, so that they split and join again.
+// channel so that they read as one, lines between the same two items
+// sharing a trunk at both ends, so that they split and join again, and a line
+// run round the outside of the drawing where a short free route ran through it.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -24,6 +25,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import headingCrossing from "./heading-crossing.json";
 import laneOrder from "./lane-order.json";
+import marginLap from "./margin-lap.json";
 import readAsOne from "./read-as-one.json";
 import risingLine from "./rising-line.json";
 import shortStep from "./short-step.json";
@@ -381,4 +383,19 @@ test("lines between the same two items keep their own ends at a card", async () 
 			expect(Math.hypot(a.x - b.x, a.y - b.y), `${one.id}/${other.id}`).toBeGreaterThan(1);
 		}
 	});
+});
+
+// Reduced from a dogfood board, names replaced: Graphviz stood a long line's
+// label, and so its lanes, beyond the cards on one side, and the line ran out
+// round the edge of the drawing and back in, where a free route ran between
+// its two ends.
+test("a line runs between its ends rather than round the drawing when a free route does", async () => {
+	const content = orderedFixture(marginLap);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const edge = content.edges.find(({ id }) => id === "FWJMAVKj")!;
+	const ends = [drawing.atlas.nodes[edge.from]!, drawing.atlas.nodes[edge.to]!];
+	const low = Math.min(...ends.map(({ x }) => x));
+	const high = Math.max(...ends.map(({ x, width }) => x + width));
+	for (const { x } of routePoints(drawing.svg).get(edge.id)!)
+		expect(x >= low && x <= high, `${x} outside ${low}..${high}`).toBe(true);
 });
