@@ -4,6 +4,7 @@
 // channel to fit, so the block's size is final when this answers.
 import type { ElkExtendedEdge, ElkLabel, ElkNode } from "@archboard/elk-rs";
 import type { Edge, Graph, Subgraph, Viz } from "@viz-js/viz";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
@@ -59,7 +60,9 @@ function emptyGraph(): Graph & Required<Pick<Graph, "nodes" | "edges" | "subgrap
 			nodesep: NODE_GAP / 72,
 			ranksep: RANK_GAP / 72,
 			pad: 0,
-			margin: 0,
+			// Graphviz keeps the clusters directly in a graph its margin apart on a
+			// rank: top-level containers stand as far apart as nested ones.
+			margin: CONTAINER_INSET,
 		},
 		nodeAttributes: { shape: "box", fixedsize: true, label: "", margin: 0 },
 		edgeAttributes: { dir: "none" },

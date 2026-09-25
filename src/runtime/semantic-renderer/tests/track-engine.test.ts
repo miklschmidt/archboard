@@ -5,10 +5,12 @@
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
-// and a tall board of containers drawn as one column, or folded through one.
+// a tall board of containers drawn as one column, or folded through one, and
+// containers side by side sharing one border.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import {
 	corridorPoints,
 	routeLabels,
@@ -169,4 +171,24 @@ test("a tall board of containers folds into columns that each hold a container w
 			frame.y + frame.height,
 		);
 	}
+});
+
+// Two containers side by side at the top of a board once shared one border:
+// Graphviz held top-level clusters only the root's margin apart, and that was 0.
+test("containers side by side keep an inset between their borders", async () => {
+	const sides = ["left", "right"];
+	const content = orderedFixture({
+		nodes: sides.flatMap((side) => [
+			{ id: side, name: `${side} service`, kind: "service" },
+			{ id: `${side}a`, name: `${side} intake`, kind: "module", parent: side },
+			{ id: `${side}b`, name: `${side} output`, kind: "module", parent: side },
+		]),
+		edges: sides.map((side) => ({ id: side, from: `${side}a`, to: `${side}b`, kind: "call" })),
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const [one, other] = sides
+		.map((side) => drawing.atlas.nodes[side]!)
+		.toSorted((a, b) => a.x - b.x);
+	expect(one!.y).toBeLessThan(other!.y + other!.height);
+	expect(other!.x - (one!.x + one!.width)).toBeGreaterThanOrEqual(CONTAINER_INSET);
 });
