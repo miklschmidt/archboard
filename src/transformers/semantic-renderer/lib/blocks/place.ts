@@ -7,6 +7,7 @@
 // relationship's lines are joined end to end (`assembly.ts`).
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
+import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { Assembly } from "@/transformers/semantic-renderer/lib/blocks/assembly";
@@ -18,6 +19,15 @@ import { PackLayout } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { BlockTree, type Block } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 
+/** How much better a wrap must fit the page than the board whole. */
+const WORTH_WRAPPING = 1.1;
+/**
+ * How much better a wrap must fit the page than a block inside the board,
+ * whose own fit only stands for how well its parent can pack it.
+ */
+const WORTH_WRAPPING_INSIDE = 1.4;
+/** The fewest items a rank must hold to be wrapped. */
+const MIN_WRAPPED = 4;
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
 /** The root option carrying the placed drawing, as the JSON the assembly answers. */
@@ -36,7 +46,8 @@ function insetsOf(block: Block): Insets {
 }
 
 /**
- * Lay one block of cards out, folded into columns when that fits the page better.
+ * Lay one block of cards out: whole, its widest rank wrapped into rows when
+ * that fits the page better, or folded into columns when that does.
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
@@ -46,12 +57,47 @@ function insetsOf(block: Block): Insets {
 function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
 	const insets = insetsOf(block);
 	const whole = new CardLayout(block, laid, tree, insets).lay(viz);
+	const wrapped = wrapPlans(whole).map((lowered) =>
+		new CardLayout(block, laid, tree, insets, lowered).lay(viz),
+	);
+	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
+	const best = [whole, ...wrapped].reduce((one, other) =>
+		fitIn(other) > fitIn(one) * worth ? other : one,
+	);
+	if (best !== whole) return best;
 	const plan = foldPlan(block, whole, insets);
 	if (plan === undefined) return whole;
 	const columns = foldBlock(tree, block, plan);
 	for (const column of columns)
 		laid.set(column.id, new CardLayout(column, laid, tree, insetsOf(column)).lay(viz));
 	return new FoldLayout(block, columns, laid, tree, insets).lay();
+}
+
+/**
+ * The ways to wrap a block's widest rank of items into rows, when the block
+ * is wider than the page's shape: every row after the first lowered one row
+ * of cards more, the items dealt out across the rows in their order.
+ * @param whole The block laid out whole.
+ * @returns Each wrap, as how far each wrapped item is lowered.
+ */
+function wrapPlans(whole: Laid): Map<string, number>[] {
+	const pane = REFERENCE_PANE.width / REFERENCE_PANE.height;
+	const bands = whole.bands.filter(({ items }) => items.length >= MIN_WRAPPED);
+	if (bands.length === 0 || whole.width / whole.height <= pane) return [];
+	const widest = bands.reduce((one, other) =>
+		other.items.length > one.items.length ? other : one,
+	);
+	const across = widest.items.toSorted(
+		(one, other) => whole.boxes.get(one)!.x - whole.boxes.get(other)!.x,
+	);
+	return [2, 3, 4]
+		.filter((rows) => rows < across.length)
+		.map(
+			(rows) =>
+				new Map(
+					across.map((item, index) => [item, index % rows] as const).filter(([, row]) => row > 0),
+				),
+		);
 }
 
 /**
@@ -84,4 +130,4 @@ function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	};
 }
 
-export { BLOCKS_PLACED, placeBlocks };
+export { BLOCKS_PLACED, layCards, placeBlocks };

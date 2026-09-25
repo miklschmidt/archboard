@@ -91,12 +91,14 @@ class CardLayout {
 	 * @param laid The blocks laid out so far; a folded block's columns hold the ones inside them.
 	 * @param tree The blocks.
 	 * @param insets The block's insets.
+	 * @param lowered How many rows each item a wide rank wraps is set below its place.
 	 */
 	constructor(
 		readonly block: Block,
 		readonly laid: ReadonlyMap<string, Laid>,
 		readonly tree: BlockTree,
 		readonly insets: Insets,
+		readonly lowered: ReadonlyMap<string, number> = new Map(),
 	) {}
 
 	/**
@@ -164,14 +166,16 @@ class CardLayout {
 		const head = this.vendorOf(line.head);
 		const label = line.labelled ? line.edge.labels?.[0] : undefined;
 		const id = line.key;
+		// A wrapped item sits a row of cards and its labels lower for each row it is lowered.
+		const minlen = 1 + 2 * (this.lowered.get(head) ?? 0);
 		if (label === undefined) {
-			this.graph.edges.push({ tail, head, attributes: { id } });
+			this.graph.edges.push({ tail, head, attributes: { id, minlen } });
 			return;
 		}
 		const name = `label:${line.edge.id}`;
 		this.graph.nodes.push(box(name, label.width!, label.height!));
 		this.graph.edges.push(
-			{ tail, head: name, attributes: { id: `${id}:1` } },
+			{ tail, head: name, attributes: { id: `${id}:1`, minlen } },
 			{ tail: name, head, attributes: { id: `${id}:2` } },
 		);
 	}

@@ -27,6 +27,8 @@ const HEAD_GAP = 48;
 const TRUNK_CLEARANCE = 16;
 /** How much a trunk pays for each turn, in diagram points. */
 const TRUNK_TURN = 60;
+/** How much a trunk pays for crossing another, in diagram points. */
+const TRUNK_CROSSING = 3000;
 /** The side of a port's square. */
 const PORT = 1;
 /** The most blocks whose every packing is tried. */
@@ -357,6 +359,7 @@ class PackLayout {
 			router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
 			router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
 			router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
+			router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
 			const header = this.block.header === undefined ? [] : [headerOf(this.block)];
 			const shapes = new Map(
 				[...this.block.items, ...header].map((id) => [
