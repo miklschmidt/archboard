@@ -14,7 +14,7 @@ import {
 	BEND_RADIUS,
 	CONTAINER_INSET,
 } from "@/transformers/semantic-renderer/config";
-import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	LANE,
 	chainOf,
@@ -30,6 +30,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/channels";
 import { slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
+import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
 
 /** From the band above to the first track: room for the bend off a face. */
 const TRACK_TOP = 2 * BEND_RADIUS;
@@ -171,34 +172,44 @@ function settleStraights(nets: readonly Net[]): void {
 }
 
 /**
- * How tall a channel is for the tracks it holds.
+ * How tall a channel is for the tracks it holds, below the containers that
+ * end above it.
  * @param tracks Its track count.
+ * @param closing How far below its band the containers ending there reach.
  * @returns Its height.
  */
-function channelHeight(tracks: number): number {
+function channelHeight(tracks: number, closing = 0): number {
 	return tracks === 0
-		? MIN_CHANNEL
-		: Math.max(MIN_CHANNEL, TRACK_TOP + (tracks - 1) * LANE + TRACK_BOTTOM);
+		? Math.max(MIN_CHANNEL, closing + MIN_CHANNEL - CONTAINER_INSET)
+		: Math.max(MIN_CHANNEL, closing + TRACK_TOP + (tracks - 1) * LANE + TRACK_BOTTOM);
 }
 
 /**
  * Lay out every band and channel again, from the tracks each channel needs.
  * A channel no line crosses below a band of titles alone keeps the room a
  * container keeps around its cards: no frame ends there, so a container's
- * cards stand as far below its title as in from its sides.
+ * cards stand as far below its title as in from its sides. A channel below
+ * containers that end on its band starts its tracks below their edges.
  * @param scene The scene, whose bands get their new tops.
  * @param nets Every net, given its track in its channel.
+ * @param closings How far below each band the containers ending on it reach.
  * @param margin Where the first band starts.
  */
-function spaceBands(scene: Scene, nets: readonly Net[], margin: number): void {
+function spaceBands(
+	scene: Scene,
+	nets: readonly Net[],
+	closings: readonly number[],
+	margin: number,
+): void {
 	const held = new Set([...scene.cards.values(), ...scene.labels.values()].map(({ band }) => band));
 	let top = margin;
 	scene.bands.forEach((band, index) => {
 		band.newTop = top;
+		band.closing = closings[index]!;
 		const crossing = nets.filter((net) => net.channel === index);
 		const titled = crossing.length === 0 && !held.has(index);
-		top +=
-			band.bottom - band.top + (titled ? CONTAINER_INSET : channelHeight(assignTracks(crossing)));
+		const channel = titled ? CONTAINER_INSET : channelHeight(assignTracks(crossing), band.closing);
+		top += band.bottom - band.top + channel;
 	});
 }
 
@@ -239,120 +250,14 @@ function pointsOf(scene: Scene, nets: readonly Net[], left: number): Point[] {
 	return nets.flatMap((net) => {
 		const upper = scene.bands[net.top.band]!;
 		const from = { x: net.topX + left, y: leavesAt(scene, net, left) };
-		const track = upper.newTop + (upper.bottom - upper.top) + TRACK_TOP + net.track * LANE;
+		const track =
+			upper.newTop + (upper.bottom - upper.top) + upper.closing + TRACK_TOP + net.track * LANE;
 		if (net.wall === "bottom")
 			return [from, { x: from.x, y: track }, { x: net.bottomX + left, y: track }];
 		const to = { x: net.bottomX + left, y: entersAt(scene, net, left) };
 		if (net.wall === "top") return [{ x: from.x, y: track }, { x: to.x, y: track }, to];
 		if (Math.abs(from.x - to.x) <= STRAIGHT) return [from, to];
 		return [from, { x: from.x, y: track }, { x: to.x, y: track }, to];
-	});
-}
-
-/** A frame's box once the scene is spaced, and how deep in frames it sits. */
-interface FrameShape {
-	readonly id: string;
-	readonly box: Box;
-	readonly depth: number;
-}
-
-/** A group region's band and caption once the scene is spaced. */
-interface RegionShape {
-	readonly group: string;
-	readonly parent: string | undefined;
-	readonly box: Box;
-	readonly caption: Box;
-	readonly depth: number;
-}
-
-/**
- * The boxes of the items and labels inside some members: their cards and
- * title rows, and the labels of the relationships between two of them.
- * @param scene The spaced scene.
- * @param edges The placed relationships.
- * @param inside The members.
- * @param left How far every x moves.
- * @returns The boxes.
- */
-function heldBoxes(
-	scene: Scene,
-	edges: ReadonlyMap<string, ElkExtendedEdge>,
-	inside: ReadonlySet<string>,
-	left: number,
-): Box[] {
-	return [
-		...[...inside].flatMap((member) => {
-			const item = scene.cards.get(member) ?? scene.titles.get(member);
-			return item === undefined ? [] : [scene.moved(item, left)];
-		}),
-		...[...scene.labels]
-			.filter(([edge]) => {
-				const placed = edges.get(edge)!;
-				return inside.has(placed.sources[0]!) && inside.has(placed.targets[0]!);
-			})
-			.map(([, item]) => scene.moved(item, left)),
-	];
-}
-
-/**
- * Every frame: Graphviz's width, from its title row down to below its lowest
- * member, the labels of the relationships it holds included.
- * @param scene The spaced scene.
- * @param edges The placed relationships.
- * @param left How far every x moves.
- * @returns The frames' shapes.
- */
-function frameShapes(
-	scene: Scene,
-	edges: ReadonlyMap<string, ElkExtendedEdge>,
-	left: number,
-): FrameShape[] {
-	return [...scene.frames].map(([id, { node, depth, members }]) => {
-		const title = scene.moved(scene.titles.get(id)!, left);
-		const boxes = heldBoxes(scene, edges, new Set(members), left);
-		const bottom = Math.max(title.y + title.height, ...boxes.map((box) => box.y + box.height));
-		const box = { x: node.x! + left, y: title.y, width: node.width!, height: 0 };
-		return { id, box: { ...box, height: bottom + CONTAINER_INSET - title.y }, depth };
-	});
-}
-
-/** Room a group region keeps below its lowest member. */
-const REGION_BOTTOM = 14;
-/** How far a region's caption sits in from its band's left edge. */
-const REGION_CAPTION_INSET = 6;
-
-/**
- * Every group region: Graphviz's width, from its caption row down to below its
- * lowest member, the labels of the relationships it holds included.
- * @param scene The spaced scene.
- * @param edges The placed relationships.
- * @param left How far every x moves.
- * @returns The regions' shapes.
- */
-function regionShapes(
-	scene: Scene,
-	edges: ReadonlyMap<string, ElkExtendedEdge>,
-	left: number,
-): RegionShape[] {
-	return scene.regions.map((region) => {
-		const inside = new Set(
-			region.members.flatMap((id) => [id, ...(scene.frames.get(id)?.members ?? [])]),
-		);
-		const centred = scene.moved(region.caption, left);
-		// The caption reads from the band's top-left corner, as a frame's title does.
-		const caption = { ...centred, x: region.box.x + left + REGION_CAPTION_INSET };
-		const boxes = heldBoxes(scene, edges, inside, left);
-		const bottom = Math.max(caption.y + caption.height, ...boxes.map((box) => box.y + box.height));
-		const depth =
-			region.parent === undefined ? 0 : (scene.frames.get(region.parent)?.depth ?? 0) + 1;
-		const box = { x: region.box.x + left, y: caption.y, width: region.box.width, height: 0 };
-		return {
-			group: region.group,
-			parent: region.parent,
-			box: { ...box, height: bottom + REGION_BOTTOM - caption.y },
-			caption,
-			depth,
-		};
 	});
 }
 
@@ -406,7 +311,8 @@ function routeScene(
 		first.wall = "top";
 		first.topX = wallX(scene, line.enters!);
 	}
-	spaceBands(scene, nets, top);
+	const edges = new Map(lines.map((line) => [line.id, line.placed]));
+	spaceBands(scene, nets, new Containers(scene, edges).closings(), top);
 	return new Map(
 		[...routed].map(([id, route]) => {
 			const points = pointsOf(scene, route.nets, margin);
@@ -420,11 +326,7 @@ export {
 	TRACK_BOTTOM,
 	TRACK_TOP,
 	channelHeight,
-	frameShapes,
-	regionShapes,
 	routeScene,
 	trunkKind,
-	type FrameShape,
-	type RegionShape,
 	type SceneLine,
 };

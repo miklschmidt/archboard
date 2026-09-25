@@ -1,7 +1,10 @@
 // What laying a block out answers, and the small geometry the block engine
 // moves it with.
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import type { FrameShape, RegionShape } from "@/transformers/semantic-renderer/lib/track/route";
+import type {
+	FrameShape,
+	RegionShape,
+} from "@/transformers/semantic-renderer/lib/track/containers";
 
 /** One rank of a laid-out block: where it lies, and the block's items on it. */
 interface Band {
