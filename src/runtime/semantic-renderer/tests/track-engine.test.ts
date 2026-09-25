@@ -1,8 +1,9 @@
 // The track engine (TASK-349): what its own placement and routing promise.
 // What this catches: a fan wider than the page drawn as one long row again, a
 // line that jogs a few points on its way to a label, which its rounded corners
-// draw as a hook doubling back on itself, and a long chain drawn as one tall
-// column again, or folded into columns that start at different heights.
+// draw as a hook doubling back on itself, a long chain drawn as one tall
+// column again, or folded into columns that start at different heights, and a
+// container of cards nothing connects drawn as one long row again.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -76,3 +77,29 @@ test("a long chain folds into columns whose first cards stand on one line", asyn
 	const order = cards.toSorted((one, other) => one.x - other.x || one.y - other.y);
 	expect(order).toEqual(cards);
 });
+
+test.each(["track", "blocks"] as const)(
+	"a container of cards nothing connects sets them out as a grid (%s)",
+	async (layout) => {
+		const apps = Array.from({ length: 11 }, (_, index) => `app${index}`);
+		const portfolio = orderedFixture({
+			nodes: [
+				{ id: "apps", name: "Application portfolio", kind: "service" },
+				...apps.map((id) => ({
+					id,
+					name: `Application ${id}`,
+					kind: "module",
+					parent: "apps",
+				})),
+			],
+			edges: [],
+		});
+		const drawing = await renderArchitecture({ content: portfolio, theme: "light", layout });
+		const cards = apps.map((id) => drawing.atlas.nodes[id]!);
+		const rows = new Set(cards.map(({ y }) => y));
+		const columns = new Set(cards.map(({ x }) => x));
+		expect(rows.size).toBeGreaterThan(1);
+		// Every row lines up under the first: no card stands off the grid's columns.
+		expect(columns.size).toBe(Math.ceil(cards.length / rows.size));
+	},
+);

@@ -96,7 +96,8 @@ function readsBetter(one: Weighed, other: Weighed): boolean {
  * about equal width, each run of cards held together kept in one row, and the
  * rank dealt out across the rows card by card.
  * @param runs The rank's cards left to right, in runs held together, each with its width.
- * @returns Each wrap, as how far each wrapped card is lowered.
+ * @returns Each wrap, as the row of every card of the rank, left to right: the
+ * first row's cards stay where they are, and the first of them anchors the rest.
  */
 function wrapPlans(
 	runs: readonly { ids: readonly string[]; width: number }[],
@@ -108,21 +109,38 @@ function wrapPlans(
 		let before = 0;
 		for (const { ids, width } of runs) {
 			const row = Math.min(rows - 1, Math.floor(((before + width / 2) * rows) / total));
-			for (const id of ids) if (row > 0) cut.set(id, row);
+			for (const id of ids) cut.set(id, row);
 			before += width;
 		}
-		const dealt = new Map(
-			cards.map((id, index) => [id, index % rows] as const).filter(([, row]) => row > 0),
-		);
+		const dealt = new Map(cards.map((id, index) => [id, index % rows] as const));
 		return rows < cards.length ? [cut, dealt] : [];
 	});
 	const seen = new Set<string>();
 	return plans.filter((plan) => {
 		const key = JSON.stringify([...plan]);
-		const fresh = plan.size > 0 && !seen.has(key);
+		const fresh = [...plan.values()].some((row) => row > 0) && !seen.has(key);
 		seen.add(key);
 		return fresh;
 	});
 }
 
-export { crossingsOf, readsBetter, scoreOf, wrapPlans, type Weighed };
+/**
+ * The lowered cards of a wrap that no line arrives at, each with the card of
+ * its rank that stays in the first row and holds it down: a card a line
+ * arrives at is lowered by that line, one no line reaches by its anchor alone.
+ * @param plan The wrap: every card of the rank and its row.
+ * @param arriving The cards some line arrives at.
+ * @returns Each such lowered card, its rows and its anchor.
+ */
+function anchored(
+	plan: ReadonlyMap<string, number>,
+	arriving: ReadonlySet<string>,
+): { card: string; rows: number; anchor: string }[] {
+	const anchor = [...plan].find(([, row]) => row === 0)?.[0];
+	if (anchor === undefined) return [];
+	return [...plan]
+		.filter(([card, row]) => row > 0 && !arriving.has(card))
+		.map(([card, rows]) => ({ card, rows, anchor }));
+}
+
+export { anchored, crossingsOf, readsBetter, scoreOf, wrapPlans, type Weighed };

@@ -23,6 +23,7 @@ import {
 	type Line,
 	type Side,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { grids } from "@/transformers/semantic-renderer/lib/track/grid";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 import {
 	crossingsOf,
@@ -100,8 +101,8 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 }
 
 /**
- * The block's widest rank wrapped into rows, when a wrap reads clearly better
- * than the block whole.
+ * The block's widest rank wrapped into rows, or its loose cards set out as a
+ * grid, when that reads clearly better than the block whole.
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
@@ -118,13 +119,18 @@ function bestWrap(
 ): Laid | undefined {
 	const insets = insetsOf(block);
 	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
-	const best = wrapsOf(laying.whole)
-		.map((lowered) => new CardLayout(block, laying.laid, tree, insets, lowered).lay(viz))
-		.reduce<Laid | undefined>(
-			(one, other) =>
-				one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one,
-			undefined,
-		);
+	const gridded = grids(new CardLayout(block, laying.laid, tree, insets).looseCards())
+		? [new CardLayout(block, laying.laid, tree, insets, new Map(), true).lay(viz)]
+		: [];
+	const best = [
+		...gridded,
+		...wrapsOf(laying.whole).map((lowered) =>
+			new CardLayout(block, laying.laid, tree, insets, lowered).lay(viz),
+		),
+	].reduce<Laid | undefined>(
+		(one, other) => (one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one),
+		undefined,
+	);
 	return best !== undefined && scored(best) > scored(laying.whole) * worth ? best : undefined;
 }
 
