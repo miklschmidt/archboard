@@ -12,6 +12,8 @@ const TRACK_POLYLINE = "archboard.track.polyline";
 const TRACK_TITLE = "archboard.track.title";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
+/** How far a region's caption sits in from its band's left edge. */
+const REGION_CAPTION_INSET = 6;
 
 const BoxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
 /** A group region as placement answers it. */
@@ -98,6 +100,8 @@ class Scene {
 	readonly cards = new Map<string, Item>();
 	readonly labels = new Map<string, Item>();
 	readonly titles = new Map<string, Item>();
+	/** How far each title row's words reach in from its left edge. */
+	readonly words = new Map<Item, number>();
 	readonly frames = new Map<string, Frame>();
 	readonly regions: Region[] = [];
 	readonly bands: Band[] = [];
@@ -127,7 +131,9 @@ class Scene {
 			.array(PlacedRegionSchema)
 			.parse(JSON.parse(placed.layoutOptions?.[TRACK_REGIONS] ?? "[]"));
 		for (const { group, parent, members, box, caption } of rows) {
-			const [x, y, width, height] = caption;
+			const [, y, width, height] = caption;
+			// The caption reads from the band's top-left corner, as a frame's title does.
+			const x = box[0] + REGION_CAPTION_INSET;
 			this.regions.push({
 				group,
 				parent,
@@ -182,8 +188,10 @@ class Scene {
 				this.cards.set(node.id, { box: boxOf(node, node.id), band: -1 });
 				continue;
 			}
-			const [x, y, width, height] = title.split(",").map(Number);
-			this.titles.set(node.id, { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 });
+			const [x, y, width, height, words] = title.split(",").map(Number);
+			const item = { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 };
+			this.titles.set(node.id, item);
+			this.words.set(item, words!);
 			this.frames.set(node.id, { node, depth, members: [] });
 			this.visit(node.children ?? [], depth + 1, [...frames, node.id]);
 		}
@@ -199,6 +207,30 @@ class Scene {
 		const item = this.cards.get(id) ?? this.titles.get(id);
 		if (item === undefined) throw new Error(`Track placement omitted endpoint ${id}`);
 		return item;
+	}
+
+	/**
+	 * Every title row's and caption's painted words: the band they sit on,
+	 * where they start and end, and the walls of the container they head.
+	 * @returns The headings.
+	 */
+	headings(): { band: number; left: number; end: number; walls: readonly [number, number] }[] {
+		const titles = [...this.titles].map(([id, item]) => {
+			const { node } = this.frames.get(id)!;
+			return {
+				band: item.band,
+				left: item.box.x,
+				end: item.box.x + this.words.get(item)!,
+				walls: [node.x!, node.x! + node.width!] as const,
+			};
+		});
+		const captions = this.regions.map(({ caption, box }) => ({
+			band: caption.band,
+			left: caption.box.x,
+			end: caption.box.x + caption.box.width,
+			walls: [box.x, box.x + box.width] as const,
+		}));
+		return [...titles, ...captions];
 	}
 
 	/**

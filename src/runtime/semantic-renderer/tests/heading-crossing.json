@@ -1,0 +1,156 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaalpha",
+			"kind": "module",
+			"order": 2000,
+			"responsibility": "bravob car del ea f gard, harbor i junglej kett lant meado ne oran, pep quartzq riv summ timber a bravobr",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "n1",
+			"name": "carbon deltade",
+			"kind": "function",
+			"order": 4000,
+			"responsibility": "eagle fal gar ha i jung ke lan mead ne orange: pepper qua rive, summi ti, alphaa bra carb delta, eagl fal garde har island",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "n2",
+			"name": "jungleju kettle",
+			"kind": "function",
+			"order": 5000,
+			"parent": "n5",
+			"responsibility": "lanter mea needlene, orangeor pe qu, river summi tim alpha-brav carbonc, del eagle fa gard harbo isl jungl ket lant mea need"
+		},
+		{
+			"id": "n3",
+			"name": "orangeor pepperpepp",
+			"kind": "function",
+			"order": 6000,
+			"parent": "n5",
+			"responsibility": "qua riverr su t alphaa: bra carbo del eaglee, fal garden harb islandisla, jun k lant meadowme need o pepp"
+		},
+		{
+			"id": "n4",
+			"name": "quartzqu",
+			"kind": "external",
+			"order": 10000,
+			"responsibility": "riv summits timb alphaa bra car, delt eag falconfal gard har islandi jung kettleke"
+		},
+		{
+			"id": "n5",
+			"name": "lanternl meadowm",
+			"kind": "module",
+			"order": 11000,
+			"responsibility": "nee ora peppe quartzqua riverr s timbert al bra car: deltade, eagleeagl falc gard harborha islandis, jun kettle lant"
+		},
+		{
+			"id": "n6",
+			"name": "meadowme needleneed",
+			"kind": "function",
+			"order": 12000,
+			"parent": "n5",
+			"responsibility": "orang pepperpe qu riv, summitsu ti al bra car delta eag falc gard, har island jung kettl lante me need"
+		},
+		{
+			"id": "n7",
+			"name": "orangeorang pepperpe",
+			"kind": "module",
+			"order": 15000,
+			"responsibility": "quartz riv summits t alphaalph bravo, carbo del eagl fa 1920g1080, har islan jun kett lant meado need oran pepp quartzq riv summits",
+			"groups": ["walkthrough"]
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n1",
+			"kind": "call",
+			"order": 3000,
+			"label": "timbert, alp bra ca d eagl"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n2",
+			"kind": "call",
+			"order": 4000,
+			"label": "falcon, gard h isla, jung"
+		},
+		{
+			"id": "e2",
+			"from": "n6",
+			"to": "n4",
+			"kind": "call",
+			"order": 5000,
+			"label": "kettl la mea nee orang pep quar rive"
+		},
+		{
+			"id": "e3",
+			"from": "n1",
+			"to": "n3",
+			"kind": "call",
+			"order": 6000,
+			"label": "sum timber al bra carb"
+		},
+		{
+			"id": "e4",
+			"from": "n3",
+			"to": "n4",
+			"kind": "rpc",
+			"order": 7000,
+			"label": "del eagl f gardengar"
+		},
+		{
+			"id": "e5",
+			"from": "n2",
+			"to": "n6",
+			"kind": "call",
+			"order": 12000,
+			"label": "harbo, isla jun kett, lant mea needl"
+		},
+		{
+			"id": "e6",
+			"from": "n2",
+			"to": "n3",
+			"kind": "call",
+			"order": 13000,
+			"label": "orangeo pep quartzq riv summ timb"
+		},
+		{
+			"id": "e7",
+			"from": "n0",
+			"to": "n6",
+			"kind": "call",
+			"order": 14000,
+			"label": "alpha bravobra"
+		},
+		{
+			"id": "e8",
+			"from": "n7",
+			"to": "n6",
+			"kind": "call",
+			"order": 18000,
+			"label": "carbo deltadel"
+		},
+		{
+			"id": "e9",
+			"from": "n7",
+			"to": "n2",
+			"kind": "call",
+			"order": 19000,
+			"label": "eaglee, f 1920g1080 harbor, isla"
+		},
+		{
+			"id": "e10",
+			"from": "n7",
+			"to": "n3",
+			"kind": "call",
+			"order": 20000,
+			"label": "jungleju ke lan mead, needle ora pepp"
+		}
+	]
+}

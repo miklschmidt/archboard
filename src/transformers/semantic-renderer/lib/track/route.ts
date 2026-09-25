@@ -30,7 +30,7 @@ import {
 	bundleTrunks,
 	type Net,
 } from "@/transformers/semantic-renderer/lib/track/channels";
-import { slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
+import { settleLabels, slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
 import { closeJogs } from "@/transformers/semantic-renderer/lib/track/jogs";
@@ -359,7 +359,11 @@ function routeScene(
 	slideLabels(scene, nets);
 	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
 	assignPorts(nets);
-	if (pullToPorts(scene, [...chains.values()], portsOf(nets))) followLanes(nets);
+	if (pullToPorts(scene, [...chains.values()], portsOf(nets))) {
+		followLanes(nets);
+		settleLabels(scene, nets);
+		assignPorts(nets);
+	}
 	closeJogs(
 		scene,
 		[...chains.values()],

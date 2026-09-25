@@ -6,7 +6,8 @@
 // card above whose arrowhead sits on its last bend, labels on a crowded band
 // shifted together until every line through them jogs, a labelled fan whose
 // trunk turns once and whose labels then turn it a second time, two labelled
-// lines entering one card unevenly, one hugging its corner, a long chain drawn as one tall
+// lines entering one card unevenly, one hugging its corner, a line crossing
+// a container's heading through its painted words, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
@@ -14,6 +15,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import {
 	corridorPoints,
 	routeLabels,
@@ -22,6 +24,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
+import headingCrossing from "./heading-crossing.json";
 import risingLine from "./rising-line.json";
 import trunkFan from "./trunk-fan.json";
 import shortStep from "./short-step.json";
@@ -185,6 +188,70 @@ test("two labelled lines into one card enter it evenly", async () => {
 	const routes = routePoints(drawing.svg);
 	const [left, right] = ["left", "right"].map((id) => routes.get(id)!.at(-1)!.x);
 	expect(Math.abs(left! - store.x - (store.x + store.width - right!))).toBeLessThanOrEqual(2);
+});
+
+/**
+ * Where a container's heading words are painted: each line of its title and
+ * summary, from its x to a width no narrower than its characters at 0.4 em.
+ * @param svg The drawing.
+ * @returns Each line's box, top to bottom.
+ */
+function headingLines(svg: string): { x: number; end: number; top: number; bottom: number }[] {
+	return [
+		...svg.matchAll(
+			/data-depiction="container"[^>]*>([\s\S]*?)(?=<g data-semantic-kind=|$)/gu,
+		),
+	].flatMap(([, head]) =>
+		[
+			...head!.matchAll(
+				/<text[^>]*x="([\d.]+)" y="([\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>([^<]*)</gu,
+			),
+		].map(([, x, y, size, words]) => ({
+			x: Number(x),
+			end: Number(x) + words!.length * Number(size) * 0.4,
+			top: Number(y) - Number(size),
+			bottom: Number(y),
+		})),
+	);
+}
+
+// Reduced from a dogfood board, names replaced: Graphviz stands a frame's
+// heading row wherever it likes and runs lines beside it, but the words are
+// painted from the frame's left edge, where those lines ran.
+test("a line crossing a container's heading passes beside its words", async () => {
+	const policy = SemanticPolicySchema.parse({
+		levels: ["service"],
+		nodeKinds: {
+			module: { name: "Module", icon: "RiBox3Line" },
+			function: { name: "Function", icon: "RiCodeSSlashLine" },
+			external: { name: "External", icon: "RiExternalLinkLine" },
+		},
+		relationshipKinds: {
+			call: { name: "Call", dash: "solid", arrowhead: "filled" },
+			rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		},
+		groups: {
+			drawing: { name: "Drawing", color: "violet" },
+			walkthrough: { name: "Walkthroughs", color: "cyan" },
+		},
+	});
+	const content = orderedFixture(headingCrossing);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const lines = headingLines(drawing.svg);
+	expect(lines.length).toBeGreaterThan(0);
+	for (const [id, points] of routePoints(drawing.svg))
+		points.slice(1).forEach((point, index) => {
+			const previous = points[index]!;
+			if (previous.x !== point.x) return;
+			const struck = lines.some(
+				(line) =>
+					point.x >= line.x &&
+					point.x <= line.end &&
+					Math.min(previous.y, point.y) < line.bottom &&
+					Math.max(previous.y, point.y) > line.top,
+			);
+			expect(struck, `${id} through a heading`).toBe(false);
+		});
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
