@@ -1,6 +1,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import reservedCorner from "./reserved-label-corner.json";
 import reservedLane from "./reserved-label-lane.json";
 import { covering, overlaps } from "@/runtime/semantic-renderer/tests/drawn-labels";
@@ -18,9 +19,13 @@ const AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
 /** The room a badge keeps from another badge. */
 const LABEL_AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
 
-test.each([false, true])(
-	"badges use their own clear runs with room from cards and other routes (nested: %s)",
-	async (nested) => {
+test.each(
+	LayoutEngineSchema.options.flatMap((layout) =>
+		[false, true].map((nested) => [nested, layout] as const),
+	),
+)(
+	"badges use their own clear runs with room from cards and other routes (nested: %s, %s)",
+	async (nested, layout) => {
 		const content = orderedFixture({
 			nodes: [
 				...(nested ? [{ id: "outer", name: "Worker system", kind: "service" }] : []),
@@ -37,7 +42,7 @@ test.each([false, true])(
 				{ id: "e2", from: "source", to: "third", kind: "call", label: "accept request" },
 			],
 		});
-		const drawing = await renderArchitecture({ content, theme: "light" });
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
 		const labels = routeLabels(drawing.svg);
 		const routes = routePoints(drawing.svg);
 		expect(labels.size).toBe(content.edges.length);
@@ -78,7 +83,7 @@ test.each([false, true])(
 				expect(label.y + label.height).toBeLessThanOrEqual(frame.y + frame.height - 24);
 			}
 		}
-		expect(await renderArchitecture({ content, theme: "light" })).toEqual(drawing);
+		expect(await renderArchitecture({ content, theme: "light", layout })).toEqual(drawing);
 	},
 );
 
