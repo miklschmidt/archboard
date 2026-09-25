@@ -1,7 +1,6 @@
 import type { ElkExtendedEdge, ElkLabel, ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import type { Graph, Subgraph, Viz } from "@viz-js/viz";
 import { z } from "zod";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { Below } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { alignColumns } from "@/transformers/semantic-renderer/lib/track/graphviz";
@@ -13,7 +12,13 @@ import {
 } from "@/transformers/semantic-renderer/config";
 
 import { CARD_ROUTING_GAP } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { orientLabelChains } from "@/transformers/semantic-renderer/lib/layout/label-chains";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
+import {
+	dimensions,
+	pack,
+	type Offset,
+} from "@/transformers/semantic-renderer/lib/layout/packed-frames";
 
 // Viz publishes graph input types, but returns only `object` for Graphviz JSON.
 const objectSchema = z.object({
@@ -23,8 +28,6 @@ const objectSchema = z.object({
 });
 const outputSchema = z.object({ bb: z.string(), objects: z.array(objectSchema).default([]) });
 type Cluster = Subgraph & Required<Pick<Subgraph, "nodes" | "edges" | "subgraphs">>;
-type Offset = { node: ElkNode; x: number; y: number };
-
 /**
  * Read finite coordinates from Graphviz's comma-separated geometry.
  * @param value The serialized point or bounds.
@@ -35,17 +38,6 @@ function coordinates(value: string): number[] {
 	if (numbers.some((number) => !Number.isFinite(number)))
 		throw new Error("Graphviz returned non-finite geometry");
 	return numbers;
-}
-
-/**
- * Read the measured dimensions, requiring no estimates for missing text.
- * @param node The measured shape.
- * @returns Its dimensions.
- */
-function dimensions(node: Pick<ElkNode, "width" | "height">): { width: number; height: number } {
-	if (node.width === undefined || node.height === undefined)
-		throw new Error("Layout requires measured shape dimensions");
-	return { width: node.width, height: node.height };
 }
 
 /**
@@ -60,46 +52,6 @@ function rectangle(
 ): NonNullable<Graph["nodes"]>[number] {
 	const { width, height } = dimensions(shape);
 	return { name, attributes: { width: width / 72, height: height / 72 } };
-}
-
-/**
- * Pack disconnected children as a fixed measured collection before outer placement.
- * @param node The frame to pack.
- * @returns Child offsets from the resulting frame's origin.
- */
-function pack(node: ElkNode): Offset[] {
-	const size = Number(node.layoutOptions?.["archboard.header.size"] ?? 0);
-	const children = node.children!.toSorted(
-		(one, other) => semanticOrder(one) - semanticOrder(other),
-	);
-	const sizes = children.map(dimensions);
-	const width = Math.max(...sizes.map((child) => child.width));
-	const height = Math.max(...sizes.map((child) => child.height));
-	const aspect = REFERENCE_PANE.width / REFERENCE_PANE.height;
-	const columns = Math.min(
-		children.length,
-		Math.max(
-			1,
-			Math.round(Math.sqrt((children.length * aspect * (height + CARD_GAP)) / (width + CARD_GAP))),
-		),
-	);
-	const x = CONTAINER_INSET;
-	const y = size + CONTAINER_INSET;
-	const minimum = dimensions(node);
-	node.width = Math.max(
-		minimum.width,
-		2 * CONTAINER_INSET + columns * width + (columns - 1) * CARD_GAP,
-	);
-	const rows = Math.ceil(children.length / columns);
-	node.height = Math.max(
-		minimum.height,
-		size + 2 * CONTAINER_INSET + rows * height + (rows - 1) * CARD_GAP,
-	);
-	return children.map((child, index) => ({
-		node: child,
-		x: x + (index % columns) * (width + CARD_GAP),
-		y: y + Math.floor(index / columns) * (height + CARD_GAP),
-	}));
 }
 
 /**
@@ -149,7 +101,9 @@ class Placement {
 						CARD_ROUTING_GAP,
 					) / 72,
 				pad: 0,
-				margin: 0,
+				// Graphviz keeps top-level frames apart by the root margin, in points:
+				// with none, two frames side by side stood 2 points apart.
+				margin: CARD_ROUTING_GAP,
 			},
 			nodeAttributes: { shape: "box", fixedsize: true, label: "", margin: 0 },
 			edgeAttributes: { dir: "none" },
@@ -367,6 +321,7 @@ class Placement {
 		const below = this.below();
 		for (const node of this.nodes.values()) this.order(node, below);
 		for (const edge of this.graph.edges) this.orderReturn(edge);
+		orientLabelChains(this.graph);
 	}
 
 	/** Keep reserved labels aligned with their endpoints after sibling slots change. */
