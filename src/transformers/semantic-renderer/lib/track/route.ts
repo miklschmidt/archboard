@@ -35,6 +35,7 @@ import {
 	bundleTrunks,
 	type Net,
 } from "@/transformers/semantic-renderer/lib/track/channels";
+import { slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** From the band above to the first track: room for the bend off a face. */
@@ -73,6 +74,29 @@ function netsOf(edge: SemanticEdge, chain: Chain, standing: string): Net[] {
 			bottomX: bottom.x,
 			track: 0,
 		};
+	});
+}
+
+/** How far apart two ends may be and still be drawn as one straight drop. */
+const STRAIGHT = 0.5;
+
+/**
+ * Make every drop that is straight to within half a unit exactly straight, so
+ * no line takes a sliver of a step the curve would round into a corner. The
+ * end that gives way is a lane, which carries the move into the net beside
+ * it, or else a card's port; a label box never moves.
+ * @param nets One relationship's nets, top to bottom.
+ */
+function settleStraights(nets: readonly Net[]): void {
+	nets.forEach((net, index) => {
+		if (Math.abs(net.topX - net.bottomX) > STRAIGHT || net.topX === net.bottomX) return;
+		if (net.bottom.kind === "lane") {
+			net.bottom.x = net.topX;
+			net.bottomX = net.topX;
+			const next = nets[index + 1];
+			if (next !== undefined) next.topX = net.topX;
+		} else if (net.bottom.kind === "card") net.bottomX = net.topX;
+		else net.topX = net.bottomX;
 	});
 }
 
@@ -138,7 +162,7 @@ function pointsOf(scene: Scene, nets: readonly Net[], left: number): Point[] {
 		const upper = scene.bands[net.top.band]!;
 		const from = { x: net.topX + left, y: leavesAt(scene, net, left) };
 		const to = { x: net.bottomX + left, y: entersAt(scene, net, left) };
-		if (Math.abs(from.x - to.x) <= 0.5) return [from, to];
+		if (Math.abs(from.x - to.x) <= STRAIGHT) return [from, to];
 		const track = upper.newTop + (upper.bottom - upper.top) + TRACK_TOP + net.track * LANE;
 		return [from, { x: from.x, y: track }, { x: to.x, y: track }, to];
 	});
@@ -284,6 +308,9 @@ function routeTracks(
 	const nets = [...routed.values()].flatMap((route) => route.nets);
 	bundleTrunks(nets);
 	assignPorts(nets);
+	slideLabels(scene, nets);
+	assignPorts(nets);
+	for (const route of routed.values()) settleStraights(route.nets);
 	spaceBands(
 		scene,
 		scene.bands.map((_, channel) => assignTracks(nets.filter((net) => net.channel === channel))),
