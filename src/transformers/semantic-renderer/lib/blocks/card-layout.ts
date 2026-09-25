@@ -404,8 +404,8 @@ class CardLayout {
 			return;
 		}
 		const name = `label:${line.edge.id}`;
-		this.clusters.common(tail, head).nodes.push(box(name, label.width!, label.height!));
 		this.graph.edges.push(
+			...this.clusters.holdLabel(tail, head, box(name, label.width!, label.height!)),
 			{ tail, head: name, attributes: { id: `${id}:1`, minlen } },
 			{ tail: name, head, attributes: { id: `${id}:2` } },
 		);

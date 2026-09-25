@@ -94,13 +94,21 @@ test("different kinds reach a shared destination through distinct straight chann
 	}
 });
 
+test("routes leaving one gateway in one direction may share a run", async () => {
+	// The shared trunk Graphviz draws here is what the overdrawn-run measure
+	// below must see, so a zero from it means no run is shared.
+	const plain = await renderArchitecture({
+		content: channelContent,
+		theme: "dark",
+		layout: "graphviz",
+	});
+	expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
+});
+
 test.each(LayoutEngineSchema.options)(
 	"opposing same-kind channels do not share an overdrawn run (%s)",
 	async (layout) => {
 		const plain = await renderArchitecture({ content: channelContent, theme: "dark", layout });
-		// These two routes leave the same gateway in the same direction, so their
-		// existing shared-trunk behavior remains intact without a comparison mark.
-		expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
 		// Each pair below uses the same HTTP kind but arrives at the gateway where
 		// the other route leaves it. Their local direction is therefore different.
 		for (const pair of [

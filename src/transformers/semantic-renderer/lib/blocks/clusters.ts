@@ -158,6 +158,34 @@ class Clusters {
 	}
 
 	/**
+	 * Stand a line's label in its cluster: inside the innermost container its
+	 * lower end stands in and its upper end does not, held below that
+	 * container's title, so the label stands over the card it leads into
+	 * rather than beside the container on a rank the container spans; else in
+	 * the innermost cluster around both ends. A group region is no boundary a
+	 * line must go round, so a label never moves into one.
+	 * @param tail The line's upper end.
+	 * @param head Its lower end.
+	 * @param label The label's node.
+	 * @returns The edge holding the label below its cluster's title, if it needs one.
+	 */
+	holdLabel(tail: string, head: string, label: VendorNode): Edge[] {
+		const theirs = new Set(this.around(tail));
+		const entered = isTitle(head)
+			? undefined
+			: this.around(head).find(
+					(id) => !theirs.has(id) && this.block.clusters.get(id)!.kind === "frame",
+				);
+		if (entered === undefined) {
+			this.common(tail, head).nodes.push(label);
+			return [];
+		}
+		this.graphs.get(entered)!.nodes.push(label);
+		const attributes = { style: "invis", weight: TITLE_WEIGHT };
+		return [{ tail: titleOf(entered), head: label.name, attributes }];
+	}
+
+	/**
 	 * The vendor node a member of a cluster stands at: a nested cluster at its title.
 	 * @param member The member.
 	 * @returns Its vendor node.
