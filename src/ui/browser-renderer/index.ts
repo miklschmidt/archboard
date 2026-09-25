@@ -24,7 +24,7 @@ import {
 	createEnginePool,
 	workerCeiling,
 	type EngineWorker,
-} from "@/ui/browser-renderer/lib/engine-pool";
+} from "@/transformers/semantic-renderer/engine-pool";
 
 /** What the page supplies to draw here. */
 interface BrowserRendererSetup {
@@ -95,6 +95,4 @@ async function drawBoardHere(
 	return renderBoard(board, { ...choices, fonts: "linked" }, policy);
 }
 
-// The pool is exported for its own contract test; the page starts it through startBrowserRenderer.
-export { createEnginePool, workerCeiling, type EngineWorker };
 export { drawBoardHere, startBrowserRenderer, type BrowserRendererSetup };

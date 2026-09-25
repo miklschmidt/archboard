@@ -2,6 +2,7 @@ import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
 import type { RendererHost } from "@/transformers/semantic-renderer/host";
 import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
+import { engineAborted } from "@/transformers/semantic-renderer/engine-pool";
 
 type Solve = RendererHost["solve"];
 interface Request {
@@ -30,8 +31,9 @@ self.addEventListener("message", (event: MessageEvent<Request>) => {
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
 			self.postMessage({ id: request.id, data });
 		} catch (error) {
+			const fatal = initFailure || engineAborted(error);
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
-			self.postMessage({ id: request.id, error: String(error), fatal: initFailure });
+			self.postMessage({ id: request.id, error: String(error), fatal });
 		}
 		return undefined;
 	});

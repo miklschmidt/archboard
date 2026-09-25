@@ -9,11 +9,16 @@
 // the shared stylesheet on disk.
 
 import { readFileSync } from "node:fs";
+import { availableParallelism } from "node:os";
 import { fileURLToPath } from "node:url";
 import { GlobalFonts, createCanvas } from "@napi-rs/canvas";
 import { readThemeColors } from "@/shared/theme/server";
 import { FACES, installRendererHost } from "@/transformers/semantic-renderer/host";
-import { solveOnEngine } from "@/runtime/semantic-renderer/lib/engine-pool";
+import {
+	createEnginePool,
+	workerCeiling,
+	type EngineWorker,
+} from "@/transformers/semantic-renderer/engine-pool";
 import { iconPaths } from "@/runtime/semantic-renderer/lib/icon-paths";
 
 /** Where the diagram font files live in this checkout. */
@@ -32,6 +37,34 @@ let installed = false;
  */
 function nodeOffscreenCanvas(width: number, height: number) {
 	return createCanvas(width, height);
+}
+
+/**
+ * Start one engine worker, which keeps Bun alive only while it holds a solve.
+ * @returns The worker.
+ * @throws {Error} When this Bun lacks the worker lifetime controls.
+ */
+function startEngineWorker(): EngineWorker {
+	const worker = new Worker(new URL("./layout-worker.ts", import.meta.url).href);
+	if (!hasProcessLifetime(worker)) {
+		worker.terminate();
+		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");
+	}
+	return worker;
+}
+
+/**
+ * Whether a worker has Bun's process lifetime controls.
+ * @param worker The worker.
+ * @returns Whether it exposes ref and unref.
+ */
+function hasProcessLifetime(worker: Worker): worker is Worker & Pick<Bun.Worker, "ref" | "unref"> {
+	return (
+		"ref" in worker &&
+		typeof worker.ref === "function" &&
+		"unref" in worker &&
+		typeof worker.unref === "function"
+	);
 }
 
 /**
@@ -64,7 +97,7 @@ function installBunHost(): void {
 		}
 	}
 	installRendererHost({
-		solve: solveOnEngine,
+		solve: createEnginePool(startEngineWorker, workerCeiling(availableParallelism())),
 		themeColors: readThemeColors(
 			readFileSync(new URL("../../../shared/theme/theme.css", import.meta.url), "utf8"),
 		),
