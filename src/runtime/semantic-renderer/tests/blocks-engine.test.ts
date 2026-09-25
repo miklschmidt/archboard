@@ -5,10 +5,12 @@
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
+import owningTheChild from "./owning-the-child.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
 const policy = SemanticPolicySchema.parse({
@@ -28,12 +30,14 @@ const policy = SemanticPolicySchema.parse({
 		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
 		state: { name: "Server state", color: "teal" },
 		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
 		panes: { name: "Live panes", color: "teal" },
+		walkthrough: { name: "Walkthroughs", color: "cyan" },
 		voice: { name: "Voice", color: "yellow" },
 		workhorse: { name: "Workhorse", color: "sky" },
 		child: { name: "Codex child", color: "indigo" },
@@ -84,6 +88,25 @@ test("a container of blocks keeps no more room under its title than a container 
 	expect(packed).toBeLessThanOrEqual(carded);
 });
 
+test("a container's cards stand under its title, not beside it", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "cli", name: "Agent CLI", kind: "module" },
+			{
+				id: "pool",
+				name: "Platform.Common",
+				kind: "service",
+				responsibility: "Shared helpers every service links against, kept in one library",
+			},
+			{ id: "pipe", name: "Table query pipeline", kind: "module", parent: "pool" },
+		],
+		edges: [{ id: "e1", from: "cli", to: "pipe", kind: "call", label: "filter, sort, paginate" }],
+	});
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const { nodes } = drawn.atlas;
+	expect(nodes["pipe"]!.x - nodes["pool"]!.x).toBeLessThanOrEqual(CONTAINER_INSET + 1);
+});
+
 test("a group region holds the lines it draws beside its cards", async () => {
 	const content = orderedFixture(agentWorkbench);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
@@ -94,4 +117,14 @@ test("a group region holds the lines it draws beside its cards", async () => {
 		.filter(({ y }) => y > band.y && y < band.y + band.height);
 	expect(inside.length).toBeGreaterThan(0);
 	for (const { x } of inside) expect(x).toBeLessThan(band.x + band.width);
+});
+
+test("blocks are packed the way their trunks run, not only the way the page fits", async () => {
+	const content = orderedFixture(owningTheChild);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const { nodes } = drawn.atlas;
+	// Codex process spawns Codex app-server: packed beside the container, the
+	// line would climb back over it; packed below, it drops straight.
+	const workbench = nodes["7TAwfrZF"]!;
+	expect(nodes["giL6EI28"]!.y).toBeGreaterThan(workbench.y + workbench.height);
 });

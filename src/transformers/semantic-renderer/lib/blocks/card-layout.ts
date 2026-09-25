@@ -142,7 +142,8 @@ class CardLayout {
 	 */
 	nodeOf(name: string): VendorNode {
 		const { width, height } = this.sizeOf(name);
-		return box(name, width, height);
+		// The header is ranked as a sliver: it stands in the corner once placed.
+		return box(name, name === headerOf(this.block) ? PORT : width, height);
 	}
 
 	/**
@@ -488,11 +489,38 @@ class CardLayout {
 		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
 		for (const pin of new Set(ends.filter((end) => this.tree.pins.has(end))))
 			leaves.push(this.pinned(pin, centres));
+		this.cornerHeader(leaves);
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);
 		const { children, regions } = this.clusters.nest(leaves, centres, clusters);
 		return { id: this.block.id, children, edges, layoutOptions: { [TRACK_REGIONS]: regions } };
+	}
+
+	/**
+	 * Stand the header in the block's top-left corner, over what the block
+	 * holds, and every port on its rank right of it a lane apart. Graphviz ranks the
+	 * header as a sliver, so it pushes neither the ports nor the cards under
+	 * them right by its width.
+	 * @param leaves Every placed leaf; the header's and the top ports' move in place.
+	 */
+	cornerHeader(leaves: ElkNode[]): void {
+		const header = leaves.find(({ id }) => id === headerOf(this.block));
+		if (header === undefined) return;
+		header.x = Math.min(...leaves.filter((leaf) => leaf !== header).map(({ x }) => x!));
+		/**
+		 * Whether a leaf stands on the header's rank.
+		 * @param leaf The leaf.
+		 * @returns True when some of its height is the header's.
+		 */
+		const beside = (leaf: ElkNode): boolean =>
+			leaf !== header && leaf.y! < header.y! + header.height! && header.y! < leaf.y! + leaf.height!;
+		const tops = leaves.filter(beside).toSorted((one, other) => one.x! - other.x!);
+		let free = header.x + header.width! + LANE;
+		for (const port of tops) {
+			port.x = Math.max(port.x!, free);
+			free = port.x + port.width! + LANE;
+		}
 	}
 
 	/**
