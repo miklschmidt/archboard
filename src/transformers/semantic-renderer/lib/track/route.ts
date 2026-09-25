@@ -33,7 +33,7 @@ import {
 import { settleLabels, slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
-import { closeJogs } from "@/transformers/semantic-renderer/lib/track/jogs";
+import { closeJogs, partCollinear } from "@/transformers/semantic-renderer/lib/track/jogs";
 
 /** From the band above to the first track: room for the bend off a face. */
 const TRACK_TOP = 2 * BEND_RADIUS;
@@ -486,6 +486,11 @@ function routeScene(
 		first.wall = "top";
 		first.topX = wallX(scene, line.enters!);
 	}
+	partCollinear(
+		scene,
+		[...chains.values()],
+		[...routed.values()].map((route) => route.nets),
+	);
 	const edges = new Map(lines.map((line) => [line.id, line.placed]));
 	const rising = new Set(
 		[...routed.values()].filter(({ upward }) => upward).map(({ nets: [first] }) => first!),

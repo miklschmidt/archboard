@@ -7,7 +7,8 @@
 // shifted together until every line through them jogs, a labelled fan whose
 // trunk turns once and whose labels then turn it a second time, two labelled
 // lines entering one card unevenly, one hugging its corner, a line crossing
-// a container's heading through its painted words, lanes put where they
+// a container's heading through its painted words, two lines lined up end to
+// end across a channel so that they read as one, lanes put where they
 // cross another line that a free column would have left alone, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
@@ -26,6 +27,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
 import headingCrossing from "./heading-crossing.json";
+import readAsOne from "./read-as-one.json";
 import laneOrder from "./lane-order.json";
 import risingLine from "./rising-line.json";
 import trunkFan from "./trunk-fan.json";
@@ -40,6 +42,27 @@ const FRAME_ROOM = 24;
 const APPROACH = 12;
 /** The sideways room a line's two fixed 8 px bends need to step aside and on. */
 const TWO_BENDS = 16;
+
+/** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
+const policy = SemanticPolicySchema.parse({
+	levels: ["service"],
+	nodeKinds: {
+		module: { name: "Module", icon: "RiBox3Line" },
+		function: { name: "Function", icon: "RiCodeSSlashLine" },
+		external: { name: "External", icon: "RiExternalLinkLine" },
+	},
+	relationshipKinds: {
+		call: { name: "Call", dash: "solid", arrowhead: "filled" },
+		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+	},
+	groups: {
+		drawing: { name: "Drawing", color: "violet" },
+		walkthrough: { name: "Walkthroughs", color: "cyan" },
+		voice: { name: "Voice", color: "yellow" },
+		child: { name: "Codex child", color: "indigo" },
+	},
+});
 
 const fan = orderedFixture({
 	nodes: ["hub", ...TARGETS].map((id) => ({ id, name: id, kind: "module" })),
@@ -219,22 +242,6 @@ function headingLines(svg: string): { x: number; end: number; top: number; botto
 // heading row wherever it likes and runs lines beside it, but the words are
 // painted from the frame's left edge, where those lines ran.
 test("a line crossing a container's heading passes beside its words", async () => {
-	const policy = SemanticPolicySchema.parse({
-		levels: ["service"],
-		nodeKinds: {
-			module: { name: "Module", icon: "RiBox3Line" },
-			function: { name: "Function", icon: "RiCodeSSlashLine" },
-			external: { name: "External", icon: "RiExternalLinkLine" },
-		},
-		relationshipKinds: {
-			call: { name: "Call", dash: "solid", arrowhead: "filled" },
-			rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
-		},
-		groups: {
-			drawing: { name: "Drawing", color: "violet" },
-			walkthrough: { name: "Walkthroughs", color: "cyan" },
-		},
-	});
 	const content = orderedFixture(headingCrossing);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const lines = headingLines(drawing.svg);
@@ -300,6 +307,33 @@ test("a run of lanes takes the free column that crosses fewest other lines", asy
 		layout: "track",
 	});
 	expect(crossingsOf(drawing.svg)).toBe(0);
+});
+
+// Reduced from a dogfood board, names replaced: a line came down onto its track
+// and turned where another turned off the track below and went on down, one
+// lane over, and the two read as one line with a kink.
+test("a line ending on a track and another leaving the track below stand apart", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(readAsOne),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const uprights = [...corridorPoints(drawing.svg)].flatMap(([id, points]) =>
+		points.slice(1).flatMap((end, index) => {
+			const start = points[index]!;
+			const upright = start.x === end.x && Math.abs(start.y - end.y) > 0.5;
+			return upright
+				? [{ id, x: end.x, top: Math.min(start.y, end.y), bottom: Math.max(start.y, end.y) }]
+				: [];
+		}),
+	);
+	for (const one of uprights)
+		for (const other of uprights.filter(({ id }) => id !== one.id)) {
+			const gap = other.top - one.bottom;
+			const lined = Math.abs(one.x - other.x) < TWO_BENDS && gap > 0 && gap <= 2 * TWO_BENDS + 8;
+			expect(lined, `${one.id} runs on into ${other.id}`).toBe(false);
+		}
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
