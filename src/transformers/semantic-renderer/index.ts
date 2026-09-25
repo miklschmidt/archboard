@@ -270,21 +270,20 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		request.standing,
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 	);
-	const palette = PALETTE;
 	const painting = paintArchitecture(
 		drawing,
-		palette,
+		PALETTE,
 		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 		stepLines.derived,
 	);
-	const page = pageFor(painting, palette, request.unbuilt);
+	const page = pageFor(painting, PALETTE, request.unbuilt);
 
 	const svg = svgDocument({
 		width: page.width,
 		height: page.height,
-		palette,
+		palette: PALETTE,
 		title: plannedTitle(titleFor(request.content), request.unbuilt),
 		description: descriptionFor(drawing.containers.map((held) => held.measured.node.name)),
 		fonts: request.fonts ?? "linked",
@@ -370,21 +369,20 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		);
 	}
 
-	const palette = PALETTE;
 	const painting = paintDataFlow(
 		content.flows,
 		content.nodes,
-		palette,
+		PALETTE,
 		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 	);
-	const page = pageFor(painting, palette, request.unbuilt);
+	const page = pageFor(painting, PALETTE, request.unbuilt);
 
 	const svg = svgDocument({
 		width: page.width,
 		height: page.height,
-		palette,
+		palette: PALETTE,
 		title: plannedTitle(sequenceTitleFor(content), request.unbuilt),
 		description: sequenceDescriptionFor(content),
 		fonts: request.fonts ?? "linked",
