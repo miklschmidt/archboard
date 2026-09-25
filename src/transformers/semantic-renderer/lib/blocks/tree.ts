@@ -25,6 +25,7 @@ import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/seman
 import { addInline, holds, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
+import { CycleWalk } from "@/transformers/semantic-renderer/lib/blocks/cycles";
 
 /** A width and a height. */
 interface Size {
@@ -145,6 +146,18 @@ function captionsOf(graph: ElkNode): Map<string, Size> {
 }
 
 /**
+ * What a port on a side wall adds to its key: the line's end inside the
+ * block. Each line crosses a wall on the track it runs on inside, so lines
+ * from different items never share a wall port.
+ * @param side The edge the port crosses.
+ * @param inner The line's end inside the block.
+ * @returns The key's part, empty for a port on the top or bottom.
+ */
+function walled(side: Side, inner: string): string {
+	return side === "left" || side === "right" ? `${inner}|` : "";
+}
+
+/**
  * The item a chain of blocks reaches its outermost block at, or the node itself.
  * @param chain The blocks, innermost first.
  * @param node The node.
@@ -152,32 +165,6 @@ function captionsOf(graph: ElkNode): Map<string, Size> {
  */
 function outermost(chain: readonly Block[], node: string): string {
 	return chain.at(-1)?.id ?? node;
-}
-
-/** A depth-first walk over one block's projections that finds the ones closing a cycle. */
-class CycleWalk {
-	readonly back = new Set<string>();
-	readonly state = new Map<string, "open" | "done">();
-
-	/**
-	 * A walk over the projections leaving each item.
-	 * @param out The projections leaving each item.
-	 */
-	constructor(readonly out: ReadonlyMap<string, readonly Projection[]>) {}
-
-	/**
-	 * Walk from one item, unless the walk has been there.
-	 * @param item The item.
-	 */
-	from(item: string): void {
-		if (this.state.has(item)) return;
-		this.state.set(item, "open");
-		for (const projection of this.out.get(item) ?? []) {
-			if (this.state.get(projection.to) === "open") this.back.add(projection.edge.id);
-			else this.from(projection.to);
-		}
-		this.state.set(item, "done");
-	}
 }
 
 /** The board's blocks and every relationship's lines through them. */
@@ -462,7 +449,7 @@ class BlockTree {
 		for (const block of out) {
 			const along = `${projection.to}|${kindOf(edge)}`;
 			const side = block === labelAt ? face : this.exitOf(block, `out|${face}|${along}`, face);
-			const port = this.port(block, `out|${side}|${along}`, side);
+			const port = this.port(block, `out|${side}|${walled(side, from)}${along}`, side);
 			const ranked = side === "top" ? { tail: port, head: from } : { tail: from, head: port };
 			pieces.push([
 				block,
@@ -492,7 +479,7 @@ class BlockTree {
 		for (const block of into) {
 			const along = `${projection.from}|${kindOf(edge)}`;
 			const side = this.exitOf(block, `in|${face}|${along}`, face);
-			const port = this.port(block, `in|${side}|${along}`, side);
+			const port = this.port(block, `in|${side}|${walled(side, to)}${along}`, side);
 			const ranked = side === "bottom" ? { tail: to, head: port } : { tail: port, head: to };
 			pieces.unshift([
 				block,

@@ -10,6 +10,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
+import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import owningTheChild from "./owning-the-child.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
@@ -127,4 +128,37 @@ test("blocks are packed the way their trunks run, not only the way the page fits
 	// line would climb back over it; packed below, it drops straight.
 	const workbench = nodes["7TAwfrZF"]!;
 	expect(nodes["giL6EI28"]!.y).toBeGreaterThan(workbench.y + workbench.height);
+});
+
+/**
+ * Every upright run of every route that lies on one of a box's side walls,
+ * within a point, for longer than a lane.
+ * @param routes Every route's points.
+ * @param box The box.
+ * @param box.x Its left edge.
+ * @param box.width Its width.
+ * @returns The routes' ids.
+ */
+function alongWalls(
+	routes: ReadonlyMap<string, readonly { x: number; y: number }[]>,
+	box: { x: number; width: number },
+): string[] {
+	return [...routes].flatMap(([id, points]) =>
+		points
+			.slice(1)
+			.some(
+				(point, index) =>
+					point.x === points[index]!.x &&
+					Math.abs(point.y - points[index]!.y) > 16 &&
+					[box.x, box.x + box.width].some((wall) => Math.abs(point.x - wall) < 1),
+			)
+			? [id]
+			: [],
+	);
+}
+
+test("lines from different cards leave a region by their own ports, not along its wall", async () => {
+	const content = orderedFixture(oneBrowserTwoUses);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(alongWalls(routePoints(drawn.svg), regionBox(drawn.svg, "drawing"))).toEqual([]);
 });
