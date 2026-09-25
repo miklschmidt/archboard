@@ -6,6 +6,7 @@ export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions"
 export {
 	curveThrough,
 	curveClearanceIssue,
+	straightenedCurve,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 export { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 export { improveProjection } from "@/transformers/semantic-renderer/lib/layout/label-projections";
