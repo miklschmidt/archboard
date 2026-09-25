@@ -254,18 +254,40 @@ async function settleReading(reading: Reading): Promise<ArchitectureDrawing> {
 
 /**
  * A settled relationship whose route passes its checks: as it is, or with its
- * short S-jogs straightened when only they fail it.
+ * short S-jogs straightened when only they fail it. Straightening one jog can
+ * leave the next step of a staircase short, so it is repeated while the route
+ * still changes.
  * @param drawn The settled relationship.
  * @returns The relationship.
  * @throws {Error} When the route fails its checks even straightened.
  */
 function checkedEdge(drawn: DrawingEdge): DrawingEdge {
-	const { edge, curve, label } = drawn;
-	if (curveClearanceIssue(curve, label?.box) === undefined) return drawn;
-	const straightened = straightenedCurve(curve);
-	const issue = curveClearanceIssue(straightened, label?.box);
+	const { edge, label } = drawn;
+	if (curveClearanceIssue(drawn.curve, label?.box) === undefined) return drawn;
+	const curve = straightenedWhileFailing(drawn.curve, label?.box);
+	const issue = curveClearanceIssue(curve, label?.box);
 	if (issue !== undefined) throw new Error(`Layout relationship ${edge.id}: ${issue}`);
-	return { ...drawn, curve: straightened, path: pathOf(straightened) };
+	return { ...drawn, curve, path: pathOf(curve) };
+}
+
+/**
+ * Straighten a route's short S-jogs again while it still fails its checks and
+ * straightening still changes it.
+ * @param curve The route.
+ * @param label Its label's box, if it carries one.
+ * @returns The route straightened as far as that goes.
+ */
+function straightenedWhileFailing(
+	curve: DrawingEdge["curve"],
+	label: Box | undefined,
+): DrawingEdge["curve"] {
+	let current = curve;
+	let next = straightenedCurve(current);
+	while (curveClearanceIssue(current, label) !== undefined && pathOf(next) !== pathOf(current)) {
+		current = next;
+		next = straightenedCurve(current);
+	}
+	return current;
 }
 
 /**
