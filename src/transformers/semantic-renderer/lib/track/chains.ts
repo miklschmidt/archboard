@@ -16,6 +16,8 @@ const LANE = 16;
 const FACE_MARGIN = 20;
 /** How many quarter lanes either way a lane looks for a free column. */
 const SEARCH_STEPS = 64;
+/** How far a lane keeps from a container wall it passes beside: half a lane. */
+const WALL_CLEARANCE = LANE / 2;
 
 /** Where a chain touches a band. */
 interface Station {
@@ -160,6 +162,22 @@ class Occupancy {
 		// a line into its container crosses the row beside them.
 		for (const { band, left, end } of scene.headings())
 			this.taken[band]!.push([left - LANE, end + LANE]);
+		// A lane keeps off the walls of the containers it passes, as off a card.
+		scene.bands.forEach((_, band) => {
+			for (const walls of scene.walled(band).values())
+				for (const wall of walls)
+					this.taken[band]!.push([wall - WALL_CLEARANCE, wall + WALL_CLEARANCE]);
+		});
+	}
+
+	/**
+	 * Every edge of what some lanes' bands hold: a free window beside a wall
+	 * can be narrower than the steps a search takes.
+	 * @param lanes The lanes.
+	 * @returns The edges' x.
+	 */
+	edges(lanes: readonly Station[]): number[] {
+		return lanes.flatMap((lane) => this.taken[lane.band]!.flat());
 	}
 
 	/**
@@ -216,7 +234,10 @@ function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 	for (const run of runs) {
 		const chosen = columnOf(scene, run, occupancy, bands);
 		for (const lane of run.lanes) {
-			lane.x = chosen ?? nearest(lane.x, (x) => occupancy.fits([lane], x)) ?? lane.x;
+			lane.x =
+				chosen ??
+				nearest(lane.x, (x) => occupancy.fits([lane], x), occupancy.edges([lane])) ??
+				lane.x;
 			occupancy.take(lane);
 		}
 	}
@@ -340,7 +361,7 @@ function columnOf(
 	const median = xs[Math.floor(xs.length / 2)]!;
 	const [columns, near] =
 		straight.length > 0 ? [straight, straight[0]!] : [[after.x, before.x, median, ...xs], median];
-	const found = nearest(near, (x) => occupancy.fits(lanes, x));
+	const found = nearest(near, (x) => occupancy.fits(lanes, x), occupancy.edges(lanes));
 	const free = [
 		...columns.filter((x) => occupancy.fits(lanes, x)),
 		...(found === undefined ? [] : [found]),
@@ -525,16 +546,31 @@ function straightOn(scene: Scene, before: Station, after: Station): number[] {
 }
 
 /**
- * The nearest x to one that passes a test, searched outward a quarter lane at a time.
+ * The nearest x to one that passes a test, searched outward a quarter lane at
+ * a time and at some exact edges within the same reach; on a tie the step
+ * comes first.
  * @param from Where to start.
  * @param passes The test.
+ * @param edges Exact x worth trying too.
  * @returns The nearest passing x within reach, or nothing.
  */
-function nearest(from: number, passes: (x: number) => boolean): number | undefined {
-	for (let step = 0; step <= SEARCH_STEPS; step += 1) {
-		for (const x of [from - (step * LANE) / 4, from + (step * LANE) / 4]) if (passes(x)) return x;
-	}
-	return undefined;
+function nearest(
+	from: number,
+	passes: (x: number) => boolean,
+	edges: readonly number[] = [],
+): number | undefined {
+	const steps = Array.from({ length: SEARCH_STEPS + 1 }, (_, step) => [
+		from - (step * LANE) / 4,
+		from + (step * LANE) / 4,
+	]).flat();
+	const reach = (SEARCH_STEPS * LANE) / 4;
+	const exact = edges.filter((x) => Math.abs(x - from) <= reach);
+	const ordered = [...steps, ...exact]
+		.map((x, order) => ({ x, order }))
+		.toSorted(
+			(one, other) => Math.abs(one.x - from) - Math.abs(other.x - from) || one.order - other.order,
+		);
+	return ordered.find(({ x }) => passes(x))?.x;
 }
 
 export {
