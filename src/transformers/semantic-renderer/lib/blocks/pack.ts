@@ -8,7 +8,13 @@
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { SAME, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
+import {
+	SAME,
+	moved,
+	type Insets,
+	type Laid,
+} from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
 	headerOf,
 	type Block,
@@ -26,6 +32,8 @@ const PACK_GAP = 72;
 const HEAD_GAP = 48;
 /** The side of a port's square. */
 const PORT = 1;
+/** How far apart two ends may be and still be one straight run. */
+const STRAIGHT = 0.5;
 /** The most blocks whose every packing is tried. */
 const EVERY_PACKING = 9;
 /** How nearly a packing's estimated fit must reach the best one's to be laid out and weighed. */
@@ -232,6 +240,69 @@ class PackLayout {
 	}
 
 	/**
+	 * Where a pin stands in the block, and the edge of its own block it is on.
+	 * @param end The pin.
+	 * @returns Its point and edge.
+	 */
+	pinAt(end: string): Point & { side: Side } {
+		const { block, port } = this.tree.pins.get(end)!;
+		const at = this.laid.get(block.id)!.boxes.get(port)!;
+		const box = this.boxes.get(block.id)!;
+		const side = block.ports.get(port)!;
+		return { x: box.x + at.x + at.width / 2, y: box.y + at.y + at.height / 2, side };
+	}
+
+	/**
+	 * Move a packed block by a little where a trunk between two pins facing
+	 * each other steps sideways by less than its two bends need, when the
+	 * block keeps its room from every other: the step would be drawn as a
+	 * notch. Each block moves once.
+	 */
+	alignPins(): void {
+		const done = new Set<string>();
+		for (const line of this.block.lines.values()) {
+			const [tail, head] = [this.tree.pins.get(line.tail), this.tree.pins.get(line.head)];
+			if (tail === undefined || head === undefined || tail.block === head.block) continue;
+			const [one, other] = [this.pinAt(line.tail), this.pinAt(line.head)];
+			const sides = `${one.side}>${other.side}`;
+			const upright = sides === "bottom>top" || sides === "top>bottom";
+			if (!upright && sides !== "right>left" && sides !== "left>right") continue;
+			const step = upright ? one.x - other.x : one.y - other.y;
+			if (Math.abs(step) < STRAIGHT || Math.abs(step) >= 2 * BEND_RADIUS) continue;
+			const by = (sign: number): Point =>
+				upright ? { x: sign * step, y: 0 } : { x: 0, y: sign * step };
+			const choice = [
+				{ id: head.block.id, by: by(1) },
+				{ id: tail.block.id, by: by(-1) },
+			].find(({ id, by: offset }) => !done.has(id) && this.roomFor(id, offset));
+			if (choice === undefined) continue;
+			this.boxes.set(choice.id, moved(this.boxes.get(choice.id)!, choice.by));
+			done.add(choice.id);
+		}
+	}
+
+	/**
+	 * Whether a packed block, moved, keeps the room trunks need between it and every other.
+	 * @param id The block.
+	 * @param by How far it moves.
+	 * @returns True when it does.
+	 */
+	roomFor(id: string, by: Point): boolean {
+		const room = this.gap - 2 * LANE;
+		const box = moved(this.boxes.get(id)!, by);
+		return this.block.items
+			.filter((item) => item !== id)
+			.map((item) => this.boxes.get(item)!)
+			.every(
+				(other) =>
+					box.x + box.width + room <= other.x ||
+					other.x + other.width + room <= box.x ||
+					box.y + box.height + room <= other.y ||
+					other.y + other.height + room <= box.y,
+			);
+	}
+
+	/**
 	 * The x of a pin: its port's middle on its block.
 	 * @param end The pin.
 	 * @returns Its x.
@@ -372,6 +443,7 @@ class PackLayout {
 	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
 		this.gap = packing.gap ?? PACK_GAP;
 		this.place(packing);
+		this.alignPins();
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
 		const width = Math.max(

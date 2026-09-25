@@ -18,6 +18,7 @@ import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 import twoChains from "./two-chains.json";
+import workingWithAnAgent from "./working-with-an-agent.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
 const policy = SemanticPolicySchema.parse({
@@ -29,6 +30,7 @@ const policy = SemanticPolicySchema.parse({
 		external: { name: "External", icon: "RiExternalLinkLine" },
 		ui: { name: "User interface", icon: "RiLayoutLine" },
 		function: { name: "Function", icon: "RiCodeLine" },
+		system: { name: "System", icon: "RiApps2Line" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
@@ -215,6 +217,38 @@ test("trunks between packed blocks keep a lane apart however many share a gap", 
 	const content = orderedFixture(agentWorkbench);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(squeezed(corridorPoints(drawn.svg))).toEqual([]);
+});
+
+/**
+ * How far a drawn route steps between each of its straight runs and the
+ * next one running the same way: sideways for upright runs, up or down for
+ * level ones.
+ * @param points The route's points, control points included.
+ * @returns The steps, in order.
+ */
+function steps(points: readonly { x: number; y: number }[]): number[] {
+	const [uprights, levels] = [true, false].map((upright) =>
+		points.slice(1).flatMap((point, index) => {
+			const last = points[index]!;
+			const along = upright ? point.x === last.x : point.y === last.y;
+			const moves = upright ? point.y !== last.y : point.x !== last.x;
+			return along && moves ? [upright ? point.x : point.y] : [];
+		}),
+	);
+	return [uprights!, levels!].flatMap((runs) =>
+		runs.slice(1).map((at, index) => Math.abs(at - runs[index]!)),
+	);
+}
+
+test("a trunk between blocks side by side runs straight from wall to wall", async () => {
+	const content = orderedFixture(workingWithAnAgent);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const routes = corridorPoints(drawn.svg);
+	// Lines from Application composition and Voice session into the Agent region.
+	for (const id of ["WchncnH1", "md5cpNZV", "rcSUaP1b"]) {
+		const notches = steps(routes.get(id)!).filter((step) => step > 0.5 && step < 16);
+		expect(notches, id).toEqual([]);
+	}
 });
 
 test("two chains leaving a block through its bottom start on one row", async () => {
