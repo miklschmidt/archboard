@@ -331,4 +331,12 @@ function nearest(from: number, passes: (x: number) => boolean): number | undefin
 	return undefined;
 }
 
-export { LANE, chainOf, straightenIntoContainers, straightenLanes, type Chain, type Station };
+export {
+	LANE,
+	chainOf,
+	reachOf,
+	straightenIntoContainers,
+	straightenLanes,
+	type Chain,
+	type Station,
+};
