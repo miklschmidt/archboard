@@ -34,6 +34,8 @@ const WORTH_LAYING = 0.8;
 interface Packing {
 	readonly across: boolean;
 	readonly groups: readonly (readonly number[])[];
+	/** Room between two packed blocks, when their trunks need more than the least. */
+	readonly gap?: number;
 }
 
 /**
@@ -70,13 +72,18 @@ function cutsOf(count: number): number[][] {
  * How long and how thick one group is: along the way it is read, and across it.
  * @param sizes Its items' sizes.
  * @param across Whether it is a row.
+ * @param gap The room between two items.
  * @returns Its length and thickness.
  */
-function extentOf(sizes: readonly Size[], across: boolean): { long: number; thick: number } {
+function extentOf(
+	sizes: readonly Size[],
+	across: boolean,
+	gap: number,
+): { long: number; thick: number } {
 	const along = sizes.map(({ width, height }) => (across ? width : height));
 	const breadth = sizes.map(({ width, height }) => (across ? height : width));
 	return {
-		long: along.reduce((sum, value) => sum + value, 0) + (sizes.length - 1) * PACK_GAP,
+		long: along.reduce((sum, value) => sum + value, 0) + (sizes.length - 1) * gap,
 		thick: Math.max(...breadth),
 	};
 }
@@ -89,6 +96,8 @@ class PackLayout {
 	settled: ReadonlyMap<string, number> = new Map();
 	/** The width it keeps, once its parent has placed it. */
 	held = 0;
+	/** Room between two packed blocks, for the trunks that pass between them. */
+	gap = PACK_GAP;
 
 	/**
 	 * Start the layout of a block of blocks.
@@ -148,10 +157,12 @@ class PackLayout {
 	 * @returns Its size, without the block's own header, ports and insets.
 	 */
 	sizeOf(packing: Packing): Size {
-		const extents = packing.groups.map((group) => extentOf(this.sizesOf(group), packing.across));
+		const extents = packing.groups.map((group) =>
+			extentOf(this.sizesOf(group), packing.across, this.gap),
+		);
 		const long = Math.max(...extents.map((extent) => extent.long));
 		const deep =
-			extents.reduce((sum, extent) => sum + extent.thick, 0) + (extents.length - 1) * PACK_GAP;
+			extents.reduce((sum, extent) => sum + extent.thick, 0) + (extents.length - 1) * this.gap;
 		return packing.across ? { width: long, height: deep } : { width: deep, height: long };
 	}
 
@@ -201,7 +212,7 @@ class PackLayout {
 		let deep = 0;
 		for (const group of packing.groups) {
 			const sizes = this.sizesOf(group);
-			const { long, thick } = extentOf(sizes, packing.across);
+			const { long, thick } = extentOf(sizes, packing.across, this.gap);
 			let along = (length - long) / 2;
 			group.forEach((index, at) => {
 				const { width, height } = sizes[at]!;
@@ -214,9 +225,9 @@ class PackLayout {
 					width,
 					height,
 				});
-				along += (packing.across ? width : height) + PACK_GAP;
+				along += (packing.across ? width : height) + this.gap;
 			});
-			deep += thick + PACK_GAP;
+			deep += thick + this.gap;
 		}
 	}
 
@@ -315,12 +326,41 @@ class PackLayout {
 	 * @returns The laid-out block, and the packing it used.
 	 */
 	lay(avoid: AvoidEngine, kept?: Packing): Laid & { packing: Packing } {
-		if (kept !== undefined) return this.layOut(avoid, kept);
-		const laid = this.packings().map((packing) =>
-			new PackLayout(this.block, this.laid, this.tree, this.insets).layOut(avoid, packing),
-		);
-		const scores = laid.map((one) => packedScore(one));
-		return laid[scores.indexOf(Math.max(...scores))]!;
+		if (kept !== undefined) return this.roomy(avoid, kept);
+		const tried = this.packings().map((packing) => {
+			const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
+			return { layout, laid: layout.layOut(avoid, packing) };
+		});
+		const scores = tried.map(({ laid }) => packedScore(laid));
+		const { layout, laid } = tried[scores.indexOf(Math.max(...scores))]!;
+		return layout.widened(avoid, laid);
+	}
+
+	/**
+	 * Lay the block of blocks out packed one way, its gaps widened where
+	 * its trunks crowd them.
+	 * @param avoid The initialized libavoid module.
+	 * @param packing The packing.
+	 * @returns The laid-out block, and the packing it used.
+	 */
+	roomy(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
+		return this.widened(avoid, this.layOut(avoid, packing));
+	}
+
+	/**
+	 * The block as laid out, or laid out again with wider gaps when its
+	 * trunks crowd a gap closer than a lane apart.
+	 * @param avoid The initialized libavoid module.
+	 * @param laid The block as this layout laid it out.
+	 * @returns The laid-out block.
+	 */
+	widened(avoid: AvoidEngine, laid: Laid & { packing: Packing }): Laid & { packing: Packing } {
+		const room = this.crowded();
+		if (room <= this.gap) return laid;
+		const again = new PackLayout(this.block, this.laid, this.tree, this.insets);
+		again.settled = this.settled;
+		again.held = this.held;
+		return again.layOut(avoid, { ...laid.packing, gap: room });
 	}
 
 	/**
@@ -330,6 +370,7 @@ class PackLayout {
 	 * @returns The laid-out block, and the packing it used.
 	 */
 	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
+		this.gap = packing.gap ?? PACK_GAP;
 		this.place(packing);
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
@@ -355,6 +396,38 @@ class PackLayout {
 			bands: [],
 			packing,
 		};
+	}
+
+	/**
+	 * The room the trunks running between two neighbouring blocks need: a lane
+	 * either side of each, where libavoid squeezed more into a gap than it
+	 * holds a lane apart.
+	 * @returns The room the most crowded gap needs.
+	 */
+	crowded(): number {
+		const items = this.block.items.map((id) => this.boxes.get(id)!);
+		const runs = [...this.lines.values()].flatMap((points) =>
+			points.slice(1).map((to, index) => ({ from: points[index]!, to })),
+		);
+		const between = (low: number, high: number, at: number): boolean => at > low && at < high;
+		const most = items.flatMap((one) =>
+			items.map((other) => {
+				const across = [one.x + one.width, other.x];
+				const down = [one.y + one.height, other.y];
+				const beside = across[1]! - across[0]! > 0 && across[1]! - across[0]! <= this.gap + SAME;
+				const under = down[1]! - down[0]! > 0 && down[1]! - down[0]! <= this.gap + SAME;
+				const columns = runs
+					.filter(({ from, to }) => beside && Math.abs(from.x - to.x) < SAME)
+					.filter(({ from }) => between(across[0]!, across[1]!, from.x))
+					.map(({ from }) => Math.round(from.x));
+				const rows = runs
+					.filter(({ from, to }) => under && Math.abs(from.y - to.y) < SAME)
+					.filter(({ from }) => between(down[0]!, down[1]!, from.y))
+					.map(({ from }) => Math.round(from.y));
+				return Math.max(new Set(columns).size, new Set(rows).size);
+			}),
+		);
+		return (Math.max(0, ...most) + 1) * LANE;
 	}
 
 	/**
