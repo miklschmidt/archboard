@@ -336,7 +336,7 @@ class Settle {
 		const again = new PackLayout(block, laid, tree, insetsOf(block));
 		again.settled = own;
 		again.held = before.width;
-		laid.set(block.id, again.layOut(avoid, packing));
+		laid.set(block.id, again.roomy(avoid, packing));
 	}
 }
 

@@ -163,6 +163,60 @@ function alongWalls(
 	);
 }
 
+/**
+ * Every pair of different routes with runs side by side, closer than a
+ * lane but not on one trunk: 3.5 to 12 points apart for 20 points or more.
+ * @param routes Every route's points.
+ * @returns Each pair's ids.
+ */
+function squeezed(routes: ReadonlyMap<string, readonly { x: number; y: number }[]>): string[] {
+	const runs = [...routes].flatMap(([id, points]) =>
+		points.slice(1).flatMap((point, index) => {
+			const last = points[index]!;
+			if (point.x === last.x && Math.abs(point.y - last.y) >= 20)
+				return [
+					{
+						id,
+						upright: true,
+						at: point.x,
+						low: Math.min(point.y, last.y),
+						high: Math.max(point.y, last.y),
+					},
+				];
+			if (point.y === last.y && Math.abs(point.x - last.x) >= 20)
+				return [
+					{
+						id,
+						upright: false,
+						at: point.y,
+						low: Math.min(point.x, last.x),
+						high: Math.max(point.x, last.x),
+					},
+				];
+			return [];
+		}),
+	);
+	return runs.flatMap((one, index) =>
+		runs
+			.slice(index + 1)
+			.filter(
+				(other) =>
+					other.id !== one.id &&
+					other.upright === one.upright &&
+					Math.abs(other.at - one.at) > 3.5 &&
+					Math.abs(other.at - one.at) < 12 &&
+					Math.min(one.high, other.high) - Math.max(one.low, other.low) >= 20,
+			)
+			.map((other) => `${one.id}/${other.id}`),
+	);
+}
+
+test("trunks between packed blocks keep a lane apart however many share a gap", async () => {
+	const content = orderedFixture(agentWorkbench);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(squeezed(corridorPoints(drawn.svg))).toEqual([]);
+});
+
 test("two chains leaving a block through its bottom start on one row", async () => {
 	const content = orderedFixture(twoChains);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
