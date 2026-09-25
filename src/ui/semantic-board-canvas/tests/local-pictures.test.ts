@@ -322,7 +322,8 @@ test("a page that loads draws every listed board ahead once, for both themes, an
 	const first = page(storage);
 	await first.client.fetchQuery(semanticBoardListQuery());
 	await until(() => first.draws.length === 1);
-	expect(first.draws[0]).toEqual({ version: 1 });
+	expect(first.draws[0]).toMatchObject({ version: 1 });
+	expect(first.draws[0]).not.toHaveProperty("theme");
 	expect(first.draws[0]?.variant).toBeUndefined();
 	expect(first.draws[0]?.view).toBeUndefined();
 	// Opening it finds it drawn, without laying it out again.
