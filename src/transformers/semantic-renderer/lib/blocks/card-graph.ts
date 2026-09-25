@@ -1,10 +1,11 @@
-// The Graphviz graph a block of cards starts from, and the small geometry its
-// layout reads back: a label's box where Graphviz put it, and a line run onto
-// the block's wall.
+// The Graphviz graph a block of cards starts from, the holds it keeps its
+// first rank with, and the small geometry its layout reads back: a label's box
+// where Graphviz put it, and a line run onto the block's wall.
 import type { ElkLabel } from "@archboard/elk-rs";
 import type { Graph } from "@viz-js/viz";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { headerOf, type Block } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** Horizontal room Graphviz keeps between neighbours in a rank. */
 const NODE_GAP = 40;
@@ -80,4 +81,47 @@ function walledPoints(
 	return undefined;
 }
 
-export { emptyGraph, placedLabel, walledPoints, type VendorNode };
+/** A block of cards' Graphviz graph. */
+type VendorGraph = ReturnType<typeof emptyGraph>;
+
+/**
+ * The item a block holds the items no line enters under: its header, or its
+ * first top port.
+ * @param block The block.
+ * @returns The item, or nothing when the block has neither.
+ */
+function aboveOf(block: Block): string | undefined {
+	if (block.header !== undefined) return headerOf(block);
+	return [...block.ports].find(([, side]) => side === "top")?.[0];
+}
+
+/**
+ * Hold every item no line enters on a block's first rank of items, when the
+ * block has ports on its bottom. Graphviz ranks those ports last and joins
+ * every item no line leaves to them at no cost, so a short chain hangs from
+ * the bottom and its cards stand between another chain's rows.
+ * @param block The block.
+ * @param graph Its Graphviz graph, its lines already in it; the holds are added.
+ * @param nodeOf The vendor node of an item.
+ */
+function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) => VendorNode): void {
+	if (![...block.ports.values()].includes("bottom")) return;
+	const entered = new Set(graph.edges.map(({ head }) => head));
+	const leaving = new Set(graph.edges.map(({ tail }) => tail));
+	const sources = block.items.filter((item) => !entered.has(item) && leaving.has(item));
+	if (sources.length === 0) return;
+	const above = aboveOf(block);
+	if (above === undefined) {
+		graph.subgraphs.push({ graphAttributes: { rank: "min" }, nodes: sources.map(nodeOf) });
+		return;
+	}
+	graph.edges.push(
+		...sources.map((head) => ({
+			tail: above,
+			head,
+			attributes: { style: "invis", weight: 1, minlen: 1 },
+		})),
+	);
+}
+
+export { emptyGraph, holdSources, placedLabel, walledPoints, type VendorNode };

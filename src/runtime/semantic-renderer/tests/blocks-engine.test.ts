@@ -141,6 +141,17 @@ test("blocks are packed the way their trunks run, not only the way the page fits
 });
 
 /**
+ * Whether a coordinate lies on either of two edges, within a point.
+ * @param at The coordinate.
+ * @param low One edge.
+ * @param high The other.
+ * @returns True when it does.
+ */
+function on(at: number, low: number, high: number): boolean {
+	return Math.abs(at - low) < 1 || Math.abs(at - high) < 1;
+}
+
+/**
  * Every route with a run longer than a lane that lies on one of a box's
  * edges, within a point.
  * @param routes Every route's points.
@@ -151,8 +162,6 @@ function alongWalls(
 	routes: ReadonlyMap<string, readonly { x: number; y: number }[]>,
 	box: { x: number; y: number; width: number; height: number },
 ): string[] {
-	const on = (at: number, low: number, high: number): boolean =>
-		Math.abs(at - low) < 1 || Math.abs(at - high) < 1;
 	return [...routes].flatMap(([id, points]) =>
 		points.slice(1).some((point, index) => {
 			const last = points[index]!;

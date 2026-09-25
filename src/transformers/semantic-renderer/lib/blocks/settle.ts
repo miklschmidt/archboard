@@ -104,6 +104,33 @@ function spread(span: Span, wanted: readonly number[]): number[] {
 	return xs;
 }
 
+/**
+ * The stretches of an edge no blocked stretch covers.
+ * @param edge The edge.
+ * @param blocked The blocked stretches.
+ * @returns The free ones, left to right.
+ */
+function freeOf(edge: Span, blocked: readonly Span[]): Span[] {
+	const free: Span[] = [];
+	let from = edge[0];
+	for (const [low, high] of blocked.toSorted((one, other) => one[0] - other[0])) {
+		if (low > from) free.push([from, Math.min(low, edge[1])]);
+		from = Math.max(from, high);
+	}
+	if (from < edge[1]) free.push([from, edge[1]]);
+	return free;
+}
+
+/**
+ * How far an x stands outside a span.
+ * @param span The span.
+ * @param x The x.
+ * @returns The distance, zero inside it.
+ */
+function apart(span: Span, x: number): number {
+	return Math.max(span[0] - x, x - span[1], 0);
+}
+
 /** The top-down walk that settles every block's ports and routes each block again. */
 class Settle {
 	/**
@@ -162,18 +189,11 @@ class Settle {
 		const blocked = block.items
 			.map((item) => inner.boxes.get(item)!)
 			.filter((box) => (top ? box.y - face : face - box.y - box.height) < PACK_GAP)
-			.map((box): Span => [box.x - TRUNK_CLEARANCE, box.x + box.width + TRUNK_CLEARANCE])
-			.toSorted((one, other) => one[0] - other[0]);
-		const open: Span[] = [];
-		let from = edge[0];
-		for (const [low, high] of blocked) {
-			if (low > from) open.push([from, Math.min(low, edge[1])]);
-			from = Math.max(from, high);
-		}
-		if (from < edge[1]) open.push([from, edge[1]]);
+			.map((box): Span => [box.x - TRUNK_CLEARANCE, box.x + box.width + TRUNK_CLEARANCE]);
 		const x = middle(inner.boxes.get(port)!);
-		const distance = ([low, high]: Span): number => Math.max(low - x, x - high, 0);
-		return open.toSorted((one, other) => distance(one) - distance(other))[0] ?? edge;
+		return (
+			freeOf(edge, blocked).toSorted((one, other) => apart(one, x) - apart(other, x))[0] ?? edge
+		);
 	}
 
 	/**
