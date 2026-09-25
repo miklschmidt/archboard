@@ -110,12 +110,12 @@ class Scene {
 		this.visit(placed.children ?? [], 0, []);
 		this.readLabels(placed.edges ?? []);
 		this.readRegions(placed);
-		this.groupBands([
-			...this.cards.values(),
-			...this.labels.values(),
-			...this.titles.values(),
-			...this.regions.map(({ caption }) => caption),
-		]);
+		const heads = [...this.titles.values(), ...this.regions.map(({ caption }) => caption)];
+		this.groupBands([...this.cards.values(), ...this.labels.values(), ...heads]);
+		// A title row or caption sits at the foot of its band, on the cards it
+		// heads, rather than halfway down a taller card beside it.
+		for (const head of heads)
+			head.box = { ...head.box, y: this.bands[head.band]!.bottom - head.box.height };
 	}
 
 	/**
