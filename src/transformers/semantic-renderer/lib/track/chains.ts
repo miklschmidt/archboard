@@ -540,6 +540,9 @@ function nearest(from: number, passes: (x: number) => boolean): number | undefin
 export {
 	LANE,
 	chainOf,
+	freeWithout,
+	inversions,
+	laneRuns,
 	moveRun,
 	pullToPorts,
 	reachOf,

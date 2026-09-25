@@ -9,7 +9,8 @@
 // lines entering one card unevenly, one hugging its corner, a line crossing
 // a container's heading through its painted words, two lines lined up end to
 // end across a channel so that they read as one, a container ending 12 px
-// above another opening under it, lanes put where they
+// above another opening under it, a run of lanes left where a label stood
+// before it slid aside, lanes put where they
 // cross another line that a free column would have left alone, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
@@ -327,6 +328,24 @@ function containerBoxes(svg: string): { x: number; y: number; width: number; hei
 		height: Number(height),
 	}));
 }
+
+// The workhorse fixture again: one line's run of lanes was blocked by a label
+// that later slid aside, and the run stayed where it was, turning twice more.
+test("a run of lanes a label blocked moves onto its end's column once the label slides", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(readAsOne),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	for (const [id, points] of corridorPoints(drawing.svg)) {
+		const levels = points
+			.slice(1)
+			.filter((point, index) => point.y === points[index]!.y && point.x !== points[index]!.x)
+			.map(({ y }) => y);
+		expect(new Set(levels).size, id).toBeLessThanOrEqual(2);
+	}
+});
 
 // The heading fixture again: its Drawing region ended one band above a frame
 // that opened under it, and the channel between kept 12 px, not an inset.
