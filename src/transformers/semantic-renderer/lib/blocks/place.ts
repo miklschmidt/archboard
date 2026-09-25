@@ -357,7 +357,10 @@ function layOut(
 			: layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
 	const unsettled = new Map(last.laid);
 	settlePorts({ ...last, insetsOf, avoid });
-	if (routedScore(...drawn(last.tree, unsettled)) > routedScore(...drawn(last.tree, last.laid)))
+	if (
+		routedScore(...pageAndLines(last.tree, unsettled)) >
+		routedScore(...pageAndLines(last.tree, last.laid))
+	)
 		for (const [id, laid] of unsettled) last.laid.set(id, laid);
 	return last;
 }
@@ -368,7 +371,7 @@ function layOut(
  * @param laid Every block laid out.
  * @returns The page and the points.
  */
-function drawn(
+function pageAndLines(
 	tree: BlockTree,
 	laid: ReadonlyMap<string, Laid>,
 ): [{ width: number; height: number }, Point[][]] {

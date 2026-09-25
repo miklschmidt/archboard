@@ -7,6 +7,7 @@ import type { Edge, Subgraph, Viz } from "@viz-js/viz";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	emptyGraph,
+	holdSources,
 	placedLabel,
 	walledPoints,
 	type VendorNode,
@@ -221,38 +222,7 @@ class CardLayout {
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
-		this.holdSources();
-	}
-
-	/**
-	 * Hold every item no line enters on the block's first rank of items, when
-	 * the block has ports on its bottom. Graphviz ranks those ports last and
-	 * joins every item no line leaves to them at no cost, so a short chain
-	 * hangs from the bottom and its cards stand between another chain's rows.
-	 */
-	holdSources(): void {
-		const { block, graph } = this;
-		if (![...block.ports.values()].includes("bottom")) return;
-		const entered = new Set(graph.edges.map(({ head }) => head));
-		const leaving = new Set(graph.edges.map(({ tail }) => tail));
-		const sources = block.items.filter((item) => !entered.has(item) && leaving.has(item));
-		const top = block.header === undefined ? undefined : headerOf(block);
-		if (sources.length === 0) return;
-		if (top === undefined && ![...block.ports.values()].includes("top")) {
-			graph.subgraphs.push({
-				graphAttributes: { rank: "min" },
-				nodes: sources.map((item) => this.nodeOf(item)),
-			});
-			return;
-		}
-		const above = top ?? [...block.ports].find(([, side]) => side === "top")![0];
-		graph.edges.push(
-			...sources.map((head) => ({
-				tail: above,
-				head,
-				attributes: { style: "invis", weight: 1, minlen: 1 },
-			})),
-		);
+		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
 	}
 
 	/**
@@ -391,7 +361,7 @@ class CardLayout {
 		});
 		const placed = this.placed(centres, polylines, clusters);
 		const laid = this.routed(placed, 0);
-		return { ...laid, reroute: (ports) => this.rerouted(placed, ports, laid.width) };
+		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width) };
 	}
 
 	/**
@@ -428,14 +398,14 @@ class CardLayout {
 	 * where its parent settled them; Graphviz does not rank it again, and it
 	 * keeps its width.
 	 * @param placed The placed block; its ports' leaves move in place.
-	 * @param ports Each moved port's x, in the block's own coordinates.
 	 * @param held The block's width.
+	 * @param ports Each moved port's x, in the block's own coordinates.
 	 * @returns The laid-out block.
 	 */
 	rerouted(
 		placed: ElkNode & { edges: ElkExtendedEdge[] },
-		ports: ReadonlyMap<string, number>,
 		held: number,
+		ports: ReadonlyMap<string, number>,
 	): Laid {
 		for (const leaf of placed.children ?? []) {
 			const x = ports.get(leaf.id);

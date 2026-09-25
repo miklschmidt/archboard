@@ -24,7 +24,11 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
-import { TrunkRouter, packedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
+import {
+	TrunkRouter,
+	packedScore,
+	roomNeeded,
+} from "@/transformers/semantic-renderer/lib/blocks/trunks";
 
 /** Room between two packed blocks, for the trunks that pass between them. */
 const PACK_GAP = 72;
@@ -34,6 +38,11 @@ const HEAD_GAP = 48;
 const PORT = 1;
 /** How far apart two ends may be and still be one straight run. */
 const STRAIGHT = 0.5;
+/** The pairs of edges two pins stand on when they face each other, over and under or side by side. */
+const FACING = {
+	upright: new Set(["bottom>top", "top>bottom"]),
+	level: new Set(["right>left", "left>right"]),
+};
 /** The most blocks whose every packing is tried. */
 const EVERY_PACKING = 9;
 /** How nearly a packing's estimated fit must reach the best one's to be laid out and weighed. */
@@ -262,23 +271,48 @@ class PackLayout {
 		const done = new Set<string>();
 		for (const line of this.block.lines.values()) {
 			const [tail, head] = [this.tree.pins.get(line.tail), this.tree.pins.get(line.head)];
-			if (tail === undefined || head === undefined || tail.block === head.block) continue;
-			const [one, other] = [this.pinAt(line.tail), this.pinAt(line.head)];
-			const sides = `${one.side}>${other.side}`;
-			const upright = sides === "bottom>top" || sides === "top>bottom";
-			if (!upright && sides !== "right>left" && sides !== "left>right") continue;
-			const step = upright ? one.x - other.x : one.y - other.y;
-			if (Math.abs(step) < STRAIGHT || Math.abs(step) >= 2 * BEND_RADIUS) continue;
-			const by = (sign: number): Point =>
-				upright ? { x: sign * step, y: 0 } : { x: 0, y: sign * step };
+			const by = this.stepOf(line.tail, line.head);
+			if (tail === undefined || head === undefined || by === undefined) continue;
+			const back = { x: -by.x, y: -by.y };
 			const choice = [
-				{ id: head.block.id, by: by(1) },
-				{ id: tail.block.id, by: by(-1) },
+				{ id: head.block.id, by },
+				{ id: tail.block.id, by: back },
 			].find(({ id, by: offset }) => !done.has(id) && this.roomFor(id, offset));
 			if (choice === undefined) continue;
 			this.boxes.set(choice.id, moved(this.boxes.get(choice.id)!, choice.by));
 			done.add(choice.id);
 		}
+	}
+
+	/**
+	 * How far a trunk steps sideways between two pins facing each other, on
+	 * blocks of their own, when the step is too short for its two bends.
+	 * @param tail The trunk's upper end.
+	 * @param head Its lower end.
+	 * @returns The move that brings the lower end's block in line, or nothing.
+	 */
+	stepOf(tail: string, head: string): Point | undefined {
+		const facing = this.facing(tail, head);
+		if (facing === undefined) return undefined;
+		const { one, other, upright } = facing;
+		const step = upright ? one.x - other.x : one.y - other.y;
+		if (Math.abs(step) < STRAIGHT || Math.abs(step) >= 2 * BEND_RADIUS) return undefined;
+		return upright ? { x: step, y: 0 } : { x: 0, y: step };
+	}
+
+	/**
+	 * Two pins on blocks of their own that face each other.
+	 * @param tail One pin.
+	 * @param head The other.
+	 * @returns Where both stand, and whether one stands over the other, or nothing.
+	 */
+	facing(tail: string, head: string): { one: Point; other: Point; upright: boolean } | undefined {
+		const [a, b] = [this.tree.pins.get(tail), this.tree.pins.get(head)];
+		if (a === undefined || b === undefined || a.block === b.block) return undefined;
+		const [one, other] = [this.pinAt(tail), this.pinAt(head)];
+		const sides = `${one.side}>${other.side}`;
+		if (FACING.upright.has(sides)) return { one, other, upright: true };
+		return FACING.level.has(sides) ? { one, other, upright: false } : undefined;
 	}
 
 	/**
@@ -426,7 +460,11 @@ class PackLayout {
 	 * @returns The laid-out block.
 	 */
 	widened(avoid: AvoidEngine, laid: Laid & { packing: Packing }): Laid & { packing: Packing } {
-		const room = this.crowded();
+		const room = roomNeeded(
+			this.block.items.map((id) => this.boxes.get(id)!),
+			[...this.lines.values()],
+			this.gap,
+		);
 		if (room <= this.gap) return laid;
 		const again = new PackLayout(this.block, this.laid, this.tree, this.insets);
 		again.settled = this.settled;
@@ -468,38 +506,6 @@ class PackLayout {
 			bands: [],
 			packing,
 		};
-	}
-
-	/**
-	 * The room the trunks running between two neighbouring blocks need: a lane
-	 * either side of each, where libavoid squeezed more into a gap than it
-	 * holds a lane apart.
-	 * @returns The room the most crowded gap needs.
-	 */
-	crowded(): number {
-		const items = this.block.items.map((id) => this.boxes.get(id)!);
-		const runs = [...this.lines.values()].flatMap((points) =>
-			points.slice(1).map((to, index) => ({ from: points[index]!, to })),
-		);
-		const between = (low: number, high: number, at: number): boolean => at > low && at < high;
-		const most = items.flatMap((one) =>
-			items.map((other) => {
-				const across = [one.x + one.width, other.x];
-				const down = [one.y + one.height, other.y];
-				const beside = across[1]! - across[0]! > 0 && across[1]! - across[0]! <= this.gap + SAME;
-				const under = down[1]! - down[0]! > 0 && down[1]! - down[0]! <= this.gap + SAME;
-				const columns = runs
-					.filter(({ from, to }) => beside && Math.abs(from.x - to.x) < SAME)
-					.filter(({ from }) => between(across[0]!, across[1]!, from.x))
-					.map(({ from }) => Math.round(from.x));
-				const rows = runs
-					.filter(({ from, to }) => under && Math.abs(from.y - to.y) < SAME)
-					.filter(({ from }) => between(down[0]!, down[1]!, from.y))
-					.map(({ from }) => Math.round(from.y));
-				return Math.max(new Set(columns).size, new Set(rows).size);
-			}),
-		);
-		return (Math.max(0, ...most) + 1) * LANE;
 	}
 
 	/**

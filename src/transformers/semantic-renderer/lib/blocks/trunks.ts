@@ -3,11 +3,12 @@
 // or header, and how much room the routes spend running round the blocks.
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { SAME, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
 	headerOf,
 	type Block,
 	type BlockTree,
+	type Line,
 	type Side,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
@@ -32,6 +33,7 @@ const INWARD: Readonly<Record<Side, Side>> = {
 /** A router, its ends and its connectors, as the module makes them. */
 type Router = InstanceType<AvoidEngine["Router"]>;
 type End = InstanceType<AvoidEngine["ConnEnd"]>;
+type Connection = InstanceType<AvoidEngine["ConnRef"]>;
 
 /**
  * Whether a route runs only across and down, never on a slant.
@@ -114,6 +116,50 @@ function routedScore(page: { width: number; height: number }, lines: readonly Po
  */
 function packedScore(laid: Laid): number {
 	return routedScore(laid, [...laid.lines.values()]);
+}
+
+/**
+ * Whether a value lies strictly between two others.
+ * @param low The lower.
+ * @param high The higher.
+ * @param at The value.
+ * @returns True when it does.
+ */
+function between(low: number, high: number, at: number): boolean {
+	return at > low && at < high;
+}
+
+/**
+ * The room the trunks running between two neighbouring blocks need: a lane
+ * either side of each, where libavoid squeezed more into a gap than it
+ * holds a lane apart.
+ * @param items The packed blocks' boxes.
+ * @param lines Every trunk's points.
+ * @param gap The room packed blocks stand apart by.
+ * @returns The room the most crowded gap needs.
+ */
+function roomNeeded(items: readonly Box[], lines: readonly Point[][], gap: number): number {
+	const runs = lines.flatMap((points) =>
+		points.slice(1).map((to, index) => ({ from: points[index]!, to })),
+	);
+	const most = items.flatMap((one) =>
+		items.map((other) => {
+			const across = [one.x + one.width, other.x];
+			const down = [one.y + one.height, other.y];
+			const beside = across[1]! - across[0]! > 0 && across[1]! - across[0]! <= gap + SAME;
+			const under = down[1]! - down[0]! > 0 && down[1]! - down[0]! <= gap + SAME;
+			const columns = runs
+				.filter(({ from, to }) => beside && Math.abs(from.x - to.x) < SAME)
+				.filter(({ from }) => between(across[0]!, across[1]!, from.x))
+				.map(({ from }) => Math.round(from.x));
+			const rows = runs
+				.filter(({ from, to }) => under && Math.abs(from.y - to.y) < SAME)
+				.filter(({ from }) => between(down[0]!, down[1]!, from.y))
+				.map(({ from }) => Math.round(from.y));
+			return Math.max(new Set(columns).size, new Set(rows).size);
+		}),
+	);
+	return (Math.max(0, ...most) + 1) * LANE;
 }
 
 /** The trunks of one block of blocks, routed around its packed blocks. */
@@ -254,44 +300,14 @@ class TrunkRouter {
 	 * for some trunk and a dogleg was not asked for.
 	 */
 	routeOnce(avoid: AvoidEngine, anyway = false): Map<string, Point[]> | undefined {
-		const lines = new Map<string, Point[]>();
 		const router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		try {
-			router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
-			router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
-			router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
-			router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
-			const header = this.block.header === undefined ? [] : [headerOf(this.block)];
-			const shapes = new Map(
-				[...this.block.items, ...header, ...(this.directed ? this.block.ports.keys() : [])].map(
-					(id) => [id, this.shape(avoid, router, this.boxes.get(id)!)],
-				),
-			);
-			const classes = new Map<string, number>();
-			const connections = [...this.block.lines.values()].map((line) => {
-				const from = this.end(avoid, line.tail, shapes, classes);
-				const to = this.end(avoid, line.head, shapes, classes);
-				try {
-					const connection = new avoid.ConnRef(router, from, to);
-					connection.setRoutingType(avoid.ConnType.ConnType_Orthogonal);
-					return { line, connection };
-				} finally {
-					from.delete();
-					to.delete();
-				}
-			});
+			const connections = this.connect(avoid, router);
 			router.processTransaction();
+			const lines = new Map<string, Point[]>();
 			for (const { line, connection } of connections) {
-				const route = connection.displayRoute();
-				const routed = Array.from({ length: route.size() }, (_, index) => {
-					const { x, y } = route.at(index);
-					return { x, y };
-				});
-				// libavoid answers a straight line between the blocks' middles when it finds
-				// no route; the trunk then takes a plain dogleg between its pins.
-				const valid = connection.hasValidRoute() && orthogonal(routed);
-				if (!valid && !anyway) return undefined;
-				const points = valid ? routed : dogleg(this.pinPoint(line.tail), this.pinPoint(line.head));
+				const points = this.pointsOf(line, connection, anyway);
+				if (points === undefined) return undefined;
 				lines.set(line.key, line.from === line.tail ? points : points.toReversed());
 			}
 			return lines;
@@ -299,6 +315,61 @@ class TrunkRouter {
 			router.delete();
 		}
 	}
+
+	/**
+	 * Set the router up and connect every trunk's two ends.
+	 * @param avoid The initialized libavoid module.
+	 * @param router The router.
+	 * @returns Each line and its connector.
+	 */
+	connect(avoid: AvoidEngine, router: Router): { line: Line; connection: Connection }[] {
+		router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
+		router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
+		router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
+		router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
+		const header = this.block.header === undefined ? [] : [headerOf(this.block)];
+		const owned = this.directed ? [...this.block.ports.keys()] : [];
+		const shapes = new Map(
+			[...this.block.items, ...header, ...owned].map((id) => [
+				id,
+				this.shape(avoid, router, this.boxes.get(id)!),
+			]),
+		);
+		const classes = new Map<string, number>();
+		return [...this.block.lines.values()].map((line) => {
+			const from = this.end(avoid, line.tail, shapes, classes);
+			const to = this.end(avoid, line.head, shapes, classes);
+			try {
+				const connection = new avoid.ConnRef(router, from, to);
+				connection.setRoutingType(avoid.ConnType.ConnType_Orthogonal);
+				return { line, connection };
+			} finally {
+				from.delete();
+				to.delete();
+			}
+		});
+	}
+
+	/**
+	 * One trunk's route as libavoid answered it: its points, a plain dogleg
+	 * between its pins when libavoid found no route and one is asked for, or
+	 * nothing.
+	 * @param line The trunk.
+	 * @param connection Its connector, routed.
+	 * @param anyway Whether a trunk with no route takes a dogleg.
+	 * @returns The points, from the trunk's upper end.
+	 */
+	pointsOf(line: Line, connection: Connection, anyway: boolean): Point[] | undefined {
+		const route = connection.displayRoute();
+		const routed = Array.from({ length: route.size() }, (_, index) => {
+			const { x, y } = route.at(index);
+			return { x, y };
+		});
+		// libavoid answers a straight line between the blocks' middles when it
+		// finds no route.
+		if (connection.hasValidRoute() && orthogonal(routed)) return routed;
+		return anyway ? dogleg(this.pinPoint(line.tail), this.pinPoint(line.head)) : undefined;
+	}
 }
 
-export { TRUNK_CLEARANCE, TrunkRouter, packedScore, routedScore };
+export { TRUNK_CLEARANCE, TrunkRouter, packedScore, roomNeeded, routedScore };
