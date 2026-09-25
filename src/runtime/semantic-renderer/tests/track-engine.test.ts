@@ -1,7 +1,8 @@
 // The track engine (TASK-349): what its own placement and routing promise.
-// What this catches: a fan wider than the page drawn as one long row again,
-// and a line that jogs a few points on its way to a label, which its rounded
-// corners draw as a hook doubling back on itself.
+// What this catches: a fan wider than the page drawn as one long row again, a
+// line that jogs a few points on its way to a label, which its rounded corners
+// draw as a hook doubling back on itself, and a long chain drawn as one tall
+// column again, or folded into columns that start at different heights.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -50,4 +51,28 @@ test("a line to its label runs without a hook", async () => {
 	const routes = routePoints(drawing.svg);
 	expect(routes.size).toBe(TARGETS.length);
 	for (const [id, points] of routes) expect(doublesBack(points), id).toBe(false);
+});
+
+test("a long chain folds into columns whose first cards stand on one line", async () => {
+	const stages = Array.from({ length: 12 }, (_, index) => `s${index}`);
+	const chain = orderedFixture({
+		nodes: stages.map((id) => ({ id, name: `Stage ${id}`, kind: "module" })),
+		edges: stages.slice(1).map((to, index) => ({
+			id: `e${index}`,
+			from: stages[index]!,
+			to,
+			kind: "call",
+		})),
+	});
+	const drawing = await renderArchitecture({ content: chain, theme: "light", layout: "track" });
+	const cards = stages.map((id) => drawing.atlas.nodes[id]!);
+	const columns = [...new Set(cards.map(({ x }) => x))].toSorted((one, other) => one - other);
+	expect(columns.length).toBeGreaterThan(1);
+	const heads = columns.map((x) =>
+		Math.min(...cards.filter((card) => card.x === x).map(({ y }) => y)),
+	);
+	expect(new Set(heads).size).toBe(1);
+	// Down each column, then on at the head of the next.
+	const order = cards.toSorted((one, other) => one.x - other.x || one.y - other.y);
+	expect(order).toEqual(cards);
 });
