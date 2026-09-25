@@ -15,6 +15,7 @@ import { curveBounds, labelAnchorOf } from "@/transformers/semantic-renderer/lib
 import {
 	crossingCutouts,
 	crossingMasks,
+	labelCutouts,
 	trunkCutouts,
 } from "@/transformers/semantic-renderer/lib/svg/crossings";
 import {
@@ -293,6 +294,13 @@ function paintArchitecture(
 	const { definitions, masks } = crossingMasks(edges, [
 		...crossingCutouts(edges, bridges),
 		...trunkCutouts(drawing.edges),
+		// A removed relationship's label is drawn see-through, as its line is.
+		...labelCutouts(
+			edges,
+			edges.flatMap(({ edge, label }) =>
+				label === undefined || standingOf(edge.id) !== "removed" ? [] : [label.box],
+			),
+		),
 	]);
 	const appearances = nodeAppearances(
 		[...cards, ...containers].map(({ measured }) => measured.node),
