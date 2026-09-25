@@ -21,6 +21,7 @@ import {
 	type DiagramBox,
 	type DiagramTheme,
 	type DrawnBoard,
+	type LayoutEngineName,
 	type ListedBoard,
 	type NothingDrawn,
 	type OfferedView,
@@ -86,6 +87,8 @@ interface SemanticRenderRequest {
 	readonly theme: SemanticTheme;
 	/** Whether to show proposal comparison treatment; defaults to true. */
 	readonly comparison?: boolean | undefined;
+	/** Which engine lays it out; the default one when absent (TASK-348). */
+	readonly layout?: LayoutEngineName | undefined;
 }
 
 /**
@@ -217,14 +220,14 @@ async function fetchSemanticBoards(signal?: AbortSignal): Promise<SemanticBoardL
  */
 function renderQuery(request: SemanticRenderRequest): string {
 	const search = new URLSearchParams({ board: request.board, theme: request.theme });
-	if (request.variant !== undefined && request.variant !== "") {
-		search.set("variant", request.variant);
-	}
-	if (request.view !== undefined && request.view !== "") {
-		search.set("view", request.view);
-	}
-	if (request.comparison === false) {
-		search.set("comparison", "off");
+	const stated = {
+		variant: request.variant,
+		view: request.view,
+		comparison: request.comparison === false ? "off" : undefined,
+		layout: request.layout,
+	};
+	for (const [name, value] of Object.entries(stated)) {
+		if (value !== undefined && value !== "") search.set(name, value);
 	}
 	return `?${search.toString()}`;
 }

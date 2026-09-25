@@ -29,6 +29,17 @@ const DiagramThemeSchema = z.enum(["light", "dark"]);
 type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
 
 /**
+ * Which engine lays an architecture out. Engines sit behind one seam and are
+ * compared side by side (TASK-348); `graphviz` places with Graphviz and routes
+ * with libavoid, `track` routes every relationship on an assigned track in the
+ * channels between ranks (TASK-349).
+ */
+const LayoutEngineSchema = z.enum(["graphviz", "track"]);
+type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
+/** The engine a render uses when it names none. */
+const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "graphviz";
+
+/**
  * Where a drawn document's faces come from.
  *
  * A pane is inside a page the server serves, so it links them and the browser
@@ -182,6 +193,9 @@ export {
 	type RenderedChanges,
 	DiagramThemeSchema,
 	type DiagramTheme,
+	DEFAULT_LAYOUT_ENGINE,
+	LayoutEngineSchema,
+	type LayoutEngineName,
 	FontSourceSchema,
 	type FontSource,
 	DiagramBoxSchema,

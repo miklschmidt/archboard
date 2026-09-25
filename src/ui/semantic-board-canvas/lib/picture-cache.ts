@@ -20,7 +20,11 @@
 
 import { createStore, del, get, keys, set } from "idb-keyval";
 
-import { SemanticRenderReplySchema, type SemanticRenderReply } from "@/shared/semantic-board/index";
+import {
+	DEFAULT_LAYOUT_ENGINE,
+	SemanticRenderReplySchema,
+	type SemanticRenderReply,
+} from "@/shared/semantic-board/index";
 import type { SemanticRenderRequest } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 
@@ -90,6 +94,7 @@ function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string
 		request.view ?? "",
 		request.theme,
 		request.comparison === false ? "plain" : "compared",
+		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		stamp.version,
 		stamp.fingerprint,
 		stamp.renderer,
@@ -157,7 +162,7 @@ async function forgetStalePictures(
 	try {
 		const stale = (await storage.keys()).filter((key): key is string => {
 			if (typeof key !== "string") return false;
-			const [board, , , , , version, , drawnBy] = keyParts(key);
+			const [board, , , , , , version, , drawnBy] = keyParts(key);
 			const listed = boards.find(
 				({ name, key: listedKey }) =>
 					typeof board === "string" &&
@@ -174,7 +179,7 @@ async function forgetStalePictures(
 /**
  * The fields of a kept key, or none for a key this module did not write.
  * @param key A stored key.
- * @returns Board, variant, view, theme, comparison, version, fingerprint, renderer.
+ * @returns Board, variant, view, theme, comparison, engine, version, fingerprint, renderer.
  */
 function keyParts(key: string): unknown[] {
 	try {

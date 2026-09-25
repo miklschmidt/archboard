@@ -60,6 +60,7 @@ import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-s
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
+import { useLayoutEngine } from "@/ui/semantic-board-canvas/hooks/use-layout-engine";
 import {
 	useLevelReading,
 	type PaneReading,
@@ -418,6 +419,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// long as that beat is the one being read, and hands it straight back: the
 	// narrative decides the reading while somebody is following it, and what the
 	// person chose is what they come back to.
+	const layout = useLayoutEngine();
 	const render = useQuery(
 		semanticRenderQuery({
 			board: drill.board,
@@ -425,6 +427,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 			view: viewToRead(narrative.beat, level.view),
 			theme,
 			comparison,
+			layout,
 		}),
 	);
 	// The board on screen, not the pane's own: a change to the board somebody is

@@ -27,14 +27,16 @@ import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-
 // content, theme and font source to the same bytes in any order, and two
 // browsers may measure a word differently because each paints it differently.
 
-import type {
-	DiagramAtlas,
-	DiagramGrammar,
-	DiagramTheme,
-	FontSource,
-	VariantContent,
+import {
+	DEFAULT_LAYOUT_ENGINE,
+	type DiagramAtlas,
+	type DiagramGrammar,
+	type DiagramTheme,
+	type FontSource,
+	type LayoutEngineName,
+	type VariantContent,
 } from "@/shared/semantic-board/index";
-import { layoutCompound } from "@/transformers/semantic-renderer/lib/layout/compound";
+import { layoutEngine } from "@/transformers/semantic-renderer/lib/layout/engines";
 import type {
 	PaintedDrawing,
 	ReadingDirection,
@@ -128,6 +130,8 @@ interface DiagramRenderRequest {
 	 * variant and view of such a board is framed alike.
 	 */
 	readonly unbuilt?: boolean | undefined;
+	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
+	readonly layout?: LayoutEngineName | undefined;
 }
 
 /** The same, plus which of the two pictures to draw. */
@@ -197,16 +201,18 @@ const REMEMBERED_LAYOUTS = 64;
 const layouts = new Map<string, Promise<PaintedDrawing>>();
 
 /**
- * Lay out each distinct content and comparison channel set once, independent of theme.
+ * Lay out each distinct content and comparison channel set once per engine, independent of theme.
  * @param content The architecture to draw.
  * @param expanded The architecture after adding drawable flow-step lines.
  * @param standing Comparison standing used to keep marked relationships apart.
+ * @param engine The engine that lays it out.
  * @returns Its deterministic layout.
  */
 function layoutRemembered(
 	content: VariantContent,
 	expanded: VariantContent,
 	standing: StatedStandings | undefined,
+	engine: LayoutEngineName,
 ): Promise<PaintedDrawing> {
 	const edgeStandings =
 		standing === undefined
@@ -214,14 +220,14 @@ function layoutRemembered(
 			: Object.fromEntries(
 					expanded.edges.map((edge) => [edge.id, standing[edge.id] ?? "unchanged"]),
 				);
-	const key = JSON.stringify([content, edgeStandings]);
+	const key = JSON.stringify([engine, content, edgeStandings]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
 		layouts.set(key, known);
 		return known;
 	}
-	const layout = layoutCompound(expanded, measureArchitecture(expanded), edgeStandings);
+	const layout = layoutEngine(engine)(expanded, measureArchitecture(expanded), edgeStandings);
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.
 	layout.catch(() => layouts.delete(key));
@@ -248,7 +254,12 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 	}
 
 	const stepLines = withStepLines(request.content);
-	const drawing = await layoutRemembered(request.content, stepLines.content, request.standing);
+	const drawing = await layoutRemembered(
+		request.content,
+		stepLines.content,
+		request.standing,
+		request.layout ?? DEFAULT_LAYOUT_ENGINE,
+	);
 	const palette = paletteFor(theme);
 	const painting = paintArchitecture(
 		drawing,
