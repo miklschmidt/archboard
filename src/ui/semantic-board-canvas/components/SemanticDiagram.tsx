@@ -33,6 +33,7 @@ import {
 	type StagedPicture,
 } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-presentation-arrival";
+import { SemanticCaptions } from "@/ui/semantic-board-canvas/components/SemanticCaptions";
 import { PAN_STEP, cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import {
 	leavePicture,
@@ -562,6 +563,11 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						data-slot="semantic-board-surface"
 						style={surfaceStyle}
 						className={`${surfaceClass(panning, reducedMotion, camera.instant)}${presentationMarks(props.presenting).surface}`}
+					/>
+					<SemanticCaptions
+						svg={drawing.svg}
+						view={view}
+						easing={!panning && !reducedMotion && !camera.instant}
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}

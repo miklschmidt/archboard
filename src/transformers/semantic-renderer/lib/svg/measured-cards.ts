@@ -116,7 +116,12 @@ function paintMeasuredFrame(
 	const styles = stylesFor(palette);
 	return wrap(
 		"g",
-		{ ...subjectGroup("region", measured.node.id, standing), ...appearanceAttributes(appearance) },
+		{
+			...subjectGroup("region", measured.node.id, standing),
+			...appearanceAttributes(appearance),
+			// The container's name, for a viewer that keeps it readable when the picture is small.
+			"data-caption": measured.node.name,
+		},
 		lines([
 			halo(box, BAND_RADIUS, styles),
 			tag("rect", {
