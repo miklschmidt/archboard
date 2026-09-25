@@ -27,15 +27,14 @@ import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
+	HEAD_REF_X,
+	HEAD_SIZE,
 	WEIGHTS,
 	lineColour,
 	type Head,
 	type Weight,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
 import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
-
-/** How big an arrowhead of each weight is. A hero's head is part of its weight. */
-const HEAD_SIZE: Readonly<Record<Weight, number>> = { hero: 7.5, normal: 6, muted: 5.5 };
 
 /**
  * The standings an arrowhead is drawn for, beyond the plain one.
@@ -76,7 +75,7 @@ function marker(head: Head, weight: Weight, palette: Palette, standing?: Subject
 		{
 			id: `ah-${head}-${weight}${standing === undefined ? "" : `-${standing}`}`,
 			viewBox: "0 0 10 10",
-			refX: head === "filled" ? 8 : 10,
+			refX: HEAD_REF_X[head],
 			refY: 5,
 			markerWidth: size,
 			markerHeight: size,

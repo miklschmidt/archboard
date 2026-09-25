@@ -19,7 +19,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/design";
 import {
 	ACTIVATION_HALF_WIDTH,
-	MARKER_INSET,
+	arrowStandoff,
 	MESSAGE_LABEL_GAP,
 	SELF_LABEL_GAP,
 	SELF_LOOP_CORNER,
@@ -61,8 +61,8 @@ function travelOf(kind: MessageKind, fromX: number, toX: number): Travel {
  * Where a message's arrow starts and stops.
  *
  * A busy column is a bar rather than a line, so an arrow touching one has to
- * stop at the bar's edge, and the arrowhead needs room of its own on top of
- * that.
+ * stop at the bar's edge, short of it by what the arrowhead's tip reaches past
+ * the line's end.
  * @param placed The message.
  * @param activeAt Whether a column is busy at a given height.
  * @param direction Which way it travels.
@@ -73,7 +73,7 @@ function endsFor(placed: PlacedStep, activeAt: ActiveAt, direction: -1 | 1): End
 	const arriving = activeAt(placed.step.to, placed.y) ? ACTIVATION_HALF_WIDTH : 0;
 	return {
 		start: placed.fromX + direction * leaving,
-		end: placed.toX - direction * (arriving + MARKER_INSET),
+		end: placed.toX - direction * (arriving + arrowStandoff(placed.step.kind)),
 	};
 }
 

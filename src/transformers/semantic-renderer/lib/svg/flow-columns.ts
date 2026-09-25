@@ -110,12 +110,14 @@ function paintColumn(
 				...own.lifeline,
 				stroke: ink ?? own.lifeline["stroke"],
 			}),
+			// A bar reaches its corner radius past the call that starts it and the
+			// reply that ends it, so both meet its straight side, not a rounded corner.
 			...column.activations.map((bar) =>
 				tag("rect", {
 					x: coord(column.centreX - ACTIVATION_HALF_WIDTH),
-					y: coord(bar.top),
+					y: coord(bar.top - ACTIVATION_RADIUS),
 					width: ACTIVATION_HALF_WIDTH * 2,
-					height: coord(bar.bottom - bar.top),
+					height: coord(bar.bottom - bar.top + ACTIVATION_RADIUS * 2),
 					rx: ACTIVATION_RADIUS,
 					...own.activation,
 				}),

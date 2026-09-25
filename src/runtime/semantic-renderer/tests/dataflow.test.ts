@@ -330,8 +330,8 @@ describe("renderDataFlow", () => {
 
 		const receiver = rendered.atlas.nodes["server"]!;
 		const lifeline = receiver.x + receiver.width / 2;
-		// Short of the lifeline by the width of the bar it is busy with, plus the
-		// room the arrowhead needs of its own — a dozen units, not a column.
+		// Short of the lifeline by the width of the bar it is busy with, less
+		// than a column.
 		expect(lifeline - arrival!.x).toBeGreaterThan(0);
 		expect(lifeline - arrival!.x).toBeLessThan(16);
 		expect(arrival!.y).toBeGreaterThan(rendered.atlas.edges["s1"]!.y);
