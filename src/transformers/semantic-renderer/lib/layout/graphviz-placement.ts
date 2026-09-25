@@ -13,6 +13,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 
 import { CARD_ROUTING_GAP } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { orientLabelChains } from "@/transformers/semantic-renderer/lib/layout/label-chains";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 
 // Viz publishes graph input types, but returns only `object` for Graphviz JSON.
@@ -24,7 +25,6 @@ const objectSchema = z.object({
 const outputSchema = z.object({ bb: z.string(), objects: z.array(objectSchema).default([]) });
 type Cluster = Subgraph & Required<Pick<Subgraph, "nodes" | "edges" | "subgraphs">>;
 type Offset = { node: ElkNode; x: number; y: number };
-
 /**
  * Read finite coordinates from Graphviz's comma-separated geometry.
  * @param value The serialized point or bounds.
@@ -367,6 +367,7 @@ class Placement {
 		const below = this.below();
 		for (const node of this.nodes.values()) this.order(node, below);
 		for (const edge of this.graph.edges) this.orderReturn(edge);
+		orientLabelChains(this.graph);
 	}
 
 	/** Keep reserved labels aligned with their endpoints after sibling slots change. */
