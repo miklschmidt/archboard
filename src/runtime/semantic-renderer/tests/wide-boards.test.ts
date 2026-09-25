@@ -17,7 +17,11 @@ import {
 	readSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
-import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routeLabels,
+	routePoints,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import first from "../../../../docs/design/wide-board-layout-fixtures/flask-map-1.content.json";
 import third from "../../../../docs/design/wide-board-layout-fixtures/flask-map-3.content.json";
 import systemMap from "../../../../docs/design/wide-board-layout-fixtures/system-map.content.json";
@@ -62,6 +66,44 @@ function vaultBoards(): {
 }
 
 /**
+ * Every straight run of one route through another relationship's label, where
+ * a reader would take the route to end at the label it vanishes under.
+ * @param drawing The rendered board.
+ * @returns Each such route and label, named.
+ */
+function runsUnderLabels(drawing: RenderedDiagram): string[] {
+	const routes = [...corridorPoints(drawing.svg)];
+	const inside = 3;
+	return [...routeLabels(drawing.svg)].flatMap(([id, pill]) =>
+		routes
+			.filter(([other]) => other !== id)
+			.filter(([, points]) =>
+				points.slice(1).some((end, index) => {
+					const start = points[index]!;
+					const [low, high] = [pill.x + inside, pill.x + pill.width - inside];
+					const [top, bottom] = [pill.y + inside, pill.y + pill.height - inside];
+					if (start.x === end.x)
+						return (
+							start.x > low &&
+							start.x < high &&
+							Math.max(start.y, end.y) > top &&
+							Math.min(start.y, end.y) < bottom
+						);
+					if (start.y === end.y)
+						return (
+							start.y > top &&
+							start.y < bottom &&
+							Math.max(start.x, end.x) > low &&
+							Math.min(start.x, end.x) < high
+						);
+					return false;
+				}),
+			)
+			.map(([other]) => `${other} under ${id}`),
+	);
+}
+
+/**
  * Semantic completeness and readable labels across the measured corpus.
  * @param drawing The rendered board.
  * @param content Its authored architecture.
@@ -69,6 +111,7 @@ function vaultBoards(): {
 function expectIntact(drawing: RenderedDiagram, content: VariantContent) {
 	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
 	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
+	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);
 	expect(Object.keys(drawing.atlas.nodes).toSorted()).toEqual(
 		content.nodes.map(({ id }) => id).toSorted(),
 	);
