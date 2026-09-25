@@ -3,14 +3,23 @@
 // line that jogs a few points on its way to a label, which its rounded corners
 // draw as a hook doubling back on itself, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
-// container of cards nothing connects drawn as one long row again.
+// container of cards nothing connects drawn as one long row again, and a line
+// into a wide container that aims at its middle and comes back to its port.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { routePoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routeLabels,
+	routePoints,
+	type DrawnPoint,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import containerDetour from "./container-detour.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
+/** How far past its ends a line may stand: one lane, where it turns beside a port. */
+const SLACK = 16;
 
 const fan = orderedFixture({
 	nodes: ["hub", ...TARGETS].map((id) => ({ id, name: id, kind: "module" })),
@@ -103,3 +112,21 @@ test.each(["track", "blocks"] as const)(
 		expect(columns.size).toBe(Math.ceil(cards.length / rows.size));
 	},
 );
+
+// Reduced from a real ingress board, names replaced: a line into a wide container
+// crossed a band of other labels on its way and aimed at the container's middle.
+test("a line into a wide container stays between its ends and its label", async () => {
+	const pool = orderedFixture(containerDetour);
+	const drawing = await renderArchitecture({ content: pool, theme: "light", layout: "track" });
+	const labels = routeLabels(drawing.svg);
+	for (const [id, points] of corridorPoints(drawing.svg)) {
+		const label = labels.get(id)!;
+		// A line reaches as far as its two ends and the words it carries.
+		const reached = [points[0]!.x, points.at(-1)!.x, label.x + label.width / 2];
+		const [low, high] = [Math.min(...reached), Math.max(...reached)];
+		for (const { x } of points) {
+			expect(x, `${id} beyond its ends`).toBeGreaterThanOrEqual(low - SLACK);
+			expect(x, `${id} beyond its ends`).toBeLessThanOrEqual(high + SLACK);
+		}
+	}
+});
