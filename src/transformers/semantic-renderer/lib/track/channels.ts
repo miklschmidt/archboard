@@ -81,8 +81,10 @@ interface Unit {
  * @param nets Every net.
  */
 function bundleTrunks(nets: readonly Net[]): void {
+	const lineEnds = endsOf(nets);
 	for (const side of ["top", "bottom"] as const) {
-		for (const group of trunkGroups(nets, side).flatMap((one) => apart(one, nets, side))) {
+		const groups = trunkGroups(nets, side).map((one) => withoutTwins(one, side, lineEnds));
+		for (const group of groups.flatMap((one) => apart(one, nets, side))) {
 			if (group.length < 2) continue;
 			const other = side === "top" ? "bottom" : "top";
 			const ends = new Set(
@@ -92,6 +94,58 @@ function bundleTrunks(nets: readonly Net[]): void {
 			for (const net of group) net.trunk = trunk;
 		}
 	}
+}
+
+/**
+ * Each line's two end items: the upper station of its first net and the lower
+ * station of its last.
+ * @param nets Every net.
+ * @returns The two items, by relationship.
+ */
+function endsOf(nets: readonly Net[]): Map<string, readonly [unknown, unknown]> {
+	const lines = new Map<string, Net[]>();
+	for (const net of nets) lines.set(net.edge, [...(lines.get(net.edge) ?? []), net]);
+	return new Map(
+		[...lines].map(([edge, own]) => {
+			const sorted = own.toSorted((one, other) => one.channel - other.channel);
+			return [edge, [sorted[0]!.top.item, sorted.at(-1)!.bottom.item] as const];
+		}),
+	);
+}
+
+/**
+ * Whether two nets belong to different lines between the same two items.
+ * @param one A net.
+ * @param other Another.
+ * @param ends Each line's two end items.
+ * @returns True when they are twins.
+ */
+function twins(
+	one: Net,
+	other: Net,
+	ends: ReadonlyMap<string, readonly [unknown, unknown]>,
+): boolean {
+	const [a, b] = [ends.get(one.edge)!, ends.get(other.edge)!];
+	return one.edge !== other.edge && a[0] === b[0] && a[1] === b[1];
+}
+
+/**
+ * A card face's trunk without the lines that run between the same two items
+ * as another of its lines: two such lines sharing a trunk at both ends split
+ * through their labels and join again, a loop. Each keeps its own port on the
+ * card; a block's one-point port is shared whatever joins at it.
+ * @param group The nets that would share the face's trunk.
+ * @param side Which end the face is.
+ * @param ends Each line's two end items.
+ * @returns The group without such twins.
+ */
+function withoutTwins(
+	group: readonly Net[],
+	side: "top" | "bottom",
+	ends: ReadonlyMap<string, readonly [unknown, unknown]>,
+): Net[] {
+	if (group.length < 2 || group[0]![side].item!.box.width <= 1) return [...group];
+	return group.filter((net) => !group.some((other) => twins(net, other, ends)));
 }
 
 /**

@@ -57,6 +57,27 @@ test("measurement preserves complete words at fixed readable sizes and bounds th
 	}
 });
 
+// From the dogfood boards: a wrapped line kept the space it broke at, and the
+// card grew past its 340 px maximum by that space's width.
+test("a card's wrapped lines do not widen it by the space they broke at", () => {
+	const content: VariantContent = {
+		...emptyContent(),
+		nodes: [
+			{
+				id: "socket",
+				order: 1000,
+				name: "Pane socket",
+				kind: "module",
+				responsibility:
+					"One socket per page: registers it with the panes, and passes its agent messages to the Codex workbench",
+			},
+		],
+	};
+	const card = measureArchitecture(content).nodes.get("socket")!;
+	for (const run of card.runs) expect(run.text).toBe(run.text.trimEnd());
+	expect(card.width).toBeLessThan(341);
+});
+
 test("a relationship's plate hugs its balanced lines and centres them on the line it labels", () => {
 	// One line of this is just wider than a plate's text room, and one glyph is far narrower.
 	const labels = { wrapped: "thread/start with the coordinator body", glyph: "/" };
@@ -115,7 +136,7 @@ test("structural parents reserve the whole wrapped header and keep descriptions 
 		parent.runs
 			.filter((run) => run.role === "title")
 			.map((run) => run.text)
-			.join(""),
+			.join(" "),
 	).toBe(content.nodes[0]!.name);
 });
 

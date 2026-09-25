@@ -9,8 +9,9 @@
 // they cross another line that a free column would have left alone, a line
 // through a card entering and leaving it a few points apart, a run of lanes
 // left where a label stood before it slid aside, a container ending 12 px
-// above another opening under it, and two lines lined up end to end across a
-// channel so that they read as one.
+// above another opening under it, two lines lined up end to end across a
+// channel so that they read as one, and lines between the same two items
+// sharing a trunk at both ends, so that they split and join again.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -28,6 +29,7 @@ import risingLine from "./rising-line.json";
 import shortStep from "./short-step.json";
 import throughCard from "./through-card.json";
 import trunkFan from "./trunk-fan.json";
+import twinLines from "./twin-lines.json";
 
 /** The room a container keeps around what it holds, and between it and a container it stands over. */
 const CONTAINER_INSET = 20;
@@ -47,12 +49,14 @@ const policy = SemanticPolicySchema.parse({
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
 		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
 	},
 	groups: {
 		drawing: { name: "Drawing", color: "violet" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
 		voice: { name: "Voice", color: "yellow" },
+		workhorse: { name: "Workhorse", color: "sky" },
 		child: { name: "Codex child", color: "indigo" },
 	},
 });
@@ -361,4 +365,20 @@ test("a line ending on a track and another leaving the track below stand apart",
 			const lined = Math.abs(one.x - other.x) < TWO_BENDS && gap > 0 && gap <= 2 * TWO_BENDS + 8;
 			expect(lined, `${one.id} runs on into ${other.id}`).toBe(false);
 		}
+});
+
+// Reduced from a dogfood board, names replaced: under Blocks, lines from one
+// block reach a card in another through one port, and inside the card's
+// block each carries its own label. Sharing a trunk at the port and at the
+// card, they split through their labels and joined again, a ladder of loops.
+test("lines between the same two items keep their own ends at a card", async () => {
+	const content = orderedFixture(twinLines);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
+	const routes = routePoints(drawing.svg);
+	content.edges.forEach((one, index) => {
+		for (const other of content.edges.slice(index + 1).filter(({ to }) => to === one.to)) {
+			const [a, b] = [routes.get(one.id)!.at(-1)!, routes.get(other.id)!.at(-1)!];
+			expect(Math.hypot(a.x - b.x, a.y - b.y), `${one.id}/${other.id}`).toBeGreaterThan(1);
+		}
+	});
 });
