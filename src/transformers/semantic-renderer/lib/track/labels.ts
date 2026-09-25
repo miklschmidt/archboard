@@ -370,9 +370,21 @@ function keepsGap(item: Item, box: Item["box"], others: Iterable<Item>, gap: num
 }
 
 /**
+ * Whether a box reaches into a stretch of a band.
+ * @param box The box.
+ * @param low Where the stretch starts.
+ * @param high Where it ends.
+ * @returns True when they overlap.
+ */
+function enters(box: Item["box"], low: number, high: number): boolean {
+	return box.x < high && box.x + box.width > low;
+}
+
+/**
  * Whether a label box, moved, keeps its room from everything else on its
  * band: a card's clearance from a card or title row, a label's from a label,
- * and a lane's from every other line passing the band.
+ * a lane's from every other line passing the band, and a container's inset
+ * from its walls, unless it stood inside that inset already.
  * @param scene The scene.
  * @param item The label box.
  * @param box Where it would stand.
@@ -393,7 +405,10 @@ function clearOnBand(
 			LABEL_CARD_CLEARANCE,
 		) &&
 		keepsGap(item, box, scene.labels.values(), LABEL_LABEL_CLEARANCE) &&
-		lanes.every((x) => x <= box.x - LABEL_GAP || x >= box.x + box.width + LABEL_GAP)
+		lanes.every((x) => x <= box.x - LABEL_GAP || x >= box.x + box.width + LABEL_GAP) &&
+		frameWallsOn(scene, item.band).every(
+			([low, high]) => !enters(box, low, high) || enters(item.box, low, high),
+		)
 	);
 }
 

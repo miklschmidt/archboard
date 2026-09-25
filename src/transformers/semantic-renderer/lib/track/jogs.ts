@@ -7,6 +7,10 @@
 // that would bend a line that ran straight on the moved station's other side
 // is not made.
 //
+// A card a line enters on top and another leaves at the bottom a few points
+// over is such a step too: the two read as one line through the card with a
+// notch in it, and one end moves onto the other's column.
+//
 // The same moves part two lines that read as one: a line that comes down onto
 // its track and turns within a lane of where another line turns off a lower
 // track and goes on down draws one line with a kink, however their tracks are
@@ -33,6 +37,12 @@ const PASSES = 3;
 
 /** Which end of a net a station stands at. */
 type End = "top" | "bottom";
+
+/** Where a net stands: its line, top to bottom, and its place in it. */
+interface Place {
+	readonly route: readonly Net[];
+	readonly index: number;
+}
 
 /**
  * How far a net steps sideways.
@@ -189,6 +199,21 @@ function follow(nets: readonly Net[]): void {
 }
 
 /**
+ * What a move must not do, read before it: notch a line that ran clear, or
+ * step a line through a card that ran through it straight, which trades one
+ * jog for another.
+ * @param nets Every net.
+ * @returns Whether the nets, once moved, still keep clear of new steps.
+ */
+function keepsClean(nets: readonly Net[]): () => boolean {
+	const notches = new Set(nets.filter(notched));
+	const steps = new Set(cardStepKeys(nets));
+	return () =>
+		nets.every((net) => notches.has(net) || !notched(net)) &&
+		cardStepKeys(nets).every((key) => steps.has(key));
+}
+
+/**
  * Move a stretch of stations onto one column: each run of lanes onto a free
  * column, each label box where it stays clear, and a card at its far end by
  * its own port. All of it moves, or none, and none when the move would notch
@@ -214,17 +239,16 @@ function moveStretch(
 		nets,
 		stretch.map(({ station }) => station),
 	);
-	const before = new Set(nets.filter(notched));
+	const kept = keepsClean(nets);
 	const moved = stretch.every(({ station, net, end }) => {
 		if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x);
 		if (station.kind === "label") return nudgeLabel(scene, nets, station.item!, x);
 		return movePort(nets, net, end, x);
 	});
 	if (moved) follow(nets);
-	// A move that notches a line that ran clear trades one jog for another.
-	const kept = moved && nets.every((net) => before.has(net) || !notched(net)) && better();
-	if (!kept) restore(saved);
-	return kept;
+	const done = moved && kept() && better();
+	if (!done) restore(saved);
+	return done;
 }
 
 /**
@@ -252,6 +276,97 @@ function close(
 }
 
 /**
+ * Whether two x stand closer than a line's two bends can turn between, yet apart.
+ * @param one An x.
+ * @param other Another.
+ * @returns True for such a step.
+ */
+function tooShort(one: number, other: number): boolean {
+	const gap = Math.abs(one - other);
+	return gap > STRAIGHT && gap < 2 * BEND_RADIUS;
+}
+
+/**
+ * Every card a line enters on top and another leaves at the bottom, their
+ * two ends a step too short to turn apart: the two read as one line through
+ * the card with a notch in it.
+ * @param routes Every line's nets, top to bottom.
+ * @returns Each step, the line in and the line out.
+ */
+function cardSteps(routes: readonly (readonly Net[])[]): { into: Place; outOf: Place }[] {
+	const places = routes.flatMap((route) =>
+		route.flatMap((net, index) => (net.wall === undefined ? [{ route, index, net }] : [])),
+	);
+	const into = places.filter(({ net }) => net.bottom.kind === "card");
+	const outOf = places.filter(({ net }) => net.top.kind === "card");
+	return into.flatMap((one) =>
+		outOf
+			.filter(({ net }) => net.top.item === one.net.bottom.item)
+			.filter(({ net }) => tooShort(net.topX, one.net.bottomX))
+			.map((other) => ({ into: one, outOf: other })),
+	);
+}
+
+/**
+ * A key for every card step among some nets, to tell a new one from an old one.
+ * @param nets Every net.
+ * @returns The keys.
+ */
+function cardStepKeys(nets: readonly Net[]): string[] {
+	const tops = nets.filter((net) => net.wall === undefined && net.bottom.kind === "card");
+	return nets.flatMap((net) =>
+		net.wall === undefined && net.top.kind === "card"
+			? tops
+					.filter(({ bottom }) => bottom.item === net.top.item)
+					.filter(({ bottomX }) => tooShort(bottomX, net.topX))
+					.map(({ bottomX }) => `${net.edge}|${net.channel}|${bottomX.toFixed(2)}`)
+			: [],
+	);
+}
+
+/**
+ * The end of a net at a card, and the straight stretch beyond it when the
+ * net runs straight from the card.
+ * @param place The net.
+ * @param end Which end is the card.
+ * @returns The stations to move together.
+ */
+function cardSide(place: Place, end: End): { station: Station; net: Net; end: End }[] {
+	const net = place.route[place.index]!;
+	const beyond = end === "top" ? "bottom" : "top";
+	const straight = step(net) <= STRAIGHT;
+	return [
+		{ station: net[end], net, end },
+		...(straight ? stretchBeyond(place.route, place.index, beyond) : []),
+	];
+}
+
+/**
+ * Close one card step: move the line out of the card, and the straight stretch
+ * below it, onto the line in's column; else the line in onto the line out's.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param nets Every net.
+ * @param steps The card step.
+ * @param steps.into The line into the card.
+ * @param steps.outOf The line out of it.
+ * @returns Whether it closed.
+ */
+function closeCardStep(
+	scene: Scene,
+	chains: readonly Chain[],
+	nets: readonly Net[],
+	{ into, outOf }: { into: Place; outOf: Place },
+): boolean {
+	const [inNet, outNet] = [into.route[into.index]!, outOf.route[outOf.index]!];
+	if (!tooShort(inNet.bottomX, outNet.topX)) return false;
+	return (
+		moveStretch(scene, chains, nets, cardSide(outOf, "top"), inNet.bottomX) ||
+		moveStretch(scene, chains, nets, cardSide(into, "bottom"), outNet.topX)
+	);
+}
+
+/**
  * Close every step too short for its two bends that a move can close.
  * @param scene The scene, its ports placed.
  * @param chains Every relationship's chain.
@@ -269,6 +384,7 @@ function closeJogs(
 				notched(net) && net.wall === undefined ? close(scene, chains, nets, route, index) : false,
 			),
 		);
+		for (const one of cardSteps(routes)) closed.push(closeCardStep(scene, chains, nets, one));
 		if (!closed.some(Boolean)) return;
 	}
 }
@@ -349,8 +465,8 @@ function part(
 	scene: Scene,
 	chains: readonly Chain[],
 	routes: readonly (readonly Net[])[],
-	leaving: { route: readonly Net[]; index: number },
-	entering: { route: readonly Net[]; index: number },
+	leaving: Place,
+	entering: Place,
 ): boolean {
 	const nets = routes.flat();
 	const [up, down] = [leaving.route[leaving.index]!, entering.route[entering.index]!];
