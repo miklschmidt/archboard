@@ -8,10 +8,11 @@
 // ever grew, so a settled drawing could pay for rows that hold nothing. Once
 // every label has a box, the reservations whose labels sit elsewhere are
 // released, all together and then one at a time, and the first release that
-// still gives every label a box on a smaller page is kept. That is one round:
-// the drawing a release settles is not searched for further releases. Each
-// round costs a placement per release and a route per smaller page, and later
-// rounds gave back room on 4 of the 49 dogfood pictures (TASK-342,
+// still gives every label a box on a smaller page is kept. That is one round.
+// The drawing a kept release settles is searched again in another round, for
+// at most RELEASE_ROUNDS rounds; a round that keeps nothing ends the search.
+// Each round costs a placement per release and a route per smaller page, so
+// the cap bounds what a settlement can spend (TASK-342,
 // docs/design/layout-rules.md section 34).
 //
 // Routing does not change a page's size: placement fixes it before a route
@@ -21,6 +22,14 @@
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { curveClearanceIssue } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { crossingCount } from "@/transformers/semantic-renderer/lib/layout/crossings";
+
+/**
+ * The most release rounds a settlement runs. The dogfood vault's settlements
+ * keep a release in at most three rounds (Browser application, its view
+ * D87Mmg83 and Board rasterizer's view vAJmBRF7 take three, Skill evaluation
+ * two); with two, Browser application draws 2764 wide instead of 2558.
+ */
+const RELEASE_ROUNDS = 3;
 
 /** One solve with its labels placed. */
 interface LabelAttempt {
@@ -73,21 +82,28 @@ function releasesOf(unused: readonly string[]): (readonly string[])[] {
 }
 
 /**
- * Let go of reservations the settled drawing does not use, in one round,
- * while every label still finds a box and the page gets smaller.
+ * Let go of reservations the settled drawing does not use, while every label
+ * still finds a box and the page gets smaller, round after round while a
+ * round keeps a release, for at most {@link RELEASE_ROUNDS} rounds.
  * @param solves Places, or solves, with a set of reservations.
  * @param reserved The reservations the drawing was settled with.
  * @param settled The settled attempt, every label placed.
- * @returns The first release's drawing that holds, or the settled one.
+ * @param rounds The rounds still allowed.
+ * @returns The last release's drawing that holds, or the settled one.
  */
 async function releaseUnused(
 	solves: Solves,
 	reserved: ReadonlySet<string>,
 	settled: LabelAttempt,
+	rounds = RELEASE_ROUNDS,
 ): Promise<ArchitectureDrawing> {
 	const unused = settled.unused.filter((id) => reserved.has(id));
 	const released = await firstRelease(solves, reserved, settled, releasesOf(unused));
-	return (released ?? settled).drawing;
+	return released === undefined
+		? settled.drawing
+		: rounds <= 1
+			? released.attempt.drawing
+			: releaseUnused(solves, released.kept, released.attempt, rounds - 1);
 }
 
 /**
@@ -103,25 +119,26 @@ async function releaseUnused(
  * @param reserved The reservations held now.
  * @param settled The attempt with those reservations.
  * @param releases The releases to try, in order.
- * @returns That release's attempt, or nothing.
+ * @returns That release's attempt and remaining reservations, or nothing.
  */
 async function firstRelease(
 	solves: Solves,
 	reserved: ReadonlySet<string>,
 	settled: LabelAttempt,
 	releases: readonly (readonly string[])[],
-): Promise<LabelAttempt | undefined> {
-	const answers = await Promise.all(
-		releases.map(async (release) => {
-			const kept = new Set([...reserved].filter((id) => !release.includes(id)));
-			return smallerPage(await solves.place(kept), settled.drawing)
-				? solves.solve(kept)
-				: undefined;
-		}),
-	);
-	return answers.find(
+): Promise<{ attempt: LabelAttempt; kept: ReadonlySet<string> } | undefined> {
+	const tried = releases.map((release) => {
+		const kept = new Set([...reserved].filter((id) => !release.includes(id)));
+		const attempt = solves
+			.place(kept)
+			.then((page) => (smallerPage(page, settled.drawing) ? solves.solve(kept) : undefined));
+		return { kept, attempt };
+	});
+	const answers = await Promise.all(tried.map(({ attempt }) => attempt));
+	const index = answers.findIndex(
 		(attempt) => attempt?.missing.length === 0 && noLarger(attempt.drawing, settled.drawing),
 	);
+	return index === -1 ? undefined : { attempt: answers[index]!, kept: tried[index]!.kept };
 }
 
 /**

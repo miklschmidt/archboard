@@ -1636,7 +1636,7 @@ The user's budget is under 1 s of layout per board. After the changes above
 one picture still ran hundreds of solves (Command interface 202, Browser
 application 294, Voice coordinator 702, Archboard server over 1000), each
 placement or route 40 to 80 ms. The number of solves is the cost, so two rules
-now bound it. Both change pictures, and the user accepted that for the time.
+now bound it.
 
 - **The column count is chosen on placements** (`column-readings.ts`). The
   unfolded reading is settled as before. Every column count its bands allow is
@@ -1647,40 +1647,63 @@ now bound it. Both change pictures, and the user accepted that for the time.
   settled, and it is kept when its settled drawing still fits materially
   better than the unfolded one; a count the router refuses keeps the unfolded
   reading. Every other count costs one placement instead of its label rounds.
-- **Unused reservations are released in one round** (`label-reservations.ts`):
-  every unused one together, then each alone, side by side, and the first that
-  holds is kept. The drawing that release settles is not searched for further
-  releases.
+- **Release rounds are capped at three** (`label-reservations.ts`,
+  `RELEASE_ROUNDS`). A round tries every unused reservation together, then
+  each alone, side by side, and keeps the first that holds; rounds go on while
+  one keeps a release. On the vault, settlements keep a release in at most
+  three rounds: Browser application, its view D87Mmg83 and Board rasterizer's
+  view vAJmBRF7 take three, Skill evaluation two, Voice coordinator and Board
+  viewer one. One round moved four pictures (Browser application 2558x1697 to
+  2870x1697, which the user rejected: Semantic viewer dropped to the bottom
+  left and its trafficked line to Archboard server crossed the whole board);
+  two rounds still drew Browser application 2764 wide.
 
 The comparison starts from the settled unfolded page, not from the unfolded
 placement. The unfolded placement reserves no label and so fits better than
 the settled page (Archboard server 0.51 placed, 0.34 settled); starting from it
 lost the fold of Archboard server view FawxUEKE, which main draws folded at
-1317x958 and which then drew unfolded at 834x1372. Starting from the settled
-page changes no picture's fold on the vault, and costs Archboard server one
-settled fold the router refuses (3.2 s with the placement start, 6.5 s with
-the settled start).
+1317x958 and which then drew unfolded at 834x1372. Folding must not be lost,
+so the settled start stays, and costs Archboard server one settled fold the
+router refuses.
 
-First layout in ms, `timing.ts` in-process, two runs each on an otherwise
-quiet box; every other board and fixture is under 700 ms on both:
+That fold (two columns) is refused by the final clearance check in
+`settleReading`: relationship BiJamQt9's route reverses through a fixed bend.
+No earlier solve implies the refusal. Clearance problems come and go between
+the attempts of one settlement (its first routed attempt fails on xjqxaA6G,
+which later attempts route cleanly; BiJamQt9 first fails in the fifth
+reservation round), and even a settled drawing that fails could still be
+replaced by a release, which is kept only when every route clears. Across
+every fixture and vault variant this was the only settlement whose settled
+drawing failed. The fold costs 94 routed attempts (15 s of routing across
+the pool): 19 sequential attempts over five reservation rounds (2.1 s) and
+one release round of 41 releases (1.4 s). The unfolded reading alone takes
+109 routed attempts and about 3.9 s, so refusing the fold at once would still
+leave Archboard server near 4 s.
+
+With both rules, all 49 dogfood pictures (every board whole and every view,
+rendered through a server on a copy of the vault) are byte-identical to main.
+First layout in ms, `timing.ts` in-process, two runs each; every other board
+and fixture is under 700 ms on both:
 
 | board               | main 6f5f08c7 | budget     |
 | ------------------- | ------------- | ---------- |
-| Archboard server    | 35752, 32967  | 6475, 6524 |
-| Voice coordinator   | 1835, 1779    | 394, 411   |
-| Browser application | 1589, 1601    | 608, 672   |
-| Skill evaluation    | 1007, 998     | 628, 630   |
-| Board viewer        | 977, 952      | 542, 567   |
-| Semantic renderer   | 924, 938      | 313, 313   |
-| Archboard           | 820, 763      | 63, 64     |
-| Command interface   | 789, 751      | 451, 496   |
-| flask-map-2         | 650, 617      | 494, 514   |
-| Agent workbench     | 615, 601      | 466, 461   |
+| Archboard server    | 35752, 32967  | 7852, 7682 |
+| Browser application | 1589, 1601    | 1343, 1380 |
+| Skill evaluation    | 1007, 998     | 1047, 1058 |
+| Board viewer        | 977, 952      | 974, 985   |
+| Voice coordinator   | 1835, 1779    | 537, 545   |
+| Semantic renderer   | 924, 938      | 369, 368   |
+| Archboard           | 820, 763      | 54, 55     |
+| Command interface   | 789, 751      | 762, 771   |
+| flask-map-2         | 650, 617      | 642, 618   |
+| Agent workbench     | 615, 601      | 608, 611   |
 
-Every board but Archboard server lays out in under 1 s. Of the 49 dogfood
-pictures (every board whole and every view, rendered through a server on a
-copy of the vault), four change, all from the single release round, each
-keeping a reservation a second round had given back: Browser application
-2558x1697 to 2870x1697, its view D87Mmg83 1752x1092 to 1752x1180, Skill
-evaluation 4124x1594 to 4420x1594 and Board rasterizer view vAJmBRF7 1549x861
-to 1728x1008. The column rule alone changes none.
+Browser application, Skill evaluation and Board viewer are at or over 1 s,
+and the release rounds are what they spend: Browser application's three
+rounds take 610, 380 and 350 ms, Skill evaluation's third round (which keeps
+nothing) 255 ms, and Board viewer's second (keeping nothing) 415 ms. With one
+round they took 608, 628 and 542 ms. A round that keeps nothing must still
+route every release whose page is smaller to learn that, so it is not free.
+Returning a round as soon as the first release in order holds, and stopping
+the solves after it, saved nothing measurable (Browser application 1346 to
+1319 ms): the kept release is usually late in the order.
