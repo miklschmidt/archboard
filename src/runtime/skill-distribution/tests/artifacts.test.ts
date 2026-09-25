@@ -69,7 +69,7 @@ const CONFIG = {
 		plain: { name: "Plain", icon: "RiBox3Line" },
 	},
 	relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
-	groups: { fulfillment: { name: "Fulfillment" } },
+	groups: { fulfillment: { name: "Fulfillment", color: "teal" } },
 };
 
 /** A persisted family with nested content: a view, a flow, a walkthrough and groups. */
@@ -139,8 +139,9 @@ describe("generated schemas agree with the Zod authorities", () => {
 					plain: { name: "Plain", icon: "RiBox3Line", color: "mauve" },
 				},
 			},
-			{ ...CONFIG, groups: { "Bad Key": { name: "x" } } },
-			{ ...CONFIG, groups: { blank: { name: " " } } },
+			{ ...CONFIG, groups: { "Bad Key": { name: "x", color: "teal" } } },
+			{ ...CONFIG, groups: { blank: { name: " ", color: "teal" } } },
+			{ ...CONFIG, groups: { uncolored: { name: "Uncolored" } } },
 		]) {
 			expect(SemanticBoardConfigurationSchema.safeParse(broken).success).toBe(false);
 			expect(accepts("vault-config.schema.json", broken)).toBe(false);

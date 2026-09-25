@@ -34,7 +34,7 @@ const SCENARIOS = [
 ];
 const FIXTURES = [
 	{
-		policy: { groups: { "request-lifecycle": { name: "Lifecycle" } } },
+		policy: { groups: { "request-lifecycle": { name: "Lifecycle", color: "blue" } } },
 		steps: [
 			{
 				op: "new",

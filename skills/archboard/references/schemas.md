@@ -73,7 +73,8 @@ it breaks one of them. The ones that matter while authoring:
 The configuration file is authoritative for a vault's vocabulary. Validate an
 edit against `generated/vault-config.schema.json`; it requires unique levels,
 listed coarsest first (the navigator nests a board under the closest coarser
-board that drills into it), and nonempty node and relationship kind maps, and its `icon` enum is the exact
+board that drills into it), nonempty node and relationship kind maps, and a
+palette `color` on every group, and its `icon` enum is the exact
 set of RemixIcon names the installed build accepts. For where the vault lives,
 how `ARCHBOARD_VAULT` is set, and how the skill and the repository block are
 installed, follow [`generated/INSTALL.md`](generated/INSTALL.md).

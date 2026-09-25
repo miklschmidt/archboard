@@ -50,9 +50,18 @@ const RelationshipPolicySchema = z
 /**
  * One configured group a node may belong to. The record key is the stable id
  * boards carry; the name is what a reader sees, and renaming it changes no
- * board and no comparison.
+ * board and no comparison. The colour is required: a group colours the cards
+ * placed with it and the region that gathers them (ADR 0038), so a group
+ * without one could not be drawn. The refusal's path names the group.
  */
-const GroupPolicySchema = z.object({ name: PolicyDisplayNameSchema }).strict();
+const GroupPolicySchema = z
+	.object({
+		name: PolicyDisplayNameSchema,
+		color: z.enum(PaletteColorSchema.options, {
+			error: `Every group needs a color: add color: with one of ${PaletteColorSchema.options.join(", ")}.`,
+		}),
+	})
+	.strict();
 /**
  * Build the policy contract with the icon vocabulary available at this boundary.
  * @param icon Valid icon names; browser readers only need the transport spelling.

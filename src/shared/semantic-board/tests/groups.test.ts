@@ -10,6 +10,7 @@ import {
 	inspectGroup,
 	normalizeGroupIds,
 	persistedGroupIds,
+	placingGroups,
 	reconcileVariant,
 	SemanticNodeSchema,
 	VariantContentSchema,
@@ -90,6 +91,74 @@ describe("inspecting one group", () => {
 
 /** The worker on its own, so a merge has nothing but memberships to decide. */
 const FREE_WORKER = { id: "w", name: "Worker", kind: "job", groups: ["billing", "fulfillment"] };
+
+describe("the group a card is placed with", () => {
+	/**
+	 * The placing group of every placed node, drawing the given nodes.
+	 * @param nodes The nodes drawn, each with an id, a parent and memberships.
+	 * @param order The configured groups, in config.yaml order.
+	 * @returns Node id to placing group id, for the placed nodes only.
+	 */
+	const placing = (nodes: readonly Record<string, unknown>[], order: readonly string[]) =>
+		Object.fromEntries(
+			placingGroups(
+				content({
+					nodes: [
+						ORDERS,
+						SHIPPING,
+						...nodes.map((node) => ({ name: node["id"], kind: "job", ...node })),
+					],
+				}).nodes,
+				{
+					groups: Object.fromEntries(order.map((id) => [id, { name: id, color: "blue" as const }])),
+				},
+			),
+		);
+
+	test("configuration order decides between two groups the siblings share", () => {
+		const nodes = [
+			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
+			{ id: "b", parent: "orders", groups: ["billing", "fulfillment"] },
+		];
+		expect(placing(nodes, ["fulfillment", "billing"])).toEqual({
+			a: "fulfillment",
+			b: "fulfillment",
+		});
+		expect(placing(nodes, ["billing", "fulfillment"])).toEqual({ a: "billing", b: "billing" });
+	});
+
+	test("a group with one member among the drawn nodes falls through to the next, or to none", () => {
+		const nodes = [
+			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
+			{ id: "b", parent: "orders", groups: ["fulfillment"] },
+			{ id: "c", parent: "orders", groups: ["audit"] },
+		];
+		expect(placing(nodes, ["billing", "fulfillment", "audit"])).toEqual({
+			a: "fulfillment",
+			b: "fulfillment",
+		});
+	});
+
+	test("siblings are counted within one parent, and the board level is one parent", () => {
+		const nodes = [
+			{ id: "a", parent: "orders", groups: ["billing"] },
+			{ id: "b", parent: "shipping", groups: ["billing"] },
+			{ id: "c", groups: ["billing"] },
+			{ id: "d", groups: ["billing"] },
+		];
+		expect(placing(nodes, ["billing"])).toEqual({ c: "billing", d: "billing" });
+	});
+
+	test("a group the configuration does not define never places", () => {
+		const nodes = [
+			{ id: "a", parent: "orders", groups: ["billing", "retired"] },
+			{ id: "b", parent: "orders", groups: ["retired"] },
+			{ id: "c", parent: "orders", groups: ["billing"] },
+		];
+		expect(placing(nodes, ["billing"])).toEqual({ a: "billing", c: "billing" });
+		expect(placing(nodes.slice(0, 2), ["billing"])).toEqual({});
+	});
+});
 
 describe("memberships as a set", () => {
 	test("the document refuses a non-canonical spelling and the boundary produces one", () => {

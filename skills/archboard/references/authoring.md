@@ -50,16 +50,21 @@ valid ids alone cannot tell you this.
 A group crosses containment: modules in different services can share one, and
 one module can be in two. Membership is explicit on each member, never inherited
 by or from a container, and the ids come from `groups` in `config.yaml`
-(`{ "<id>": { "name": "<display name>" } }`); renaming a group changes no board.
-Before every write that adds parts, ask of each new part which configured
-concerns it serves: a group the source places a part in and the part does not
-list is a membership the board lacks. Groups assign no color: color belongs to a
-kind (`nodeKinds.<kind>.color`, `relationshipKinds.<kind>.color`, from the
-curated palette), never to a board, a node or a group. A container with a
-colored kind tints its contents and each node's icon chip says its own kind; a
-vault whose kinds carry no color draws every board neutral, which is the vault
-owner's configuration question, not a reason to touch `config.yaml` while
-authoring a board.
+(`{ "<id>": { "name": "<display name>", "color": "<palette color>" } }`);
+renaming a group changes no board. Before every write that adds parts, ask of
+each new part which configured concerns it serves: a group the source places a
+part in and the part does not list is a membership the board lacks.
+
+Groups carry the color of the cards. Every configured group has a required
+`color` from the curated palette. A card is placed with its first group, in
+`config.yaml` order, that another drawn card in the same container shares; the
+cards placed with one group in one container are gathered into a region tinted
+with that group's color, and each takes its body color from it. A card placed
+with no group is neutral. A container's kind colors only the container, never
+the cards inside it, and each node's icon chip says its own kind
+(`nodeKinds.<kind>.color`). Color is configuration, never on a board or a node:
+a board drawn neutral is the vault owner's configuration question, not a reason
+to touch `config.yaml` while authoring a board.
 
 ```json
 {

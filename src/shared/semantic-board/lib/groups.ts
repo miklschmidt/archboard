@@ -12,6 +12,10 @@
 // because something inside it is, and the group's boundary is drawn around its
 // members, not around whatever contains them: a service holding one grouped
 // module out of six is context for the reader, and is reported as such.
+//
+// Where a card is placed is read off the same memberships (ADR 0038): a card
+// goes with the first group, in configuration order, that it shares with a
+// sibling, because a region of one card gathers nothing.
 
 import type {
 	SemanticEdge,
@@ -19,6 +23,7 @@ import type {
 	VariantContent,
 } from "@/shared/semantic-board/lib/content";
 import { normalizeGroupIds } from "@/shared/semantic-board/lib/primitives";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 
 /** Which way a relationship crosses the group's boundary. */
 type BoundaryDirection = "incoming" | "outgoing";
@@ -117,6 +122,38 @@ function inspectGroup(content: VariantContent, group: string): GroupInspection {
 	return { group, members, internalEdges, boundaryEdges, neighbors };
 }
 
+/**
+ * The group each node is placed with among the nodes given (ADR 0038).
+ *
+ * A node's placing group is the first group, in the order `policy.groups`
+ * lists them, that it shares with at least one other given node of the same
+ * parent; nodes without a parent are siblings at the board level. A node
+ * sharing no configured group with a sibling has no placing group, and an id
+ * the configuration does not define never places. Pass the nodes a view
+ * draws: a member the view hides does not hold a region open.
+ * @param nodes The nodes drawn together.
+ * @param policy The vault policy whose group order decides.
+ * @returns Each placed node's id with its placing group's id.
+ */
+function placingGroups(
+	nodes: readonly SemanticNode[],
+	policy: Pick<SemanticPolicy, "groups">,
+): Map<string, string> {
+	const configured = Object.keys(policy.groups);
+	const placed = new Map<string, string>();
+	for (const node of nodes) {
+		const group = configured.find(
+			(id) =>
+				isMemberOf(node, id) &&
+				nodes.some(
+					(other) => other.id !== node.id && other.parent === node.parent && isMemberOf(other, id),
+				),
+		);
+		if (group !== undefined) placed.set(node.id, group);
+	}
+	return placed;
+}
+
 export {
 	type BoundaryDirection,
 	type BoundaryEdge,
@@ -124,4 +161,5 @@ export {
 	groupsUsed,
 	inspectGroup,
 	isMemberOf,
+	placingGroups,
 };

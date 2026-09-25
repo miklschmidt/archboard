@@ -4,6 +4,11 @@ status: accepted
 
 # Vault configuration owns vocabulary and presentation
 
+Superseded in part by [ADR 0038](0038-groups-gather-and-colour-their-cards.md):
+a group now has a required colour from the curated palette, and that colour
+places and colours its cards. Configuration ownership and the curated palette
+stand.
+
 Dogfooding exposed missing board levels and visual styles whose meaning readers
 could not explain. Each vault will own one version-controlled YAML configuration
 defining its vocabulary and visual policy, so consumers can describe their domain

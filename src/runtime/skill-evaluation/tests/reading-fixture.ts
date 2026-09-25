@@ -203,7 +203,7 @@ const READING: Reading = {
 	snapshot: new Map([["Flask", BEFORE]]),
 	policy: {
 		...DEFAULT_SEMANTIC_POLICY,
-		groups: { "request-lifecycle": { name: "Request lifecycle" } },
+		groups: { "request-lifecycle": { name: "Request lifecycle", color: "blue" } },
 	},
 	diagnostics: [],
 	renders: [
