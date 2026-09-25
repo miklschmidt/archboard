@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-25 00:15'
-updated_date: '2026-09-25 19:18'
+updated_date: '2026-09-25 20:52'
 labels:
   - renderer
 dependencies: []
@@ -61,4 +61,6 @@ Visual polish round (2026-09-25), from three adversarially verified visual bug h
 - Track routing: notches closed by a guarded stretch move (jogs.ts), rising lines keep an arrowhead's approach, crowded bands place labels exactly (fewest jogs, then short jogs, then displacement), labels ignore trunk-shared ends, straight labels centre on their shared face, lines keep clear of heading words, lane columns and trunks chosen for fewest crossings, lines that read as one parted, the score counts crossing places as drawn, facing containers keep an inset, stranded lanes follow slid labels, card in/out steps closed, lanes keep half a lane off walls, labels stay within the scene's extent, twin lines keep their own card ends. Track dogfood now 124/3435/107, work 20/526/18.
 - Shared: label plates fitted to balanced text (measurement.ts); sequence lifelines, divider, arrowhead reach and removed-step plates; placement: chains in one column, sunk wraps dropped, sibling frames 20 px apart, near-miss columns aligned (Graphviz dogfood 252 to 225 crossings).
 - Still running: painter (hops, junction dots, pulses), Graphviz engine, Blocks engine, Track margin-lap relay. Card line trim waits on branch measure-trim for a Graphviz alignment fix.
+
+Visual polish merged to main at 0567e47c after the full gate (lint, format, types, 3531 module tests, system, repository and browser lanes; walkthrough recording passed on rerun). Against main before the round, both vaults (crossings / bends / jogs): Graphviz dogfood 252/2811/204 to 225/2277/150; Track dogfood 140/4060/175 to 145/3313/86, line length -10% (crossings now also count trunk crossings the painter marks); Blocks dogfood 623/5407/277 to 448/4603/174, U-turns 84 to 33; work vault Track 28/666/38 to 20/490/6, Blocks 115/1075/64 to 39/837/14; Graphviz work 30/537/19 to 37/585/27, mostly Platform Phone API and Auditlog. Painter: one crossing rule for every engine (hops only on straight runs, cuts elsewhere), trunks drawn once, dots at the real join, comets clear of arrowheads. Track: margin laps 30 to 15 by a relay step. Graphviz: 16 px lanes, false trunks parted, label chains ranked between their ends, even page margins, folds kept only when they also score higher with crossings. Blocks: settled ports, own-port pins, packing chosen with routes, title strips closed. Open: Graphviz Archboard server whole still ~9 s; Track-side fixes the Blocks diagnosis listed (lane re-derivation into moved ports, label reversal term, lane-run swaps, row top-alignment).
 <!-- SECTION:NOTES:END -->
