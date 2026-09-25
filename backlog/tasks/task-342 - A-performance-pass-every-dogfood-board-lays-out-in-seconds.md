@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-24 16:09'
-updated_date: '2026-09-25 00:15'
+updated_date: '2026-09-25 00:20'
 labels:
   - renderer
   - performance
@@ -56,4 +56,6 @@ Second pass, fixed solve budget (2026-09-25, commit 203f3bc7): (1) column-readin
 Gate on 203f3bc7, one lane at a time: type-check pass; lint pass; fmt:check pass; test:modules 3405 pass / 0 fail (the wide-boards Archboard server owner now passes, 7.3 s alone); test:system 181/0; test:repository 8/0; test:serial-browser 15 owners, 0 failures.
 
 Third pass (2026-09-25). Early refusal: Archboard server's 2-column fold is refused by the final clearance check in settleReading (compound.ts): BiJamQt9 'Route run 6 reverses through a fixed bend'. No safe early refusal exists: route clearance problems appear and vanish between attempts of one settlement (first routed attempt fails on xjqxaA6G, later attempts clear it; BiJamQt9 first fails in the fifth reservation round), and a settled drawing that fails could still be replaced by a release, which is kept only when every route clears. Across every fixture and vault variant this was the only settlement whose settled drawing failed. The fold spends 94 routed attempts (15 s routing CPU): 19 sequential attempts over five reservation rounds (2.1 s wall) and one release round of 41 releases (1.4 s). The unfolded reading alone is 109 routed attempts, about 3.9 s, so even refusing the fold outright leaves Archboard server near 4 s. Release rounds: the user rejected Browser application at one round. Rounds now continue while a round keeps a release, capped at RELEASE_ROUNDS = 3. Main's round counts (rounds that keep, then one that keeps nothing): Browser application 3, view D87Mmg83 3, Board rasterizer view vAJmBRF7 3, Skill evaluation 2; Voice coordinator and Board viewer 1. Cap 2 draws Browser application 2764 wide; cap 3 gives main's 2558. All 49 pictures are byte-identical to main at cap 3. Timing (ms, two runs): Archboard server 7852/7682, Browser application 1343/1380, Skill evaluation 1047/1058, Board viewer 974/985, every other board under 800. Browser application and Skill evaluation are over the 1 s budget and Board viewer at it: the release rounds are what they spend (Browser application 610+380+350 ms; Skill evaluation's empty third round 255 ms; Board viewer's empty second round 415 ms). An ordered early return with cancellation of later releases saved nothing measurable (1346 to 1319 ms) and was not kept. Picture fidelity and the 1 s budget conflict here; the parent decides.
+
+Gate on 08f75c17, one lane at a time: type-check, lint, fmt:check pass; test:modules 3405/0; test:system 181/0; test:repository 8/0; test:serial-browser pass (0 failures).
 <!-- SECTION:NOTES:END -->
