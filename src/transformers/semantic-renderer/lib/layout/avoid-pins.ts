@@ -1,8 +1,12 @@
 import {
 	projectedCardPins,
+	separateEndRuns,
 	usedCardPins,
 } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
-import { CARD_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import {
+	CARD_ROUTE_CLEARANCE,
+	ROUTE_LANE,
+} from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	ROUTE_NUDGE_DISTANCE,
 	ROUTE_OBSTACLE_CLEARANCE,
@@ -145,6 +149,8 @@ function candidates(one: Box, two: Box, anchor?: number): [AlignedPin, AlignedPi
 /** Construct stable, noncolliding candidate pins before native connector registration. */
 class PinCandidates {
 	readonly pins: AlignedPins = new Map();
+	/** Tracks another route holds, which no pin on the same face may come within a lane of. */
+	tracks: ReadonlyMap<string, readonly AlignedPin[]> = new Map();
 	private readonly selfLoops = new Map<string, Set<string>>();
 
 	/**
@@ -338,8 +344,11 @@ class PinCandidates {
 	private available(id: string, channel: string, pin: AlignedPin): boolean {
 		const box = boxOf(this.nodes.get(id)!);
 		const channels = this.channels.get(id)!;
-		return channels.every((other, index) =>
-			this.freeOfChannel(id, channel, pin, box, other, index, channels.length),
+		return (
+			!(this.tracks.get(id) ?? []).some((track) => nearby(box, pin, track, ROUTE_LANE - 0.01)) &&
+			channels.every((other, index) =>
+				this.freeOfChannel(id, channel, pin, box, other, index, channels.length),
+			)
 		);
 	}
 
@@ -476,7 +485,9 @@ export function refinedPins(
 	edges: readonly ElkExtendedEdge[],
 ): AlignedPins | undefined {
 	const used = collectUsedPins(nodes, edges);
+	const tracks = separateEndRuns(nodes, edges, (card) => used.get(card));
 	const selected = new PinCandidates(nodes, channels, edges, used, used);
+	selected.tracks = tracks;
 	for (const [id, byChannel] of used)
 		selected.pins.set(id, new Map([...byChannel].map(([channel, pins]) => [channel, [...pins]])));
 	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two))) {
@@ -488,7 +499,7 @@ export function refinedPins(
 			([channel, pins]) => pins.length > (used.get(id)?.get(channel)?.length ?? 0),
 		),
 	);
-	return added ? selected.pins : undefined;
+	return added || tracks.size > 0 ? selected.pins : undefined;
 }
 
 /**
