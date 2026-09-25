@@ -244,14 +244,17 @@ test("a torn render answer is a failure, and never looks like an empty board", a
 });
 
 /**
- * The page's name for the one region in the picture.
+ * The page's name for one kind of subject in the picture.
+ * @param kind A card or a group's region.
  * @returns Its element.
  */
-function caption(): HTMLElement {
-	return document.querySelector<HTMLElement>("[data-slot='semantic-board-caption']")!;
+function caption(kind: "card" | "group"): HTMLElement {
+	return document.querySelector<HTMLElement>(
+		`[data-slot='semantic-board-caption'][data-kind='${kind}']`,
+	)!;
 }
 
-test("a region's name stays readable while the picture is too small to read it, and gives way when zoomed in", async () => {
+test("a region's and a card's names stay readable while the picture is too small to read them, and give way when zoomed in", async () => {
 	const small = drawing(1);
 	server.reply = {
 		status: 200,
@@ -262,19 +265,25 @@ test("a region's name stays readable while the picture is too small to read it, 
 			svg:
 				`<svg xmlns="http://www.w3.org/2000/svg" width="4000" height="3000">` +
 				`<g data-semantic-kind="group-region" data-group="core" data-caption="Core" data-group-color="green">` +
-				`<rect x="100" y="100" width="1600" height="900"></rect><text font-size="20">Core</text></g></svg>`,
+				`<rect x="100" y="100" width="1600" height="900"></rect><text font-size="20">Core</text></g>` +
+				`<g data-semantic-kind="node" data-semantic-id="n1" data-caption="Gateway">` +
+				`<rect class="ab-halo"></rect><rect x="200" y="200" width="600" height="80"></rect>` +
+				`<text font-size="14">Gateway</text></g></svg>`,
 		},
 	};
 	mountStage();
 	await settle();
 	// Fitted, the drawn name is a few pixels tall: the page names the region itself.
-	expect(caption().textContent).toBe("Core");
-	expect(caption().dataset["shown"]).toBe("true");
+	expect(caption("group").textContent).toBe("Core");
+	expect(caption("group").dataset["shown"]).toBe("true");
+	expect(caption("card").textContent).toBe("Gateway");
+	expect(caption("card").dataset["shown"]).toBe("true");
 	for (let press = 0; press < 20; press += 1)
 		act(() => {
 			fireEvent.keyDown(viewport(), { key: "+" });
 		});
 	// Close enough to read the picture's own name, the page's gives way to it.
 	expect(cameraNow().scale * 20).toBeGreaterThan(12);
-	expect(caption().dataset["shown"]).toBe("false");
+	expect(caption("group").dataset["shown"]).toBe("false");
+	expect(caption("card").dataset["shown"]).toBe("false");
 });
