@@ -3,7 +3,13 @@
 // see-through label. Each is cut from the line's own group by one mask, so the
 // actual backdrop shows through, and nothing is painted over anything.
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord, inflate, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import {
+	coord,
+	inflate,
+	type Box,
+	type Point,
+} from "@/transformers/semantic-renderer/lib/geometry";
 import type { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 import { sharedInk } from "@/transformers/semantic-renderer/lib/layout/drawn-lines";
 import {
@@ -132,6 +138,39 @@ function trunkCutouts(routes: readonly DrawingEdge[]): Cutout[] {
 }
 
 /**
+ * Hide every line's ink behind a label that is drawn see-through, as a removed
+ * relationship's is, so the words are not struck through by what they label.
+ * @param edges Final bridged routes.
+ * @param labels The see-through labels' boxes.
+ * @returns One cutout per route passing behind such a label.
+ */
+function labelCutouts(edges: readonly DrawingEdge[], labels: readonly Box[]): Cutout[] {
+	return labels.flatMap((box) => {
+		const markup = tag("rect", {
+			x: coord(box.x),
+			y: coord(box.y),
+			width: coord(box.width),
+			height: coord(box.height),
+			rx: PILL_RADIUS,
+			fill: "black",
+		});
+		return edges
+			.filter(({ curve }) => overlaps(inflate(curveBounds(curve), 1), box))
+			.map(({ edge }) => ({ edgeId: edge.id, markup }));
+	});
+}
+
+/**
+ * Whether two boxes share area.
+ * @param a One box.
+ * @param b Another.
+ * @returns True when they do.
+ */
+function overlaps(a: Box, b: Box): boolean {
+	return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+/**
  * One mask per route with anything to hide, keeping all the rest of its ink.
  * @param edges Final bridged routes.
  * @param cutouts What each route must not show.
@@ -177,4 +216,4 @@ function crossingMasks(
 	};
 }
 
-export { crossingCutouts, crossingMasks, trunkCutouts };
+export { crossingCutouts, crossingMasks, labelCutouts, trunkCutouts };

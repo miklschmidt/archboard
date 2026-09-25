@@ -256,3 +256,26 @@ test("routes sharing a trunk draw its ink once: one line, one dash pattern, one 
 	const onTrunk = { x: end!.x, y: end!.y - 5 };
 	expect(drawn.filter((route) => !hides(svg, route.mask, onTrunk))).toHaveLength(1);
 });
+
+// Blocks and Graphviz: a removed relationship's label is drawn see-through,
+// and its own line struck through its words.
+test("no line shows through a removed relationship's label", async () => {
+	const content = orderedFixture({
+		nodes: ["a", "b"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
+		edges: [{ id: "ab", from: "a", to: "b", kind: "call", label: "reads rows" }],
+	});
+	for (const standing of [{}, { ab: "removed" as const }]) {
+		const drawn = await renderArchitecture({ content, theme: "light", standing });
+		const label =
+			/<g data-semantic-kind="edge" data-semantic-id="ab"[^>]*>\s*<rect x="([-\d.]+)" y="([-\d.]+)" width="([\d.]+)" height="([\d.]+)"/u.exec(
+				drawn.svg,
+			)!;
+		const middle = {
+			x: Number(label[1]) + Number(label[3]) / 2,
+			y: Number(label[2]) + Number(label[4]) / 2,
+		};
+		const [line] = routes(drawn.svg);
+		// An opaque label hides its line itself; a see-through one has it cut away.
+		expect(hides(drawn.svg, line!.mask, middle)).toBe("ab" in standing);
+	}
+});
