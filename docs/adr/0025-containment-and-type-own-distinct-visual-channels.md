@@ -23,7 +23,8 @@ icon chips communicate node type, and comparison and selection use separate visu
 channels. These rules were accepted in TASK-203 on 2026-09-13.
 
 Card, container and icon chip are defined in [CONTEXT.md](../../CONTEXT.md#the-surface);
-emphasis, color scope and comparison status are also glossary terms. The decisions
+emphasis and comparison status are also glossary terms; color scope was one
+until ADR 0038 removed it. The decisions
 below govern how those concepts are combined in a drawing.
 
 ## Type is independent of depiction

@@ -35,6 +35,7 @@ function appearanceAttributes(appearance: NodeAppearance): Attributes {
 		"data-depiction": appearance.container ? "container" : "card",
 		"data-body-color": appearance.bodyColor ?? "neutral",
 		"data-group": appearance.group,
+		"data-group-name": appearance.groupName,
 		"data-type-color": appearance.typeColor ?? "neutral",
 		"data-type-name": appearance.typeName,
 		"data-type-kind": appearance.typeKind,

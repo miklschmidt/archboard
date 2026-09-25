@@ -12,6 +12,8 @@ interface NodeAppearance {
 	readonly bodyColor?: PaletteColor | undefined;
 	/** The group whose colour it takes, if any. */
 	readonly group?: string | undefined;
+	/** That group's name, as the vault configures it. */
+	readonly groupName?: string | undefined;
 	readonly typeColor?: PaletteColor | undefined;
 	readonly icon: string;
 	readonly typeName: string;
@@ -48,10 +50,12 @@ function nodeAppearances(
 	const resolved = new Map<string, NodeAppearance>();
 	for (const node of nodes) {
 		const group = placing.get(node.id);
+		const placed = group === undefined ? undefined : ownDefinition(policy.groups, group);
 		resolved.set(node.id, {
 			container: parents.has(node.id),
-			bodyColor: group === undefined ? undefined : ownDefinition(policy.groups, group)?.color,
+			bodyColor: placed?.color,
 			group,
+			groupName: placed?.name,
 			...typeAppearance(node.kind, policy),
 		});
 	}
