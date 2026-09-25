@@ -118,19 +118,22 @@ function wallX(scene: Scene, side: "left" | "right"): number {
 }
 
 /**
- * A chain's nets: one for each pair of stations on neighbouring bands.
+ * A chain's nets: one for each pair of stations on neighbouring bands. A net
+ * running upward never shares a trunk with one running down, since a trunk
+ * carries its lines one way.
  * @param line The line.
  * @param chain Its stations.
  * @returns Its nets, top to bottom.
  */
 function netsOf(line: SceneLine, chain: Chain): Net[] {
+	const kind = chain.upward ? `${line.kind}|upward` : line.kind;
 	return chain.stations.slice(1).map((bottom, index) => {
 		const top = chain.stations[index]!;
 		return {
 			edge: line.id,
 			order: line.order,
 			channel: top.band,
-			kind: line.kind,
+			kind,
 			top,
 			bottom,
 			topX: top.x,
