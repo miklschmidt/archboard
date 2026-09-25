@@ -3,6 +3,7 @@
 // relationship drawn on tracks through the ports where it crosses a block's
 // edge (`tree.ts`, `place.ts`). Everything is laid out and routed where the
 // layout engines run; here the geometry becomes the drawing.
+import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
@@ -103,6 +104,27 @@ function drawingOf(
 }
 
 /**
+ * Lay a measured hierarchy out as blocks, then draw it.
+ * @param content The architecture.
+ * @param measured Its measured cards and labels.
+ * @param graph Its measured hierarchy.
+ * @returns The drawing painting and the atlas read.
+ */
+async function drawnBlocks(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	graph: ElkNode,
+): Promise<PaintedDrawing> {
+	const solved = await rendererHost().solve(graph, {
+		...COMPOUND_OPTIONS,
+		[SOLVE_STAGE]: "blocks",
+	});
+	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
+	const drawing = drawingOf(content, measured, placed);
+	return { ...drawing, bridged: bridgeCrossings(drawing) };
+}
+
+/**
  * Lay an architecture out as blocks.
  * @param content The architecture.
  * @param measured Its measured cards and labels.
@@ -114,13 +136,7 @@ async function layoutBlocks(
 	measured: MeasuredArchitecture,
 	standings?: Readonly<Record<string, ChangeKind>>,
 ): Promise<PaintedDrawing> {
-	const solved = await rendererHost().solve(compoundGraph(content, measured, standings), {
-		...COMPOUND_OPTIONS,
-		[SOLVE_STAGE]: "blocks",
-	});
-	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
-	const drawing = drawingOf(content, measured, placed);
-	return { ...drawing, bridged: bridgeCrossings(drawing) };
+	return drawnBlocks(content, measured, compoundGraph(content, measured, standings));
 }
 
-export { layoutBlocks };
+export { drawnBlocks, layoutBlocks };

@@ -32,6 +32,15 @@ const PORT = 1;
 const STRAIGHT = 0.5;
 
 /**
+ * How far down a laid-out column its first card stands.
+ * @param laid The column laid out.
+ * @returns The top of its first rank that holds a card.
+ */
+function firstCardTop(laid: Laid): number {
+	return laid.bands.find(({ items }) => items.length > 0)?.top ?? 0;
+}
+
+/**
  * Where a line of the folded block runs: down from the block's header or top
  * port into a column, out of a column to its bottom port, or over from one
  * column to a later one through the gutter left of the later one.
@@ -277,12 +286,21 @@ class FoldLayout {
 		const row = Math.max(this.block.header?.height ?? 0, tops.length > 0 ? PORT : 0);
 		const channelTop = this.insets.top + row;
 		const columnsTop = channelTop + channelHeight(top.count);
+		// Every column's first card stands on one line, as newspaper columns do,
+		// whatever ports and channel a column keeps above it.
+		const heads = this.columns.map((column) => firstCardTop(this.laid.get(column.id)!));
+		const lowest = Math.max(...heads);
 		this.columns.forEach((column, index) => {
 			const { width, height } = this.laid.get(column.id)!;
-			this.boxes.set(column.id, { x: this.columnX[index]!, y: columnsTop, width, height });
+			const y = columnsTop + lowest - heads[index]!;
+			this.boxes.set(column.id, { x: this.columnX[index]!, y, width, height });
 		});
-		const heights = this.columns.map((column) => this.laid.get(column.id)!.height);
-		const channelBottom = columnsTop + Math.max(...heights);
+		const channelBottom = Math.max(
+			...this.columns.map((column) => {
+				const box = this.boxes.get(column.id)!;
+				return box.y + box.height;
+			}),
+		);
 		for (const port of tops) this.boxes.set(port, this.portBox(port, this.insets.top + row / 2));
 		this.placeBottomPorts(channelBottom, bottom);
 		return { top: channelTop, bottom: channelBottom };

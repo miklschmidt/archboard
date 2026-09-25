@@ -7,7 +7,7 @@
 // relationship's lines are joined end to end (`assembly.ts`).
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
-import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
+import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { Assembly } from "@/transformers/semantic-renderer/lib/blocks/assembly";
@@ -24,6 +24,13 @@ import {
 	type Side,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
+import {
+	crossingsOf,
+	readsBetter,
+	scoreOf,
+	wrapPlans,
+	type Weighed,
+} from "@/transformers/semantic-renderer/lib/track/score";
 
 /** How much better a wrap must fit the page than the board whole. */
 const WORTH_WRAPPING = 1.1;
@@ -52,8 +59,26 @@ function insetsOf(block: Block): Insets {
 }
 
 /**
+ * How readable a laid-out block is, on the score every layout choice is made by.
+ * @param laid The block laid out.
+ * @returns Its score.
+ */
+function scored(laid: Laid): number {
+	return scoreOf(weighed(laid));
+}
+
+/**
+ * What a laid-out block is scored on.
+ * @param laid The block laid out.
+ * @returns Its page and crossings.
+ */
+function weighed(laid: Laid): Weighed {
+	return { width: laid.width, height: laid.height, crossings: crossingsOf(laid.lines.values()) };
+}
+
+/**
  * Lay one block of cards out: whole, its widest rank wrapped into rows when
- * that fits the page better, or folded into columns when that does.
+ * that reads clearly better, or folded into columns when that does.
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
@@ -63,16 +88,10 @@ function insetsOf(block: Block): Insets {
 function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
 	const insets = insetsOf(block);
 	const whole = new CardLayout(block, laid, tree, insets).lay(viz);
-	const wrapped = wrapPlans(whole).map((lowered) =>
-		new CardLayout(block, laid, tree, insets, lowered).lay(viz),
-	);
-	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
-	const best = [whole, ...wrapped].reduce((one, other) =>
-		fitIn(other) > fitIn(one) * worth ? other : one,
-	);
+	const wrapped = bestWrap(viz, tree, block, { laid, whole });
+	if (wrapped !== undefined) return wrapped;
 	const walled = [...block.ports.values()].some((side) => side === "left" || side === "right");
-	if (best !== whole || walled) return best;
-	const plan = foldPlan(block, whole, insets);
+	const plan = walled ? undefined : foldPlan(block, whole, insets, scored(whole));
 	if (plan === undefined) return whole;
 	const columns = foldBlock(tree, block, plan);
 	for (const column of columns)
@@ -81,13 +100,41 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 }
 
 /**
+ * The block's widest rank wrapped into rows, when a wrap reads clearly better
+ * than the block whole.
+ * @param viz The initialized Graphviz instance.
+ * @param tree The blocks.
+ * @param block The block.
+ * @param laying Every block laid out so far, and this one whole.
+ * @param laying.laid Every block laid out so far.
+ * @param laying.whole This block laid out whole.
+ * @returns The best wrap, or nothing when the block stays whole.
+ */
+function bestWrap(
+	viz: Viz,
+	tree: BlockTree,
+	block: Block,
+	laying: { laid: Map<string, Laid>; whole: Laid },
+): Laid | undefined {
+	const insets = insetsOf(block);
+	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
+	const best = wrapsOf(laying.whole)
+		.map((lowered) => new CardLayout(block, laying.laid, tree, insets, lowered).lay(viz))
+		.reduce<Laid | undefined>(
+			(one, other) =>
+				one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one,
+			undefined,
+		);
+	return best !== undefined && scored(best) > scored(laying.whole) * worth ? best : undefined;
+}
+
+/**
  * The ways to wrap a block's widest rank of items into rows, when the block
- * is wider than the page's shape: every row after the first lowered one row
- * of cards more, the items dealt out across the rows in their order.
+ * is wider than the page's shape.
  * @param whole The block laid out whole.
  * @returns Each wrap, as how far each wrapped item is lowered.
  */
-function wrapPlans(whole: Laid): Map<string, number>[] {
+function wrapsOf(whole: Laid): Map<string, number>[] {
 	const pane = REFERENCE_PANE.width / REFERENCE_PANE.height;
 	const bands = whole.bands.filter(({ items }) => items.length >= MIN_WRAPPED);
 	if (bands.length === 0 || whole.width / whole.height <= pane) return [];
@@ -97,14 +144,7 @@ function wrapPlans(whole: Laid): Map<string, number>[] {
 	const across = widest.items.toSorted(
 		(one, other) => whole.boxes.get(one)!.x - whole.boxes.get(other)!.x,
 	);
-	return [2, 3, 4]
-		.filter((rows) => rows < across.length)
-		.map(
-			(rows) =>
-				new Map(
-					across.map((item, index) => [item, index % rows] as const).filter(([, row]) => row > 0),
-				),
-		);
+	return wrapPlans(across.map((id) => ({ ids: [id], width: whole.boxes.get(id)!.width })));
 }
 
 /**
