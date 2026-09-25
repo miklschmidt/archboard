@@ -15,8 +15,10 @@ import { z } from "zod";
 import { errorMessage } from "@/shared/thrown-error/index";
 import {
 	acceptedBoardNames,
+	LayoutEngineSchema,
 	listedBoard,
 	type BoardListing,
+	type LayoutEngineName,
 	type SemanticBoard,
 } from "@/shared/semantic-board/index";
 import {
@@ -149,10 +151,11 @@ interface RenderChoices {
 	readonly variant?: string;
 	readonly view?: string;
 	readonly comparison: boolean;
+	readonly layout?: LayoutEngineName;
 }
 
 /** The selectors a render request may state, all of them optional. */
-const RENDER_SELECTORS = ["variant", "view", "theme", "fonts", "comparison"] as const;
+const RENDER_SELECTORS = ["variant", "view", "theme", "fonts", "comparison", "layout"] as const;
 
 /**
  * One stated selector, or why it cannot be acted on.
@@ -232,16 +235,50 @@ function chosen(
 	if (!comparison.success) {
 		return { ok: false, why: `"comparison" says "${stated["comparison"]}"; choose on or off` };
 	}
+	const layout = statedLayout(stated["layout"]);
+	if (!layout.ok) return layout;
 	return {
 		ok: true,
 		how: {
 			theme: theme.data,
 			fonts: fonts.data,
 			comparison: comparison.data === "on",
-			...(stated["variant"] === undefined ? {} : { variant: stated["variant"] }),
-			...(stated["view"] === undefined ? {} : { view: stated["view"] }),
+			...namedIn(stated),
+			...layout.choice,
 		},
 	};
+}
+
+/**
+ * The variant and view a request names, when it names them.
+ * @param stated The selectors that were stated, by name.
+ * @returns The named ones.
+ */
+function namedIn(stated: Readonly<Record<string, string>>): { variant?: string; view?: string } {
+	return {
+		...(stated["variant"] === undefined ? {} : { variant: stated["variant"] }),
+		...(stated["view"] === undefined ? {} : { view: stated["view"] }),
+	};
+}
+
+/**
+ * The layout engine a render request names, if it names one.
+ * @param stated What the request said, if anything.
+ * @returns The engine, or why it is not one.
+ */
+function statedLayout(
+	stated: string | undefined,
+):
+	| { readonly ok: true; readonly choice: { layout?: LayoutEngineName } }
+	| { readonly ok: false; readonly why: string } {
+	if (stated === undefined) return { ok: true, choice: {} };
+	const layout = LayoutEngineSchema.safeParse(stated);
+	return layout.success
+		? { ok: true, choice: { layout: layout.data } }
+		: {
+				ok: false,
+				why: `"layout" says "${stated}"; choose ${LayoutEngineSchema.options.join(" or ")}`,
+			};
 }
 
 /**

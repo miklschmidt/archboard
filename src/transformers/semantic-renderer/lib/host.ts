@@ -56,8 +56,9 @@ interface RendererHost {
  * The option that asks a solve for one stage. `place` answers the graph
  * placed (and folded into its columns) with nothing routed: cards, frames and
  * reserved labels have their boxes and the page its size, which routing never
- * changes. `route` routes a graph a `place` answered. Absent, a solve does
- * both.
+ * changes. `route` routes a graph a `place` answered. `track` places a graph
+ * for the track engine (TASK-349): every label a box of its own and every
+ * relationship's polyline written on it. Absent, a solve places and routes.
  */
 const SOLVE_STAGE = "archboard.stage";
 

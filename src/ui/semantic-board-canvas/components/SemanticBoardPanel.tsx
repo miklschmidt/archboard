@@ -15,6 +15,7 @@
 import type { JSX, ReactNode } from "react";
 
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { SemanticEngineBar } from "@/ui/semantic-board-canvas/components/SemanticEngineBar";
 import { SemanticGroupBar } from "@/ui/semantic-board-canvas/components/SemanticGroupBar";
 import { SemanticLegend } from "@/ui/semantic-board-canvas/components/SemanticLegend";
 import { SemanticVariantBar } from "@/ui/semantic-board-canvas/components/SemanticVariantBar";
@@ -191,6 +192,9 @@ function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
 			</Part>
 			<Part title="Groups" slot="semantic-board-panel-groups">
 				{groupControl(props)}
+			</Part>
+			<Part title="Layout engine" slot="semantic-board-panel-engine">
+				<SemanticEngineBar />
 			</Part>
 			<SemanticLegend
 				appearances={props.appearances}

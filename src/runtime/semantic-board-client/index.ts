@@ -28,6 +28,7 @@ import {
 	type FontSource,
 	type SemanticBoard,
 	type SemanticRenderReply,
+	type LayoutEngineName,
 } from "@/shared/semantic-board/index";
 
 /** One board in the vault's semantic listing. */
@@ -186,6 +187,7 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options.view A view id or name; the whole variant when absent.
  * @param options.theme Which colour scheme to draw for.
  * @param options.fonts Where the drawn faces come from; embedded makes the file self-contained.
+ * @param options.layout Which layout engine lays it out; the default one when absent.
  * @returns The picture, or the fact that there is nothing on the board yet.
  */
 async function renderSemanticBoardOnServer(
@@ -195,21 +197,11 @@ async function renderSemanticBoardOnServer(
 		view?: string;
 		theme?: "light" | "dark";
 		fonts?: FontSource;
+		layout?: LayoutEngineName;
 	} = {},
 ): Promise<SemanticRenderReply> {
 	const query = new URLSearchParams({ board });
-	if (options.variant !== undefined) {
-		query.set("variant", options.variant);
-	}
-	if (options.view !== undefined) {
-		query.set("view", options.view);
-	}
-	if (options.theme !== undefined) {
-		query.set("theme", options.theme);
-	}
-	if (options.fonts !== undefined) {
-		query.set("fonts", options.fonts);
-	}
+	for (const [name, value] of Object.entries(options)) query.set(name, value);
 	return SemanticRenderReplySchema.parse(
 		await requestJson<unknown>(`/api/semantic-boards/render?${query.toString()}`),
 	);

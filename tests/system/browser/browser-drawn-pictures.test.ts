@@ -135,7 +135,7 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	// Laid out here and kept again, as a picture of the new version.
 	const keptAfter = await pollUntil(
 		() => keptPictures(browser),
-		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[5] === 2),
+		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[6] === 2),
 		"the new version's picture to be kept",
 		WAIT,
 	);

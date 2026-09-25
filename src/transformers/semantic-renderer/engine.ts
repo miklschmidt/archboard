@@ -5,6 +5,7 @@ import { z } from "zod";
 import { placeGraph } from "@/transformers/semantic-renderer/lib/layout/graphviz-placement";
 import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
 import { foldColumns } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
+import { placeTracks } from "@/transformers/semantic-renderer/lib/track/placement";
 import { SOLVE_STAGE } from "@/transformers/semantic-renderer/lib/host";
 
 /** A value owned by the WASM heap. */
@@ -92,6 +93,7 @@ export function createLayoutEngine(viz: Viz, instance: unknown) {
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
 		const stage = options[SOLVE_STAGE];
 		if (stage === "route") return routeGraph(avoid, graph);
+		if (stage === "track") return placeTracks(viz, graph);
 		const reading = placeReading(viz, graph, options);
 		return stage === "place" ? reading : routeGraph(avoid, reading);
 	};

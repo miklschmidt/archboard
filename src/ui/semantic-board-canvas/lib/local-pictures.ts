@@ -49,6 +49,7 @@ import {
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { sameBoardName } from "@/ui/semantic-board-canvas/lib/address";
 import { onSemanticBoardChange } from "@/ui/semantic-board-canvas/lib/board-changes";
+import { layoutEngineNow } from "@/ui/semantic-board-canvas/lib/layout-engine";
 import {
 	forgetStalePictures,
 	readCachedPicture,
@@ -133,6 +134,7 @@ async function drawHere(
 		request.view,
 		request.theme,
 		request.comparison === false ? "plain" : "compared",
+		request.layout,
 		stamp,
 	]);
 	const reply =
@@ -199,6 +201,7 @@ async function drawn(
 			view: request.view,
 			theme: request.theme,
 			comparison: request.comparison,
+			layout: request.layout,
 		},
 		policy,
 	);
@@ -291,6 +294,7 @@ async function picturesToDrawAhead(
 				...(variant === "" ? {} : { variant }),
 				...(view === "" ? {} : { view }),
 				theme,
+				layout: layoutEngineNow(),
 			})),
 		),
 	);
@@ -335,7 +339,9 @@ async function drawListedAhead(
 		const { name, themes } = readingsOf(client, entry.key, shown);
 		for (const theme of themes) {
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time, so drawing ahead never takes more than one of the renderer's workers
-			await client.prefetchQuery(semanticRenderQuery({ board: name, theme }));
+			await client.prefetchQuery(
+				semanticRenderQuery({ board: name, theme, layout: layoutEngineNow() }),
+			);
 		}
 	}
 }

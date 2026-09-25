@@ -3,7 +3,11 @@
 // server that drew it (ADR 0023: the renderer owns every coordinate).
 
 import { z } from "zod";
-import { OfferedViewSchema, RenderedVariantSchema } from "@/shared/semantic-board/index";
+import {
+	LayoutEngineSchema,
+	OfferedViewSchema,
+	RenderedVariantSchema,
+} from "@/shared/semantic-board/index";
 import { renderSemanticBoardOnServer } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
@@ -17,6 +21,7 @@ const RenderInputSchema = z.object({
 	variant: SelectorSchema.optional(),
 	view: SelectorSchema.optional(),
 	theme: z.enum(THEMES).default("light"),
+	layout: LayoutEngineSchema.optional(),
 	out: z.string(),
 });
 
@@ -100,6 +105,15 @@ const semanticRenderContract = defineCommand({
 			default: "light",
 			description: "Which ground to draw on",
 		},
+		{
+			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: LayoutEngineSchema.options,
+			description: "Which layout engine lays the architecture out; the default one when absent",
+		},
 	],
 	input: { ingress: RenderInputSchema },
 	result: SemanticRenderResultSchema,
@@ -143,6 +157,7 @@ const semanticRenderContract = defineCommand({
 			...(input.variant === undefined ? {} : { variant: input.variant }),
 			...(input.view === undefined ? {} : { view: input.view }),
 			theme: input.theme,
+			...(input.layout === undefined ? {} : { layout: input.layout }),
 			// The file outlives the server that drew it, so it carries its faces
 			// rather than pointing at a server that may not be running.
 			fonts: "embedded",

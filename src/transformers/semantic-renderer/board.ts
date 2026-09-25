@@ -17,6 +17,7 @@ import {
 	type DrawnProposal,
 	type DiagramGrammar,
 	type DiagramTheme,
+	type LayoutEngineName,
 	type FontSource,
 	type OfferedView,
 	type SemanticBoard,
@@ -39,6 +40,8 @@ interface BoardRenderChoices {
 	readonly comparison?: boolean | undefined;
 	readonly theme: DiagramTheme;
 	readonly fonts: FontSource;
+	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
+	readonly layout?: LayoutEngineName | undefined;
 }
 
 /** The answer, or which of the request's names this board does not have. */
@@ -120,13 +123,20 @@ function pictureOf(
  * @param how.fonts Where the drawn faces come from.
  * @param how.policy The vault's presentation policy.
  * @param how.comparison Whether to draw comparison treatment.
+ * @param how.layout Which engine lays the architecture out.
  * @returns The answer.
  */
 async function drawnReply(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	view: SemanticView | undefined,
-	how: { theme: DiagramTheme; fonts: FontSource; policy: SemanticPolicy; comparison: boolean },
+	how: {
+		theme: DiagramTheme;
+		fonts: FontSource;
+		policy: SemanticPolicy;
+		comparison: boolean;
+		layout: LayoutEngineName | undefined;
+	},
 ): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
 	// The comparison restores what a change took away from the predecessor;
@@ -156,6 +166,7 @@ async function drawnReply(
 			grammar: reading.grammar,
 			theme: how.theme,
 			fonts: how.fonts,
+			layout: how.layout,
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 			unbuilt: nothingBuilt(board),
 		});
@@ -198,6 +209,7 @@ async function renderBoard(
 		fonts: choices.fonts,
 		policy,
 		comparison: choices.comparison !== false,
+		layout: choices.layout,
 	});
 	return { ok: true, reply };
 }

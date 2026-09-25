@@ -5,6 +5,7 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
+import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
 import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 import {
 	fetchSemanticBoardDocument,
@@ -59,6 +60,7 @@ const semanticBoardKeys = {
 			request.view ?? "",
 			request.theme,
 			request.comparison === false ? "plain" : "compared",
+			request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		] as const,
 };
 
