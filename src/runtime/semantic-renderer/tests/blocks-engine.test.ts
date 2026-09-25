@@ -17,6 +17,7 @@ import agentWorkbench from "./agent-workbench.json";
 import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
+import twoChains from "./two-chains.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
 const policy = SemanticPolicySchema.parse({
@@ -161,6 +162,16 @@ function alongWalls(
 			: [],
 	);
 }
+
+test("two chains leaving a block through its bottom start on one row", async () => {
+	const content = orderedFixture(twoChains);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const { nodes } = drawn.atlas;
+	// The chain into the Platform is a card shorter; it stays level with the
+	// other rather than hanging from the block's bottom between its rows.
+	expect(nodes["preview"]!.y).toBe(nodes["dns"]!.y);
+	expect(nodes["platlb"]!.y).toBe(nodes["legacy"]!.y);
+});
 
 test("trunks reach a container's own ports from inside it, not along its border", async () => {
 	const content = orderedFixture(agentWorkbench);

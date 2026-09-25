@@ -12,6 +12,7 @@ import {
 	type VendorNode,
 } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { cornerHeader } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
 	type Block,
@@ -219,6 +220,38 @@ class CardLayout {
 			...this.clusters.titleEdges(lower, links),
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
+		);
+		this.holdSources();
+	}
+
+	/**
+	 * Hold every item no line enters on the block's first rank of items, when
+	 * the block has ports on its bottom. Graphviz ranks those ports last and
+	 * joins every item no line leaves to them at no cost, so a short chain
+	 * hangs from the bottom and its cards stand between another chain's rows.
+	 */
+	holdSources(): void {
+		const { block, graph } = this;
+		if (![...block.ports.values()].includes("bottom")) return;
+		const entered = new Set(graph.edges.map(({ head }) => head));
+		const leaving = new Set(graph.edges.map(({ tail }) => tail));
+		const sources = block.items.filter((item) => !entered.has(item) && leaving.has(item));
+		const top = block.header === undefined ? undefined : headerOf(block);
+		if (sources.length === 0) return;
+		if (top === undefined && ![...block.ports.values()].includes("top")) {
+			graph.subgraphs.push({
+				graphAttributes: { rank: "min" },
+				nodes: sources.map((item) => this.nodeOf(item)),
+			});
+			return;
+		}
+		const above = top ?? [...block.ports].find(([, side]) => side === "top")![0];
+		graph.edges.push(
+			...sources.map((head) => ({
+				tail: above,
+				head,
+				attributes: { style: "invis", weight: 1, minlen: 1 },
+			})),
 		);
 	}
 
@@ -524,38 +557,12 @@ class CardLayout {
 		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
 		for (const pin of new Set(ends.filter((end) => this.tree.pins.has(end))))
 			leaves.push(this.pinned(pin, centres));
-		this.cornerHeader(leaves);
+		cornerHeader(leaves, headerOf(this.block));
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);
 		const { children, regions } = this.clusters.nest(leaves, centres, clusters);
 		return { id: this.block.id, children, edges, layoutOptions: { [TRACK_REGIONS]: regions } };
-	}
-
-	/**
-	 * Stand the header in the block's top-left corner, over what the block
-	 * holds, and every port on its rank right of it a lane apart. Graphviz ranks the
-	 * header as a sliver, so it pushes neither the ports nor the cards under
-	 * them right by its width.
-	 * @param leaves Every placed leaf; the header's and the top ports' move in place.
-	 */
-	cornerHeader(leaves: ElkNode[]): void {
-		const header = leaves.find(({ id }) => id === headerOf(this.block));
-		if (header === undefined) return;
-		header.x = Math.min(...leaves.filter((leaf) => leaf !== header).map(({ x }) => x!));
-		/**
-		 * Whether a leaf stands on the header's rank.
-		 * @param leaf The leaf.
-		 * @returns True when some of its height is the header's.
-		 */
-		const beside = (leaf: ElkNode): boolean =>
-			leaf !== header && leaf.y! < header.y! + header.height! && header.y! < leaf.y! + leaf.height!;
-		const tops = leaves.filter(beside).toSorted((one, other) => one.x! - other.x!);
-		let free = header.x + header.width! + LANE;
-		for (const port of tops) {
-			port.x = Math.max(port.x!, free);
-			free = port.x + port.width! + LANE;
-		}
 	}
 
 	/**
