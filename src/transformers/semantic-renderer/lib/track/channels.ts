@@ -19,6 +19,8 @@ import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** How far a port keeps from a card's corner. */
 const PORT_MARGIN = 20;
+/** The cost of an order that runs two lines down one column: never taken when avoidable. */
+const STACKED = 100;
 
 /** Relationships that share a port and a track at one card face. */
 interface Trunk {
@@ -277,7 +279,7 @@ function costAbove(above: Unit, below: Unit): number {
 	const stacked = below.tops.some((top) =>
 		above.bottoms.some((bottom) => Math.abs(top - bottom) < LANE / 2),
 	);
-	return stacked ? 100 : inside(below.tops, above) + inside(above.bottoms, below);
+	return stacked ? STACKED : inside(below.tops, above) + inside(above.bottoms, below);
 }
 
 /**
@@ -297,6 +299,37 @@ function preferenceOf(unit: Unit, units: readonly Unit[]): number {
 }
 
 /**
+ * Whether one unit must be above another: below it, the other would run a
+ * line down the column of one of its own.
+ * @param above The unit that would be higher.
+ * @param below The unit that would be lower.
+ * @returns True when the other order would stack two lines in one column.
+ */
+function mustBeAbove(above: Unit, below: Unit): boolean {
+	return (
+		overlap(above, below) && costAbove(below, above) >= STACKED && costAbove(above, below) < STACKED
+	);
+}
+
+/**
+ * The units in their preferred order, except that no unit is placed before
+ * a unit that must be above it.
+ * @param preferred The units, most wanting to be high first.
+ * @returns The order to give tracks in.
+ */
+function keepingStacks(preferred: readonly Unit[]): Unit[] {
+	const waiting = [...preferred];
+	const ordered: Unit[] = [];
+	while (waiting.length > 0) {
+		const ready = waiting.findIndex(
+			(unit) => !waiting.some((other) => other !== unit && mustBeAbove(other, unit)),
+		);
+		ordered.push(...waiting.splice(Math.max(ready, 0), 1));
+	}
+	return ordered;
+}
+
+/**
  * Assign the tracks of one channel: the order that crosses least, each unit on
  * the highest track below every overlapping unit above it.
  * @param nets The channel's nets.
@@ -305,11 +338,13 @@ function preferenceOf(unit: Unit, units: readonly Unit[]): number {
 function assignTracks(nets: readonly Net[]): number {
 	const units = unitsOf(nets);
 	const preference = new Map(units.map((unit) => [unit, preferenceOf(unit, units)]));
-	const ordered = units.toSorted(
-		(one, other) =>
-			preference.get(other)! - preference.get(one)! ||
-			one.low - other.low ||
-			one.order - other.order,
+	const ordered = keepingStacks(
+		units.toSorted(
+			(one, other) =>
+				preference.get(other)! - preference.get(one)! ||
+				one.low - other.low ||
+				one.order - other.order,
+		),
 	);
 	const tracks = new Map<Unit, number>();
 	for (const unit of ordered) {

@@ -8,7 +8,7 @@ import { copyFileSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	locateSemanticBoard,
@@ -16,6 +16,7 @@ import {
 	readSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
+import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import first from "../../../../docs/design/wide-board-layout-fixtures/flask-map-1.content.json";
 import third from "../../../../docs/design/wide-board-layout-fixtures/flask-map-3.content.json";
 import systemMap from "../../../../docs/design/wide-board-layout-fixtures/system-map.content.json";
@@ -69,12 +70,78 @@ function expectIntact(drawing: RenderedDiagram, content: VariantContent) {
 	);
 }
 
+/** The least distance the track engine keeps between two lines that do not share a trunk. */
+const TRACK_LANE = 16;
+
+/** One straight run of a drawn route. */
+interface Run {
+	readonly edge: string;
+	readonly vertical: boolean;
+	/** Where it stands across its direction. */
+	readonly at: number;
+	readonly from: number;
+	readonly to: number;
+}
+
+/**
+ * Every straight run of every drawn route longer than a bend.
+ * @param drawing The rendered board.
+ * @returns The runs.
+ */
+function runsOf(drawing: RenderedDiagram): Run[] {
+	return [...routePoints(drawing.svg)].flatMap(([edge, points]) =>
+		points.slice(1).flatMap((point, index) => {
+			const previous = points[index]!;
+			const vertical = Math.abs(point.x - previous.x) < 0.01;
+			const horizontal = Math.abs(point.y - previous.y) < 0.01;
+			if (vertical === horizontal) return [];
+			const [one, other] = vertical ? [previous.y, point.y] : [previous.x, point.x];
+			if (Math.abs(other - one) < 2 * TRACK_LANE) return [];
+			return [
+				{
+					edge,
+					vertical,
+					at: vertical ? point.x : point.y,
+					from: Math.min(one, other),
+					to: Math.max(one, other),
+				},
+			];
+		}),
+	);
+}
+
+/**
+ * Pairs of lines that run side by side closer than a lane without sharing a
+ * trunk: the near-coincident lanes the track engine exists to prevent.
+ * @param drawing The rendered board.
+ * @returns The pairs, by relationship ids and their distance.
+ */
+function nearLanes(drawing: RenderedDiagram): string[] {
+	const runs = runsOf(drawing);
+	return runs.flatMap((run, index) =>
+		runs.slice(index + 1).flatMap((other) => {
+			const gap = Math.abs(run.at - other.at);
+			const overlap = Math.min(run.to, other.to) - Math.max(run.from, other.from);
+			return run.edge !== other.edge &&
+				run.vertical === other.vertical &&
+				overlap > TRACK_LANE &&
+				gap > 0.5 &&
+				gap < TRACK_LANE - 0.5
+				? [`${run.edge}/${other.edge} ${gap.toFixed(1)}`]
+				: [];
+		}),
+	);
+}
+
 // Bun waits the suite's 20 s wall-clock budget rather than its own shorter
 // default, so the budget is what a slow layout fails (docs/agents/test-suite.md).
 for (const board of [...FIXTURES, ...vaultBoards()]) {
-	test(`${board.name}: complete architecture, clear cards, labels on their own routes`, async () => {
-		const content = orderedFixture(board.content);
-		const drawing = await renderArchitecture({ content, theme: "light" });
-		expectIntact(drawing, content);
-	}, 20_000);
+	for (const layout of LayoutEngineSchema.options) {
+		test(`${board.name} (${layout}): complete architecture, clear cards, labels on their own routes`, async () => {
+			const content = orderedFixture(board.content);
+			const drawing = await renderArchitecture({ content, theme: "light", layout });
+			expectIntact(drawing, content);
+			if (layout === "track") expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
+		}, 20_000);
+	}
 }

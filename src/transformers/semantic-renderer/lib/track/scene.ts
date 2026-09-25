@@ -4,9 +4,9 @@ import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/placement";
 
-/** Something that sits on a band: a card, a label box or a frame's title row. */
+/** Something that sits on a band: a card, a label box or a frame's title row; a label box may slide. */
 interface Item {
-	readonly box: Box;
+	box: Box;
 	band: number;
 }
 

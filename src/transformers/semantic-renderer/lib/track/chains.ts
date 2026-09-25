@@ -8,6 +8,8 @@ import { Scene, centreX, type Item } from "@/transformers/semantic-renderer/lib/
 
 /** Distance between neighbouring lanes and tracks. */
 const LANE = 16;
+/** How many quarter lanes either way a lane looks for a free column. */
+const SEARCH_STEPS = 64;
 
 /** Where a chain touches a band. */
 interface Station {
@@ -197,13 +199,28 @@ function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 	const runs = laneRuns(chains).toSorted((one, other) => other.lanes.length - one.lanes.length);
 	for (const { lanes, before, after } of runs) {
 		const xs = lanes.map(({ x }) => x).toSorted((one, other) => one - other);
-		const candidates = [after.x, before.x, xs[Math.floor(xs.length / 2)]!, ...xs];
-		const chosen = candidates.find((x) => occupancy.fits(lanes, x));
+		const median = xs[Math.floor(xs.length / 2)]!;
+		const chosen =
+			[after.x, before.x, median, ...xs].find((x) => occupancy.fits(lanes, x)) ??
+			nearest(median, (x) => occupancy.fits(lanes, x));
 		for (const lane of lanes) {
-			if (chosen !== undefined) lane.x = chosen;
+			lane.x = chosen ?? nearest(lane.x, (x) => occupancy.fits([lane], x)) ?? lane.x;
 			occupancy.take(lane);
 		}
 	}
+}
+
+/**
+ * The nearest x to one that passes a test, searched outward a quarter lane at a time.
+ * @param from Where to start.
+ * @param passes The test.
+ * @returns The nearest passing x within reach, or nothing.
+ */
+function nearest(from: number, passes: (x: number) => boolean): number | undefined {
+	for (let step = 0; step <= SEARCH_STEPS; step += 1) {
+		for (const x of [from - (step * LANE) / 4, from + (step * LANE) / 4]) if (passes(x)) return x;
+	}
+	return undefined;
 }
 
 export { LANE, chainOf, straightenLanes, type Chain, type Station };
