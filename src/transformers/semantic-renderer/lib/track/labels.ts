@@ -287,8 +287,18 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
 			);
 		}
 	});
+	settleLabels(scene, nets);
+}
+
+/**
+ * Settle every label box onto the lane or face its line meets it from, and
+ * move the nets through it with it.
+ * @param scene The scene.
+ * @param nets Every net, whose label ends follow their boxes.
+ */
+function settleLabels(scene: Scene, nets: readonly Net[]): void {
 	settleOnLanes(scene, nets);
-	centreOnFaces(scene, nets, sliders);
+	centreOnFaces(scene, nets, slidersOf(nets));
 	for (const net of nets) {
 		if (net.top.kind === "label") net.topX = centreX(net.top.item!);
 		if (net.bottom.kind === "label") net.bottomX = centreX(net.bottom.item!);
@@ -460,4 +470,4 @@ function lanesByBand(scene: Scene, nets: readonly Net[]): number[][] {
 	return lanes;
 }
 
-export { nudgeLabel, slideLabels };
+export { nudgeLabel, settleLabels, slideLabels };

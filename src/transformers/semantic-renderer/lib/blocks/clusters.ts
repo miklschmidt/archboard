@@ -7,7 +7,10 @@
 // every region on the block's root.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Edge, Graph, Subgraph } from "@viz-js/viz";
-import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import {
+	ARCHITECTURE_HEADER_PADDING,
+	CONTAINER_INSET,
+} from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { box, numbers, type Output } from "@/transformers/semantic-renderer/lib/track/graphviz";
@@ -308,10 +311,11 @@ class Clusters {
 			const bounds = boxes.get(cluster.id)!;
 			const title = centres.get(titleOf(cluster.id))!;
 			const row = [bounds.x, title.y - cluster.header.height / 2, bounds.width];
+			const words = cluster.header.width - ARCHITECTURE_HEADER_PADDING;
 			frames.set(cluster.id, {
 				id: cluster.id,
 				...bounds,
-				layoutOptions: { [TRACK_TITLE]: [...row, cluster.header.height].join(",") },
+				layoutOptions: { [TRACK_TITLE]: [...row, cluster.header.height, words].join(",") },
 				children: [],
 			});
 		}

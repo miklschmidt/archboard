@@ -10,8 +10,6 @@ import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/sce
 
 /** Room a group region keeps below its lowest member. */
 const REGION_BOTTOM = 14;
-/** How far a region's caption sits in from its band's left edge. */
-const REGION_CAPTION_INSET = 6;
 
 /** A frame's box once the scene is spaced, and how deep in frames it sits. */
 interface FrameShape {
@@ -202,9 +200,7 @@ function regionShapes(
 ): RegionShape[] {
 	const containers = new Containers(scene, edges);
 	return scene.regions.map((region, index) => {
-		const centred = scene.moved(region.caption, left);
-		// The caption reads from the band's top-left corner, as a frame's title does.
-		const caption = { ...centred, x: region.box.x + left + REGION_CAPTION_INSET };
+		const caption = scene.moved(region.caption, left);
 		const bottom = containers.bottomOf(containers.regions[index]!, left);
 		const depth =
 			region.parent === undefined ? 0 : (scene.frames.get(region.parent)?.depth ?? 0) + 1;
