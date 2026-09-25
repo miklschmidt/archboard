@@ -4,7 +4,7 @@
 // that stands to one side of both its ends has to jog on the way in and on the
 // way out. Here each box slides sideways, within its band, to where both ends
 // could reach it straight: a point both cards' faces cover, or as near as the
-// band allows. An end that shares a trunk's port is not aimed at: the trunk
+// band allows, and then to the middle of that stretch where the room allows. An end that shares a trunk's port is not aimed at: the trunk
 // turns on its track wherever the box stands. Cards, title rows, lanes and frame walls stay where they are;
 // boxes between them keep their order and spacing, placed as close to where
 // they want to be as the gap allows.
@@ -288,9 +288,57 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
 		}
 	});
 	settleOnLanes(scene, nets);
+	centreOnFaces(scene, nets, sliders);
 	for (const net of nets) {
 		if (net.top.kind === "label") net.topX = centreX(net.top.item!);
 		if (net.bottom.kind === "label") net.bottomX = centreX(net.bottom.item!);
+	}
+}
+
+/**
+ * The stretch both of a label's ends reach straight, if they share one.
+ * @param slider The label.
+ * @returns The lowest and highest centre, or nothing when its line must jog.
+ */
+function faceOf(slider: Slider): [number, number] | undefined {
+	const { reaches } = slider;
+	const low = Math.max(...reaches.map(([one]) => one));
+	const high = Math.min(...reaches.map(([, other]) => other));
+	return low <= high ? [low, high] : undefined;
+}
+
+/**
+ * Centre each label whose line runs straight on the middle of the stretch
+ * both its ends reach, as near as the free room beside it allows; nothing
+ * else moves. Where Graphviz stood such a label says nothing, and a fork's
+ * branches would otherwise leave or enter their card unevenly.
+ * @param scene The scene.
+ * @param nets Every net.
+ * @param sliders Every label on a line.
+ */
+function centreOnFaces(scene: Scene, nets: readonly Net[], sliders: readonly Slider[]): void {
+	const lanes = lanesByBand(scene, nets);
+	for (const slider of sliders.toSorted((one, other) => one.item.box.x - other.item.box.x)) {
+		const face = faceOf(slider);
+		const { item } = slider;
+		if (face === undefined) continue;
+		const labels = [...scene.labels.values()]
+			.filter((other) => other !== item && other.band === item.band)
+			.map(({ box }): Wall => [
+				box.x - LABEL_LABEL_CLEARANCE,
+				box.x + box.width + LABEL_LABEL_CLEARANCE,
+			]);
+		const [left, right] = stretchOf(
+			[...wallsOn(scene, item.band, lanes[item.band]!), ...labels],
+			item,
+		);
+		const half = item.box.width / 2;
+		const lowest = Math.max(face[0], left + half);
+		const highest = Math.min(face[1], right - half);
+		const centre = centreX(item);
+		if (centre < lowest - 0.5 || centre > highest + 0.5) continue;
+		const middle = Math.min(highest, Math.max(lowest, (face[0] + face[1]) / 2));
+		item.box = { ...item.box, x: middle - half };
 	}
 }
 

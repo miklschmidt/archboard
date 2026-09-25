@@ -5,7 +5,8 @@
 // than its two bends need on its way between cards, a line rising into the
 // card above whose arrowhead sits on its last bend, labels on a crowded band
 // shifted together until every line through them jogs, a labelled fan whose
-// trunk turns once and whose labels then turn it a second time, a long chain drawn as one tall
+// trunk turns once and whose labels then turn it a second time, two labelled
+// lines entering one card unevenly, one hugging its corner, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
@@ -159,6 +160,31 @@ test("a labelled line leaving through a trunk runs sideways on one level only", 
 			.map(({ y }) => y);
 		expect(new Set(levels).size, id).toBeLessThanOrEqual(1);
 	}
+});
+
+// Shaped like a real board, names replaced: two hosts side by side each send a
+// labelled line into the store under them. Where Graphviz stood a label is
+// arbitrary, and one line entered 20 px from the store's corner.
+test("two labelled lines into one card enter it evenly", async () => {
+	const fork = orderedFixture({
+		nodes: [
+			["left", "Host three", "Legacy services"],
+			["right", "Host four", "Legacy services"],
+			["store", "Shared store", "Existing shared production database."],
+		].map(([id, name, responsibility]) => ({ id, name, kind: "module", responsibility })),
+		edges: ["left", "right"].map((from) => ({
+			id: from,
+			from,
+			to: "store",
+			kind: "data",
+			label: "Database connection",
+		})),
+	});
+	const drawing = await renderArchitecture({ content: fork, theme: "light", layout: "track" });
+	const store = drawing.atlas.nodes["store"]!;
+	const routes = routePoints(drawing.svg);
+	const [left, right] = ["left", "right"].map((id) => routes.get(id)!.at(-1)!.x);
+	expect(Math.abs(left! - store.x - (store.x + store.width - right!))).toBeLessThanOrEqual(2);
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
