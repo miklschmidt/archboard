@@ -149,7 +149,9 @@ class Placement {
 						CARD_ROUTING_GAP,
 					) / 72,
 				pad: 0,
-				margin: 0,
+				// Graphviz keeps top-level frames apart by the root margin, in points:
+				// with none, two frames side by side stood 2 points apart.
+				margin: CARD_ROUTING_GAP,
 			},
 			nodeAttributes: { shape: "box", fixedsize: true, label: "", margin: 0 },
 			edgeAttributes: { dir: "none" },
