@@ -210,8 +210,11 @@ function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 	clearHeadings(scene, chains);
 	const occupancy = new Occupancy(scene);
 	const runs = laneRuns(chains).toSorted((one, other) => other.lanes.length - one.lanes.length);
+	const bands = chains.map(
+		({ stations }) => new Map(stations.map((station) => [station.band, station])),
+	);
 	for (const run of runs) {
-		const chosen = columnOf(scene, run, occupancy);
+		const chosen = columnOf(scene, run, occupancy, bands);
 		for (const lane of run.lanes) {
 			lane.x = chosen ?? nearest(lane.x, (x) => occupancy.fits([lane], x)) ?? lane.x;
 			occupancy.take(lane);
@@ -244,24 +247,106 @@ function clearHeadings(scene: Scene, chains: readonly Chain[]): void {
 }
 
 /**
- * The column a run of lanes takes: straight on for a run to or from a
- * container, as near that as it is free; else the column of the station it
- * leads into, the one it leaves, or its own lanes', the first that is free.
+ * Where a line meets a station: a lane's or label's x, or the point of a
+ * card's face nearest the other end, where its port will stand.
+ * @param station The station.
+ * @param toward The x of the line's other end in that channel.
+ * @param lane Where a lane stands instead of its own x, when it is the one being placed.
+ * @returns The x.
+ */
+function meetsAt(station: Station, toward: number, lane = station.x): number {
+	if (station.kind === "lane") return lane;
+	if (station.kind !== "card") return station.x;
+	const [low, high] = reachOf(station);
+	return Math.min(high, Math.max(low, toward));
+}
+
+/**
+ * Whether two chains meet at one station: the same one, or the same card.
+ * @param one A station.
+ * @param other Another on the same band.
+ * @returns True when they are one place.
+ */
+function meets(one: Station, other: Station): boolean {
+	return one === other || (one.item !== undefined && one.item === other.item);
+}
+
+/**
+ * Whether another chain's line between two bands crosses a run's line
+ * between them, where no track order undoes it.
+ * @param upper The run's station on the upper band.
+ * @param lower Its station on the lower band.
+ * @param x The run's column.
+ * @param other The other chain's stations, by band.
+ * @returns True when the two cross.
+ */
+function crosses(
+	upper: Station,
+	lower: Station,
+	x: number,
+	other: ReadonlyMap<number, Station>,
+): boolean {
+	const [one, two] = [other.get(upper.band), other.get(lower.band)];
+	if (one === undefined || two === undefined || meets(one, upper) || meets(two, lower))
+		return false;
+	const [top, bottom] = [meetsAt(upper, x, x), meetsAt(lower, x, x)];
+	return (top - meetsAt(one, two.x)) * (bottom - meetsAt(two, one.x)) < 0;
+}
+
+/**
+ * How many other chains a run on one column would cross between one band
+ * and the next.
+ * @param run The run.
+ * @param x The column.
+ * @param bands Every chain's stations, by band.
+ * @returns The count.
+ */
+function inversions(
+	run: LaneRun,
+	x: number,
+	bands: readonly ReadonlyMap<number, Station>[],
+): number {
+	const own = [run.before, ...run.lanes, run.after];
+	return own
+		.slice(1)
+		.reduce(
+			(count, lower, index) =>
+				count + bands.filter((other) => crosses(own[index]!, lower, x, other)).length,
+			0,
+		);
+}
+
+/**
+ * The column a run of lanes takes: of the free columns it could stand on
+ * (straight on for a run to or from a container, else the column of the
+ * station it leads into, the one it leaves, or its own lanes', and the free
+ * one nearest them), the one that crosses fewest other lines, the first of
+ * them on a tie.
  * @param scene The placed scene.
  * @param run The run.
  * @param occupancy What each band holds so far.
+ * @param bands Every chain's stations, by band.
  * @returns The column, or nothing when no column is free on every band.
  */
-function columnOf(scene: Scene, run: LaneRun, occupancy: Occupancy): number | undefined {
+function columnOf(
+	scene: Scene,
+	run: LaneRun,
+	occupancy: Occupancy,
+	bands: readonly ReadonlyMap<number, Station>[],
+): number | undefined {
 	const { lanes, before, after } = run;
 	const straight = straightOn(scene, before, after);
 	const xs = lanes.map(({ x }) => x).toSorted((one, other) => one - other);
 	const median = xs[Math.floor(xs.length / 2)]!;
 	const [columns, near] =
 		straight.length > 0 ? [straight, straight[0]!] : [[after.x, before.x, median, ...xs], median];
-	return (
-		columns.find((x) => occupancy.fits(lanes, x)) ?? nearest(near, (x) => occupancy.fits(lanes, x))
-	);
+	const found = nearest(near, (x) => occupancy.fits(lanes, x));
+	const free = [
+		...columns.filter((x) => occupancy.fits(lanes, x)),
+		...(found === undefined ? [] : [found]),
+	];
+	const counts = free.map((x) => inversions(run, x, bands));
+	return free[counts.indexOf(Math.min(...counts))];
 }
 
 /**

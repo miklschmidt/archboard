@@ -7,7 +7,8 @@
 // shifted together until every line through them jogs, a labelled fan whose
 // trunk turns once and whose labels then turn it a second time, two labelled
 // lines entering one card unevenly, one hugging its corner, a line crossing
-// a container's heading through its painted words, a long chain drawn as one tall
+// a container's heading through its painted words, lanes put where they
+// cross another line that a free column would have left alone, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
@@ -25,6 +26,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
 import headingCrossing from "./heading-crossing.json";
+import laneOrder from "./lane-order.json";
 import risingLine from "./rising-line.json";
 import trunkFan from "./trunk-fan.json";
 import shortStep from "./short-step.json";
@@ -198,9 +200,7 @@ test("two labelled lines into one card enter it evenly", async () => {
  */
 function headingLines(svg: string): { x: number; end: number; top: number; bottom: number }[] {
 	return [
-		...svg.matchAll(
-			/data-depiction="container"[^>]*>([\s\S]*?)(?=<g data-semantic-kind=|$)/gu,
-		),
+		...svg.matchAll(/data-depiction="container"[^>]*>([\s\S]*?)(?=<g data-semantic-kind=|$)/gu),
 	].flatMap(([, head]) =>
 		[
 			...head!.matchAll(
@@ -252,6 +252,54 @@ test("a line crossing a container's heading passes beside its words", async () =
 			);
 			expect(struck, `${id} through a heading`).toBe(false);
 		});
+});
+
+/**
+ * Whether a value lies strictly between two others, more than a unit inside.
+ * @param value The value.
+ * @param one One bound.
+ * @param other The other.
+ * @returns True when it is inside.
+ */
+function inside(value: number, one: number, other: number): boolean {
+	return value > Math.min(one, other) + 1 && value < Math.max(one, other) - 1;
+}
+
+/**
+ * How many times one drawn route crosses another, from their corridors with
+ * the hops taken out.
+ * @param svg The drawing.
+ * @returns The count.
+ */
+function crossingsOf(svg: string): number {
+	const segments = [...corridorPoints(svg)].flatMap(([id, points]) =>
+		points.slice(1).map((end, index) => ({ id, start: points[index]!, end })),
+	);
+	const level = segments.filter(({ start, end }) => start.y === end.y && start.x !== end.x);
+	const upright = segments.filter(({ start, end }) => start.x === end.x && start.y !== end.y);
+	return level.reduce(
+		(count, across) =>
+			count +
+			upright.filter(
+				(down) =>
+					down.id !== across.id &&
+					inside(down.start.x, across.start.x, across.end.x) &&
+					inside(across.start.y, down.start.y, down.end.y),
+			).length,
+		0,
+	);
+}
+
+// Reduced from a dogfood board, names replaced: the longest run of lanes took
+// its column first and passed a sibling line's lanes that still stood where
+// Graphviz left them, so the sibling crossed it on its way to its label.
+test("a run of lanes takes the free column that crosses fewest other lines", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(laneOrder),
+		theme: "light",
+		layout: "track",
+	});
+	expect(crossingsOf(drawing.svg)).toBe(0);
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {

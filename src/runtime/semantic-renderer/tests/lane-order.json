@@ -1,0 +1,186 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alpha bravobravo",
+			"kind": "module",
+			"order": 3000,
+			"responsibility": "carbo delta eag, falconfa gar harborharb, isla jung ke lanternl, mea nee or pepperp quar ri sum timb alphaa"
+		},
+		{
+			"id": "n1",
+			"name": "bra carboncar",
+			"kind": "module",
+			"order": 4000,
+			"responsibility": "del eagle falconf garde: har isl jung, ket lan meado needlen, ora pep qua ri sum timb"
+		},
+		{
+			"id": "n2",
+			"name": "alphaa bravobra",
+			"kind": "module",
+			"order": 5000,
+			"responsibility": "c deltadel, eagleeag falconfa ga har island jungl kettle lant m need orang, pe qu river summitsumm tim a bravobra carbonca"
+		},
+		{
+			"id": "n3",
+			"name": "del-eag falcon",
+			"kind": "module",
+			"order": 6000,
+			"responsibility": "garden harb islandisla jungle ke l mead need orangeo pep quart riv summi, tim alph bra carbonca"
+		},
+		{
+			"id": "n4",
+			"name": "delta eagleea",
+			"kind": "module",
+			"order": 7000,
+			"responsibility": "falconfa gardeng har isl, jung kettl la mea needl orangeo, pep quartz riverriv su tim alphaalph brav car delta eagl, fal ga-harborh isl junglejun kettl"
+		},
+		{
+			"id": "n5",
+			"name": "lanter mea",
+			"kind": "module",
+			"order": 8000,
+			"responsibility": "needle ora peppe qu, rive sum timber alph, bra carbo deltadelta eagl"
+		},
+		{
+			"id": "n6",
+			"name": "falconfalc",
+			"kind": "function",
+			"order": 9000,
+			"responsibility": "gar harbo islan jun ke lant me, needlenee orangeo p quart rive sum timbert alphaa bra carbo delt"
+		},
+		{
+			"id": "n7",
+			"name": "eagleea falcon",
+			"kind": "function",
+			"order": 10000,
+			"responsibility": "gar harborha isla jung ke lante: mead nee orang, pep quartzq riv sum timbe alphaal bravobra car"
+		},
+		{
+			"id": "n8",
+			"name": "deltadel",
+			"kind": "module",
+			"order": 11000,
+			"responsibility": "eagle fal gardeng ha islan jungl, kett lan meadowm nee orangeor pepperpe, qua river su timberti alp"
+		},
+		{
+			"id": "n9",
+			"name": "bravo car",
+			"kind": "external",
+			"order": 19000,
+			"responsibility": "del eaglee, fal gar ha isl jun kettlek; lanter me ne orang pepperp q river summits ti alphaa brav"
+		},
+		{
+			"id": "n10",
+			"name": "car delta",
+			"kind": "module",
+			"order": 8500,
+			"responsibility": "eagl fal gardeng harborh isl jun ke lante me ne ora pep quartzq riverr, sum timbe alph bra carbon, deltade, eagle falconf gar harborharbo"
+		},
+		{
+			"id": "n11",
+			"name": "islandi junglejung",
+			"kind": "function",
+			"order": 9500,
+			"responsibility": "kettlek lant meadowm nee orange pep, qua river s timb al brav car del ea falconfa gardeng: har island, jun kettlek, l meado needlen, orangeo pep"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n5",
+			"kind": "call",
+			"order": 6000,
+			"label": "qua riv, sum timberti, alp bravobravo"
+		},
+		{
+			"id": "e1",
+			"from": "n5",
+			"to": "n1",
+			"kind": "call",
+			"order": 7000,
+			"label": "c deltade eagle fal gard har"
+		},
+		{
+			"id": "e2",
+			"from": "n5",
+			"to": "n2",
+			"kind": "call",
+			"order": 8000,
+			"label": "isl jungle kett lanternl me needl, or pe quart riverriver"
+		},
+		{
+			"id": "e3",
+			"from": "n5",
+			"to": "n3",
+			"kind": "call",
+			"order": 9000,
+			"label": "s timber al bra car"
+		},
+		{
+			"id": "e4",
+			"from": "n5",
+			"to": "n4",
+			"kind": "call",
+			"order": 10000,
+			"label": "deltade eag fal garde harborha"
+		},
+		{
+			"id": "e5",
+			"from": "n5",
+			"to": "n9",
+			"kind": "call",
+			"order": 11000,
+			"label": "isl jungle kett"
+		},
+		{
+			"id": "e6",
+			"from": "n5",
+			"to": "n6",
+			"kind": "call",
+			"order": 12000,
+			"label": "lant mea nee ora pep quartzq ri su"
+		},
+		{
+			"id": "e7",
+			"from": "n5",
+			"to": "n7",
+			"kind": "call",
+			"order": 13000,
+			"label": "timb alp bravo car delt"
+		},
+		{
+			"id": "e8",
+			"from": "n5",
+			"to": "n8",
+			"kind": "call",
+			"order": 14000,
+			"label": "eagleeagle falconfalc gardenga"
+		},
+		{
+			"id": "e9",
+			"from": "n0",
+			"to": "n2",
+			"kind": "call",
+			"order": 27000,
+			"label": "harb isl jung kettl"
+		},
+		{
+			"id": "e10",
+			"from": "n5",
+			"to": "n10",
+			"kind": "call",
+			"order": 28000,
+			"label": "lan mea needlen, oran pep quart rive"
+		},
+		{
+			"id": "e11",
+			"from": "n5",
+			"to": "n11",
+			"kind": "call",
+			"order": 30000,
+			"label": "summi tim alphaalp br carb deltade"
+		}
+	]
+}

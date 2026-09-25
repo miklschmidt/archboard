@@ -82,7 +82,7 @@ interface Unit {
  */
 function bundleTrunks(nets: readonly Net[]): void {
 	for (const side of ["top", "bottom"] as const) {
-		for (const group of trunkGroups(nets, side)) {
+		for (const group of trunkGroups(nets, side).flatMap((one) => apart(one, nets, side))) {
 			if (group.length < 2) continue;
 			const other = side === "top" ? "bottom" : "top";
 			const ends = new Set(
@@ -92,6 +92,33 @@ function bundleTrunks(nets: readonly Net[]): void {
 			for (const net of group) net.trunk = trunk;
 		}
 	}
+}
+
+/**
+ * A face's trunk cut wherever another line from the same face comes between
+ * two of its members' other ends: the trunk's track would cross that line.
+ * @param group The nets that would share the face's trunk.
+ * @param nets Every net.
+ * @param side Which end the face is.
+ * @returns The pieces, each ordered by its other ends.
+ */
+function apart(group: readonly Net[], nets: readonly Net[], side: "top" | "bottom"): Net[][] {
+	if (group.length < 2) return [[...group]];
+	const other = side === "top" ? "bottom" : "top";
+	const face = group[0]![side].item;
+	const foreign = nets
+		.filter(
+			(net) => !group.includes(net) && net[side].item === face && net.channel === group[0]!.channel,
+		)
+		.map((net) => net[other].x);
+	const sorted = group.toSorted((one, next) => one[other].x - next[other].x);
+	const pieces: Net[][] = [[sorted[0]!]];
+	for (let index = 1; index < sorted.length; index += 1) {
+		const [low, high] = [sorted[index - 1]![other].x, sorted[index]![other].x];
+		if (foreign.some((x) => x > low && x < high)) pieces.push([]);
+		pieces.at(-1)!.push(sorted[index]!);
+	}
+	return pieces;
 }
 
 /**

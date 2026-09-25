@@ -327,6 +327,121 @@ function portsOf(nets: readonly Net[]): Map<Station, number> {
 }
 
 /**
+ * The lane that feeds the trunk a net joins, and the column its line comes
+ * from: the lane above a shared lower face, or below a shared upper one.
+ * @param own The line's nets, top to bottom.
+ * @param index The net's place.
+ * @returns The lane, the column if the line has one there, and which face is shared.
+ */
+function feedOf(
+	own: readonly Net[],
+	index: number,
+): { lane: Station; x: number | undefined; below: boolean } | undefined {
+	const net = own[index]!;
+	if (net.trunk === undefined) return undefined;
+	if (net.trunk.side === "bottom") return { lane: net.top, x: own[index - 1]?.topX, below: true };
+	return { lane: net.bottom, x: own[index + 1]?.bottomX, below: false };
+}
+
+/**
+ * Where a lane feeding a trunk would stand to meet its line's column there:
+ * the column the line comes from, when the trunk's track covers it anyway.
+ * @param own The line's nets, top to bottom.
+ * @param index The place of the net that joins the trunk.
+ * @returns The lane and the column, or nothing.
+ */
+function trunkFeed(own: readonly Net[], index: number): { lane: Station; x: number } | undefined {
+	const feed = feedOf(own, index);
+	if (feed?.lane.kind !== "lane" || feed.x === undefined) return undefined;
+	const { lane, x, below } = feed;
+	return Math.abs(x - lane.x) >= STRAIGHT && covers(own[index]!, below, x)
+		? { lane, x }
+		: undefined;
+}
+
+/**
+ * Whether a trunk's track already spans an x: between its shared port and
+ * its other members' far ends.
+ * @param net A net of the trunk.
+ * @param below Whether the trunk shares the lower face.
+ * @param x The x.
+ * @returns True when the track covers it.
+ */
+function covers(net: Net, below: boolean, x: number): boolean {
+	const others = net.trunk!.nets.filter((other) => other !== net);
+	const pins = below
+		? [net.bottomX, ...others.map(({ topX }) => topX)]
+		: [net.topX, ...others.map(({ bottomX }) => bottomX)];
+	return x >= Math.min(...pins) && x <= Math.max(...pins);
+}
+
+/**
+ * Whether a lane may stand at an x: a lane clear of every card, label, title
+ * row and other lane on its band, in the same frames.
+ * @param scene The scene.
+ * @param nets Every net.
+ * @param lane The lane.
+ * @param x The x.
+ * @returns True when it is free.
+ */
+function laneFree(scene: Scene, nets: readonly Net[], lane: Station, x: number): boolean {
+	const items = [...scene.cards.values(), ...scene.labels.values(), ...scene.titles.values()]
+		.filter((item) => item.band === lane.band)
+		.map(({ box }) => [box.x - LANE, box.x + box.width + LANE] as const);
+	const lanes = nets
+		.flatMap((other) => [other.top, other.bottom])
+		.filter((station) => station.kind === "lane" && station.band === lane.band && station !== lane)
+		.map((station) => [station.x - LANE, station.x + LANE] as const);
+	const clear = [...items, ...lanes].every(([low, high]) => x <= low || x >= high);
+	return clear && scene.framesAt(lane.band, x) === scene.framesAt(lane.band, lane.x);
+}
+
+/**
+ * Move each lane that feeds a trunk onto the column its line comes from, when
+ * the trunk's track covers that column anyway and it is free: the track then
+ * carries the line across, and the line does not cross, one channel earlier,
+ * the lines the trunk crosses.
+ * @param scene The scene.
+ * @param routes Every relationship's nets.
+ * @param nets Every net.
+ * @returns Whether any lane moved.
+ */
+function pullIntoTrunks(scene: Scene, routes: readonly Routed[], nets: readonly Net[]): boolean {
+	let moved = false;
+	for (const { nets: own } of routes)
+		own.forEach((_, index) => {
+			// One at a time, so a lane moved first is where the next one must keep clear of.
+			const feed = trunkFeed(own, index);
+			if (feed === undefined || !laneFree(scene, nets, feed.lane, feed.x)) return;
+			feed.lane.x = feed.x;
+			moved = true;
+		});
+	return moved;
+}
+
+/**
+ * Pull lanes onto the ports and trunks their lines meet, and settle the
+ * labels and ports that follow them.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param routes Every relationship's nets.
+ * @param nets Every net.
+ */
+function pullOntoPorts(
+	scene: Scene,
+	chains: readonly Chain[],
+	routes: readonly Routed[],
+	nets: readonly Net[],
+): void {
+	if (pullToPorts(scene, chains, portsOf(nets))) {
+		followLanes(nets);
+		settleLabels(scene, nets);
+		assignPorts(nets);
+	}
+	if (pullIntoTrunks(scene, routes, nets)) followLanes(nets);
+}
+
+/**
  * Route lines through a banded scene, each on tracks of its own, and space
  * the bands for the tracks each channel holds.
  * @param scene The scene, whose bands get their new tops.
@@ -359,11 +474,7 @@ function routeScene(
 	slideLabels(scene, nets);
 	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
 	assignPorts(nets);
-	if (pullToPorts(scene, [...chains.values()], portsOf(nets))) {
-		followLanes(nets);
-		settleLabels(scene, nets);
-		assignPorts(nets);
-	}
+	pullOntoPorts(scene, [...chains.values()], [...routed.values()], nets);
 	closeJogs(
 		scene,
 		[...chains.values()],
