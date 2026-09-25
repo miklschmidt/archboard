@@ -409,9 +409,7 @@ class TrackPlacement {
 	 * @param edges Every relationship to place.
 	 */
 	arrange(edges: readonly ElkExtendedEdge[]): void {
-		if (this.grid)
-			for (const cards of this.looseCards(edges).values())
-				this.graph.edges.push(...gridEdges(cards));
+		if (this.grid) this.setGrids(edges);
 		const arriving = new Set(edges.map((edge) => edge.targets[0]!));
 		for (const { card, rows, anchor } of anchored(this.lowered, arriving))
 			this.graph.edges.push({
@@ -419,6 +417,22 @@ class TrackPlacement {
 				head: this.vendorName(card),
 				attributes: { style: "invis", minlen: 2 * rows, weight: 0 },
 			});
+	}
+
+	/**
+	 * Set every cluster's loose cards out as a grid. A card below the grid's
+	 * first row stands below the title row through the card above it, so the
+	 * title's own edge to it goes: that edge would thread through every row
+	 * above and widen the frame beside the grid.
+	 * @param edges Every relationship to place.
+	 */
+	setGrids(edges: readonly ElkExtendedEdge[]): void {
+		const grid = [...this.looseCards(edges).values()].flatMap((cards) => gridEdges(cards));
+		const below = new Set(grid.map(({ head }) => head));
+		const kept = this.graph.edges.filter(
+			({ tail, head }) => !(tail.startsWith("title_") && below.has(head)),
+		);
+		this.graph.edges.splice(0, this.graph.edges.length, ...kept, ...grid);
 	}
 
 	/**

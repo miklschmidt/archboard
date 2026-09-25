@@ -20,6 +20,8 @@ import containerDetour from "./container-detour.json";
 const TARGETS = ["one", "two", "three", "four", "five"];
 /** How far past its ends a line may stand: one lane, where it turns beside a port. */
 const SLACK = 16;
+/** The most room a container keeps beside what it holds. */
+const FRAME_ROOM = 24;
 
 const fan = orderedFixture({
 	nodes: ["hub", ...TARGETS].map((id) => ({ id, name: id, kind: "module" })),
@@ -110,6 +112,11 @@ test.each(["track", "blocks"] as const)(
 		expect(rows.size).toBeGreaterThan(1);
 		// Every row lines up under the first: no card stands off the grid's columns.
 		expect(columns.size).toBe(Math.ceil(cards.length / rows.size));
+		// And the container hugs its grid, with no more than its insets beside it.
+		const frame = drawing.atlas.nodes["apps"]!;
+		const span =
+			Math.max(...cards.map(({ x, width }) => x + width)) - Math.min(...cards.map(({ x }) => x));
+		expect(frame.width - span).toBeLessThanOrEqual(2 * FRAME_ROOM);
 	},
 );
 
