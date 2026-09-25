@@ -195,7 +195,7 @@ class PackLayout {
 	}
 
 	/**
-	 * Place the items packed one way, each group centred across its row or column.
+	 * Place the items packed one way, each group centred along its row or column and aligned across it.
 	 * @param packing The packing.
 	 */
 	place(packing: Packing): void {
@@ -209,7 +209,8 @@ class PackLayout {
 			let along = (length - long) / 2;
 			group.forEach((index, at) => {
 				const { width, height } = sizes[at]!;
-				const cross = deep + (thick - (packing.across ? height : width)) / 2;
+				// Rows stand on one top line and columns on one left edge, so their ports line up.
+				const cross = deep;
 				const [x, y] = packing.across ? [along, cross] : [cross, along];
 				this.boxes.set(this.block.items[index]!, {
 					x: this.insets.side + x,
