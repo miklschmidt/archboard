@@ -7,7 +7,10 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
-import { CARD_ROUTE_EXPANSION } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import {
+	CARD_ROUTE_EXPANSION,
+	ROUTE_LANE,
+} from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	boxCentre,
 	inflate,
@@ -63,10 +66,7 @@ export class RoutingScene {
 	) {
 		this.router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		this.router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, SHAPE_CLEARANCE);
-		this.router.setRoutingParameter(
-			avoid.RoutingParameter.idealNudgingDistance,
-			ROUTE_NUDGE_DISTANCE,
-		);
+		this.router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, ROUTE_LANE);
 		this.router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, ROUTE_SEGMENT_PENALTY);
 		this.router.setRoutingOption(
 			avoid.RoutingOption.nudgeOrthogonalSegmentsConnectedToShapes,
