@@ -94,13 +94,16 @@ test("different kinds reach a shared destination through distinct straight chann
 	}
 });
 
+/** The engine that draws the two outgoing routes on one shared trunk here. */
+const SHARING = "track";
+
 test("routes leaving one gateway in one direction may share a run", async () => {
-	// The shared trunk Graphviz draws here is what the overdrawn-run measure
-	// below must see, so a zero from it means no run is shared.
+	// The shared trunk this engine draws here is what the overdrawn-run
+	// measure below must see, so a zero from it means no run is shared.
 	const plain = await renderArchitecture({
 		content: channelContent,
 		theme: "dark",
-		layout: "graphviz",
+		layout: SHARING,
 	});
 	expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
 });
@@ -135,6 +138,7 @@ for (const [left, right] of [
 		const drawing = await renderArchitecture({
 			content: channelContent,
 			theme: "dark",
+			layout: SHARING,
 			standing: { [OUTGOING_CHANNELS[0]]: left, [OUTGOING_CHANNELS[1]]: right },
 		});
 		expect(overdrawnRun(drawing, OUTGOING_CHANNELS), `${left}/${right}`).toBe(0);
