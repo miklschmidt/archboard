@@ -5,7 +5,10 @@
 // the page kept so far when it fits the reference pane materially better,
 // fewer columns winning ties. Only the chosen count is settled, and it is kept
 // when its settled drawing still fits materially better than the unfolded one;
-// a count the router refuses keeps the unfolded reading (TASK-342).
+// a count the router refuses keeps the unfolded reading (TASK-342). The
+// settled fold must also score higher on the one score every engine chooses
+// layouts on, its fit less a share for every crossing: a fold that fits the
+// pane better but crosses far more reads worse.
 //
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
@@ -18,6 +21,7 @@ import { fitIn } from "@/shared/shell-geometry/index";
 import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
+import { crossingsOf, scoreOf } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The size of a page. */
 type Page = Pick<ArchitectureDrawing, "width" | "height">;
@@ -49,7 +53,36 @@ async function chooseReading(
 	}
 	if (kept.reading === undefined) return baseline;
 	const candidate = await kept.reading.settle().catch(() => undefined);
-	return candidate !== undefined && better(candidate, baseline) ? candidate : baseline;
+	return candidate !== undefined && readsBetter(candidate, baseline) ? candidate : baseline;
+}
+
+/**
+ * Whether a settled fold reads better than the unfolded drawing: it fits the
+ * pane materially better, and scores higher on its fit less a share for every
+ * crossing.
+ * @param candidate The fold.
+ * @param baseline The unfolded drawing.
+ * @returns True when the fold is kept.
+ */
+function readsBetter(candidate: ArchitectureDrawing, baseline: ArchitectureDrawing): boolean {
+	return better(candidate, baseline) && scoreOf(weighed(candidate)) > scoreOf(weighed(baseline));
+}
+
+/**
+ * What a settled drawing is scored on: its page and its crossings.
+ * @param drawing The drawing.
+ * @returns Its size and crossing count.
+ */
+function weighed(drawing: ArchitectureDrawing): {
+	width: number;
+	height: number;
+	crossings: number;
+} {
+	const lines = drawing.edges.map(({ curve }) => [
+		curve.from,
+		...curve.segments.map(({ to }) => to),
+	]);
+	return { width: drawing.width, height: drawing.height, crossings: crossingsOf(lines) };
 }
 
 /**
