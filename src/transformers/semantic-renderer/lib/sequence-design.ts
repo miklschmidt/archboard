@@ -24,7 +24,7 @@ const COLUMN_GAP = 16;
 
 /** The air between the bottom of a participant's card and the top of its lifeline. */
 const LIFELINE_GAP = 6;
-/** How far the first message sits below the top of the lifelines. */
+/** How far the first message sits below the lifeline of the tallest participant card. */
 const FIRST_MESSAGE_DROP = 36;
 /** The vertical step from one message to the next, and from one self-message. */
 const MESSAGE_PITCH = 40;

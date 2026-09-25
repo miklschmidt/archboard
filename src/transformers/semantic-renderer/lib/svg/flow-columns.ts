@@ -64,9 +64,9 @@ function sequenceStyles(palette: Palette): {
 function columnStrip(column: PlacedColumn, layout: FlowLayout): Box {
 	return {
 		x: column.centreX - ACTIVATION_HALF_WIDTH,
-		y: layout.lifelineTop,
+		y: column.lifelineTop,
 		width: ACTIVATION_HALF_WIDTH * 2,
-		height: layout.lifelineBottom - layout.lifelineTop,
+		height: layout.lifelineBottom - column.lifelineTop,
 	};
 }
 
@@ -104,7 +104,7 @@ function paintColumn(
 			halo(columnStrip(column, layout), ACTIVATION_RADIUS, styles),
 			tag("line", {
 				x1: coord(column.centreX),
-				y1: coord(layout.lifelineTop),
+				y1: coord(column.lifelineTop),
 				x2: coord(column.centreX),
 				y2: coord(layout.lifelineBottom),
 				...own.lifeline,
