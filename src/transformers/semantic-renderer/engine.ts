@@ -5,7 +5,6 @@ import { z } from "zod";
 import { placeGraph } from "@/transformers/semantic-renderer/lib/layout/graphviz-placement";
 import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
 import { foldColumns } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
-import { placeTracks } from "@/transformers/semantic-renderer/lib/track/wrap";
 import { placeBlocks } from "@/transformers/semantic-renderer/lib/blocks/place";
 import { SOLVE_STAGE } from "@/transformers/semantic-renderer/lib/host";
 
@@ -94,9 +93,8 @@ export function createLayoutEngine(viz: Viz, instance: unknown) {
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
 		const stage = options[SOLVE_STAGE];
 		if (stage === "route") return routeGraph(avoid, graph);
-		if (stage === "track") return placeTracks(viz, graph);
+		if (stage === "track") return placeBlocks(viz, avoid, graph, true);
 		if (stage === "blocks") return placeBlocks(viz, avoid, graph);
-		if (stage === "inline") return placeBlocks(viz, avoid, graph, true);
 		const reading = placeReading(viz, graph, options);
 		return stage === "place" ? reading : routeGraph(avoid, reading);
 	};

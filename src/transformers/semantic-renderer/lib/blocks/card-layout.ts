@@ -22,10 +22,6 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import {
-	TRACK_POLYLINE,
-	TRACK_REGIONS,
-} from "@/transformers/semantic-renderer/lib/track/placement";
-import {
 	frameShapes,
 	regionShapes,
 	routeScene,
@@ -34,7 +30,11 @@ import {
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { gridEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
-import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import {
+	Scene,
+	TRACK_POLYLINE,
+	TRACK_REGIONS,
+} from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Horizontal room Graphviz keeps between neighbours in a rank. */
 const NODE_GAP = 40;
@@ -128,11 +128,30 @@ function namesIn(graph: {
 	];
 }
 
+/** How a block is arranged beyond Graphviz's own ranking. */
+interface Arrangement {
+	/** How many rows each item a wide rank wraps is set below its place. */
+	readonly lowered?: ReadonlyMap<string, number>;
+	/** Whether the cards no line touches are set out as a grid. */
+	readonly grid?: boolean;
+	/**
+	 * Whether a container a line from another container enters is held below
+	 * the line's source, so containers in a chain stack.
+	 */
+	readonly stacked?: boolean;
+}
+
 /** One block of cards' layout, from its Graphviz graph to its routed lines. */
 class CardLayout {
 	readonly graph = emptyGraph();
 	/** The containers and regions the block draws inline. */
 	readonly clusters: Clusters;
+	/** How many rows each item a wide rank wraps is set below its place. */
+	readonly lowered: ReadonlyMap<string, number>;
+	/** Whether the cards no line touches are set out as a grid. */
+	readonly grid: boolean;
+	/** Whether containers a line from another container enters stack below it. */
+	readonly stacked: boolean;
 
 	/**
 	 * Start a block's layout.
@@ -140,17 +159,18 @@ class CardLayout {
 	 * @param laid The blocks laid out so far; a folded block's columns hold the ones inside them.
 	 * @param tree The blocks.
 	 * @param insets The block's insets.
-	 * @param lowered How many rows each item a wide rank wraps is set below its place.
-	 * @param grid Whether the cards no line touches are set out as a grid.
+	 * @param options How the block is arranged beyond Graphviz's own ranking.
 	 */
 	constructor(
 		readonly block: Block,
 		readonly laid: ReadonlyMap<string, Laid>,
 		readonly tree: BlockTree,
 		readonly insets: Insets,
-		readonly lowered: ReadonlyMap<string, number> = new Map(),
-		readonly grid = false,
+		options: Arrangement = {},
 	) {
+		this.lowered = options.lowered ?? new Map();
+		this.grid = options.grid ?? false;
+		this.stacked = options.stacked ?? false;
 		this.clusters = new Clusters(block, this.graph);
 		// Ranks cross the clusters a block draws inline, as one board; a block
 		// without any keeps Graphviz's own ranking, which holds its header alone
@@ -253,7 +273,14 @@ class CardLayout {
 	arrange(): void {
 		const { block, graph } = this;
 		const grid = this.grid ? this.looseCards().flatMap((cards) => gridEdges(cards)) : [];
-		graph.edges.push(...grid, ...this.clusters.titleEdges(new Set(grid.map(({ head }) => head))));
+		const links = this.links();
+		const lower = new Set(grid.map(({ head }) => head));
+		const stacking = this.stacked ? this.clusters.enteringEdges(links) : [];
+		graph.edges.push(
+			...grid,
+			...this.clusters.titleEdges(lower, this.stacked ? links : []),
+			...stacking,
+		);
 		const arriving = new Set([...block.lines.values()].map((line) => this.vendorOf(line.head)));
 		for (const { card, rows, anchor } of anchored(this.lowered, arriving))
 			graph.edges.push({
@@ -261,6 +288,29 @@ class CardLayout {
 				head: card,
 				attributes: { style: "invis", minlen: 2 * rows, weight: 0 },
 			});
+	}
+
+	/**
+	 * Every line Graphviz ranks, between the vendor nodes it joins.
+	 * @returns Each line's upper end, lower end, and whether a label sits between.
+	 */
+	links(): { tail: string; head: string; labelled: boolean }[] {
+		return [...this.block.lines.values()]
+			.filter((line) => this.wallOf(line) === undefined)
+			.map((line) => ({
+				tail: this.vendorOf(line.tail),
+				head: this.vendorOf(line.head),
+				labelled: line.labelled && (line.edge.labels?.length ?? 0) > 0,
+			}));
+	}
+
+	/**
+	 * Whether stacking would change the block: some line runs from one inline
+	 * container into another.
+	 * @returns True when it would.
+	 */
+	stacks(): boolean {
+		return this.clusters.enteringEdges(this.links()).length > 0;
 	}
 
 	/**
@@ -509,4 +559,4 @@ class CardLayout {
 	}
 }
 
-export { CardLayout };
+export { CardLayout, type Arrangement };

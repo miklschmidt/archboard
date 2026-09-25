@@ -1,13 +1,27 @@
-// The track placement read back as a scene (TASK-349): cards, label boxes and
-// frame title rows as items, grouped into bands by the rank they sit on.
+// A block's placement read back as a scene (TASK-349): cards, label boxes and
+// frame title rows as items, grouped into bands by the rank they sit on. The
+// placed hierarchy carries each relationship's polyline, each frame's title
+// row and every group region in the layout options named here.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { z } from "zod";
-import {
-	PlacedRegionSchema,
-	TRACK_REGIONS,
-	TRACK_TITLE,
-} from "@/transformers/semantic-renderer/lib/track/placement";
+
+/** The layout option that carries a relationship's polyline, as `x,y` pairs separated by spaces. */
+const TRACK_POLYLINE = "archboard.track.polyline";
+/** The layout option on a frame that carries its title row's box, as `x,y,width,height`. */
+const TRACK_TITLE = "archboard.track.title";
+/** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
+const TRACK_REGIONS = "archboard.track.regions";
+
+const BoxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+/** A group region as placement answers it. */
+const PlacedRegionSchema = z.object({
+	group: z.string(),
+	parent: z.string().optional(),
+	members: z.array(z.string()),
+	box: BoxSchema,
+	caption: BoxSchema,
+});
 
 /** Something that sits on a band: a card, a label box or a frame's title row; a label box may slide. */
 interface Item {
@@ -274,4 +288,14 @@ class Scene {
 	}
 }
 
-export { Scene, centreX, type Band, type Frame, type Item, type Region };
+export {
+	Scene,
+	TRACK_POLYLINE,
+	TRACK_REGIONS,
+	TRACK_TITLE,
+	centreX,
+	type Band,
+	type Frame,
+	type Item,
+	type Region,
+};

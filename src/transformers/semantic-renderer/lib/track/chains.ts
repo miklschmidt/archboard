@@ -3,8 +3,12 @@
 // lanes it passes on the bands between.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { TRACK_POLYLINE } from "@/transformers/semantic-renderer/lib/track/placement";
-import { Scene, centreX, type Item } from "@/transformers/semantic-renderer/lib/track/scene";
+import {
+	Scene,
+	TRACK_POLYLINE,
+	centreX,
+	type Item,
+} from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Distance between neighbouring lanes and tracks. */
 const LANE = 16;
@@ -201,18 +205,67 @@ class Occupancy {
 function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 	const occupancy = new Occupancy(scene);
 	const runs = laneRuns(chains).toSorted((one, other) => other.lanes.length - one.lanes.length);
-	for (const { lanes, before, after } of runs) {
-		const xs = lanes.map(({ x }) => x).toSorted((one, other) => one - other);
-		const median = xs[Math.floor(xs.length / 2)]!;
-		const straight = straightOn(scene, before, after);
-		const chosen =
-			[...straight, after.x, before.x, median, ...xs].find((x) => occupancy.fits(lanes, x)) ??
-			nearest(median, (x) => occupancy.fits(lanes, x));
-		for (const lane of lanes) {
+	for (const run of runs) {
+		const chosen = columnOf(scene, run, occupancy);
+		for (const lane of run.lanes) {
 			lane.x = chosen ?? nearest(lane.x, (x) => occupancy.fits([lane], x)) ?? lane.x;
 			occupancy.take(lane);
 		}
 	}
+}
+
+/**
+ * The column a run of lanes takes: straight on for a run to or from a
+ * container, as near that as it is free; else the column of the station it
+ * leads into, the one it leaves, or its own lanes', the first that is free.
+ * @param scene The placed scene.
+ * @param run The run.
+ * @param occupancy What each band holds so far.
+ * @returns The column, or nothing when no column is free on every band.
+ */
+function columnOf(scene: Scene, run: LaneRun, occupancy: Occupancy): number | undefined {
+	const { lanes, before, after } = run;
+	const straight = straightOn(scene, before, after);
+	const xs = lanes.map(({ x }) => x).toSorted((one, other) => one - other);
+	const median = xs[Math.floor(xs.length / 2)]!;
+	const [columns, near] =
+		straight.length > 0 ? [straight, straight[0]!] : [[after.x, before.x, median, ...xs], median];
+	return (
+		columns.find((x) => occupancy.fits(lanes, x)) ?? nearest(near, (x) => occupancy.fits(lanes, x))
+	);
+}
+
+/**
+ * Once the labels have slid, try every run of lanes to or from a container
+ * on its straight column again: a label that stood in its way before sliding
+ * may have moved aside. Every other lane stays where it is.
+ * @param scene The scene, its labels slid.
+ * @param chains Every relationship's chain.
+ * @returns Whether any run moved.
+ */
+function straightenIntoContainers(scene: Scene, chains: readonly Chain[]): boolean {
+	const runs = laneRuns(chains);
+	const straight = runs.filter(({ before, after }) => straightOn(scene, before, after).length > 0);
+	const occupancy = new Occupancy(scene);
+	for (const { lanes } of runs.filter((run) => !straight.includes(run)))
+		for (const lane of lanes) occupancy.take(lane);
+	return straight.map((run) => straighten(scene, run, occupancy)).some(Boolean);
+}
+
+/**
+ * Move one run to or from a container onto its straight column, when that is free.
+ * @param scene The scene.
+ * @param run The run.
+ * @param occupancy What each band holds; the run's lanes are added.
+ * @returns Whether it moved.
+ */
+function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
+	const { lanes, before, after } = run;
+	const x = straightOn(scene, before, after).find((column) => occupancy.fits(lanes, column));
+	const moved = x !== undefined && lanes.some((lane) => lane.x !== x);
+	if (moved) for (const lane of lanes) lane.x = x;
+	for (const lane of lanes) occupancy.take(lane);
+	return moved;
 }
 
 /**
@@ -246,19 +299,22 @@ function meeting(before: Station, after: Station, near: number): number[] {
 }
 
 /**
- * Where a run of lanes to or from a container runs straight on: at the x of
- * the station at its other end, as near as both can reach. A container's centre
- * says nothing of where its port will stand, so a run toward one would
- * otherwise aim at its middle and come back.
+ * Where a run of lanes to or from a container runs straight on: from the
+ * station at its other end, as near as both reach. It never aims at the
+ * container's centre, which says nothing of where its port will stand: a run
+ * toward one would swing out to its middle and come back. When that column is
+ * taken the run keeps as near to it as it can.
  * @param scene The placed scene.
  * @param before The station above the run.
  * @param after The station below it.
- * @returns That x, or nothing when neither end is a container or they reach no common point.
+ * @returns The columns to try, best first; none for a run between two cards.
  */
 function straightOn(scene: Scene, before: Station, after: Station): number[] {
 	const titles = new Set(scene.titles.values());
-	if (after.item !== undefined && titles.has(after.item)) return meeting(before, after, before.x);
-	if (before.item !== undefined && titles.has(before.item)) return meeting(before, after, after.x);
+	if (after.item !== undefined && titles.has(after.item))
+		return [...meeting(before, after, before.x), before.x];
+	if (before.item !== undefined && titles.has(before.item))
+		return [...meeting(before, after, after.x), after.x];
 	return [];
 }
 
@@ -275,4 +331,4 @@ function nearest(from: number, passes: (x: number) => boolean): number | undefin
 	return undefined;
 }
 
-export { LANE, chainOf, straightenLanes, type Chain, type Station };
+export { LANE, chainOf, straightenIntoContainers, straightenLanes, type Chain, type Station };
