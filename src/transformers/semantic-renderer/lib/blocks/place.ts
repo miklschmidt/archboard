@@ -92,7 +92,9 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 	const wrapped = bestWrap(viz, tree, block, { laid, whole });
 	if (wrapped !== undefined) return wrapped;
 	const walled = [...block.ports.values()].some((side) => side === "left" || side === "right");
-	const plan = walled ? undefined : foldPlan(block, whole, insets, scored(whole));
+	// A fold cannot yet cut a block whose containers it draws inline.
+	const folds = !walled && block.clusters.size === 0;
+	const plan = folds ? foldPlan(block, whole, insets, scored(whole)) : undefined;
 	if (plan === undefined) return whole;
 	const columns = foldBlock(tree, block, plan);
 	for (const column of columns)
@@ -119,7 +121,7 @@ function bestWrap(
 ): Laid | undefined {
 	const insets = insetsOf(block);
 	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
-	const gridded = grids(new CardLayout(block, laying.laid, tree, insets).looseCards())
+	const gridded = new CardLayout(block, laying.laid, tree, insets).looseCards().some(grids)
 		? [new CardLayout(block, laying.laid, tree, insets, new Map(), true).lay(viz)]
 		: [];
 	const best = [
@@ -161,6 +163,7 @@ function wrapsOf(whole: Laid): Map<string, number>[] {
  * @param earlier What an earlier layout decided: the wall each port moves to, and each packing, kept.
  * @param earlier.exits The wall each port moves to.
  * @param earlier.packings Each block of blocks' packing.
+ * @param inline Whether containers and group regions are drawn inline.
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
@@ -168,8 +171,9 @@ function layAll(
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	earlier?: { exits: ReadonlyMap<string, Side>; packings: ReadonlyMap<string, Packing> },
+	inline = false,
 ): { tree: BlockTree; laid: Map<string, Laid>; packings: Map<string, Packing> } {
-	const tree = new BlockTree(graph, earlier?.exits);
+	const tree = new BlockTree(graph, earlier?.exits, inline);
 	const laid = new Map<string, Laid>();
 	const packings = new Map<string, Packing>();
 	for (const block of tree.innermostFirst()) {
@@ -239,13 +243,17 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
+ * @param inline Whether containers and group regions are drawn inline, as
+ * clusters of the board's own layout, rather than packed as blocks.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
-function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode): ElkNode {
-	const first = layAll(viz, avoid, graph);
+function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
+	const first = layAll(viz, avoid, graph, undefined, inline);
 	const exits = exitsOf(first.tree, first.laid);
 	const { tree, laid } =
-		exits.size === 0 ? first : layAll(viz, avoid, graph, { exits, packings: first.packings });
+		exits.size === 0
+			? first
+			: layAll(viz, avoid, graph, { exits, packings: first.packings }, inline);
 	const placed = new Assembly(tree, laid).placed();
 	return {
 		id: graph.id,

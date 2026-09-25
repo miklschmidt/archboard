@@ -1,6 +1,7 @@
 // What laying a block out answers, and the small geometry the block engine
 // moves it with.
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { FrameShape, RegionShape } from "@/transformers/semantic-renderer/lib/track/route";
 
 /** One rank of a laid-out block: where it lies, and the block's items on it. */
 interface Band {
@@ -19,6 +20,10 @@ interface Laid {
 	readonly lines: ReadonlyMap<string, Point[]>;
 	/** Its ranks, top to bottom, when Graphviz ranked it. */
 	readonly bands: readonly Band[];
+	/** The containers it draws inline, in its own coordinates. */
+	readonly frames?: readonly FrameShape[];
+	/** The group regions it draws inline, in its own coordinates. */
+	readonly regions?: readonly RegionShape[];
 }
 
 /** The room a block keeps around what it holds. */

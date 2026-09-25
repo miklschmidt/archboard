@@ -269,9 +269,75 @@ function drawCards(scene: Scene, measured: MeasuredArchitecture, left: number): 
 	}));
 }
 
+/** A frame's box once the scene is spaced, and how deep in frames it sits. */
+interface FrameShape {
+	readonly id: string;
+	readonly box: Box;
+	readonly depth: number;
+}
+
+/** A group region's band and caption once the scene is spaced. */
+interface RegionShape {
+	readonly group: string;
+	readonly parent: string | undefined;
+	readonly box: Box;
+	readonly caption: Box;
+	readonly depth: number;
+}
+
+/**
+ * The boxes of the items and labels inside some members: their cards and
+ * title rows, and the labels of the relationships between two of them.
+ * @param scene The spaced scene.
+ * @param edges The placed relationships.
+ * @param inside The members.
+ * @param left How far every x moves.
+ * @returns The boxes.
+ */
+function heldBoxes(
+	scene: Scene,
+	edges: ReadonlyMap<string, ElkExtendedEdge>,
+	inside: ReadonlySet<string>,
+	left: number,
+): Box[] {
+	return [
+		...[...inside].flatMap((member) => {
+			const item = scene.cards.get(member) ?? scene.titles.get(member);
+			return item === undefined ? [] : [scene.moved(item, left)];
+		}),
+		...[...scene.labels]
+			.filter(([edge]) => {
+				const placed = edges.get(edge)!;
+				return inside.has(placed.sources[0]!) && inside.has(placed.targets[0]!);
+			})
+			.map(([, item]) => scene.moved(item, left)),
+	];
+}
+
 /**
  * Every frame: Graphviz's width, from its title row down to below its lowest
  * member, the labels of the relationships it holds included.
+ * @param scene The spaced scene.
+ * @param edges The placed relationships.
+ * @param left How far every x moves.
+ * @returns The frames' shapes.
+ */
+function frameShapes(
+	scene: Scene,
+	edges: ReadonlyMap<string, ElkExtendedEdge>,
+	left: number,
+): FrameShape[] {
+	return [...scene.frames].map(([id, { node, depth, members }]) => {
+		const title = scene.moved(scene.titles.get(id)!, left);
+		const boxes = heldBoxes(scene, edges, new Set(members), left);
+		const bottom = Math.max(title.y + title.height, ...boxes.map((box) => box.y + box.height));
+		const box = { x: node.x! + left, y: title.y, width: node.width!, height: 0 };
+		return { id, box: { ...box, height: bottom + CONTAINER_INSET - title.y }, depth };
+	});
+}
+
+/**
+ * Every frame, drawn.
  * @param scene The spaced scene.
  * @param edges The placed relationships.
  * @param measured The measured frames.
@@ -284,33 +350,11 @@ function drawFrames(
 	measured: MeasuredArchitecture,
 	left: number,
 ): DrawingNode[] {
-	return [...scene.frames].map(([id, { node, depth, members }]) => {
-		const inside = new Set(members);
-		const title = scene.moved(scene.titles.get(id)!, left);
-		const boxes = [
-			...members.flatMap((member) => {
-				const item = scene.cards.get(member) ?? scene.titles.get(member);
-				return item === undefined ? [] : [scene.moved(item, left)];
-			}),
-			...[...scene.labels]
-				.filter(([edge]) => {
-					const placed = edges.get(edge)!;
-					return inside.has(placed.sources[0]!) && inside.has(placed.targets[0]!);
-				})
-				.map(([, item]) => scene.moved(item, left)),
-		];
-		const bottom = Math.max(title.y + title.height, ...boxes.map((box) => box.y + box.height));
-		return {
-			measured: measured.nodes.get(id)!,
-			box: {
-				x: node.x! + left,
-				y: title.y,
-				width: node.width!,
-				height: bottom + CONTAINER_INSET - title.y,
-			},
-			depth,
-		};
-	});
+	return frameShapes(scene, edges, left).map(({ id, box, depth }) => ({
+		measured: measured.nodes.get(id)!,
+		box,
+		depth,
+	}));
 }
 
 /** Room a group region keeps below its lowest member. */
@@ -323,6 +367,40 @@ const REGION_CAPTION_INSET = 6;
  * lowest member, the labels of the relationships it holds included.
  * @param scene The spaced scene.
  * @param edges The placed relationships.
+ * @param left How far every x moves.
+ * @returns The regions' shapes.
+ */
+function regionShapes(
+	scene: Scene,
+	edges: ReadonlyMap<string, ElkExtendedEdge>,
+	left: number,
+): RegionShape[] {
+	return scene.regions.map((region) => {
+		const inside = new Set(
+			region.members.flatMap((id) => [id, ...(scene.frames.get(id)?.members ?? [])]),
+		);
+		const centred = scene.moved(region.caption, left);
+		// The caption reads from the band's top-left corner, as a frame's title does.
+		const caption = { ...centred, x: region.box.x + left + REGION_CAPTION_INSET };
+		const boxes = heldBoxes(scene, edges, inside, left);
+		const bottom = Math.max(caption.y + caption.height, ...boxes.map((box) => box.y + box.height));
+		const depth =
+			region.parent === undefined ? 0 : (scene.frames.get(region.parent)?.depth ?? 0) + 1;
+		const box = { x: region.box.x + left, y: caption.y, width: region.box.width, height: 0 };
+		return {
+			group: region.group,
+			parent: region.parent,
+			box: { ...box, height: bottom + REGION_BOTTOM - caption.y },
+			caption,
+			depth,
+		};
+	});
+}
+
+/**
+ * Every group region, drawn.
+ * @param scene The spaced scene.
+ * @param edges The placed relationships.
  * @param measured The measured captions.
  * @param left How far every x moves.
  * @returns The regions.
@@ -333,44 +411,11 @@ function drawRegions(
 	measured: MeasuredArchitecture,
 	left: number,
 ): DrawingRegion[] {
-	return scene.regions.flatMap((region) => {
-		const caption = measured.groups?.captions.get(region.group);
+	return regionShapes(scene, edges, left).flatMap((shape) => {
+		const caption = measured.groups?.captions.get(shape.group);
 		if (caption === undefined) return [];
-		const inside = new Set(
-			region.members.flatMap((id) => [id, ...(scene.frames.get(id)?.members ?? [])]),
-		);
-		const centred = scene.moved(region.caption, left);
-		// The caption reads from the band's top-left corner, as a frame's title does.
-		const top = { ...centred, x: region.box.x + left + REGION_CAPTION_INSET };
-		const boxes = [
-			...[...inside].flatMap((id) => {
-				const item = scene.cards.get(id) ?? scene.titles.get(id);
-				return item === undefined ? [] : [scene.moved(item, left)];
-			}),
-			...[...scene.labels]
-				.filter(([edge]) => {
-					const placed = edges.get(edge)!;
-					return inside.has(placed.sources[0]!) && inside.has(placed.targets[0]!);
-				})
-				.map(([, item]) => scene.moved(item, left)),
-		];
-		const bottom = Math.max(top.y + top.height, ...boxes.map((box) => box.y + box.height));
-		const depth =
-			region.parent === undefined ? 0 : (scene.frames.get(region.parent)?.depth ?? 0) + 1;
-		return [
-			{
-				group: region.group,
-				parent: region.parent,
-				box: {
-					x: region.box.x + left,
-					y: top.y,
-					width: region.box.width,
-					height: bottom + REGION_BOTTOM - top.y,
-				},
-				caption: { box: top, measured: caption },
-				depth,
-			},
-		];
+		const { group, parent, box, depth } = shape;
+		return [{ group, parent, box, caption: { box: shape.caption, measured: caption }, depth }];
 	});
 }
 
@@ -515,8 +560,12 @@ export {
 	TRACK_BOTTOM,
 	TRACK_TOP,
 	channelHeight,
+	frameShapes,
+	regionShapes,
 	routeScene,
 	routeTracks,
 	trunkKind,
+	type FrameShape,
+	type RegionShape,
 	type SceneLine,
 };

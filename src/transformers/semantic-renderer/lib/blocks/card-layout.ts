@@ -21,8 +21,17 @@ import {
 	polylinePoints,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { TRACK_POLYLINE } from "@/transformers/semantic-renderer/lib/track/placement";
-import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
+import {
+	TRACK_POLYLINE,
+	TRACK_REGIONS,
+} from "@/transformers/semantic-renderer/lib/track/placement";
+import {
+	frameShapes,
+	regionShapes,
+	routeScene,
+	trunkKind,
+} from "@/transformers/semantic-renderer/lib/track/route";
+import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { gridEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
 import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
@@ -102,9 +111,28 @@ function walledPoints(
 	return undefined;
 }
 
+/**
+ * Every node's name in a Graphviz graph and all its subgraphs.
+ * @param graph The graph.
+ * @param graph.nodes Its nodes.
+ * @param graph.subgraphs Its subgraphs.
+ * @returns The names.
+ */
+function namesIn(graph: {
+	nodes?: readonly VendorNode[];
+	subgraphs?: readonly Subgraph[];
+}): string[] {
+	return [
+		...(graph.nodes ?? []).map(({ name }) => name),
+		...(graph.subgraphs ?? []).flatMap((subgraph) => namesIn(subgraph)),
+	];
+}
+
 /** One block of cards' layout, from its Graphviz graph to its routed lines. */
 class CardLayout {
 	readonly graph = emptyGraph();
+	/** The containers and regions the block draws inline. */
+	readonly clusters: Clusters;
 
 	/**
 	 * Start a block's layout.
@@ -122,7 +150,14 @@ class CardLayout {
 		readonly insets: Insets,
 		readonly lowered: ReadonlyMap<string, number> = new Map(),
 		readonly grid = false,
-	) {}
+	) {
+		this.clusters = new Clusters(block, this.graph);
+		// Ranks cross the clusters a block draws inline, as one board; a block
+		// without any keeps Graphviz's own ranking, which holds its header alone
+		// on the first rank.
+		if (block.clusters.size > 0)
+			this.graph.graphAttributes = { ...this.graph.graphAttributes, newrank: true };
+	}
 
 	/**
 	 * The vendor node a line end stands on: a pin stands on its child block.
@@ -131,6 +166,7 @@ class CardLayout {
 	 */
 	vendorOf(end: string): string {
 		if (this.walled(end)) return `stub:${end}`;
+		if (this.block.clusters.has(end)) return titleOf(end);
 		return this.tree.pins.get(end)?.block.id ?? end;
 	}
 
@@ -160,6 +196,8 @@ class CardLayout {
 	 * @returns Its size.
 	 */
 	sizeOf(name: string): Size {
+		const title = this.clusters.sizeOf(name);
+		if (title !== undefined) return title;
 		if (name === headerOf(this.block)) return this.block.header!;
 		if (name.startsWith("port:") || name.startsWith("stub:")) return { width: PORT, height: PORT };
 		return this.laid.get(name) ?? this.tree.cards.get(name)!;
@@ -182,7 +220,7 @@ class CardLayout {
 	 */
 	build(): void {
 		const { block, graph } = this;
-		graph.nodes.push(...block.items.map((item) => this.nodeOf(item)));
+		for (const item of block.items) this.clusters.holderOf(item).nodes.push(this.nodeOf(item));
 		const header = block.header === undefined ? [] : [headerOf(block)];
 		const tops = [...block.ports].filter(([, side]) => side === "top").map(([port]) => port);
 		const bottoms = [...block.ports].filter(([, side]) => side === "bottom").map(([port]) => port);
@@ -203,8 +241,19 @@ class CardLayout {
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of block.lines.values())
 			if (this.wallOf(line) === undefined) this.connect(line);
-		if (this.grid) graph.edges.push(...gridEdges(this.looseCards()));
-		// A wrapped item is held a row of cards and its labels below the rank's first row for each row it is lowered.
+		this.arrange();
+	}
+
+	/**
+	 * Hold the block's items where its clusters, a grid or a wrap put them:
+	 * every title above its cluster's members, loose cards in a grid, and a
+	 * wrapped item a row of cards and its labels below the rank's first row for
+	 * each row it is lowered.
+	 */
+	arrange(): void {
+		const { block, graph } = this;
+		const grid = this.grid ? this.looseCards().flatMap((cards) => gridEdges(cards)) : [];
+		graph.edges.push(...grid, ...this.clusters.titleEdges(new Set(grid.map(({ head }) => head))));
 		const arriving = new Set([...block.lines.values()].map((line) => this.vendorOf(line.head)));
 		for (const { card, rows, anchor } of anchored(this.lowered, arriving))
 			graph.edges.push({
@@ -215,19 +264,24 @@ class CardLayout {
 	}
 
 	/**
-	 * The block's cards no line touches, in the board's order, with their sizes.
-	 * @returns The loose cards.
+	 * The block's cards no line touches, in the board's order, with their
+	 * sizes, by the cluster that holds them.
+	 * @returns Each cluster's loose cards.
 	 */
-	looseCards(): { id: string; width: number; height: number }[] {
+	looseCards(): { id: string; width: number; height: number }[][] {
 		const touched = new Set(
 			[...this.block.lines.values()].flatMap((line) => [
 				this.vendorOf(line.tail),
 				this.vendorOf(line.head),
 			]),
 		);
-		return this.block.items
-			.filter((item) => !this.tree.blocks.has(item) && !touched.has(item))
-			.map((id) => ({ id, ...this.sizeOf(id) }));
+		const loose = new Map<string | undefined, { id: string; width: number; height: number }[]>();
+		for (const item of this.block.items) {
+			if (this.tree.blocks.has(item) || touched.has(item)) continue;
+			const around = this.block.clusterOf.get(item);
+			loose.set(around, [...(loose.get(around) ?? []), { id: item, ...this.sizeOf(item) }]);
+		}
+		return [...loose.values()];
 	}
 
 	/**
@@ -266,7 +320,7 @@ class CardLayout {
 			return;
 		}
 		const name = `label:${line.edge.id}`;
-		this.graph.nodes.push(box(name, label.width!, label.height!));
+		this.clusters.common(tail, head).nodes.push(box(name, label.width!, label.height!));
 		this.graph.edges.push(
 			{ tail, head: name, attributes: { id: `${id}:1`, minlen } },
 			{ tail: name, head, attributes: { id: `${id}:2` } },
@@ -286,7 +340,11 @@ class CardLayout {
 		const polylines = new Map<string, string[]>();
 		for (const { id, pos } of output.edges)
 			if (id !== undefined && pos !== undefined) polylines.set(id, polylinePoints(pos, origin));
-		const placed = this.placed(centresOf(output, origin), polylines);
+		const placed = this.placed(
+			centresOf(output, origin),
+			polylines,
+			this.clusters.boxes(output, origin),
+		);
 		const scene = new Scene(placed);
 		const lines = routeScene(
 			scene,
@@ -306,16 +364,21 @@ class CardLayout {
 			this.insets.side,
 			this.insets.top,
 		);
-		return this.read(scene, lines);
+		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])));
 	}
 
 	/**
 	 * Read the routed scene back into the laid-out block.
 	 * @param scene The routed scene.
 	 * @param lines Every line's points.
+	 * @param edges Every placed line, by key.
 	 * @returns The laid-out block.
 	 */
-	read(scene: Scene, lines: ReadonlyMap<string, Point[]>): Laid {
+	read(
+		scene: Scene,
+		lines: ReadonlyMap<string, Point[]>,
+		edges: ReadonlyMap<string, ElkExtendedEdge>,
+	): Laid {
 		const { side, bottom } = this.insets;
 		const boxes = new Map<string, Box>();
 		for (const [id, item] of scene.cards) boxes.set(id, scene.moved(item, side));
@@ -325,7 +388,13 @@ class CardLayout {
 			bottom: band.newTop + band.bottom - band.top,
 			items: this.block.items.filter((item) => scene.cards.get(item)?.band === index),
 		}));
-		const all = [...boxes.values()];
+		const frames = frameShapes(scene, edges, side);
+		const regions = regionShapes(scene, edges, side);
+		const all = [
+			...boxes.values(),
+			...frames.map((frame) => frame.box),
+			...regions.map((region) => region.box),
+		];
 		const width = Math.max(
 			this.block.header?.width ?? 0,
 			...all.map((one) => one.x + one.width + side),
@@ -338,6 +407,8 @@ class CardLayout {
 			boxes,
 			lines: walled,
 			bands,
+			frames,
+			regions,
 		};
 	}
 
@@ -369,28 +440,30 @@ class CardLayout {
 	 * as cards, and its lines as placed relationships.
 	 * @param centres Every vendor node's centre.
 	 * @param polylines Every vendor edge's polyline, by id.
+	 * @param clusters Every inline cluster's box.
 	 * @returns The placed block.
 	 */
 	placed(
 		centres: ReadonlyMap<string, Point>,
 		polylines: ReadonlyMap<string, string[]>,
+		clusters: ReadonlyMap<string, Box>,
 	): ElkNode & { edges: ElkExtendedEdge[] } {
-		const named = [
-			...this.graph.nodes.map(({ name }) => name).filter((name) => !name.startsWith("label:")),
-			...this.graph.subgraphs.flatMap(({ nodes }) => (nodes ?? []).map(({ name }) => name)),
-		];
-		const children: ElkNode[] = named.map((id) => {
+		const named = namesIn(this.graph).filter(
+			(name) => !name.startsWith("label:") && !isTitle(name),
+		);
+		const leaves: ElkNode[] = named.map((id) => {
 			const { width, height } = this.sizeOf(id);
 			const centre = centres.get(id)!;
 			return { id, x: centre.x - width / 2, y: centre.y - height / 2, width, height };
 		});
 		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
 		for (const pin of new Set(ends.filter((end) => this.tree.pins.has(end))))
-			children.push(this.pinned(pin, centres));
+			leaves.push(this.pinned(pin, centres));
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);
-		return { id: this.block.id, children, edges };
+		const { children, regions } = this.clusters.nest(leaves, centres, clusters);
+		return { id: this.block.id, children, edges, layoutOptions: { [TRACK_REGIONS]: regions } };
 	}
 
 	/**

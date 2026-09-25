@@ -1,0 +1,282 @@
+// Containers and group regions a block of cards draws inline (TASK-349). Each
+// is a Graphviz cluster of the block's own layout, headed by its title row or
+// its region's caption, which invisible edges hold above every member; so the
+// board's cards are ranked across containers, as the track engine ranks them.
+// After Graphviz answers, the clusters are read back into the shape the track
+// scene reads: every frame a node around its members with its title row, and
+// every region on the block's root.
+import type { ElkNode } from "@archboard/elk-rs";
+import type { Edge, Graph, Subgraph } from "@viz-js/viz";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { box, numbers, type Output } from "@/transformers/semantic-renderer/lib/track/graphviz";
+import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/placement";
+
+/** Room a group region keeps around its members. */
+const REGION_INSET = 14;
+/** How strongly a title row holds each member below it. */
+const TITLE_WEIGHT = 10;
+
+/** A Graphviz node. */
+type VendorNode = NonNullable<Graph["nodes"]>[number];
+
+/** A Graphviz cluster that holds nodes and further clusters. */
+type Nested = Subgraph & Required<Pick<Subgraph, "nodes" | "subgraphs">>;
+
+/** Something nodes can be put in: the block's graph or one of its clusters. */
+interface Holder {
+	readonly nodes: VendorNode[];
+}
+
+/**
+ * The vendor node heading a cluster: a frame's title row or a region's caption.
+ * @param cluster The cluster's id.
+ * @returns The node's name.
+ */
+function titleOf(cluster: string): string {
+	return `title:${cluster}`;
+}
+
+/**
+ * Whether a vendor node heads a cluster.
+ * @param name The vendor node.
+ * @returns True for a title row or caption.
+ */
+function isTitle(name: string): boolean {
+	return name.startsWith("title:");
+}
+
+/** A block's inline clusters, in its Graphviz graph and read back from it. */
+class Clusters {
+	readonly graphs = new Map<string, Nested>();
+	/** Each Graphviz cluster's name, by the cluster it draws. */
+	readonly names = new Map<string, string>();
+
+	/**
+	 * Make every cluster of a block in its graph, each headed by its title.
+	 * @param block The block.
+	 * @param graph Its Graphviz graph.
+	 */
+	constructor(
+		readonly block: Block,
+		readonly graph: Holder & { readonly subgraphs: Subgraph[] },
+	) {
+		for (const [index, cluster] of [...block.clusters.values()].entries()) {
+			const name = `cluster_${index}`;
+			const inset = cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET;
+			const title = box(titleOf(cluster.id), cluster.header.width, cluster.header.height);
+			const made: Nested = {
+				name,
+				graphAttributes: { margin: inset },
+				nodes: [title],
+				subgraphs: [],
+			};
+			this.graphs.set(cluster.id, made);
+			this.names.set(name, cluster.id);
+			const parent = cluster.parent === undefined ? graph : this.graphs.get(cluster.parent)!;
+			parent.subgraphs.push(made);
+		}
+	}
+
+	/**
+	 * The size of a cluster's title node.
+	 * @param name The vendor node.
+	 * @returns Its size, or nothing when it heads no cluster.
+	 */
+	sizeOf(name: string): Size | undefined {
+		return isTitle(name) ? this.block.clusters.get(name.slice("title:".length))?.header : undefined;
+	}
+
+	/**
+	 * Where a member's node goes: its innermost cluster, or the block's graph.
+	 * @param member A card or other item of the block.
+	 * @returns The holder.
+	 */
+	holderOf(member: string): Holder {
+		const around = this.block.clusterOf.get(member);
+		return around === undefined ? this.graph : this.graphs.get(around)!;
+	}
+
+	/**
+	 * The clusters around a vendor node, innermost first: a title stands inside
+	 * its own cluster, and ports, pins and headers inside none.
+	 * @param vendor The vendor node.
+	 * @returns The clusters' ids.
+	 */
+	around(vendor: string): string[] {
+		const start = isTitle(vendor)
+			? vendor.slice("title:".length)
+			: this.block.clusterOf.get(vendor);
+		const chain: string[] = [];
+		for (let at = start; at !== undefined; at = this.block.clusters.get(at)?.parent) chain.push(at);
+		return chain;
+	}
+
+	/**
+	 * Where a label between two vendor nodes goes: their innermost shared cluster.
+	 * @param one A vendor node.
+	 * @param other Another.
+	 * @returns The holder.
+	 */
+	common(one: string, other: string): Holder {
+		const theirs = new Set(this.around(other));
+		const shared = this.around(one).find((id) => theirs.has(id));
+		return shared === undefined ? this.graph : this.graphs.get(shared)!;
+	}
+
+	/**
+	 * The vendor node a member of a cluster stands at: a nested cluster at its title.
+	 * @param member The member.
+	 * @returns Its vendor node.
+	 */
+	vendorOf(member: string): string {
+		return this.block.clusters.has(member) ? titleOf(member) : member;
+	}
+
+	/**
+	 * The invisible edges that hold each title above its cluster's members.
+	 * @param lower Members held down by something else, which need no edge from their title.
+	 * @returns The edges.
+	 */
+	titleEdges(lower: ReadonlySet<string>): Edge[] {
+		return [...this.block.clusterOf]
+			.filter(([member]) => !lower.has(member))
+			.map(([member, around]) => ({
+				tail: titleOf(around),
+				head: this.vendorOf(member),
+				attributes: { style: "invis", weight: TITLE_WEIGHT },
+			}));
+	}
+
+	/**
+	 * Every cluster's box, as Graphviz answered it.
+	 * @param output What Graphviz answered.
+	 * @param origin Where the drawing starts.
+	 * @returns The boxes, by cluster.
+	 */
+	boxes(output: Output, origin: Point): Map<string, Box> {
+		const boxes = new Map<string, Box>();
+		for (const { name, bb } of output.objects) {
+			const id = this.names.get(name);
+			if (id === undefined || bb === undefined) continue;
+			const [x1, y1, x2, y2] = numbers(bb);
+			boxes.set(id, {
+				x: Math.min(x1!, x2!) - origin.x,
+				y: Math.min(y1!, y2!) - origin.y,
+				width: Math.abs(x2! - x1!),
+				height: Math.abs(y2! - y1!),
+			});
+		}
+		return boxes;
+	}
+
+	/**
+	 * The innermost frame around a cluster or member, passing over regions.
+	 * @param start The cluster to start from, if any.
+	 * @returns The frame's id, if any.
+	 */
+	frameAround(start: string | undefined): string | undefined {
+		let at = start;
+		while (at !== undefined && this.block.clusters.get(at)!.kind === "region")
+			at = this.block.clusters.get(at)!.parent;
+		return at;
+	}
+
+	/**
+	 * Every frame as a node of the scene, around nothing yet, with its title row.
+	 * @param centres Every vendor node's centre.
+	 * @param boxes Every cluster's box.
+	 * @returns The frames' nodes, by frame.
+	 */
+	frameNodes(
+		centres: ReadonlyMap<string, Point>,
+		boxes: ReadonlyMap<string, Box>,
+	): Map<string, ElkNode & { children: ElkNode[] }> {
+		const frames = new Map<string, ElkNode & { children: ElkNode[] }>();
+		for (const cluster of this.block.clusters.values()) {
+			if (cluster.kind !== "frame") continue;
+			const bounds = boxes.get(cluster.id)!;
+			const title = centres.get(titleOf(cluster.id))!;
+			const row = [bounds.x, title.y - cluster.header.height / 2, bounds.width];
+			frames.set(cluster.id, {
+				id: cluster.id,
+				...bounds,
+				layoutOptions: { [TRACK_TITLE]: [...row, cluster.header.height].join(",") },
+				children: [],
+			});
+		}
+		return frames;
+	}
+
+	/**
+	 * The placed block's children nested as the track scene reads them: every
+	 * frame a node around its members with its title row, every region a row
+	 * on the root.
+	 * @param leaves Every placed card, port, header and pin.
+	 * @param centres Every vendor node's centre.
+	 * @param boxes Every cluster's box.
+	 * @returns The children, and the regions' rows.
+	 */
+	nest(
+		leaves: readonly ElkNode[],
+		centres: ReadonlyMap<string, Point>,
+		boxes: ReadonlyMap<string, Box>,
+	): { children: ElkNode[]; regions: string } {
+		const frames = this.frameNodes(centres, boxes);
+		const children: ElkNode[] = [];
+		const placed: [ElkNode, string | undefined][] = [
+			...[...frames].map(([id, frame]): [ElkNode, string | undefined] => [
+				frame,
+				this.block.clusters.get(id)!.parent,
+			]),
+			...leaves.map((leaf): [ElkNode, string | undefined] => [
+				leaf,
+				this.block.clusterOf.get(leaf.id),
+			]),
+		];
+		for (const [node, around] of placed) {
+			const frame = this.frameAround(around);
+			(frame === undefined ? children : frames.get(frame)!.children).push(node);
+		}
+		return { children, regions: JSON.stringify(this.regionRows(centres, boxes)) };
+	}
+
+	/**
+	 * Every region as the track scene reads it: its group, frame, direct
+	 * members, band and caption.
+	 * @param centres Every vendor node's centre.
+	 * @param boxes Every cluster's box.
+	 * @returns The rows.
+	 */
+	regionRows(
+		centres: ReadonlyMap<string, Point>,
+		boxes: ReadonlyMap<string, Box>,
+	): {
+		group: string;
+		parent?: string;
+		members: string[];
+		box: number[];
+		caption: number[];
+	}[] {
+		return [...this.block.clusters.values()]
+			.filter(({ kind }) => kind === "region")
+			.map((cluster) => {
+				const bounds = boxes.get(cluster.id)!;
+				const centre = centres.get(titleOf(cluster.id))!;
+				const { width, height } = cluster.header;
+				const parent = this.frameAround(cluster.parent);
+				return {
+					group: cluster.group!,
+					...(parent === undefined ? {} : { parent }),
+					members: [...this.block.clusterOf]
+						.filter(([, around]) => around === cluster.id)
+						.map(([member]) => member),
+					box: [bounds.x, bounds.y, bounds.width, bounds.height],
+					caption: [centre.x - width / 2, centre.y - height / 2, width, height],
+				};
+			});
+	}
+}
+
+export { Clusters, isTitle, titleOf };

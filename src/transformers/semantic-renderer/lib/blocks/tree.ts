@@ -22,6 +22,7 @@ import {
 	PLACING_GROUP,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
+import { addInline, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 
 /** A width and a height. */
 interface Size {
@@ -78,6 +79,10 @@ interface Block {
 	readonly lines: Map<string, Line>;
 	/** Its ports, by id, with the edge each crosses. */
 	readonly ports: Map<string, Side>;
+	/** The containers and regions it draws inline, outermost first. */
+	readonly clusters: Map<string, Cluster>;
+	/** The innermost inline cluster around each of its items and clusters. */
+	readonly clusterOf: Map<string, string>;
 }
 
 /** Where one relationship is drawn: its block, and the blocks it leaves and enters. */
@@ -195,10 +200,13 @@ class BlockTree {
 	 * @param exits The wall each leaving port moves to, keyed `block|port` by
 	 * the port it would otherwise be: an earlier layout's answer, where it
 	 * stood the block beside the block its trunk goes to.
+	 * @param inline Whether containers and group regions are drawn inline, as
+	 * clusters of the board's own layout, rather than as blocks of their own.
 	 */
 	constructor(
 		graph: ElkNode,
 		readonly exits: ReadonlyMap<string, Side> = new Map(),
+		readonly inline = false,
 	) {
 		this.captions = captionsOf(graph);
 		this.root = this.block(":root", "root", undefined, {});
@@ -235,6 +243,8 @@ class BlockTree {
 			items: [],
 			lines: new Map(),
 			ports: new Map(),
+			clusters: new Map(),
+			clusterOf: new Map(),
 		};
 		this.blocks.set(id, made);
 		parent?.items.push(id);
@@ -250,7 +260,8 @@ class BlockTree {
 		const ordered = nodes.toSorted((one, other) => semanticOrder(one) - semanticOrder(other));
 		for (const node of ordered) {
 			const group = node.layoutOptions?.[PLACING_GROUP];
-			this.add(group === undefined ? block : this.region(block, group), node);
+			if (this.inline) addInline(this, block, node, undefined);
+			else this.add(group === undefined ? block : this.region(block, group), node);
 		}
 	}
 
