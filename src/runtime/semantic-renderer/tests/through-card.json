@@ -1,0 +1,126 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaal / bravobr carbonc",
+			"kind": "external",
+			"order": 1000,
+			"responsibility": "delta eaglee falconfal; garde harbo isl jun kettleket la mea needlene orangeor."
+		},
+		{
+			"id": "n1",
+			"name": "pepperpepp quart",
+			"kind": "external",
+			"order": 2000,
+			"responsibility": "riverriv sum timb alp bra carbo."
+		},
+		{
+			"id": "n2",
+			"name": "delta eagleea falconf",
+			"kind": "module",
+			"order": 3000,
+			"responsibility": "garden harborha islan."
+		},
+		{
+			"id": "n3",
+			"name": "ju ket lantern",
+			"kind": "external",
+			"order": 4000,
+			"responsibility": "meadowme nee or pepperpe quart."
+		},
+		{
+			"id": "n4",
+			"name": "riv summits",
+			"kind": "external",
+			"order": 5000,
+			"responsibility": "timberti alp br carbonca delta."
+		},
+		{
+			"id": "n5",
+			"name": "eaglee fal gardenga",
+			"kind": "service",
+			"order": 6000,
+			"responsibility": "harborha islan jungleju ke lant meadow needl."
+		},
+		{
+			"id": "n6",
+			"name": "orang pepperpe quar riverriv",
+			"kind": "module",
+			"order": 7000,
+			"responsibility": "summitsu tx alphaal br car deltade / eag falc."
+		},
+		{
+			"id": "n7",
+			"name": "gardeng / har is jung",
+			"kind": "system",
+			"order": 8000,
+			"responsibility": "kett lanternlan mea need orang pep quartzqu riv sum timbertim."
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n1",
+			"kind": "http",
+			"order": 1000,
+			"label": "alphaa bravobrav"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n2",
+			"kind": "http",
+			"order": 2000,
+			"label": "carbonca del / eagle falc"
+		},
+		{
+			"id": "e2",
+			"from": "n2",
+			"to": "n3",
+			"kind": "http",
+			"order": 3000,
+			"label": "ga harborha"
+		},
+		{
+			"id": "e3",
+			"from": "n2",
+			"to": "n4",
+			"kind": "http",
+			"order": 4000,
+			"label": "is jungleju"
+		},
+		{
+			"id": "e4",
+			"from": "n3",
+			"to": "n5",
+			"kind": "http",
+			"order": 5000,
+			"label": "kettleke lante"
+		},
+		{
+			"id": "e5",
+			"from": "n4",
+			"to": "n5",
+			"kind": "http",
+			"order": 6000,
+			"label": "meadowme needl"
+		},
+		{
+			"id": "e6",
+			"from": "n5",
+			"to": "n6",
+			"kind": "http",
+			"order": 7000,
+			"label": "orange pepperpep"
+		},
+		{
+			"id": "e7",
+			"from": "n6",
+			"to": "n7",
+			"kind": "http",
+			"order": 8000,
+			"label": "qx riverriver"
+		}
+	]
+}
