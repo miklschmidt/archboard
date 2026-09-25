@@ -201,7 +201,7 @@ class BlockTree {
 		readonly exits: ReadonlyMap<string, Side> = new Map(),
 	) {
 		this.captions = captionsOf(graph);
-		this.root = this.block("root", "root", undefined, {});
+		this.root = this.block(":root", "root", undefined, {});
 		this.fill(this.root, graph.children ?? []);
 		this.gather(this.root);
 		const edges = (graph.edges ?? []).filter((edge) => edge.sources[0] !== edge.targets[0]);
@@ -442,7 +442,11 @@ class BlockTree {
 		const { edge, out } = projection;
 		const face: Face = upward ? "top" : "bottom";
 		const pieces: Piece[] = [];
-		let from = out.length === 0 ? projection.from : edge.sources[0]!;
+		let from = this.onEdge(
+			out.length === 0 ? projection.from : edge.sources[0]!,
+			`from|${face}|${projection.to}|${kindOf(edge)}`,
+			face,
+		);
 		for (const block of out) {
 			const along = `${projection.to}|${kindOf(edge)}`;
 			const side = block === labelAt ? face : this.exitOf(block, `out|${face}|${along}`, face);
@@ -468,7 +472,11 @@ class BlockTree {
 		const { edge, into } = projection;
 		const face: Face = upward ? "bottom" : "top";
 		const pieces: Piece[] = [];
-		let to = into.length === 0 ? projection.to : edge.targets[0]!;
+		let to = this.onEdge(
+			into.length === 0 ? projection.to : edge.targets[0]!,
+			`to|${face}|${projection.from}|${kindOf(edge)}`,
+			face,
+		);
 		for (const block of into) {
 			const along = `${projection.from}|${kindOf(edge)}`;
 			const side = this.exitOf(block, `in|${face}|${along}`, face);
@@ -481,6 +489,20 @@ class BlockTree {
 			to = this.pin(block, port);
 		}
 		return { pieces, end: to };
+	}
+
+	/**
+	 * Where a line meets a container the relationship names as its end: a
+	 * port on the container's own edge, so the line stops at the box the
+	 * reader sees instead of running in to its middle.
+	 * @param end The line's end.
+	 * @param key What the relationships ending there share.
+	 * @param face The edge the port stands on.
+	 * @returns The port's pin on a container, else the end itself.
+	 */
+	onEdge(end: string, key: string, face: Face): string {
+		const block = this.blocks.get(end);
+		return block?.kind === "frame" ? this.pin(block, this.port(block, key, face)) : end;
 	}
 
 	/**
