@@ -516,4 +516,4 @@ function lanesByBand(scene: Scene, nets: readonly Net[]): number[][] {
 	return lanes;
 }
 
-export { nudgeLabel, settleLabels, slideLabels };
+export { extentOf, nudgeLabel, settleLabels, slideLabels };

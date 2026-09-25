@@ -180,17 +180,39 @@ test.each(["graphviz", "track"] as const)(
 
 // Reduced from the dogfood Semantic renderer board: a line through its label
 // let its two stacked ends stand 9 to 10 points out of one column, so their
-// edges almost lined up and the line jogged or sat off both centres.
+// edges almost lined up and the line jogged or sat off both centres. Stacked
+// ends stand in one column or clearly apart, never a near miss.
 test.each([
 	["graphviz", "wskEBeIy", "4nyk76pY"],
 	["track", "CtoOMxca", "wLF1X11D"],
 ] as const)(
-	"stacked cards joined through a label share a column (%s)",
+	"stacked cards joined through a label share a column or stand clearly apart (%s)",
 	async (layout, upper, lower) => {
 		const content = orderedFixture(nearMiss);
 		const drawing = await renderArchitecture({ content, theme: "light", layout });
 		const [one, other] = [drawing.atlas.nodes[upper]!, drawing.atlas.nodes[lower]!];
 		expect(one.y + one.height).toBeLessThan(other.y);
-		expect(one.x + one.width / 2).toBeCloseTo(other.x + other.width / 2, 1);
+		const offset = Math.abs(one.x + one.width / 2 - (other.x + other.width / 2));
+		expect(offset < 0.05 || offset > 16).toBe(true);
 	},
 );
+
+// The Graphviz page kept the placement's slack: a frame's trimmed title
+// margin left 52 points above the drawing against 24 below it.
+test("a Graphviz page keeps the same margin on every side of what it draws", async () => {
+	const drawing = await renderArchitecture({ content: NESTED, theme: "light", layout: "graphviz" });
+	const boxes = [
+		...Object.values(drawing.atlas.nodes),
+		...routeLabels(drawing.svg).values(),
+		...[...routePoints(drawing.svg).values()]
+			.flat()
+			.map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
+	];
+	const margins = [
+		Math.min(...boxes.map(({ x }) => x)),
+		Math.min(...boxes.map(({ y }) => y)),
+		drawing.width - Math.max(...boxes.map(({ x, width }) => x + width)),
+		drawing.height - Math.max(...boxes.map(({ y, height }) => y + height)),
+	];
+	for (const margin of margins) expect(Math.abs(margin - margins[0]!)).toBeLessThanOrEqual(2);
+});

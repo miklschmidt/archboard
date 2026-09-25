@@ -8,16 +8,25 @@
 // only end at the same point of a card do not join anywhere, so that point is
 // not marked. The marks change nothing about where anything is placed or
 // routed; they are found from the finished routes and painted over them.
+//
+// A dot sits where the ink actually parts: a route that turns off a lane
+// leaves it where its rounded bend begins, not at the corner the bend cuts.
+// Joins a few units apart along one lane are one place to a reader, so they
+// are marked by one bar along the lane rather than by dots that overlap.
 
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { verticesOf, type Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
 /** How far a junction mark reaches past the line it sits on, so it reads as a dot and not a kink. */
 const JUNCTION_REACH = 1.6;
 
 /** How far a route must go on from a point to count as leaving it that way. */
 const ONWARD = 0.5;
+
+/** How much clear space two marks along one lane need to read as two. */
+const APART = 2;
 
 /** One straight stretch of a route, along one axis. */
 interface Stretch {
@@ -28,39 +37,77 @@ interface Stretch {
 	readonly at: number;
 	readonly from: number;
 	readonly to: number;
+	/** How far before each end the route's ink turns away: its bend's radius there, none at a route's end. */
+	readonly fromBend: number;
+	readonly toBend: number;
 	/** How thick its line is drawn. */
 	readonly width: number;
 }
 
-/** A place two routes join or part, and the heavier of the lines there. */
+/** A place two routes join or part, and the heavier of the lines there; a bar when it runs on to `until`. */
 interface Junction {
 	readonly point: Point;
+	readonly until?: Point;
 	readonly route: number;
+	readonly width: number;
+}
+
+/** One route, as the joins are found from it. */
+interface JoinRoute {
+	/** Its ends and corners, in order. */
+	readonly corners: readonly Point[];
+	/** How far before each corner its ink starts to turn: its bend's radius there, none at its ends. */
+	readonly bends?: readonly number[];
 	readonly width: number;
 }
 
 /**
  * The straight stretches of one route, from its corners.
- * @param corners The route's ends and corners, in order.
- * @param route Which route it is.
- * @param width How thick its line is drawn.
+ * @param route The route.
+ * @param index Which route it is.
  * @returns Its stretches along either axis.
  */
-function stretchesOf(corners: readonly Point[], route: number, width: number): Stretch[] {
-	const stretches: Stretch[] = [];
-	for (let index = 1; index < corners.length; index += 1) {
-		const a = corners[index - 1]!;
-		const b = corners[index]!;
-		const across = Math.abs(a.y - b.y) < ONWARD;
-		const down = Math.abs(a.x - b.x) < ONWARD;
-		if (across === down) continue;
-		stretches.push(
-			across
-				? { route, across, at: a.y, from: Math.min(a.x, b.x), to: Math.max(a.x, b.x), width }
-				: { route, across, at: a.x, from: Math.min(a.y, b.y), to: Math.max(a.y, b.y), width },
-		);
-	}
-	return stretches;
+function stretchesOf(route: JoinRoute, index: number): Stretch[] {
+	const { corners, bends = [], width } = route;
+	return corners.slice(1).flatMap((to, at) => {
+		const from = corners[at]!;
+		const ends = { from, to, bends: [bends[at] ?? 0, bends[at + 1] ?? 0] as const };
+		return stretchBetween(ends, index, width);
+	});
+}
+
+/**
+ * The stretch between two corners of a route, when they share a row or a column.
+ * @param ends The two corners and how far before each the route's ink turns.
+ * @param ends.from The first corner.
+ * @param ends.to The second.
+ * @param ends.bends The bends' radii at each.
+ * @param route Which route it is.
+ * @param width How thick its line is drawn.
+ * @returns The stretch, or none for a diagonal or a point.
+ */
+function stretchBetween(
+	ends: { readonly from: Point; readonly to: Point; readonly bends: readonly [number, number] },
+	route: number,
+	width: number,
+): Stretch[] {
+	const { from: a, to: b, bends } = ends;
+	const across = Math.abs(a.y - b.y) < ONWARD;
+	if (across === Math.abs(a.x - b.x) < ONWARD) return [];
+	const axis = across ? "x" : "y";
+	const forward = a[axis] <= b[axis];
+	return [
+		{
+			route,
+			across,
+			at: across ? a.y : a.x,
+			from: Math.min(a[axis], b[axis]),
+			to: Math.max(a[axis], b[axis]),
+			fromBend: forward ? bends[0] : bends[1],
+			toBend: forward ? bends[1] : bends[0],
+			width,
+		},
+	];
 }
 
 /**
@@ -126,34 +173,56 @@ function partAt(
 }
 
 /**
- * Where two stretches begin and stop running together as one drawn line.
+ * Where two stretches begin and stop running together as one drawn line, and
+ * where along it their ink parts at each end: a route that turns off at an
+ * end has already left the line where its bend begins.
  * @param one A stretch of one route.
  * @param other A stretch of another route.
- * @returns The two ends of the stretch they share and how near their lines are, or null when they share none.
+ * @returns Each end with where the ink parts there, and how near their lines are, or null when they share none.
  */
 function sharedEnds(
 	one: Stretch,
 	other: Stretch,
-): { readonly ends: readonly Point[]; readonly near: number } | null {
+): {
+	readonly ends: readonly { readonly end: Point; readonly parts: Point }[];
+	readonly near: number;
+} | null {
 	if (one.route === other.route || one.across !== other.across) return null;
 	const near = Math.max((one.width + other.width) / 2, ONWARD);
 	const from = Math.max(one.from, other.from);
 	const to = Math.min(one.to, other.to);
 	if (Math.abs(one.at - other.at) > near || to - from <= near) return null;
 	const at = (one.at + other.at) / 2;
-	const ends = [from, to].map((along) => (one.across ? { x: along, y: at } : { x: at, y: along }));
-	return { ends, near };
-}
-
-/**
- * Keep one join per place, carrying the heavier line there.
- * @param found The joins so far, by place.
- * @param junction The join found now.
- */
-function keep(found: Map<string, Junction>, junction: Junction): void {
-	const key = `${Math.round(junction.point.x / 2)},${Math.round(junction.point.y / 2)}`;
-	const held = found.get(key);
-	if (held === undefined || held.width < junction.width) found.set(key, junction);
+	/**
+	 * The point on the shared line at one coordinate along it.
+	 * @param along The coordinate.
+	 * @returns The point.
+	 */
+	const point = (along: number): Point => (one.across ? { x: along, y: at } : { x: at, y: along });
+	const middle = (from + to) / 2;
+	/**
+	 * How far in from one end of the shared stretch the ink parts.
+	 * @param along The end.
+	 * @param bend Which end of each stretch it is.
+	 * @returns The distance, never past the middle.
+	 */
+	const inward = (along: number, bend: "fromBend" | "toBend"): number =>
+		Math.min(
+			Math.abs(middle - along),
+			Math.max(
+				...[one, other].map((stretch) => {
+					const end = bend === "fromBend" ? stretch.from : stretch.to;
+					return Math.abs(end - along) <= near ? stretch[bend] : 0;
+				}),
+			),
+		);
+	return {
+		ends: [
+			{ end: point(from), parts: point(from + inward(from, "fromBend")) },
+			{ end: point(to), parts: point(to - inward(to, "toBend")) },
+		],
+		near,
+	};
 }
 
 /**
@@ -172,24 +241,89 @@ function joinsBetween(
 	if (shared === null) return [];
 	const heavier = one.width >= other.width ? one : other;
 	return shared.ends
-		.filter((point) => partAt(byRoute[one.route]!, byRoute[other.route]!, point, shared.near))
-		.map((point) => ({ point, route: heavier.route, width: heavier.width }));
+		.filter(({ end }) => partAt(byRoute[one.route]!, byRoute[other.route]!, end, shared.near))
+		.map(({ parts }) => ({ point: parts, route: heavier.route, width: heavier.width }));
 }
 
 /**
- * Every place two routes join or part, one per place.
+ * Keep one join per place, carrying the heavier line there.
+ * @param found The joins so far, by place.
+ * @param junction The join found now.
+ */
+function keep(found: Map<string, Junction>, junction: Junction): void {
+	const key = `${Math.round(junction.point.x / 2)},${Math.round(junction.point.y / 2)}`;
+	const held = found.get(key);
+	if (held === undefined || held.width < junction.width) found.set(key, junction);
+}
+
+/**
+ * Joins close together along one lane, gathered into one mark: a bar from the
+ * first to the last, carrying the heaviest line among them.
+ * @param junctions The joins, one per place.
+ * @returns The marks.
+ */
+function gathered(junctions: readonly Junction[]): Junction[] {
+	const pending = [...junctions];
+	const marks: Junction[] = [];
+	while (pending.length > 0) {
+		const cluster = [pending.pop()!];
+		// Grow the cluster until no pending join touches any of it.
+		for (let index = pending.findIndex((one) => touchesAny(cluster, one)); index !== -1;) {
+			cluster.push(...pending.splice(index, 1));
+			index = pending.findIndex((one) => touchesAny(cluster, one));
+		}
+		marks.push(markOf(cluster));
+	}
+	return marks;
+}
+
+/**
+ * Whether a join touches any join of a cluster.
+ * @param cluster The cluster.
+ * @param junction The join.
+ * @returns True when it does.
+ */
+function touchesAny(cluster: readonly Junction[], junction: Junction): boolean {
+	return cluster.some((held) => touching(held, junction));
+}
+
+/**
+ * One mark for a cluster of joins: a dot for one, a bar along the lane for several.
+ * @param cluster The joins, all on one lane.
+ * @returns The mark, carrying the heaviest line among them.
+ */
+function markOf(cluster: readonly Junction[]): Junction {
+	const heaviest = cluster.reduce((best, one) => (one.width > best.width ? one : best));
+	if (cluster.length === 1) return heaviest;
+	const ordered = cluster.toSorted((a, b) => a.point.x - b.point.x || a.point.y - b.point.y);
+	return { ...heaviest, point: ordered[0]!.point, until: ordered.at(-1)!.point };
+}
+
+/**
+ * Whether two joins on one lane are too close to read as two dots.
+ * @param a One join.
+ * @param b Another.
+ * @returns True when they share a lane and their dots would touch.
+ */
+function touching(a: Junction, b: Junction): boolean {
+	const dx = Math.abs(a.point.x - b.point.x);
+	const dy = Math.abs(a.point.y - b.point.y);
+	const reach = a.width + b.width + JUNCTION_REACH * 2 + APART;
+	return (dx < ONWARD && dy < reach) || (dy < ONWARD && dx < reach);
+}
+
+/**
+ * Every place two routes join or part, one mark per place.
  *
  * Two stretches draw as one line when their strokes touch, which a shared lane
  * does even when routing nudged its routes a unit apart; where such a shared
  * stretch begins and ends, the routes on it either go on together, which is a
  * corner they share, or part, which is a join.
- * @param routes Every route's corners and line width.
+ * @param routes Every route's corners, its bends' radii and its line width.
  * @returns The joins.
  */
-function junctionsOf(
-	routes: readonly { readonly corners: readonly Point[]; readonly width: number }[],
-): Junction[] {
-	const byRoute = routes.map(({ corners, width }, route) => stretchesOf(corners, route, width));
+function junctionsOf(routes: readonly JoinRoute[]): Junction[] {
+	const byRoute = routes.map(stretchesOf);
 	const stretches = byRoute.flat();
 	const found = new Map<string, Junction>();
 	for (const [index, one] of stretches.entries()) {
@@ -197,7 +331,25 @@ function junctionsOf(
 			for (const junction of joinsBetween(one, other, byRoute)) keep(found, junction);
 		}
 	}
-	return [...found.values()];
+	return gathered([...found.values()]);
+}
+
+/**
+ * How far before each of a route's corners its ink starts to turn.
+ * @param curve The route, before any hop is drawn.
+ * @returns One radius per corner, ends included at zero.
+ */
+function bendsOf(curve: Curve): number[] {
+	let from = curve.from;
+	const radii = [0];
+	for (const segment of curve.segments) {
+		if (segment.kind === "cubic") {
+			radii.push(Math.max(Math.abs(segment.to.x - from.x), Math.abs(segment.to.y - from.y)));
+		}
+		from = segment.to;
+	}
+	radii.push(0);
+	return radii;
 }
 
 /**
@@ -212,14 +364,27 @@ function junctionMarks(
 ): string {
 	const lines = routes.map(inkOf);
 	const junctions = junctionsOf(
-		routes.map(({ curve }, index) => ({ corners: verticesOf(curve), width: lines[index]!.width })),
+		routes.map(({ curve }, index) => ({
+			corners: verticesOf(curve),
+			bends: bendsOf(curve),
+			width: lines[index]!.width,
+		})),
 	);
 	if (junctions.length === 0) return "";
-	const marks = junctions.map(
-		({ point, route, width }) =>
-			`<circle cx="${coord(point.x)}" cy="${coord(point.y)}" r="${coord(width + JUNCTION_REACH)}" fill="${lines[route]!.ink}"/>`,
-	);
-	return `<g class="ab-junctions" pointer-events="none">${marks.join("")}</g>`;
+	const marks = junctions.map(({ point, until, route, width }) => {
+		const ink = lines[route]!.ink;
+		const radius = width + JUNCTION_REACH;
+		return until === undefined
+			? tag("circle", { cx: coord(point.x), cy: coord(point.y), r: coord(radius), fill: ink })
+			: tag("path", {
+					d: `M${coord(point.x)},${coord(point.y)} L${coord(until.x)},${coord(until.y)}`,
+					fill: "none",
+					stroke: ink,
+					"stroke-width": coord(radius * 2),
+					"stroke-linecap": "round",
+				});
+	});
+	return wrap("g", { class: "ab-junctions", "pointer-events": "none" }, marks.join(""));
 }
 
 export { junctionMarks, junctionsOf };
