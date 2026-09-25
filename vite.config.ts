@@ -17,7 +17,6 @@ const RENDERER_SOURCES = [
 	"src/transformers/semantic-renderer",
 	"src/ui/browser-renderer",
 	"src/runtime/semantic-renderer/lib/layout-worker.ts",
-	"src/runtime/semantic-renderer/lib/engine-pool.ts",
 	"src/shared/semantic-board",
 	"src/shared/semantic-policy",
 	"node_modules/@viz-js/viz/package.json",
