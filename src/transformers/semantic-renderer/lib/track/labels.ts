@@ -196,8 +196,11 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
  */
 function lanesByBand(scene: Scene, nets: readonly Net[]): number[][] {
 	const lanes = scene.bands.map((): number[] => []);
-	for (const station of nets.flatMap((net) => [net.top, net.bottom]))
-		if (station.kind === "lane") lanes[station.band]!.push(station.x);
+	// A line to a wall ends on its track: the far end it aims at is no lane.
+	const stations = nets.flatMap((net) =>
+		net.wall === "bottom" ? [net.top] : net.wall === "top" ? [net.bottom] : [net.top, net.bottom],
+	);
+	for (const station of stations) if (station.kind === "lane") lanes[station.band]!.push(station.x);
 	return lanes;
 }
 

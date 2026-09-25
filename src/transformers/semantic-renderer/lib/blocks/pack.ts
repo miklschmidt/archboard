@@ -33,8 +33,8 @@ const TRUNK_CROSSING = 3000;
 const PORT = 1;
 /** The most blocks whose every packing is tried. */
 const EVERY_PACKING = 9;
-/** libavoid's pin directions: a top port is left upward, a bottom one downward. */
-const DIRECTION: Readonly<Record<Side, number>> = { top: 1, bottom: 2 };
+/** libavoid's pin directions: a port is left the way its edge faces. */
+const DIRECTION: Readonly<Record<Side, number>> = { top: 1, bottom: 2, left: 4, right: 8 };
 
 /** A router, its ends and its connectors, as the module makes them. */
 type Router = InstanceType<AvoidEngine["Router"]>;
@@ -269,6 +269,32 @@ class PackLayout {
 	}
 
 	/**
+	 * Place the block's own ports on its side walls: each level with the
+	 * middle of the blocks its lines reach, within the block.
+	 * @param width The block's width.
+	 * @param span Where the packed items start and end.
+	 * @param span.top Where they start.
+	 * @param span.bottom Where they end.
+	 */
+	placeWalls(width: number, span: { top: number; bottom: number }): void {
+		const lines = [...this.block.lines.values()];
+		for (const [port, side] of this.block.ports) {
+			if (side !== "left" && side !== "right") continue;
+			const reached = lines
+				.flatMap((line) => (line.to === port ? [line.from] : line.from === port ? [line.to] : []))
+				.flatMap((end) => {
+					const pin = this.tree.pins.get(end);
+					const owner = pin === undefined ? undefined : this.boxes.get(pin.block.id);
+					return owner === undefined ? [] : [owner.y + owner.height / 2];
+				});
+			const middle = reached.reduce((sum, y) => sum + y, 0) / Math.max(1, reached.length);
+			const y = Math.min(span.bottom, Math.max(span.top, middle));
+			const x = side === "left" ? 0 : width;
+			this.boxes.set(port, { x: x - PORT / 2, y: y - PORT / 2, width: PORT, height: PORT });
+		}
+	}
+
+	/**
 	 * Add one obstacle.
 	 * @param avoid The initialized libavoid module.
 	 * @param router The router.
@@ -309,15 +335,16 @@ class PackLayout {
 	 * @param at The pin or the header.
 	 * @returns The obstacle, the proportional x, and the edge it leaves by.
 	 */
-	pinOn(at: string): { owner: string; x: number; side: Side } {
+	pinOn(at: string): { owner: string; x: number; y: number; side: Side } {
 		const pin = this.tree.pins.get(at);
-		if (pin === undefined) return { owner: at, x: 0.5, side: "bottom" };
-		const owner = this.boxes.get(pin.block.id)!;
-		return {
-			owner: pin.block.id,
-			x: (this.pinX(at) - owner.x) / owner.width,
-			side: pin.block.ports.get(pin.port)!,
-		};
+		if (pin === undefined) return { owner: at, x: 0.5, y: 1, side: "bottom" };
+		const inner = this.laid.get(pin.block.id)!;
+		const port = inner.boxes.get(pin.port)!;
+		const side = pin.block.ports.get(pin.port)!;
+		const x = (port.x + port.width / 2) / inner.width;
+		const y = (port.y + port.height / 2) / inner.height;
+		const onWall = { top: [x, 0], bottom: [x, 1], left: [0, y], right: [1, y] }[side];
+		return { owner: pin.block.id, x: onWall[0]!, y: onWall[1]!, side };
 	}
 
 	/**
@@ -336,13 +363,12 @@ class PackLayout {
 		classes: Map<string, number>,
 	): End {
 		if (!this.tree.pins.has(at) && at !== headerOf(this.block)) return this.point(avoid, at);
-		const { owner, x, side } = this.pinOn(at);
+		const { owner, x, y, side } = this.pinOn(at);
 		const shape = shapes.get(owner)!;
 		const known = classes.get(at);
 		const pinClass = known ?? classes.size + 1;
 		if (known === undefined) {
 			classes.set(at, pinClass);
-			const y = side === "top" ? 0 : 1;
 			const made = new avoid.ShapeConnectionPin(shape, pinClass, x, y, true, 0, DIRECTION[side]);
 			made.setExclusive(false);
 		}
@@ -397,20 +423,18 @@ class PackLayout {
 	/**
 	 * Lay the block of blocks out.
 	 * @param avoid The initialized libavoid module.
-	 * @returns The laid-out block.
+	 * @param kept The packing an earlier layout chose, to keep.
+	 * @returns The laid-out block, and the packing it used.
 	 */
-	lay(avoid: AvoidEngine): Laid {
-		const packing = this.packing();
+	lay(avoid: AvoidEngine, kept?: Packing): Laid & { packing: Packing } {
+		const packing = kept ?? this.packing();
 		this.place(packing);
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
 		const width = Math.max(size.width, this.block.header?.width ?? 0) + 2 * side;
 		const ended = [...this.block.ports.values()].includes("bottom");
 		const bottom = top + this.headRoom() + size.height + (ended ? HEAD_GAP : 0);
-		if (this.block.header !== undefined)
-			this.boxes.set(headerOf(this.block), { x: side, y: top, ...this.block.header });
-		this.placePorts("top", width, top);
-		this.placePorts("bottom", width, bottom);
+		this.placeEdges(width, { top, bottom });
 		this.route(avoid);
 		const reach = [...this.boxes.values()].flatMap((one) => [
 			{ x: one.x + one.width, y: one.y + one.height },
@@ -422,8 +446,28 @@ class PackLayout {
 			boxes: this.boxes,
 			lines: this.lines,
 			bands: [],
+			packing,
 		};
+	}
+
+	/**
+	 * Place the block's header and its own ports on every edge.
+	 * @param width The block's width.
+	 * @param span Where its top and bottom ports stand.
+	 * @param span.top The top ports' height.
+	 * @param span.bottom The bottom ports' height.
+	 */
+	placeEdges(width: number, span: { top: number; bottom: number }): void {
+		if (this.block.header !== undefined)
+			this.boxes.set(headerOf(this.block), {
+				x: this.insets.side,
+				y: span.top,
+				...this.block.header,
+			});
+		this.placePorts("top", width, span.top);
+		this.placePorts("bottom", width, span.bottom);
+		this.placeWalls(width, span);
 	}
 }
 
-export { PackLayout };
+export { PackLayout, type Packing };
