@@ -34,8 +34,8 @@ interface Band {
 	readonly top: number;
 	readonly bottom: number;
 	newTop: number;
-	/** How far below it the containers that end on it reach, once spaced. */
-	closing: number;
+	/** How far below it the first track of the channel under it runs, once spaced. */
+	firstTrack: number;
 }
 
 /** A frame: its placed node, its depth and every card or frame inside it. */
@@ -163,7 +163,7 @@ class Scene {
 				top: Math.min(...on.map(({ box }) => box.y)),
 				bottom: Math.max(...on.map(({ box }) => box.y + box.height)),
 				newTop: 0,
-				closing: 0,
+				firstTrack: 0,
 			});
 		}
 	}

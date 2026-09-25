@@ -2,7 +2,8 @@
 // What this catches: a fan wider than the page drawn as one long row again, a
 // line that jogs a few points on its way to a label, which its rounded corners
 // draw as a hook doubling back on itself, a line that steps sideways by less
-// than its two bends need on its way between cards, a long chain drawn as one tall
+// than its two bends need on its way between cards, a line rising into the
+// card above whose arrowhead sits on its last bend, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
@@ -18,6 +19,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
+import risingLine from "./rising-line.json";
 import shortStep from "./short-step.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
@@ -25,6 +27,8 @@ const TARGETS = ["one", "two", "three", "four", "five"];
 const SLACK = 16;
 /** The most room a container keeps beside what it holds. */
 const FRAME_ROOM = 24;
+/** The straight run an arrowhead sits on after a line's last bend. */
+const APPROACH = 12;
 /** The sideways room a line's two fixed 8 px bends need to step aside and on. */
 const TWO_BENDS = 16;
 
@@ -95,6 +99,20 @@ test("a line steps sideways by no less than its two bends need, or runs straight
 	for (const [id, points] of routePoints(drawing.svg))
 		for (const step of sidewaysSteps(points))
 			expect(step > 0.5 && step < TWO_BENDS, `${id} steps ${step}`).toBe(false);
+});
+
+// Reduced from a dogfood board, names replaced: a line rising into the card
+// above turned on the channel's first track, 8 px under that card.
+test("every line's arrowhead sits on a straight run, rising lines' too", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(risingLine),
+		theme: "light",
+		layout: "track",
+	});
+	for (const [id, points] of routePoints(drawing.svg)) {
+		const [before, end] = [points.at(-2)!, points.at(-1)!];
+		expect(Math.hypot(end.x - before.x, end.y - before.y), id).toBeGreaterThanOrEqual(APPROACH);
+	}
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
