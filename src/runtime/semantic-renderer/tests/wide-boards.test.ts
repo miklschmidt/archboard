@@ -4,11 +4,12 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 // are reported by docs/design/wide-board-layout-fixtures/measure.ts.
 
 import { expect, test } from "bun:test";
-import { copyFileSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LayoutEngineSchema, type VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
 	locateSemanticBoard,
@@ -30,13 +31,18 @@ const FIXTURES = [
 	{ name: "system-map", content: systemMap },
 ];
 
-/** The vault's tracked boards, by name, as their current variant's content. */
-function vaultBoards(): { readonly name: string; readonly content: VariantContent }[] {
+/** The tracked vault's policy and its boards, by name, as their current variant's content. */
+function vaultBoards(): {
+	readonly policy: SemanticPolicy;
+	readonly boards: { readonly name: string; readonly content: VariantContent }[];
+} {
 	const vault = fileURLToPath(new URL("../../../../.archboard/vault/", import.meta.url));
 	const copy = mkdtempSync(join(tmpdir(), "archboard-renderer-vault-"));
 	try {
+		mkdirSync(join(copy, ".archboard"));
+		copyFileSync(join(vault, ".archboard", "config.yaml"), join(copy, ".archboard", "config.yaml"));
 		const configured = readSemanticBoardConfiguration(copy);
-		return readdirSync(vault)
+		const boards = readdirSync(vault)
 			.filter((file) => file.endsWith(".semantic.json"))
 			.toSorted()
 			.map((file) => {
@@ -49,6 +55,7 @@ function vaultBoards(): { readonly name: string; readonly content: VariantConten
 					throw new Error(`the vault board ${file} has no current variant`);
 				return { name: read.board.name, content: current.content };
 			});
+		return { policy: configured.configuration, boards };
 	} finally {
 		rmSync(copy, { recursive: true, force: true });
 	}
@@ -133,14 +140,50 @@ function nearLanes(drawing: RenderedDiagram): string[] {
 	);
 }
 
+/**
+ * The routes that run on a slant anywhere longer than a rounded corner: a
+ * route is drawn across and down, and a slant is a route that lost its way.
+ * @param drawing The rendered board.
+ * @returns The slanted routes' relationship ids.
+ */
+function slants(drawing: RenderedDiagram): string[] {
+	return [...routePoints(drawing.svg)].flatMap(([edge, points]) =>
+		points.slice(1).some((point, index) => {
+			const previous = points[index]!;
+			const across = Math.abs(point.x - previous.x);
+			const down = Math.abs(point.y - previous.y);
+			return across > 0.5 && down > 0.5 && Math.hypot(across, down) > 3 * TRACK_LANE;
+		})
+			? [edge]
+			: [],
+	);
+}
+
+const { policy, boards } = vaultBoards();
+
 // Bun waits the suite's 20 s wall-clock budget rather than its own shorter
 // default, so the budget is what a slow layout fails (docs/agents/test-suite.md).
-for (const board of [...FIXTURES, ...vaultBoards()]) {
+// The vault's boards are drawn with the vault's policy, so its groups gather.
+const cases: {
+	name: string;
+	content: Parameters<typeof orderedFixture>[0];
+	policy: SemanticPolicy | undefined;
+}[] = [
+	...FIXTURES.map(({ name, content }) => ({ name, content, policy: undefined })),
+	...boards.map(({ name, content }) => ({ name, content, policy })),
+];
+for (const board of cases) {
 	for (const layout of LayoutEngineSchema.options) {
 		test(`${board.name} (${layout}): complete architecture, clear cards, labels on their own routes`, async () => {
 			const content = orderedFixture(board.content);
-			const drawing = await renderArchitecture({ content, theme: "light", layout });
+			const drawing = await renderArchitecture({
+				content,
+				theme: "light",
+				layout,
+				...(board.policy === undefined ? {} : { policy: board.policy }),
+			});
 			expectIntact(drawing, content);
+			expect(slants(drawing), "routes on a slant").toEqual([]);
 			if (layout === "track") expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
 		}, 20_000);
 	}
