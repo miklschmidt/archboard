@@ -1,11 +1,11 @@
 ---
 id: TASK-347
 title: 'Groups gather their cards into a coloured region, and colour them'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-25 00:11'
-updated_date: '2026-09-25 01:07'
+updated_date: '2026-09-25 01:28'
 labels:
   - renderer
   - frontend
@@ -23,12 +23,12 @@ User decision 2026-09-25: groups steer layout and carry colour. Today a group is
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A group without a colour is refused by the vault check with a diagnostic that names the repair, and every shipped example, fixture and skill reference gives groups a colour
-- [ ] #2 Cards sharing a placing group within one container are placed together in one region, and a group with a single member in the drawn view places that card with its next group or none
-- [ ] #3 A region is drawn as a faint band in its group's colour with the group's name, lines cross it, and a column fold never splits it
-- [ ] #4 A card's body colour comes from its placing group and no longer from its container; its icon keeps its type colour
-- [ ] #5 An ADR records groups as the source of region and card colour, superseding the colour-scope rule of ADR 0025 and the group clause of ADR 0024
-- [ ] #6 The dogfood vault configures groups and assigns them on the boards they clarify, and the affected boards are rendered and looked at
+- [x] #1 A group without a colour is refused by the vault check with a diagnostic that names the repair, and every shipped example, fixture and skill reference gives groups a colour
+- [x] #2 Cards sharing a placing group within one container are placed together in one region, and a group with a single member in the drawn view places that card with its next group or none
+- [x] #3 A region is drawn as a faint band in its group's colour with the group's name, lines cross it, and a column fold never splits it
+- [x] #4 A card's body colour comes from its placing group and no longer from its container; its icon keeps its type colour
+- [x] #5 An ADR records groups as the source of region and card colour, superseding the colour-scope rule of ADR 0025 and the group clause of ADR 0024
+- [x] #6 The dogfood vault configures groups and assigns them on the boards they clarify, and the affected boards are rendered and looked at
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,4 +52,15 @@ Vocabulary half (branch task-347-policy):
 - placingGroups(nodes, policy) in shared/semantic-board/lib/groups.ts: first configured group (config order) the node shares with another given node of the same parent; parent undefined = board level; unconfigured ids never place. Quadratic scan, chosen for simplicity at board sizes.
 - ADR 0038 states that a container keeps its own kind colour for its own body and passes none to its contents; the parent should confirm that reading of decision (4) when building the painter.
 - CONTEXT.md: group entry gains a colour. The Color scope entry is left for the renderer half, which removes the concept in code.
+
+Renderer half (main e9c4b7bc and before): measurement carries each node's placing group (shared placingGroups) and each placing group's measured caption. The track engine gathers a group's members in one container into a Graphviz cluster with a caption row held under the container's title, and paints it as a faint band (8% of the group's colour over the page, a 32% edge, caption leaning 35% toward the text colour), pointer-events none, lines crossing it. Every engine paints a node's body in its placing group's colour; the chip keeps the kind colour. Decision: a container is placed and coloured by the same rule as a card (ADR 0038 amended), so a vault without groups draws every body neutral. The inspector reads data-group-name from the picture and names the group a body's colour comes from; the colour scope left CONTEXT.md and the code.
+Scope note: regions are drawn by the track engine (Tracks, experimental, in the board panel). The Graphviz engine colours cards by group but does not gather them; the track engine does not fold, so a fold never splits a region there. Region shape is the next engine's problem: layered clusters span every rank a member sits on, so a region with members at the top and bottom of a board becomes a tall sparse column (Agent workbench, Browser application).
+Dogfood: ten groups in config.yaml (writes, drawing, panes, walkthrough, voice, workhorse, child, agent, checks, grading), memberships written on eleven boards through the CLI under claims (24ae94c0); archboard check valid with no diagnostics. Looked at Archboard server, Agent workbench, Board rasterizer and Browser application under the track engine.
+Validation: bun run check on the merged branch passed every lane but one serial-browser test, which expected the container's name in the removed colour-scope sentence; the assertion was dropped (containment stays asserted by drawn geometry) and test:serial-browser then passed; renderer module tests 258 pass after the caption fix.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Groups now carry a required colour, place their cards (first group in config order shared with a sibling) and colour card and container bodies; the track engine gathers each group's cards per container into a captioned faint band. The container colour scope is gone (ADR 0038, amended so containers follow the card rule). The dogfood vault defines ten groups and uses them on eleven boards. Verified by the full gate (serial-browser rerun after a stale colour-scope assertion was removed), group-regions and grouping tests, archboard check, and by looking at four rendered boards.
+<!-- SECTION:FINAL_SUMMARY:END -->
