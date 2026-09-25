@@ -10,6 +10,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	bodyShift,
 	corridorPoints,
+	routeCrosses,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
@@ -17,6 +18,7 @@ import agentWorkbench from "./agent-workbench.json";
 import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
+import tightWallPort from "./tight-wall-port.json";
 import twoChains from "./two-chains.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 
@@ -259,6 +261,15 @@ test("two chains leaving a block through its bottom start on one row", async () 
 	// other rather than hanging from the block's bottom between its rows.
 	expect(nodes["preview"]!.y).toBe(nodes["dns"]!.y);
 	expect(nodes["platlb"]!.y).toBe(nodes["legacy"]!.y);
+});
+
+test("a trunk into a port too close to a block for a pin still runs round the block", async () => {
+	const content = orderedFixture(tightWallPort);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	// The line from the outside card enters the outer container by its wall,
+	// a few points from the nested container, and runs on to a card beside it.
+	const route = routePoints(drawn.svg).get("f3lzoqzb")!;
+	expect(routeCrosses(route, drawn.atlas.nodes["H69iTtH7"]!)).toBeFalse();
 });
 
 test("trunks reach a container's own ports from inside it, not along its border", async () => {
