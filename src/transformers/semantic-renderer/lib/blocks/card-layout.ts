@@ -22,7 +22,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { TRACK_POLYLINE } from "@/transformers/semantic-renderer/lib/track/placement";
-import { routeScene } from "@/transformers/semantic-renderer/lib/track/route";
+import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Horizontal room Graphviz keeps between neighbours in a rank. */
@@ -56,17 +56,6 @@ function emptyGraph(): Graph & Required<Pick<Graph, "nodes" | "edges" | "subgrap
 		edges: [],
 		subgraphs: [],
 	};
-}
-
-/**
- * The kind two lines must share to share a trunk: kind and standing.
- * @param edge The relationship a line draws.
- * @returns The kind.
- */
-function trunkKind(edge: ElkExtendedEdge): string {
-	const options = edge.layoutOptions ?? {};
-	const kind = options["archboard.relationship.kind"] ?? "";
-	return `${kind}|${options["archboard.relationship.standing"] ?? "unchanged"}`;
 }
 
 /**

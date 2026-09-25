@@ -150,8 +150,12 @@ class TrackPlacement {
 	/**
 	 * Start from a copy, so the caller's graph is never changed.
 	 * @param input The measured hierarchy with every label measured.
+	 * @param lowered How many rows each card a wide rank wraps is set below its place.
 	 */
-	constructor(input: ElkNode) {
+	constructor(
+		input: ElkNode,
+		readonly lowered: ReadonlyMap<string, number> = new Map(),
+	) {
 		this.result = structuredClone(input);
 		const rows = CaptionsSchema.parse(JSON.parse(input.layoutOptions?.[GROUP_CAPTIONS] ?? "[]"));
 		this.captions = new Map(rows.map(([id, width, height]) => [id, [width, height] as const]));
@@ -344,13 +348,16 @@ class TrackPlacement {
 	connect(edge: ElkExtendedEdge, back: ReadonlySet<string>): void {
 		const [tail, head] = this.endsOf(edge, back);
 		const label = edge.labels?.[0];
+		// A wrapped card sits a row of cards and its labels lower for each row it is lowered.
+		const rows = this.lowered.get(head) ?? 0;
+		const attributes = rows === 0 ? {} : { attributes: { minlen: 1 + 2 * rows } };
 		if (label === undefined) {
-			this.graph.edges.push({ tail, head });
+			this.graph.edges.push({ tail, head, ...attributes });
 			return;
 		}
 		const name = `label_${edge.id}`;
 		this.common(tail, head).nodes.push(box(name, label.width!, label.height!));
-		this.graph.edges.push({ tail, head: name }, { tail: name, head });
+		this.graph.edges.push({ tail, head: name, ...attributes }, { tail: name, head });
 	}
 
 	/**
@@ -517,14 +524,4 @@ function polylinesOf(output: Output, origin: Point): Map<string, string[]> {
 	return polylines;
 }
 
-/**
- * Place a measured hierarchy for the track router.
- * @param viz The initialized Graphviz instance.
- * @param graph The measured hierarchy, every label measured.
- * @returns The same hierarchy placed, with label boxes, frame title rows and polylines.
- */
-function placeTracks(viz: Viz, graph: ElkNode): ElkNode {
-	return new TrackPlacement(graph).place(viz);
-}
-
-export { PlacedRegionSchema, TRACK_POLYLINE, TRACK_REGIONS, TRACK_TITLE, placeTracks };
+export { PlacedRegionSchema, TRACK_POLYLINE, TRACK_REGIONS, TRACK_TITLE, TrackPlacement };

@@ -30,7 +30,7 @@ async function layoutTracks(
 		...COMPOUND_OPTIONS,
 		[SOLVE_STAGE]: "track",
 	});
-	const drawing = routeTracks(content, placed, measured, standings);
+	const drawing = routeTracks(content, placed, measured);
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 

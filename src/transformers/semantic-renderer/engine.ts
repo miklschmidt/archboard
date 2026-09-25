@@ -5,7 +5,7 @@ import { z } from "zod";
 import { placeGraph } from "@/transformers/semantic-renderer/lib/layout/graphviz-placement";
 import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
 import { foldColumns } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
-import { placeTracks } from "@/transformers/semantic-renderer/lib/track/placement";
+import { placeTracks } from "@/transformers/semantic-renderer/lib/track/wrap";
 import { placeBlocks } from "@/transformers/semantic-renderer/lib/blocks/place";
 import { SOLVE_STAGE } from "@/transformers/semantic-renderer/lib/host";
 

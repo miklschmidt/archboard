@@ -9,7 +9,7 @@
 // tracks need, so lanes keep one spacing and never squeeze, and every label
 // sits on its own line by construction. One pass, no search.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
+import type { VariantContent } from "@/shared/semantic-board/index";
 import {
 	APPROACH_STRAIGHT,
 	BEND_RADIUS,
@@ -73,6 +73,18 @@ interface SceneLine {
 	 * the wall along the channel under that band instead.
 	 */
 	readonly enters?: "left" | "right";
+}
+
+/**
+ * The kind two lines must share to share a trunk, read off a placed
+ * relationship: its kind and its standing.
+ * @param edge The placed relationship.
+ * @returns The kind.
+ */
+function trunkKind(edge: ElkExtendedEdge): string {
+	const options = edge.layoutOptions ?? {};
+	const kind = options["archboard.relationship.kind"] ?? "";
+	return `${kind}|${options["archboard.relationship.standing"] ?? "unchanged"}`;
 }
 
 /** How far outside the scene a line to a wall aims while its ports and tracks are settled. */
@@ -462,14 +474,12 @@ function routeScene(
  * @param content The architecture, for its relationships in drawing order.
  * @param placed The track placement's answer.
  * @param measured The measured cards and labels.
- * @param standings Comparison standings, which keep marked relationships off one trunk.
  * @returns The drawing painting and the atlas read.
  */
 function routeTracks(
 	content: VariantContent,
 	placed: ElkNode,
 	measured: MeasuredArchitecture,
-	standings?: Readonly<Record<string, ChangeKind>>,
 ): ArchitectureDrawing {
 	const scene = new Scene(placed);
 	const edges = new Map((placed.edges ?? []).map((edge) => [edge.id, edge]));
@@ -480,7 +490,7 @@ function routeTracks(
 			.map((edge) => ({
 				id: edge.id,
 				order: edge.order,
-				kind: `${edge.kind}|${standings?.[edge.id] ?? "unchanged"}`,
+				kind: trunkKind(edges.get(edge.id)!),
 				placed: edges.get(edge.id)!,
 			})),
 		PAGE_MARGIN,
@@ -507,5 +517,6 @@ export {
 	channelHeight,
 	routeScene,
 	routeTracks,
+	trunkKind,
 	type SceneLine,
 };
