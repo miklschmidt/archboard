@@ -18,7 +18,7 @@ import { routeTracks } from "@/transformers/semantic-renderer/lib/track/route";
  * Lay an architecture out on tracks.
  * @param content The architecture.
  * @param measured Its measured cards and labels.
- * @param standings Comparison standings; the track engine keeps every relationship on its own track anyway.
+ * @param standings Comparison standings, which keep marked relationships off one trunk.
  * @returns The drawing painting and the atlas read.
  */
 async function layoutTracks(
@@ -30,7 +30,7 @@ async function layoutTracks(
 		...COMPOUND_OPTIONS,
 		[SOLVE_STAGE]: "track",
 	});
-	const drawing = routeTracks(content, placed, measured);
+	const drawing = routeTracks(content, placed, measured, standings);
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 

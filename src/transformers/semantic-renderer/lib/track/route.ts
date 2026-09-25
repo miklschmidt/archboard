@@ -9,7 +9,7 @@
 // tracks need, so lanes keep one spacing and never squeeze, and every label
 // sits on its own line by construction. One pass, no search.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import type { SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import type { ChangeKind, SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
 import {
 	APPROACH_STRAIGHT,
 	BEND_RADIUS,
@@ -32,6 +32,7 @@ import {
 import {
 	assignPorts,
 	assignTracks,
+	bundleTrunks,
 	type Net,
 } from "@/transformers/semantic-renderer/lib/track/channels";
 import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
@@ -55,15 +56,17 @@ interface Routed {
  * A chain's nets: one for each pair of stations on neighbouring bands.
  * @param edge The relationship.
  * @param chain Its stations.
+ * @param standing Its comparison standing; relationships that differ never share a trunk.
  * @returns Its nets, top to bottom.
  */
-function netsOf(edge: SemanticEdge, chain: Chain): Net[] {
+function netsOf(edge: SemanticEdge, chain: Chain, standing: string): Net[] {
 	return chain.stations.slice(1).map((bottom, index) => {
 		const top = chain.stations[index]!;
 		return {
 			edge: edge.id,
 			order: edge.order,
 			channel: top.band,
+			kind: `${edge.kind}|${standing}`,
 			top,
 			bottom,
 			topX: top.x,
@@ -257,12 +260,14 @@ function pageAround(boxes: readonly Box[]): { width: number; height: number } {
  * @param content The architecture, for its relationships in drawing order.
  * @param placed The track placement's answer.
  * @param measured The measured cards and labels.
+ * @param standings Comparison standings, which keep marked relationships off one trunk.
  * @returns The drawing painting and the atlas read.
  */
 function routeTracks(
 	content: VariantContent,
 	placed: ElkNode,
 	measured: MeasuredArchitecture,
+	standings?: Readonly<Record<string, ChangeKind>>,
 ): ArchitectureDrawing {
 	const scene = new Scene(placed);
 	const edges = new Map((placed.edges ?? []).map((edge) => [edge.id, edge]));
@@ -272,15 +277,16 @@ function routeTracks(
 	const routed = new Map<string, Routed>(
 		between.map((edge) => {
 			const chain = chains.get(edge.id)!;
-			return [edge.id, { nets: netsOf(edge, chain), upward: chain.upward }];
+			const standing = standings?.[edge.id] ?? "unchanged";
+			return [edge.id, { nets: netsOf(edge, chain, standing), upward: chain.upward }];
 		}),
 	);
 	const nets = [...routed.values()].flatMap((route) => route.nets);
+	bundleTrunks(nets);
 	assignPorts(nets);
-	const turning = nets.filter((net) => Math.abs(net.topX - net.bottomX) > 0.5);
 	spaceBands(
 		scene,
-		scene.bands.map((_, channel) => assignTracks(turning.filter((net) => net.channel === channel))),
+		scene.bands.map((_, channel) => assignTracks(nets.filter((net) => net.channel === channel))),
 	);
 	const cards = drawCards(scene, measured, PAGE_MARGIN);
 	const containers = drawFrames(scene, edges, measured, PAGE_MARGIN);
