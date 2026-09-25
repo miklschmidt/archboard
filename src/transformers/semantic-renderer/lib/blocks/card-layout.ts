@@ -16,10 +16,13 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import {
 	box,
+	boxesOf,
 	centresOf,
+	nodesIn,
 	numbers,
 	outputSchema,
 	polylinePoints,
+	type Join,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
@@ -108,23 +111,6 @@ function walledPoints(
 	if (walls.enters !== undefined)
 		return [{ x: walls.enters === "left" ? 0 : width, y: points[0]!.y }, ...points.slice(1)];
 	return undefined;
-}
-
-/**
- * Every node's name in a Graphviz graph and all its subgraphs.
- * @param graph The graph.
- * @param graph.nodes Its nodes.
- * @param graph.subgraphs Its subgraphs.
- * @returns The names.
- */
-function namesIn(graph: {
-	nodes?: readonly VendorNode[];
-	subgraphs?: readonly Subgraph[];
-}): string[] {
-	return [
-		...(graph.nodes ?? []).map(({ name }) => name),
-		...(graph.subgraphs ?? []).flatMap((subgraph) => namesIn(subgraph)),
-	];
 }
 
 /** How a block is arranged beyond Graphviz's own ranking. */
@@ -329,15 +315,18 @@ class CardLayout {
 
 	/**
 	 * Every line Graphviz ranks, between the vendor nodes it joins.
-	 * @returns Each line's upper end, lower end, and whether a label sits between.
+	 * @returns Each line's upper end, lower end, whether a label sits between,
+	 * its label's box and the edges that draw it.
 	 */
-	links(): { tail: string; head: string; labelled: boolean }[] {
+	links(): (Join & { labelled: boolean })[] {
 		return [...this.block.lines.values()]
 			.filter((line) => this.wallOf(line) === undefined)
 			.map((line) => ({
 				tail: this.vendorOf(line.tail),
 				head: this.vendorOf(line.head),
 				labelled: line.labelled && (line.edge.labels?.length ?? 0) > 0,
+				label: `label:${line.edge.id}`,
+				legs: [line.key, `${line.key}:1`, `${line.key}:2`],
 			}));
 	}
 
@@ -428,11 +417,14 @@ class CardLayout {
 		const polylines = new Map<string, string[]>();
 		for (const { id, pos } of output.edges)
 			if (id !== undefined && pos !== undefined) polylines.set(id, polylinePoints(pos, origin));
-		const placed = this.placed(
-			centresOf(output, origin),
+		const [centres, clusters] = [centresOf(output, origin), this.clusters.boxes(output, origin)];
+		this.clusters.lineUp(this.links(), centres, {
+			boxes: boxesOf(nodesIn(this.graph), centres),
+			clusters,
 			polylines,
-			this.clusters.boxes(output, origin),
-		);
+			width: Math.abs(right! - left!),
+		});
+		const placed = this.placed(centres, polylines, clusters);
 		const scene = new Scene(placed);
 		const lines = routeScene(
 			scene,
@@ -536,9 +528,9 @@ class CardLayout {
 		polylines: ReadonlyMap<string, string[]>,
 		clusters: ReadonlyMap<string, Box>,
 	): ElkNode & { edges: ElkExtendedEdge[] } {
-		const named = namesIn(this.graph).filter(
-			(name) => !name.startsWith("label:") && !isTitle(name),
-		);
+		const named = nodesIn(this.graph)
+			.map(({ name }) => name)
+			.filter((name) => !name.startsWith("label:") && !isTitle(name));
 		const leaves: ElkNode[] = named.map((id) => {
 			const { width, height } = this.sizeOf(id);
 			const centre = centres.get(id)!;

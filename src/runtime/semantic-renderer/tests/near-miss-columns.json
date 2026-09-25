@@ -1,0 +1,280 @@
+{
+	"nodes": [
+		{
+			"order": 2000,
+			"id": "wpI1LbzG",
+			"name": "View dispatcher",
+			"kind": "function",
+			"responsibility": "Chooses the grammar, lays out each distinct content once, and returns the document"
+		},
+		{
+			"order": 3000,
+			"id": "y8vuJJKu",
+			"name": "Subject atlas",
+			"kind": "function",
+			"responsibility": "Records where every drawn node, relationship and region landed"
+		},
+		{
+			"order": 4000,
+			"id": "Y0smyqtZ",
+			"name": "Compound layout",
+			"kind": "module",
+			"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better"
+		},
+		{
+			"order": 5000,
+			"id": "L51bfquE",
+			"name": "Edge geometry",
+			"kind": "function",
+			"responsibility": "Rounds a routed polyline into a curve and says where its label may sit"
+		},
+		{
+			"order": 6000,
+			"id": "wLF1X11D",
+			"name": "Data-flow layout",
+			"kind": "function",
+			"responsibility": "Places participant columns, lifelines and stacked messages for one exchange"
+		},
+		{
+			"order": 7000,
+			"id": "J3yMo4ag",
+			"name": "Measured text",
+			"kind": "function",
+			"responsibility": "Measures every card, note and label with the diagram faces loaded"
+		},
+		{
+			"order": 8000,
+			"id": "u1OXg3Yy",
+			"name": "Theme palette",
+			"kind": "function",
+			"responsibility": "Resolves every drawn colour for the ground being drawn on"
+		},
+		{
+			"order": 9000,
+			"id": "J7mPrUeP",
+			"name": "Architecture painter",
+			"kind": "function",
+			"responsibility": "Paints a settled drawing as SVG marks and standing"
+		},
+		{
+			"order": 11000,
+			"id": "wskEBeIy",
+			"name": "Browser application",
+			"kind": "service",
+			"responsibility": "Installs its own host in the tab and draws the same board there"
+		},
+		{
+			"order": 12000,
+			"id": "0XCanbzp",
+			"name": "Bun host",
+			"kind": "module",
+			"responsibility": "The renderer under Bun: installs the Bun host once, then calls the core"
+		},
+		{
+			"order": 13000,
+			"id": "4nyk76pY",
+			"name": "Renderer host",
+			"kind": "function",
+			"responsibility": "The seam a host fills: the layout engine, theme colours, font bytes and icon paths"
+		},
+		{
+			"order": 14000,
+			"id": "yOV8Znnv",
+			"name": "Board answer",
+			"kind": "function",
+			"responsibility": "Resolves variant, view, scope and standing from one board before anything is drawn"
+		},
+		{
+			"order": 15000,
+			"id": "CtoOMxca",
+			"name": "Sequence painter",
+			"kind": "function",
+			"responsibility": "Paints the sequence grammar: frame, columns, messages and pulses"
+		},
+		{
+			"order": 16000,
+			"id": "gUN928v4",
+			"name": "Host canvas",
+			"kind": "external",
+			"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded"
+		}
+	],
+	"edges": [
+		{
+			"order": 2000,
+			"id": "qJrkH2Qg",
+			"from": "Y0smyqtZ",
+			"to": "L51bfquE",
+			"kind": "call",
+			"label": "round the routed polylines"
+		},
+		{
+			"order": 3000,
+			"id": "WwNFCjLE",
+			"from": "wpI1LbzG",
+			"to": "u1OXg3Yy",
+			"kind": "call",
+			"label": "resolve theme"
+		},
+		{
+			"order": 4000,
+			"id": "SIdU2g2Q",
+			"from": "Y0smyqtZ",
+			"to": "J7mPrUeP",
+			"kind": "data",
+			"label": "the settled drawing"
+		},
+		{
+			"order": 5000,
+			"id": "0s8raCUw",
+			"from": "L51bfquE",
+			"to": "J7mPrUeP",
+			"kind": "data",
+			"label": "curves and label anchors"
+		},
+		{
+			"order": 6000,
+			"id": "I1lGjMES",
+			"from": "u1OXg3Yy",
+			"to": "J7mPrUeP",
+			"kind": "data",
+			"label": "literal colours"
+		},
+		{
+			"order": 8000,
+			"id": "4RbEQ6uO",
+			"from": "0XCanbzp",
+			"to": "yOV8Znnv",
+			"kind": "call",
+			"label": "renderBoard on the core"
+		},
+		{
+			"order": 9000,
+			"id": "veScCirT",
+			"from": "0XCanbzp",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"label": "installRendererHost"
+		},
+		{
+			"order": 10000,
+			"id": "NFop37Ak",
+			"from": "wskEBeIy",
+			"to": "yOV8Znnv",
+			"kind": "call",
+			"label": "renderBoard, linked faces"
+		},
+		{
+			"order": 11000,
+			"id": "aN2ABUiR",
+			"from": "wskEBeIy",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"label": "installRendererHost"
+		},
+		{
+			"order": 12000,
+			"id": "iyXO5GUb",
+			"from": "yOV8Znnv",
+			"to": "wpI1LbzG",
+			"kind": "call",
+			"label": "renderSemanticView"
+		},
+		{
+			"order": 13000,
+			"id": "ezsxPVcK",
+			"from": "wpI1LbzG",
+			"to": "J3yMo4ag",
+			"kind": "call",
+			"label": "measure every word"
+		},
+		{
+			"order": 14000,
+			"id": "eJO5yog2",
+			"from": "wpI1LbzG",
+			"to": "Y0smyqtZ",
+			"kind": "call",
+			"label": "content and measured sizes"
+		},
+		{
+			"order": 15000,
+			"id": "98et92HX",
+			"from": "wpI1LbzG",
+			"to": "J7mPrUeP",
+			"kind": "call",
+			"label": "paint the settled drawing"
+		},
+		{
+			"order": 16000,
+			"id": "NSEpn12D",
+			"from": "wpI1LbzG",
+			"to": "CtoOMxca",
+			"kind": "call",
+			"label": "paint the exchange"
+		},
+		{
+			"order": 18000,
+			"id": "F5mgUBCT",
+			"from": "Y0smyqtZ",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"label": "solve on the layout engine"
+		},
+		{
+			"order": 20000,
+			"id": "NIW5ioWQ",
+			"from": "u1OXg3Yy",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"label": "theme colours"
+		},
+		{
+			"order": 21000,
+			"id": "WMtzvSOO",
+			"from": "J7mPrUeP",
+			"to": "y8vuJJKu",
+			"kind": "call",
+			"label": "where every subject landed"
+		},
+		{
+			"order": 22000,
+			"id": "IvQqev1K",
+			"from": "CtoOMxca",
+			"to": "wLF1X11D",
+			"kind": "call",
+			"label": "columns, lifelines and messages"
+		},
+		{
+			"order": 23000,
+			"id": "BzVsPvqY",
+			"from": "J3yMo4ag",
+			"to": "gUN928v4",
+			"kind": "call",
+			"label": "measure every painted line"
+		},
+		{
+			"order": 24000,
+			"id": "V6JJ4OjE",
+			"from": "0XCanbzp",
+			"to": "gUN928v4",
+			"kind": "call",
+			"label": "install as OffscreenCanvas, faces registered"
+		},
+		{
+			"order": 25000,
+			"id": "tmrkphkd",
+			"from": "wskEBeIy",
+			"to": "gUN928v4",
+			"kind": "call",
+			"label": "load the diagram faces into the tab"
+		},
+		{
+			"order": 26000,
+			"id": "oCH6TGpi",
+			"from": "wLF1X11D",
+			"to": "J3yMo4ag",
+			"kind": "call",
+			"label": "wrap responsibilities and step notes"
+		}
+	]
+}
