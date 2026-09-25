@@ -174,6 +174,23 @@ function paintLabel(
 }
 
 /**
+ * A plain rounded plate, filled and unruled.
+ * @param box Where it goes.
+ * @param fill Its ground.
+ * @returns The plate.
+ */
+function plainPlate(box: Box, fill: string): string {
+	return tag("rect", {
+		x: coord(box.x),
+		y: coord(box.y),
+		width: coord(box.width),
+		height: coord(box.height),
+		rx: PILL_RADIUS,
+		fill,
+	});
+}
+
+/**
  * A step's note under its message: complete lines on a plate of the frame's
  * ground, so a lifeline it crosses passes behind the words.
  * @param placed The message.
@@ -186,14 +203,7 @@ function paintNote(placed: PlacedStep, styles: SvgStyles): string {
 		return "";
 	}
 	return lines([
-		tag("rect", {
-			x: coord(note.box.x),
-			y: coord(note.box.y),
-			width: coord(note.box.width),
-			height: coord(note.box.height),
-			rx: PILL_RADIUS,
-			fill: styles.band.fill,
-		}),
+		plainPlate(note.box, styles.band.fill),
 		...note.lines.map((run) =>
 			textNode(
 				{
@@ -319,14 +329,26 @@ function paintStepWords(
 ): string {
 	const plate = labelBox(placed, activeAt);
 	const styles = stylesFor(palette);
+	const words = lines([
+		paintLabel(placed.label, plate, styles, standingOutline(standing, palette)),
+		paintNote(placed, styles),
+		// On the leading edge of the plate, clear of its words.
+		warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
+	]);
+	const { opacity, ...identity } = subjectGroup("step", placed.step.id, standing);
+	if (opacity === undefined) {
+		return wrap("g", identity, words);
+	}
+	// Ghosted words stay on plates as solid as a live message's, so a lifeline
+	// behind them is hidden rather than read through them: the plates are laid
+	// at full strength first, and only the words on them are ghosted.
 	return wrap(
 		"g",
-		subjectGroup("step", placed.step.id, standing),
+		identity,
 		lines([
-			paintLabel(placed.label, plate, styles, standingOutline(standing, palette)),
-			paintNote(placed, styles),
-			// On the leading edge of the plate, clear of its words.
-			warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
+			plainPlate(plate, styles.pill.fill),
+			placed.note === undefined ? "" : plainPlate(placed.note.box, styles.band.fill),
+			wrap("g", { opacity }, words),
 		]),
 	);
 }

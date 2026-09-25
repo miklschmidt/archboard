@@ -160,6 +160,17 @@ function subject(rendered: RenderedDiagram, kind: string, id: string): DrawnGrou
 	return group!;
 }
 
+/**
+ * Where one drawn element's box is, as written on it.
+ * @param tag The element's start tag.
+ * @returns Its box, as one comparable string.
+ */
+function boxOf(tag: string): string {
+	return ["x", "y", "width", "height"]
+		.map((name) => new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1])
+		.join();
+}
+
 describe("a picture nobody stated a standing for", () => {
 	test("is drawn exactly as it was before standings existed", async () => {
 		// The whole proof that adding comparison to the renderer left a plain board
@@ -397,6 +408,48 @@ describe("a stated standing on a sequence", () => {
 				)!,
 			);
 		expect(lifelines(SEQUENCE_STANDING)).not.toBe(lifelines({ legacy: "unchanged" }));
+	});
+
+	test("keeps a removed step's words on solid plates, so a lifeline behind them stays hidden", () => {
+		// The removed message's label sits across a lifeline, and a note under it
+		// does too. Its words are ghosted like the rest of it, but a plate drawn at
+		// the same strength lets the lifeline cut through the words.
+		const flow = SEQUENCE.flows[0]!;
+		const [s1, s2, s3, s4] = flow.steps;
+		const noted: VariantContent = {
+			...SEQUENCE,
+			flows: [{ ...flow, steps: [s1!, s2!, { ...s3!, note: "until the bridge is gone" }, s4!] }],
+		};
+		const words = subjectGroups(renderDataFlow({ content: noted, standing: SEQUENCE_STANDING }).svg)
+			.filter((group) => group.kind === "step" && group.id === "s3")
+			.find((group) => group.markup.includes("<text"))!;
+		// Every element of the group, with the opacity it is finally drawn at.
+		const drawnAt: { tag: string; opacity: number }[] = [];
+		const strengths = [1];
+		for (const [token] of words.markup.matchAll(/<g\b[^>]*>|<\/g>|<(?:rect|text)\b[^>]*>/g)) {
+			const own = Number(/\sopacity="([\d.]+)"/.exec(token)?.[1] ?? 1);
+			if (token === "</g>") {
+				strengths.pop();
+			} else if (token.startsWith("<g")) {
+				strengths.push(strengths.at(-1)! * own);
+			} else {
+				drawnAt.push({ tag: token, opacity: strengths.at(-1)! * own });
+			}
+		}
+		const ghosted = drawnAt.filter((one) => one.opacity < 1);
+		// The words are ghosted, label and note alike.
+		expect(ghosted.filter((one) => one.tag.startsWith("<text")).length).toBeGreaterThanOrEqual(2);
+		const plates = ghosted.filter((one) => one.tag.startsWith("<rect"));
+		expect(plates).toHaveLength(2);
+		for (const plate of plates) {
+			const under = drawnAt.slice(0, drawnAt.indexOf(plate));
+			expect(
+				under.some(
+					(one) =>
+						one.opacity === 1 && one.tag.startsWith("<rect") && boxOf(one.tag) === boxOf(plate.tag),
+				),
+			).toBe(true);
+		}
 	});
 
 	test("tells its four standings apart without relying on colour", () => {
