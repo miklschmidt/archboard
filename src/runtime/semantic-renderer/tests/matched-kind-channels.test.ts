@@ -4,6 +4,7 @@ import type { ElkNode } from "@archboard/elk-rs";
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
 import { overdrawnRun } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
@@ -93,23 +94,26 @@ test("different kinds reach a shared destination through distinct straight chann
 	}
 });
 
-test("opposing same-kind channels do not share an overdrawn run", async () => {
-	const plain = await renderArchitecture({ content: channelContent, theme: "dark" });
-	// These two routes leave the same gateway in the same direction, so their
-	// existing shared-trunk behavior remains intact without a comparison mark.
-	expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
-	// Each pair below uses the same HTTP kind but arrives at the gateway where
-	// the other route leaves it. Their local direction is therefore different.
-	for (const pair of [
-		["NHlWy1Yw", "kJaF9nLs"],
-		["NHlWy1Yw", "HOKDAQTU"],
-		["fXPVXdiF", "2L2brMps"],
-	] as const) {
-		expect(overdrawnRun(plain, pair), pair.join(" / ")).toBe(0);
-	}
-	expect(routePoints(plain.svg).size).toBe(channelContent.edges.length);
-	expect(routeLabels(plain.svg).size).toBe(channelContent.edges.length);
-});
+test.each(LayoutEngineSchema.options)(
+	"opposing same-kind channels do not share an overdrawn run (%s)",
+	async (layout) => {
+		const plain = await renderArchitecture({ content: channelContent, theme: "dark", layout });
+		// These two routes leave the same gateway in the same direction, so their
+		// existing shared-trunk behavior remains intact without a comparison mark.
+		expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
+		// Each pair below uses the same HTTP kind but arrives at the gateway where
+		// the other route leaves it. Their local direction is therefore different.
+		for (const pair of [
+			["NHlWy1Yw", "kJaF9nLs"],
+			["NHlWy1Yw", "HOKDAQTU"],
+			["fXPVXdiF", "2L2brMps"],
+		] as const) {
+			expect(overdrawnRun(plain, pair), pair.join(" / ")).toBe(0);
+		}
+		expect(routePoints(plain.svg).size).toBe(channelContent.edges.length);
+		expect(routeLabels(plain.svg).size).toBe(channelContent.edges.length);
+	},
+);
 
 for (const [left, right] of [
 	["added", "changed"],
