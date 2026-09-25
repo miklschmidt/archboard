@@ -3,7 +3,7 @@
 // line inside it on tracks in the channels between its ranks, growing each
 // channel to fit, so the block's size is final when this answers.
 import type { ElkExtendedEdge, ElkLabel, ElkNode } from "@archboard/elk-rs";
-import type { Graph, Subgraph, Viz } from "@viz-js/viz";
+import type { Edge, Graph, Subgraph, Viz } from "@viz-js/viz";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
@@ -28,7 +28,7 @@ import {
 	trunkKind,
 } from "@/transformers/semantic-renderer/lib/track/route";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
-import { gridEdges } from "@/transformers/semantic-renderer/lib/track/grid";
+import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
 import {
 	Scene,
@@ -134,6 +134,8 @@ interface Arrangement {
 	readonly lowered?: ReadonlyMap<string, number>;
 	/** Whether the cards no line touches are set out as a grid. */
 	readonly grid?: boolean;
+	/** Whether a wrap's rows keep their columns, each lowered card under the one above it. */
+	readonly columns?: boolean;
 	/**
 	 * Whether a container a line from another container enters is held below
 	 * the line's source, so containers in a chain stack.
@@ -146,12 +148,8 @@ class CardLayout {
 	readonly graph = emptyGraph();
 	/** The containers and regions the block draws inline. */
 	readonly clusters: Clusters;
-	/** How many rows each item a wide rank wraps is set below its place. */
-	readonly lowered: ReadonlyMap<string, number>;
-	/** Whether the cards no line touches are set out as a grid. */
-	readonly grid: boolean;
-	/** Whether containers a line from another container enters stack below it. */
-	readonly stacked: boolean;
+	/** How the block is arranged beyond Graphviz's own ranking. */
+	readonly arranged: Required<Arrangement>;
 
 	/**
 	 * Start a block's layout.
@@ -168,9 +166,7 @@ class CardLayout {
 		readonly insets: Insets,
 		options: Arrangement = {},
 	) {
-		this.lowered = options.lowered ?? new Map();
-		this.grid = options.grid ?? false;
-		this.stacked = options.stacked ?? false;
+		this.arranged = { lowered: new Map(), grid: false, columns: false, stacked: false, ...options };
 		this.clusters = new Clusters(block, this.graph);
 		// Ranks cross the clusters a block draws inline, as one board; a block
 		// without any keeps Graphviz's own ranking, which holds its header alone
@@ -296,23 +292,40 @@ class CardLayout {
 	 * each row it is lowered.
 	 */
 	arrange(): void {
-		const { block, graph } = this;
-		const grid = this.grid ? this.looseCards().flatMap((cards) => gridEdges(cards)) : [];
+		const { graph } = this;
+		const { grid: gridded, stacked } = this.arranged;
+		const grid = gridded ? this.looseCards().flatMap((cards) => gridEdges(cards)) : [];
 		const links = this.links();
 		const lower = new Set(grid.map(({ head }) => head));
-		const stacking = this.stacked ? this.clusters.enteringEdges(links) : [];
 		graph.edges.push(
 			...grid,
-			...this.clusters.titleEdges(lower, this.stacked ? links : []),
-			...stacking,
+			...this.clusters.titleEdges(lower, stacked ? links : []),
+			...(stacked ? this.clusters.enteringEdges(links) : []),
+			...this.wrapHolds(),
 		);
-		const arriving = new Set([...block.lines.values()].map((line) => this.vendorOf(line.head)));
-		for (const { card, rows, anchor } of anchored(this.lowered, arriving))
-			graph.edges.push({
+	}
+
+	/**
+	 * The invisible edges that hold a wrap's lowered cards down: each under
+	 * the card above it in its column when the rows keep their columns, and
+	 * one no line or column reaches by the first card of the rank's first row.
+	 * @returns The edges.
+	 */
+	wrapHolds(): Edge[] {
+		const { lowered, columns } = this.arranged;
+		const held = columns ? wrapEdges(lowered) : [];
+		const arriving = new Set(
+			[...this.block.lines.values()].map((line) => this.vendorOf(line.head)),
+		);
+		for (const { head } of held) arriving.add(head);
+		return [
+			...held,
+			...anchored(lowered, arriving).map(({ card, rows, anchor }) => ({
 				tail: anchor,
 				head: card,
 				attributes: { style: "invis", minlen: 2 * rows, weight: 0 },
-			});
+			})),
+		];
 	}
 
 	/**
@@ -389,7 +402,7 @@ class CardLayout {
 		const label = line.labelled ? line.edge.labels?.[0] : undefined;
 		const id = line.key;
 		// A wrapped item sits a row of cards and its labels lower for each row it is lowered.
-		const minlen = 1 + 2 * (this.lowered.get(head) ?? 0);
+		const minlen = 1 + 2 * (this.arranged.lowered.get(head) ?? 0);
 		if (label === undefined) {
 			this.graph.edges.push({ tail, head, attributes: { id, minlen } });
 			return;

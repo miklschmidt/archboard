@@ -183,15 +183,22 @@ function channelHeight(tracks: number): number {
 
 /**
  * Lay out every band and channel again, from the tracks each channel needs.
+ * A channel no line crosses below a band of titles alone keeps the room a
+ * container keeps around its cards: no frame ends there, so a container's
+ * cards stand as far below its title as in from its sides.
  * @param scene The scene, whose bands get their new tops.
- * @param tracks How many tracks each channel holds.
+ * @param nets Every net, given its track in its channel.
  * @param margin Where the first band starts.
  */
-function spaceBands(scene: Scene, tracks: readonly number[], margin: number): void {
+function spaceBands(scene: Scene, nets: readonly Net[], margin: number): void {
+	const held = new Set([...scene.cards.values(), ...scene.labels.values()].map(({ band }) => band));
 	let top = margin;
 	scene.bands.forEach((band, index) => {
 		band.newTop = top;
-		top += band.bottom - band.top + channelHeight(tracks[index] ?? 0);
+		const crossing = nets.filter((net) => net.channel === index);
+		const titled = crossing.length === 0 && !held.has(index);
+		top +=
+			band.bottom - band.top + (titled ? CONTAINER_INSET : channelHeight(assignTracks(crossing)));
 	});
 }
 
@@ -399,11 +406,7 @@ function routeScene(
 		first.wall = "top";
 		first.topX = wallX(scene, line.enters!);
 	}
-	spaceBands(
-		scene,
-		scene.bands.map((_, channel) => assignTracks(nets.filter((net) => net.channel === channel))),
-		top,
-	);
+	spaceBands(scene, nets, top);
 	return new Map(
 		[...routed].map(([id, route]) => {
 			const points = pointsOf(scene, route.nets, margin);

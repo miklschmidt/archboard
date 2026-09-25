@@ -164,8 +164,10 @@ function bestWrap(
 		: [];
 	const best = [
 		...gridded,
-		...wrapsOf(laying.whole, block, tree).map((lowered) =>
-			new CardLayout(block, laid, tree, insets, { lowered, stacked }).lay(viz),
+		...wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
+			[false, true].map((columns) =>
+				new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }).lay(viz),
+			),
 		),
 	].reduce<Laid | undefined>(
 		(one, other) => (one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one),
