@@ -386,7 +386,7 @@ describe("renderArchitecture", () => {
 		);
 
 		expect(title.length).toBeGreaterThan(1);
-		expect(title.map((run) => run.text).join("")).toBe(long);
+		expect(title.map((run) => run.text).join(" ")).toBe(long);
 		expect(title.every((run) => run.size === 14)).toBe(true);
 		expect(
 			title.every((run) => spanFits(drawnSpan(run, faces), rendered.atlas.nodes["long"]!)),
