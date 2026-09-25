@@ -1,0 +1,57 @@
+{
+	"nodes": [
+		{
+			"id": "dns",
+			"name": "Public hostname",
+			"kind": "module",
+			"responsibility": "Names one load balancer's public address for every client that calls it"
+		},
+		{
+			"id": "legacy",
+			"name": "Legacy balancer",
+			"kind": "module",
+			"responsibility": "Forwards traffic to the pool without opening it"
+		},
+		{
+			"id": "preview",
+			"name": "Preview requests",
+			"kind": "module",
+			"responsibility": "Synthetic requests from engineers, on a port of their own"
+		},
+		{
+			"id": "platlb",
+			"name": "Platform balancer",
+			"kind": "module",
+			"responsibility": "A separate balancer that already serves the platform"
+		},
+		{ "id": "pool", "name": "Server pool", "kind": "service" },
+		{ "id": "vm", "name": "Pool server", "kind": "module", "parent": "pool" },
+		{ "id": "plat", "name": "Platform", "kind": "service" },
+		{ "id": "envoy", "name": "Envoy balancing", "kind": "module", "parent": "plat" }
+	],
+	"edges": [
+		{ "id": "e1", "from": "dns", "to": "legacy", "kind": "call", "label": "points here today" },
+		{ "id": "e2", "from": "legacy", "to": "pool", "kind": "call", "label": "forwards traffic" },
+		{
+			"id": "e3",
+			"from": "preview",
+			"to": "platlb",
+			"kind": "call",
+			"label": "plain HTTP on a preview port"
+		},
+		{
+			"id": "e4",
+			"from": "platlb",
+			"to": "envoy",
+			"kind": "call",
+			"label": "preview port forwarded"
+		},
+		{
+			"id": "e5",
+			"from": "envoy",
+			"to": "vm",
+			"kind": "call",
+			"label": "plain HTTP to each server"
+		}
+	]
+}
