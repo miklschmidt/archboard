@@ -91,6 +91,44 @@ function extentOf(sizes: readonly Size[], across: boolean): { long: number; thic
 	};
 }
 
+/**
+ * Whether a route runs only across and down, never on a slant.
+ * @param points The route.
+ * @returns True when every run is horizontal or vertical.
+ */
+function orthogonal(points: readonly Point[]): boolean {
+	return (
+		points.length >= 2 &&
+		points
+			.slice(1)
+			.every(
+				(point, index) =>
+					Math.abs(point.x - points[index]!.x) < 0.5 || Math.abs(point.y - points[index]!.y) < 0.5,
+			)
+	);
+}
+
+/**
+ * A plain dogleg between two ends: across then down for ends that face
+ * sideways, down then across for ends that face up or down.
+ * @param from The first end and the edge it faces.
+ * @param from.point Where it stands.
+ * @param from.side The edge it faces.
+ * @param to The second end.
+ * @param to.point Where it stands.
+ * @returns The route.
+ */
+function dogleg(from: { point: Point; side: Side }, to: { point: Point }): Point[] {
+	const a = from.point;
+	const b = to.point;
+	if (from.side === "left" || from.side === "right") {
+		const middle = (a.x + b.x) / 2;
+		return [a, { x: middle, y: a.y }, { x: middle, y: b.y }, b];
+	}
+	const middle = (a.y + b.y) / 2;
+	return [a, { x: a.x, y: middle }, { x: b.x, y: middle }, b];
+}
+
 /** A block of blocks laid out: packed, and its trunks routed. */
 class PackLayout {
 	readonly boxes = new Map<string, Box>();
@@ -349,6 +387,23 @@ class PackLayout {
 	}
 
 	/**
+	 * Where a trunk's end stands and which way it leaves: a pin on its block's
+	 * edge, or the middle of the block's own port or header.
+	 * @param at The line end.
+	 * @returns The point and the edge it faces.
+	 */
+	pinPoint(at: string): { point: Point; side: Side } {
+		if (!this.tree.pins.has(at) && at !== headerOf(this.block)) {
+			const box = this.boxes.get(at)!;
+			const side = this.block.ports.get(at) ?? "bottom";
+			return { point: { x: box.x + box.width / 2, y: box.y + box.height / 2 }, side };
+		}
+		const { owner, x, y, side } = this.pinOn(at);
+		const box = this.boxes.get(owner)!;
+		return { point: { x: box.x + x * box.width, y: box.y + y * box.height }, side };
+	}
+
+	/**
 	 * One end of a trunk: a pin on a packed block's port, a point on the
 	 * block's own port, or the bottom of its header.
 	 * @param avoid The initialized libavoid module.
@@ -410,10 +465,16 @@ class PackLayout {
 			router.processTransaction();
 			for (const { line, connection } of connections) {
 				const route = connection.displayRoute();
-				const points = Array.from({ length: route.size() }, (_, index) => {
+				const routed = Array.from({ length: route.size() }, (_, index) => {
 					const { x, y } = route.at(index);
 					return { x, y };
 				});
+				// libavoid answers a straight line between the blocks' middles when it finds
+				// no route; the trunk then takes a plain dogleg between its pins.
+				const points =
+					connection.hasValidRoute() && orthogonal(routed)
+						? routed
+						: dogleg(this.pinPoint(line.tail), this.pinPoint(line.head));
 				this.lines.set(line.key, line.from === line.tail ? points : points.toReversed());
 			}
 		} finally {
