@@ -36,8 +36,10 @@ import { Containers } from "@/transformers/semantic-renderer/lib/track/container
 const TRACK_TOP = 2 * BEND_RADIUS;
 /** From the last track to the band below: room for the bend and a straight arrow approach. */
 const TRACK_BOTTOM = APPROACH_STRAIGHT + 2 * BEND_RADIUS;
-/** The least height of a channel, which straight lines alone still cross. */
-const MIN_CHANNEL = 32;
+/** The height of a channel no line turns in: room for an arrowhead's straight approach and air. */
+const EMPTY_CHANNEL = 24;
+/** Room between a container's bottom edge and the band below it. */
+const BELOW_CONTAINER = 12;
 /** Space kept around the drawing. */
 const PAGE_MARGIN = 24;
 
@@ -180,8 +182,8 @@ function settleStraights(nets: readonly Net[]): void {
  */
 function channelHeight(tracks: number, closing = 0): number {
 	return tracks === 0
-		? Math.max(MIN_CHANNEL, closing + MIN_CHANNEL - CONTAINER_INSET)
-		: Math.max(MIN_CHANNEL, closing + TRACK_TOP + (tracks - 1) * LANE + TRACK_BOTTOM);
+		? Math.max(EMPTY_CHANNEL, closing + BELOW_CONTAINER)
+		: closing + TRACK_TOP + (tracks - 1) * LANE + TRACK_BOTTOM;
 }
 
 /**
@@ -322,6 +324,7 @@ function routeScene(
 }
 
 export {
+	EMPTY_CHANNEL,
 	PAGE_MARGIN,
 	TRACK_BOTTOM,
 	TRACK_TOP,
