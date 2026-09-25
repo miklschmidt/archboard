@@ -28,7 +28,7 @@ const TRUNK_CLEARANCE = 16;
 /** How much a trunk pays for each turn, in diagram points. */
 const TRUNK_TURN = 60;
 /** How much a trunk pays for crossing another, in diagram points. */
-const TRUNK_CROSSING = 3000;
+const TRUNK_CROSSING = 300;
 /** The side of a port's square. */
 const PORT = 1;
 /** The most blocks whose every packing is tried. */
