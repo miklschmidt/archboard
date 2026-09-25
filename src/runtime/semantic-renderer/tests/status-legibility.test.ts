@@ -22,7 +22,7 @@ import {
 	distanceToRoute,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { colourDistance, hueOf } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { colourDistance, hueOf, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({
@@ -96,19 +96,17 @@ const STANDING: StatedStandings = {
 /**
  * The architecture, drawn as its caller would.
  * @param unsettled Which subjects the board has not decided, when any.
- * @param theme Which ground to draw it on.
- * @returns The rendered picture.
+ * @param theme Which theme it is shown in.
+ * @returns The rendered picture, painted in literals.
  */
-function architecture(
-	unsettled?: readonly string[],
+async function architecture(
+	unsettled: readonly string[] = [],
 	theme: DiagramTheme = "light",
 ): Promise<RenderedDiagram> {
-	return renderArchitecture({
-		content: CONTENT,
+	return seenIn(
+		await renderArchitecture({ content: CONTENT, standing: STANDING, unsettled }),
 		theme,
-		standing: STANDING,
-		...(unsettled === undefined ? {} : { unsettled }),
-	});
+	);
 }
 
 /**
@@ -116,13 +114,8 @@ function architecture(
  * @param unsettled Which subjects the board has not decided, when any.
  * @returns The rendered picture.
  */
-function sequence(unsettled?: readonly string[]): RenderedDiagram {
-	return renderDataFlow({
-		content: CONTENT,
-		theme: "light",
-		standing: STANDING,
-		...(unsettled === undefined ? {} : { unsettled }),
-	});
+function sequence(unsettled: readonly string[] = []): RenderedDiagram {
+	return seenIn(renderDataFlow({ content: CONTENT, standing: STANDING, unsettled }));
 }
 
 /**
@@ -191,7 +184,7 @@ function dotInks(group: DrawnGroup): string[] {
 	return [...group.markup.matchAll(/<g class="ab-pulse"[^>]*>([\s\S]*?)<\/g>/gu)].flatMap((comet) =>
 		[
 			...comet[1]!.matchAll(
-				/<(?:circle|path)(?![^>]*data-pulse-part="moat")[^>]*?(?:fill|stroke)="(#[0-9a-f]{6})"/gu,
+				/<(?:circle|path)(?![^>]*data-pulse-part="moat")[^>]*?(?:fill|stroke)="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu,
 			),
 		].map((found) => found[1]!),
 	);
@@ -317,7 +310,7 @@ describe("a relationship is drawn in one colour from end to end", () => {
 		}
 		// A plain board uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
-		const plain = await renderArchitecture({ content: CONTENT, theme: "light" });
+		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
 		expect(line(subject(drawn, "edge", "moved")).ink).not.toBe(
 			line(subject(plain, "edge", "moved")).ink,
 		);
@@ -329,14 +322,14 @@ describe("a relationship is drawn in one colour from end to end", () => {
 	test("a relationship nothing happened to is drawn in the ink of its weight", async () => {
 		const marked = line(subject(await architecture(), "edge", "same"));
 		const plain = line(
-			subject(await renderArchitecture({ content: CONTENT, theme: "light" }), "edge", "same"),
+			subject(seenIn(await renderArchitecture({ content: CONTENT })), "edge", "same"),
 		);
 		expect(marked.ink).toBe(plain.ink);
 		expect(marked.head).toBe(plain.head);
 	});
 
 	test("the standing takes the colour and leaves the dash and the weight alone", async () => {
-		const plain = await renderArchitecture({ content: CONTENT, theme: "light" });
+		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
 		const markedDrawing = await architecture();
 		for (const id of ["moved", "new", "gone", "same"]) {
 			const marked = LINE.exec(subject(markedDrawing, "edge", id).markup)![0];
@@ -391,7 +384,7 @@ describe("the words a relationship carries are on top of every dot", () => {
 describe("what nobody has decided is said in its own corner", () => {
 	test("an unlabelled return carries its warning on the route", async () => {
 		const content = { ...CONTENT, edges: CONTENT.edges.map(({ label: _label, ...edge }) => edge) };
-		const drawn = await renderArchitecture({ content, theme: "light", unsettled: ["same"] });
+		const drawn = await renderArchitecture({ content, unsettled: ["same"] });
 		const badge = badges(drawn).get("same")!;
 		const shift = bodyShift(drawn.svg);
 		const routes = routePoints(drawn.svg);

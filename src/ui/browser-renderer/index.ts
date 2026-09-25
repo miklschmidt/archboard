@@ -3,8 +3,9 @@
 // The same renderer core the CLI and the Archboard server's render route run
 // (`@/transformers/semantic-renderer`), with this page as its host: the
 // browser's own canvas measures text, in the diagram faces loaded into the
-// page; a pool of Web Workers runs the layout engine; the theme colours are the
-// ones the build read out of the shared stylesheet. What is drawn comes from the
+// page; a pool of Web Workers runs the layout engine. It holds no theme
+// colours: a picture drawn here paints with the page's own colour tokens, so it
+// takes whichever theme the page is in (TASK-346). What is drawn comes from the
 // board the page read from the server and holds as a read-only cache (ADR 0023),
 // so the picture is the server's picture of that board, measured the way this
 // browser paints it.
@@ -16,11 +17,7 @@ import {
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 } from "@/transformers/semantic-renderer/board";
-import {
-	installRendererHost,
-	type RendererHost,
-	type ThemeColors,
-} from "@/transformers/semantic-renderer/host";
+import { installRendererHost, type RendererHost } from "@/transformers/semantic-renderer/host";
 import { loadDiagramFaces } from "@/ui/browser-renderer/lib/diagram-faces";
 import { loadDiagramIcons, loadedIconPaths } from "@/ui/browser-renderer/lib/diagram-icons";
 import {
@@ -31,8 +28,6 @@ import {
 
 /** What the page supplies to draw here. */
 interface BrowserRendererSetup {
-	/** The theme colours, as the build read them. */
-	readonly themeColors: ThemeColors;
 	/** Starts one layout engine worker, having sent its initialization message. */
 	readonly startWorker: () => EngineWorker;
 }
@@ -63,14 +58,13 @@ function noEmbeddedFaces(): never {
 
 /**
  * Make this page a renderer host. Once per page: later calls keep the first.
- * @param setup The theme colours and the engine worker.
+ * @param setup The engine worker.
  */
 function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	if (started !== undefined) return;
 	const solve = createEnginePool(setup.startWorker, workerCeiling(navigator.hardwareConcurrency));
 	installRendererHost({
 		solve,
-		themeColors: setup.themeColors,
 		fontBase64: noEmbeddedFaces,
 		iconPaths: loadedIconPaths,
 	});
@@ -84,7 +78,7 @@ function startBrowserRenderer(setup: BrowserRendererSetup): void {
 /**
  * Draw one variant of a board in this page, once its faces have loaded.
  * @param board The board, as the page read it.
- * @param choices The variant, view and theme; the faces are always linked.
+ * @param choices The variant and view; the faces are always linked, and the picture takes the page's theme.
  * @param policy The vault's presentation policy, as the page read it.
  * @returns The same answer the render route would give for this board.
  * @throws {Error} When this page never started the renderer.

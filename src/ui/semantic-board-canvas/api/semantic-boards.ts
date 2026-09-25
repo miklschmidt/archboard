@@ -19,7 +19,6 @@ import {
 	type BoardListing,
 	type DiagramAtlas,
 	type DiagramBox,
-	type DiagramTheme,
 	type DrawnBoard,
 	type LayoutEngineName,
 	type ListedBoard,
@@ -34,9 +33,6 @@ import {
 // `@/shared/semantic-board`, and every consumer infers its types from that.
 // Two copies of a protocol are two protocols the first time somebody adds a
 // field to one of them.
-
-/** The themes a render can be asked for; the shell owns which one is on. */
-type SemanticTheme = DiagramTheme;
 
 /** One subject's box, in the rendered SVG's own viewBox units. */
 type SemanticBox = DiagramBox;
@@ -84,7 +80,6 @@ interface SemanticRenderRequest {
 	 * in the request and in the address, and no answer to it writes anything.
 	 */
 	readonly view?: string | undefined;
-	readonly theme: SemanticTheme;
 	/** Whether to show proposal comparison treatment; defaults to true. */
 	readonly comparison?: boolean | undefined;
 	/** Which engine lays it out; the default one when absent (TASK-348). */
@@ -215,11 +210,13 @@ async function fetchSemanticBoards(signal?: AbortSignal): Promise<SemanticBoardL
 
 /**
  * The query string one render request is asking with.
- * @param request The board, the variant and the theme.
+ * The picture names no theme: it paints with the page's own colour tokens, so
+ * it is drawn once and takes whichever theme the page is in.
+ * @param request The board, the variant and the view.
  * @returns The query string, with its leading question mark.
  */
 function renderQuery(request: SemanticRenderRequest): string {
-	const search = new URLSearchParams({ board: request.board, theme: request.theme });
+	const search = new URLSearchParams({ board: request.board });
 	const stated = {
 		variant: request.variant,
 		view: request.view,
@@ -239,7 +236,7 @@ function renderQuery(request: SemanticRenderRequest): string {
  * nothing on it yet is a normal thing for an agent to have just created, and
  * the viewer says so in its own words. A reply that is neither that nor a whole
  * picture is a failure, and is reported as one.
- * @param request The board, the variant and the theme.
+ * @param request The board, the variant and the view.
  * @param signal Cancels the read.
  * @returns The drawing, or the news that there is nothing to draw.
  */
@@ -308,7 +305,6 @@ export {
 	type SemanticRender,
 	type SemanticOfferedView,
 	type SemanticRenderRequest,
-	type SemanticTheme,
 	type SemanticVariantRef,
 	type SemanticWaiting,
 };

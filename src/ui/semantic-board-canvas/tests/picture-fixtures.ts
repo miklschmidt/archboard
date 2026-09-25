@@ -82,9 +82,7 @@ function lineMarkup(line: Line): string {
 function picture(
 	cards: readonly Card[],
 	lines: readonly Line[],
-	identity: Partial<
-		Pick<SemanticDrawing, "board" | "variant" | "view" | "theme" | "width" | "height">
-	> = {},
+	identity: Partial<Pick<SemanticDrawing, "board" | "variant" | "view" | "width" | "height">> = {},
 ): SemanticDrawing {
 	const width = identity.width ?? 600;
 	const height = identity.height ?? 400;
@@ -99,7 +97,6 @@ function picture(
 		board: "pipeline",
 		version: 1,
 		variant: { id: "v1", name: "current", lifecycle: "current" },
-		theme: "dark",
 		view: null,
 		views: [],
 		changes: null,

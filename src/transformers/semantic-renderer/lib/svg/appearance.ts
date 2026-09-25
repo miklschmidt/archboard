@@ -1,30 +1,27 @@
 import type { PaletteColor } from "@/shared/semantic-policy/index";
-import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
-import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { token, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { ICON_CHIP_SIZE, ICON_CHIP_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import { glyphGroup } from "@/transformers/semantic-renderer/lib/svg/icons";
 import { tag, type Attributes } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
 /**
- * Resolve one named palette color on the selected ground.
+ * One named palette color, as the page's token for it.
  * @param color Configured color name.
- * @param palette Selected theme.
- * @returns Literal ink or no color.
+ * @returns Its ink, or no color.
  */
-function semanticInk(color: PaletteColor | undefined, palette: Palette): string | undefined {
-	return color === undefined ? undefined : themeColor(palette.ground, `--semantic-${color}`);
+function semanticInk(color: PaletteColor | undefined): string | undefined {
+	return color === undefined ? undefined : token(`--semantic-${color}`);
 }
 
 /**
  * The body's restrained tint and border, without touching comparison or type.
  * @param appearance Resolved channels.
- * @param palette Selected theme.
  * @returns Translucent body fill and opaque border.
  */
-function bodyAttributes(appearance: NodeAppearance, palette: Palette): Attributes {
-	const ink = semanticInk(appearance.bodyColor, palette);
+function bodyAttributes(appearance: NodeAppearance): Attributes {
+	const ink = semanticInk(appearance.bodyColor);
 	return ink === undefined ? {} : { stroke: ink, fill: ink, "fill-opacity": 0.07 };
 }
 
@@ -53,7 +50,7 @@ function appearanceAttributes(appearance: NodeAppearance): Attributes {
  * @returns Tile and configured icon.
  */
 function typeChip(x: number, y: number, appearance: NodeAppearance, palette: Palette): string {
-	const ink = semanticInk(appearance.typeColor, palette) ?? palette.glyph;
+	const ink = semanticInk(appearance.typeColor) ?? palette.glyph;
 	return (
 		tag("rect", {
 			x: coord(x),

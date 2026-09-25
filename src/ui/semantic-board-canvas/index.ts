@@ -23,7 +23,6 @@ export {
 	type SemanticRender,
 	type SemanticOfferedView,
 	type SemanticRenderRequest,
-	type SemanticTheme,
 	type SemanticVariantRef,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
 export {

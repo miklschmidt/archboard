@@ -3,7 +3,7 @@
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { rendererBuild, themeColors } from "virtual:archboard-renderer";
+import { rendererBuild } from "virtual:archboard-renderer";
 
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
@@ -28,7 +28,6 @@ const avoidWasmUrl = new URL("../node_modules/libavoid-js/dist/libavoid.wasm", i
 // kept picture never wait for it.
 const renderer = import("@/ui/browser-renderer").then((module) => {
 	module.startBrowserRenderer({
-		themeColors,
 		/**
 		 * Start one engine worker and tell it where the routing engine is served.
 		 * @returns The worker.
@@ -52,21 +51,13 @@ takePicturesFrom(
 		/**
 		 * Draw one variant of a board in this page, once the renderer has arrived.
 		 * @param board The board, as the page read it.
-		 * @param choices The variant, view and theme.
+		 * @param choices The variant and view.
 		 * @param policy The vault's presentation policy, as the page read it.
 		 * @returns The same answer the render route would give for this board.
 		 */
 		draw: async (board, choices, policy) => (await renderer).drawBoardHere(board, choices, policy),
 		renderer: rendererBuild,
 		storage: browserPictureStorage(),
-		/**
-		 * The theme the page shows, once the application has put one on the root.
-		 * @returns The theme, or nothing before the first one is applied.
-		 */
-		theme: () => {
-			const shown = document.documentElement.dataset["theme"];
-			return shown === "light" || shown === "dark" ? shown : undefined;
-		},
 	}),
 );
 

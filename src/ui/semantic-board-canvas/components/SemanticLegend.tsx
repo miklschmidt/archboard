@@ -2,13 +2,13 @@ import { useId, useMemo, type JSX, type ReactNode } from "react";
 
 import { PaletteColorSchema } from "@/shared/semantic-policy/index";
 import { STANDING_COLORS } from "@/shared/theme/index";
-import { LINE_STRENGTH } from "@/transformers/semantic-renderer/index";
+import { lineInk } from "@/transformers/semantic-renderer/index";
 import { Checkbox } from "@/ui/components/checkbox";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
 /**
  * A browser-only key to the channels in the current picture.
- * @param props The appearance facts and theme of the drawing.
+ * @param props The appearance facts of the drawing.
  * @param props.appearances Facts emitted for its visible subjects.
  * @param props.comparison Whether comparison treatment is visible.
  * @param props.comparisonAvailable Whether this variant has a predecessor.
@@ -145,22 +145,18 @@ function sampleKey(item: AppliedAppearance): string {
 
 /**
  * Show the configured relationship color, dash and arrowhead.
- * @param props One applied relationship and the picture's theme.
+ * @param props One applied relationship.
  * @param props.appearance The line appearance.
  * @returns The line sample.
  */
 function RelationshipSample(props: { readonly appearance: AppliedAppearance }): JSX.Element {
 	const { appearance } = props;
-	// Drawn as the picture draws it: a coloured line at its line strength over
-	// the page, the neutral line as it is.
-	const style = useMemo(() => {
-		const colour = ink(appearance.lineColor, "--diagram-edge");
-		return {
-			color: PaletteColorSchema.safeParse(appearance.lineColor).success
-				? `color-mix(in srgb, ${colour} ${LINE_STRENGTH * 100}%, var(--background))`
-				: colour,
-		};
-	}, [appearance.lineColor]);
+	// Drawn in the picture's own expression for it: a coloured line at its line
+	// strength over the page, the neutral line as it is.
+	const style = useMemo(
+		() => ({ color: lineInk(ink(appearance.lineColor, "--diagram-edge")) }),
+		[appearance.lineColor],
+	);
 	const dash =
 		appearance.dash === "dotted" ? "1 4" : appearance.dash === "dashed" ? "6 4" : undefined;
 	return (
@@ -222,7 +218,7 @@ function StandingSample(props: {
 
 /**
  * A sample of a type chip’s independently colored border and tint.
- * @param props The type color and theme.
+ * @param props The type color.
  * @param props.appearance Applied type color and the renderer’s icon.
  * @returns The chip.
  */

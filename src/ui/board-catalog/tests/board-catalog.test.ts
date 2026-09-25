@@ -222,7 +222,7 @@ test("reloading reads every cached board resource again, documents included", as
 	 */
 	const willReadAgain = (key: readonly unknown[]): boolean =>
 		client.getQueryState(key)?.isInvalidated === true;
-	const render = semanticBoardKeys.render({ board: "payments", theme: "light" });
+	const render = semanticBoardKeys.render({ board: "payments" });
 	const document = semanticBoardKeys.document("payments");
 	await seed(render);
 	await seed(document);

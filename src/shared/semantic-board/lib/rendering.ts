@@ -24,7 +24,7 @@ import {
 	VariantLifecycleSchema,
 } from "@/shared/semantic-board/lib/vocabulary";
 
-/** The two grounds a board can be drawn on. */
+/** The two themes a document that stands alone can be drawn in. */
 const DiagramThemeSchema = z.enum(["light", "dark"]);
 type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
 
@@ -130,7 +130,6 @@ const RenderIdentitySchema = z.object({
 	board: DisplayNameSchema,
 	version: z.int(),
 	variant: RenderedVariantSchema,
-	theme: DiagramThemeSchema,
 	/** The view this picture is of, or null when it is of the whole variant. */
 	view: OfferedViewSchema.nullable(),
 	/** Every board view, in its authored order. */

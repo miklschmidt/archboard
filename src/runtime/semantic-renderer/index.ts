@@ -96,7 +96,7 @@ export {
 	type RenderedDiagram,
 	type RenderErrorCode,
 	SemanticRenderError,
-	paletteFor,
+	PALETTE,
 	type Palette,
 } from "@/transformers/semantic-renderer/index";
 export type {

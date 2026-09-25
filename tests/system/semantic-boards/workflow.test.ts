@@ -174,6 +174,8 @@ describe("authoring and opening a semantic board", () => {
 		expect(receipt.height).toBeGreaterThan(0);
 		const svg = fs.readFileSync(out, "utf8");
 		expect(svg.startsWith("<svg")).toBe(true);
+		// A file stands alone, so it carries the theme it was asked for.
+		expect(svg).toMatch(/^<svg [^>]*style="color-scheme:dark;/u);
 		// Every node the board states is drawn and can be pointed at by its id.
 		const stored = JSON.parse(cli(["semantic", "show", "pipeline"]).stdout).board;
 		for (const node of stored.variants[0].content.nodes) {

@@ -1,5 +1,6 @@
-/* Canonical shadcn theme colors, shared by the shell and standalone SVGs.
-   Keep theme colors as literal CSS colors; the export reader resolves them to sRGB. */
+/* Canonical shadcn theme colors, shared by the shell and the diagrams, which paint
+   with these tokens. Keep theme colors as literal CSS colors; the export reader
+   resolves them to sRGB for a standalone SVG. */
 /* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
 :root {
 	/* Named colors used by node types, groups and relationships. */

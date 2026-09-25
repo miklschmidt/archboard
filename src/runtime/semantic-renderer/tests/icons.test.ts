@@ -16,6 +16,7 @@ import {
 	renderArchitecture,
 } from "@/runtime/semantic-renderer/index";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import { paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 const components = new Map(Object.entries(RemixIcons));
 
@@ -60,9 +61,10 @@ describe("type icons", () => {
 		const content = orderedFixture({
 			nodes: icons.map((icon, index) => ({ id: `n${index}`, name: icon, kind: `kind${index}` })),
 		});
-		const drawing = await renderArchitecture({ content, theme: "light", policy });
+		// Its ink as a reader sees it: the component is handed a literal colour.
+		const drawing = paintedIn((await renderArchitecture({ content, policy })).svg);
 		for (const [index, icon] of icons.entries()) {
-			const card = groupOf(drawing.svg, "node", `n${index}`)!.markup;
+			const card = groupOf(drawing, "node", `n${index}`)!.markup;
 			const glyph = new RegExp(`data-type-icon="${icon}">(<svg[^]*?</svg>)`).exec(card);
 			const ink = /<svg[^>]* fill="([^"]*)"/.exec(glyph?.[1] ?? "")?.[1] ?? "";
 			expect(glyph?.[1]).toBe(componentMarkup(icon, ink));

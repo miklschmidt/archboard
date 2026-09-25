@@ -297,7 +297,6 @@ function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 			onVariantChange={props.onVariantChange}
 			view={view === null ? undefined : view}
 			onViewChange={onView}
-			theme={props.theme}
 			selection={picked === null ? null : picked.id}
 			onSelect={onSelect}
 			onUserChanged={onUserChanged}

@@ -1,19 +1,9 @@
-import { themeColor } from "@/transformers/semantic-renderer/lib/host";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import { lightDark } from "@/transformers/semantic-renderer/lib/svg/colour";
 
-// SVG roles resolve the same CSS tokens as the shell, with export-safe literals.
+// SVG roles paint with the same CSS tokens as the shell.
 
-/** One theme's resolved colours. */
+/** The picture's colours, each a CSS expression of the page's tokens. */
 interface Palette {
-	/**
-	 * Which ground this palette is for.
-	 *
-	 * Here so that a colour derived from something the board says — a group
-	 * label's — can be resolved from the palette alone, rather than by threading
-	 * the theme past every painter that does not care about it. A palette IS a
-	 * theme resolved, so it is the honest place to ask.
-	 */
-	readonly ground: DiagramTheme;
 	/** The page behind everything. */
 	readonly background: string;
 	/** A region band's fill. */
@@ -52,6 +42,7 @@ interface Palette {
 	 * The shell's own warning pair, each ground taking the token that is meant to
 	 * be read ON that ground: `--warning` carries a dark panel, and
 	 * `--warning-foreground` is the one the shell uses for warning text on paper.
+	 * Which ground it is, is the page's `color-scheme`, so the choice is CSS's.
 	 * The badge needs the second on the light ground — at eleven units with the
 	 * page knocked out of it, the panel token reached only 2.5:1 against a white
 	 * card and 2.3:1 against its own mark, which is a badge a reader has to hunt
@@ -73,34 +64,41 @@ interface Palette {
 }
 
 /**
- * Map diagram roles onto the canonical shadcn theme, without a second palette.
- * @param theme Which ground to draw on.
- * @returns Literal sRGB colors, including transparency where the token has it.
+ * One page token, as the picture paints with it.
+ * @param name The CSS custom property.
+ * @returns Its reference.
  */
-function paletteFor(theme: DiagramTheme): Palette {
-	return {
-		ground: theme,
-		background: themeColor(theme, "--background"),
-		band: themeColor(theme, "--sidebar"),
-		bandBorder: themeColor(theme, "--sidebar-border"),
-		card: themeColor(theme, "--muted"),
-		cardBorder: themeColor(theme, "--diagram-edge"),
-		foreground: themeColor(theme, "--card-foreground"),
-		muted: themeColor(theme, "--muted-foreground"),
-		faint: themeColor(theme, "--muted-foreground"),
-		edge: themeColor(theme, "--diagram-edge"),
-		edgeMuted: themeColor(theme, "--muted-foreground"),
-		chip: themeColor(theme, "--muted"),
-		glyph: themeColor(theme, "--muted-foreground"),
-		pill: themeColor(theme, "--popover"),
-		pillBorder: themeColor(theme, "--diagram-edge"),
-		pillText: themeColor(theme, "--popover-foreground"),
-		selection: themeColor(theme, "--diagram-selection"),
-		warning: themeColor(theme, theme === "light" ? "--warning-foreground" : "--warning"),
-		standingAdded: themeColor(theme, "--standing-added"),
-		standingChanged: themeColor(theme, "--standing-changed"),
-		standingRemoved: themeColor(theme, "--standing-removed"),
-	};
+function token(name: string): string {
+	return `var(${name})`;
 }
 
-export { type Palette, paletteFor };
+/**
+ * Diagram roles mapped onto the canonical shadcn theme, without a second
+ * palette: each is a page token, so the picture takes whichever theme the page
+ * showing it is in, and a document that stands alone carries the values of the
+ * tokens it names (`lib/svg/document.ts`).
+ */
+const PALETTE: Palette = {
+	background: token("--background"),
+	band: token("--sidebar"),
+	bandBorder: token("--sidebar-border"),
+	card: token("--muted"),
+	cardBorder: token("--diagram-edge"),
+	foreground: token("--card-foreground"),
+	muted: token("--muted-foreground"),
+	faint: token("--muted-foreground"),
+	edge: token("--diagram-edge"),
+	edgeMuted: token("--muted-foreground"),
+	chip: token("--muted"),
+	glyph: token("--muted-foreground"),
+	pill: token("--popover"),
+	pillBorder: token("--diagram-edge"),
+	pillText: token("--popover-foreground"),
+	selection: token("--diagram-selection"),
+	warning: lightDark(token("--warning-foreground"), token("--warning")),
+	standingAdded: token("--standing-added"),
+	standingChanged: token("--standing-changed"),
+	standingRemoved: token("--standing-removed"),
+};
+
+export { type Palette, PALETTE, token };

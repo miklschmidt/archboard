@@ -6,10 +6,11 @@
 // **weight** says how much attention the author asked for.
 //
 // Appearance lives on the elements rather than in the stylesheet, as it did
-// upstream, and for a reason that still holds: the same string is shown in a
-// pane, saved to a file and opened in whatever a person opens an SVG with.
-// The stylesheet carries the `@font-face` rules and what an attribute cannot
-// say — the cursor, and the selection ring a viewer toggles.
+// upstream: each element says what it looks like, and its colours are CSS
+// expressions of the page's tokens (`lib/theme.ts`), written where CSS applies
+// to them (`lib/svg/primitives.ts`). The stylesheet carries the `@font-face`
+// rules and what an element cannot say — the cursor, and the selection ring a
+// viewer toggles.
 //
 // Every bundle that sets a size also sets a face, from the named roles in
 // `lib/fonts.ts`, and the same role is what measured the string. That is the
@@ -120,7 +121,7 @@ function relationshipInk(
 	appearance = relationshipAppearance(edge.kind, policy),
 ): string {
 	const marked = standing === undefined ? undefined : standingInk(standing, palette);
-	return marked ?? semanticInk(appearance.color, palette) ?? palette.edge;
+	return marked ?? semanticInk(appearance.color) ?? palette.edge;
 }
 
 /**
@@ -235,6 +236,7 @@ export {
 	type SvgStyles,
 	WEIGHTS,
 	lineColour,
+	drawnInk,
 	fullLineColour,
 	relationshipInk,
 	weightOf,

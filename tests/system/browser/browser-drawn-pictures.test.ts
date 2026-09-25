@@ -19,7 +19,8 @@ import { addressShowing, seedSemanticBoard, stageState } from "./support/semanti
 // out by engine workers in this browser, measured by this browser's canvas.
 // What only a real page can show is that the whole of that happens here — no
 // picture is asked of the server, the icons a picture names arrive, a picture
-// this browser already drew is shown again without laying anything out, and a
+// this browser already drew is shown again without laying anything out, a
+// theme switch recolours the picture on screen without drawing another, and a
 // change to the board is drawn again.
 
 /** Short on purpose: each wait names itself well inside the owner's budget. */
@@ -77,7 +78,7 @@ const drawn = (browser: AgentBrowserSession, what: string): Promise<string | nul
 		WAIT,
 	);
 
-test("the page draws a board itself, keeps the picture, and draws it again when the board changes", async () => {
+test("the page draws a board itself, keeps the picture, recolours it for a theme, and draws it again when the board changes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "drawn-here-vault");
@@ -116,6 +117,27 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	);
 	expect(await keptPictures(browser)).toEqual(keptBefore);
 
+	// Switching the theme recolours the picture on screen (TASK-346): the same
+	// picture stays, takes the page's own colours for the other theme, and
+	// nothing is laid out or kept for it.
+	const ground = `getComputedStyle(document.querySelector("${SURFACE} svg > rect")).fill`;
+	const lightGround = await browser.eval<string>(ground);
+	await browser.eval(`window.shownPicture = document.querySelector("${SURFACE} svg")`);
+	await browser.eval(`document.querySelector("[aria-label='Switch to dark theme']").click()`);
+	const darkGround = await pollUntil(
+		() => browser.eval<string>(ground),
+		(fill) => fill !== lightGround,
+		"the picture on screen to take the dark theme's colours",
+		WAIT,
+	);
+	expect(darkGround).toBe(
+		await browser.eval<string>(`getComputedStyle(document.body).backgroundColor`),
+	);
+	expect(
+		await browser.eval<boolean>(`document.querySelector("${SURFACE} svg") === window.shownPicture`),
+	).toBeTrue();
+	expect(await keptPictures(browser)).toEqual(keptBefore);
+
 	// The board changes: the pane is told, and the new version is drawn here.
 	const wrote = await request<{ version: number }>("/api/semantic-boards/edit?expectVersion=1", {
 		method: "POST",
@@ -135,7 +157,7 @@ test("the page draws a board itself, keeps the picture, and draws it again when 
 	// Laid out here and kept again, as a picture of the new version.
 	const keptAfter = await pollUntil(
 		() => keptPictures(browser),
-		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[6] === 2),
+		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[5] === 2),
 		"the new version's picture to be kept",
 		WAIT,
 	);

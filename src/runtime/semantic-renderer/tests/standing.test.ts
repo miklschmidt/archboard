@@ -1,6 +1,5 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import type { DiagramTheme } from "@/shared/semantic-board/index";
 import { type VariantContent } from "@/shared/semantic-board/index";
 import {
 	renderArchitecture,
@@ -17,6 +16,7 @@ import {
 	withoutMark,
 	type DrawnGroup,
 } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import { colourIn, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 /**
  * One architecture, as its own contract reads it.
@@ -116,35 +116,31 @@ function markInk(group: DrawnGroup): string | undefined {
 }
 
 /**
- * The ink this document's selection ring lights up in.
+ * The ink this document's selection ring lights up in, in one theme.
  * @param svg The drawn document.
+ * @param theme The theme it is shown in.
  * @returns The colour.
  */
-function selectionInk(svg: string): string {
-	return /\.is-selected \.ab-halo\{[^}]*stroke:(#[0-9a-f]{6})/.exec(svg)![1]!;
+function selectionInk(svg: string, theme: "light" | "dark"): string {
+	return colourIn(/\.is-selected \.ab-halo\{[^}]*stroke:([^;}]+)/.exec(svg)![1]!, theme);
 }
 
 /**
  * Draw the architecture, with or without a statement of how it stands.
  * @param standing What the caller says, when it says anything.
- * @param theme Which ground to draw it on.
  * @returns The rendered architecture.
  */
-function drawn(
-	standing?: StatedStandings,
-	theme: DiagramTheme = "light",
-): Promise<RenderedDiagram> {
-	return renderArchitecture({ content: PROPOSAL, theme, standing });
+function drawn(standing?: StatedStandings): Promise<RenderedDiagram> {
+	return renderArchitecture({ content: PROPOSAL, standing });
 }
 
 /**
  * Draw the sequence, with or without a statement of how it stands.
  * @param standing What the caller says, when it says anything.
- * @param theme Which ground to draw it on.
  * @returns The rendered sequence.
  */
-function drawnSequence(standing?: StatedStandings, theme: DiagramTheme = "light"): RenderedDiagram {
-	return renderDataFlow({ content: SEQUENCE, theme, standing });
+function drawnSequence(standing?: StatedStandings): RenderedDiagram {
+	return renderDataFlow({ content: SEQUENCE, standing });
 }
 
 /**
@@ -318,25 +314,22 @@ describe("a stated standing on an architecture", () => {
 		expect(withoutColour(words)).not.toBe(withoutColour(unmarked));
 	});
 
-	test("draws the same standings on both grounds without moving anything", async () => {
-		const light = await drawn(STANDING, "light");
-		const dark = await drawn(STANDING, "dark");
-
-		expect(dark.svg).not.toBe(light.svg);
-		expect(dark.atlas).toEqual(light.atlas);
+	test("one picture draws its standings in each theme's own ink", async () => {
+		const rendered = await drawn(STANDING);
 		for (const standing of ["added", "removed", "changed"]) {
-			expect(dark.svg).toContain(`data-semantic-standing="${standing}"`);
+			expect(rendered.svg).toContain(`data-semantic-standing="${standing}"`);
 		}
 		// Each theme paints its standings in its own ink, and neither reaches for the
 		// ring a viewer already uses to mean "this is what you have selected".
-		for (const rendered of [light, dark]) {
-			const mark = markInk(subject(rendered, "node", "queue"));
+		const inks = (["light", "dark"] as const).map((theme) => {
+			const queue = groupOf(paintedIn(rendered.svg, theme), "node", "queue");
+			expect(queue, `queue was not drawn in ${theme}`).toBeDefined();
+			const mark = markInk(queue!);
 			expect(mark).toBeDefined();
-			expect(mark).not.toBe(selectionInk(rendered.svg));
-		}
-		expect(markInk(subject(light, "node", "queue"))).not.toBe(
-			markInk(subject(dark, "node", "queue")),
-		);
+			expect(mark).not.toBe(selectionInk(rendered.svg, theme));
+			return mark;
+		});
+		expect(inks[0]).not.toBe(inks[1]);
 	});
 });
 

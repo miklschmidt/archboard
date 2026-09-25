@@ -49,7 +49,7 @@ test("a board the vault has not got is named rather than shrugged at", async () 
 	expect(document.body.textContent).toContain("pipeline");
 });
 
-test("a drawn board puts the server's picture on screen in the shell's theme", async () => {
+test("a drawn board puts the server's picture on screen, asked for in no theme", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
@@ -57,7 +57,8 @@ test("a drawn board puts the server's picture on screen in the shell's theme", a
 	expect(surface().querySelector("svg")).not.toBeNull();
 	expect(surface().querySelectorAll("[data-semantic-id]").length).toBe(3);
 	expect(renderCalls()[0]).toContain("board=pipeline");
-	expect(renderCalls()[0]).toContain("theme=light");
+	// The picture takes the page's theme, so the request names none.
+	expect(renderCalls()[0]).not.toContain("theme=");
 });
 
 test("a drawn board is fitted to the pane, and `0` puts it back", async () => {
@@ -238,7 +239,6 @@ test("a torn render answer is a failure, and never looks like an empty board", a
 			board: "pipeline",
 			version: 1,
 			variant: whole["variant"],
-			theme: "light",
 		}),
 	).toBe("error");
 });

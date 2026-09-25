@@ -270,7 +270,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	await settled();
 
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("engine");
-	expect(server.calls.some((url) => url.includes("board=engine&theme=light"))).toBe(true);
+	expect(server.calls.some((url) => url.includes("board=engine"))).toBe(true);
 	// The pane says where it is and how to get back; the address still names the
 	// board the pane was opened on, which is why the trail has to be on screen.
 	expect(slot("semantic-board-trail")?.textContent).toContain("pipeline");

@@ -21,7 +21,6 @@ import { ghostPicture, type Departure } from "@/ui/semantic-board-canvas/lib/pic
 import { enterPicture } from "@/ui/semantic-board-canvas/lib/picture-entrance";
 import {
 	continuousPictures,
-	sameReading,
 	sharedShift,
 	stagePicture,
 	transitionPicture,
@@ -102,10 +101,7 @@ function carriedOn(last: SemanticDrawing, next: SemanticDrawing, presenting = fa
 	if (last.svg === next.svg) {
 		return false;
 	}
-	return (
-		continuousPictures(last, next) ||
-		(presenting && last.board === next.board && last.theme === next.theme)
-	);
+	return continuousPictures(last, next) || (presenting && last.board === next.board);
 }
 
 /**
@@ -131,8 +127,8 @@ function carriedFrom(
 /**
  * Whether the next picture comes in part by part: one with nothing on this
  * surface to be carried from — the first, or another board or view. A picture
- * of the same board read the same way is carried instead, and one that only
- * changed theme is cut to, since the same board simply took other colours.
+ * of the same board read the same way is carried instead. A theme switch is no
+ * new picture at all: the one on the surface takes the page's colours.
  * @param last What the surface was last given, if anything.
  * @param surface The surface the picture goes on.
  * @param drawing The picture.
@@ -148,7 +144,7 @@ function entersAfresh(
 	if (reducedMotion || !canAnimate()) {
 		return false;
 	}
-	return last?.surface !== surface || !sameReading(last.drawing, drawing);
+	return last?.surface !== surface || !continuousPictures(last.drawing, drawing);
 }
 
 /**

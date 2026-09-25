@@ -101,26 +101,15 @@ function viewOf(drawing: SemanticDrawing): string | null {
 /**
  * Whether the next picture is one this pane can move to from the last.
  *
- * Only a picture of the same board, read the same way and drawn on the same
- * ground: another variant of it, or the same variant after an edit. Another
- * board, another view of this one or another theme is a different picture
- * with nothing to carry across, and is shown at once.
+ * Only a picture of the same board, read the same way: another variant of it,
+ * or the same variant after an edit. Another board or another view of this one
+ * is a different picture with nothing to carry across, and is shown at once.
+ * A theme is never a different picture: one picture takes the page's theme.
  * @param before The picture on the surface.
  * @param after The picture that arrived.
  * @returns True when the subjects of one are the subjects of the other.
  */
 function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): boolean {
-	return sameReading(before, after) && before.theme === after.theme;
-}
-
-/**
- * Whether two pictures are of the same board read the same way, whatever
- * ground they are drawn on.
- * @param before One picture.
- * @param after The other.
- * @returns True for the same board through the same view.
- */
-function sameReading(before: SemanticDrawing, after: SemanticDrawing): boolean {
 	return before.board === after.board && viewOf(before) === viewOf(after);
 }
 
@@ -383,7 +372,6 @@ function transitionPicture(
 export {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
-	sameReading,
 	sharedShift,
 	stagePicture,
 	transitionPicture,

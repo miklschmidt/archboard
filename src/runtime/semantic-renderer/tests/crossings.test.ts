@@ -53,7 +53,9 @@ function masks(svg: string) {
 		[...svg.matchAll(/<mask id="([^"]+)"[^>]*>([\s\S]*?)<\/mask>/gu)].map((mask) => [
 			mask[1]!,
 			[
-				...mask[2]!.matchAll(/<path d="([^"]+)"[^>]*stroke="black"[^>]*stroke-width="([^"]+)"/gu),
+				...mask[2]!.matchAll(
+					/<path d="([^"]+)"[^>]*stroke(?:="|:)black[^>]*stroke-width="([^"]+)"/gu,
+				),
 			].map((path) => ({ path: path[1]!, width: Number(path[2]) })),
 		]),
 	);

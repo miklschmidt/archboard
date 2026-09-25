@@ -112,7 +112,6 @@ function drawing(version: number, board = "pipeline"): Record<string, unknown> {
 		board,
 		version,
 		variant: { id: "v1", name: "current", lifecycle: "current" },
-		theme: "light",
 		view: null,
 		views: [],
 		changes: null,
@@ -143,7 +142,6 @@ const NOTHING_DRAWN = {
 		board: "pipeline",
 		version: 3,
 		variant: { id: "v1", name: "current", lifecycle: "current" },
-		theme: "light",
 		view: null,
 		views: [],
 		changes: null,
@@ -431,7 +429,6 @@ function Held(props: HeldProps): JSX.Element {
 	}
 	return createElement(SemanticBoardStage, {
 		board: "pipeline",
-		theme: "light",
 		...paneReading(props),
 		variant,
 		onVariantChange,
@@ -464,7 +461,6 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 				? createElement(Held, { ...options, selection, report: onSelect })
 				: createElement(SemanticBoardStage, {
 						board: "pipeline",
-						theme: "light",
 						...paneReading(options),
 						selection,
 						onSelect,

@@ -7,8 +7,10 @@
 //
 //   the layout engine: a pool of workers, Bun Workers on the server and Web
 //     Workers in the browser, each solving one graph at a time
-//   the theme colours: parsed from src/shared/theme/theme.css, which Bun reads
-//     from disk and a browser build reads at build time
+//   the theme colours a document that stands alone carries: parsed from
+//     src/shared/theme/theme.css, which Bun reads from disk; a browser draws
+//     only pictures for its own page, which take the page's colours, so it
+//     has none
 //   the diagram fonts as base64, for a document that embeds its faces, which
 //     only a host with the files at hand can give
 //   the Remix Icon path data a policy's node kinds name: the whole set under
@@ -36,8 +38,8 @@ interface RendererHost {
 	 * @returns Its solved geometry.
 	 */
 	readonly solve: (graph: ElkNode, layoutOptions: LayoutOptions) => Promise<ElkNode>;
-	/** The theme colours. */
-	readonly themeColors: ThemeColors;
+	/** The theme colours, where a document that stands alone can be drawn. */
+	readonly themeColors?: ThemeColors | undefined;
 	/**
 	 * One diagram font file as base64, for a document that embeds its faces.
 	 * @param file The file's name.
@@ -92,10 +94,16 @@ function rendererHost(): RendererHost {
  * @param theme The theme.
  * @param name The CSS colour custom property.
  * @returns The colour.
- * @throws {Error} When the theme does not define the property.
+ * @throws {Error} When the host has no theme colours, or the theme does not define the property.
  */
 function themeColor(theme: DiagramTheme, name: string): string {
-	const color = rendererHost().themeColors[theme][name];
+	const colors = rendererHost().themeColors;
+	if (colors === undefined) {
+		throw new Error(
+			"This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme.",
+		);
+	}
+	const color = colors[theme][name];
 	if (color === undefined) {
 		throw new Error(
 			`Missing ${theme} theme color ${name}. Define it in src/shared/theme/theme.css.`,

@@ -15,7 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { openSidebarTab, pictureAtRest } from "./support/semantic-page.ts";
-import { sameHue } from "./support/computed-colours.ts";
+import { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints } from "./support/computed-colours.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -27,39 +27,6 @@ const SURFACE = "[data-slot='semantic-board-surface']";
 const INSPECTOR = "[data-slot='semantic-inspector']";
 
 /**
- * What the browser actually paints one relationship with: the ink of the line,
- * of the band behind it, of the arrowhead it references, and of its dots.
- *
- * Computed styles and a resolved marker, not attributes, because the question
- * is what a person sees — an attribute a stylesheet overrode would pass a
- * reading of the markup and fail the reader.
- * @param browser The page.
- * @param id The relationship's semantic id.
- * @returns The four inks, each as the browser resolves it.
- */
-const edgeInks = (
-	browser: AgentBrowserSession,
-	id: string,
-): Promise<{ line: string; band: string; head: string; streams: string[] }> =>
-	browser.eval(
-		`(() => {` +
-			` const group = document.querySelector("${SURFACE} [data-semantic-id='${id}']");` +
-			` const paths = [...group.querySelectorAll(":scope > path")];` +
-			` const line = paths.find((path) => path.getAttribute("marker-end") !== null);` +
-			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo") && !path.classList.contains("ab-pulse"));` +
-			` const marker = "#" + line.getAttribute("marker-end").slice(5, -1);` +
-			` const head = document.querySelector(marker + " path");` +
-			` return {` +
-			`  line: getComputedStyle(line).stroke,` +
-			`  band: getComputedStyle(band).stroke,` +
-			`  head: getComputedStyle(head).fill === "none"` +
-			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill,` +
-			`  streams: [...group.querySelectorAll(".ab-pulse")].map((comet) => [...new Set(` +
-			`   [...comet.querySelectorAll("path:not([data-pulse-part='moat'])")].map((path) => getComputedStyle(path).stroke))].join("|")),` +
-			` }; })()`,
-	);
-
-/**
  * The ink one card's icon tile is drawn in, or null while the card is not there.
  *
  * Null rather than a throw, because the surface is remounted whenever a new
@@ -68,16 +35,17 @@ const edgeInks = (
  * about. `iconInk` waits for the card instead.
  * @param browser The page.
  * @param name What the card says.
- * @returns The tile's stroke as the browser resolves it, or null.
+ * @returns The tile's stroke as the browser resolves it, spelt as opaque sRGB, or null.
  */
 const drawnIconInk = (browser: AgentBrowserSession, name: string): Promise<string | null> =>
 	browser.eval<string | null>(
 		`(() => {` +
+			OPAQUE_SRGB +
 			` const card = [...document.querySelectorAll("${SURFACE} [data-semantic-kind='node']")]` +
 			`  .find((group) => group.textContent.includes(${JSON.stringify(name)}));` +
 			` if (card === undefined) { return null; }` +
 			` const tile = [...card.querySelectorAll("rect")].find((rect) => rect.getAttribute("rx") === "5");` +
-			` return tile === undefined ? null : getComputedStyle(tile).stroke; })()`,
+			` return tile === undefined ? null : opaque(getComputedStyle(tile).stroke); })()`,
 	);
 
 /**
@@ -377,10 +345,13 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 	expect(Object.keys(ids).toSorted()).toEqual(["added", "gone", "hero", "queue", "writer"]);
 
+	// Every paint in the picture resolves against the page's own tokens.
+	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
+
 	// One ink from end to end. The band behind the line was already coloured;
 	// what a reader could not see is that the line, its arrowhead and its dots
 	// belonged to it rather than being grey scenery over the top.
-	const added = await edgeInks(browser, ids["added"] ?? "");
+	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
 	// The comets carry the relationship's colour, the band's hue; the line is drawn weaker.
@@ -393,7 +364,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	// A relationship the proposal dropped is still drawn, in its own ink, and
 	// sends nothing: a removed line that looked like live traffic would be the
 	// picture claiming the proposal still has it.
-	const gone = await edgeInks(browser, ids["gone"] ?? "");
+	const gone = await edgeInks(browser, SURFACE, ids["gone"] ?? "");
 	expect(sameHue(gone.line, gone.band)).toBe(true);
 	expect(gone.head).toBe(gone.line);
 	expect(gone.streams).toHaveLength(0);
@@ -453,6 +424,11 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const stepId = await browser.eval<string>(
 		`document.querySelector("${SURFACE} [data-semantic-kind='step']").dataset.semanticId`,
 	);
+	// The exchange's timed comets: their SMIL motion and the gradient stops their tails fade through.
+	expect(
+		await browser.eval<number>(`document.querySelectorAll("${SURFACE} svg stop").length`),
+	).toBeGreaterThan(0);
+	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 	const message = await overThePill(browser, stepId);
 	expect(message.traffic).toBeGreaterThan(0);
 	expect(message.trafficFirst).toBe(true);
@@ -465,7 +441,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	await pollUntil(
 		() => iconInk(browser, "Gateway"),
 		(ink) => ink !== lightIcon,
-		"the picture to be redrawn on the dark ground",
+		"the picture to take the dark ground's colours",
 		WAIT,
 	);
 	await browser.eval(
@@ -481,7 +457,8 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		"the architecture to be drawn again",
 		WAIT,
 	);
-	const darkAdded = await edgeInks(browser, ids["added"] ?? "");
+	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
+	const darkAdded = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(sameHue(darkAdded.line, darkAdded.band)).toBe(true);
 	expect(darkAdded.head).toBe(darkAdded.line);
 	expect(darkAdded.line).not.toBe(added.line);

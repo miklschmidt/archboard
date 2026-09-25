@@ -40,8 +40,13 @@ import {
 	resolveRoute,
 } from "@/server/archboard/lib/semantic-board-writes";
 
-/** The themes a render can be asked for. */
-const RenderThemeSchema = z.enum(["light", "dark"]).default("light");
+/**
+ * The theme a render stands alone in. Absent asks for the page's picture, which
+ * paints with the page's colour tokens and so takes whichever theme the page
+ * showing it is in; a theme asks for a document that carries that theme's
+ * values, for a file or a bitmap.
+ */
+const RenderThemeSchema = z.enum(["light", "dark"]).optional();
 
 /**
  * Where the drawn faces come from.
@@ -146,7 +151,7 @@ function renderRoute(req: Request, res: Response): void {
 
 /** What a render request selects, once every stated selector has been read. */
 interface RenderChoices {
-	readonly theme: "light" | "dark";
+	readonly theme?: "light" | "dark" | undefined;
 	readonly fonts: "linked" | "embedded";
 	readonly variant?: string;
 	readonly view?: string;

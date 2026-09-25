@@ -25,7 +25,6 @@ import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type {
 	SemanticDrawing,
 	SemanticRender,
-	SemanticTheme,
 	SemanticWaiting,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { SemanticDiagram } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
@@ -98,8 +97,6 @@ interface SemanticBoardStageProps {
 	 * server to draw and touches no board.
 	 */
 	view?: string | undefined;
-	/** Which palette the server should draw in; the shell owns the choice. */
-	theme?: SemanticTheme | undefined;
 	/**
 	 * The person chose a different way of reading this variant.
 	 *
@@ -172,7 +169,7 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onComparisonChange: (enabled: boolean) => void;
 	/** Camera retained while a different variant is being drawn. */
 	readonly camera: BoardCamera;
-	/** The cache's answer for this board, variant and theme. */
+	/** The cache's answer for this board, variant and view. */
 	readonly render: UseQueryResult<SemanticRender>;
 	/** Ask the server for the picture again. */
 	readonly onRetry: () => void;
@@ -388,12 +385,11 @@ function renderedView(view: RenderView): JSX.Element {
 
 /**
  * A read-only semantic board in one pane.
- * @param props The board, the variant, the theme, the selection and the pick.
+ * @param props The board, the variant, the selection and the pick.
  * @returns Whichever of the four states is true.
  */
 function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	const { board, variant, onSelect, onUserChanged } = props;
-	const theme = props.theme ?? "light";
 	const [comparison, onComparisonChange] = useState(true);
 	const drill = useDrillDown(board, variant);
 	// How the board on screen is read: the shell's answer for the pane's own
@@ -425,7 +421,6 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 			board: drill.board,
 			variant: level.variant,
 			view: viewToRead(narrative.beat, level.view),
-			theme,
 			comparison,
 			layout,
 		}),
