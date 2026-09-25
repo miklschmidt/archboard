@@ -1,7 +1,8 @@
 // The track engine (TASK-349): what its own placement and routing promise.
 // What this catches: a fan wider than the page drawn as one long row again, a
 // line that jogs a few points on its way to a label, which its rounded corners
-// draw as a hook doubling back on itself, a long chain drawn as one tall
+// draw as a hook doubling back on itself, a line that steps sideways by less
+// than its two bends need on its way between cards, a long chain drawn as one tall
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
@@ -17,12 +18,15 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
+import shortStep from "./short-step.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
 /** How far past its ends a line may stand: one lane, where it turns beside a port. */
 const SLACK = 16;
 /** The most room a container keeps beside what it holds. */
 const FRAME_ROOM = 24;
+/** The sideways room a line's two fixed 8 px bends need to step aside and on. */
+const TWO_BENDS = 16;
 
 const fan = orderedFixture({
 	nodes: ["hub", ...TARGETS].map((id) => ({ id, name: id, kind: "module" })),
@@ -64,6 +68,33 @@ test("a line to its label runs without a hook", async () => {
 	const routes = routePoints(drawing.svg);
 	expect(routes.size).toBe(TARGETS.length);
 	for (const [id, points] of routes) expect(doublesBack(points), id).toBe(false);
+});
+
+/**
+ * How far a drawn route steps sideways between each of its upright runs and the next.
+ * @param points The route's path points, control points included.
+ * @returns The steps, in order.
+ */
+function sidewaysSteps(points: readonly DrawnPoint[]): number[] {
+	const uprights = points
+		.slice(1)
+		.flatMap((point, index) =>
+			point.x === points[index]!.x && point.y !== points[index]!.y ? [point.x] : [],
+		);
+	return uprights.slice(1).map((x, index) => Math.abs(x - uprights[index]!));
+}
+
+// Reduced from a dogfood board, names replaced: lines leaving one shared port
+// stepped a few points aside where a lane or a label stood just off their column.
+test("a line steps sideways by no less than its two bends need, or runs straight", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(shortStep),
+		theme: "light",
+		layout: "track",
+	});
+	for (const [id, points] of routePoints(drawing.svg))
+		for (const step of sidewaysSteps(points))
+			expect(step > 0.5 && step < TWO_BENDS, `${id} steps ${step}`).toBe(false);
 });
 
 test("a long chain folds into columns whose first cards stand on one line", async () => {
