@@ -107,8 +107,25 @@ function slidersOf(nets: readonly Net[]): Slider[] {
 }
 
 /**
- * What stays put on one band: its cards and title rows, its lanes, and the
- * walls of every frame the band passes through.
+ * How far the scene's cards, title rows and labels reach, left and right: a
+ * label slides no further out, since the lines that enter a block run down
+ * beside its items.
+ * @param scene The scene.
+ * @returns The leftmost and rightmost edge.
+ */
+function extentOf(scene: Scene): Wall {
+	const boxes = [...scene.cards.values(), ...scene.titles.values(), ...scene.labels.values()].map(
+		({ box }) => box,
+	);
+	return [
+		Math.min(...boxes.map(({ x }) => x)),
+		Math.max(...boxes.map(({ x, width }) => x + width)),
+	];
+}
+
+/**
+ * What stays put on one band: its cards and title rows, its lanes, the
+ * walls of every frame the band passes through, and the scene's extent.
  * @param scene The placed scene.
  * @param band The band.
  * @param lanes The x of every lane on the band.
@@ -118,10 +135,13 @@ function wallsOn(scene: Scene, band: number, lanes: readonly number[]): Wall[] {
 	const items = [...scene.cards.values(), ...scene.titles.values()].filter(
 		(item) => item.band === band,
 	);
+	const [left, right] = extentOf(scene);
 	return [
 		...items.map(({ box }): Wall => [box.x - LABEL_GAP, box.x + box.width + LABEL_GAP]),
 		...lanes.map((x): Wall => [x - LABEL_GAP, x + LABEL_GAP]),
 		...frameWallsOn(scene, band),
+		[-OPEN_REACH, left] as const,
+		[right, OPEN_REACH] as const,
 	].toSorted((one, other) => one[0] - other[0]);
 }
 
@@ -370,6 +390,16 @@ function keepsGap(item: Item, box: Item["box"], others: Iterable<Item>, gap: num
 }
 
 /**
+ * Whether a box stands within a stretch.
+ * @param box The box.
+ * @param stretch The stretch.
+ * @returns True when it does.
+ */
+function within(box: Item["box"], stretch: Wall): boolean {
+	return box.x >= stretch[0] && box.x + box.width <= stretch[1];
+}
+
+/**
  * Whether a box reaches into a stretch of a band.
  * @param box The box.
  * @param low Where the stretch starts.
@@ -408,7 +438,8 @@ function clearOnBand(
 		lanes.every((x) => x <= box.x - LABEL_GAP || x >= box.x + box.width + LABEL_GAP) &&
 		frameWallsOn(scene, item.band).every(
 			([low, high]) => !enters(box, low, high) || enters(item.box, low, high),
-		)
+		) &&
+		within(box, extentOf(scene))
 	);
 }
 
