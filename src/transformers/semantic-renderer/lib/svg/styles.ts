@@ -54,6 +54,30 @@ type Head = "filled" | "open";
 const WEIGHTS: readonly Weight[] = ["hero", "normal", "muted"];
 
 const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.2 };
+
+/**
+ * How big an arrowhead of each weight is, in widths of its line. A hero's head
+ * is part of its weight.
+ */
+const HEAD_SIZE: Readonly<Record<Weight, number>> = { hero: 7.5, normal: 6, muted: 5.5 };
+
+/**
+ * Where on its ten-unit drawing each head sits on the end of its line. The open
+ * head anchors at its tip so the line runs all the way into the point; the
+ * filled one two units back, so its body covers the line's round cap.
+ */
+const HEAD_REF_X: Readonly<Record<Head, number>> = { filled: 8, open: 10 };
+
+/**
+ * How far an arrowhead's tip lies past the end of its line. A line that must
+ * touch something with its tip stops exactly this far short of it.
+ * @param head Which form.
+ * @param weight How loudly the line speaks.
+ * @returns The distance, in the page's units.
+ */
+function headReach(head: Head, weight: Weight): number {
+	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+}
 /**
  * The ink a line and its arrowhead are drawn in; its comets carry the same
  * colour at full strength (`fullLineColour`).
@@ -244,5 +268,8 @@ export {
 	strokeWidthOf,
 	edgeAttributes,
 	stylesFor,
+	headReach,
+	HEAD_REF_X,
+	HEAD_SIZE,
 	STROKE_WIDTH,
 };

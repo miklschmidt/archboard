@@ -40,8 +40,9 @@ import {
 	STEP_NOTE_PADDING_Y,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {
+	STEP_HEAD,
 	STEP_WEIGHT,
-	MARKER_INSET,
+	arrowStandoff,
 	SELF_LOOP_CORNER,
 	SELF_LOOP_DROP,
 	SELF_LOOP_REACH,
@@ -91,7 +92,6 @@ import {
 	stylesFor,
 	lineColour,
 	STROKE_WIDTH,
-	type Head,
 	type SvgStyles,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
 
@@ -113,22 +113,6 @@ const STEP_DASH: Readonly<Record<MessageKind, string | undefined>> = {
 	async: undefined,
 	self: undefined,
 	return: "5 4",
-};
-
-/**
- * The arrowhead each message kind ends in.
- *
- * A deliberate deviation from strict UML 2, which draws replies with an open head
- * as well, inherited from PR Lens with its reasoning intact: here the open head is
- * the exclusive mark of "nobody is waiting on this". The dash already says "this
- * is an answer", so an open-headed reply would put the asynchronous signature on
- * every reply and dilute the one distinction the head shape exists to draw.
- */
-const STEP_HEAD: Readonly<Record<MessageKind, Head>> = {
-	sync: "filled",
-	async: "open",
-	return: "filled",
-	self: "filled",
 };
 
 /**
@@ -237,7 +221,7 @@ function selfPath(placed: PlacedStep, activated: boolean): string {
 		`a${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} 0 0 1 ${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} ` +
 		`v${coord(SELF_LOOP_DROP)} ` +
 		`a${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} 0 0 1 -${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} ` +
-		`h-${coord(SELF_LOOP_REACH - MARKER_INSET)}`
+		`h-${coord(SELF_LOOP_REACH - arrowStandoff("self"))}`
 	);
 }
 

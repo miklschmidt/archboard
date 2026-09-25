@@ -1,5 +1,6 @@
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
-import type { Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
+import type { MessageKind } from "@/shared/semantic-board/index";
+import { headReach, type Head, type Weight } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 // Sequence-diagram measurements, used by the data-flow renderer.
 // Participants occupy columns; their dashed vertical lifelines show progression
@@ -39,8 +40,6 @@ const LIFELINE_DASH = "3 5";
 
 /** Half the width of an activation bar, and how far it holds arrows off the lifeline. */
 const ACTIVATION_HALF_WIDTH = 6;
-/** The room an arrowhead needs of its own, short of whatever it points at. */
-const MARKER_INSET = 5;
 /** The corner radius of an activation bar. */
 const ACTIVATION_RADIUS = 3;
 
@@ -85,6 +84,32 @@ const MAX_PULSES_PER_STEP = 3;
  */
 const STEP_WEIGHT: Weight = "normal";
 
+/**
+ * The arrowhead each message kind ends in.
+ *
+ * A deliberate deviation from strict UML 2, which draws replies with an open head
+ * as well, inherited from PR Lens with its reasoning intact: here the open head is
+ * the exclusive mark of "nobody is waiting on this". The dash already says "this
+ * is an answer", so an open-headed reply would put the asynchronous signature on
+ * every reply and dilute the one distinction the head shape exists to draw.
+ */
+const STEP_HEAD: Readonly<Record<MessageKind, Head>> = {
+	sync: "filled",
+	async: "open",
+	return: "filled",
+	self: "filled",
+};
+
+/**
+ * How far short of the bar or lifeline it arrives at a message's line stops:
+ * exactly the reach of its head, so the tip touches what it points at.
+ * @param kind What the message does.
+ * @returns The distance.
+ */
+function arrowStandoff(kind: MessageKind): number {
+	return headReach(STEP_HEAD[kind], STEP_WEIGHT);
+}
+
 export {
 	STEP_WEIGHT,
 	MAX_PULSES_PER_STEP,
@@ -100,7 +125,8 @@ export {
 	FLOW_GAP,
 	ACTIVATION_HALF_WIDTH,
 	ACTIVATION_RADIUS,
-	MARKER_INSET,
+	STEP_HEAD,
+	arrowStandoff,
 	SELF_LOOP_REACH,
 	SELF_LOOP_DROP,
 	SELF_LOOP_CORNER,

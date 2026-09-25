@@ -1,5 +1,6 @@
 // Where the parts of a drawn sequence meet: a lifeline and the card it hangs
-// from, and a flow's title rule and the frame around it.
+// from, an arrowhead and the bar or lifeline it points at, and a flow's title
+// rule and the frame around it.
 //
 // Each is read back off the drawn document, in the one frame of reference a
 // subject's own group is drawn in, so the page's shift never enters a comparison.
@@ -101,6 +102,110 @@ test("every lifeline starts the same short way under its own card, however tall 
 	const first = groups.find((group) => group.id === "s1")!;
 	const row = Number(/\sd="M[\d.]+,([\d.]+)/.exec(first.markup)?.[1]);
 	expect(row).toBeGreaterThan(Math.max(...cards.map((card) => card.bottom)));
+});
+
+/**
+ * Where a path's pen stops, and which way it was last moving across the page.
+ *
+ * A sequence writes a crossing message with absolute moves and a self-message
+ * loop with relative ones, so both are walked.
+ * @param d The path's `d`.
+ * @returns The first point, the last point and the sign of the last horizontal move.
+ */
+function penOf(d: string): { start: number; end: number; y: number; heading: number } {
+	let x = 0;
+	let y = 0;
+	let start = 0;
+	let heading = 0;
+	for (const [, command, list] of d.matchAll(/([MLhva])([^MLhva]*)/g)) {
+		const numbers = [...list!.matchAll(/-?[\d.]+/g)].map(Number);
+		const before = x;
+		if (command === "M" || command === "L") {
+			[x, y] = [numbers[0]!, numbers[1]!];
+		} else if (command === "h") {
+			x += numbers[0]!;
+		} else if (command === "v") {
+			y += numbers[0]!;
+		} else {
+			x += numbers.at(-2)!;
+			y += numbers.at(-1)!;
+		}
+		if (command === "M") {
+			start = x;
+		} else if (x !== before) {
+			heading = Math.sign(x - before);
+		}
+	}
+	return { start, end: x, y, heading };
+}
+
+test("every message's arrowhead touches the bar or lifeline it arrives at", () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "a", name: "Caller", kind: "service" },
+			{ id: "b", name: "Worker", kind: "service" },
+			{ id: "c", name: "Store", kind: "datastore" },
+		],
+		flows: [
+			{
+				id: "f",
+				name: "One job",
+				participants: ["a", "b", "c"],
+				steps: [
+					{ id: "s1", from: "a", to: "b", label: "run", kind: "sync" },
+					{ id: "s2", from: "b", to: "b", label: "check", kind: "self" },
+					{ id: "s3", from: "b", to: "c", label: "save", kind: "async" },
+					{ id: "s4", from: "c", to: "b", label: "saved", kind: "return" },
+					{ id: "s5", from: "b", to: "a", label: "done", kind: "return" },
+					{ id: "s6", from: "a", to: "a", label: "log", kind: "self" },
+				],
+			},
+		],
+	});
+	const rendered = renderDataFlow({ theme: "light", content });
+	const markers = new Map(
+		[...rendered.svg.matchAll(/<marker\s[^>]*>/g)].map(([tag]) => [
+			/id="([^"]+)"/.exec(tag)![1]!,
+			{
+				refX: Number(/refX="([\d.]+)"/.exec(tag)![1]),
+				width: Number(/markerWidth="([\d.]+)"/.exec(tag)![1]),
+			},
+		]),
+	);
+	const groups = subjectGroups(rendered.svg);
+	const steps = ["s1", "s2", "s3", "s4", "s5", "s6"];
+	const touched = steps.map((id) => {
+		const step = content.flows[0]!.steps.find((one) => one.id === id)!;
+		const line = /<path\s[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/.exec(
+			groups.find((group) => group.id === id)!.markup,
+		)![0];
+		const head = markers.get(/marker-end="url\(#([^)]+)\)"/.exec(line)![1]!)!;
+		const pen = penOf(/\sd="([^"]+)"/.exec(line)![1]!);
+		const reach =
+			((10 - head.refX) / 10) * head.width * Number(/stroke-width="([\d.]+)"/.exec(line)![1]);
+		const tip = pen.end + pen.heading * reach;
+		if (step.kind === "self") {
+			// A loop comes back to exactly where it left.
+			return tip - pen.start;
+		}
+		// Otherwise it arrives at the straight side of the receiver's bar where
+		// one runs at that height, not at a rounded corner of it, or at its lifeline.
+		const column = groups.find((group) => group.id === step.to && group.markup.includes("<line"))!;
+		const bar = [...column.markup.matchAll(/<rect\s(?![^>]*ab-halo)[^>]*>/g)]
+			.map(([tag]) => numbersOf({ ...column, markup: tag }, "rect"))
+			.find(
+				(rect) =>
+					rect("y") + rect("rx") <= pen.y && pen.y <= rect("y") + rect("height") - rect("rx"),
+			);
+		const side =
+			bar === undefined
+				? numbersOf(column, "line")("x1")
+				: bar("x") + (pen.heading > 0 ? 0 : bar("width"));
+		return tip - side;
+	});
+	for (const [index, miss] of touched.entries()) {
+		expect(Math.abs(miss), steps[index]).toBeLessThan(0.5);
+	}
 });
 
 test("a flow's title rule keeps the same inset from both sides of a frame its words widened", () => {
