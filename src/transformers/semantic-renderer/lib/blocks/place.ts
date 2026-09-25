@@ -30,6 +30,7 @@ import {
 	crossingsOf,
 	readsBetter,
 	scoreOf,
+	sinks,
 	wrapPlans,
 	type Weighed,
 } from "@/transformers/semantic-renderer/lib/track/score";
@@ -163,14 +164,16 @@ function bestWrap(
 	const gridded = new CardLayout(block, laid, tree, insets).looseCards().some(grids)
 		? [new CardLayout(block, laid, tree, insets, { grid: true, stacked }).lay(viz)]
 		: [];
-	const best = [
-		...gridded,
-		...wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
-			[false, true].map((columns) =>
+	// A wrap that sinks a card stands it off on a late rank, away from its
+	// neighbours; it may fit the page better, but it is no wrap.
+	const wraps = wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
+		[false, true]
+			.map((columns) =>
 				new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }).lay(viz),
-			),
-		),
-	].reduce<Laid | undefined>(
+			)
+			.filter(({ boxes }) => !sinks(lowered, boxes, (card) => block.clusterOf.get(card))),
+	);
+	const best = [...gridded, ...wraps].reduce<Laid | undefined>(
 		(one, other) => (one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one),
 		undefined,
 	);

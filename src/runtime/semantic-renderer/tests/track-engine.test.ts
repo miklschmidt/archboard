@@ -5,8 +5,9 @@
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
-// a tall board of containers drawn as one column, or folded through one, and
-// containers side by side sharing one border.
+// a tall board of containers drawn as one column, or folded through one,
+// containers side by side sharing one border, and a wrapped rank that sinks a
+// card to a late row of its own, away from the cards it stands with.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -19,6 +20,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
+import sunkWrap from "./sunk-wrap.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
 /** How far past its ends a line may stand: one lane, where it turns beside a port. */
@@ -191,4 +193,28 @@ test("containers side by side keep an inset between their borders", async () => 
 		.toSorted((a, b) => a.x - b.x);
 	expect(one!.y).toBeLessThan(other!.y + other!.height);
 	expect(other!.x - (one!.x + one!.width)).toBeGreaterThanOrEqual(CONTAINER_INSET);
+});
+
+// Reduced from the dogfood Codex session board: a wrap of the hub's wide rank
+// stepped each row right of the one above, so the last card stood alone on a
+// late row across an empty strip.
+test("a wrapped rank stands each lowered card under one of its row above", async () => {
+	const content = orderedFixture(sunkWrap);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const rank = content.edges.filter(({ from }) => from === "hub").map(({ to }) => to);
+	const parentOf = new Map(content.nodes.map(({ id, parent }) => [id, parent]));
+	const box = (id: string) => drawing.atlas.nodes[id]!;
+	const middle = (id: string): number => Math.round(box(id).y + box(id).height / 2);
+	const rows = [...new Set(rank.map(middle))].toSorted((one, other) => one - other);
+	const rowOf = (id: string): number => rows.indexOf(middle(id));
+	for (const card of rank.filter((id) => rowOf(id) > 0)) {
+		const over = rank.filter(
+			(other) =>
+				rowOf(other) === rowOf(card) - 1 &&
+				parentOf.get(other) === parentOf.get(card) &&
+				box(other).x < box(card).x + box(card).width &&
+				box(card).x < box(other).x + box(other).width,
+		);
+		expect(over.length, card).toBeGreaterThan(0);
+	}
 });
