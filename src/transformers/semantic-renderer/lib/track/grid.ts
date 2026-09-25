@@ -44,4 +44,26 @@ function gridEdges(cards: readonly { id: string; width: number; height: number }
 	}));
 }
 
-export { gridEdges, grids };
+/**
+ * The invisible edges that keep a wrapped rank's rows in columns: every
+ * lowered card chained to the card above it in its column, a row of cards and
+ * its labels higher, so the rows stand as a grid instead of each card leaning
+ * toward its own source.
+ * @param plan The wrap: every card of the rank, left to right, and its row.
+ * @returns The edges, from each card to the one below it.
+ */
+function wrapEdges(plan: ReadonlyMap<string, number>): Edge[] {
+	const rows: string[][] = [];
+	for (const [card, row] of plan) (rows[row] ??= []).push(card);
+	return rows.flatMap((cards, row) =>
+		row === 0
+			? []
+			: cards.flatMap((head, column) => {
+					const tail = rows[row - 1]?.[column];
+					if (tail === undefined) return [];
+					return [{ tail, head, attributes: { style: "invis", minlen: 2, weight: COLUMN_WEIGHT } }];
+				}),
+	);
+}
+
+export { gridEdges, grids, wrapEdges };
