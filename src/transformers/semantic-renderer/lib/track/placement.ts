@@ -77,6 +77,10 @@ function emptyGraph(): Graph & Cluster {
 			newrank: true,
 			compound: true,
 			rankdir: "TB",
+			// More passes at ordering each rank, and one more over the whole: fewer
+			// crossings on the dogfood boards (244 to 224) at no measurable cost.
+			mclimit: 4,
+			remincross: true,
 			splines: "polyline",
 			nodesep: TRACK_NODE_GAP / 72,
 			ranksep: TRACK_RANK_GAP / 72,
