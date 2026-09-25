@@ -1,3 +1,4 @@
+import { paintRegion } from "@/transformers/semantic-renderer/lib/svg/regions";
 import {
 	nodeAppearances,
 	relationshipAppearance,
@@ -269,10 +270,11 @@ function paintArchitecture(
 		label === undefined ? [] : [{ id: edge.id, box: label.box }],
 	);
 	const framed = containers.map(({ measured, box }) => ({ id: measured.node.id, box }));
+	const regioned = (drawing.regions ?? []).map(({ box }) => box);
 	const cardBoxes = cards.map(({ measured, box }) => ({ id: measured.node.id, box }));
 	const canvas = canvasFor(
 		drawing,
-		union([...cardBoxes, ...framed, ...inked, ...labelled].map(({ box }) => box)),
+		union([...[...cardBoxes, ...framed, ...inked, ...labelled].map(({ box }) => box), ...regioned]),
 		DIAGRAM_MARGIN,
 	);
 	const boxes = containers.toSorted(
@@ -289,6 +291,10 @@ function paintArchitecture(
 				appearances.get(held.measured.node.id)!,
 			),
 		),
+		// Group regions: over the frames that hold them, under every line that crosses them.
+		...(drawing.regions ?? [])
+			.toSorted((a, b) => a.depth - b.depth)
+			.map((region) => paintRegion(region, palette, policy)),
 		...edges.map((edge) =>
 			paintEdgeLine(
 				edge,

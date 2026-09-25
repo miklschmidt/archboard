@@ -10,7 +10,12 @@ import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
 import { layoutWithLines, measureNaturalWidth, prepareWithSegments } from "@chenglou/pretext";
-import type { SemanticNode, VariantContent } from "@/shared/semantic-board/index";
+import {
+	placingGroups,
+	type SemanticNode,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { canvasWidth, cssFont } from "@/transformers/semantic-renderer/lib/canvas-text";
 import type {
 	MeasuredArchitecture,
@@ -41,6 +46,9 @@ const NOTE: TextStyle = {
 	role: "note",
 };
 const LABEL: TextStyle = { font: PILL_FONT, fontSize: 10, lineHeight: 15, role: "label" };
+const CAPTION: TextStyle = { font: CARD_TITLE_FONT, fontSize: 12, lineHeight: 16, role: "label" };
+/** Room around a region caption's words. */
+const CAPTION_PADDING = { x: 10, y: 6 };
 
 /**
  * Measure a whole painted line, preserving kerning across Pretext segments.
@@ -171,12 +179,41 @@ function measureLabel(text: string): MeasuredLabel {
 }
 
 /**
+ * Measure a group's name as the caption its region is drawn with: one line.
+ * @param name The group's name.
+ * @returns Its box and its line.
+ */
+function measureCaption(name: string): MeasuredLabel {
+	const width = exactWidth(name, CAPTION);
+	return {
+		width: width + 2 * CAPTION_PADDING.x,
+		height: CAPTION.lineHeight + 2 * CAPTION_PADDING.y,
+		runs: [
+			{
+				text: name,
+				width,
+				x: CAPTION_PADDING.x,
+				y: CAPTION_PADDING.y + CAPTION.fontSize,
+				font: CAPTION.font,
+				fontSize: CAPTION.fontSize,
+				role: CAPTION.role,
+			},
+		],
+	};
+}
+
+/**
  * Measure every architectural subject before placement or SVG emission.
  * @param content The already validated semantic content.
- * @returns Text, card minima, container headers and relationship labels.
+ * @param policy The vault's groups, in order, when groups gather and colour cards.
+ * @returns Text, card minima, container headers, relationship labels and group captions.
  */
-function measureArchitecture(content: VariantContent): MeasuredArchitecture {
+function measureArchitecture(
+	content: VariantContent,
+	policy: Pick<SemanticPolicy, "groups"> = { groups: {} },
+): MeasuredArchitecture {
 	const containers = new Set(content.nodes.flatMap((node) => (node.parent ? [node.parent] : [])));
+	const placing = placingGroups(content.nodes, policy);
 	return {
 		nodes: new Map(
 			content.nodes.map((node) => [node.id, measureNode(node, containers.has(node.id))]),
@@ -184,6 +221,19 @@ function measureArchitecture(content: VariantContent): MeasuredArchitecture {
 		labels: new Map(
 			content.edges.flatMap((edge) => (edge.label ? [[edge.id, measureLabel(edge.label)]] : [])),
 		),
+		...(placing.size === 0
+			? {}
+			: {
+					groups: {
+						placing,
+						captions: new Map(
+							[...new Set(placing.values())].map((id) => [
+								id,
+								measureCaption(policy.groups[id]!.name),
+							]),
+						),
+					},
+				}),
 	};
 }
 

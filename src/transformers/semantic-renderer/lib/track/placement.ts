@@ -11,6 +11,10 @@ import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { Graph, Subgraph, Viz } from "@viz-js/viz";
 import { z } from "zod";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import {
+	GROUP_CAPTIONS,
+	PLACING_GROUP,
+} from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 
 /** Horizontal room Graphviz keeps between neighbours in a rank, in diagram points. */
@@ -22,6 +26,23 @@ const TRACK_RANK_GAP = 28;
 const TRACK_POLYLINE = "archboard.track.polyline";
 /** The layout option on a frame that carries its title row's box, as `x,y,width,height`. */
 const TRACK_TITLE = "archboard.track.title";
+/** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
+const TRACK_REGIONS = "archboard.track.regions";
+/** Room a group region keeps around its members. */
+const REGION_INSET = 14;
+
+const BoxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+/** A group region as placement answers it. */
+const PlacedRegionSchema = z.object({
+	group: z.string(),
+	parent: z.string().optional(),
+	members: z.array(z.string()),
+	box: BoxSchema,
+	caption: BoxSchema,
+});
+type PlacedRegion = z.infer<typeof PlacedRegionSchema>;
+/** Each placing group's caption size, as `[id, width, height]` rows. */
+const CaptionsSchema = z.array(z.tuple([z.string(), z.number(), z.number()]));
 
 const objectSchema = z.object({
 	name: z.string(),
@@ -171,6 +192,20 @@ class TrackPlacement {
 	readonly enclosing = new Map<Cluster, Cluster>();
 	/** Frames by id. */
 	readonly frames = new Map<string, ElkNode>();
+	/** Group regions by their vendor key, with their members and caption size. */
+	readonly regions = new Map<
+		string,
+		{
+			group: string;
+			parent: string | undefined;
+			members: string[];
+			size: readonly [number, number];
+		}
+	>();
+	/** Each placing group's caption size. */
+	readonly captions: ReadonlyMap<string, readonly [number, number]>;
+	/** Group region clusters by vendor name. */
+	readonly regionClusters = new Map<string, Cluster>();
 
 	/**
 	 * Start from a copy, so the caller's graph is never changed.
@@ -178,6 +213,67 @@ class TrackPlacement {
 	 */
 	constructor(input: ElkNode) {
 		this.result = structuredClone(input);
+		const rows = CaptionsSchema.parse(JSON.parse(input.layoutOptions?.[GROUP_CAPTIONS] ?? "[]"));
+		this.captions = new Map(rows.map(([id, width, height]) => [id, [width, height] as const]));
+	}
+
+	/**
+	 * Add one parent's children, gathering those a group places into its region.
+	 * @param children The children, in the board's order.
+	 * @param parent The cluster they sit in.
+	 * @param parentId The container they sit in; absent on the board.
+	 */
+	visitChildren(children: readonly ElkNode[], parent: Cluster, parentId: string | undefined): void {
+		for (const child of children) {
+			const group = child.layoutOptions?.[PLACING_GROUP];
+			this.visit(
+				child,
+				group === undefined ? parent : this.regionFor(group, parent, parentId, child),
+			);
+		}
+	}
+
+	/**
+	 * The region cluster a group has in one parent, made on first use with a
+	 * caption row held above every member.
+	 * @param group The placing group.
+	 * @param parent The parent's cluster.
+	 * @param parentId The container; absent on the board.
+	 * @param member The member being placed.
+	 * @returns The region's cluster.
+	 */
+	regionFor(
+		group: string,
+		parent: Cluster,
+		parentId: string | undefined,
+		member: ElkNode,
+	): Cluster {
+		const key = `${parentId ?? "board"}__${group}`;
+		const name = `cluster_region_${key}`;
+		let cluster = this.regionClusters.get(name);
+		if (cluster === undefined) {
+			cluster = {
+				name,
+				graphAttributes: { margin: REGION_INSET },
+				nodes: [],
+				edges: [],
+				subgraphs: [],
+			};
+			this.regionClusters.set(name, cluster);
+			parent.subgraphs.push(cluster);
+			this.enclosing.set(cluster, parent);
+			const size = this.captions.get(group) ?? [1, 1];
+			this.regions.set(key, { group, parent: parentId, members: [], size });
+			this.parents.set(`caption_${key}`, cluster);
+			cluster.nodes.push(box(`caption_${key}`, size[0], size[1]));
+		}
+		this.regions.get(key)!.members.push(member.id);
+		this.graph.edges.push({
+			tail: `caption_${key}`,
+			head: member.children?.length ? `title_${member.id}` : member.id,
+			attributes: { style: "invis", weight: 10 },
+		});
+		return cluster;
 	}
 
 	/**
@@ -223,7 +319,7 @@ class TrackPlacement {
 		const children = node.children!.toSorted(
 			(one, other) => semanticOrder(one) - semanticOrder(other),
 		);
-		for (const child of children) this.visit(child, cluster);
+		this.visitChildren(children, cluster, node.id);
 		for (const child of children) {
 			this.graph.edges.push({
 				tail: title,
@@ -324,7 +420,13 @@ class TrackPlacement {
 	 * @returns The placed hierarchy.
 	 */
 	place(viz: Viz): ElkNode {
-		for (const node of this.result.children ?? []) this.visit(node, this.graph);
+		this.visitChildren(
+			(this.result.children ?? []).toSorted(
+				(one, other) => semanticOrder(one) - semanticOrder(other),
+			),
+			this.graph,
+			undefined,
+		);
 		const edges = (this.result.edges ?? []).filter((edge) => edge.sources[0] !== edge.targets[0]);
 		const back = this.backEdges(edges);
 		for (const edge of edges) this.connect(edge, back);
@@ -334,6 +436,7 @@ class TrackPlacement {
 		const centres = centresOf(output, origin);
 		this.writeNodes(centres);
 		this.writeFrames(output, centres, origin);
+		this.writeRegions(output, centres, origin);
 		this.writeEdges(edges, back, { output, centres, origin });
 		return {
 			...this.result,
@@ -386,6 +489,40 @@ class TrackPlacement {
 				].join(","),
 			};
 		}
+	}
+
+	/**
+	 * Write every group region's box and caption onto the root.
+	 * @param output What Graphviz answered.
+	 * @param centres Every vendor node's centre.
+	 * @param origin Where the drawing starts.
+	 */
+	writeRegions(output: Output, centres: ReadonlyMap<string, Point>, origin: Point): void {
+		const regions: PlacedRegion[] = [...this.regions].flatMap(([key, region]) => {
+			const cluster = output.objects.find((object) => object.name === `cluster_region_${key}`);
+			const centre = centres.get(`caption_${key}`);
+			if (cluster?.bb === undefined || centre === undefined) return [];
+			const [x1, y1, x2, y2] = numbers(cluster.bb);
+			const [width, height] = region.size;
+			return [
+				{
+					group: region.group,
+					...(region.parent === undefined ? {} : { parent: region.parent }),
+					members: region.members,
+					box: [
+						Math.min(x1!, x2!) - origin.x,
+						Math.min(y1!, y2!) - origin.y,
+						Math.abs(x2! - x1!),
+						Math.abs(y2! - y1!),
+					],
+					caption: [centre.x - width / 2, centre.y - height / 2, width, height],
+				},
+			];
+		});
+		this.result.layoutOptions = {
+			...this.result.layoutOptions,
+			[TRACK_REGIONS]: JSON.stringify(regions),
+		};
 	}
 
 	/**
@@ -451,4 +588,4 @@ function placeTracks(viz: Viz, graph: ElkNode): ElkNode {
 	return new TrackPlacement(graph).place(viz);
 }
 
-export { TRACK_POLYLINE, TRACK_TITLE, placeTracks };
+export { PlacedRegionSchema, TRACK_POLYLINE, TRACK_REGIONS, TRACK_TITLE, placeTracks };

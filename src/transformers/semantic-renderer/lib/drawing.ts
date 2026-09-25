@@ -36,12 +36,33 @@ interface MeasuredLabel {
 interface MeasuredArchitecture {
 	readonly nodes: ReadonlyMap<string, MeasuredNode>;
 	readonly labels: ReadonlyMap<string, MeasuredLabel>;
+	/** The group each node is placed with, and each placing group's measured caption (TASK-347). */
+	readonly groups?: MeasuredGroups | undefined;
+}
+
+/** Which group places each node, and the caption each placing group is drawn with. */
+interface MeasuredGroups {
+	/** A node's placing group, by node id; a node with none is absent. */
+	readonly placing: ReadonlyMap<string, string>;
+	/** Each placing group's name, measured as its region caption. */
+	readonly captions: ReadonlyMap<string, MeasuredLabel>;
 }
 
 /** One card or containing frame, in the final drawing coordinate space. */
 interface DrawingNode {
 	readonly measured: MeasuredNode;
 	readonly box: Box;
+	readonly depth: number;
+}
+
+/** A group's region: the cards one group places inside one container, gathered and captioned. */
+interface DrawingRegion {
+	readonly group: string;
+	/** The container the region sits in; absent on the board itself. */
+	readonly parent?: string | undefined;
+	readonly box: Box;
+	/** Where its caption sits, and its words. */
+	readonly caption: { readonly box: Box; readonly measured: MeasuredLabel };
 	readonly depth: number;
 }
 
@@ -65,6 +86,8 @@ interface ArchitectureDrawing {
 	readonly cards: readonly DrawingNode[];
 	readonly containers: readonly DrawingNode[];
 	readonly edges: readonly DrawingEdge[];
+	/** Group regions, when the engine gathers groups (TASK-347). */
+	readonly regions?: readonly DrawingRegion[] | undefined;
 }
 
 /** A raised arc where one route crosses others, on the route that carries it. */
@@ -92,7 +115,9 @@ export type {
 	MeasuredNode,
 	MeasuredLabel,
 	MeasuredArchitecture,
+	MeasuredGroups,
 	DrawingNode,
+	DrawingRegion,
 	DrawingEdge,
 	ArchitectureDrawing,
 	DrawingBridge,

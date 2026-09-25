@@ -2,7 +2,12 @@
 // frame title rows as items, grouped into bands by the rank they sit on.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/placement";
+import { z } from "zod";
+import {
+	PlacedRegionSchema,
+	TRACK_REGIONS,
+	TRACK_TITLE,
+} from "@/transformers/semantic-renderer/lib/track/placement";
 
 /** Something that sits on a band: a card, a label box or a frame's title row; a label box may slide. */
 interface Item {
@@ -22,6 +27,15 @@ interface Frame {
 	readonly node: ElkNode;
 	readonly depth: number;
 	readonly members: string[];
+}
+
+/** A group region: Graphviz's cluster box, its caption row and the nodes it gathers. */
+interface Region {
+	readonly group: string;
+	readonly parent: string | undefined;
+	readonly members: readonly string[];
+	readonly box: { readonly x: number; readonly width: number };
+	readonly caption: Item;
 }
 
 /** A placed shape, before it is known to have geometry. */
@@ -69,6 +83,7 @@ class Scene {
 	readonly labels = new Map<string, Item>();
 	readonly titles = new Map<string, Item>();
 	readonly frames = new Map<string, Frame>();
+	readonly regions: Region[] = [];
 	readonly bands: Band[] = [];
 
 	/**
@@ -78,7 +93,33 @@ class Scene {
 	constructor(placed: ElkNode) {
 		this.visit(placed.children ?? [], 0, []);
 		this.readLabels(placed.edges ?? []);
-		this.groupBands([...this.cards.values(), ...this.labels.values(), ...this.titles.values()]);
+		this.readRegions(placed);
+		this.groupBands([
+			...this.cards.values(),
+			...this.labels.values(),
+			...this.titles.values(),
+			...this.regions.map(({ caption }) => caption),
+		]);
+	}
+
+	/**
+	 * Read every group region placement wrote on the root.
+	 * @param placed The placed hierarchy.
+	 */
+	readRegions(placed: ElkNode): void {
+		const rows = z
+			.array(PlacedRegionSchema)
+			.parse(JSON.parse(placed.layoutOptions?.[TRACK_REGIONS] ?? "[]"));
+		for (const { group, parent, members, box, caption } of rows) {
+			const [x, y, width, height] = caption;
+			this.regions.push({
+				group,
+				parent,
+				members,
+				box: { x: box[0], width: box[2] },
+				caption: { box: { x, y, width, height }, band: -1 },
+			});
+		}
 	}
 
 	/**
@@ -157,22 +198,63 @@ class Scene {
 	}
 
 	/**
-	 * The frames whose body covers an x on a band, as a key a lane must keep.
+	 * The frames and group regions whose body covers an x on a band, as a key a lane must keep.
 	 * @param band The band.
 	 * @param x The x.
-	 * @returns The ids of the frames covering it, joined.
+	 * @returns The ids of the frames and regions covering it, joined.
 	 */
 	framesAt(band: number, x: number): string {
-		return [...this.frames]
-			.filter(
-				([id, { node }]) =>
-					band >= this.titles.get(id)!.band &&
-					band <= this.lastBandOf(id) &&
-					x > node.x! &&
-					x < node.x! + node.width!,
-			)
+		return [...this.walled(band)]
+			.filter(([, [low, high]]) => x > low && x < high)
 			.map(([id]) => id)
 			.join(",");
+	}
+
+	/**
+	 * Every frame and group region a band passes through, with its left and right walls.
+	 * @param band The band.
+	 * @returns Each one's id and walls.
+	 */
+	walled(band: number): Map<string, readonly [number, number]> {
+		return new Map([...this.frameWalls(band), ...this.regionWalls(band)]);
+	}
+
+	/**
+	 * Every frame a band passes through, with its walls.
+	 * @param band The band.
+	 * @returns Each frame's id and walls.
+	 */
+	frameWalls(band: number): [string, readonly [number, number]][] {
+		return [...this.frames]
+			.filter(([id]) => band >= this.titles.get(id)!.band && band <= this.lastBandOf(id))
+			.map(([id, { node }]) => [id, [node.x!, node.x! + node.width!]]);
+	}
+
+	/**
+	 * Every group region a band passes through, with its walls.
+	 * @param band The band.
+	 * @returns Each region's key and walls.
+	 */
+	regionWalls(band: number): [string, readonly [number, number]][] {
+		return this.regions
+			.filter((region) => band >= region.caption.band && band <= this.regionLastBand(region))
+			.map((region) => [
+				`${region.parent ?? ""}|${region.group}`,
+				[region.box.x, region.box.x + region.box.width],
+			]);
+	}
+
+	/**
+	 * The last band a region covers: its lowest member's, frames' members included.
+	 * @param region The region.
+	 * @returns The band.
+	 */
+	regionLastBand(region: Region): number {
+		const nodes = region.members.flatMap((id) => [id, ...(this.frames.get(id)?.members ?? [])]);
+		return Math.max(
+			region.caption.band,
+			...nodes.map((id) => (this.cards.get(id) ?? this.titles.get(id))?.band ?? 0),
+		);
 	}
 
 	/**
@@ -192,4 +274,4 @@ class Scene {
 	}
 }
 
-export { Scene, centreX, type Band, type Frame, type Item };
+export { Scene, centreX, type Band, type Frame, type Item, type Region };
