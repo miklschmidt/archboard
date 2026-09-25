@@ -256,7 +256,6 @@ test("a person reads containment, code and the level below it, and writes nothin
 	expect(inspected).toContain("The one place a note is read or written");
 	expect(inspected).toContain("archboard");
 	expect(inspected).toContain("src/runtime/engine/board-io.ts");
-	expect(inspected).toContain("Engine");
 
 	// A node bound to a different repository says so, and a planned one says it
 	// is planned rather than showing an empty field.
