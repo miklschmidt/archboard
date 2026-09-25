@@ -6,16 +6,39 @@
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import agentWorkbench from "./agent-workbench.json";
 
+/** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },
 		service: { name: "Service", icon: "RiServerLine" },
+		route: { name: "Route", icon: "RiRouteLine" },
+		external: { name: "External", icon: "RiExternalLinkLine" },
+		ui: { name: "User interface", icon: "RiLayoutLine" },
+		function: { name: "Function", icon: "RiCodeLine" },
 	},
-	relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
-	groups: { state: { name: "Server state", color: "teal" } },
+	relationshipKinds: {
+		call: { name: "Call", dash: "solid", arrowhead: "filled" },
+		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
+		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+	},
+	groups: {
+		state: { name: "Server state", color: "teal" },
+		writes: { name: "Board writes", color: "orange" },
+		drawing: { name: "Drawing", color: "violet" },
+		panes: { name: "Live panes", color: "teal" },
+		voice: { name: "Voice", color: "yellow" },
+		workhorse: { name: "Workhorse", color: "sky" },
+		child: { name: "Codex child", color: "indigo" },
+		agent: { name: "Agent", color: "fuchsia" },
+	},
 });
 
 /**
@@ -35,7 +58,8 @@ function regionBox(
 	const [x, y, width, height] = ["x", "y", "width", "height"].map((name) =>
 		Number(new RegExp(`<rect[^>]* ${name}="([^"]+)"`, "u").exec(markup)![1]),
 	);
-	return { x: x!, y: y!, width: width!, height: height! };
+	const shift = bodyShift(svg);
+	return { x: x! + shift.x, y: y! + shift.y, width: width!, height: height! };
 }
 
 test("a container of blocks keeps no more room under its title than a container of cards", async () => {
@@ -58,4 +82,16 @@ test("a container of blocks keeps no more room under its title than a container 
 	const packed = regionBox(drawn.svg, "state").y - nodes["grouped"]!.y;
 	const carded = nodes["queue"]!.y - nodes["plain"]!.y;
 	expect(packed).toBeLessThanOrEqual(carded);
+});
+
+test("a group region holds the lines it draws beside its cards", async () => {
+	const content = orderedFixture(agentWorkbench);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const band = regionBox(drawn.svg, "workhorse");
+	// The Data line from Thread link runs up the region's right side to leave it.
+	const inside = routePoints(drawn.svg)
+		.get("SRifquBt")!
+		.filter(({ y }) => y > band.y && y < band.y + band.height);
+	expect(inside.length).toBeGreaterThan(0);
+	for (const { x } of inside) expect(x).toBeLessThan(band.x + band.width);
 });

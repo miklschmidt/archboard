@@ -1,0 +1,392 @@
+{
+	"nodes": [
+		{
+			"id": "7TAwfrZF",
+			"name": "Agent workbench",
+			"kind": "service",
+			"order": 1000,
+			"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server"
+		},
+		{
+			"id": "skyIeErO",
+			"name": "Generation composition",
+			"kind": "module",
+			"order": 2000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it"
+		},
+		{
+			"id": "u2LFaG7R",
+			"name": "Browser gateway",
+			"kind": "module",
+			"order": 3000,
+			"parent": "7TAwfrZF",
+			"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease at a time"
+		},
+		{
+			"id": "9diqPrFw",
+			"name": "Codex process",
+			"kind": "module",
+			"order": 4000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "Owns the child: proves the executable, prepares the Codex home every Archboard server on the machine shares, spawns the child and reaps its group"
+		},
+		{
+			"id": "FxzIjbIO",
+			"name": "Codex transport",
+			"kind": "module",
+			"order": 5000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace"
+		},
+		{
+			"id": "jylkTBp7",
+			"name": "Codex session",
+			"kind": "module",
+			"order": 6000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "One initialized session and the reviewed methods it will send"
+		},
+		{
+			"id": "byMaoUe0",
+			"name": "Thread link",
+			"kind": "module",
+			"order": 7000,
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"responsibility": "Which thread the Archboard server is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree"
+		},
+		{
+			"id": "2ffhMTdn",
+			"name": "Workhorse queue",
+			"kind": "module",
+			"order": 8000,
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now"
+		},
+		{
+			"id": "Fg9dkGj3",
+			"name": "Voice coordinator",
+			"kind": "module",
+			"order": 9000,
+			"parent": "7TAwfrZF",
+			"groups": ["voice"],
+			"responsibility": "The separate fast thread voice attaches to, the voice model's subconscious, which routes sustained work to the workhorse"
+		},
+		{
+			"id": "giL6EI28",
+			"name": "Codex app-server",
+			"kind": "external",
+			"order": 10000,
+			"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home"
+		},
+		{
+			"id": "tzyaOHwF",
+			"name": "Browser pane",
+			"kind": "service",
+			"order": 11000,
+			"responsibility": "The pane a user works in: it holds the lease, sends commands and draws the published state"
+		},
+		{
+			"id": "Uz2qReYK",
+			"name": "Epoch ledger",
+			"kind": "module",
+			"order": 12000,
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back"
+		},
+		{
+			"id": "tlC2W839",
+			"name": "Workhorse operations",
+			"kind": "module",
+			"order": 13000,
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue"
+		},
+		{
+			"id": "ZQxB1ZaK",
+			"name": "Realtime voice",
+			"kind": "module",
+			"order": 14000,
+			"parent": "7TAwfrZF",
+			"groups": ["voice"],
+			"responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back"
+		},
+		{
+			"id": "QGVPyMwG",
+			"name": "Approvals",
+			"kind": "module",
+			"order": 15000,
+			"parent": "7TAwfrZF",
+			"responsibility": "Every approval the child raises: staged, published once, answered exactly once, settled"
+		},
+		{
+			"id": "DNQTPTxE",
+			"name": "Thread tool calls",
+			"kind": "module",
+			"order": 16000,
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait"
+		},
+		{
+			"id": "08zJvPJq",
+			"name": "Coordinator callbacks",
+			"kind": "module",
+			"order": 17000,
+			"parent": "7TAwfrZF",
+			"groups": ["voice"],
+			"responsibility": "While voice is live, workhorse news for the coordinator and pane news for the voice model, each once and in order"
+		},
+		{
+			"id": "RkhHgrhb",
+			"name": "Board-change delivery",
+			"kind": "module",
+			"order": 18000,
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"responsibility": "Tells the linked workhorse what a user changed on a board: one quiet developer message, settled once"
+		},
+		{
+			"id": "42Ws0Eeo",
+			"name": "Semantic context",
+			"kind": "module",
+			"order": 19000,
+			"parent": "7TAwfrZF",
+			"responsibility": "Turns a user's gestures and settled board changes into briefs and events for whoever subscribes"
+		}
+	],
+	"edges": [
+		{
+			"id": "hwJPR59O",
+			"from": "skyIeErO",
+			"to": "9diqPrFw",
+			"kind": "call",
+			"order": 1000,
+			"label": "start a generation"
+		},
+		{
+			"id": "9GaG5ItC",
+			"from": "9diqPrFw",
+			"to": "giL6EI28",
+			"kind": "call",
+			"order": 2000,
+			"label": "spawn the child"
+		},
+		{
+			"id": "FZnS78FX",
+			"from": "jylkTBp7",
+			"to": "FxzIjbIO",
+			"kind": "rpc",
+			"order": 3000,
+			"label": "one JSON-RPC request per method"
+		},
+		{
+			"id": "3vlSu8a3",
+			"from": "FxzIjbIO",
+			"to": "giL6EI28",
+			"kind": "rpc",
+			"order": 4000,
+			"label": "JSON-RPC over stdio"
+		},
+		{
+			"id": "SRifquBt",
+			"from": "byMaoUe0",
+			"to": "jylkTBp7",
+			"kind": "data",
+			"order": 5000,
+			"label": "thread/list and thread/read: the candidates"
+		},
+		{
+			"id": "b9HU99hH",
+			"from": "2ffhMTdn",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 6000,
+			"label": "thread/queue/add, update, reorder, delete, start"
+		},
+		{
+			"id": "XAd3chIR",
+			"from": "Fg9dkGj3",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 7000,
+			"label": "thread/start and settings for the coordinator"
+		},
+		{
+			"id": "3C7aLx0q",
+			"from": "u2LFaG7R",
+			"to": "byMaoUe0",
+			"kind": "call",
+			"order": 8000,
+			"label": "the server's link, as this pane sees it"
+		},
+		{
+			"id": "Qh7VZ9MQ",
+			"from": "u2LFaG7R",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 9000,
+			"label": "a typed message: turn/start or turn/steer"
+		},
+		{
+			"id": "Lo6Q7GDB",
+			"from": "tzyaOHwF",
+			"to": "u2LFaG7R",
+			"kind": "event",
+			"order": 10000,
+			"label": "lease, commands, snapshots"
+		},
+		{
+			"id": "nw9nYSMn",
+			"from": "skyIeErO",
+			"to": "u2LFaG7R",
+			"kind": "call",
+			"order": 11000,
+			"label": "bind the gateway to this generation"
+		},
+		{
+			"id": "2wlebJ2T",
+			"from": "u2LFaG7R",
+			"to": "tzyaOHwF",
+			"kind": "event",
+			"order": 12000,
+			"label": "one snapshot, then deltas"
+		},
+		{
+			"id": "uK6QAuru",
+			"from": "tlC2W839",
+			"to": "2ffhMTdn",
+			"kind": "call",
+			"order": 13000,
+			"label": "queue a delegation behind the running turn"
+		},
+		{
+			"id": "NeJ30W7X",
+			"from": "tlC2W839",
+			"to": "byMaoUe0",
+			"kind": "call",
+			"order": 14000,
+			"label": "the thread this operation is for"
+		},
+		{
+			"id": "2ed6AqSF",
+			"from": "tlC2W839",
+			"to": "Uz2qReYK",
+			"kind": "call",
+			"order": 15000,
+			"label": "stage, commit or roll back"
+		},
+		{
+			"id": "mhknqBOz",
+			"from": "Fg9dkGj3",
+			"to": "tlC2W839",
+			"kind": "call",
+			"order": 16000,
+			"label": "delegate, steer, inspect, queue"
+		},
+		{
+			"id": "TFjDY5zE",
+			"from": "ZQxB1ZaK",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 17000,
+			"label": "thread/realtime/start, append, stop"
+		},
+		{
+			"id": "YOaSBuBr",
+			"from": "QGVPyMwG",
+			"to": "u2LFaG7R",
+			"kind": "event",
+			"order": 18000,
+			"label": "an approval to answer"
+		},
+		{
+			"id": "aoHKAkWD",
+			"from": "FxzIjbIO",
+			"to": "DNQTPTxE",
+			"kind": "event",
+			"order": 19000,
+			"label": "a tool call from a thread"
+		},
+		{
+			"id": "mxl6bmYW",
+			"from": "DNQTPTxE",
+			"to": "Uz2qReYK",
+			"kind": "call",
+			"order": 20000,
+			"label": "the generation that may act"
+		},
+		{
+			"id": "EZEiVlsE",
+			"from": "u2LFaG7R",
+			"to": "2ffhMTdn",
+			"kind": "call",
+			"order": 21000,
+			"label": "queue, edit, reorder or start a message"
+		},
+		{
+			"id": "rOBpux5i",
+			"from": "tlC2W839",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 22000,
+			"label": "turn/start when idle, turn/steer"
+		},
+		{
+			"id": "NztvEtjX",
+			"from": "FxzIjbIO",
+			"to": "08zJvPJq",
+			"kind": "event",
+			"order": 23000,
+			"label": "workhorse notifications, tell_coordinator calls"
+		},
+		{
+			"id": "biUWQZMB",
+			"from": "08zJvPJq",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 24000,
+			"label": "news as a coordinator turn/start; pane news appended"
+		},
+		{
+			"id": "Tqxin6z5",
+			"from": "42Ws0Eeo",
+			"to": "08zJvPJq",
+			"kind": "event",
+			"order": 25000,
+			"label": "the user's changes, focus and selection"
+		},
+		{
+			"id": "7LxiPZOi",
+			"from": "42Ws0Eeo",
+			"to": "RkhHgrhb",
+			"kind": "event",
+			"order": 26000,
+			"label": "a settled board change"
+		},
+		{
+			"id": "8g1SNngD",
+			"from": "RkhHgrhb",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"order": 27000,
+			"label": "thread/inject_items into the workhorse"
+		},
+		{
+			"id": "jbxp553Z",
+			"from": "RkhHgrhb",
+			"to": "byMaoUe0",
+			"kind": "call",
+			"order": 28000,
+			"label": "check the link again"
+		}
+	]
+}
