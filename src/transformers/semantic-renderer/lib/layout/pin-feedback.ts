@@ -39,17 +39,7 @@ export function usedCardPins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	edge: ElkExtendedEdge,
 ): [string, AlignedPin][] {
-	const section = edge.sections?.[0];
-	if (!section || edge.sources[0] === edge.targets[0]) return [];
-	const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
-	const ends = [
-		[edge.sources[0]!, points],
-		[edge.targets[0]!, points.toReversed()],
-	] as const;
-	return ends.flatMap(([id, route]) => {
-		const node = nodes.get(id)!;
-		return node.children?.length ? [] : [[id, usedPin(node, route)] as [string, AlignedPin]];
-	});
+	return endRuns(nodes, edge).map(({ card, pin }) => [card, pin]);
 }
 
 /**
