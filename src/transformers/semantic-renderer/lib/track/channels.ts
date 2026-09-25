@@ -15,7 +15,7 @@
 // in the order that crosses least, each on the highest track below the
 // overlapping units above it.
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { LANE, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
+import { LANE, reachOf, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** How far a port keeps from a card's corner. */
@@ -74,12 +74,15 @@ interface Unit {
 
 /**
  * Group nets that share a card face, a channel, a kind and a standing into
- * trunks: first those leaving a face, then, among the rest, those entering one.
+ * trunks: first those leaving a face, then, among the rest, those entering
+ * one. A net that can come straight down into its card keeps its own way in,
+ * unless the trunk would cross it: two straight lines read more plainly than
+ * a trunk they would have to jog to.
  * @param nets Every net.
  */
 function bundleTrunks(nets: readonly Net[]): void {
 	for (const side of ["top", "bottom"] as const) {
-		for (const group of sharing(nets, side)) {
+		for (const group of trunkGroups(nets, side)) {
 			if (group.length < 2) continue;
 			const other = side === "top" ? "bottom" : "top";
 			const ends = new Set(
@@ -89,6 +92,29 @@ function bundleTrunks(nets: readonly Net[]): void {
 			for (const net of group) net.trunk = trunk;
 		}
 	}
+}
+
+/**
+ * Whether a net can run straight down from its upper station into the card
+ * below: some x lies on both.
+ * @param net The net.
+ * @returns True when it can.
+ */
+function dropsStraight(net: Net): boolean {
+	const [a, b] = reachOf(net.top);
+	const [c, d] = reachOf(net.bottom);
+	return Math.max(a, c) <= Math.min(b, d);
+}
+
+/**
+ * The nets that share a trunk on one side of their faces.
+ * @param nets Every net.
+ * @param side Which end: the upper station's, or the lower station's.
+ * @returns The groups.
+ */
+function trunkGroups(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
+	const groups = sharing(nets, side);
+	return side === "top" ? groups : groups.map(joining);
 }
 
 /**
@@ -109,6 +135,19 @@ function sharing(nets: readonly Net[], side: "top" | "bottom"): Net[][] {
 		groups.set(station.item!, byKind);
 	}
 	return [...groups.values()].flatMap((byKind) => [...byKind.values()]);
+}
+
+/**
+ * The nets entering one face that join its trunk: those that cannot come
+ * straight down into the card, and a straight one the others arrive from
+ * both sides of, whose line their trunk would otherwise cross.
+ * @param group The nets entering one face, of one kind.
+ * @returns Those that join.
+ */
+function joining(group: readonly Net[]): Net[] {
+	const xs = group.filter((net) => !dropsStraight(net)).map((net) => net.top.x);
+	const [low, high] = [Math.min(...xs), Math.max(...xs)];
+	return group.filter((net) => !dropsStraight(net) || (net.top.x > low && net.top.x < high));
 }
 
 /**
