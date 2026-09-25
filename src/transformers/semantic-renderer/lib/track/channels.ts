@@ -348,15 +348,16 @@ function inside(pins: readonly number[], unit: Unit): number {
 }
 
 /**
- * How many crossings one unit above another costs; a lower pin under an upper
- * one would run two lines down one column, which is never allowed.
+ * How many crossings one unit above another costs; a lower pin within a lane
+ * of an upper one would run two lines down one column, or closer than a lane
+ * beside each other, which is never allowed.
  * @param above The unit on the higher track.
  * @param below The unit on the lower track.
  * @returns The cost.
  */
 function costAbove(above: Unit, below: Unit): number {
 	const stacked = below.tops.some((top) =>
-		above.bottoms.some((bottom) => Math.abs(top - bottom) < LANE / 2),
+		above.bottoms.some((bottom) => Math.abs(top - bottom) < LANE),
 	);
 	return stacked ? STACKED : inside(below.tops, above) + inside(above.bottoms, below);
 }

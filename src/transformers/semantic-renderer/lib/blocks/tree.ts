@@ -23,6 +23,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import { addInline, holds, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
 
 /** A width and a height. */
@@ -201,13 +202,12 @@ class BlockTree {
 	 * @param exits The wall each leaving port moves to, keyed `block|port` by
 	 * the port it would otherwise be: an earlier layout's answer, where it
 	 * stood the block beside the block its trunk goes to.
-	 * @param inline Whether containers and group regions are drawn inline, as
-	 * clusters of the board's own layout, rather than as blocks of their own.
+	 * @param nesting How containers and group regions are drawn.
 	 */
 	constructor(
 		graph: ElkNode,
 		readonly exits: ReadonlyMap<string, Side> = new Map(),
-		readonly inline = false,
+		readonly nesting: Nesting = "blocks",
 	) {
 		this.captions = captionsOf(graph);
 		this.root = this.block(":root", "root", undefined, {});
@@ -261,7 +261,7 @@ class BlockTree {
 		const ordered = nodes.toSorted((one, other) => semanticOrder(one) - semanticOrder(other));
 		for (const node of ordered) {
 			const group = node.layoutOptions?.[PLACING_GROUP];
-			if (this.inline) addInline(this, block, node, undefined);
+			if (this.nesting !== "blocks") addInline(this, block, node, undefined);
 			else this.add(group === undefined ? block : this.region(block, group), node);
 		}
 	}
@@ -287,15 +287,15 @@ class BlockTree {
 
 	/**
 	 * Gather the cards a block of blocks holds outside every block into one
-	 * cluster, so every block holds either cards alone or blocks alone, and
-	 * every line between blocks runs between two blocks.
+	 * cluster, so every block holds cards alone or blocks alone; drawn
+	 * inline, a block of cards keeps its packed regions among its cards.
 	 * @param block The block, and every block inside it.
 	 */
 	gather(block: Block): void {
 		const inner = block.items.filter((item) => this.blocks.has(item));
 		for (const item of inner) this.gather(this.blocks.get(item)!);
 		const loose = block.items.filter((item) => !this.blocks.has(item));
-		if (inner.length === 0 || loose.length === 0) return;
+		if (this.nesting !== "blocks" || inner.length === 0 || loose.length === 0) return;
 		const at = block.items.indexOf(loose[0]!);
 		const before = inner.filter((item) => block.items.indexOf(item) < at);
 		block.items.length = 0;

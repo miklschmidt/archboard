@@ -9,6 +9,13 @@ import type { Block, BlockTree, Size } from "@/transformers/semantic-renderer/li
 import { cardOf } from "@/transformers/semantic-renderer/lib/blocks/card";
 
 /**
+ * How a board's containers and group regions are drawn: each packed as a
+ * block of its own, every one inline as a cluster of the board's layout, or
+ * containers inline with each group's region packed as a block.
+ */
+type Nesting = "blocks" | "inline" | "groups";
+
+/**
  * A container or group region a block of cards draws inline: a cluster of the
  * block's own Graphviz layout rather than a block of its own.
  */
@@ -51,6 +58,32 @@ function inlineRegion(
 }
 
 /**
+ * A group's region packed as a block of its own inside a block drawn inline,
+ * made on first use and standing in the cluster around it.
+ * @param tree The blocks.
+ * @param block The block that lays it out.
+ * @param around The cluster it stands in, if any.
+ * @param group The group.
+ * @returns The region's block.
+ */
+function packedRegion(
+	tree: BlockTree,
+	block: Block,
+	around: string | undefined,
+	group: string,
+): Block {
+	const id = `region:${around ?? block.id}:${group}`;
+	const existing = tree.blocks.get(id);
+	if (existing !== undefined) return existing;
+	const made = tree.block(id, "region", block, {
+		group,
+		header: tree.captions.get(group) ?? { width: 1, height: 1 },
+	});
+	if (around !== undefined) block.clusterOf.set(id, around);
+	return made;
+}
+
+/**
  * Add a container to a block drawn inline: a cluster with its children inside it.
  * @param tree The blocks.
  * @param block The block that lays it out.
@@ -73,23 +106,43 @@ function addFrame(tree: BlockTree, block: Block, node: ElkNode, within: string |
 }
 
 /**
+ * Where a node drawn inline goes: in its group's region, a cluster of the
+ * block or, with groups packed, a block of its own; else where it is.
+ * @param tree The blocks.
+ * @param block The block that lays the node out.
+ * @param around The cluster around it, if any.
+ * @param group Its placing group, if any.
+ * @returns The block that holds it and the cluster around it there, if any.
+ */
+function placing(
+	tree: BlockTree,
+	block: Block,
+	around: string | undefined,
+	group: string | undefined,
+): { holder: Block; within: string | undefined } {
+	if (group === undefined || block.group === group) return { holder: block, within: around };
+	if (tree.nesting === "groups")
+		return { holder: packedRegion(tree, block, around, group), within: undefined };
+	return { holder: block, within: inlineRegion(tree, block, around, group) };
+}
+
+/**
  * Add one node to a block drawn inline: a card as an item, a container as a
- * cluster with its children inside it, each in its group's region cluster.
+ * cluster with its children inside it, each in its group's region.
  * @param tree The blocks.
  * @param block The block that lays the node out.
  * @param node The node.
  * @param around The cluster around it, if any.
  */
 function addInline(tree: BlockTree, block: Block, node: ElkNode, around: string | undefined): void {
-	const group = node.layoutOptions?.[PLACING_GROUP];
-	const within = group === undefined ? around : inlineRegion(tree, block, around, group);
-	if (within !== undefined) block.clusterOf.set(node.id, within);
-	tree.holder.set(node.id, block);
+	const { holder, within } = placing(tree, block, around, node.layoutOptions?.[PLACING_GROUP]);
+	if (within !== undefined) holder.clusterOf.set(node.id, within);
+	tree.holder.set(node.id, holder);
 	if (node.children?.length) {
-		addFrame(tree, block, node, within);
+		addFrame(tree, holder, node, within);
 		return;
 	}
-	block.items.push(node.id);
+	holder.items.push(node.id);
 	tree.cards.set(node.id, cardOf(node));
 }
 
@@ -106,4 +159,4 @@ function holds(block: Block, cluster: string, item: string): boolean {
 	return false;
 }
 
-export { addInline, holds, type Cluster };
+export { addInline, holds, type Cluster, type Nesting };

@@ -10,12 +10,13 @@ import type { Viz } from "@viz-js/viz";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
-import { Assembly } from "@/transformers/semantic-renderer/lib/blocks/assembly";
+import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/blocks/assembly";
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import {
 	BlockTree,
@@ -233,6 +234,18 @@ function peerRuns(
 }
 
 /**
+ * Whether a block is packed with its child blocks as the pieces, rather than
+ * laid out as cards: a block of blocks, unless the board is drawn inline.
+ * @param tree The blocks.
+ * @param block The block.
+ * @param nesting How containers and group regions are drawn.
+ * @returns True when it is packed.
+ */
+function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
+	return nesting === "blocks" && block.items.some((item) => tree.blocks.has(item));
+}
+
+/**
  * Lay every block out, innermost first.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
@@ -240,7 +253,7 @@ function peerRuns(
  * @param earlier What an earlier layout decided: the wall each port moves to, and each packing, kept.
  * @param earlier.exits The wall each port moves to.
  * @param earlier.packings Each block of blocks' packing.
- * @param inline Whether containers and group regions are drawn inline.
+ * @param nesting How containers and group regions are drawn.
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
@@ -248,13 +261,13 @@ function layAll(
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	earlier?: { exits: ReadonlyMap<string, Side>; packings: ReadonlyMap<string, Packing> },
-	inline = false,
+	nesting: Nesting = "blocks",
 ): { tree: BlockTree; laid: Map<string, Laid>; packings: Map<string, Packing> } {
-	const tree = new BlockTree(graph, earlier?.exits, inline);
+	const tree = new BlockTree(graph, earlier?.exits, nesting);
 	const laid = new Map<string, Laid>();
 	const packings = new Map<string, Packing>();
 	for (const block of tree.innermostFirst()) {
-		if (block.items.some((item) => tree.blocks.has(item))) {
+		if (packsBlocks(tree, block, nesting)) {
 			const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
 				avoid,
 				earlier?.packings.get(block.id),
@@ -314,9 +327,77 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
 }
 
 /**
- * Lay a measured hierarchy out as blocks and route every relationship; when
- * a trunk joins two blocks that stand side by side, once more with that
- * trunk leaving its block by the wall that faces the other.
+ * Lay a measured hierarchy out one way and route every relationship; when a
+ * trunk joins two blocks that stand side by side, once more with that trunk
+ * leaving its block by the wall that faces the other.
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param graph The measured hierarchy.
+ * @param nesting How containers and group regions are drawn.
+ * @returns The blocks, every block laid out.
+ */
+function layOut(
+	viz: Viz,
+	avoid: AvoidEngine,
+	graph: ElkNode,
+	nesting: Nesting,
+): { tree: BlockTree; laid: Map<string, Laid> } {
+	const first = layAll(viz, avoid, graph, undefined, nesting);
+	const exits = exitsOf(first.tree, first.laid);
+	if (exits.size === 0) return first;
+	return layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
+}
+
+/**
+ * How readable a whole drawing is: its page, and the crossings of its lines
+ * as drawn, where pieces of one line in different blocks are joined.
+ * @param placed The drawing's geometry.
+ * @returns The score.
+ */
+function drawingScore(placed: Placed): number {
+	const crossings = crossingsOf(placed.edges.map(({ points }) => points));
+	return scoreOf({ width: placed.width, height: placed.height, crossings });
+}
+
+/**
+ * How much line a drawing draws.
+ * @param placed The drawing's geometry.
+ * @returns The total length of every line.
+ */
+function lineLength(placed: Placed): number {
+	return placed.edges.reduce(
+		(sum, { points }) =>
+			sum +
+			points
+				.slice(1)
+				.reduce(
+					(run, to, index) =>
+						run + Math.abs(to.x - points[index]!.x) + Math.abs(to.y - points[index]!.y),
+					0,
+				),
+		0,
+	);
+}
+
+/**
+ * Whether a board laid with its groups packed reads better than laid inline:
+ * it scores higher and draws no more line. Blocks standing side by side can
+ * trade a line's straight run for one round both blocks, which the score
+ * alone does not see.
+ * @param packed The drawing with groups packed.
+ * @param inline The drawing with groups inline.
+ * @returns True when the packed one reads better.
+ */
+function readsBetterPacked(packed: Placed, inline: Placed): boolean {
+	return drawingScore(packed) > drawingScore(inline) && lineLength(packed) <= lineLength(inline);
+}
+
+/**
+ * Lay a measured hierarchy out as blocks and route every relationship. Drawn
+ * inline, a board with groups is also laid with each group's region packed as
+ * a block of its own, and the layout that reads better is kept: a group whose
+ * members stand far apart in the board's ranks spans them all as a cluster,
+ * a tall sparse band, but packed stands whole.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -325,13 +406,9 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
 function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const first = layAll(viz, avoid, graph, undefined, inline);
-	const exits = exitsOf(first.tree, first.laid);
-	const { tree, laid } =
-		exits.size === 0
-			? first
-			: layAll(viz, avoid, graph, { exits, packings: first.packings }, inline);
-	const placed = new Assembly(tree, laid).placed();
+	const first = layOut(viz, avoid, graph, inline ? "inline" : "blocks");
+	const drawn = new Assembly(first.tree, first.laid).placed();
+	const placed = inline && hasRegions(first.tree) ? betterOf(viz, avoid, graph, drawn) : drawn;
 	return {
 		id: graph.id,
 		x: 0,
@@ -340,6 +417,30 @@ function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = fals
 		height: placed.height,
 		layoutOptions: { ...graph.layoutOptions, [BLOCKS_PLACED]: JSON.stringify(placed) },
 	};
+}
+
+/**
+ * The better of a board drawn inline and drawn with each group's region
+ * packed as a block of its own.
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param graph The measured hierarchy.
+ * @param inline The board drawn inline.
+ * @returns The drawing's geometry.
+ */
+function betterOf(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline: Placed): Placed {
+	const { tree, laid } = layOut(viz, avoid, graph, "groups");
+	const packed = new Assembly(tree, laid).placed();
+	return readsBetterPacked(packed, inline) ? packed : inline;
+}
+
+/**
+ * Whether a board drawn inline gathers any group into a region.
+ * @param tree The blocks.
+ * @returns True when some cluster is a group's region.
+ */
+function hasRegions(tree: BlockTree): boolean {
+	return [...tree.root.clusters.values()].some(({ kind }) => kind === "region");
 }
 
 export { BLOCKS_PLACED, exitsOf, layAll, placeBlocks };

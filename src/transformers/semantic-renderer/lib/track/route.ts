@@ -18,8 +18,10 @@ import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	LANE,
 	chainOf,
+	pullToPorts,
 	straightenIntoContainers,
 	straightenLanes,
+	type Station,
 	type Chain,
 } from "@/transformers/semantic-renderer/lib/track/chains";
 import {
@@ -275,6 +277,20 @@ function followLanes(nets: readonly Net[]): void {
 }
 
 /**
+ * The port each lane beside a card wants: where the net between them meets the card.
+ * @param nets Every net, its ports placed.
+ * @returns The port x, by lane.
+ */
+function portsOf(nets: readonly Net[]): Map<Station, number> {
+	const ports = new Map<Station, number>();
+	for (const net of nets) {
+		if (net.top.kind === "card" && net.bottom.kind === "lane") ports.set(net.bottom, net.topX);
+		if (net.bottom.kind === "card" && net.top.kind === "lane") ports.set(net.top, net.bottomX);
+	}
+	return ports;
+}
+
+/**
  * Route lines through a banded scene, each on tracks of its own, and space
  * the bands for the tracks each channel holds.
  * @param scene The scene, whose bands get their new tops.
@@ -307,6 +323,7 @@ function routeScene(
 	slideLabels(scene, nets);
 	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
 	assignPorts(nets);
+	if (pullToPorts(scene, [...chains.values()], portsOf(nets))) followLanes(nets);
 	for (const route of routed.values()) settleStraights(route.nets);
 	for (const line of lines.filter(({ enters }) => enters !== undefined)) {
 		const first = routed.get(line.id)!.nets[0]!;
