@@ -61,13 +61,15 @@ const edgeInks = (
  * fill or stop, or no stroke at all. So every fill, stroke and gradient stop
  * the picture declares — lines, arrowheads, the comets SMIL moves and the
  * stops their tails fade through — is read back as the browser computed it.
+ * A mask's shapes are not paint: they are black or white by design, saying
+ * where a line's ink is hidden, and are left out.
  * @param browser The page.
  * @param surface The selector of the element the picture is in.
  * @returns What fell back, one line each; empty when everything resolved.
  */
 const unresolvedPaints = (browser: AgentBrowserSession, surface: string): Promise<string[]> =>
 	browser.eval<string[]>(
-		`[...document.querySelectorAll("${surface} svg [style]")].flatMap((element) => {` +
+		`[...document.querySelectorAll("${surface} svg [style]:not(mask *)")].flatMap((element) => {` +
 			` const computed = getComputedStyle(element);` +
 			` const declared = (name) => element.style.getPropertyValue(name);` +
 			` return ["fill", "stroke", "stop-color"]` +
