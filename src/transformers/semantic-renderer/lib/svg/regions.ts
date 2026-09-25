@@ -34,6 +34,9 @@ function paintRegion(region: DrawingRegion, palette: Palette, policy: SemanticPo
 		{
 			"data-semantic-kind": "group-region",
 			"data-group": region.group,
+			// The group's name and colour, for a viewer that keeps the caption readable when the picture is small.
+			"data-caption": caption.measured.runs.map(({ text }) => text).join(" "),
+			"data-group-color": policy.groups[region.group]?.color,
 			"pointer-events": "none",
 		},
 		lines([

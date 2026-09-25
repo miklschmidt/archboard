@@ -242,3 +242,39 @@ test("a torn render answer is a failure, and never looks like an empty board", a
 		}),
 	).toBe("error");
 });
+
+/**
+ * The page's name for the one region in the picture.
+ * @returns Its element.
+ */
+function caption(): HTMLElement {
+	return document.querySelector<HTMLElement>("[data-slot='semantic-board-caption']")!;
+}
+
+test("a region's name stays readable while the picture is too small to read it, and gives way when zoomed in", async () => {
+	const small = drawing(1);
+	server.reply = {
+		status: 200,
+		body: {
+			...small,
+			width: 4000,
+			height: 3000,
+			svg:
+				`<svg xmlns="http://www.w3.org/2000/svg" width="4000" height="3000">` +
+				`<g data-semantic-kind="group-region" data-group="core" data-caption="Core" data-group-color="green">` +
+				`<rect x="100" y="100" width="1600" height="900"></rect><text font-size="20">Core</text></g></svg>`,
+		},
+	};
+	mountStage();
+	await settle();
+	// Fitted, the drawn name is a few pixels tall: the page names the region itself.
+	expect(caption().textContent).toBe("Core");
+	expect(caption().dataset["shown"]).toBe("true");
+	for (let press = 0; press < 20; press += 1)
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "+" });
+		});
+	// Close enough to read the picture's own name, the page's gives way to it.
+	expect(cameraNow().scale * 20).toBeGreaterThan(12);
+	expect(caption().dataset["shown"]).toBe("false");
+});
