@@ -82,6 +82,8 @@ interface PlacedColumn {
 	readonly card: SequenceCard;
 	/** Where its lifeline runs. */
 	readonly centreX: number;
+	/** Where its lifeline starts: the same air under its own card as under every other. */
+	readonly lifelineTop: number;
 	/** The stretches where it is working on a call it received. */
 	readonly activations: readonly ActivationBar[];
 }
@@ -124,9 +126,7 @@ interface FlowLayout {
 	readonly frame: Box;
 	/** Where the frame's name and summary go. */
 	readonly header: Box;
-	/** Where the lifelines start, under the tallest card in the header row. */
-	readonly lifelineTop: number;
-	/** Where they stop. */
+	/** Where the lifelines stop. */
 	readonly lifelineBottom: number;
 	/** Its participants, in the order the flow states them. */
 	readonly columns: readonly PlacedColumn[];
@@ -497,13 +497,13 @@ function layoutFlow(
 			measurement.notes.get(node.id) ?? [],
 		),
 	);
-	const lifelineTop =
-		cardsTop +
-		largest(
-			cards.map((card) => card.box.height),
-			0,
-		) +
-		LIFELINE_GAP;
+	// Every lifeline starts under its own card, but the first message waits for
+	// the tallest one, so no card's lines sit on a message's words.
+	const tallest = largest(
+		cards.map((card) => card.box.height),
+		0,
+	);
+	const firstRow = cardsTop + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
 
 	const steps = placeSteps(
 		flow,
@@ -515,16 +515,17 @@ function layoutFlow(
 			firstCentre: centres[0] ?? 0,
 			lastCentre: centres.at(-1) ?? 0,
 		},
-		lifelineTop + FIRST_MESSAGE_DROP,
+		firstRow,
 		start.turn,
 	);
-	const lifelineBottom = lowestDrawn(steps, lifelineTop + FIRST_MESSAGE_DROP) + FLOW_BOTTOM_PADDING;
+	const lifelineBottom = lowestDrawn(steps, firstRow) + FLOW_BOTTOM_PADDING;
 
 	const columns = cards.map((card, index) => {
 		const centreX = centres[index] ?? 0;
 		return {
 			card,
 			centreX,
+			lifelineTop: card.box.y + card.box.height + LIFELINE_GAP,
 			activations: activationsFor(card.node.id, steps),
 		};
 	});
@@ -537,7 +538,6 @@ function layoutFlow(
 			height: lifelineBottom + CONTAINER_BOTTOM_PAD - top,
 		},
 		header,
-		lifelineTop,
 		lifelineBottom,
 		columns,
 		steps,
