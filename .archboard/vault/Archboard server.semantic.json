@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 14,
+	"version": 15,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-24T15:41:37.946Z",
+	"updatedAt": "2026-09-25T01:27:41.436Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -111,6 +111,9 @@
 						"name": "Mutation admission",
 						"kind": "module",
 						"responsibility": "Admits changes while the server runs and counts each until it settles, so a stop drains every accepted write or refuses with SERVER_BUSY",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/mutation-admission.ts"
@@ -122,6 +125,9 @@
 						"name": "Board routes",
 						"kind": "route",
 						"responsibility": "Mounts every board route and answers the reads: the family, the catalogue, one drawn view, the vault check",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-board-routes.ts"
@@ -133,6 +139,9 @@
 						"name": "Semantic board store",
 						"kind": "module",
 						"responsibility": "The one place a board is read or written",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-board-store"
@@ -150,6 +159,9 @@
 						"name": "Semantic renderer",
 						"kind": "module",
 						"responsibility": "Draws one variant, view and theme as a self-contained document",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-renderer"
@@ -167,6 +179,9 @@
 						"name": "Pane registry",
 						"kind": "module",
 						"responsibility": "The sockets, what each pane is showing, and the news broadcast to every one of them",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/pane-registry.ts"
@@ -178,6 +193,9 @@
 						"name": "Disk change watcher",
 						"kind": "module",
 						"responsibility": "Notices a board changed on disk that this process did not write",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-disk-watch.ts"
@@ -200,6 +218,9 @@
 						"name": "Codex workbench",
 						"kind": "service",
 						"responsibility": "Owns the private Codex child and bridges it to the panes",
+						"groups": [
+							"agent"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/codex-wiring.ts"
@@ -252,6 +273,9 @@
 						"kind": "route",
 						"responsibility": "The one write boundary: every route that changes a board goes through here",
 						"description": "ADR 0023: the file is the board and nothing holds a copy of it. A write states the version it read, takes the board's lease, and is committed before it is answered.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-board-writes.ts"
@@ -264,6 +288,9 @@
 						"kind": "route",
 						"responsibility": "An agent's claim on a board, its release, and the person's override",
 						"description": "ADR 0016 and ADR 0022: one writer at a time, visible in every pane showing the board, and the one control a person has over it is taking it back.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-lock-routes.ts"
@@ -276,6 +303,9 @@
 						"kind": "route",
 						"responsibility": "Renames a board or a variant as a write, and moves what the server keyed by the old name: its panes, its claim, what the agent said",
 						"description": "TASK-281, ADR 0036. The old name stays a former name, so a pane or a command that still uses it reaches the board.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-board-rename.ts"
@@ -288,6 +318,9 @@
 						"kind": "route",
 						"responsibility": "Lets a whole board go under the write's admission and lease, and tells every pane on it the board is gone",
 						"description": "TASK-304.02: a board made only to be recorded, discarded by semantic record --discard.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-board-discard.ts"
@@ -311,6 +344,9 @@
 						"name": "Pane routes",
 						"kind": "route",
 						"responsibility": "What each pane shows and where, pushed by the browser; the CLI opens, closes and shows panes through it",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/pane-routes.ts"
@@ -322,6 +358,9 @@
 						"name": "Pane socket",
 						"kind": "module",
 						"responsibility": "One socket per page: registers it with the panes, and passes its agent messages to the Codex workbench",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/websocket-connection.ts"
@@ -334,6 +373,9 @@
 						"kind": "module",
 						"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
 						"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+						"groups": [
+							"writes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/engine/board-lock.ts"
@@ -346,6 +388,9 @@
 						"kind": "module",
 						"responsibility": "Tells every pane on a board who holds it and what they said they were doing",
 						"description": "ADR 0022: a claim is visible wherever the board is shown. Board content is never in the news; a pane reads the board again.",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/board-announcements.ts"
@@ -357,6 +402,9 @@
 						"name": "Change feed",
 						"kind": "module",
 						"responsibility": "Every settled board change as one stream with a cursor, read off the panes' announcements, for the agent's context",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/semantic-change-feed.ts"

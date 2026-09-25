@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 10,
+	"version": 11,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-24T15:41:37.452Z",
+	"updatedAt": "2026-09-25T01:27:40.845Z",
 	"views": [],
 	"variants": [
 		{
@@ -84,7 +84,10 @@
 						"name": "Codex app-server",
 						"kind": "external",
 						"responsibility": "Runs the linked agent threads, as one private child of the Archboard server",
-						"description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. Archboard's side of it is the agent workbench inside the Archboard server."
+						"description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. Archboard's side of it is the agent workbench inside the Archboard server.",
+						"groups": [
+							"agent"
+						]
 					},
 					{
 						"id": "19855Ply",
@@ -130,6 +133,9 @@
 						"kind": "datastore",
 						"responsibility": "Codex's sign-in, config and threads, shared by every Archboard server on this machine",
 						"description": "An archboard-only CODEX_HOME under the state directory, readable by nobody else. One sign-in serves every server, since Codex takes several processes on one home; what a server keeps about its own child, the owner lock and the epoch ledger, sits under its port. The server fills in the config it needs (auto-review approvals, a sandbox with network access) and keeps what Codex or the user set.",
+						"groups": [
+							"agent"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-process/lib/storage.ts"

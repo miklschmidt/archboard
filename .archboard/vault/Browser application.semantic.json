@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 12,
+	"version": 13,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-24T15:41:39.465Z",
+	"updatedAt": "2026-09-25T01:27:42.616Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -116,6 +116,9 @@
 						"responsibility": "Reads and explores rendered boards",
 						"description": "Reads the board document from the server and draws its picture in this page (or asks the server's render route when the page runs no renderer). Owns only camera, selection, view, variant, walkthrough position and drill-down trail, and writes nothing (ADR 0023).",
 						"parent": "yAFyqal3",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas"
@@ -135,6 +138,9 @@
 						"responsibility": "Keeps each pane in server contact",
 						"description": "Owns the pane's socket and its generations, registration and pane reports, board news, taking back a claim, opening code, and the workbench transport each socket generation carries.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/pane-session"
@@ -148,6 +154,9 @@
 						"responsibility": "Restores pane display intent",
 						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs. It is never board authority.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"panes"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/board-routing"
@@ -174,6 +183,9 @@
 						"responsibility": "The agent bar under the panes and the conversation beside them: the agent's state and its one action, Talk, the composer, and the conversation with its work, plans and approvals",
 						"description": "Reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"agent"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/workbench/index.tsx"
@@ -193,6 +205,9 @@
 						"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
 						"description": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to that pane's media owner (codex-workbench-media), negotiated over the pane's workbench transport.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"voice"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/voice-session/index.ts"
@@ -253,6 +268,9 @@
 						"kind": "module",
 						"responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
 						"parent": "yAFyqal3",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/browser-renderer/index.ts"
@@ -284,6 +302,9 @@
 						"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation",
 						"description": "One setup for the whole server, outliving focus. Each held message says what it waits on; a failure stays on it with the reason, and nothing is retried behind the user's back. It speaks through ports the application wires to the focused pane's thread link, composer and voice session.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"agent"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/agent-setup/index.ts"
@@ -296,6 +317,9 @@
 						"kind": "module",
 						"responsibility": "The agent's channel on one pane socket: the server's agent state in, the controllers' commands out",
 						"parent": "yAFyqal3",
+						"groups": [
+							"agent"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/workbench-transport/index.ts"
@@ -309,6 +333,9 @@
 						"responsibility": "The voice's words over the pane it runs for, measured into two lines",
 						"description": "Cut into cues from the transcript on the pane's transport; a subtitle that stops growing lingers, then goes. A person can turn them off; a recording always has them.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"voice"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/voice-subtitles/index.ts"
@@ -322,6 +349,9 @@
 						"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
 						"description": "Asked for by the page's address. The page shows the one pane (RecordingStage) instead of the shell and publishes its contract on the window for the recorder that drives it (drawn on Board rasterizer). The voice's audio element is muted, so nobody hears it; the voice is mixed into the tab capture through one Web Audio destination, silent until the voice plays.",
 						"parent": "yAFyqal3",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/walkthrough-recording/index.ts"

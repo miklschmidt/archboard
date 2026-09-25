@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 6,
+	"version": 7,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-09-24T09:34:39.496Z",
+	"updatedAt": "2026-09-25T01:27:32.521Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -89,6 +89,9 @@
 						"name": "Rasterize command",
 						"kind": "service",
 						"responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-rasterize.ts"
@@ -107,6 +110,9 @@
 						"kind": "module",
 						"responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture",
 						"description": "Nothing is started until a job arrives, and the session is stopped with the rasterizer, so no browser outlives the command that needed it. A Chromium that failed one capture is closed rather than trusted with the next.",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/index.ts"
@@ -118,6 +124,9 @@
 						"name": "Bounds and limits",
 						"kind": "function",
 						"responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/bounds.ts"
@@ -129,6 +138,9 @@
 						"name": "Raster session",
 						"kind": "function",
 						"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/session.ts"
@@ -165,6 +177,9 @@
 						"kind": "function",
 						"responsibility": "What the page must say before it is photographed, and what the answer must be",
 						"description": "The faces are loaded, the animation is paused at its first frame, and the SVG is the size the job asked for. A bitmap of the wrong size is refused, never cropped.",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/page.ts"
@@ -176,6 +191,9 @@
 						"name": "PNG header",
 						"kind": "function",
 						"responsibility": "The two numbers from the IHDR of the answered image",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/lib/png.ts"
@@ -187,6 +205,9 @@
 						"name": "Receipt",
 						"kind": "function",
 						"responsibility": "What was drawn, at what scale, and from which SVG",
+						"groups": [
+							"drawing"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/semantic-rasterizer/receipt.ts"
@@ -247,6 +268,9 @@
 						"name": "Record command",
 						"kind": "service",
 						"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/cli/commands/semantic-record.ts"
@@ -265,6 +289,9 @@
 						"kind": "module",
 						"responsibility": "Starts the browser a recording needs, opens the page at 1920x1080, and moves the file into place only once that browser has stopped",
 						"description": "The browser is started with tab capture accepted without a prompt, audio allowed to play, and a fake microphone playing a second of silence, because voice will not start without a microphone and would hear Chromium's default tone as somebody speaking. An interrupt stops the browser at once, so every call waiting on it fails and nothing is written.",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/walkthrough-recorder/index.ts"
@@ -277,6 +304,9 @@
 						"kind": "function",
 						"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step and streams the finished file out",
 						"description": "Everything the page says crosses as the shared recording state and is parsed as such, so a page from another build is refused rather than guessed at.",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/walkthrough-recorder/lib/drive.ts"
@@ -289,6 +319,9 @@
 						"kind": "function",
 						"responsibility": "Rewrites an MP4's Opus sound as AAC with ffmpeg, the picture copied, so the file plays with sound in Safari",
 						"description": "Chrome on Linux has no AAC encoder, so the page writes MP4 sound as Opus. Without an ffmpeg the file is kept as recorded and the command says what that means.",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/walkthrough-recorder/lib/playable.ts"
@@ -300,7 +333,10 @@
 						"name": "ffmpeg",
 						"kind": "external",
 						"responsibility": "Converts the sound and moves the index to the front, so playback starts before the file has arrived",
-						"description": "On PATH, or named by ARCHBOARD_FFMPEG."
+						"description": "On PATH, or named by ARCHBOARD_FFMPEG.",
+						"groups": [
+							"walkthrough"
+						]
 					},
 					{
 						"id": "T1TYskKQ",
@@ -309,6 +345,9 @@
 						"kind": "ui",
 						"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records its tab into one file",
 						"description": "The tab capture is picture only. The voice plays through a muted audio element, so nobody hears a recording, and its stream is mixed into the file through one Web Audio destination whose track is there from the first frame. The browser writes the container itself: MP4 with H.264, or WebM with VP9.",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/walkthrough-recording/index.ts"

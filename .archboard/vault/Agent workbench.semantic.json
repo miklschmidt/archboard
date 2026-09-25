@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 14,
+	"version": 15,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-24T15:41:36.905Z",
+	"updatedAt": "2026-09-25T01:27:43.143Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -119,6 +119,9 @@
 						"responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it",
 						"description": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess and a generation factory; the factories (codex-workbench-factories.ts) build the components in the order they depend on each other, the gateway last.",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/server/archboard/lib/codex-workbench.ts"
@@ -144,6 +147,9 @@
 						"responsibility": "Owns the child: proves the executable, prepares the Codex home every Archboard server on the machine shares, spawns the child and reaps its group",
 						"description": "One Archboard-only CODEX_HOME and SQLite home under the state directory serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused.",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-process/index.ts"
@@ -157,6 +163,9 @@
 						"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
 						"description": "The versioned wire contract it decodes against lives beside it in codex-protocol. A dynamic tool call reaches the owner registered for its namespace and manifest digest: the thread tools, the coordinator tools, or tell_coordinator.",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-transport/index.ts"
@@ -169,6 +178,9 @@
 						"kind": "module",
 						"responsibility": "One initialized session and the reviewed methods it will send",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-session/index.ts"
@@ -187,6 +199,9 @@
 						"kind": "module",
 						"responsibility": "Which thread the Archboard server is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-thread-link/index.ts"
@@ -199,6 +214,9 @@
 						"kind": "module",
 						"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-queue/index.ts"
@@ -211,6 +229,9 @@
 						"kind": "module",
 						"responsibility": "The separate fast thread voice attaches to, the voice model's subconscious, which routes sustained work to the workhorse",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"voice"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator/index.ts"
@@ -254,6 +275,9 @@
 						"kind": "module",
 						"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-epoch/index.ts"
@@ -266,6 +290,9 @@
 						"kind": "module",
 						"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-operations/index.ts"
@@ -285,6 +312,9 @@
 						"responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back",
 						"description": "Archboard never speaks to a voice endpoint itself: the child brokers it, and the media travels browser to provider over the peer connection the tab made.",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"voice"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-realtime/index.ts"
@@ -310,6 +340,9 @@
 						"responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait",
 						"description": "A creation, fork or message runs only once the user approves it in the pane, under the generation that may act.",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-dynamic-tools/index.ts"
@@ -322,6 +355,9 @@
 						"kind": "module",
 						"responsibility": "While voice is live, workhorse news for the coordinator and pane news for the voice model, each once and in order",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"voice"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator-callbacks/index.ts"
@@ -341,6 +377,9 @@
 						"responsibility": "Tells the linked workhorse what a user changed on a board: one quiet developer message, settled once",
 						"description": "Before each delivery it checks the child, epoch, thread link and cursor again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
 						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-thread-context/index.ts"

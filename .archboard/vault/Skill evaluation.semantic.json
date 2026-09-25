@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 8,
+	"version": 9,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-09-24T09:31:03.441Z",
+	"updatedAt": "2026-09-25T01:27:45.933Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -196,6 +196,9 @@
 						"kind": "module",
 						"responsibility": "Stages a read-only workspace and grades the ungraded runs in chunks, in one resumed session of the grader chosen by name",
 						"description": "The runs reach the grader blinded: an anonymous id from the batch salt, private paths redacted, and no arm anywhere in the bundle. Every run of both arms is judged against the one candidate skill the batch kept, staged beside the pinned Flask sources; a batch whose kept copy is missing or changed is refused.",
+						"groups": [
+							"grading"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/grading-run.ts"
@@ -207,6 +210,9 @@
 						"name": "Codex grader",
 						"kind": "module",
 						"responsibility": "One grader runner: a resumed thread, pictures attached, usage read as the thread's running total",
+						"groups": [
+							"grading"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/codex-grader.ts"
@@ -218,6 +224,9 @@
 						"name": "Claude grader",
 						"kind": "module",
 						"responsibility": "The other grader runner: a resumed session, read-only tools, pictures opened from the workspace",
+						"groups": [
+							"grading"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/claude-grader.ts"
@@ -230,6 +239,9 @@
 						"kind": "module",
 						"responsibility": "Joins every run with the verdict of each grader that graded it, and says where two graders agree",
 						"description": "A finding's cited passage is resolved against the kept candidate skill: one it lacks is the grader's error, one only the candidate carries is a departure the run was never shown. Written as report.md and report.json beside the batch.",
+						"groups": [
+							"grading"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/records.ts"
@@ -349,6 +361,9 @@
 						"kind": "module",
 						"responsibility": "Holds each answer to what the report reads, and asks once more in the same session for the runs an answer fell short on",
 						"description": "Short means a declared feature left unanswered, a feature invented, or a capture offered and not observed. The retry is a call of the session like any other, so its usage counts, and it is never itself retried; a retry owed by an earlier pass is asked on the next one.",
+						"groups": [
+							"grading"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/skill-evaluation/lib/grading-retry.ts"
