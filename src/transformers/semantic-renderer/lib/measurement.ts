@@ -9,7 +9,12 @@ import {
 import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
-import { layoutWithLines, measureNaturalWidth, prepareWithSegments } from "@chenglou/pretext";
+import {
+	layoutWithLines,
+	measureLineStats,
+	measureNaturalWidth,
+	prepareWithSegments,
+} from "@chenglou/pretext";
 import {
 	placingGroups,
 	type SemanticNode,
@@ -156,29 +161,67 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	};
 }
 
+/** The widest a relationship's plate grows before its words wrap. */
+const LABEL_MAX_WIDTH = 200;
+/** The narrowest plate, so a one-glyph label still reads as a plate. */
+const LABEL_MIN_WIDTH = 40;
+
+/**
+ * The narrowest wrap width that keeps the line count the widest wrap gives,
+ * so wrapped words share their lines evenly instead of leaving one word alone
+ * on the last.
+ * @param prepared The measured text.
+ * @param limit The widest the lines may be.
+ * @returns A width at most `limit` that breaks into no more lines than `limit` does.
+ */
+function balancedWrapWidth(
+	prepared: ReturnType<typeof prepareWithSegments>,
+	limit: number,
+): number {
+	const lines = measureLineStats(prepared, limit).lineCount;
+	if (lines <= 1) {
+		return limit;
+	}
+	let tooNarrow = measureNaturalWidth(prepared) / lines;
+	let fits = limit;
+	while (fits - tooNarrow > 0.5) {
+		const middle = (tooNarrow + fits) / 2;
+		if (measureLineStats(prepared, middle).lineCount <= lines) {
+			fits = middle;
+		} else {
+			tooNarrow = middle;
+		}
+	}
+	return fits;
+}
+
 /**
  * Settle a relationship's complete words and padded plate before routing it.
+ * The words wrap balanced, the plate hugs the widest line, and every line is
+ * centred, so the text sits on the line the plate is centred on.
  * @param text The connection label.
  * @returns Its box and the relative positions of its lines.
  */
 function measureLabel(text: string): MeasuredLabel {
 	const prepared = prepare(text, LABEL);
-	const width = Math.min(
-		200,
-		Math.max(40, measureNaturalWidth(prepared) + 2 * ARCHITECTURE_LABEL_PADDING_X),
-	);
-	const runs = runsFor(
-		prepared,
-		LABEL,
-		width - 2 * ARCHITECTURE_LABEL_PADDING_X,
-		ARCHITECTURE_LABEL_PADDING_X,
-		ARCHITECTURE_LABEL_PADDING_Y,
-	);
-	const paintedWidth = runs.reduce((widest, run) => Math.max(widest, run.width), 0);
+	const limit = LABEL_MAX_WIDTH - 2 * ARCHITECTURE_LABEL_PADDING_X;
+	// A hanging space is not painted, so it neither widens nor off-centres the plate.
+	const lines = layoutWithLines(prepared, balancedWrapWidth(prepared, limit), LABEL.lineHeight)
+		.lines.map(({ text: line }) => line.trimEnd())
+		.map((line) => ({ text: line, width: exactWidth(line, LABEL) }));
+	const widest = lines.reduce((most, line) => Math.max(most, line.width), 0);
+	const width = Math.max(LABEL_MIN_WIDTH, widest + 2 * ARCHITECTURE_LABEL_PADDING_X);
 	return {
-		width: Math.max(width, paintedWidth + 2 * ARCHITECTURE_LABEL_PADDING_X),
-		height: Math.max(1, runs.length) * LABEL.lineHeight + 2 * ARCHITECTURE_LABEL_PADDING_Y,
-		runs,
+		width,
+		height: Math.max(1, lines.length) * LABEL.lineHeight + 2 * ARCHITECTURE_LABEL_PADDING_Y,
+		runs: lines.map((line, index) => ({
+			...line,
+			x: (width - line.width) / 2,
+			y: ARCHITECTURE_LABEL_PADDING_Y + LABEL.fontSize + index * LABEL.lineHeight,
+			font: LABEL.font,
+			fontSize: LABEL.fontSize,
+			role: LABEL.role,
+		})),
 	};
 }
 

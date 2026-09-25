@@ -57,6 +57,37 @@ test("measurement preserves complete words at fixed readable sizes and bounds th
 	}
 });
 
+test("a relationship's plate hugs its balanced lines and centres them on the line it labels", () => {
+	// One line of this is just wider than a plate's text room, and one glyph is far narrower.
+	const labels = { wrapped: "thread/start with the coordinator body", glyph: "/" };
+	const measured = measureArchitecture({
+		...emptyContent(),
+		nodes: [{ id: "api", order: 1000, name: "API", kind: "service" }],
+		edges: Object.entries(labels).map(([id, label]) => ({
+			id,
+			order: 1000,
+			from: "api",
+			to: "api",
+			kind: "call" as const,
+			label,
+			emphasis: "normal" as const,
+		})),
+	});
+	const wrapped = measured.labels.get("wrapped")!;
+	const widths = wrapped.runs.map((run) => run.width);
+	expect(wrapped.runs).toHaveLength(2);
+	expect(wrapped.width).toBeCloseTo(Math.max(...widths) + 20, 6);
+	// Balanced: no word is left alone on the last line.
+	expect(Math.min(...widths)).toBeGreaterThan(Math.max(...widths) / 2);
+	for (const plate of [wrapped, measured.labels.get("glyph")!]) {
+		expect(plate.width).toBeGreaterThanOrEqual(40);
+		for (const run of plate.runs) {
+			expect(run.width).toBe(exactWidth(run));
+			expect(run.x + run.width / 2).toBeCloseTo(plate.width / 2, 6);
+		}
+	}
+});
+
 test("structural parents reserve the whole wrapped header and keep descriptions in inspection", () => {
 	const description = "This extended inspector prose must not become another canvas paragraph.";
 	const content: VariantContent = {
