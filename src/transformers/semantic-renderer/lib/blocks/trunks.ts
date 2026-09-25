@@ -92,17 +92,28 @@ function detourOf(points: readonly Point[]): number {
 }
 
 /**
- * How readable a block of blocks reads laid out, on the score every layout
- * choice is made by, with the room its trunks spend running round the
- * blocks counted as crossings at the router's own rate.
+ * How readable a layout is, on the score every layout choice is made by,
+ * with the room its lines spend running round what they pass counted as
+ * crossings at the trunk router's own rate.
+ * @param page The layout's size.
+ * @param page.width Its width.
+ * @param page.height Its height.
+ * @param lines Every line's points.
+ * @returns The score.
+ */
+function routedScore(page: { width: number; height: number }, lines: readonly Point[][]): number {
+	const detour = lines.reduce((sum, points) => sum + detourOf(points), 0);
+	const crossings = crossingsOf(lines) + detour / TRUNK_CROSSING;
+	return scoreOf({ width: page.width, height: page.height, crossings });
+}
+
+/**
+ * How readable a block of blocks reads laid out, its trunks' detours counted.
  * @param laid The block laid out.
  * @returns The score.
  */
 function packedScore(laid: Laid): number {
-	const lines = [...laid.lines.values()];
-	const detour = lines.reduce((sum, points) => sum + detourOf(points), 0);
-	const crossings = crossingsOf(lines) + detour / TRUNK_CROSSING;
-	return scoreOf({ width: laid.width, height: laid.height, crossings });
+	return routedScore(laid, [...laid.lines.values()]);
 }
 
 /** The trunks of one block of blocks, routed around its packed blocks. */
@@ -120,6 +131,12 @@ class TrunkRouter {
 		readonly tree: BlockTree,
 		readonly boxes: ReadonlyMap<string, Box>,
 	) {}
+
+	/**
+	 * Whether the block's own ports are pins trunks leave into the block, or
+	 * free points, for a block too tight for a trunk to turn into a pin.
+	 */
+	directed = true;
 
 	/**
 	 * Add one obstacle.
@@ -194,6 +211,15 @@ class TrunkRouter {
 		shapes: ReadonlyMap<string, object>,
 		classes: Map<string, number>,
 	): End {
+		if (!this.directed && this.block.ports.has(at)) {
+			const box = this.boxes.get(at)!;
+			const point = new avoid.Point(box.x + box.width / 2, box.y + box.height / 2);
+			try {
+				return new avoid.ConnEnd(point);
+			} finally {
+				point.delete();
+			}
+		}
 		const { owner, x, y, side } = this.pinOn(at);
 		const shape = shapes.get(owner)!;
 		const known = classes.get(at);
@@ -207,11 +233,27 @@ class TrunkRouter {
 	}
 
 	/**
-	 * Route every trunk around the packed blocks.
+	 * Route every trunk around the packed blocks: into the block's own ports
+	 * as pins, or, where libavoid finds no route that way, to them as free
+	 * points, and a trunk it still finds none for as a plain dogleg.
 	 * @param avoid The initialized libavoid module.
 	 * @returns Each line's points, by key, from its source end.
 	 */
 	route(avoid: AvoidEngine): Map<string, Point[]> {
+		const lines = this.routeOnce(avoid);
+		if (lines !== undefined) return lines;
+		this.directed = false;
+		return this.routeOnce(avoid) ?? this.routeOnce(avoid, true)!;
+	}
+
+	/**
+	 * Route every trunk once, the block's own ports as pins or free points.
+	 * @param avoid The initialized libavoid module.
+	 * @param anyway Whether a trunk libavoid finds no route for takes a plain dogleg.
+	 * @returns Each line's points, or nothing when libavoid found no route
+	 * for some trunk and a dogleg was not asked for.
+	 */
+	routeOnce(avoid: AvoidEngine, anyway = false): Map<string, Point[]> | undefined {
 		const lines = new Map<string, Point[]>();
 		const router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		try {
@@ -221,10 +263,9 @@ class TrunkRouter {
 			router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
 			const header = this.block.header === undefined ? [] : [headerOf(this.block)];
 			const shapes = new Map(
-				[...this.block.items, ...header, ...this.block.ports.keys()].map((id) => [
-					id,
-					this.shape(avoid, router, this.boxes.get(id)!),
-				]),
+				[...this.block.items, ...header, ...(this.directed ? this.block.ports.keys() : [])].map(
+					(id) => [id, this.shape(avoid, router, this.boxes.get(id)!)],
+				),
 			);
 			const classes = new Map<string, number>();
 			const connections = [...this.block.lines.values()].map((line) => {
@@ -248,10 +289,9 @@ class TrunkRouter {
 				});
 				// libavoid answers a straight line between the blocks' middles when it finds
 				// no route; the trunk then takes a plain dogleg between its pins.
-				const points =
-					connection.hasValidRoute() && orthogonal(routed)
-						? routed
-						: dogleg(this.pinPoint(line.tail), this.pinPoint(line.head));
+				const valid = connection.hasValidRoute() && orthogonal(routed);
+				if (!valid && !anyway) return undefined;
+				const points = valid ? routed : dogleg(this.pinPoint(line.tail), this.pinPoint(line.head));
 				lines.set(line.key, line.from === line.tail ? points : points.toReversed());
 			}
 			return lines;
@@ -261,4 +301,4 @@ class TrunkRouter {
 	}
 }
 
-export { TRUNK_CLEARANCE, TrunkRouter, packedScore };
+export { TRUNK_CLEARANCE, TrunkRouter, packedScore, routedScore };
