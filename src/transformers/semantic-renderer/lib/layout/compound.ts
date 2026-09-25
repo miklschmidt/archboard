@@ -41,6 +41,7 @@ import {
 	compoundGraph,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
+import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
@@ -197,7 +198,7 @@ async function layoutCompound(
 	// Lanes that fold into one row are exchanged first, so the routes the
 	// drawing reports are the ones painted (junction marks read them); bridges
 	// are then settled as part of the geometry a reader sees.
-	const drawing = unfoldCrossings(chosen);
+	const drawing = fittedPage(unfoldCrossings(chosen));
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 
