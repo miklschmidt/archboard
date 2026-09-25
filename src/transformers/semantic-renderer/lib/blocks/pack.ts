@@ -8,7 +8,7 @@
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { SAME, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
 	headerOf,
 	type Block,
@@ -495,9 +495,11 @@ class PackLayout {
 		const { side, top } = this.insets;
 		const width = Math.max(size.width, this.block.header?.width ?? 0) + 2 * side;
 		const ended = [...this.block.ports.values()].includes("bottom");
-		const bottom = top + this.headRoom() + size.height + (ended ? HEAD_GAP : 0);
-		this.placeEdges(width, { top, bottom });
+		const items = top + this.headRoom();
+		const low = items + size.height + (ended ? HEAD_GAP : 0);
+		this.placeEdges(width, { top, bottom: low });
 		this.route(avoid);
+		const bottom = this.closeStrips(items, low, ended);
 		const reach = [...this.boxes.values()].flatMap((one) => [
 			{ x: one.x + one.width, y: one.y + one.height },
 		]);
@@ -510,6 +512,52 @@ class PackLayout {
 			bands: [],
 			packing,
 		};
+	}
+
+	/**
+	 * Close the gaps kept for trunks that turn under the header or over the
+	 * bottom ports to the block's inset, where no trunk turns.
+	 * @param items Where the packed items start.
+	 * @param bottom Where the bottom ports stand.
+	 * @param ended Whether the block has bottom ports.
+	 * @returns Where the bottom ports stand now.
+	 */
+	closeStrips(items: number, bottom: number, ended: boolean): number {
+		const head = this.headRoom() > 0 ? this.close(items - HEAD_GAP, items) : 0;
+		const low = bottom - head;
+		return ended ? low - this.close(low - HEAD_GAP, low) : low;
+	}
+
+	/**
+	 * Close a strip across the block to the block's inset when no trunk turns
+	 * in it: everything at or below its foot moves up, and the trunks that
+	 * only cross it get shorter.
+	 * @param from Where the strip starts.
+	 * @param to Where it ends.
+	 * @returns How far everything below it moved up.
+	 */
+	close(from: number, to: number): number {
+		const by = to - from - this.insets.side;
+		const lines = [...this.lines.values()];
+		const turns = lines.some((points) =>
+			points
+				.slice(1)
+				.some(
+					(point, index) =>
+						Math.abs(point.y - points[index]!.y) < SAME &&
+						point.y > from + SAME &&
+						point.y < to - SAME,
+				),
+		);
+		if (by <= 0 || turns) return 0;
+		for (const [id, one] of this.boxes)
+			if (one.y >= to - SAME) this.boxes.set(id, { ...one, y: one.y - by });
+		for (const [key, points] of this.lines)
+			this.lines.set(
+				key,
+				points.map((point) => (point.y >= to - SAME ? { x: point.x, y: point.y - by } : point)),
+			);
+		return by;
 	}
 
 	/**

@@ -89,4 +89,4 @@ function corners(points: readonly Point[]): Point[] {
 	return kept;
 }
 
-export { corners, moved, shifted, type Band, type Insets, type Laid };
+export { SAME, corners, moved, shifted, type Band, type Insets, type Laid };
