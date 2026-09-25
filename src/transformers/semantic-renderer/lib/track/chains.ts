@@ -8,6 +8,8 @@ import { Scene, centreX, type Item } from "@/transformers/semantic-renderer/lib/
 
 /** Distance between neighbouring lanes and tracks. */
 const LANE = 16;
+/** How far a line keeps from a card's corner, as ports do. */
+const FACE_MARGIN = 20;
 /** How many quarter lanes either way a lane looks for a free column. */
 const SEARCH_STEPS = 64;
 
@@ -189,8 +191,10 @@ class Occupancy {
  * Straighten every run of lanes onto one column where that column is free on
  * every band the run passes and keeps it inside the same frames: a long
  * relationship then descends in one line instead of jogging at every channel.
- * A run prefers the column of the station it leads into, then the one it leaves;
- * longer runs choose first, and a run with no free column keeps Graphviz's lanes.
+ * A run prefers the column of the station it leads into, then the one it
+ * leaves, except that a run to or from a container prefers a column both its
+ * neighbours reach straight; longer runs choose first, and a run with no free
+ * column keeps Graphviz's lanes.
  * @param scene The placed scene.
  * @param chains Every relationship's chain.
  */
@@ -200,14 +204,62 @@ function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 	for (const { lanes, before, after } of runs) {
 		const xs = lanes.map(({ x }) => x).toSorted((one, other) => one - other);
 		const median = xs[Math.floor(xs.length / 2)]!;
+		const straight = straightOn(scene, before, after);
 		const chosen =
-			[after.x, before.x, median, ...xs].find((x) => occupancy.fits(lanes, x)) ??
+			[...straight, after.x, before.x, median, ...xs].find((x) => occupancy.fits(lanes, x)) ??
 			nearest(median, (x) => occupancy.fits(lanes, x));
 		for (const lane of lanes) {
 			lane.x = chosen ?? nearest(lane.x, (x) => occupancy.fits([lane], x)) ?? lane.x;
 			occupancy.take(lane);
 		}
 	}
+}
+
+/**
+ * The x a line can pass a station at straight: anywhere along a card's or
+ * title row's face clear of its corners, anywhere across a label box, or a
+ * lane's own x.
+ * @param station The station.
+ * @returns The lowest and highest x.
+ */
+function reachOf(station: Station): [number, number] {
+	if (station.item === undefined) return [station.x, station.x];
+	const { x, width } = station.item.box;
+	const margin = Math.min(station.kind === "label" ? LANE : FACE_MARGIN, width / 2);
+	return [x + margin, x + width - margin];
+}
+
+/**
+ * Where a run of lanes lets its line pass straight from the station above it
+ * into the one below: the point both can reach nearest the lanes, if any.
+ * @param before The station above the run.
+ * @param after The station below it.
+ * @param near The lanes' own middle.
+ * @returns That x, or nothing when the two reach no common point.
+ */
+function meeting(before: Station, after: Station, near: number): number[] {
+	const [a, b] = reachOf(before);
+	const [c, d] = reachOf(after);
+	const low = Math.max(a, c);
+	const high = Math.min(b, d);
+	return low <= high ? [Math.min(high, Math.max(low, near))] : [];
+}
+
+/**
+ * Where a run of lanes to or from a container runs straight on: at the x of
+ * the station at its other end, as near as both can reach. A container's centre
+ * says nothing of where its port will stand, so a run toward one would
+ * otherwise aim at its middle and come back.
+ * @param scene The placed scene.
+ * @param before The station above the run.
+ * @param after The station below it.
+ * @returns That x, or nothing when neither end is a container or they reach no common point.
+ */
+function straightOn(scene: Scene, before: Station, after: Station): number[] {
+	const titles = new Set(scene.titles.values());
+	if (after.item !== undefined && titles.has(after.item)) return meeting(before, after, before.x);
+	if (before.item !== undefined && titles.has(before.item)) return meeting(before, after, after.x);
+	return [];
 }
 
 /**

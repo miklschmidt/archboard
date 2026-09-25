@@ -1,0 +1,220 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "Alpha h",
+			"kind": "module",
+			"responsibility": "delta kettle river eagle lantern summit falcon meadow tim"
+		},
+		{
+			"id": "n1",
+			"name": "Bravo island pepper c",
+			"kind": "module",
+			"responsibility": "eagle lantern summit falcon meadow timber garden needle alpha harbor orange bravo island "
+		},
+		{
+			"id": "n2",
+			"name": "Carbon jungle ",
+			"kind": "module",
+			"responsibility": "falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow tim"
+		},
+		{
+			"id": "n3",
+			"name": "Delta kettl",
+			"kind": "module",
+			"responsibility": "garden needle alpha harbor orange bravo island pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden needle alp"
+		},
+		{
+			"id": "n4",
+			"name": "Eagle lantern summit falcon ",
+			"kind": "module",
+			"responsibility": "harbor orange bravo island pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon j"
+		},
+		{
+			"id": "n5",
+			"name": "Falcon meadow timber garde",
+			"kind": "module",
+			"responsibility": "island pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon jungle quartz delta kettl"
+		},
+		{
+			"id": "n6",
+			"name": "Garden needle alpha h",
+			"kind": "service",
+			"responsibility": "jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon jungle quartz delta kettle river eag"
+		},
+		{
+			"id": "n7",
+			"name": "Harbor o",
+			"kind": "module",
+			"responsibility": "kettle river eagle lantern summit f",
+			"parent": "n6"
+		},
+		{
+			"id": "n8",
+			"name": "Island p",
+			"kind": "module",
+			"responsibility": "lantern summit falcon meadow timber",
+			"parent": "n6"
+		},
+		{
+			"id": "n9",
+			"name": "Jungle q",
+			"kind": "module",
+			"responsibility": "meadow timber garden needle alpha h",
+			"parent": "n6"
+		},
+		{
+			"id": "n10",
+			"name": "Kettle r",
+			"kind": "module",
+			"responsibility": "needle alpha harbor orange bravo is",
+			"parent": "n6"
+		},
+		{
+			"id": "n11",
+			"name": "Lantern summit falcon",
+			"kind": "module",
+			"responsibility": "orange bravo island pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden needle alpha harbor orang"
+		},
+		{
+			"id": "n12",
+			"name": "Meadow timber garden needle ",
+			"kind": "module",
+			"responsibility": "pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon jungle quartz de"
+		},
+		{
+			"id": "n13",
+			"name": "Needle alpha harbor orange br",
+			"kind": "service",
+			"responsibility": "quartz delta kettle river eagle lantern summit falcon meadow timber garden"
+		},
+		{
+			"id": "n14",
+			"name": "Orange bravo island ",
+			"kind": "module",
+			"responsibility": "river eagle lantern summit falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon jungle quartz delta kettle river eagle lantern summit falcon meadow timber garden n",
+			"parent": "n13"
+		},
+		{
+			"id": "n15",
+			"name": "Pepper carbon jungle",
+			"kind": "module",
+			"responsibility": "summit falcon meadow timber garden needle alpha harbor orange bravo island pepper carbon jungle quartz delta kettle river ea",
+			"parent": "n13"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n1",
+			"kind": "http",
+			"label": "alpha harbor ora"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n2",
+			"kind": "http",
+			"label": "bravo islan"
+		},
+		{
+			"id": "e2",
+			"from": "n1",
+			"to": "n3",
+			"kind": "http",
+			"label": "carbon jung"
+		},
+		{
+			"id": "e3",
+			"from": "n2",
+			"to": "n4",
+			"kind": "http",
+			"label": "delta kettle r"
+		},
+		{
+			"id": "e4",
+			"from": "n3",
+			"to": "n4",
+			"kind": "http",
+			"label": "eagle lantern "
+		},
+		{
+			"id": "e5",
+			"from": "n4",
+			"to": "n5",
+			"kind": "http",
+			"label": "falcon meadow timber g"
+		},
+		{
+			"id": "e6",
+			"from": "n5",
+			"to": "n6",
+			"kind": "http",
+			"label": "garden needle alpha harbor orange bravo is"
+		},
+		{
+			"id": "e7",
+			"from": "n11",
+			"to": "n12",
+			"kind": "http",
+			"label": "harbor orange bravo island pepper carbon jungle"
+		},
+		{
+			"id": "e8",
+			"from": "n12",
+			"to": "n14",
+			"kind": "http",
+			"label": "island pepper carbon jungle quartz d"
+		},
+		{
+			"id": "e9",
+			"from": "n14",
+			"to": "n6",
+			"kind": "http",
+			"label": "jungle quartz delta kettle river eagle lantern s"
+		},
+		{
+			"id": "e10",
+			"from": "n4",
+			"to": "n12",
+			"kind": "http",
+			"label": "kettle river eagle lantern summi"
+		},
+		{
+			"id": "e11",
+			"from": "n12",
+			"to": "n14",
+			"kind": "http",
+			"label": "lantern summit falcon meadow timber garden ne"
+		},
+		{
+			"id": "e12",
+			"from": "n14",
+			"to": "n6",
+			"kind": "http",
+			"label": "meadow timber garden needle alpha harbor orange bra"
+		},
+		{
+			"id": "e13",
+			"from": "n4",
+			"to": "n5",
+			"kind": "call",
+			"label": "needle alpha harbor orange bravo island pepper carbon jungle"
+		},
+		{
+			"id": "e14",
+			"from": "n5",
+			"to": "n6",
+			"kind": "call",
+			"label": "orange bravo island pepper carbon jungle qu"
+		},
+		{
+			"id": "e15",
+			"from": "n14",
+			"to": "n15",
+			"kind": "http",
+			"label": "pepper carbon jungle quartz delta kettle"
+		}
+	]
+}
