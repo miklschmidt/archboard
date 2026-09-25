@@ -219,21 +219,30 @@ function keepsGap(item: Item, box: Item["box"], others: Iterable<Item>, gap: num
 }
 
 /**
- * Whether a label box, moved, keeps its room from every other box on its
- * band: a card's clearance from a card or title row, a label's from a label.
+ * Whether a label box, moved, keeps its room from everything else on its
+ * band: a card's clearance from a card or title row, a label's from a label,
+ * and a lane's from every other line passing the band.
  * @param scene The scene.
  * @param item The label box.
  * @param box Where it would stand.
+ * @param lanes The x of every lane on the label's band.
  * @returns True when nothing is closer.
  */
-function clearOnBand(scene: Scene, item: Item, box: Item["box"]): boolean {
+function clearOnBand(
+	scene: Scene,
+	item: Item,
+	box: Item["box"],
+	lanes: readonly number[],
+): boolean {
 	return (
 		keepsGap(
 			item,
 			box,
 			[...scene.cards.values(), ...scene.titles.values()],
 			LABEL_CARD_CLEARANCE,
-		) && keepsGap(item, box, scene.labels.values(), LABEL_LABEL_CLEARANCE)
+		) &&
+		keepsGap(item, box, scene.labels.values(), LABEL_LABEL_CLEARANCE) &&
+		lanes.every((x) => x <= box.x - LABEL_GAP || x >= box.x + box.width + LABEL_GAP)
 	);
 }
 
@@ -259,6 +268,7 @@ function meetingX(station: Station, item: Item): number {
  * @param nets Every net.
  */
 function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
+	const lanes = lanesByBand(scene, nets);
 	// In the board's order, so which of two neighbours moves first never depends on the document's.
 	const ordered = nets.toSorted((one, other) => one.order - other.order);
 	const pairs = [
@@ -270,8 +280,8 @@ function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
 		const item = label.item!;
 		const shift = meetingX(other, item) - centreX(item);
 		const box = { ...item.box, x: item.box.x + shift };
-		if (settled.has(item) || Math.abs(shift) >= 2 * LANE || !clearOnBand(scene, item, box))
-			continue;
+		const clear = clearOnBand(scene, item, box, lanes[item.band]!);
+		if (settled.has(item) || Math.abs(shift) >= 2 * LANE || !clear) continue;
 		item.box = box;
 		settled.add(item);
 	}
