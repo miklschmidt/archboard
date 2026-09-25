@@ -18,6 +18,7 @@ const LAYOUT_ENGINE_KEY = "archboard.layout-engine";
 const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label: string }[] = [
 	{ name: "graphviz", label: "Graphviz and libavoid" },
 	{ name: "track", label: "Tracks (experimental)" },
+	{ name: "blocks", label: "Blocks (experimental)" },
 ];
 
 /**

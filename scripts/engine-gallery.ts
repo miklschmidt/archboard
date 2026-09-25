@@ -7,11 +7,13 @@
 // the vault is never touched.
 //
 // Run from the repository root:
-//   bun scripts/engine-gallery.ts [vault] [out]
-// The vault defaults to the tracked dogfood vault, the output to a temporary folder.
+//   bun scripts/engine-gallery.ts [vault] [out] [engine,engine]
+// The vault defaults to the tracked dogfood vault, the output to a temporary
+// folder, and the engines to every registered one.
 import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { z } from "zod";
 import { LayoutEngineSchema, type SemanticBoard } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import {
@@ -40,6 +42,9 @@ interface Drawing {
 
 const vault = process.argv[2] ?? ".archboard/vault";
 const out = process.argv[3] ?? mkdtempSync(join(tmpdir(), "archboard-engine-gallery-"));
+const engines = z
+	.array(LayoutEngineSchema)
+	.parse(process.argv[4]?.split(",") ?? LayoutEngineSchema.options);
 mkdirSync(out, { recursive: true });
 
 /**
@@ -88,7 +93,7 @@ const drawings: Drawing[] = [];
 for (const board of boards) {
 	for (const view of [undefined, ...board.views.map(({ name }) => name)]) {
 		const drawn: Drawn[] = [];
-		for (const engine of LayoutEngineSchema.options) {
+		for (const engine of engines) {
 			const started = performance.now();
 			// oxlint-disable-next-line no-await-in-loop -- one drawing at a time, so each time is its own
 			const outcome = await renderBoard(
@@ -126,7 +131,7 @@ const rows = drawings.map(
 );
 writeFileSync(
 	join(out, "index.html"),
-	`<!doctype html><meta charset="utf-8"><title>Engine gallery</title><style>body{font:14px system-ui;margin:24px;background:#fafaf9}h2{font-size:15px;margin:28px 0 8px}.row{display:grid;grid-template-columns:repeat(${LayoutEngineSchema.options.length},1fr);gap:16px}figure{margin:0;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:8px}img{width:100%;height:auto}figcaption{color:#666;margin-bottom:6px}</style>${rows.join("")}`,
+	`<!doctype html><meta charset="utf-8"><title>Engine gallery</title><style>body{font:14px system-ui;margin:24px;background:#fafaf9}h2{font-size:15px;margin:28px 0 8px}.row{display:grid;grid-template-columns:repeat(${engines.length},1fr);gap:16px}figure{margin:0;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:8px}img{width:100%;height:auto}figcaption{color:#666;margin-bottom:6px}</style>${rows.join("")}`,
 );
 console.log(`gallery: ${join(out, "index.html")}`);
 process.exit(0);

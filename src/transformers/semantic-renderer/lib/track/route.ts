@@ -9,7 +9,7 @@
 // tracks need, so lanes keep one spacing and never squeeze, and every label
 // sits on its own line by construction. One pass, no search.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import type { ChangeKind, SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
+import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import {
 	APPROACH_STRAIGHT,
 	BEND_RADIUS,
@@ -54,21 +54,30 @@ interface Routed {
 	readonly upward: boolean;
 }
 
+/** One line a scene is routed for: a relationship, or the part of one a block draws. */
+interface SceneLine {
+	readonly id: string;
+	readonly order: number;
+	/** What must match for two lines to share a trunk: kind and standing. */
+	readonly kind: string;
+	/** Its placed ends, label and polyline. */
+	readonly placed: ElkExtendedEdge;
+}
+
 /**
  * A chain's nets: one for each pair of stations on neighbouring bands.
- * @param edge The relationship.
+ * @param line The line.
  * @param chain Its stations.
- * @param standing Its comparison standing; relationships that differ never share a trunk.
  * @returns Its nets, top to bottom.
  */
-function netsOf(edge: SemanticEdge, chain: Chain, standing: string): Net[] {
+function netsOf(line: SceneLine, chain: Chain): Net[] {
 	return chain.stations.slice(1).map((bottom, index) => {
 		const top = chain.stations[index]!;
 		return {
-			edge: edge.id,
-			order: edge.order,
+			edge: line.id,
+			order: line.order,
 			channel: top.band,
-			kind: `${edge.kind}|${standing}`,
+			kind: line.kind,
 			top,
 			bottom,
 			topX: top.x,
@@ -116,9 +125,10 @@ function channelHeight(tracks: number): number {
  * Lay out every band and channel again, from the tracks each channel needs.
  * @param scene The scene, whose bands get their new tops.
  * @param tracks How many tracks each channel holds.
+ * @param margin Where the first band starts.
  */
-function spaceBands(scene: Scene, tracks: readonly number[]): void {
-	let top = PAGE_MARGIN;
+function spaceBands(scene: Scene, tracks: readonly number[], margin: number): void {
+	let top = margin;
 	scene.bands.forEach((band, index) => {
 		band.newTop = top;
 		top += band.bottom - band.top + channelHeight(tracks[index] ?? 0);
@@ -297,14 +307,14 @@ function drawRegions(
  * Every relationship's drawn line and label.
  * @param scene The spaced scene.
  * @param content The architecture, for its relationships in drawing order.
- * @param routed Every routed relationship.
+ * @param routed Every routed relationship's points, from its source to its target.
  * @param measured The measured labels.
  * @returns The drawn relationships.
  */
 function drawEdges(
 	scene: Scene,
 	content: VariantContent,
-	routed: ReadonlyMap<string, Routed>,
+	routed: ReadonlyMap<string, Point[]>,
 	measured: MeasuredArchitecture,
 ): DrawingEdge[] {
 	return content.edges
@@ -316,15 +326,11 @@ function drawEdges(
 				label === undefined || item === undefined
 					? {}
 					: { label: { measured: label, box: scene.moved(item, PAGE_MARGIN) } };
-			const route = routed.get(edge.id);
+			const points = routed.get(edge.id);
 			const curve =
-				route === undefined
+				points === undefined
 					? selfLoop(scene.moved(scene.endpoint(edge.from), PAGE_MARGIN), false)
-					: curveThrough(
-							route.upward
-								? pointsOf(scene, route.nets, PAGE_MARGIN).toReversed()
-								: pointsOf(scene, route.nets, PAGE_MARGIN),
-						);
+					: curveThrough(points);
 			return { edge, curve, path: pathOf(curve), ...withLabel };
 		});
 }
@@ -339,6 +345,48 @@ function pageAround(boxes: readonly Box[]): { width: number; height: number } {
 		width: Math.max(...boxes.map((box) => box.x + box.width)) + PAGE_MARGIN,
 		height: Math.max(...boxes.map((box) => box.y + box.height)) + PAGE_MARGIN,
 	};
+}
+
+/**
+ * Route lines through a banded scene, each on tracks of its own, and space
+ * the bands for the tracks each channel holds.
+ * @param scene The scene, whose bands get their new tops.
+ * @param lines The lines, each between two of its items.
+ * @param margin How far every x moves.
+ * @param top Where the first band starts.
+ * @returns Each line's points, from its source to its target.
+ */
+function routeScene(
+	scene: Scene,
+	lines: readonly SceneLine[],
+	margin: number,
+	top = margin,
+): Map<string, Point[]> {
+	const chains = new Map(lines.map((line) => [line.id, chainOf(scene, line.placed)]));
+	straightenLanes(scene, [...chains.values()]);
+	const routed = new Map<string, Routed>(
+		lines.map((line) => {
+			const chain = chains.get(line.id)!;
+			return [line.id, { nets: netsOf(line, chain), upward: chain.upward }];
+		}),
+	);
+	const nets = [...routed.values()].flatMap((route) => route.nets);
+	bundleTrunks(nets);
+	assignPorts(nets);
+	slideLabels(scene, nets);
+	assignPorts(nets);
+	for (const route of routed.values()) settleStraights(route.nets);
+	spaceBands(
+		scene,
+		scene.bands.map((_, channel) => assignTracks(nets.filter((net) => net.channel === channel))),
+		top,
+	);
+	return new Map(
+		[...routed].map(([id, route]) => {
+			const points = pointsOf(scene, route.nets, margin);
+			return [id, route.upward ? points.toReversed() : points];
+		}),
+	);
 }
 
 /**
@@ -357,25 +405,17 @@ function routeTracks(
 ): ArchitectureDrawing {
 	const scene = new Scene(placed);
 	const edges = new Map((placed.edges ?? []).map((edge) => [edge.id, edge]));
-	const between = content.edges.filter((edge) => edge.from !== edge.to);
-	const chains = new Map(between.map((edge) => [edge.id, chainOf(scene, edges.get(edge.id)!)]));
-	straightenLanes(scene, [...chains.values()]);
-	const routed = new Map<string, Routed>(
-		between.map((edge) => {
-			const chain = chains.get(edge.id)!;
-			const standing = standings?.[edge.id] ?? "unchanged";
-			return [edge.id, { nets: netsOf(edge, chain, standing), upward: chain.upward }];
-		}),
-	);
-	const nets = [...routed.values()].flatMap((route) => route.nets);
-	bundleTrunks(nets);
-	assignPorts(nets);
-	slideLabels(scene, nets);
-	assignPorts(nets);
-	for (const route of routed.values()) settleStraights(route.nets);
-	spaceBands(
+	const routed = routeScene(
 		scene,
-		scene.bands.map((_, channel) => assignTracks(nets.filter((net) => net.channel === channel))),
+		content.edges
+			.filter((edge) => edge.from !== edge.to)
+			.map((edge) => ({
+				id: edge.id,
+				order: edge.order,
+				kind: `${edge.kind}|${standings?.[edge.id] ?? "unchanged"}`,
+				placed: edges.get(edge.id)!,
+			})),
+		PAGE_MARGIN,
 	);
 	const cards = drawCards(scene, measured, PAGE_MARGIN);
 	const containers = drawFrames(scene, edges, measured, PAGE_MARGIN);
@@ -392,4 +432,4 @@ function routeTracks(
 	};
 }
 
-export { routeTracks };
+export { PAGE_MARGIN, TRACK_TOP, channelHeight, routeScene, routeTracks, type SceneLine };

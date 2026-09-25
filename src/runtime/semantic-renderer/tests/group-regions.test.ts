@@ -57,24 +57,27 @@ function regionBox(
 	return { x: x!, y: y!, width: width!, height: height! };
 }
 
-test("the track engine gathers the cards a group places into one region, captioned with its name", async () => {
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "track" });
-	for (const [group, members, name] of [
-		["routes", ["read", "write"], "Routes"],
-		["state", ["store", "lease"], "Server state"],
-	] as const) {
-		const band = regionBox(drawn.svg, group);
-		const inside = (id: string): boolean => {
-			const box = drawn.atlas.nodes[id]!;
-			return (
-				box.x >= band.x &&
-				box.y >= band.y &&
-				box.x + box.width <= band.x + band.width &&
-				box.y + box.height <= band.y + band.height
-			);
-		};
-		for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
-		for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
-		expect(drawn.svg).toContain(`>${name}</text>`);
-	}
-});
+test.each(["track", "blocks"] as const)(
+	"the %s engine gathers the cards a group places into one region, captioned with its name",
+	async (layout) => {
+		const drawn = await renderArchitecture({ content, theme: "light", policy, layout });
+		for (const [group, members, name] of [
+			["routes", ["read", "write"], "Routes"],
+			["state", ["store", "lease"], "Server state"],
+		] as const) {
+			const band = regionBox(drawn.svg, group);
+			const inside = (id: string): boolean => {
+				const box = drawn.atlas.nodes[id]!;
+				return (
+					box.x >= band.x &&
+					box.y >= band.y &&
+					box.x + box.width <= band.x + band.width &&
+					box.y + box.height <= band.y + band.height
+				);
+			};
+			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
+			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
+			expect(drawn.svg).toContain(`>${name}</text>`);
+		}
+	},
+);
