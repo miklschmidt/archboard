@@ -3,9 +3,11 @@ id: TASK-351
 title: >-
   A block layout engine: containers and group regions laid out as compact
   blocks, packed and joined by trunks
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-25 02:09'
+updated_date: '2026-09-25 02:16'
 labels:
   - renderer
 dependencies: []
