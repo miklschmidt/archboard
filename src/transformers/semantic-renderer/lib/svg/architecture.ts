@@ -12,7 +12,11 @@ import { canvasFor, coord, inflate, union } from "@/transformers/semantic-render
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { curveBounds, labelAnchorOf } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { crossingMasks } from "@/transformers/semantic-renderer/lib/svg/crossings";
+import {
+	crossingCutouts,
+	crossingMasks,
+	trunkCutouts,
+} from "@/transformers/semantic-renderer/lib/svg/crossings";
 import {
 	paintMeasuredCard,
 	paintMeasuredFrame,
@@ -286,7 +290,10 @@ function paintArchitecture(
 ): ArchitecturePainting {
 	const { cards, containers } = drawing;
 	const { edges, bridges } = drawing.bridged;
-	const { definitions, masks } = crossingMasks(edges, bridges);
+	const { definitions, masks } = crossingMasks(edges, [
+		...crossingCutouts(edges, bridges),
+		...trunkCutouts(drawing.edges),
+	]);
 	const appearances = nodeAppearances(
 		[...cards, ...containers].map(({ measured }) => measured.node),
 		policy,
