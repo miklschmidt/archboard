@@ -13,7 +13,7 @@ import {
 	type Block,
 	type BlockTree,
 	type Line,
-	type Side,
+	type Face,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import {
@@ -73,7 +73,7 @@ interface Rows {
  */
 function turning(
 	course: Course,
-	channel: Side,
+	channel: Face,
 	at: { tail: number; head: number; order: number },
 ): Unit | undefined {
 	const own = (course.kind === "down") === (channel === "top");
@@ -112,7 +112,7 @@ class FoldLayout {
 	 * @param side The side.
 	 * @returns Their ids.
 	 */
-	portsOn(side: Side): string[] {
+	portsOn(side: Face): string[] {
 		return [...this.block.ports].filter(([, at]) => at === side).map(([port]) => port);
 	}
 
@@ -194,7 +194,7 @@ class FoldLayout {
 	 * @param side Which edge.
 	 * @param right Where the last column ends.
 	 */
-	placePorts(courses: readonly Course[], side: Side, right: number): void {
+	placePorts(courses: readonly Course[], side: Face, right: number): void {
 		const ports = this.portsOn(side);
 		const end = side === "top" ? "tail" : "head";
 		const wanted = ports
@@ -222,7 +222,7 @@ class FoldLayout {
 	 * @param channel Which channel: above the columns, or below them.
 	 * @returns Its unit.
 	 */
-	unitOf(course: Course, channel: Side): Unit | undefined {
+	unitOf(course: Course, channel: Face): Unit | undefined {
 		const order = Number(course.line.edge.layoutOptions?.["archboard.order"] ?? 0);
 		const tail = this.endX(course.line.tail);
 		const head = this.endX(course.line.head);
@@ -238,7 +238,7 @@ class FoldLayout {
 	 * @param channel Which channel.
 	 * @returns The stacked runs.
 	 */
-	stack(courses: readonly Course[], channel: Side): Stacked {
+	stack(courses: readonly Course[], channel: Face): Stacked {
 		const units = new Map<Course, Unit>();
 		for (const course of courses) {
 			const unit = this.unitOf(course, channel);

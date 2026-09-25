@@ -37,7 +37,7 @@ import {
 	type Net,
 } from "@/transformers/semantic-renderer/lib/track/channels";
 import { slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
-import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** From the band above to the first track: room for the bend off a face. */
 const TRACK_TOP = 2 * BEND_RADIUS;
@@ -62,6 +62,59 @@ interface SceneLine {
 	readonly kind: string;
 	/** Its placed ends, label and polyline. */
 	readonly placed: ElkExtendedEdge;
+	/**
+	 * The wall it runs to from its source, in the channel under the source,
+	 * when it leaves its block sideways; its target is then that wall.
+	 */
+	readonly wall?: "left" | "right";
+	/**
+	 * The wall it comes from, when it enters its block sideways: its source
+	 * is then a stub on the band above its first station, and it runs in from
+	 * the wall along the channel under that band instead.
+	 */
+	readonly enters?: "left" | "right";
+}
+
+/** How far outside the scene a line to a wall aims while its ports and tracks are settled. */
+const WALL_REACH = 4 * LANE;
+
+/**
+ * A line to a wall: from its source down into the channel under it, and
+ * along that channel's track to the wall.
+ * @param scene The scene.
+ * @param line The line.
+ * @returns Its one net.
+ */
+function wallNet(scene: Scene, line: SceneLine): Net {
+	const item = scene.endpoint(line.placed.sources[0]!);
+	const x = wallX(scene, line.wall!);
+	const top = { kind: "card" as const, band: item.band, item, x: centreX(item) };
+	return {
+		edge: line.id,
+		order: line.order,
+		channel: item.band,
+		kind: line.kind,
+		top,
+		bottom: { kind: "lane", band: item.band + 1, x },
+		topX: top.x,
+		bottomX: x,
+		track: 0,
+		wall: "bottom",
+	};
+}
+
+/**
+ * Where a line to or from a wall aims while ports and tracks are settled:
+ * a little outside the scene on that side.
+ * @param scene The scene.
+ * @param side The wall.
+ * @returns The x.
+ */
+function wallX(scene: Scene, side: "left" | "right"): number {
+	const boxes = [...scene.cards.values(), ...scene.labels.values()].map(({ box }) => box);
+	return side === "left"
+		? Math.min(...boxes.map((box) => box.x)) - WALL_REACH
+		: Math.max(...boxes.map((box) => box.x + box.width)) + WALL_REACH;
 }
 
 /**
@@ -172,9 +225,12 @@ function pointsOf(scene: Scene, nets: readonly Net[], left: number): Point[] {
 	return nets.flatMap((net) => {
 		const upper = scene.bands[net.top.band]!;
 		const from = { x: net.topX + left, y: leavesAt(scene, net, left) };
-		const to = { x: net.bottomX + left, y: entersAt(scene, net, left) };
-		if (Math.abs(from.x - to.x) <= STRAIGHT) return [from, to];
 		const track = upper.newTop + (upper.bottom - upper.top) + TRACK_TOP + net.track * LANE;
+		if (net.wall === "bottom")
+			return [from, { x: from.x, y: track }, { x: net.bottomX + left, y: track }];
+		const to = { x: net.bottomX + left, y: entersAt(scene, net, left) };
+		if (net.wall === "top") return [{ x: from.x, y: track }, { x: to.x, y: track }, to];
+		if (Math.abs(from.x - to.x) <= STRAIGHT) return [from, to];
 		return [from, { x: from.x, y: track }, { x: to.x, y: track }, to];
 	});
 }
@@ -362,20 +418,29 @@ function routeScene(
 	margin: number,
 	top = margin,
 ): Map<string, Point[]> {
-	const chains = new Map(lines.map((line) => [line.id, chainOf(scene, line.placed)]));
+	const inner = lines.filter(({ wall }) => wall === undefined);
+	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
 	straightenLanes(scene, [...chains.values()]);
-	const routed = new Map<string, Routed>(
-		lines.map((line) => {
+	const routed = new Map<string, Routed>([
+		...inner.map((line): [string, Routed] => {
 			const chain = chains.get(line.id)!;
 			return [line.id, { nets: netsOf(line, chain), upward: chain.upward }];
 		}),
-	);
+		...lines
+			.filter(({ wall }) => wall !== undefined)
+			.map((line): [string, Routed] => [line.id, { nets: [wallNet(scene, line)], upward: false }]),
+	]);
 	const nets = [...routed.values()].flatMap((route) => route.nets);
 	bundleTrunks(nets);
 	assignPorts(nets);
 	slideLabels(scene, nets);
 	assignPorts(nets);
 	for (const route of routed.values()) settleStraights(route.nets);
+	for (const line of lines.filter(({ enters }) => enters !== undefined)) {
+		const first = routed.get(line.id)!.nets[0]!;
+		first.wall = "top";
+		first.topX = wallX(scene, line.enters!);
+	}
 	spaceBands(
 		scene,
 		scene.bands.map((_, channel) => assignTracks(nets.filter((net) => net.channel === channel))),
@@ -432,4 +497,12 @@ function routeTracks(
 	};
 }
 
-export { PAGE_MARGIN, TRACK_TOP, channelHeight, routeScene, routeTracks, type SceneLine };
+export {
+	PAGE_MARGIN,
+	TRACK_BOTTOM,
+	TRACK_TOP,
+	channelHeight,
+	routeScene,
+	routeTracks,
+	type SceneLine,
+};

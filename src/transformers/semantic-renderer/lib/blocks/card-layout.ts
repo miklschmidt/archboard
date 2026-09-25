@@ -20,6 +20,7 @@ import {
 	outputSchema,
 	polylinePoints,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
+import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { TRACK_POLYLINE } from "@/transformers/semantic-renderer/lib/track/placement";
 import { routeScene } from "@/transformers/semantic-renderer/lib/track/route";
 import { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
@@ -81,6 +82,31 @@ function placedLabel(id: string, label: ElkLabel, centre: Point): ElkLabel {
 	return { id: `${id}:label`, width, height, x: centre.x - width / 2, y: centre.y - height / 2 };
 }
 
+/**
+ * A line's points run onto the block's wall: its last point when it leaves
+ * by a wall, its first when it enters by one.
+ * @param points The line's points, from its source.
+ * @param walls The walls it leaves or enters by.
+ * @param walls.leaves The wall it leaves by, if any.
+ * @param walls.enters The wall it enters by, if any.
+ * @param width The block's width.
+ * @returns The moved points, or nothing when the line meets no wall.
+ */
+function walledPoints(
+	points: readonly Point[],
+	walls: { leaves: "left" | "right" | undefined; enters: "left" | "right" | undefined },
+	width: number,
+): Point[] | undefined {
+	if (walls.leaves !== undefined)
+		return [
+			...points.slice(0, -1),
+			{ x: walls.leaves === "left" ? 0 : width, y: points.at(-1)!.y },
+		];
+	if (walls.enters !== undefined)
+		return [{ x: walls.enters === "left" ? 0 : width, y: points[0]!.y }, ...points.slice(1)];
+	return undefined;
+}
+
 /** One block of cards' layout, from its Graphviz graph to its routed lines. */
 class CardLayout {
 	readonly graph = emptyGraph();
@@ -107,7 +133,28 @@ class CardLayout {
 	 * @returns The vendor node's name.
 	 */
 	vendorOf(end: string): string {
+		if (this.walled(end)) return `stub:${end}`;
 		return this.tree.pins.get(end)?.block.id ?? end;
+	}
+
+	/**
+	 * Whether a line end is one of the block's ports on a side wall.
+	 * @param end The line end.
+	 * @returns True for a port on the left or right wall.
+	 */
+	walled(end: string): boolean {
+		const side = this.block.ports.get(end);
+		return side === "left" || side === "right";
+	}
+
+	/**
+	 * Where a line end stands in the scene: a port a line enters by from a
+	 * wall stands on its stub, one rank above.
+	 * @param end The line end.
+	 * @returns The scene item's id.
+	 */
+	sceneEnd(end: string): string {
+		return this.walled(end) ? `stub:${end}` : end;
 	}
 
 	/**
@@ -117,7 +164,7 @@ class CardLayout {
 	 */
 	sizeOf(name: string): Size {
 		if (name === headerOf(this.block)) return this.block.header!;
-		if (name.startsWith("port:")) return { width: PORT, height: PORT };
+		if (name.startsWith("port:") || name.startsWith("stub:")) return { width: PORT, height: PORT };
 		return this.laid.get(name) ?? this.tree.cards.get(name)!;
 	}
 
@@ -154,7 +201,31 @@ class CardLayout {
 			nodes: bottoms.map((name) => this.nodeOf(name)),
 		};
 		graph.subgraphs.push(...[first, last].filter(({ nodes }) => nodes!.length > 0));
-		for (const line of block.lines.values()) this.connect(line);
+		const entering = [...block.lines.values()].filter((line) => this.entersBy(line) !== undefined);
+		const stubs = new Set(entering.map(({ from }) => this.vendorOf(from)));
+		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
+		for (const line of block.lines.values())
+			if (this.wallOf(line) === undefined) this.connect(line);
+	}
+
+	/**
+	 * The wall a line leaves the block by, when its port is on one.
+	 * @param line The line.
+	 * @returns The wall, or nothing for a line Graphviz ranks.
+	 */
+	wallOf(line: Line): "left" | "right" | undefined {
+		const side = this.block.ports.get(line.to);
+		return side === "left" || side === "right" ? side : undefined;
+	}
+
+	/**
+	 * The wall a line enters the block by, when its port is on one.
+	 * @param line The line.
+	 * @returns The wall, or nothing.
+	 */
+	entersBy(line: Line): "left" | "right" | undefined {
+		const side = this.block.ports.get(line.from);
+		return side === "left" || side === "right" ? side : undefined;
 	}
 
 	/**
@@ -197,12 +268,19 @@ class CardLayout {
 		const scene = new Scene(placed);
 		const lines = routeScene(
 			scene,
-			placed.edges.map((edge) => ({
-				id: edge.id,
-				order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
-				kind: trunkKind(edge),
-				placed: edge,
-			})),
+			placed.edges.map((edge) => {
+				const line = this.block.lines.get(edge.id)!;
+				const wall = this.wallOf(line);
+				const enters = this.entersBy(line);
+				return {
+					id: edge.id,
+					order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
+					kind: trunkKind(edge),
+					placed: edge,
+					...(wall === undefined ? {} : { wall }),
+					...(enters === undefined ? {} : { enters }),
+				};
+			}),
 			this.insets.side,
 			this.insets.top,
 		);
@@ -226,13 +304,42 @@ class CardLayout {
 			items: this.block.items.filter((item) => scene.cards.get(item)?.band === index),
 		}));
 		const all = [...boxes.values()];
+		const width = Math.max(
+			this.block.header?.width ?? 0,
+			...all.map((one) => one.x + one.width + side),
+		);
+		const walled = new Map(lines);
+		const tracks = this.wallLines(walled, boxes, width);
 		return {
-			width: Math.max(this.block.header?.width ?? 0, ...all.map((one) => one.x + one.width + side)),
-			height: Math.max(...all.map((one) => one.y + one.height)) + bottom,
+			width,
+			height: Math.max(...all.map((one) => one.y + one.height), ...tracks) + bottom,
 			boxes,
-			lines,
+			lines: walled,
 			bands,
 		};
+	}
+
+	/**
+	 * Run every line to a wall onto the block's own wall, and stand its port there.
+	 * @param lines Every line's points, the lines to a wall ending on their tracks; those are replaced.
+	 * @param boxes Every box, to which the side ports are added.
+	 * @param width The block's width.
+	 * @returns The height of every such line's track, which the block must hold.
+	 */
+	wallLines(lines: Map<string, Point[]>, boxes: Map<string, Box>, width: number): number[] {
+		return [...this.block.lines.values()].flatMap((line) => {
+			const points = lines.get(line.key);
+			const leaves = this.wallOf(line);
+			const enters = this.entersBy(line);
+			if (points === undefined) return [];
+			const moved = walledPoints(points, { leaves, enters }, width);
+			if (moved === undefined) return [];
+			lines.set(line.key, moved);
+			const end = leaves === undefined ? moved[0]! : moved.at(-1)!;
+			const port = leaves === undefined ? line.from : line.to;
+			boxes.set(port, { x: end.x - PORT / 2, y: end.y - PORT / 2, width: PORT, height: PORT });
+			return [end.y + LANE];
+		});
 	}
 
 	/**
@@ -298,8 +405,8 @@ class CardLayout {
 		const through = legs.flatMap((leg) => polylines.get(leg) ?? []);
 		return {
 			id,
-			sources: [line.from],
-			targets: [line.to],
+			sources: [this.sceneEnd(line.from)],
+			targets: [this.sceneEnd(line.to)],
 			labels:
 				label === undefined ? [] : [placedLabel(id, label, centres.get(`label:${line.edge.id}`)!)],
 			layoutOptions: { ...line.edge.layoutOptions, [TRACK_POLYLINE]: through.join(" ") },

@@ -29,8 +29,14 @@ interface Size {
 	readonly height: number;
 }
 
-/** Which edge of a block a line crosses. */
-type Side = "top" | "bottom";
+/** The top or the bottom edge of a block. */
+type Face = "top" | "bottom";
+
+/**
+ * Which edge of a block a line crosses: its top or bottom, or, for a line
+ * leaving toward a block beside it, the wall that faces that block.
+ */
+type Side = Face | "left" | "right";
 
 /** A line's ends: where it comes from and goes to, and which Graphviz ranks above the other. */
 interface Ends {
@@ -122,6 +128,16 @@ function kindOf(edge: ElkExtendedEdge): string {
 }
 
 /**
+ * Each placing group's caption size, as measurement wrote it on the root.
+ * @param graph The measured hierarchy.
+ * @returns The sizes, by group.
+ */
+function captionsOf(graph: ElkNode): Map<string, Size> {
+	const rows = CaptionsSchema.parse(JSON.parse(graph.layoutOptions?.[GROUP_CAPTIONS] ?? "[]"));
+	return new Map(rows.map(([id, width, height]) => [id, { width, height }]));
+}
+
+/**
  * The item a chain of blocks reaches its outermost block at, or the node itself.
  * @param chain The blocks, innermost first.
  * @param node The node.
@@ -176,10 +192,15 @@ class BlockTree {
 	/**
 	 * Read the blocks of a measured hierarchy and project its relationships.
 	 * @param graph The measured hierarchy.
+	 * @param exits The wall each leaving port moves to, keyed `block|port` by
+	 * the port it would otherwise be: an earlier layout's answer, where it
+	 * stood the block beside the block its trunk goes to.
 	 */
-	constructor(graph: ElkNode) {
-		const rows = CaptionsSchema.parse(JSON.parse(graph.layoutOptions?.[GROUP_CAPTIONS] ?? "[]"));
-		this.captions = new Map(rows.map(([id, width, height]) => [id, { width, height }]));
+	constructor(
+		graph: ElkNode,
+		readonly exits: ReadonlyMap<string, Side> = new Map(),
+	) {
+		this.captions = captionsOf(graph);
 		this.root = this.block("root", "root", undefined, {});
 		this.fill(this.root, graph.children ?? []);
 		this.gather(this.root);
@@ -419,12 +440,14 @@ class BlockTree {
 	 */
 	leave(projection: Projection, upward: boolean, labelAt: Block): { pieces: Piece[]; end: string } {
 		const { edge, out } = projection;
-		const side: Side = upward ? "top" : "bottom";
+		const face: Face = upward ? "top" : "bottom";
 		const pieces: Piece[] = [];
 		let from = out.length === 0 ? projection.from : edge.sources[0]!;
 		for (const block of out) {
-			const port = this.port(block, `out|${side}|${projection.to}|${kindOf(edge)}`, side);
-			const ranked = upward ? { tail: port, head: from } : { tail: from, head: port };
+			const along = `${projection.to}|${kindOf(edge)}`;
+			const side = block === labelAt ? face : this.exitOf(block, `out|${face}|${along}`, face);
+			const port = this.port(block, `out|${side}|${along}`, side);
+			const ranked = side === "top" ? { tail: port, head: from } : { tail: from, head: port };
 			pieces.push([
 				block,
 				this.line(block, edge, { from, to: port, ...ranked }, block === labelAt),
@@ -443,12 +466,14 @@ class BlockTree {
 	 */
 	enter(projection: Projection, upward: boolean, labelAt: Block): { pieces: Piece[]; end: string } {
 		const { edge, into } = projection;
-		const side: Side = upward ? "bottom" : "top";
+		const face: Face = upward ? "bottom" : "top";
 		const pieces: Piece[] = [];
 		let to = into.length === 0 ? projection.to : edge.targets[0]!;
 		for (const block of into) {
-			const port = this.port(block, `in|${side}|${projection.from}|${kindOf(edge)}`, side);
-			const ranked = upward ? { tail: to, head: port } : { tail: port, head: to };
+			const along = `${projection.from}|${kindOf(edge)}`;
+			const side = this.exitOf(block, `in|${face}|${along}`, face);
+			const port = this.port(block, `in|${side}|${along}`, side);
+			const ranked = side === "bottom" ? { tail: to, head: port } : { tail: port, head: to };
 			pieces.unshift([
 				block,
 				this.line(block, edge, { from: port, to, ...ranked }, block === labelAt),
@@ -456,6 +481,17 @@ class BlockTree {
 			to = this.pin(block, port);
 		}
 		return { pieces, end: to };
+	}
+
+	/**
+	 * The edge a port crosses: the wall an earlier layout moved it to, or its face.
+	 * @param block The block.
+	 * @param key The port's key on its face.
+	 * @param face Its face.
+	 * @returns The edge.
+	 */
+	exitOf(block: Block, key: string, face: Face): Side {
+		return this.exits.get(`${block.id}|port:${key}`) ?? face;
 	}
 
 	/**
@@ -523,6 +559,7 @@ export {
 	type Line,
 	type Piece,
 	type Projection,
+	type Face,
 	type Route,
 	type Side,
 	type Size,

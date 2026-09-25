@@ -43,6 +43,12 @@ interface Net {
 	bottomX: number;
 	track: number;
 	trunk?: Trunk;
+	/**
+	 * Which end is its block's wall, reached on its track with no line above
+	 * or below it: the bottom for a line leaving by a wall, the top for one
+	 * entering by one.
+	 */
+	wall?: "top" | "bottom";
 }
 
 /** One port a face must give: a trunk's, or a lone net's end. */
@@ -236,14 +242,19 @@ function unitsOf(nets: readonly Net[]): Unit[] {
  * @returns The unit.
  */
 function unitOf(members: readonly Net[]): Unit {
-	const tops = [...new Set(members.map(({ topX }) => topX))];
-	const bottoms = [...new Set(members.map(({ bottomX }) => bottomX))];
+	const tops = [...new Set(members.filter(({ wall }) => wall !== "top").map(({ topX }) => topX))];
+	const bottoms = [
+		...new Set(members.filter(({ wall }) => wall !== "bottom").map(({ bottomX }) => bottomX)),
+	];
+	const walls = members.flatMap((net) =>
+		net.wall === "top" ? [net.topX] : net.wall === "bottom" ? [net.bottomX] : [],
+	);
 	return {
 		nets: members,
 		tops,
 		bottoms,
-		low: Math.min(...tops, ...bottoms),
-		high: Math.max(...tops, ...bottoms),
+		low: Math.min(...tops, ...bottoms, ...walls),
+		high: Math.max(...tops, ...bottoms, ...walls),
 		order: Math.min(...members.map(({ order }) => order)),
 	};
 }

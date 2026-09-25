@@ -15,8 +15,14 @@ import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-lay
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { PackLayout } from "@/transformers/semantic-renderer/lib/blocks/pack";
-import { BlockTree, type Block } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
+import {
+	BlockTree,
+	type Block,
+	type Line,
+	type Side,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 
 /** How much better a wrap must fit the page than the board whole. */
@@ -64,7 +70,8 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 	const best = [whole, ...wrapped].reduce((one, other) =>
 		fitIn(other) > fitIn(one) * worth ? other : one,
 	);
-	if (best !== whole) return best;
+	const walled = [...block.ports.values()].some((side) => side === "left" || side === "right");
+	if (best !== whole || walled) return best;
 	const plan = foldPlan(block, whole, insets);
 	if (plan === undefined) return whole;
 	const columns = foldBlock(tree, block, plan);
@@ -101,24 +108,98 @@ function wrapPlans(whole: Laid): Map<string, number>[] {
 }
 
 /**
- * Lay a measured hierarchy out as blocks and route every relationship.
+ * Lay every block out, innermost first.
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param graph The measured hierarchy.
+ * @param earlier What an earlier layout decided: the wall each port moves to, and each packing, kept.
+ * @param earlier.exits The wall each port moves to.
+ * @param earlier.packings Each block of blocks' packing.
+ * @returns The blocks, every block laid out, and each block of blocks' packing.
+ */
+function layAll(
+	viz: Viz,
+	avoid: AvoidEngine,
+	graph: ElkNode,
+	earlier?: { exits: ReadonlyMap<string, Side>; packings: ReadonlyMap<string, Packing> },
+): { tree: BlockTree; laid: Map<string, Laid>; packings: Map<string, Packing> } {
+	const tree = new BlockTree(graph, earlier?.exits);
+	const laid = new Map<string, Laid>();
+	const packings = new Map<string, Packing>();
+	for (const block of tree.innermostFirst()) {
+		if (block.items.some((item) => tree.blocks.has(item))) {
+			const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
+				avoid,
+				earlier?.packings.get(block.id),
+			);
+			packings.set(block.id, packed.packing);
+			laid.set(block.id, packed);
+		} else laid.set(block.id, layCards(viz, tree, block, laid));
+	}
+	return { tree, laid, packings };
+}
+
+/**
+ * The leaving ports whose trunk goes to a block standing beside theirs, and
+ * the wall of their block that faces it.
+ * @param tree The blocks, laid out once.
+ * @param laid Every block laid out.
+ * @returns Each such port's wall, keyed `block|port`.
+ */
+function exitsOf(tree: BlockTree, laid: ReadonlyMap<string, Laid>): Map<string, Side> {
+	const exits = new Map<string, Side>();
+	for (const block of tree.blocks.values())
+		for (const line of block.lines.values())
+			for (const [key, side] of facing(tree, laid.get(block.id)?.boxes, line)) exits.set(key, side);
+	return exits;
+}
+
+/**
+ * The walls one line's two ports move to, when the blocks it joins stand side by side.
+ * @param tree The blocks.
+ * @param boxes Where the block the line is drawn in put its items.
+ * @param line The line.
+ * @returns Each port's wall, keyed `block|port`; none when the line does not join two blocks side by side.
+ */
+function facing(
+	tree: BlockTree,
+	boxes: ReadonlyMap<string, Box> | undefined,
+	line: Line,
+): [string, Side][] {
+	const pins = [tree.pins.get(line.from), tree.pins.get(line.to)];
+	const [one, other] = pins.map((pin) =>
+		pin === undefined ? undefined : boxes?.get(pin.block.id),
+	);
+	if (!besides(one, other)) return [];
+	const walls: Side[] = other!.x > one!.x ? ["right", "left"] : ["left", "right"];
+	return pins.map((pin, index) => [`${pin!.block.id}|${pin!.port}`, walls[index]!]);
+}
+
+/**
+ * Whether two boxes stand side by side: some height is in both.
+ * @param one A box, if there is one.
+ * @param other Another box, if there is one.
+ * @returns True when both are there and share a height.
+ */
+function besides(one: Box | undefined, other: Box | undefined): boolean {
+	if (one === undefined || other === undefined) return false;
+	return one.y < other.y + other.height && other.y < one.y + one.height;
+}
+
+/**
+ * Lay a measured hierarchy out as blocks and route every relationship; when
+ * a trunk joins two blocks that stand side by side, once more with that
+ * trunk leaving its block by the wall that faces the other.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
 function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode): ElkNode {
-	const tree = new BlockTree(graph);
-	const laid = new Map<string, Laid>();
-	for (const block of tree.innermostFirst()) {
-		const holdsBlocks = block.items.some((item) => tree.blocks.has(item));
-		laid.set(
-			block.id,
-			holdsBlocks
-				? new PackLayout(block, laid, tree, insetsOf(block)).lay(avoid)
-				: layCards(viz, tree, block, laid),
-		);
-	}
+	const first = layAll(viz, avoid, graph);
+	const exits = exitsOf(first.tree, first.laid);
+	const { tree, laid } =
+		exits.size === 0 ? first : layAll(viz, avoid, graph, { exits, packings: first.packings });
 	const placed = new Assembly(tree, laid).placed();
 	return {
 		id: graph.id,
@@ -130,4 +211,4 @@ function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	};
 }
 
-export { BLOCKS_PLACED, layCards, placeBlocks };
+export { BLOCKS_PLACED, exitsOf, layAll, placeBlocks };
