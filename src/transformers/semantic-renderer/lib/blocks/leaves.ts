@@ -47,26 +47,18 @@ function cornerHeader(leaves: readonly ElkNode[], id: string): void {
 /**
  * Let a block's own top and bottom ports slide along its edge while it is
  * routed: Graphviz stands them beside the header, which may hold a port away
- * from its line, and a port may then move onto that line's column. A top port
- * keeps clear of the header, as a settled one does. Only the Blocks engine
- * settles a block's ports from its parent and routes the block again, so
- * there nothing slides, nor at the root, which has no ports of its own. A
- * port its parent settled stands where it was settled.
+ * from its line, and a port may then move onto that line's column. A block
+ * routed again from where its parent settled its ports slides them on from
+ * there. A top port keeps clear of the header, as a settled one does. Under
+ * the Blocks engine a block's ports are settled from its parent and held, so
+ * nothing slides there, nor at the root, which has no ports of its own.
  * @param scene The block's scene, whose sliding ports are set.
  * @param block The block.
  * @param nesting How containers and group regions are drawn.
- * @param settled The ports its parent settled.
  */
-function letPortsSlide(
-	scene: Scene,
-	block: Block,
-	nesting: Nesting,
-	settled: ReadonlySet<string>,
-): void {
+function letPortsSlide(scene: Scene, block: Block, nesting: Nesting): void {
 	if (block.kind === "root" || nesting === "blocks") return;
-	const fixed = new Set([...settled].map((port) => scene.cards.get(port)));
-	for (const [item, stretch] of slidesOf(scene, block))
-		if (!fixed.has(item)) scene.slides.set(item, stretch);
+	for (const [item, stretch] of slidesOf(scene, block)) scene.slides.set(item, stretch);
 }
 
 /**
