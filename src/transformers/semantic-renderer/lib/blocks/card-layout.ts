@@ -33,7 +33,6 @@ import {
 	centresOf,
 	nodesIn,
 	numbers,
-	outputSchema,
 	polylinePoints,
 	type Join,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
@@ -43,6 +42,7 @@ import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
+import { placedChains } from "@/transformers/semantic-renderer/lib/track/stairs";
 import {
 	Scene,
 	TRACK_POLYLINE,
@@ -354,7 +354,7 @@ class CardLayout {
 	 */
 	lay(viz: Viz): Laid {
 		this.build();
-		const output = outputSchema.parse(viz.renderJSON(this.graph, { yInvert: true }));
+		const output = placedChains(viz, this.graph, this.links(), (name) => this.tree.cards.has(name));
 		const [left, low, right, high] = numbers(output.bb);
 		const origin = { x: Math.min(left!, right!), y: Math.min(low!, high!) };
 		const polylines = new Map<string, string[]>();
