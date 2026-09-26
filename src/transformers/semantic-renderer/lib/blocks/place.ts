@@ -155,14 +155,16 @@ function stackedOrNot(
 	/**
 	 * Whether the block reads better stacked. Stacked containers often read
 	 * best folded, so each is weighed at its best; a near tie goes to the
-	 * page that fits the pane better, as it does between a block's joins.
+	 * page that fits the pane clearly better, as it does between a block's
+	 * joins, and to the better score where neither page fits clearly better.
 	 * @param pick Which of each way the titles stand is weighed.
 	 * @returns True when it does.
 	 */
 	const stacks = (pick: (laying: Laying) => Laid): boolean => {
 		const [one, other] = [bestOf(block, pick(stacked), insets), bestOf(block, pick(plain), insets)];
-		if (Math.abs(one - other) > NEAR * Math.min(one, other)) return one > other;
-		return fitIn(pick(stacked)) > fitIn(pick(plain));
+		const [fits, flat] = [fitIn(pick(stacked)), fitIn(pick(plain))];
+		const near = (a: number, b: number): boolean => Math.abs(a - b) <= NEAR * Math.min(a, b);
+		return near(one, other) && !near(fits, flat) ? fits > flat : one > other;
 	};
 	const [tied, pulled] = [stacks(({ tied: one }) => one), stacks(settled)];
 	// Pulling titles down may change the choice only when that draws no more line.

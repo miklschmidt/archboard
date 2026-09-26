@@ -27,6 +27,7 @@ import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
 import staircase from "./staircase.json";
 import trunkTurnBack from "./trunk-turn-back.json";
+import voiceCoordinator from "./voice-coordinator.json";
 import walkthroughStair from "./walkthrough-stair.json";
 
 /** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
@@ -263,6 +264,49 @@ test("a line keeps a lane and a half from a group region's wall it runs beside",
 		const regions = regionWalls(drawing.svg);
 		for (const [id, points] of corridorPoints(drawing.svg))
 			expect(besideWalls(points, regions), id).toEqual([]);
+	}
+});
+
+/**
+ * Every container frame a drawing draws, read from its halo, which stands
+ * its stroke's width outside the frame.
+ * @param svg The drawing.
+ * @returns Each frame's walls.
+ */
+function frameWalls(svg: string): Walls[] {
+	const shift = bodyShift(svg);
+	return [
+		...svg.matchAll(
+			/data-depiction="container"[^>]*><rect class="ab-halo" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu,
+		),
+	].map(([, x, y, width, height]) => ({
+		left: Number(x) + 3 + shift.x,
+		right: Number(x) + Number(width) - 3 + shift.x,
+		top: Number(y) + 3 + shift.y,
+		bottom: Number(y) + Number(height) - 3 + shift.y,
+	}));
+}
+
+// Taken from boards of this repository: a line ran down just outside a
+// container's wall, 16 px off it, where nothing stood between them. Inside a
+// container its inset keeps what it holds off the wall; outside, a line keeps
+// a group region's clearance from it where it has the room.
+test("a line keeps a lane and a half outside a container's wall it runs beside", async () => {
+	for (const fixture of [voiceCoordinator, walkthroughStair]) {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(fixture),
+			theme: "light",
+			layout: "track",
+			policy,
+		});
+		const frames = frameWalls(drawing.svg);
+		expect(frames.length).toBeGreaterThan(0);
+		for (const [id, points] of corridorPoints(drawing.svg))
+			for (const walls of frames)
+				expect(
+					besideWalls(points, [walls]).filter((x) => x < walls.left || x > walls.right),
+					id,
+				).toEqual([]);
 	}
 });
 

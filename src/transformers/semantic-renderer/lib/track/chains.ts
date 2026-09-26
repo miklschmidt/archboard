@@ -200,6 +200,24 @@ function besideRegion(wall: number, items: readonly [number, number][]): [number
 	return [low, high];
 }
 
+/**
+ * The stretch a frame's wall keeps a lane off: half a lane inside, where the
+ * frame's inset stands between the wall and what it holds, and a region's
+ * clearance outside, where nothing does ({@link besideRegion}).
+ * @param wall The wall.
+ * @param walls The frame's two walls.
+ * @param items What the band's items keep a lane off.
+ * @returns The stretch, open at both ends.
+ */
+function outsideFrame(
+	wall: number,
+	walls: readonly [number, number],
+	items: readonly [number, number][],
+): [number, number] {
+	const [low, high] = besideRegion(wall, items);
+	return wall === walls[0] ? [low, wall + WALL_CLEARANCE] : [wall - WALL_CLEARANCE, high];
+}
+
 /** Which horizontal intervals of each band are taken by items and settled lanes. */
 class Occupancy {
 	readonly taken: [number, number][][];
@@ -225,15 +243,14 @@ class Occupancy {
 		for (const { band, left, end } of scene.headings())
 			this.taken[band]!.push([left - LANE, end + LANE]);
 		// A lane keeps off the walls of the containers it passes, as off a card,
-		// and further off a group region's, which has no inset of its own.
+		// and further off a group region's, which has no inset of its own, and
+		// off a container's outside, where its inset stands on the other side.
 		scene.bands.forEach((_, band) => {
 			const held = [...this.taken[band]!];
 			for (const [id, walls] of scene.walled(band))
 				for (const wall of walls)
 					this.taken[band]!.push(
-						scene.frames.has(id)
-							? [wall - WALL_CLEARANCE, wall + WALL_CLEARANCE]
-							: besideRegion(wall, held),
+						scene.frames.has(id) ? outsideFrame(wall, walls, held) : besideRegion(wall, held),
 					);
 		});
 	}
