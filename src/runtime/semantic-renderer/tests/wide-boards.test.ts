@@ -18,6 +18,7 @@ import {
 } from "@/runtime/semantic-board-store/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import {
+	bodyShift,
 	corridorPoints,
 	routeLabels,
 	routePoints,
@@ -192,11 +193,13 @@ function nearLanes(drawing: RenderedDiagram): string[] {
 function wallHugs(drawing: RenderedDiagram): string[] {
 	const boxes =
 		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+	// Routes are read on the page, so the walls are moved onto it with them.
+	const shift = bodyShift(drawing.svg);
 	const walls = [...drawing.svg.matchAll(boxes)].flatMap(([, x, y, width, height]) =>
 		[Number(x), Number(x) + Number(width)].map((at) => ({
-			at,
-			from: Number(y),
-			to: Number(y) + Number(height),
+			at: at + shift.x,
+			from: Number(y) + shift.y,
+			to: Number(y) + Number(height) + shift.y,
 		})),
 	);
 	return runsOf(drawing)

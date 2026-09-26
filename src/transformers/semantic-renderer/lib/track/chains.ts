@@ -152,11 +152,15 @@ class Occupancy {
 	/**
 	 * Start with every item's box, widened by a lane either side.
 	 * @param scene The placed scene.
+	 * @param without Items whose boxes are not taken, as the label boxes of a line being placed.
 	 */
-	constructor(readonly scene: Scene) {
+	constructor(
+		readonly scene: Scene,
+		without: ReadonlySet<Item> = new Set(),
+	) {
 		this.taken = scene.bands.map(() => []);
 		const items = [...scene.cards.values(), ...scene.labels.values()];
-		for (const { box, band } of items)
+		for (const { box, band } of items.filter((item) => !without.has(item)))
 			this.taken[band]!.push([box.x - LANE, box.x + box.width + LANE]);
 		// A title row or caption takes only the room its words are painted in:
 		// a line into its container crosses the row beside them.
@@ -225,7 +229,6 @@ class Occupancy {
  * @param chains Every relationship's chain.
  */
 function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
-	clearHeadings(scene, chains);
 	const occupancy = new Occupancy(scene);
 	const runs = laneRuns(chains).toSorted((one, other) => other.lanes.length - one.lanes.length);
 	const bands = chains.map(
@@ -239,30 +242,6 @@ function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 				nearest(lane.x, (x) => occupancy.fits([lane], x), occupancy.edges([lane])) ??
 				lane.x;
 			occupancy.take(lane);
-		}
-	}
-}
-
-/**
- * Move the lanes that cross a title row or caption clear of its words, in
- * their order: Graphviz kept the heading's room wherever it stood it on the
- * row, but its words are painted at the row's left, over the lanes Graphviz
- * ran beside that room. Each lane under the words, or within a lane of them
- * or of the lane before it, moves right as little as that takes.
- * @param scene The placed scene.
- * @param chains Every relationship's chain.
- */
-function clearHeadings(scene: Scene, chains: readonly Chain[]): void {
-	const lanes = chains.flatMap(({ stations }) => stations.filter(({ kind }) => kind === "lane"));
-	for (const { band, end, walls } of scene.headings()) {
-		const [low, high] = walls;
-		const crossing = lanes
-			.filter((lane) => lane.band === band && lane.x > low && lane.x < high)
-			.toSorted((one, other) => one.x - other.x);
-		let next = end + LANE;
-		for (const lane of crossing) {
-			lane.x = Math.max(lane.x, next);
-			next = lane.x + LANE;
 		}
 	}
 }
@@ -583,6 +562,7 @@ export {
 	meetsAt,
 	meets,
 	moveRun,
+	nearest,
 	pullToPorts,
 	reachOf,
 	runOf,

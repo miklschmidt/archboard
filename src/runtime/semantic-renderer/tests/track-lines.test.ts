@@ -11,14 +11,17 @@
 // left where a label stood before it slid aside, a container ending 12 px
 // above another opening under it, two lines lined up end to end across a
 // channel so that they read as one, lines between the same two items
-// sharing a trunk at both ends, so that they split and join again, and a line
-// run round the outside of the drawing where a short free route ran through it.
+// sharing a trunk at both ends, so that they split and join again, a line
+// run round the outside of the drawing where a short free route ran through
+// it, and a labelled line stepping sideways both above and below its label
+// where one column ran free from its label to its card.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import {
 	corridorPoints,
+	routeLabels,
 	routePoints,
 	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
@@ -30,6 +33,7 @@ import readAsOne from "./read-as-one.json";
 import risingLine from "./rising-line.json";
 import shortStep from "./short-step.json";
 import throughCard from "./through-card.json";
+import throughLabel from "./through-label.json";
 import trunkFan from "./trunk-fan.json";
 import twinLines from "./twin-lines.json";
 
@@ -144,6 +148,31 @@ test("a labelled line leaving through a trunk runs sideways on one level only", 
 			.filter((point, index) => point.y === points[index]!.y && point.x !== points[index]!.x)
 			.map(({ y }) => y);
 		expect(new Set(levels).size, id).toBeLessThanOrEqual(1);
+	}
+});
+
+// Reduced from a dogfood board: the run of lanes above a line's label and the
+// run below it were each straightened on their own, so the line stepped
+// sideways on both sides of its label although one column ran free from the
+// label down to its card.
+test("a labelled line steps sideways on one side of its label at most", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(throughLabel),
+		theme: "light",
+		layout: "track",
+	});
+	const labels = routeLabels(drawing.svg);
+	for (const [id, points] of corridorPoints(drawing.svg)) {
+		const box = labels.get(id);
+		if (box === undefined) continue;
+		const sideways = points
+			.slice(1)
+			.flatMap((point, index) =>
+				Math.abs(point.x - points[index]!.x) > 0.5 ? [(point.y + points[index]!.y) / 2] : [],
+			);
+		const above = sideways.some((y) => y < box.y);
+		const below = sideways.some((y) => y > box.y + box.height);
+		expect(above && below, id).toBe(false);
 	}
 });
 

@@ -1,0 +1,223 @@
+{
+	"nodes": [
+		{
+			"id": "wpI1LbzG",
+			"name": "View dispatcher",
+			"kind": "function",
+			"order": 2000,
+			"responsibility": "Chooses the grammar, lays out each distinct content once, and returns the document"
+		},
+		{
+			"id": "y8vuJJKu",
+			"name": "Subject atlas",
+			"kind": "function",
+			"order": 3000,
+			"responsibility": "Records where every drawn node, relationship and region landed"
+		},
+		{
+			"id": "Y0smyqtZ",
+			"name": "Compound layout",
+			"kind": "module",
+			"order": 4000,
+			"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better"
+		},
+		{
+			"id": "L51bfquE",
+			"name": "Edge geometry",
+			"kind": "function",
+			"order": 5000,
+			"responsibility": "Rounds a routed polyline into a curve and says where its label may sit"
+		},
+		{
+			"id": "wLF1X11D",
+			"name": "Data-flow layout",
+			"kind": "function",
+			"order": 6000,
+			"responsibility": "Places participant columns, lifelines and stacked messages for one exchange"
+		},
+		{
+			"id": "J3yMo4ag",
+			"name": "Measured text",
+			"kind": "function",
+			"order": 7000,
+			"responsibility": "Measures every card, note and label with the diagram faces loaded"
+		},
+		{
+			"id": "u1OXg3Yy",
+			"name": "Theme palette",
+			"kind": "function",
+			"order": 8000,
+			"responsibility": "Resolves every drawn colour for the ground being drawn on"
+		},
+		{
+			"id": "J7mPrUeP",
+			"name": "Architecture painter",
+			"kind": "function",
+			"order": 9000,
+			"responsibility": "Paints a settled drawing as SVG marks and standing"
+		},
+		{
+			"id": "0XCanbzp",
+			"name": "Bun host",
+			"kind": "module",
+			"order": 12000,
+			"responsibility": "The renderer under Bun: installs the Bun host once, then calls the core"
+		},
+		{
+			"id": "4nyk76pY",
+			"name": "Renderer host",
+			"kind": "function",
+			"order": 13000,
+			"responsibility": "The seam a host fills: the layout engine, theme colours, font bytes and icon paths"
+		},
+		{
+			"id": "yOV8Znnv",
+			"name": "Board answer",
+			"kind": "function",
+			"order": 14000,
+			"responsibility": "Resolves variant, view, scope and standing from one board before anything is drawn"
+		},
+		{
+			"id": "CtoOMxca",
+			"name": "Sequence painter",
+			"kind": "function",
+			"order": 15000,
+			"responsibility": "Paints the sequence grammar: frame, columns, messages and pulses"
+		},
+		{
+			"id": "gUN928v4",
+			"name": "Host canvas",
+			"kind": "external",
+			"order": 16000,
+			"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded"
+		}
+	],
+	"edges": [
+		{
+			"id": "qJrkH2Qg",
+			"from": "Y0smyqtZ",
+			"to": "L51bfquE",
+			"kind": "call",
+			"order": 2000,
+			"label": "round the routed polylines",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4RbEQ6uO",
+			"from": "0XCanbzp",
+			"to": "yOV8Znnv",
+			"kind": "call",
+			"order": 8000,
+			"label": "renderBoard on the core",
+			"emphasis": "hero"
+		},
+		{
+			"id": "veScCirT",
+			"from": "0XCanbzp",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"order": 9000,
+			"label": "installRendererHost",
+			"emphasis": "muted"
+		},
+		{
+			"id": "ezsxPVcK",
+			"from": "wpI1LbzG",
+			"to": "J3yMo4ag",
+			"kind": "call",
+			"order": 13000,
+			"label": "measure every word",
+			"emphasis": "hero"
+		},
+		{
+			"id": "eJO5yog2",
+			"from": "wpI1LbzG",
+			"to": "Y0smyqtZ",
+			"kind": "call",
+			"order": 14000,
+			"label": "content and measured sizes",
+			"emphasis": "hero"
+		},
+		{
+			"id": "98et92HX",
+			"from": "wpI1LbzG",
+			"to": "J7mPrUeP",
+			"kind": "call",
+			"order": 15000,
+			"label": "paint the settled drawing",
+			"emphasis": "hero"
+		},
+		{
+			"id": "NSEpn12D",
+			"from": "wpI1LbzG",
+			"to": "CtoOMxca",
+			"kind": "call",
+			"order": 16000,
+			"label": "paint the exchange",
+			"emphasis": "normal"
+		},
+		{
+			"id": "F5mgUBCT",
+			"from": "Y0smyqtZ",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"order": 18000,
+			"label": "solve on the layout engine",
+			"emphasis": "normal"
+		},
+		{
+			"id": "NIW5ioWQ",
+			"from": "u1OXg3Yy",
+			"to": "4nyk76pY",
+			"kind": "call",
+			"order": 20000,
+			"label": "theme colours",
+			"emphasis": "normal"
+		},
+		{
+			"id": "WMtzvSOO",
+			"from": "J7mPrUeP",
+			"to": "y8vuJJKu",
+			"kind": "call",
+			"order": 21000,
+			"label": "where every subject landed",
+			"emphasis": "normal"
+		},
+		{
+			"id": "IvQqev1K",
+			"from": "CtoOMxca",
+			"to": "wLF1X11D",
+			"kind": "call",
+			"order": 22000,
+			"label": "columns, lifelines and messages",
+			"emphasis": "normal"
+		},
+		{
+			"id": "BzVsPvqY",
+			"from": "J3yMo4ag",
+			"to": "gUN928v4",
+			"kind": "call",
+			"order": 23000,
+			"label": "measure every painted line",
+			"emphasis": "normal"
+		},
+		{
+			"id": "V6JJ4OjE",
+			"from": "0XCanbzp",
+			"to": "gUN928v4",
+			"kind": "call",
+			"order": 24000,
+			"label": "install as OffscreenCanvas, faces registered",
+			"emphasis": "muted"
+		},
+		{
+			"id": "oCH6TGpi",
+			"from": "wLF1X11D",
+			"to": "J3yMo4ag",
+			"kind": "call",
+			"order": 26000,
+			"label": "wrap responsibilities and step notes",
+			"emphasis": "normal"
+		}
+	]
+}
