@@ -95,20 +95,31 @@ function trafficLayers(svg: string, id: string): TrafficLayer[] {
  * @param pattern The dash pattern: dash, gap, dash, gap.
  * @param offset The dash offset.
  * @param length How long the route is.
+ * @param reach How far a dash's round cap reaches past its ends: a dash that
+ * stops short of the route by less than this still shows.
  * @returns How far along the route each dash that shows on it ends.
  */
-function headsOn(pattern: readonly number[], offset: number, length: number): number[] {
+function headsOn(pattern: readonly number[], offset: number, length: number, reach = 0): number[] {
 	const period = pattern.reduce((sum, value) => sum + value, 0);
 	const heads: number[] = [];
 	let start = -offset - period * Math.ceil((length + offset) / period + 1);
-	while (start <= length) {
+	while (start <= length + reach) {
 		for (let index = 0; index < pattern.length; index += 2) {
 			const end = start + pattern[index]!;
-			if (end >= 0 && start <= length) heads.push(end);
+			if (end >= -reach && start <= length + reach) heads.push(end);
 			start = end + (pattern[index + 1] ?? 0);
 		}
 	}
 	return heads;
+}
+
+/**
+ * How far one cycle of a layer's moving pattern repeats over.
+ * @param layer The layer.
+ * @returns The pattern's length.
+ */
+function trainPeriod(layer: TrafficLayer): number {
+	return layer.train.reduce((sum, value) => sum + value, 0);
 }
 
 /**
@@ -125,4 +136,4 @@ function launchGaps(layer: TrafficLayer): number[] {
 	return gaps;
 }
 
-export { headsOn, launchGaps, trafficLayers, type TrafficLayer };
+export { headsOn, launchGaps, trafficLayers, trainPeriod, type TrafficLayer };
