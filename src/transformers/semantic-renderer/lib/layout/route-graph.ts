@@ -1,4 +1,4 @@
-import type { ElkNode } from "@archboard/elk-rs";
+import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { RoutingScene } from "@/transformers/semantic-renderer/lib/layout/avoid-routing";
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
@@ -7,7 +7,7 @@ import { wallReach } from "@/transformers/semantic-renderer/lib/layout/frame-wal
 import { centreLabels } from "@/transformers/semantic-renderer/lib/layout/label-centring";
 import { requestOf } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { joinSqueezedTrunks } from "@/transformers/semantic-renderer/lib/layout/squeezed-trunks";
-import type { AlignedPins } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
+import type { PinFeedback } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import {
 	isNativeRouteUnavailable,
 	positionReservedLabel,
@@ -28,15 +28,15 @@ function visitNodes(scene: RoutingScene, graph: ElkNode): void {
  * @param avoid Initialized native router.
  * @param graph Complete globally placed geometry.
  * @param endpoints Available shared faces.
- * @param pins Optional feedback candidates.
+ * @param feedback Optional feedback candidates; held channels mark the last solve.
  * @returns New useful physical alternatives after the scene has settled.
  */
 function settle(
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	endpoints: EndpointOptions,
-	pins?: AlignedPins,
-): AlignedPins | undefined {
+	feedback?: PinFeedback,
+): PinFeedback | undefined {
 	const frames = new ForeignFrames(graph);
 	const edges = graph.edges ?? [];
 	const requested = requestOf(graph);
@@ -47,7 +47,7 @@ function settle(
 		try {
 			edges.forEach(positionReservedLabel);
 			visitNodes(scene, graph);
-			scene.ports(edges, pins);
+			scene.ports(edges, feedback?.pins);
 			scene.labels(edges);
 			const routes = new Map(edges.map((edge) => [edge.id, scene.relationship(edge)]));
 			scene.router.processTransaction();
@@ -65,11 +65,31 @@ function settle(
 				)
 			)
 				continue;
-			return pins === undefined ? scene.refinePorts(edges) : undefined;
+			return nextFeedback(scene, edges, feedback);
 		} finally {
 			scene.router.delete();
 		}
 	}
+}
+
+/**
+ * What a settled scene offers the next solve: a refinement after the first
+ * solve, lone ports centred after the refinement, nothing after that.
+ * @param scene The settled scene.
+ * @param edges Its routed relationships.
+ * @param feedback What this solve was offered.
+ * @returns The next solve's feedback, or nothing when the routes are final.
+ */
+function nextFeedback(
+	scene: RoutingScene,
+	edges: readonly ElkExtendedEdge[],
+	feedback: PinFeedback | undefined,
+): PinFeedback | undefined {
+	if (feedback === undefined) {
+		const pins = scene.refinePorts(edges);
+		return pins === undefined ? undefined : { pins };
+	}
+	return feedback.held === undefined ? scene.centrePorts(edges) : undefined;
 }
 
 /**
@@ -87,8 +107,10 @@ export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 }
 
 /**
- * Route once, then offer one optional native refinement informed by the settled paths.
- * Failed optional routes retain the complete baseline; unrelated failures still propagate.
+ * Route once, then offer one optional native refinement informed by the
+ * settled paths, and, when that leaves a lone port to centre, one last solve
+ * with the centred channels held to their faces (lone-pins.ts). Failed optional routes
+ * retain the last complete routing; unrelated failures still propagate.
  * @param avoid Initialized native router.
  * @param graph Complete globally placed semantic geometry.
  * @returns The hierarchy with finite orthogonal relationship routes.
@@ -96,14 +118,18 @@ export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 function refinedRoutes(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	const endpoints = new EndpointOptions();
 	endpoints.refuse(graph.edges ?? [], requestOf(graph).refusedEnds);
-	const pins = settle(avoid, graph, endpoints);
-	if (pins === undefined) return graph;
-	const candidate = structuredClone(graph);
-	try {
-		settle(avoid, candidate, endpoints, pins);
-		return candidate;
-	} catch (error) {
-		if (!isNativeRouteUnavailable(error)) throw error;
+	let routed = graph;
+	let feedback = settle(avoid, graph, endpoints);
+	while (feedback !== undefined) {
+		if (feedback.held !== undefined) endpoints.hold(feedback.pins, feedback.held);
+		const candidate = structuredClone(routed);
+		try {
+			feedback = settle(avoid, candidate, endpoints, feedback);
+			routed = candidate;
+		} catch (error) {
+			if (!isNativeRouteUnavailable(error)) throw error;
+			break;
+		}
 	}
-	return graph;
+	return routed;
 }

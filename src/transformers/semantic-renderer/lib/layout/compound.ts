@@ -49,6 +49,7 @@ import {
 	sideHooks,
 	wrongFaces,
 } from "@/transformers/semantic-renderer/lib/layout/finishing";
+import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import {
 	refusedLines,
 	stackCrossings,
@@ -247,8 +248,8 @@ function columnReading(problem: Problem): ColumnReading {
 		/**
 		 * The complete drawing: the tidier of plain and evened pins, then
 		 * finished clear of frame walls, of side exits between stacked cards,
-		 * of hooks into a card's side and of unrelated lines on one stroke
-		 * (finishing.ts). Side exits go first, so a line they turn into a
+		 * of hooks into a card's side, of unrelated lines on one stroke and
+		 * of lone ports crowding a corner (finishing.ts). Side exits go first, so a line they turn into a
 		 * hook can still be cured.
 		 * @returns The settled reading.
 		 */
@@ -273,7 +274,10 @@ function columnReading(problem: Problem): ColumnReading {
 				(refusedEnds) => reroute(asking(hooked.reading, { refusedEnds })),
 				{ excused: refusedLines, hidden: stackCrossings },
 			);
-			return parted.drawing;
+			const centred = await finished(parted, bunchedPorts, () =>
+				reroute(asking(parted.reading, { centredPorts: true })),
+			);
+			return centred.drawing;
 		},
 	};
 }

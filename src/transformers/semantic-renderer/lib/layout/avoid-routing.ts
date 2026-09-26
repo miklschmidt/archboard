@@ -2,6 +2,10 @@ import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/end
 import { centreHandicap } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
+	centredPins,
+	type PinFeedback,
+} from "@/transformers/semantic-renderer/lib/layout/lone-pins";
+import {
 	APPROACH_STRAIGHT,
 	ROUTE_OBSTACLE_CLEARANCE as SHAPE_CLEARANCE,
 	ROUTE_NUDGE_DISTANCE,
@@ -31,6 +35,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 import {
 	alignedPins,
+	collectUsedPins,
 	refinedPins,
 	nearby,
 	relationshipChannel,
@@ -154,6 +159,16 @@ export class RoutingScene {
 	 */
 	refinePorts(edges: readonly ElkExtendedEdge[]): AlignedPins | undefined {
 		return refinedPins(this.nodes, this.channels, edges, this.request);
+	}
+
+	/**
+	 * The used pins with every lone port centred, when the routes ask for it.
+	 * @param edges Settled refined relationships.
+	 * @returns The used pins and the moved channels to hold, or nothing when none moved.
+	 */
+	centrePorts(edges: readonly ElkExtendedEdge[]): PinFeedback | undefined {
+		if (!this.request.centredPorts) return undefined;
+		return centredPins(this.nodes, this.channels, edges, collectUsedPins(this.nodes, edges));
 	}
 
 	/**

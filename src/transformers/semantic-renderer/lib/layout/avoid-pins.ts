@@ -13,6 +13,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { candidates } from "@/transformers/semantic-renderer/lib/layout/straight-candidates";
+import { centreLonePins } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import {
@@ -29,10 +30,10 @@ export type AlignedPin = { face: Face; position: number };
 export type AlignedPins = Map<string, Map<string, AlignedPin[]>>;
 
 /** What a route request asks of the pins offered (route-requests.ts). */
-type PinRequest = Pick<Requested, "cornerPins" | "laneChannels">;
+type PinRequest = Pick<Requested, "cornerPins" | "laneChannels" | "centredPorts">;
 
 /** Pins asked for nothing beyond the ordinary. */
-const ORDINARY_PINS: PinRequest = { cornerPins: false, laneChannels: false };
+const ORDINARY_PINS: PinRequest = { cornerPins: false, laneChannels: false, centredPorts: false };
 
 /**
  * Read physical alternatives in a shared endpoint channel.
@@ -410,7 +411,7 @@ export function alignedPins(
  * @param edges Settled routes.
  * @returns Pins grouped by endpoint and channel.
  */
-function collectUsedPins(
+export function collectUsedPins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	edges: readonly ElkExtendedEdge[],
 ): AlignedPins {
@@ -446,6 +447,7 @@ export function refinedPins(
 ): AlignedPins | undefined {
 	const used = collectUsedPins(nodes, edges);
 	const tracks = separateEndRuns(nodes, edges, (card) => used.get(card));
+	const centred = request.centredPorts ? centreLonePins(nodes, channels, edges, used).size : 0;
 	const selected = new PinCandidates(nodes, channels, edges, used, used);
 	selected.tracks = tracks;
 	selected.request = request;
@@ -455,12 +457,25 @@ export function refinedPins(
 		selected.add(edge);
 		selected.addRails(edge);
 	}
-	const added = [...selected.pins].some(([id, byChannel]) =>
-		[...byChannel].some(
-			([channel, pins]) => pins.length > (used.get(id)?.get(channel)?.length ?? 0),
-		),
+	return offersMore(selected.pins, used, tracks.size + centred) ? selected.pins : undefined;
+}
+
+/**
+ * Whether a refinement offers anything new: a pin a channel did not use, or a moved pin.
+ * @param offered The refined pins.
+ * @param used The pins the settled routes used.
+ * @param moved How many used pins moved.
+ * @returns True when the next solve has something new.
+ */
+function offersMore(offered: AlignedPins, used: AlignedPins, moved: number): boolean {
+	return (
+		moved > 0 ||
+		[...offered].some(([id, byChannel]) =>
+			[...byChannel].some(
+				([channel, pins]) => pins.length > (used.get(id)?.get(channel)?.length ?? 0),
+			),
+		)
 	);
-	return added || tracks.size > 0 ? selected.pins : undefined;
 }
 
 /**

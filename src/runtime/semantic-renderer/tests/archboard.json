@@ -1,0 +1,183 @@
+{
+	"nodes": [
+		{
+			"id": "TBnOCNx2",
+			"name": "Agent CLI",
+			"kind": "service",
+			"order": 1000,
+			"responsibility": "Authors named boards: one short-lived process per command, writing no board itself"
+		},
+		{
+			"id": "cPOdAA3f",
+			"name": "Archboard server",
+			"kind": "service",
+			"order": 2000,
+			"responsibility": "Owns every board, draws every view, and answers both applications"
+		},
+		{
+			"id": "6nZjwK9W",
+			"name": "Browser",
+			"kind": "service",
+			"order": 3000,
+			"responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else"
+		},
+		{
+			"id": "8XKRkSHl",
+			"name": "Board vault",
+			"kind": "datastore",
+			"order": 4000,
+			"responsibility": "One document per board, holding every variant of it"
+		},
+		{
+			"id": "xr1MHYE7",
+			"name": "Codex app-server",
+			"kind": "external",
+			"order": 5000,
+			"groups": ["agent"],
+			"responsibility": "Runs the linked agent threads, as one private child of the Archboard server"
+		},
+		{
+			"id": "19855Ply",
+			"name": "Repository checkout",
+			"kind": "datastore",
+			"order": 6000,
+			"responsibility": "The source a node's binding resolves to on this machine"
+		},
+		{
+			"id": "PxnjFfV3",
+			"name": "Skill evaluation",
+			"kind": "service",
+			"order": 7000,
+			"responsibility": "Measures one version of the agent skill against another, on real authors and real checkouts"
+		},
+		{
+			"id": "t7W7wJHv",
+			"name": "Headless Chromium",
+			"kind": "external",
+			"order": 8000,
+			"responsibility": "Paints an SVG and answers with the bitmap, or opens the Archboard server's page and captures a narrated walkthrough, when a command asks"
+		},
+		{
+			"id": "zs8yTQLI",
+			"name": "Codex home",
+			"kind": "datastore",
+			"order": 9000,
+			"groups": ["agent"],
+			"responsibility": "Codex's sign-in, config and threads, shared by every Archboard server on this machine"
+		}
+	],
+	"edges": [
+		{
+			"id": "9m47dJzG",
+			"from": "TBnOCNx2",
+			"to": "cPOdAA3f",
+			"kind": "http",
+			"order": 1000,
+			"label": "semantic commands"
+		},
+		{
+			"id": "iF6W48DS",
+			"from": "6nZjwK9W",
+			"to": "cPOdAA3f",
+			"kind": "http",
+			"order": 2000,
+			"label": "views and controls"
+		},
+		{
+			"id": "mjjIPV4U",
+			"from": "cPOdAA3f",
+			"to": "8XKRkSHl",
+			"kind": "data",
+			"order": 3000,
+			"label": "read / commit"
+		},
+		{
+			"id": "4p2LMrOt",
+			"from": "cPOdAA3f",
+			"to": "6nZjwK9W",
+			"kind": "event",
+			"order": 4000,
+			"label": "board and agent news"
+		},
+		{
+			"id": "2OeapIzk",
+			"from": "cPOdAA3f",
+			"to": "xr1MHYE7",
+			"kind": "rpc",
+			"order": 5000,
+			"label": "private stdio session"
+		},
+		{
+			"id": "oK9fPKdv",
+			"from": "cPOdAA3f",
+			"to": "19855Ply",
+			"kind": "data",
+			"order": 6000,
+			"label": "resolve code targets"
+		},
+		{
+			"id": "chzSzpL4",
+			"from": "TBnOCNx2",
+			"to": "t7W7wJHv",
+			"kind": "call",
+			"order": 7000,
+			"label": "photograph a board, record a walkthrough"
+		},
+		{
+			"id": "xKVVomRU",
+			"from": "PxnjFfV3",
+			"to": "TBnOCNx2",
+			"kind": "call",
+			"order": 8000,
+			"label": "the CLI under test"
+		},
+		{
+			"id": "SoK3eMhj",
+			"from": "PxnjFfV3",
+			"to": "cPOdAA3f",
+			"kind": "call",
+			"order": 9000,
+			"label": "one per run, on its own port"
+		},
+		{
+			"id": "vKDw0TwV",
+			"from": "t7W7wJHv",
+			"to": "cPOdAA3f",
+			"kind": "http",
+			"order": 10000,
+			"label": "the recording page"
+		},
+		{
+			"id": "pxP5bkpx",
+			"from": "cPOdAA3f",
+			"to": "zs8yTQLI",
+			"kind": "data",
+			"order": 11000,
+			"label": "prepare, write its config"
+		},
+		{
+			"id": "t3P6jc5T",
+			"from": "xr1MHYE7",
+			"to": "zs8yTQLI",
+			"kind": "data",
+			"order": 12000,
+			"label": "sign-in, config, threads"
+		},
+		{
+			"id": "DcdR8rPv",
+			"from": "xr1MHYE7",
+			"to": "TBnOCNx2",
+			"kind": "call",
+			"order": 13000,
+			"label": "a thread's board commands"
+		},
+		{
+			"id": "J5WjwmUn",
+			"from": "TBnOCNx2",
+			"to": "19855Ply",
+			"kind": "data",
+			"order": 14000,
+			"label": "register a checkout"
+		}
+	]
+}
