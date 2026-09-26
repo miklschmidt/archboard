@@ -118,6 +118,10 @@ class Scene {
 		this.readRegions(placed);
 		const heads = [...this.titles.values(), ...this.regions.map(({ caption }) => caption)];
 		this.groupBands([...this.cards.values(), ...this.labels.values(), ...heads]);
+		// A card stands at the top of its band, so the cards of a row line up and
+		// every line into them from above lands at one height, whatever their heights.
+		for (const card of this.cards.values())
+			card.box = { ...card.box, y: this.bands[card.band]!.top };
 		// A title row or caption sits at the foot of its band, on the cards it
 		// heads, rather than halfway down a taller card beside it.
 		for (const head of heads)
