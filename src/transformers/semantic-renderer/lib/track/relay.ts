@@ -37,30 +37,24 @@ import {
 	type Relaid,
 } from "@/transformers/semantic-renderer/lib/track/readings";
 import {
-	JOG,
-	MIN_STEP,
+	CROSSING,
+	EDGE,
 	backtrack,
+	block,
 	descend,
+	fromReach,
+	spanned,
+	warp,
+	type Span,
 } from "@/transformers/semantic-renderer/lib/track/sweep";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** How far outside its ends' reach a station stands before its chain laps. */
 const STRAY = 2 * LANE;
-/**
- * What crossing another line costs, as sideways travel: the detour that
- * makes a lap. Cheaper, and relays pay for short laps with many crossings;
- * dearer, and they leave laps one crossing would undo.
- */
-const CROSSING = 25 * LANE;
 /** How much cheaper a new route must be than the old one before the chain takes it. */
 const SAVING = 8 * LANE;
 /** The spacing of the columns a route may take, besides the edges of what stands on its bands. */
 const STEP = LANE / 2;
-/** How far inside an interval's edge still counts as outside it. */
-const EDGE = 1e-9;
-
-/** An interval of x. */
-type Span = readonly [number, number];
 
 /** What the other lines do in one channel, read onto the columns. */
 interface Traffic {
@@ -82,23 +76,6 @@ interface Traffic {
  */
 function outside(x: number, span: Span): number {
 	return Math.max(0, span[0] - x, x - span[1]);
-}
-
-/**
- * The first index of an ascending list whose value is above a bound.
- * @param sorted The list.
- * @param bound The bound.
- * @returns The index; the list's length when none is.
- */
-function firstAbove(sorted: ArrayLike<number>, bound: number): number {
-	let low = 0;
-	let high = sorted.length;
-	while (low < high) {
-		const middle = (low + high) >> 1;
-		if (sorted[middle]! <= bound) low = middle + 1;
-		else high = middle;
-	}
-	return low;
 }
 
 /**
@@ -154,74 +131,22 @@ function framesOff(scene: Scene, station: Station, open: ReadonlySet<string>): S
 	});
 }
 
-/**
- * Mark the columns strictly inside an interval as taken.
- * @param free One flag per column; those inside are cleared.
- * @param xs The columns, ascending.
- * @param span The interval.
- */
-function block(free: Uint8Array, xs: readonly number[], span: Span): void {
-	for (let j = firstAbove(xs, span[0]); j < xs.length && xs[j]! < span[1]; j += 1) free[j] = 0;
-}
-
-/**
- * Each column's warped x in a channel: its x plus a crossing's worth for
- * every other line's end left of it, each end counting half.
- * @param xs The columns, ascending.
- * @param ends The other lines' ends in the channel, ascending.
- * @returns The warped x, ascending.
- */
-function warp(xs: readonly number[], ends: readonly number[]): Float64Array {
-	const warped = new Float64Array(xs.length);
-	let passed = 0;
-	for (let j = 0; j < xs.length; j += 1) {
-		while (passed < ends.length && ends[passed]! < xs[j]!) passed += 1;
-		warped[j] = xs[j]! + (CROSSING * passed) / 2;
-	}
-	return warped;
-}
-
-/**
- * How many runs cover each column, strictly inside.
- * @param xs The columns, ascending.
- * @param runs The runs.
- * @returns One count per column.
- */
-function spanned(xs: readonly number[], runs: readonly Span[]): Float64Array {
-	const counts = new Float64Array(xs.length + 1);
-	for (const [low, high] of runs) {
-		const from = firstAbove(xs, low + 0.5);
-		counts[from]! += 1;
-		counts[Math.max(from, firstAbove(xs, high - 0.5 - EDGE))]! -= 1;
-	}
-	for (let j = 1; j < xs.length; j += 1) counts[j]! += counts[j - 1]!;
-	return counts.subarray(0, xs.length);
-}
-
-/**
- * What reaching each column from a card costs: nothing across its face,
- * else the warped travel from the face's nearest edge and a jog, which a
- * column too near the face to turn to cannot take.
- * @param xs The columns, ascending; the face's edges among them.
- * @param warped Each column's warped x in the channel beside the card.
- * @param reach The face.
- * @returns One cost per column.
- */
-function fromReach(xs: readonly number[], warped: Float64Array, reach: Span): Float64Array {
-	const left = firstAbove(xs, reach[0] - EDGE);
-	const right = firstAbove(xs, reach[1] - EDGE);
-	return warped.map((value, j) => {
-		if (j >= left && j <= right) return 0;
-		const edge = j < left ? left : right;
-		const step = Math.abs(xs[edge]! - xs[j]!);
-		return step < MIN_STEP ? Infinity : Math.abs(warped[edge]! - value) + JOG;
-	});
-}
-
 /** What a chain costs where it stands, by each count, and how many lines it crosses there. */
 interface Standing {
 	readonly costs: readonly number[];
 	readonly crossings: number;
+}
+
+/** What one chain's route search keeps across the readings of its stations. */
+interface Search {
+	readonly chain: Chain;
+	/** What the chain's bands hold besides it. */
+	readonly occupancy: Occupancy;
+	readonly xs: readonly number[];
+	readonly traffic: ReadonlyMap<number, Traffic>;
+	/** Each station's free columns, once found. */
+	readonly masks: Map<Station, Uint8Array>;
+	readonly standing: Standing;
 }
 
 /** The route search over one scene's columns. */
@@ -286,8 +211,9 @@ class Relay {
 	 * band or another its line passes, when that saves enough; a label box
 	 * moves to another band only where its line crosses no more lines.
 	 * @param chain The chain.
+	 * @returns Whether it moved.
 	 */
-	relay(chain: Chain): void {
+	relay(chain: Chain): boolean {
 		const index = this.chains.indexOf(chain);
 		const old = chain.stations.map(({ x }) => x);
 		const standing: Standing = {
@@ -295,16 +221,29 @@ class Relay {
 			crossings: crossingsOf(chain.stations, old, this.bands),
 		};
 		const occupancy = this.occupancyWithout(chain);
+		// Every reading passes the same bands with the same x, so it has the
+		// same columns and the same traffic; only a moved station's mask is new.
+		const xs = this.columnsFor(chain.stations, occupancy);
+		const search: Search = {
+			chain,
+			occupancy,
+			xs,
+			traffic: this.trafficOf(chain.stations, xs),
+			masks: new Map(),
+			standing,
+		};
 		const relaid = readingsOf(this.scene, chain).flatMap((stations) => {
 			this.bands[index] = byBand(stations);
-			return this.relaid(chain, stations, occupancy, standing);
+			return this.relaid(search, stations);
 		});
 		const best = relaid.reduce<Relaid | undefined>(
 			(one, other) => (one === undefined || other.cost < one.cost ? other : one),
 			undefined,
 		);
 		this.bands[index] = byBand(best?.stations ?? chain.stations);
-		if (best !== undefined) take(chain, best, this.scene);
+		if (best === undefined) return false;
+		take(chain, best, this.scene);
+		return true;
 	}
 
 	/**
@@ -323,23 +262,14 @@ class Relay {
 	/**
 	 * The cheapest free route for one reading of a chain's stations, when it
 	 * saves enough over where the chain stands.
-	 * @param chain The chain.
+	 * @param search What the chain's search keeps across its readings.
 	 * @param stations The reading: its stations, its label box on one band.
-	 * @param occupancy What the chain's bands hold besides it.
-	 * @param standing What the chain costs where it stands, and the lines it crosses there.
 	 * @returns The route, or nothing.
 	 */
-	relaid(
-		chain: Chain,
-		stations: readonly Station[],
-		occupancy: Occupancy,
-		standing: Standing,
-	): Relaid[] {
-		const xs = this.columnsFor(stations, occupancy);
-		const masks = stations
-			.slice(1, -1)
-			.map((station) => this.freeAt(chain, station, xs, occupancy));
-		const chosen = this.cheapest(stations, xs, masks);
+	relaid(search: Search, stations: readonly Station[]): Relaid[] {
+		const { chain, xs, standing } = search;
+		const masks = stations.slice(1, -1).map((station) => this.maskOf(search, station));
+		const chosen = this.cheapest(stations, xs, masks, search.traffic);
 		if (chosen === undefined) return [];
 		const route = [stations[0]!.x, ...chosen, stations.at(-1)!.x];
 		const costs = this.counts().map((counted) => this.cost(stations, route, counted));
@@ -348,6 +278,20 @@ class Relay {
 		if (moved && crossingsOf(stations, route, this.bands) > standing.crossings) return [];
 		const saves = costs.some((cost, at) => cost <= standing.costs[at]! - SAVING);
 		return saves ? [{ stations, route, cost: costs[0]! }] : [];
+	}
+
+	/**
+	 * Which columns a station may stand on, found once per search.
+	 * @param search What the chain's search keeps across its readings.
+	 * @param station The station.
+	 * @returns One flag per column.
+	 */
+	maskOf(search: Search, station: Station): Uint8Array {
+		const known = search.masks.get(station);
+		if (known !== undefined) return known;
+		const mask = this.freeAt(search.chain, station, search.xs, search.occupancy);
+		search.masks.set(station, mask);
+		return mask;
 	}
 
 	/**
@@ -493,6 +437,20 @@ class Relay {
 	}
 
 	/**
+	 * What the other lines do in each channel a chain passes.
+	 * @param stations The chain's stations.
+	 * @param xs The columns.
+	 * @returns The traffic, by the band above each channel.
+	 */
+	trafficOf(stations: readonly Station[], xs: readonly number[]): Map<number, Traffic> {
+		return new Map(
+			stations
+				.slice(1)
+				.map((below, index) => [below.band - 1, this.trafficIn(stations[index]!, below, xs)]),
+		);
+	}
+
+	/**
 	 * What the other lines do in the channel between two of a chain's
 	 * stations, leaving out those that meet the chain at a card or label
 	 * there, which it never crosses.
@@ -523,21 +481,16 @@ class Relay {
 	 * @param stations The chain's stations.
 	 * @param xs The columns.
 	 * @param masks Which columns each middle station may stand on.
+	 * @param traffic What the other lines do in each channel the chain passes, by the band above it.
 	 * @returns Each middle station's x, or nothing when no route is free.
 	 */
 	cheapest(
 		stations: readonly Station[],
 		xs: readonly number[],
 		masks: readonly Uint8Array[],
+		traffic: ReadonlyMap<number, Traffic>,
 	): number[] | undefined {
 		const [upper, lower] = [stations[0]!, stations.at(-1)!];
-		const traffic = new Map(
-			stations
-				.slice(1)
-				.map(
-					(below, index) => [below.band - 1, this.trafficIn(stations[index]!, below, xs)] as const,
-				),
-		);
 		let cost = fromReach(xs, traffic.get(upper.band)!.warped, reachOf(upper));
 		const steps: Int32Array[] = [];
 		stations.slice(1, -1).forEach(({ band }, index) => {
@@ -562,7 +515,7 @@ class Relay {
 /**
  * Relay every chain that laps the drawing onto a short free route through
  * it, longest first, each keeping clear of every other line's lanes as they
- * stand; its label box moves along its band with it.
+ * stand; its label box moves with it.
  * @param scene The scene; relayed label boxes move.
  * @param kinds Every relationship's chain, its lanes straightened, and what
  * it must share with another to share a trunk.

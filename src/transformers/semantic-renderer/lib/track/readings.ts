@@ -39,8 +39,8 @@ function onBand(scene: Scene, label: Item, band: number): Item {
 
 /**
  * The ways a chain's stations may be read: as they stand, and, when it has a
- * label box, with the box on each other band between its ends that is tall
- * enough to hold it and a lane where the box stood. Graphviz ranks a label
+ * label box, with the box on the band above or below between its ends, where
+ * that band is tall enough to hold it, and a lane where the box stood. Graphviz ranks a label
  * on one band of its line, and its only free slot there may lie far off the
  * line's column where the band above or below had room on it.
  * @param scene The scene.
@@ -54,7 +54,7 @@ function readingsOf(scene: Scene, chain: Chain): (readonly Station[])[] {
 	const item = label.item!;
 	const moved = stations.slice(1, -1).filter(({ band }) => {
 		const { top, bottom } = scene.bands[band]!;
-		return band !== label.band && item.box.height <= bottom - top;
+		return Math.abs(band - label.band) === 1 && item.box.height <= bottom - top;
 	});
 	return [
 		stations,
