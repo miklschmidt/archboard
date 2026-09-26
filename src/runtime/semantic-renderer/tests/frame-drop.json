@@ -1,0 +1,122 @@
+{
+	"nodes": [
+		{
+			"id": "KyQxypRC",
+			"order": 2000,
+			"name": "Kettleeagl",
+			"kind": "module",
+			"responsibility": "Meadow bra car ri d lant, summit b quartzg brav carb needl ne carb, har carbonr nee brav summit d harbors",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "8c0zvhQW",
+			"order": 4000,
+			"name": "Bravos summitm",
+			"kind": "function",
+			"responsibility": "Bravo har Bra ri e jung ne eag rive de summit: jungle riv falc, delta su, summit gar lant delta, rive car summi bra timber",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "6uHnaygd",
+			"order": 5000,
+			"name": "Gardenpe rivern",
+			"kind": "function",
+			"responsibility": "Kettle ora Summitor, lanternj ha fa, harbo carbo sum jungl-quar pepperk, ora jungl ti carb delta qua needl fal kett eag pepp",
+			"parent": "IzgAi2R1"
+		},
+		{
+			"id": "AVCQVNqI",
+			"order": 6000,
+			"name": "Needlebr carbonrive",
+			"kind": "function",
+			"responsibility": "Sum kettle ke l timber: pep summi ora carbon, car isla'p carb bravojungl, sum o Jung meadowla alph o lant",
+			"parent": "IzgAi2R1"
+		},
+		{
+			"id": "R9St060W",
+			"order": 10000,
+			"name": "Falconti",
+			"kind": "external",
+			"responsibility": "Del pepperb gard jungle eag Har, mead mea peppercar falc ora meadowr isla Eaglenee"
+		},
+		{
+			"id": "IzgAi2R1",
+			"order": 11000,
+			"name": "Riverisl needlel",
+			"kind": "module",
+			"responsibility": "Mea har eagle carbonfal eagleh h alphape su fal isl: junglea, eagleneed rive lant timbersu Kettleea, qua timber brav"
+		},
+		{
+			"id": "ShT7QadJ",
+			"order": 12000,
+			"name": "Orangeri meadowmead",
+			"kind": "function",
+			"responsibility": "Meado Meadowde pe mea, bravogar ca ga ora fal delta ket timb brav, del alphas eagl river delta la timb",
+			"parent": "IzgAi2R1"
+		},
+		{
+			"id": "ZAj4RMzN",
+			"order": 15000,
+			"name": "Alphacarbon gardenti",
+			"kind": "module",
+			"responsibility": "Meadow eag islandl t lanternpe delta, delta pep oran pe 1920p1080, jun carbo eag delt kett islan pepp falc quar alphaga qua lantern",
+			"groups": ["walkthrough"]
+		}
+	],
+	"edges": [
+		{
+			"id": "IiA7nIxT",
+			"order": 3000,
+			"from": "KyQxypRC",
+			"to": "8c0zvhQW",
+			"kind": "call",
+			"label": "eagleri, alp qua ju c isla",
+			"emphasis": "hero"
+		},
+		{
+			"id": "tJ3SgMcL",
+			"order": 4000,
+			"from": "8c0zvhQW",
+			"to": "6uHnaygd",
+			"kind": "call",
+			"label": "quartz, lant f lant, harb",
+			"emphasis": "hero"
+		},
+		{
+			"id": "aYI0EhkT",
+			"order": 6000,
+			"from": "8c0zvhQW",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"label": "riv riverq ke har timb",
+			"emphasis": "hero"
+		},
+		{
+			"id": "JgtXFRyO",
+			"order": 7000,
+			"from": "AVCQVNqI",
+			"to": "R9St060W",
+			"kind": "rpc",
+			"label": "Gar harb m Harborgar",
+			"emphasis": "normal"
+		},
+		{
+			"id": "FDMYhJSq",
+			"order": 14000,
+			"from": "KyQxypRC",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"label": "quart Pepperla",
+			"emphasis": "muted"
+		},
+		{
+			"id": "2fcZLCiQ",
+			"order": 20000,
+			"from": "ZAj4RMzN",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"label": "alphaalp is pep isla, garden tim Lant",
+			"emphasis": "normal"
+		}
+	]
+}
