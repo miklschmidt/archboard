@@ -1,0 +1,147 @@
+{
+	"nodes": [
+		{
+			"id": "yAFyqal3",
+			"order": 1000,
+			"name": "Browser client",
+			"kind": "system",
+			"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing"
+		},
+		{
+			"id": "HggZR41l",
+			"order": 2000,
+			"name": "Application composition",
+			"kind": "module",
+			"responsibility": "Connects pane and feature owners",
+			"parent": "yAFyqal3"
+		},
+		{
+			"id": "dtYjWvlf",
+			"order": 3000,
+			"name": "Semantic viewer",
+			"kind": "module",
+			"responsibility": "Reads and explores rendered boards",
+			"parent": "yAFyqal3",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "0SRnYXnC",
+			"order": 8000,
+			"name": "Voice session",
+			"kind": "module",
+			"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
+			"parent": "yAFyqal3",
+			"groups": ["voice"]
+		},
+		{
+			"id": "zs2QxCu7",
+			"order": 14000,
+			"name": "Agent setup",
+			"kind": "module",
+			"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation",
+			"parent": "yAFyqal3",
+			"groups": ["agent"]
+		},
+		{
+			"id": "0yb2VbKc",
+			"order": 16000,
+			"name": "Voice subtitles",
+			"kind": "ui",
+			"responsibility": "The voice's words over the pane it runs for, measured into two lines",
+			"parent": "yAFyqal3",
+			"groups": ["voice"]
+		},
+		{
+			"id": "fscW90Xt",
+			"order": 17000,
+			"name": "Walkthrough recording",
+			"kind": "module",
+			"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
+			"parent": "yAFyqal3",
+			"groups": ["walkthrough"]
+		}
+	],
+	"edges": [
+		{
+			"id": "VbLQ6rfX",
+			"order": 11000,
+			"from": "HggZR41l",
+			"to": "dtYjWvlf",
+			"kind": "render",
+			"label": "one stage per pane",
+			"emphasis": "hero"
+		},
+		{
+			"id": "md5cpNZV",
+			"order": 24000,
+			"from": "HggZR41l",
+			"to": "zs2QxCu7",
+			"kind": "call",
+			"label": "send, Talk, narrate",
+			"emphasis": "normal"
+		},
+		{
+			"id": "UBmrpsBg",
+			"order": 26000,
+			"from": "zs2QxCu7",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"label": "start voice",
+			"emphasis": "normal"
+		},
+		{
+			"id": "qKwYD1B2",
+			"order": 27000,
+			"from": "HggZR41l",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"label": "a session for voice's pane; mute, stop",
+			"emphasis": "normal"
+		},
+		{
+			"id": "vm1xFAYO",
+			"order": 29000,
+			"from": "HggZR41l",
+			"to": "0yb2VbKc",
+			"kind": "render",
+			"label": "over voice's pane",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4zVUlTbS",
+			"order": 30000,
+			"from": "HggZR41l",
+			"to": "fscW90Xt",
+			"kind": "call",
+			"label": "the recorder, when the address asks",
+			"emphasis": "normal"
+		},
+		{
+			"id": "UEuRPGRJ",
+			"order": 31000,
+			"from": "fscW90Xt",
+			"to": "zs2QxCu7",
+			"kind": "call",
+			"label": "Talk, as a recording",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5y8UuVhP",
+			"order": 32000,
+			"from": "fscW90Xt",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"label": "live and loud yet; stop",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Gxh1Pbx3",
+			"order": 33000,
+			"from": "fscW90Xt",
+			"to": "dtYjWvlf",
+			"kind": "data",
+			"label": "the step to show",
+			"emphasis": "normal"
+		}
+	]
+}
