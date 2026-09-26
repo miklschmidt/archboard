@@ -8,6 +8,11 @@ import {
 	type Segment,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
+import {
+	shotSchedule,
+	type ShotSchedule,
+} from "@/transformers/semantic-renderer/lib/svg/traffic-shots";
+import { TRAFFIC_STILL_MS, TRAFFIC_STREAK_MS } from "@/shared/timing/timing";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	colourId,
@@ -35,6 +40,8 @@ const TRAIN_RADIUS = 3;
 
 /** One connection's routed path and explicit illustrated traffic. */
 interface Pulse {
+	/** The relationship's id: what its irregular launches are drawn from. */
+	readonly id: string;
 	/** The route as drawn, bridges and all. */
 	readonly curve: Curve;
 	/** How far back from the route's end its arrowhead reaches: no comet may cover it. */
@@ -48,30 +55,38 @@ interface Pulse {
 	/** The page the comets are drawn on: its background, its neutral line colour and its text colour. */
 	readonly page: Pick<Palette, "background" | "edge" | "foreground">;
 	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
-	/** Every relationship's label, drawn over the comets: no resting comet sits half under one. */
+	/** Every relationship's label, drawn over the traffic: no resting streak sits half under one. */
 	readonly labels: readonly Box[];
 }
 
-/** The longest tail a comet draws, in diagram units, however far apart comets travel. */
-const COMET_TAIL = 30;
-
-/** How much of the space between two comets one comet's tail may take. */
-const COMET_TAIL_SHARE = 0.5;
+/** How much of the line it rides a streak may cover at most, so a streak never fills a short line. */
+const STREAK_LINE_SHARE = 0.45;
 
 /**
- * A comet's tail, from its faint far end to the part just behind its head: how
- * far back each layer reaches (a share of the tail), how thick it is (a share
- * of the way from its line's width to its head's) and how opaque. Every layer
- * is at least as thick as the line, so the whole tail shows as a streak on the
- * line rather than hiding inside it. Stacked, the layers taper and fade away
- * from the head, so a comet at rest still points the way its relationship flows.
+ * How much of the shortest distance between two shots one streak may cover,
+ * so two shots fired close together stay two streaks rather than merging.
  */
-const COMET_TAIL_LAYERS = [
-	{ reach: 1, width: 0.1, opacity: 0.22 },
-	{ reach: 0.7, width: 0.35, opacity: 0.36 },
-	{ reach: 0.42, width: 0.62, opacity: 0.58 },
-	{ reach: 0.18, width: 0.9, opacity: 0.85 },
+const STREAK_GAP_SHARE = 0.7;
+
+/**
+ * A streak's tail, from its faint far end to the part just behind its head:
+ * how far back each layer reaches (a share of the tail), how thick it is (a
+ * share of the way from its line's width to its head's), how opaque, and how
+ * much of the head's colour it carries over the line's. Every layer is at least
+ * as thick as the line and darker than it, so the whole tail shows on the line
+ * rather than hiding inside it. Stacked, the layers thin and fade away from the
+ * head into the line's colour, so a streak at rest still points the way its
+ * relationship flows.
+ */
+const STREAK_TAIL_LAYERS = [
+	{ reach: 1, width: 0.05, opacity: 0.35, ink: 0.35 },
+	{ reach: 0.7, width: 0.15, opacity: 0.5, ink: 0.6 },
+	{ reach: 0.42, width: 0.32, opacity: 0.7, ink: 0.8 },
+	{ reach: 0.2, width: 0.6, opacity: 0.9, ink: 0.95 },
 ] as const;
+
+/** How long a streak's head is along its line, as a share of its width: a bolt, longer than it is wide. */
+const STREAK_HEAD_LENGTH = 1.4;
 
 /**
  * The soft glow around a comet's head, as a multiple of the head, and how
@@ -93,9 +108,6 @@ function glowColour(colour: string): string {
 		translucent(colour, COMET_GLOW.opacity.dark),
 	);
 }
-
-/** How long a comet's head is along its line, as a share of its width: a capsule, not a dot. */
-const COMET_HEAD_LENGTH = 0.55;
 
 /**
  * The ring of the page's own background around a comet's head, as the width it
@@ -221,18 +233,72 @@ function timecount(seconds: number): string {
 }
 
 /**
- * One layer of a comet stream: dashes of one length, one per comet, each
- * ending where its comet's head is.
+ * How long a route is along its ink.
+ * @param curve The route.
+ * @returns Its length.
+ */
+function curveLength(curve: Curve): number {
+	return curve.segments.reduce(
+		(length, segment, index) => length + segmentLength(segmentStart(curve, index), segment),
+		0,
+	);
+}
+
+/** One line's traffic, laid along the route it rides: what every layer of its streaks shares. */
+interface Volley {
+	/** The route, as path data. */
+	readonly path: string;
+	/** How far along the route the resting streak's head is. */
+	readonly rest: number;
+	/**
+	 * The gap after the resting streak in the still picture: longer than the
+	 * rest of the route, so no other streak shows on it.
+	 */
+	readonly still: number;
+	/**
+	 * How far each head is from the one ahead of it on the route, over one
+	 * cycle, rounded as written: the shots fired earlier are further along.
+	 */
+	readonly spacings: readonly number[];
+	/** Their sum: how far the whole train moves in one cycle. */
+	readonly period: number;
+	/** How long one cycle takes. */
+	readonly cycle: string;
+}
+
+/**
+ * How far each head is from the one ahead of it, as rounded distances whose
+ * sum is exactly the rounded length of the cycle, so the pattern repeats where
+ * the clock says it does.
+ * @param schedule The shots' speed and the gaps between their launches.
+ * @returns The distances, in route order from the resting head forward.
+ */
+function trainSpacings(schedule: ShotSchedule): number[] {
+	// The shot ahead of one on the route was fired before it: route order is
+	// launch order backwards.
+	const distances = schedule.gaps.toReversed().map((gap) => gap * schedule.speed);
+	let along = 0;
+	let written = 0;
+	return distances.map((distance) => {
+		along += distance;
+		const next = Number(coord(along));
+		const spacing = Number(coord(next - written));
+		written = next;
+		return spacing;
+	});
+}
+
+/**
+ * One layer of a line's streaks: a dash of one length per shot, each ending
+ * where its shot's head is.
  *
- * A dash pattern shifted back by the dash's own length puts the dash's far end
- * on the head, so every layer rides the same clock and stays behind its head
- * on straight and bent routes alike. At rest the first head sits where
- * {@link restingPlace} puts it, which is what a picture that does not move shows.
- * @param stream The route, the spacing between comets and their clock.
- * @param stream.path The route.
- * @param stream.spacing How far apart comets travel.
- * @param stream.rest How far along the route the first head rests.
- * @param stream.seconds How long one comet takes to reach the next one's place.
+ * The layer's own attributes are the still picture: one dash, ending on the
+ * resting place, and a gap longer than the route. A moment later the dash
+ * pattern becomes the whole train of shots, the resting one among them, and
+ * the train moves one cycle's distance every cycle. Every layer rides the same
+ * clock and ends on the same heads, so a streak holds together on straight and
+ * bent routes alike.
+ * @param volley The route, the resting place, the train and its clock.
  * @param layer How long, thick, opaque and in what colour this layer is.
  * @param layer.length How far back from the head it reaches.
  * @param layer.width How thick it is.
@@ -241,13 +307,8 @@ function timecount(seconds: number): string {
  * @param layer.moat Set on the ring in the page's colour.
  * @returns The layer's path.
  */
-function cometLayer(
-	stream: {
-		readonly path: string;
-		readonly spacing: number;
-		readonly rest: number;
-		readonly seconds: string;
-	},
+function streakLayer(
+	volley: Volley,
 	layer: {
 		readonly length: number;
 		readonly width: number;
@@ -257,81 +318,90 @@ function cometLayer(
 		readonly moat?: true;
 	},
 ): string {
-	const { path, spacing, rest, seconds } = stream;
 	const { width, opacity, colour, moat } = layer;
-	// Rounded once, so the dash and its gap add up to exactly one spacing and
-	// the pattern repeats where the clock says it does.
 	const length = Number(coord(layer.length));
-	// The dash ends at the rest a spacing on, rather than back, so the far end
-	// of the clock stays finite.
-	const offset = Number(coord(length + spacing - rest));
+	const offset = Number(coord(length - volley.rest));
+	const begin = timecount(TRAFFIC_STILL_MS / 1000);
+	const train = volley.spacings
+		.map((spacing) => `${length} ${coord(Math.max(0, spacing - length))}`)
+		.join(" ");
 	return wrap(
 		"path",
 		{
-			d: path,
+			d: volley.path,
 			"data-pulse-part": moat === true ? "moat" : undefined,
 			fill: "none",
 			stroke: colour,
 			"stroke-width": coord(width),
 			"stroke-opacity": opacity === 1 ? undefined : opacity,
 			"stroke-linecap": "round",
-			"stroke-dasharray": `${length} ${Math.max(Number.MIN_VALUE, spacing - length)}`,
+			"stroke-dasharray": `${length} ${coord(volley.still)}`,
 			"stroke-dashoffset": offset,
 		},
-		tag("animate", {
-			attributeName: "stroke-dashoffset",
-			from: offset,
-			to: offset - spacing,
-			dur: seconds,
-			repeatCount: "indefinite",
-			calcMode: "linear",
-		}),
+		tag("set", { attributeName: "stroke-dasharray", to: train, begin }) +
+			tag("animate", {
+				attributeName: "stroke-dashoffset",
+				from: offset,
+				to: coord(offset - volley.period),
+				dur: volley.cycle,
+				begin,
+				repeatCount: "indefinite",
+				calcMode: "linear",
+			}),
 	);
 }
 
 /**
- * A steady stream of comets measured directly along the final SVG path.
+ * A relationship's traffic as shots fired along its line.
  *
- * Each comet is a head ringed by the page's colour, with a soft glow, in its
- * relationship's colour with some of the page's text mixed in, and a tail that
- * tapers and fades from the head's colour back into the line's, spaced
- * speed/volume units apart. Every layer is one dash pattern
- * over the whole route, advanced by one spacing every 1/volume seconds, which
- * gives fixed distance per second on straight and curved routes, already
- * populated at load, and any volume without one element per comet (ADR 0027).
- * The tail is what a round dot never said: which way the relationship flows,
- * even in a picture that does not move.
+ * Each shot is a streak: a head ringed by the page's colour, with a soft glow,
+ * in its relationship's colour with some of the page's text mixed in, and a
+ * long thin tail that fades from the head's colour back into the line's. The
+ * line fires its volume's worth of shots a second on average, at irregular
+ * moments, each crossing at a multiple of the authored speed (ADR 0027). Every
+ * layer is one dash pattern over the whole route, so shots in flight together
+ * are dashes of one pattern and none is dropped, whatever the volume. A still
+ * picture shows one streak at rest on the line, pointing the way it flows.
  * @param pulse Route, line ink, line width, authored traffic and the labels drawn over it.
- * @returns The animated comet stream, retained in exported SVGs.
+ * @returns The animated traffic, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
-	const { lineWidth, lineColour, page, traffic } = pulse;
+	const { lineWidth, lineColour, page } = pulse;
 	const colour = cometColour(pulse.colour, page);
-	const spacing = Math.max(
-		Number.MIN_VALUE,
-		Math.min(Number.MAX_VALUE, traffic.speed / traffic.volume),
-	);
-	const seconds = timecount(Math.min(Number.MAX_VALUE, 1 / traffic.volume));
 	const head = cometHead(lineWidth);
-	const headLength = head * COMET_HEAD_LENGTH;
-	const tail = Math.min(COMET_TAIL, spacing * COMET_TAIL_SHARE);
-	// The comets ride the route up to the base of its arrowhead: a head there,
+	const headLength = head * STREAK_HEAD_LENGTH;
+	// The streaks ride the route up to the base of its arrowhead: a head there,
 	// ringed by the page, would blunt the arrowhead into a dark block.
 	const ride = shortenedBy(pulse.curve, pulse.headReach + head / 2 + COMET_MOAT);
 	if (ride === undefined) return "";
-	const rest = restingPlace(ride, spacing, (head * COMET_GLOW.width) / 2, pulse.labels);
-	const stream = { path: pathOf(ride), spacing, rest, seconds };
+	const length = curveLength(ride);
+	const schedule = shotSchedule(pulse.traffic, pulse.id);
+	const spacings = trainSpacings(schedule);
+	const tail = Math.min(
+		(schedule.speed * TRAFFIC_STREAK_MS) / 1000,
+		length * STREAK_LINE_SHARE,
+		Math.min(...spacings) * STREAK_GAP_SHARE,
+	);
+	const rest = restingPlace(ride, length, (head * COMET_GLOW.width) / 2, pulse.labels);
+	const volley: Volley = {
+		path: pathOf(ride),
+		rest,
+		still: Math.ceil(length - rest) + 1,
+		spacings,
+		period: spacings.reduce((sum, spacing) => sum + spacing, 0),
+		cycle: timecount(schedule.cycle),
+	};
 	return wrap(
 		"g",
 		{ class: PULSE_CLASS, "pointer-events": "none" },
 		[
-			cometLayer(stream, {
+			streakLayer(volley, {
 				length: 0,
 				width: head * COMET_GLOW.width,
 				opacity: 1,
 				colour: glowColour(colour),
 			}),
-			cometLayer(stream, {
+			streakLayer(volley, {
 				length: headLength,
 				width: head + COMET_MOAT * 2,
 				opacity: 1,
@@ -339,15 +409,15 @@ function travellingPulses(pulse: Pulse): string {
 				moat: true,
 			}),
 			// The tail leaves the head in its colour and fades back into the line's.
-			...COMET_TAIL_LAYERS.map((layer) =>
-				cometLayer(stream, {
+			...STREAK_TAIL_LAYERS.map((layer) =>
+				streakLayer(volley, {
 					length: tail * layer.reach,
 					width: lineWidth + (head - lineWidth) * layer.width,
 					opacity: layer.opacity,
-					colour: mixed(lineColour, colour, 1 - layer.reach),
+					colour: mixed(lineColour, colour, layer.ink),
 				}),
 			),
-			cometLayer(stream, { length: headLength, width: head, opacity: 1, colour }),
+			streakLayer(volley, { length: headLength, width: head, opacity: 1, colour }),
 		].join(""),
 	);
 }
