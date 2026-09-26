@@ -15,6 +15,7 @@ import {
 	routeEnds,
 	routePoints,
 	sharedStretches,
+	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
@@ -23,6 +24,7 @@ import oneCommand from "./one-command.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 import tightWallPort from "./tight-wall-port.json";
+import trackOrder from "./track-order.json";
 import twoChains from "./two-chains.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 
@@ -372,4 +374,61 @@ test("lines that join on the way to a card stay joined, without running along a 
 	const together = Math.hypot(one.x - other.x, one.y - other.y) < 1;
 	expect(together || sharedStretches(queue, typed).length === 0).toBeTrue();
 	expect(alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["7TAwfrZF"]!)).toEqual([]);
+});
+
+/** One straight run of a drawn route. */
+type Run = readonly [DrawnPoint, DrawnPoint];
+
+/**
+ * Whether a value lies strictly between two others, half a unit in.
+ * @param value The value.
+ * @param one One bound.
+ * @param other The other.
+ * @returns True when it does.
+ */
+function strictlyBetween(value: number, one: number, other: number): boolean {
+	return value > Math.min(one, other) + 0.5 && value < Math.max(one, other) - 0.5;
+}
+
+/**
+ * Whether a sideways run crosses a downward one.
+ * @param sideways The sideways run.
+ * @param down The downward run.
+ * @returns True when they cross.
+ */
+function crosses([a, b]: Run, [c, d]: Run): boolean {
+	return (
+		a.y === b.y && c.x === d.x && strictlyBetween(c.x, a.x, b.x) && strictlyBetween(a.y, c.y, d.y)
+	);
+}
+
+/**
+ * How many times two drawn routes cross at a right angle.
+ * @param one One route's corridor.
+ * @param other The other's.
+ * @returns The crossings.
+ */
+function crossingsBetween(one: readonly DrawnPoint[], other: readonly DrawnPoint[]): number {
+	const [ones, others] = [one, other].map((points) =>
+		points.slice(1).map((to, index): Run => [points[index]!, to]),
+	);
+	return ones!
+		.flatMap((run) => others!.map((across) => [run, across] as const))
+		.filter(([run, across]) => crosses(run, across) || crosses(across, run)).length;
+}
+
+// Reduced from a dogfood board: in one channel a line wanted a track above
+// most of the lines it shares the channel with and was given one above two
+// lines it then crossed twice each, where the other order crosses neither.
+test("the lines of one channel take the track order that crosses least", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(trackOrder),
+		theme: "light",
+		layout: "blocks",
+		policy,
+	});
+	const routes = corridorPoints(drawing.svg);
+	const claims = routes.get("Ep4ins2T")!;
+	for (const other of ["dHru8Ng6", "7kWTFGGA"])
+		expect(crossingsBetween(claims, routes.get(other)!), other).toBe(0);
 });
