@@ -33,7 +33,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
-import { frameShapes, regionShapes } from "@/transformers/semantic-renderer/lib/track/containers";
+import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
@@ -448,8 +448,7 @@ class CardLayout {
 			bottom: band.newTop + band.bottom - band.top,
 			items: this.block.items.filter((item) => scene.cards.get(item)?.band === index),
 		}));
-		const frames = frameShapes(scene, edges, side);
-		const regions = regionShapes(scene, edges, side);
+		const { frames, regions } = fitSides(scene, edges, lines, side);
 		const walled = new Map(lines);
 		const reach = [
 			...boxes.values(),
