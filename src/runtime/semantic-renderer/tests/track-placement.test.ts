@@ -1,15 +1,19 @@
 // Where the track engine stands a card sideways (TASK-349). What this
 // catches: a chain of one-in, one-out cards stepping sideways rank by rank,
-// its lines leaving and entering its cards off centre, and a fan whose
-// wrap lowers a group region whole refused, so the region stands on a row
-// of its own above the fan's other cards, and a card fed by a fan standing
-// off its middle, so the fan's lines land unevenly on it.
+// its lines leaving and entering its cards off centre; a fan whose wrap
+// lowers a group region whole refused, so the region stands on a row of its
+// own above the fan's other cards; a card fed by a fan standing off its
+// middle, so the fan's lines land unevenly on it; and a wrap standing a card
+// in a line's way, or away from the port its one line leaves.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import loweredRegion from "./lowered-region.json";
+import underPort from "./under-port.json";
+import wrappedBlocker from "./wrapped-blocker.json";
 
 const WORDS = "alpha bravo delta eagle falcon garden harbor island jungle kettle lantern meadow";
 
@@ -126,4 +130,59 @@ test("a card two cards of one rank feed stands midway under them", async () => {
 		const [one, other] = from.map((id) => centre(drawing.atlas.nodes[id]!));
 		expect(Math.abs(centre(drawing.atlas.nodes[to]!) - (one! + other!) / 2)).toBeLessThan(1);
 	}
+});
+
+/** The vocabulary the reduced wrap fixtures draw with. */
+const wrapPolicy = SemanticPolicySchema.parse({
+	levels: ["service"],
+	nodeKinds: Object.fromEntries(
+		["module", "function", "service", "external"].map((kind) => [
+			kind,
+			{ name: kind, icon: "RiBox3Line" },
+		]),
+	),
+	relationshipKinds: {
+		call: { name: "Call", dash: "solid", arrowhead: "filled" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+	},
+	groups: { inner: { name: "Inner", color: "purple" } },
+});
+
+/**
+ * Whether a drawn line runs straight down, with no bend.
+ * @param svg The drawing.
+ * @param id The line.
+ * @returns True when every point of it stands on one column.
+ */
+function dropsStraight(svg: string, id: string): boolean {
+	const points = routePoints(svg).get(id)!;
+	return points.every((point) => Math.abs(point.x - points[0]!.x) < 0.5);
+}
+
+// Reduced from a board of this repository, names replaced: a wrap stood a
+// card with no line of its own to either end in the column between a card
+// and the card its line drops to, and the line stepped around it.
+test("a wrapped card stands aside from a line that drops straight past it", async () => {
+	const content = orderedFixture(wrappedBlocker);
+	const drawing = await renderArchitecture({
+		content,
+		theme: "light",
+		policy: wrapPolicy,
+		layout: "track",
+	});
+	expect(dropsStraight(drawing.svg, "e6")).toBe(true);
+});
+
+// Reduced from a board of this repository, names replaced: two cards below a
+// group region, each with one line from inside it, were wrapped under
+// unrelated cards, and both lines stepped across to them.
+test("a wrapped card whose one line leaves a region stands under it", async () => {
+	const content = orderedFixture(underPort);
+	const drawing = await renderArchitecture({
+		content,
+		theme: "light",
+		policy: wrapPolicy,
+		layout: "track",
+	});
+	for (const id of ["e3", "e6"]) expect(dropsStraight(drawing.svg, id), id).toBe(true);
 });

@@ -1,0 +1,129 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alpha harborhar",
+			"kind": "module",
+			"responsibility": "delta ket lantern eagl la sum falconfal lanter tim garde needl alpha harborha orangeora bra isl orange lantern ju q lantern ket river eag"
+		},
+		{
+			"id": "n1",
+			"name": "lantern lantern",
+			"kind": "module",
+			"responsibility": "island l summitsum falconfal mea needle gar needlene alph ha lantern br isl lantern lantern ju qua harbor orange ri eagl",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n2",
+			"name": "garden jungl",
+			"kind": "module",
+			"responsibility": "falco mead island ga need alp garden needle bra isla pepp carb ju qua delt lantern riv eag lant su orange mead timbe ga",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n3",
+			"name": "delta orange",
+			"kind": "module",
+			"responsibility": "gar summit lantern h lantern lantern islandis pepperpep carbo jung qu del kettleke lantern eagle",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n4",
+			"name": "island pepper",
+			"kind": "module",
+			"responsibility": "har orang kettle lantern p lantern jungleju quartzqua harbor kettleke garden eagl lan summitsum",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n5",
+			"name": "jungle",
+			"kind": "module",
+			"responsibility": "islan peppe car jung qua lantern ke rive island lant harbor fal mea timb garde nee lantern harbo",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n6",
+			"name": "gardengard",
+			"kind": "module",
+			"responsibility": "jun quartzqua del kettleke riv eag lan summi falco mead timbe lantern nee alpha h oran brav is pep carbo jun quart deltadel ke quartz"
+		},
+		{
+			"id": "n7",
+			"name": "harbo ora",
+			"kind": "external",
+			"responsibility": "ket lantern eag lan su fal mea timberti kettle ne al harbo lantern b islan lantern ca needle quar"
+		},
+		{
+			"id": "n8",
+			"name": "meadow pep",
+			"kind": "external",
+			"responsibility": "lan summi lantern mea timb gardengar needl alp harb or bra islandisla pepperpe"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n1",
+			"to": "n3",
+			"kind": "call",
+			"label": "lan summi fa lantern timb",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n4",
+			"kind": "call",
+			"label": "mea timbe ga lantern alph",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e2",
+			"from": "n3",
+			"to": "n7",
+			"kind": "call",
+			"label": "summit alp lantern island",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e3",
+			"from": "n4",
+			"to": "n8",
+			"kind": "call",
+			"label": "timber bra lantern lantern",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e4",
+			"from": "n5",
+			"to": "n1",
+			"kind": "data",
+			"label": "pepp carbonca jungl quartzqu",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e5",
+			"from": "n1",
+			"to": "n2",
+			"kind": "call",
+			"label": "quart lantern kett river",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e6",
+			"from": "n5",
+			"to": "n6",
+			"kind": "call",
+			"label": "riv eagleeag falcon",
+			"emphasis": "hero"
+		},
+		{
+			"id": "e7",
+			"from": "n5",
+			"to": "n0",
+			"kind": "call",
+			"label": "lantern falc meadowmea lantern",
+			"emphasis": "normal"
+		}
+	]
+}

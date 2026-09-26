@@ -520,4 +520,4 @@ function assignTracks(nets: readonly Net[]): number {
 	return tracks.size === 0 ? 0 : Math.max(...tracks.values()) + 1;
 }
 
-export { assignPorts, assignTracks, bundleTrunks, sharedAt, spreadPorts, type Net };
+export { assignPorts, assignTracks, bundleTrunks, onePoint, sharedAt, spreadPorts, type Net };

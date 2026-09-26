@@ -383,6 +383,7 @@ class Clusters {
 	 * @param placed.polylines Every vendor edge's polyline, by id.
 	 * @param placed.width The block's width.
 	 * @param placed.cards The block's cards, whose widths may be evened with the card over or under them.
+	 * @param placed.lowered How far a wrap lowered each card of its rank; empty when none.
 	 */
 	lineUp(
 		joins: readonly Join[],
@@ -393,9 +394,10 @@ class Clusters {
 			polylines: ReadonlyMap<string, readonly string[]>;
 			width: number;
 			cards: ReadonlyMap<string, unknown>;
+			lowered: ReadonlyMap<string, number>;
 		},
 	): void {
-		const { boxes, clusters, polylines, width, cards } = placed;
+		const { boxes, clusters, polylines, width, cards, lowered } = placed;
 		for (const [id, at] of clusters) boxes.set(`cluster:${id}`, at);
 		alignColumns(boxes, joins, {
 			gap: LINED_UP_GAP,
@@ -412,6 +414,15 @@ class Clusters {
 			 * @returns True for a card.
 			 */
 			card: (name) => cards.has(name),
+			wrap: {
+				rows: lowered,
+				/**
+				 * The innermost cluster around a card.
+				 * @param card The card.
+				 * @returns The cluster, if any.
+				 */
+				around: (card) => this.block.clusterOf.get(card),
+			},
 		});
 		for (const [name, at] of boxes) if (cards.has(name)) this.widths.set(name, at.width);
 		for (const [name, { x, width: wide }] of boxes) {

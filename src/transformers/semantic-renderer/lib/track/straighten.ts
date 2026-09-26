@@ -6,12 +6,14 @@ import {
 	crossingsOf,
 	inversions,
 	laneRuns,
+	meeting,
 	nearest,
 	straightOn,
 	type Chain,
 	type LaneRun,
 	type Station,
 } from "@/transformers/semantic-renderer/lib/track/chains";
+import { onePoint } from "@/transformers/semantic-renderer/lib/track/channels";
 import type { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /**
@@ -117,6 +119,29 @@ function longestPiece(
 }
 
 /**
+ * Where a run from a block's port runs straight on into a card whose only
+ * line it is: under the port, when the card's face reaches it. Nothing else
+ * stands at that card's face to want its middle, and the lane would only
+ * step across to it.
+ * @param run The run.
+ * @param bands Every chain's stations, by band.
+ * @param near Where the run's lanes stand.
+ * @returns The column, or none.
+ */
+function fromPort(
+	run: LaneRun,
+	bands: readonly ReadonlyMap<number, Station>[],
+	near: number,
+): number[] {
+	const { before, after } = run;
+	if (before.kind !== "card" || !onePoint(before.item) || after.kind !== "card") return [];
+	const lines = bands.filter((chain) =>
+		[...chain.values()].some(({ item }) => item === after.item),
+	);
+	return lines.length === 1 ? meeting(before, after, near) : [];
+}
+
+/**
  * The column a run of lanes takes: of the free columns it could stand on
  * (straight on for a run to or from a container, else the column of the
  * station it leads into, the one it leaves, or its own lanes', and the free
@@ -141,7 +166,9 @@ function columnOf(
 	const xs = lanes.map(({ x }) => x).toSorted((one, other) => one - other);
 	const median = xs[Math.floor(xs.length / 2)]!;
 	const [columns, near] =
-		straight.length > 0 ? [straight, straight[0]!] : [[after.x, before.x, median, ...xs], median];
+		straight.length > 0
+			? [straight, straight[0]!]
+			: [[...fromPort(run, bands, median), after.x, before.x, median, ...xs], median];
 	const found = nearest(near, (x) => occupancy.fits(run, x), occupancy.edges(lanes));
 	const free = [
 		...columns.filter((x) => occupancy.fits(run, x)),

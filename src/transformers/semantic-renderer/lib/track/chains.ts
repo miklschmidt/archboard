@@ -442,6 +442,7 @@ function nearest(
 }
 
 export {
+	FACE_MARGIN,
 	LANE,
 	Occupancy,
 	chainOf,
@@ -450,6 +451,7 @@ export {
 	inversions,
 	labelStation,
 	laneRuns,
+	meeting,
 	meetsAt,
 	meets,
 	moveRun,
