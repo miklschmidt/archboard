@@ -124,7 +124,21 @@ function extentOf(scene: Scene): Wall {
 }
 
 /**
- * What stays put on one band: its cards and title rows, its lanes, the
+ * Everything on the scene a label keeps its clearance from: every card,
+ * frame title row and group region caption.
+ * @param scene The placed scene.
+ * @returns The items.
+ */
+function standing(scene: Scene): Item[] {
+	return [
+		...scene.cards.values(),
+		...scene.titles.values(),
+		...scene.regions.map(({ caption }) => caption),
+	];
+}
+
+/**
+ * What stays put on one band: its cards, title rows and captions, its lanes, the
  * walls of every frame the band passes through, and the scene's extent.
  * @param scene The placed scene.
  * @param band The band.
@@ -132,9 +146,7 @@ function extentOf(scene: Scene): Wall {
  * @returns The walls, widened by the gap a box keeps.
  */
 function wallsOn(scene: Scene, band: number, lanes: readonly number[]): Wall[] {
-	const items = [...scene.cards.values(), ...scene.titles.values()].filter(
-		(item) => item.band === band,
-	);
+	const items = standing(scene).filter((item) => item.band === band);
 	const [left, right] = extentOf(scene);
 	return [
 		...items.map(({ box }): Wall => [box.x - LABEL_GAP, box.x + box.width + LABEL_GAP]),
@@ -412,7 +424,7 @@ function enters(box: Item["box"], low: number, high: number): boolean {
 
 /**
  * Whether a label box, moved, keeps its room from everything else on its
- * band: a card's clearance from a card or title row, a label's from a label,
+ * band: a card's clearance from a card, title row or caption, a label's from a label,
  * a lane's from every other line passing the band, and a container's inset
  * from its walls, unless it stood inside that inset already.
  * @param scene The scene.
@@ -428,12 +440,7 @@ function clearOnBand(
 	lanes: readonly number[],
 ): boolean {
 	return (
-		keepsGap(
-			item,
-			box,
-			[...scene.cards.values(), ...scene.titles.values()],
-			LABEL_CARD_CLEARANCE,
-		) &&
+		keepsGap(item, box, standing(scene), LABEL_CARD_CLEARANCE) &&
 		keepsGap(item, box, scene.labels.values(), LABEL_LABEL_CLEARANCE) &&
 		lanes.every((x) => x <= box.x - LABEL_GAP || x >= box.x + box.width + LABEL_GAP) &&
 		frameWallsOn(scene, item.band).every(

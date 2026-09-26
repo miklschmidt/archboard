@@ -59,6 +59,22 @@ function isTitle(name: string): boolean {
 	return name.startsWith("title:");
 }
 
+/**
+ * How much harder a graph's edges pull each vendor node down than up: the
+ * weight of its edges down less the weight of its edges up.
+ * @param edges The graph's edges.
+ * @returns The pull, by vendor node.
+ */
+function pullsDown(edges: readonly Edge[]): Map<string, number> {
+	const pulls = new Map<string, number>();
+	for (const { tail, head, attributes } of edges) {
+		const weight = Number(attributes?.["weight"] ?? 1);
+		pulls.set(tail, (pulls.get(tail) ?? 0) + weight);
+		pulls.set(head, (pulls.get(head) ?? 0) - weight);
+	}
+	return pulls;
+}
+
 /** Which vendor nodes Graphviz must rank below which, as edges are added. */
 class Below {
 	readonly next = new Map<string, string[]>();
@@ -96,6 +112,12 @@ class Clusters {
 	readonly graphs = new Map<string, Nested>();
 	/** Each Graphviz cluster's name, by the cluster it draws. */
 	readonly names = new Map<string, string>();
+	/** The width of each card evened with the card over or under it. */
+	readonly widths = new Map<string, number>();
+	/** Whether a title pulled up as hard as down is left tied, for Graphviz to break. */
+	keepTies = false;
+	/** Whether some title was pulled up as hard as down. */
+	tied = false;
 
 	/**
 	 * Make every cluster of a block in its graph, each headed by its title.
@@ -220,6 +242,28 @@ class Clusters {
 	}
 
 	/**
+	 * Pull every title a little harder onto its members where it is pulled up
+	 * exactly as hard as down: a nested title is a member of its parent, and
+	 * when it holds one member, nothing else ranks it, so Graphviz would stand
+	 * it on whichever rank between is least crowded, far above its members.
+	 * One more on one of its edges down stands it on the rank just above them,
+	 * and costs every other ranking just what it cost before.
+	 * @param edges Every edge of the block's graph; a tied title's first edge down is made heavier, unless ties are kept.
+	 */
+	untie(edges: readonly Edge[]): void {
+		const pulls = pullsDown(edges);
+		const downs = [...this.block.clusters.keys()].flatMap((cluster) => {
+			const title = titleOf(cluster);
+			const down = edges.find(({ tail, attributes }) => tail === title && attributes?.["weight"]);
+			return pulls.get(title) === 0 && down !== undefined ? [down] : [];
+		});
+		this.tied = downs.length > 0;
+		if (this.keepTies) return;
+		for (const down of downs)
+			down.attributes = { ...down.attributes, weight: Number(down.attributes!["weight"]) + 1 };
+	}
+
+	/**
 	 * How strongly a line pulls its lower end: one that holds it below its
 	 * cluster's title, in place of the title's own edge, pulls as hard as that
 	 * edge would, so the cluster stays as compact.
@@ -338,6 +382,7 @@ class Clusters {
 	 * @param placed.clusters Every cluster's box.
 	 * @param placed.polylines Every vendor edge's polyline, by id.
 	 * @param placed.width The block's width.
+	 * @param placed.cards The block's cards, whose widths may be evened with the card over or under them.
 	 */
 	lineUp(
 		joins: readonly Join[],
@@ -347,9 +392,10 @@ class Clusters {
 			clusters: ReadonlyMap<string, Box>;
 			polylines: ReadonlyMap<string, readonly string[]>;
 			width: number;
+			cards: ReadonlyMap<string, unknown>;
 		},
 	): void {
-		const { boxes, clusters, polylines, width } = placed;
+		const { boxes, clusters, polylines, width, cards } = placed;
 		for (const [id, at] of clusters) boxes.set(`cluster:${id}`, at);
 		alignColumns(boxes, joins, {
 			gap: LINED_UP_GAP,
@@ -360,7 +406,14 @@ class Clusters {
 			 * @returns Its span, or nothing when it stays.
 			 */
 			within: (name) => this.spanOf(name, clusters, width),
+			/**
+			 * Whether a vendor node is a card.
+			 * @param name The vendor node.
+			 * @returns True for a card.
+			 */
+			card: (name) => cards.has(name),
 		});
+		for (const [name, at] of boxes) if (cards.has(name)) this.widths.set(name, at.width);
 		for (const [name, { x, width: wide }] of boxes) {
 			const centre = centres.get(name);
 			if (centre !== undefined) centres.set(name, { x: x + wide / 2, y: centre.y });
