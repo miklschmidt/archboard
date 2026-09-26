@@ -298,27 +298,42 @@ function moveStretch(
 	return done;
 }
 
+/** What a pass keeps from growing: a count over every net, never more after a move than before it. */
+type Kept = (nets: readonly Net[]) => number;
+
+/**
+ * Whether a move leaves no more of what a pass keeps than there was before it.
+ * @param nets Every net.
+ * @param kept What the pass keeps from growing.
+ * @returns The test, asked once the move is made.
+ */
+function noMore(nets: readonly Net[], kept: Kept): () => boolean {
+	const before = kept(nets);
+	return () => kept(nets) <= before;
+}
+
 /**
  * Close one net's short step by moving the stretch beyond one of its ends
  * onto the other end's column.
  * @param scene The scene.
  * @param chains Every relationship's chain.
  * @param nets Every net.
- * @param route The net's line, top to bottom.
- * @param index The net's place in it.
+ * @param place The net and its line, top to bottom.
+ * @param kept What the move must not add to.
  * @returns Whether it closed.
  */
 function close(
 	scene: Scene,
 	chains: readonly Chain[],
 	nets: readonly Net[],
-	route: readonly Net[],
-	index: number,
+	{ route, index }: Place,
+	kept: Kept,
 ): boolean {
 	const net = route[index]!;
 	return (["top", "bottom"] as const).some((end) => {
 		const x = xAt(net, end === "top" ? "bottom" : "top");
-		return moveStretch(scene, chains, nets, stretchBeyond(route, index, end), x, kinked);
+		const stretch = stretchBeyond(route, index, end);
+		return moveStretch(scene, chains, nets, stretch, x, kinked, noMore(nets, kept));
 	});
 }
 
@@ -397,6 +412,7 @@ function cardSide(place: Place, end: End): { station: Station; net: Net; end: En
  * @param steps The card step.
  * @param steps.into The line into the card.
  * @param steps.outOf The line out of it.
+ * @param kept What the move must not add to.
  * @returns Whether it closed.
  */
 function closeCardStep(
@@ -404,12 +420,14 @@ function closeCardStep(
 	chains: readonly Chain[],
 	nets: readonly Net[],
 	{ into, outOf }: { into: Place; outOf: Place },
+	kept: Kept,
 ): boolean {
 	const [inNet, outNet] = [into.route[into.index]!, outOf.route[outOf.index]!];
 	if (!tooShort(inNet.bottomX, outNet.topX)) return false;
+	const [out, inward] = [cardSide(outOf, "top"), cardSide(into, "bottom")];
 	return (
-		moveStretch(scene, chains, nets, cardSide(outOf, "top"), inNet.bottomX, kinked) ||
-		moveStretch(scene, chains, nets, cardSide(into, "bottom"), outNet.topX, kinked)
+		moveStretch(scene, chains, nets, out, inNet.bottomX, kinked, noMore(nets, kept)) ||
+		moveStretch(scene, chains, nets, inward, outNet.topX, kinked, noMore(nets, kept))
 	);
 }
 
@@ -418,20 +436,25 @@ function closeCardStep(
  * @param scene The scene, its ports placed.
  * @param chains Every relationship's chain.
  * @param routes Every line's nets, top to bottom.
+ * @param kept What no move may add to, so a pass after another keeps what
+ * the earlier one did: none when nothing ran before it.
  */
 function closeJogs(
 	scene: Scene,
 	chains: readonly Chain[],
 	routes: readonly (readonly Net[])[],
+	kept: Kept = () => 0,
 ): void {
 	const nets = routes.flat();
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				kinked(net) && net.wall === undefined ? close(scene, chains, nets, route, index) : false,
+				kinked(net) && net.wall === undefined
+					? close(scene, chains, nets, { route, index }, kept)
+					: false,
 			),
 		);
-		for (const one of cardSteps(routes)) closed.push(closeCardStep(scene, chains, nets, one));
+		for (const one of cardSteps(routes)) closed.push(closeCardStep(scene, chains, nets, one, kept));
 		if (!closed.some(Boolean)) return;
 	}
 }

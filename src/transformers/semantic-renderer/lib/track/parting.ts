@@ -188,4 +188,4 @@ function partCollinear(
 	}
 }
 
-export { partCollinear };
+export { collinearPairs, partCollinear };
