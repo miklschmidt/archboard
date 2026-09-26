@@ -114,7 +114,7 @@ function faceReach(card: Box, frame: Box, face: WallFace, others: readonly Box[]
 	);
 	const room = (passage - ROUTE_OPEN_CORRIDOR) / 2;
 	if (room < WALL_CLEARANCE / 2) return passage;
-	return Math.min(ROUTE_LANE - clear, room);
+	return Math.min(ROUTE_LANE + clear, room);
 }
 
 /**

@@ -5,9 +5,12 @@
 // line's colour (a view of a work board, its words scrambled). Kept half a
 // lane off, it still traced the frame's outline; where the passage has room
 // it keeps a whole lane. Below this frame the passage is too narrow for one.
+// A card standing further inside than the inset reaches that much further, so
+// its routing box still ends a lane beyond the wall.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { wallOf, wallReach } from "@/runtime/semantic-renderer/layout";
 import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import frameWall from "./frame-wall.json";
@@ -51,4 +54,16 @@ test("a line out of a frame to a card beside it keeps a lane from the frame's si
 		}),
 	);
 	expect(hugs).toEqual([]);
+});
+
+test("a card inside a frame reaches a lane past a wall to clear, however far in it stands", () => {
+	/** How far a card's routing box reaches past it. */
+	const routingBox = 20;
+	const ends = [0, 4, 8, 12].map((inside) => {
+		const card = { id: "card", x: 100 + routingBox + inside, y: 200, width: 200, height: 80 };
+		const frame = { id: "frame", x: 100, y: 100, width: 600, height: 400, children: [card] };
+		const reach = wallReach({ id: "root", children: [frame] }, [wallOf("frame", "WEST")]);
+		return card.x - routingBox - (reach.get("card")?.WEST ?? 0) - frame.x;
+	});
+	expect(ends.every((end) => end <= -LANE + 0.01)).toBe(true);
 });
