@@ -80,6 +80,7 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	markedBox,
 	standingOutline,
 	standingPin,
 	standingSwipe,
@@ -563,9 +564,11 @@ function paintDataFlow(
 	const steps = layout.flows.flatMap(stepSubjects);
 	const frames = layout.flows.map((laid) => ({ id: laid.flow.id, box: laid.frame }));
 
-	// A frame holds everything its flow draws, labels included, so the frames are
-	// the page; one that reaches left of the margin shifts the page to keep it.
-	const canvas = canvasFor(layout, union(frames.map(({ box }) => box)), DIAGRAM_MARGIN);
+	// A frame holds everything its flow draws, labels included, so the frames and
+	// the marks on their corners are the page; one that reaches left of the
+	// margin shifts the page to keep it.
+	const marked = frames.map(({ id, box }) => markedBox(box, standingOf(id), unsettledOf(id)));
+	const canvas = canvasFor(layout, union(marked), DIAGRAM_MARGIN);
 
 	return {
 		width: canvas.width,

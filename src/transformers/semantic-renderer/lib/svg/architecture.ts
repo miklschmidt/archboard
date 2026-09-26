@@ -37,6 +37,7 @@ import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primi
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import { travellingPulses } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
+	markedBox,
 	standingOutline,
 	standingSwipe,
 	subjectGroup,
@@ -335,9 +336,13 @@ function paintArchitecture(
 	const framed = containers.map(({ measured, box }) => ({ id: measured.node.id, box }));
 	const regioned = (drawing.regions ?? []).map(({ box }) => box);
 	const cardBoxes = cards.map(({ measured, box }) => ({ id: measured.node.id, box }));
+	// The page holds the marks on the subjects' corners too.
+	const marked = [...cardBoxes, ...framed].map(({ id, box }) =>
+		markedBox(box, standingOf(id), unsettledOf(id)),
+	);
 	const canvas = canvasFor(
 		drawing,
-		union([...[...cardBoxes, ...framed, ...inked, ...labelled].map(({ box }) => box), ...regioned]),
+		union([...marked, ...[...inked, ...labelled].map(({ box }) => box), ...regioned]),
 		DIAGRAM_MARGIN,
 	);
 	const boxes = containers.toSorted(

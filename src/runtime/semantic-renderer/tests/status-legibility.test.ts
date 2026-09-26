@@ -23,6 +23,7 @@ import {
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { colourDistance, hueOf, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({
@@ -468,12 +469,12 @@ describe("what nobody has decided is said in its own corner", () => {
 	test("what the board has not decided does not move anything", async () => {
 		const plain = await architecture();
 		const badged = await architecture(["io", "gw", "moved", "gone", "store"]);
-		// The same page at the same size with the same subjects in the same
-		// places: a mark that reflowed the drawing would mean two readers of one
-		// board comparing two different pictures.
-		expect(badged.width).toBe(plain.width);
-		expect(badged.height).toBe(plain.height);
-		expect(badged.atlas).toEqual(plain.atlas);
+		// The same subjects in the same places against one another: a reflowed
+		// drawing would give two readers of one board two pictures. Only a badge in
+		// the page's margin may shift the drawing or widen the page, by under seven.
+		const [was, is] = [arrangementOf(plain), arrangementOf(badged)];
+		expect(is.atlas).toEqual(was.atlas);
+		for (const side of ["width", "height"] as const) expect(is[side] - was[side]).toBeWithin(0, 7);
 	});
 
 	test("the badge can be read on both grounds, and so can the mark inside it", async () => {
