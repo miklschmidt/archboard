@@ -2,7 +2,11 @@
 // Graphviz ranks a label on one band of its line, and its only free slot
 // there may lie far off the line's column where the band above or below had
 // room on it; the relay tries each reading and keeps the cheapest route.
-import type { Chain, Station } from "@/transformers/semantic-renderer/lib/track/chains";
+import {
+	labelStation,
+	type Chain,
+	type Station,
+} from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** A chain's route relaid: its stations, where each stands, and what it costs. */
@@ -64,22 +68,36 @@ function readingsOf(scene: Scene, chain: Chain): (readonly Station[])[] {
 }
 
 /**
- * Put a chain on its relaid route: its stations, each at its x, and its
- * label box on its station's band and column.
+ * Put a chain on its relaid route: its stations, its label box moved onto
+ * its station's band where the reading moved it, and each station between
+ * its ends at its x, a label box's moving with it.
  * @param chain The chain; its stations are replaced.
  * @param relaid The route.
  * @param scene The scene, whose bands a moved label box centres on.
  */
 function take(chain: Chain, relaid: Relaid, scene: Scene): void {
-	chain.stations.splice(0, chain.stations.length, ...relaid.stations);
-	chain.stations.forEach((station, index) => {
-		station.x = relaid.route[index]!;
-		const { item } = station;
-		if (item === undefined || station.kind === "card") return;
-		const placed = item.band === station.band ? item : onBand(scene, item, station.band);
-		item.band = station.band;
-		item.box = { ...placed.box, x: station.x - item.box.width / 2 };
+	const stations = relaid.stations.map((station) =>
+		station.kind === "label" && station.item!.band !== station.band
+			? moveLabel(scene, station.item!, station.band)
+			: station,
+	);
+	chain.stations.splice(0, chain.stations.length, ...stations);
+	stations.slice(1, -1).forEach((station, index) => {
+		station.x = relaid.route[index + 1]!;
 	});
+}
+
+/**
+ * Move a label box onto another band, centred on it.
+ * @param scene The scene.
+ * @param item The box.
+ * @param band The band.
+ * @returns Its station there.
+ */
+function moveLabel(scene: Scene, item: Item, band: number): Station {
+	item.box = onBand(scene, item, band).box;
+	item.band = band;
+	return labelStation(item, band);
 }
 
 export { byBand, onBand, readingsOf, take, type Relaid };
