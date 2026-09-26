@@ -25,7 +25,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
-import { layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins";
+import { NEAR, layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { routedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import {
 	BlockTree,
@@ -154,12 +154,16 @@ function stackedOrNot(
 	const stacked = layBoth(viz, () => new CardLayout(block, laid, tree, insets, { stacked: true }));
 	/**
 	 * Whether the block reads better stacked. Stacked containers often read
-	 * best folded, so each is weighed at its best.
+	 * best folded, so each is weighed at its best; a near tie goes to the
+	 * page that fits the pane better, as it does between a block's joins.
 	 * @param pick Which of each way the titles stand is weighed.
 	 * @returns True when it does.
 	 */
-	const stacks = (pick: (laying: Laying) => Laid): boolean =>
-		bestOf(block, pick(stacked), insets) > bestOf(block, pick(plain), insets);
+	const stacks = (pick: (laying: Laying) => Laid): boolean => {
+		const [one, other] = [bestOf(block, pick(stacked), insets), bestOf(block, pick(plain), insets)];
+		if (Math.abs(one - other) > NEAR * Math.min(one, other)) return one > other;
+		return fitIn(pick(stacked)) > fitIn(pick(plain));
+	};
 	const [tied, pulled] = [stacks(({ tied: one }) => one), stacks(settled)];
 	// Pulling titles down may change the choice only when that draws no more line.
 	const [was, is] = [tied, pulled].map((one) => settled(one ? stacked : plain));
