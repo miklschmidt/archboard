@@ -22,6 +22,7 @@ import boardRasterizer from "./board-rasterizer.json";
 import browserApplication from "./browser-application.json";
 import codexWorkhorse from "./codex-workhorse.json";
 import commandGroups from "./command-groups.json";
+import commandInterface from "./command-interface.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
 import staircase from "./staircase.json";
@@ -303,6 +304,20 @@ function throughForeign(points: readonly DrawnPoint[], regions: readonly Walls[]
 		return foreign.some((walls) => within(middle, walls, -1)) ? [middle] : [];
 	});
 }
+
+// Taken from a board of this repository: of the ways to lay it out, the one
+// chosen by crossings alone ran two lines down the page's margin, round
+// everything, one of them 1567 px long, on a page 220 px wider. A lap counts
+// as a crossing when the layouts are weighed.
+test("a layout whose line laps the drawing weighs the lap as a crossing", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(commandInterface),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	expect(drawing.width).toBeLessThan(3450);
+});
 
 // Taken from boards of this repository. In the first, a line from a card
 // near the left of the drawing to one at the foot ran down the page's left
