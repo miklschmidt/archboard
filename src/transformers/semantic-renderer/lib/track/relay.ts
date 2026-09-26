@@ -7,7 +7,8 @@
 // strays well outside both its ends' reach looks for the cheapest free route
 // over the same bands: its lanes on any free column, its label box anywhere
 // free along its own band or a band beside it, each within the scene and
-// inside the frames it stood in, or those its own ends stand in. A route costs
+// inside the frames it stood in, or those its own ends stand in, and outside
+// every group region neither of its ends stands in. A route costs
 // its sideways travel and a crossing's worth for each line it crosses, or
 // each trunk; the chain takes the new route only when that saves more than a
 // few lanes. A crossing is worth as much as the detour that makes a lap, so a
@@ -101,7 +102,7 @@ function strays(chain: Chain): boolean {
 }
 
 /**
- * The frames a chain's two ends stand inside.
+ * The frames and group regions a chain's two ends stand inside.
  * @param scene The scene.
  * @param chain The chain.
  * @returns Their ids.
@@ -110,8 +111,7 @@ function endFrames(scene: Scene, chain: Chain): Set<string> {
 	const ends = [chain.stations[0]!, chain.stations.at(-1)!];
 	return new Set(
 		ends.flatMap((end) =>
-			scene
-				.frameWalls(end.band)
+			[...scene.walled(end.band)]
 				.filter(([, [low, high]]) => end.x > low && end.x < high)
 				.map(([id]) => id),
 		),
@@ -120,18 +120,19 @@ function endFrames(scene: Scene, chain: Chain): Set<string> {
 
 /**
  * Where a station may not stand for the frames it stood in: outside each
- * frame it stood inside, and inside each it stood outside, unless one of
- * its line's own ends stands in that frame: Graphviz runs a line past a
- * frame's title row outside it even when the line ends inside. A group
- * region is no frame: a line may cross into one.
+ * frame it stood inside, and inside each frame or group region it does not
+ * stand inside, unless one of its line's own ends stands in it: Graphviz
+ * runs a line past a frame's title row outside it even when the line ends
+ * inside. A line relaid through a group region it has no card in reads as
+ * part of that group.
  * @param scene The scene.
  * @param station The station.
  * @param open The frames its line's ends stand in.
  * @returns The intervals it keeps out of.
  */
 function framesOff(scene: Scene, station: Station, open: ReadonlySet<string>): Span[] {
-	return scene.frameWalls(station.band).flatMap(([id, [low, high]]): Span[] => {
-		if (station.x > low && station.x < high)
+	return [...scene.walled(station.band)].flatMap(([id, [low, high]]): Span[] => {
+		if (scene.frames.has(id) && station.x > low && station.x < high)
 			return [
 				[-Infinity, low + EDGE],
 				[high - EDGE, Infinity],

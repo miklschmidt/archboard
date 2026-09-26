@@ -257,13 +257,36 @@ function leftOfEverything(drawing: RenderedDiagram, id: string): number[] {
 		);
 }
 
+/**
+ * The runs of a line through a group region neither of its ends stands in.
+ * @param points The line's corridor.
+ * @param regions Every region's walls.
+ * @returns Each such run's middle.
+ */
+function throughForeign(points: readonly DrawnPoint[], regions: readonly Walls[]): DrawnPoint[] {
+	const within = (point: DrawnPoint, walls: Walls, by: number): boolean =>
+		point.x > walls.left - by &&
+		point.x < walls.right + by &&
+		point.y > walls.top - by &&
+		point.y < walls.bottom + by;
+	const foreign = regions.filter(
+		(walls) => !within(points[0]!, walls, 2) && !within(points.at(-1)!, walls, 2),
+	);
+	return points.slice(1).flatMap((to, index) => {
+		const from = points[index]!;
+		const middle = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+		return foreign.some((walls) => within(middle, walls, -1)) ? [middle] : [];
+	});
+}
+
 // Taken from boards of this repository. In the first, a line from a card
 // near the left of the drawing to one at the foot ran down the page's left
 // margin, round everything, where a way inside crossed one line: a lap round
 // the page reads worse than a crossing. In the second, a line had room in
 // the gap between a card and a group region's wall only half a lane from the
 // wall; kept a whole lane off it, the line went round, and the crossing that
-// cost sent the whole board to a wrapped layout whose line laps the margin.
+// cost sent the whole board to a wrapped layout whose line laps the margin;
+// kept inside, it must still not cut through a group region it has no card in.
 test("a line runs inside the drawing rather than round it", async () => {
 	for (const [fixture, id] of [
 		[boardRasterizer, "P1XYQl8l"],
@@ -279,5 +302,7 @@ test("a line runs inside the drawing rather than round it", async () => {
 			leftOfEverything(drawing, id).filter((length) => length > 200),
 			id,
 		).toEqual([]);
+		const points = corridorPoints(drawing.svg).get(id)!;
+		expect(throughForeign(points, regionWalls(drawing.svg)), id).toEqual([]);
 	}
 });
