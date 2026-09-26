@@ -200,7 +200,7 @@ async function layoutCompound(
 	// drawing reports are the ones painted (junction marks read them); bridges
 	// are then settled as part of the geometry a reader sees.
 	const drawing = fittedPage(unfoldCrossings(chosen));
-	return { ...drawing, bridged: bridgeCrossings(drawing) };
+	return { ...drawing, bridged: bridgeCrossings(drawing, measured.lines) };
 }
 
 /**

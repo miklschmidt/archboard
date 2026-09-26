@@ -1,11 +1,16 @@
 // Fixed orthogonal routes, rounded as they reach crossing treatment, so a
 // test exercises the crossing pass independently of any placement engine.
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
+	bridgeCrossings,
 	curveThrough,
 	type ArchitectureDrawing,
 	type DrawingEdge,
 	type Point,
 } from "@/runtime/semantic-renderer/layout";
+
+/** How a line of a kind the policy does not know is drawn. */
+const DEFAULT_LOOK = { dash: "solid", arrowhead: "filled" } as const;
 
 /** What a route's relationship says about how it is drawn, where a test sets it. */
 type Look = Partial<Pick<DrawingEdge["edge"], "kind" | "emphasis">>;
@@ -65,6 +70,25 @@ function down(x: number, from = 0, to = 100): Point[] {
 }
 
 /**
+ * Settle a drawing's crossings, each line drawn as the default policy draws its kind.
+ * @param settled The drawing.
+ * @param policy The policy whose relationship kinds say how lines are drawn.
+ * @returns The bridged edges and the ink each crossing clears.
+ */
+function bridged(
+	settled: ArchitectureDrawing,
+	policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
+): ReturnType<typeof bridgeCrossings> {
+	const lines = new Map(
+		settled.edges.map(({ edge }) => {
+			const { dash, arrowhead } = policy.relationshipKinds[edge.kind] ?? DEFAULT_LOOK;
+			return [edge.id, { dash, arrowhead }];
+		}),
+	);
+	return bridgeCrossings(settled, lines);
+}
+
+/**
  * Whether a bridge is a hop, not a cut.
  * @param bridge A bridge.
  * @param bridge.curve Its curve.
@@ -74,4 +98,4 @@ function hops(bridge: { readonly curve: DrawingEdge["curve"] }): boolean {
 	return bridge.curve.segments.length > 1;
 }
 
-export { across, down, drawing, hops };
+export { across, bridged, down, drawing, hops };

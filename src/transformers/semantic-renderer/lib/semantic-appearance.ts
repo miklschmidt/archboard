@@ -95,12 +95,26 @@ function typeAppearance(
 }
 
 /**
+ * How a flow step reads on the board: dashed with an open head, in the neutral
+ * ink, so it is never mistaken for an authored relationship of any kind.
+ */
+const STEP_APPEARANCE = {
+	name: "Step",
+	color: undefined,
+	dash: "dashed",
+	arrowhead: "open",
+} as const;
+
+/**
  * Resolve a relationship's semantic line grammar, independently of emphasis and standing.
  * @param kind Authored relationship kind.
  * @param policy Current vault policy.
  * @returns Configured appearance or an explicit neutral fallback.
  */
-function relationshipAppearance(kind: string, policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY) {
+function relationshipAppearance(
+	kind: string,
+	policy: Pick<SemanticPolicy, "relationshipKinds"> = DEFAULT_SEMANTIC_POLICY,
+) {
 	return (
 		ownDefinition(policy.relationshipKinds, kind) ?? {
 			name: kind,
@@ -110,4 +124,19 @@ function relationshipAppearance(kind: string, policy: SemanticPolicy = DEFAULT_S
 	);
 }
 
-export { type NodeAppearance, nodeAppearances, relationshipAppearance };
+/**
+ * How a drawn line reads: a flow step in its own appearance, a relationship in its kind's.
+ * @param kind The line's relationship kind.
+ * @param policy Current vault policy.
+ * @param step Whether the line is a flow step.
+ * @returns The appearance.
+ */
+function lineAppearance(
+	kind: string,
+	policy: Pick<SemanticPolicy, "relationshipKinds">,
+	step: boolean,
+) {
+	return step ? STEP_APPEARANCE : relationshipAppearance(kind, policy);
+}
+
+export { type NodeAppearance, nodeAppearances, lineAppearance, relationshipAppearance };

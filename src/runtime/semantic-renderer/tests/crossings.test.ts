@@ -1,5 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
+import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, roundBridges } from "./drawn-routes";
 
@@ -285,4 +286,30 @@ test("no line shows through a removed relationship's label", async () => {
 		// An opaque label hides its line itself; a see-through one has it cut away.
 		expect(hides(drawn.svg, line!.mask, middle)).toBe("ab" in standing);
 	}
+});
+
+// Work vault: a kind the vault draws dashed but the default policy does not
+// know was judged solid, and rose over solid lines with an arc that barely showed.
+test("the crossing pass reads each line's dash from the vault's own policy", async () => {
+	const content = structuredClone(CROSSED);
+	for (const edge of content.edges) if (edge.from === "a") edge.kind = "stream";
+	/**
+	 * The lines that hop, with the stream kind drawn one way.
+	 * @param dash How the vault draws a stream.
+	 * @returns Their ids.
+	 */
+	const hopping = async (dash: "solid" | "dashed"): Promise<string[]> => {
+		const policy = {
+			...DEFAULT_SEMANTIC_POLICY,
+			relationshipKinds: {
+				...DEFAULT_SEMANTIC_POLICY.relationshipKinds,
+				stream: { name: "Stream", dash, arrowhead: "open" as const },
+			},
+		};
+		const { svg } = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+		return routes(svg).flatMap(({ id, paths }) => (roundBridges(paths[0]!).length > 0 ? [id] : []));
+	};
+	// Drawn solid, a stream line rises over a call it crosses; drawn dashed, never.
+	expect((await hopping("solid")).some((id) => id.startsWith("a"))).toBe(true);
+	expect((await hopping("dashed")).some((id) => id.startsWith("a"))).toBe(false);
 });

@@ -1,8 +1,8 @@
 // Which line rises where two lines cross, and where a hop may stand, on fixed
 // route geometry.
 import { expect, test } from "bun:test";
-import { bridgeCrossings } from "@/runtime/semantic-renderer/layout";
-import { drawing } from "./fixed-routes";
+import type { bridgeCrossings } from "@/runtime/semantic-renderer/layout";
+import { bridged, drawing } from "./fixed-routes";
 
 // Every engine: a line that turned just past a crossing was cut beneath the
 // straight line, which read as a missing arc, though the turn lay on the side
@@ -35,7 +35,7 @@ test("a straight line hops a line that turns just past the crossing, away from i
 		],
 	]) {
 		const before = drawing(routes);
-		const result = bridgeCrossings(before);
+		const result = bridged(before);
 		expect(result.bridges).toHaveLength(1);
 		expect(result.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
 		expect(result.bridges[0]!.curve.segments.length).toBeGreaterThan(1);
@@ -47,7 +47,7 @@ test("a straight line hops a line that turns just past the crossing, away from i
 // Every engine: where neither line had a bend's room past a hop, the
 // later-painted line rose, however close to its own turn.
 test("where neither line has a bend's room past a hop, the one with more room rises", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([
 			// Straight for eighteen units below the crossing.
 			[
@@ -71,7 +71,7 @@ test("where neither line has a bend's room past a hop, the one with more room ri
 // Browser application and Agent workbench: a branch bent off its trunk and
 // hopped a line a few points later, the turn and the hop one squiggle.
 test("a line that turns just before a crossing does not hop it; the line it crosses does", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([
 			[
 				{ x: 0, y: 50 },
@@ -100,7 +100,7 @@ test("a line hops a trunk beside a join, and at the join the trunk stays whole, 
 		[164.8, false],
 		[168, false],
 	] as const) {
-		const result = bridgeCrossings(
+		const result = bridged(
 			drawing([
 				[
 					{ x: 0, y: 100 },
@@ -144,7 +144,7 @@ function bulgeOneWay(bridges: ReturnType<typeof bridgeCrossings>["bridges"]): bo
 // Browser application and Command interface: two lines twelve apart hopped one
 // line with arcs bulging toward each other, drawing a closed ring around it.
 test("a crossing with room on both lines hops, centred, and every hop bulges the same way", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([
 			[
 				{ x: 50, y: 0 },

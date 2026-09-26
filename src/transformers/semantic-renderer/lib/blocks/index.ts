@@ -126,7 +126,7 @@ async function drawnBlocks(
 	});
 	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
 	const drawing = fittedPage(drawingOf(content, measured, placed));
-	return { ...drawing, bridged: bridgeCrossings(drawing) };
+	return { ...drawing, bridged: bridgeCrossings(drawing, measured.lines) };
 }
 
 /**

@@ -217,7 +217,9 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
  * @param expanded The architecture after adding drawable flow-step lines.
  * @param standing Comparison standing used to keep marked relationships apart.
  * @param engine The engine that lays it out.
- * @param groups The vault's groups, in order, which place and caption regions.
+ * @param policy The vault's groups, in order, which place and caption regions, and its
+ * relationship kinds, which say how each line is drawn.
+ * @param steps The lines that are flow steps drawn on the board.
  * @returns Its deterministic layout.
  */
 function layoutRemembered(
@@ -225,7 +227,8 @@ function layoutRemembered(
 	expanded: VariantContent,
 	standing: StatedStandings | undefined,
 	engine: LayoutEngineName,
-	groups: SemanticPolicy["groups"],
+	policy: Pick<SemanticPolicy, "groups" | "relationshipKinds">,
+	steps: ReadonlySet<string>,
 ): Promise<PaintedDrawing> {
 	const edgeStandings =
 		standing === undefined
@@ -233,8 +236,13 @@ function layoutRemembered(
 			: Object.fromEntries(
 					expanded.edges.map((edge) => [edge.id, standing[edge.id] ?? "unchanged"]),
 				);
-	const named = Object.entries(groups).map(([id, { name }]) => [id, name]);
-	const key = JSON.stringify([engine, content, edgeStandings, named]);
+	const named = Object.entries(policy.groups).map(([id, { name }]) => [id, name]);
+	const lines = Object.entries(policy.relationshipKinds).map(([kind, look]) => [
+		kind,
+		look.dash,
+		look.arrowhead,
+	]);
+	const key = JSON.stringify([engine, content, edgeStandings, named, lines]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
@@ -243,7 +251,7 @@ function layoutRemembered(
 	}
 	const layout = layoutEngine(engine)(
 		expanded,
-		measureArchitecture(expanded, { groups }),
+		measureArchitecture(expanded, policy, steps),
 		edgeStandings,
 	);
 	layouts.set(key, layout);
@@ -277,7 +285,8 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		stepLines.content,
 		request.standing,
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
-		policy.groups,
+		policy,
+		stepLines.derived,
 	);
 	const painting = paintArchitecture(
 		drawing,

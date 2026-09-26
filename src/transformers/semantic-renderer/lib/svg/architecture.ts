@@ -1,7 +1,7 @@
 import { paintRegion } from "@/transformers/semantic-renderer/lib/svg/regions";
 import {
 	nodeAppearances,
-	relationshipAppearance,
+	lineAppearance,
 } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
@@ -56,34 +56,12 @@ import {
 const EDGE_HALO_EXTRA = 5;
 
 /**
- * How a flow step reads on the board: dashed with an open head, in the neutral
- * ink, so it is never mistaken for an authored relationship of any kind.
- */
-const STEP_APPEARANCE = {
-	name: "Step",
-	color: undefined,
-	dash: "dashed",
-	arrowhead: "open",
-} as const;
-
-/**
  * The subject kind a drawn line is: a flow step drawn on the board, or a relationship.
  * @param step Whether the line is a flow step.
  * @returns The kind.
  */
 function lineKind(step: boolean): "step" | "edge" {
 	return step ? "step" : "edge";
-}
-
-/**
- * How a drawn line reads: a step in its own appearance, a relationship in its kind's.
- * @param edge The line.
- * @param policy Current vault policy.
- * @param step Whether the line is a flow step.
- * @returns The appearance.
- */
-function lineAppearance(edge: DrawingEdge["edge"], policy: SemanticPolicy, step: boolean) {
-	return step ? STEP_APPEARANCE : relationshipAppearance(edge.kind, policy);
 }
 
 /** An arrowhead's drawing: a square this many marker units wide, the line's end at `refX`. */
@@ -176,7 +154,7 @@ function paintEdgeLine(
 	const width = strokeWidthOf(edge);
 	// One colour for the line, the head it ends in and the comets that ride it:
 	// the line and its head drawn weaker, the comets at full strength.
-	const appearance = lineAppearance(edge, policy, step);
+	const appearance = lineAppearance(edge.kind, policy, step);
 	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
 	const ink = String(attributes["stroke"]);
 	// Inline panes share the document ID namespace. Equal IDs must always
@@ -374,7 +352,7 @@ function paintArchitecture(
 						palette,
 						standingOf(edge.id),
 						policy,
-						lineAppearance(edge, policy, derived.has(edge.id)),
+						lineAppearance(edge.kind, policy, derived.has(edge.id)),
 					)["stroke"],
 				),
 				width: strokeWidthOf(edge),
