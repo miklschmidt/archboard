@@ -34,9 +34,8 @@ import {
 	curveThrough,
 	pathOf,
 	simplify,
-	straightenedCurve,
-	verticesOf,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { checked } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
@@ -44,6 +43,8 @@ import {
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 import { EVEN_PINS, tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { CLEAR_WALLS } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
+import { clearOfWalls } from "@/transformers/semantic-renderer/lib/layout/clear-walls";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
@@ -53,6 +54,8 @@ interface Problem {
 	readonly columns: number;
 	/** Whether its routes are asked for evened pins (even-pins.ts). */
 	readonly evenPins?: boolean;
+	/** The frame walls its routes keep clear of (frame-walls.ts). */
+	readonly clearWalls?: readonly string[];
 }
 
 /**
@@ -63,6 +66,13 @@ interface Problem {
  */
 interface Reading extends Problem {
 	readonly place: (reserved: ReadonlySet<string>) => Promise<ElkNode>;
+}
+
+/** A reading's settled drawing and the label reservations it was placed with. */
+interface SettledReading {
+	readonly reading: Reading;
+	readonly drawing: ArchitectureDrawing;
+	readonly reserved: ReadonlySet<string>;
 }
 
 /**
@@ -224,11 +234,19 @@ function columnReading(problem: Problem): ColumnReading {
 		 */
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
-		 * The complete drawing.
+		 * The complete drawing: the tidier of plain and evened pins, then clear of frame walls.
 		 * @returns The settled reading.
 		 */
-		settle: () =>
-			tidierSettlement(settleReading(reading), settleReading({ ...reading, evenPins: true })),
+		settle: async () => {
+			const kept = await tidierSettlement(
+				settleReading(reading),
+				settleReading({ ...reading, evenPins: true }),
+			);
+			return clearOfWalls(kept.drawing, async (clearWalls) => {
+				const attempt = await attemptLabels({ ...kept.reading, clearWalls }, kept.reserved);
+				return attempt.missing.length === 0 ? checked(attempt.drawing) : undefined;
+			});
+		},
 	};
 }
 
@@ -237,8 +255,8 @@ function columnReading(problem: Problem): ColumnReading {
  * @param reading Measured content, requested downward column count and its placements.
  * @returns A complete candidate or a routing/label failure.
  */
-async function settleReading(reading: Reading): Promise<ArchitectureDrawing> {
-	const drawing = await settleLabels(
+async function settleReading(reading: Reading): Promise<SettledReading> {
+	const settled = await settleLabels(
 		{
 			/**
 			 * The page a set of reservations places, which routing leaves as it is.
@@ -250,107 +268,7 @@ async function settleReading(reading: Reading): Promise<ArchitectureDrawing> {
 		},
 		new Set(),
 	);
-	return { ...drawing, edges: drawing.edges.map((drawn) => checkedEdge(drawn)) };
-}
-
-/**
- * A settled relationship whose route passes its checks: as it is, or with its
- * short S-jogs straightened when only they fail it. Straightening one jog can
- * leave the next step of a staircase short, so it is repeated while the route
- * still changes.
- * @param drawn The settled relationship.
- * @returns The relationship.
- * @throws {Error} When the route fails its checks even straightened.
- */
-function checkedEdge(drawn: DrawingEdge): DrawingEdge {
-	const { edge, label } = drawn;
-	if (curveClearanceIssue(drawn.curve, label?.box) === undefined) return drawn;
-	const straightened = straightenedEdge(drawn);
-	const issue = curveClearanceIssue(straightened.curve, straightened.label?.box);
-	if (issue !== undefined) throw new Error(`Layout relationship ${edge.id}: ${issue}`);
-	return straightened;
-}
-
-/**
- * A relationship with its route's short S-jogs straightened, and its label
- * carried along with the run it rides.
- * @param drawn The settled relationship.
- * @returns The relationship straightened.
- */
-function straightenedEdge(drawn: DrawingEdge): DrawingEdge {
-	const { label } = drawn;
-	const curve = straightenedWhileFailing(drawn.curve, label?.box);
-	const straightened = { ...drawn, curve, path: pathOf(curve) };
-	if (label === undefined) return straightened;
-	return { ...straightened, label: { ...label, box: carriedBox(label.box, drawn.curve, curve) } };
-}
-
-/**
- * A label's box moved across with the run it rides, when straightening a
- * jog moved that run sideways. The label once stayed where it was, a few
- * points off its own line.
- * @param box The label's box on the route as it was.
- * @param was The route as it was.
- * @param now The straightened route.
- * @returns The box, moved as far as its run moved.
- */
-function carriedBox(box: Box, was: DrawingEdge["curve"], now: DrawingEdge["curve"]): Box {
-	for (const axis of ["x", "y"] as const) {
-		const centre = box[axis] + (axis === "x" ? box.width : box.height) / 2;
-		const from = runAt(verticesOf(was), box, axis, centre, 1);
-		const to = from === undefined ? undefined : runAt(verticesOf(now), box, axis, from, Infinity);
-		if (from !== undefined && to !== undefined) return { ...box, [axis]: box[axis] + to - from };
-	}
-	return box;
-}
-
-/**
- * Where the route's run past a label's whole length stands across it: the
- * run nearest a given coordinate, among the runs square to one axis.
- * @param points The route's vertices.
- * @param box The label's box.
- * @param axis The axis the run stands at a coordinate of.
- * @param near The coordinate to look near.
- * @param reach How far from it the run may stand.
- * @returns The run's coordinate, or nothing when no run is within reach.
- */
-function runAt(
-	points: readonly Point[],
-	box: Box,
-	axis: "x" | "y",
-	near: number,
-	reach: number,
-): number | undefined {
-	const along = axis === "x" ? "y" : "x";
-	const [low, high] = [box[along], box[along] + (axis === "x" ? box.height : box.width)];
-	const runs = points.slice(1).flatMap((end, index) => {
-		const start = points[index]!;
-		const spans =
-			Math.min(start[along], end[along]) <= low && Math.max(start[along], end[along]) >= high;
-		return start[axis] === end[axis] && spans ? [start[axis]] : [];
-	});
-	const nearest = runs.toSorted((one, other) => Math.abs(one - near) - Math.abs(other - near))[0];
-	return nearest !== undefined && Math.abs(nearest - near) <= reach ? nearest : undefined;
-}
-
-/**
- * Straighten a route's short S-jogs again while it still fails its checks and
- * straightening still changes it.
- * @param curve The route.
- * @param label Its label's box, if it carries one.
- * @returns The route straightened as far as that goes.
- */
-function straightenedWhileFailing(
-	curve: DrawingEdge["curve"],
-	label: Box | undefined,
-): DrawingEdge["curve"] {
-	let current = curve;
-	let next = straightenedCurve(current);
-	while (curveClearanceIssue(current, label) !== undefined && pathOf(next) !== pathOf(current)) {
-		current = next;
-		next = straightenedCurve(current);
-	}
-	return current;
+	return { reading, drawing: checked(settled.drawing), reserved: settled.reserved };
 }
 
 /**
@@ -370,16 +288,20 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
  * Ask a placed graph's forced labels to be routed through.
  * @param placed A placement of the reading, which stays as it is.
  * @param forced Labels that require a route through their reserved box.
- * @param evenPins Whether its routes are asked for evened pins.
+ * @param routing How its routes are asked for: evened pins, and the frame walls to keep clear of.
  * @returns The routing input.
  */
 function forceLabels(
 	placed: ElkNode,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
-	evenPins = false,
+	routing: Pick<Problem, "evenPins" | "clearWalls">,
 ): ElkNode {
 	const graph = structuredClone(placed);
-	graph.layoutOptions = { ...graph.layoutOptions, [EVEN_PINS]: String(evenPins) };
+	graph.layoutOptions = {
+		...graph.layoutOptions,
+		[EVEN_PINS]: String(routing.evenPins ?? false),
+		[CLEAR_WALLS]: JSON.stringify(routing.clearWalls ?? []),
+	};
 	for (const edge of graph.edges ?? []) {
 		if (!forced.has(edge.id)) continue;
 		edge.layoutOptions = {
@@ -552,7 +474,7 @@ async function drawAttempt(
 > {
 	const { content, measured } = problem;
 	const laidOut = await rendererHost().solve(
-		forceLabels(await problem.place(reserved), forced, problem.evenPins),
+		forceLabels(await problem.place(reserved), forced, problem),
 		{
 			...solveOptions(problem),
 			[SOLVE_STAGE]: "route",

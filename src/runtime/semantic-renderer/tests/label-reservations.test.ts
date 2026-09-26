@@ -86,7 +86,7 @@ describe("an unused label reservation", () => {
 			"a,b": { drawing: page(400, 500), unused: ["a"] },
 			b: { drawing: smaller },
 		});
-		expect(await settleLabels({ place, solve }, new Set(["a", "b"]))).toBe(smaller);
+		expect((await settleLabels({ place, solve }, new Set(["a", "b"]))).drawing).toBe(smaller);
 	});
 
 	test("is kept when a smaller release cannot fit the fixed bends", async () => {
@@ -104,7 +104,7 @@ describe("an unused label reservation", () => {
 			a: { drawing: kept, unused: ["a"] },
 			"": { drawing: page(300, 400, [tight]) },
 		});
-		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(kept);
+		expect((await settleLabels({ place, solve }, new Set(["a"]))).drawing).toBe(kept);
 	});
 
 	test("is kept, and never routed, when its placement only spreads the page sideways", async () => {
@@ -113,7 +113,7 @@ describe("an unused label reservation", () => {
 			a: { drawing: kept, unused: ["a"] },
 			"": { drawing: page(600, 480) },
 		});
-		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(kept);
+		expect((await settleLabels({ place, solve }, new Set(["a"]))).drawing).toBe(kept);
 		expect(asked).toEqual(["a"]);
 	});
 
@@ -123,7 +123,7 @@ describe("an unused label reservation", () => {
 			a: { drawing: kept, unused: ["a"] },
 			"": { drawing: page(300, 400, CROSSING) },
 		});
-		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(kept);
+		expect((await settleLabels({ place, solve }, new Set(["a"]))).drawing).toBe(kept);
 	});
 
 	test("is released alone when releasing every unused one together loses a label's box", async () => {
@@ -140,7 +140,9 @@ describe("an unused label reservation", () => {
 			const attempt = await solve(reserved);
 			return reserved.size === 0 ? { ...attempt, missing: [CROSSING[0]!] } : attempt;
 		};
-		expect(await settleLabels({ place, solve: missingLabel }, new Set(["a", "b"]))).toBe(smaller);
+		expect((await settleLabels({ place, solve: missingLabel }, new Set(["a", "b"]))).drawing).toBe(
+			smaller,
+		);
 	});
 
 	test("is released round after round, for at most three rounds", async () => {
@@ -153,14 +155,16 @@ describe("an unused label reservation", () => {
 			// A fourth round would release d as well, onto a smaller page still.
 			"": { drawing: page(400, 300) },
 		});
-		expect(await settleLabels({ place, solve }, new Set(["a", "b", "c", "d"]))).toBe(third);
+		expect((await settleLabels({ place, solve }, new Set(["a", "b", "c", "d"]))).drawing).toBe(
+			third,
+		);
 		expect(asked).toEqual(["a,b,c,d", "b,c,d", "c,d", "d"]);
 	});
 
 	test("settling ends when no reservation is unused", async () => {
 		const settled = page(400, 500);
 		const { solve, place, asked } = solveFrom({ a: { drawing: settled } });
-		expect(await settleLabels({ place, solve }, new Set(["a"]))).toBe(settled);
+		expect((await settleLabels({ place, solve }, new Set(["a"]))).drawing).toBe(settled);
 		expect(asked).toEqual(["a"]);
 	});
 });

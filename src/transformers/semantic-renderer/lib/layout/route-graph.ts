@@ -4,6 +4,7 @@ import { RoutingScene } from "@/transformers/semantic-renderer/lib/layout/avoid-
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 import { EVEN_PINS } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { ForeignFrames } from "@/transformers/semantic-renderer/lib/layout/foreign-frames";
+import { wallReach } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
 import { joinSqueezedTrunks } from "@/transformers/semantic-renderer/lib/layout/squeezed-trunks";
 import type { AlignedPins } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import {
@@ -47,9 +48,10 @@ function settle(
 	const frames = new ForeignFrames(graph);
 	const edges = graph.edges ?? [];
 	const even = evenPins(graph);
+	const reach = wallReach(graph);
 	let routed = false;
 	for (;;) {
-		const scene = new RoutingScene(avoid, endpoints, new Set(), even);
+		const scene = new RoutingScene(avoid, endpoints, new Set(), even, reach);
 		try {
 			edges.forEach(positionReservedLabel);
 			visitNodes(scene, graph);
@@ -67,7 +69,7 @@ function settle(
 					endpoints,
 					scene,
 					routes,
-					(closed) => new RoutingScene(avoid, endpoints, closed, even),
+					(closed) => new RoutingScene(avoid, endpoints, closed, even, reach),
 				)
 			)
 				continue;
