@@ -176,12 +176,18 @@ function headInk(svg: string, id: string): string {
 
 /**
  * The inks the traffic marks on one relationship are drawn in: every part of
- * every comet but the ring of the page's own colour around its head.
- * @param group The subject group.
+ * every comet but the ring of the page's own colour around its head, read from
+ * its traffic layer, which is painted apart from its line.
+ * @param svg The drawn document.
+ * @param id The relationship.
  * @returns The colours, one per inked part.
  */
-function dotInks(group: DrawnGroup): string[] {
-	return [...group.markup.matchAll(/<g class="ab-pulse"[^>]*>([\s\S]*?)<\/g>/gu)].flatMap((comet) =>
+function dotInks(svg: string, id: string): string[] {
+	// A sequence step carries its marks; a relationship's traffic is a layer of its own that names it.
+	const traffic = [`data-semantic-id="${id}"`, `data-traffic="${id}"`]
+		.map((named) => (svg.split(named)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!)
+		.join("");
+	return [...traffic.matchAll(/<g class="ab-pulse"[^>]*>([\s\S]*?)<\/g>/gu)].flatMap((comet) =>
 		[
 			...comet[1]!.matchAll(
 				/<(?:circle|path)(?![^>]*data-pulse-part="moat")[^>]*?(?:fill|stroke)="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu,
@@ -298,7 +304,7 @@ describe("a relationship is drawn in one colour from end to end", () => {
 			const drawnLine = line(subject(drawn, "edge", id));
 			// Every channel of the same relationship, asked separately.
 			expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
-			const comets = dotInks(subject(drawn, "edge", id));
+			const comets = dotInks(drawn.svg, id);
 			expect(comets.length).toBeGreaterThan(0);
 			// The same colour, never a grey over it: every part of a comet has the
 			// line's hue, and its head stands farther from the page than the line.
@@ -355,8 +361,8 @@ describe("a relationship is drawn in one colour from end to end", () => {
 	});
 
 	test("a relationship the proposal no longer has sends no dots", async () => {
-		expect(dotInks(subject(await architecture(), "edge", "gone"))).toHaveLength(0);
-		expect(dotInks(subject(sequence(), "step", "answers"))).toHaveLength(0);
+		expect(dotInks((await architecture()).svg, "gone")).toHaveLength(0);
+		expect(dotInks(sequence().svg, "answers")).toHaveLength(0);
 	});
 });
 

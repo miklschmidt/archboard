@@ -13,6 +13,16 @@ const CROSSED = orderedFixture({
 	),
 });
 
+/**
+ * A relationship's traffic layer, painted apart from its line.
+ * @param svg The drawing.
+ * @param id The relationship.
+ * @returns The layer's markup, or nothing for a line without traffic.
+ */
+function trafficOf(svg: string, id: string): string {
+	return (svg.split(`data-traffic="${id}"`)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!;
+}
+
 /** Read only the route groups, excluding separately painted relationship words. */
 function routes(svg: string) {
 	return [
@@ -41,14 +51,12 @@ function routes(svg: string) {
 			// The curves its traffic rides, whatever layers the theme gives the traffic.
 			rides: [
 				...new Set(
-					[
-						...(group[3]!.split('<g class="ab-pulse"')[1] ?? "").matchAll(
-							/<path[^>]* d="([^"]+)"/gu,
-						),
-					].map((path) => path[1]!),
+					[...trafficOf(svg, group[1]!).matchAll(/<path[^>]* d="([^"]+)"/gu)].map(
+						(path) => path[1]!,
+					),
 				),
 			],
-			// The line's own paths, before the traffic that rides it in a group of its own.
+			// The line's own paths; its traffic is painted apart, over every line.
 			own: [
 				...group[3]!
 					.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
@@ -312,4 +320,23 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 	// Drawn solid, a stream line rises over a call it crosses; drawn dashed, never.
 	expect((await hopping("solid")).some((id) => id.startsWith("a"))).toBe(true);
 	expect((await hopping("dashed")).some((id) => id.startsWith("a"))).toBe(false);
+});
+
+// Reported from use: traffic on a line that joins lines without traffic
+// stopped at the junction, where the shared stretch is drawn by one of the
+// others and the rest are masked away.
+test("traffic on a joined line runs on past the junction to its card", async () => {
+	const content = orderedFixture({
+		nodes: ["a", "b", "c", "t"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
+		edges: [
+			{ id: "at", from: "a", to: "t", kind: "event" },
+			{ id: "bt", from: "b", to: "t", kind: "event", traffic: {} },
+			{ id: "ct", from: "c", to: "t", kind: "event" },
+		],
+	});
+	const { svg } = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const layers = [...svg.matchAll(/data-traffic="([^"]+)"/gu)];
+	expect(layers.map((layer) => layer[1])).toEqual(["bt"]);
+	// Painted in a layer of its own after the last line, so no line's mask cuts it.
+	expect(layers[0]!.index).toBeGreaterThan(svg.lastIndexOf("marker-end"));
 });

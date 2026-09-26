@@ -30,6 +30,7 @@ import {
 	FAR_VIEW_CLASS,
 	NEAR_CLASS,
 } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { TRAFFIC_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	HEAD_REF_X,
@@ -153,7 +154,7 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			// neighbours and the connections that cross its boundary stay
 			// readable, and everything else recedes. Ancestors of a member are
 			// context: readable, but never lit as members.
-			".is-group-focus [data-semantic-id]{opacity:.28}",
+			`.is-group-focus [data-semantic-id],.is-group-focus [${TRAFFIC_ATTRIBUTE}]{opacity:.28}`,
 			".is-group-focus .is-group-member,.is-group-focus .is-group-member [data-semantic-id]{opacity:1}",
 			".is-group-focus .is-group-boundary,.is-group-focus .is-group-context{opacity:.7}",
 			".is-group-focus .is-group-context [data-semantic-id]{opacity:.28}",

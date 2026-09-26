@@ -117,7 +117,7 @@ function dotsIn(svg: string): number {
 }
 
 /**
- * The dots one subject's group carries.
+ * The dots one subject carries, in its own group or in its traffic layer.
  *
  * Counted from where the subject is named to where the next one is, because a
  * group holds nested groups of its own — a label pill is one — and matching
@@ -127,9 +127,13 @@ function dotsIn(svg: string): number {
  * @returns How many dots ride it.
  */
 function pulsesOn(svg: string, id: string): number {
-	const after = svg.split(`data-semantic-id="${id}"`)[1] ?? "";
-	const own = after.split("data-semantic-id=")[0] ?? "";
-	return [...own.matchAll(/<(?:circle|path|g) class="ab-pulse"/gu)].length;
+	// A sequence step carries its marks; a relationship's traffic is a layer of its own that names it.
+	return [`data-semantic-id="${id}"`, `data-traffic="${id}"`]
+		.map((named) => (svg.split(named)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!)
+		.reduce(
+			(sum, own) => sum + [...own.matchAll(/<(?:circle|path|g) class="ab-pulse"/gu)].length,
+			0,
+		);
 }
 
 /**

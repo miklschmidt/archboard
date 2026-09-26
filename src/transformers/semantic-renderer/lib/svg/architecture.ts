@@ -44,6 +44,7 @@ import {
 	type StandingOf,
 	type SubjectStanding,
 	type UnsettledOf,
+	TRAFFIC_ATTRIBUTE,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
 	edgeAttributes,
@@ -137,7 +138,6 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
  * @param policy Current vault policy.
  * @param mask Optional narrow cutouts beneath higher connections.
  * @param step Whether this line is a flow step drawn on the board, not an authored relationship.
- * @param labels Every relationship's label, drawn over its traffic marks.
  * @returns The connection group.
  */
 function paintEdgeLine(
@@ -147,7 +147,6 @@ function paintEdgeLine(
 	policy: SemanticPolicy,
 	mask: string | undefined,
 	step: boolean,
-	labels: readonly Box[],
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
@@ -189,23 +188,53 @@ function paintEdgeLine(
 				"marker-end": appearance.arrowhead === "none" ? undefined : `url(#${markerId})`,
 				...attributes,
 			}),
-			// The dots over its own line, and under every relationship's words.
-			// A relationship the proposal no longer has is drawn for context and
-			// must not read as live traffic.
-			standing === "removed" || edge.traffic === undefined
-				? ""
-				: travellingPulses({
-						id: edge.id,
-						curve: routed.curve,
-						headReach: arrowheadReach(appearance.arrowhead, width),
-						colour: relationshipInk(edge, palette, standing, policy, appearance),
-						lineColour: ink,
-						lineWidth: width,
-						page: palette,
-						traffic: edge.traffic,
-						labels,
-					}),
 		]),
+	);
+}
+
+/**
+ * Paint a relationship's traffic in a layer of its own, over every line and
+ * under every card and every relationship's words. Drawn with its line, the
+ * shots riding a stretch two joined lines share were covered by whichever
+ * line was painted after, and cut where its line is cut beneath a crossing.
+ * The layer names its relationship, so a viewer lights, dims and raises it
+ * with its line. A relationship the proposal no longer has is drawn for
+ * context and must not read as live traffic.
+ * @param routed The supplied route.
+ * @param look The page's colours, the vault's policy, and whether the line is a flow step.
+ * @param look.palette The selected theme.
+ * @param look.policy Current vault policy.
+ * @param look.step Whether this line is a flow step drawn on the board.
+ * @param standing Its architectural change.
+ * @param labels Every relationship's label, drawn over the shots.
+ * @returns The traffic's group, or nothing for a line without traffic.
+ */
+function paintEdgeTraffic(
+	routed: DrawingEdge,
+	look: { palette: Palette; policy: SemanticPolicy; step: boolean },
+	standing: SubjectStanding | undefined,
+	labels: readonly Box[],
+): string {
+	const { edge } = routed;
+	if (standing === "removed" || edge.traffic === undefined) return "";
+	const { palette, policy, step } = look;
+	const width = strokeWidthOf(edge);
+	const appearance = lineAppearance(edge.kind, policy, step);
+	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
+	return wrap(
+		"g",
+		{ [TRAFFIC_ATTRIBUTE]: edge.id },
+		travellingPulses({
+			id: edge.id,
+			curve: routed.curve,
+			headReach: arrowheadReach(appearance.arrowhead, width),
+			colour: relationshipInk(edge, palette, standing, policy, appearance),
+			lineColour: String(attributes["stroke"]),
+			lineWidth: width,
+			page: palette,
+			traffic: edge.traffic,
+			labels,
+		}),
 	);
 }
 
@@ -338,7 +367,6 @@ function paintArchitecture(
 				policy,
 				masks.get(edge.edge.id),
 				derived.has(edge.edge.id),
-				labels,
 			),
 		),
 		// Over the lines they join, under the cards and every relationship's words.
@@ -357,6 +385,16 @@ function paintArchitecture(
 				),
 				width: strokeWidthOf(edge),
 			}),
+		),
+		// Every relationship's traffic, over all the lines so a stretch two joined
+		// lines share never covers the other's shots, and under the cards and words.
+		...edges.map((edge) =>
+			paintEdgeTraffic(
+				edge,
+				{ palette, policy, step: derived.has(edge.edge.id) },
+				standingOf(edge.edge.id),
+				labels,
+			),
 		),
 		...orderedCards.map((card) =>
 			paintMeasuredCard(

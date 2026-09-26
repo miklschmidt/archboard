@@ -11,6 +11,26 @@ import type { SemanticAtlas, SemanticBox } from "@/ui/semantic-board-canvas/api/
 /** The attribute every selectable group in the picture carries. */
 const SUBJECT_ATTRIBUTE = "data-semantic-id";
 
+/**
+ * The attribute a relationship's traffic layer carries: the id of the line it
+ * rides. The picture draws a line's traffic apart from it, over every line,
+ * and the viewer marks the layer as it marks its line, so traffic lights,
+ * recedes and rises with the line it rides.
+ */
+const TRAFFIC_ATTRIBUTE = "data-traffic";
+
+/** Every group the viewer marks: each subject's, and each line's traffic. */
+const MARKED = `[${SUBJECT_ATTRIBUTE}],[${TRAFFIC_ATTRIBUTE}]`;
+
+/**
+ * The subject a marked group draws: its own id, or the line its traffic rides.
+ * @param group The group.
+ * @returns The subject's id, or null for scenery.
+ */
+function markedId(group: Element): string | null {
+	return group.getAttribute(SUBJECT_ATTRIBUTE) ?? group.getAttribute(TRAFFIC_ATTRIBUTE);
+}
+
 /** The class the embedded stylesheet draws a selected subject with. */
 const SELECTED_CLASS = "is-selected";
 
@@ -78,8 +98,8 @@ function subjectAt(target: EventTarget | null, atlas: SemanticAtlas): string | n
  * @param attended Which subjects are being attended to; empty for none.
  */
 function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
-	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
-		const id = group.getAttribute(SUBJECT_ATTRIBUTE);
+	for (const group of surface.querySelectorAll(MARKED)) {
+		const id = markedId(group);
 		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
 	}
 	raiseSelected(surface);
@@ -90,7 +110,7 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
  * Never a container, a group's region, a flow or a participant's lifeline,
  * each of which runs under what it holds or crosses.
  */
-const RAISED = "[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card']";
+const RAISED = `[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card'],[${TRAFFIC_ATTRIBUTE}]`;
 
 /** Where each raised group stood before it was raised, to go back to when it is let go. */
 const raisedFrom = new WeakMap<Element, Comment>();
@@ -104,7 +124,7 @@ const raisedFrom = new WeakMap<Element, Comment>();
  * @param surface The element the picture was put into.
  */
 function raiseSelected(surface: Element): void {
-	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
+	for (const group of surface.querySelectorAll(MARKED)) {
 		raise(group, group.classList.contains(SELECTED_CLASS) && group.matches(RAISED));
 	}
 }
@@ -158,8 +178,8 @@ interface GroupMarks {
  * @param marks What to light, keep readable, and treat as context; null for none.
  */
 function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
-	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
-		const id = group.getAttribute(SUBJECT_ATTRIBUTE) ?? "";
+	for (const group of surface.querySelectorAll(MARKED)) {
+		const id = markedId(group) ?? "";
 		for (const role of ["members", "boundary", "context"] as const) {
 			group.classList.toggle(GROUP_CLASSES[role], marks?.[role].has(id) ?? false);
 		}
@@ -195,9 +215,9 @@ const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, ...Object.values(GROUP_
  */
 function marksOn(surface: Element): Map<string, string[]> {
 	const marked = new Map<string, string[]>();
-	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
+	for (const group of surface.querySelectorAll(MARKED)) {
 		const marks = VIEWER_MARKS.filter((mark) => group.classList.contains(mark));
-		const id = group.getAttribute(SUBJECT_ATTRIBUTE);
+		const id = markedId(group);
 		if (id !== null && marks.length > 0) {
 			marked.set(id, marks);
 		}
@@ -221,8 +241,8 @@ function marksOn(surface: Element): Map<string, string[]> {
 function keepingMarks(surface: Element, stage: () => void): void {
 	const marked = marksOn(surface);
 	stage();
-	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
-		const marks = marked.get(group.getAttribute(SUBJECT_ATTRIBUTE) ?? "");
+	for (const group of surface.querySelectorAll(MARKED)) {
+		const marks = marked.get(markedId(group) ?? "");
 		if (marks !== undefined) {
 			group.classList.add(...marks);
 		}

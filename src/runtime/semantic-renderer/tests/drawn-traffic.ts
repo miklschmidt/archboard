@@ -63,7 +63,10 @@ function seconds(value: string | undefined): number {
  * @returns The layers, in drawing order.
  */
 function trafficLayers(svg: string, id: string): TrafficLayer[] {
-	const group = svg.split(`data-semantic-id="${id}"`)[1]?.split("data-semantic-id=")[0] ?? "";
+	// A line's traffic is painted in a layer of its own that names the line.
+	const group = (svg.split(`data-traffic="${id}"`)[1] ?? "").split(
+		/data-(?:semantic-id|traffic)=/u,
+	)[0]!;
 	const traffic = group.split('<g class="ab-pulse"')[1] ?? "";
 	return [...traffic.matchAll(/<path ([^>]*)>([\s\S]*?)<\/path>/gu)].map(
 		([, tag = "", body = ""]) => {
