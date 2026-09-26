@@ -141,12 +141,12 @@ function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 /**
  * What a drawing is ranked on, most important first.
  * @param drawing A settled drawing.
- * @returns Its crossings, junctions and hooks together with the ports beside a card's corner, then
- * its line ends across the reading direction, bends and line length.
+ * @returns Its crossings and hooks together with the ports beside a card's corner, then its line
+ * ends across the reading direction, bends and line length.
  */
 function untidiness(drawing: ArchitectureDrawing): readonly number[] {
-	const [crossings, junctions, , hooks] = defectsIn(drawing);
-	const seen = crossings! + junctions! + hooks! + cornerPorts(drawing).length;
+	const [crossings, , , hooks] = defectsIn(drawing);
+	const seen = crossings! + hooks! + cornerPorts(drawing).length;
 	return [seen, sideEnds(drawing), bendsIn(drawing), lineLength(drawing)];
 }
 
@@ -186,23 +186,21 @@ function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
 
 /**
  * Whether one drawing is tidier than another: it has no more of any defect
- * ({@link defectsIn}), ranks strictly better, or no worse on its defects
- * together where it cures others that are not ranked, and grows the page and
+ * ({@link defectsIn}), ranks strictly better or cures others that are not
+ * ranked, and grows the page and
  * its lines by no more than every defect it saves buys
  * ({@link CROSSING_WORTH}). Two crossings saved do not pay for a page a
  * third taller with a third more line (Command dispatch).
  * @param one The challenger.
  * @param other The drawing kept so far, which wins a tie.
- * @param cured How many defects the ranking does not count the challenger cures.
+ * @param cured How many defects the ranking does not count the challenger cures, less those it brings.
  * @returns True when the challenger is kept.
  */
 function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured = 0): boolean {
 	const [mine, theirs] = [defectsIn(one), defectsIn(other)];
 	if (mine.some((value, at) => value > theirs[at]!)) return false;
 	const [ranked, against] = [untidiness(one), untidiness(other)];
-	if (!ranksBetter(ranked, against) && !(cured > 0 && ranked[0]! <= against[0]! + 0.5)) {
-		return false;
-	}
+	if (!ranksBetter(ranked, against) && cured <= 0) return false;
 	const saved = Math.max(0, against[0]! - ranked[0]!) + cured;
 	return growth(one, other) <= saved * CROSSING_WORTH;
 }

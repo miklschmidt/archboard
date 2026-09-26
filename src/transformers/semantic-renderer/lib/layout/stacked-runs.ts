@@ -409,12 +409,3 @@ export function stackedEnds(drawing: ArchitectureDrawing): string[] {
 	const cards = new Set(drawing.cards.map(({ measured }) => measured.node.id));
 	return stacksOf(linesOf(drawing)).flatMap((stack) => turningEnds(stack, cards));
 }
-
-/**
- * The lines a stack's cure sends another way.
- * @param found The keys {@link stackedEnds} gave.
- * @returns The lines refused a face they ended on.
- */
-export function refusedLines(found: readonly string[]): ReadonlySet<string> {
-	return new Set(found.map((key) => key.split(":")[0]!));
-}

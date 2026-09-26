@@ -8,10 +8,9 @@
 // the middle is free, and its label hangs past the card (Archboard's
 // "private stdio session"). Such a port moves to the middle of its face when
 // the strip its end run would sweep is clear, and the refined routes are
-// solved once more with each moved channel held to its face, since the
-// refinement can leave a port alone that had company before, and libavoid
-// would otherwise take the shorter seed another face offers near the corner. Which drawings
-// are routed so is the finishing step's choice (finishing.ts).
+// solved once more, since the refinement can leave a port alone that had
+// company before. Which drawings are routed so is the finishing step's choice
+// (finishing.ts).
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { LABEL_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
@@ -312,8 +311,8 @@ function centreLonePins(
 	return moved;
 }
 
-/** Pins a settled scene offers the next solve, and the card:channel keys held to their faces. */
-export type PinFeedback = { readonly pins: AlignedPins; readonly held?: ReadonlySet<string> };
+/** Pins a settled scene offers the next solve, and whether that solve is the last. */
+export type PinFeedback = { readonly pins: AlignedPins; readonly last?: true };
 
 /**
  * The used pins of settled routes with every lone port centred.
@@ -321,7 +320,7 @@ export type PinFeedback = { readonly pins: AlignedPins; readonly held?: Readonly
  * @param channels Sorted connection channels at every endpoint.
  * @param edges Settled relationships.
  * @param used Their used pins by card and channel, changed in place.
- * @returns The pins and the moved channels to hold, or nothing when none moved.
+ * @returns The pins for the last solve, or nothing when none moved.
  */
 export function centredPins(
 	nodes: ReadonlyMap<string, ElkNode>,
@@ -329,6 +328,7 @@ export function centredPins(
 	edges: readonly ElkExtendedEdge[],
 	used: AlignedPins,
 ): PinFeedback | undefined {
-	const held = centreLonePins(nodes, channels, edges, used);
-	return held.size > 0 ? { pins: used, held } : undefined;
+	return centreLonePins(nodes, channels, edges, used).size > 0
+		? { pins: used, last: true }
+		: undefined;
 }
