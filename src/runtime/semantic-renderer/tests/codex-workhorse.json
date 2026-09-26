@@ -13,9 +13,7 @@
 			"name": "Coordinator tools",
 			"kind": "module",
 			"responsibility": "The coordinator's tool calls: each becomes one of the four workhorse operations",
-			"groups": [
-				"voice"
-			]
+			"groups": ["voice"]
 		},
 		{
 			"id": "glxfDGYq",
@@ -65,9 +63,7 @@
 			"name": "Epoch ledger",
 			"kind": "module",
 			"responsibility": "Which child generation owns which thread, on disk, with operations that commit, roll back or say the outcome is unknown",
-			"groups": [
-				"child"
-			]
+			"groups": ["child"]
 		},
 		{
 			"id": "ZGoXFusm",
@@ -89,9 +85,7 @@
 			"name": "Codex session",
 			"kind": "module",
 			"responsibility": "The reviewed methods a turn is actually sent on",
-			"groups": [
-				"child"
-			]
+			"groups": ["child"]
 		},
 		{
 			"id": "WaIHZ8sZ",
@@ -99,9 +93,7 @@
 			"name": "Tell coordinator",
 			"kind": "module",
 			"responsibility": "The archboard_coordinator tool a workhorse is started with: tell the coordinator one thing while it works",
-			"groups": [
-				"voice"
-			]
+			"groups": ["voice"]
 		}
 	],
 	"edges": [

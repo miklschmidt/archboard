@@ -83,9 +83,7 @@
 			"name": "Grading session",
 			"kind": "module",
 			"responsibility": "Stages a read-only workspace and grades the ungraded runs in chunks, in one resumed session of the grader chosen by name",
-			"groups": [
-				"inner"
-			]
+			"groups": ["inner"]
 		},
 		{
 			"id": "gwU9cyGm",
@@ -93,9 +91,7 @@
 			"name": "Codex grader",
 			"kind": "module",
 			"responsibility": "One grader runner: a resumed thread, pictures attached, usage read as the thread's running total",
-			"groups": [
-				"inner"
-			]
+			"groups": ["inner"]
 		},
 		{
 			"id": "bgEcePXZ",
@@ -103,9 +99,7 @@
 			"name": "Claude grader",
 			"kind": "module",
 			"responsibility": "The other grader runner: a resumed session, read-only tools, pictures opened from the workspace",
-			"groups": [
-				"inner"
-			]
+			"groups": ["inner"]
 		},
 		{
 			"id": "LcKROPw0",
@@ -113,9 +107,7 @@
 			"name": "Report",
 			"kind": "module",
 			"responsibility": "Joins every run with the verdict of each grader that graded it, and says where two graders agree",
-			"groups": [
-				"inner"
-			]
+			"groups": ["inner"]
 		},
 		{
 			"id": "IOCRa8GO",
@@ -186,9 +178,7 @@
 			"name": "Grader retry",
 			"kind": "module",
 			"responsibility": "Holds each answer to what the report reads, and asks once more in the same session for the runs an answer fell short on",
-			"groups": [
-				"inner"
-			]
+			"groups": ["inner"]
 		},
 		{
 			"id": "zZTYX1sf",

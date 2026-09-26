@@ -284,17 +284,28 @@ function leftOfEverything(drawing: RenderedDiagram, id: string): number[] {
 }
 
 /**
+ * Whether a point stands inside a region, its walls moved out by some amount.
+ * @param point The point.
+ * @param walls The region's walls.
+ * @param by How far out; less than none moves them in.
+ * @returns True when it is inside.
+ */
+function within(point: DrawnPoint, walls: Walls, by: number): boolean {
+	return (
+		point.x > walls.left - by &&
+		point.x < walls.right + by &&
+		point.y > walls.top - by &&
+		point.y < walls.bottom + by
+	);
+}
+
+/**
  * The runs of a line through a group region neither of its ends stands in.
  * @param points The line's corridor.
  * @param regions Every region's walls.
  * @returns Each such run's middle.
  */
 function throughForeign(points: readonly DrawnPoint[], regions: readonly Walls[]): DrawnPoint[] {
-	const within = (point: DrawnPoint, walls: Walls, by: number): boolean =>
-		point.x > walls.left - by &&
-		point.x < walls.right + by &&
-		point.y > walls.top - by &&
-		point.y < walls.bottom + by;
 	const foreign = regions.filter(
 		(walls) => !within(points[0]!, walls, 2) && !within(points.at(-1)!, walls, 2),
 	);
