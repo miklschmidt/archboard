@@ -368,8 +368,30 @@ function boxesOverlap(one: DiagramBox, other: DiagramBox): boolean {
 	);
 }
 
+/**
+ * The corners of a drawn line: its ends, and where each straight run meets
+ * the next square to it, with its rounded turns taken out.
+ * @param points The drawn points, curve controls included.
+ * @returns The corners.
+ */
+function cornersOf(points: readonly DrawnPoint[]): DrawnPoint[] {
+	const runs = points.slice(1).flatMap((point, index) => {
+		const previous = points[index]!;
+		const [dx, dy] = [Math.abs(point.x - previous.x), Math.abs(point.y - previous.y)];
+		if (dx > 1 && dy < 0.01) return [{ vertical: false, at: point.y }];
+		return dy > 1 && dx < 0.01 ? [{ vertical: true, at: point.x }] : [];
+	});
+	const turns = runs.slice(1).flatMap((run, index) => {
+		const previous = runs[index]!;
+		if (run.vertical === previous.vertical) return [];
+		return [run.vertical ? { x: run.at, y: previous.at } : { x: previous.at, y: run.at }];
+	});
+	return [points[0]!, ...turns, points.at(-1)!];
+}
+
 export {
 	type DrawnPoint,
+	cornersOf,
 	bodyShift,
 	boxesOverlap,
 	corridorPoints,

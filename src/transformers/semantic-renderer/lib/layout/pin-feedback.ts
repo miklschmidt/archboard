@@ -3,7 +3,18 @@ import type { AlignedPin } from "@/transformers/semantic-renderer/lib/layout/avo
 import { boxOf, type Face } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
-import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import {
+	CARD_ROUTE_CLEARANCE,
+	ROUTE_LANE,
+} from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+
+/**
+ * How far inside a card's corner a corner pin stands: clear of the change
+ * badge a proposal pins 3 px inside a card's top corner with a 9.2 px radius,
+ * by half the widest arrowhead, so an arrow never lands on the badge
+ * (Board persistence's "adopt a draft" into Adopt).
+ */
+const CORNER_PIN_INSET = 20;
 
 type PinProjection = { pin: AlignedPin; corridor: Box };
 
@@ -176,15 +187,15 @@ function cornerPins(
  * card, so the face never sees it as a rail of its own.
  * @param box The card.
  * @param route The route ordered away from the card.
- * @returns The pin 12 points inside the corner it passed, and the corridor the carried-on run and drop take.
+ * @returns The pin {@link CORNER_PIN_INSET} inside the corner it passed, and the corridor the carried-on run and drop take.
  */
 function cornerPin(box: Box, route: readonly Point[]): PinProjection | undefined {
 	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
 	if (after === undefined || !hooksPast(box, tip, bend, after)) return undefined;
 	const above = after.y < box.y;
 	const x = Math.max(
-		box.x + ROUTE_NUDGE_DISTANCE,
-		Math.min(box.x + box.width - ROUTE_NUDGE_DISTANCE, bend.x),
+		box.x + CORNER_PIN_INSET,
+		Math.min(box.x + box.width - CORNER_PIN_INSET, bend.x),
 	);
 	const face = above ? box.y : box.y + box.height;
 	return {
@@ -199,15 +210,20 @@ function cornerPin(box: Box, route: readonly Point[]): PinProjection | undefined
 }
 
 /**
- * Whether a route leaves a card's side and turns along it to beyond the card's top or bottom.
+ * Whether a route hooks into a card's side: a stub no longer than the card's
+ * own corridor and a lane leaves the side and turns along it to beyond the
+ * card's top or bottom. A longer first run is an ordinary L that happens to
+ * pass the card's corner, and its corner exit would only be worse (Command
+ * interface's "the stated board, doing and version").
  * @param box The card.
  * @param tip The route's end on the card.
  * @param bend Its first bend.
  * @param after The end of the run after that bend.
  * @returns True when the side stub turns past the card's corner.
  */
-function hooksPast(box: Box, tip: Point, bend: Point, after: Point): boolean {
-	if (Math.abs(tip.y - bend.y) >= 0.001 || Math.abs(bend.x - after.x) >= 0.001) return false;
+export function hooksPast(box: Box, tip: Point, bend: Point, after: Point): boolean {
+	if (Math.abs(tip.y - bend.y) >= 0.01 || Math.abs(bend.x - after.x) >= 0.01) return false;
+	if (Math.abs(tip.x - bend.x) > CARD_ROUTE_CLEARANCE + ROUTE_LANE) return false;
 	return after.y < box.y || after.y > box.y + box.height;
 }
 

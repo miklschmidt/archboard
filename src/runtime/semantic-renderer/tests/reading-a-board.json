@@ -1,0 +1,161 @@
+{
+	"nodes": [
+		{
+			"id": "a",
+			"name": "Browser client",
+			"kind": "service",
+			"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing",
+			"order": 1000
+		},
+		{
+			"id": "b",
+			"name": "Application composition",
+			"kind": "module",
+			"responsibility": "Connects pane and feature owners",
+			"parent": "a",
+			"order": 2000
+		},
+		{
+			"id": "c",
+			"name": "Semantic viewer",
+			"kind": "module",
+			"responsibility": "Reads and explores rendered boards",
+			"parent": "a",
+			"order": 3000
+		},
+		{
+			"id": "d",
+			"name": "Pane session",
+			"kind": "module",
+			"responsibility": "Keeps each pane in server contact",
+			"parent": "a",
+			"order": 4000
+		},
+		{
+			"id": "e",
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "Owns every board and answers every read",
+			"order": 10000
+		},
+		{
+			"id": "f",
+			"name": "Shell",
+			"kind": "service",
+			"responsibility": "The desktop frame: header, navigator, the panes, the agent bar under them and the conversation panel beside them",
+			"parent": "a",
+			"order": 11000
+		},
+		{
+			"id": "g",
+			"name": "Browser renderer",
+			"kind": "module",
+			"responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
+			"parent": "a",
+			"order": 12000
+		},
+		{
+			"id": "h",
+			"name": "Server requests",
+			"kind": "module",
+			"responsibility": "The one way this tab speaks JSON to the Archboard server",
+			"parent": "a",
+			"order": 13000
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "b",
+			"to": "f",
+			"kind": "render",
+			"emphasis": "normal",
+			"label": "the desktop frame",
+			"order": 1000
+		},
+		{
+			"id": "e1",
+			"from": "b",
+			"to": "d",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "a session per pane; open a board in one",
+			"order": 2000
+		},
+		{
+			"id": "e2",
+			"from": "c",
+			"to": "e",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "board documents, listing, policy",
+			"order": 5000
+		},
+		{
+			"id": "e3",
+			"from": "d",
+			"to": "e",
+			"kind": "event",
+			"emphasis": "hero",
+			"label": "the pane socket: registration and news",
+			"order": 6000
+		},
+		{
+			"id": "e4",
+			"from": "b",
+			"to": "c",
+			"kind": "render",
+			"emphasis": "hero",
+			"label": "one stage per pane",
+			"order": 11000
+		},
+		{
+			"id": "e5",
+			"from": "c",
+			"to": "g",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "draw this board here",
+			"order": 12000
+		},
+		{
+			"id": "e6",
+			"from": "h",
+			"to": "e",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "JSON",
+			"order": 14000
+		},
+		{
+			"id": "e7",
+			"from": "d",
+			"to": "h",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "report the pane, show a board, take back",
+			"order": 19000
+		},
+		{
+			"id": "e8",
+			"from": "d",
+			"to": "c",
+			"kind": "event",
+			"emphasis": "hero",
+			"label": "a board's new version",
+			"order": 20000
+		}
+	]
+}

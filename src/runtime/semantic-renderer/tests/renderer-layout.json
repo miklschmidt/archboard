@@ -1,0 +1,275 @@
+{
+	"nodes": [
+		{
+			"id": "a",
+			"name": "View dispatcher",
+			"kind": "module",
+			"responsibility": "Measures, settles and paints one drawing, in that order",
+			"order": 1000
+		},
+		{
+			"id": "b",
+			"name": "Measured text",
+			"kind": "service",
+			"responsibility": "Wraps every card, note and label and measures what the SVG will paint",
+			"order": 2000
+		},
+		{
+			"id": "c",
+			"name": "Compound layout",
+			"kind": "service",
+			"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better",
+			"order": 3000
+		},
+		{
+			"id": "d",
+			"name": "Architecture painter",
+			"kind": "service",
+			"responsibility": "Paints the settled drawing and decides no geometry of its own",
+			"order": 4000
+		},
+		{
+			"id": "e",
+			"name": "Pretext",
+			"kind": "external",
+			"responsibility": "Breaks a prepared string into lines at a given width",
+			"order": 5000
+		},
+		{
+			"id": "f",
+			"name": "Host canvas",
+			"kind": "external",
+			"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
+			"order": 6000
+		},
+		{
+			"id": "g",
+			"name": "Compound graph",
+			"kind": "service",
+			"responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph",
+			"order": 7000
+		},
+		{
+			"id": "h",
+			"name": "Layout engine",
+			"kind": "service",
+			"responsibility": "Places, folds and routes one graph inside a layout worker",
+			"order": 8000
+		},
+		{
+			"id": "i",
+			"name": "Column folds",
+			"kind": "service",
+			"responsibility": "Names the column counts a settled drawing could fold into, and folds a placement into that many columns",
+			"order": 9000
+		},
+		{
+			"id": "j",
+			"name": "Label reservations",
+			"kind": "service",
+			"responsibility": "Reserves layout space for a label no run of its route can hold, and releases reservations a label no longer uses",
+			"order": 12000
+		},
+		{
+			"id": "k",
+			"name": "Graphviz placement",
+			"kind": "service",
+			"responsibility": "Places cards and frames with Graphviz's ranking across clusters, keeping containment",
+			"order": 8250
+		},
+		{
+			"id": "l",
+			"name": "Obstacle routing",
+			"kind": "service",
+			"responsibility": "Routes every relationship orthogonally around cards and unrelated frames, through shared ports per relationship kind",
+			"order": 8500
+		},
+		{
+			"id": "m",
+			"name": "Graphviz",
+			"kind": "external",
+			"responsibility": "Ranks a clustered graph and places its nodes",
+			"order": 10000
+		},
+		{
+			"id": "n",
+			"name": "libavoid",
+			"kind": "external",
+			"responsibility": "Routes orthogonal connectors around obstacle shapes",
+			"order": 11000
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "a",
+			"to": "b",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "measure every word",
+			"order": 1000
+		},
+		{
+			"id": "e1",
+			"from": "b",
+			"to": "e",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "prepare and wrap",
+			"order": 2000
+		},
+		{
+			"id": "e2",
+			"from": "e",
+			"to": "f",
+			"kind": "dependency",
+			"emphasis": "normal",
+			"label": "measures its segments there",
+			"order": 3000
+		},
+		{
+			"id": "e3",
+			"from": "a",
+			"to": "c",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "content and measured sizes",
+			"order": 4000
+		},
+		{
+			"id": "e4",
+			"from": "b",
+			"to": "f",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "the width of a painted line",
+			"order": 5000
+		},
+		{
+			"id": "e5",
+			"from": "c",
+			"to": "i",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "column counts that could fit better",
+			"order": 6000
+		},
+		{
+			"id": "e6",
+			"from": "c",
+			"to": "g",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "state the graph",
+			"order": 8000
+		},
+		{
+			"id": "e7",
+			"from": "c",
+			"to": "h",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "solve, through the host",
+			"order": 9000
+		},
+		{
+			"id": "e8",
+			"from": "c",
+			"to": "j",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "reserve space for labels no run holds",
+			"order": 10000
+		},
+		{
+			"id": "e9",
+			"from": "a",
+			"to": "d",
+			"kind": "render",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "paint the settled drawing",
+			"order": 13000
+		},
+		{
+			"id": "e10",
+			"from": "h",
+			"to": "k",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "place cards and frames",
+			"order": 14000
+		},
+		{
+			"id": "e11",
+			"from": "h",
+			"to": "i",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "fold into the chosen columns",
+			"order": 15000
+		},
+		{
+			"id": "e12",
+			"from": "h",
+			"to": "l",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "route every relationship",
+			"order": 16000
+		},
+		{
+			"id": "e13",
+			"from": "k",
+			"to": "m",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "rank and place the clusters",
+			"order": 17000
+		},
+		{
+			"id": "e14",
+			"from": "l",
+			"to": "n",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "orthogonal routes around obstacles",
+			"order": 18000
+		}
+	]
+}
