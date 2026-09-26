@@ -1,8 +1,8 @@
 // A card stands its frame's inset from the wall, and its routing box reached
 // exactly that far. Graphviz keeps a card outside the frame only the same
 // margin from it, so the passage between the two was the wall itself, and a
-// line into the outside card ran down the wall into its side, where the frame
-// edge took the line's colour (Board viewer's "semantic read routes").
+// line out of the frame ran down the wall, where the frame edge took the
+// line's colour (a view of a work board, its words scrambled).
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";

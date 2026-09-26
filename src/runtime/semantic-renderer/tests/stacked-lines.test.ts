@@ -1,15 +1,21 @@
 // Two lines with no card in common must never share one stroke: drawn on one
 // coordinate they read as one line, and a trunk joining sources to the wrong
 // targets. Cards one routing gap apart leave room for one line between them.
+// A finishing routing that cured a hook and parted such a pair was refused
+// because one of its lines took a bend more, although the routing saved a
+// crossing (Browser application's "Recording a walkthrough").
 // What this catches: the Graphviz engine leaving two unrelated lines in such
-// a gap when both turn into it from the cards on either side.
+// a gap when both turn into it from the cards on either side, and refusing a
+// finishing routing that saves a crossing for one bend more.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { SemanticPolicySchema, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { VariantContent } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
+import recordingAWalkthrough from "./recording-a-walkthrough-graphviz.json";
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -56,12 +62,26 @@ function runsOf(points: readonly DrawnPoint[]): Run[] {
 	});
 }
 
-test("unrelated lines never share one stroke in the gap between two cards", async () => {
-	const content = orderedFixture(agentWorkbench);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "graphviz" });
+/**
+ * The pairs of unrelated lines a drawing draws on one stroke.
+ * @param content The board.
+ * @param options The vocabulary, where the board needs its own.
+ * @param options.policy The policy.
+ * @returns One key for every such pair.
+ */
+async function stackedPairs(
+	content: VariantContent,
+	options: { readonly policy?: SemanticPolicy } = {},
+): Promise<string[]> {
+	const drawn = await renderArchitecture({
+		content,
+		theme: "light",
+		layout: "graphviz",
+		...options,
+	});
 	const routes = corridorPoints(drawn.svg);
 	const edges = content.edges;
-	const stacked = edges.flatMap((one, index) =>
+	return edges.flatMap((one, index) =>
 		edges.slice(index + 1).flatMap((other) => {
 			const ends = new Set([one.from, one.to]);
 			if (ends.has(other.from) || ends.has(other.to)) return [];
@@ -77,5 +97,12 @@ test("unrelated lines never share one stroke in the gap between two cards", asyn
 			return shared ? [`${one.id}|${other.id}`] : [];
 		}),
 	);
-	expect(stacked).toEqual([]);
+}
+
+test("unrelated lines never share one stroke in the gap between two cards", async () => {
+	expect(await stackedPairs(orderedFixture(agentWorkbench), { policy })).toEqual([]);
+});
+
+test("two lines on one stroke part where that saves a crossing, though a line takes a bend more", async () => {
+	expect(await stackedPairs(orderedFixture(recordingAWalkthrough))).toEqual([]);
 });

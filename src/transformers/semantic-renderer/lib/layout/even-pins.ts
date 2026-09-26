@@ -4,19 +4,42 @@
 // target beside and just below its card drops out of the bottom and runs under
 // the trunk its siblings leave along, and every one of them hops it (Command
 // interface's "lifecycle command", Skill evaluation's "One author run"). Evening
-// that charge lets a line leave on the side it travels.
+// that charge lets a line leave on the side it travels. Charging a side pin
+// even half a bend more moved labels, and so placements: Board rasterizer
+// went from 2777 to 3495 wide and Board persistence from 3381 to 3744 and
+// tangled, so the reading direction is kept by the choice below instead.
 //
 // Evened pins move routes, so they move where labels land, which labels are
 // reserved, and the placement those reservations buy. That can fall either way
 // for a whole drawing: with evened pins no release of Browser application's
 // reserved rows kept its crossings down, so it stayed 2734 wide instead of
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
-// both ways and the tidier drawing is kept: fewer crossings, then fewer bends,
-// then less line.
+// both ways and the tidier drawing is kept: fewer crossings, counting two
+// unrelated lines on one stroke as one, since the stroke can hide one (What
+// the CLI can be asked); then fewer line ends across the reading direction,
+// so a fan into the cards below a card is not traded for side exits with a
+// bend fewer (Skill evaluation's "Grading"); then fewer bends, then less
+// line. A drawing that saves crossings by growing its page or its lines by
+// more than each saved crossing is worth is not tidier (Command dispatch took
+// a page a third taller with a third more line to save two).
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { stackKeys } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
+
+/** The share a drawing may grow its page or its lines by for every crossing it saves. */
+const CROSSING_WORTH = 0.05;
+
+/**
+ * Whether a proportional pin position lies on one of its shape's edges.
+ * @param position The position across or down the shape.
+ * @returns True at either edge.
+ */
+function onEdge(position: number): boolean {
+	return position === 0 || position === 1;
+}
 
 /**
  * The cost that evens out libavoid's charge for reaching a pin from its
@@ -27,8 +50,8 @@ import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
  * @returns The pin's connection cost.
  */
 function centreHandicap(box: Box, at: Point, inset: number): number {
-	const dx = Math.abs(at.x - 0.5) * box.width - (at.x === 0 || at.x === 1 ? inset : 0);
-	const dy = Math.abs(at.y - 0.5) * box.height - (at.y === 0 || at.y === 1 ? inset : 0);
+	const dx = Math.abs(at.x - 0.5) * box.width - (onEdge(at.x) ? inset : 0);
+	const dy = Math.abs(at.y - 0.5) * box.height - (onEdge(at.y) ? inset : 0);
 	return box.width / 2 + box.height / 2 - dx - dy;
 }
 
@@ -48,21 +71,84 @@ function lengthOf(points: readonly Point[]): number {
 }
 
 /**
- * What a drawing is ranked on, most important first.
- * @param drawing A settled drawing.
- * @returns Its crossings, counted as the places a reader sees one, bends and line length.
+ * The crossings a reader sees in a drawing, and the places two unrelated
+ * lines share one stroke, where a reader cannot tell which goes where and
+ * which may hide a crossing (stacked-runs.ts).
+ * @param drawing The drawing.
+ * @returns Their number.
  */
-function untidiness(drawing: ArchitectureDrawing): readonly number[] {
-	const lines = drawing.edges.map(({ curve }) => verticesOf(curve));
-	return [
-		crossingsOf(lines),
-		lines.reduce((sum, points) => sum + points.length - 2, 0),
-		lines.reduce((sum, points) => sum + lengthOf(points), 0),
-	];
+function crossingsSeen(drawing: ArchitectureDrawing): number {
+	return (
+		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))) + stackKeys(drawing).length
+	);
 }
 
 /**
- * Whether one drawing is tidier than another.
+ * How many bends a drawing's lines take together.
+ * @param drawing The drawing.
+ * @returns The bends.
+ */
+function bendsIn(drawing: ArchitectureDrawing): number {
+	return drawing.edges.reduce((sum, { curve }) => sum + verticesOf(curve).length - 2, 0);
+}
+
+/**
+ * How long a drawing's lines are together.
+ * @param drawing The drawing.
+ * @returns Their length.
+ */
+function lineLength(drawing: ArchitectureDrawing): number {
+	return drawing.edges.reduce((sum, { curve }) => sum + lengthOf(verticesOf(curve)), 0);
+}
+
+/**
+ * What a drawing is ranked on, most important first.
+ * @param drawing A settled drawing.
+ * @returns Its crossings seen, line ends across the reading direction, bends and line length.
+ */
+function untidiness(drawing: ArchitectureDrawing): readonly number[] {
+	return [crossingsSeen(drawing), sideEnds(drawing), bendsIn(drawing), lineLength(drawing)];
+}
+
+/**
+ * How many line ends leave or enter a card by its side, across the reading direction.
+ * @param drawing The drawing.
+ * @returns The ends.
+ */
+function sideEnds(drawing: ArchitectureDrawing): number {
+	const cards = new Set(drawing.cards.map(({ measured }) => measured.node.id));
+	return drawing.edges.reduce((sum, { edge, curve }) => {
+		const points = verticesOf(curve);
+		const ends = [
+			[edge.from, points[0]!, points[1]!],
+			[edge.to, points.at(-1)!, points.at(-2)!],
+		] as const;
+		return (
+			sum +
+			ends.filter(([card, tip, next]) => cards.has(card) && Math.abs(tip.y - next.y) < 0.5).length
+		);
+	}, 0);
+}
+
+/**
+ * How much bigger one drawing is than another, page and line alike.
+ * @param one A drawing.
+ * @param other Another.
+ * @returns The larger of the page area's and the line length's growth, as a share.
+ */
+function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
+	const [mine, theirs] = [lineLength(one), lineLength(other)];
+	return Math.max(
+		(one.width * one.height) / (other.width * other.height) - 1,
+		theirs === 0 ? 0 : mine / theirs - 1,
+	);
+}
+
+/**
+ * Whether one drawing is tidier than another: it ranks strictly better and
+ * grows the page and its lines by no more than every crossing it saves buys
+ * ({@link CROSSING_WORTH}). Two crossings saved do not pay for a page a third
+ * taller with a third more line (Command dispatch).
  * @param one The challenger.
  * @param other The drawing kept so far, which wins a tie.
  * @returns True when the challenger ranks strictly better.
@@ -70,12 +156,14 @@ function untidiness(drawing: ArchitectureDrawing): readonly number[] {
 function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean {
 	const [mine, theirs] = [untidiness(one), untidiness(other)];
 	const index = mine.findIndex((value, at) => Math.abs(value - theirs[at]!) > 0.5);
-	return index !== -1 && mine[index]! < theirs[index]!;
+	if (index === -1 || mine[index]! > theirs[index]!) return false;
+	const saved = Math.max(0, theirs[0]! - mine[0]!);
+	return growth(one, other) <= saved * CROSSING_WORTH;
 }
 
 /**
  * The tidier of a reading settled with plain pins and with evened pins. A
- * settlement the router refuses leaves the other; both refused is refused.
+ * settlement the router refuses leaves the other; a fault in either is thrown.
  * @param plain The reading settled with plain pins.
  * @param even The reading settled with evened pins.
  * @returns The settlement kept.
@@ -84,10 +172,9 @@ async function tidierSettlement<Settled extends { readonly drawing: Architecture
 	plain: Promise<Settled>,
 	even: Promise<Settled>,
 ): Promise<Settled> {
-	const [one, other] = await Promise.allSettled([plain, even]);
-	if (other.status === "rejected") return plain;
-	if (one.status === "rejected") return other.value;
-	return tidierThan(other.value.drawing, one.value.drawing) ? other.value : one.value;
+	const [one, other] = await eitherRouting(plain, even);
+	if (one === undefined || other === undefined) return (one ?? other)!;
+	return tidierThan(other.drawing, one.drawing) ? other : one;
 }
 
-export { centreHandicap, tidierSettlement, untidiness };
+export { bendsIn, centreHandicap, crossingsSeen, tidierSettlement };

@@ -1,34 +1,69 @@
 {
 	"nodes": [
 		{
-			"id": "f",
-			"name": "Alpha frame",
+			"id": "a",
+			"name": "Etaoinsh dlucmf",
 			"kind": "service",
-			"responsibility": "Bravo carbon delta eagle"
+			"responsibility": "Oinshr LUC Fwypet oins. Dluc fwype aoin hr lu mfwypeta insh-dlucm wypet oins r LUC fwypetaoi shrd ucm wy etaoins, dluc fw peta in. Rdlu mfw petaoi shr lucmfwypeta.",
+			"order": 2000
 		},
 		{
-			"id": "p",
-			"name": "Carbon delta",
-			"kind": "module",
-			"responsibility": "Eagle falcon garden harbor island jungle",
-			"parent": "f"
-		},
-		{
-			"id": "q",
-			"name": "Delta eagle",
-			"kind": "module",
-			"responsibility": "Falcon garden harbor island jungle kettle",
-			"parent": "f"
-		},
-		{
-			"id": "s",
-			"name": "Eagle falcon",
+			"id": "b",
+			"name": "Taoinshr.Lucmfw",
 			"kind": "service",
-			"responsibility": "Garden harbor island jungle kettle lantern"
+			"responsibility": "Inshrd .CMF ypetaoi shrd uc fwype Aoinshrd UCM.",
+			"order": 3000
+		},
+		{
+			"id": "c",
+			"name": "Aoins rdluc fwypetao",
+			"kind": "module",
+			"responsibility": "Nshrdl cmfwyp, aoin hrd ucmfwy eta inshr lucmfwype. Oi shrdlucmfwy etaoinsh dlucm wyp taoins rdlu-mfwyp taoi.",
+			"parent": "b",
+			"order": 4000
+		},
+		{
+			"id": "d",
+			"name": "Oinshr LUC",
+			"kind": "service",
+			"responsibility": "Shr Lucmfwyp taoinsh dlucmf ype Aoinsh.",
+			"order": 7000
+		},
+		{
+			"id": "e",
+			"name": "Inshrdlu mfwypet",
+			"kind": "module",
+			"responsibility": "Hrd Ucm Wy Etaoi, Hrdlu Mfwypeta ins Rdlucm Wypetao nshrdluc. Wype aoin hrdl, mfwypet oins rd UCMf ype aoinsh d ucmf yp tao nshrdl.",
+			"parent": "d",
+			"order": 8000
 		}
 	],
 	"edges": [
-		{ "id": "e0", "from": "p", "to": "q", "kind": "call" },
-		{ "id": "e1", "from": "p", "to": "s", "kind": "data" }
+		{
+			"id": "e0",
+			"from": "e",
+			"to": "a",
+			"kind": "data",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "UC Fwyp taoi",
+			"order": 2000
+		},
+		{
+			"id": "e1",
+			"from": "e",
+			"to": "c",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "cmfwyp, aoin, rdlucmfw",
+			"order": 4000
+		}
 	]
 }
