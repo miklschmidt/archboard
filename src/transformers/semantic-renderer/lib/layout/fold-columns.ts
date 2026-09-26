@@ -39,13 +39,13 @@ function nodesById(graph: ElkNode): Map<string, ElkNode> {
 }
 
 /**
- * Group overlapping rows and entire frames into indivisible horizontal bands.
- * @param graph Native downward placement.
- * @returns Consecutive bands, split only where an original relationship continues.
+ * Group overlapping cards and entire frames into rows.
+ * @param nodes One containment level, where it stands.
+ * @returns Its rows, top to bottom.
  */
-function rowsOf(graph: ElkNode): Band[] {
+function rowsOf(nodes: readonly ElkNode[]): Band[] {
 	const rows: Band[] = [];
-	for (const node of (graph.children ?? []).toSorted(
+	for (const node of nodes.toSorted(
 		(one, other) => boxOf(one).y - boxOf(other).y || semanticOrder(one) - semanticOrder(other),
 	)) {
 		const box = boxOf(node);
@@ -68,7 +68,7 @@ function rowsOf(graph: ElkNode): Band[] {
 function bandsOf(graph: ElkNode): Band[] {
 	const byId = nodesById(graph);
 	const bands: Band[] = [];
-	for (const row of rowsOf(graph)) {
+	for (const row of rowsOf(graph.children ?? [])) {
 		const previous = bands.at(-1);
 		const continues = (graph.edges ?? []).some((edge) => {
 			const from = boxOf(byId.get(edge.sources[0]!)!);
@@ -263,11 +263,13 @@ function translate(
  * @param graph Translated hierarchy with its original relationships.
  * @param positions Each identity's translation and column.
  * @param columns Bounds of the complete columns, including their widest frames.
+ * @param rows Each column's rows and how far each dropped to meet its neighbours.
  */
 function translateLabels(
 	graph: ElkNode,
 	positions: ReadonlyMap<string, Point & { column: number }>,
 	columns: readonly Box[],
+	rows: readonly (readonly DroppedRow[])[],
 ): void {
 	const nodes = nodesById(graph);
 	const gutters: ElkLabel[][] = Array.from({ length: columns.length - 1 }, () => []);
@@ -278,7 +280,7 @@ function translateLabels(
 			const box = boxOf(label);
 			if (source.column === target.column) {
 				label.x = box.x + source.x;
-				label.y = box.y + source.y;
+				label.y = box.y + source.y + dropAt(rows[source.column]!, box.y + source.y);
 			} else {
 				const from = boxOf(nodes.get(edge.sources[0]!)!);
 				const to = boxOf(nodes.get(edge.targets[0]!)!);
@@ -396,11 +398,13 @@ export function foldColumns(placed: ElkNode, count: number): ElkNode | undefined
 		translate(nodes, { x: left - box.x, y: top - box.y }, column, positions);
 		left += box.width + gap;
 	}
+	const rows = alignRows(members.map(rowsOf));
 	graph.x = 0;
 	graph.y = 0;
 	graph.width = left - gap + DIAGRAM_MARGIN;
-	graph.height = tallest + 2 * DIAGRAM_MARGIN;
-	translateLabels(graph, positions, columns);
+	graph.height = Math.max(...flattened(members.flat()).map((node) => bottomOf(boxOf(node))));
+	graph.height += DIAGRAM_MARGIN;
+	translateLabels(graph, positions, columns, rows);
 	return graph;
 }
 
@@ -438,6 +442,124 @@ function columnDrop(
 	if (drops.length === 0) return 0;
 	const sorted = drops.toSorted((one, other) => one - other);
 	return Math.max(0, Math.min(room, sorted[Math.floor((sorted.length - 1) / 2)]!));
+}
+
+/** A folded column's row: where its top stood, and how far it dropped to meet its neighbours. */
+interface DroppedRow {
+	readonly top: number;
+	readonly drop: number;
+}
+
+/** A row of one column to drop, and by how much, to meet a row of the next. */
+interface Meeting {
+	readonly column: number;
+	readonly row: number;
+	readonly by: number;
+	/** The higher top of the two rows, which orders the meetings top-down. */
+	readonly top: number;
+}
+
+/**
+ * Drop rows so that rows of neighbouring columns that read as one row share a
+ * centre, as Graphviz centres a rank. Each column was placed whole, stacked at
+ * its own rank pitch, so rows of different heights drifted apart down the
+ * columns. The topmost pair that misses meets first: the higher row drops with
+ * every row below it in its column, so no gap in a column shrinks and nothing
+ * above that pair moves.
+ * @param columns Each column's rows, top to bottom, where the fold put them.
+ * @returns Each column's rows with the drop each one took; their nodes are moved.
+ */
+function alignRows(columns: readonly Band[][]): DroppedRow[][] {
+	const drops = columns.map((rows) => rows.map(() => 0));
+	// Every meeting moves some row down and no row ever rises, so this bound
+	// only keeps a pathological fold from searching without end.
+	const limit = drops.flat().length ** 2;
+	for (let round = 0; round < limit; round++) {
+		const meeting = nextMeeting(columns, drops);
+		if (meeting === undefined) break;
+		const rows = drops[meeting.column]!;
+		for (let row = meeting.row; row < rows.length; row++) rows[row]! += meeting.by;
+	}
+	return columns.map((rows, column) =>
+		rows.map((row, index) => {
+			const drop = drops[column]![index]!;
+			for (const node of flattened(row.nodes)) node.y = boxOf(node).y + drop;
+			return { top: row.box.y, drop };
+		}),
+	);
+}
+
+/**
+ * The topmost pair of rows in neighbouring columns that read as one row but
+ * miss a shared centre.
+ * @param columns Each column's rows where the fold put them.
+ * @param drops How far each row has dropped so far.
+ * @returns The meeting to make, or nothing when every such pair meets.
+ */
+function nextMeeting(columns: readonly Band[][], drops: readonly number[][]): Meeting | undefined {
+	const dropped = columns.map((rows, column) =>
+		rows.map(({ box }, row) => ({ ...box, y: box.y + drops[column]![row]! })),
+	);
+	return dropped
+		.slice(1)
+		.flatMap((right, index) => meetings(dropped[index]!, right, index))
+		.reduce<Meeting | undefined>(
+			(best, meeting) => (best && best.top <= meeting.top ? best : meeting),
+			undefined,
+		);
+}
+
+/**
+ * Every row of one column that reads as one row with a row of the next but
+ * misses its centre, with the drop that makes the two meet.
+ * @param left The column's rows where they stand now.
+ * @param right The next column's rows.
+ * @param column The left column's index.
+ * @returns The meetings.
+ */
+function meetings(left: readonly Box[], right: readonly Box[], column: number): Meeting[] {
+	return left.flatMap((one, row) => {
+		const partner = right.findIndex((other) => oneRow(one, other));
+		const other = right[partner];
+		const by = other === undefined ? 0 : middle(other) - middle(one);
+		if (other === undefined || Math.abs(by) < 0.5) return [];
+		const top = Math.min(one.y, other.y);
+		return [by > 0 ? { column, row, by, top } : { column: column + 1, row: partner, by: -by, top }];
+	});
+}
+
+/**
+ * Whether two rows of neighbouring columns read as one row: each one's centre
+ * lies within the other's height. Rows in one column never overlap, so a row
+ * reads as one with at most one row of the next column.
+ * @param one A row.
+ * @param other A row of the next column.
+ * @returns True when they read as one row.
+ */
+function oneRow(one: Box, other: Box): boolean {
+	const [mine, theirs] = [middle(one), middle(other)];
+	return theirs >= one.y && theirs <= bottomOf(one) && mine >= other.y && mine <= bottomOf(other);
+}
+
+/**
+ * The drop a column's rows took where a label inside the column stands: the
+ * drop of the lowest row whose top is at or above it. Drops never shrink down
+ * a column, so the label keeps its clearance on both sides.
+ * @param rows The column's rows.
+ * @param y The label's top before rows dropped.
+ * @returns The drop.
+ */
+function dropAt(rows: readonly DroppedRow[], y: number): number {
+	return rows.findLast((row) => row.top <= y)?.drop ?? 0;
+}
+
+/**
+ * A box's bottom edge.
+ * @param box The box.
+ * @returns Its bottom's y.
+ */
+function bottomOf(box: Box): number {
+	return box.y + box.height;
 }
 
 /**
