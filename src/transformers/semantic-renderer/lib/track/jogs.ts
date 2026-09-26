@@ -302,6 +302,14 @@ function moveStretch(
 type Kept = (nets: readonly Net[]) => number;
 
 /**
+ * What a pass that runs first keeps: nothing.
+ * @returns None.
+ */
+function nothing(): number {
+	return 0;
+}
+
+/**
  * Whether a move leaves no more of what a pass keeps than there was before it.
  * @param nets Every net.
  * @param kept What the pass keeps from growing.
@@ -318,7 +326,9 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
  * @param scene The scene.
  * @param chains Every relationship's chain.
  * @param nets Every net.
- * @param place The net and its line, top to bottom.
+ * @param place The net and its line.
+ * @param place.route The net's line, top to bottom.
+ * @param place.index The net's place in it.
  * @param kept What the move must not add to.
  * @returns Whether it closed.
  */
@@ -443,7 +453,7 @@ function closeJogs(
 	scene: Scene,
 	chains: readonly Chain[],
 	routes: readonly (readonly Net[])[],
-	kept: Kept = () => 0,
+	kept: Kept = nothing,
 ): void {
 	const nets = routes.flat();
 	for (let pass = 0; pass < PASSES; pass += 1) {
