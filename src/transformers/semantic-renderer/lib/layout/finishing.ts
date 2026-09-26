@@ -9,7 +9,8 @@
 // cures: a line along the wall of a frame it does not stay inside, a line
 // that leaves a card by its side although its other card stands straight
 // below or above it, or a line that hooks into a card's side past the card's
-// corner, or two unrelated lines on one stroke (stacked-runs.ts). The same
+// corner, two unrelated lines on one stroke (stacked-runs.ts), or a port
+// alone on a card face beside its corner (lone-pins.ts). The same
 // placement, with the same reservations, is routed once more with the pass's
 // options, and that drawing is kept when it has fewer of them
 // (or as many with fewer bends in all), every label still finds a box, it has

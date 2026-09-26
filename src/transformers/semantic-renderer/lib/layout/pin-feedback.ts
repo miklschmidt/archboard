@@ -212,7 +212,7 @@ function hooksPast(box: Box, tip: Point, bend: Point, after: Point): boolean {
 }
 
 /** One route's first or last run, which the router holds on its card's pin. */
-interface EndRun {
+export interface EndRun {
 	readonly edge: ElkExtendedEdge;
 	readonly card: string;
 	readonly pin: AlignedPin;
@@ -231,7 +231,7 @@ interface EndRun {
  * @param edge One complete native relationship.
  * @returns Its end runs on ordinary cards.
  */
-function endRuns(nodes: ReadonlyMap<string, ElkNode>, edge: ElkExtendedEdge): EndRun[] {
+export function endRuns(nodes: ReadonlyMap<string, ElkNode>, edge: ElkExtendedEdge): EndRun[] {
 	const section = edge.sections?.[0];
 	if (!section || edge.sources[0] === edge.targets[0]) return [];
 	const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
@@ -319,7 +319,7 @@ function pinAt(box: Box, face: Face, at: number): AlignedPin {
  * @param face A face.
  * @returns Its coordinate and extent.
  */
-function alongFace(face: Face): readonly ["x", "width"] | readonly ["y", "height"] {
+export function alongFace(face: Face): readonly ["x", "width"] | readonly ["y", "height"] {
 	return face === "NORTH" || face === "SOUTH"
 		? (["x", "width"] as const)
 		: (["y", "height"] as const);
@@ -373,7 +373,7 @@ function channelOf(
  * @param other Another pin.
  * @returns True on the same face at the same place.
  */
-function samePin(one: AlignedPin, other: AlignedPin): boolean {
+export function samePin(one: AlignedPin, other: AlignedPin): boolean {
 	return one.face === other.face && Math.abs(one.position - other.position) < 0.000001;
 }
 
