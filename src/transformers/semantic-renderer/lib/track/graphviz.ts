@@ -3,6 +3,7 @@
 import type { Graph } from "@viz-js/viz";
 import { z } from "zod";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { clearWrap, type Wrap } from "@/transformers/semantic-renderer/lib/track/wrap-columns";
 
 /** A point in diagram coordinates. */
 type Point = { readonly x: number; readonly y: number };
@@ -154,6 +155,8 @@ interface Room {
 	 * @returns True for a card.
 	 */
 	readonly card?: (name: string) => boolean;
+	/** The wrap the block's rank was placed by, whose lowered cards may step out of a line's way. */
+	readonly wrap?: Wrap;
 }
 
 /**
@@ -281,6 +284,23 @@ class Columns {
 	}
 
 	/**
+	 * Whether an item may stand at a box, whatever lines Graphviz drew there:
+	 * inside its span, and crowding nothing but what holds it.
+	 * @param name The item.
+	 * @param at Where it would stand.
+	 * @returns True when it may.
+	 */
+	roomy(name: string, at: Box): boolean {
+		const span = this.room.within(name);
+		if (span === undefined || at.x < span.left || at.x + at.width > span.right) return false;
+		const was = this.boxes.get(name)!;
+		return ![...this.boxes].some(
+			([other, placed]) =>
+				other !== name && !holds(placed, was) && crowds(at, placed, this.room.gap),
+		);
+	}
+
+	/**
 	 * Whether an item may stand at a box: inside its span, crowding nothing
 	 * but what holds it, and clear of every line it is not an end of.
 	 * @param name The item.
@@ -288,15 +308,8 @@ class Columns {
 	 * @returns True when it may.
 	 */
 	free(name: string, at: Box): boolean {
-		const span = this.room.within(name);
-		if (span === undefined || at.x < span.left || at.x + at.width > span.right) return false;
-		const was = this.boxes.get(name)!;
-		const crowded = [...this.boxes].some(
-			([other, placed]) =>
-				other !== name && !holds(placed, was) && crowds(at, placed, this.room.gap),
-		);
 		return (
-			!crowded &&
+			this.roomy(name, at) &&
 			this.paths.every(
 				({ ends, points }) =>
 					ends.has(name) || points.slice(1).every((to, index) => !through(points[index]!, to, at)),
@@ -474,7 +487,8 @@ function fans(at: Box, fan: readonly Box[]): boolean {
  * an end already lined up with another card, whose straight line would bend.
  * The cards stacked on the moved end's centre move with it. Last, where the
  * room names the cards, two joined cards on one centre whose widths differ
- * by no more than a near miss are made one width.
+ * by no more than a near miss are made one width, and where it names a wrap,
+ * its lowered cards stand out of the way of the lines through it.
  * @param boxes Every item Graphviz placed; the moved ones are replaced.
  * @param joins Every line between two items, upper end first.
  * @param room What a moved item must keep to.
@@ -488,6 +502,7 @@ function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Roo
 	for (const name of boxes.keys()) columns.centre(name);
 	// Widening one card can line its edges up with a third's.
 	while (columns.stacked().some((join) => columns.even(join)));
+	clearWrap(columns, room.wrap);
 }
 
 export {
@@ -500,6 +515,7 @@ export {
 	numbers,
 	outputSchema,
 	polylinePoints,
+	type Columns,
 	type Join,
 	type Output,
 };

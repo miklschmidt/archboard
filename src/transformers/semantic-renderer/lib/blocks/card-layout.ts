@@ -372,6 +372,7 @@ class CardLayout {
 			polylines,
 			width,
 			cards: this.tree.cards,
+			lowered: this.arranged.lowered,
 		});
 		const placed = this.placed(centres, polylines, clusters);
 		const laid = this.routed(placed, 0);

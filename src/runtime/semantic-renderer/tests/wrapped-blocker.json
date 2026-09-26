@@ -1,0 +1,104 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaalp lanter",
+			"kind": "module",
+			"responsibility": "lantern orange lantern needle lan meadow fa mea timberti gar needl a quartz oran brav isla pe carb jun quar meadow"
+		},
+		{
+			"id": "n1",
+			"name": "bravobra isla",
+			"kind": "function",
+			"responsibility": "eagleeag lante summi falc mea timbe gard nee lantern harbo timber"
+		},
+		{
+			"id": "n2",
+			"name": "carbo lantern",
+			"kind": "function",
+			"responsibility": "falconfa meado timbe pepper nee alp garden orang bravo is"
+		},
+		{
+			"id": "n3",
+			"name": "lantern kettlekettl",
+			"kind": "service",
+			"responsibility": "gardenga nee alp harb or bra isl pep carbo jun quar delta kettl"
+		},
+		{
+			"id": "n4",
+			"name": "eag lant",
+			"kind": "module",
+			"responsibility": "har orangeor bravo isla pepperpe car jun quar delta kett river eag lant"
+		},
+		{
+			"id": "n5",
+			"name": "falconfa mead",
+			"kind": "function",
+			"responsibility": "isl pepp c jung kettle del jungle lantern eagle lanternl summ falco mea timb garde"
+		},
+		{
+			"id": "n6",
+			"name": "gard summit",
+			"kind": "external",
+			"responsibility": "jun falcon de kettleke river eag lanternl summ fal lantern timbe pepper"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n4",
+			"to": "n5",
+			"kind": "call",
+			"label": "lanternlanternlante",
+			"emphasis": "muted"
+		},
+		{
+			"id": "e1",
+			"from": "n3",
+			"to": "n5",
+			"kind": "call",
+			"label": "meadowmeadowmeadow",
+			"emphasis": "muted"
+		},
+		{
+			"id": "e2",
+			"from": "n0",
+			"to": "n5",
+			"kind": "call",
+			"label": "needl al har island pepper",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e3",
+			"from": "n2",
+			"to": "n5",
+			"kind": "call",
+			"label": "orang lantern",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e4",
+			"from": "n1",
+			"to": "n6",
+			"kind": "call",
+			"label": "lantern carbo lantern quar",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e5",
+			"from": "n4",
+			"to": "n6",
+			"kind": "call",
+			"label": "lantern de kettlekettlekett river eagleeagle",
+			"emphasis": "muted"
+		},
+		{
+			"id": "e6",
+			"from": "n3",
+			"to": "n6",
+			"kind": "call",
+			"label": "rive eag lantern summi falc mea tim",
+			"emphasis": "muted"
+		}
+	]
+}
