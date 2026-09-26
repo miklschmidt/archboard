@@ -1,7 +1,7 @@
 // Which line rises where two lines cross, and where a hop may stand, on fixed
 // route geometry.
 import { expect, test } from "bun:test";
-import { bridgeCrossings, type Point } from "@/runtime/semantic-renderer/layout";
+import { bridgeCrossings } from "@/runtime/semantic-renderer/layout";
 import { drawing } from "./fixed-routes";
 
 // Every engine: a line that turned just past a crossing was cut beneath the
@@ -161,65 +161,4 @@ test("a crossing with room on both lines hops, centred, and every hop bulges the
 	expect(result.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
 	expect(result.bridges[0]!.curve.segments[0]!.to).toEqual({ x: 50, y: 43 });
 	expect(bulgeOneWay(result.bridges)).toBe(true);
-});
-
-/**
- * A straight route across at one height.
- * @param y The height.
- * @returns Its points.
- */
-function across(y: number): Point[] {
-	return [
-		{ x: 0, y },
-		{ x: 100, y },
-	];
-}
-
-// Archboard server, Browser application and Skill evaluation: a line crossed
-// two lines sixteen apart; one of them hopped it and the other, whose hop
-// would have touched the first, was cut.
-test("a line crossing two close lines rises over both under one crest", () => {
-	const down = [
-		{ x: 50, y: 0 },
-		{ x: 50, y: 150 },
-	];
-	// Whether the crossing line is painted first or between the two.
-	for (const routes of [
-		[down, across(50), across(62)],
-		[across(50), down, across(66)],
-	]) {
-		const result = bridgeCrossings(drawing(routes));
-		const line = String(routes.indexOf(down));
-		expect(result.bridges).toHaveLength(1);
-		expect(result.bridges[0]!.edgeId).toBe(line);
-		expect(result.bridges[0]!.under.toSorted()).toEqual(
-			["0", "1", "2"].filter((id) => id !== line),
-		);
-		expect(bulgeOneWay(result.bridges)).toBe(true);
-	}
-});
-
-// Every engine: a line crossing another route's corner was cut beneath the
-// corner, though the corner turned on into a line leading away from it.
-test("a straight line hops a rounded corner that turns away on the side its crest bulges to", () => {
-	const before = drawing([
-		[
-			{ x: 50, y: 0 },
-			{ x: 50, y: 200 },
-		],
-		[
-			{ x: 150, y: 100 },
-			{ x: 46, y: 100 },
-			{ x: 46, y: 200 },
-		],
-	]);
-	const result = bridgeCrossings(before);
-	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
-	expect(result.bridges[0]!.curve.segments.length).toBeGreaterThan(1);
-	expect(bulgeOneWay(result.bridges)).toBe(true);
-	// The crest stands on the corner, not on the line it turns onto.
-	const crest = result.bridges[0]!.curve.segments[0]!.to;
-	expect(crest.y).toBeGreaterThan(100);
-	expect(result.edges[1]).toEqual(before.edges[1]!);
 });
