@@ -1,0 +1,182 @@
+{
+	"nodes": [
+		{
+			"id": "E2MAq7W7",
+			"order": 4000,
+			"name": "Contract execution",
+			"kind": "module",
+			"responsibility": "Parses and validates a command's input, runs its handler with the prerequisites it asks for, and presents the answer",
+			"description": "runner.ts is the seam callers import; the steps live here.",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/command-contract/lib/execution.ts"
+			}
+		},
+		{
+			"id": "OfRn3av3",
+			"order": 6000,
+			"name": "Board client",
+			"kind": "module",
+			"responsibility": "The board routes: reads, writes, renders and the vault check, and the refusals they come back with",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/semantic-board-client/index.ts"
+			}
+		},
+		{
+			"id": "eOsn0BO4",
+			"order": 9000,
+			"name": "Semantic lifecycle",
+			"kind": "module",
+			"responsibility": "resolve, adopt and shelve: settling a proposal, moving the current designation, setting a proposal aside",
+			"groups": ["writes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-lifecycle.ts"
+			}
+		},
+		{
+			"id": "e8DKQF2E",
+			"order": 10000,
+			"name": "Comparison",
+			"kind": "module",
+			"responsibility": "compare: what one variant changed about the one it came from",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-compare.ts"
+			}
+		},
+		{
+			"id": "69392DWF",
+			"order": 11000,
+			"name": "Rasterize",
+			"kind": "module",
+			"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
+			"description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it.",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-rasterize.ts"
+			}
+		},
+		{
+			"id": "gQ3aPXau",
+			"order": 18000,
+			"name": "Render",
+			"kind": "module",
+			"responsibility": "render: a board, a variant or one of its views as the SVG the Archboard server draws",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-render.ts"
+			}
+		},
+		{
+			"id": "4oWqpsOB",
+			"order": 21000,
+			"name": "Record",
+			"kind": "module",
+			"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
+			"description": "Reads the board through the Archboard server and hands the walkthrough to the recorder. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile.",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-record.ts"
+			}
+		},
+		{
+			"id": "XAJYaUnv",
+			"order": 22000,
+			"name": "Walkthrough recorder",
+			"kind": "module",
+			"responsibility": "Opens the Archboard server's own page in a private headless browser and saves the tab's capture as the file",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/walkthrough-recorder/index.ts"
+			},
+			"drillDown": {
+				"board": "Board rasterizer",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "2KmUovkl",
+			"order": 25000,
+			"name": "Status",
+			"kind": "module",
+			"responsibility": "status: whether the Archboard server answers, who it is, and what it reports",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/command-contract/status.ts"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "BsJL3bGP",
+			"order": 9000,
+			"from": "E2MAq7W7",
+			"to": "e8DKQF2E",
+			"kind": "call",
+			"label": "validated input",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Ixm9Y4W9",
+			"order": 14000,
+			"from": "eOsn0BO4",
+			"to": "OfRn3av3",
+			"kind": "call",
+			"label": "board operation",
+			"emphasis": "normal"
+		},
+		{
+			"id": "I2CofSP0",
+			"order": 16000,
+			"from": "69392DWF",
+			"to": "OfRn3av3",
+			"kind": "call",
+			"label": "the drawn SVG",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HEDb25Es",
+			"order": 26000,
+			"from": "E2MAq7W7",
+			"to": "gQ3aPXau",
+			"kind": "call",
+			"label": "validated input",
+			"emphasis": "normal"
+		},
+		{
+			"id": "bbPBYyFU",
+			"order": 29000,
+			"from": "E2MAq7W7",
+			"to": "4oWqpsOB",
+			"kind": "call",
+			"label": "validated input",
+			"emphasis": "normal"
+		},
+		{
+			"id": "LL4azQxP",
+			"order": 32000,
+			"from": "E2MAq7W7",
+			"to": "2KmUovkl",
+			"kind": "call",
+			"label": "validated input",
+			"emphasis": "normal"
+		},
+		{
+			"id": "W0x3eks9",
+			"order": 33000,
+			"from": "gQ3aPXau",
+			"to": "OfRn3av3",
+			"kind": "call",
+			"label": "the drawn SVG",
+			"emphasis": "normal"
+		}
+	]
+}

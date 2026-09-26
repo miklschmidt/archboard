@@ -13,7 +13,13 @@ import {
 	type VendorNode,
 } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { cornerHeader, letPortsSlide } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import {
+	PORT,
+	cornerHeader,
+	letPortsSlide,
+	markPorts,
+	pinnedLeaf,
+} from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
 	type Block,
@@ -42,9 +48,6 @@ import {
 	TRACK_POLYLINE,
 	TRACK_REGIONS,
 } from "@/transformers/semantic-renderer/lib/track/scene";
-
-/** The side of a port's square. */
-const PORT = 1;
 
 /** How a block is arranged beyond Graphviz's own ranking. */
 interface Arrangement {
@@ -359,7 +362,7 @@ class CardLayout {
 			if (id !== undefined && pos !== undefined) polylines.set(id, polylinePoints(pos, origin));
 		const [centres, clusters] = [centresOf(output, origin), this.clusters.boxes(output, origin)];
 		const boxes = boxesOf(nodesIn(this.graph), centres);
-		for (const pin of this.pins()) boxes.set(pin, this.pinned(pin, centres));
+		for (const pin of this.pins()) boxes.set(pin, pinnedLeaf(this.tree, this.laid, pin, centres));
 		// A line from a child block is lined up where it leaves the block, at its pin.
 		const atPins = this.links((end) => (this.tree.pins.has(end) ? end : this.vendorOf(end)));
 		const width = Math.abs(right! - left!);
@@ -372,18 +375,20 @@ class CardLayout {
 		});
 		const placed = this.placed(centres, polylines, clusters);
 		const laid = this.routed(placed, 0);
-		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width) };
+		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
 	}
 
 	/**
 	 * Route the placed block's lines on tracks and read it back.
 	 * @param placed The placed block.
 	 * @param held The width the block keeps at least.
+	 * @param settled Whether its ports were settled, and stay where they stand.
 	 * @returns The laid-out block.
 	 */
-	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
+	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number, settled = false): Laid {
 		const scene = new Scene(placed);
-		letPortsSlide(scene, this.block, this.tree.nesting);
+		markPorts(scene, this.block);
+		if (!settled) letPortsSlide(scene, this.block, this.tree.nesting);
 		const lines = routeScene(
 			scene,
 			placed.edges.map((edge) => {
@@ -407,23 +412,30 @@ class CardLayout {
 
 	/**
 	 * The block routed again with some of its ports moved along their edges,
-	 * where its parent settled them; Graphviz does not rank it again, and it
-	 * keeps its width.
-	 * @param placed The placed block; its ports' leaves move in place.
+	 * where its parent settled them, and every pin on a block inside it where
+	 * that block's settled port now stands; Graphviz does not rank it again,
+	 * and it keeps its width.
+	 * @param placed The placed block; its ports' and pins' leaves move in place.
 	 * @param held The block's width.
+	 * @param centres Every vendor node's centre.
 	 * @param ports Each moved port's x, in the block's own coordinates.
 	 * @returns The laid-out block.
 	 */
 	rerouted(
 		placed: ElkNode & { edges: ElkExtendedEdge[] },
 		held: number,
+		centres: ReadonlyMap<string, Point>,
 		ports: ReadonlyMap<string, number>,
 	): Laid {
-		for (const leaf of placed.children ?? []) {
+		const leaves = [...(placed.children ?? [])];
+		for (let leaf = leaves.pop(); leaf !== undefined; leaf = leaves.pop()) {
+			leaves.push(...(leaf.children ?? []));
 			const x = ports.get(leaf.id);
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
+			else if (this.tree.pins.has(leaf.id))
+				leaf.x = pinnedLeaf(this.tree, this.laid, leaf.id, centres).x;
 		}
-		return this.routed(placed, held);
+		return this.routed(placed, held, true);
 	}
 
 	/**
@@ -536,7 +548,7 @@ class CardLayout {
 			const centre = centres.get(id)!;
 			return { id, x: centre.x - width / 2, y: centre.y - height / 2, width, height };
 		});
-		for (const pin of this.pins()) leaves.push(this.pinned(pin, centres));
+		for (const pin of this.pins()) leaves.push(pinnedLeaf(this.tree, this.laid, pin, centres));
 		cornerHeader(leaves, headerOf(this.block));
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
@@ -552,22 +564,6 @@ class CardLayout {
 	pins(): Set<string> {
 		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
 		return new Set(ends.filter((end) => this.tree.pins.has(end)));
-	}
-
-	/**
-	 * A pin as the scene reads it: a sliver as tall as its child block, at its port's x.
-	 * @param pin The pin.
-	 * @param centres Every vendor node's centre.
-	 * @returns The placed pin.
-	 */
-	pinned(pin: string, centres: ReadonlyMap<string, Point>): ElkNode & Box {
-		const { block: child, port } = this.tree.pins.get(pin)!;
-		const inner = this.laid.get(child.id)!;
-		const at = inner.boxes.get(port)!;
-		const centre = centres.get(child.id)!;
-		const x = centre.x - inner.width / 2 + at.x + at.width / 2;
-		const y = centre.y - inner.height / 2;
-		return { id: pin, x: x - PORT / 2, y, width: PORT, height: inner.height };
 	}
 
 	/**
