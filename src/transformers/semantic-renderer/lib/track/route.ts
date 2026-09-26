@@ -32,7 +32,8 @@ import {
 import { settleLabels, slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
-import { closeJogs, partCollinear } from "@/transformers/semantic-renderer/lib/track/jogs";
+import { closeJogs, openNotches } from "@/transformers/semantic-renderer/lib/track/jogs";
+import { partCollinear } from "@/transformers/semantic-renderer/lib/track/parting";
 import { relayLaps } from "@/transformers/semantic-renderer/lib/track/relay";
 import {
 	clearHeadings,
@@ -484,6 +485,23 @@ function pullOntoPorts(
 }
 
 /**
+ * Part the lines that read as one, then close the jogs that frees: parting
+ * two lines stands one exactly a lane from the other, which can free the
+ * column a jog was held off by a point or two. A step still too short for
+ * its bends is opened to one they turn whole.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param routed Every line's nets.
+ */
+function partAndClose(scene: Scene, chains: readonly Chain[], routed: readonly Routed[]): void {
+	const routes = routed.map((route) => route.nets);
+	partCollinear(scene, chains, routes);
+	closeJogs(scene, chains, routes);
+	openNotches(scene, chains, routes);
+	for (const nets of routes) settleStraights(nets);
+}
+
+/**
  * Route lines through a banded scene, each on tracks of its own, and space
  * the bands for the tracks each channel holds.
  * @param scene The scene, whose bands get their new tops.
@@ -538,11 +556,7 @@ function routeScene(
 		first.wall = "top";
 		first.topX = wallX(scene, line.enters!);
 	}
-	partCollinear(
-		scene,
-		[...chains.values()],
-		[...routed.values()].map((route) => route.nets),
-	);
+	partAndClose(scene, [...chains.values()], [...routed.values()]);
 	const edges = new Map(lines.map((line) => [line.id, line.placed]));
 	const rising = new Set(
 		[...routed.values()].filter(({ upward }) => upward).map(({ nets: [first] }) => first!),
