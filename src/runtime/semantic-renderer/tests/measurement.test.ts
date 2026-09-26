@@ -80,7 +80,12 @@ test("a card's wrapped lines do not widen it by the space they broke at", () => 
 
 test("a relationship's plate hugs its balanced lines and centres them on the line it labels", () => {
 	// One line of this is just wider than a plate's text room, and one glyph is far narrower.
-	const labels = { wrapped: "thread/start with the coordinator body", glyph: "/" };
+	// The long word is wider than half the words, so a wrap balanced below it would break it.
+	const labels = {
+		wrapped: "thread/start with the coordinator body",
+		glyph: "/",
+		long: "layoutWithLines(handle, width, lineHeight)",
+	};
 	const measured = measureArchitecture({
 		...emptyContent(),
 		nodes: [{ id: "api", order: 1000, name: "API", kind: "service" }],
@@ -100,6 +105,9 @@ test("a relationship's plate hugs its balanced lines and centres them on the lin
 	expect(wrapped.width).toBeCloseTo(Math.max(...widths) + 20, 6);
 	// Balanced: no word is left alone on the last line.
 	expect(Math.min(...widths)).toBeGreaterThan(Math.max(...widths) / 2);
+	// Balanced, but never inside a word that the plate's room holds whole.
+	const long = measured.labels.get("long")!.runs.flatMap((run) => run.text.split(" "));
+	expect(long).toEqual(labels.long.split(" "));
 	for (const plate of [wrapped, measured.labels.get("glyph")!]) {
 		expect(plate.width).toBeGreaterThanOrEqual(40);
 		for (const run of plate.runs) {
