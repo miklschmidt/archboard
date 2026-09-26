@@ -1,4 +1,5 @@
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
+import { centreHandicap } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import {
 	APPROACH_STRAIGHT,
 	ROUTE_OBSTACLE_CLEARANCE as SHAPE_CLEARANCE,
@@ -58,11 +59,14 @@ export class RoutingScene {
 	 * Configure the same obstacle routing as the accepted prototype.
 	 * @param avoid The initialized libavoid module.
 	 * @param endpoints Shared faces still capable of a complete rounded approach.
+	 * @param closedFrames Frames whose bodies no unrelated route may enter.
+	 * @param evenPins Whether every pin of a shape costs the same (even-pins.ts).
 	 */
 	constructor(
 		private readonly avoid: AvoidEngine,
 		private readonly endpoints: EndpointOptions,
 		private readonly closedFrames: ReadonlySet<string> = new Set(),
+		private readonly evenPins = false,
 	) {
 		this.router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		this.router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, SHAPE_CLEARANCE);
@@ -270,16 +274,21 @@ export class RoutingScene {
 		const box = this.obstacles.get(id)!;
 		const inset = nodeInset(this.nodes.get(id));
 		for (const [x, y, direction] of faces) {
+			const at = {
+				x: x === 0.5 ? (inset + (box.width - 2 * inset) * position) / box.width : x,
+				y: y === 0.5 ? (inset + (box.height - 2 * inset) * position) / box.height : y,
+			};
 			const pin = new this.avoid.ShapeConnectionPin(
 				shape,
 				pinClass,
-				x === 0.5 ? (inset + (box.width - 2 * inset) * position) / box.width : x,
-				y === 0.5 ? (inset + (box.height - 2 * inset) * position) / box.height : y,
+				at.x,
+				at.y,
 				true,
 				inset,
 				direction,
 			);
 			pin.setExclusive(false);
+			if (this.evenPins) pin.setConnectionCost(centreHandicap(box, at, inset));
 		}
 	}
 

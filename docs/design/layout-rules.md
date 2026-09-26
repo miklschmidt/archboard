@@ -1707,3 +1707,38 @@ route every release whose page is smaller to learn that, so it is not free.
 Returning a round as soon as the first release in order holds, and stopping
 the solves after it, saved nothing measurable (Browser application 1346 to
 1319 ms): the kept release is usually late in the order.
+
+## 35. Evened pins, settled both ways (2026-09-26)
+
+libavoid joins the pins of one class to a point at the shape's centre and
+charges each pin its distance from there. On a 340x105 card a side pin starts
+about 144 units behind the pin in the middle of the bottom face, which cancels
+exactly the shorter run a side exit has along a trunk. So Command interface's
+`lifecycle command` dropped out of Contract execution's bottom and ran under the
+trunk its siblings leave along, and all six drops hopped it; Skill evaluation's
+`One author run` drew 10 crossings the same way. Each pin now carries a
+connection cost that makes every pin of a shape cost the same
+(`even-pins.ts`, `centreHandicap`), and routes compete on their own length and
+bends.
+
+Evened pins move routes, so they move which labels are reserved and the
+placement those reservations buy. Applied everywhere they took dogfood from 218
+to 190 crossings but Browser application from 15 to 24: no release of its
+reserved rows kept its crossings down (the release of `md5cpNZV` came to 27
+against 26), so it stayed 2734 wide instead of settling to 2156. Choosing pins
+per routing pass by crossings did worse (202; Semantic renderer 7 to 15), since
+every pass still reshuffles the reservations. Each reading is therefore settled
+with plain and with evened pins, and the tidier drawing is kept: fewer
+crossings as a reader sees them (`crossingsOf`), then fewer bends, then less
+line.
+
+On the two galleries, no drawing gains a crossing:
+
+| vault   | crossings | length          | bends       | short jogs |
+| ------- | --------- | --------------- | ----------- | ---------- |
+| dogfood | 218 → 171 | 372.5k → 363.9k | 2235 → 2079 | 148 → 107  |
+| work    | 35 → 26   | 95.6k → 90.4k   | 576 → 505   | 26 → 19    |
+
+Settling twice doubles a reading's label rounds. Archboard server's whole
+drawing then runs past the 20 s budget of its wide-boards test on a loaded
+machine; making it fast is the next step, not a reason to keep the crossings.
