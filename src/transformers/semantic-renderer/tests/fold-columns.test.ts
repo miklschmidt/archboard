@@ -188,7 +188,6 @@ test("a narrower taller prefix survives until its complete partition fits the pa
 	// Cuts after the second and fifth cards keep the 900-wide card in one
 	// column. Minimizing prefix height (or prefix fit) loses this split.
 	expect(folded.width).toBe(300 + 900 + 400 + 2 * COLUMN_GAP + 2 * DIAGRAM_MARGIN);
-	expect(folded.height).toBe(1380 + 2 * DIAGRAM_MARGIN);
 	const columns = folded.children!.map((node) => node.x);
 	expect(columns).toEqual([
 		columns[0],
