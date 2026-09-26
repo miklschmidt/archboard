@@ -138,29 +138,31 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 	});
 }
 
-test("seen from far away, a card draws only its name, larger and at one size for every card", async () => {
-	const rendered = await renderSemanticView({ grammar: "architecture", content, theme: "light" });
-	const faces = registeredFaces(rendered.svg);
-	const near = drawnTexts(rendered.svg);
-	const far = drawnTexts(rendered.svg, "far");
-	const sizes = new Set<number>();
-	for (const id of ["api", "store"]) {
-		const box = cardBox(rendered, id);
-		const title = near.find((run) => run.subject.id === id && run.weight !== 400)!;
-		const runs = far.filter((run) => run.subject.id === id);
-		expect(runs.map((run) => run.text).join(" ")).toBe(
-			content.nodes.find((node) => node.id === id)!.name,
-		);
-		for (const run of runs) {
-			expect(run.size).toBeGreaterThan(title.size);
-			expect(spanFits(drawnSpan(run, faces), box)).toBe(true);
-			expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
-			sizes.add(run.size);
+for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[])
+	test(`${grammar}, seen from far away, draws only each card's name, larger and at one size for every card`, async () => {
+		const rendered = await renderSemanticView({ grammar, content, theme: "light" });
+		const faces = registeredFaces(rendered.svg);
+		const near = drawnTexts(rendered.svg);
+		const far = drawnTexts(rendered.svg, "far");
+		const sizes = new Set<number>();
+		for (const id of ["api", "store"]) {
+			const box = cardBox(rendered, id);
+			const title = near.find((run) => run.subject.id === id && run.weight !== 400)!;
+			const runs = far.filter((run) => run.subject.id === id);
+			expect(runs.map((run) => run.text).join(" ")).toBe(
+				content.nodes.find((node) => node.id === id)!.name,
+			);
+			for (const run of runs) {
+				expect(run.size).toBeGreaterThan(title.size);
+				expect(spanFits(drawnSpan(run, faces), box)).toBe(true);
+				expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
+				sizes.add(run.size);
+			}
 		}
-	}
-	expect(sizes.size).toBe(1);
-	// A container's name stays in its header, above what it holds.
-	const header = far.filter((run) => run.subject.id === "system");
-	expect(header.map((run) => run.text).join(" ")).toBe("Board service");
-	expect(header.at(-1)!.y).toBeLessThan(rendered.atlas.nodes["api"]!.y);
-});
+		expect(sizes.size).toBe(1);
+		if (grammar === "data-flow") return;
+		// A container's name stays in its header, above what it holds.
+		const header = far.filter((run) => run.subject.id === "system");
+		expect(header.map((run) => run.text).join(" ")).toBe("Board service");
+		expect(header.at(-1)!.y).toBeLessThan(rendered.atlas.nodes["api"]!.y);
+	});

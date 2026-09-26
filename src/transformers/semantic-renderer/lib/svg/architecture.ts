@@ -23,8 +23,8 @@ import {
 	paintMeasuredCard,
 	paintMeasuredFrame,
 	paintMeasuredHeader,
-	paintTextRuns,
 } from "@/transformers/semantic-renderer/lib/svg/measured-cards";
+import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import { colourId } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";

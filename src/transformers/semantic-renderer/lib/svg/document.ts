@@ -29,7 +29,7 @@ import {
 	FAR_CLASS,
 	FAR_VIEW_CLASS,
 	NEAR_CLASS,
-} from "@/transformers/semantic-renderer/lib/svg/measured-cards";
+} from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	HEAD_REF_X,

@@ -50,6 +50,7 @@ import {
 	SELF_LOOP_REACH,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
+import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import { canvasFor, coord, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { FLOW_CYCLE_CAP_MS, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
@@ -419,6 +420,9 @@ function paintFlow(
 	appearances: ReadonlyMap<string, NodeAppearance>,
 ): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
+	const farSize = Math.min(
+		...layout.columns.map(({ card }) => farSizeOf(card.node.name, card.box)),
+	);
 	const body = lines([
 		paintFrame(layout, palette, standingOf(layout.flow.id), unsettledOf(layout.flow.id)),
 		wrap(
@@ -441,6 +445,7 @@ function paintFlow(
 						standingOf(column.card.node.id),
 						unsettledOf(column.card.node.id),
 						appearances.get(column.card.node.id)!,
+						farSize,
 					),
 				),
 			),
