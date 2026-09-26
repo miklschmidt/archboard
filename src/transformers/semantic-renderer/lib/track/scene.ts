@@ -103,6 +103,8 @@ class Scene {
 	/** How far each title row's words reach in from its left edge. */
 	readonly words = new Map<Item, number>();
 	readonly frames = new Map<string, Frame>();
+	/** Each band's frame and region walls, once asked for. */
+	private readonly walls = new Map<number, ReadonlyMap<string, readonly [number, number]>>();
 	readonly regions: Region[] = [];
 	readonly bands: Band[] = [];
 
@@ -261,11 +263,16 @@ class Scene {
 
 	/**
 	 * Every frame and group region a band passes through, with its left and right walls.
+	 * Routing moves no frame or region sideways, so each band's walls are found once.
 	 * @param band The band.
 	 * @returns Each one's id and walls.
 	 */
-	walled(band: number): Map<string, readonly [number, number]> {
-		return new Map([...this.frameWalls(band), ...this.regionWalls(band)]);
+	walled(band: number): ReadonlyMap<string, readonly [number, number]> {
+		const known = this.walls.get(band);
+		if (known !== undefined) return known;
+		const walls = new Map([...this.frameWalls(band), ...this.regionWalls(band)]);
+		this.walls.set(band, walls);
+		return walls;
 	}
 
 	/**

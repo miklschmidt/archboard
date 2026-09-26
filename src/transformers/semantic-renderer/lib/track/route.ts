@@ -35,6 +35,10 @@ import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
 import { closeJogs, partCollinear } from "@/transformers/semantic-renderer/lib/track/jogs";
 import { relayLaps } from "@/transformers/semantic-renderer/lib/track/relay";
+import {
+	clearHeadings,
+	straightenThroughLabels,
+} from "@/transformers/semantic-renderer/lib/track/columns";
 import { unstrandLanes } from "@/transformers/semantic-renderer/lib/track/stranded";
 
 /** From the band above to the first track: room for the bend off a face. */
@@ -469,12 +473,14 @@ function routeScene(
 	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
 	// A line that enters its block by a wall comes from that wall, not from its stub.
 	const movable = inner.filter(({ enters }) => enters === undefined);
+	clearHeadings(scene, [...chains.values()]);
 	straightenLanes(scene, [...chains.values()]);
 	relayLaps(
 		scene,
 		[...chains.values()],
 		movable.map(({ id }) => chains.get(id)!),
 	);
+	straightenThroughLabels(scene, [...chains.values()]);
 	const routed = new Map<string, Routed>([
 		...inner.map((line): [string, Routed] => {
 			const chain = chains.get(line.id)!;
