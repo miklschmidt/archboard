@@ -1,7 +1,9 @@
 // Small jogs closed (visual polish). A line whose neighbouring stations stand
 // a few points apart is drawn with a sideways step too short for its two
-// bends: a notch in a line that should run straight. Each such step is closed
-// by moving one of its ends onto the other's column where that end can move
+// bends: a notch in a line that should run straight. A step of up to two
+// lanes still reads as a kink in one line rather than a route, with no
+// straight between its bends, and is closed the same way. Each such step is
+// closed by moving one of its ends onto the other's column where that end can move
 // without crowding anything: a card's own port along its face, a run of lanes
 // onto a free column, or a label box clear of the rest of its band. A move
 // that would bend a line that ran straight on the moved station's other side
@@ -16,6 +18,8 @@
 // track and goes on down draws one line with a kink, however their tracks are
 // ordered. One end of the pair moves a lane aside, or onto its own line's
 // column, when that parts more such pairs than it makes and crosses nothing.
+// Two lines that end at one point, as at a block's one-point port, are drawn
+// joined there and are never parted.
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import {
 	LANE,
@@ -60,6 +64,18 @@ function step(net: Net): number {
  */
 function notched(net: Net): boolean {
 	return step(net) > STRAIGHT && step(net) < 2 * BEND_RADIUS;
+}
+
+/** Up to this, a sideways step reads as a kink in one line, not a route: two bends and at most a lane between. */
+const KINK = 2 * LANE;
+
+/**
+ * Whether a net steps sideways by no more than a kink.
+ * @param net The net.
+ * @returns True for a kink.
+ */
+function kinked(net: Net): boolean {
+	return step(net) > STRAIGHT && step(net) <= KINK + STRAIGHT;
 }
 
 /**
@@ -203,14 +219,41 @@ function follow(nets: readonly Net[]): void {
  * step a line through a card that ran through it straight, which trades one
  * jog for another.
  * @param nets Every net.
+ * @param guard Which steps count as new ones: notches, or for a pass that
+ * closes kinks, kinks too, so closing one never opens another.
  * @returns Whether the nets, once moved, still keep clear of new steps.
  */
-function keepsClean(nets: readonly Net[]): () => boolean {
-	const notches = new Set(nets.filter(notched));
+function keepsClean(nets: readonly Net[], guard: (net: Net) => boolean): () => boolean {
+	const notches = new Set(nets.filter(guard));
 	const steps = new Set(cardStepKeys(nets));
 	return () =>
-		nets.every((net) => notches.has(net) || !notched(net)) &&
+		nets.every((net) => notches.has(net) || !guard(net)) &&
 		cardStepKeys(nets).every((key) => steps.has(key));
+}
+
+/**
+ * Move one station onto a column: a run of lanes onto it where it is free, a
+ * label box where it stays clear, and a card by its own port.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param nets Every net.
+ * @param one The station, with the net arriving at it.
+ * @param one.station The station.
+ * @param one.net The net.
+ * @param one.end Which end of the net it stands at.
+ * @param x The column.
+ * @returns Whether it moved.
+ */
+function moveStation(
+	scene: Scene,
+	chains: readonly Chain[],
+	nets: readonly Net[],
+	{ station, net, end }: { station: Station; net: Net; end: End },
+	x: number,
+): boolean {
+	if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x);
+	if (station.kind === "label") return nudgeLabel(scene, nets, station.item!, x);
+	return movePort(nets, net, end, x);
 }
 
 /**
@@ -223,6 +266,7 @@ function keepsClean(nets: readonly Net[]): () => boolean {
  * @param nets Every net.
  * @param stretch The stations, each with the net arriving at it.
  * @param x The column.
+ * @param guard Which steps the move must not open on another line.
  * @param better Whether the drawing is better for the move, asked once it is made.
  * @returns Whether it moved.
  */
@@ -232,6 +276,7 @@ function moveStretch(
 	nets: readonly Net[],
 	stretch: readonly { station: Station; net: Net; end: End }[],
 	x: number,
+	guard: (net: Net) => boolean,
 	better: () => boolean = () => true,
 ): boolean {
 	const saved = save(
@@ -239,12 +284,8 @@ function moveStretch(
 		nets,
 		stretch.map(({ station }) => station),
 	);
-	const kept = keepsClean(nets);
-	const moved = stretch.every(({ station, net, end }) => {
-		if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x);
-		if (station.kind === "label") return nudgeLabel(scene, nets, station.item!, x);
-		return movePort(nets, net, end, x);
-	});
+	const kept = keepsClean(nets, guard);
+	const moved = stretch.every((one) => moveStation(scene, chains, nets, one, x));
 	if (moved) follow(nets);
 	const done = moved && kept() && better();
 	if (!done) restore(saved);
@@ -271,7 +312,7 @@ function close(
 	const net = route[index]!;
 	return (["top", "bottom"] as const).some((end) => {
 		const x = xAt(net, end === "top" ? "bottom" : "top");
-		return moveStretch(scene, chains, nets, stretchBeyond(route, index, end), x);
+		return moveStretch(scene, chains, nets, stretchBeyond(route, index, end), x, kinked);
 	});
 }
 
@@ -361,8 +402,8 @@ function closeCardStep(
 	const [inNet, outNet] = [into.route[into.index]!, outOf.route[outOf.index]!];
 	if (!tooShort(inNet.bottomX, outNet.topX)) return false;
 	return (
-		moveStretch(scene, chains, nets, cardSide(outOf, "top"), inNet.bottomX) ||
-		moveStretch(scene, chains, nets, cardSide(into, "bottom"), outNet.topX)
+		moveStretch(scene, chains, nets, cardSide(outOf, "top"), inNet.bottomX, kinked) ||
+		moveStretch(scene, chains, nets, cardSide(into, "bottom"), outNet.topX, kinked)
 	);
 }
 
@@ -381,7 +422,7 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				notched(net) && net.wall === undefined ? close(scene, chains, nets, route, index) : false,
+				kinked(net) && net.wall === undefined ? close(scene, chains, nets, route, index) : false,
 			),
 		);
 		for (const one of cardSteps(routes)) closed.push(closeCardStep(scene, chains, nets, one));
@@ -410,8 +451,26 @@ function related(one: Net, other: Net): boolean {
  */
 function collinear(leaving: Net, entering: Net): boolean {
 	if (leaving.channel !== entering.channel || related(leaving, entering)) return false;
-	if (leaving.wall === "top" || entering.wall === "bottom") return false;
+	if (leaving.wall === "top" || entering.wall === "bottom" || meetAtOnePoint(leaving, entering))
+		return false;
 	return Math.abs(leaving.topX - entering.bottomX) < LANE;
+}
+
+/**
+ * Whether two nets end at one point of one station, as two lines into a
+ * block's one-point port do: they are drawn joined there already, and
+ * parting them only steps one aside twice.
+ * @param one A net.
+ * @param other Another in the same channel.
+ * @returns True when they share an end.
+ */
+function meetAtOnePoint(one: Net, other: Net): boolean {
+	return (["top", "bottom"] as const).some(
+		(end) =>
+			one[end].item !== undefined &&
+			one[end].item === other[end].item &&
+			Math.abs(xAt(one, end) - xAt(other, end)) <= STRAIGHT,
+	);
 }
 
 /**
@@ -492,6 +551,8 @@ function part(
 				nets,
 				stretch,
 				x,
+				// A lane aside opens a 16 px step on purpose: only a notch is new.
+				notched,
 				() => collinearPairs(nets) < count && swapped(nets) <= crossing,
 			),
 	);
