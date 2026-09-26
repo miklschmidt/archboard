@@ -32,6 +32,7 @@ import {
 	centresOf,
 	nodesIn,
 	numbers,
+	outputSchema,
 	type Output,
 	polylinePoints,
 	type Join,
@@ -42,7 +43,6 @@ import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
-import { placedChains } from "@/transformers/semantic-renderer/lib/track/stairs";
 import { keptSteps, type Aligned } from "@/transformers/semantic-renderer/lib/blocks/stepped";
 import {
 	entersBy,
@@ -344,7 +344,7 @@ class CardLayout {
 	 */
 	lay(viz: Viz): Laid {
 		this.build();
-		const output = placedChains(viz, this.graph, this.links(), (name) => this.tree.cards.has(name));
+		const output = outputSchema.parse(viz.renderJSON(this.graph, { yInvert: true }));
 		const { laid, placed, centres } = keptSteps((refused) => this.aligned(output, refused));
 		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
 	}

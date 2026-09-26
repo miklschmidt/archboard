@@ -513,7 +513,6 @@ function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Roo
 }
 
 export {
-	NEAR_MISS,
 	alignColumns,
 	box,
 	boxesOf,
