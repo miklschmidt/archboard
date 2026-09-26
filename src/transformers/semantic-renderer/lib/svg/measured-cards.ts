@@ -3,7 +3,12 @@ import {
 	ARCHITECTURE_HEADER_PADDING,
 } from "@/transformers/semantic-renderer/config";
 // Paint the measured words at supplied baselines. No fitting happens here.
-import { CARD_RADIUS, BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import {
+	CARD_RADIUS,
+	BAND_RADIUS,
+	ICON_CHIP_SIZE,
+} from "@/transformers/semantic-renderer/lib/design";
+import { farSizeOf, measureFarTitle } from "@/transformers/semantic-renderer/lib/measurement";
 import type { DrawingNode, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";
@@ -55,6 +60,62 @@ function paintTextRuns(runs: readonly TextRun[], box: Box, palette: Palette): st
 	);
 }
 
+/** The part of a card drawn when the picture is seen near: its chip, name and responsibility. */
+const NEAR_CLASS = "ab-near";
+/** The part drawn when it is seen from far away: its name and chip, grown to fill it. */
+const FAR_CLASS = "ab-far";
+/** The class a viewer puts on the picture while it is seen from far away. */
+const FAR_VIEW_CLASS = "is-far";
+
+/**
+ * A card's name and chip as they are drawn from far away, hidden until a
+ * viewer says the picture is far: the name grown, the chip grown to match,
+ * the responsibility left out.
+ * @param name The card's name.
+ * @param box The card's box.
+ * @param size The name's size.
+ * @param look Its type chip's colour and glyph, and the selected theme.
+ * @param look.appearance Its type chip's colour and glyph.
+ * @param look.palette The selected theme.
+ * @returns The far layer.
+ */
+function paintFarTitle(
+	name: string,
+	box: Box,
+	size: number,
+	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
+): string {
+	const far = measureFarTitle(name, box, size);
+	const scale = far.chip.size / ICON_CHIP_SIZE;
+	// Hidden by its own attribute, so a reader of the picture that ignores its
+	// stylesheet draws the card as it is seen near.
+	return wrap(
+		"g",
+		{ class: FAR_CLASS, display: "none" },
+		wrap(
+			"g",
+			{
+				transform: `translate(${coord(box.x + far.chip.x)},${coord(box.y + far.chip.y)}) scale(${coord(scale)})`,
+			},
+			typeChip(0, 0, appearance, palette),
+		) + paintTextRuns(far.runs, box, palette),
+	);
+}
+
+/**
+ * A frame's name and chip as they are drawn from far away: as large as its
+ * header holds them.
+ * @param placed The frame's geometry and name.
+ * @param appearance Its type chip's colour and glyph.
+ * @param palette The selected theme.
+ * @returns The far layer.
+ */
+function paintFarHeader(placed: DrawingNode, appearance: NodeAppearance, palette: Palette): string {
+	const { name } = placed.measured.node;
+	const header = { ...placed.box, height: placed.measured.headerHeight };
+	return paintFarTitle(name, header, farSizeOf(name, header), { appearance, palette });
+}
+
 /**
  * Paint one measured card with its kind glyph and semantic change treatment.
  * @param placed Final card geometry and prepared text.
@@ -62,6 +123,8 @@ function paintTextRuns(runs: readonly TextRun[], box: Box, palette: Palette): st
  * @param standing Its change relative to the predecessor.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
+ * @param farSize Its name's size from far away: one for every card of the
+ * picture, which reads as one scale where each card's own largest would not.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -70,6 +133,7 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
+	farSize: number,
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
@@ -80,8 +144,6 @@ function paintMeasuredCard(
 		{
 			...subjectGroup("node", measured.node.id, standing),
 			...appearanceAttributes(appearance),
-			// The card's name, for a viewer that keeps it readable when the picture is small.
-			"data-caption": measured.node.name,
 		},
 		lines([
 			halo(box, CARD_RADIUS, styles),
@@ -95,8 +157,12 @@ function paintMeasuredCard(
 				...bodyAttributes(appearance),
 				...standingOutline(standing, palette),
 			}),
-			typeChip(chipX, chipY, appearance, palette),
-			paintTextRuns(measured.runs, box, palette),
+			wrap(
+				"g",
+				{ class: NEAR_CLASS },
+				typeChip(chipX, chipY, appearance, palette) + paintTextRuns(measured.runs, box, palette),
+			),
+			paintFarTitle(measured.node.name, box, farSize, { appearance, palette }),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
@@ -124,8 +190,6 @@ function paintMeasuredFrame(
 		{
 			...subjectGroup("region", measured.node.id, standing),
 			...appearanceAttributes(appearance),
-			// The container's name, for a viewer that keeps it readable when the picture is small.
-			"data-caption": measured.node.name,
 		},
 		lines([
 			halo(box, BAND_RADIUS, styles),
@@ -177,16 +241,28 @@ function paintMeasuredHeader(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			typeChip(
-				placed.box.x + ARCHITECTURE_HEADER_PADDING,
-				placed.box.y + ARCHITECTURE_HEADER_PADDING,
-				appearance,
-				palette,
+			wrap(
+				"g",
+				{ class: NEAR_CLASS },
+				typeChip(
+					placed.box.x + ARCHITECTURE_HEADER_PADDING,
+					placed.box.y + ARCHITECTURE_HEADER_PADDING,
+					appearance,
+					palette,
+				) + paintTextRuns(placed.measured.runs, placed.box, palette),
 			),
-			paintTextRuns(placed.measured.runs, placed.box, palette),
+			paintFarHeader(placed, appearance, palette),
 			warningBadge(placed.box, unsettled, palette),
 		]),
 	);
 }
 
-export { paintTextRuns, paintMeasuredCard, paintMeasuredFrame, paintMeasuredHeader };
+export {
+	FAR_CLASS,
+	FAR_VIEW_CLASS,
+	NEAR_CLASS,
+	paintTextRuns,
+	paintMeasuredCard,
+	paintMeasuredFrame,
+	paintMeasuredHeader,
+};

@@ -121,6 +121,20 @@ function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
 	}
 }
 
+/** The class the surface carries while the picture is seen from far away. */
+const FAR_VIEW_CLASS = "is-far";
+
+/**
+ * Say on the picture whether it is seen from far away, where each card draws
+ * its name larger in place of its responsibility: the picture carries both,
+ * and its own stylesheet draws the one this class asks for.
+ * @param surface The element the picture was put into.
+ * @param far Whether it is seen from far away.
+ */
+function markFarView(surface: Element, far: boolean): void {
+	surface.classList.toggle(FAR_VIEW_CLASS, far);
+}
+
 /** Every class the viewer puts on a subject's group; none of them is the renderer's. */
 const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, ...Object.values(GROUP_CLASSES)];
 
@@ -172,6 +186,7 @@ export {
 	SUBJECT_ATTRIBUTE,
 	isSubject,
 	keepingMarks,
+	markFarView,
 	markGroupFocus,
 	markSubjects,
 	subjectAt,

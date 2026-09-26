@@ -62,6 +62,14 @@ const PAN_STEP = 64;
  */
 const FOCUS_MAX_SCALE = 1.5;
 
+/**
+ * Below this magnification the picture is seen from far away: a card's
+ * responsibility, drawn at 11 units, is under 8.25 px on screen and nobody
+ * reads it, while its name, at 14, is still read with effort. The picture
+ * then draws each card's name larger in its place.
+ */
+const FAR_SCALE = 0.75;
+
 /** The camera a diagram starts at before anything has been fitted. */
 const IDENTITY_CAMERA: Camera = Object.freeze({ x: 0, y: 0, scale: 1 });
 
@@ -200,6 +208,7 @@ function cameraTransform(camera: Camera): string {
 }
 
 export {
+	FAR_SCALE,
 	FIT_MARGIN,
 	FOCUS_MAX_SCALE,
 	IDENTITY_CAMERA,

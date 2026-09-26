@@ -117,6 +117,40 @@ function textsIn(
 	return drawn;
 }
 
+/** The opening of a card's layer drawn only when the picture is seen from far away. */
+const FAR_LAYER = '<g class="ab-far"';
+
+/**
+ * A group's markup as it is drawn near, or only what it draws from far away:
+ * a card draws its far layer, from its opening tag to the one that closes it,
+ * only while the picture is seen from far away.
+ * @param chunk The group's markup.
+ * @param seen From near or from far away.
+ * @returns The markup drawn.
+ */
+function seenFrom(chunk: string, seen: "near" | "far"): string {
+	let near = "";
+	let far = "";
+	let from = 0;
+	for (let start = chunk.indexOf(FAR_LAYER); start !== -1; start = chunk.indexOf(FAR_LAYER, from)) {
+		const tags = /<(\/?)g\b[^>]*?(\/?)>/gu;
+		tags.lastIndex = start;
+		let depth = 0;
+		let end = chunk.length;
+		for (let tag = tags.exec(chunk); tag !== null; tag = tags.exec(chunk)) {
+			depth += tag[1] === "/" ? -1 : tag[2] === "/" ? 0 : 1;
+			if (depth === 0) {
+				end = tags.lastIndex;
+				break;
+			}
+		}
+		near += chunk.slice(from, start);
+		far += chunk.slice(start, end);
+		from = end;
+	}
+	return seen === "far" ? far : near + chunk.slice(from);
+}
+
 /**
  * Every piece of text the document draws, tagged with the subject it belongs
  * to.
@@ -126,9 +160,11 @@ function textsIn(
  * also the thing being checked, since a label drawn outside its edge's group
  * would come back under the wrong subject or none at all.
  * @param svg The document.
+ * @param seen Whether the picture is seen near, as it is drawn unless a
+ * viewer says otherwise, or from far away.
  * @returns The text elements, in document order.
  */
-function drawnTexts(svg: string): DrawnText[] {
+function drawnTexts(svg: string, seen: "near" | "far" = "near"): DrawnText[] {
 	// In page coordinates, which is what the atlas is written in and what a
 	// browser lays the text out at: the document moves its whole body onto the
 	// page with one transform, and reading the `x` attribute without it would
@@ -142,7 +178,7 @@ function drawnTexts(svg: string): DrawnText[] {
 		if (kind === undefined || id === undefined) {
 			continue;
 		}
-		drawn.push(...textsIn(chunk, { kind, id }, shift));
+		drawn.push(...textsIn(seenFrom(chunk, seen), { kind, id }, shift));
 	}
 	return drawn;
 }

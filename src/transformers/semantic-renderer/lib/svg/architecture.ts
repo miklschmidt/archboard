@@ -11,6 +11,7 @@ import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/li
 import { canvasFor, coord, inflate, union } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
+import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import { curveBounds, labelAnchorOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	crossingCutouts,
@@ -325,6 +326,7 @@ function paintArchitecture(
 		(a, b) => a.depth - b.depth || a.measured.node.order - b.measured.node.order,
 	);
 	const orderedCards = cards.toSorted((a, b) => a.measured.node.order - b.measured.node.order);
+	const farSize = Math.min(...cards.map(({ measured, box }) => farSizeOf(measured.node.name, box)));
 	const painted = lines([
 		definitions,
 		...boxes.map((held) =>
@@ -373,6 +375,7 @@ function paintArchitecture(
 				standingOf(card.measured.node.id),
 				unsettledOf(card.measured.node.id),
 				appearances.get(card.measured.node.id)!,
+				farSize,
 			),
 		),
 		...edges.map((edge) =>

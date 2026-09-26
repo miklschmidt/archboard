@@ -251,17 +251,20 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		{ speed: Number.MAX_VALUE, volume: Number.MIN_VALUE },
 	]) {
 		test(`positive finite traffic stays bounded with valid SVG timing (${traffic.speed}/${traffic.volume})`, async () => {
-			const content = variant({
-				nodes: SAMPLE.nodes,
-				edges: [{ id: "busy", from: "api", to: "store", kind: "call", traffic }],
-			});
-			const { svg } = await renderSemanticView({
-				content,
-				grammar: "architecture",
-				theme: "light",
-			});
+			const drawnWith = (busy: typeof traffic) =>
+				renderSemanticView({
+					content: variant({
+						nodes: SAMPLE.nodes,
+						edges: [{ id: "busy", from: "api", to: "store", kind: "call", traffic: busy }],
+					}),
+					grammar: "architecture",
+					theme: "light",
+				});
+			const { svg } = await drawnWith(traffic);
+			const calm = await drawnWith({ speed: 1, volume: 1 });
 			expect(pulsesOn(svg, "busy")).toBe(1);
-			expect(svg.length).toBeLessThan(20000);
+			// However extreme, traffic draws about as much as ordinary traffic does.
+			expect(svg.length).toBeLessThan(calm.svg.length * 1.5);
 			const duration = svg.match(/dur="([^s]+)s"/u)![1]!;
 			expect(duration).not.toContain("e");
 			expect(Number(duration)).toBeGreaterThan(0);
