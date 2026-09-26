@@ -226,7 +226,8 @@ function fitting(scene: Scene, occupancy: Occupancy, stretch: Stretch): (x: numb
 /**
  * Whether a label box may stand centred on a column: a lane clear of
  * everything else on its band, a card's clearance from a group region's
- * caption row it would reach above ({@link Scene.captionsFor}), and within
+ * caption row it would reach above or stand level with ({@link Scene.captionsFor},
+ * {@link Scene.titleBandsFor}), and within
  * the scene's extent, since a label out past it widens the page.
  * @param scene The placed scene.
  * @param room What the label keeps clear of.
@@ -251,13 +252,11 @@ function labelFits(
 		room.occupancy.taken[label.band]!.every(([low, high]) => right <= low || left >= high) &&
 		x - width / 2 >= room.extent[0] &&
 		x + width / 2 <= room.extent[1] &&
-		scene
-			.captionsFor(label.item!)
-			.every(
-				({ box }) =>
-					x + width / 2 <= box.x - LABEL_CARD_CLEARANCE ||
-					x - width / 2 >= box.x + box.width + LABEL_CARD_CLEARANCE,
-			)
+		[...scene.captionsFor(label.item!), ...scene.titleBandsFor(label.item!)].every(
+			({ box }) =>
+				x + width / 2 <= box.x - LABEL_CARD_CLEARANCE ||
+				x - width / 2 >= box.x + box.width + LABEL_CARD_CLEARANCE,
+		)
 	);
 }
 

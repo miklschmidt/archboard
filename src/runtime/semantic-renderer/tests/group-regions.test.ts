@@ -9,8 +9,14 @@ import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
-import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	bodyShift,
+	boxesOverlap,
+	routeLabels,
+	routePoints,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import codexWorkhorse from "./codex-workhorse.json";
 import nestedRegion from "./nested-region.json";
 import sideSlack from "./side-slack.json";
 
@@ -20,7 +26,11 @@ const policy = SemanticPolicySchema.parse({
 		module: { name: "Module", icon: "RiBox3Line" },
 		service: { name: "Service", icon: "RiServerLine" },
 	},
-	relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
+	relationshipKinds: {
+		call: { name: "Call", dash: "solid", arrowhead: "filled" },
+		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+	},
 	groups: {
 		state: { name: "Server state", color: "teal" },
 		routes: { name: "Routes", color: "violet" },
@@ -28,6 +38,7 @@ const policy = SemanticPolicySchema.parse({
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
 		voice: { name: "Voice", color: "yellow" },
 		workhorse: { name: "Workhorse", color: "sky" },
+		child: { name: "Codex child", color: "indigo" },
 	},
 });
 
@@ -156,4 +167,27 @@ test("a frame's side walls keep one inset from what it holds once lines are rout
 	const right = frame.x + frame.width - Math.max(...held.map(({ x, width }) => x + width));
 	expect(left).toBeCloseTo(CONTAINER_INSET, 0);
 	expect(right).toBeCloseTo(CONTAINER_INSET, 0);
+});
+
+// Taken from a board of this repository: a line's label, moved onto the one
+// column its line runs down, stood beside a group region's caption, in the
+// region's title band, where it reads as part of the caption.
+test("a label moved onto its line keeps out of a group region's title band", async () => {
+	const drawn = await renderArchitecture({
+		content: orderedFixture(codexWorkhorse),
+		theme: "light",
+		policy,
+		layout: "track",
+	});
+	const shift = bodyShift(drawn.svg);
+	const groups = [
+		...drawn.svg.matchAll(/data-semantic-kind="group-region" data-group="([^"]+)"/gu),
+	].map(([, group]) => group!);
+	for (const group of groups) {
+		const { x, y, width } = regionBox(drawn.svg, group);
+		// The caption row: 20 px words under the region's top edge.
+		const title = { x: x + shift.x, y: y + shift.y, width, height: 40 };
+		for (const [id, label] of routeLabels(drawn.svg))
+			expect(boxesOverlap(label, title), `${id} in the title band of ${group}`).toBeFalse();
+	}
 });
