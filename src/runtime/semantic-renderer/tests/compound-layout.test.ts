@@ -221,3 +221,29 @@ test.each(LayoutEngineSchema.options)(
 		for (const margin of margins) expect(Math.abs(margin - margins[0]!)).toBeLessThanOrEqual(2);
 	},
 );
+
+// Graphviz centres the cards of one rank on one line, so cards whose notes
+// wrapped to different lengths stood with their tops and bottoms stepped, and
+// the arrowheads and labels of one fan-out stepped with them.
+test("cards Graphviz ranks together share their top and bottom edges", async () => {
+	const ends = ["bare", "short", "long"];
+	const content = orderedFixture({
+		nodes: [
+			{ id: "hub", name: "Hub", kind: "service" },
+			{ id: "bare", name: "Bare", kind: "module" },
+			{ id: "short", name: "Short", kind: "module", responsibility: "Keeps one thing" },
+			{
+				id: "long",
+				name: "Long",
+				kind: "module",
+				responsibility:
+					"Keeps every record it is handed, checks each one against the rules it was given, and answers what it found",
+			},
+		],
+		edges: ends.map((to) => ({ id: `to-${to}`, from: "hub", to, kind: "call" })),
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "graphviz" });
+	const cards = ends.map((id) => drawing.atlas.nodes[id]!);
+	expect(new Set(cards.map(({ y }) => y)).size).toBe(1);
+	expect(new Set(cards.map(({ y, height }) => y + height)).size).toBe(1);
+});
