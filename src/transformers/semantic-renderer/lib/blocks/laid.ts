@@ -94,4 +94,18 @@ function corners(points: readonly Point[]): Point[] {
 	return kept;
 }
 
-export { SAME, corners, moved, shifted, type Band, type Insets, type Laid };
+/**
+ * How much nearer than a block's inset a line runs to its left wall, round
+ * the block's leftmost items; a line ending on a port on that wall does not
+ * count. The block's width keeps a line round its rightmost items the inset
+ * from its right wall already.
+ * @param lines Every line's points.
+ * @param inset The room the block keeps inside its walls.
+ * @returns The room short, or nothing.
+ */
+function leftShortOf(lines: Iterable<readonly Point[]>, inset: number): number {
+	const xs = [...lines].flat().flatMap(({ x }) => (x < 1 ? [] : [x]));
+	return Math.max(0, inset - Math.min(inset, ...xs));
+}
+
+export { SAME, corners, leftShortOf, moved, shifted, type Band, type Insets, type Laid };
