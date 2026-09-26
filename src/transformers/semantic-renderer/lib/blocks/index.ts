@@ -16,6 +16,7 @@ import type {
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
+import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 import {
 	COMPOUND_OPTIONS,
 	compoundGraph,
@@ -124,7 +125,7 @@ async function drawnBlocks(
 		[SOLVE_STAGE]: inline ? "track" : "blocks",
 	});
 	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
-	const drawing = drawingOf(content, measured, placed);
+	const drawing = fittedPage(drawingOf(content, measured, placed));
 	return { ...drawing, bridged: bridgeCrossings(drawing) };
 }
 

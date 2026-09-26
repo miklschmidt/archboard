@@ -2,6 +2,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import nearMiss from "./near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import {
 	distanceToFrame,
@@ -197,22 +198,26 @@ test.each([
 	},
 );
 
-// The Graphviz page kept the placement's slack: a frame's trimmed title
-// margin left 52 points above the drawing against 24 below it.
-test("a Graphviz page keeps the same margin on every side of what it draws", async () => {
-	const drawing = await renderArchitecture({ content: NESTED, theme: "light", layout: "graphviz" });
-	const boxes = [
-		...Object.values(drawing.atlas.nodes),
-		...routeLabels(drawing.svg).values(),
-		...[...routePoints(drawing.svg).values()]
-			.flat()
-			.map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
-	];
-	const margins = [
-		Math.min(...boxes.map(({ x }) => x)),
-		Math.min(...boxes.map(({ y }) => y)),
-		drawing.width - Math.max(...boxes.map(({ x, width }) => x + width)),
-		drawing.height - Math.max(...boxes.map(({ y, height }) => y + height)),
-	];
-	for (const margin of margins) expect(Math.abs(margin - margins[0]!)).toBeLessThanOrEqual(2);
-});
+// A page kept its placement's slack: under Graphviz a frame's trimmed title
+// margin left 52 points above the drawing against 24 below it, and under the
+// block engines a frame at the board's edge stood 32 points in on one side.
+test.each(LayoutEngineSchema.options)(
+	"a %s page keeps the same margin on every side of what it draws",
+	async (layout) => {
+		const drawing = await renderArchitecture({ content: NESTED, theme: "light", layout });
+		const boxes = [
+			...Object.values(drawing.atlas.nodes),
+			...routeLabels(drawing.svg).values(),
+			...[...routePoints(drawing.svg).values()]
+				.flat()
+				.map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
+		];
+		const margins = [
+			Math.min(...boxes.map(({ x }) => x)),
+			Math.min(...boxes.map(({ y }) => y)),
+			drawing.width - Math.max(...boxes.map(({ x, width }) => x + width)),
+			drawing.height - Math.max(...boxes.map(({ y, height }) => y + height)),
+		];
+		for (const margin of margins) expect(Math.abs(margin - margins[0]!)).toBeLessThanOrEqual(2);
+	},
+);
