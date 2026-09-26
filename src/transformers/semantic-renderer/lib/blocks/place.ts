@@ -80,12 +80,14 @@ function scored(laid: Laid): number {
 }
 
 /**
- * What a laid-out block is scored on.
+ * What a laid-out block is scored on: its page, and its crossings with each
+ * line that laps round it counted as one more.
  * @param laid The block laid out.
  * @returns Its page and crossings.
  */
 function weighed(laid: Laid): Weighed {
-	return { width: laid.width, height: laid.height, crossings: crossingsOf(laid.lines.values()) };
+	const crossings = crossingsOf(laid.lines.values()) + (laid.laps ?? 0);
+	return { width: laid.width, height: laid.height, crossings };
 }
 
 /**

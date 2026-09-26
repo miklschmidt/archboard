@@ -41,7 +41,7 @@ import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
-import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
+import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
 import { placedChains } from "@/transformers/semantic-renderer/lib/track/stairs";
 import { keptSteps, type Aligned } from "@/transformers/semantic-renderer/lib/blocks/stepped";
 import {
@@ -381,6 +381,14 @@ class CardLayout {
 	}
 
 	/**
+	 * Whether the block's sides are the page's: the board, drawn inline.
+	 * @returns True when they are.
+	 */
+	edgesPage(): boolean {
+		return this.block.kind === "root" && this.tree.nesting !== "blocks";
+	}
+
+	/**
 	 * Route the placed block's lines on tracks and read it back.
 	 * @param placed The placed block.
 	 * @param held The width the block keeps at least.
@@ -393,6 +401,7 @@ class CardLayout {
 		settled: ReadonlySet<string> = new Set(),
 	): Laid {
 		const scene = new Scene(placed);
+		scene.edgesPage = this.edgesPage();
 		markPorts(scene, this.block);
 		letPortsSlide(scene, this.block, this.tree.nesting, settled);
 		const lines = routeScene(
@@ -481,7 +490,9 @@ class CardLayout {
 			...reach.map((one) => one.x + one.width + side),
 		);
 		const tracks = wallLines(this.block, walled, boxes, width);
+		const laps = scene.edgesPage ? lapsOf(walled.values(), [...boxes.values()]) : 0;
 		return {
+			laps,
 			width,
 			height: Math.max(...reach.map((one) => one.y + one.height), ...tracks) + bottom,
 			boxes,

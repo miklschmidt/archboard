@@ -68,6 +68,34 @@ function crossingsOf(lines: Iterable<readonly Point[]>): number {
 	return new Set(places).size;
 }
 
+/** How long an upright run beyond everything a block holds must be to lap round it. */
+const LAP = 200;
+
+/**
+ * How many lines lap round a block: run down or up, for more than a short
+ * way, beyond everything it holds on either side. A lap reads worse than a
+ * crossing, which the relay may trade one for, so a layout is charged a
+ * crossing's worth for each.
+ * @param lines Every line's points.
+ * @param boxes Every box the block holds.
+ * @returns The laps.
+ */
+function lapsOf(lines: Iterable<readonly Point[]>, boxes: readonly Box[]): number {
+	if (boxes.length === 0) return 0;
+	const left = Math.min(...boxes.map(({ x }) => x));
+	const right = Math.max(...boxes.map(({ x, width }) => x + width));
+	return [...lines].filter((points) =>
+		points
+			.slice(1)
+			.some(
+				(to, index) =>
+					Math.abs(to.x - points[index]!.x) < 0.5 &&
+					Math.abs(to.y - points[index]!.y) > LAP &&
+					(to.x < left || to.x > right),
+			),
+	).length;
+}
+
 /**
  * How readable a layout is: its fit to the reference pane, less a share for
  * every crossing and every line between columns.
@@ -181,4 +209,4 @@ function sinks(
 	});
 }
 
-export { anchored, crossingsOf, readsBetter, scoreOf, sinks, wrapPlans, type Weighed };
+export { anchored, crossingsOf, lapsOf, readsBetter, scoreOf, sinks, wrapPlans, type Weighed };
