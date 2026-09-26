@@ -7,12 +7,20 @@
 // the change badge a proposal pins in that corner (Board persistence's
 // "adopt a draft"). A
 // finished drawing is routed so only where it has such a hook (Renderer
-// layout's "Responsibilities").
+// layout's "Responsibilities"). A settlement that saves crossings may not buy
+// them with hooks either: evened pins hooked both lines into Former names'
+// sides past its top, where plain pins enter the top, and ran two unrelated
+// lines half a lane apart (Board persistence's "Durable write boundary").
+// Plain and evened settlements are each finished before one is chosen: the
+// evened one chosen before finishing kept nine hooks in Skill evaluation where
+// the other, finished, keeps one that neither can cure.
 
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
+import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import type { StatedStandings } from "@/transformers/semantic-renderer/index";
 import { requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
 import {
 	cornersOf,
@@ -21,7 +29,18 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
+import formerNames from "./former-names.json";
 import rendererLayout from "./renderer-layout.json";
+import skillEvaluation from "./skill-evaluation-graphviz.json";
+
+/** The dogfood vault's vocabulary as far as the fixtures use it. */
+const policy = SemanticPolicySchema.parse({
+	...DEFAULT_SEMANTIC_POLICY,
+	groups: {
+		writes: { name: "Board writes", color: "orange" },
+		grading: { name: "Grading", color: "purple" },
+	},
+});
 
 /**
  * How far from a card's top corner an arrow keeps clear of the change badge
@@ -86,9 +105,14 @@ test("a line passing its target's top corner enters the top instead of hooking i
 	expect(fromCorner).toBeGreaterThanOrEqual(BADGE_CLEARANCE);
 });
 
-test("a finished drawing has no line hooking into a card's side past its corner", async () => {
-	const content = orderedFixture(rendererLayout);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "graphviz" });
+/**
+ * The lines of a finished drawing that hook into a card's side.
+ * @param fixture The board.
+ * @returns The ids of the hooked lines, once for each hooked end.
+ */
+async function hookedLines(fixture: Parameters<typeof orderedFixture>[0]): Promise<string[]> {
+	const content = orderedFixture(fixture);
+	const drawing = await renderArchitecture({ content, policy, theme: "light", layout: "graphviz" });
 	const cards = drawing.atlas.nodes;
 	const routes = routePoints(drawing.svg);
 	const hooks = content.edges.flatMap(({ id, from, to }) => {
@@ -97,5 +121,34 @@ test("a finished drawing has no line hooking into a card's side past its corner"
 			.filter(Boolean)
 			.map(() => id);
 	});
-	expect(hooks).toEqual([]);
+	return hooks;
+}
+
+test("a finished drawing has no line hooking into a card's side past its corner", async () => {
+	expect(await hookedLines(rendererLayout)).toEqual([]);
+});
+
+test("the finished settlements are compared, so one that cures its hooks is not passed over", async () => {
+	expect((await hookedLines(skillEvaluation)).length).toBeLessThanOrEqual(1);
+});
+
+test("lines down into a card enter its top rather than hook past it into its sides", async () => {
+	const { standing, ...board } = formerNames;
+	const former = board.nodes.find(({ name }) => name === "Former names")!.id;
+	const drawing = await renderArchitecture({
+		content: orderedFixture(board),
+		standing: standing as StatedStandings,
+		policy,
+		theme: "light",
+		layout: "graphviz",
+	});
+	const routes = routePoints(drawing.svg);
+	const down = new Set(["a former name opens the board", "the board the name answers to"]);
+	const entries = board.edges
+		.filter(({ to, label }) => to === former && down.has(label))
+		.map(({ id }) => {
+			const [last, before] = cornersOf(routes.get(id)!).toReversed();
+			return Math.abs(last!.x - before!.x) < 0.01 ? "top" : "side";
+		});
+	expect(entries).toEqual(["top", "top"]);
 });

@@ -225,8 +225,8 @@ function columnReading(problem: Problem): ColumnReading {
 		 */
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
-		 * The complete drawing: the tidier of plain and evened pins, finished, with and
-		 * without reserved labels' full clearance, whichever is clearer (label-clearance.ts).
+		 * The complete drawing: the tidier of plain and evened pins, each finished, with
+		 * and without reserved labels' full clearance, whichever is clearer (label-clearance.ts).
 		 * @returns The settled reading.
 		 */
 		settle: () =>
@@ -235,16 +235,16 @@ function columnReading(problem: Problem): ColumnReading {
 }
 
 /**
- * A reading settled with plain and with evened pins, the tidier finished.
+ * A reading settled with plain and with evened pins, each finished, the tidier kept.
  * @param reading The reading.
  * @param route What else its routes are asked for.
  * @returns The finished drawing.
  */
 function finishedWith(reading: Reading, route: RouteRequest): Promise<ArchitectureDrawing> {
 	return tidierSettlement(
-		settleReading(asking(reading, route)),
-		settleReading(asking(reading, { ...route, evenPins: true })),
-	).then(finishedDrawing);
+		settleReading(asking(reading, route)).then(finishedReading),
+		settleReading(asking(reading, { ...route, evenPins: true })).then(finishedReading),
+	).then(({ drawing }) => drawing);
 }
 
 /**
@@ -254,10 +254,9 @@ function finishedWith(reading: Reading, route: RouteRequest): Promise<Architectu
  * @param kept The settled reading.
  * @returns The finished drawing.
  */
-async function finishedDrawing(kept: SettledReading): Promise<ArchitectureDrawing> {
+function finishedReading(kept: SettledReading): Promise<{ drawing: ArchitectureDrawing }> {
 	const reroute = rerouting(kept.reserved);
-	const done = await finished(kept, (reading, request) => reroute(asking(reading, request)));
-	return done.drawing;
+	return finished(kept, (reading, request) => reroute(asking(reading, request)));
 }
 
 /**

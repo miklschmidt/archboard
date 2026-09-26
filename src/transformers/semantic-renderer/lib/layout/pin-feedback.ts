@@ -2,6 +2,8 @@ import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AlignedPin } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import { boxOf, type Face } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
+import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import {
 	CARD_ROUTE_CLEARANCE,
@@ -225,6 +227,39 @@ export function hooksPast(box: Box, tip: Point, bend: Point, after: Point): bool
 	if (Math.abs(tip.y - bend.y) >= 0.01 || Math.abs(bend.x - after.x) >= 0.01) return false;
 	if (Math.abs(tip.x - bend.x) > CARD_ROUTE_CLEARANCE + ROUTE_LANE) return false;
 	return after.y < box.y || after.y > box.y + box.height;
+}
+
+/**
+ * The line ends of a drawing that hook into a card's side: the end's short
+ * run leaves the side and turns along it to beyond the card's top or bottom
+ * ({@link hooksPast}).
+ * @param drawing The drawing.
+ * @returns One key for every such end.
+ */
+export function sideHooks(drawing: ArchitectureDrawing): string[] {
+	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
+	return drawing.edges.flatMap(({ edge, curve }) => {
+		const points = verticesOf(curve);
+		const ends = [
+			[edge.from, points],
+			[edge.to, points.toReversed()],
+		] as const;
+		return ends.flatMap(([card, route]) => {
+			const box = cards.get(card);
+			return box !== undefined && hooks(box, route) ? [`${edge.id}:${card}`] : [];
+		});
+	});
+}
+
+/**
+ * Whether a route leaves a card's side and turns along it to beyond the card's top or bottom.
+ * @param box The card.
+ * @param route The route ordered away from the card.
+ * @returns True when its side stub turns past the card's corner.
+ */
+function hooks(box: Box, route: readonly Point[]): boolean {
+	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
+	return after !== undefined && hooksPast(box, tip, bend, after);
 }
 
 /** One route's first or last run, which the router holds on its card's pin. */

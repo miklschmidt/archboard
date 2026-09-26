@@ -12,22 +12,22 @@
 // corner, two unrelated lines on one stroke (stacked-runs.ts), or a port
 // alone on a card face beside its corner (lone-pins.ts). The same placement,
 // with the same reservations, is routed once more with the pass's options,
-// and that drawing is kept when it cures more: no defect of the pass's own
-// kind that the settled drawing did not have, so a pass never moves a defect
-// from one line to its neighbour, and fewer defects of every kind together,
-// a label another line crowds and two unrelated lines that touch counted
-// too, or the same defects with fewer bends in all. It must also keep every
-// label, have no more crossings, counting two unrelated lines on one stroke
-// as one, give no line more bends, unless it saves a crossing and takes no
-// more bends in all (Browser application's "Recording a walkthrough" parted
-// a stack and cured three hooks for one line's extra bend), and keep every
-// line that stayed inside a frame inside it. A pass that refuses a line the face it ended on lets that
-// line take more bends: parting two lines that swap sides on one stroke shows
-// a crossing that was always there. A route that takes a detour is not worth
-// what it cures, fewer bends elsewhere do not pay for one line made worse,
-// and a relationship within a frame belongs inside it even when the only
-// room is on its wall: its cards stand the frame's inset from the wall, which
-// leaves no lane inside.
+// and that drawing is kept when it cures more: it brings no defect of any
+// kind the settled drawing did not have, a label another line crowds and two
+// lines that touch or run as a double track counted too, and has fewer
+// defects together, or the same defects with fewer bends in all. Refusing
+// only fresh defects of the pass's own kind let Voice coordinator's hook
+// pass cure hooks by crowding a label. It must also keep every label, have no more crossings, counting two
+// unrelated lines on one stroke as one, give no line more bends unless it
+// saves a crossing and takes no more bends in all (Browser application's
+// "Recording a walkthrough" parted a stack and cured three hooks for one
+// line's extra bend), and keep every line that stayed inside a frame inside
+// it. A pass that refuses a line the face it ended on lets that line take
+// more bends: parting two lines that swap sides on one stroke shows a
+// crossing that was always there. A route that takes a detour is not worth
+// what it cures, and a relationship within a frame belongs inside it even
+// when the only room is on its wall: its cards stand the frame's inset from
+// the wall, which leaves no lane inside.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -39,13 +39,14 @@ import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/chec
 import { crossingsSeen } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { crowdedLabels } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
-import { hooksPast } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
+import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import type { RouteRequest } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
 	refusedLines,
 	stackedEnds,
 	stackKeys,
 	touchKeys,
+	trackKeys,
 } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import {
 	WALL_FACES,
@@ -173,39 +174,6 @@ function crowdedWalls(drawing: ArchitectureDrawing): string[] {
 }
 
 /**
- * The line ends of a drawing that hook into a card's side: the end's short
- * run leaves the side and turns along it to beyond the card's top or bottom
- * ({@link hooksPast}).
- * @param drawing The drawing.
- * @returns One key for every such end.
- */
-function sideHooks(drawing: ArchitectureDrawing): string[] {
-	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
-	return drawing.edges.flatMap(({ edge, curve }) => {
-		const points = verticesOf(curve);
-		const ends = [
-			[edge.from, points],
-			[edge.to, points.toReversed()],
-		] as const;
-		return ends.flatMap(([card, route]) => {
-			const box = cards.get(card);
-			return box !== undefined && hooks(box, route) ? [`${edge.id}:${card}`] : [];
-		});
-	});
-}
-
-/**
- * Whether a route leaves a card's side and turns along it to beyond the card's top or bottom.
- * @param box The card.
- * @param route The route ordered away from the card.
- * @returns True when its side stub turns past the card's corner.
- */
-function hooks(box: Box, route: readonly Point[]): boolean {
-	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
-	return after !== undefined && hooksPast(box, tip, bend, after);
-}
-
-/**
  * The line ends of a drawing that leave a card by its side although the
  * card and the line's other card stand one above the other with a shared
  * span a straight line could drop through.
@@ -295,8 +263,9 @@ function noWorse(
 
 /**
  * Every defect of a drawing that a finishing pass cures, and every label
- * another line crowds and every pair of unrelated lines that touch, which no
- * pass may bring, each keyed by its kind.
+ * another line crowds, every pair of lines that touch and every pair of
+ * unrelated lines that run as a double track, each keyed by its kind. No pass
+ * may bring any of them ({@link cures}).
  * @param drawing The drawing.
  * @returns The defects.
  */
@@ -307,27 +276,27 @@ function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
 		),
 		...crowdedLabels(drawing).map((key) => `label:${key}`),
 		...touchKeys(drawing).map((key) => `touch:${key}`),
+		...trackKeys(drawing).map((key) => `track:${key}`),
 	]);
 }
 
 /**
- * Whether a finishing routing cures more than the settled drawing. It may
- * not trade a defect for another of its own kind (IIS Ingress Migration's
- * wrong-face pass moved a side hook from one line to its neighbour), it must
- * have fewer defects of every kind together, or, with the same defects and
- * no new one, fewer bends in all.
+ * Whether a finishing routing cures more than the settled drawing: it brings
+ * no defect of any kind the settled drawing did not have, and has fewer
+ * defects, or the same defects with fewer bends in all. Refusing only fresh
+ * defects of a pass's own kind let IIS Ingress Migration's wrong-face pass
+ * move a side hook from one line to its neighbour, and Voice coordinator's
+ * hook pass crowd a label.
  * @param finish The finishing routing.
  * @param settled The settled drawing.
- * @param kind The kind of defect the pass cures.
  * @returns True when it cures more.
  */
-function cures(finish: ArchitectureDrawing, settled: ArchitectureDrawing, kind: string): boolean {
+function cures(finish: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
 	const [after, before] = [defectsOf(finish), defectsOf(settled)];
-	const fresh = [...after].filter((key) => !before.has(key));
-	if (fresh.some((key) => key.startsWith(`${kind}:`))) return false;
+	if ([...after].some((key) => !before.has(key))) return false;
 	return (
 		after.size < before.size ||
-		(fresh.length === 0 && after.size === before.size && totalBends(finish) < totalBends(settled))
+		(after.size === before.size && totalBends(finish) < totalBends(settled))
 	);
 }
 
@@ -472,7 +441,7 @@ async function finishedBy<Reading>(
 		throw error;
 	});
 	return finish !== undefined &&
-		cures(finish.drawing, settled.drawing, pass.kind) &&
+		cures(finish.drawing, settled.drawing) &&
 		noWorse(finish.drawing, settled.drawing, pass.excused(found))
 		? finish
 		: settled;

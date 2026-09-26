@@ -1,10 +1,12 @@
 // Every reading is finished twice, once routed with reserved labels' full
-// clearance, and the cleared drawing is kept only where it gives a crowded
-// label its clearance. Kept wherever it merely cost nothing, it moved lines
-// round boards it cured nothing in (Codex workhorse), and a cleared drawing
-// on a wider page was kept although the page was to stay as it was.
-// What this catches: the cleared drawing chosen without curing a label, on a
-// page of another size, and a fault in the ordinary drawing hidden behind it.
+// clearance. The cleared drawing is kept where it gives a crowded label its
+// clearance, or where it is tidier. Kept wherever it merely cost nothing, it
+// moved lines round boards it cured nothing in (Codex workhorse). A cleared
+// drawing may place the board anew, but not on a page grown by more than the
+// labels it clears are worth.
+// What this catches: the cleared drawing chosen where it cures nothing and
+// is no tidier, on a page grown past what it cures, and a fault in the
+// ordinary drawing hidden behind it.
 
 import { expect, test } from "bun:test";
 import { clearerDrawing, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
@@ -55,14 +57,15 @@ test("the cleared drawing is kept where it gives a crowded label its clearance",
 	expect(await clearerDrawing(passing(148), cleared)).toBe(await cleared);
 });
 
-test("the cleared drawing is not kept where no label was crowded", async () => {
-	const ordinary = passing(170);
-	expect(await clearerDrawing(ordinary, passing(180))).toBe(await ordinary);
+test("a cleared drawing that clears no label is kept only where it is tidier", async () => {
+	const [shorter, longer] = [passing(180), passing(170)];
+	expect(await clearerDrawing(shorter, longer)).toBe(await shorter);
+	expect(await clearerDrawing(longer, shorter)).toBe(await shorter);
 });
 
-test("the cleared drawing is not kept on a page of another size", async () => {
+test("the cleared drawing is not kept on a page larger than the labels it clears are worth", async () => {
 	const ordinary = passing(148);
-	expect(await clearerDrawing(ordinary, passing(160, { width: 1040, height: 1000 }))).toBe(
+	expect(await clearerDrawing(ordinary, passing(160, { width: 1100, height: 1000 }))).toBe(
 		await ordinary,
 	);
 });

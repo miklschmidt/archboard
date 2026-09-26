@@ -28,6 +28,15 @@ import {
 /** How close two parallel runs are drawn as one stroke. */
 const ONE_STROKE = 2;
 
+/**
+ * How near a corner of one line to another's stroke, or two parallel runs,
+ * read as one junction or one line: half a lane, under the nudging distance
+ * lines keep apart where they have room (Platform Public API's two corners
+ * 5 px apart, Agent workbench's two lines 8 px apart, one turning 2 px from
+ * the other's turn).
+ */
+const NEAR = ROUTE_LANE / 2 + 0.5;
+
 /** A routed line as the stack rules read it: its source, its target and its corners. */
 interface Line {
 	readonly id: string;
@@ -45,6 +54,8 @@ interface Run {
 	readonly at: number;
 	readonly from: number;
 	readonly to: number;
+	/** Whether the line travels it towards its larger coordinate. */
+	readonly forward: boolean;
 }
 
 /** Two runs of unrelated lines drawn as one stroke, and the stretch they share. */
@@ -73,7 +84,10 @@ function runsOf(line: Line): Run[] {
 		const [across, , along] = AXES[vertical ? "vertical" : "horizontal"];
 		const from = Math.min(point[along], previous[along]);
 		const to = Math.max(point[along], previous[along]);
-		return to - from < 0.01 ? [] : [{ line, index, vertical, at: point[across], from, to }];
+		const forward = point[along] > previous[along];
+		return to - from < 0.01
+			? []
+			: [{ line, index, vertical, at: point[across], from, to, forward }];
 	});
 }
 
@@ -98,14 +112,15 @@ function endRun(run: Run): boolean {
 }
 
 /**
- * The stack two runs of unrelated lines make, if they lie on one stroke for
- * a lane or more and are not both held end runs.
+ * The stack two runs of unrelated lines make, if they lie a band apart for a
+ * lane or more and are not both held end runs.
  * @param one A run.
  * @param other A run of another line.
+ * @param band How far apart they may lie.
  * @returns The stack, or none.
  */
-function stackOf(one: Run, other: Run): Stack[] {
-	if (one.vertical !== other.vertical || Math.abs(one.at - other.at) > ONE_STROKE) return [];
+function stackOf(one: Run, other: Run, band: Band): Stack[] {
+	if (one.vertical !== other.vertical || !within(Math.abs(one.at - other.at), band)) return [];
 	const from = Math.max(one.from, other.from);
 	const to = Math.min(one.to, other.to);
 	if (to - from < ROUTE_LANE || (endRun(one) && endRun(other))) return [];
@@ -113,12 +128,32 @@ function stackOf(one: Run, other: Run): Stack[] {
 }
 
 /**
- * Every pair of runs of unrelated lines that lie on one stroke for a lane or
+ * Whether a distance lies in a band.
+ * @param apart The distance.
+ * @param band The band.
+ * @returns True above its first bound and up to its second.
+ */
+function within(apart: number, band: Band): boolean {
+	return apart > band[0] && apart <= band[1];
+}
+
+/** How far apart two runs lie across their axis: more than the first, up to the second. */
+type Band = readonly [number, number];
+
+/** Two runs on one stroke. */
+const STROKE: Band = [-1, ONE_STROKE];
+
+/** Two runs side by side, a double track. */
+const TRACK: Band = [ONE_STROKE, NEAR];
+
+/**
+ * Every pair of runs of unrelated lines that lie a band apart for a lane or
  * more, apart from two held end runs.
  * @param lines The lines.
+ * @param band How far apart the runs lie.
  * @returns The stacks.
  */
-function stacksOf(lines: readonly Line[]): Stack[] {
+function stacksOf(lines: readonly Line[], band: Band = STROKE): Stack[] {
 	const runs = lines.map(runsOf);
 	return lines.flatMap((line, index) =>
 		lines
@@ -127,7 +162,7 @@ function stacksOf(lines: readonly Line[]): Stack[] {
 				related(line, other)
 					? []
 					: runs[index]!.flatMap((one) =>
-							runs[index + 1 + offset]!.flatMap((two) => stackOf(one, two)),
+							runs[index + 1 + offset]!.flatMap((two) => stackOf(one, two, band)),
 						),
 			),
 	);
@@ -153,7 +188,35 @@ function linesOf(drawing: ArchitectureDrawing): Line[] {
  * @returns One key for every stack, naming its two lines.
  */
 export function stackKeys(drawing: ArchitectureDrawing): string[] {
-	return stacksOf(linesOf(drawing)).map(({ runs }) =>
+	return pairKeys(stacksOf(linesOf(drawing)));
+}
+
+/**
+ * How long a drawing draws unrelated lines on one stroke, all its stacks together.
+ * @param drawing The drawing.
+ * @returns The length its stacks share.
+ */
+export function stackedLength(drawing: ArchitectureDrawing): number {
+	return stacksOf(linesOf(drawing)).reduce((sum, { from, to }) => sum + to - from, 0);
+}
+
+/**
+ * The pairs of unrelated lines a drawing runs side by side nearer than half
+ * a lane, a double track a reader takes for one line.
+ * @param drawing The drawing.
+ * @returns One key for every such pair, naming its two lines.
+ */
+export function trackKeys(drawing: ArchitectureDrawing): string[] {
+	return pairKeys(stacksOf(linesOf(drawing), TRACK));
+}
+
+/**
+ * The keys of stacks, naming their two lines.
+ * @param stacks The stacks.
+ * @returns One key for each.
+ */
+function pairKeys(stacks: readonly Stack[]): string[] {
+	return stacks.map(({ runs }) =>
 		runs
 			.map(({ line }) => line.id)
 			.toSorted()
@@ -162,7 +225,7 @@ export function stackKeys(drawing: ArchitectureDrawing): string[] {
 }
 
 /**
- * Whether a corner of one line lies on another line's stroke.
+ * Whether a corner of one line lies on, or within half a lane of, another line's stroke.
  * @param corner The corner.
  * @param run A run of another line.
  * @returns True when they meet, where they read as a junction.
@@ -170,31 +233,85 @@ export function stackKeys(drawing: ArchitectureDrawing): string[] {
 function meets(corner: Point, run: Run): boolean {
 	const [across, , along] = AXES[run.vertical ? "vertical" : "horizontal"];
 	return (
-		Math.abs(corner[across] - run.at) <= ONE_STROKE &&
-		corner[along] >= run.from - ONE_STROKE &&
-		corner[along] <= run.to + ONE_STROKE
+		Math.abs(corner[across] - run.at) <= NEAR &&
+		corner[along] >= run.from - NEAR &&
+		corner[along] <= run.to + NEAR
 	);
 }
 
 /**
- * The pairs of unrelated lines a drawing lets touch: a corner of one on the
- * other's stroke reads as a junction that joins them (Board persistence's
- * "every current binding's file" turning where "rename transition" turns).
+ * Whether two runs are one trunk: side by side within half a lane for a
+ * lane or more, travelled the same way.
+ * @param one A run.
+ * @param other A run of another line.
+ * @returns True when they read as one line carrying both.
+ */
+function trunk(one: Run, other: Run): boolean {
+	return (
+		one.vertical === other.vertical &&
+		one.forward === other.forward &&
+		Math.abs(one.at - other.at) <= NEAR &&
+		Math.min(one.to, other.to) - Math.max(one.from, other.from) >= ROUTE_LANE
+	);
+}
+
+/**
+ * Whether a corner of one line turns off, or onto, a trunk it shares with
+ * another line: the two share an end and a run beside the corner travels
+ * with the other line's.
+ * @param line The line.
+ * @param corner The corner's index in it.
+ * @param other The other line.
+ * @param runs The other line's runs.
+ * @returns True for a trunk's branch.
+ */
+function branches(line: Line, corner: number, other: Line, runs: readonly Run[]): boolean {
+	return (
+		related(line, other) &&
+		runsOf(line)
+			.filter(({ index }) => index === corner - 1 || index === corner)
+			.some((mine) => runs.some((theirs) => trunk(mine, theirs)))
+	);
+}
+
+/**
+ * The pairs of lines a drawing lets touch: a corner of one on or within half
+ * a lane of the other's stroke reads as a junction that joins them (Board
+ * persistence's "every current binding's file" turning where "rename
+ * transition" turns, Platform Public API's corners 5 px apart), unless it
+ * turns off or onto a trunk the two lines share from a common end. Lines
+ * that share an end but meet head to head, each turning where the other
+ * turns, touch (Auditlog's "ApplyOffsets" and "filter, sort, paginate").
  * @param drawing The drawing.
  * @returns One key for every touching pair, naming its two lines.
  */
 export function touchKeys(drawing: ArchitectureDrawing): string[] {
 	const lines = linesOf(drawing);
 	const runs = lines.map(runsOf);
-	return lines.flatMap((line, index) =>
+	const touching = lines.flatMap((line, index) =>
 		lines.flatMap((other, at) =>
-			at === index ||
-			related(line, other) ||
-			!line.points.slice(1, -1).some((corner) => runs[at]!.some((run) => meets(corner, run)))
-				? []
-				: [[line.id, other.id].toSorted().join("|")],
+			at !== index && touches(line, other, runs[at]!)
+				? [[line.id, other.id].toSorted().join("|")]
+				: [],
 		),
 	);
+	return [...new Set(touching)];
+}
+
+/**
+ * Whether a corner of one line meets another line's stroke other than where it branches off a trunk they share.
+ * @param line The line.
+ * @param other Another line.
+ * @param runs The other line's runs.
+ * @returns True when they touch.
+ */
+function touches(line: Line, other: Line, runs: readonly Run[]): boolean {
+	return line.points
+		.slice(1, -1)
+		.some(
+			(corner, offset) =>
+				runs.some((run) => meets(corner, run)) && !branches(line, offset + 1, other, runs),
+		);
 }
 
 /**

@@ -63,15 +63,21 @@ function alongOf(box: Box, face: Face, tip: Point): number {
 	return tip[axis] - box[axis];
 }
 
+/** The ports on one card face: the card, the face, and where along it each port stands. */
+interface FacePorts {
+	readonly box: Box;
+	readonly face: Face;
+	readonly at: readonly number[];
+}
+
 /**
- * The ports of a drawing that stand alone on a card face within a lane of its
- * corner.
+ * The ports of a drawing's lines on every card face.
  * @param drawing The drawing.
- * @returns One card:FACE key for every such port.
+ * @returns The ports by card:FACE key.
  */
-export function bunchedPorts(drawing: ArchitectureDrawing): string[] {
+function facePorts(drawing: ArchitectureDrawing): ReadonlyMap<string, FacePorts> {
 	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
-	const ports = new Map<string, { box: Box; face: Face; at: number[] }>();
+	const ports = new Map<string, FacePorts>();
 	for (const { edge, curve } of drawing.edges) {
 		const points = verticesOf(curve);
 		for (const [card, tip, next] of [
@@ -86,11 +92,46 @@ export function bunchedPorts(drawing: ArchitectureDrawing): string[] {
 			ports.set(key, { ...port, at: [...port.at, alongOf(box, face, tip)] });
 		}
 	}
-	return [...ports].flatMap(([key, { box, face, at }]) => {
-		const [, extent] = alongFace(face);
-		const lone = at.every((one) => Math.abs(one - at[0]!) < 1);
-		return lone && Math.min(at[0]!, box[extent] - at[0]!) < ROUTE_LANE ? [key] : [];
+	return ports;
+}
+
+/**
+ * Whether a port stands within a lane of its face's corner.
+ * @param ports The face's ports.
+ * @param at Where the port stands along the face.
+ * @returns True beside a corner.
+ */
+function besideCorner(ports: FacePorts, at: number): boolean {
+	const [, extent] = alongFace(ports.face);
+	return Math.min(at, ports.box[extent] - at) < ROUTE_LANE;
+}
+
+/**
+ * The ports of a drawing that stand alone on a card face within a lane of its
+ * corner.
+ * @param drawing The drawing.
+ * @returns One card:FACE key for every such port.
+ */
+export function bunchedPorts(drawing: ArchitectureDrawing): string[] {
+	return [...facePorts(drawing)].flatMap(([key, ports]) => {
+		const lone = ports.at.every((one) => Math.abs(one - ports.at[0]!) < 1);
+		return lone && besideCorner(ports, ports.at[0]!) ? [key] : [];
 	});
+}
+
+/**
+ * The ports of a drawing within a lane of their card face's corner, alone on
+ * the face or not: a line that meets its card there reads as meeting the
+ * corner (IIS Ingress Migration's "US steering").
+ * @param drawing The drawing.
+ * @returns One card:FACE:position key for every such port.
+ */
+export function cornerPorts(drawing: ArchitectureDrawing): string[] {
+	return [...facePorts(drawing)].flatMap(([key, ports]) =>
+		[...new Set(ports.at.map(Math.round))]
+			.filter((at) => besideCorner(ports, at))
+			.map((at) => `${key}:${at}`),
+	);
 }
 
 /**

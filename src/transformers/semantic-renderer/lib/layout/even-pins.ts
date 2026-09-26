@@ -14,22 +14,36 @@
 // for a whole drawing: with evened pins no release of Browser application's
 // reserved rows kept its crossings down, so it stayed 2734 wide instead of
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
-// both ways and the tidier drawing is kept: fewer crossings, counting two
-// unrelated lines on one stroke as one, since the stroke can hide one (What
-// the CLI can be asked); then fewer line ends across the reading direction,
-// so a fan into the cards below a card is not traded for side exits with a
-// bend fewer (Skill evaluation's "Grading"); then fewer bends, then less
-// line. A drawing that saves crossings by growing its page or its lines by
-// more than each saved crossing is worth is not tidier (Command dispatch took
-// a page a third taller with a third more line to save two).
+// and finished both ways (compound.ts) and the tidier drawing is kept. It may
+// have no more of any defect a reader sees: crossings, unrelated lines that
+// read as one, the length they share a stroke over, and hooks into a card's
+// side. Evened pins that saved crossings kept a 450 px trunk of two unrelated
+// lines in Command interface, and finishing only the settlement chosen left
+// the other no chance to cure its trunks (What the CLI can be asked). Among
+// drawings with no more of any, the one with fewer defects together, ports
+// beside a card's corner counted too, is kept; then fewer line ends across
+// the reading direction, so a fan into the cards below a card is not traded
+// for side exits with a bend fewer (Skill evaluation's "Grading"); then fewer
+// bends, then less line. A drawing that saves defects by growing its page or
+// its lines by more than each saved defect is worth is not tidier (Command
+// dispatch took a page a third taller with a third more line to save two
+// crossings).
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { stackKeys } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
+import { cornerPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
+import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
+import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import {
+	stackedLength,
+	stackKeys,
+	touchKeys,
+	trackKeys,
+} from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
 
-/** The share a drawing may grow its page or its lines by for every crossing it saves. */
+/** The share a drawing may grow its page or its lines by for every defect it saves. */
 const CROSSING_WORTH = 0.05;
 
 /**
@@ -102,12 +116,35 @@ function lineLength(drawing: ArchitectureDrawing): number {
 }
 
 /**
+ * What a drawing may have no more of than the drawing it would replace: drawn
+ * crossings, pairs of lines a reader takes for one (unrelated lines on one
+ * stroke or side by side within half a lane, and lines that touch), the
+ * lanes' worth of line
+ * drawn on one stroke, and line ends hooking into a card's side. Ranked on
+ * crossings seen alone, evened pins kept Command interface's 450 px trunk of
+ * two unrelated lines for the crossings it saved.
+ * @param drawing A settled drawing.
+ * @returns Its crossings, junctions, stacked lanes and hooks.
+ */
+function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
+	return [
+		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))),
+		stackKeys(drawing).length + touchKeys(drawing).length + trackKeys(drawing).length,
+		Math.round(stackedLength(drawing) / ROUTE_LANE),
+		sideHooks(drawing).length,
+	];
+}
+
+/**
  * What a drawing is ranked on, most important first.
  * @param drawing A settled drawing.
- * @returns Its crossings seen, line ends across the reading direction, bends and line length.
+ * @returns Its crossings, junctions and hooks together with the ports beside a card's corner, then
+ * its line ends across the reading direction, bends and line length.
  */
 function untidiness(drawing: ArchitectureDrawing): readonly number[] {
-	return [crossingsSeen(drawing), sideEnds(drawing), bendsIn(drawing), lineLength(drawing)];
+	const [crossings, junctions, , hooks] = defectsIn(drawing);
+	const seen = crossings! + junctions! + hooks! + cornerPorts(drawing).length;
+	return [seen, sideEnds(drawing), bendsIn(drawing), lineLength(drawing)];
 }
 
 /**
@@ -145,20 +182,37 @@ function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
 }
 
 /**
- * Whether one drawing is tidier than another: it ranks strictly better and
- * grows the page and its lines by no more than every crossing it saves buys
- * ({@link CROSSING_WORTH}). Two crossings saved do not pay for a page a third
- * taller with a third more line (Command dispatch).
+ * Whether one drawing is tidier than another: it has no more of any defect
+ * ({@link defectsIn}), ranks strictly better, or no worse on its defects
+ * together where it cures others that are not ranked, and grows the page and
+ * its lines by no more than every defect it saves buys
+ * ({@link CROSSING_WORTH}). Two crossings saved do not pay for a page a
+ * third taller with a third more line (Command dispatch).
  * @param one The challenger.
  * @param other The drawing kept so far, which wins a tie.
- * @returns True when the challenger ranks strictly better.
+ * @param cured How many defects the ranking does not count the challenger cures.
+ * @returns True when the challenger is kept.
  */
-function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean {
-	const [mine, theirs] = [untidiness(one), untidiness(other)];
-	const index = mine.findIndex((value, at) => Math.abs(value - theirs[at]!) > 0.5);
-	if (index === -1 || mine[index]! > theirs[index]!) return false;
-	const saved = Math.max(0, theirs[0]! - mine[0]!);
+function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured = 0): boolean {
+	const [mine, theirs] = [defectsIn(one), defectsIn(other)];
+	if (mine.some((value, at) => value > theirs[at]!)) return false;
+	const [ranked, against] = [untidiness(one), untidiness(other)];
+	if (!ranksBetter(ranked, against) && !(cured > 0 && ranked[0]! <= against[0]! + 0.5)) {
+		return false;
+	}
+	const saved = Math.max(0, against[0]! - ranked[0]!) + cured;
 	return growth(one, other) <= saved * CROSSING_WORTH;
+}
+
+/**
+ * Whether one ranking is strictly better than another at the first place they differ.
+ * @param ranked A drawing's ranking ({@link untidiness}).
+ * @param against Another's.
+ * @returns True when the first ranks better.
+ */
+function ranksBetter(ranked: readonly number[], against: readonly number[]): boolean {
+	const index = ranked.findIndex((value, at) => Math.abs(value - against[at]!) > 0.5);
+	return index !== -1 && ranked[index]! < against[index]!;
 }
 
 /**
@@ -177,4 +231,4 @@ async function tidierSettlement<Settled extends { readonly drawing: Architecture
 	return tidierThan(other.drawing, one.drawing) ? other : one;
 }
 
-export { bendsIn, centreHandicap, crossingsSeen, tidierSettlement };
+export { centreHandicap, crossingsSeen, tidierSettlement, tidierThan };

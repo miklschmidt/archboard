@@ -11,22 +11,23 @@
 // lines into longer ways round in some boards: Platform Phone API went from 9
 // to 12 crossings and Board rasterizer's "One browser, two uses" took 20 more
 // bends. So each reading is settled and finished both ways and keeps the
-// clearance only where it gives labels their clearance: fewer labels another
-// line crowds and none crowded that was clear, the page and every card where
-// they were, and no more crossings, bends or stacked lines. Kept wherever it
-// merely cost nothing, it moved lines round boards it cured nothing in, and
-// put three labels a clearance from lines that were far from them (Codex
-// workhorse, Browser application's "Recording a walkthrough"). A cleared
-// settlement can reserve other labels and so place the board anew, which no
-// count judges: Board rasterizer's came out with a tangle of parallel lines
-// between two of its frames.
+// clearance only where it gives labels their clearance: no more labels
+// another line crowds, and a drawing no untidier than the ordinary one where
+// it crowds fewer, or tidier where it crowds as many, judged as plain and
+// evened pins are (even-pins.ts). Kept wherever it merely cost nothing, it
+// moved lines round boards it cured nothing in, and put three labels a
+// clearance from lines that were far from them (Codex workhorse, Browser
+// application's "Recording a walkthrough"). A cleared settlement can reserve
+// other labels and so place the board anew; held to the ordinary placement,
+// it was judged on its page alone, and What the CLI can be asked kept 10
+// crossings and a trunk of two unrelated lines where the cleared placement
+// drew 4 and none.
 import { LABEL_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { bendsIn, crossingsSeen } from "@/transformers/semantic-renderer/lib/layout/even-pins";
-import { stackedEnds } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
+import { tidierThan } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 
 /**
  * How far a straight run passes from a box.
@@ -75,71 +76,25 @@ export function crowdedLabels(drawing: ArchitectureDrawing): string[] {
 }
 
 /**
- * What a finished drawing is weighed on: its crossings, those its stacks
- * hide included, its bends and the lines it leaves on another's stroke.
- * @param drawing The drawing.
- * @returns Its crossings, bends and stacked line ends.
- */
-function weighed(drawing: ArchitectureDrawing): readonly number[] {
-	return [crossingsSeen(drawing), bendsIn(drawing), stackedEnds(drawing).length];
-}
-
-/**
- * A drawing's page and the boxes of its cards and frames.
- * @param drawing The drawing.
- * @returns The page first, then each card and frame in the drawing's order.
- */
-function placedBoxes(drawing: ArchitectureDrawing): Box[] {
-	return [
-		{ x: 0, y: 0, width: drawing.width, height: drawing.height },
-		...[...drawing.cards, ...drawing.containers].map(({ box }) => box),
-	];
-}
-
-/**
- * Whether two drawings place every card and frame alike on a page of one size.
- * @param one A drawing.
- * @param other Another.
- * @returns True when only their routes and labels differ.
- */
-function samePlacement(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean {
-	const theirs = placedBoxes(other);
-	return placedBoxes(one).every(
-		(box, index) =>
-			Math.abs(box.x - theirs[index]!.x) < 0.5 &&
-			Math.abs(box.y - theirs[index]!.y) < 0.5 &&
-			Math.abs(box.width - theirs[index]!.width) < 0.5 &&
-			Math.abs(box.height - theirs[index]!.height) < 0.5,
-	);
-}
-
-/**
- * Whether the cleared drawing gives labels their clearance and costs nothing
- * else: fewer labels another line crowds and none crowded that was clear,
- * the page and every card and frame where they were, and no more crossings,
- * bends or stacked lines.
+ * Whether the cleared drawing is kept: no more labels another line crowds,
+ * and a drawing tidier than the ordinary one, each label it clears counted as
+ * a defect saved (even-pins.ts). A cleared drawing that clears no label is
+ * another settlement of the same reading, kept where it is tidier: What the
+ * CLI can be asked drew 4 crossings so where the ordinary drawing drew 10.
  * @param cleared The drawing with reserved labels' full clearance.
  * @param ordinary The drawing with the router's buffer round them.
  * @returns True when the cleared drawing is kept.
  */
 function clearer(cleared: ArchitectureDrawing, ordinary: ArchitectureDrawing): boolean {
-	const [crowded, clear] = [new Set(crowdedLabels(ordinary)), crowdedLabels(cleared)];
-	const [wide, narrow] = [weighed(cleared), weighed(ordinary)];
-	return (
-		clear.length < crowded.size &&
-		clear.every((key) => crowded.has(key)) &&
-		samePlacement(cleared, ordinary) &&
-		wide.every((value, index) => value <= narrow[index]!)
-	);
+	const [clear, crowded] = [crowdedLabels(cleared).length, crowdedLabels(ordinary).length];
+	if (clear > crowded) return false;
+	return tidierThan(cleared, ordinary, crowded - clear);
 }
 
 /**
  * The drawing routed with reserved labels' full clearance where it gives
- * labels clearance: fewer labels crowded by another line and none crowded
- * that was clear ({@link crowdedLabels}), the page and every card and frame
- * where they were, and no more crossings, bends or stacked lines than the
- * ordinary drawing. A drawing the router refuses leaves the other; a fault in
- * either is thrown.
+ * labels clearance and costs nothing else ({@link clearer}). A drawing the
+ * router refuses leaves the other; a fault in either is thrown.
  * @param ordinary The finished drawing with the router's buffer round reserved labels.
  * @param cleared The finished drawing with their full clearance.
  * @returns The drawing kept.
