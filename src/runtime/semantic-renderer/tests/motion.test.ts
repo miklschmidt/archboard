@@ -6,6 +6,7 @@ import {
 	headsOn,
 	launchGaps,
 	trafficLayers,
+	trainPeriod,
 } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
@@ -182,13 +183,6 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		const speeds = (id: string) => {
 			const layers = trafficLayers(svg, id);
 			expect(layers.length).toBeGreaterThan(1);
-			// The train is one cycle long, so it moves exactly its own pattern each cycle.
-			for (const layer of layers) {
-				expect(layer.travel).toBeCloseTo(
-					layer.train.reduce((sum, value) => sum + value, 0),
-					6,
-				);
-			}
 			return layers.map((layer) => layer.travel / layer.cycle);
 		};
 		const [short, long] = [trafficLayers(svg, "ab")[0]!, trafficLayers(svg, "ac")[0]!];
@@ -199,6 +193,25 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		// faster than the stroll it asked for.
 		for (const speed of speeds("bc")) expect(speed).toBeCloseTo(shot * 2, 3);
 		expect(shot).toBeGreaterThan(80 * 5);
+	});
+
+	test("every layer repeats over the distance its train moves, however dense the traffic", async () => {
+		// Where shots are fired closer together than a layer is long, a layer
+		// that repeated over more than the train moves would lose its head's
+		// glow and tail and jump back every cycle.
+		for (const traffic of [{}, { speed: 10, volume: 20 }, { volume: 40 }]) {
+			const { svg } = await renderSemanticView({
+				content: variant({
+					nodes: SAMPLE.nodes,
+					edges: [{ id: "e", from: "api", to: "store", kind: "call", traffic }],
+				}),
+				grammar: "architecture",
+				theme: "light",
+			});
+			const layers = trafficLayers(svg, "e");
+			expect(layers.length).toBeGreaterThan(1);
+			for (const layer of layers) expect(trainPeriod(layer)).toBeCloseTo(layer.travel, 6);
+		}
 	});
 
 	test("the mean launch rate over a cycle equals the volume, at irregular moments", async () => {
@@ -298,7 +311,9 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 
 	test("a still picture rests its streak clear of the labels drawn over it", async () => {
 		// Two stacked cards: the label sits on the line half way along, cut by
-		// the label's border or hidden under it, whichever the layout gives.
+		// the label's border or hidden under it, whichever the layout gives; at
+		// least one layout moves the resting place beyond half way.
+		let beyondHalf = false;
 		const content = variant({
 			nodes: [
 				{ id: "a", name: "A", kind: "service" },
@@ -317,7 +332,13 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			const glow = Math.max(...layers.map(({ width }) => width / 2));
 			const [x0, y0, x1, y1] = layers[0]!.d.match(/[\d.]+/gu)!.map(Number);
 			const length = Math.hypot(x1! - x0!, y1! - y0!);
+			// Every layer shows exactly one dash at time zero, round caps included,
+			// wherever the label moved the resting place.
+			for (const layer of layers) {
+				expect(headsOn(layer.still, layer.offset, length, layer.width / 2)).toHaveLength(1);
+			}
 			const [along] = headsOn(layers[0]!.still, layers[0]!.offset, length);
+			beyondHalf ||= along! > length / 2;
 			const head = {
 				x: x0! + ((x1! - x0!) * along!) / length,
 				y: y0! + ((y1! - y0!) * along!) / length,
@@ -332,6 +353,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			);
 			expect(gap).toBeGreaterThanOrEqual(glow);
 		}
+		expect(beyondHalf).toBe(true);
 	});
 	for (const traffic of [
 		{ speed: 40, volume: 1e12 },

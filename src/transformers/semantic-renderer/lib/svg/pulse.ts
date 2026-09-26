@@ -251,8 +251,9 @@ interface Volley {
 	/** How far along the route the resting streak's head is. */
 	readonly rest: number;
 	/**
-	 * The gap after the resting streak in the still picture: longer than the
-	 * rest of the route, so no other streak shows on it.
+	 * The gap either side of the resting streak in the still picture: longer
+	 * than the whole route and a glow's round cap, so wherever the streak rests
+	 * no dash before or after it shows on the route.
 	 */
 	readonly still: number;
 	/**
@@ -322,8 +323,13 @@ function streakLayer(
 	const length = Number(coord(layer.length));
 	const offset = Number(coord(length - volley.rest));
 	const begin = timecount(TRAFFIC_STILL_MS / 1000);
+	// A dash never outgrows its spacing, so every layer repeats over the same
+	// distance the train moves in a cycle, however close the shots are fired.
 	const train = volley.spacings
-		.map((spacing) => `${length} ${coord(Math.max(0, spacing - length))}`)
+		.map((spacing) => {
+			const dash = Math.min(length, spacing);
+			return `${dash} ${coord(spacing - dash)}`;
+		})
 		.join(" ");
 	return wrap(
 		"path",
@@ -382,11 +388,11 @@ function travellingPulses(pulse: Pulse): string {
 		length * STREAK_LINE_SHARE,
 		Math.min(...spacings) * STREAK_GAP_SHARE,
 	);
-	const rest = restingPlace(ride, length, (head * COMET_GLOW.width) / 2, pulse.labels);
+	const glow = head * COMET_GLOW.width;
 	const volley: Volley = {
 		path: pathOf(ride),
-		rest,
-		still: Math.ceil(length - rest) + 1,
+		rest: restingPlace(ride, length, glow / 2, pulse.labels),
+		still: Math.ceil(length + glow) + 1,
 		spacings,
 		period: spacings.reduce((sum, spacing) => sum + spacing, 0),
 		cycle: timecount(schedule.cycle),
