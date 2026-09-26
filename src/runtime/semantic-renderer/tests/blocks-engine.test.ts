@@ -19,6 +19,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import agentWorkbench from "./agent-workbench.json";
+import archboardServer from "./archboard-server.json";
 import browserApplication from "./browser-application.json";
 import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import oneCommand from "./one-command.json";
@@ -384,4 +385,14 @@ test("the lines of one channel take the track order that crosses least", async (
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
 	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
 	expect(crossings.value).toBeLessThanOrEqual(38);
+});
+
+// Taken from a board of this repository: laid with its groups packed as
+// blocks of their own it crossed fewer lines and drew a little less line,
+// but on a portrait page that fits the pane worse, its lines run round the
+// blocks. Packing is for a page the board's own ranks spread out.
+test("a board's groups are packed only where that fits the pane no worse", async () => {
+	const content = orderedFixture(archboardServer);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	expect(drawing.width).toBeGreaterThan(drawing.height);
 });
