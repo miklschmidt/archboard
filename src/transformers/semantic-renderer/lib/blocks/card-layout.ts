@@ -439,9 +439,7 @@ class CardLayout {
 		centres: ReadonlyMap<string, Point>,
 		ports: ReadonlyMap<string, number>,
 	): Laid {
-		const leaves = [...(placed.children ?? [])];
-		for (let leaf = leaves.pop(); leaf !== undefined; leaf = leaves.pop()) {
-			leaves.push(...(leaf.children ?? []));
+		for (const leaf of placed.children ?? []) {
 			const x = ports.get(leaf.id);
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
 			else if (this.tree.pins.has(leaf.id))
@@ -487,7 +485,7 @@ class CardLayout {
 			...reach.map((one) => one.x + one.width + side),
 		);
 		const tracks = wallLines(this.block, walled, boxes, width);
-		const laps = scene.edgesPage ? lapsOf(walled.values(), [...boxes.values()]) : 0;
+		const laps = lapsOf(walled.values(), [...boxes.values()]);
 		return {
 			laps,
 			width,

@@ -132,7 +132,7 @@ function unstrandRun(
  * it on one column that meets neither the piece or label above it nor the one
  * below it moves onto the column of one of them, the lower first, where that
  * is free and crosses no more lines. The line then changes column once where
- * it changed twice. A card is left to its port, which is placed later.
+ * it changed twice.
  * @param run The run.
  * @param free What each band holds without it.
  * @param bands Every chain's stations, by band.
@@ -151,7 +151,6 @@ function closeSteps(
 			if (meetsStraight(piece.before, x) || meetsStraight(piece.after, x)) return false;
 			const crossed = inversions(piece, x, bands);
 			const column = [piece.after, piece.before]
-				.filter(({ kind }) => kind !== "card")
 				.map((station) => meetingColumn(station, x))
 				.find((one) => free.fits(piece, one) && inversions(piece, one, bands) <= crossed);
 			if (column === undefined) return false;
