@@ -1,10 +1,14 @@
 // Where the track engine stands a card sideways (TASK-349). What this
 // catches: a chain of one-in, one-out cards stepping sideways rank by rank,
-// its lines leaving and entering its cards off centre.
+// its lines leaving and entering its cards off centre, and a fan whose
+// wrap lowers a group region whole refused, so the region stands on a row
+// of its own above the fan's other cards.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import loweredRegion from "./lowered-region.json";
 
 const WORDS = "alpha bravo delta eagle falcon garden harbor island jungle kettle lantern meadow";
 
@@ -53,4 +57,43 @@ test("a chain between a pull and a fan stands on one column", async () => {
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
 	const centres = chain.map((id) => centre(drawing.atlas.nodes[id]!));
 	for (const at of centres) expect(Math.abs(at - centres[0]!)).toBeLessThan(1);
+});
+
+/**
+ * Whether two boxes share some height, side by side.
+ * @param one A box.
+ * @param one.y Its top.
+ * @param one.height Its height.
+ * @param other Another.
+ * @param other.y Its top.
+ * @param other.height Its height.
+ * @returns True when they do.
+ */
+function beside(one: { y: number; height: number }, other: { y: number; height: number }): boolean {
+	return one.y < other.y + other.height && other.y < one.y + one.height;
+}
+
+// Reduced from a board of this repository, names replaced: a hub fans out to
+// four cards and to two cards of one group region, one of which a line from
+// above also enters.
+test("a wrapped fan stands a group region beside its other cards", async () => {
+	const policy = SemanticPolicySchema.parse({
+		levels: ["service"],
+		nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
+		relationshipKinds: {
+			call: { name: "Call", dash: "solid", arrowhead: "filled" },
+			uses: { name: "Uses", dash: "dotted", arrowhead: "open" },
+		},
+		groups: {
+			inner: { name: "Inner", color: "indigo" },
+			outer: { name: "Outer", color: "yellow" },
+		},
+	});
+	const content = orderedFixture(loweredRegion);
+	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "track" });
+	const [members, others] = [
+		["n5", "n6"],
+		["n2", "n3", "n4", "n7"],
+	].map((ids) => ids.map((id) => drawing.atlas.nodes[id]!));
+	expect(members!.some((member) => others!.some((other) => beside(member, other)))).toBe(true);
 });

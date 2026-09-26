@@ -1,0 +1,113 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "kettlee meadowb",
+			"kind": "module",
+			"responsibility": "carbo r deltal summitb quartzga bravoca needlene car harborc riv ne bravosu del ha sum bravosum summitm"
+		},
+		{
+			"id": "n1",
+			"name": "bravoharb bravo",
+			"kind": "module",
+			"responsibility": "river eag jun needle eag riverdel summ jung river falc del summitsummit gar lant delt rivercarbo summi b timber garde pepperriv"
+		},
+		{
+			"id": "n2",
+			"name": "needle kett",
+			"kind": "module",
+			"responsibility": "orang summit ora lanternju harbor fa harbo car summitjun quar peppe ket ora junglet carb d quartz needlef kettleeag"
+		},
+		{
+			"id": "n3",
+			"name": "pepper needl",
+			"kind": "module",
+			"responsibility": "bra carbonriversu kettleke l timberpep su orangec carbo island pe car bravoj"
+		},
+		{
+			"id": "n4",
+			"name": "summitor junglemeadow",
+			"kind": "module",
+			"responsibility": "lan alphaoran lanternfalco t deltap bravog jungl eag har meadow mead pepper carb falconora"
+		},
+		{
+			"id": "n5",
+			"name": "meado riveri",
+			"kind": "module",
+			"responsibility": "eagle needl riverislan need lante meadowh ea carbo falc eagleharbo harb alphape summ falc is jun alp eaglene ri lantern",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n6",
+			"name": "timbe summitk",
+			"kind": "module",
+			"responsibility": "eag quartzti bravoor r mead me meadowme delt pe",
+			"groups": ["inner"]
+		},
+		{
+			"id": "n7",
+			"name": "mead bravogarden",
+			"kind": "module",
+			"responsibility": "car gardenorangefalcondel kett t bravodelt al summite river delt lan timberalpha car garde timbe me eagle",
+			"groups": ["outer"]
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n0",
+			"to": "n6",
+			"kind": "call",
+			"label": "i lante timberla pepperdelt de pepperoran"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n2",
+			"kind": "call",
+			"label": "pepperpe jun carb eag deltaket island"
+		},
+		{
+			"id": "e2",
+			"from": "n1",
+			"to": "n5",
+			"kind": "call",
+			"label": "pepper falcon qu alph gard qua lante"
+		},
+		{
+			"id": "e3",
+			"from": "n1",
+			"to": "n6",
+			"kind": "call",
+			"label": "eagleriveral quar jun carbonis quar"
+		},
+		{
+			"id": "e4",
+			"from": "n1",
+			"to": "n3",
+			"kind": "uses",
+			"label": "lanternfalconl ha riverr"
+		},
+		{
+			"id": "e5",
+			"from": "n1",
+			"to": "n4",
+			"kind": "uses",
+			"label": "qua kettleharbort ga harbor"
+		},
+		{
+			"id": "e6",
+			"from": "n0",
+			"to": "n1",
+			"kind": "call",
+			"label": "meado h gardenqua pep lan alphaa"
+		},
+		{
+			"id": "e7",
+			"from": "n1",
+			"to": "n7",
+			"kind": "uses",
+			"label": "islandpepperislandgard ti lanter"
+		}
+	]
+}

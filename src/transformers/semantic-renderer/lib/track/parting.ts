@@ -94,6 +94,22 @@ function swapped(nets: readonly Net[]): number {
 }
 
 /**
+ * The stretches of a line a part may move beyond one end of a net: the whole
+ * straight stretch, and, when that runs on through lanes into a label or a
+ * card, its lanes alone. Moving only the lanes leaves the line's step at that
+ * label or card, away from where the two lines meet, when the label or card
+ * has no room to follow.
+ * @param place The net.
+ * @param end Which end the stretch starts at.
+ * @returns The stretches, the whole one first.
+ */
+function stretchesBeyond(place: Place, end: "top" | "bottom"): ReturnType<typeof stretchBeyond>[] {
+	const whole = stretchBeyond(place.route, place.index, end);
+	const cut = whole.findIndex(({ station }) => station.kind !== "lane");
+	return cut > 0 ? [whole, whole.slice(0, cut)] : [whole];
+}
+
+/**
  * Part one pair of lines that read as one: move the leaving line's upper
  * stretch, or the entering line's lower stretch, a lane aside from the other
  * or onto its own line's column, the nearest move that parts more pairs than
@@ -123,16 +139,12 @@ function part(
 	// parts the pair, so those moves come before a lane aside.
 	const own = new Set([up.bottomX, down.topX]);
 	const moves = [
-		...[down.bottomX - LANE, down.bottomX + LANE, up.bottomX].map((x) => ({
-			x,
-			from: up.topX,
-			stretch: stretchBeyond(leaving.route, leaving.index, "top"),
-		})),
-		...[up.topX - LANE, up.topX + LANE, down.topX].map((x) => ({
-			x,
-			from: down.bottomX,
-			stretch: stretchBeyond(entering.route, entering.index, "bottom"),
-		})),
+		...[down.bottomX - LANE, down.bottomX + LANE, up.bottomX].flatMap((x) =>
+			stretchesBeyond(leaving, "top").map((stretch) => ({ x, from: up.topX, stretch })),
+		),
+		...[up.topX - LANE, up.topX + LANE, down.topX].flatMap((x) =>
+			stretchesBeyond(entering, "bottom").map((stretch) => ({ x, from: down.bottomX, stretch })),
+		),
 	].toSorted(
 		(one, other) =>
 			Number(!own.has(one.x)) - Number(!own.has(other.x)) ||
