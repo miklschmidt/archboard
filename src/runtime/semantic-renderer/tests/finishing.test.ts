@@ -5,8 +5,9 @@
 // from one line to its neighbour and was kept for it (IIS Ingress
 // Migration's "Today: DNS points here" and its fallback), and a pass could
 // cure two defects by bringing one of another kind: a crowded label (Voice
-// coordinator) or two lines whose corners interlock a few pixels apart
-// (Platform Public API's "Authentication and usage").
+// coordinator), two lines whose corners interlock a few pixels apart
+// (Platform Public API's "Authentication and usage"), or a fan whose branches
+// crowd into one blot (Skill evaluation's six lines out of Author run).
 // What this catches: an ordinary L taken for a hook, a pass trading a defect
 // for another of its kind, a pass curing defects by crowding a label or by
 // joining two unrelated lines at or near a corner, and a fault in a pass's
@@ -157,6 +158,26 @@ test("a pass may not cure a hook by turning a line a few pixels from an unrelate
 	const settled = sketch(cards, [hooked(0), near]);
 	const interlocked = sketch(cards, [entering(0), near]);
 	expect(await finishing(settled, interlocked)).toBe(settled);
+});
+
+/**
+ * Three lines from one card down a shared trunk, each branching off it to the right.
+ * @param apart How far apart the branches leave the trunk.
+ * @returns The lines.
+ */
+function fan(apart: number): Line[] {
+	return ["one", "two", "three"].map((to, index) => ({
+		id: `fan-${to}`,
+		from: "hub",
+		to,
+		points: at([600, 300], [600, 340 + index * apart], [800, 340 + index * apart]),
+	}));
+}
+
+test("a pass may not cure a hook by crowding a fan's branches into one blot", async () => {
+	const settled = sketch(cards, [hooked(0), ...fan(20)]);
+	const crowded = sketch(cards, [entering(0), ...fan(9)]);
+	expect(await finishing(settled, crowded)).toBe(settled);
 });
 
 test("a routing the router refuses keeps the settled drawing, and a fault is thrown", async () => {

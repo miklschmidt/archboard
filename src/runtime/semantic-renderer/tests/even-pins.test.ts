@@ -11,7 +11,8 @@
 // two unrelated lines, and two lines from one card turning head to head
 // (Auditlog's "ApplyOffsets"), for the crossings they saved; and a crossing
 // saved does not pay for two ports beside a card's corner (IIS Ingress
-// Migration's "US steering").
+// Migration's "US steering"), nor for a fan whose branches crowd into one
+// blot (Skill evaluation's six lines out of Author run, branching 9 px apart).
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -168,5 +169,25 @@ test("a crossing saved does not pay for two ports beside a card's corner", async
 		{ id: "line", from: "source", to: "target", points: at([5, 50], [5, 200]) },
 		...long(false).slice(0, 2),
 	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+/**
+ * Three lines from one card down a shared trunk, each branching off it to the left.
+ * @param apart How far apart the branches leave the trunk.
+ * @returns The lines.
+ */
+function branching(apart: number): Line[] {
+	return ["one", "two", "three"].map((to, index) => ({
+		id: `fan-${to}`,
+		from: "hub",
+		to,
+		points: at([100, 0], [100, 40 + index * apart], [0, 40 + index * apart]),
+	}));
+}
+
+test("a crossing saved does not pay for a fan whose branches crowd into one blot", async () => {
+	const plain = sketch({}, [...branching(20), ...long(true).slice(0, 2)]);
+	const even = sketch({}, [...branching(9), ...long(false).slice(0, 2)]);
 	expect(await kept(plain, even)).toBe("plain");
 });

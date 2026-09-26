@@ -42,6 +42,7 @@ import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-p
 import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import type { RouteRequest } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
+	crowdedJoinCount,
 	refusedLines,
 	stackedEnds,
 	stackKeys,
@@ -277,6 +278,7 @@ function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
 		...crowdedLabels(drawing).map((key) => `label:${key}`),
 		...touchKeys(drawing).map((key) => `touch:${key}`),
 		...trackKeys(drawing).map((key) => `track:${key}`),
+		...Array.from({ length: crowdedJoinCount(drawing) }, (_, index) => `join:${index}`),
 	]);
 }
 

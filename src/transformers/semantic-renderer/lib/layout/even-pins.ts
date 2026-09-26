@@ -36,6 +36,7 @@ import { cornerPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pi
 import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
+	crowdedJoinCount,
 	stackedLength,
 	stackKeys,
 	touchKeys,
@@ -129,7 +130,10 @@ function lineLength(drawing: ArchitectureDrawing): number {
 function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 	return [
 		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))),
-		stackKeys(drawing).length + touchKeys(drawing).length + trackKeys(drawing).length,
+		stackKeys(drawing).length +
+			touchKeys(drawing).length +
+			trackKeys(drawing).length +
+			crowdedJoinCount(drawing),
 		Math.round(stackedLength(drawing) / ROUTE_LANE),
 		sideHooks(drawing).length,
 	];

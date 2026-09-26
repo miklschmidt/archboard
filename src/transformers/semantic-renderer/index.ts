@@ -215,7 +215,8 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
  * Lay out each distinct content and comparison channel set once per engine.
  * @param content The architecture to draw.
  * @param expanded The architecture after adding drawable flow-step lines.
- * @param standing Comparison standing used to keep marked relationships apart.
+ * @param standing Comparison standing used to keep marked relationships apart, and lines off
+ * the pin a marked card wears.
  * @param engine The engine that lays it out.
  * @param policy The vault's groups, in order, which place and caption regions, and its
  * relationship kinds, which say how each line is drawn.
@@ -230,11 +231,11 @@ function layoutRemembered(
 	policy: Pick<SemanticPolicy, "groups" | "relationshipKinds">,
 	steps: ReadonlySet<string>,
 ): Promise<PaintedDrawing> {
-	const edgeStandings =
+	const standings =
 		standing === undefined
 			? undefined
 			: Object.fromEntries(
-					expanded.edges.map((edge) => [edge.id, standing[edge.id] ?? "unchanged"]),
+					[...expanded.nodes, ...expanded.edges].map(({ id }) => [id, standing[id] ?? "unchanged"]),
 				);
 	const named = Object.entries(policy.groups).map(([id, { name }]) => [id, name]);
 	const lines = Object.entries(policy.relationshipKinds).map(([kind, look]) => [
@@ -242,7 +243,7 @@ function layoutRemembered(
 		look.dash,
 		look.arrowhead,
 	]);
-	const key = JSON.stringify([engine, content, edgeStandings, named, lines]);
+	const key = JSON.stringify([engine, content, standings, named, lines]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
@@ -252,7 +253,7 @@ function layoutRemembered(
 	const layout = layoutEngine(engine)(
 		expanded,
 		measureArchitecture(expanded, policy, steps),
-		edgeStandings,
+		standings,
 	);
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.

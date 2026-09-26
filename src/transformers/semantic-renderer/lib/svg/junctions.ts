@@ -313,6 +313,45 @@ function touching(a: Junction, b: Junction): boolean {
 }
 
 /**
+ * The joins of routes, one per place, before close ones are gathered into a mark.
+ * @param routes Every route's corners, its bends' radii and its line width.
+ * @returns The joins.
+ */
+function joinsOf(routes: readonly JoinRoute[]): Junction[] {
+	const byRoute = routes.map(stretchesOf);
+	const stretches = byRoute.flat();
+	const found = new Map<string, Junction>();
+	for (const [index, one] of stretches.entries()) {
+		for (const other of stretches.slice(index + 1)) {
+			for (const junction of joinsBetween(one, other, byRoute)) keep(found, junction);
+		}
+	}
+	return [...found.values()];
+}
+
+/**
+ * The pairs of joins on one lane nearer together than a distance, which a
+ * reader sees as one blot rather than two branches (Skill evaluation's fan of
+ * six lines out of Author run, branching 9 px apart).
+ * @param routes Every route's corners, its bends' radii and its line width.
+ * @param apart How far apart two joins on one lane must be to read as two.
+ * @returns Where each pair of crowded joins lies.
+ */
+function crowdedJoins(routes: readonly JoinRoute[], apart: number): (readonly [Point, Point])[] {
+	const joins = joinsOf(routes);
+	return joins.flatMap((one, index) =>
+		joins.slice(index + 1).flatMap((other) => {
+			const [dx, dy] = [
+				Math.abs(one.point.x - other.point.x),
+				Math.abs(one.point.y - other.point.y),
+			];
+			const crowded = (dx < ONWARD && dy < apart) || (dy < ONWARD && dx < apart);
+			return crowded ? [[one.point, other.point] as const] : [];
+		}),
+	);
+}
+
+/**
  * Every place two routes join or part, one mark per place.
  *
  * Two stretches draw as one line when their strokes touch, which a shared lane
@@ -323,15 +362,7 @@ function touching(a: Junction, b: Junction): boolean {
  * @returns The joins.
  */
 function junctionsOf(routes: readonly JoinRoute[]): Junction[] {
-	const byRoute = routes.map(stretchesOf);
-	const stretches = byRoute.flat();
-	const found = new Map<string, Junction>();
-	for (const [index, one] of stretches.entries()) {
-		for (const other of stretches.slice(index + 1)) {
-			for (const junction of joinsBetween(one, other, byRoute)) keep(found, junction);
-		}
-	}
-	return gathered([...found.values()]);
+	return gathered(joinsOf(routes));
 }
 
 /**
@@ -353,6 +384,23 @@ function bendsOf(curve: Curve): number[] {
 }
 
 /**
+ * Drawn routes as the joins are found from them.
+ * @param routes The routes as drawn, before crossings are bridged.
+ * @param widthOf How thick one route's line is drawn, by its place among them.
+ * @returns The routes' corners, bends and widths.
+ */
+function joinRoutes(
+	routes: readonly DrawingEdge[],
+	widthOf: (index: number) => number,
+): JoinRoute[] {
+	return routes.map(({ curve }, index) => ({
+		corners: verticesOf(curve),
+		bends: bendsOf(curve),
+		width: widthOf(index),
+	}));
+}
+
+/**
  * The marks for every join, in the ink and weight of the heavier line there.
  * @param routes The routes as drawn, before crossings are bridged.
  * @param inkOf The ink and width of one route's line.
@@ -363,13 +411,8 @@ function junctionMarks(
 	inkOf: (route: DrawingEdge) => { readonly ink: string; readonly width: number },
 ): string {
 	const lines = routes.map(inkOf);
-	const junctions = junctionsOf(
-		routes.map(({ curve }, index) => ({
-			corners: verticesOf(curve),
-			bends: bendsOf(curve),
-			width: lines[index]!.width,
-		})),
-	);
+	const junctions = junctionsOf(joinRoutes(routes, (index) => lines[index]!.width));
+
 	if (junctions.length === 0) return "";
 	const marks = junctions.map(({ point, until, route, width }) => {
 		const ink = lines[route]!.ink;
@@ -396,4 +439,4 @@ function markRadius(width: number): number {
 	return width + JUNCTION_REACH;
 }
 
-export { junctionMarks, junctionsOf, markRadius };
+export { crowdedJoins, joinRoutes, junctionMarks, junctionsOf, markRadius };

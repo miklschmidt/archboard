@@ -1,0 +1,428 @@
+{
+	"nodes": [
+		{
+			"id": "nmyK8UOO",
+			"name": "View dispatcher",
+			"kind": "module",
+			"responsibility": "Measures, settles and paints one drawing, in that order",
+			"order": 1000
+		},
+		{
+			"id": "kHpIix5b",
+			"name": "Measured text",
+			"kind": "function",
+			"responsibility": "Wraps every card, note and label and measures what the SVG will paint",
+			"order": 2000
+		},
+		{
+			"id": "BKjOFlgb",
+			"name": "Compound layout",
+			"kind": "function",
+			"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better",
+			"order": 3000
+		},
+		{
+			"id": "H0xU45vp",
+			"name": "Architecture painter",
+			"kind": "function",
+			"responsibility": "Paints the settled drawing and decides no geometry of its own",
+			"order": 4000
+		},
+		{
+			"id": "RvOyWmEb",
+			"name": "Pretext",
+			"kind": "external",
+			"responsibility": "Breaks a prepared string into lines at a given width",
+			"order": 5000
+		},
+		{
+			"id": "dYxhsEhY",
+			"name": "Host canvas",
+			"kind": "external",
+			"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
+			"order": 6000
+		},
+		{
+			"id": "ZRFUJrjD",
+			"name": "Compound graph",
+			"kind": "function",
+			"responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph",
+			"order": 7000
+		},
+		{
+			"id": "JwgvpLYJ",
+			"name": "Layout engine",
+			"kind": "function",
+			"responsibility": "Places, folds and routes one graph inside a layout worker",
+			"order": 8000
+		},
+		{
+			"id": "sJEdCSmX",
+			"name": "Column folds",
+			"kind": "function",
+			"responsibility": "Names the column counts a settled drawing could fold into, and folds a placement into that many columns",
+			"order": 9000
+		},
+		{
+			"id": "1hNZb5CR",
+			"name": "Label reservations",
+			"kind": "function",
+			"responsibility": "Reserves layout space for a label no run of its route can hold, and releases reservations a label no longer uses",
+			"order": 12000
+		},
+		{
+			"id": "QhftMIRP",
+			"name": "Graphviz placement",
+			"kind": "function",
+			"responsibility": "Places cards and frames with Graphviz's ranking across clusters, keeping containment",
+			"order": 8250
+		},
+		{
+			"id": "afquGGyY",
+			"name": "Obstacle routing",
+			"kind": "function",
+			"responsibility": "Routes every relationship orthogonally around cards and unrelated frames, through shared ports per relationship kind",
+			"order": 8500
+		},
+		{
+			"id": "KdNM1Q56",
+			"name": "Graphviz",
+			"kind": "external",
+			"responsibility": "Ranks a clustered graph and places its nodes",
+			"order": 10000
+		},
+		{
+			"id": "LCcblgyC",
+			"name": "libavoid",
+			"kind": "external",
+			"responsibility": "Routes orthogonal connectors around obstacle shapes",
+			"order": 11000
+		},
+		{
+			"id": "weNj8ziG",
+			"name": "Card text",
+			"kind": "function",
+			"responsibility": "Fits words into allocated space",
+			"order": 2000
+		},
+		{
+			"id": "kfgDUWyE",
+			"name": "Grid placement",
+			"kind": "function",
+			"responsibility": "Assigns fixed seats and rows",
+			"order": 3000
+		},
+		{
+			"id": "tBUl0ybN",
+			"name": "Route planning",
+			"kind": "function",
+			"responsibility": "Plans indexed corridors and ports",
+			"order": 4000
+		}
+	],
+	"edges": [
+		{
+			"id": "TPRWw9F4",
+			"from": "nmyK8UOO",
+			"to": "kHpIix5b",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "measure every word",
+			"order": 1000
+		},
+		{
+			"id": "19pjtjrv",
+			"from": "kHpIix5b",
+			"to": "RvOyWmEb",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "prepare and wrap",
+			"order": 2000
+		},
+		{
+			"id": "aESGqkun",
+			"from": "RvOyWmEb",
+			"to": "dYxhsEhY",
+			"kind": "dependency",
+			"emphasis": "normal",
+			"label": "measures its segments there",
+			"order": 3000
+		},
+		{
+			"id": "notKnIIz",
+			"from": "nmyK8UOO",
+			"to": "BKjOFlgb",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "content and measured sizes",
+			"order": 4000
+		},
+		{
+			"id": "TSsnxsV9",
+			"from": "kHpIix5b",
+			"to": "dYxhsEhY",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "the width of a painted line",
+			"order": 5000
+		},
+		{
+			"id": "eNHrvq6Y",
+			"from": "BKjOFlgb",
+			"to": "sJEdCSmX",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "column counts that could fit better",
+			"order": 6000
+		},
+		{
+			"id": "lbUaPzWc",
+			"from": "BKjOFlgb",
+			"to": "ZRFUJrjD",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "state the graph",
+			"order": 8000
+		},
+		{
+			"id": "wCXK6KYw",
+			"from": "BKjOFlgb",
+			"to": "JwgvpLYJ",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "solve, through the host",
+			"order": 9000
+		},
+		{
+			"id": "hJ4xGthq",
+			"from": "BKjOFlgb",
+			"to": "1hNZb5CR",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "reserve space for labels no run holds",
+			"order": 10000
+		},
+		{
+			"id": "oYEzQ4k5",
+			"from": "nmyK8UOO",
+			"to": "H0xU45vp",
+			"kind": "render",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "paint the settled drawing",
+			"order": 13000
+		},
+		{
+			"id": "T4hTbGVM",
+			"from": "JwgvpLYJ",
+			"to": "QhftMIRP",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "place cards and frames",
+			"order": 14000
+		},
+		{
+			"id": "S5js7d30",
+			"from": "JwgvpLYJ",
+			"to": "sJEdCSmX",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "fold into the chosen columns",
+			"order": 15000
+		},
+		{
+			"id": "Qvp9SqT5",
+			"from": "JwgvpLYJ",
+			"to": "afquGGyY",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "route every relationship",
+			"order": 16000
+		},
+		{
+			"id": "Md6tqK1p",
+			"from": "QhftMIRP",
+			"to": "KdNM1Q56",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "rank and place the clusters",
+			"order": 17000
+		},
+		{
+			"id": "PYJsIDYm",
+			"from": "afquGGyY",
+			"to": "LCcblgyC",
+			"kind": "call",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "orthogonal routes around obstacles",
+			"order": 18000
+		},
+		{
+			"id": "bvxJfQzm",
+			"from": "nmyK8UOO",
+			"to": "kfgDUWyE",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "place grid",
+			"order": 1000
+		},
+		{
+			"id": "VIDMaMpV",
+			"from": "kfgDUWyE",
+			"to": "weNj8ziG",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "fit title size",
+			"order": 2000
+		},
+		{
+			"id": "tj0diTvb",
+			"from": "nmyK8UOO",
+			"to": "tBUl0ybN",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "traffic and routes",
+			"order": 3000
+		},
+		{
+			"id": "my9Bj1QK",
+			"from": "nmyK8UOO",
+			"to": "H0xU45vp",
+			"kind": "render",
+			"emphasis": "normal",
+			"label": "paint placed cards",
+			"order": 4000
+		},
+		{
+			"id": "jpAcngCZ",
+			"from": "H0xU45vp",
+			"to": "weNj8ziG",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "truncate to fit",
+			"order": 5000
+		}
+	],
+	"standing": {
+		"nmyK8UOO": "changed",
+		"kHpIix5b": "added",
+		"BKjOFlgb": "added",
+		"H0xU45vp": "changed",
+		"RvOyWmEb": "added",
+		"dYxhsEhY": "added",
+		"ZRFUJrjD": "added",
+		"JwgvpLYJ": "added",
+		"sJEdCSmX": "added",
+		"1hNZb5CR": "added",
+		"QhftMIRP": "added",
+		"afquGGyY": "added",
+		"KdNM1Q56": "added",
+		"LCcblgyC": "added",
+		"weNj8ziG": "removed",
+		"kfgDUWyE": "removed",
+		"tBUl0ybN": "removed",
+		"TPRWw9F4": "added",
+		"19pjtjrv": "added",
+		"aESGqkun": "added",
+		"notKnIIz": "added",
+		"TSsnxsV9": "added",
+		"eNHrvq6Y": "added",
+		"lbUaPzWc": "added",
+		"wCXK6KYw": "added",
+		"hJ4xGthq": "added",
+		"oYEzQ4k5": "added",
+		"T4hTbGVM": "added",
+		"S5js7d30": "added",
+		"Qvp9SqT5": "added",
+		"Md6tqK1p": "added",
+		"PYJsIDYm": "added",
+		"bvxJfQzm": "removed",
+		"VIDMaMpV": "removed",
+		"tj0diTvb": "removed",
+		"my9Bj1QK": "removed",
+		"jpAcngCZ": "removed",
+		"EnnH7t3r": "changed",
+		"8bDSfxwQ": "added",
+		"zSKT3nqZ": "added",
+		"XFEvswz4": "added",
+		"86rBqUC3": "added",
+		"VvuVMt2N": "added",
+		"WGJHkAQl": "changed",
+		"wQkT9L0G": "removed",
+		"yNL678PM": "removed",
+		"L9F90cm5": "changed",
+		"8M6WT0aE": "removed",
+		"zwhuuBWn": "removed",
+		"VRuTF4wt": "removed",
+		"SSJu7sqW": "removed",
+		"jx5Hncf9": "removed",
+		"kOG12Oz8": "removed",
+		"WLZ1TpXI": "changed",
+		"fGx4kjfR": "added",
+		"qwFzQ6L0": "removed",
+		"UMqwdfOH": "changed",
+		"0MkUq3tK": "removed",
+		"K9SFgjvi": "added",
+		"25HE191y": "added",
+		"PmcyOckC": "added",
+		"BXG2HWcT": "added",
+		"4VDj3O5C": "added",
+		"5BB225La": "added",
+		"mYPHaKGi": "added",
+		"LNqaqV2F": "added",
+		"pg7iuzfp": "added",
+		"Q7y55Dyj": "added",
+		"A3bYq29V": "added",
+		"rLH2nWZg": "added",
+		"dcc2Zdl3": "added",
+		"k46CuhtA": "added",
+		"1yozI9dG": "added",
+		"Jg0ZstWt": "added",
+		"9PtOgYTY": "added",
+		"ha2mR0vC": "added",
+		"CDlrijzI": "added",
+		"wx3eSeIZ": "added",
+		"GtqHFT5V": "added",
+		"Fp7Vqg48": "added",
+		"2pW0EofI": "added",
+		"Mt1IGOaL": "added",
+		"v4G3l8cW": "added",
+		"5rR69oPZ": "added",
+		"U515KUcY": "added"
+	}
+}

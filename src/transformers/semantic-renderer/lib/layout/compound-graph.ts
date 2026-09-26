@@ -18,6 +18,9 @@ const PLACING_GROUP = "archboard.group";
 /** The root layout option carrying each placing group's caption size, as `[id, width, height]` rows. */
 const GROUP_CAPTIONS = "archboard.group.captions";
 
+/** The layout option marking a card that wears a standing pin in its top-left corner (standing.ts). */
+const PINNED_STANDING = "archboard.standing.pinned";
+
 /** Shared diagram spacing; legacy option names remain the transport spelling. */
 const COMPOUND_OPTIONS: LayoutOptions = {
 	"elk.spacing.labelNode": String(LABEL_CARD_CLEARANCE),
@@ -27,12 +30,26 @@ const COMPOUND_OPTIONS: LayoutOptions = {
 };
 
 /**
+ * The layout option marking a card that wears a standing pin.
+ * @param standing How it stands in a comparison, if it is one.
+ * @returns The option, or none for a card that wears no pin.
+ */
+function pinnedOptions(standing: ChangeKind | undefined): LayoutOptions {
+	return standing === undefined || standing === "unchanged" ? {} : { [PINNED_STANDING]: "true" };
+}
+
+/**
  * Convert measured dimensions to a card or expandable frame.
  * @param measured The complete text measurement.
  * @param group The group it is placed with, if any.
+ * @param standing How it stands in a comparison, if it is one.
  * @returns The measured shape before containment is assembled.
  */
-function nodeOf(measured: MeasuredNode, group: string | undefined): ElkNode {
+function nodeOf(
+	measured: MeasuredNode,
+	group: string | undefined,
+	standing: ChangeKind | undefined,
+): ElkNode {
 	const { node, width, height, headerHeight } = measured;
 	return {
 		id: node.id,
@@ -41,6 +58,7 @@ function nodeOf(measured: MeasuredNode, group: string | undefined): ElkNode {
 		layoutOptions: {
 			"archboard.order": String(node.order),
 			...(group === undefined ? {} : { [PLACING_GROUP]: group }),
+			...pinnedOptions(standing),
 			"archboard.order-group":
 				node.responsibility === undefined
 					? String(node.order)
@@ -91,7 +109,8 @@ function captionOptions(measured: MeasuredArchitecture): Pick<ElkNode, "layoutOp
  * Construct one whole graph without rank, flank or boundary-port policies.
  * @param content The view's semantic content.
  * @param measured Its fixed text and card dimensions.
- * @param standings Comparison standings used to distinguish marked relationship channels.
+ * @param standings Comparison standings used to distinguish marked relationship channels and
+ * to mark the cards that wear a standing pin.
  * @returns The hierarchy and complete semantic relationships.
  */
 function compoundGraph(
@@ -100,7 +119,10 @@ function compoundGraph(
 	standings?: Readonly<Record<string, ChangeKind>>,
 ): ElkNode {
 	const nodes = new Map(
-		[...measured.nodes].map(([id, value]) => [id, nodeOf(value, measured.groups?.placing.get(id))]),
+		[...measured.nodes].map(([id, value]) => [
+			id,
+			nodeOf(value, measured.groups?.placing.get(id), standings?.[id]),
+		]),
 	);
 	const children: ElkNode[] = [];
 	for (const node of content.nodes.toSorted((one, other) => one.order - other.order)) {
@@ -130,4 +152,4 @@ function compoundGraph(
 	};
 }
 
-export { COMPOUND_OPTIONS, GROUP_CAPTIONS, PLACING_GROUP, compoundGraph };
+export { COMPOUND_OPTIONS, GROUP_CAPTIONS, PINNED_STANDING, PLACING_GROUP, compoundGraph };
