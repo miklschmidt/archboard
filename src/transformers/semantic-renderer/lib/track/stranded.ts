@@ -61,16 +61,44 @@ function meetingColumn(station: Station, near: number): number {
  * @returns Whether any run moved.
  */
 function unstrandLanes(scene: Scene, chains: readonly Chain[]): boolean {
+	return eachRun(
+		scene,
+		chains,
+		(run, free, bands) =>
+			unstrandRun(run, free, bands) || (scene.inline && closeSteps(run, free, bands)),
+	);
+}
+
+/**
+ * Drawn inline, close the steps inside every run of lanes again once the
+ * labels have settled onto the lanes toward their cards' ports: a label that
+ * moved onto the lane below it leaves the piece above it meeting neither
+ * neighbour ({@link closeSteps}).
+ * @param scene The scene, its labels settled.
+ * @param chains Every relationship's chain.
+ * @returns Whether any run moved.
+ */
+function closeLaneSteps(scene: Scene, chains: readonly Chain[]): boolean {
+	return scene.inline && eachRun(scene, chains, closeSteps);
+}
+
+/**
+ * Try to move every run of lanes, each with what its bands hold without it.
+ * @param scene The scene.
+ * @param chains Every relationship's chain.
+ * @param move Move one run; answers whether it moved.
+ * @returns Whether any run moved.
+ */
+function eachRun(
+	scene: Scene,
+	chains: readonly Chain[],
+	move: (run: LaneRun, free: Occupancy, bands: readonly ReadonlyMap<number, Station>[]) => boolean,
+): boolean {
 	const runs = laneRuns(chains);
 	const bands = chains.map(
 		({ stations }) => new Map(stations.map((station) => [station.band, station])),
 	);
-	return runs
-		.map((run) => {
-			const free = freeWithout(scene, runs, run);
-			return unstrandRun(run, free, bands) || (scene.inline && closeSteps(run, free, bands));
-		})
-		.some(Boolean);
+	return runs.map((run) => move(run, freeWithout(scene, runs, run), bands)).some(Boolean);
 }
 
 /**
@@ -236,4 +264,4 @@ function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
 	for (const lane of lanes) occupancy.take(lane);
 	return moved;
 }
-export { pullToPorts, straightenIntoContainers, unstrandLanes };
+export { closeLaneSteps, pullToPorts, straightenIntoContainers, unstrandLanes };

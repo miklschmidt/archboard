@@ -42,6 +42,7 @@ import {
 import {
 	pullToPorts,
 	straightenIntoContainers,
+	closeLaneSteps,
 	unstrandLanes,
 } from "@/transformers/semantic-renderer/lib/track/stranded";
 
@@ -479,6 +480,7 @@ function pullOntoPorts(
 	if (pullToPorts(scene, chains, portsOf(nets))) {
 		followLanes(nets);
 		settleLabels(scene, nets);
+		if (closeLaneSteps(scene, chains)) followLanes(nets);
 		assignPorts(nets, scene.ports);
 	}
 	if (pullIntoTrunks(scene, routes, nets)) followLanes(nets);
