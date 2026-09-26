@@ -4,14 +4,16 @@
 // so a long line, and the label box on it, can drift to the outermost slot
 // of every rank it passes; its lanes then keep that side, and the line laps
 // the drawing. Once the lanes are straightened, each chain whose middle
-// strays well outside both its ends' reach looks for the cheapest free route
-// over the same bands: its lanes on any free column, its label box anywhere
-// free along its own band, each within the scene and inside the frames it
-// stood in, or those its own ends stand in. A route costs its sideways travel
-// and a crossing's worth for each line it crosses, or each trunk; the chain
-// takes the new route only when that saves more than a few lanes. A crossing
-// is worth as much as the detour that makes a lap, so a lap is undone only
-// where each crossing that adds buys back at least that much.
+// strays well outside both its ends' reach, or whose line travels sideways
+// well beyond what its ends need, looks for the cheapest free route over the
+// same bands: its lanes on any free column, its label box anywhere free along
+// its own band or a band beside it, each within the scene and inside the
+// frames it stood in, or those its own ends stand in. A route costs its
+// sideways travel and a crossing's worth for each line it crosses, or each
+// trunk; the chain takes the new route only when that saves more than a few
+// lanes. A crossing is worth as much as the detour that makes a lap, so a lap
+// is undone only where each crossing that adds buys back at least that much.
+// A chain kept where it stood is tried again once the others have moved.
 import {
 	CONTAINER_INSET,
 	LABEL_CARD_CLEARANCE,
@@ -53,6 +55,8 @@ import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/sce
 const STRAY = 2 * LANE;
 /** How much cheaper a new route must be than the old one before the chain takes it. */
 const SAVING = 8 * LANE;
+/** How many times the chains not yet relaid are tried again, once others moved out of their way. */
+const PASSES = 3;
 /** The spacing of the columns a route may take, besides the edges of what stands on its bands. */
 const STEP = LANE / 2;
 
@@ -80,7 +84,9 @@ function outside(x: number, span: Span): number {
 
 /**
  * Whether a chain laps: a station between its ends stands more than a
- * couple of lanes outside where either end reaches.
+ * couple of lanes outside where either end reaches, or its line travels
+ * sideways more than it needs by more than a new route must save: a line
+ * that runs out to a label standing between its ends and back laps too.
  * @param chain The chain.
  * @returns True when it strays.
  */
@@ -88,7 +94,24 @@ function strays(chain: Chain): boolean {
 	const { stations } = chain;
 	const [upper, lower] = [reachOf(stations[0]!), reachOf(stations.at(-1)!)];
 	const span: Span = [Math.min(upper[0], lower[0]), Math.max(upper[1], lower[1])];
-	return stations.slice(1, -1).some(({ x }) => outside(x, span) > STRAY);
+	if (stations.slice(1, -1).some(({ x }) => outside(x, span) > STRAY)) return true;
+	const least = Math.max(0, upper[0] - lower[1], lower[0] - upper[1]);
+	return travelOf(stations) - least > SAVING;
+}
+
+/**
+ * How far a chain's line travels sideways, from station to station.
+ * @param stations The chain's stations.
+ * @returns The travel.
+ */
+function travelOf(stations: readonly Station[]): number {
+	return stations
+		.slice(1)
+		.reduce(
+			(sum, lower, index) =>
+				sum + Math.abs(meetsAt(stations[index]!, lower.x) - meetsAt(lower, stations[index]!.x)),
+			0,
+		);
 }
 
 /**
@@ -515,7 +538,8 @@ class Relay {
 /**
  * Relay every chain that laps the drawing onto a short free route through
  * it, longest first, each keeping clear of every other line's lanes as they
- * stand; its label box moves with it.
+ * stand; its label box moves with it. A chain kept off its route by lines
+ * relaid after it is tried again once they have moved, a few times at most.
  * @param scene The scene; relayed label boxes move.
  * @param kinds Every relationship's chain, its lanes straightened, and what
  * it must share with another to share a trunk.
@@ -526,12 +550,16 @@ function relayLaps(
 	kinds: ReadonlyMap<Chain, string>,
 	movable: readonly Chain[],
 ): void {
-	const laps = movable
+	let left = movable
 		.filter(strays)
 		.toSorted((one, other) => other.stations.length - one.stations.length);
-	if (laps.length === 0) return;
+	if (left.length === 0) return;
 	const relay = new Relay(scene, kinds);
-	for (const chain of laps) relay.relay(chain);
+	for (let pass = 0; pass < PASSES && left.length > 0; pass += 1) {
+		const before = left.length;
+		left = left.filter((chain) => !relay.relay(chain));
+		if (left.length === before) break;
+	}
 }
 
 export { relayLaps };
