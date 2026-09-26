@@ -585,4 +585,4 @@ function hasRegions(tree: BlockTree): boolean {
 	return [...tree.root.clusters.values()].some(({ kind }) => kind === "region");
 }
 
-export { BLOCKS_PLACED, placeBlocks, readsBetterPacked };
+export { BLOCKS_PLACED, placeBlocks };
