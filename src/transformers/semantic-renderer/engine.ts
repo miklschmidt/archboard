@@ -70,10 +70,7 @@ export interface AvoidEngine {
 		"shapeBufferDistance" | "idealNudgingDistance" | "segmentPenalty" | "crossingPenalty",
 		AvoidEnum
 	>;
-	RoutingOption: Record<
-		"nudgeOrthogonalSegmentsConnectedToShapes" | "nudgeOrthogonalTouchingColinearSegments",
-		AvoidEnum
-	>;
+	RoutingOption: Record<"nudgeOrthogonalSegmentsConnectedToShapes", AvoidEnum>;
 }
 
 /**
