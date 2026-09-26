@@ -10,9 +10,15 @@ import { lines, textNode } from "@/transformers/semantic-renderer/lib/svg/primit
  * @param runs The prepared lines and local baselines.
  * @param box The box their coordinates are relative to.
  * @param palette The selected theme.
+ * @param fill An ink for every line in place of its role's, if any.
  * @returns SVG text elements.
  */
-function paintTextRuns(runs: readonly TextRun[], box: Box, palette: Palette): string {
+function paintTextRuns(
+	runs: readonly TextRun[],
+	box: Box,
+	palette: Palette,
+	fill?: string,
+): string {
 	return lines(
 		runs.map((run) =>
 			textNode(
@@ -20,12 +26,7 @@ function paintTextRuns(runs: readonly TextRun[], box: Box, palette: Palette): st
 					"xml:space": "preserve",
 					x: coord(box.x + run.x),
 					y: coord(box.y + run.y),
-					fill:
-						run.role === "title"
-							? palette.foreground
-							: run.role === "label"
-								? palette.pillText
-								: palette.muted,
+					fill: fill ?? inkOf(run, palette),
 					...fontAttributes(run.font),
 					"font-size": run.fontSize,
 				},
@@ -33,6 +34,17 @@ function paintTextRuns(runs: readonly TextRun[], box: Box, palette: Palette): st
 			),
 		),
 	);
+}
+
+/**
+ * The ink a measured line takes by its role.
+ * @param run The line.
+ * @param palette The selected theme.
+ * @returns A title's, a label's or a note's ink.
+ */
+function inkOf(run: TextRun, palette: Palette): string {
+	if (run.role === "title") return palette.foreground;
+	return run.role === "label" ? palette.pillText : palette.muted;
 }
 
 export { paintTextRuns };

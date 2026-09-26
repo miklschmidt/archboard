@@ -97,6 +97,14 @@ test.each(["track", "blocks"] as const)(
 				"u",
 			).exec(drawn.svg)![0];
 			expect(outline).toMatch(/fill(:|=")none/u);
+			// From far away its caption grows with the cards' names.
+			const sizes = [
+				...new RegExp(
+					`data-group="${group}"[\\s\\S]*?class="ab-near"[\\s\\S]*?font-size="([\\d.]+)"[\\s\\S]*?class="ab-far"[\\s\\S]*?font-size="([\\d.]+)"`,
+					"u",
+				).exec(drawn.svg)!,
+			].slice(1);
+			expect(Number(sizes[1])).toBeGreaterThan(Number(sizes[0]));
 		}
 	},
 );

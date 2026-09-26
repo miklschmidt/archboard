@@ -172,7 +172,7 @@ function paintCard(
 					note,
 				]),
 			),
-			paintFarTitle(node.name, box, farSize, { appearance, palette }),
+			paintFarTitle(node.name, box, { size: farSize, align: "centre" }, { appearance, palette }),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
 			// stop short of, so a card can say both at once and neither mark lands on

@@ -282,77 +282,136 @@ interface FarTitle {
 	readonly runs: readonly TextRun[];
 }
 
-/** Room a far card keeps inside its border. */
-const FAR_PADDING = 10;
-/** The largest a far card's name is set. */
+/** Room a far name keeps from its card's sides. */
+const FAR_PADDING_X = 16;
+/** Room a far name keeps from its card's top and bottom. */
+const FAR_PADDING_Y = 12;
+/** The largest a far name is set. */
 const FAR_MAX_SIZE = 44;
-/** The step between one line of a far name and the next, per unit of its size. */
-const FAR_LINE = 1.3;
+/**
+ * The most of a card's height one line of its far name may take: set larger,
+ * a name fills its card like a word in a box rather than a title on a card.
+ */
+const FAR_HEIGHT_SHARE = 0.36;
+/** The step between one line of a far name and the next, per unit of its size: display leading. */
+const FAR_LINE = 1.15;
 /** A far card's chip, per unit of its name's size. */
-const FAR_CHIP = 1.4;
+const FAR_CHIP = 1.25;
+/** The gap between a far chip and its name, per unit of the name's size. */
+const FAR_GAP = 0.5;
+/** The most lines a far name takes. */
+const FAR_LINES = 2;
+/**
+ * How much smaller a picture's far names may be set to keep every one of them
+ * on one line: a picture whose names all read on one line reads as one set,
+ * where a mix of one and two lines reads as ragged.
+ */
+const FAR_ONE_LINE_SHARE = 0.85;
+
+/** A title a picture draws from far away: its text and the box it stands in. */
+interface FarSubject {
+	readonly name: string;
+	readonly box: { readonly width: number; readonly height: number };
+}
 
 /**
- * The largest size a card's name is set from far away: the largest whose
- * balanced wrap fits the card beside its type chip grown to match, never
- * smaller than the name drawn near.
- * @param name The card's name.
- * @param box The card's size.
- * @param box.width Its width.
- * @param box.height Its height.
+ * The size a picture's far names are set at, one for all of them so they read
+ * as one set: the largest every name fits at on one line, when that is not
+ * much smaller than the largest every name fits at on two, else that.
+ * @param subjects The cards whose names are drawn.
+ * @returns The size, or {@link FAR_MAX_SIZE} for a picture with no cards.
+ */
+function farSizeFor(subjects: readonly FarSubject[]): number {
+	const one = sharedFarSize(subjects, 1);
+	const two = sharedFarSize(subjects, FAR_LINES);
+	return one >= two * FAR_ONE_LINE_SHARE ? one : two;
+}
+
+/**
+ * The largest size every one of some names fits at from far away.
+ * @param subjects The cards whose names are drawn.
+ * @param lines The most lines a name may take.
  * @returns The size.
  */
-function farSizeOf(name: string, box: { width: number; height: number }): number {
+function sharedFarSize(subjects: readonly FarSubject[], lines: number): number {
+	return Math.min(FAR_MAX_SIZE, ...subjects.map(({ name, box }) => farSizeOf(name, box, lines)));
+}
+
+/**
+ * The largest size a name fits at from far away: its balanced wrap on at
+ * most some lines beside its type chip grown to match, a line taking no more
+ * than {@link FAR_HEIGHT_SHARE} of the box, and never smaller than the name
+ * drawn near.
+ * @param name The name.
+ * @param box The box it stands in.
+ * @param box.width Its width.
+ * @param box.height Its height.
+ * @param lines The most lines it may take.
+ * @returns The size.
+ */
+function farSizeOf(
+	name: string,
+	box: { width: number; height: number },
+	lines: number = FAR_LINES,
+): number {
 	let low = TITLE.fontSize;
-	let high = FAR_MAX_SIZE;
+	let high = Math.max(low, Math.min(FAR_MAX_SIZE, box.height * FAR_HEIGHT_SHARE));
 	while (high - low > 0.5) {
 		const middle = (low + high) / 2;
-		if (farLines(name, box, middle) === undefined) high = middle;
+		if (farLines(name, box, middle, lines) === undefined) high = middle;
 		else low = middle;
 	}
 	return Math.floor(low * 2) / 2;
 }
 
 /**
- * A card's name set from far away, beside its type chip grown to match, its
+ * A name set from far away, beside its type chip grown to match, its
  * responsibility left out: from far away the name is what a reader can still
- * take in.
- * @param name The card's name.
- * @param box The card's size.
+ * take in. A card's name and chip stand centred in the card as one block; a
+ * container's stand at its header's start, as a heading does.
+ * @param name The name.
+ * @param box The box it stands in: a card, or a container's header.
  * @param box.width Its width.
  * @param box.height Its height.
- * @param size The name's size, at most {@link farSizeOf} the card.
+ * @param place Its size, at most {@link farSizeOf} the box, and where the block stands.
+ * @param place.size The name's size.
+ * @param place.align Centred in the box, or at its start.
  * @returns The chip's place and the name's lines.
  */
 function measureFarTitle(
 	name: string,
 	box: { width: number; height: number },
-	size: number,
+	place: { size: number; align: "centre" | "start" },
 ): FarTitle {
-	return farTitleAt(name, box, size, farLines(name, box, size) ?? farWrap(name, box, size));
+	const lines = farLines(name, box, place.size, FAR_LINES) ?? farWrap(name, box, place.size);
+	return farTitleAt(box, place, lines);
 }
 
 /**
- * A far name's lines at one size, when they fit the card beside the chip,
- * broken only between words.
- * @param name The card's name.
- * @param box The card's size.
+ * A far name's lines at one size, when they fit the box beside the chip on
+ * at most some lines, broken only between words.
+ * @param name The name.
+ * @param box The box it stands in.
  * @param box.width Its width.
  * @param box.height Its height.
  * @param size The name's size.
+ * @param most The most lines it may take.
  * @returns The lines, or nothing when they do not fit.
  */
 function farLines(
 	name: string,
 	box: { width: number; height: number },
 	size: number,
+	most: number,
 ): string[] | undefined {
-	const style = { ...TITLE, fontSize: size, lineHeight: size * FAR_LINE };
+	const style = farStyle(size);
 	const lines = farWrap(name, box, size);
 	// At a size where one word is wider than the room, the wrap breaks it, which a far name never is.
 	const whole = lines.join(" ") === name.split(/\s+/u).join(" ");
 	const fits =
 		whole &&
-		lines.length * style.lineHeight <= box.height - FAR_PADDING * 2 &&
+		lines.length <= most &&
+		lines.length * style.lineHeight <= box.height - FAR_PADDING_Y * 2 &&
 		lines.every((line) => exactWidth(line, style) <= farRoom(box, size));
 	return fits ? lines : undefined;
 }
@@ -360,15 +419,15 @@ function farLines(
 /**
  * A far name wrapped, balanced, to the room beside the chip at one size, as
  * the name drawn near would wrap: a word wider than the room breaks.
- * @param name The card's name.
- * @param box The card's size.
+ * @param name The name.
+ * @param box The box it stands in.
  * @param box.width Its width.
  * @param box.height Its height.
  * @param size The name's size.
  * @returns The lines.
  */
 function farWrap(name: string, box: { width: number; height: number }, size: number): string[] {
-	const style = { ...TITLE, fontSize: size, lineHeight: size * FAR_LINE };
+	const style = farStyle(size);
 	const prepared = prepare(name, style);
 	return layoutWithLines(
 		prepared,
@@ -378,56 +437,72 @@ function farWrap(name: string, box: { width: number; height: number }, size: num
 }
 
 /**
+ * A far name's face at one size.
+ * @param size The name's size.
+ * @returns The title's face, at that size with display leading.
+ */
+function farStyle(size: number): TextStyle {
+	return { ...TITLE, fontSize: size, lineHeight: size * FAR_LINE };
+}
+
+/**
  * The width a far name has beside its chip at one size.
- * @param box The card's size.
+ * @param box The box it stands in.
  * @param box.width Its width.
  * @param box.height Its height.
  * @param size The name's size.
  * @returns The width.
  */
 function farRoom(box: { width: number; height: number }, size: number): number {
-	return box.width - FAR_PADDING * 2 - farChip(box, size) - size / 2;
+	return box.width - FAR_PADDING_X * 2 - farChip(box, size) - size * FAR_GAP;
 }
 
 /**
- * A far card's chip side at one name size: in proportion to the name, and no
- * taller than the card holds.
- * @param box The card's size.
+ * A far chip's side at one name size: in proportion to the name, and no
+ * taller than the box holds.
+ * @param box The box it stands in.
  * @param box.height Its height.
  * @param size The name's size.
  * @returns The side.
  */
 function farChip(box: { height: number }, size: number): number {
-	return Math.min(size * FAR_CHIP, box.height - FAR_PADDING * 2);
+	return Math.min(size * FAR_CHIP, box.height - FAR_PADDING_Y * 2);
 }
 
 /**
- * Stand a far name's lines and chip in the card: the chip on the left, the
- * lines beside it, both centred top to bottom.
- * @param name The card's name, for a card whose name fits no size.
- * @param box The card's size.
+ * Stand a far name's lines and chip in their box: the chip, then the lines
+ * beside it, as one block centred top to bottom, and centred across the box
+ * or at its start.
+ * @param box The box it stands in.
  * @param box.width Its width.
  * @param box.height Its height.
- * @param size The name's size.
+ * @param place The name's size and where the block stands.
+ * @param place.size The name's size.
+ * @param place.align Centred in the box, or at its start.
  * @param lines The name's lines.
  * @returns The chip's place and the name's runs.
  */
 function farTitleAt(
-	name: string,
 	box: { width: number; height: number },
-	size: number,
+	place: { size: number; align: "centre" | "start" },
 	lines: readonly string[],
 ): FarTitle {
-	const style = { ...TITLE, fontSize: size, lineHeight: size * FAR_LINE };
+	const { size } = place;
+	const style = farStyle(size);
 	const chip = farChip(box, size);
-	const x = FAR_PADDING + chip + size / 2;
+	const widths = lines.map((text) => exactWidth(text, style));
+	const block = chip + size * FAR_GAP + Math.max(0, ...widths);
+	const left =
+		place.align === "centre" ? Math.max(FAR_PADDING_X, (box.width - block) / 2) : FAR_PADDING_X;
+	const x = left + chip + size * FAR_GAP;
 	const top = (box.height - lines.length * style.lineHeight) / 2;
 	return {
-		chip: { x: FAR_PADDING, y: (box.height - chip) / 2, size: chip },
-		runs: (lines.length > 0 ? lines : [name]).map((text, index) => ({
+		chip: { x: left, y: (box.height - chip) / 2, size: chip },
+		runs: lines.map((text, index) => ({
 			text,
-			width: exactWidth(text, style),
+			width: widths[index]!,
 			x,
+			// The baseline stands half a cap height below the line's middle.
 			y: top + style.lineHeight / 2 + size * 0.35 + index * style.lineHeight,
 			font: style.font,
 			fontSize: size,
@@ -497,6 +572,7 @@ function measureArchitecture(
 
 export {
 	measureArchitecture,
+	farSizeFor,
 	farSizeOf,
 	measureFarTitle,
 	measureMessageLines,
