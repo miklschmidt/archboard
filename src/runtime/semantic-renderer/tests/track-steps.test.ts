@@ -403,6 +403,21 @@ test("a line runs inside the drawing rather than round it", async () => {
 	}
 });
 
+// The workhorse board again: its relaid line passes a card that stands a
+// lane and a bit off a group region's wall, where the line may keep only as
+// far off the wall as the card leaves it. Above the card it kept a lane and a
+// half off, and stepped aside 20 px just to pass the card. Squeezed on one
+// band, it keeps that column on the bands above and below.
+test("a line squeezed between a card and a region's wall passes on one column", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(codexWorkhorse),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	expect(sidewaysLevels(corridorPoints(drawing.svg).get("FWJMAVKj")!).size).toBeLessThanOrEqual(2);
+});
+
 // Taken from a board of this repository, its groups packed as blocks of their
 // own: a pin on a group's block was settled only between its line's two ends
 // as they stood, and the board's lines into its groups crossed each other

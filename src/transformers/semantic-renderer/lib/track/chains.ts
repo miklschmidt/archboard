@@ -221,6 +221,10 @@ function outsideFrame(
 /** Which horizontal intervals of each band are taken by items and settled lanes. */
 class Occupancy {
 	readonly taken: [number, number][][];
+	/** What each band holds but the stretches its walls keep a lane off. */
+	readonly held: [number, number][][];
+	/** The stretch each wall keeps a lane off, on each band, by the wall. */
+	readonly walls: Map<string, readonly [number, number]>[];
 
 	/**
 	 * Start with every item's box, widened by a lane either side.
@@ -245,14 +249,43 @@ class Occupancy {
 		// A lane keeps off the walls of the containers it passes, as off a card,
 		// and further off a group region's, which has no inset of its own, and
 		// off a container's outside, where its inset stands on the other side.
-		scene.bands.forEach((_, band) => {
-			const held = [...this.taken[band]!];
-			for (const [id, walls] of scene.walled(band))
-				for (const wall of walls)
-					this.taken[band]!.push(
+		this.held = this.taken.map((spans) => [...spans]);
+		this.walls = scene.bands.map((_, band) => {
+			const held = this.held[band]!;
+			return new Map(
+				[...scene.walled(band)].flatMap(([id, walls]) =>
+					walls.map((wall, side) => [
+						`${id}|${side}`,
 						scene.frames.has(id) ? outsideFrame(wall, walls, held) : besideRegion(wall, held),
-					);
+					]),
+				),
+			);
 		});
+		this.walls.forEach((walls, band) => this.taken[band]!.push(...walls.values()));
+	}
+
+	/**
+	 * What a band holds for a lane of a line that passes some bands: each wall
+	 * kept off only as far as it is on the band beside the line where a card
+	 * stands nearest it, so a line squeezed past a card beside a wall need not
+	 * step aside on the bands above and below to keep further off it.
+	 * @param band The band.
+	 * @param bands Every band the line's lanes pass.
+	 * @returns The stretches a lane keeps out of.
+	 */
+	along(band: number, bands: readonly number[]): (readonly [number, number])[] {
+		const walls = [...this.walls[band]!].map(([key, [low, high]]) =>
+			bands.reduce<readonly [number, number]>(
+				(narrowest, other) => {
+					const stretch = this.walls[other]!.get(key);
+					return stretch === undefined
+						? narrowest
+						: [Math.max(narrowest[0], stretch[0]), Math.min(narrowest[1], stretch[1])];
+				},
+				[low, high],
+			),
+		);
+		return [...this.held[band]!, ...walls];
 	}
 
 	/**
@@ -282,7 +315,12 @@ class Occupancy {
 	 * @returns True when the column is free on every band and keeps the frames {@link Scene.keepsFrames} asks.
 	 */
 	fits(run: LaneRun, x: number): boolean {
-		return run.lanes.every((lane) => this.free(lane.band, x)) && this.scene.keepsFrames(run, x);
+		const bands = run.lanes.map(({ band }) => band);
+		return (
+			run.lanes.every((lane) =>
+				this.along(lane.band, bands).every(([low, high]) => x <= low || x >= high),
+			) && this.scene.keepsFrames(run, x)
+		);
 	}
 
 	/**
@@ -290,7 +328,9 @@ class Occupancy {
 	 * @param lane The lane.
 	 */
 	take(lane: Station): void {
-		this.taken[lane.band]!.push([lane.x - LANE, lane.x + LANE]);
+		const span = [lane.x - LANE, lane.x + LANE] as [number, number];
+		this.taken[lane.band]!.push(span);
+		this.held[lane.band]!.push(span);
 	}
 }
 

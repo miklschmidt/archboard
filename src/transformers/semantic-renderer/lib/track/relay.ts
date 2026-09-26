@@ -141,6 +141,15 @@ function framesOff(scene: Scene, station: Station, open: ReadonlySet<string>): S
 	});
 }
 
+/**
+ * The bands a chain's lanes pass.
+ * @param chain The chain.
+ * @returns Their bands.
+ */
+function laneBands(chain: Chain): number[] {
+	return chain.stations.filter(({ kind }) => kind === "lane").map(({ band }) => band);
+}
+
 /** What a chain costs where it stands, by each count, and how many lines it crosses there. */
 interface Standing {
 	readonly costs: readonly number[];
@@ -370,7 +379,7 @@ class Relay {
 			[-Infinity, left + half],
 			[right - half, Infinity],
 			...(item === undefined
-				? occupancy.taken[station.band]!
+				? occupancy.along(station.band, laneBands(chain))
 				: this.labelWalls(chain, item, station.band)),
 		];
 	}
