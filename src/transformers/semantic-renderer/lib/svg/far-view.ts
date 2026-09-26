@@ -27,12 +27,25 @@ function nearLayer(markup: string): string {
 }
 
 /**
+ * What a card or a caption draws only when the picture is seen from far
+ * away. It is hidden by its own attribute, so a reader of the picture that
+ * ignores its stylesheet draws it as it is seen near.
+ * @param markup Its markup.
+ * @returns The far layer.
+ */
+function farLayer(markup: string): string {
+	return wrap("g", { class: FAR_CLASS, display: "none" }, markup);
+}
+
+/**
  * A card's name and chip as they are drawn from far away, hidden until a
  * viewer says the picture is far: the name grown, the chip grown to match,
  * the responsibility left out.
  * @param name The card's name.
- * @param box The card's box.
- * @param size The name's size.
+ * @param box The card's box, or a container's header.
+ * @param place The name's size, and whether it stands centred or at the start.
+ * @param place.size The name's size.
+ * @param place.align Centred in the box, or at its start.
  * @param look Its type chip's colour and glyph, and the selected theme.
  * @param look.appearance Its type chip's colour and glyph.
  * @param look.palette The selected theme.
@@ -41,16 +54,12 @@ function nearLayer(markup: string): string {
 function paintFarTitle(
 	name: string,
 	box: Box,
-	size: number,
+	place: { size: number; align: "centre" | "start" },
 	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
 ): string {
-	const far = measureFarTitle(name, box, size);
+	const far = measureFarTitle(name, box, place);
 	const scale = far.chip.size / ICON_CHIP_SIZE;
-	// Hidden by its own attribute, so a reader of the picture that ignores its
-	// stylesheet draws the card as it is seen near.
-	return wrap(
-		"g",
-		{ class: FAR_CLASS, display: "none" },
+	return farLayer(
 		wrap(
 			"g",
 			{
@@ -61,4 +70,4 @@ function paintFarTitle(
 	);
 }
 
-export { FAR_CLASS, FAR_VIEW_CLASS, NEAR_CLASS, nearLayer, paintFarTitle };
+export { FAR_CLASS, FAR_VIEW_CLASS, NEAR_CLASS, farLayer, nearLayer, paintFarTitle };

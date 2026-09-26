@@ -28,17 +28,24 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /**
- * A frame's name and chip as they are drawn from far away: as large as its
- * header holds them.
+ * A frame's name and chip as they are drawn from far away: at its header's
+ * start, as large as the picture's cards' names, or as its header holds.
  * @param placed The frame's geometry and name.
- * @param appearance Its type chip's colour and glyph.
- * @param palette The selected theme.
+ * @param farSize The size of the picture's cards' names from far away.
+ * @param look Its type chip's colour and glyph, and the selected theme.
+ * @param look.appearance Its type chip's colour and glyph.
+ * @param look.palette The selected theme.
  * @returns The far layer.
  */
-function paintFarHeader(placed: DrawingNode, appearance: NodeAppearance, palette: Palette): string {
+function paintFarHeader(
+	placed: DrawingNode,
+	farSize: number,
+	look: { appearance: NodeAppearance; palette: Palette },
+): string {
 	const { name } = placed.measured.node;
 	const header = { ...placed.box, height: placed.measured.headerHeight };
-	return paintFarTitle(name, header, farSizeOf(name, header), { appearance, palette });
+	const size = Math.min(farSize, farSizeOf(name, header));
+	return paintFarTitle(name, header, { size, align: "start" }, look);
 }
 
 /**
@@ -85,7 +92,12 @@ function paintMeasuredCard(
 			nearLayer(
 				typeChip(chipX, chipY, appearance, palette) + paintTextRuns(measured.runs, box, palette),
 			),
-			paintFarTitle(measured.node.name, box, farSize, { appearance, palette }),
+			paintFarTitle(
+				measured.node.name,
+				box,
+				{ size: farSize, align: "centre" },
+				{ appearance, palette },
+			),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
@@ -148,6 +160,7 @@ function paintMeasuredFrame(
  * @param standing Its architectural change.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
+ * @param farSize The size of the picture's cards' names from far away.
  * @returns The header group.
  */
 function paintMeasuredHeader(
@@ -156,6 +169,7 @@ function paintMeasuredHeader(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
+	farSize: number,
 ): string {
 	return wrap(
 		"g",
@@ -172,7 +186,7 @@ function paintMeasuredHeader(
 					palette,
 				) + paintTextRuns(placed.measured.runs, placed.box, palette),
 			),
-			paintFarHeader(placed, appearance, palette),
+			paintFarHeader(placed, farSize, { appearance, palette }),
 			warningBadge(placed.box, unsettled, palette),
 		]),
 	);

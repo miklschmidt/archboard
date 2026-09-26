@@ -17,7 +17,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
-import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
+import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
 import { curveBounds, labelAnchorOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	crossingCutouts,
@@ -336,7 +336,7 @@ function paintArchitecture(
 		(a, b) => a.depth - b.depth || a.measured.node.order - b.measured.node.order,
 	);
 	const orderedCards = cards.toSorted((a, b) => a.measured.node.order - b.measured.node.order);
-	const farSize = Math.min(...cards.map(({ measured, box }) => farSizeOf(measured.node.name, box)));
+	const farSize = farSizeFor(cards.map(({ measured, box }) => ({ name: measured.node.name, box })));
 	const painted = lines([
 		definitions,
 		...boxes.map((held) =>
@@ -350,7 +350,7 @@ function paintArchitecture(
 		// Group regions: over the frames that hold them, under every line that crosses them.
 		...(drawing.regions ?? [])
 			.toSorted((a, b) => a.depth - b.depth)
-			.map((region) => paintRegion(region, palette, policy)),
+			.map((region) => paintRegion(region, { palette, policy, farSize })),
 		...edges.map((edge) =>
 			paintEdgeLine(
 				edge,
@@ -405,6 +405,7 @@ function paintArchitecture(
 				standingOf(held.measured.node.id),
 				unsettledOf(held.measured.node.id),
 				appearances.get(held.measured.node.id)!,
+				farSize,
 			),
 		),
 	]);
