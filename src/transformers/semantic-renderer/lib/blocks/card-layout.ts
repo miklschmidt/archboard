@@ -33,7 +33,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
-import { frameShapes, regionShapes } from "@/transformers/semantic-renderer/lib/track/containers";
+import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
@@ -52,7 +52,10 @@ interface Arrangement {
 	readonly lowered?: ReadonlyMap<string, number>;
 	/** Whether the cards no line touches are set out as a grid. */
 	readonly grid?: boolean;
-	/** Whether a wrap's rows keep their columns, each lowered card under the one above it. */
+	/**
+	 * Whether a wrap's rows keep their columns, each lowered card under the
+	 * one above it: always for a wrap of three rows or more on the track engine.
+	 */
 	readonly columns?: boolean;
 	/**
 	 * Whether a container a line from another container enters is held below
@@ -222,6 +225,7 @@ class CardLayout {
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
+		this.clusters.untie(graph.edges);
 		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
 	}
 
@@ -250,15 +254,16 @@ class CardLayout {
 
 	/**
 	 * Every line Graphviz ranks, between the vendor nodes it joins.
+	 * @param endOf What an end is named by: its vendor node, unless told otherwise.
 	 * @returns Each line's upper end, lower end, whether a label sits between,
 	 * its label's box and the edges that draw it.
 	 */
-	links(): (Join & { labelled: boolean })[] {
+	links(endOf = (end: string): string => this.vendorOf(end)): (Join & { labelled: boolean })[] {
 		return [...this.block.lines.values()]
 			.filter((line) => this.wallOf(line) === undefined)
 			.map((line) => ({
-				tail: this.vendorOf(line.tail),
-				head: this.vendorOf(line.head),
+				tail: endOf(line.tail),
+				head: endOf(line.head),
 				labelled: line.labelled && (line.edge.labels?.length ?? 0) > 0,
 				label: `label:${line.edge.id}`,
 				legs: [line.key, `${line.key}:1`, `${line.key}:2`],
@@ -353,11 +358,17 @@ class CardLayout {
 		for (const { id, pos } of output.edges)
 			if (id !== undefined && pos !== undefined) polylines.set(id, polylinePoints(pos, origin));
 		const [centres, clusters] = [centresOf(output, origin), this.clusters.boxes(output, origin)];
-		this.clusters.lineUp(this.links(), centres, {
-			boxes: boxesOf(nodesIn(this.graph), centres),
+		const boxes = boxesOf(nodesIn(this.graph), centres);
+		for (const pin of this.pins()) boxes.set(pin, this.pinned(pin, centres) as Box);
+		// A line from a child block is lined up where it leaves the block, at its pin.
+		const atPins = this.links((end) => (this.tree.pins.has(end) ? end : this.vendorOf(end)));
+		const width = Math.abs(right! - left!);
+		this.clusters.lineUp(atPins, centres, {
+			boxes,
 			clusters,
 			polylines,
-			width: Math.abs(right! - left!),
+			width,
+			cards: this.tree.cards,
 		});
 		const placed = this.placed(centres, polylines, clusters);
 		const laid = this.routed(placed, 0);
@@ -437,8 +448,7 @@ class CardLayout {
 			bottom: band.newTop + band.bottom - band.top,
 			items: this.block.items.filter((item) => scene.cards.get(item)?.band === index),
 		}));
-		const frames = frameShapes(scene, edges, side);
-		const regions = regionShapes(scene, edges, side);
+		const { frames, regions } = fitSides(scene, edges, lines, side);
 		const walled = new Map(lines);
 		const reach = [
 			...boxes.values(),
@@ -520,19 +530,27 @@ class CardLayout {
 			.map(({ name }) => name)
 			.filter((name) => !name.startsWith("label:") && !isTitle(name));
 		const leaves: ElkNode[] = named.map((id) => {
-			const { width, height } = this.sizeOf(id);
+			const { height } = this.sizeOf(id);
+			const width = this.clusters.widths.get(id) ?? this.sizeOf(id).width;
 			const centre = centres.get(id)!;
 			return { id, x: centre.x - width / 2, y: centre.y - height / 2, width, height };
 		});
-		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
-		for (const pin of new Set(ends.filter((end) => this.tree.pins.has(end))))
-			leaves.push(this.pinned(pin, centres));
+		for (const pin of this.pins()) leaves.push(this.pinned(pin, centres));
 		cornerHeader(leaves, headerOf(this.block));
 		const edges = [...this.block.lines.values()].map((line) =>
 			this.placedLine(line, centres, polylines),
 		);
 		const { children, regions } = this.clusters.nest(leaves, centres, clusters);
 		return { id: this.block.id, children, edges, layoutOptions: { [TRACK_REGIONS]: regions } };
+	}
+
+	/**
+	 * Every pin a line of the block ends on.
+	 * @returns The pins.
+	 */
+	pins(): Set<string> {
+		const ends = [...this.block.lines.values()].flatMap(({ from, to }) => [from, to]);
+		return new Set(ends.filter((end) => this.tree.pins.has(end)));
 	}
 
 	/**

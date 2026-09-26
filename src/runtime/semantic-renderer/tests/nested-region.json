@@ -1,0 +1,99 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alpha harborhar",
+			"kind": "service",
+			"responsibility": "deltadelta kettleket rive eaglee lan summits falco meado, timber gar needlenee alphaa"
+		},
+		{
+			"id": "n1",
+			"name": "bravo islandisl",
+			"kind": "module",
+			"responsibility": "eag lanternlantern summ falcon me t gard need alp, harborharb or bra islandi, pep carb jung quar deltad ke riv eagle lanternlan sum fal meadowmea",
+			"parent": "n0",
+			"groups": ["state"]
+		},
+		{
+			"id": "n2",
+			"name": "carbo junglej",
+			"kind": "module",
+			"responsibility": "fal meadowmeado timbert gar nee alphaalp harborh or brav isla",
+			"parent": "n0",
+			"groups": ["state"]
+		},
+		{
+			"id": "n3",
+			"name": "deltad kett",
+			"kind": "module",
+			"responsibility": "garde needle alp harborhar orange br islan pe, carb ju qua delta kettlek ri eagl: lan summitsumm, fal meadowm, tim gar needlen alph har orangeor",
+			"parent": "n0",
+			"groups": ["routes"]
+		},
+		{
+			"id": "n4",
+			"name": "eagle lanternlan",
+			"kind": "module",
+			"responsibility": "har orang bravob, isl pe car junglej quart delt kettl ri eag lanternlantern summi falc"
+		},
+		{
+			"id": "n5",
+			"name": "falconfalcon meadowme",
+			"kind": "module",
+			"responsibility": "islan pep carbon junglejun quar d kett riverri ea l summi: fal meado timbertim gardeng, needlen alph",
+			"parent": "n0",
+			"groups": ["routes"]
+		},
+		{
+			"id": "n6",
+			"name": "gardenga needlen",
+			"kind": "module",
+			"responsibility": "jungl q deltad kettleke riv eagleea lante summits falc meadow tim garden nee alphaal harborharb",
+			"parent": "n0"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n2",
+			"to": "n1",
+			"kind": "call",
+			"label": "lan summitsu falconf mea timber"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n4",
+			"kind": "call",
+			"label": "meadowme timb garde"
+		},
+		{
+			"id": "e2",
+			"from": "n3",
+			"to": "n2",
+			"kind": "call",
+			"label": "needleneedl alp harborharbo: ora bravobravo"
+		},
+		{
+			"id": "e3",
+			"from": "n6",
+			"to": "n5",
+			"kind": "call",
+			"label": "o bravobr islan pepper"
+		},
+		{
+			"id": "e4",
+			"from": "n5",
+			"to": "n2",
+			"kind": "call",
+			"label": "pepperpepperpepper carb jun quartzqua"
+		},
+		{
+			"id": "e5",
+			"from": "n5",
+			"to": "n3",
+			"kind": "call",
+			"label": "quart del kett river"
+		}
+	]
+}

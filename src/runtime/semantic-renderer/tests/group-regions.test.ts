@@ -1,20 +1,33 @@
 // A group gathers the cards it places inside one container into one region,
 // drawn in its colour with its name (TASK-347). What this catches: a group's
 // members scattered among other cards, a region drawn around a card the
-// group does not place, and a caption naming something other than the group.
+// group does not place, a caption naming something other than the group, a
+// nested region's caption floating ranks above its members, and a frame
+// keeping the strip Graphviz reserved for a label the router moved.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import nestedRegion from "./nested-region.json";
+import sideSlack from "./side-slack.json";
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
-	nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
+	nodeKinds: {
+		module: { name: "Module", icon: "RiBox3Line" },
+		service: { name: "Service", icon: "RiServerLine" },
+	},
 	relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
 	groups: {
 		state: { name: "Server state", color: "teal" },
 		routes: { name: "Routes", color: "violet" },
+		drawing: { name: "Drawing", color: "violet" },
+		walkthrough: { name: "Walkthroughs", color: "cyan" },
+		voice: { name: "Voice", color: "yellow" },
+		workhorse: { name: "Workhorse", color: "sky" },
 	},
 });
 
@@ -81,3 +94,52 @@ test.each(["track", "blocks"] as const)(
 		}
 	},
 );
+
+// Reduced from a dogfood view, names replaced: each region's one card no line
+// inside it holds is entered from cards several ranks down, and the region's
+// caption floated above them over an empty band.
+test("a group region inside a container starts on the rank just above its first member", async () => {
+	const nested = orderedFixture(nestedRegion);
+	const drawn = await renderArchitecture({
+		content: nested,
+		theme: "light",
+		policy,
+		layout: "track",
+	});
+	for (const group of ["state", "routes"]) {
+		const band = regionBox(drawn.svg, group);
+		const members = nested.nodes.filter(({ groups }) => groups?.includes(group));
+		const first = Math.min(...members.map(({ id }) => drawn.atlas.nodes[id]!.y));
+		const between = Object.entries(drawn.atlas.nodes)
+			.filter(([, box]) => box.y > band.y && box.y + box.height < first)
+			.map(([id]) => id);
+		expect(between, `nothing stands above the first member of ${group}`).toEqual([]);
+	}
+});
+
+// Reduced from a dogfood view, names replaced: Graphviz sized the frame to
+// hold a label where it first stood it, the router slid the label onto its
+// line, and the frame kept an empty strip down its left side.
+test("a frame's side walls keep one inset from what it holds once lines are routed", async () => {
+	const slack = orderedFixture(sideSlack);
+	const drawn = await renderArchitecture({
+		content: slack,
+		theme: "light",
+		policy,
+		layout: "track",
+	});
+	const frame = drawn.atlas.nodes["n0"]!;
+	const groups = [
+		...drawn.svg.matchAll(/data-semantic-kind="group-region" data-group="([^"]+)"/gu),
+	];
+	const held = [
+		...slack.nodes.filter(({ parent }) => parent === "n0").map(({ id }) => drawn.atlas.nodes[id]!),
+		...routeLabels(drawn.svg).values(),
+		...[...routePoints(drawn.svg).values()].flat().map(({ x }) => ({ x, width: 0 })),
+		...groups.map(([, group]) => regionBox(drawn.svg, group!)),
+	].filter(({ x, width }) => x >= frame.x && x + width <= frame.x + frame.width);
+	const left = Math.min(...held.map(({ x }) => x)) - frame.x;
+	const right = frame.x + frame.width - Math.max(...held.map(({ x, width }) => x + width));
+	expect(left).toBeCloseTo(CONTAINER_INSET, 0);
+	expect(right).toBeCloseTo(CONTAINER_INSET, 0);
+});

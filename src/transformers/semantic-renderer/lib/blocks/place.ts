@@ -17,6 +17,12 @@ import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-lay
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import {
+	layBoth,
+	lineLength,
+	settled,
+	type Laying,
+} from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
 import { routedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
@@ -100,7 +106,12 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 	if (plan === undefined) return whole;
 	const columns = foldBlock(tree, block, plan.items);
 	for (const column of columns)
-		laid.set(column.id, new CardLayout(column, laid, tree, insetsOf(column), { stacked }).lay(viz));
+		laid.set(
+			column.id,
+			settled(
+				layBoth(viz, () => new CardLayout(column, laid, tree, insetsOf(column), { stacked })),
+			),
+		);
 	return new FoldLayout(block, columns, laid, tree, insets).lay();
 }
 
@@ -123,7 +134,9 @@ function bestOf(block: Block, laid: Laid, insets: Insets): number {
  * @param tree The blocks.
  * @param block The block.
  * @param laid Every block laid out so far.
- * @returns The block laid out, and whether it stacks.
+ * @returns The block laid out, and whether it stacks. Its titles are pulled
+ * onto their members where that crosses and draws no more line, and may
+ * change whether it stacks only when the choice then draws no more line.
  */
 function stackedOrNot(
 	viz: Viz,
@@ -132,14 +145,24 @@ function stackedOrNot(
 	laid: Map<string, Laid>,
 ): { whole: Laid; stacked: boolean } {
 	const insets = insetsOf(block);
-	const plain = new CardLayout(block, laid, tree, insets);
-	const whole = plain.lay(viz);
-	if (!plain.stacks()) return { whole, stacked: false };
-	const stacked = new CardLayout(block, laid, tree, insets, { stacked: true }).lay(viz);
-	// Stacked containers often read best folded, so each is weighed at its best.
-	return bestOf(block, stacked, insets) > bestOf(block, whole, insets)
-		? { whole: stacked, stacked: true }
-		: { whole, stacked: false };
+	const plain = layBoth(viz, () => new CardLayout(block, laid, tree, insets));
+	if (!new CardLayout(block, laid, tree, insets).stacks())
+		return { whole: settled(plain), stacked: false };
+	const stacked = layBoth(viz, () => new CardLayout(block, laid, tree, insets, { stacked: true }));
+	/**
+	 * Whether the block reads better stacked. Stacked containers often read
+	 * best folded, so each is weighed at its best.
+	 * @param pick Which of each way the titles stand is weighed.
+	 * @returns True when it does.
+	 */
+	const stacks = (pick: (laying: Laying) => Laid): boolean =>
+		bestOf(block, pick(stacked), insets) > bestOf(block, pick(plain), insets);
+	const [tied, pulled] = [stacks(({ tied: one }) => one), stacks(settled)];
+	// Pulling titles down may change the choice only when that draws no more line.
+	const [was, is] = [tied, pulled].map((one) => settled(one ? stacked : plain));
+	const keeps = tied !== pulled && lineLength(is!.lines.values()) > lineLength(was!.lines.values());
+	const chosen = keeps ? tied : pulled;
+	return { whole: settled(chosen ? stacked : plain), stacked: chosen };
 }
 
 /**
@@ -164,22 +187,93 @@ function bestWrap(
 	const { laid, stacked } = laying;
 	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
 	const gridded = new CardLayout(block, laid, tree, insets).looseCards().some(grids)
-		? [new CardLayout(block, laid, tree, insets, { grid: true, stacked }).lay(viz)]
+		? [
+				wrapOf(
+					layBoth(viz, () => new CardLayout(block, laid, tree, insets, { grid: true, stacked })),
+				),
+			]
 		: [];
 	// A wrap that sinks a card stands it off on a late rank, away from its
 	// neighbours; it may fit the page better, but it is no wrap.
 	const wraps = wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
-		[false, true]
+		columnChoices(lowered, tree.nesting)
 			.map((columns) =>
-				new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }).lay(viz),
+				wrapOf(
+					layBoth(
+						viz,
+						() => new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }),
+					),
+					lowered,
+				),
 			)
-			.filter(({ boxes }) => !sinks(lowered, boxes, (card) => block.clusterOf.get(card))),
+			.filter(({ laid: { boxes } }) => !sinks(lowered, boxes, (card) => block.clusterOf.get(card))),
 	);
-	const best = [...gridded, ...wraps].reduce<Laid | undefined>(
-		(one, other) => (one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one),
+	// A wrap is chosen with its titles tied; only the chosen one is laid again with them pulled down.
+	const best = [...gridded, ...wraps].reduce<Wrapped | undefined>(
+		(one, other) => (one === undefined || wrapsBetter(other, one) ? other : one),
 		undefined,
 	);
-	return best !== undefined && scored(best) > scored(laying.whole) * worth ? best : undefined;
+	if (best === undefined || scored(best.laid) <= scored(laying.whole) * worth) return undefined;
+	const kept = settled({ tied: best.laid, untied: best.untied });
+	const sunk = sinks(best.lowered, kept.boxes, (card) => block.clusterOf.get(card));
+	return sunk ? best.laid : kept;
+}
+
+/** A wrap or grid laid out, and how many rows a wrap deals its rank into. */
+interface Wrapped {
+	/** It laid out with its titles tied. */
+	readonly laid: Laid;
+	/** How far each wrapped item is lowered; none for a grid. */
+	readonly lowered: ReadonlyMap<string, number>;
+	readonly rows?: number;
+	/**
+	 * It laid out with its tied titles pulled onto their members.
+	 * @returns It, or nothing when no title was tied.
+	 */
+	readonly untied: () => Laid | undefined;
+}
+
+/**
+ * A wrap or grid as the wrap choice weighs it.
+ * @param laying It laid out both ways its titles may stand.
+ * @param lowered How far each wrapped item is lowered, for a wrap.
+ * @returns The wrap.
+ */
+function wrapOf(laying: Laying, lowered?: ReadonlyMap<string, number>): Wrapped {
+	const rows = lowered === undefined ? {} : { rows: 1 + Math.max(...lowered.values()) };
+	return { laid: laying.tied, untied: laying.untied, lowered: lowered ?? new Map(), ...rows };
+}
+
+/**
+ * Whether one wrap reads better than another: it scores higher, or, as well,
+ * deals its rank into fewer rows. Two wraps that both fit the reference pane
+ * at full scale score the same, and one dealt into more rows only saves
+ * area: a wrap is for a rank too wide for the pane, and each row more steps
+ * the rank further from how it reads.
+ * @param one A wrap.
+ * @param other Another.
+ * @returns True when the first reads better.
+ */
+function wrapsBetter(one: Wrapped, other: Wrapped): boolean {
+	const tied = Math.abs(scored(one.laid) - scored(other.laid)) <= 1e-9;
+	if (tied && one.rows !== undefined && other.rows !== undefined && one.rows !== other.rows)
+		return one.rows < other.rows;
+	return readsBetter(weighed(one.laid), weighed(other.laid));
+}
+
+/**
+ * Whether a wrap's rows may be laid with their columns free, as well as held.
+ * Left free, a lowered card is pushed aside by the lines to every row below
+ * it, so on the track engine's ranks a wrap deeper than two rows steps down
+ * diagonally: it keeps its columns. The blocks engine packs such a block
+ * among others, where holding its columns drew more crossings than it saved.
+ * @param lowered How far each wrapped item is lowered.
+ * @param nesting How the board's containers and group regions are drawn.
+ * @returns The choices to lay the wrap with.
+ */
+function columnChoices(lowered: ReadonlyMap<string, number>, nesting: Nesting): boolean[] {
+	const deep = Math.max(0, ...lowered.values()) > 1;
+	return deep && nesting !== "blocks" ? [true] : [false, true];
 }
 
 /**
@@ -391,26 +485,6 @@ function drawingScore(placed: Placed): number {
 }
 
 /**
- * How much line a drawing draws.
- * @param placed The drawing's geometry.
- * @returns The total length of every line.
- */
-function lineLength(placed: Placed): number {
-	return placed.edges.reduce(
-		(sum, { points }) =>
-			sum +
-			points
-				.slice(1)
-				.reduce(
-					(run, to, index) =>
-						run + Math.abs(to.x - points[index]!.x) + Math.abs(to.y - points[index]!.y),
-					0,
-				),
-		0,
-	);
-}
-
-/**
  * Whether a board laid with its groups packed reads better than laid inline:
  * it scores higher and draws no more line. Blocks standing side by side can
  * trade a line's straight run for one round both blocks, which the score
@@ -420,7 +494,8 @@ function lineLength(placed: Placed): number {
  * @returns True when the packed one reads better.
  */
 function readsBetterPacked(packed: Placed, inline: Placed): boolean {
-	return drawingScore(packed) > drawingScore(inline) && lineLength(packed) <= lineLength(inline);
+	const [packs, inlines] = [packed, inline].map(({ edges }) => edges.map(({ points }) => points));
+	return drawingScore(packed) > drawingScore(inline) && lineLength(packs!) <= lineLength(inlines!);
 }
 
 /**
