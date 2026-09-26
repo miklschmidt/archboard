@@ -3,20 +3,23 @@
 // found in real boards, reduced to a fixture. What this catches: a line into
 // a card inside a frame run round the outside of another card because it was
 // kept out of the frame it ends in, and a labelled line run out to the edge
-// of the drawing and back because its label's band had room only there.
+// of the drawing and back because its label's band had room only there, and
+// a line into a group region run out beside the region to its label and back.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import frameDrop from "./frame-drop.json";
 import labelBand from "./label-band.json";
+import regionLabel from "./region-label.json";
 
 /** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
 	nodeKinds: {
+		service: { name: "Service", icon: "RiServerLine", color: "blue" },
 		module: { name: "Module", icon: "RiBox3Line" },
 		function: { name: "Function", icon: "RiCodeSSlashLine" },
 		external: { name: "External", icon: "RiExternalLinkLine" },
@@ -26,8 +29,10 @@ const policy = SemanticPolicySchema.parse({
 		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
 		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
+		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
 	},
@@ -54,6 +59,22 @@ test("a labelled line keeps between its ends when another band holds its label",
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const edge = content.edges.find(({ id }) => id === "Wa0ROBSq")!;
 	expectBetween(drawing, edge.id, [edge.from, edge.to]);
+});
+
+// Reduced from a dogfood board, names replaced: Graphviz stood the label of a
+// line into a group region beside the region, the relay's first route in
+// crossed a label that only later moved aside, and the line's run out to its
+// label and back was no lap by the reach of its ends.
+test("a line into a group region keeps its label between its ends", async () => {
+	const content = orderedFixture(regionLabel);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const edge = content.edges.find(({ id }) => id === "i6pk24Ov")!;
+	const ends = [drawing.atlas.nodes[edge.from]!, drawing.atlas.nodes[edge.to]!];
+	const label = routeLabels(drawing.svg).get(edge.id)!;
+	expect(label.x).toBeGreaterThanOrEqual(Math.min(...ends.map(({ x }) => x)));
+	expect(label.x + label.width).toBeLessThanOrEqual(
+		Math.max(...ends.map(({ x, width }) => x + width)),
+	);
 });
 
 /**
