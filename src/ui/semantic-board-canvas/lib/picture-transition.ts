@@ -127,7 +127,16 @@ function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): bo
  * @param svg The picture.
  */
 function stagePicture(surface: HTMLElement, svg: string): void {
+	// A picture's traffic runs on its own animation clock, which starts again
+	// at nought whenever its markup is replaced: a transition that lands, a
+	// flight that ends. The clock carries over, so the comets run on instead
+	// of jumping back to where they rest.
+	// A page without SVG animation has no clock to carry.
+	const last = surface.querySelector("svg");
+	const clock = last !== null && "getCurrentTime" in last ? last.getCurrentTime() : undefined;
 	surface.innerHTML = svg;
+	const next = surface.querySelector("svg");
+	if (clock !== undefined && next !== null && "setCurrentTime" in next) next.setCurrentTime(clock);
 }
 
 /**
