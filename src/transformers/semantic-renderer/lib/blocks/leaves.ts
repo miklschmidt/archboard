@@ -1,11 +1,16 @@
 // A block of cards' placed leaves, set right where Graphviz leaves them
 // off: the header in its corner, with the ports on its rank beside it.
 import type { ElkNode } from "@archboard/elk-rs";
+import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
-import type { Block } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
+
+/** The side of a port's square. */
+const PORT = 1;
 
 /**
  * Whether two leaves share some height.
@@ -46,18 +51,48 @@ function cornerHeader(leaves: readonly ElkNode[], id: string): void {
  * keeps clear of the header, as a settled one does. Only the Blocks engine
  * settles a block's ports from its parent and routes the block again, so
  * there nothing slides, nor at the root, which has no ports of its own.
- * Either way the scene learns which cards are the block's ports.
- * @param scene The block's scene, whose ports and sliding ports are set.
+ * @param scene The block's scene, whose sliding ports are set.
  * @param block The block.
  * @param nesting How containers and group regions are drawn.
  */
 function letPortsSlide(scene: Scene, block: Block, nesting: Nesting): void {
+	if (block.kind === "root" || nesting === "blocks") return;
+	for (const [item, stretch] of slidesOf(scene, block)) scene.slides.set(item, stretch);
+}
+
+/**
+ * Tell a block's scene which of its cards are the block's own ports.
+ * @param scene The block's scene.
+ * @param block The block.
+ */
+function markPorts(scene: Scene, block: Block): void {
 	for (const port of block.ports.keys()) {
 		const item = scene.cards.get(port);
 		if (item !== undefined) scene.ports.add(item);
 	}
-	if (block.kind === "root" || nesting === "blocks") return;
-	for (const [item, stretch] of slidesOf(scene, block)) scene.slides.set(item, stretch);
+}
+
+/**
+ * A pin as a block's scene reads it: a sliver as tall as its child block, at its port's x.
+ * @param tree The blocks.
+ * @param laid Every block laid out so far.
+ * @param pin The pin.
+ * @param centres Every vendor node's centre in the block.
+ * @returns The placed pin.
+ */
+function pinnedLeaf(
+	tree: BlockTree,
+	laid: ReadonlyMap<string, Laid>,
+	pin: string,
+	centres: ReadonlyMap<string, Point>,
+): ElkNode & Box {
+	const { block: child, port } = tree.pins.get(pin)!;
+	const inner = laid.get(child.id)!;
+	const at = inner.boxes.get(port)!;
+	const centre = centres.get(child.id)!;
+	const x = centre.x - inner.width / 2 + at.x + at.width / 2;
+	const y = centre.y - inner.height / 2;
+	return { id: pin, x: x - PORT / 2, y, width: PORT, height: inner.height };
 }
 
 /**
@@ -78,4 +113,4 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 	});
 }
 
-export { cornerHeader, letPortsSlide };
+export { PORT, cornerHeader, letPortsSlide, markPorts, pinnedLeaf };

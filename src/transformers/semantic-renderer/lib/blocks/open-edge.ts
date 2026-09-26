@@ -39,12 +39,28 @@ function apart(span: Span, x: number): number {
  * @param boxes The boxes standing against it.
  * @param margin How far a port keeps from each box's sides.
  * @param x Where the port wants to stand.
+ * @returns The stretch, or none when the boxes cover the edge.
+ */
+function nearestFree(
+	edge: Span,
+	boxes: readonly Box[],
+	margin: number,
+	x: number,
+): Span | undefined {
+	const blocked = boxes.map((box): Span => [box.x - margin, box.x + box.width + margin]);
+	return freeOf(edge, blocked).toSorted((one, other) => apart(one, x) - apart(other, x))[0];
+}
+
+/**
+ * The free stretch of an edge nearest an x, clear of some boxes by a margin.
+ * @param edge The edge.
+ * @param boxes The boxes standing against it.
+ * @param margin How far a port keeps from each box's sides.
+ * @param x Where the port wants to stand.
  * @returns The stretch, or the whole edge when the boxes cover it.
  */
 function openStretch(edge: Span, boxes: readonly Box[], margin: number, x: number): Span {
-	const blocked = boxes.map((box): Span => [box.x - margin, box.x + box.width + margin]);
-	const free = freeOf(edge, blocked).toSorted((one, other) => apart(one, x) - apart(other, x));
-	return free[0] ?? edge;
+	return nearestFree(edge, boxes, margin, x) ?? edge;
 }
 
-export { openStretch, type Span };
+export { nearestFree, openStretch, type Span };

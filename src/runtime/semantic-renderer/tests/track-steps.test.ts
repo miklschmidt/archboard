@@ -12,6 +12,7 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import onePointPort from "./one-point-port.json";
+import regionPortTurnBack from "./region-port-turn-back.json";
 import doubleStep from "./double-step.json";
 import staircase from "./staircase.json";
 import trunkTurnBack from "./trunk-turn-back.json";
@@ -36,6 +37,7 @@ const policy = SemanticPolicySchema.parse({
 		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
+		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
 		panes: { name: "Live panes", color: "teal" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
@@ -142,6 +144,20 @@ test("a line steps once where one step joins the columns above and below", async
 test("no line leaving a trunk doubles back along it", async () => {
 	const drawing = await renderArchitecture({
 		content: orderedFixture(trunkTurnBack),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
+});
+
+// Reduced from a dogfood board: two lines leave a group region through one
+// port on its bottom, placed between its two cards before the board around
+// the region was routed. Outside, their line goes on to the right, so the one
+// from the left card ran along the region's track past its turn and back.
+test("a line through a group region's port does not double back at it", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(regionPortTurnBack),
 		theme: "light",
 		layout: "track",
 		policy,
