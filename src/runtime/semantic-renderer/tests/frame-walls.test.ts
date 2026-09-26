@@ -2,7 +2,9 @@
 // exactly that far. Graphviz keeps a card outside the frame only the same
 // margin from it, so the passage between the two was the wall itself, and a
 // line out of the frame ran down the wall, where the frame edge took the
-// line's colour (a view of a work board, its words scrambled).
+// line's colour (a view of a work board, its words scrambled). Kept half a
+// lane off, it still traced the frame's outline; where the passage has room
+// it keeps a whole lane. Below this frame the passage is too narrow for one.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -10,13 +12,10 @@ import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import frameWall from "./frame-wall.json";
 
-/** Half a lane: the distance a line keeps off a frame wall. */
-const WALL_CLEARANCE = 8;
-
-/** A run shorter than a lane is a jog, not a line along a wall. */
+/** The distance a line keeps off a frame wall where the passage has room, and the length of a run that is not a jog. */
 const LANE = 16;
 
-test("a line out of a frame to a card beside it runs clear of the frame's wall", async () => {
+test("a line out of a frame to a card beside it keeps a lane from the frame's side walls", async () => {
 	const { svg } = await renderArchitecture({
 		content: orderedFixture(frameWall),
 		theme: "light",
@@ -31,7 +30,6 @@ test("a line out of a frame to a card beside it runs clear of the frame's wall",
 		return [
 			{ vertical: true, at: left, from: top, to: bottom },
 			{ vertical: true, at: right, from: top, to: bottom },
-			{ vertical: false, at: bottom, from: left, to: right },
 		];
 	});
 	const hugs = [...routePoints(svg)].flatMap(([edge, points]) =>
@@ -45,7 +43,7 @@ test("a line out of a frame to a card beside it runs clear of the frame's wall",
 				.filter(
 					(wall) =>
 						wall.vertical === vertical &&
-						Math.abs(at - wall.at) < WALL_CLEARANCE &&
+						Math.abs(at - wall.at) < LANE - 0.5 &&
 						Math.min(Math.max(one, other), wall.to) - Math.max(Math.min(one, other), wall.from) >
 							LANE,
 				)
