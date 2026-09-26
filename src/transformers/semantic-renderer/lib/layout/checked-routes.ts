@@ -11,6 +11,43 @@ import {
 	straightenedCurve,
 	verticesOf,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { isNativeRouteUnavailable } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
+
+/** A settled route that fails its checks even straightened; another routing of the board may pass them. */
+class RouteCheckFailed extends Error {
+	override readonly name = "RouteCheckFailed";
+}
+
+/**
+ * Whether an error is a routing's refusal, which leaves another routing of
+ * the same board to be drawn, rather than a fault.
+ * @param error The error.
+ * @returns True when the router found no route or a route failed its checks.
+ */
+export function refusedRouting(error: unknown): boolean {
+	return error instanceof RouteCheckFailed || isNativeRouteUnavailable(error);
+}
+
+/**
+ * Two routings of one board, each as drawn or refused ({@link refusedRouting}).
+ * @param one A routing.
+ * @param other Another.
+ * @returns Both, nothing for a refused one.
+ * @throws {Error} Any fault, and the first refusal when both were refused.
+ */
+export async function eitherRouting<Routed>(
+	one: Promise<Routed>,
+	other: Promise<Routed>,
+): Promise<readonly [Routed | undefined, Routed | undefined]> {
+	const results = await Promise.allSettled([one, other]);
+	const failed = results.flatMap((result) => (result.status === "rejected" ? [result.reason] : []));
+	const fault = failed.find((reason) => !refusedRouting(reason));
+	if (fault !== undefined || failed.length === results.length) throw fault ?? failed[0];
+	const [mine, theirs] = results.map((result) =>
+		result.status === "fulfilled" ? result.value : undefined,
+	);
+	return [mine, theirs];
+}
 
 /**
  * A settled drawing whose every route passes its checks.
@@ -35,7 +72,7 @@ function checkedEdge(drawn: DrawingEdge): DrawingEdge {
 	if (curveClearanceIssue(drawn.curve, label?.box) === undefined) return drawn;
 	const straightened = straightenedEdge(drawn);
 	const issue = curveClearanceIssue(straightened.curve, straightened.label?.box);
-	if (issue !== undefined) throw new Error(`Layout relationship ${edge.id}: ${issue}`);
+	if (issue !== undefined) throw new RouteCheckFailed(`Layout relationship ${edge.id}: ${issue}`);
 	return straightened;
 }
 
