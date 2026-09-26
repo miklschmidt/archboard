@@ -20,6 +20,7 @@ import loweredRegion from "./lowered-region.json";
 import underPort from "./under-port.json";
 import browserApplication from "./browser-application.json";
 import grading from "./grading.json";
+import reservedLane from "./reserved-label-lane.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 import skillEvaluation from "./skill-evaluation.json";
 import wrappedBlocker from "./wrapped-blocker.json";
@@ -203,6 +204,33 @@ test("a line leaving a container stands its label below the container", async ()
 	const frame = drawing.atlas.nodes["lib"]!;
 	const label = routeLabels(drawing.svg).get("ax")!;
 	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);
+});
+
+// Reduced from a real library board: pulling the labels of lines leaving a
+// container below it answered with another ranking of the whole block, on a
+// page 170 px wider and 30 px taller, which the score alone did not refuse.
+test("a leaving label is pulled below its container only on no more page", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(reservedLane),
+		theme: "light",
+		policy: SemanticPolicySchema.parse({
+			levels: ["service"],
+			nodeKinds: Object.fromEntries(
+				["external", "service", "datastore", "module"].map((kind) => [
+					kind,
+					{ name: kind, icon: "RiBox3Line" },
+				]),
+			),
+			relationshipKinds: {
+				http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
+				call: { name: "Call", dash: "solid", arrowhead: "filled" },
+				dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+				data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+			},
+		}),
+		layout: "track",
+	});
+	expect(drawing.width).toBeLessThan(2100);
 });
 
 /** The vocabulary of the Browser application board's fixtures. */
