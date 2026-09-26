@@ -9,7 +9,6 @@ import {
 	emptyGraph,
 	holdSources,
 	placedLabel,
-	walledPoints,
 	type VendorNode,
 } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
@@ -33,10 +32,10 @@ import {
 	centresOf,
 	nodesIn,
 	numbers,
+	type Output,
 	polylinePoints,
 	type Join,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
-import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
@@ -44,6 +43,13 @@ import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
 import { placedChains } from "@/transformers/semantic-renderer/lib/track/stairs";
+import { keptSteps, type Aligned } from "@/transformers/semantic-renderer/lib/blocks/stepped";
+import {
+	entersBy,
+	innerPoints,
+	wallLines,
+	wallOf,
+} from "@/transformers/semantic-renderer/lib/blocks/walls";
 import {
 	Scene,
 	TRACK_POLYLINE,
@@ -178,7 +184,9 @@ class CardLayout {
 			nodes: bottoms.map((name) => this.nodeOf(name)),
 		};
 		graph.subgraphs.push(...[first, last].filter(({ nodes }) => nodes!.length > 0));
-		const entering = [...block.lines.values()].filter((line) => this.entersBy(line) !== undefined);
+		const entering = [...block.lines.values()].filter(
+			(line) => entersBy(this.block, line) !== undefined,
+		);
 		const stubs = new Set(entering.map(({ from }) => this.vendorOf(from)));
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of this.boardOrder()) this.connect(line);
@@ -201,7 +209,7 @@ class CardLayout {
 				around = this.block.clusterOf.get(around);
 			}
 		return [...this.block.lines.values()]
-			.filter((line) => this.wallOf(line) === undefined)
+			.filter((line) => wallOf(this.block, line) === undefined)
 			.map((line) => ({
 				line,
 				tail: place.get(this.vendorOf(line.tail)) ?? -1,
@@ -264,7 +272,7 @@ class CardLayout {
 	 */
 	links(endOf = (end: string): string => this.vendorOf(end)): (Join & { labelled: boolean })[] {
 		return [...this.block.lines.values()]
-			.filter((line) => this.wallOf(line) === undefined)
+			.filter((line) => wallOf(this.block, line) === undefined)
 			.map((line) => ({
 				tail: endOf(line.tail),
 				head: endOf(line.head),
@@ -305,26 +313,6 @@ class CardLayout {
 	}
 
 	/**
-	 * The wall a line leaves the block by, when its port is on one.
-	 * @param line The line.
-	 * @returns The wall, or nothing for a line Graphviz ranks.
-	 */
-	wallOf(line: Line): "left" | "right" | undefined {
-		const side = this.block.ports.get(line.to);
-		return side === "left" || side === "right" ? side : undefined;
-	}
-
-	/**
-	 * The wall a line enters the block by, when its port is on one.
-	 * @param line The line.
-	 * @returns The wall, or nothing.
-	 */
-	entersBy(line: Line): "left" | "right" | undefined {
-		const side = this.block.ports.get(line.from);
-		return side === "left" || side === "right" ? side : undefined;
-	}
-
-	/**
 	 * Connect one line, through its label's box when it carries the label here.
 	 * @param line The line.
 	 */
@@ -357,6 +345,17 @@ class CardLayout {
 	lay(viz: Viz): Laid {
 		this.build();
 		const output = placedChains(viz, this.graph, this.links(), (name) => this.tree.cards.has(name));
+		const { laid, placed, centres } = keptSteps((refused) => this.aligned(output, refused));
+		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
+	}
+
+	/**
+	 * The block lined up from where Graphviz placed it, placed and routed.
+	 * @param output Graphviz's output.
+	 * @param refused The wrapped cards that may not step out of a line's way.
+	 * @returns The block, and the cards that stepped aside.
+	 */
+	aligned(output: Output, refused: ReadonlySet<string>): Aligned {
 		const [left, low, right, high] = numbers(output.bb);
 		const origin = { x: Math.min(left!, right!), y: Math.min(low!, high!) };
 		const polylines = new Map<string, string[]>();
@@ -368,17 +367,17 @@ class CardLayout {
 		// A line from a child block is lined up where it leaves the block, at its pin.
 		const atPins = this.links((end) => (this.tree.pins.has(end) ? end : this.vendorOf(end)));
 		const width = Math.abs(right! - left!);
-		this.clusters.lineUp(atPins, centres, {
+		const stepped = this.clusters.lineUp(atPins, centres, {
 			boxes,
 			clusters,
 			polylines,
 			width,
 			cards: this.tree.cards,
 			lowered: this.arranged.lowered,
+			refused,
 		});
 		const placed = this.placed(centres, polylines, clusters);
-		const laid = this.routed(placed, 0);
-		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
+		return { stepped, centres, placed, laid: this.routed(placed, 0) };
 	}
 
 	/**
@@ -396,8 +395,8 @@ class CardLayout {
 			scene,
 			placed.edges.map((edge) => {
 				const line = this.block.lines.get(edge.id)!;
-				const wall = this.wallOf(line);
-				const enters = this.entersBy(line);
+				const wall = wallOf(this.block, line);
+				const enters = entersBy(this.block, line);
 				return {
 					id: edge.id,
 					order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
@@ -470,14 +469,14 @@ class CardLayout {
 			...boxes.values(),
 			...frames.map((frame) => frame.box),
 			...regions.map((region) => region.box),
-			...this.innerPoints(walled).map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
+			...innerPoints(this.block, walled).map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
 		];
 		const width = Math.max(
 			held,
 			this.block.header?.width ?? 0,
 			...reach.map((one) => one.x + one.width + side),
 		);
-		const tracks = this.wallLines(walled, boxes, width);
+		const tracks = wallLines(this.block, walled, boxes, width);
 		return {
 			width,
 			height: Math.max(...reach.map((one) => one.y + one.height), ...tracks) + bottom,
@@ -487,46 +486,6 @@ class CardLayout {
 			frames,
 			regions,
 		};
-	}
-
-	/**
-	 * Every point the lines of a block inside the board draw, which its parent
-	 * must route around: all but the end where a line to or from a wall meets
-	 * the wall, which stands where the block ends. The board's own lines are
-	 * fitted on the page when it is drawn.
-	 * @param lines Every line's points.
-	 * @returns The points.
-	 */
-	innerPoints(lines: ReadonlyMap<string, Point[]>): Point[] {
-		if (this.block.kind === "root") return [];
-		return [...this.block.lines.values()].flatMap((line) => {
-			const points = lines.get(line.key) ?? [];
-			if (this.wallOf(line) !== undefined) return points.slice(0, -1);
-			return this.entersBy(line) === undefined ? points : points.slice(1);
-		});
-	}
-
-	/**
-	 * Run every line to a wall onto the block's own wall, and stand its port there.
-	 * @param lines Every line's points, the lines to a wall ending on their tracks; those are replaced.
-	 * @param boxes Every box, to which the side ports are added.
-	 * @param width The block's width.
-	 * @returns The height of every such line's track, which the block must hold.
-	 */
-	wallLines(lines: Map<string, Point[]>, boxes: Map<string, Box>, width: number): number[] {
-		return [...this.block.lines.values()].flatMap((line) => {
-			const points = lines.get(line.key);
-			const leaves = this.wallOf(line);
-			const enters = this.entersBy(line);
-			if (points === undefined) return [];
-			const moved = walledPoints(points, { leaves, enters }, width);
-			if (moved === undefined) return [];
-			lines.set(line.key, moved);
-			const end = leaves === undefined ? moved[0]! : moved.at(-1)!;
-			const port = leaves === undefined ? line.from : line.to;
-			boxes.set(port, { x: end.x - PORT / 2, y: end.y - PORT / 2, width: PORT, height: PORT });
-			return [end.y + LANE];
-		});
 	}
 
 	/**

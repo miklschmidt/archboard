@@ -29,6 +29,8 @@ interface Wrap {
 	 * @returns The cluster.
 	 */
 	readonly around: (card: string) => string | undefined;
+	/** The lowered cards that may not step out of a line's way. */
+	readonly refused?: ReadonlySet<string>;
 }
 
 /** The furthest a card standing in a line's way steps aside: four lanes. */
@@ -94,21 +96,23 @@ function kept(at: Box): [number, number] {
 }
 
 /**
- * What stays of a span once some stretches are taken out of it.
+ * What stays of a span once some stretches are taken out of it: the parts a
+ * line can stand in, so none narrower than a unit unless the span itself is.
  * @param span The span.
  * @param taken The stretches, each open at both ends.
  * @returns The free parts, left to right, each closed.
  */
 function openParts(span: [number, number], taken: readonly [number, number][]): [number, number][] {
+	const least = Math.min(1, span[1] - span[0]);
 	const parts: [number, number][] = [];
 	let low = span[0];
 	for (const [start, end] of taken.toSorted(([one], [other]) => one - other)) {
 		if (end <= low || start >= span[1]) continue;
-		if (start >= low) parts.push([low, start]);
+		parts.push([low, start]);
 		low = end;
 	}
-	if (low <= span[1]) parts.push([low, span[1]]);
-	return parts;
+	parts.push([low, span[1]]);
+	return parts.filter(([from, to]) => to - from >= least);
 }
 
 /**
@@ -120,13 +124,8 @@ function openParts(span: [number, number], taken: readonly [number, number][]): 
  */
 function straight(columns: Columns, join: Join): boolean {
 	const span = common(columns, join);
-	if (span === undefined) return false;
-	return (
-		openParts(
-			span,
-			standing(columns, join).map(([, at]) => kept(at)),
-		).length > 0
-	);
+	const taken = standing(columns, join).map(([, at]) => kept(at));
+	return span !== undefined && openParts(span, taken).length > 0;
 }
 
 /**
@@ -224,7 +223,8 @@ function moveUnderPort(columns: Columns, wrap: Wrap, join: Join): boolean {
 
 /**
  * The shifts that would take a card out of a line's way: to the near side of
- * each column left open by everything else standing there, nearest first.
+ * each stretch left open by everything else standing there, leaving a lane
+ * of it open, or all of it when it is narrower, nearest first.
  * @param columns The placed items.
  * @param join The line.
  * @param card The card in its way.
@@ -237,7 +237,10 @@ function shiftsAside(columns: Columns, join: Join, card: string): number[] {
 		common(columns, join)!,
 		others.map(([, box]) => kept(box)),
 	)
-		.flatMap(([low, high]) => [high - LANE - (at.x + at.width), low + LANE - at.x])
+		.flatMap(([low, high]) => [
+			Math.max(low, high - LANE) - LANE - (at.x + at.width),
+			Math.min(high, low + LANE) + LANE - at.x,
+		])
 		.filter((shift) => Math.abs(shift) >= 0.5 && Math.abs(shift) <= STEP_ASIDE)
 		.toSorted((one, other) => Math.abs(one) - Math.abs(other));
 }
@@ -278,21 +281,26 @@ function into(stretch: [number, number], span: [number, number]): boolean {
 
 /**
  * Open a straight column for a line the wrap closed: move its lone lowered
- * end under its port, else step a lowered card in its way aside.
+ * end under its port, else step a lowered card in its way aside, one the
+ * wrap does not refuse.
  * @param columns The placed items.
  * @param wrap The wrap.
  * @param join The line.
+ * @returns The card that stepped aside, if one did.
  */
-function clearLine(columns: Columns, wrap: Wrap, join: Join): void {
-	if (moveUnderPort(columns, wrap, join) || straight(columns, join)) return;
+function clearLine(columns: Columns, wrap: Wrap, join: Join): string | undefined {
+	if (moveUnderPort(columns, wrap, join) || straight(columns, join)) return undefined;
 	const span = common(columns, join);
-	if (span === undefined) return;
-	standing(columns, join)
+	if (span === undefined) return undefined;
+	return standing(columns, join)
 		.filter(
 			([name, at]) =>
-				lowered(wrap, name) && columns.room.card?.(name) === true && into(kept(at), span),
+				lowered(wrap, name) &&
+				wrap.refused?.has(name) !== true &&
+				columns.room.card?.(name) === true &&
+				into(kept(at), span),
 		)
-		.some(([name]) => stepAside(columns, join, name));
+		.find(([name]) => stepAside(columns, join, name))?.[0];
 }
 
 /**
@@ -300,10 +308,11 @@ function clearLine(columns: Columns, wrap: Wrap, join: Join): void {
  * way: every line stacked from one rank to a lower one, in turn.
  * @param columns The placed items, lined up.
  * @param wrap The wrap they were placed by, if any.
+ * @returns The cards that stepped aside, which only routing shows were worth it.
  */
-function clearWrap(columns: Columns, wrap: Wrap | undefined): void {
-	if (wrap === undefined || ![...wrap.rows.values()].some((row) => row > 0)) return;
-	for (const join of columns.stacked()) clearLine(columns, wrap, join);
+function clearWrap(columns: Columns, wrap: Wrap | undefined): string[] {
+	if (wrap === undefined || ![...wrap.rows.values()].some((row) => row > 0)) return [];
+	return columns.stacked().flatMap((join) => clearLine(columns, wrap, join) ?? []);
 }
 
 export { clearWrap, type Wrap };
