@@ -336,8 +336,10 @@ class Settle {
 
 	/**
 	 * Whether a line in a block of blocks is read to settle its pins: every
-	 * line of a packed block, and in a block of cards drawn inline one that
-	 * ends on a pin with both its ends standing in the block.
+	 * line of a packed block, and in a block of cards drawn inline one whose
+	 * ends both stand in the block, as a card or a pin: a line into a
+	 * container gathered into a group region with its own members ends on no
+	 * card of the region's block.
 	 * @param block The block of blocks.
 	 * @param ends The line's ends.
 	 * @returns True when it is.
@@ -346,10 +348,7 @@ class Settle {
 		if (!this.cardsInline(block)) return true;
 		const { tree, laid } = this.settling;
 		const { boxes } = laid.get(block.id)!;
-		return (
-			ends.every((end) => tree.pins.has(end) || boxes.has(end)) &&
-			ends.some((end) => tree.pins.has(end))
-		);
+		return ends.every((end) => tree.pins.has(end) || boxes.has(end));
 	}
 
 	/**
