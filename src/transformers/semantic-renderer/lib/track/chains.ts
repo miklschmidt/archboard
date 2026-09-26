@@ -198,11 +198,13 @@ class Occupancy {
 		// a line into its container crosses the row beside them.
 		for (const { band, left, end } of scene.headings())
 			this.taken[band]!.push([left - LANE, end + LANE]);
-		// A lane keeps off the walls of the containers it passes, as off a card.
+		// A lane keeps off the walls of the containers it passes, as off a card,
+		// and a lane off a group region's, which has no inset of its own.
 		scene.bands.forEach((_, band) => {
-			for (const walls of scene.walled(band).values())
-				for (const wall of walls)
-					this.taken[band]!.push([wall - WALL_CLEARANCE, wall + WALL_CLEARANCE]);
+			for (const [id, walls] of scene.walled(band)) {
+				const clearance = scene.frames.has(id) ? WALL_CLEARANCE : LANE;
+				for (const wall of walls) this.taken[band]!.push([wall - clearance, wall + clearance]);
+			}
 		});
 	}
 

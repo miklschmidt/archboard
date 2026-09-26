@@ -9,11 +9,17 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	bodyShift,
+	corridorPoints,
+	type DrawnPoint,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
 import doubleStep from "./double-step.json";
+import durableWriteBoundary from "./durable-write-boundary.json";
+import oneCommand from "./one-command.json";
 import staircase from "./staircase.json";
 import trunkTurnBack from "./trunk-turn-back.json";
 import walkthroughStair from "./walkthrough-stair.json";
@@ -163,4 +169,71 @@ test("a line through a group region's port does not double back at it", async ()
 		policy,
 	});
 	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
+});
+
+/** A group region's box as drawn: its left and right walls, its top and bottom. */
+interface Walls {
+	readonly left: number;
+	readonly right: number;
+	readonly top: number;
+	readonly bottom: number;
+}
+
+/**
+ * Every group region a drawing draws.
+ * @param svg The drawing.
+ * @returns Each region's walls.
+ */
+function regionWalls(svg: string): Walls[] {
+	const shift = bodyShift(svg);
+	return [
+		...svg.matchAll(
+			/data-semantic-kind="group-region"[^>]*>\s*<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu,
+		),
+	].map(([, x, y, width, height]) => ({
+		left: Number(x) + shift.x,
+		right: Number(x) + Number(width) + shift.x,
+		top: Number(y) + shift.y,
+		bottom: Number(y) + Number(height) + shift.y,
+	}));
+}
+
+/**
+ * The columns where a line runs down beside a region's wall for more than a
+ * lane, nearer it than a lane.
+ * @param points The line's corridor.
+ * @param regions Every region's walls.
+ * @returns Those columns.
+ */
+function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): number[] {
+	return points.slice(1).flatMap((to, index) => {
+		const from = points[index]!;
+		if (Math.abs(from.x - to.x) > 0.5) return [];
+		const [top, bottom] = [Math.min(from.y, to.y), Math.max(from.y, to.y)];
+		const beside = regions.some(
+			(walls) =>
+				Math.min(bottom, walls.bottom) - Math.max(top, walls.top) > 16 &&
+				[walls.left, walls.right].some((wall) => {
+					const apart = Math.abs(from.x - wall);
+					return apart > 0.5 && apart < 16;
+				}),
+		);
+		return beside ? [from.x] : [];
+	});
+}
+
+// Reduced from dogfood boards: a line ran down beside a group region's wall
+// half a lane away, where it read as part of the region's outline.
+test("a line keeps a lane from a group region's wall it runs beside", async () => {
+	for (const fixture of [durableWriteBoundary, oneCommand]) {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(fixture),
+			theme: "light",
+			layout: "track",
+			policy,
+		});
+		const regions = regionWalls(drawing.svg);
+		for (const [id, points] of corridorPoints(drawing.svg))
+			expect(besideWalls(points, regions), id).toEqual([]);
+	}
 });
