@@ -14,8 +14,7 @@
 // a block without a label of its own there shares one line, so what runs
 // between two blocks is drawn once, as a trunk. A relationship's label sits in
 // the innermost block around its target, or else its source, next to the card
-// it names; one that joins another of its kind to its card on the way there
-// sits by its source instead, before the join, so the two never part again.
+// it names, unless that would part lines joined on the way to it (`joins.ts`).
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import {
@@ -27,6 +26,7 @@ import { addInline, holds, type Cluster } from "@/transformers/semantic-renderer
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
 import { CycleWalk } from "@/transformers/semantic-renderer/lib/blocks/cycles";
+import { joinWays, kindOf } from "@/transformers/semantic-renderer/lib/blocks/joins";
 
 /** A width and a height. */
 interface Size {
@@ -126,17 +126,6 @@ function headerOf(block: Block): string {
 }
 
 /**
- * The kind a line is bundled by: the relationship's kind and comparison standing.
- * @param edge The relationship.
- * @returns The kind.
- */
-function kindOf(edge: ElkExtendedEdge): string {
-	const options = edge.layoutOptions ?? {};
-	const kind = options["archboard.relationship.kind"] ?? "";
-	return `${kind}|${options["archboard.relationship.standing"] ?? "unchanged"}`;
-}
-
-/**
  * Each placing group's caption size, as measurement wrote it on the root.
  * @param graph The measured hierarchy.
  * @returns The sizes, by group.
@@ -183,6 +172,10 @@ class BlockTree {
 	readonly routes = new Map<string, Route>();
 	/** Where each pin meets its child block: the block and its port. */
 	readonly pins = new Map<string, { readonly block: Block; readonly port: string }>();
+	/** Every join of lines of one kind on the way to one card, by its key. */
+	readonly joining: ReadonlySet<string>;
+	/** The relationships that keep ports of their own rather than join others, by id. */
+	readonly apart: ReadonlySet<string>;
 
 	/**
 	 * Read the blocks of a measured hierarchy and project its relationships.
@@ -191,11 +184,13 @@ class BlockTree {
 	 * the port it would otherwise be: an earlier layout's answer, where it
 	 * stood the block beside the block its trunk goes to.
 	 * @param nesting How containers and group regions are drawn.
+	 * @param apart The joins whose lines keep ports of their own, by key.
 	 */
 	constructor(
 		graph: ElkNode,
-		readonly exits: ReadonlyMap<string, Side> = new Map(),
-		readonly nesting: Nesting = "blocks",
+		readonly exits: ReadonlyMap<string, Side>,
+		readonly nesting: Nesting,
+		apart: ReadonlySet<string>,
 	) {
 		this.captions = captionsOf(graph);
 		this.root = this.block(":root", "root", undefined, {});
@@ -204,13 +199,10 @@ class BlockTree {
 		const edges = (graph.edges ?? []).filter((edge) => edge.sources[0] !== edge.targets[0]);
 		this.projections = edges.map((edge) => this.project(edge));
 		const back = this.backEdges();
-		// Lines of one kind into one card through the same ports run as one past
-		// the first; each carries its label before they join, never after.
-		const joins = this.projections.map(({ edge, into, from }) =>
-			into.length === 0 ? "" : `${from}|${edge.targets[0]}|${kindOf(edge)}|${back.has(edge.id)}`,
-		);
-		for (const [index, projection] of this.projections.entries())
-			this.draw(projection, back, joins.filter((one) => one && one === joins[index]).length > 1);
+		const ways = joinWays(this.projections, back, apart);
+		[this.joining, this.apart] = [ways.joining, ways.apart];
+		for (const projection of this.projections)
+			this.draw(projection, back, ways.before.has(projection.edge.id));
 	}
 
 	/**
@@ -416,12 +408,12 @@ class BlockTree {
 	 * and one in the block that holds both ends.
 	 * @param projection Where it is drawn.
 	 * @param back The relationships that run upward where they are drawn.
-	 * @param joined Whether it joins another to its card on the way there, and so carries its label before.
+	 * @param before Whether it carries its label before a join with others to its card.
 	 */
-	draw(projection: Projection, back: ReadonlySet<string>, joined: boolean): void {
+	draw(projection: Projection, back: ReadonlySet<string>, before: boolean): void {
 		const { edge, at, out, into } = projection;
 		const upward = back.has(edge.id);
-		const labelAt = joined ? (out[0] ?? at) : (into[0] ?? out[0] ?? at);
+		const labelAt = before ? (out[0] ?? at) : (into[0] ?? out[0] ?? at);
 		const leaving = this.leave(projection, upward, labelAt);
 		const entering = this.enter(projection, upward, labelAt);
 		const ranked = upward
@@ -456,7 +448,7 @@ class BlockTree {
 			face,
 		);
 		for (const block of out) {
-			const along = `${projection.to}|${kindOf(edge)}`;
+			const along = `${projection.to}|${this.kindOf(edge)}`;
 			const side = block === labelAt ? face : this.exitOf(block, `out|${face}|${along}`, face);
 			const port = this.port(block, `out|${side}|${walled(side, from)}${along}`, side);
 			const ranked = side === "top" ? { tail: port, head: from } : { tail: from, head: port };
@@ -486,7 +478,7 @@ class BlockTree {
 			face,
 		);
 		for (const block of into) {
-			const along = `${projection.from}|${kindOf(edge)}`;
+			const along = `${projection.from}|${this.kindOf(edge)}`;
 			const side = this.exitOf(block, `in|${face}|${along}`, face);
 			const port = this.port(block, `in|${side}|${walled(side, to)}${along}`, side);
 			const ranked = side === "bottom" ? { tail: to, head: port } : { tail: port, head: to };
@@ -497,6 +489,16 @@ class BlockTree {
 			to = this.pin(block, port);
 		}
 		return { pieces, end: to };
+	}
+
+	/**
+	 * What a relationship's ports on a block's edge share with others: its
+	 * kind, and its id when it keeps ports of its own.
+	 * @param edge The relationship.
+	 * @returns The key's part.
+	 */
+	kindOf(edge: ElkExtendedEdge): string {
+		return this.apart.has(edge.id) ? `${kindOf(edge)}|${edge.id}` : kindOf(edge);
 	}
 
 	/**

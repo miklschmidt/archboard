@@ -25,6 +25,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
+import { layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { routedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import {
 	BlockTree,
@@ -353,16 +354,18 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  * @param earlier.exits The wall each port moves to.
  * @param earlier.packings Each block of blocks' packing.
  * @param nesting How containers and group regions are drawn.
+ * @param apart The joins whose lines keep ports of their own, by key.
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
 	viz: Viz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
-	earlier?: { exits: ReadonlyMap<string, Side>; packings: ReadonlyMap<string, Packing> },
-	nesting: Nesting = "blocks",
+	earlier: { exits: ReadonlyMap<string, Side>; packings: ReadonlyMap<string, Packing> } | undefined,
+	nesting: Nesting,
+	apart: ReadonlySet<string>,
 ): { tree: BlockTree; laid: Map<string, Laid>; packings: Map<string, Packing> } {
-	const tree = new BlockTree(graph, earlier?.exits, nesting);
+	const tree = new BlockTree(graph, earlier?.exits ?? new Map(), nesting, apart);
 	const laid = new Map<string, Laid>();
 	const packings = new Map<string, Packing>();
 	for (const block of tree.innermostFirst()) {
@@ -435,6 +438,7 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
+ * @param apart The joins whose lines keep ports of their own, by key.
  * @returns The blocks, every block laid out.
  */
 function layOut(
@@ -442,13 +446,14 @@ function layOut(
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
+	apart: ReadonlySet<string>,
 ): { tree: BlockTree; laid: Map<string, Laid> } {
-	const first = layAll(viz, avoid, graph, undefined, nesting);
+	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = exitsOf(first.tree, first.laid);
 	const last =
 		exits.size === 0
 			? first
-			: layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting);
+			: layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting, apart);
 	const unsettled = new Map(last.laid);
 	settlePorts({ ...last, insetsOf, avoid });
 	if (
@@ -457,6 +462,27 @@ function layOut(
 	)
 		for (const [id, laid] of unsettled) last.laid.set(id, laid);
 	return last;
+}
+
+/**
+ * Lay a measured hierarchy out with every join of lines to one card kept
+ * whole the way that reads better (`joins.ts`).
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param graph The measured hierarchy.
+ * @param nesting How containers and group regions are drawn.
+ * @returns The blocks, every block laid out.
+ */
+function layJoinedOut(
+	viz: Viz,
+	avoid: AvoidEngine,
+	graph: ElkNode,
+	nesting: Nesting,
+): { tree: BlockTree; laid: Map<string, Laid> } {
+	return layJoined((apart) => {
+		const drawn = layOut(viz, avoid, graph, nesting, apart);
+		return { ...drawn, lines: new Assembly(drawn.tree, drawn.laid).placed().edges };
+	});
 }
 
 /**
@@ -512,7 +538,7 @@ function readsBetterPacked(packed: Placed, inline: Placed): boolean {
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
 function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const first = layOut(viz, avoid, graph, inline ? "inline" : "blocks");
+	const first = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
 	const drawn = new Assembly(first.tree, first.laid).placed();
 	const placed = inline && hasRegions(first.tree) ? betterOf(viz, avoid, graph, drawn) : drawn;
 	return {
@@ -535,7 +561,7 @@ function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = fals
  * @returns The drawing's geometry.
  */
 function betterOf(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline: Placed): Placed {
-	const { tree, laid } = layOut(viz, avoid, graph, "groups");
+	const { tree, laid } = layJoinedOut(viz, avoid, graph, "groups");
 	const packed = new Assembly(tree, laid).placed();
 	return readsBetterPacked(packed, inline) ? packed : inline;
 }
