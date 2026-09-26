@@ -29,7 +29,7 @@ import {
 	type Station,
 } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
-import { nudgeLabel } from "@/transformers/semantic-renderer/lib/track/labels";
+import { nudgeLabel, slidePort } from "@/transformers/semantic-renderer/lib/track/labels";
 import { centreX, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Under this, two stations stand in one column. */
@@ -124,14 +124,17 @@ function onFace(station: Station, x: number): boolean {
 
 /**
  * Move a card's own port along its face to an x, when the port is no trunk's
- * and stays clear of the face's corners and its other ports.
+ * and stays clear of the face's corners and its other ports; a block's own
+ * port slides along the block's edge instead.
+ * @param scene The scene.
  * @param nets Every net.
  * @param net The net whose port moves.
  * @param end Which of its ends is the card.
  * @param x The x.
  * @returns Whether it moved.
  */
-function movePort(nets: readonly Net[], net: Net, end: End, x: number): boolean {
+function movePort(scene: Scene, nets: readonly Net[], net: Net, end: End, x: number): boolean {
+	if (scene.slides.has(net[end].item!)) return slidePort(scene, nets, net, end, x);
 	if (trunkAt(net, end) || !onFace(net[end], x)) return false;
 	const others = nets.filter((other) => other !== net && other[end].item === net[end].item);
 	if (others.some((other) => Math.abs(xAt(other, end) - x) < LANE)) return false;
@@ -171,18 +174,24 @@ interface Saved {
 
 /**
  * Keep what moving some stations could change.
+ * @param scene The scene, for the ports that slide.
  * @param chains Every relationship's chain.
  * @param nets Every net.
  * @param stations The stations.
  * @returns The saved state.
  */
-function save(chains: readonly Chain[], nets: readonly Net[], stations: readonly Station[]): Saved {
+function save(
+	scene: Scene,
+	chains: readonly Chain[],
+	nets: readonly Net[],
+	stations: readonly Station[],
+): Saved {
 	const lanes = new Map<Station, number>();
 	for (const station of stations)
 		for (const lane of runOf(chains, station)?.lanes ?? []) lanes.set(lane, lane.x);
 	const boxes = new Map(
 		stations
-			.filter(({ kind }) => kind === "label")
+			.filter(({ kind, item }) => kind === "label" || scene.slides.has(item!))
 			.map((station) => [station, { ...station.item! }] as const),
 	);
 	return { lanes, boxes, ends: new Map(nets.map((net) => [net, [net.topX, net.bottomX]])) };
@@ -253,7 +262,7 @@ function moveStation(
 ): boolean {
 	if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x);
 	if (station.kind === "label") return nudgeLabel(scene, nets, station.item!, x);
-	return movePort(nets, net, end, x);
+	return movePort(scene, nets, net, end, x);
 }
 
 /**
@@ -280,6 +289,7 @@ function moveStretch(
 	better: () => boolean = () => true,
 ): boolean {
 	const saved = save(
+		scene,
 		chains,
 		nets,
 		stretch.map(({ station }) => station),
@@ -530,6 +540,9 @@ function part(
 	const nets = routes.flat();
 	const [up, down] = [leaving.route[leaving.index]!, entering.route[entering.index]!];
 	const [count, crossing] = [collinearPairs(nets), swapped(nets)];
+	// A stretch moved onto its own line's column straightens that line as it
+	// parts the pair, so those moves come before a lane aside.
+	const own = new Set([up.bottomX, down.topX]);
 	const moves = [
 		...[down.bottomX - LANE, down.bottomX + LANE, up.bottomX].map((x) => ({
 			x,
@@ -541,7 +554,11 @@ function part(
 			from: down.bottomX,
 			stretch: stretchBeyond(entering.route, entering.index, "bottom"),
 		})),
-	].toSorted((one, other) => Math.abs(one.x - one.from) - Math.abs(other.x - other.from));
+	].toSorted(
+		(one, other) =>
+			Number(!own.has(one.x)) - Number(!own.has(other.x)) ||
+			Math.abs(one.x - one.from) - Math.abs(other.x - other.from),
+	);
 	return moves.some(
 		({ x, from, stretch }) =>
 			Math.abs(x - from) > STRAIGHT &&

@@ -14,6 +14,8 @@ const TRACK_TITLE = "archboard.track.title";
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
 const REGION_CAPTION_INSET = 6;
+/** How far below a region's top edge a label box in its caption row keeps. */
+const ROW_MARGIN = 4;
 
 const BoxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
 /** A group region as placement answers it. */
@@ -107,6 +109,12 @@ class Scene {
 	private readonly walls = new Map<number, ReadonlyMap<string, readonly [number, number]>>();
 	readonly regions: Region[] = [];
 	readonly bands: Band[] = [];
+	/**
+	 * A block's own ports that may still slide along its top or bottom edge,
+	 * each with the stretch it may stand on: while the block is first routed,
+	 * nothing outside it has read where they stand.
+	 */
+	readonly slides = new Map<Item, readonly [number, number]>();
 
 	/**
 	 * Read every placed item and group them into bands by their centres.
@@ -118,6 +126,10 @@ class Scene {
 		this.readRegions(placed);
 		const heads = [...this.titles.values(), ...this.regions.map(({ caption }) => caption)];
 		this.groupBands([...this.cards.values(), ...this.labels.values(), ...heads]);
+		// A card stands at the top of its band, so the cards of a row line up and
+		// every line into them from above lands at one height, whatever their heights.
+		for (const card of this.cards.values())
+			card.box = { ...card.box, y: this.bands[card.band]!.top };
 		// A title row or caption sits at the foot of its band, on the cards it
 		// heads, rather than halfway down a taller card beside it.
 		for (const head of heads)
@@ -236,6 +248,23 @@ class Scene {
 	}
 
 	/**
+	 * What a label box keeps clear of on its band for each group region
+	 * heading it: the caption's words, and the whole caption row when the box
+	 * would reach above the region's top edge there.
+	 * @param label The label box.
+	 * @returns The items it keeps a card's clearance from.
+	 */
+	captionsFor(label: Item): Item[] {
+		return this.regions
+			.filter(({ caption }) => caption.band === label.band)
+			.map(({ box, caption }) =>
+				label.box.y >= caption.box.y + ROW_MARGIN
+					? caption
+					: { box: { ...caption.box, x: box.x, width: box.width }, band: caption.band },
+			);
+	}
+
+	/**
 	 * The last band a frame covers.
 	 * @param id The frame.
 	 * @returns Its lowest member's band.
@@ -331,6 +360,7 @@ class Scene {
 }
 
 export {
+	REGION_CAPTION_INSET,
 	Scene,
 	TRACK_POLYLINE,
 	TRACK_REGIONS,

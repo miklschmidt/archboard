@@ -141,15 +141,24 @@ function wallX(scene: Scene, side: "left" | "right"): number {
 }
 
 /**
- * A chain's nets: one for each pair of stations on neighbouring bands. A net
- * running upward never shares a trunk with one running down, since a trunk
- * carries its lines one way.
+ * What a line's nets must share with another's to share a trunk: its kind,
+ * and its direction, since a trunk carries its lines one way.
+ * @param line The line.
+ * @param chain Its stations.
+ * @returns The kind.
+ */
+function chainKind(line: SceneLine, chain: Chain): string {
+	return chain.upward ? `${line.kind}|upward` : line.kind;
+}
+
+/**
+ * A chain's nets: one for each pair of stations on neighbouring bands.
  * @param line The line.
  * @param chain Its stations.
  * @returns Its nets, top to bottom.
  */
 function netsOf(line: SceneLine, chain: Chain): Net[] {
-	const kind = chain.upward ? `${line.kind}|upward` : line.kind;
+	const kind = chainKind(line, chain);
 	return chain.stations.slice(1).map((bottom, index) => {
 		const top = chain.stations[index]!;
 		return {
@@ -479,7 +488,7 @@ function routeScene(
 	straightenLanes(scene, [...chains.values()]);
 	relayLaps(
 		scene,
-		[...chains.values()],
+		new Map(inner.map((line) => [chains.get(line.id)!, chainKind(line, chains.get(line.id)!)])),
 		movable.map(({ id }) => chains.get(id)!),
 	);
 	straightenThroughLabels(scene, [...chains.values()]);

@@ -1,0 +1,202 @@
+{
+	"nodes": [
+		{
+			"id": "R42M7QM6",
+			"order": 2000,
+			"name": "Orang rive",
+			"kind": "module",
+			"responsibility": "Orangeo qua summi gar Falco Quar Pep"
+		},
+		{
+			"id": "pJMt3GxZ",
+			"order": 3000,
+			"name": "Timberfa deltaorangej",
+			"kind": "module",
+			"responsibility": "Eag carbonriverbra, timbermea, orang, timberf tim alphaqu carbon"
+		},
+		{
+			"id": "F6YmqOP3",
+			"order": 4000,
+			"name": "Bravo bravoga",
+			"kind": "module",
+			"responsibility": "Harbor timberalph ora kettleor su gardenqua h jungle peppe"
+		},
+		{
+			"id": "xitUSxDu",
+			"order": 5000,
+			"name": "Alphaca orangei",
+			"kind": "module",
+			"responsibility": "Needler Car isl Kettle Harbor quartzju al carbon"
+		},
+		{
+			"id": "LUs5k7Hn",
+			"order": 6000,
+			"name": "Summit deltame",
+			"kind": "module",
+			"responsibility": "Deltajun meadowc alp alphag garden bravopep"
+		},
+		{
+			"id": "wA4Ah8qA",
+			"order": 7000,
+			"name": "Meado meadown carbons",
+			"kind": "function",
+			"responsibility": "Garde island kettlecar jungle ket Alp needled"
+		},
+		{
+			"id": "YPe0VNUb",
+			"order": 8000,
+			"name": "Eagleh deltaalphabrav",
+			"kind": "module",
+			"responsibility": "Orangepe Fal rivergar, orangequa, gardeneag nee meadow deltamea"
+		},
+		{
+			"id": "AWctGlAO",
+			"order": 9000,
+			"name": "Needlega alphaisl",
+			"kind": "module",
+			"responsibility": "Summit junglea ga falconmead timbersu deltabra eaglegarden"
+		},
+		{
+			"id": "BdSgIf3c",
+			"order": 11000,
+			"name": "Orange Is alphati",
+			"kind": "module",
+			"responsibility": "Kettle jungle meadowca car carb gardensummi harbora"
+		},
+		{
+			"id": "N2j1WRJD",
+			"order": 12000,
+			"name": "Tim lanternla",
+			"kind": "external",
+			"responsibility": "Timbero eagles peppers eag meadowfa eaglejun harborti"
+		}
+	],
+	"edges": [
+		{
+			"id": "yvR9sXLo",
+			"order": 2000,
+			"from": "R42M7QM6",
+			"to": "pJMt3GxZ",
+			"kind": "call",
+			"label": "Harborgardenfa",
+			"emphasis": "normal"
+		},
+		{
+			"id": "cBcjFOPi",
+			"order": 3000,
+			"from": "R42M7QM6",
+			"to": "YPe0VNUb",
+			"kind": "dependency",
+			"label": "Rivergardenmeadowpeppe",
+			"emphasis": "normal"
+		},
+		{
+			"id": "9NGJ6dnW",
+			"order": 4000,
+			"from": "pJMt3GxZ",
+			"to": "F6YmqOP3",
+			"kind": "dependency",
+			"label": "timbe carbonn \u2192 Bravode",
+			"emphasis": "hero"
+		},
+		{
+			"id": "cBS5OpCh",
+			"order": 5000,
+			"from": "pJMt3GxZ",
+			"to": "xitUSxDu",
+			"kind": "dependency",
+			"label": "deltabr quartzis \u2192 Harborm",
+			"emphasis": "hero"
+		},
+		{
+			"id": "NjaWHjWo",
+			"order": 7000,
+			"from": "F6YmqOP3",
+			"to": "wA4Ah8qA",
+			"kind": "call",
+			"label": "islan nee timber pepperju",
+			"emphasis": "normal"
+		},
+		{
+			"id": "YxkJNBB0",
+			"order": 8000,
+			"from": "xitUSxDu",
+			"to": "LUs5k7Hn",
+			"kind": "call",
+			"label": "Quartzfalconcarboneagleh",
+			"emphasis": "hero"
+		},
+		{
+			"id": "Wa0ROBSq",
+			"order": 9000,
+			"from": "F6YmqOP3",
+			"to": "AWctGlAO",
+			"kind": "call",
+			"label": "pepper rivertim",
+			"emphasis": "normal"
+		},
+		{
+			"id": "hjTyE1N2",
+			"order": 11000,
+			"from": "xitUSxDu",
+			"to": "AWctGlAO",
+			"kind": "call",
+			"label": "timber carbonis",
+			"emphasis": "normal"
+		},
+		{
+			"id": "jfISjNuz",
+			"order": 13000,
+			"from": "LUs5k7Hn",
+			"to": "AWctGlAO",
+			"kind": "call",
+			"label": "garden gardenal",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Kq0pa5ow",
+			"order": 17000,
+			"from": "YPe0VNUb",
+			"to": "BdSgIf3c",
+			"kind": "dependency",
+			"label": "carbonis needle Ora harborb",
+			"emphasis": "normal"
+		},
+		{
+			"id": "8D2sHRcs",
+			"order": 19000,
+			"from": "xitUSxDu",
+			"to": "BdSgIf3c",
+			"kind": "event",
+			"label": "bravo falcon jun Lanternquartzsum",
+			"emphasis": "hero"
+		},
+		{
+			"id": "j9LZXUcr",
+			"order": 20000,
+			"from": "LUs5k7Hn",
+			"to": "BdSgIf3c",
+			"kind": "event",
+			"label": "eagle carbonl eag Orangekettlequar",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Unvxe5hQ",
+			"order": 21000,
+			"from": "BdSgIf3c",
+			"to": "N2j1WRJD",
+			"kind": "event",
+			"label": "Su Eag summi bra alphap",
+			"emphasis": "hero"
+		},
+		{
+			"id": "nb79OcR1",
+			"order": 22000,
+			"from": "AWctGlAO",
+			"to": "N2j1WRJD",
+			"kind": "event",
+			"label": "lanter junglebra alph timbercar pepperc",
+			"emphasis": "normal"
+		}
+	]
+}
