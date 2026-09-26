@@ -139,6 +139,9 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			"[data-semantic-kind]{cursor:pointer}",
 			".ab-halo{opacity:0}",
 			`.is-selected .ab-halo{opacity:1;stroke:${palette.selection}}`,
+			// A viewer draws a selected line over the rest, so it is drawn whole: the
+			// cuts where it ran under another line would be gaps in it now.
+			".is-selected[mask]{mask:none}",
 			// Seen from far away, a card is its name: a viewer puts the far class
 			// on the picture when a card's own name would be too small to read,
 			// and each card shows its name and chip grown to fill it instead.
