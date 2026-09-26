@@ -1,0 +1,84 @@
+{
+	"nodes": [
+		{
+			"id": "7TAwfrZF",
+			"order": 1000,
+			"name": "Agent workbench",
+			"kind": "service",
+			"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server"
+		},
+		{
+			"id": "u2LFaG7R",
+			"order": 3000,
+			"name": "Browser gateway",
+			"kind": "module",
+			"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease at a time",
+			"parent": "7TAwfrZF"
+		},
+		{
+			"id": "FxzIjbIO",
+			"order": 5000,
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+			"parent": "7TAwfrZF",
+			"groups": ["child"]
+		},
+		{
+			"id": "Uz2qReYK",
+			"order": 12000,
+			"name": "Epoch ledger",
+			"kind": "module",
+			"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back",
+			"parent": "7TAwfrZF",
+			"groups": ["child"]
+		},
+		{
+			"id": "tlC2W839",
+			"order": 13000,
+			"name": "Workhorse operations",
+			"kind": "module",
+			"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "DNQTPTxE",
+			"order": 16000,
+			"name": "Thread tool calls",
+			"kind": "module",
+			"responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"]
+		}
+	],
+	"edges": [
+		{
+			"id": "2ed6AqSF",
+			"order": 15000,
+			"from": "tlC2W839",
+			"to": "Uz2qReYK",
+			"kind": "call",
+			"label": "stage, commit or roll back",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aoHKAkWD",
+			"order": 19000,
+			"from": "FxzIjbIO",
+			"to": "DNQTPTxE",
+			"kind": "event",
+			"label": "a tool call from a thread",
+			"emphasis": "normal"
+		},
+		{
+			"id": "mxl6bmYW",
+			"order": 20000,
+			"from": "DNQTPTxE",
+			"to": "Uz2qReYK",
+			"kind": "call",
+			"label": "the generation that may act",
+			"emphasis": "normal"
+		}
+	]
+}
