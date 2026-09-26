@@ -188,19 +188,17 @@ function endRuns(nodes: ReadonlyMap<string, ElkNode>, edge: ElkExtendedEdge): En
 	});
 }
 
-/** How close two parallel runs are drawn as one stroke. */
-const ONE_STROKE = 2;
-
 /**
- * Whether two end runs of unrelated routes lie on one track: parallel, within
- * a stroke of each other and side by side for a lane or more. The router holds
- * both, so its nudging never parts them, and they read as one line.
+ * Whether two end runs of unrelated routes share a lane: parallel, closer
+ * than a lane and side by side for a lane or more. The router holds both, so
+ * its nudging never parts them, and they read as one line or a doubled one.
  * @param one An end run.
  * @param other Another route's end run.
  * @returns True when they would read as one line.
  */
 function onOneTrack(one: EndRun, other: EndRun): boolean {
-	if (one.vertical !== other.vertical || Math.abs(one.at - other.at) > ONE_STROKE) return false;
+	if (one.vertical !== other.vertical || Math.abs(one.at - other.at) >= ROUTE_LANE - 0.01)
+		return false;
 	const ends = new Set([...one.edge.sources, ...one.edge.targets]);
 	if ([...other.edge.sources, ...other.edge.targets].some((id) => ends.has(id))) return false;
 	return Math.min(one.to, other.to) - Math.max(one.from, other.from) >= ROUTE_LANE;

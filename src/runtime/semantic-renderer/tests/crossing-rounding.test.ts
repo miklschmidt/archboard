@@ -325,6 +325,36 @@ test("routes that cross where they turn onto one row get a bridge on straight ru
 	expect(moved.x + moved.width / 2).toBe(30);
 });
 
+test("a fan's line that turns back across its sibling's lane drops a lane before it", () => {
+	// Both lines leave one port along one row. The outer lane turns back
+	// under the row across the inner lane, which runs on past that turn.
+	const routes = [
+		[
+			{ x: 0, y: 0 },
+			{ x: 100, y: 0 },
+			{ x: 100, y: 200 },
+			{ x: 200, y: 200 },
+		],
+		[
+			{ x: 0, y: 0 },
+			{ x: 116, y: 0 },
+			{ x: 116, y: 100 },
+			{ x: -60, y: 100 },
+		],
+	];
+	const before = drawing(routes);
+	const edges = before.edges.map((drawn) => ({
+		...drawn,
+		edge: { ...drawn.edge, from: "hub" },
+	}));
+	const result = bridgeCrossings({ ...before, width: 300, height: 260, edges });
+	expect(result.bridges).toEqual([]);
+	for (const [index, { curve }] of result.edges.entries()) {
+		expect(curve.from).toEqual(routes[index]![0]!);
+		expect(curve.segments.at(-1)!.to).toEqual(routes[index]!.at(-1)!);
+	}
+});
+
 // Native endpoint and inner-leg shortages must never produce smaller bends.
 test("ordinary bends stay fixed while completed routes require room for every turn and head", () => {
 	const points = [
