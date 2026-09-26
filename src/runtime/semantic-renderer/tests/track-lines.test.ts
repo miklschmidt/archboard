@@ -10,8 +10,8 @@
 // through a card entering and leaving it a few points apart, a run of lanes
 // left where a label stood before it slid aside, a container ending 12 px
 // above another opening under it, two lines lined up end to end across a
-// channel so that they read as one, lines between the same two items
-// sharing a trunk at both ends, so that they split and join again, a line
+// channel so that they read as one, lines into one card that join on the way
+// and then part again, to their own ends or to join once more, a line
 // run round the outside of the drawing where a short free route ran through
 // it, and a labelled line stepping sideways both above and below its label
 // where one column ran free from its label to its card.
@@ -23,6 +23,7 @@ import {
 	corridorPoints,
 	routeLabels,
 	routePoints,
+	sharedStretches,
 	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
@@ -393,20 +394,29 @@ test("a line ending on a track and another leaving the track below stand apart",
 		}
 });
 
-// Reduced from a dogfood board, names replaced: under Blocks, lines from one
-// block reach a card in another through one port, and inside the card's
-// block each carries its own label. Sharing a trunk at the port and at the
-// card, they split through their labels and joined again, a ladder of loops.
-test("lines between the same two items keep their own ends at a card", async () => {
+// Reduced from a dogfood board, names replaced: under Blocks, lines of one
+// kind from one block reach a card in another through one port. Each carrying
+// its own label inside the card's block, they split through their labels
+// after the port, and either joined again at the card, a ladder of loops, or
+// ended apart on it. Once joined, lines stay one line into the card.
+test("lines of one kind that join on the way to a card stay one line into it", async () => {
 	const content = orderedFixture(twinLines);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
-	const routes = routePoints(drawing.svg);
-	content.edges.forEach((one, index) => {
-		for (const other of content.edges.slice(index + 1).filter(({ to }) => to === one.to)) {
-			const [a, b] = [routes.get(one.id)!.at(-1)!, routes.get(other.id)!.at(-1)!];
-			expect(Math.hypot(a.x - b.x, a.y - b.y), `${one.id}/${other.id}`).toBeGreaterThan(1);
-		}
-	});
+	const routes = corridorPoints(drawing.svg);
+	const parted = content.edges.flatMap((one, index) =>
+		content.edges
+			.slice(index + 1)
+			.filter(({ to, kind }) => to === one.to && kind === one.kind)
+			.flatMap((other) => {
+				const [a, b] = [routes.get(one.id)!, routes.get(other.id)!];
+				const shared = sharedStretches(a, b);
+				const [end, otherEnd] = [a.at(-1)!, b.at(-1)!];
+				const together = Math.hypot(end.x - otherEnd.x, end.y - otherEnd.y) < 1;
+				const joined = shared.reduce((sum, length) => sum + length, 0) > TWO_BENDS;
+				return joined && (!together || shared.length > 1) ? [`${one.id}/${other.id}`] : [];
+			}),
+	);
+	expect(parted).toEqual([]);
 });
 
 // Reduced from a dogfood board, names replaced: Graphviz stood a long line's

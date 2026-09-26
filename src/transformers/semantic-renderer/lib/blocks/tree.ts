@@ -14,7 +14,8 @@
 // a block without a label of its own there shares one line, so what runs
 // between two blocks is drawn once, as a trunk. A relationship's label sits in
 // the innermost block around its target, or else its source, next to the card
-// it names.
+// it names; one that joins another of its kind to its card on the way there
+// sits by its source instead, before the join, so the two never part again.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import {
@@ -203,7 +204,13 @@ class BlockTree {
 		const edges = (graph.edges ?? []).filter((edge) => edge.sources[0] !== edge.targets[0]);
 		this.projections = edges.map((edge) => this.project(edge));
 		const back = this.backEdges();
-		for (const projection of this.projections) this.draw(projection, back.has(projection.edge.id));
+		// Lines of one kind into one card through the same ports run as one past
+		// the first; each carries its label before they join, never after.
+		const joins = this.projections.map(({ edge, into, from }) =>
+			into.length === 0 ? "" : `${from}|${edge.targets[0]}|${kindOf(edge)}|${back.has(edge.id)}`,
+		);
+		for (const [index, projection] of this.projections.entries())
+			this.draw(projection, back, joins.filter((one) => one && one === joins[index]).length > 1);
 	}
 
 	/**
@@ -408,11 +415,13 @@ class BlockTree {
 	 * Give a relationship its lines: one in each block it leaves or enters,
 	 * and one in the block that holds both ends.
 	 * @param projection Where it is drawn.
-	 * @param upward Whether it runs upward where it is drawn.
+	 * @param back The relationships that run upward where they are drawn.
+	 * @param joined Whether it joins another to its card on the way there, and so carries its label before.
 	 */
-	draw(projection: Projection, upward: boolean): void {
+	draw(projection: Projection, back: ReadonlySet<string>, joined: boolean): void {
 		const { edge, at, out, into } = projection;
-		const labelAt = into[0] ?? out[0] ?? at;
+		const upward = back.has(edge.id);
+		const labelAt = joined ? (out[0] ?? at) : (into[0] ?? out[0] ?? at);
 		const leaving = this.leave(projection, upward, labelAt);
 		const entering = this.enter(projection, upward, labelAt);
 		const ranked = upward
