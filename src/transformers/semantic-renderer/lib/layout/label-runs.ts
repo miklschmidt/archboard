@@ -147,15 +147,39 @@ class LabelPlacement {
 		if (this.invalid()) this.reset();
 	}
 
-	/** Propose one collision-free joint pin/label adjustment per detouring ordinary relationship. */
+	/**
+	 * Propose one collision-free joint pin/label adjustment per detouring ordinary
+	 * relationship. A proposal that conflicts after packing goes back to its
+	 * reservation alone, so one crowded label never discards its neighbours'.
+	 */
 	projectChannels(): void {
 		for (const edge of this.drawing.edges.toSorted(byOrder)) this.projectEdge(edge);
 		packChannels(this.drawing, this.labels, this.accepted, this.original, this.bounds);
-		if (
-			this.invalid() ||
-			[...this.accepted].some((id) => !this.clearProjection(id, this.labels.get(id)!))
-		)
-			this.reset();
+		for (let found = this.conflicting(); found.length > 0; found = this.conflicting())
+			for (const id of found) this.restore(id);
+	}
+
+	/**
+	 * Accepted proposals that enter a reserved clearance or a foreign run.
+	 * @returns Their relationship identities.
+	 */
+	private conflicting(): string[] {
+		return [...this.accepted].filter((id) => {
+			const box = this.labels.get(id)!;
+			return this.conflicts(id, box) || !this.clearProjection(id, box);
+		});
+	}
+
+	/**
+	 * Put one relationship's reservation back as it was before this pass.
+	 * @param id The relationship.
+	 */
+	private restore(id: string): void {
+		const box = this.original.get(id)!;
+		this.accepted.delete(id);
+		this.bounds.delete(id);
+		this.labels.set(id, box);
+		this.grownLabels.set(id, inflate(box, this.labelAir));
 	}
 
 	/**
@@ -377,14 +401,21 @@ class LabelPlacement {
 	 * @returns Whether any proposed anchor violates the unchanged obstacle set.
 	 */
 	private invalid(): boolean {
-		const labels = [...this.labels];
-		return labels.some(
-			([id, box]) =>
-				this.accepted.has(id) &&
-				(this.grownCards.some((other) => overlaps(box, other)) ||
-					labels.some(
-						([otherId, other]) => otherId !== id && overlaps(box, inflate(other, this.labelAir)),
-					)),
+		return [...this.labels].some(([id, box]) => this.accepted.has(id) && this.conflicts(id, box));
+	}
+
+	/**
+	 * Whether one label enters a card's or another label's clearance.
+	 * @param id The label's relationship.
+	 * @param box Its box.
+	 * @returns True when it conflicts.
+	 */
+	private conflicts(id: string, box: Box): boolean {
+		return (
+			this.grownCards.some((other) => overlaps(box, other)) ||
+			[...this.labels].some(
+				([otherId, other]) => otherId !== id && overlaps(box, inflate(other, this.labelAir)),
+			)
 		);
 	}
 

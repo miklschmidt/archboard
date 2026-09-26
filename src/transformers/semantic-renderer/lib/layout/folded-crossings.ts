@@ -8,6 +8,7 @@ import {
 	LABEL_ROUTE_CLEARANCE,
 	ROUTE_OBSTACLE_CLEARANCE,
 } from "@/transformers/semantic-renderer/config";
+import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -389,6 +390,150 @@ function exchange(scene: Scene, legs: readonly [Leg, Leg]): Scene | undefined {
 }
 
 /**
+ * Whether two legs leave one port along one row, with both lanes off the same
+ * side of it.
+ * @param one A leg.
+ * @param other Another route's leg.
+ * @returns True when they fan out of one trunk.
+ */
+function fanned(one: Leg, other: Leg): boolean {
+	const row = across(one.axis);
+	return (
+		one.edgeIndex !== other.edgeIndex &&
+		one.axis === other.axis &&
+		Math.hypot(one.port.x - other.port.x, one.port.y - other.port.y) < EPSILON &&
+		Math.abs(one.corner[row] - other.corner[row]) < EPSILON &&
+		Math.sign(one.far[row] - one.corner[row]) === Math.sign(other.far[row] - other.corner[row])
+	);
+}
+
+/**
+ * Whether a fan's leg drops on the outer lane and then turns back across its
+ * sibling's lane, which runs on past that turn: the crossing a fan draws only
+ * because the two lanes stand in the wrong order.
+ * @param one The leg that turns.
+ * @param other Its sibling.
+ * @returns True when the lanes cross.
+ */
+function crossedFan(one: Leg, other: Leg): boolean {
+	const { axis } = one;
+	const row = across(axis);
+	const turn = Math.sign(one.beyond[axis] - one.far[axis]);
+	return (
+		turn === Math.sign(other.corner[axis] - one.corner[axis]) &&
+		Math.abs(other.far[row] - other.corner[row]) > Math.abs(one.far[row] - one.corner[row]) &&
+		between(other.corner[axis], one.far[axis], one.beyond[axis])
+	);
+}
+
+/**
+ * The area a lane sweeps moving along its row, from the row to its far corner.
+ * @param leg The leg.
+ * @param to Where the lane moves.
+ * @returns The box.
+ */
+function laneSweep(leg: Leg, to: number): Box {
+	const { axis } = leg;
+	const row = across(axis);
+	const [low, high] = [Math.min(leg.corner[axis], to), Math.max(leg.corner[axis], to)];
+	const [top, bottom] = [
+		Math.min(leg.corner[row], leg.far[row]),
+		Math.max(leg.corner[row], leg.far[row]),
+	];
+	return axis === "x"
+		? { x: low, y: top, width: high - low, height: bottom - top }
+		: { x: top, y: low, width: bottom - top, height: high - low };
+}
+
+/**
+ * Where a fan's leg that turns across its sibling's lane should drop instead:
+ * a lane before that lane, when the two lines share a trunk and nothing else
+ * stands where the lane moves.
+ * @param scene The drawing and route vertices.
+ * @param one The leg that turns.
+ * @param other Its sibling.
+ * @returns The new lane coordinate, or undefined when the fan is in order.
+ */
+function fanLane(scene: Scene, one: Leg, other: Leg): number | undefined {
+	const { edges } = scene.drawing;
+	if (!fanned(one, other) || !crossedFan(one, other)) return undefined;
+	if (!sharedTrunk(edges[one.edgeIndex]!.edge, edges[other.edgeIndex]!.edge)) return undefined;
+	const turn = Math.sign(one.beyond[one.axis] - one.far[one.axis]);
+	const to = other.corner[one.axis] + turn * ROUTE_LANE;
+	return fanBlocked(scene, [one, other], laneSweep(one, to)) ? undefined : to;
+}
+
+/**
+ * Put a fan's crossed lanes in order, when the moved line's label stays on it
+ * and nothing comes closer to anything new.
+ * @param scene The drawing and route vertices.
+ * @param one The leg that turns.
+ * @param other Its sibling.
+ * @returns The scene with the leg redrawn, or undefined to leave it as it is.
+ */
+function orderFan(scene: Scene, one: Leg, other: Leg): Scene | undefined {
+	const to = fanLane(scene, one, other);
+	const move = to === undefined ? undefined : movedLane(scene, one, to);
+	if (move === undefined || !labelOnLine(move.edge, move.points)) return undefined;
+	const after = {
+		drawing: { ...scene.drawing, edges: scene.drawing.edges.with(one.edgeIndex, move.edge) },
+		vertices: scene.vertices.with(one.edgeIndex, move.points),
+	};
+	const was = crowding(scene, [one.edgeIndex]);
+	return [...crowding(after, [one.edgeIndex])].every((pair) => was.has(pair)) ? after : undefined;
+}
+
+/**
+ * Whether a card, a label or another route stands where a fan's lane moves.
+ * @param scene The drawing and route vertices.
+ * @param legs The fan's two legs, whose own pieces may be there.
+ * @param swept The area the lane sweeps.
+ * @returns True when something else is there.
+ */
+function fanBlocked(scene: Scene, legs: readonly [Leg, Leg], swept: Box): boolean {
+	const { drawing } = scene;
+	const own = new Set(legs.map(({ edgeIndex }) => edgeIndex));
+	return (
+		drawing.cards.some(({ box }) => meets(swept, box)) ||
+		drawing.edges.some(({ label }, index) => !own.has(index) && label && meets(swept, label.box)) ||
+		piecesOf(scene.vertices).some(
+			({ edgeIndex, from, to }) => !own.has(edgeIndex) && enters(swept, from, to),
+		)
+	);
+}
+
+/**
+ * Whether a redrawn route's label still sits on one of its pieces.
+ * @param edge The redrawn route.
+ * @param points Its vertices.
+ * @returns True when it has no label or the label is on its line.
+ */
+function labelOnLine(edge: DrawingEdge, points: readonly Point[]): boolean {
+	const box = edge.label?.box;
+	return box === undefined || points.slice(1).some((to, index) => enters(box, points[index]!, to));
+}
+
+/**
+ * Put every fan whose lanes cross in order, before exchanging folded lanes.
+ * @param scene The drawing and route vertices.
+ * @param legs Every route's end legs.
+ * @param moved The routes redrawn, added to here.
+ * @returns The scene with such fans redrawn.
+ */
+function orderFans(scene: Scene, legs: readonly Leg[], moved: Set<number>): Scene {
+	let current = scene;
+	for (const one of legs)
+		for (const other of legs) {
+			if (moved.has(one.edgeIndex) || moved.has(other.edgeIndex)) continue;
+			const next = orderFan(current, one, other);
+			if (next === undefined) continue;
+			current = next;
+			moved.add(one.edgeIndex).add(other.edgeIndex);
+		}
+	return current;
+}
+
+/**
  * Exchange the lanes of route pairs whose rows fold a crossing into their corners.
  * Cards and every other route keep their geometry; a label on a moved lane moves with it.
  * @param drawing The drawing after routing, rounding and label placement.
@@ -403,8 +548,8 @@ function unfoldCrossings(drawing: ArchitectureDrawing): ArchitectureDrawing {
 	const legs = vertices.flatMap((points, edgeIndex) =>
 		points === undefined ? [] : legsOf(points, edgeIndex),
 	);
-	let scene: Scene = { drawing, vertices };
 	const moved = new Set<number>();
+	let scene: Scene = orderFans({ drawing, vertices }, legs, moved);
 	for (const [index, one] of legs.entries()) {
 		for (const other of legs.slice(index + 1)) {
 			if (moved.has(one.edgeIndex) || moved.has(other.edgeIndex)) continue;
