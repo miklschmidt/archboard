@@ -1,0 +1,415 @@
+{
+	"nodes": [
+		{
+			"id": "jChkQdeE",
+			"order": 1000,
+			"name": "Rasterize command",
+			"kind": "module",
+			"responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "KyQxypRC",
+			"order": 2000,
+			"name": "Rasterizer",
+			"kind": "module",
+			"responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "7N0JLb2b",
+			"order": 3000,
+			"name": "Bounds and limits",
+			"kind": "function",
+			"responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "8c0zvhQW",
+			"order": 4000,
+			"name": "Raster session",
+			"kind": "function",
+			"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "6uHnaygd",
+			"order": 5000,
+			"name": "Chromium launch",
+			"kind": "function",
+			"responsibility": "Starts one Chromium, connects to it, opens pages and exact-size windows, and stops it with proof the group and root are gone",
+			"parent": "IzgAi2R1"
+		},
+		{
+			"id": "AVCQVNqI",
+			"order": 6000,
+			"name": "DevTools connection",
+			"kind": "function",
+			"responsibility": "One socket to a target: its calls and events, the page's last complaints, and a Blob streamed into a file",
+			"parent": "IzgAi2R1"
+		},
+		{
+			"id": "FXGZhgKo",
+			"order": 7000,
+			"name": "Page readiness",
+			"kind": "function",
+			"responsibility": "What the page must say before it is photographed, and what the answer must be",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "ctgF3OPk",
+			"order": 8000,
+			"name": "PNG header",
+			"kind": "function",
+			"responsibility": "The two numbers from the IHDR of the answered image",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "EqEyDg2D",
+			"order": 9000,
+			"name": "Receipt",
+			"kind": "function",
+			"responsibility": "What was drawn, at what scale, and from which SVG",
+			"groups": [
+				"drawing"
+			]
+		},
+		{
+			"id": "R9St060W",
+			"order": 10000,
+			"name": "Chromium",
+			"kind": "external",
+			"responsibility": "The browser that paints the SVG, runs the recording page and answers over DevTools"
+		},
+		{
+			"id": "IzgAi2R1",
+			"order": 11000,
+			"name": "Headless browser",
+			"kind": "module",
+			"responsibility": "The one place archboard starts a browser of its own: private, reachable only over loopback DevTools, and proved gone"
+		},
+		{
+			"id": "ShT7QadJ",
+			"order": 12000,
+			"name": "Chromium executable",
+			"kind": "function",
+			"responsibility": "Which Chromium to run, spawning it in its own group and temp root, and making that whole group go away",
+			"parent": "IzgAi2R1"
+		},
+		{
+			"id": "2UcHnREN",
+			"order": 13000,
+			"name": "Archboard server",
+			"kind": "module",
+			"responsibility": "Draws the SVG, serves the recording page and starts the voice that narrates it"
+		},
+		{
+			"id": "QSI6gCrL",
+			"order": 14000,
+			"name": "Record command",
+			"kind": "module",
+			"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
+			"groups": [
+				"walkthrough"
+			]
+		},
+		{
+			"id": "ZAj4RMzN",
+			"order": 15000,
+			"name": "Walkthrough recorder",
+			"kind": "module",
+			"responsibility": "Starts the browser a recording needs, opens the page at 1920x1080, and moves the file into place only once that browser has stopped",
+			"groups": [
+				"walkthrough"
+			]
+		},
+		{
+			"id": "hlLOugjc",
+			"order": 16000,
+			"name": "Page driver",
+			"kind": "function",
+			"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step and streams the finished file out",
+			"groups": [
+				"walkthrough"
+			]
+		},
+		{
+			"id": "gN7rfqFF",
+			"order": 17000,
+			"name": "Sound conversion",
+			"kind": "function",
+			"responsibility": "Rewrites an MP4's Opus sound as AAC with ffmpeg, the picture copied, so the file plays with sound in Safari",
+			"groups": [
+				"walkthrough"
+			]
+		},
+		{
+			"id": "PhFc1AJ9",
+			"order": 18000,
+			"name": "ffmpeg",
+			"kind": "external",
+			"responsibility": "Converts the sound and moves the index to the front, so playback starts before the file has arrived",
+			"groups": [
+				"walkthrough"
+			]
+		},
+		{
+			"id": "T1TYskKQ",
+			"order": 19000,
+			"name": "Recording page",
+			"kind": "ui",
+			"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records its tab into one file",
+			"groups": [
+				"walkthrough"
+			]
+		}
+	],
+	"edges": [
+		{
+			"id": "RPqD1PrA",
+			"order": 1000,
+			"from": "jChkQdeE",
+			"to": "KyQxypRC",
+			"kind": "call",
+			"label": "one SVG, a scale and a region",
+			"emphasis": "hero"
+		},
+		{
+			"id": "7gIxznvp",
+			"order": 2000,
+			"from": "KyQxypRC",
+			"to": "7N0JLb2b",
+			"kind": "call",
+			"label": "refuse what is past the limits first",
+			"emphasis": "normal"
+		},
+		{
+			"id": "IiA7nIxT",
+			"order": 3000,
+			"from": "KyQxypRC",
+			"to": "8c0zvhQW",
+			"kind": "call",
+			"label": "capture, one job at a time",
+			"emphasis": "hero"
+		},
+		{
+			"id": "tJ3SgMcL",
+			"order": 4000,
+			"from": "8c0zvhQW",
+			"to": "6uHnaygd",
+			"kind": "call",
+			"label": "launch, open a page, stop",
+			"emphasis": "hero"
+		},
+		{
+			"id": "wI4kxS9L",
+			"order": 5000,
+			"from": "ShT7QadJ",
+			"to": "R9St060W",
+			"kind": "call",
+			"label": "spawn in its own group and temp root",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aYI0EhkT",
+			"order": 6000,
+			"from": "8c0zvhQW",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"label": "one socket to the page",
+			"emphasis": "hero"
+		},
+		{
+			"id": "JgtXFRyO",
+			"order": 7000,
+			"from": "AVCQVNqI",
+			"to": "R9St060W",
+			"kind": "rpc",
+			"label": "CDP over a WebSocket",
+			"emphasis": "normal"
+		},
+		{
+			"id": "TBd33jdx",
+			"order": 8000,
+			"from": "8c0zvhQW",
+			"to": "FXGZhgKo",
+			"kind": "call",
+			"label": "prove the page before shooting",
+			"emphasis": "hero"
+		},
+		{
+			"id": "6dBMtPdX",
+			"order": 9000,
+			"from": "8c0zvhQW",
+			"to": "7N0JLb2b",
+			"kind": "call",
+			"label": "the clip region",
+			"emphasis": "normal"
+		},
+		{
+			"id": "68lKuaPg",
+			"order": 10000,
+			"from": "FXGZhgKo",
+			"to": "ctgF3OPk",
+			"kind": "call",
+			"label": "the size of the answered bitmap",
+			"emphasis": "normal"
+		},
+		{
+			"id": "2nhl0tv0",
+			"order": 11000,
+			"from": "jChkQdeE",
+			"to": "EqEyDg2D",
+			"kind": "data",
+			"label": "what the picture is of",
+			"emphasis": "muted"
+		},
+		{
+			"id": "De1J26nB",
+			"order": 12000,
+			"from": "6uHnaygd",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"label": "spawn, read the port, stop the group",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ZP5lfDZ6",
+			"order": 13000,
+			"from": "6uHnaygd",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"label": "connect the browser and each page",
+			"emphasis": "normal"
+		},
+		{
+			"id": "FDMYhJSq",
+			"order": 14000,
+			"from": "KyQxypRC",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"label": "which Chromium",
+			"emphasis": "muted"
+		},
+		{
+			"id": "DIvMjVOy",
+			"order": 15000,
+			"from": "jChkQdeE",
+			"to": "2UcHnREN",
+			"kind": "http",
+			"label": "the SVG, faces embedded",
+			"emphasis": "normal"
+		},
+		{
+			"id": "P1XYQl8l",
+			"order": 16000,
+			"from": "QSI6gCrL",
+			"to": "2UcHnREN",
+			"kind": "http",
+			"label": "read the board; discard it when asked",
+			"emphasis": "normal"
+		},
+		{
+			"id": "H7LOWDrR",
+			"order": 17000,
+			"from": "QSI6gCrL",
+			"to": "ZAj4RMzN",
+			"kind": "call",
+			"label": "this walkthrough to this file",
+			"emphasis": "hero"
+		},
+		{
+			"id": "a0oemoX5",
+			"order": 18000,
+			"from": "ZAj4RMzN",
+			"to": "ShT7QadJ",
+			"kind": "call",
+			"label": "which Chromium",
+			"emphasis": "muted"
+		},
+		{
+			"id": "BN01aJai",
+			"order": 19000,
+			"from": "ZAj4RMzN",
+			"to": "6uHnaygd",
+			"kind": "call",
+			"label": "launch, a 1920x1080 window, stop",
+			"emphasis": "normal"
+		},
+		{
+			"id": "2fcZLCiQ",
+			"order": 20000,
+			"from": "ZAj4RMzN",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"label": "evaluate in the page, stream its Blob",
+			"emphasis": "normal"
+		},
+		{
+			"id": "m9ReACWz",
+			"order": 21000,
+			"from": "ZAj4RMzN",
+			"to": "hlLOugjc",
+			"kind": "call",
+			"label": "drive the open page",
+			"emphasis": "hero"
+		},
+		{
+			"id": "IOU51tal",
+			"order": 22000,
+			"from": "hlLOugjc",
+			"to": "T1TYskKQ",
+			"kind": "rpc",
+			"label": "state, start, file",
+			"emphasis": "hero"
+		},
+		{
+			"id": "QXiKBTpj",
+			"order": 23000,
+			"from": "ZAj4RMzN",
+			"to": "gN7rfqFF",
+			"kind": "call",
+			"label": "make it play everywhere",
+			"emphasis": "normal"
+		},
+		{
+			"id": "evDPJiNi",
+			"order": 24000,
+			"from": "gN7rfqFF",
+			"to": "PhFc1AJ9",
+			"kind": "call",
+			"label": "sound to AAC, picture copied",
+			"emphasis": "normal"
+		},
+		{
+			"id": "yWqRrF8i",
+			"order": 25000,
+			"from": "R9St060W",
+			"to": "2UcHnREN",
+			"kind": "http",
+			"label": "load the page on the board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4SigiIMB",
+			"order": 26000,
+			"from": "T1TYskKQ",
+			"to": "2UcHnREN",
+			"kind": "event",
+			"label": "voice as a recording; each step shown",
+			"emphasis": "normal"
+		}
+	]
+}

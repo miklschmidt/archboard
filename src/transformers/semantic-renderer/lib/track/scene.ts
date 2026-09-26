@@ -127,6 +127,11 @@ class Scene {
 	 * block's parent, so no line is judged by a step into one.
 	 */
 	readonly ports = new Set<Item>();
+	/**
+	 * Whether the scene's sides are the page's: the whole board drawn inline,
+	 * where a line run beyond everything it holds laps round the drawing.
+	 */
+	edgesPage = false;
 
 	/**
 	 * Read every placed item and group them into bands by their centres.

@@ -17,6 +17,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
+import boardRasterizer from "./board-rasterizer.json";
 import doubleStep from "./double-step.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
@@ -236,4 +237,24 @@ test("a line keeps a lane from a group region's wall it runs beside", async () =
 		for (const [id, points] of corridorPoints(drawing.svg))
 			expect(besideWalls(points, regions), id).toEqual([]);
 	}
+});
+
+// Taken from a board of this repository: a line from a card near the left of
+// the drawing to one at the foot ran down the page's left margin, round
+// everything, where a way inside crossed one line. A lap round the page
+// reads worse than a crossing.
+test("a line runs inside the drawing where the way round it saves only a crossing", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(boardRasterizer),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const left = Math.min(...Object.values(drawing.atlas.nodes).map(({ x }) => x));
+	const points = corridorPoints(drawing.svg).get("P1XYQl8l")!;
+	const lapping = points
+		.slice(1)
+		.filter((to, index) => to.x === points[index]!.x && to.x < left)
+		.map((to, index) => Math.abs(to.y - points[index]!.y));
+	expect(lapping.filter((length) => length > 200)).toEqual([]);
 });

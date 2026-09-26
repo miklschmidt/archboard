@@ -28,6 +28,12 @@ interface Laid {
 	/** The group regions it draws inline, in its own coordinates. */
 	readonly regions?: readonly RegionShape[];
 	/**
+	 * How many of its lines lap round it, which its score counts as
+	 * crossings: only the track engine's relay trades a lap for a crossing,
+	 * so only a block it routes counts them.
+	 */
+	readonly laps?: number;
+	/**
 	 * The block routed again with some of its ports moved along their edges,
 	 * keeping its width, when it can be.
 	 */
