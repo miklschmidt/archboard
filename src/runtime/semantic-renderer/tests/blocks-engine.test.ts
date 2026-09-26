@@ -25,6 +25,7 @@ import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import oneCommand from "./one-command.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
+import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import tightWallPort from "./tight-wall-port.json";
 import twoChains from "./two-chains.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
@@ -267,6 +268,17 @@ test("a trunk round a container's leftmost block keeps the container's inset fro
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const inset = alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["yAFyqal3"]!, CONTAINER_INSET);
 	expect(inset).toEqual([]);
+});
+
+// Taken from a board of this repository: parting two lines that read as one
+// moved only the lanes of one, and the line then ran round the far side of
+// the block, down the container's wall at its inset, where it read as the
+// container's outline.
+test("a line parted from another keeps off its container's wall", async () => {
+	const content = orderedFixture(recordingAWalkthrough);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const frame = drawn.atlas.nodes["yAFyqal3"]!;
+	expect(alongWalls(routePoints(drawn.svg), frame, CONTAINER_INSET + 4)).toEqual([]);
 });
 
 test("a trunk between blocks side by side runs straight from wall to wall", async () => {
