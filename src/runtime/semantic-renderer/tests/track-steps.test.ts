@@ -7,7 +7,7 @@
 // doubles back.
 
 import { expect, test } from "bun:test";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import {
 	bodyShift,
@@ -18,6 +18,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
 import boardRasterizer from "./board-rasterizer.json";
+import codexWorkhorse from "./codex-workhorse.json";
 import doubleStep from "./double-step.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
@@ -239,22 +240,44 @@ test("a line keeps a lane from a group region's wall it runs beside", async () =
 	}
 });
 
-// Taken from a board of this repository: a line from a card near the left of
-// the drawing to one at the foot ran down the page's left margin, round
-// everything, where a way inside crossed one line. A lap round the page
-// reads worse than a crossing.
-test("a line runs inside the drawing where the way round it saves only a crossing", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(boardRasterizer),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
+/**
+ * How long each upright run of a line left of every card is: a lap down the
+ * page's left margin, round everything.
+ * @param drawing The drawing.
+ * @param id The line.
+ * @returns The runs' lengths, the short ones too.
+ */
+function leftOfEverything(drawing: RenderedDiagram, id: string): number[] {
 	const left = Math.min(...Object.values(drawing.atlas.nodes).map(({ x }) => x));
-	const points = corridorPoints(drawing.svg).get("P1XYQl8l")!;
-	const lapping = points
+	const points = corridorPoints(drawing.svg).get(id)!;
+	return points
 		.slice(1)
-		.filter((to, index) => to.x === points[index]!.x && to.x < left)
-		.map((to, index) => Math.abs(to.y - points[index]!.y));
-	expect(lapping.filter((length) => length > 200)).toEqual([]);
+		.flatMap((to, index) =>
+			to.x === points[index]!.x && to.x < left ? [Math.abs(to.y - points[index]!.y)] : [],
+		);
+}
+
+// Taken from boards of this repository. In the first, a line from a card
+// near the left of the drawing to one at the foot ran down the page's left
+// margin, round everything, where a way inside crossed one line: a lap round
+// the page reads worse than a crossing. In the second, a line had room in
+// the gap between a card and a group region's wall only half a lane from the
+// wall; kept a whole lane off it, the line went round, and the crossing that
+// cost sent the whole board to a wrapped layout whose line laps the margin.
+test("a line runs inside the drawing rather than round it", async () => {
+	for (const [fixture, id] of [
+		[boardRasterizer, "P1XYQl8l"],
+		[codexWorkhorse, "FWJMAVKj"],
+	] as const) {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(fixture),
+			theme: "light",
+			layout: "track",
+			policy,
+		});
+		expect(
+			leftOfEverything(drawing, id).filter((length) => length > 200),
+			id,
+		).toEqual([]);
+	}
 });
