@@ -124,17 +124,21 @@ function extentOf(scene: Scene): Wall {
 }
 
 /**
- * What stays put on one band: its cards and title rows, its lanes, the
- * walls of every frame the band passes through, and the scene's extent.
+ * What stays put on one band for one label box: its cards, title rows and
+ * the region captions the box keeps clear of, its lanes, the walls of every
+ * frame the band passes through, and the scene's extent.
  * @param scene The placed scene.
  * @param band The band.
  * @param lanes The x of every lane on the band.
+ * @param label The label box.
  * @returns The walls, widened by the gap a box keeps.
  */
-function wallsOn(scene: Scene, band: number, lanes: readonly number[]): Wall[] {
-	const items = [...scene.cards.values(), ...scene.titles.values()].filter(
-		(item) => item.band === band,
-	);
+function wallsOn(scene: Scene, band: number, lanes: readonly number[], label: Item): Wall[] {
+	const items = [
+		...scene.cards.values(),
+		...scene.titles.values(),
+		...scene.captionsFor(label),
+	].filter((item) => item.band === band);
 	const [left, right] = extentOf(scene);
 	return [
 		...items.map(({ box }): Wall => [box.x - LABEL_GAP, box.x + box.width + LABEL_GAP]),
@@ -292,9 +296,9 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
 	const lanes = lanesByBand(scene, nets);
 	const sliders = slidersOf(nets);
 	scene.bands.forEach((_, band) => {
-		const walls = wallsOn(scene, band, lanes[band]!);
 		const runs = new Map<string, Slider[]>();
 		for (const slider of sliders.filter(({ item }) => item.band === band)) {
+			const walls = wallsOn(scene, band, lanes[band]!, slider.item);
 			const key = stretchOf(walls, slider.item).join(",");
 			runs.set(key, [...(runs.get(key) ?? []), slider]);
 		}
@@ -359,7 +363,7 @@ function centreOnFaces(scene: Scene, nets: readonly Net[], sliders: readonly Sli
 				box.x + box.width + LABEL_LABEL_CLEARANCE,
 			]);
 		const [left, right] = stretchOf(
-			[...wallsOn(scene, item.band, lanes[item.band]!), ...labels],
+			[...wallsOn(scene, item.band, lanes[item.band]!, item), ...labels],
 			item,
 		);
 		const half = item.box.width / 2;
@@ -400,21 +404,21 @@ function within(box: Item["box"], stretch: Wall): boolean {
 }
 
 /**
- * Whether a box reaches into a stretch of a band.
+ * How far a box keeps from a container's wall, on whichever side it stands.
  * @param box The box.
- * @param low Where the stretch starts.
- * @param high Where it ends.
- * @returns True when they overlap.
+ * @param wall The wall's x.
+ * @returns The room; less than none when the box straddles the wall.
  */
-function enters(box: Item["box"], low: number, high: number): boolean {
-	return box.x < high && box.x + box.width > low;
+function keepsFrom(box: Item["box"], wall: number): number {
+	return Math.max(box.x - wall, wall - box.x - box.width);
 }
 
 /**
  * Whether a label box, moved, keeps its room from everything else on its
- * band: a card's clearance from a card or title row, a label's from a label,
- * a lane's from every other line passing the band, and a container's inset
- * from its walls, unless it stood inside that inset already.
+ * band: a card's clearance from a card, title row or region caption, a
+ * label's from a label, a lane's from every other line passing the band, and
+ * a container's inset from its walls, or, where it already stood nearer a
+ * wall, no nearer than it stood: it never moves across one.
  * @param scene The scene.
  * @param item The label box.
  * @param box Where it would stand.
@@ -431,14 +435,16 @@ function clearOnBand(
 		keepsGap(
 			item,
 			box,
-			[...scene.cards.values(), ...scene.titles.values()],
+			[...scene.cards.values(), ...scene.titles.values(), ...scene.captionsFor(item)],
 			LABEL_CARD_CLEARANCE,
 		) &&
 		keepsGap(item, box, scene.labels.values(), LABEL_LABEL_CLEARANCE) &&
 		lanes.every((x) => x <= box.x - LABEL_GAP || x >= box.x + box.width + LABEL_GAP) &&
-		frameWallsOn(scene, item.band).every(
-			([low, high]) => !enters(box, low, high) || enters(item.box, low, high),
-		) &&
+		[...scene.walled(item.band).values()]
+			.flat()
+			.every(
+				(wall) => keepsFrom(box, wall) >= Math.min(CONTAINER_INSET, keepsFrom(item.box, wall)),
+			) &&
 		within(box, extentOf(scene))
 	);
 }

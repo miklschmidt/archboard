@@ -14,6 +14,8 @@ const TRACK_TITLE = "archboard.track.title";
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
 const REGION_CAPTION_INSET = 6;
+/** How far below a region's top edge a label box in its caption row keeps. */
+const ROW_MARGIN = 4;
 
 const BoxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
 /** A group region as placement answers it. */
@@ -233,6 +235,23 @@ class Scene {
 			walls: [box.x, box.x + box.width] as const,
 		}));
 		return [...titles, ...captions];
+	}
+
+	/**
+	 * What a label box keeps clear of on its band for each group region
+	 * heading it: the caption's words, and the whole caption row when the box
+	 * would reach above the region's top edge there.
+	 * @param label The label box.
+	 * @returns The items it keeps a card's clearance from.
+	 */
+	captionsFor(label: Item): Item[] {
+		return this.regions
+			.filter(({ caption }) => caption.band === label.band)
+			.map(({ box, caption }) =>
+				label.box.y >= caption.box.y + ROW_MARGIN
+					? caption
+					: { box: { ...caption.box, x: box.x, width: box.width }, band: caption.band },
+			);
 	}
 
 	/**
