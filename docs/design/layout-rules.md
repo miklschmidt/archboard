@@ -1865,3 +1865,54 @@ lines leaving Author run on one trunk. Six drawings draw a crossing or two more
 than the base, each where a stack of unrelated lines that hid a crossing is
 parted (Agent workbench, Archboard server, Board persistence, Recording a
 walkthrough, Skill evaluation, Platform Phone API).
+
+## 39. Fans keep their branches apart, lines keep off corners and standing pins (2026-09-27)
+
+Round 3 of the Graphviz pass left four drawings reading worse than the merge
+base `d8fd1bb7`, and some of its rules owned by no test.
+
+- **Crowded joins count as a defect** (`stacked-runs.ts`, `crowdedJoinCount`;
+  `junctions.ts`, `crowdedJoins`). Two joins on one lane nearer than the
+  nudging distance run into one blot of junction marks. Evened pins moved Skill
+  evaluation's fan of six lines out of Author run to a port 15 px from the
+  card's corner, branching 9 px apart; the settlement chooser's veto and the
+  finishing passes now count such pairs, so the plain settlement, which keeps
+  the base's fan and the base's `fill the bare cache`, is kept. They are
+  counted rather than named, as is every lane's worth of line two unrelated
+  lines share a stroke over: keyed by their pair alone, two stacks of the same
+  two lines were one defect, so parting one cured nothing.
+- **A standing pin keeps lines a lane off** (`pin-feedback.ts`). The node
+  standings now reach the layout with the relationship ones, and a card that
+  wears a pin is marked (`compound-graph.ts`, `PINNED_STANDING`). No aligned pin
+  is offered within the pin's reach and a lane of its corner, on the top or
+  the left face, and a corner pin on the top stands there: at the 20 px corner
+  inset, `adopt a draft` landed 8 px from Adopt's pin.
+- **A label moved onto a shared span keeps its line the corner-pin inset from
+  each card's corner** (`label-centring.ts`): at the nudging distance, Browser
+  application's `start voice` left Agent setup 12 px from its corner.
+- **A card inside a frame reaches a lane past a wall however far in it
+  stands** (`frame-walls.ts`): the reach was a lane less the distance inside.
+
+Rules that no test owned and no drawing needed alone were removed: finishing's
+cure by equal defects and fewer bends, its keep-inside-a-frame check and the
+stack pass's excused lines, the chooser's near-tie threshold and second count
+of junctions, the label-clearance guard the cured count already covers, the
+duplicate lone-pin centring in `refinedPins`, and `EndpointOptions.hold`.
+Together they change one drawing, the work vault's `Shared SQL boundary`,
+which draws 3 crossings instead of 4 and 39 bends instead of 47. Every other
+rule a drawing depends on has an owner that fails without it.
+
+Against the merge base `d8fd1bb7` (crossings, stacks of unrelated lines and
+their length, the review touch measure, hooks into a card's side, ports within
+16 px of a corner, line ends within 14 px of a standing pin's rim, labels
+within 12 px of another line):
+
+| vault   | crossings | stacks (length)     | touches | hooks    | corner ports | by a pin | crowded labels |
+| ------- | --------- | ------------------- | ------- | -------- | ------------ | -------- | -------------- |
+| dogfood | 212 → 192 | 22 (2318) → 4 (808) | 12 → 4  | 144 → 63 | 54 → 30      | 5 → 2    | 24 → 16        |
+| work    | 35 → 32   | 2 (76) → 0          | 3 → 1   | 29 → 11  | 20 → 12      | 0 → 0    | 4 → 4          |
+
+Six drawings draw a crossing or two more than the base, each where a stack of
+unrelated lines that hid a crossing is parted (Agent workbench, Archboard
+server, Durable write boundary, Recording a walkthrough, Skill evaluation,
+Platform Phone API).
