@@ -12,8 +12,8 @@
 // sides past its top, where plain pins enter the top, and ran two unrelated
 // lines half a lane apart (Board persistence's "Durable write boundary").
 // Plain and evened settlements are each finished before one is chosen: the
-// evened one chosen before finishing kept nine hooks in Skill evaluation where
-// the other, finished, keeps one that neither can cure.
+// plain one chosen before finishing kept five hooks in Renderer layout's
+// proposal where the evened one, finished, keeps none.
 
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
@@ -30,8 +30,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import formerNames from "./former-names.json";
-import rendererLayout from "./renderer-layout.json";
-import skillEvaluation from "./skill-evaluation-graphviz.json";
+import rendererLayout from "./renderer-layout-proposal.json";
 
 /** The dogfood vault's vocabulary as far as the fixtures use it. */
 const policy = SemanticPolicySchema.parse({
@@ -107,12 +106,21 @@ test("a line passing its target's top corner enters the top instead of hooking i
 
 /**
  * The lines of a finished drawing that hook into a card's side.
- * @param fixture The board.
+ * @param fixture The board, and how its subjects stand in the proposal it draws.
  * @returns The ids of the hooked lines, once for each hooked end.
  */
-async function hookedLines(fixture: Parameters<typeof orderedFixture>[0]): Promise<string[]> {
-	const content = orderedFixture(fixture);
-	const drawing = await renderArchitecture({ content, policy, theme: "light", layout: "graphviz" });
+async function hookedLines(
+	fixture: Parameters<typeof orderedFixture>[0] & { readonly standing: object },
+): Promise<string[]> {
+	const { standing, ...board } = fixture;
+	const content = orderedFixture(board);
+	const drawing = await renderArchitecture({
+		content,
+		standing: standing as StatedStandings,
+		policy,
+		theme: "light",
+		layout: "graphviz",
+	});
 	const cards = drawing.atlas.nodes;
 	const routes = routePoints(drawing.svg);
 	const hooks = content.edges.flatMap(({ id, from, to }) => {
@@ -126,10 +134,6 @@ async function hookedLines(fixture: Parameters<typeof orderedFixture>[0]): Promi
 
 test("a finished drawing has no line hooking into a card's side past its corner", async () => {
 	expect(await hookedLines(rendererLayout)).toEqual([]);
-});
-
-test("the finished settlements are compared, so one that cures its hooks is not passed over", async () => {
-	expect((await hookedLines(skillEvaluation)).length).toBeLessThanOrEqual(1);
 });
 
 test("lines down into a card enter its top rather than hook past it into its sides", async () => {

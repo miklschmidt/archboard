@@ -14,12 +14,9 @@
 // labels stay reserved, and so the placements.
 import { requestOf } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import type { ElkExtendedEdge, ElkLabel, ElkNode } from "@archboard/elk-rs";
-import {
-	CONTAINER_INSET,
-	LABEL_LABEL_CLEARANCE,
-	ROUTE_NUDGE_DISTANCE,
-} from "@/transformers/semantic-renderer/config";
+import { CONTAINER_INSET, LABEL_LABEL_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import { boxesOverlap, boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
+import { CORNER_PIN_INSET } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import {
 	anchorClearance,
 	CARD_ROUTE_CLEARANCE,
@@ -135,15 +132,19 @@ function pageOf(graph: ElkNode): Page {
 
 /**
  * The vertical channel nearest a label's centre that two cards share: the
- * cards stand one above the other and their spans overlap.
+ * cards stand one above the other and their spans overlap where a line
+ * reads as meeting each card's face rather than its corner (pin-feedback.ts).
+ * A channel the nudging distance from a corner took Browser application's
+ * "start voice" out of Agent setup 12 px from its corner, where it had left
+ * the card's side.
  * @param from One card.
  * @param to The other card.
  * @param label The label's box.
  * @returns The channel and the gap it crosses, or nothing.
  */
 function channelBetween(from: Box, to: Box, label: Box): Box | undefined {
-	const low = Math.max(from.x, to.x) + ROUTE_NUDGE_DISTANCE;
-	const high = Math.min(from.x + from.width, to.x + to.width) - ROUTE_NUDGE_DISTANCE;
+	const low = Math.max(from.x, to.x) + CORNER_PIN_INSET;
+	const high = Math.min(from.x + from.width, to.x + to.width) - CORNER_PIN_INSET;
 	const [upper, lower] = from.y < to.y ? [from, to] : [to, from];
 	const top = upper.y + upper.height;
 	if (low > high || top >= lower.y) return undefined;

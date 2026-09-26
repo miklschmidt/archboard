@@ -8,7 +8,10 @@ export {
 	curveClearanceIssue,
 	straightenedCurve,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
-export { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
+export {
+	COMPOUND_OPTIONS,
+	PINNED_STANDING,
+} from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 export { improveProjection } from "@/transformers/semantic-renderer/lib/layout/label-projections";
 export {
 	alignLabelRows,
@@ -20,6 +23,7 @@ export { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/ev
 export { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
 export { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 export { requestOptions } from "@/transformers/semantic-renderer/lib/layout/route-requests";
+export { wallOf, wallReach } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
 export { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 export {
 	foldColumnCounts,

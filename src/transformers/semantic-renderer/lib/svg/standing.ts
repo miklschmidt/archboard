@@ -95,6 +95,9 @@ type SubjectKind = "node" | "edge" | "region" | "flow" | "step";
 /** How far in from a subject's corner its pin sits, and how big the pin is. */
 const PIN_INSET = 3;
 const PIN_RADIUS = 9.2;
+
+/** How far along either face from a subject's top-left corner its standing pin reaches. */
+const PIN_REACH = PIN_INSET + PIN_RADIUS;
 const PIN_STROKE = 1.7;
 
 /** What a ghosted subject's ink is worth. */
@@ -488,6 +491,7 @@ export {
 	type SubjectKind,
 	type UnsettledOf,
 	BADGE_SIZE,
+	PIN_REACH,
 	TRAFFIC_ATTRIBUTE,
 	markedBox,
 	standingInk,

@@ -19,7 +19,9 @@
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Face } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
+import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { crowdedJoins, joinRoutes } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import {
 	CARD_ROUTE_CLEARANCE,
 	ROUTE_LANE,
@@ -222,6 +224,23 @@ function pairKeys(stacks: readonly Stack[]): string[] {
 			.toSorted()
 			.join("|"),
 	);
+}
+
+/**
+ * How many pairs of joins a drawing draws on one lane nearer together than
+ * the nudging distance the router keeps lines apart where it has room: their
+ * junction marks run into one blot (Skill evaluation's fan out of Author
+ * run, branching 9 px apart where the plain settlement branched 16 px apart).
+ * They are counted, not named: which line a join's mark carries changes with
+ * every route beside it.
+ * @param drawing The drawing.
+ * @returns The number of such pairs.
+ */
+export function crowdedJoinCount(drawing: ArchitectureDrawing): number {
+	return crowdedJoins(
+		joinRoutes(drawing.edges, () => 1),
+		ROUTE_NUDGE_DISTANCE,
+	).length;
 }
 
 /**

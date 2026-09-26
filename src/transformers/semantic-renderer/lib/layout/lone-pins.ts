@@ -285,7 +285,7 @@ function centred(
  * @param used The used pins by card and channel, changed in place.
  * @returns The moved channels, as card:channel keys.
  */
-export function centreLonePins(
+function centreLonePins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	channels: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],

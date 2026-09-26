@@ -1,4 +1,5 @@
 import {
+	clearOfStandingPin,
 	projectedCardPins,
 	separateEndRuns,
 	usedCardPins,
@@ -14,7 +15,6 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { candidates } from "@/transformers/semantic-renderer/lib/layout/straight-candidates";
-import { centreLonePins } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import {
 	requestOf,
 	type Requested,
@@ -312,6 +312,7 @@ class PinCandidates {
 		const box = boxOf(this.nodes.get(id)!);
 		const channels = this.channels.get(id)!;
 		return (
+			clearOfStandingPin(this.nodes.get(id)!, pin) &&
 			!(this.tracks.get(id) ?? []).some((track) => nearby(box, pin, track, ROUTE_LANE - 0.01)) &&
 			channels.every((other, index) =>
 				this.freeOfChannel(id, channel, pin, box, other, index, channels.length),
@@ -459,7 +460,6 @@ export function refinedPins(
 ): AlignedPins | undefined {
 	const used = collectUsedPins(nodes, edges);
 	const tracks = separateEndRuns(nodes, edges, (card) => used.get(card));
-	const centred = request.centredPorts ? centreLonePins(nodes, channels, edges, used).size : 0;
 	const selected = new PinCandidates(nodes, channels, edges, used, used);
 	selected.tracks = tracks;
 	selected.request = request;
@@ -469,7 +469,7 @@ export function refinedPins(
 		selected.add(edge);
 		selected.addRails(edge);
 	}
-	return offersMore(selected.pins, used, tracks.size + centred) ? selected.pins : undefined;
+	return offersMore(selected.pins, used, tracks.size) ? selected.pins : undefined;
 }
 
 /**

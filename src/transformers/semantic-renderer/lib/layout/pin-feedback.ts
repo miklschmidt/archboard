@@ -5,18 +5,27 @@ import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
+import { PINNED_STANDING } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
+import { PIN_REACH } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
 	CARD_ROUTE_CLEARANCE,
 	ROUTE_LANE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 
 /**
- * How far inside a card's corner a corner pin stands: clear of the change
- * badge a proposal pins 3 px inside a card's top corner with a 9.2 px radius,
- * by half the widest arrowhead, so an arrow never lands on the badge
- * (Board persistence's "adopt a draft" into Adopt).
+ * How far inside a card's corner a line meets a face and still reads as
+ * meeting the face rather than the corner: its nudging distance from the
+ * corner and half the widest arrowhead. A corner pin stands there.
  */
-const CORNER_PIN_INSET = 20;
+export const CORNER_PIN_INSET = 20;
+
+/**
+ * How far along the top face from its left corner a card's standing pin
+ * keeps a corner pin: a lane past the pin's rim, so an arrow never lands on
+ * it (Board persistence's "adopt a draft" into Adopt, 8 px from the rim at
+ * the corner pin's own inset).
+ */
+const PINNED_CORNER_INSET = PIN_REACH + ROUTE_LANE;
 
 type PinProjection = { pin: AlignedPin; corridor: Box };
 
@@ -174,7 +183,7 @@ function cornerPins(
 		...(edge.targets[0] === node.id ? [points.toReversed()] : []),
 	];
 	return ends.flatMap((route) => {
-		const corner = cornerPin(boxOf(node), route);
+		const corner = cornerPin(node, route);
 		return corner ? [corner] : [];
 	});
 }
@@ -187,16 +196,17 @@ function cornerPins(
  * face's only pin was its channel's seed, far along it, so the router took
  * the side. The run past the corner only lies a card clearance outside the
  * card, so the face never sees it as a rail of its own.
- * @param box The card.
+ * @param node The card.
  * @param route The route ordered away from the card.
- * @returns The pin {@link CORNER_PIN_INSET} inside the corner it passed, and the corridor the carried-on run and drop take.
+ * @returns The pin {@link CORNER_PIN_INSET} inside the corner it passed, or {@link PINNED_CORNER_INSET} beside a standing
+ * pin, and the corridor the carried-on run and drop take.
  */
-function cornerPin(box: Box, route: readonly Point[]): PinProjection | undefined {
-	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
+function cornerPin(node: ElkNode, route: readonly Point[]): PinProjection | undefined {
+	const [box, tip, bend, after] = [boxOf(node), route[0]!, route[1]!, route[2]];
 	if (after === undefined || !hooksPast(box, tip, bend, after)) return undefined;
 	const above = after.y < box.y;
 	const x = Math.max(
-		box.x + CORNER_PIN_INSET,
+		box.x + leftInset(node, above),
 		Math.min(box.x + box.width - CORNER_PIN_INSET, bend.x),
 	);
 	const face = above ? box.y : box.y + box.height;
@@ -209,6 +219,36 @@ function cornerPin(box: Box, route: readonly Point[]): PinProjection | undefined
 			height: Math.abs(after.y - face),
 		},
 	};
+}
+
+/**
+ * Whether a pin keeps {@link PINNED_CORNER_INSET} from the top-left corner
+ * where a card wears its standing pin, on either face that meets there. A
+ * straight channel through Renderer layout's "place grid" met Grid placement's
+ * top 8 px from its pin's rim.
+ * @param node The card.
+ * @param pin A candidate pin on it.
+ * @returns True unless the card wears a pin and this one stands beside it.
+ */
+export function clearOfStandingPin(node: ElkNode, pin: AlignedPin): boolean {
+	if (node.layoutOptions?.[PINNED_STANDING] !== "true") return true;
+	if (pin.face !== "NORTH" && pin.face !== "WEST") return true;
+	const box = boxOf(node);
+	return pin.position * (pin.face === "NORTH" ? box.width : box.height) >= PINNED_CORNER_INSET;
+}
+
+/**
+ * How far from a card's left corner a line meets its top or bottom face and
+ * reads as meeting the face.
+ * @param node The card.
+ * @param above Whether the line meets its top face.
+ * @returns The inset: {@link PINNED_CORNER_INSET} on the top face of a card that wears a
+ * standing pin, else {@link CORNER_PIN_INSET}.
+ */
+function leftInset(node: ElkNode, above: boolean): number {
+	return above && node.layoutOptions?.[PINNED_STANDING] === "true"
+		? PINNED_CORNER_INSET
+		: CORNER_PIN_INSET;
 }
 
 /**
