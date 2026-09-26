@@ -218,6 +218,12 @@ function fromReach(xs: readonly number[], warped: Float64Array, reach: Span): Fl
 	});
 }
 
+/** What a chain costs where it stands, by each count, and how many lines it crosses there. */
+interface Standing {
+	readonly costs: readonly number[];
+	readonly crossings: number;
+}
+
 /** The route search over one scene's columns. */
 class Relay {
 	readonly columns: number[];
@@ -277,13 +283,17 @@ class Relay {
 
 	/**
 	 * Relay one chain onto its cheapest free route, its label box on its own
-	 * band or another its line passes, when that saves enough.
+	 * band or another its line passes, when that saves enough; a label box
+	 * moves to another band only where its line crosses no more lines.
 	 * @param chain The chain.
 	 */
 	relay(chain: Chain): void {
 		const index = this.chains.indexOf(chain);
 		const old = chain.stations.map(({ x }) => x);
-		const standing = this.counts().map((counted) => this.cost(chain.stations, old, counted));
+		const standing: Standing = {
+			costs: this.counts().map((counted) => this.cost(chain.stations, old, counted)),
+			crossings: crossingsOf(chain.stations, old, this.bands),
+		};
 		const occupancy = this.occupancyWithout(chain);
 		const relaid = readingsOf(this.scene, chain).flatMap((stations) => {
 			this.bands[index] = byBand(stations);
@@ -316,14 +326,14 @@ class Relay {
 	 * @param chain The chain.
 	 * @param stations The reading: its stations, its label box on one band.
 	 * @param occupancy What the chain's bands hold besides it.
-	 * @param standing What the chain costs where it stands, by each count.
+	 * @param standing What the chain costs where it stands, and the lines it crosses there.
 	 * @returns The route, or nothing.
 	 */
 	relaid(
 		chain: Chain,
 		stations: readonly Station[],
 		occupancy: Occupancy,
-		standing: readonly number[],
+		standing: Standing,
 	): Relaid[] {
 		const xs = this.columnsFor(stations, occupancy);
 		const masks = stations
@@ -333,7 +343,10 @@ class Relay {
 		if (chosen === undefined) return [];
 		const route = [stations[0]!.x, ...chosen, stations.at(-1)!.x];
 		const costs = this.counts().map((counted) => this.cost(stations, route, counted));
-		const saves = costs.some((cost, at) => cost <= standing[at]! - SAVING);
+		// A label box moved to another band crosses no more lines than its line does.
+		const moved = stations !== chain.stations;
+		if (moved && crossingsOf(stations, route, this.bands) > standing.crossings) return [];
+		const saves = costs.some((cost, at) => cost <= standing.costs[at]! - SAVING);
 		return saves ? [{ stations, route, cost: costs[0]! }] : [];
 	}
 
