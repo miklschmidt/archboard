@@ -14,7 +14,7 @@ import {
 import { isNativeRouteUnavailable } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 
 /** A settled route that fails its checks even straightened; another routing of the board may pass them. */
-class RouteCheckFailed extends Error {
+export class RouteCheckFailed extends Error {
 	override readonly name = "RouteCheckFailed";
 }
 

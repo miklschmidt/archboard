@@ -24,32 +24,43 @@ interface Line {
 }
 
 /**
+ * Placed nodes, cards or frames, from their boxes.
+ * @param boxes Every node's box, by id.
+ * @returns The nodes.
+ */
+function placed(boxes: Readonly<Record<string, Box>>): ArchitectureDrawing["cards"] {
+	return Object.entries(boxes).map(([id, box], index) => ({
+		measured: {
+			node: { id, order: (index + 1) * 1000, name: id, kind: "module" },
+			width: box.width,
+			height: box.height,
+			headerHeight: 0,
+			runs: [],
+		},
+		box,
+		depth: 0,
+	}));
+}
+
+/**
  * A settled drawing of cards and lines.
  * @param cards Every card's box, by id.
  * @param lines The lines.
  * @param page The page's size.
+ * @param frames Every frame's box, by id.
  * @returns The drawing.
  */
 function sketch(
 	cards: Readonly<Record<string, Box>>,
 	lines: readonly Line[],
 	page: { readonly width: number; readonly height: number } = { width: 1000, height: 1000 },
+	frames: Readonly<Record<string, Box>> = {},
 ): ArchitectureDrawing {
 	return {
 		direction: "down",
 		...page,
-		cards: Object.entries(cards).map(([id, box], index) => ({
-			measured: {
-				node: { id, order: (index + 1) * 1000, name: id, kind: "module" },
-				width: box.width,
-				height: box.height,
-				headerHeight: 0,
-				runs: [],
-			},
-			box,
-			depth: 0,
-		})),
-		containers: [],
+		cards: placed(cards),
+		containers: placed(frames),
 		edges: lines.map(({ id, from, to, points, label }, index) => ({
 			edge: { id, order: (index + 1) * 1000, from, to, kind: "call", emphasis: "normal" },
 			curve: curveThrough(points),

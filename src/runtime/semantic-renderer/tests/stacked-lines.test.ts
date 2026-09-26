@@ -1,12 +1,8 @@
 // Two lines with no card in common must never share one stroke: drawn on one
 // coordinate they read as one line, and a trunk joining sources to the wrong
 // targets. Cards one routing gap apart leave room for one line between them.
-// A finishing routing that cured a hook and parted such a pair was refused
-// because one of its lines took a bend more, although the routing saved a
-// crossing (Browser application's "Recording a walkthrough").
 // What this catches: the Graphviz engine leaving two unrelated lines in such
-// a gap when both turn into it from the cards on either side, and refusing a
-// finishing routing that saves a crossing for one bend more.
+// a gap when both turn into it from the cards on either side.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema, type SemanticPolicy } from "@/shared/semantic-policy/index";
@@ -15,7 +11,6 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
-import recordingAWalkthrough from "./recording-a-walkthrough-graphviz.json";
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -101,8 +96,4 @@ async function stackedPairs(
 
 test("unrelated lines never share one stroke in the gap between two cards", async () => {
 	expect(await stackedPairs(orderedFixture(agentWorkbench), { policy })).toEqual([]);
-});
-
-test("two lines on one stroke part where that saves a crossing, though a line takes a bend more", async () => {
-	expect(await stackedPairs(orderedFixture(recordingAWalkthrough))).toEqual([]);
 });

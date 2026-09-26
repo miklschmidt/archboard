@@ -3,6 +3,7 @@
 export {
 	alignLabelRows,
 	bridgeCrossings,
+	centredPins,
 	chooseReading,
 	clearerDrawing,
 	curveThrough,
@@ -15,7 +16,9 @@ export {
 	tidierSettlement,
 	improveProjection,
 	projectLabelChannels,
+	relationshipChannel,
 	requestOptions,
+	RouteCheckFailed,
 	routeGraph,
 	wallOf,
 	wallReach,

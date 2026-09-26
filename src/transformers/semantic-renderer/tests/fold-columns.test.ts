@@ -1,7 +1,12 @@
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { fitIn } from "@/shared/shell-geometry/index";
-import { COLUMN_GAP, DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/config";
+import {
+	COLUMN_GAP,
+	DIAGRAM_MARGIN,
+	LABEL_ROUTE_CLEARANCE,
+	ROUTE_OPEN_CORRIDOR,
+} from "@/transformers/semantic-renderer/config";
 import { foldColumnCounts, foldColumns } from "@/transformers/semantic-renderer/layout";
 
 /**
@@ -84,6 +89,13 @@ test("fold labels use the full column gutter without covering each other", () =>
 		expect(label.x! + label.width!).toBeLessThan(frame.x!);
 	}
 	expect(labels[1]!.y!).toBeGreaterThan(labels[0]!.y! + labels[0]!.height!);
+});
+
+test("two labels stacked in a gutter leave a line room to pass between them clear of both", () => {
+	const folded = foldColumns(branching(), 2)!;
+	const [upper, lower] = folded.edges!.flatMap((edge) => edge.labels ?? []);
+	const between = lower!.y! - upper!.y! - upper!.height!;
+	expect(between).toBeGreaterThanOrEqual(2 * LABEL_ROUTE_CLEARANCE + ROUTE_OPEN_CORRIDOR);
 });
 
 test("candidate counts follow the pane and indivisible bands rather than a fixed column count", () => {

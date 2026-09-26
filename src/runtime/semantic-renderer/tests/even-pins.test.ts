@@ -191,3 +191,32 @@ test("a crossing saved does not pay for a fan whose branches crowd into one blot
 	const even = sketch({}, [...branching(9), ...long(false).slice(0, 2)]);
 	expect(await kept(plain, even)).toBe("plain");
 });
+
+test("a hook into a card's side is not kept for the crossings it saves", async () => {
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+	};
+	const entering = at([50, 50], [50, 100], [220, 100], [220, 200]);
+	const hooked = at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230]);
+	const plain = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: entering },
+		...long(true),
+	]);
+	const even = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: hooked },
+		...long(false),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("two lines whose end runs meet on one stroke are not a trunk that costs a settlement", async () => {
+	const facing = [
+		{ id: "left", from: "a", to: "b", points: at([100, 0], [0, 0], [0, 100]) },
+		{ id: "right", from: "c", to: "d", points: at([50, 0], [200, 0], [200, 100]) },
+	];
+	const apart = [facing[0]!, { ...facing[1]!, points: at([50, 30], [200, 30], [200, 100]) }];
+	const plain = sketch({}, [...apart, ...long(true).slice(0, 2)]);
+	const even = sketch({}, [...facing, ...long(false).slice(0, 2)]);
+	expect(await kept(plain, even)).toBe("even");
+});
