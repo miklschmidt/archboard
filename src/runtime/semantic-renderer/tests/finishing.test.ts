@@ -14,7 +14,11 @@
 // routing being taken for a refusal.
 
 import { expect, test } from "bun:test";
-import { finished, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
+import {
+	finished,
+	RouteCheckFailed,
+	type ArchitectureDrawing,
+} from "@/runtime/semantic-renderer/layout";
 import {
 	at,
 	sketch,
@@ -109,12 +113,7 @@ test("a pass that cures a hook keeps its routing", async () => {
 
 test("an ordinary L past a card's corner is not taken for a hook", async () => {
 	const settled = sketch(cards, [line(0, at([50, 50], [50, 230], [200, 230]))]);
-	const asked: boolean[] = [];
-	await finished({ reading: "settled", drawing: settled }, (_reading, request) => {
-		asked.push(request.cornerPins === true);
-		return Promise.resolve(undefined);
-	});
-	expect(asked).not.toContain(true);
+	expect((await requestsOf(settled)).filter(({ cornerPins }) => cornerPins)).toEqual([]);
 });
 
 test("a pass may not move a hook onto another line, whatever else it cures", async () => {
@@ -206,10 +205,103 @@ test("a pass that parts one of two stacks of the same two lines is kept", async 
 	expect(await finishing(settled, parted)).toBe(parted);
 });
 
+/**
+ * A line down the page, which crosses the line across it when it stands within its span.
+ * @param x Where it stands.
+ * @param detour How many bends it takes on the way, in pairs.
+ * @returns The line.
+ */
+function down(x: number, detour = 0): Line {
+	const steps = Array.from({ length: detour }, (_, step) => [
+		[x, 950 + step * 20],
+		[x + 50, 950 + step * 20],
+		[x + 50, 960 + step * 20],
+		[x, 960 + step * 20],
+	]).flat() as [number, number][];
+	return { id: "down", from: "u", to: "v", points: at([x, 900], ...steps, [x, 1200]) };
+}
+
+/** A line across the page, from x 400 to 2400. */
+const across: Line = { id: "across", from: "w", to: "z", points: at([400, 1000], [2400, 1000]) };
+
+test("a pass may not cure a hook by bringing a crossing", async () => {
+	const settled = sketch(cards, [hooked(0), down(2500), across]);
+	const crossed = sketch(cards, [entering(0), down(700), across]);
+	expect(await finishing(settled, crossed)).toBe(settled);
+});
+
+test("a pass may not cure a hook by giving another line more bends", async () => {
+	const settled = sketch(cards, [hooked(0), entering(500)]);
+	const wound = sketch(cards, [entering(0), winding(500)]);
+	expect(await finishing(settled, wound)).toBe(settled);
+});
+
+test("a pass that saves a crossing may give a line more bends, but no more in all", async () => {
+	const settled = sketch(cards, [hooked(0), down(700), across]);
+	const bent = sketch(cards, [
+		entering(0),
+		{ ...down(2500), points: at([2500, 900], [2500, 1200], [2600, 1200]) },
+		across,
+	]);
+	const detour = sketch(cards, [entering(0), down(2500, 1), across]);
+	expect(await finishing(settled, bent)).toBe(bent);
+	expect(await finishing(settled, detour)).toBe(settled);
+});
+
+/** What a finishing pass asks of its routes. */
+type RouteRequest = Parameters<Parameters<typeof finished>[1]>[1];
+
+/**
+ * What a settled drawing's finishing passes ask of their routes.
+ * @param settled The settled drawing.
+ * @returns Each request, every routing refused.
+ */
+async function requestsOf(settled: ArchitectureDrawing): Promise<RouteRequest[]> {
+	const requests: RouteRequest[] = [];
+	await finished({ reading: "settled", drawing: settled }, (_reading, request) => {
+		requests.push(request);
+		return Promise.resolve(undefined);
+	});
+	return requests;
+}
+
+test("a line that stays inside its frame is not sent off the frame's wall", async () => {
+	const inside = {
+		upper: { x: 20, y: 20, width: 100, height: 50 },
+		lower: { x: 20, y: 200, width: 100, height: 50 },
+	};
+	const along = {
+		id: "along",
+		from: "upper",
+		to: "lower",
+		points: at([20, 45], [2, 45], [2, 225], [20, 225]),
+	};
+	const settled = sketch(inside, [along], undefined, {
+		frame: { x: 0, y: 0, width: 400, height: 300 },
+	});
+	expect(
+		(await requestsOf(settled)).filter(({ clearWalls }) => (clearWalls ?? []).length > 0),
+	).toEqual([]);
+});
+
+test("a port beside a corner with another port on its face is not moved to the middle", async () => {
+	const card = { hub: { x: 0, y: 0, width: 200, height: 60 } };
+	const lines = [8, 100].map((x) => ({
+		id: `from${x}`,
+		from: "hub",
+		to: `to${x}`,
+		points: at([x, 60], [x, 300]),
+	}));
+	expect(
+		(await requestsOf(sketch(card, lines))).filter(({ centredPorts }) => centredPorts),
+	).toEqual([]);
+});
+
 test("a routing the router refuses keeps the settled drawing, and a fault is thrown", async () => {
 	const settled = sketch(cards, [hooked(0)]);
 	const refused = new Error("NativeRouteUnavailable: no route clear of obstacles");
 	expect(await finishing(settled, refused)).toBe(settled);
+	expect(await finishing(settled, new RouteCheckFailed("a route fails its checks"))).toBe(settled);
 	const fault = new Error("a fault in the routing");
 	await expect(finishing(settled, fault)).rejects.toBe(fault);
 });

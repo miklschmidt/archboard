@@ -21,9 +21,12 @@ export { publishRoutes } from "@/transformers/semantic-renderer/lib/layout/avoid
 export { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
 export { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 export { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
+export { RouteCheckFailed } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 export { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 export { requestOptions } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 export { wallOf, wallReach } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
+export { centredPins } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
+export { relationshipChannel } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 export { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 export {
 	foldColumnCounts,

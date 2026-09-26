@@ -67,3 +67,22 @@ test("a card inside a frame reaches a lane past a wall to clear, however far in 
 	});
 	expect(ends.every((end) => end <= -LANE + 0.01)).toBe(true);
 });
+
+/**
+ * How far a card on a frame's west inset reaches past the wall, with a card outside in front of it.
+ * @param passage The free passage between their routing boxes.
+ * @returns The reach.
+ */
+function reachAcross(passage: number): number {
+	const card = { id: "card", x: 120, y: 200, width: 200, height: 80 };
+	const frame = { id: "frame", x: 100, y: 100, width: 600, height: 400, children: [card] };
+	const outside = { id: "outside", x: 40 - passage, y: 180, width: 40, height: 120 };
+	const graph = { id: "root", children: [outside, frame] };
+	return wallReach(graph, [wallOf("frame", "WEST")]).get("card")?.WEST ?? 0;
+}
+
+test("a card reaches past a wall within half the passage in front, and across one too narrow for a line", () => {
+	expect(reachAcross(100)).toBeCloseTo(LANE, 5);
+	expect(reachAcross(20)).toBeCloseTo((20 - 2) / 2, 5);
+	expect(reachAcross(6)).toBeCloseTo(6, 5);
+});

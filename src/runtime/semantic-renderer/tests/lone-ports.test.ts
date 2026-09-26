@@ -5,9 +5,11 @@
 // label hung past the card. A reserved label is an obstacle the router kept
 // lines only its buffer from, so another line could pass 8 px from it, where
 // a label on its own run keeps 12.
+// A lone port moves only where the strip its end run sweeps is clear of
+// other cards and of other lines' reserved labels.
 // What this catches: the Graphviz engine leaving a lone port in its
-// card-wide slot beside a corner, and routing a line past a reserved label
-// closer than a label's clearance.
+// card-wide slot beside a corner, moving one across a card or a label, and
+// routing a line past a reserved label closer than a label's clearance.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -16,7 +18,9 @@ import {
 	ROUTE_NUDGE_DISTANCE,
 	ROUTE_OPEN_CORRIDOR,
 } from "@/transformers/semantic-renderer/config";
+import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { centredPins, relationshipChannel } from "@/runtime/semantic-renderer/layout";
 import {
 	cornersOf,
 	corridorPoints,
@@ -161,4 +165,62 @@ test("a port away from its face's corners stays put, so no line runs a part-lane
 			),
 	);
 	expect(doubled).toEqual([]);
+});
+
+/**
+ * Where a lone port 10 px from its card's corner stands after centring, with other things in the way.
+ * @param others Other cards, and other relationships with reserved labels.
+ * @param others.cards Other cards.
+ * @param others.edges Other relationships.
+ * @returns The port's position along its face.
+ */
+function centredPort(others: {
+	readonly cards?: readonly ElkNode[];
+	readonly edges?: readonly ElkExtendedEdge[];
+}): number {
+	const source = { id: "source", x: 0, y: 0, width: 340, height: 88 };
+	const target = { id: "target", x: 500, y: 300, width: 340, height: 88 };
+	const line: ElkExtendedEdge = {
+		id: "line",
+		sources: ["source"],
+		targets: ["target"],
+		layoutOptions: { "archboard.relationship.kind": "call" },
+		sections: [
+			{
+				id: "s",
+				startPoint: { x: 10, y: 88 },
+				bendPoints: [
+					{ x: 10, y: 120 },
+					{ x: 670, y: 120 },
+				],
+				endPoint: { x: 670, y: 300 },
+			},
+		],
+	};
+	const channel = relationshipChannel(line, "source");
+	const slot = 10 / 340;
+	const channels = new Map([
+		["source", [channel, ...Array.from({ length: 16 }, (_, index) => `other${index}`)]],
+		["target", [relationshipChannel(line, "target")]],
+	]);
+	const nodes = new Map([source, target, ...(others.cards ?? [])].map((node) => [node.id, node]));
+	const used = new Map([
+		["source", new Map([[channel, [{ face: "SOUTH" as const, position: slot }]]])],
+	]);
+	const moved = centredPins(nodes, channels, [line, ...(others.edges ?? [])], used);
+	return (moved?.pins ?? used).get("source")!.get(channel)![0]!.position;
+}
+
+test("a lone port moves to its face's middle only across a strip clear of cards and labels", () => {
+	expect(centredPort({})).toBe(0.5);
+	const card = { id: "card", x: 100, y: 130, width: 40, height: 40 };
+	expect(centredPort({ cards: [card] })).toBeLessThan(0.5);
+	const labelled: ElkExtendedEdge = {
+		id: "labelled",
+		sources: ["card"],
+		targets: ["target"],
+		layoutOptions: { "archboard.relationship.kind": "call", "archboard.route-label": "true" },
+		labels: [{ x: 80, y: 95, width: 80, height: 20 }],
+	};
+	expect(centredPort({ edges: [labelled] })).toBeLessThan(0.5);
 });
