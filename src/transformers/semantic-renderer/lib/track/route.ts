@@ -18,7 +18,6 @@ import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	LANE,
 	chainOf,
-	straightenIntoContainers,
 	straightenLanes,
 	type Station,
 	type Chain,
@@ -38,7 +37,11 @@ import {
 	clearHeadings,
 	straightenThroughLabels,
 } from "@/transformers/semantic-renderer/lib/track/columns";
-import { pullToPorts, unstrandLanes } from "@/transformers/semantic-renderer/lib/track/stranded";
+import {
+	pullToPorts,
+	straightenIntoContainers,
+	unstrandLanes,
+} from "@/transformers/semantic-renderer/lib/track/stranded";
 
 /** From the band above to the first track: room for the bend off a face. */
 const TRACK_TOP = 2 * BEND_RADIUS;

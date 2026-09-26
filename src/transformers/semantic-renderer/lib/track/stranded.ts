@@ -4,13 +4,16 @@
 // turns twice more to reach them. Once the labels have slid, each such run
 // moves onto the column of one of its ends where that is free and crosses no
 // more lines; once the ports are placed, a run standing less than a lane off
-// its port moves onto the port's column.
+// its port moves onto the port's column, and each run to or from a container
+// onto its straight column where a label stood in its way before sliding.
 import {
 	LANE,
+	Occupancy,
 	freeWithout,
 	inversions,
 	laneRuns,
 	reachOf,
+	straightOn,
 	type Chain,
 	type LaneRun,
 	type Station,
@@ -128,4 +131,36 @@ function portBeside(run: LaneRun, ports: ReadonlyMap<Station, number>): number |
 	return off >= 0.5 && off < LANE ? x : undefined;
 }
 
-export { pullToPorts, unstrandLanes };
+/**
+ * Once the labels have slid, try every run of lanes to or from a container
+ * on its straight column again: a label that stood in its way before sliding
+ * may have moved aside. Every other lane stays where it is.
+ * @param scene The scene, its labels slid.
+ * @param chains Every relationship's chain.
+ * @returns Whether any run moved.
+ */
+function straightenIntoContainers(scene: Scene, chains: readonly Chain[]): boolean {
+	const runs = laneRuns(chains);
+	const straight = runs.filter(({ before, after }) => straightOn(scene, before, after).length > 0);
+	const occupancy = new Occupancy(scene);
+	for (const { lanes } of runs.filter((run) => !straight.includes(run)))
+		for (const lane of lanes) occupancy.take(lane);
+	return straight.map((run) => straighten(scene, run, occupancy)).some(Boolean);
+}
+
+/**
+ * Move one run to or from a container onto its straight column, when that is free.
+ * @param scene The scene.
+ * @param run The run.
+ * @param occupancy What each band holds; the run's lanes are added.
+ * @returns Whether it moved.
+ */
+function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
+	const { lanes, before, after } = run;
+	const x = straightOn(scene, before, after).find((column) => occupancy.fits(lanes, column));
+	const moved = x !== undefined && lanes.some((lane) => lane.x !== x);
+	if (moved) for (const lane of lanes) lane.x = x;
+	for (const lane of lanes) occupancy.take(lane);
+	return moved;
+}
+export { pullToPorts, straightenIntoContainers, unstrandLanes };
