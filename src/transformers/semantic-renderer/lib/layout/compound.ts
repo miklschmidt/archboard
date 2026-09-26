@@ -44,7 +44,12 @@ import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 import { EVEN_PINS, tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { CLEAR_WALLS } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
-import { clearOfWalls } from "@/transformers/semantic-renderer/lib/layout/clear-walls";
+import {
+	crowdedWalls,
+	finished,
+	sideHooks,
+} from "@/transformers/semantic-renderer/lib/layout/finishing";
+import { CORNER_PINS } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
@@ -56,6 +61,8 @@ interface Problem {
 	readonly evenPins?: boolean;
 	/** The frame walls its routes keep clear of (frame-walls.ts). */
 	readonly clearWalls?: readonly string[];
+	/** Whether its routes are offered corner pins (pin-feedback.ts). */
+	readonly cornerPins?: boolean;
 }
 
 /**
@@ -234,7 +241,8 @@ function columnReading(problem: Problem): ColumnReading {
 		 */
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
-		 * The complete drawing: the tidier of plain and evened pins, then clear of frame walls.
+		 * The complete drawing: the tidier of plain and evened pins, then
+		 * finished clear of frame walls and of hooks into a card's side (finishing.ts).
 		 * @returns The settled reading.
 		 */
 		settle: async () => {
@@ -242,11 +250,31 @@ function columnReading(problem: Problem): ColumnReading {
 				settleReading(reading),
 				settleReading({ ...reading, evenPins: true }),
 			);
-			return clearOfWalls(kept.drawing, async (clearWalls) => {
-				const attempt = await attemptLabels({ ...kept.reading, clearWalls }, kept.reserved);
-				return attempt.missing.length === 0 ? checked(attempt.drawing) : undefined;
-			});
+			const reroute = rerouting(kept.reserved);
+			const walled = await finished(kept, crowdedWalls, (clearWalls) =>
+				reroute({ ...kept.reading, clearWalls }),
+			);
+			const hooked = await finished(walled, sideHooks, () =>
+				reroute({ ...walled.reading, cornerPins: true }),
+			);
+			return hooked.drawing;
 		},
+	};
+}
+
+/**
+ * Route a settled placement once more, with the reservations it settled with.
+ * @param reserved Its reservations.
+ * @returns Routes a reading of it, answering nothing when a label finds no box.
+ */
+function rerouting(
+	reserved: ReadonlySet<string>,
+): (reading: Reading) => Promise<Omit<SettledReading, "reserved"> | undefined> {
+	return async (reading) => {
+		const attempt = await attemptLabels(reading, reserved);
+		return attempt.missing.length === 0
+			? { reading, drawing: checked(attempt.drawing) }
+			: undefined;
 	};
 }
 
@@ -288,20 +316,16 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
  * Ask a placed graph's forced labels to be routed through.
  * @param placed A placement of the reading, which stays as it is.
  * @param forced Labels that require a route through their reserved box.
- * @param routing How its routes are asked for: evened pins, and the frame walls to keep clear of.
+ * @param routing How its routes are asked for: evened pins, the frame walls to keep clear of, and corner pins.
  * @returns The routing input.
  */
 function forceLabels(
 	placed: ElkNode,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
-	routing: Pick<Problem, "evenPins" | "clearWalls">,
+	routing: Pick<Problem, "evenPins" | "clearWalls" | "cornerPins">,
 ): ElkNode {
 	const graph = structuredClone(placed);
-	graph.layoutOptions = {
-		...graph.layoutOptions,
-		[EVEN_PINS]: String(routing.evenPins ?? false),
-		[CLEAR_WALLS]: JSON.stringify(routing.clearWalls ?? []),
-	};
+	graph.layoutOptions = { ...graph.layoutOptions, ...routeOptions(routing) };
 	for (const edge of graph.edges ?? []) {
 		if (!forced.has(edge.id)) continue;
 		edge.layoutOptions = {
@@ -311,6 +335,26 @@ function forceLabels(
 		};
 	}
 	return graph;
+}
+
+/**
+ * The routing options a reading asks its routes for.
+ * @param routing How the routes are asked for.
+ * @param routing.evenPins Whether every pin of a shape costs the same.
+ * @param routing.clearWalls The frame walls to keep clear of.
+ * @param routing.cornerPins Whether a route that hooks past a card's corner is offered the face it passed.
+ * @returns The graph options that ask for them.
+ */
+function routeOptions({
+	evenPins = false,
+	clearWalls = [],
+	cornerPins = false,
+}: Pick<Problem, "evenPins" | "clearWalls" | "cornerPins">): Record<string, string> {
+	return {
+		[EVEN_PINS]: String(evenPins),
+		[CLEAR_WALLS]: JSON.stringify(clearWalls),
+		[CORNER_PINS]: String(cornerPins),
+	};
 }
 
 /**
