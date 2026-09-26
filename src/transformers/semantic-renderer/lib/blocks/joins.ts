@@ -3,23 +3,40 @@
 // past the first they share; if each then carried its label beside the card,
 // they would part again to their labels and end apart. So each such join is
 // kept whole one of two ways: each line's label sits before the join, by its
-// source, or each line keeps ports of its own and the lines never join. Each
-// join takes the way that reads better in the drawing as a whole.
+// source, or each line keeps ports of its own and the lines never join. The
+// joins whose labels would move to one block take one way together, since
+// labels before some of a block's joins and not others rank its cards
+// unevenly; each such block takes the way that reads better in the drawing as
+// a whole.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { BlockTree, Projection } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
+import { fitIn } from "@/shared/shell-geometry/index";
 
-/** How much line costs as much as one crossing: what the trunk router pays to avoid one. */
-const LINE_PER_CROSSING = 300;
+/**
+ * How much line costs as much as one crossing: a crossing the reader has to
+ * look twice at is worth a long run of line, and less than this lets a trunk
+ * kept whole lose to lines that each hop what it hopped once.
+ */
+const LINE_PER_CROSSING = 1000;
 
-/** A drawing laid out one way, and every relationship's points as drawn. */
-interface Drawn<Laid> {
-	readonly laid: Laid;
+/** How near two costs are for the page to decide between them: a twentieth. */
+const NEAR = 0.05;
+
+/** A drawing's page and every relationship's points, as drawn. */
+interface Page {
+	readonly width: number;
+	readonly height: number;
+	readonly edges: readonly { readonly id: string; readonly points: readonly Point[] }[];
+}
+
+/** A drawing laid out one way: its blocks, and the drawing as placed. */
+interface Drawn<Placed extends Page> {
 	readonly tree: BlockTree;
-	readonly lines: readonly { readonly id: string; readonly points: readonly Point[] }[];
+	readonly placed: Placed;
 }
 
 /**
@@ -46,12 +63,22 @@ function joinOf(projection: Projection, upward: boolean): string {
 }
 
 /**
- * Every join, and how each relationship in one keeps it whole: its label
- * before it, or ports of its own.
+ * The block a relationship's label moves to when it is kept before a join:
+ * the innermost around its source.
+ * @param projection Where it is drawn.
+ * @returns The block's id.
+ */
+function blockOf(projection: Projection): string {
+	return (projection.out[0] ?? projection.at).id;
+}
+
+/**
+ * The blocks that joins move labels to when kept before them, and how each
+ * relationship in a join keeps it whole.
  * @param projections Where each relationship is drawn.
  * @param back The relationships that run upward where they are drawn.
- * @param apart The joins whose lines keep ports of their own, by key.
- * @returns Every join's key, and the relationships in joins each way, by id.
+ * @param apart The blocks whose joins keep ports of their own, by id.
+ * @returns Those blocks, and the relationships in joins each way, by id.
  */
 function joinWays(
 	projections: readonly Projection[],
@@ -59,13 +86,13 @@ function joinWays(
 	apart: ReadonlySet<string>,
 ): { joining: Set<string>; before: Set<string>; apart: Set<string> } {
 	const joins = projections.map((one) => joinOf(one, back.has(one.edge.id)));
-	const joining = new Set(
-		joins.filter((join) => join !== "" && joins.indexOf(join) !== joins.lastIndexOf(join)),
-	);
-	const [before, own] = [new Set<string>(), new Set<string>()];
-	projections.forEach(({ edge }, index) => {
+	const [joining, before, own] = [new Set<string>(), new Set<string>(), new Set<string>()];
+	projections.forEach((projection, index) => {
 		const join = joins[index]!;
-		if (joining.has(join)) (apart.has(join) ? own : before).add(edge.id);
+		if (join === "" || joins.indexOf(join) === joins.lastIndexOf(join)) return;
+		const block = blockOf(projection);
+		joining.add(block);
+		(apart.has(block) ? own : before).add(projection.edge.id);
 	});
 	return { joining, before, apart: own };
 }
@@ -130,11 +157,11 @@ function sharedLength(one: readonly Point[], other: readonly Point[]): number {
  * @param drawn The drawing.
  * @returns The count.
  */
-function partedOf(drawn: Drawn<unknown>): number {
+function partedOf(drawn: Drawn<Page>): number {
 	const towards = new Map(
 		drawn.tree.projections.map(({ edge }) => [edge.id, `${edge.targets[0]}|${kindOf(edge)}`]),
 	);
-	const lines = drawn.lines.filter(({ points }) => points.length > 1);
+	const lines = drawn.placed.edges.filter(({ points }) => points.length > 1);
 	return lines.reduce(
 		(sum, one, index) =>
 			sum +
@@ -178,45 +205,55 @@ function pairCrossings(lines: readonly (readonly Point[])[]): number {
 }
 
 /**
- * What a drawing costs: each crossing once as the reader sees it and once
- * more for each line through it, since a trunk drawn far across the drawing
- * crosses for every line it carries, and its line at a crossing's worth for
- * every run as long as a trunk pays to avoid one.
- * @param drawn The drawing.
+ * What a drawing's lines cost: each crossing as the reader sees it, half as
+ * much again for each line through it past the first, since a trunk drawn
+ * far across the drawing crosses for every line it carries, and its line at
+ * a crossing's worth for every run as long as a trunk pays to avoid one.
+ * @param placed The drawing.
  * @returns The cost.
  */
-function costOf(drawn: Drawn<unknown>): number {
-	const points = drawn.lines.map((line) => line.points);
-	return crossingsOf(points) + pairCrossings(points) + lineLength(points) / LINE_PER_CROSSING;
+function costOf(placed: Page): number {
+	const points = placed.edges.map((line) => line.points);
+	const seen = crossingsOf(points);
+	return seen + (pairCrossings(points) - seen) / 2 + lineLength(points) / LINE_PER_CROSSING;
 }
 
 /**
  * Whether one drawing reads better than another: it parts fewer joined
- * lines, or as few and costs less.
+ * lines; or, as few, its lines cost much less; or, costing about as much,
+ * its page fits the reference pane better, since two layouts that cost
+ * the same can stand the board in very different shapes.
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first reads better.
  */
-function drawsBetter(one: Drawn<unknown>, other: Drawn<unknown>): boolean {
+function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
-	return parted < fewest || (parted === fewest && costOf(one) < costOf(other) - 1e-9);
+	if (parted !== fewest) return parted < fewest;
+	const [cost, least] = [costOf(one.placed), costOf(other.placed)];
+	const [fit, best] = [fitIn(one.placed), fitIn(other.placed)];
+	if (Math.abs(cost - least) > NEAR * Math.min(cost, least) || Math.abs(fit - best) < 1e-9)
+		return cost < least - 1e-9;
+	return fit > best;
 }
 
 /**
  * Lay a drawing out with every join kept whole the way that reads better:
- * every join with its labels before it; then every join apart; and from the
- * better of those, each join turned the other way in turn, kept where the
+ * every join before its labels; then every join apart; then, from the better
+ * of those, each block's joins turned the other way in turn, kept where the
  * drawing reads better.
- * @param lay Lay the drawing out with some joins apart, by key.
+ * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The drawing laid out best.
  */
-function layJoined<Laid>(lay: (apart: ReadonlySet<string>) => Drawn<Laid>): Drawn<Laid> {
+function layJoined<Placed extends Page>(
+	lay: (apart: ReadonlySet<string>) => Drawn<Placed>,
+): Drawn<Placed> {
 	let best = lay(new Set());
-	const joins = [...best.tree.joining];
+	const blocks = [...best.tree.joining];
 	let apart = new Set<string>();
 	const trials = [
-		...(joins.length > 1 ? [(): Set<string> => new Set(joins)] : []),
-		...joins.map((join) => (): Set<string> => toggled(apart, join)),
+		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
+		...blocks.map((block) => (): Set<string> => toggled(apart, block)),
 	];
 	for (const next of trials) {
 		const trial = next();
